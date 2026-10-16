@@ -1,0 +1,17 @@
+{
+  "id": "set-on-fire",
+  "name": "Set on Fire",
+  "category": "vfx",
+  "blurb": "Engulfed in flames, totally calm.",
+  "sample": "chef",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "Flames burst from the subject's shoulders and race across their clothes until they stand fully engulfed in roaring fire, calm and unharmed, embers swirling up into the air.",
+        "camera": "push-in",
+        "sound": "A whoosh of ignition, then roaring, crackling fire."
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "hologram",
+  "name": "Hologram",
+  "category": "vfx",
+  "blurb": "Glitches into a blue hologram.",
+  "sample": "dancer",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "The dancer flickers, then turns into a translucent glowing blue hologram, scan lines rolling down her body and the stage lights showing through her, glitching once before the projection steadies.",
+        "camera": "locked",
+        "sound": "Sharp digital glitch bursts and a steady electronic hum."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Turn the dancer into a translucent glowing blue hologram with fine horizontal scan lines; the red and blue stage light and haze show through her body. Keep the same pose, framing and background."
+  }
+}

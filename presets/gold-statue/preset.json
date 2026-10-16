@@ -1,0 +1,20 @@
+{
+  "id": "gold-statue",
+  "name": "Gold Statue",
+  "category": "transform",
+  "blurb": "Solid gold, head to toe.",
+  "sample": "dancer",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "A shimmer of gold spreads from the subject's hands across their whole body, skin, hair and clothes hardening into polished metal until they stand perfectly still as a gold statue.",
+        "camera": "push-in",
+        "sound": "A soft metallic crackle rising into a bright ringing chime."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Turn the person into a solid polished gold statue: skin, hair and clothes are all gleaming gold metal with fine sculpted detail. Keep the same person, face, pose, framing, background and lighting."
+  }
+}

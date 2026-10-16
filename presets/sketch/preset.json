@@ -1,0 +1,20 @@
+{
+  "id": "sketch",
+  "name": "Pencil Sketch",
+  "category": "transform",
+  "blurb": "Dissolves into a drawing.",
+  "sample": "harbor",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "The colors drain away and the scene dissolves, line by line, into a graphite pencil sketch on paper, hatching sweeping across the shapes as if drawn by an invisible hand.",
+        "camera": "locked",
+        "sound": "The scratch of a pencil and turning paper."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Turn the whole image into a detailed graphite pencil sketch on white paper with confident hatching and visible paper texture. Keep the same composition, pose and framing."
+  }
+}

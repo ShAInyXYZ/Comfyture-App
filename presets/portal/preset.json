@@ -1,0 +1,20 @@
+{
+  "id": "portal",
+  "name": "Portal",
+  "category": "vfx",
+  "blurb": "A ring of energy tears open.",
+  "sample": "rain-coat",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "Behind the woman, a swirling ring of glowing orange energy tears open in the middle of the street, spinning faster and throwing sparks across the wet pavement, while she stays still and her face stays clear in front of it.",
+        "camera": "locked",
+        "sound": "An electric crackle building into a whirring hum."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Add a large swirling ring of glowing orange energy floating in the street far behind the woman, throwing sparks onto the wet pavement and rim-lighting her back. The woman, her face, coat and pose stay exactly the same and fully visible in front of it."
+  }
+}

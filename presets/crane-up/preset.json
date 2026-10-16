@@ -1,0 +1,18 @@
+{
+  "id": "crane-up",
+  "name": "Crane Up",
+  "category": "camera",
+  "blurb": "Rises high to reveal everything.",
+  "sample": "rooftop",
+  "seconds": 6,
+  "script": {
+    "shots": [
+      {
+        "action": "The subject stands still as the surroundings open up around them, the city spreading out below.",
+        "camera": "crane-up",
+        "sound": "The near sounds fall away under a swelling orchestral chord.",
+        "framing": "a high wide shot with the subject small in the frame"
+      }
+    ]
+  }
+}

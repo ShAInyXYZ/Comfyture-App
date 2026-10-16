@@ -1,0 +1,20 @@
+{
+  "id": "age-50",
+  "name": "Fifty Years",
+  "category": "transform",
+  "blurb": "Ages half a century.",
+  "sample": "rooftop",
+  "seconds": 6,
+  "script": {
+    "shots": [
+      {
+        "action": "The subject ages fifty years in a few seconds: hair fades to grey, wrinkles deepen around the eyes and mouth, while they hold a calm gaze toward the lens.",
+        "camera": "push-in",
+        "sound": "A ticking clock slowing down under a gentle string swell."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Age the person by fifty years: grey hair, deep wrinkles, age spots and softer skin, same clothes. Keep the same person, face, pose, framing, background and lighting."
+  }
+}

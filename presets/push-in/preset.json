@@ -1,0 +1,18 @@
+{
+  "id": "push-in",
+  "name": "Slow Push-In",
+  "category": "camera",
+  "blurb": "The classic dramatic push.",
+  "sample": "harbor",
+  "seconds": 6,
+  "script": {
+    "shots": [
+      {
+        "action": "The subject breathes, blinks once and slowly lifts their gaze to the lens.",
+        "camera": "push-in",
+        "sound": "Gulls far away, water lapping against the dock, a single soft piano note.",
+        "framing": "a close-up of the face"
+      }
+    ]
+  }
+}

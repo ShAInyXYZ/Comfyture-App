@@ -1,0 +1,20 @@
+{
+  "id": "plush-toy",
+  "name": "Plush Toy",
+  "category": "transform",
+  "blurb": "Becomes a soft stitched plush.",
+  "sample": "dog",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "The subject softens and puffs up as fur turns into stitched fabric and felt, seams appearing along the body, until a cute plush toy of the dog sits in the meadow.",
+        "camera": "locked",
+        "sound": "Soft fabric rustles and a playful pop."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Turn the dog into a cute soft plush toy version of itself: stitched fabric fur, felt nose, embroidered eyes and visible seams. Keep the same pose, framing, meadow background and light."
+  }
+}

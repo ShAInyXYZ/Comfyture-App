@@ -1,0 +1,19 @@
+{
+  "id": "dolly-zoom",
+  "name": "Dolly Zoom",
+  "category": "camera",
+  "blurb": "Vertigo: the world stretches behind.",
+  "sample": "harbor",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "The subject stays perfectly still, eyes widening slightly, while the background stretches and recedes behind them.",
+        "camera": "custom",
+        "sound": "A low tense drone swells over a slow heartbeat.",
+        "cameraText": "The camera dollies backward while the lens zooms in, keeping the subject the same size in frame",
+        "framing": "a tight medium shot"
+      }
+    ]
+  }
+}

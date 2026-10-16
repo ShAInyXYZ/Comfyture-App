@@ -1,0 +1,20 @@
+{
+  "id": "disintegrate",
+  "name": "Disintegrate",
+  "category": "vfx",
+  "blurb": "Turns to dust and blows away.",
+  "sample": "rain-coat",
+  "seconds": 6,
+  "script": {
+    "shots": [
+      {
+        "action": "Starting at the fingertips and the hair, the woman crumbles into fine grey dust and ash that streams away on the wind, piece by piece, until only the empty rainy street remains.",
+        "camera": "locked",
+        "sound": "A dry crackling hiss of dust carried away on the wind, fading into the rain."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Remove the person completely so only the empty rainy street remains, with the same shops, lights, reflections and framing. A faint drift of grey dust hangs in the air where they stood."
+  }
+}

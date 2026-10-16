@@ -1,0 +1,19 @@
+{
+  "id": "fpv-dive",
+  "name": "FPV Dive",
+  "category": "camera",
+  "blurb": "A drone dives in and banks past.",
+  "sample": "roadtrip",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "Wind ripples the brush by the road as the scene rushes closer.",
+        "camera": "custom",
+        "sound": "Buzzing drone propellers and rushing wind.",
+        "cameraText": "The FPV drone camera starts high above, tips forward, dives fast toward the subject, banks hard and pulls up past them",
+        "framing": "a low tracking shot beside the subject"
+      }
+    ]
+  }
+}

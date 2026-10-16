@@ -1,0 +1,17 @@
+{
+  "id": "explosion",
+  "name": "Walk Away",
+  "category": "vfx",
+  "blurb": "A huge blast behind. No flinch.",
+  "sample": "rooftop",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "A massive fireball erupts far behind the subject, lighting them in hot orange and throwing debris through the air, and they keep calmly looking ahead.",
+        "camera": "push-in",
+        "sound": "A huge boom, a rolling rumble and falling debris."
+      }
+    ]
+  }
+}

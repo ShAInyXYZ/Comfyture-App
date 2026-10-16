@@ -1,0 +1,17 @@
+{
+  "id": "shatter",
+  "name": "Shatter",
+  "category": "vfx",
+  "blurb": "Cracks like glass and bursts.",
+  "sample": "sneaker",
+  "seconds": 4,
+  "script": {
+    "shots": [
+      {
+        "action": "A crack shoots across the whole image as if it were a pane of glass, more cracks spider out, then the scene shatters into glittering shards that fly toward the lens in slow motion.",
+        "camera": "locked",
+        "sound": "A sharp glass crack and a shattering crash."
+      }
+    ]
+  }
+}

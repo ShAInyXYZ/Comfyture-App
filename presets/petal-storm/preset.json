@@ -1,0 +1,18 @@
+{
+  "id": "petal-storm",
+  "name": "Petal Storm",
+  "category": "vfx",
+  "blurb": "A gust of blossoms sweeps through.",
+  "sample": "dog",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "A sudden gust sweeps thousands of pink cherry blossom petals through the frame, swirling around the subject and catching the light, fur and grass lifting in the wind.",
+        "camera": "custom",
+        "sound": "Rushing wind and soft wind chimes.",
+        "cameraText": "The camera arcs slowly to the side"
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "claymation",
+  "name": "Claymation",
+  "category": "transform",
+  "blurb": "Remade in plasticine.",
+  "sample": "roadtrip",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "Every surface turns into soft plasticine, the woman, the car and the desert gaining thumbprints and seams, and the motion steps into the jerky rhythm of stop-motion as she gives a little wave.",
+        "camera": "locked",
+        "sound": "Squishy clay sounds and a cheerful plucked melody."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Rebuild the whole image as a handmade claymation stop-motion miniature: a plasticine woman with visible thumbprints, a chunky clay car, clay road, clay desert hills and a painted clay sky, soft studio lighting. Keep the same composition, pose and colours."
+  }
+}

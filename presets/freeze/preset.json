@@ -1,0 +1,20 @@
+{
+  "id": "freeze",
+  "name": "Flash Freeze",
+  "category": "vfx",
+  "blurb": "Ice creeps over everything.",
+  "sample": "harbor",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "Frost races across the man's beard, hair and sweater, ice crystals branching and thickening until he stands frozen solid under a glittering shell of ice, his breath hanging frozen in the air.",
+        "camera": "push-in",
+        "sound": "Crackling, creaking ice and a cold wind."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Freeze the man solid: thick white frost and clear ice cover his hair, beard, skin and sweater, small icicles hang from his beard and his breath is frozen in the air. Keep the same man, pose, framing, harbour and golden light."
+  }
+}

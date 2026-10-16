@@ -1,0 +1,18 @@
+{
+  "id": "orbit-360",
+  "name": "360 Orbit",
+  "category": "camera",
+  "blurb": "Circles all the way around.",
+  "sample": "sneaker",
+  "seconds": 6,
+  "script": {
+    "shots": [
+      {
+        "action": "The subject stays centered and still as the surroundings turn around it, light sliding across its surfaces.",
+        "camera": "orbit",
+        "sound": "Quiet room tone and a soft whoosh that rises and falls with the move.",
+        "framing": "the same view it started from"
+      }
+    ]
+  }
+}

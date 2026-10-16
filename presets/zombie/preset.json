@@ -1,0 +1,20 @@
+{
+  "id": "zombie",
+  "name": "Zombie",
+  "category": "transform",
+  "blurb": "The turn, in five seconds.",
+  "sample": "chef",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "The subject's skin drains to grey and cracks, dark veins spread up the neck and the eyes cloud over white as they turn into a zombie and slowly tilt their head.",
+        "camera": "locked",
+        "sound": "Dry cracking, a low guttural growl and eerie strings."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Turn the person into a horror-movie zombie: grey cracked skin, dark veins, clouded white eyes, frayed clothes, eerie cinematic light, nothing gory. Keep the same person, face, pose, framing, background and lighting."
+  }
+}

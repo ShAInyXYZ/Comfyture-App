@@ -1,0 +1,20 @@
+{
+  "id": "day-to-night",
+  "name": "Day to Night",
+  "category": "transform",
+  "blurb": "The lights come on.",
+  "sample": "roadtrip",
+  "seconds": 6,
+  "script": {
+    "shots": [
+      {
+        "action": "Time-lapse: the light drops from sunset to deep night as the sky darkens to blue, headlights and distant lights flicker on, and the subject stays still.",
+        "camera": "locked",
+        "sound": "Evening crickets swell as the wind dies down."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Change the time to deep night: dark blue sky full of stars, the car's headlights on, warm light on the woman. Keep the same people, pose, framing and road."
+  }
+}

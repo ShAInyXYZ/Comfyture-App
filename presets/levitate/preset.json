@@ -1,0 +1,20 @@
+{
+  "id": "levitate",
+  "name": "Levitate",
+  "category": "vfx",
+  "blurb": "Gravity lets go.",
+  "sample": "roadtrip",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "The woman slowly lifts off the road and floats upward beside the car, her feet hanging free, hair and shirt drifting as if weightless, dust and small stones rising around her.",
+        "camera": "locked",
+        "sound": "A deep humming drone and soft airy whooshes over a quiet desert wind."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Make the woman float about a metre above the road beside the car, feet hanging free, hair and white shirt lifting as if weightless, small stones and dust floating in the air around her. Keep the same woman, car, road, desert and sunset light."
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "id": "earth-zoom-out",
+  "name": "Earth Zoom Out",
+  "category": "camera",
+  "blurb": "Pulls back all the way to space.",
+  "sample": "roadtrip",
+  "seconds": 8,
+  "script": {
+    "shots": [
+      {
+        "action": "The scene shrinks away below: the road, the desert, the whole region, until the curve of the Earth fills the frame against black space.",
+        "camera": "custom",
+        "sound": "A rising whoosh that fades into the silence of space.",
+        "cameraText": "The camera pulls straight up and away, faster and faster, through the clouds",
+        "framing": "the whole planet against black space"
+      }
+    ]
+  }
+}

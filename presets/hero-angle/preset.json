@@ -1,0 +1,19 @@
+{
+  "id": "hero-angle",
+  "name": "Hero Angle",
+  "category": "camera",
+  "blurb": "Low angle, big entrance.",
+  "sample": "rooftop",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "The subject turns to face the lens with quiet confidence as the background drops away against the sky.",
+        "camera": "custom",
+        "sound": "A huge cinematic drum hit and rising brass.",
+        "cameraText": "The camera sinks low and tilts up into a heroic low angle",
+        "framing": "a low-angle medium shot"
+      }
+    ]
+  }
+}

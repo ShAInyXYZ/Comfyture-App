@@ -1,0 +1,17 @@
+{
+  "id": "thunder-god",
+  "name": "Thunder God",
+  "category": "vfx",
+  "blurb": "Lightning answers the call.",
+  "sample": "rooftop",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "Dark storm clouds roll in overhead, then bolts of blue-white lightning strike around the subject and crackle across their body as their eyes begin to glow electric blue.",
+        "camera": "locked",
+        "sound": "Crackling electricity and booming thunder."
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "winter",
+  "name": "First Snow",
+  "category": "transform",
+  "blurb": "Winter arrives at once.",
+  "sample": "dog",
+  "seconds": 6,
+  "script": {
+    "shots": [
+      {
+        "action": "Snow begins to fall and quickly thickens, covering the meadow and the mountains in white, flakes settling on the dog's fur as its breath turns to mist.",
+        "camera": "locked",
+        "sound": "A hushed winter wind and the soft patter of snow."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Change the season to deep winter: heavy snow falling, the meadow and mountains covered in white, snow on the dog's fur, cold blue light. Keep the same dog, pose and framing."
+  }
+}

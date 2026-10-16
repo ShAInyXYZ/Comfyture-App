@@ -1,0 +1,20 @@
+{
+  "id": "armor-up",
+  "name": "Armor Up",
+  "category": "transform",
+  "blurb": "A high-tech suit assembles.",
+  "sample": "rain-coat",
+  "seconds": 6,
+  "script": {
+    "shots": [
+      {
+        "action": "Mechanical plates unfold and slide across the subject's body, clicking into place one by one until a sleek armored suit covers them and thin lines glow to life.",
+        "camera": "push-in",
+        "sound": "Whirring servos, metallic clicks and a final power-up hum."
+      }
+    ]
+  },
+  "end": {
+    "paint": "Dress the person in a sleek original high-tech armored suit with matte black and brushed steel plates and thin glowing lines, no logos or emblems, face uncovered. Keep the same person, face, pose, framing, background and lighting."
+  }
+}

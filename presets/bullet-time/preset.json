@@ -1,0 +1,19 @@
+{
+  "id": "bullet-time",
+  "name": "Bullet Time",
+  "category": "camera",
+  "blurb": "Time freezes; the camera keeps moving.",
+  "sample": "dancer",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "Time freezes mid-movement: the dancer is locked perfectly still, every strand of hair and wisp of haze suspended in the air like glass, nothing in the frame moves except the camera.",
+        "camera": "custom",
+        "sound": "A deep slowed-down rumble with a crystalline shimmer.",
+        "cameraText": "The camera travels in a wide, smooth arc around the frozen dancer, sweeping from her front to her side while she stays completely motionless",
+        "framing": "her profile against the red and blue light"
+      }
+    ]
+  }
+}

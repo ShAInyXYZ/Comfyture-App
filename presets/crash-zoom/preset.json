@@ -1,0 +1,19 @@
+{
+  "id": "crash-zoom",
+  "name": "Crash Zoom",
+  "category": "camera",
+  "blurb": "A violent zoom into the eyes.",
+  "sample": "rain-coat",
+  "seconds": 4,
+  "script": {
+    "shots": [
+      {
+        "action": "The subject holds still for a beat, then their expression sharpens as the frame rushes in on them.",
+        "camera": "custom",
+        "sound": "A fast rising whoosh slams into a deep cinematic boom.",
+        "cameraText": "The camera crash-zooms violently toward the face with heavy motion blur and stops hard",
+        "framing": "an extreme close-up of the eyes"
+      }
+    ]
+  }
+}
