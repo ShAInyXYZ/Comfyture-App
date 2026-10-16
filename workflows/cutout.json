@@ -1,0 +1,9 @@
+{
+  "photo": { "class_type": "LoadImage", "inputs": { "image": "" } },
+  "model": { "class_type": "LoadBackgroundRemovalModel", "inputs": { "bg_removal_name": "birefnet.safetensors" } },
+  "mask": { "class_type": "RemoveBackground", "inputs": { "bg_removal_model": ["model", 0], "image": ["photo", 0] } },
+  "size": { "class_type": "GetImageSize", "inputs": { "image": ["photo", 0] } },
+  "black": { "class_type": "EmptyImage", "inputs": { "width": ["size", 0], "height": ["size", 1], "batch_size": 1, "color": 0 } },
+  "cut": { "class_type": "ImageCompositeMasked", "inputs": { "destination": ["black", 0], "source": ["photo", 0], "x": 0, "y": 0, "resize_source": false, "mask": ["mask", 0] } },
+  "frame": { "class_type": "SaveImage", "inputs": { "filename_prefix": "comfyture/cutout", "images": ["cut", 0] } }
+}

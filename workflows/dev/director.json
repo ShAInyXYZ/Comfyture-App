@@ -1,0 +1,19 @@
+{
+  "plan": {
+    "class_type": "PrimitiveStringMultiline",
+    "inputs": {
+      "value": "{\"title\": \"Dev Film\", \"look\": \"Soft daylight, 35 mm, warm colors.\", \"cast\": \"A tabby cat with a red collar.\", \"shots\": [{\"name\": \"Window\", \"frame\": \"A tabby cat with a red collar sits on a sunny windowsill, wide shot.\", \"action\": \"The cat turns its head toward the room.\", \"camera\": \"push-in\", \"framing\": \"a medium shot of the cat\", \"sound\": \"Birdsong outside, a clock ticking.\", \"seconds\": 4}, {\"name\": \"Jump\", \"frame\": \"Close-up of the tabby cat with a red collar crouching on the windowsill.\", \"action\": \"The cat leaps down out of frame.\", \"camera\": \"locked\", \"framing\": \"the empty windowsill\", \"sound\": \"A soft thump.\", \"seconds\": 4}, {\"name\": \"Bowl\", \"frame\": \"The tabby cat with a red collar beside a food bowl on a kitchen floor.\", \"action\": \"The cat eats from the bowl, tail swaying.\", \"camera\": \"handheld\", \"framing\": \"a close-up of the bowl\", \"sound\": \"Crunching kibble.\", \"seconds\": 4}]}"
+    }
+  },
+  "out": {
+    "class_type": "SaveText",
+    "inputs": {
+      "text": [
+        "plan",
+        0
+      ],
+      "filename_prefix": "comfyture/plan",
+      "format": "txt"
+    }
+  }
+}

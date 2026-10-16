@@ -1,0 +1,19 @@
+{
+  "plan": {
+    "class_type": "PrimitiveStringMultiline",
+    "inputs": {
+      "value": "{\"reply\": \"Dev mode: I set a slow push-in and named the shot. Turn on the real workflows to talk to Gemma 4.\", \"actions\": [{\"do\": \"script\", \"camera\": \"push-in\", \"framing\": \"a close-up\"}, {\"do\": \"name\", \"name\": \"Dev shot\"}]}"
+    }
+  },
+  "out": {
+    "class_type": "SaveText",
+    "inputs": {
+      "text": [
+        "plan",
+        0
+      ],
+      "filename_prefix": "comfyture/assistant",
+      "format": "txt"
+    }
+  }
+}

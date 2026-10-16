@@ -1,0 +1,27 @@
+{
+  "photo": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": ""
+    }
+  },
+  "invert": {
+    "class_type": "ImageInvert",
+    "inputs": {
+      "image": [
+        "photo",
+        0
+      ]
+    }
+  },
+  "frame": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "invert",
+        0
+      ],
+      "filename_prefix": "comfyture/dev-frame"
+    }
+  }
+}

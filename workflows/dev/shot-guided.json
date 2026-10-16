@@ -1,0 +1,7 @@
+{
+  "base": { "class_type": "EmptyImage", "inputs": { "width": 640, "height": 352, "batch_size": 1, "color": 3158064 } },
+  "fit": { "class_type": "ImageScale", "inputs": { "image": ["base", 0], "upscale_method": "bilinear", "width": 640, "height": 352, "crop": "center" } },
+  "frames": { "class_type": "RepeatImageBatch", "inputs": { "image": ["fit", 0], "amount": 24 } },
+  "clip": { "class_type": "CreateVideo", "inputs": { "images": ["frames", 0], "fps": 12 } },
+  "video": { "class_type": "SaveVideo", "inputs": { "video": ["clip", 0], "filename_prefix": "comfyture/dev-shot", "format": "auto", "codec": "auto" } }
+}

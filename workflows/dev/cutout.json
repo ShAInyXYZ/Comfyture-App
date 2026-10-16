@@ -1,0 +1,4 @@
+{
+  "photo": { "class_type": "LoadImage", "inputs": { "image": "" } },
+  "frame": { "class_type": "SaveImage", "inputs": { "filename_prefix": "comfyture/cutout", "images": ["photo", 0] } }
+}

@@ -1,0 +1,4 @@
+{
+  "video_in": { "class_type": "LoadVideo", "inputs": { "file": "" } },
+  "video": { "class_type": "SaveVideo", "inputs": { "video": ["video_in", 0], "filename_prefix": "comfyture/sound", "format": "auto", "format.codec": "auto" } }
+}

@@ -1,0 +1,4 @@
+{
+  "base": { "class_type": "EmptyImage", "inputs": { "width": 1248, "height": 832, "batch_size": 1, "color": 3355443 } },
+  "frame": { "class_type": "SaveImage", "inputs": { "filename_prefix": "comfyture/generated", "images": ["base", 0] } }
+}
