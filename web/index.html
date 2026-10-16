@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comfyture</title>
+  <meta name="description" content="Open-source creation desk for cinematic shots with sound, built on ComfyUI and LTX-2.5.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/material.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="top">
+    <div class="top-in">
+      <a class="wordmark" href="#/create" aria-label="Comfyture"><img src="brand/wordmark.svg" alt="Comfyture" draggable="false"></a>
+      <nav class="sections" id="nav" aria-label="Sections"></nav>
+      <div class="top-tools">
+        <span class="cloud" id="cloud"></span>
+        <a class="top-link" href="https://github.com/" target="_blank" rel="noreferrer" aria-label="Source code on GitHub" id="repo-link"></a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Create: the desk, one shot at a time, with a tab for every shot -->
+  <div class="page" id="page-create" data-page="create">
+    <div class="subbar">
+      <div class="subbar-in">
+        <nav class="tabs" id="tabs" role="tablist" aria-label="Shots"></nav>
+        <div class="subbar-actions" id="actions"></div>
+      </div>
+    </div>
+    <main class="desk">
+      <aside class="col inputs" aria-label="Inputs and shot settings">
+        <section class="col-section" id="sources" aria-label="Inputs"></section>
+        <section class="col-section settings" id="settings" aria-label="Shot"></section>
+      </aside>
+
+      <div class="col stage">
+        <div class="stage-top">
+          <section class="card monitor" id="monitor" aria-label="Monitor"></section>
+          <section class="card presets" id="presets" aria-label="Presets"></section>
+        </div>
+        <section class="card script" id="script" aria-label="Script"></section>
+      </div>
+
+      <aside class="col side">
+        <section class="card takes" id="takes" aria-label="Take log"></section>
+      </aside>
+    </main>
+    <!-- the assistant floats over the desk: a bar at the bottom, the conversation above it -->
+    <section class="chat-float" id="assistant" aria-label="Assistant"></section>
+  </div>
+
+  <main class="page page-wide" id="page-director" data-page="director" hidden></main>
+  <main class="page page-wide" id="page-library" data-page="library" hidden></main>
+  <main class="page page-wide" id="page-edit" data-page="edit" hidden></main>
+
+  <!-- the Image window: a floating window over a dimmed page, opened from the cards and the Library -->
+  <div class="img-layer" id="image" hidden></div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <input type="file" id="file-image" accept="image/png,image/jpeg,image/webp" hidden>
+  <input type="file" id="file-video" accept="video/mp4,video/webm,video/quicktime" hidden>
+  <input type="file" id="file-audio" accept="audio/*,video/mp4,video/webm,video/quicktime" hidden>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
