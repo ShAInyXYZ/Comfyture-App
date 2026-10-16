@@ -1,0 +1,65 @@
+{
+  "llm": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "gemma4_e4b_it_fp8_scaled.safetensors",
+      "type": "stable_diffusion",
+      "device": "default"
+    },
+    "_meta": {
+      "title": "Gemma 4 (the director)"
+    }
+  },
+  "brief": {
+    "class_type": "PrimitiveStringMultiline",
+    "inputs": {
+      "value": "You are the director of a short film made one shot at a time by an image-to-video model with sound. Each shot starts from a still frame and lasts 3 to 8 seconds. Plan the film the user describes as a sequence of shots.\n\nReply with JSON only, no markdown fence, in exactly this shape:\n{\"title\": \"\", \"look\": \"\", \"cast\": \"\", \"shots\": [{\"name\": \"\", \"frame\": \"\", \"action\": \"\", \"camera\": \"\", \"framing\": \"\", \"sound\": \"\", \"seconds\": 5}]}\n\ntitle: one to four words.\nlook: one sentence of visual style that every shot shares: light, lens, color, texture.\ncast: one sentence that pins down the recurring people, animals or objects (age, hair, clothes, colors, materials), or \"\" when there are none.\nshots: exactly the number of shots asked for, telling the story in order, with varied shot sizes (wide, medium, close-up).\nname: one to three words.\nframe: the first frame of the shot, written as a photo for an image generator: subject, place, framing, light. Repeat the cast description whenever they appear. No camera motion, no story, no text, no logos.\naction: what happens during the shot, in order, present tense, one or two sentences, physically possible within its seconds. Lead with the motion.\ncamera: one of locked, push-in, pull-out, orbit, crane-up, handheld. Use at least two different moves across the film, and locked only where stillness matters.\nframing: what the shot ends on, in a few words, such as \"a close-up of her face\".\nsound: ambience, foley and music that fit, in one sentence. No dialogue unless the user asks for it.\nseconds: a whole number from 3 to 8, on every shot.\n\nKeep continuity: the same cast, wardrobe, place and time of day unless the story changes them. Never use real people, brands or copyrighted characters."
+    },
+    "_meta": {
+      "title": "The director's brief"
+    }
+  },
+  "plan": {
+    "class_type": "TextGenerate",
+    "inputs": {
+      "clip": [
+        "llm",
+        0
+      ],
+      "prompt": "",
+      "max_length": 2400,
+      "sampling_mode": "on",
+      "sampling_mode.temperature": 0.7,
+      "sampling_mode.top_k": 64,
+      "sampling_mode.top_p": 0.95,
+      "sampling_mode.min_p": 0.05,
+      "sampling_mode.repetition_penalty": 1.05,
+      "sampling_mode.seed": 0,
+      "sampling_mode.presence_penalty": 0,
+      "thinking": false,
+      "use_default_template": true,
+      "mtp": "auto",
+      "system_prompt": [
+        "brief",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Plan the shots"
+    }
+  },
+  "out": {
+    "class_type": "SaveText",
+    "inputs": {
+      "text": [
+        "plan",
+        0
+      ],
+      "filename_prefix": "comfyture/plan",
+      "format": "txt"
+    },
+    "_meta": {
+      "title": "The plan"
+    }
+  }
+}
