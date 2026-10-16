@@ -1,0 +1,23 @@
+{
+  "name": "comfyture",
+  "version": "0.1.0",
+  "description": "Open-source cinematic presets: your photo becomes a shot with sound. Built on the Comfy SDK and LTX-2.5.",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/main.ts",
+    "dev": "COMFYTURE_WORKFLOWS=dev node --env-file-if-exists=.env server/main.ts",
+    "check": "node --env-file-if-exists=.env scripts/smoke.ts data/smoke.png",
+    "check:workflows": "node scripts/check-workflows.ts",
+    "previews": "node --env-file-if-exists=.env scripts/previews.ts",
+    "demo-site": "node scripts/demo-site.ts"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@comfyorg/sdk": "^0.5.0"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "repository": "https://github.com/ShAInyXYZ/Comfyture"
+}
