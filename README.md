@@ -1,0 +1,253 @@
+# Comfyture
+
+**One photo in, a cinematic shot with sound out. One sentence in, a short film out.**
+
+Comfyture is an open-source preset studio. Pick a photo, pick a preset (a crash zoom, setting yourself on fire, turning into a gold statue) and get a short video with synchronized sound. Every preset is a readable file and every model is open weights. It's built on the [Comfy Developer Platform](https://docs.comfy.org/development/overview), and the same code runs on your own GPU or on Comfy Cloud.
+
+> Built for Comfy's #OpenSourceHiggsfield challenge: a preset video studio that is open source and runs on open weights.
+
+![The Comfyture desk: sources, monitor, script, presets, shot settings and the take log](docs/desk.jpg)
+
+![Six presets on six photos: Walk Away, Set on Fire, Gold Statue, Thunder God, Earth Zoom Out and Plush Toy](docs/presets.webp)
+
+## What it does
+
+Comfyture is a desk for directing a shot: give it the frames, write the script, set the camera, roll takes and keep the good one. Then chain shots into a film, or let the Director plan and make the whole film from one sentence.
+
+- **Four sections.** **Create** is the desk. **Director** plans and makes a whole film from a sentence. **Library** holds every take, film and image. **Edit** cuts takes into a film.
+- **Assistant.** A floating chat over the desk, like Higgsfield's: a bar at the bottom, the conversation above it when you want it. It knows how the app works: a manual written from the app's own code (which workflow runs for which inputs, every input and its limits, how the script becomes the exact prompt, the presets) goes with every message, together with the open tab's whole state and the latest takes. Say what you want and Gemma 4, running inside ComfyUI with your start photo in view, picks a preset, writes one to four shots with their cuts, sets length, frame, quality and takes, draws or edits the start photo, draws references, sets a paint, switches a video between extend and copy motion, opens the next shot from a take's last frame, and rolls when you ask. Attach images, videos, sounds or text files (the paperclip, a drop, or a paste) and name them with `@` in a message: "use @chef as the cast and @sneaker as the prop, follow @brief". `@` also reaches everything in the Library: an earlier take (`continue from @finding-life`), a film, or any image. The files you name get an accent outline; the assistant sees the named images on one labelled sheet and puts each file where you say. Every change is listed under its reply, with an Undo.
+- **Director.** Describe a film in a sentence. Gemma 4, running inside ComfyUI, writes the shot list; Qwen Image 2.1 draws each shot's first frame; LTX-2.5 rolls every shot with its sound; the takes are cut into one film. Every shot opens as a tab in Create that you can change and roll again.
+- **Image.** A floating window for pictures: step 0 on the desk, above the inputs, and on any input card or in the Library. Pick a model (Qwen Image 2.1 and its Turbo, FLUX 3 Klein, Krea 2 Turbo, Z-Image Turbo) and a template (text to image, image edit, style reference), set the frame, the size and how many, and name references with `@` as in the chat. Every model runs Comfy's official template for it, and Improve rewrites your words with that template's own prompt enhancer, by the rules of the model it is for. Send any result to an input of the open tab: the start or end frame, a keyframe, the cast, the prop or the place. With several results, a notch at the top of the picture switches between them, shows them all at once, or compares two with a slider.
+- **Tabs.** Click any take to open it in a tab with the inputs that made it, while the Draft tab keeps yours. Hover a tab to preview it and drag tabs into order. Next shot opens a new tab that starts on a take's last frame, and Edit takes sends the tabs' takes on to Edit.
+- **Library.** Takes, films and images in one searchable grid. Select takes to add them to Edit, open a take in Create with its inputs, use an image as a start frame, download anything.
+- **Edit.** Put takes in order, trim each one with its two handles, choose a cut or a cross-dissolve, preview the sequence and cut the film. Films keep their clips, so Edit again reopens them.
+- **Sources.**
+  - A start frame from a photo, a video or a picture made in the Image window. Any input image can be made or edited there ("make it night, add rain").
+  - A video to extend, so the shot picks up where the clip ends, or whose motion to copy onto your photo: body and face, or shapes and edges.
+  - An end frame. Upload it, or paint it from the start frame with an instruction.
+  - Keyframes pinned at any moment of the shot.
+  - Reference images (cast, prop, location) that put your person, product and place into a new scene. Cast and props are cut out onto black automatically, and a few words per image tell the model which is which.
+  - A voice or music track the picture follows, with lip sync. A video's sound works too.
+- **Script.** One or more shots, each with action, camera move and framing, sound, and dialogue lines with speaker and language. Hard cuts, match cuts and dissolves are written as LTX-2.5's native multi-shot prose. The Prompt view shows the exact text sent to the model, and you can edit it directly.
+- **Video and sound in one pass.** LTX-2.5 generates the picture and the audio together: the whoosh of the zoom, the crackle of the fire, the line she says.
+- **Last frame first.** With a paint instruction and no end frame, each take paints its last frame with Qwen Image 2.1 and waits. Animate it or paint again.
+- **Takes.** Roll 1 to 4 takes with locked or random seeds, then:
+  - watch any take with a filmstrip and a waveform
+  - reload its exact settings
+  - open the next shot on its last frame, to chain shots
+  - keep the picture and roll a new sound: LTX-2.5 writes the audio again for the frozen picture
+  - cut a 9:16 clip to post, with your photo above the shot
+  - remix it, download it, or send it to Edit to join it with other takes
+- **28 presets as starting scripts** in three groups: Camera (crash zoom, dolly zoom, 360 orbit, FPV dive, bullet time…), VFX (fire, lightning, disintegrate, portal…) and Transform (gold statue, plush toy, zombie, fifty years older…). A preset fills the script and stays editable. Save your own with one click; each one is a file in `presets/`.
+- **Your GPU or Comfy Cloud.** The app talks to ComfyUI through the official Comfy SDK. Point it at Comfy Cloud with an API key, or at your own ComfyUI through `comfy-api-proxy`. Nothing else changes.
+
+## Last frame first
+
+![Your photo, the last frame painted by Qwen Image 2.1, and the shot turning toward it](docs/last-frame-first.jpg)
+
+A transformation preset doesn't hope the video model gets there. It paints the destination first: Qwen Image 2.1 edits your photo into the final frame, you check it, and LTX-2.5 animates from your photo to that frame. Each preset carries both the motion script and the paint instruction.
+
+## References
+
+![A reference sheet of a chef, a sneaker and a harbor, and the shot made from it](docs/references.jpg)
+
+Cast, prop and location images go onto one sheet on black. Cast and props are cut out automatically with ComfyUI's background removal, and a few words per image tell the model which panel is which. LTX-2.5 with Lightricks' Ingredients IC-LoRA then puts them into a new scene.
+
+## Director
+
+![The Director: one sentence, a three-shot plan, each shot's first frame and take, and the film](docs/director.jpg)
+
+The Director is a small harness built from the same parts as the desk. Write what the film is about and pick how many shots. An open-weights LLM, Gemma 4 E4B, runs as a ComfyUI workflow (`workflows/director.json`, core `TextGenerate`) and returns a shot list: a title, a look and a cast shared by every shot, and for each shot its first frame, what happens, the camera move, the framing it ends on, the sound and its length. You can edit the plan before anything renders.
+
+Make the film opens one tab per shot, draws every first frame with Qwen Image 2.1, rolls each shot with LTX-2.5 as soon as its frame is in, and cuts the finished takes into one film in tab order. With a start photo in the open tab, shot 1 starts on your photo and the plan follows from it.
+
+## Image
+
+Each model in the Image window is one of Comfy's official templates from the Cloud template library, kept as an API-format graph in `workflows/image/` and listed in `workflows/image/models.json` with the template it comes from:
+
+| Model | Templates | Official templates |
+|---|---|---|
+| Qwen Image 2.1 | text to image, image edit (up to 10 references) | `image_qwen_image_2_1_t2i`, `image_qwen_image_2_1_image_edit` |
+| Qwen Image 2.1 Turbo | text to image, image edit, 8 steps | `image_qwen_image_2_1_turbo_t2i`, `image_qwen_image_2_1_turbo_image_edit` |
+| FLUX 3 Klein | text to image, image edit (up to 10 references) | `image_flux3_klein_distilled_t2i`, `image_flux3_klein_distilled_image_edit` |
+| Krea 2 Turbo | text to image, style reference | `image_krea2_turbo_t2i_int8`, `image_krea2_turbo_int8_image_style_reference` |
+| Z-Image Turbo | text to image | `image_z_image_turbo` |
+
+What changes from the templates:
+
+- **Improve is a step of its own.** The templates switch their prompt enhancer on inside the graph. Here it runs alone (`workflows/image/enhance.json`) with the template's enhancer model, its system prompt (copied verbatim into `workflows/image/prompts/`) and its sampling, so you read and edit the rewritten prompt before anything renders. Z-Image Turbo's template has no enhancer: its brief is written from Tongyi's prompting guide and runs on Gemma 4.
+- **`@` names become each model's own reference syntax.** `@chef` turns into `<image1>` for Qwen, `<ref_image_0>` for FLUX 3 and "the image" when there is only one, as each model's guide asks.
+- **The frame is part of the brief.** For a new picture, the enhancer is told the aspect ratio, so it composes for it.
+- **References are read at about a megapixel** by the enhancers, whatever their size, and Qwen's edit enhancer reasons in its thinking channel, so only the prompt comes back.
+- **LoRAs from Comfy Cloud's library**, listed per model in `workflows/image/loras.json`: Krea's nine official style LoRAs (with the trigger words from Krea's model card), community styles for Krea 2 and Z-Image Turbo (trigger words from Cloud's own metadata), and Qwen Image 2.1's edit LoRAs. Up to three at a time, each with its strength; they load between the model and the sampler, and their trigger words are added after the prompt, as the Krea template does. FLUX 3 Klein has none on Cloud yet.
+- **Sizes follow each model's guide:** Qwen Image 2.1 up to its native 2K (4 MP, multiples of 32), FLUX 3 Klein and Krea 2 up to 4 MP, Z-Image up to 2 MP.
+
+## Video in
+
+A clip can start the shot instead of a photo. Uploads are normalized to 24 fps, at most 1280 px and 20 seconds.
+
+- **Extend this clip.** The clip's last 17 frames guide the start of the new shot, so it picks up exactly where the clip ends and carries on with your script. The result is the clip and its continuation as one file. End frames and keyframes still work.
+- **Copy its motion.** Lightricks' union-control IC-LoRA follows the clip's pose (body, hands, face, from DWPose) or its edges (Canny) while your start photo gives the look. Without a photo the script sets the look. A voice track can drive it too.
+
+## Quick start
+
+You need Node.js 22.18 or newer.
+
+```bash
+git clone <this repo> comfyture && cd comfyture
+npm install
+```
+
+### On Comfy Cloud
+
+You need a Comfy API key from [platform.comfy.org](https://platform.comfy.org) and a paid Comfy Cloud plan.
+
+```bash
+echo "COMFY_API_KEY=comfyui-..." > .env
+npm start
+```
+
+Open http://127.0.0.1:5177.
+
+### On your own GPU
+
+1. Install a recent ComfyUI with the models listed under [Models](#models).
+2. Run the official v2 API proxy next to it:
+   ```bash
+   pip install comfy-api-proxy
+   comfy-api-proxy run          # serves the Comfy API v2 on 127.0.0.1:8189
+   ```
+3. `npm start` and open http://127.0.0.1:5177.
+
+To check the connection without the app, run `npm run check`. It runs a tiny workflow and saves `data/smoke.png`.
+
+`npm run dev` starts the app with tiny stand-in workflows, so you can work on the interface without a GPU or credits.
+
+### A live demo without a server
+
+`npm run demo-site` writes `site/`: the app as static files, with your presets, the sample photos and every finished take in your take log. Presets and takes play, prompts and workflows are all there; rolling is off. Publish the folder on any static host. For GitHub Pages:
+
+```bash
+npm run demo-site
+npx gh-pages -d site --dotfiles   # pushes site/ to the gh-pages branch
+```
+
+Then set Pages to deploy from the `gh-pages` branch. The site works under the repository's sub-path.
+
+## Models
+
+Local runs need these files in your ComfyUI `models` folder. On Comfy Cloud nothing to do: Cloud has them, and the one it lacks (Production's detail LoRA) is imported into your Cloud library automatically the first time the app starts.
+
+| File | Folder | Used for |
+|---|---|---|
+| `ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors` | `diffusion_models` | video and sound |
+| `gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors` | `text_encoders` | LTX-2.5 prompts |
+| `ltx-2.5-video-vae-bf16.safetensors` | `vae` | video decode |
+| `ltx-2.5-audio-vae-bf16.safetensors` | `vae` | sound decode |
+| `ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors` | `latent_upscale_models` | detail pass |
+| `gemma4_e2b_it_int8_convrot.safetensors` | `text_encoders` | the optional prompt enhancer |
+| `ltx-2.3-22b-ic-lora-ingredients-0.9.safetensors` | `loras` | references (cast, prop, location) |
+| `ltx-2.5-22b-dev-transformer-bf16.safetensors` | `diffusion_models` | references: the LoRA needs the dev model with guidance |
+| `birefnet.safetensors` | `background_removal` | cutting cast and props out for the reference sheet |
+| `ltx-2.5-22b-ic-lora-pixel-spatial-upscaler-x2-1.0.safetensors` | `loras` | Production's detail pass |
+| `ltx-2.5-latent-temporal-upscaler-x2-bf16-1.0.safetensors` | `latent_upscale_models` | Production's 48 fps pass |
+| `qwen_image_2.1_int8_convrot.safetensors` | `diffusion_models` | last frames |
+| `qwen3vl_8b_int8_convrot.safetensors` | `text_encoders` | last-frame prompts |
+| `qwen_image_2.1_vae_bf16.safetensors` | `vae` | last frames |
+| `gemma4_e4b_it_fp8_scaled.safetensors` | `text_encoders` | the Director's shot lists |
+| `ltx-2.3-22b-ic-lora-union-control-ref0.5.safetensors` | `loras` | copying a video's motion |
+| `ltx-2.5-22b-distilled-transformer-bf16.safetensors` | `diffusion_models` | copying a video's motion, as in Lightricks' example |
+| `ltx-2.3-spatial-upscaler-x2-1.1.safetensors` | `latent_upscale_models` | copying a video's motion: the detail pass |
+
+The Image window's other models (Qwen Image 2.1 Turbo, FLUX 3 Klein, Krea 2 Turbo, Z-Image Turbo) and their prompt enhancers are on Comfy Cloud; to run them locally, `workflows/image/models.json` and the graphs beside it name each file.
+
+`scripts/get-models.sh /path/to/ComfyUI/models` fetches the required files with the Hugging Face CLI. Add `ALL=1` for the optional ones (prompt enhancer, references, copying motion, Production). The LTX-2.5 files come from [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5), the references LoRA from [Lightricks/LTX-2.3-22b-IC-LoRA-Ingredients](https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Ingredients) (Lightricks' LTX-2.5 example uses this one too), the detail LoRA from [Lightricks/LTX-2.5-22b-IC-LoRA-Pixel-Spatial-Upscaler](https://huggingface.co/Lightricks/LTX-2.5-22b-IC-LoRA-Pixel-Spatial-Upscaler), the enhancer from [Comfy-Org/gemma-4](https://huggingface.co/Comfy-Org/gemma-4) and the cutout model from [Comfy-Org/BiRefNet](https://huggingface.co/Comfy-Org/BiRefNet). Accept the model terms on the Lightricks pages before downloading. Every workflow uses core ComfyUI nodes, except References and Copy its motion, which are wired like Lightricks' own IC-LoRA examples and need [ComfyUI-LTXVideo](https://github.com/Lightricks/ComfyUI-LTXVideo); following body and face also needs DWPose from [comfyui_controlnet_aux](https://github.com/Fannovel16/comfyui_controlnet_aux). Comfy Cloud has both.
+
+## How it works
+
+```
+browser ──► Comfyture server (Node) ──► Comfy SDK ──► Comfy Cloud
+                                                 └──► comfy-api-proxy ──► your ComfyUI
+```
+
+- `server/` is a small Node server with no framework. It stores photos and runs, and streams progress and live preview frames to the browser.
+- `workflows/` holds API-format ComfyUI workflows with readable node ids (`photo`, `prompt`, `seed`, `video`…). The server adds guides, audio and the reference LoRA to them per shot:
+  - `shot-i2v.json`: LTX-2.5 image-to-video with sound, as a two-pass render. Used for a start frame alone.
+  - `shot-guided.json`: one LTX-2.5 pass with any number of guide frames. It covers text-to-video, start, end and keyframes, and reference sheets (on the dev model, 30 steps, as the Ingredients LoRA is trained).
+  - `shot-motion.json`: LTX-2.5 with the union-control IC-LoRA, two passes, for copying a clip's motion. Extending a clip uses `shot-guided.json` with the clip's last frames as the first guide.
+  - `frame-edit.json`: the Qwen Image 2.1 edit that paints end frames and edits any input.
+  - `image-generate.json`: Qwen Image 2.1 text-to-image, for the Director's first frames and the assistant.
+  - `image/`: the Image window's models, one graph per official template, their catalogue (`models.json`), the shared enhancer graph and the enhancers' briefs.
+  - `cutout.json`: ComfyUI's background removal, for cast and prop references.
+  - `sound.json`: a new sound for a finished picture, which is frozen while LTX-2.5 writes the audio.
+  - `director.json`: Gemma 4 turning an idea into a shot list.
+  - `assistant.json`: Gemma 4 answering the chat with a reply and the actions that set up the shot (`server/assistant.ts` writes its prompt and checks every action).
+  - `parts/enhancer.json`: the optional prompt enhancer.
+- `node scripts/check-workflows.ts` builds every kind of shot graph and checks it against a running ComfyUI's node definitions.
+- `presets/` has one folder per preset: its `preset.json`, plus the `preview.mp4` and `poster.jpg` the gallery shows.
+- `web/` is the interface: plain HTML, CSS and JavaScript, with no build step.
+
+## Make a preset
+
+Press **Save as preset** on the desk, or write `presets/<id>/preset.json` by hand:
+
+```json
+{
+  "id": "gold-statue",
+  "name": "Gold Statue",
+  "category": "transform",
+  "blurb": "Solid gold, head to toe.",
+  "sample": "dancer",
+  "seconds": 5,
+  "script": {
+    "shots": [
+      {
+        "action": "A shimmer of gold spreads from the subject's hands across their whole body…",
+        "camera": "push-in",
+        "sound": "A soft metallic crackle rising into a bright ringing chime."
+      }
+    ]
+  },
+  "end": { "paint": "Turn the person into a solid polished gold statue… Keep the same person, pose, framing and background." }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `category` | `camera`, `vfx` or `transform` |
+| `script.shots[]` | `action`, `camera` (`locked`, `push-in`, `pull-out`, `orbit`, `crane-up`, `handheld`) or a free `cameraText`, `framing`, `sound`, `dialogue` (`speaker`, `language`, `line`) and, from the second shot on, a `transition` (`hard-cut`, `match-cut`, `dissolve`) |
+| `end.paint` | Optional: how to paint the end frame from the start frame |
+| `seconds` | Default length, 2–10 |
+| `sample` | The sample photo the preview is rendered from |
+
+Write the action the way LTX-2.5 reads best: present tense, the motion first, one camera move, and sounds that have a visible source. Then render the preset's gallery preview through the running app with `node scripts/previews.ts gold-statue`.
+
+## Configuration
+
+| Variable | Default | |
+|---|---|---|
+| `COMFY_API_KEY` | | Comfy Cloud key. Setting it alone targets Comfy Cloud. |
+| `COMFY_BASE_URL` | `http://127.0.0.1:8189` | Any Comfy API v2 endpoint: a proxy, a Comfy API deployment… |
+| `PORT` / `HOST` | `5177` / `127.0.0.1` | Where the app listens |
+| `COMFYTURE_DATA` | `data` | Photos and runs |
+| `COMFYTURE_WORKFLOWS` | | `dev` swaps in tiny stand-in workflows so you can work on the UI without a GPU |
+
+## Credits
+
+Everything the app runs is open weights, through ComfyUI. No partner nodes and no paid model APIs.
+
+| What | Used for |
+|---|---|
+| [LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5) (Lightricks) | video and sound in one pass, its spatial and temporal upscalers |
+| LTX IC-LoRAs: [Ingredients](https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Ingredients), [Pixel Spatial Upscaler](https://huggingface.co/Lightricks/LTX-2.5-22b-IC-LoRA-Pixel-Spatial-Upscaler) | references, Production's detail pass |
+| [Qwen Image 2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1) | painted end frames |
+| [Gemma 4](https://huggingface.co/Comfy-Org/gemma-4) | LTX-2.5's text encoder and the optional prompt enhancer |
+| [BiRefNet](https://huggingface.co/Comfy-Org/BiRefNet) | cutting cast and props out for the reference sheet |
+| [Comfy SDK](https://www.npmjs.com/package/@comfyorg/sdk) | talking to Comfy Cloud or your own ComfyUI |
+| [Manrope](https://github.com/sharanda/manrope), [IBM Plex Mono](https://github.com/IBM/plex) | the interface type (SIL Open Font License, in `web/fonts/`) |
+
+The sample photos in `samples/` were generated for this repository with GPT Image. They show no real people. Bring your own photos for anything you make.
+
+## License
+
+MIT
