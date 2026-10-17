@@ -11,7 +11,7 @@ import { manual } from "./manual.ts";
 import { LIMITS } from "./limits.ts";
 import { CloudLibrary } from "./cloud.ts";
 import { ASPECTS, ImageModels } from "./images.ts";
-import { blenderStatus, command, CONTROL_BRIEF, controlConnected, controlEvents, controlPrompt, fromBlender, readControlAnswer, reply, toBlender, type ControlTurn } from "./control.ts";
+import { askClaude, blenderStatus, command, CONTROL_BRIEF, CONTROL_MODEL, controlConnected, controlEvents, controlModelName, controlPrompt, fromBlender, readControlAnswer, reply, toBlender, type ControlTurn } from "./control.ts";
 import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
 
@@ -646,7 +646,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     return;
   }
   if (path === "/api/control/events" && method === "GET") return controlEvents(req, res);
-  if (path === "/api/control/status" && method === "GET") return json(res, 200, { page: controlConnected() });
+  if (path === "/api/control/status" && method === "GET") return json(res, 200, { page: controlConnected(), assistant: controlModelName() });
   if (path === "/api/control/command" && method === "POST") {
     const input = await jsonBody(req);
     const answer = await command(text(input.op, 40), input.args && typeof input.args === "object" ? input.args : {});
@@ -671,16 +671,21 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const scene = input.scene && typeof input.scene === "object" ? input.scene : {};
     let picture: string | undefined;
     const png = typeof input.look === "string" ? /^data:image\/(png|jpeg);base64,(.+)$/.exec(input.look) : null;
-    if (png) {
+    // Gemma reads the picture from a file it uploads; Claude takes it inline
+    if (png && CONTROL_MODEL === "gemma") {
       await mkdir(join(data, "control"), { recursive: true });
       picture = join(data, "control", `look-${randomBytes(4).toString("hex")}.${png[1] === "png" ? "png" : "jpg"}`);
       await writeFile(picture, Buffer.from(png[2], "base64"));
     }
+    const ask = (prompt: string) =>
+      CONTROL_MODEL === "claude"
+        ? askClaude(prompt, png ? { type: png[1], data: png[2] } : undefined)
+        : engine.ask(prompt, undefined, undefined, { brief: CONTROL_BRIEF, picture });
     try {
-      const prompt = controlPrompt(scene, turns, !!picture);
-      let answer = readControlAnswer(await engine.ask(prompt, undefined, undefined, { brief: CONTROL_BRIEF, picture }), scene);
+      const prompt = controlPrompt(scene, turns, !!png);
+      let answer = readControlAnswer(await ask(prompt), scene);
       // JSON it could not close is asked for once more, never shown
-      if (answer.unreadable) answer = readControlAnswer(await engine.ask(`${prompt}\n\nYour last answer was not valid JSON. Answer again: one JSON object, every bracket closed.`, undefined, undefined, { brief: CONTROL_BRIEF, picture }), scene);
+      if (answer.unreadable) answer = readControlAnswer(await ask(`${prompt}\n\nYour last answer was not valid JSON. Answer again: one JSON object, every bracket closed.`), scene);
       if (answer.unreadable) answer = { reply: "I could not put that together. Try it in smaller steps?", actions: [] };
       return json(res, 200, answer);
     } finally {
@@ -768,4 +773,5 @@ createServer((req, res) => {
   console.log(`Comfyture  http://${host}:${port}`);
   console.log(`ComfyUI    ${target.kind} · ${target.url} · ${workflowSet}`);
   console.log(`Presets    ${presets.size}`);
+  console.log(`Control    assistant ${controlModelName()}`);
 });

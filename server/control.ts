@@ -5,7 +5,7 @@
 
 import { connect } from "node:net";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 
 type Reply = { ok: boolean; result?: unknown; error?: string };
 type Waiting = { resolve: (r: Reply) => void; timer: NodeJS.Timeout };
@@ -409,6 +409,11 @@ const lc = (v: unknown) => String(v ?? "").toLowerCase();
  * the seat was given a place), then they turn, then they sit, and the seat is moved under them.
  */
 function seatInOrder(actions: ControlAction[]) {
+  // someone added already seated sits once everything else in the answer is there
+  for (const a of actions.filter((a) => a.op === "add_character" && a.args.sit_on !== undefined && a.args.name)) {
+    actions.push({ op: "place", args: { id: a.args.name, sit_on: a.args.sit_on } });
+    delete a.args.sit_on;
+  }
   for (const sit of actions.filter((a) => a.op === "place" && a.args.sit_on !== undefined)) {
     const who = lc(sit.args.id);
     const seat = lc(sit.args.sit_on);
@@ -420,8 +425,16 @@ function seatInOrder(actions: ControlAction[]) {
     // the turns this person makes, taken out to come just before the sitting
     const turns = actions.filter((a) => a !== sit && a.op === "place" && lc(a.args.id) === who && Object.keys(a.args).every((k) => ["id", "face_toward", "facing"].includes(k)));
     for (const t of turns) actions.splice(actions.indexOf(t), 1);
-    const before: ControlAction[] = [];
-    if (!Object.keys(mine).length && Object.keys(theirs).length) before.push({ op: "place", args: { id: sit.args.id, ...theirs } });
+    // the seat is made before anyone sits on it
+    const made = actions.find((a) => a.op === "add_prop" && lc(a.args.label) === seat);
+    if (made && actions.indexOf(made) > actions.indexOf(sit)) actions.splice(actions.indexOf(made), 1);
+    const before: ControlAction[] = made && !actions.includes(made) ? [made] : [];
+    if (!Object.keys(mine).length && Object.keys(theirs).length) {
+      before.push({ op: "place", args: { id: sit.args.id, ...theirs } });
+      // moved, so whoever they look at is looked at again from the new place
+      const look = about(who).map((t: any) => t.face_toward).find((v: unknown) => v !== undefined);
+      if (look !== undefined && !turns.length) before.push({ op: "place", args: { id: sit.args.id, face_toward: look } });
+    }
     before.push(...turns);
     actions.splice(actions.indexOf(sit), 0, ...before);
   }
@@ -492,4 +505,64 @@ export function readControlAnswer(text: string, scene: Record<string, any> = {})
     .filter((a: ControlAction) => (CONTROL_OPS as readonly string[]).includes(a.op));
   tidy(actions, scene);
   return { reply: String(raw.reply ?? "").replace(/\s+/g, " ").trim().slice(0, 600) || (actions.length ? "Done." : "…"), actions };
+}
+
+// ------------------------------------------------------------------ the assistant on Claude
+
+/**
+ * Which model answers on the Control page: Claude Haiku through Comfy Router when there is a Comfy
+ * key (billed in Comfy credits like everything else), else Gemma 4 in ComfyUI.
+ */
+export const CONTROL_MODEL = (() => {
+  const want = process.env.COMFYTURE_ASSISTANT?.trim().toLowerCase();
+  if (want === "gemma") return "gemma";
+  if (process.env.COMFY_API_KEY?.trim()) return "claude";
+  return "gemma";
+})();
+const CLAUDE_MODEL = process.env.COMFYTURE_CLAUDE_MODEL?.trim() || "claude-haiku-4-5-20251001";
+export const controlModelName = () => (CONTROL_MODEL === "claude" ? CLAUDE_MODEL : "gemma-4-e4b");
+
+// the answer as a tool call, so it always arrives as JSON in this shape
+const STAGE_TOOL = {
+  name: "stage",
+  description: "Stage the scene: a short reply to the user and the Control actions that carry out what they asked.",
+  input_schema: {
+    type: "object",
+    properties: {
+      reply: { type: "string", description: "One or two short sentences to the user." },
+      actions: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: { op: { type: "string", enum: [...CONTROL_OPS] }, args: { type: "object" } },
+          required: ["op", "args"],
+        },
+      },
+    },
+    required: ["reply", "actions"],
+  },
+};
+
+/** The assistant's answer from Claude through Comfy Router (Anthropic's Messages format), as the JSON text the Gemma path would give. */
+export async function askClaude(prompt: string, picture?: { type: string; data: string }) {
+  const content: Record<string, unknown>[] = [];
+  if (picture) content.push({ type: "image", source: { type: "base64", media_type: `image/${picture.type}`, data: picture.data } });
+  content.push({ type: "text", text: prompt });
+  const res = await fetch(`https://api.comfy.org/v2/models/anthropic/${CLAUDE_MODEL}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-API-Key": process.env.COMFY_API_KEY!.trim(), "Idempotency-Key": randomUUID() },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: 2000,
+      system: [{ type: "text", text: CONTROL_BRIEF, cache_control: { type: "ephemeral" } }],
+      tools: [STAGE_TOOL],
+      tool_choice: { type: "tool", name: "stage" },
+      messages: [{ role: "user", content }],
+    }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(`Claude: ${body?.error?.message ?? body?.message ?? `${res.status} ${res.statusText}`}`), { status: 502 });
+  const call = (body.content ?? []).find((c: any) => c.type === "tool_use");
+  if (process.env.COMFYTURE_DEBUG) console.log(`claude usage ${JSON.stringify(body.usage)}`);
+  return call ? JSON.stringify(call.input) : String((body.content ?? []).map((c: any) => c.text ?? "").join(" "));
 }

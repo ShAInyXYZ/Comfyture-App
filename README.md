@@ -95,7 +95,7 @@ A clip can start the shot instead of a photo. Uploads are normalized to 24 fps, 
 
 ### The assistant
 
-The chat bar under the viewport stages the scene for you. "Two people arguing by a wall, low angle, vertical for a reel" becomes two mannequins pointing at each other, a wall behind them, a low camera and a 9:16 frame. Follow-ups change only what you name: "put a table between them", "make the one on the left sit down", "send it to Blender". It is the same assistant as the app's, Gemma 4 inside ComfyUI. It gets the stage as it stands and a picture of the frame, and answers with Control commands. Each answer is one undo step. Whatever fails goes back to it once so it can fix its answer.
+The chat bar under the viewport stages the scene for you. "Two people arguing by a wall, low angle, vertical for a reel" becomes two mannequins pointing at each other, a wall behind them, a low camera and a 9:16 frame. Follow-ups change only what you name: "put a table between them", "make the one on the left sit down", "send it to Blender". On Comfy Cloud it runs on Claude Haiku 4.5 through Comfy Router, billed in Comfy credits with the same key. Without a Comfy key, or with `COMFYTURE_ASSISTANT=gemma`, it runs on the app's own assistant, Gemma 4 inside ComfyUI, and stays open weights. It gets the stage as it stands and a picture of the frame, and answers with Control commands. Each answer is one undo step. Whatever fails goes back to it once so it can fix its answer.
 
 The assistant says where things are relative to each other, and Control works out the numbers:
 - **against:** the back rests on it, touching. "A man leaning back on the wall, hands in his pockets, one foot on the wall" becomes the lean-back pose with the back and the raised sole on the wall.
@@ -271,6 +271,8 @@ Write the action the way LTX-2.5 reads best: present tense, the motion first, on
 | `COMFYTURE_WORKFLOWS` | | `dev` swaps in tiny stand-in workflows so you can work on the UI without a GPU |
 | `COMFYTURE_URL` | `http://127.0.0.1:5177` | Where `scripts/control-mcp.ts` finds the app |
 | `BLENDER_MCP_HOST` / `BLENDER_MCP_PORT` | `localhost` / `9876` | Where the app finds Blender's MCP add-on |
+| `COMFYTURE_ASSISTANT` | | `gemma` keeps the Control assistant on Gemma 4 instead of Claude through Comfy Router |
+| `COMFYTURE_CLAUDE_MODEL` | `claude-haiku-4-5-20251001` | Which Claude model on Comfy Router the Control assistant uses |
 | `COMFYTURE_DEBUG` | | Set to log the Control assistant's raw answers |
 
 ## Credits

@@ -59,7 +59,7 @@ export function mountChat(el, stage, { ops, look }) {
           try {
             const result = ops[op](args);
             const label = LABEL[op] ? LABEL[op](args, result ?? {}) : op;
-            if (label) did.push(label);
+            if (label && !did.includes(label)) did.push(label);
           } catch (error) {
             failed.push(`${op}: ${error.message}`);
           }
