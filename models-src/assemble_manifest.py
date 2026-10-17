@@ -31,5 +31,8 @@ manifest={
  'rig':'rigid joint-node meshes; no skinning',
  'gripConvention':{'modelOrigin':'palm grip point','coordinateSpace':'hand-joint-local','quaternionOrder':'xyzw','referenceHand':'socket .075 m along finger axis; scale position by body.handSocketScale','leftHand':'scale [-1,1,1] mirrors across X, retaining palm -Y and thumb +Z'},
  'bodies':bodies,'assets':assets+read('new-metadata.json'),'handProps':read('hand-metadata.json')}
+if (SRC/'batch2-requirements.json').exists():
+ from assemble_batch2 import append_batch2
+ manifest=append_batch2(manifest)
 (ROOT/'web/models/manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print('Manifest:',len(bodies),'bodies,',len(manifest['assets']),'assets,',len(manifest['handProps']),'hand props, 3 modules')

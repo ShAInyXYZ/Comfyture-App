@@ -1,0 +1,3841 @@
+[
+  {
+    "type": "bicycle",
+    "name": "City bicycle",
+    "category": "Vehicles",
+    "file": "props/bicycle.glb",
+    "size": [
+      0.552854,
+      1.096989,
+      1.91
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 4060,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "transport"
+    ],
+    "tags": [
+      "bicycle",
+      "vehicle",
+      "transport"
+    ]
+  },
+  {
+    "type": "bus",
+    "name": "City bus",
+    "category": "Vehicles",
+    "file": "props/bus.glb",
+    "size": [
+      2.9,
+      3.14,
+      7.67
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 7144,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "transport"
+    ],
+    "tags": [
+      "bus",
+      "vehicle",
+      "transport"
+    ]
+  },
+  {
+    "type": "shop-front",
+    "name": "Shop facade",
+    "category": "Architecture",
+    "file": "props/shop-front.glb",
+    "size": [
+      3.78,
+      3.01,
+      0.505
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1528,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "retail"
+    ],
+    "tags": [
+      "shop-front",
+      "building",
+      "facade"
+    ]
+  },
+  {
+    "type": "motorcycle",
+    "name": "Road motorcycle",
+    "category": "Vehicles",
+    "file": "props/motorcycle.glb",
+    "size": [
+      0.646,
+      1.27,
+      2.04
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 4404,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "transport"
+    ],
+    "tags": [
+      "motorcycle",
+      "vehicle",
+      "transport"
+    ]
+  },
+  {
+    "type": "e-scooter",
+    "name": "Electric scooter",
+    "category": "Vehicles",
+    "file": "props/e-scooter.glb",
+    "size": [
+      0.5,
+      1.1325,
+      0.95
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2332,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "transport"
+    ],
+    "tags": [
+      "e-scooter",
+      "vehicle",
+      "transport"
+    ]
+  },
+  {
+    "type": "van",
+    "name": "Delivery van",
+    "category": "Vehicles",
+    "file": "props/van.glb",
+    "size": [
+      2.31,
+      2.18,
+      4.2
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 5412,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "transport"
+    ],
+    "tags": [
+      "van",
+      "vehicle",
+      "transport"
+    ]
+  },
+  {
+    "type": "traffic-light",
+    "name": "Traffic light",
+    "category": "Outdoor",
+    "file": "props/traffic-light.glb",
+    "size": [
+      0.34,
+      2.825,
+      0.384
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1512,
+    "modules": [],
+    "themes": [
+      "street",
+      "city"
+    ],
+    "tags": [
+      "signal",
+      "junction",
+      "stoplight"
+    ]
+  },
+  {
+    "type": "stop-sign",
+    "name": "Octagonal stop sign",
+    "category": "Outdoor",
+    "file": "props/stop-sign.glb",
+    "size": [
+      0.683671,
+      2.261835,
+      0.116
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 612,
+    "modules": [],
+    "themes": [
+      "street",
+      "city"
+    ],
+    "tags": [
+      "road",
+      "traffic",
+      "sign"
+    ]
+  },
+  {
+    "type": "street-sign",
+    "name": "Street name signs",
+    "category": "Outdoor",
+    "file": "props/street-sign.glb",
+    "size": [
+      1.0,
+      2.607,
+      0.86
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 984,
+    "modules": [],
+    "themes": [
+      "street",
+      "city"
+    ],
+    "tags": [
+      "intersection",
+      "direction",
+      "sign"
+    ]
+  },
+  {
+    "type": "fire-hydrant",
+    "name": "Fire hydrant",
+    "category": "Outdoor",
+    "file": "props/fire-hydrant.glb",
+    "size": [
+      0.58,
+      0.74,
+      0.38
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1252,
+    "modules": [],
+    "themes": [
+      "street",
+      "city"
+    ],
+    "tags": [
+      "water",
+      "fire",
+      "safety"
+    ]
+  },
+  {
+    "type": "parking-meter",
+    "name": "Parking meter",
+    "category": "Outdoor",
+    "file": "props/parking-meter.glb",
+    "size": [
+      0.34,
+      1.42,
+      0.23
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 656,
+    "modules": [],
+    "themes": [
+      "street",
+      "city"
+    ],
+    "tags": [
+      "parking",
+      "payment",
+      "car"
+    ]
+  },
+  {
+    "type": "bollard",
+    "name": "Street bollard",
+    "category": "Outdoor",
+    "file": "props/bollard.glb",
+    "size": [
+      0.24,
+      0.84,
+      0.24
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 360,
+    "modules": [],
+    "themes": [
+      "street",
+      "city"
+    ],
+    "tags": [
+      "barrier",
+      "post",
+      "pedestrian"
+    ]
+  },
+  {
+    "type": "road-barrier",
+    "name": "Road work barrier",
+    "category": "Outdoor",
+    "file": "props/road-barrier.glb",
+    "size": [
+      1.88,
+      1.21,
+      0.68
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1320,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "industrial"
+    ],
+    "tags": [
+      "construction",
+      "traffic",
+      "fence"
+    ]
+  },
+  {
+    "type": "dumpster",
+    "name": "Wheeled dumpster",
+    "category": "Outdoor",
+    "file": "props/dumpster.glb",
+    "size": [
+      1.55,
+      1.115,
+      1.02
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 4216,
+    "modules": [],
+    "themes": [
+      "street",
+      "city"
+    ],
+    "tags": [
+      "bin",
+      "rubbish",
+      "trash"
+    ]
+  },
+  {
+    "type": "shopping-cart",
+    "name": "Shopping cart",
+    "category": "Outdoor",
+    "file": "props/shopping-cart.glb",
+    "size": [
+      0.687811,
+      0.986,
+      0.917429
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 4468,
+    "modules": [],
+    "themes": [
+      "retail",
+      "street"
+    ],
+    "tags": [
+      "trolley",
+      "supermarket",
+      "groceries"
+    ]
+  },
+  {
+    "type": "bike-rack",
+    "name": "Bicycle parking rack",
+    "category": "Outdoor",
+    "file": "props/bike-rack.glb",
+    "size": [
+      1.8,
+      0.776998,
+      0.54
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 488,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "transport"
+    ],
+    "tags": [
+      "cycle",
+      "parking",
+      "rack"
+    ]
+  },
+  {
+    "type": "vending-machine",
+    "name": "Vending machine",
+    "category": "Outdoor",
+    "file": "props/vending-machine.glb",
+    "size": [
+      0.95,
+      1.86,
+      0.83
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2676,
+    "modules": [],
+    "themes": [
+      "street",
+      "retail",
+      "drinks"
+    ],
+    "tags": [
+      "snacks",
+      "soda",
+      "dispenser"
+    ]
+  },
+  {
+    "type": "atm",
+    "name": "Cash machine",
+    "category": "Outdoor",
+    "file": "props/atm.glb",
+    "size": [
+      0.75,
+      1.7,
+      0.84
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1428,
+    "modules": [],
+    "themes": [
+      "street",
+      "retail",
+      "city"
+    ],
+    "tags": [
+      "cash",
+      "bank",
+      "atm"
+    ]
+  },
+  {
+    "type": "kiosk",
+    "name": "Street kiosk",
+    "category": "Outdoor",
+    "file": "props/kiosk.glb",
+    "size": [
+      2.16,
+      2.395,
+      1.93
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1620,
+    "modules": [],
+    "themes": [
+      "street",
+      "retail",
+      "city"
+    ],
+    "tags": [
+      "news",
+      "stall",
+      "shop"
+    ]
+  },
+  {
+    "type": "market-stall",
+    "name": "Market stall",
+    "category": "Outdoor",
+    "file": "props/market-stall.glb",
+    "size": [
+      2.5,
+      2.552,
+      1.641097
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 3822,
+    "modules": [],
+    "themes": [
+      "street",
+      "retail",
+      "food"
+    ],
+    "tags": [
+      "market",
+      "canopy",
+      "produce"
+    ]
+  },
+  {
+    "type": "scaffolding",
+    "name": "Scaffolding bay",
+    "category": "Architecture",
+    "file": "props/scaffolding.glb",
+    "size": [
+      2.358469,
+      3.05,
+      1.198469
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 5184,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "retail"
+    ],
+    "tags": [
+      "scaffolding",
+      "building",
+      "facade"
+    ]
+  },
+  {
+    "type": "billboard",
+    "name": "Billboard on posts",
+    "category": "Architecture",
+    "file": "props/billboard.glb",
+    "size": [
+      4.48,
+      4.195,
+      0.8
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 960,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "retail"
+    ],
+    "tags": [
+      "billboard",
+      "building",
+      "facade"
+    ]
+  },
+  {
+    "type": "awning",
+    "name": "Striped shop awning",
+    "category": "Architecture",
+    "file": "props/awning.glb",
+    "size": [
+      2.6,
+      0.662,
+      0.9975
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2006,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "retail"
+    ],
+    "tags": [
+      "awning",
+      "building",
+      "facade"
+    ]
+  },
+  {
+    "type": "football",
+    "name": "Football",
+    "category": "Objects",
+    "file": "props/football.glb",
+    "size": [
+      0.22,
+      0.22,
+      0.22
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1020,
+    "modules": [],
+    "themes": [
+      "sports"
+    ],
+    "tags": [
+      "soccer",
+      "football",
+      "ball"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.0,
+        0.11,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.11
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.11
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "basketball",
+    "name": "Basketball",
+    "category": "Objects",
+    "file": "props/basketball.glb",
+    "size": [
+      0.2436,
+      0.2436,
+      0.2436
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2472,
+    "modules": [],
+    "themes": [
+      "sports"
+    ],
+    "tags": [
+      "basketball",
+      "ball",
+      "court"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.1218,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.1218
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.1218
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "tennis-racket",
+    "name": "Tennis racket",
+    "category": "Objects",
+    "file": "props/tennis-racket.glb",
+    "size": [
+      0.274,
+      0.642,
+      0.04
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1312,
+    "modules": [],
+    "themes": [
+      "sports"
+    ],
+    "tags": [
+      "tennis",
+      "racquet",
+      "racket"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.095,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.095
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.095
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "skateboard",
+    "name": "Skateboard",
+    "category": "Objects",
+    "file": "props/skateboard.glb",
+    "size": [
+      0.28712,
+      0.176561,
+      0.84
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 3944,
+    "modules": [],
+    "themes": [
+      "sports",
+      "street"
+    ],
+    "tags": [
+      "skate",
+      "board",
+      "wheels"
+    ]
+  },
+  {
+    "type": "surfboard",
+    "name": "Surfboard",
+    "category": "Objects",
+    "file": "props/surfboard.glb",
+    "size": [
+      0.56,
+      0.214132,
+      2.041879
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 474,
+    "modules": [],
+    "themes": [
+      "sports",
+      "beach"
+    ],
+    "tags": [
+      "surf",
+      "board",
+      "sea"
+    ]
+  },
+  {
+    "type": "yoga-mat",
+    "name": "Rolled and open yoga mat",
+    "category": "Objects",
+    "file": "props/yoga-mat.glb",
+    "size": [
+      0.635196,
+      0.17,
+      1.625
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1844,
+    "modules": [],
+    "themes": [
+      "sports",
+      "fitness"
+    ],
+    "tags": [
+      "yoga",
+      "exercise",
+      "mat"
+    ]
+  },
+  {
+    "type": "dumbbell",
+    "name": "Dumbbell",
+    "category": "Objects",
+    "file": "props/dumbbell.glb",
+    "size": [
+      0.414,
+      0.202584,
+      0.199722
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1260,
+    "modules": [],
+    "themes": [
+      "sports",
+      "fitness"
+    ],
+    "tags": [
+      "weights",
+      "gym",
+      "dumbbell"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.1012918,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.1012918
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.1012918
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "kettlebell",
+    "name": "Kettlebell",
+    "category": "Objects",
+    "file": "props/kettlebell.glb",
+    "size": [
+      0.27,
+      0.349543,
+      0.27
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1436,
+    "modules": [],
+    "themes": [
+      "sports",
+      "fitness"
+    ],
+    "tags": [
+      "weights",
+      "gym",
+      "kettlebell"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.3233333,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.3233333
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.3233333
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "treadmill",
+    "name": "Treadmill",
+    "category": "Objects",
+    "file": "props/treadmill.glb",
+    "size": [
+      0.85,
+      1.352,
+      1.76
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1476,
+    "modules": [],
+    "themes": [
+      "sports",
+      "fitness"
+    ],
+    "tags": [
+      "running",
+      "gym",
+      "exercise"
+    ]
+  },
+  {
+    "type": "mic-stand",
+    "name": "Microphone stand",
+    "category": "Objects",
+    "file": "props/mic-stand.glb",
+    "size": [
+      0.34773,
+      1.594495,
+      0.934261
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 540,
+    "modules": [],
+    "themes": [
+      "music",
+      "studio"
+    ],
+    "tags": [
+      "microphone",
+      "performance",
+      "stand"
+    ]
+  },
+  {
+    "type": "microphone",
+    "name": "Handheld microphone",
+    "category": "Objects",
+    "file": "props/microphone.glb",
+    "size": [
+      0.09,
+      0.273,
+      0.09
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 836,
+    "modules": [],
+    "themes": [
+      "music",
+      "studio"
+    ],
+    "tags": [
+      "mic",
+      "singer",
+      "microphone"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.1,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.1
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.1
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "talk",
+        "stand"
+      ]
+    }
+  },
+  {
+    "type": "dj-booth",
+    "name": "DJ booth",
+    "category": "Objects",
+    "file": "props/dj-booth.glb",
+    "size": [
+      1.82,
+      1.146301,
+      0.78
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2788,
+    "modules": [],
+    "themes": [
+      "music",
+      "party"
+    ],
+    "tags": [
+      "dj",
+      "turntables",
+      "mixer"
+    ]
+  },
+  {
+    "type": "pa-speaker",
+    "name": "PA loudspeaker",
+    "category": "Objects",
+    "file": "props/pa-speaker.glb",
+    "size": [
+      0.44,
+      0.7415,
+      0.546383
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1752,
+    "modules": [],
+    "themes": [
+      "music",
+      "studio"
+    ],
+    "tags": [
+      "speaker",
+      "concert",
+      "amplifier"
+    ]
+  },
+  {
+    "type": "golf-club",
+    "name": "Golf club",
+    "category": "Objects",
+    "file": "props/golf-club.glb",
+    "size": [
+      0.095,
+      1.008,
+      0.145734
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1184,
+    "modules": [],
+    "themes": [
+      "sports"
+    ],
+    "tags": [
+      "golf",
+      "club",
+      "putter"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.888,
+        -0.0218174
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            0.0038174,
+            -0.888
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            0.0038174,
+            -0.888
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "game-console",
+    "name": "Game console",
+    "category": "Objects",
+    "file": "props/game-console.glb",
+    "size": [
+      0.335,
+      0.16,
+      0.31
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1008,
+    "modules": [],
+    "themes": [
+      "tech",
+      "living"
+    ],
+    "tags": [
+      "gaming",
+      "console",
+      "video game"
+    ]
+  },
+  {
+    "type": "balloons",
+    "name": "Balloon cluster",
+    "category": "Objects",
+    "file": "props/balloons.glb",
+    "size": [
+      0.81,
+      1.735,
+      0.39
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1596,
+    "modules": [],
+    "themes": [
+      "party",
+      "kids"
+    ],
+    "tags": [
+      "balloons",
+      "celebration",
+      "party"
+    ]
+  },
+  {
+    "type": "trophy",
+    "name": "Handled trophy",
+    "category": "Objects",
+    "file": "props/trophy.glb",
+    "size": [
+      0.339972,
+      0.37,
+      0.21
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 992,
+    "modules": [],
+    "themes": [
+      "sports",
+      "party"
+    ],
+    "tags": [
+      "award",
+      "cup",
+      "winner"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.16,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.16
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.16
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "log",
+    "name": "Cut log",
+    "category": "Outdoor",
+    "file": "props/log.glb",
+    "size": [
+      0.466195,
+      0.444508,
+      1.150142
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2064,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "wood",
+      "log",
+      "forest"
+    ]
+  },
+  {
+    "type": "tree-stump",
+    "name": "Tree stump",
+    "category": "Outdoor",
+    "file": "props/tree-stump.glb",
+    "size": [
+      0.664698,
+      0.463464,
+      0.664698
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1720,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "wood",
+      "stump",
+      "forest"
+    ]
+  },
+  {
+    "type": "flower-bed",
+    "name": "Raised flower bed",
+    "category": "Outdoor",
+    "file": "props/flower-bed.glb",
+    "size": [
+      1.6,
+      0.688,
+      0.83
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 3780,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "flowers",
+      "garden",
+      "planter"
+    ]
+  },
+  {
+    "type": "cactus",
+    "name": "Branched cactus",
+    "category": "Outdoor",
+    "file": "props/cactus.glb",
+    "size": [
+      0.75,
+      1.16,
+      0.45
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1328,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "cactus",
+      "desert",
+      "succulent"
+    ]
+  },
+  {
+    "type": "beach-umbrella",
+    "name": "Beach umbrella",
+    "category": "Outdoor",
+    "file": "props/beach-umbrella.glb",
+    "size": [
+      2.046899,
+      2.185,
+      2.046899
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 746,
+    "modules": [],
+    "themes": [
+      "nature",
+      "beach",
+      "camping"
+    ],
+    "tags": [
+      "parasol",
+      "umbrella",
+      "beach"
+    ]
+  },
+  {
+    "type": "sun-lounger",
+    "name": "Sun lounger",
+    "category": "Outdoor",
+    "file": "props/sun-lounger.glb",
+    "size": [
+      0.726,
+      0.891899,
+      1.79
+    ],
+    "seat": {
+      "y": 0.341899,
+      "z": 0.155,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "triangles": 912,
+    "modules": [],
+    "themes": [
+      "nature",
+      "beach",
+      "camping"
+    ],
+    "tags": [
+      "lounger",
+      "deckchair",
+      "beach"
+    ]
+  },
+  {
+    "type": "beach-ball",
+    "name": "Beach ball",
+    "category": "Outdoor",
+    "file": "props/beach-ball.glb",
+    "size": [
+      0.3034,
+      0.303884,
+      0.3
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2252,
+    "modules": [],
+    "themes": [
+      "nature",
+      "beach",
+      "camping"
+    ],
+    "tags": [
+      "ball",
+      "beach",
+      "summer"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.1503841,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.1503841
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.1503841
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "picnic-table",
+    "name": "Picnic table",
+    "category": "Outdoor",
+    "file": "props/picnic-table.glb",
+    "size": [
+      1.649,
+      0.759374,
+      1.83
+    ],
+    "seat": {
+      "y": 0.429374,
+      "z": 0.0,
+      "x": [
+        -0.67,
+        0.67
+      ]
+    },
+    "top": 0.759374,
+    "triangles": 832,
+    "modules": [],
+    "themes": [
+      "nature",
+      "beach",
+      "camping"
+    ],
+    "tags": [
+      "table",
+      "bench",
+      "picnic"
+    ]
+  },
+  {
+    "type": "picnic-basket",
+    "name": "Picnic basket",
+    "category": "Outdoor",
+    "file": "props/picnic-basket.glb",
+    "size": [
+      0.46,
+      0.447571,
+      0.463
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 768,
+    "modules": [],
+    "themes": [
+      "nature",
+      "beach",
+      "camping"
+    ],
+    "tags": [
+      "basket",
+      "picnic",
+      "wicker"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.43,
+        -0.0065
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0115,
+            -0.43
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0115,
+            -0.43
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "cooler-box",
+    "name": "Cooler box",
+    "category": "Outdoor",
+    "file": "props/cooler-box.glb",
+    "size": [
+      0.769547,
+      0.505,
+      0.4205
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 768,
+    "modules": [],
+    "themes": [
+      "nature",
+      "beach",
+      "camping"
+    ],
+    "tags": [
+      "cooler",
+      "ice",
+      "camping"
+    ]
+  },
+  {
+    "type": "lantern",
+    "name": "Camping lantern",
+    "category": "Outdoor",
+    "file": "props/lantern.glb",
+    "size": [
+      0.216,
+      0.417787,
+      0.217
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 848,
+    "modules": [],
+    "themes": [
+      "nature",
+      "beach",
+      "camping"
+    ],
+    "tags": [
+      "lamp",
+      "lantern",
+      "camping"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.41,
+        -0.0035
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0145,
+            -0.41
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0145,
+            -0.41
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "backpack",
+    "name": "Backpack",
+    "category": "Outdoor",
+    "file": "props/backpack.glb",
+    "size": [
+      0.32,
+      0.470014,
+      0.361769
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 764,
+    "modules": [],
+    "themes": [
+      "nature",
+      "beach",
+      "camping"
+    ],
+    "tags": [
+      "rucksack",
+      "bag",
+      "hiking"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.46,
+        0.0173845
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0353845,
+            -0.46
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0353845,
+            -0.46
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "fishing-rod",
+    "name": "Fishing rod",
+    "category": "Outdoor",
+    "file": "props/fishing-rod.glb",
+    "size": [
+      0.228999,
+      2.071732,
+      0.066196
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1096,
+    "modules": [],
+    "themes": [
+      "nature",
+      "beach",
+      "camping"
+    ],
+    "tags": [
+      "fishing",
+      "rod",
+      "angling"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.0964997,
+        0.25,
+        -0.0080982
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.1714997,
+            -0.0099018,
+            -0.25
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.1714997,
+            -0.0099018,
+            -0.25
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "kayak",
+    "name": "Kayak",
+    "category": "Outdoor",
+    "file": "props/kayak.glb",
+    "size": [
+      1.94,
+      0.339436,
+      3.3
+    ],
+    "seat": {
+      "y": 0.114436,
+      "z": 0.0,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "triangles": 1530,
+    "modules": [],
+    "themes": [
+      "nature",
+      "beach",
+      "camping"
+    ],
+    "tags": [
+      "boat",
+      "kayak",
+      "paddle"
+    ]
+  },
+  {
+    "type": "wheelbarrow",
+    "name": "Wheelbarrow",
+    "category": "Outdoor",
+    "file": "props/wheelbarrow.glb",
+    "size": [
+      0.709518,
+      0.725,
+      1.799877
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1380,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "barrow",
+      "garden",
+      "tools"
+    ]
+  },
+  {
+    "type": "watering-can",
+    "name": "Watering can",
+    "category": "Outdoor",
+    "file": "props/watering-can.glb",
+    "size": [
+      0.29,
+      0.448,
+      0.716966
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 764,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "water",
+      "can",
+      "gardening"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.43,
+        -0.1152091
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            0.0972091,
+            -0.43
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            0.0972091,
+            -0.43
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "drum-kit",
+    "name": "Drum kit",
+    "category": "Objects",
+    "file": "props/drum-kit.glb",
+    "size": [
+      1.83,
+      1.169,
+      1.519261
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 4760,
+    "modules": [],
+    "themes": [
+      "music"
+    ],
+    "tags": [
+      "drums",
+      "percussion",
+      "music"
+    ]
+  },
+  {
+    "type": "treasure-chest",
+    "name": "Treasure chest",
+    "category": "Fantasy",
+    "file": "props/treasure-chest.glb",
+    "size": [
+      0.856545,
+      0.713,
+      0.541818
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1436,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "treasure",
+      "chest",
+      "pirate"
+    ]
+  },
+  {
+    "type": "shield",
+    "name": "Round shield",
+    "category": "Fantasy",
+    "file": "props/shield.glb",
+    "size": [
+      0.64,
+      0.64,
+      0.192839
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1440,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "shield",
+      "armor",
+      "knight"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.32,
+        -0.0835805
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            0.0655805,
+            -0.32
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            0.0655805,
+            -0.32
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "throne",
+    "name": "Royal throne",
+    "category": "Fantasy",
+    "file": "props/throne.glb",
+    "size": [
+      0.87,
+      1.86,
+      0.709772
+    ],
+    "seat": {
+      "y": 0.55,
+      "z": 0.039886,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "triangles": 2614,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "throne",
+      "king",
+      "chair"
+    ]
+  },
+  {
+    "type": "crystal-cluster",
+    "name": "Crystal cluster",
+    "category": "Fantasy",
+    "file": "props/crystal-cluster.glb",
+    "size": [
+      0.547212,
+      0.65,
+      0.432579
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1000,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "crystal",
+      "gem",
+      "magic"
+    ]
+  },
+  {
+    "type": "magic-staff",
+    "name": "Magic staff",
+    "category": "Fantasy",
+    "file": "props/magic-staff.glb",
+    "size": [
+      0.219526,
+      1.767884,
+      0.095014
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1448,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "staff",
+      "wizard",
+      "magic"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.8505998,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.8505998
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.8505998
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "torch",
+    "name": "Flaming torch",
+    "category": "Fantasy",
+    "file": "props/torch.glb",
+    "size": [
+      0.148,
+      0.874172,
+      0.1436
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1208,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "fire",
+      "torch",
+      "dungeon"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.001,
+        0.3,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.074,
+            -0.018,
+            -0.3
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.074,
+            -0.018,
+            -0.3
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "potion-bottle",
+    "name": "Potion bottle",
+    "category": "Fantasy",
+    "file": "props/potion-bottle.glb",
+    "size": [
+      0.202,
+      0.291187,
+      0.202
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2012,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "potion",
+      "bottle",
+      "magic"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.1321875,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.1321875
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.1321875
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "spellbook",
+    "name": "Spellbook",
+    "category": "Fantasy",
+    "file": "props/spellbook.glb",
+    "size": [
+      0.2785,
+      0.12,
+      0.32
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1604,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "book",
+      "spell",
+      "magic"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.00225,
+        0.04,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.07725,
+            -0.018,
+            -0.04
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.07725,
+            -0.018,
+            -0.04
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "signpost",
+    "name": "Wooden direction signpost",
+    "category": "Fantasy",
+    "file": "props/signpost.glb",
+    "size": [
+      1.027701,
+      2.26,
+      0.175983
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 800,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "sign",
+      "post",
+      "direction"
+    ]
+  },
+  {
+    "type": "stone-well",
+    "name": "Stone well",
+    "category": "Fantasy",
+    "file": "props/stone-well.glb",
+    "size": [
+      1.68,
+      1.956471,
+      1.313575
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 4728,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "well",
+      "water",
+      "stone"
+    ]
+  },
+  {
+    "type": "wooden-cart",
+    "name": "Wooden cart",
+    "category": "Fantasy",
+    "file": "props/wooden-cart.glb",
+    "size": [
+      1.28,
+      1.085,
+      2.0775
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 3984,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "cart",
+      "wagon",
+      "wood"
+    ]
+  },
+  {
+    "type": "anvil",
+    "name": "Blacksmith anvil",
+    "category": "Fantasy",
+    "file": "props/anvil.glb",
+    "size": [
+      0.840333,
+      0.484,
+      0.27
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 640,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "anvil",
+      "forge",
+      "blacksmith"
+    ]
+  },
+  {
+    "type": "tombstone",
+    "name": "Tombstone",
+    "category": "Fantasy",
+    "file": "props/tombstone.glb",
+    "size": [
+      0.59,
+      0.805,
+      0.29
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 640,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "grave",
+      "stone",
+      "cemetery"
+    ]
+  },
+  {
+    "type": "gas-lamp",
+    "name": "Gas street lamp",
+    "category": "Fantasy",
+    "file": "props/gas-lamp.glb",
+    "size": [
+      0.694354,
+      2.865,
+      0.694354
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1512,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "lamp",
+      "lantern",
+      "victorian"
+    ]
+  },
+  {
+    "type": "dog",
+    "name": "Standing dog",
+    "category": "Creatures",
+    "file": "props/dog.glb",
+    "size": [
+      0.404875,
+      0.967062,
+      1.254526
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 5944,
+    "modules": [],
+    "themes": [
+      "animals",
+      "nature"
+    ],
+    "tags": [
+      "dog",
+      "canine",
+      "pet"
+    ]
+  },
+  {
+    "type": "dog-sitting",
+    "name": "Sitting dog",
+    "category": "Creatures",
+    "file": "props/dog-sitting.glb",
+    "size": [
+      0.597471,
+      0.957062,
+      0.786673
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 4784,
+    "modules": [],
+    "themes": [
+      "animals",
+      "nature"
+    ],
+    "tags": [
+      "dog",
+      "canine",
+      "pet",
+      "sit"
+    ]
+  },
+  {
+    "type": "cat",
+    "name": "Sitting cat",
+    "category": "Creatures",
+    "file": "props/cat.glb",
+    "size": [
+      0.430212,
+      0.622638,
+      0.372423
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 3772,
+    "modules": [],
+    "themes": [
+      "animals",
+      "nature"
+    ],
+    "tags": [
+      "cat",
+      "feline",
+      "pet"
+    ]
+  },
+  {
+    "type": "horse",
+    "name": "Standing horse",
+    "category": "Creatures",
+    "file": "props/horse.glb",
+    "size": [
+      0.622625,
+      2.133292,
+      2.051758
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 6520,
+    "modules": [],
+    "themes": [
+      "animals",
+      "nature"
+    ],
+    "tags": [
+      "horse",
+      "equine",
+      "stable"
+    ]
+  },
+  {
+    "type": "pigeon",
+    "name": "Pigeon",
+    "category": "Creatures",
+    "file": "props/pigeon.glb",
+    "size": [
+      0.17,
+      0.335883,
+      0.402
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2026,
+    "modules": [],
+    "themes": [
+      "animals",
+      "nature"
+    ],
+    "tags": [
+      "pigeon",
+      "bird",
+      "city"
+    ]
+  },
+  {
+    "type": "pickup-truck",
+    "name": "Pickup truck",
+    "category": "Vehicles",
+    "file": "props/pickup-truck.glb",
+    "size": [
+      2.1404,
+      2.03,
+      4.84
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 5412,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "transport"
+    ],
+    "tags": [
+      "pickup-truck",
+      "vehicle",
+      "transport"
+    ]
+  },
+  {
+    "type": "taxi",
+    "name": "City taxi",
+    "category": "Vehicles",
+    "file": "props/taxi.glb",
+    "size": [
+      2.0432,
+      1.825,
+      4.4
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 5764,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "transport"
+    ],
+    "tags": [
+      "taxi",
+      "vehicle",
+      "transport"
+    ]
+  },
+  {
+    "type": "tram",
+    "name": "City tram",
+    "category": "Vehicles",
+    "file": "props/tram.glb",
+    "size": [
+      2.398,
+      3.815,
+      8.9125
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 10340,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "transport"
+    ],
+    "tags": [
+      "tram",
+      "vehicle",
+      "transport"
+    ]
+  },
+  {
+    "type": "newspaper-stand",
+    "name": "Newspaper stand",
+    "category": "Outdoor",
+    "file": "props/newspaper-stand.glb",
+    "size": [
+      1.02,
+      1.43,
+      0.65
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2268,
+    "modules": [],
+    "themes": [
+      "street",
+      "retail"
+    ],
+    "tags": [
+      "newspaper-stand",
+      "street",
+      "city"
+    ]
+  },
+  {
+    "type": "drinking-fountain",
+    "name": "Drinking fountain",
+    "category": "Outdoor",
+    "file": "props/drinking-fountain.glb",
+    "size": [
+      0.56,
+      0.974,
+      0.56
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 812,
+    "modules": [],
+    "themes": [
+      "street",
+      "garden"
+    ],
+    "tags": [
+      "drinking-fountain",
+      "street",
+      "city"
+    ]
+  },
+  {
+    "type": "crosswalk-sign",
+    "name": "Pedestrian crossing sign",
+    "category": "Outdoor",
+    "file": "props/crosswalk-sign.glb",
+    "size": [
+      0.833373,
+      2.346686,
+      0.143
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 636,
+    "modules": [],
+    "themes": [
+      "street",
+      "city"
+    ],
+    "tags": [
+      "crosswalk-sign",
+      "street",
+      "city"
+    ]
+  },
+  {
+    "type": "bus-shelter-ad",
+    "name": "Advertising bus shelter",
+    "category": "Outdoor",
+    "file": "props/bus-shelter-ad.glb",
+    "size": [
+      2.78,
+      2.26,
+      1.27
+    ],
+    "seat": {
+      "y": 0.47,
+      "z": -0.24,
+      "x": [
+        -0.55,
+        0.0,
+        0.55
+      ]
+    },
+    "top": null,
+    "triangles": 1576,
+    "modules": [],
+    "themes": [
+      "street",
+      "city",
+      "transport"
+    ],
+    "tags": [
+      "bus-shelter-ad",
+      "street",
+      "city"
+    ]
+  },
+  {
+    "type": "electric-car-charger",
+    "name": "Electric vehicle charger",
+    "category": "Outdoor",
+    "file": "props/electric-car-charger.glb",
+    "size": [
+      0.647593,
+      1.44,
+      0.38
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 916,
+    "modules": [],
+    "themes": [
+      "street",
+      "transport",
+      "tech"
+    ],
+    "tags": [
+      "electric-car-charger",
+      "street",
+      "city"
+    ]
+  },
+  {
+    "type": "bowling-pin",
+    "name": "Bowling pin",
+    "category": "Objects",
+    "file": "props/bowling-pin.glb",
+    "size": [
+      0.127,
+      0.4025,
+      0.127
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1600,
+    "modules": [],
+    "themes": [
+      "sports"
+    ],
+    "tags": [
+      "bowling-pin",
+      "leisure"
+    ]
+  },
+  {
+    "type": "boxing-bag",
+    "name": "Punching bag",
+    "category": "Objects",
+    "file": "props/boxing-bag.glb",
+    "size": [
+      0.7,
+      1.52,
+      0.7
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1104,
+    "modules": [],
+    "themes": [
+      "sports",
+      "fitness"
+    ],
+    "tags": [
+      "boxing-bag",
+      "leisure"
+    ]
+  },
+  {
+    "type": "bench-press",
+    "name": "Bench press",
+    "category": "Objects",
+    "file": "props/bench-press.glb",
+    "size": [
+      1.84,
+      1.31,
+      1.745
+    ],
+    "seat": {
+      "y": 0.47,
+      "z": 0.0375,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "triangles": 1936,
+    "modules": [],
+    "themes": [
+      "sports",
+      "fitness"
+    ],
+    "tags": [
+      "bench-press",
+      "leisure"
+    ]
+  },
+  {
+    "type": "keyboard-stand",
+    "name": "Keyboard on stand",
+    "category": "Objects",
+    "file": "props/keyboard-stand.glb",
+    "size": [
+      1.17,
+      0.975516,
+      0.663695
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 3164,
+    "modules": [],
+    "themes": [
+      "music"
+    ],
+    "tags": [
+      "keyboard-stand",
+      "leisure"
+    ]
+  },
+  {
+    "type": "violin",
+    "name": "Violin and bow",
+    "category": "Objects",
+    "file": "props/violin.glb",
+    "size": [
+      0.289,
+      0.560286,
+      0.0822
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1404,
+    "modules": [],
+    "themes": [
+      "music"
+    ],
+    "tags": [
+      "violin",
+      "leisure"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.0295,
+        0.3901428,
+        -0.0136001
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.1045,
+            -0.0043999,
+            -0.3901428
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.1045,
+            -0.0043999,
+            -0.3901428
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "saxophone",
+    "name": "Alto saxophone",
+    "category": "Objects",
+    "file": "props/saxophone.glb",
+    "size": [
+      0.248125,
+      0.544172,
+      0.146
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1368,
+    "modules": [],
+    "themes": [
+      "music"
+    ],
+    "tags": [
+      "saxophone",
+      "leisure"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.0939375,
+        0.2404207,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.1689375,
+            -0.018,
+            -0.2404207
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.1689375,
+            -0.018,
+            -0.2404207
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "fallen-tree",
+    "name": "Fallen tree",
+    "category": "Outdoor",
+    "file": "props/fallen-tree.glb",
+    "size": [
+      1.224293,
+      0.710821,
+      2.426128
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2160,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "fallen-tree",
+      "outdoor",
+      "garden"
+    ]
+  },
+  {
+    "type": "mushroom-cluster",
+    "name": "Mushroom cluster",
+    "category": "Outdoor",
+    "file": "props/mushroom-cluster.glb",
+    "size": [
+      0.391,
+      0.205,
+      0.296
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1716,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "mushroom-cluster",
+      "outdoor",
+      "garden"
+    ]
+  },
+  {
+    "type": "sandcastle",
+    "name": "Sandcastle",
+    "category": "Outdoor",
+    "file": "props/sandcastle.glb",
+    "size": [
+      0.936,
+      0.76,
+      0.85
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2538,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "sandcastle",
+      "outdoor",
+      "garden"
+    ]
+  },
+  {
+    "type": "garden-shed",
+    "name": "Garden shed",
+    "category": "Outdoor",
+    "file": "props/garden-shed.glb",
+    "size": [
+      2.04,
+      2.476,
+      1.88
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2960,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "garden-shed",
+      "outdoor",
+      "garden"
+    ]
+  },
+  {
+    "type": "garden-hose",
+    "name": "Coiled garden hose",
+    "category": "Outdoor",
+    "file": "props/garden-hose.glb",
+    "size": [
+      0.760831,
+      0.081558,
+      0.821752
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2836,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "garden-hose",
+      "outdoor",
+      "garden"
+    ]
+  },
+  {
+    "type": "birdhouse",
+    "name": "Birdhouse on post",
+    "category": "Outdoor",
+    "file": "props/birdhouse.glb",
+    "size": [
+      0.35,
+      1.375746,
+      0.4
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1028,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "birdhouse",
+      "outdoor",
+      "garden"
+    ]
+  },
+  {
+    "type": "hammock",
+    "name": "Hammock on frame",
+    "category": "Outdoor",
+    "file": "props/hammock.glb",
+    "size": [
+      1.03,
+      1.11969,
+      2.511172
+    ],
+    "seat": {
+      "y": 0.39,
+      "z": 0.0,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "triangles": 1860,
+    "modules": [],
+    "themes": [
+      "nature",
+      "garden"
+    ],
+    "tags": [
+      "hammock",
+      "outdoor",
+      "garden"
+    ]
+  },
+  {
+    "type": "sci-fi-crate",
+    "name": "Science fiction crate",
+    "category": "Fantasy",
+    "file": "props/sci-fi-crate.glb",
+    "size": [
+      0.941612,
+      0.62,
+      0.6145
+    ],
+    "seat": null,
+    "top": 0.62,
+    "triangles": 1200,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "sci-fi-crate",
+      "genre",
+      "set"
+    ]
+  },
+  {
+    "type": "control-console",
+    "name": "Control console",
+    "category": "Fantasy",
+    "file": "props/control-console.glb",
+    "size": [
+      1.12,
+      1.335,
+      0.776
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2552,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "control-console",
+      "genre",
+      "set"
+    ]
+  },
+  {
+    "type": "cauldron",
+    "name": "Cauldron",
+    "category": "Fantasy",
+    "file": "props/cauldron.glb",
+    "size": [
+      0.600785,
+      0.479328,
+      0.58
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2076,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "cauldron",
+      "genre",
+      "set"
+    ]
+  },
+  {
+    "type": "banner-pole",
+    "name": "Banner pole",
+    "category": "Fantasy",
+    "file": "props/banner-pole.glb",
+    "size": [
+      0.86,
+      2.57,
+      0.48
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1326,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "banner-pole",
+      "genre",
+      "set"
+    ]
+  },
+  {
+    "type": "weapon-rack",
+    "name": "Weapon rack",
+    "category": "Fantasy",
+    "file": "props/weapon-rack.glb",
+    "size": [
+      1.17,
+      1.67,
+      0.64
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2078,
+    "modules": [],
+    "themes": [
+      "fantasy"
+    ],
+    "tags": [
+      "weapon-rack",
+      "genre",
+      "set"
+    ]
+  },
+  {
+    "type": "cow",
+    "name": "Standing cow",
+    "category": "Creatures",
+    "file": "props/cow.glb",
+    "size": [
+      0.700938,
+      1.692474,
+      2.081943
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 7372,
+    "modules": [],
+    "themes": [
+      "animals",
+      "nature"
+    ],
+    "tags": [
+      "cow",
+      "animal"
+    ]
+  },
+  {
+    "type": "chicken",
+    "name": "Chicken",
+    "category": "Creatures",
+    "file": "props/chicken.glb",
+    "size": [
+      0.244,
+      0.53807,
+      0.437
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2598,
+    "modules": [],
+    "themes": [
+      "animals",
+      "nature"
+    ],
+    "tags": [
+      "chicken",
+      "animal"
+    ]
+  },
+  {
+    "type": "fish",
+    "name": "Market fish on stand",
+    "category": "Creatures",
+    "file": "props/fish.glb",
+    "size": [
+      0.19,
+      0.405,
+      0.595708
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1550,
+    "modules": [],
+    "themes": [
+      "animals",
+      "nature"
+    ],
+    "tags": [
+      "fish",
+      "animal"
+    ]
+  },
+  {
+    "type": "deer",
+    "name": "Standing deer",
+    "category": "Creatures",
+    "file": "props/deer.glb",
+    "size": [
+      0.504202,
+      2.130817,
+      1.502016
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 5860,
+    "modules": [],
+    "themes": [
+      "animals",
+      "nature"
+    ],
+    "tags": [
+      "deer",
+      "animal"
+    ]
+  }
+]

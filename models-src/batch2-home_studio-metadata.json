@@ -1,0 +1,3010 @@
+[
+  {
+    "type": "softbox",
+    "name": "Softbox on a stand",
+    "category": "Studio",
+    "file": "props/softbox.glb",
+    "size": [
+      0.839446,
+      2.212446,
+      0.795461
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1584,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "softbox",
+      "lighting",
+      "photography",
+      "diffuser"
+    ]
+  },
+  {
+    "type": "led-panel",
+    "name": "LED panel on a stand",
+    "category": "Studio",
+    "file": "props/led-panel.glb",
+    "size": [
+      0.772,
+      2.012,
+      0.795461
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2036,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "led",
+      "panel",
+      "lighting",
+      "video",
+      "light"
+    ]
+  },
+  {
+    "type": "c-stand",
+    "name": "C-stand with grip arm",
+    "category": "Studio",
+    "file": "props/c-stand.glb",
+    "size": [
+      1.217303,
+      2.464674,
+      0.866676
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 624,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "c",
+      "stand",
+      "lighting",
+      "grip",
+      "century stand"
+    ]
+  },
+  {
+    "type": "tripod-camera",
+    "name": "Camera on a tripod",
+    "category": "Studio",
+    "file": "props/tripod-camera.glb",
+    "size": [
+      0.794343,
+      1.586428,
+      0.916307
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1884,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "tripod",
+      "camera",
+      "photo",
+      "photography"
+    ]
+  },
+  {
+    "type": "cinema-camera",
+    "name": "Cinema camera on a tripod",
+    "category": "Studio",
+    "file": "props/cinema-camera.glb",
+    "size": [
+      0.794343,
+      1.918928,
+      0.93559
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 3232,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "cinema",
+      "camera",
+      "film",
+      "movie"
+    ]
+  },
+  {
+    "type": "camera-dolly",
+    "name": "Camera dolly and track",
+    "category": "Studio",
+    "file": "props/camera-dolly.glb",
+    "size": [
+      1.25,
+      1.1175,
+      3.0
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2280,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "camera",
+      "dolly",
+      "film",
+      "tracking",
+      "rail"
+    ]
+  },
+  {
+    "type": "boom-mic",
+    "name": "Boom microphone",
+    "category": "Studio",
+    "file": "props/boom-mic.glb",
+    "size": [
+      1.917768,
+      2.572,
+      0.899384
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1500,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "boom",
+      "mic",
+      "sound",
+      "audio",
+      "microphone"
+    ]
+  },
+  {
+    "type": "directors-chair",
+    "name": "Director\u2019s chair",
+    "category": "Studio",
+    "file": "props/directors-chair.glb",
+    "size": [
+      0.585,
+      1.014254,
+      0.536678
+    ],
+    "seat": {
+      "y": 0.504254,
+      "z": 0.025,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "triangles": 1076,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "directors",
+      "chair",
+      "director",
+      "folding chair",
+      "seat"
+    ]
+  },
+  {
+    "type": "clapperboard",
+    "name": "Clapperboard",
+    "category": "Studio",
+    "file": "props/clapperboard.glb",
+    "size": [
+      0.315454,
+      0.337719,
+      0.0365
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1256,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "clapperboard",
+      "slate",
+      "film",
+      "take"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.142727,
+        0.12,
+        0.01575
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.2177271,
+            -0.03375,
+            -0.12
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.2177271,
+            -0.03375,
+            -0.12
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "backdrop-sweep",
+    "name": "Paper backdrop sweep",
+    "category": "Studio",
+    "file": "props/backdrop-sweep.glb",
+    "size": [
+      3.2,
+      2.73,
+      2.0
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 842,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "backdrop",
+      "sweep",
+      "photography",
+      "background",
+      "cyclorama"
+    ]
+  },
+  {
+    "type": "reflector",
+    "name": "Studio reflector",
+    "category": "Studio",
+    "file": "props/reflector.glb",
+    "size": [
+      0.905,
+      2.398,
+      0.795461
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1592,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "reflector",
+      "lighting",
+      "bounce"
+    ]
+  },
+  {
+    "type": "ring-light",
+    "name": "Ring light",
+    "category": "Studio",
+    "file": "props/ring-light.glb",
+    "size": [
+      0.783,
+      2.196,
+      0.795461
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1876,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "ring",
+      "light",
+      "lighting",
+      "portrait",
+      "creator"
+    ]
+  },
+  {
+    "type": "field-monitor",
+    "name": "Field monitor on a stand",
+    "category": "Studio",
+    "file": "props/field-monitor.glb",
+    "size": [
+      0.8015,
+      2.0095,
+      0.795461
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1652,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "field",
+      "monitor",
+      "video",
+      "screen",
+      "production"
+    ]
+  },
+  {
+    "type": "green-screen",
+    "name": "Green screen frame",
+    "category": "Studio",
+    "file": "props/green-screen.glb",
+    "size": [
+      3.2,
+      2.73,
+      0.9
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 752,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "green",
+      "screen",
+      "chroma",
+      "background",
+      "frame"
+    ]
+  },
+  {
+    "type": "apple-boxes",
+    "name": "Nesting apple boxes",
+    "category": "Studio",
+    "file": "props/apple-boxes.glb",
+    "size": [
+      0.795,
+      0.56,
+      0.4075
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1296,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "apple",
+      "boxes",
+      "grip",
+      "wooden boxes",
+      "film"
+    ]
+  },
+  {
+    "type": "sandbag",
+    "name": "Studio sandbag",
+    "category": "Studio",
+    "file": "props/sandbag.glb",
+    "size": [
+      0.5,
+      0.263787,
+      0.36
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 652,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "sandbag",
+      "weight",
+      "grip",
+      "lighting"
+    ]
+  },
+  {
+    "type": "flag-stand",
+    "name": "Flag on a stand",
+    "category": "Studio",
+    "file": "props/flag-stand.glb",
+    "size": [
+      0.8315,
+      2.4545,
+      0.795461
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1544,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "flag",
+      "stand",
+      "lighting",
+      "negative fill",
+      "grip"
+    ]
+  },
+  {
+    "type": "coffee-table",
+    "name": "Coffee table",
+    "category": "Furniture",
+    "file": "props/coffee-table.glb",
+    "size": [
+      1.1,
+      0.44,
+      0.6
+    ],
+    "seat": null,
+    "top": 0.44,
+    "triangles": 648,
+    "modules": [],
+    "themes": [
+      "living",
+      "home"
+    ],
+    "tags": [
+      "coffee",
+      "table",
+      "low table"
+    ]
+  },
+  {
+    "type": "side-table",
+    "name": "Side table",
+    "category": "Furniture",
+    "file": "props/side-table.glb",
+    "size": [
+      0.48,
+      0.56,
+      0.48
+    ],
+    "seat": null,
+    "top": 0.56,
+    "triangles": 756,
+    "modules": [],
+    "themes": [
+      "living",
+      "bedroom",
+      "home"
+    ],
+    "tags": [
+      "side",
+      "table",
+      "nightstand",
+      "end table"
+    ]
+  },
+  {
+    "type": "bookcase",
+    "name": "Bookcase with books",
+    "category": "Furniture",
+    "file": "props/bookcase.glb",
+    "size": [
+      0.97,
+      1.82,
+      0.34
+    ],
+    "seat": null,
+    "top": 1.82,
+    "triangles": 5120,
+    "modules": [],
+    "themes": [
+      "home",
+      "living",
+      "office"
+    ],
+    "tags": [
+      "bookcase",
+      "books",
+      "library",
+      "shelves"
+    ]
+  },
+  {
+    "type": "tv-stand",
+    "name": "TV stand",
+    "category": "Furniture",
+    "file": "props/tv-stand.glb",
+    "size": [
+      1.5,
+      0.53,
+      0.471
+    ],
+    "seat": null,
+    "top": 0.53,
+    "triangles": 1836,
+    "modules": [],
+    "themes": [
+      "living",
+      "home",
+      "tech"
+    ],
+    "tags": [
+      "tv",
+      "stand",
+      "media unit",
+      "television"
+    ]
+  },
+  {
+    "type": "bunk-bed",
+    "name": "Bunk bed",
+    "category": "Furniture",
+    "file": "props/bunk-bed.glb",
+    "size": [
+      1.125,
+      1.9,
+      2.304179
+    ],
+    "seat": {
+      "y": 0.53,
+      "z": -0.08959,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "triangles": 2720,
+    "modules": [],
+    "themes": [
+      "bedroom",
+      "kids",
+      "home"
+    ],
+    "tags": [
+      "bunk",
+      "bed",
+      "sleep"
+    ]
+  },
+  {
+    "type": "crib",
+    "name": "Baby crib",
+    "category": "Furniture",
+    "file": "props/crib.glb",
+    "size": [
+      0.795,
+      1.1,
+      1.395
+    ],
+    "seat": {
+      "y": 0.52,
+      "z": 0.0,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "triangles": 4040,
+    "modules": [],
+    "themes": [
+      "bedroom",
+      "kids",
+      "home"
+    ],
+    "tags": [
+      "crib",
+      "cot",
+      "baby",
+      "nursery"
+    ]
+  },
+  {
+    "type": "book-stack",
+    "name": "Stack of books",
+    "category": "Objects",
+    "file": "props/book-stack.glb",
+    "size": [
+      0.29,
+      0.139,
+      0.22
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1296,
+    "modules": [],
+    "themes": [
+      "home",
+      "school",
+      "office"
+    ],
+    "tags": [
+      "book",
+      "stack",
+      "books",
+      "reading"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.055,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.055
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.055
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "plant-small",
+    "name": "Small potted plant",
+    "category": "Objects",
+    "file": "props/plant-small.glb",
+    "size": [
+      0.310231,
+      0.45545,
+      0.247766
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1540,
+    "modules": [],
+    "themes": [
+      "home",
+      "living",
+      "garden"
+    ],
+    "tags": [
+      "plant",
+      "small",
+      "pot",
+      "foliage"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.0011898,
+        0.09,
+        0.0133196
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.0761898,
+            -0.0313196,
+            -0.09
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.0761898,
+            -0.0313196,
+            -0.09
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "plant-large",
+    "name": "Large monstera plant",
+    "category": "Objects",
+    "file": "props/plant-large.glb",
+    "size": [
+      1.03872,
+      1.356417,
+      0.878615
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2660,
+    "modules": [],
+    "themes": [
+      "home",
+      "living",
+      "nature"
+    ],
+    "tags": [
+      "plant",
+      "large",
+      "monstera",
+      "potted"
+    ]
+  },
+  {
+    "type": "vase-flowers",
+    "name": "Vase of flowers",
+    "category": "Objects",
+    "file": "props/vase-flowers.glb",
+    "size": [
+      0.348513,
+      0.689287,
+      0.22
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 3292,
+    "modules": [],
+    "themes": [
+      "home",
+      "living"
+    ],
+    "tags": [
+      "vase",
+      "flowers",
+      "bouquet"
+    ]
+  },
+  {
+    "type": "picture-frame",
+    "name": "Picture frame",
+    "category": "Objects",
+    "file": "props/picture-frame.glb",
+    "size": [
+      0.285,
+      0.355,
+      0.154711
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 740,
+    "modules": [],
+    "themes": [
+      "home",
+      "living"
+    ],
+    "tags": [
+      "picture",
+      "frame",
+      "photo"
+    ]
+  },
+  {
+    "type": "wall-clock",
+    "name": "Wall clock",
+    "category": "Objects",
+    "file": "props/wall-clock.glb",
+    "size": [
+      0.32,
+      0.32,
+      0.068
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1624,
+    "modules": [],
+    "themes": [
+      "home",
+      "office",
+      "school"
+    ],
+    "tags": [
+      "wall",
+      "clock",
+      "time"
+    ]
+  },
+  {
+    "type": "toy-blocks",
+    "name": "Wooden toy blocks",
+    "category": "Objects",
+    "file": "props/toy-blocks.glb",
+    "size": [
+      0.484669,
+      0.239,
+      0.097
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 852,
+    "modules": [],
+    "themes": [
+      "kids",
+      "home"
+    ],
+    "tags": [
+      "toy",
+      "blocks",
+      "toys",
+      "play"
+    ]
+  },
+  {
+    "type": "teddy-bear",
+    "name": "Teddy bear",
+    "category": "Objects",
+    "file": "props/teddy-bear.glb",
+    "size": [
+      0.35,
+      0.537,
+      0.204511
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1796,
+    "modules": [],
+    "themes": [
+      "kids",
+      "bedroom",
+      "home"
+    ],
+    "tags": [
+      "teddy",
+      "bear",
+      "soft toy"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.13,
+        0.3,
+        -0.0022553
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.205,
+            -0.0157447,
+            -0.3
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.205,
+            -0.0157447,
+            -0.3
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "ceiling-lamp",
+    "name": "Pendant ceiling lamp",
+    "category": "Objects",
+    "file": "props/ceiling-lamp.glb",
+    "size": [
+      0.56,
+      1.02,
+      0.56
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 760,
+    "modules": [],
+    "themes": [
+      "home",
+      "living",
+      "dining"
+    ],
+    "tags": [
+      "ceiling",
+      "lamp",
+      "pendant",
+      "light"
+    ]
+  },
+  {
+    "type": "desk-lamp",
+    "name": "Articulated desk lamp",
+    "category": "Objects",
+    "file": "props/desk-lamp.glb",
+    "size": [
+      0.39,
+      0.52,
+      0.28
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 896,
+    "modules": [],
+    "themes": [
+      "home",
+      "office"
+    ],
+    "tags": [
+      "desk",
+      "lamp",
+      "task light"
+    ]
+  },
+  {
+    "type": "computer-desk-setup",
+    "name": "Computer desk setup",
+    "category": "Furniture",
+    "file": "props/computer-desk-setup.glb",
+    "size": [
+      1.3,
+      1.305,
+      0.65
+    ],
+    "seat": null,
+    "top": 0.75,
+    "triangles": 1988,
+    "modules": [],
+    "themes": [
+      "office",
+      "tech",
+      "home"
+    ],
+    "tags": [
+      "computer",
+      "desk",
+      "setup",
+      "monitor",
+      "keyboard",
+      "mouse"
+    ]
+  },
+  {
+    "type": "printer",
+    "name": "Desktop printer",
+    "category": "Objects",
+    "file": "props/printer.glb",
+    "size": [
+      0.47,
+      0.425,
+      0.57
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 864,
+    "modules": [],
+    "themes": [
+      "office",
+      "tech",
+      "home"
+    ],
+    "tags": [
+      "printer",
+      "print",
+      "scanner"
+    ]
+  },
+  {
+    "type": "filing-cabinet",
+    "name": "Filing cabinet",
+    "category": "Furniture",
+    "file": "props/filing-cabinet.glb",
+    "size": [
+      0.48,
+      1.1,
+      0.661803
+    ],
+    "seat": null,
+    "top": 1.1,
+    "triangles": 1032,
+    "modules": [],
+    "themes": [
+      "office",
+      "home"
+    ],
+    "tags": [
+      "filing",
+      "cabinet",
+      "files",
+      "drawers",
+      "storage"
+    ]
+  },
+  {
+    "type": "whiteboard",
+    "name": "Mobile whiteboard",
+    "category": "Furniture",
+    "file": "props/whiteboard.glb",
+    "size": [
+      1.695,
+      1.9225,
+      0.73
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1860,
+    "modules": [],
+    "themes": [
+      "office",
+      "school"
+    ],
+    "tags": [
+      "whiteboard",
+      "board",
+      "teaching",
+      "presentation"
+    ]
+  },
+  {
+    "type": "washing-machine",
+    "name": "Washing machine",
+    "category": "Furniture",
+    "file": "props/washing-machine.glb",
+    "size": [
+      0.61,
+      0.85,
+      0.6685
+    ],
+    "seat": null,
+    "top": 0.85,
+    "triangles": 1280,
+    "modules": [],
+    "themes": [
+      "home",
+      "bathroom"
+    ],
+    "tags": [
+      "washing",
+      "machine",
+      "laundry",
+      "washer"
+    ]
+  },
+  {
+    "type": "laundry-basket",
+    "name": "Laundry basket",
+    "category": "Objects",
+    "file": "props/laundry-basket.glb",
+    "size": [
+      0.614,
+      0.464416,
+      0.442678
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1644,
+    "modules": [],
+    "themes": [
+      "home",
+      "bathroom"
+    ],
+    "tags": [
+      "laundry",
+      "basket"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.29,
+        0.45,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            0.215,
+            -0.018,
+            -0.45
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            -0.215,
+            -0.018,
+            -0.45
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "ironing-board",
+    "name": "Ironing board",
+    "category": "Objects",
+    "file": "props/ironing-board.glb",
+    "size": [
+      1.416269,
+      0.813,
+      0.46
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 820,
+    "modules": [],
+    "themes": [
+      "home"
+    ],
+    "tags": [
+      "ironing",
+      "board",
+      "laundry"
+    ]
+  },
+  {
+    "type": "vacuum-cleaner",
+    "name": "Canister vacuum cleaner",
+    "category": "Objects",
+    "file": "props/vacuum-cleaner.glb",
+    "size": [
+      0.543202,
+      0.70387,
+      1.525
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1084,
+    "modules": [],
+    "themes": [
+      "home"
+    ],
+    "tags": [
+      "vacuum",
+      "cleaner",
+      "cleaning"
+    ]
+  },
+  {
+    "type": "toilet",
+    "name": "Toilet",
+    "category": "Furniture",
+    "file": "props/toilet.glb",
+    "size": [
+      0.476,
+      0.841,
+      0.7628
+    ],
+    "seat": {
+      "y": 0.473,
+      "z": 0.0386,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "triangles": 1416,
+    "modules": [],
+    "themes": [
+      "bathroom",
+      "home"
+    ],
+    "tags": [
+      "toilet",
+      "wc",
+      "bathroom"
+    ]
+  },
+  {
+    "type": "bathroom-sink",
+    "name": "Bathroom vanity and mirror",
+    "category": "Furniture",
+    "file": "props/bathroom-sink.glb",
+    "size": [
+      0.91,
+      1.8575,
+      0.56
+    ],
+    "seat": null,
+    "top": 0.85,
+    "triangles": 2598,
+    "modules": [],
+    "themes": [
+      "bathroom",
+      "home"
+    ],
+    "tags": [
+      "bathroom",
+      "sink",
+      "vanity",
+      "mirror"
+    ]
+  },
+  {
+    "type": "shower-cabin",
+    "name": "Shower cabin",
+    "category": "Furniture",
+    "file": "props/shower-cabin.glb",
+    "size": [
+      0.95,
+      2.099,
+      0.976576
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1436,
+    "modules": [],
+    "themes": [
+      "bathroom",
+      "home"
+    ],
+    "tags": [
+      "shower",
+      "cabin",
+      "enclosure"
+    ]
+  },
+  {
+    "type": "towel-rack",
+    "name": "Towel rack",
+    "category": "Objects",
+    "file": "props/towel-rack.glb",
+    "size": [
+      0.644,
+      0.957,
+      0.36
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1168,
+    "modules": [],
+    "themes": [
+      "bathroom",
+      "home"
+    ],
+    "tags": [
+      "towel",
+      "rack",
+      "rail"
+    ]
+  },
+  {
+    "type": "kitchen-run",
+    "name": "Kitchen cabinets with sink and hob",
+    "category": "Furniture",
+    "file": "props/kitchen-run.glb",
+    "size": [
+      2.46,
+      1.173527,
+      0.67
+    ],
+    "seat": null,
+    "top": 0.92,
+    "triangles": 3842,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "kitchen",
+      "run",
+      "cabinets",
+      "sink",
+      "hob",
+      "counter"
+    ]
+  },
+  {
+    "type": "wall-cabinets",
+    "name": "Wall kitchen cabinets",
+    "category": "Furniture",
+    "file": "props/wall-cabinets.glb",
+    "size": [
+      1.84,
+      0.7525,
+      0.42
+    ],
+    "seat": null,
+    "top": 0.75,
+    "triangles": 864,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "wall",
+      "cabinets",
+      "storage"
+    ]
+  },
+  {
+    "type": "dishwasher",
+    "name": "Dishwasher",
+    "category": "Furniture",
+    "file": "props/dishwasher.glb",
+    "size": [
+      0.61,
+      0.85,
+      0.67164
+    ],
+    "seat": null,
+    "top": 0.85,
+    "triangles": 740,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "dishwasher",
+      "appliance"
+    ]
+  },
+  {
+    "type": "radiator",
+    "name": "Panel radiator",
+    "category": "Objects",
+    "file": "props/radiator.glb",
+    "size": [
+      0.96,
+      0.73,
+      0.13
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1572,
+    "modules": [],
+    "themes": [
+      "home"
+    ],
+    "tags": [
+      "radiator",
+      "heating"
+    ]
+  },
+  {
+    "type": "fireplace",
+    "name": "Fireplace with logs",
+    "category": "Furniture",
+    "file": "props/fireplace.glb",
+    "size": [
+      1.4,
+      1.25,
+      0.66
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1476,
+    "modules": [],
+    "themes": [
+      "living",
+      "home"
+    ],
+    "tags": [
+      "fireplace",
+      "hearth",
+      "chimney"
+    ]
+  },
+  {
+    "type": "curtains",
+    "name": "Curtains on a pole",
+    "category": "Objects",
+    "file": "props/curtains.glb",
+    "size": [
+      2.37,
+      2.28,
+      0.14
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2180,
+    "modules": [],
+    "themes": [
+      "home",
+      "bedroom",
+      "living"
+    ],
+    "tags": [
+      "curtains",
+      "drapes",
+      "window"
+    ]
+  },
+  {
+    "type": "ladder",
+    "name": "Folding step ladder",
+    "category": "Objects",
+    "file": "props/ladder.glb",
+    "size": [
+      0.56,
+      1.553268,
+      0.809503
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1200,
+    "modules": [],
+    "themes": [
+      "home",
+      "industrial"
+    ],
+    "tags": [
+      "ladder",
+      "steps",
+      "folding"
+    ]
+  },
+  {
+    "type": "stroller",
+    "name": "Baby stroller",
+    "category": "Objects",
+    "file": "props/stroller.glb",
+    "size": [
+      0.61,
+      1.133933,
+      0.908
+    ],
+    "seat": {
+      "y": 0.52,
+      "z": 0.094,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "triangles": 2098,
+    "modules": [],
+    "themes": [
+      "kids",
+      "home",
+      "street"
+    ],
+    "tags": [
+      "stroller",
+      "pram",
+      "pushchair",
+      "baby"
+    ]
+  },
+  {
+    "type": "shop-counter",
+    "name": "Shop counter with register",
+    "category": "Furniture",
+    "file": "props/shop-counter.glb",
+    "size": [
+      1.8,
+      1.425,
+      0.68
+    ],
+    "seat": null,
+    "top": 0.94,
+    "triangles": 2792,
+    "modules": [],
+    "themes": [
+      "retail"
+    ],
+    "tags": [
+      "shop",
+      "counter",
+      "checkout",
+      "till"
+    ]
+  },
+  {
+    "type": "cash-register",
+    "name": "Cash register",
+    "category": "Objects",
+    "file": "props/cash-register.glb",
+    "size": [
+      0.39,
+      0.485,
+      0.3695
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2036,
+    "modules": [],
+    "themes": [
+      "retail"
+    ],
+    "tags": [
+      "cash",
+      "register",
+      "checkout",
+      "till",
+      "payment"
+    ]
+  },
+  {
+    "type": "store-shelving",
+    "name": "Store gondola shelving",
+    "category": "Furniture",
+    "file": "props/store-shelving.glb",
+    "size": [
+      1.5,
+      1.75,
+      0.87
+    ],
+    "seat": null,
+    "top": 1.7,
+    "triangles": 5400,
+    "modules": [],
+    "themes": [
+      "retail"
+    ],
+    "tags": [
+      "store",
+      "shelving",
+      "shop",
+      "shelves",
+      "gondola"
+    ]
+  },
+  {
+    "type": "clothing-rack",
+    "name": "Clothing rack with hangers",
+    "category": "Furniture",
+    "file": "props/clothing-rack.glb",
+    "size": [
+      1.354,
+      1.696,
+      0.6
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1596,
+    "modules": [],
+    "themes": [
+      "retail"
+    ],
+    "tags": [
+      "clothing",
+      "rack",
+      "clothes",
+      "garment",
+      "hangers"
+    ]
+  },
+  {
+    "type": "shopping-basket",
+    "name": "Shopping basket",
+    "category": "Objects",
+    "file": "props/shopping-basket.glb",
+    "size": [
+      0.51731,
+      0.523351,
+      0.379477
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1448,
+    "modules": [],
+    "themes": [
+      "retail"
+    ],
+    "tags": [
+      "shopping",
+      "basket",
+      "groceries"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.51,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.51
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.51
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "bar-counter",
+    "name": "Bar counter with taps",
+    "category": "Furniture",
+    "file": "props/bar-counter.glb",
+    "size": [
+      2.1,
+      1.71,
+      0.83
+    ],
+    "seat": null,
+    "top": 1.1,
+    "triangles": 1648,
+    "modules": [],
+    "themes": [
+      "retail",
+      "dining"
+    ],
+    "tags": [
+      "bar",
+      "counter",
+      "pub",
+      "taps"
+    ]
+  },
+  {
+    "type": "restaurant-booth",
+    "name": "Restaurant booth",
+    "category": "Furniture",
+    "file": "props/restaurant-booth.glb",
+    "size": [
+      1.68,
+      1.245,
+      0.715
+    ],
+    "seat": {
+      "y": 0.48,
+      "z": 0.0475,
+      "x": [
+        -0.4,
+        0.4
+      ]
+    },
+    "top": null,
+    "triangles": 1184,
+    "modules": [],
+    "themes": [
+      "retail",
+      "dining"
+    ],
+    "tags": [
+      "restaurant",
+      "booth",
+      "seating"
+    ]
+  },
+  {
+    "type": "round-table",
+    "name": "Round table with tablecloth",
+    "category": "Furniture",
+    "file": "props/round-table.glb",
+    "size": [
+      1.336,
+      0.77,
+      1.336
+    ],
+    "seat": null,
+    "top": 0.77,
+    "triangles": 644,
+    "modules": [],
+    "themes": [
+      "retail",
+      "dining"
+    ],
+    "tags": [
+      "round",
+      "table",
+      "restaurant",
+      "tablecloth"
+    ]
+  },
+  {
+    "type": "menu-board",
+    "name": "A-frame menu board",
+    "category": "Objects",
+    "file": "props/menu-board.glb",
+    "size": [
+      0.608,
+      1.05356,
+      0.486119
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2080,
+    "modules": [],
+    "themes": [
+      "retail",
+      "dining"
+    ],
+    "tags": [
+      "menu",
+      "board",
+      "sign",
+      "restaurant"
+    ]
+  },
+  {
+    "type": "reception-desk",
+    "name": "Reception desk",
+    "category": "Furniture",
+    "file": "props/reception-desk.glb",
+    "size": [
+      2.1,
+      1.515,
+      1.0
+    ],
+    "seat": null,
+    "top": 1.12,
+    "triangles": 1172,
+    "modules": [],
+    "themes": [
+      "retail"
+    ],
+    "tags": [
+      "reception",
+      "desk",
+      "lobby",
+      "hotel"
+    ]
+  },
+  {
+    "type": "suitcase",
+    "name": "Rolling suitcase",
+    "category": "Objects",
+    "file": "props/suitcase.glb",
+    "size": [
+      0.44,
+      0.962,
+      0.271
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1212,
+    "modules": [],
+    "themes": [
+      "retail"
+    ],
+    "tags": [
+      "suitcase",
+      "luggage",
+      "travel",
+      "rolling case"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.94,
+        -0.0055
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0125,
+            -0.94
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0125,
+            -0.94
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "hospital-bed",
+    "name": "Hospital bed",
+    "category": "Furniture",
+    "file": "props/hospital-bed.glb",
+    "size": [
+      1.018,
+      0.950676,
+      2.079425
+    ],
+    "seat": {
+      "y": 0.64,
+      "z": -0.012213,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "triangles": 3016,
+    "modules": [],
+    "themes": [
+      "medical"
+    ],
+    "tags": [
+      "hospital",
+      "bed",
+      "clinic",
+      "patient"
+    ]
+  },
+  {
+    "type": "wheelchair",
+    "name": "Wheelchair",
+    "category": "Objects",
+    "file": "props/wheelchair.glb",
+    "size": [
+      0.674785,
+      1.004,
+      1.062
+    ],
+    "seat": {
+      "y": 0.4945,
+      "z": -0.054,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "triangles": 4448,
+    "modules": [],
+    "themes": [
+      "medical"
+    ],
+    "tags": [
+      "wheelchair",
+      "chair",
+      "mobility",
+      "wheels"
+    ]
+  },
+  {
+    "type": "crutches",
+    "name": "Pair of crutches",
+    "category": "Objects",
+    "file": "props/crutches.glb",
+    "size": [
+      0.57,
+      1.3005,
+      0.075
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1136,
+    "modules": [],
+    "themes": [
+      "medical"
+    ],
+    "tags": [
+      "crutches",
+      "crutch",
+      "mobility",
+      "walking aid"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.16,
+        0.848,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.235,
+            -0.018,
+            -0.848
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.235,
+            -0.018,
+            -0.848
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "iv-stand",
+    "name": "IV drip stand",
+    "category": "Objects",
+    "file": "props/iv-stand.glb",
+    "size": [
+      0.628885,
+      2.046508,
+      0.678676
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1976,
+    "modules": [],
+    "themes": [
+      "medical"
+    ],
+    "tags": [
+      "iv",
+      "stand",
+      "drip",
+      "infusion"
+    ]
+  },
+  {
+    "type": "school-desk",
+    "name": "School desk and chair",
+    "category": "Furniture",
+    "file": "props/school-desk.glb",
+    "size": [
+      0.68,
+      0.841416,
+      1.150792
+    ],
+    "seat": {
+      "y": 0.4625,
+      "z": 0.344604,
+      "x": [
+        0.0
+      ]
+    },
+    "top": 0.73,
+    "triangles": 1352,
+    "modules": [],
+    "themes": [
+      "school"
+    ],
+    "tags": [
+      "school",
+      "desk",
+      "classroom",
+      "chair"
+    ]
+  },
+  {
+    "type": "blackboard",
+    "name": "Classroom blackboard",
+    "category": "Furniture",
+    "file": "props/blackboard.glb",
+    "size": [
+      2.045,
+      2.0225,
+      0.73
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1860,
+    "modules": [],
+    "themes": [
+      "school"
+    ],
+    "tags": [
+      "blackboard",
+      "chalkboard",
+      "teaching",
+      "board"
+    ]
+  },
+  {
+    "type": "conference-table",
+    "name": "Conference table",
+    "category": "Furniture",
+    "file": "props/conference-table.glb",
+    "size": [
+      2.6,
+      0.758,
+      1.05
+    ],
+    "seat": null,
+    "top": 0.75,
+    "triangles": 840,
+    "modules": [],
+    "themes": [
+      "office"
+    ],
+    "tags": [
+      "conference",
+      "table",
+      "meeting",
+      "boardroom"
+    ]
+  },
+  {
+    "type": "water-cooler",
+    "name": "Water cooler",
+    "category": "Objects",
+    "file": "props/water-cooler.glb",
+    "size": [
+      0.35,
+      1.41,
+      0.45
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1636,
+    "modules": [],
+    "themes": [
+      "office",
+      "medical"
+    ],
+    "tags": [
+      "water",
+      "cooler",
+      "dispenser"
+    ]
+  },
+  {
+    "type": "projector-screen",
+    "name": "Projector screen",
+    "category": "Objects",
+    "file": "props/projector-screen.glb",
+    "size": [
+      2.0,
+      2.317,
+      0.899384
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1944,
+    "modules": [],
+    "themes": [
+      "office",
+      "school"
+    ],
+    "tags": [
+      "projector",
+      "screen",
+      "projection",
+      "presentation"
+    ]
+  },
+  {
+    "type": "jib-crane",
+    "name": "Camera jib crane",
+    "category": "Studio",
+    "file": "props/jib-crane.glb",
+    "size": [
+      3.196,
+      2.607172,
+      1.382436
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 3336,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "jib",
+      "crane",
+      "film"
+    ]
+  },
+  {
+    "type": "teleprompter",
+    "name": "Teleprompter on tripod",
+    "category": "Studio",
+    "file": "props/teleprompter.glb",
+    "size": [
+      0.814,
+      1.8395,
+      0.924692
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1782,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "teleprompter",
+      "prompter",
+      "broadcast",
+      "presenter"
+    ]
+  },
+  {
+    "type": "makeup-mirror",
+    "name": "Makeup mirror with bulbs",
+    "category": "Studio",
+    "file": "props/makeup-mirror.glb",
+    "size": [
+      0.71,
+      0.965,
+      0.31
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1912,
+    "modules": [],
+    "themes": [
+      "studio",
+      "beauty"
+    ],
+    "tags": [
+      "makeup",
+      "mirror",
+      "vanity"
+    ]
+  },
+  {
+    "type": "film-light",
+    "name": "Fresnel film light",
+    "category": "Studio",
+    "file": "props/film-light.glb",
+    "size": [
+      0.764,
+      2.097,
+      0.812782
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 3360,
+    "modules": [],
+    "themes": [
+      "studio"
+    ],
+    "tags": [
+      "film",
+      "light",
+      "fresnel",
+      "spotlight",
+      "lighting"
+    ]
+  },
+  {
+    "type": "dining-set",
+    "name": "Dining table and four chairs",
+    "category": "Furniture",
+    "file": "props/dining-set.glb",
+    "size": [
+      2.39,
+      0.856416,
+      1.941583
+    ],
+    "seat": {
+      "y": 0.4775,
+      "z": -0.74,
+      "x": [
+        0.0
+      ]
+    },
+    "top": 0.75,
+    "triangles": 3612,
+    "modules": [],
+    "themes": [
+      "dining",
+      "home"
+    ],
+    "tags": [
+      "dining",
+      "set",
+      "table",
+      "chairs"
+    ]
+  },
+  {
+    "type": "sectional-sofa",
+    "name": "L-shaped sectional sofa",
+    "category": "Furniture",
+    "file": "props/sectional-sofa.glb",
+    "size": [
+      2.54,
+      0.95,
+      1.71
+    ],
+    "seat": {
+      "y": 0.43,
+      "z": -0.385,
+      "x": [
+        -0.72,
+        0.0,
+        0.72
+      ]
+    },
+    "top": null,
+    "triangles": 2288,
+    "modules": [],
+    "themes": [
+      "living",
+      "home"
+    ],
+    "tags": [
+      "sectional",
+      "sofa",
+      "couch"
+    ]
+  },
+  {
+    "type": "bean-bag",
+    "name": "Bean bag chair",
+    "category": "Furniture",
+    "file": "props/bean-bag.glb",
+    "size": [
+      0.847868,
+      0.575584,
+      0.829879
+    ],
+    "seat": {
+      "y": 0.263731,
+      "z": 0.084167,
+      "x": [
+        -0.006515
+      ]
+    },
+    "top": null,
+    "triangles": 1696,
+    "modules": [],
+    "themes": [
+      "living",
+      "kids",
+      "home"
+    ],
+    "tags": [
+      "bean",
+      "bag",
+      "beanbag",
+      "seat",
+      "cushion"
+    ]
+  },
+  {
+    "type": "wardrobe-open",
+    "name": "Open wardrobe",
+    "category": "Furniture",
+    "file": "props/wardrobe-open.glb",
+    "size": [
+      1.335,
+      1.95,
+      0.60437
+    ],
+    "seat": null,
+    "top": 1.95,
+    "triangles": 1936,
+    "modules": [],
+    "themes": [
+      "bedroom",
+      "home",
+      "fashion"
+    ],
+    "tags": [
+      "wardrobe",
+      "open",
+      "closet",
+      "clothes"
+    ]
+  },
+  {
+    "type": "mirror-round",
+    "name": "Round mirror on a stand",
+    "category": "Objects",
+    "file": "props/mirror-round.glb",
+    "size": [
+      0.606,
+      0.943,
+      0.4
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 884,
+    "modules": [],
+    "themes": [
+      "home",
+      "living"
+    ],
+    "tags": [
+      "mirror",
+      "round"
+    ]
+  },
+  {
+    "type": "shoe-rack",
+    "name": "Shoe rack with shoes",
+    "category": "Furniture",
+    "file": "props/shoe-rack.glb",
+    "size": [
+      0.96,
+      0.62,
+      0.3475
+    ],
+    "seat": null,
+    "top": 0.62,
+    "triangles": 3228,
+    "modules": [],
+    "themes": [
+      "home"
+    ],
+    "tags": [
+      "shoe",
+      "rack",
+      "shoes",
+      "storage"
+    ]
+  },
+  {
+    "type": "coat-stand",
+    "name": "Freestanding coat stand",
+    "category": "Furniture",
+    "file": "props/coat-stand.glb",
+    "size": [
+      0.6,
+      1.857,
+      0.6
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 992,
+    "modules": [],
+    "themes": [
+      "home",
+      "office"
+    ],
+    "tags": [
+      "coat",
+      "stand",
+      "hooks"
+    ]
+  },
+  {
+    "type": "alarm-clock",
+    "name": "Twin-bell alarm clock",
+    "category": "Objects",
+    "file": "props/alarm-clock.glb",
+    "size": [
+      0.26,
+      0.264906,
+      0.092
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1740,
+    "modules": [],
+    "themes": [
+      "bedroom",
+      "home"
+    ],
+    "tags": [
+      "alarm",
+      "clock",
+      "bells"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.1069065,
+        -0.005
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.013,
+            -0.1069065
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.013,
+            -0.1069065
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "candles",
+    "name": "Cluster of candles",
+    "category": "Objects",
+    "file": "props/candles.glb",
+    "size": [
+      0.303,
+      0.283,
+      0.246
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1176,
+    "modules": [],
+    "themes": [
+      "home",
+      "living"
+    ],
+    "tags": [
+      "candles",
+      "wax",
+      "light"
+    ]
+  },
+  {
+    "type": "cushion",
+    "name": "Soft cushion",
+    "category": "Objects",
+    "file": "props/cushion.glb",
+    "size": [
+      0.45,
+      0.17,
+      0.42
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 284,
+    "modules": [],
+    "themes": [
+      "home",
+      "living",
+      "bedroom"
+    ],
+    "tags": [
+      "cushion",
+      "pillow"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.1,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.1
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.1
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "walk"
+      ]
+    }
+  },
+  {
+    "type": "luggage-trolley",
+    "name": "Hotel luggage trolley",
+    "category": "Objects",
+    "file": "props/luggage-trolley.glb",
+    "size": [
+      0.83,
+      1.87,
+      1.05
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1472,
+    "modules": [],
+    "themes": [
+      "retail",
+      "transport"
+    ],
+    "tags": [
+      "luggage",
+      "trolley",
+      "hotel"
+    ]
+  },
+  {
+    "type": "coat-check",
+    "name": "Coat check rail",
+    "category": "Furniture",
+    "file": "props/coat-check.glb",
+    "size": [
+      1.85,
+      1.9475,
+      0.68
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1060,
+    "modules": [],
+    "themes": [
+      "retail",
+      "fashion"
+    ],
+    "tags": [
+      "coat",
+      "check",
+      "cloakroom"
+    ]
+  },
+  {
+    "type": "buffet-table",
+    "name": "Buffet table with serving dishes",
+    "category": "Furniture",
+    "file": "props/buffet-table.glb",
+    "size": [
+      1.9,
+      1.08,
+      0.76
+    ],
+    "seat": null,
+    "top": 0.79,
+    "triangles": 1756,
+    "modules": [],
+    "themes": [
+      "dining",
+      "retail"
+    ],
+    "tags": [
+      "buffet",
+      "table",
+      "food",
+      "serving"
+    ]
+  },
+  {
+    "type": "high-table",
+    "name": "High cocktail table",
+    "category": "Furniture",
+    "file": "props/high-table.glb",
+    "size": [
+      0.86,
+      1.07,
+      0.86
+    ],
+    "seat": null,
+    "top": 1.07,
+    "triangles": 1060,
+    "modules": [],
+    "themes": [
+      "dining",
+      "retail"
+    ],
+    "tags": [
+      "high",
+      "table",
+      "bar",
+      "cocktail"
+    ]
+  },
+  {
+    "type": "lab-bench",
+    "name": "Laboratory bench",
+    "category": "Furniture",
+    "file": "props/lab-bench.glb",
+    "size": [
+      1.8,
+      1.21,
+      0.72
+    ],
+    "seat": null,
+    "top": 0.9,
+    "triangles": 3318,
+    "modules": [],
+    "themes": [
+      "medical",
+      "school"
+    ],
+    "tags": [
+      "lab",
+      "bench",
+      "laboratory"
+    ]
+  },
+  {
+    "type": "microscope",
+    "name": "Laboratory microscope",
+    "category": "Objects",
+    "file": "props/microscope.glb",
+    "size": [
+      0.2,
+      0.46888,
+      0.27
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1280,
+    "modules": [],
+    "themes": [
+      "medical",
+      "school"
+    ],
+    "tags": [
+      "microscope",
+      "lab",
+      "science"
+    ]
+  },
+  {
+    "type": "server-rack",
+    "name": "Server rack",
+    "category": "Furniture",
+    "file": "props/server-rack.glb",
+    "size": [
+      0.62,
+      2.0,
+      0.8515
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 5756,
+    "modules": [],
+    "themes": [
+      "tech",
+      "office"
+    ],
+    "tags": [
+      "server",
+      "rack",
+      "data centre"
+    ]
+  },
+  {
+    "type": "desk-phone",
+    "name": "Office desk phone",
+    "category": "Objects",
+    "file": "props/desk-phone.glb",
+    "size": [
+      0.275263,
+      0.156011,
+      0.255
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1116,
+    "modules": [],
+    "themes": [
+      "office"
+    ],
+    "tags": [
+      "desk",
+      "phone",
+      "telephone",
+      "landline"
+    ]
+  }
+]

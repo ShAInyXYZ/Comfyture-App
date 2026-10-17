@@ -1,0 +1,6876 @@
+[
+  {
+    "type": "water-bottle",
+    "name": "Water Bottle",
+    "category": "Food",
+    "file": "props/water-bottle.glb",
+    "size": [
+      0.072,
+      0.23,
+      0.072
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1308,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "water",
+      "bottle",
+      "water",
+      "drink",
+      "bottle"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.105,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.105
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.105
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "drink",
+        "carry",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "wine-bottle",
+    "name": "Wine Bottle",
+    "category": "Food",
+    "file": "props/wine-bottle.glb",
+    "size": [
+      0.08,
+      0.3,
+      0.08
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 540,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "wine",
+      "bottle"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.15,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.15
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.15
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "drink",
+        "carry",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "beer-bottle",
+    "name": "Beer Bottle",
+    "category": "Food",
+    "file": "props/beer-bottle.glb",
+    "size": [
+      0.067,
+      0.24,
+      0.067
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 588,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "beer",
+      "bottle"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.11,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.11
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.11
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "drink",
+        "carry",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "champagne-bottle",
+    "name": "Champagne Bottle",
+    "category": "Food",
+    "file": "props/champagne-bottle.glb",
+    "size": [
+      0.096,
+      0.315,
+      0.096
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 620,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "champagne",
+      "bottle"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.16,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.16
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.16
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "drink",
+        "carry",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "soda-can",
+    "name": "Soda Can",
+    "category": "Food",
+    "file": "props/soda-can.glb",
+    "size": [
+      0.068,
+      0.1225,
+      0.068
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1172,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "soda",
+      "can",
+      "soda",
+      "coke",
+      "can",
+      "fizzy drink"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.059,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.059
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.059
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "drink",
+        "carry",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "takeaway-coffee",
+    "name": "Takeaway Coffee",
+    "category": "Food",
+    "file": "props/takeaway-coffee.glb",
+    "size": [
+      0.096,
+      0.134,
+      0.096
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 812,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "takeaway",
+      "coffee",
+      "coffee",
+      "paper cup",
+      "latte",
+      "cappuccino"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.065,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.065
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.065
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "drink",
+        "carry",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "mug",
+    "name": "Mug",
+    "category": "Food",
+    "file": "props/mug.glb",
+    "size": [
+      0.131,
+      0.095,
+      0.09
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 488,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "mug"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0445,
+        0.051,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.0305,
+            -0.018,
+            -0.051
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.0305,
+            -0.018,
+            -0.051
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "drink",
+        "carry",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "wine-glass",
+    "name": "Wine Glass",
+    "category": "Food",
+    "file": "props/wine-glass.glb",
+    "size": [
+      0.088,
+      0.19,
+      0.088
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 616,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "wine",
+      "glass"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.06,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.06
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.06
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "drink",
+        "carry",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "tumbler",
+    "name": "Tumbler",
+    "category": "Food",
+    "file": "props/tumbler.glb",
+    "size": [
+      0.082,
+      0.101732,
+      0.082
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 576,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "tumbler"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.05,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.05
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.05
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "drink",
+        "carry",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "cocktail-glass",
+    "name": "Cocktail Glass",
+    "category": "Food",
+    "file": "props/cocktail-glass.glb",
+    "size": [
+      0.13,
+      0.15,
+      0.13
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 376,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "cocktail",
+      "glass"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.06,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.06
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.06
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "drink",
+        "carry",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "teapot",
+    "name": "Teapot",
+    "category": "Food",
+    "file": "props/teapot.glb",
+    "size": [
+      0.2869,
+      0.158,
+      0.17
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 952,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "teapot"
+    ]
+  },
+  {
+    "type": "jug",
+    "name": "Jug",
+    "category": "Food",
+    "file": "props/jug.glb",
+    "size": [
+      0.208476,
+      0.186311,
+      0.132
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 504,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "jug"
+    ]
+  },
+  {
+    "type": "plate",
+    "name": "Plate",
+    "category": "Food",
+    "file": "props/plate.glb",
+    "size": [
+      0.26,
+      0.027,
+      0.26
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 336,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "plate"
+    ]
+  },
+  {
+    "type": "bowl",
+    "name": "Bowl",
+    "category": "Food",
+    "file": "props/bowl.glb",
+    "size": [
+      0.24,
+      0.07,
+      0.24
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 384,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "bowl"
+    ]
+  },
+  {
+    "type": "cutlery-set",
+    "name": "Cutlery Set",
+    "category": "Food",
+    "file": "props/cutlery-set.glb",
+    "size": [
+      0.1465,
+      0.016,
+      0.2305
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 516,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "cutlery",
+      "set"
+    ]
+  },
+  {
+    "type": "cutting-board",
+    "name": "Cutting Board",
+    "category": "Food",
+    "file": "props/cutting-board.glb",
+    "size": [
+      0.34,
+      0.026,
+      0.32
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 132,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "cutting",
+      "board"
+    ]
+  },
+  {
+    "type": "pizza",
+    "name": "Pizza",
+    "category": "Food",
+    "file": "props/pizza.glb",
+    "size": [
+      0.36,
+      0.04366,
+      0.36
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 932,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "pizza"
+    ]
+  },
+  {
+    "type": "pizza-slice",
+    "name": "Pizza Slice",
+    "category": "Food",
+    "file": "props/pizza-slice.glb",
+    "size": [
+      0.14682,
+      0.037916,
+      0.204386
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 348,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "pizza",
+      "slice"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -3.6e-06,
+        0.015,
+        -0.0561633
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.0750036,
+            0.0381633,
+            -0.015
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.0750036,
+            0.0381633,
+            -0.015
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "pizza-box",
+    "name": "Pizza Box",
+    "category": "Food",
+    "file": "props/pizza-box.glb",
+    "size": [
+      0.352,
+      0.036,
+      0.355
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 224,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "pizza",
+      "box"
+    ]
+  },
+  {
+    "type": "burger",
+    "name": "Burger",
+    "category": "Food",
+    "file": "props/burger.glb",
+    "size": [
+      0.138792,
+      0.11,
+      0.140925
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 924,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "burger"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -3.11e-05,
+        0.015,
+        -0.0024623
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.0750311,
+            -0.0155377,
+            -0.015
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.0750311,
+            -0.0155377,
+            -0.015
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "sandwich",
+    "name": "Sandwich",
+    "category": "Food",
+    "file": "props/sandwich.glb",
+    "size": [
+      0.147899,
+      0.113462,
+      0.084
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 302,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "sandwich"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.0010507,
+        0.05,
+        -0.001
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.0760507,
+            -0.017,
+            -0.05
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.0760507,
+            -0.017,
+            -0.05
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "hot-dog",
+    "name": "Hot Dog",
+    "category": "Food",
+    "file": "props/hot-dog.glb",
+    "size": [
+      0.118,
+      0.073598,
+      0.2
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 464,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "hot",
+      "dog",
+      "hotdog",
+      "sausage",
+      "fast food"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.03,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.03
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.03
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "fries",
+    "name": "Fries",
+    "category": "Food",
+    "file": "props/fries.glb",
+    "size": [
+      0.11,
+      0.178217,
+      0.058
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 672,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "fries",
+      "chips",
+      "french fries",
+      "fast food"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.055,
+        -0.0015
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0165,
+            -0.055
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0165,
+            -0.055
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "apple",
+    "name": "Apple",
+    "category": "Food",
+    "file": "props/apple.glb",
+    "size": [
+      0.08,
+      0.084949,
+      0.08
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 412,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "apple"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.0014,
+        0.035,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.0764,
+            -0.018,
+            -0.035
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.0764,
+            -0.018,
+            -0.035
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "banana",
+    "name": "Banana",
+    "category": "Food",
+    "file": "props/banana.glb",
+    "size": [
+      0.160942,
+      0.147523,
+      0.038
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 164,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "banana"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0064985,
+        0.034,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.0685015,
+            -0.018,
+            -0.034
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.0685015,
+            -0.018,
+            -0.034
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "orange",
+    "name": "Orange",
+    "category": "Food",
+    "file": "props/orange.glb",
+    "size": [
+      0.076,
+      0.074,
+      0.076
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 388,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "orange"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.037,
+        -0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.037
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.037
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "fruit-bowl",
+    "name": "Fruit Bowl",
+    "category": "Food",
+    "file": "props/fruit-bowl.glb",
+    "size": [
+      0.28,
+      0.161202,
+      0.28
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1452,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "fruit",
+      "bowl"
+    ]
+  },
+  {
+    "type": "bread-loaf",
+    "name": "Bread Loaf",
+    "category": "Food",
+    "file": "props/bread-loaf.glb",
+    "size": [
+      0.2,
+      0.131252,
+      0.27
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 504,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "bread",
+      "loaf"
+    ]
+  },
+  {
+    "type": "baguette",
+    "name": "Baguette",
+    "category": "Food",
+    "file": "props/baguette.glb",
+    "size": [
+      0.07,
+      0.071828,
+      0.34
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 504,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "baguette"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.035,
+        -0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.035
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.035
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "croissant",
+    "name": "Croissant",
+    "category": "Food",
+    "file": "props/croissant.glb",
+    "size": [
+      0.153552,
+      0.053506,
+      0.084046
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1272,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "croissant"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.026,
+        0.0100711
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0280711,
+            -0.026
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0280711,
+            -0.026
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "cake",
+    "name": "Cake",
+    "category": "Food",
+    "file": "props/cake.glb",
+    "size": [
+      0.32,
+      0.144,
+      0.32
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1448,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "cake"
+    ]
+  },
+  {
+    "type": "cupcake",
+    "name": "Cupcake",
+    "category": "Food",
+    "file": "props/cupcake.glb",
+    "size": [
+      0.082,
+      0.114,
+      0.082
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 664,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "cupcake"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.025,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.025
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.025
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "donut",
+    "name": "Donut",
+    "category": "Food",
+    "file": "props/donut.glb",
+    "size": [
+      0.124,
+      0.043187,
+      0.124
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1024,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "donut"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.0221865,
+        -0.035
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            0.017,
+            -0.0221865
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            0.017,
+            -0.0221865
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "ice-cream-cone",
+    "name": "Ice Cream Cone",
+    "category": "Food",
+    "file": "props/ice-cream-cone.glb",
+    "size": [
+      0.092633,
+      0.18,
+      0.094295
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 760,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "ice",
+      "cream",
+      "cone"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.0016835,
+        0.07,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.0766835,
+            -0.018,
+            -0.07
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.0766835,
+            -0.018,
+            -0.07
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "popcorn-bucket",
+    "name": "Popcorn Bucket",
+    "category": "Food",
+    "file": "props/popcorn-bucket.glb",
+    "size": [
+      0.133917,
+      0.169341,
+      0.133917
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1064,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "popcorn",
+      "bucket"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.07,
+        -0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.07
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.07
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "cereal-box",
+    "name": "Cereal Box",
+    "category": "Food",
+    "file": "props/cereal-box.glb",
+    "size": [
+      0.2,
+      0.303,
+      0.068165
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 448,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "cereal",
+      "box"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.15,
+        -0.0040825
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0139175,
+            -0.15
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0139175,
+            -0.15
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "milk-carton",
+    "name": "Milk Carton",
+    "category": "Food",
+    "file": "props/milk-carton.glb",
+    "size": [
+      0.075,
+      0.249,
+      0.0775
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 256,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "milk",
+      "carton"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.1,
+        -0.00125
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.01675,
+            -0.1
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.01675,
+            -0.1
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "drink",
+        "carry",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "juice-box",
+    "name": "Juice Box",
+    "category": "Food",
+    "file": "props/juice-box.glb",
+    "size": [
+      0.06,
+      0.1725,
+      0.0465
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 176,
+    "modules": [],
+    "themes": [
+      "drinks",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "juice",
+      "box"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.06,
+        -0.00075
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.01725,
+            -0.06
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.01725,
+            -0.06
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "drink",
+        "carry",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "jar",
+    "name": "Jar",
+    "category": "Food",
+    "file": "props/jar.glb",
+    "size": [
+      0.084,
+      0.127,
+      0.084
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 524,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "jar"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.065,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.065
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.065
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "ketchup-bottle",
+    "name": "Ketchup Bottle",
+    "category": "Food",
+    "file": "props/ketchup-bottle.glb",
+    "size": [
+      0.082,
+      0.259,
+      0.082
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 632,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "ketchup",
+      "bottle"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.12,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.12
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.12
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "salt-and-pepper",
+    "name": "Salt And Pepper",
+    "category": "Food",
+    "file": "props/salt-and-pepper.glb",
+    "size": [
+      0.118,
+      0.097,
+      0.048
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 800,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "salt",
+      "and",
+      "pepper"
+    ]
+  },
+  {
+    "type": "takeaway-bag",
+    "name": "Takeaway Bag",
+    "category": "Food",
+    "file": "props/takeaway-bag.glb",
+    "size": [
+      0.162371,
+      0.2834,
+      0.1035
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 476,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "takeaway",
+      "bag"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.277,
+        0.04125
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.05925,
+            -0.277
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.05925,
+            -0.277
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "takeout-box",
+    "name": "Takeout Box",
+    "category": "Food",
+    "file": "props/takeout-box.glb",
+    "size": [
+      0.148874,
+      0.172461,
+      0.093
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 264,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "takeout",
+      "box"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.17,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.17
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.17
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "food-tray",
+    "name": "Food Tray",
+    "category": "Food",
+    "file": "props/food-tray.glb",
+    "size": [
+      0.388,
+      0.03,
+      0.27
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 220,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "food",
+      "tray"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.18,
+        0.015,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            0.105,
+            -0.018,
+            -0.015
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            -0.105,
+            -0.018,
+            -0.015
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "coffee-machine",
+    "name": "Coffee Machine",
+    "category": "Objects",
+    "file": "props/coffee-machine.glb",
+    "size": [
+      0.281443,
+      0.39,
+      0.3525
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 880,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "coffee",
+      "machine"
+    ]
+  },
+  {
+    "type": "kettle",
+    "name": "Kettle",
+    "category": "Objects",
+    "file": "props/kettle.glb",
+    "size": [
+      0.282381,
+      0.217,
+      0.19
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 696,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "kettle"
+    ]
+  },
+  {
+    "type": "toaster",
+    "name": "Toaster",
+    "category": "Objects",
+    "file": "props/toaster.glb",
+    "size": [
+      0.32,
+      0.19,
+      0.17
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 412,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "toaster"
+    ]
+  },
+  {
+    "type": "microwave",
+    "name": "Microwave",
+    "category": "Objects",
+    "file": "props/microwave.glb",
+    "size": [
+      0.49,
+      0.3,
+      0.406
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 472,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "microwave"
+    ]
+  },
+  {
+    "type": "kitchen-blender",
+    "name": "Kitchen Blender",
+    "category": "Objects",
+    "file": "props/kitchen-blender.glb",
+    "size": [
+      0.205168,
+      0.403,
+      0.157
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 868,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "kitchen",
+      "blender",
+      "smoothie",
+      "mixer",
+      "appliance"
+    ]
+  },
+  {
+    "type": "saucepan",
+    "name": "Saucepan",
+    "category": "Objects",
+    "file": "props/saucepan.glb",
+    "size": [
+      0.445824,
+      0.104,
+      0.2
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 412,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "saucepan"
+    ]
+  },
+  {
+    "type": "frying-pan",
+    "name": "Frying Pan",
+    "category": "Objects",
+    "file": "props/frying-pan.glb",
+    "size": [
+      0.48,
+      0.0455,
+      0.28
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 368,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "frying",
+      "pan"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.17,
+        0.03,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            0.095,
+            -0.018,
+            -0.03
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            -0.095,
+            -0.018,
+            -0.03
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "perfume-bottle",
+    "name": "Perfume Bottle",
+    "category": "Products",
+    "file": "props/perfume-bottle.glb",
+    "size": [
+      0.075,
+      0.155,
+      0.0495
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 236,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "product",
+      "bathroom"
+    ],
+    "tags": [
+      "perfume",
+      "bottle"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.055,
+        -0.00125
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.01675,
+            -0.055
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.01675,
+            -0.055
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "cosmetic-jar",
+    "name": "Cosmetic Jar",
+    "category": "Products",
+    "file": "props/cosmetic-jar.glb",
+    "size": [
+      0.086,
+      0.062,
+      0.086
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 524,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "product",
+      "bathroom"
+    ],
+    "tags": [
+      "cosmetic",
+      "jar"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.03,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.03
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.03
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "lipstick",
+    "name": "Lipstick",
+    "category": "Products",
+    "file": "props/lipstick.glb",
+    "size": [
+      0.024,
+      0.09672,
+      0.024
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 308,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "product",
+      "bathroom"
+    ],
+    "tags": [
+      "lipstick"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.03,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.03
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.03
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "skincare-tube",
+    "name": "Skincare Tube",
+    "category": "Products",
+    "file": "props/skincare-tube.glb",
+    "size": [
+      0.055,
+      0.1585,
+      0.03362
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 256,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "product",
+      "bathroom"
+    ],
+    "tags": [
+      "skincare",
+      "tube"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.07,
+        -0.00069
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.01731,
+            -0.07
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.01731,
+            -0.07
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "pump-bottle",
+    "name": "Pump Bottle",
+    "category": "Products",
+    "file": "props/pump-bottle.glb",
+    "size": [
+      0.075,
+      0.231,
+      0.078
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 280,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "product",
+      "bathroom"
+    ],
+    "tags": [
+      "pump",
+      "bottle"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.09,
+        -0.0115
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0065,
+            -0.09
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0065,
+            -0.09
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "shampoo-bottle",
+    "name": "Shampoo Bottle",
+    "category": "Products",
+    "file": "props/shampoo-bottle.glb",
+    "size": [
+      0.084,
+      0.232,
+      0.05371
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 132,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "product",
+      "bathroom"
+    ],
+    "tags": [
+      "shampoo",
+      "bottle"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.11,
+        -0.000605
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.017395,
+            -0.11
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.017395,
+            -0.11
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "spray-can",
+    "name": "Spray Can",
+    "category": "Products",
+    "file": "props/spray-can.glb",
+    "size": [
+      0.068,
+      0.21,
+      0.068
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 536,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "product",
+      "bathroom"
+    ],
+    "tags": [
+      "spray",
+      "can"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.09,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.09
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.09
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "sneaker",
+    "name": "Sneaker",
+    "category": "Products",
+    "file": "props/sneaker.glb",
+    "size": [
+      0.105,
+      0.143464,
+      0.293
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 948,
+    "modules": [],
+    "themes": [
+      "fashion",
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "sneaker",
+      "shoe",
+      "trainer"
+    ]
+  },
+  {
+    "type": "high-heel",
+    "name": "High Heel",
+    "category": "Products",
+    "file": "props/high-heel.glb",
+    "size": [
+      0.095343,
+      0.187029,
+      0.256441
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 560,
+    "modules": [],
+    "themes": [
+      "fashion",
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "high",
+      "heel",
+      "shoe",
+      "heel",
+      "fashion"
+    ]
+  },
+  {
+    "type": "handbag",
+    "name": "Handbag",
+    "category": "Products",
+    "file": "props/handbag.glb",
+    "size": [
+      0.277055,
+      0.339,
+      0.13
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 624,
+    "modules": [],
+    "themes": [
+      "fashion",
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "handbag",
+      "purse",
+      "bag"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.33,
+        0.037
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.055,
+            -0.33
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.055,
+            -0.33
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "watch",
+    "name": "Watch",
+    "category": "Products",
+    "file": "props/watch.glb",
+    "size": [
+      0.048,
+      0.0212,
+      0.2255
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 896,
+    "modules": [],
+    "themes": [
+      "fashion",
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "watch"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.002,
+        0.01,
+        -0.05425
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.077,
+            -0.028,
+            -0.05425
+          ],
+          "quaternion": [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.077,
+            -0.028,
+            -0.05425
+          ],
+          "quaternion": [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "watch-stand",
+    "name": "Watch Stand",
+    "category": "Products",
+    "file": "props/watch-stand.glb",
+    "size": [
+      0.131,
+      0.237698,
+      0.1
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 336,
+    "modules": [],
+    "themes": [
+      "fashion",
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "watch",
+      "stand"
+    ]
+  },
+  {
+    "type": "sunglasses",
+    "name": "Sunglasses",
+    "category": "Products",
+    "file": "props/sunglasses.glb",
+    "size": [
+      0.141971,
+      0.047466,
+      0.143257
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 344,
+    "modules": [],
+    "themes": [
+      "fashion",
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "sunglasses"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.06,
+        0.0305,
+        0.0097443
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.135,
+            -0.0277443,
+            -0.0305
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.135,
+            -0.0277443,
+            -0.0305
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "headphones",
+    "name": "Headphones",
+    "category": "Products",
+    "file": "props/headphones.glb",
+    "size": [
+      0.212,
+      0.191,
+      0.063
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 512,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product",
+      "home"
+    ],
+    "tags": [
+      "headphones"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.176,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.176
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.176
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "earbuds-case",
+    "name": "Earbuds Case",
+    "category": "Products",
+    "file": "props/earbuds-case.glb",
+    "size": [
+      0.062,
+      0.046,
+      0.0475
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 516,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product",
+      "home"
+    ],
+    "tags": [
+      "earbuds",
+      "case"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.018,
+        -0.00075
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.01725,
+            -0.018
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.01725,
+            -0.018
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "smartphone",
+    "name": "Smartphone",
+    "category": "Products",
+    "file": "props/smartphone.glb",
+    "size": [
+      0.077,
+      0.0108,
+      0.15
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 224,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product",
+      "home"
+    ],
+    "tags": [
+      "smartphone",
+      "phone",
+      "mobile",
+      "cellphone"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.001,
+        0.005,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.076,
+            -0.023,
+            0.0
+          ],
+          "quaternion": [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.076,
+            -0.023,
+            0.0
+          ],
+          "quaternion": [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "phone-call",
+        "read",
+        "photo",
+        "stand"
+      ]
+    }
+  },
+  {
+    "type": "tablet",
+    "name": "Tablet",
+    "category": "Products",
+    "file": "props/tablet.glb",
+    "size": [
+      0.187,
+      0.012,
+      0.25
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 160,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product",
+      "home"
+    ],
+    "tags": [
+      "tablet"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.001,
+        0.005,
+        0.065
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.076,
+            -0.023,
+            0.065
+          ],
+          "quaternion": [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.076,
+            -0.023,
+            0.065
+          ],
+          "quaternion": [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "read",
+        "carry",
+        "stand"
+      ]
+    }
+  },
+  {
+    "type": "laptop",
+    "name": "Laptop",
+    "category": "Products",
+    "file": "props/laptop.glb",
+    "size": [
+      0.33,
+      0.245,
+      0.2495
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2108,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product",
+      "home"
+    ],
+    "tags": [
+      "laptop"
+    ]
+  },
+  {
+    "type": "smartwatch",
+    "name": "Smartwatch",
+    "category": "Products",
+    "file": "props/smartwatch.glb",
+    "size": [
+      0.0455,
+      0.0215,
+      0.2255
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 376,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product",
+      "home"
+    ],
+    "tags": [
+      "smartwatch"
+    ]
+  },
+  {
+    "type": "game-controller",
+    "name": "Game Controller",
+    "category": "Products",
+    "file": "props/game-controller.glb",
+    "size": [
+      0.174,
+      0.079,
+      0.126707
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 796,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product",
+      "home"
+    ],
+    "tags": [
+      "game",
+      "controller",
+      "gamepad",
+      "gaming"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        -0.055,
+        0.028,
+        0.0236467
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.13,
+            -0.0416467,
+            -0.028
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.13,
+            -0.0416467,
+            -0.028
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "vr-headset",
+    "name": "Vr Headset",
+    "category": "Products",
+    "file": "props/vr-headset.glb",
+    "size": [
+      0.223815,
+      0.1655,
+      0.263278
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 328,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product",
+      "home"
+    ],
+    "tags": [
+      "vr",
+      "headset"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.0525,
+        0.0796388
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0976388,
+            -0.0525
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0976388,
+            -0.0525
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "smart-speaker",
+    "name": "Smart Speaker",
+    "category": "Products",
+    "file": "props/smart-speaker.glb",
+    "size": [
+      0.1064,
+      0.156,
+      0.1064
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 716,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product",
+      "home"
+    ],
+    "tags": [
+      "smart",
+      "speaker"
+    ]
+  },
+  {
+    "type": "tv-remote",
+    "name": "Tv Remote",
+    "category": "Products",
+    "file": "props/tv-remote.glb",
+    "size": [
+      0.048,
+      0.027,
+      0.1825
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 632,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product",
+      "home"
+    ],
+    "tags": [
+      "tv",
+      "remote",
+      "remote control",
+      "television"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.01,
+        0.03125
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.028,
+            0.03125
+          ],
+          "quaternion": [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.028,
+            0.03125
+          ],
+          "quaternion": [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "credit-card",
+    "name": "Credit Card",
+    "category": "Products",
+    "file": "props/credit-card.glb",
+    "size": [
+      0.0856,
+      0.00285,
+      0.054
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 332,
+    "modules": [],
+    "themes": [
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "credit",
+      "card",
+      "payment",
+      "bank card"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.001,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.019,
+            0.0
+          ],
+          "quaternion": [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.019,
+            0.0
+          ],
+          "quaternion": [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "gift-box",
+    "name": "Gift Box",
+    "category": "Products",
+    "file": "props/gift-box.glb",
+    "size": [
+      0.193,
+      0.209573,
+      0.173
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 512,
+    "modules": [],
+    "themes": [
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "gift",
+      "box"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.08,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.08
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.08
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "shopping-bag",
+    "name": "Shopping Bag",
+    "category": "Products",
+    "file": "props/shopping-bag.glb",
+    "size": [
+      0.272308,
+      0.3896,
+      0.1235
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 476,
+    "modules": [],
+    "themes": [
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "shopping",
+      "bag"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.384,
+        0.05125
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.06925,
+            -0.384
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.06925,
+            -0.384
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "product-box",
+    "name": "Product Box",
+    "category": "Products",
+    "file": "props/product-box.glb",
+    "size": [
+      0.19,
+      0.3035,
+      0.103
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 176,
+    "modules": [],
+    "themes": [
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "product",
+      "box"
+    ]
+  },
+  {
+    "type": "product-podium-round",
+    "name": "Product Podium Round",
+    "category": "Products",
+    "file": "props/product-podium-round.glb",
+    "size": [
+      0.76,
+      0.57,
+      0.76
+    ],
+    "seat": null,
+    "top": 0.57,
+    "triangles": 320,
+    "modules": [],
+    "themes": [
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "product",
+      "podium",
+      "round"
+    ]
+  },
+  {
+    "type": "product-podium-square",
+    "name": "Product Podium Square",
+    "category": "Products",
+    "file": "props/product-podium-square.glb",
+    "size": [
+      0.65,
+      0.56,
+      0.65
+    ],
+    "seat": null,
+    "top": 0.56,
+    "triangles": 44,
+    "modules": [],
+    "themes": [
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "product",
+      "podium",
+      "square"
+    ]
+  },
+  {
+    "type": "product-podium-steps",
+    "name": "Product Podium Steps",
+    "category": "Products",
+    "file": "props/product-podium-steps.glb",
+    "size": [
+      1.32,
+      0.72,
+      0.52
+    ],
+    "seat": null,
+    "top": 0.72,
+    "triangles": 132,
+    "modules": [],
+    "themes": [
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "product",
+      "podium",
+      "steps"
+    ]
+  },
+  {
+    "type": "display-riser",
+    "name": "Display Riser",
+    "category": "Products",
+    "file": "props/display-riser.glb",
+    "size": [
+      0.42,
+      0.244,
+      0.28
+    ],
+    "seat": null,
+    "top": 0.244,
+    "triangles": 220,
+    "modules": [],
+    "themes": [
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "display",
+      "riser"
+    ]
+  },
+  {
+    "type": "display-turntable",
+    "name": "Display Turntable",
+    "category": "Products",
+    "file": "props/display-turntable.glb",
+    "size": [
+      0.54,
+      0.085,
+      0.54
+    ],
+    "seat": null,
+    "top": 0.085,
+    "triangles": 520,
+    "modules": [],
+    "themes": [
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "display",
+      "turntable"
+    ]
+  },
+  {
+    "type": "standing-mirror",
+    "name": "Standing Mirror",
+    "category": "Products",
+    "file": "props/standing-mirror.glb",
+    "size": [
+      0.54,
+      1.855,
+      0.568972
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 236,
+    "modules": [],
+    "themes": [
+      "fashion",
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "standing",
+      "mirror"
+    ]
+  },
+  {
+    "type": "birthday-cake",
+    "name": "Birthday Cake",
+    "category": "Food",
+    "file": "props/birthday-cake.glb",
+    "size": [
+      0.32,
+      0.193,
+      0.32
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 940,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "birthday",
+      "cake"
+    ]
+  },
+  {
+    "type": "salad-bowl",
+    "name": "Salad Bowl",
+    "category": "Food",
+    "file": "props/salad-bowl.glb",
+    "size": [
+      0.28,
+      0.106,
+      0.28
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1176,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "salad",
+      "bowl"
+    ]
+  },
+  {
+    "type": "spaghetti-plate",
+    "name": "Spaghetti Plate",
+    "category": "Food",
+    "file": "props/spaghetti-plate.glb",
+    "size": [
+      0.3,
+      0.075,
+      0.3
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1776,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "spaghetti",
+      "plate"
+    ]
+  },
+  {
+    "type": "soup-bowl",
+    "name": "Soup Bowl",
+    "category": "Food",
+    "file": "props/soup-bowl.glb",
+    "size": [
+      0.291649,
+      0.065,
+      0.23
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 696,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "soup",
+      "bowl"
+    ]
+  },
+  {
+    "type": "egg-carton",
+    "name": "Egg Carton",
+    "category": "Food",
+    "file": "props/egg-carton.glb",
+    "size": [
+      0.26,
+      0.1805,
+      0.1955
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1672,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "egg",
+      "carton"
+    ]
+  },
+  {
+    "type": "watermelon",
+    "name": "Watermelon",
+    "category": "Food",
+    "file": "props/watermelon.glb",
+    "size": [
+      0.485353,
+      0.247,
+      0.301
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1838,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "watermelon"
+    ]
+  },
+  {
+    "type": "pineapple",
+    "name": "Pineapple",
+    "category": "Food",
+    "file": "props/pineapple.glb",
+    "size": [
+      0.134688,
+      0.31,
+      0.13
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1338,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "pineapple"
+    ]
+  },
+  {
+    "type": "grapes",
+    "name": "Grapes",
+    "category": "Food",
+    "file": "props/grapes.glb",
+    "size": [
+      0.09414,
+      0.149772,
+      0.088229
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1532,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "grapes"
+    ]
+  },
+  {
+    "type": "vegetable-crate",
+    "name": "Vegetable Crate",
+    "category": "Food",
+    "file": "props/vegetable-crate.glb",
+    "size": [
+      0.451,
+      0.201,
+      0.315
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1748,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "vegetable",
+      "crate"
+    ]
+  },
+  {
+    "type": "wine-rack",
+    "name": "Wine Rack",
+    "category": "Food",
+    "file": "props/wine-rack.glb",
+    "size": [
+      0.525,
+      0.48,
+      0.309
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1108,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "wine",
+      "rack"
+    ]
+  },
+  {
+    "type": "beer-keg",
+    "name": "Beer Keg",
+    "category": "Food",
+    "file": "props/beer-keg.glb",
+    "size": [
+      0.392,
+      0.552,
+      0.392
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1636,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "beer",
+      "keg"
+    ]
+  },
+  {
+    "type": "sushi-tray",
+    "name": "Sushi Tray",
+    "category": "Food",
+    "file": "props/sushi-tray.glb",
+    "size": [
+      0.34,
+      0.0685,
+      0.22
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1092,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "sushi",
+      "tray"
+    ]
+  },
+  {
+    "type": "cheese-board",
+    "name": "Cheese Board",
+    "category": "Food",
+    "file": "props/cheese-board.glb",
+    "size": [
+      0.34,
+      0.081,
+      0.35
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1208,
+    "modules": [],
+    "themes": [
+      "food",
+      "kitchen",
+      "dining"
+    ],
+    "tags": [
+      "cheese",
+      "board"
+    ]
+  },
+  {
+    "type": "stand-mixer",
+    "name": "Stand Mixer",
+    "category": "Objects",
+    "file": "props/stand-mixer.glb",
+    "size": [
+      0.22,
+      0.3825,
+      0.305
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 736,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "stand",
+      "mixer"
+    ]
+  },
+  {
+    "type": "rice-cooker",
+    "name": "Rice Cooker",
+    "category": "Objects",
+    "file": "props/rice-cooker.glb",
+    "size": [
+      0.324,
+      0.2625,
+      0.2825
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 700,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "rice",
+      "cooker"
+    ]
+  },
+  {
+    "type": "spice-rack",
+    "name": "Spice Rack",
+    "category": "Objects",
+    "file": "props/spice-rack.glb",
+    "size": [
+      0.4,
+      0.3,
+      0.125196
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 1528,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "spice",
+      "rack"
+    ]
+  },
+  {
+    "type": "dish-rack",
+    "name": "Dish Rack",
+    "category": "Objects",
+    "file": "props/dish-rack.glb",
+    "size": [
+      0.4,
+      0.23,
+      0.3
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 668,
+    "modules": [],
+    "themes": [
+      "kitchen",
+      "home"
+    ],
+    "tags": [
+      "dish",
+      "rack"
+    ]
+  },
+  {
+    "type": "nail-polish",
+    "name": "Nail Polish",
+    "category": "Products",
+    "file": "props/nail-polish.glb",
+    "size": [
+      0.032,
+      0.095,
+      0.028
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 148,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "bathroom",
+      "product"
+    ],
+    "tags": [
+      "nail",
+      "polish"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.025,
+        -0.001
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.017,
+            -0.025
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.017,
+            -0.025
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "makeup-palette",
+    "name": "Makeup Palette",
+    "category": "Products",
+    "file": "props/makeup-palette.glb",
+    "size": [
+      0.13,
+      0.1105,
+      0.0935
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 536,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "bathroom",
+      "product"
+    ],
+    "tags": [
+      "makeup",
+      "palette"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.01,
+        0.00425
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.02225,
+            -0.01
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.02225,
+            -0.01
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "razor",
+    "name": "Razor",
+    "category": "Products",
+    "file": "props/razor.glb",
+    "size": [
+      0.047,
+      0.049993,
+      0.14186
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 264,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "bathroom",
+      "product"
+    ],
+    "tags": [
+      "razor"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.0089928,
+        0.0205701
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0385701,
+            -0.0089928
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0385701,
+            -0.0089928
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "toothbrush",
+    "name": "Toothbrush",
+    "category": "Products",
+    "file": "props/toothbrush.glb",
+    "size": [
+      0.016,
+      0.024999,
+      0.187086
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 372,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "bathroom",
+      "product"
+    ],
+    "tags": [
+      "toothbrush"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.0079994,
+        0.0284571
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0464571,
+            -0.0079994
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0464571,
+            -0.0079994
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "toothpaste",
+    "name": "Toothpaste",
+    "category": "Products",
+    "file": "props/toothpaste.glb",
+    "size": [
+      0.038,
+      0.1785,
+      0.0275
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 256,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "bathroom",
+      "product"
+    ],
+    "tags": [
+      "toothpaste"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.075,
+        -0.00075
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.01725,
+            -0.075
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.01725,
+            -0.075
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "deodorant",
+    "name": "Deodorant",
+    "category": "Products",
+    "file": "props/deodorant.glb",
+    "size": [
+      0.048,
+      0.128,
+      0.033
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 520,
+    "modules": [],
+    "themes": [
+      "beauty",
+      "bathroom",
+      "product"
+    ],
+    "tags": [
+      "deodorant"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.055,
+        -0.0015
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0165,
+            -0.055
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0165,
+            -0.055
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "sports-bottle",
+    "name": "Sports Bottle",
+    "category": "Products",
+    "file": "props/sports-bottle.glb",
+    "size": [
+      0.076,
+      0.248,
+      0.076
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 584,
+    "modules": [],
+    "themes": [
+      "fitness",
+      "sports",
+      "product"
+    ],
+    "tags": [
+      "sports",
+      "bottle"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.115,
+        0.0
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.018,
+            -0.115
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.018,
+            -0.115
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "protein-tub",
+    "name": "Protein Tub",
+    "category": "Products",
+    "file": "props/protein-tub.glb",
+    "size": [
+      0.152,
+      0.2,
+      0.152
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 476,
+    "modules": [],
+    "themes": [
+      "fitness",
+      "sports",
+      "product"
+    ],
+    "tags": [
+      "protein",
+      "tub"
+    ]
+  },
+  {
+    "type": "coffee-bag",
+    "name": "Coffee Bag",
+    "category": "Products",
+    "file": "props/coffee-bag.glb",
+    "size": [
+      0.1248,
+      0.21,
+      0.074
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 308,
+    "modules": [],
+    "themes": [
+      "food",
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "coffee",
+      "bag"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.105,
+        -0.002
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.016,
+            -0.105
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.016,
+            -0.105
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "chocolate-bar",
+    "name": "Chocolate Bar",
+    "category": "Products",
+    "file": "props/chocolate-bar.glb",
+    "size": [
+      0.09,
+      0.022,
+      0.188
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 308,
+    "modules": [],
+    "themes": [
+      "food",
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "chocolate",
+      "bar"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.008,
+        0.026
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.044,
+            -0.008
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.044,
+            -0.008
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "chips-bag",
+    "name": "Chips Bag",
+    "category": "Products",
+    "file": "props/chips-bag.glb",
+    "size": [
+      0.156,
+      0.23,
+      0.063
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 264,
+    "modules": [],
+    "themes": [
+      "food",
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "chips",
+      "bag"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.115,
+        -0.0015
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0165,
+            -0.115
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0165,
+            -0.115
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "medicine-bottle",
+    "name": "Medicine Bottle",
+    "category": "Products",
+    "file": "props/medicine-bottle.glb",
+    "size": [
+      0.052,
+      0.1,
+      0.054
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 628,
+    "modules": [],
+    "themes": [
+      "medical",
+      "product"
+    ],
+    "tags": [
+      "medicine",
+      "bottle"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.05,
+        -0.001
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.017,
+            -0.05
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.017,
+            -0.05
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "drone",
+    "name": "Drone",
+    "category": "Products",
+    "file": "props/drone.glb",
+    "size": [
+      0.55,
+      0.124747,
+      0.346
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 952,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product"
+    ],
+    "tags": [
+      "drone"
+    ]
+  },
+  {
+    "type": "action-camera",
+    "name": "Action Camera",
+    "category": "Products",
+    "file": "props/action-camera.glb",
+    "size": [
+      0.065,
+      0.068,
+      0.044299
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 472,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product"
+    ],
+    "tags": [
+      "action",
+      "camera"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.038,
+        -0.0071495
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.0108505,
+            -0.038
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.0108505,
+            -0.038
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "power-bank",
+    "name": "Power Bank",
+    "category": "Products",
+    "file": "props/power-bank.glb",
+    "size": [
+      0.065,
+      0.0218,
+      0.122
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 280,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product"
+    ],
+    "tags": [
+      "power",
+      "bank"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.01,
+        -0.001
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.028,
+            -0.001
+          ],
+          "quaternion": [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.028,
+            -0.001
+          ],
+          "quaternion": [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "computer-mouse",
+    "name": "Computer Mouse",
+    "category": "Products",
+    "file": "props/computer-mouse.glb",
+    "size": [
+      0.068,
+      0.057,
+      0.114
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 704,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product"
+    ],
+    "tags": [
+      "computer",
+      "mouse"
+    ]
+  },
+  {
+    "type": "ring-box",
+    "name": "Ring Box",
+    "category": "Products",
+    "file": "props/ring-box.glb",
+    "size": [
+      0.07,
+      0.0985,
+      0.0755
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 464,
+    "modules": [],
+    "themes": [
+      "fashion",
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "ring",
+      "box"
+    ],
+    "holdable": {
+      "gripCoordinateSpace": "hand-joint-local",
+      "gripPoint": [
+        0.0,
+        0.02,
+        0.00525
+      ],
+      "referenceSocket": {
+        "right": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "left": [
+          0.075,
+          -0.018,
+          0
+        ]
+      },
+      "grips": {
+        "right": {
+          "joint": "RightHand",
+          "position": [
+            -0.075,
+            -0.02325,
+            -0.02
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ]
+        },
+        "left": {
+          "joint": "LeftHand",
+          "position": [
+            0.075,
+            -0.02325,
+            -0.02
+          ],
+          "quaternion": [
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304,
+            0.0
+          ],
+          "scale": [
+            -1,
+            1,
+            1
+          ]
+        }
+      },
+      "poses": [
+        "carry",
+        "stand",
+        "talk"
+      ]
+    }
+  },
+  {
+    "type": "necklace-bust",
+    "name": "Necklace Bust",
+    "category": "Products",
+    "file": "props/necklace-bust.glb",
+    "size": [
+      0.289284,
+      0.37,
+      0.15
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 520,
+    "modules": [],
+    "themes": [
+      "fashion",
+      "product",
+      "retail"
+    ],
+    "tags": [
+      "necklace",
+      "bust"
+    ]
+  },
+  {
+    "type": "keyboard",
+    "name": "Keyboard",
+    "category": "Products",
+    "file": "props/keyboard.glb",
+    "size": [
+      0.44,
+      0.0295,
+      0.145
+    ],
+    "seat": null,
+    "top": null,
+    "triangles": 2464,
+    "modules": [],
+    "themes": [
+      "tech",
+      "product"
+    ],
+    "tags": [
+      "keyboard"
+    ]
+  }
+]

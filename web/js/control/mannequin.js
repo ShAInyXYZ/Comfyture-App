@@ -41,8 +41,9 @@ export class Mannequin {
     this.material = new THREE.MeshStandardMaterial({ roughness: 0.78, metalness: 0 });
     this.ballMaterial = new THREE.MeshStandardMaterial({ roughness: 0.7 });
     // held things are in plain clay, so they read apart from the body
-    this.heldMaterial = new THREE.MeshStandardMaterial({ color: "#a9a59e", roughness: 0.8 });
-    this.heldAccent = new THREE.MeshStandardMaterial({ color: "#76726c", roughness: 0.7 });
+    // what a hand holds is small and often a sheet (an umbrella's canopy): drawn from both sides
+    this.heldMaterial = new THREE.MeshStandardMaterial({ color: "#a9a59e", roughness: 0.8, side: THREE.DoubleSide });
+    this.heldAccent = new THREE.MeshStandardMaterial({ color: "#76726c", roughness: 0.7, side: THREE.DoubleSide });
     this.setColor(this.color);
     this.build();
   }
@@ -262,19 +263,22 @@ export class Mannequin {
     const model = type && (MODELS.hand.get(type) ?? (() => {
       const def = assetByType(type);
       const piece = MODELS.props.get(type);
-      return def?.holdable?.grips && piece ? { scene: piece.scene, grips: def.holdable.grips } : null;
+      return def?.holdable?.grips && piece ? { scene: piece.scene, grips: def.holdable.grips, socket: def.holdable.referenceSocket } : null;
     })());
     if (!model) return;
     const grip = model.grips[hand];
     const p = this.profile;
     const base = { ...DEFAULT_PROFILE, ...(bodyById(this.body)?.profile ?? {}) };
     const k = this.model ? this.model.handSocketScale * this.modelScale.s * ((p.hands ?? 1) / (base.hands ?? 1)) : (p.height / 1.78) * (p.hands ?? 1);
+    // a child's bag is a child's: the thing scales with a small hand, never past its own size;
+    // the palm's socket moves with the hand, the thing's own grip offset with the thing
+    const size = THREE.MathUtils.clamp(k, 0.55, 1);
+    const socket = new THREE.Vector3(...(model.socket?.[hand] ?? (hand === "left" ? [0.075, -0.018, 0] : [-0.075, -0.018, 0])));
     const holder = new THREE.Group();
-    holder.position.fromArray(grip.position).multiplyScalar(k);
+    holder.position.copy(socket.multiplyScalar(k - size)).addScaledVector(new THREE.Vector3(...grip.position), size);
     holder.quaternion.fromArray(grip.quaternion ?? [0, 0, 0, 1]);
     if (grip.scale) holder.scale.fromArray(grip.scale);
-    // a child's bag is a child's: the thing scales with a small hand, never past its own size
-    holder.scale.multiplyScalar(THREE.MathUtils.clamp(k, 0.55, 1));
+    holder.scale.multiplyScalar(size);
     const copy = model.scene.clone(true);
     const joint = hand === "left" ? "LeftHand" : "RightHand";
     copy.traverse((o) => {

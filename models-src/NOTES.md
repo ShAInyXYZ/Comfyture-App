@@ -113,3 +113,96 @@ python3 models-src/compose_previews.py --all
 ```
 
 Regenerate affected Blender renders before composing sheets. Python composition needs Pillow; independent verification/manifest assembly needs NumPy. Both were already available. No app code or git state was touched.
+
+## Batch 2
+
+Delivered 17 October 2026: **321 new set pieces — all 233 P1 and all 88 P2**, including the separately requested watch stand. **98** pieces also have right/left hand grips and compatible pose IDs. No P2 pieces were omitted. The manifest now contains 372 assets, 10 original hand props and eight bodies; including the three existing modules, the library has **393 GLB files**.
+
+| Category | New pieces | Triangle range |
+|---|---:|---:|
+| Food | 57 | 132–1,838 |
+| Objects | 70 | 284–4,760 |
+| Products | 52 | 44–2,464 |
+| Studio | 21 | 624–3,360 |
+| Furniture | 39 | 644–5,756 |
+| Vehicles | 8 | 2,332–10,340 |
+| Outdoor | 42 | 360–4,468 |
+| Architecture | 4 | 960–5,184 |
+| Fantasy | 19 | 640–4,728 |
+| Creatures | 9 | 1,550–7,372 |
+
+### Files and finish
+
+New files are `web/models/props/<type>.glb`. The original 72 GLBs are byte-for-byte unchanged, verified against SHA-256 values recorded before work in `batch1-baseline.json`. Existing asset, module and hand-prop records gained only `themes` and `tags`; their remaining metadata is unchanged. No app files, git operations, system packages or external asset services were used.
+
+Each new piece has its own editable `blender/batch2-<type>.blend`. `blender/batch2-held.blend` contains the delivered adult mannequin holding the mug. The modelling sources are `batch2_food_products.py`, `batch2_home_studio.py` and `batch2_world.py`, using `batch2_common.py` and the `build_batch2.py` entry point. Representative models and the final preview/attachment passes were run through the connected Blender MCP session; bulk exports and re-import verification also used the same Blender 5.2.1 binary headlessly.
+
+The batch matches the first library: metre-scale named parts, softened manufactured edges, opaque matte `prop` and optional `accent`, geometry-only bands and details, and no textures or UVs. Hollow cups, bowls, sink openings, the toilet, kayak and wheelbarrow have actual interior geometry. Final corner normals are rebuilt after welding and triangulation, preventing stale custom normals from striping curved bands. Small objects peak at 2,472 / 2,500 triangles; medium pieces at 5,756 / 6,000; vehicles at 10,340 / 15,000; creatures at 7,372 / 12,000.
+
+### Placement and attachment
+
+Every new asset has a single identity root at its base centre, with actual mesh bounds centred on X/Z and grounded at Y=0. Coordinates remain +Y up and +Z forward. `size` is [width, height, depth]. Seat anchors and usable top surfaces account for the final centring translation. Hanging or mounted pieces (pendant, awning, curtains, wall cabinets and boards) are supplied as grounded standalone components; place them at the desired installation height. Creatures are unrigged standing/sitting blockouts. Cloth/backdrop panels and facade components are intentionally thin; windows, mirrors and glass are opaque accent clay for depth/normal passes.
+
+Unlike batch 1’s palm-origin hand GLBs, batch 2 holdables retain their **base-origin** set-piece geometry. Apply `holdable.grips[hand]` to a holder parented under the named hand joint. The supplied quaternion is [x,y,z,w]; preserve the left grip’s `scale: [-1,1,1]`. `holdable.gripPoint` is the contact point in the piece’s base frame, and `referenceSocket` is the adult reference socket. Both transformed contact points are independently verified against [-.075,-.018,0] for the right hand and [.075,-.018,0] for the left.
+
+**Integration detail for non-default hand sizes:** preserve the object’s physical dimensions and scale only the socket component of the holder translation:
+
+```js
+position = grip.position + (bodySocket - holdable.referenceSocket[hand]);
+// If the loader has a scalar k instead of bodySocket:
+position = grip.position + (k - 1) * holdable.referenceSocket[hand];
+```
+
+These are vector operations. The current `web/js/control/mannequin.js` scales the entire `grip.position` in `setHold`; that remains correct for batch 1 palm-origin props, but for batch 2 it also scales the base-to-grip compensation. Use the formula above for `assets[].holdable` when adapting the loader. The reference adult (k=1) already uses the recorded transform directly. App code was not changed, as requested. The current model loader already discovers manifest assets and their holdable grips.
+
+The hands remain batch 1’s rigid open mittens. Attachment previews show actual contact and intentional rigid intersections, not articulated fingers. Wrist orientation and a supporting second hand are pose/shot choices.
+
+### P2 coverage
+
+All optional pieces were made:
+- **Food and drink**: `birthday-cake`, `salad-bowl`, `spaghetti-plate`, `soup-bowl`, `egg-carton`, `watermelon`, `pineapple`, `grapes`, `vegetable-crate`, `wine-rack`, `beer-keg`, `sushi-tray`, `cheese-board`.
+- **Kitchen appliances and ware**: `stand-mixer`, `rice-cooker`, `spice-rack`, `dish-rack`.
+- **Products and advertising**: `nail-polish`, `makeup-palette`, `razor`, `toothbrush`, `toothpaste`, `deodorant`, `sports-bottle`, `protein-tub`, `coffee-bag`, `chocolate-bar`, `chips-bag`, `medicine-bottle`, `drone`, `action-camera`, `power-bank`, `keyboard`, `computer-mouse`, `ring-box`, `necklace-bust`.
+- **Studio and production**: `jib-crane`, `teleprompter`, `makeup-mirror`, `film-light`.
+- **Home and daily life**: `dining-set`, `sectional-sofa`, `bean-bag`, `wardrobe-open`, `mirror-round`, `shoe-rack`, `coat-stand`, `alarm-clock`, `candles`, `cushion`.
+- **Street and city**: `pickup-truck`, `taxi`, `tram`, `newspaper-stand`, `drinking-fountain`, `crosswalk-sign`, `bus-shelter-ad`, `electric-car-charger`.
+- **Retail and hospitality**: `luggage-trolley`, `coat-check`, `buffet-table`, `high-table`.
+- **Sports, music and leisure**: `bowling-pin`, `boxing-bag`, `bench-press`, `keyboard-stand`, `violin`, `saxophone`.
+- **Nature, beach, camping and garden**: `fallen-tree`, `mushroom-cluster`, `sandcastle`, `garden-shed`, `garden-hose`, `birdhouse`, `hammock`.
+- **Medical, school and office**: `lab-bench`, `microscope`, `server-rack`, `desk-phone`.
+- **Fantasy and genre**: `sci-fi-crate`, `control-console`, `cauldron`, `banner-pole`, `weapon-rack`.
+- **Creatures**: `cow`, `chicken`, `fish`, `deer`.
+
+Omitted P2 pieces: **none**.
+
+### Previews and verification
+
+`previews/batch2-<category>.png` provides ten category sheets covering all 321 pieces, in batch 1’s sheet typography, lighting and clay treatment. `batch2-held.png` contains 12 actual right-mitten attachment close-ups; `batch2-held-mannequin.png` shows a complete posed mannequin. Individual render tiles are retained. Sheets are composed from unaltered renders of the delivered GLBs, with labels and margins added outside the renders.
+
+Final evidence:
+
+- `previews/batch2-validation.json`: **393 files, zero errors, zero warnings**. Coverage includes all P1/P2 IDs, unique paths, themes/tags, both grips and contact transforms, dimensions, grounding, budgets, finite unit normals, no degenerate triangles, no unreferenced vertices, material names, existing skeleton/anchor contracts, and original-file/metadata preservation.
+- `previews/batch2-blender-reimport.json`: **393 of 393 files pass** Blender re-import, actual triangle counts, dimensions and the stricter triangle-area check. Batch 2 dimensions agree within 0.2 mm; legacy files retain batch 1’s declared-envelope tolerance.
+- `previews/preview-composition.json`: sheet sources and hashes.
+- `previews/batch2-review.json`: final coverage, image freshness and visual review record.
+
+All category sheets and the held sheet were checked by eye. Iteration corrected handle contacts, hollow basins, foliage silhouettes, cloth clearance, chair orientation, board supports, creature contours and the final normal shading.
+
+### Rebuild
+
+In Blender Python, with `models-src` on `sys.path`:
+
+```python
+import build_batch2
+build_batch2.run(group="food_products")  # or home_studio / world
+build_batch2.write_spec()
+```
+
+Each group writes only its own new GLBs, sources and measured metadata. For a targeted rebuild, pass `ids=["mug"]` with the owning group. Then, from the repository root:
+
+```sh
+python3 models-src/assemble_batch2.py
+python3 models-src/verify_library.py --report models-src/previews/batch2-validation.json
+```
+
+Use `render_batch2.tiles()` in Blender to regenerate missing/stale GLB tiles, `render_batch2.held()` and `full_hold_source()` for hand previews, and `render_batch2.reimport()` for the import pass. Finish with `python3 models-src/compose_batch2.py`. The original `assemble_manifest.py` also preserves the batch 2 additions through the shared assembly routine. The machine-readable checklist is `batch2-requirements.json`; authored budgets and priorities are recorded in `batch2-spec.json`.

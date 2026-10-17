@@ -1,0 +1,1928 @@
+[
+  {
+    "type": "water-bottle",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "wine-bottle",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "beer-bottle",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "champagne-bottle",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "soda-can",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "takeaway-coffee",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "mug",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "wine-glass",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "tumbler",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "cocktail-glass",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "teapot",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "jug",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "plate",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "bowl",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "cutlery-set",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "cutting-board",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "pizza",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "pizza-slice",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "pizza-box",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "burger",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "sandwich",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "hot-dog",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "fries",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "apple",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "banana",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "orange",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "fruit-bowl",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "bread-loaf",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "baguette",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "croissant",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "cake",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "cupcake",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "donut",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "ice-cream-cone",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "popcorn-bucket",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "cereal-box",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "milk-carton",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "juice-box",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "jar",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "ketchup-bottle",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "salt-and-pepper",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "takeaway-bag",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "takeout-box",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "food-tray",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "birthday-cake",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "salad-bowl",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "spaghetti-plate",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "soup-bowl",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "egg-carton",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "watermelon",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "pineapple",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "grapes",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "vegetable-crate",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "wine-rack",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "beer-keg",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "sushi-tray",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "cheese-board",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Food and drink (Food)"
+  },
+  {
+    "type": "coffee-machine",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Kitchen appliances and ware (Objects)"
+  },
+  {
+    "type": "kettle",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Kitchen appliances and ware (Objects)"
+  },
+  {
+    "type": "toaster",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Kitchen appliances and ware (Objects)"
+  },
+  {
+    "type": "microwave",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Kitchen appliances and ware (Objects)"
+  },
+  {
+    "type": "kitchen-blender",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Kitchen appliances and ware (Objects)"
+  },
+  {
+    "type": "saucepan",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Kitchen appliances and ware (Objects)"
+  },
+  {
+    "type": "frying-pan",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Kitchen appliances and ware (Objects)"
+  },
+  {
+    "type": "stand-mixer",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Kitchen appliances and ware (Objects)"
+  },
+  {
+    "type": "rice-cooker",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Kitchen appliances and ware (Objects)"
+  },
+  {
+    "type": "spice-rack",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Kitchen appliances and ware (Objects)"
+  },
+  {
+    "type": "dish-rack",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Kitchen appliances and ware (Objects)"
+  },
+  {
+    "type": "perfume-bottle",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "cosmetic-jar",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "lipstick",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "skincare-tube",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "pump-bottle",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "shampoo-bottle",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "spray-can",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "sneaker",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "high-heel",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "handbag",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "watch",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "watch-stand",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "sunglasses",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "headphones",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "earbuds-case",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "smartphone",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "tablet",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "laptop",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "smartwatch",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "game-controller",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "vr-headset",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "smart-speaker",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "tv-remote",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "credit-card",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "gift-box",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "shopping-bag",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "product-box",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "product-podium-round",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "product-podium-square",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "product-podium-steps",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "display-riser",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "display-turntable",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "standing-mirror",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "nail-polish",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "makeup-palette",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "razor",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "toothbrush",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "toothpaste",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "deodorant",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "sports-bottle",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "protein-tub",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "coffee-bag",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "chocolate-bar",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "chips-bag",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "medicine-bottle",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "drone",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "action-camera",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "power-bank",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "keyboard",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "computer-mouse",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "ring-box",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "necklace-bust",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Products and advertising (Products)"
+  },
+  {
+    "type": "softbox",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "led-panel",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "c-stand",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "tripod-camera",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "cinema-camera",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "camera-dolly",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "boom-mic",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "directors-chair",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "clapperboard",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "backdrop-sweep",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "reflector",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "ring-light",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "field-monitor",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "green-screen",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "apple-boxes",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "sandbag",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "flag-stand",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "jib-crane",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "teleprompter",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "makeup-mirror",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "film-light",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Studio and production (Studio)"
+  },
+  {
+    "type": "coffee-table",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "side-table",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "bookcase",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "tv-stand",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "bunk-bed",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "crib",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "book-stack",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "plant-small",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "plant-large",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "vase-flowers",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "picture-frame",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "wall-clock",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "toy-blocks",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "teddy-bear",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "ceiling-lamp",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "desk-lamp",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "computer-desk-setup",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "printer",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "filing-cabinet",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "whiteboard",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "washing-machine",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "laundry-basket",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "ironing-board",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "vacuum-cleaner",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "toilet",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "bathroom-sink",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "shower-cabin",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "towel-rack",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "kitchen-run",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "wall-cabinets",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "dishwasher",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "radiator",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "fireplace",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "curtains",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "ladder",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "stroller",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "dining-set",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "sectional-sofa",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "bean-bag",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "wardrobe-open",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "mirror-round",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "shoe-rack",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "coat-stand",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "alarm-clock",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "candles",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "cushion",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Home and daily life (Furniture, Objects)"
+  },
+  {
+    "type": "bicycle",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "motorcycle",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "e-scooter",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "bus",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "van",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "traffic-light",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "stop-sign",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "street-sign",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "fire-hydrant",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "parking-meter",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "bollard",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "road-barrier",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "dumpster",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "shopping-cart",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "bike-rack",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "vending-machine",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "atm",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "kiosk",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "market-stall",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "scaffolding",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "billboard",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "shop-front",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "awning",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "pickup-truck",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "taxi",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "tram",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "newspaper-stand",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "drinking-fountain",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "crosswalk-sign",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "bus-shelter-ad",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "electric-car-charger",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Street and city (Outdoor, Architecture, Vehicles)"
+  },
+  {
+    "type": "shop-counter",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "cash-register",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "store-shelving",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "clothing-rack",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "shopping-basket",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "bar-counter",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "restaurant-booth",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "round-table",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "menu-board",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "reception-desk",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "suitcase",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "luggage-trolley",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "coat-check",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "buffet-table",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "high-table",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Retail and hospitality (Furniture, Objects)"
+  },
+  {
+    "type": "football",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "basketball",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "tennis-racket",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "skateboard",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "surfboard",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "yoga-mat",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "dumbbell",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "kettlebell",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "treadmill",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "drum-kit",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "mic-stand",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "microphone",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "dj-booth",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "pa-speaker",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "golf-club",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "game-console",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "balloons",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "trophy",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "bowling-pin",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "boxing-bag",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "bench-press",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "keyboard-stand",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "violin",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "saxophone",
+    "priority": "P2",
+    "holdable": true,
+    "group": "Sports, music and leisure (Objects)"
+  },
+  {
+    "type": "log",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "tree-stump",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "flower-bed",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "cactus",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "beach-umbrella",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "sun-lounger",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "beach-ball",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "picnic-table",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "picnic-basket",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "cooler-box",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "lantern",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "backpack",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "fishing-rod",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "kayak",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "wheelbarrow",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "watering-can",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "fallen-tree",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "mushroom-cluster",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "sandcastle",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "garden-shed",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "garden-hose",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "birdhouse",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "hammock",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Nature, beach, camping and garden (Outdoor)"
+  },
+  {
+    "type": "hospital-bed",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "wheelchair",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "crutches",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "iv-stand",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "school-desk",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "blackboard",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "conference-table",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "water-cooler",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "projector-screen",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "lab-bench",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "microscope",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "server-rack",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "desk-phone",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Medical, school and office (Furniture, Objects)"
+  },
+  {
+    "type": "treasure-chest",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "shield",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "throne",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "crystal-cluster",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "magic-staff",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "torch",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "potion-bottle",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "spellbook",
+    "priority": "P1",
+    "holdable": true,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "signpost",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "stone-well",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "wooden-cart",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "anvil",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "tombstone",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "gas-lamp",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "sci-fi-crate",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "control-console",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "cauldron",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "banner-pole",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "weapon-rack",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Fantasy and genre (Fantasy)"
+  },
+  {
+    "type": "dog",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Creatures (Creatures; standing blockouts, not rigged)"
+  },
+  {
+    "type": "dog-sitting",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Creatures (Creatures; standing blockouts, not rigged)"
+  },
+  {
+    "type": "cat",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Creatures (Creatures; standing blockouts, not rigged)"
+  },
+  {
+    "type": "horse",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Creatures (Creatures; standing blockouts, not rigged)"
+  },
+  {
+    "type": "pigeon",
+    "priority": "P1",
+    "holdable": false,
+    "group": "Creatures (Creatures; standing blockouts, not rigged)"
+  },
+  {
+    "type": "cow",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Creatures (Creatures; standing blockouts, not rigged)"
+  },
+  {
+    "type": "chicken",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Creatures (Creatures; standing blockouts, not rigged)"
+  },
+  {
+    "type": "fish",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Creatures (Creatures; standing blockouts, not rigged)"
+  },
+  {
+    "type": "deer",
+    "priority": "P2",
+    "holdable": false,
+    "group": "Creatures (Creatures; standing blockouts, not rigged)"
+  }
+]

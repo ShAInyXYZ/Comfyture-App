@@ -1,0 +1,2962 @@
+{
+  "water-bottle": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.105,
+      0
+    ]
+  },
+  "wine-bottle": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.15,
+      0
+    ]
+  },
+  "beer-bottle": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.11,
+      0
+    ]
+  },
+  "champagne-bottle": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.16,
+      0
+    ]
+  },
+  "soda-can": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.059,
+      0
+    ]
+  },
+  "takeaway-coffee": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.065,
+      0
+    ]
+  },
+  "mug": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0.065,
+      0.051,
+      0
+    ]
+  },
+  "wine-glass": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.06,
+      0
+    ]
+  },
+  "tumbler": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.05,
+      0
+    ]
+  },
+  "cocktail-glass": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.06,
+      0
+    ]
+  },
+  "teapot": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "jug": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "plate": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "bowl": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "cutlery-set": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "cutting-board": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "pizza": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "pizza-slice": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.015,
+      -0.055
+    ]
+  },
+  "pizza-box": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "burger": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.015,
+      0
+    ]
+  },
+  "sandwich": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.05,
+      0
+    ]
+  },
+  "hot-dog": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.03,
+      0
+    ]
+  },
+  "fries": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.055,
+      0
+    ]
+  },
+  "apple": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.037,
+      0
+    ]
+  },
+  "banana": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      -0.02,
+      0.03,
+      0
+    ]
+  },
+  "orange": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.037,
+      0
+    ]
+  },
+  "fruit-bowl": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "bread-loaf": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "baguette": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.035,
+      0
+    ]
+  },
+  "croissant": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.03,
+      0.025
+    ]
+  },
+  "cake": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "cupcake": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.025,
+      0
+    ]
+  },
+  "donut": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.025,
+      -0.035
+    ]
+  },
+  "ice-cream-cone": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.07,
+      0
+    ]
+  },
+  "popcorn-bucket": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.07,
+      0
+    ]
+  },
+  "cereal-box": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.15,
+      0
+    ]
+  },
+  "milk-carton": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.1,
+      0
+    ]
+  },
+  "juice-box": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.06,
+      0
+    ]
+  },
+  "jar": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.065,
+      0
+    ]
+  },
+  "ketchup-bottle": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.12,
+      0
+    ]
+  },
+  "salt-and-pepper": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "takeaway-bag": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.277,
+      0.043
+    ]
+  },
+  "takeout-box": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.17,
+      0
+    ]
+  },
+  "food-tray": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0.18,
+      0.015,
+      0
+    ]
+  },
+  "coffee-machine": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "kettle": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "toaster": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "microwave": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "kitchen-blender": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "saucepan": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "frying-pan": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0.27,
+      0.03,
+      0
+    ]
+  },
+  "perfume-bottle": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.055,
+      0
+    ]
+  },
+  "cosmetic-jar": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.03,
+      0
+    ]
+  },
+  "lipstick": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.03,
+      0
+    ]
+  },
+  "skincare-tube": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.07,
+      0
+    ]
+  },
+  "pump-bottle": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.09,
+      0
+    ]
+  },
+  "shampoo-bottle": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.11,
+      0
+    ]
+  },
+  "spray-can": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.09,
+      0
+    ]
+  },
+  "sneaker": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "high-heel": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "handbag": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.33,
+      0.047
+    ]
+  },
+  "watch": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.01,
+      -0.05
+    ]
+  },
+  "watch-stand": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "sunglasses": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      -0.06,
+      0.035,
+      -0.04
+    ]
+  },
+  "headphones": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.2,
+      0
+    ]
+  },
+  "earbuds-case": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.018,
+      0
+    ]
+  },
+  "smartphone": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.005,
+      0
+    ]
+  },
+  "tablet": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.005,
+      0.065
+    ]
+  },
+  "laptop": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "smartwatch": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "game-controller": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      -0.055,
+      0.03,
+      0.035
+    ]
+  },
+  "vr-headset": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.06,
+      0.02
+    ]
+  },
+  "smart-speaker": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "tv-remote": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.01,
+      0.03
+    ]
+  },
+  "credit-card": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.001,
+      0
+    ]
+  },
+  "gift-box": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.08,
+      0
+    ]
+  },
+  "shopping-bag": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.384,
+      0.053
+    ]
+  },
+  "product-box": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "product-podium-round": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "product-podium-square": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "product-podium-steps": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 6000,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "display-riser": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "display-turntable": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "standing-mirror": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 6000,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "birthday-cake": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "salad-bowl": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "spaghetti-plate": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "soup-bowl": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "egg-carton": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "watermelon": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "pineapple": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "grapes": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "vegetable-crate": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "wine-rack": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "beer-keg": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "sushi-tray": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "cheese-board": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "stand-mixer": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "rice-cooker": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "spice-rack": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "dish-rack": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "nail-polish": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.025,
+      0
+    ]
+  },
+  "makeup-palette": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.01,
+      0
+    ]
+  },
+  "razor": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.01,
+      0.02
+    ]
+  },
+  "toothbrush": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.008,
+      0.015
+    ]
+  },
+  "toothpaste": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.075,
+      0
+    ]
+  },
+  "deodorant": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.055,
+      0
+    ]
+  },
+  "sports-bottle": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.115,
+      0
+    ]
+  },
+  "protein-tub": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "coffee-bag": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.105,
+      0
+    ]
+  },
+  "chocolate-bar": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.008,
+      0.03
+    ]
+  },
+  "chips-bag": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.115,
+      0
+    ]
+  },
+  "medicine-bottle": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.05,
+      0
+    ]
+  },
+  "drone": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "action-camera": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.026,
+      0
+    ]
+  },
+  "power-bank": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.01,
+      0
+    ]
+  },
+  "keyboard": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "computer-mouse": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "ring-box": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": [
+      0,
+      0.02,
+      0
+    ]
+  },
+  "necklace-bust": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "food_products",
+    "budget": 2500,
+    "source": "batch2_food_products.py",
+    "authoredGrip": null
+  },
+  "softbox": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "led-panel": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "c-stand": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "tripod-camera": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "cinema-camera": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "camera-dolly": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "boom-mic": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "directors-chair": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "clapperboard": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": [
+      -0.14,
+      0.12,
+      0.018
+    ]
+  },
+  "backdrop-sweep": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "reflector": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "ring-light": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "field-monitor": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "green-screen": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "apple-boxes": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "sandbag": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "flag-stand": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "coffee-table": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "side-table": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "bookcase": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "tv-stand": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "bunk-bed": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "crib": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "book-stack": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": [
+      0,
+      0.07,
+      0
+    ]
+  },
+  "plant-small": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": [
+      0,
+      0.09,
+      0
+    ]
+  },
+  "plant-large": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "vase-flowers": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "picture-frame": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "wall-clock": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "toy-blocks": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "teddy-bear": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": [
+      -0.13,
+      0.3,
+      0.015
+    ]
+  },
+  "ceiling-lamp": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "desk-lamp": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "computer-desk-setup": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "printer": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "filing-cabinet": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "whiteboard": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "washing-machine": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "laundry-basket": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": [
+      0.29,
+      0.45,
+      0
+    ]
+  },
+  "ironing-board": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "vacuum-cleaner": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "toilet": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "bathroom-sink": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "shower-cabin": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "towel-rack": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "kitchen-run": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "wall-cabinets": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "dishwasher": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "radiator": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "fireplace": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "curtains": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "ladder": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "stroller": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "shop-counter": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "cash-register": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "store-shelving": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "clothing-rack": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "shopping-basket": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": [
+      0,
+      0.51,
+      0
+    ]
+  },
+  "bar-counter": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "restaurant-booth": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "round-table": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "menu-board": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "reception-desk": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "suitcase": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": [
+      0,
+      0.94,
+      0
+    ]
+  },
+  "hospital-bed": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "wheelchair": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "crutches": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": [
+      -0.16,
+      0.85,
+      0
+    ]
+  },
+  "iv-stand": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "school-desk": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "blackboard": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "conference-table": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "water-cooler": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "projector-screen": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "jib-crane": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "teleprompter": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "makeup-mirror": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "film-light": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "dining-set": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "sectional-sofa": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "bean-bag": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "wardrobe-open": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "mirror-round": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "shoe-rack": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "coat-stand": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "alarm-clock": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": [
+      0,
+      0.11,
+      0
+    ]
+  },
+  "candles": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "cushion": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": [
+      0,
+      0.1,
+      0
+    ]
+  },
+  "luggage-trolley": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "coat-check": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "buffet-table": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "high-table": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "lab-bench": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "microscope": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "server-rack": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 6000,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "desk-phone": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "home_studio",
+    "budget": 2500,
+    "source": "batch2_home_studio.py",
+    "authoredGrip": null
+  },
+  "bicycle": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 15000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "motorcycle": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 15000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "e-scooter": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 15000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "bus": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 15000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "van": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 15000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "traffic-light": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "stop-sign": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "street-sign": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "fire-hydrant": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "parking-meter": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "bollard": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "road-barrier": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "dumpster": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "shopping-cart": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "bike-rack": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "vending-machine": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "atm": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "kiosk": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "market-stall": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "scaffolding": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "billboard": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "shop-front": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "awning": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "football": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.11,
+      0
+    ]
+  },
+  "basketball": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.12,
+      0
+    ]
+  },
+  "tennis-racket": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.11,
+      0
+    ]
+  },
+  "skateboard": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "surfboard": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "yoga-mat": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "dumbbell": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.105,
+      0
+    ]
+  },
+  "kettlebell": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.32,
+      0
+    ]
+  },
+  "treadmill": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "drum-kit": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "mic-stand": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "microphone": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.1,
+      0
+    ]
+  },
+  "dj-booth": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "pa-speaker": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "golf-club": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.9,
+      0
+    ]
+  },
+  "game-console": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "balloons": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "trophy": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.16,
+      0
+    ]
+  },
+  "log": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "tree-stump": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "flower-bed": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "cactus": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "beach-umbrella": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "sun-lounger": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "beach-ball": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.15,
+      0
+    ]
+  },
+  "picnic-table": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "picnic-basket": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.47,
+      0
+    ]
+  },
+  "cooler-box": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "lantern": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.41,
+      0
+    ]
+  },
+  "backpack": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.47,
+      0
+    ]
+  },
+  "fishing-rod": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.28,
+      0
+    ]
+  },
+  "kayak": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "wheelbarrow": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "watering-can": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.43,
+      0
+    ]
+  },
+  "treasure-chest": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "shield": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.32,
+      -0.09
+    ]
+  },
+  "throne": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "crystal-cluster": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "magic-staff": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.85,
+      0
+    ]
+  },
+  "torch": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.3,
+      0
+    ]
+  },
+  "potion-bottle": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.13,
+      0
+    ]
+  },
+  "spellbook": {
+    "priority": "P1",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.04,
+      0
+    ]
+  },
+  "signpost": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "stone-well": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "wooden-cart": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "anvil": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "tombstone": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "gas-lamp": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "dog": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 12000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "dog-sitting": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 12000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "cat": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 12000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "horse": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 12000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "pigeon": {
+    "priority": "P1",
+    "holdable": false,
+    "group": "world",
+    "budget": 12000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "pickup-truck": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 15000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "taxi": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 15000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "tram": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 15000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "newspaper-stand": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "drinking-fountain": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "crosswalk-sign": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "bus-shelter-ad": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "electric-car-charger": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "bowling-pin": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "boxing-bag": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "bench-press": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "keyboard-stand": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "violin": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      0,
+      0.4,
+      0
+    ]
+  },
+  "saxophone": {
+    "priority": "P2",
+    "holdable": true,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": [
+      -0.025,
+      0.28,
+      0
+    ]
+  },
+  "fallen-tree": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "mushroom-cluster": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 2500,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "sandcastle": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "garden-shed": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "garden-hose": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "birdhouse": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "hammock": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "sci-fi-crate": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "control-console": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "cauldron": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "banner-pole": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "weapon-rack": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 6000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "cow": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 12000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "chicken": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 12000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "fish": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 12000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  },
+  "deer": {
+    "priority": "P2",
+    "holdable": false,
+    "group": "world",
+    "budget": 12000,
+    "source": "batch2_world.py",
+    "authoredGrip": null
+  }
+}

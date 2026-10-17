@@ -17,6 +17,8 @@ from pathlib import Path
 import struct
 import sys
 import traceback
+import hashlib
+import re
 
 import numpy as np
 
@@ -242,7 +244,7 @@ def prop_checks(report, entry, original):
     errors = report["errors"]
     if not set(report["materials"]) <= {"prop", "accent"} or "prop" not in report["materials"]:
         errors.append(f"Asset materials must be prop and optional accent, found {report['materials']}")
-    if entry.get("category") not in {"Furniture", "Architecture", "Outdoor", "Basic"}:
+    if entry.get("category") not in {"Furniture", "Architecture", "Outdoor", "Basic", "Food", "Products", "Studio", "Objects", "Vehicles", "Fantasy", "Creatures"}:
         errors.append("Invalid category")
     size = entry.get("size")
     if not finite_vector(size, 3) or any(v <= 0 for v in size):
@@ -308,6 +310,74 @@ def module_entries(modules):
         yield {"file": module} if isinstance(module, str) else module
 
 
+def batch2_checks(manifest, model_root, errors):
+    """Independent checklist coverage, immutable batch 1, search and grip contract."""
+    source = ROOT/'models-src'
+    reqpath = source/'batch2-requirements.json'
+    if not reqpath.exists():
+        return {}
+    from assemble_batch2 import THEMES
+    requirements = json.loads(reqpath.read_text())
+    by_type = {r['type']: r for r in manifest['assets']}
+    required = {r['type'] for r in requirements if r['priority']=='P1'}
+    missing = required-set(by_type)
+    if missing:
+        errors.append(f'Batch 2 missing P1 types: {sorted(missing)}')
+    specs_path = source/'batch2-spec.json'
+    specs = json.loads(specs_path.read_text()) if specs_path.exists() else {}
+    if not specs:
+        errors.append('Missing batch2-spec.json authored budgets and requirements')
+    baseline = json.loads((source/'batch1-baseline.json').read_text())
+    def strip_search(value):
+        if isinstance(value, dict):return {k:strip_search(v) for k,v in value.items() if k not in {'themes','tags'}}
+        if isinstance(value, list):return [strip_search(v) for v in value]
+        return value
+    for group, key in [('assets','type'),('handProps','type'),('bodies','id')]:
+        current={r[key]:r for r in manifest[group]}
+        for before in baseline['manifest'][group]:
+            after=current.get(before[key])
+            if strip_search(after)!=strip_search(before):errors.append(f'Batch 1 non-search metadata changed: {group}/{before[key]}')
+    for rel,digest in baseline['sha256'].items():
+        path=model_root/rel
+        if not path.exists() or hashlib.sha256(path.read_bytes()).hexdigest()!=digest:
+            errors.append('Batch 1 GLB changed: '+rel)
+    for entry in manifest['assets']+manifest['handProps']:
+        themes=entry.get('themes',[]);tags=entry.get('tags',[])
+        if not isinstance(themes,list) or not 1<=len(themes)<=4 or len(set(themes))!=len(themes) or not set(themes)<=THEMES:
+            errors.append(f'{entry["type"]}: invalid themes')
+        if not isinstance(tags,list) or not tags or not all(isinstance(t,str) and t.strip() for t in tags):
+            errors.append(f'{entry["type"]}: missing/invalid tags')
+    for req in requirements:
+        typ=req['type'];entry=by_type.get(typ)
+        if entry is None:continue
+        if not re.fullmatch(r'[a-z]+(?:-[a-z]+)*',typ):errors.append(f'Invalid batch 2 type: {typ}')
+        spec=specs.get(typ,{})
+        budget=spec.get('budget')
+        ceiling=15000 if entry['category']=='Vehicles' else 12000 if entry['category']=='Creatures' else 6000
+        if budget not in {2500,6000,12000,15000} or budget>ceiling:errors.append(f'{typ}: missing or invalid authored budget')
+        # Objects below 60 cm need the small budget, including bottles and packaged goods.
+        if max(entry['size'])<=.6 and entry['category']!='Creatures' and budget!=2500:
+            errors.append(f'{typ}: small object must use 2500 triangle budget')
+        h=entry.get('holdable')
+        if req['holdable'] and not h:errors.append(f'{typ}: required holdable metadata missing')
+        if h:
+            if h.get('gripCoordinateSpace')!='hand-joint-local':errors.append(f'{typ}: holdable must use hand-joint-local')
+            point=h.get('gripPoint')
+            if not finite_vector(point,3):errors.append(f'{typ}: invalid gripPoint');continue
+            for side,socket in [('right',[-.075,-.018,0]),('left',[.075,-.018,0])]:
+                g=h.get('grips',{}).get(side,{})
+                if g.get('joint')!=side.capitalize()+'Hand' or not finite_vector(g.get('position'),3) or not finite_vector(g.get('quaternion'),4):
+                    errors.append(f'{typ}: invalid {side} grip');continue
+                if abs(np.linalg.norm(g['quaternion'])-1)>1e-5:errors.append(f'{typ}: non-unit grip quaternion')
+                scale=g.get('scale',[1,1,1])
+                if not finite_vector(scale,3) or not close(np.abs(scale),[1,1,1]):errors.append(f'{typ}: invalid grip scale');continue
+                M=matrix(dict(translation=g['position'],rotation=g['quaternion'],scale=scale))
+                contact=(M@np.array([*point,1]))[:3]
+                if not close(contact,socket,atol=2e-5):errors.append(f'{typ}: {side} contact misses reference socket')
+            if not isinstance(h.get('poses'),list) or not h['poses'] or not all(isinstance(p,str) and p for p in h['poses']):errors.append(f'{typ}: missing holdable poses')
+    return specs
+
+
 def verify(model_root, report_path):
     manifest = json.loads((model_root/"manifest.json").read_text())
     skeleton = json.loads((SPEC/"skeleton.json").read_text())
@@ -318,6 +388,7 @@ def verify(model_root, report_path):
     if "version" not in manifest:
         errors.append("Manifest version missing")
     bodies, props, hands = manifest.get("bodies", []), manifest.get("assets", []), manifest.get("handProps", [])
+    batch2_specs = batch2_checks(manifest, model_root, errors)
     bodyids = [e.get("id") for e in bodies]
     propids = [e.get("type") for e in props]
     handids = [e.get("type") for e in hands]
@@ -336,7 +407,7 @@ def verify(model_root, report_path):
             errors.append(f"Duplicate {category} IDs: {duplicates}")
     required_modules = {"stairs.step.glb", "fence.post.glb", "fence.rail.glb"}
     modules_seen = set()
-    all_entries = [("body", e, 25000) for e in bodies] + [("asset", e, 15000 if e.get("type") == "car" else 6000) for e in props] + [("hand", e, None) for e in hands]
+    all_entries = [("body", e, 25000) for e in bodies] + [("asset", e, batch2_specs.get(e.get('type'),{}).get('budget',15000 if e.get("type") == "car" else 6000)) for e in props] + [("hand", e, None) for e in hands]
     for asset in props:
         for module in module_entries(asset.get("modules")):
             modules_seen.add(Path(module.get("file", "")).name)
@@ -372,6 +443,15 @@ def verify(model_root, report_path):
                 body_checks(glb, report, entry, skeleton)
             elif kind == "asset":
                 prop_checks(report, entry, originals.get(entry.get("type")))
+                if entry['type'] in batch2_specs:
+                    roots=[i for i in range(len(glb.nodes)) if i not in glb.parents]
+                    if len(roots)!=1 or not close(glb.world(roots[0]),np.eye(4),atol=2e-5):
+                        report['errors'].append('Batch 2 requires a single identity base-origin root')
+                    if glb.doc.get('cameras') or glb.doc.get('textures') or glb.doc.get('images'):
+                        report['errors'].append('Batch 2 must contain geometry/materials only')
+                    for mesh in glb.doc['meshes']:
+                        if any(any(k.startswith('TEXCOORD') for k in p['attributes']) for p in mesh['primitives']):
+                            report['errors'].append('Batch 2 includes unwanted UVs')
             elif kind == "hand":
                 hand_checks(report, entry)
             reports.append(report)
@@ -385,6 +465,12 @@ def verify(model_root, report_path):
               "counts": {"bodies": len(bodies), "existingAssets": len(set(propids)&set(originals)), "newAssets": len(new_assets), "handProps": len(hands), "modules": len(modules_seen), "glbFiles": len(actual_files)},
               "errors": errors, "files": reports}
     output["errorCount"] = len(errors)+sum(len(r["errors"]) for r in reports)
+    if batch2_specs:
+        shipped=[a for a in props if a['type'] in batch2_specs]
+        output['counts']['batch2']={'assets':len(shipped),
+            'P1':sum(batch2_specs[a['type']]['priority']=='P1' for a in shipped),
+            'P2':sum(batch2_specs[a['type']]['priority']=='P2' for a in shipped),
+            'holdables':sum(bool(a.get('holdable')) for a in shipped)}
     output["warningCount"] = sum(len(r["warnings"]) for r in reports)
     output["passed"] = output["errorCount"] == 0
     report_path.parent.mkdir(parents=True, exist_ok=True)
