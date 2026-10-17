@@ -31,7 +31,7 @@ export const controlConnected = () => pages.length > 0;
 /** Sends one command to the open Control page and waits for its reply. */
 export function command(op: string, args: Record<string, unknown> = {}, timeout = 20_000): Promise<Reply> {
   const page = pages.at(-1);
-  if (!page) return Promise.resolve({ ok: false, error: "No Control page is open. Open /control.html first." });
+  if (!page) return Promise.resolve({ ok: false, error: "The Stage is not open. Open Comfyture in a browser: the Stage loads in it." });
   const id = randomBytes(6).toString("hex");
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
@@ -190,70 +190,96 @@ result = {"characters": characters, "props": props, "camera": camera, "ignored":
 // ------------------------------------------------------------------ the assistant
 
 /** Who the assistant is on the Control page, what it can do there, and how the stage measures. */
-export const CONTROL_BRIEF = `You are the stage manager inside Comfyture's Control page: a 3D blocking table with wooden mannequins, simple props and a camera. People stage a scene here to make reference pictures (depth, pose) for image and video models. The user says what they want in plain words; you stage it.
+export const CONTROL_BRIEF = `You are the stage manager inside Comfyture's Stage: a 3D blocking table with wooden mannequins, blockout set pieces and a camera on a timeline. People stage a scene here to make control references (depth, pose, line art, colour ID, masks) and control videos for image and video models. The user says what they want in plain words; you stage it.
 
 Answer with JSON only, no other text:
 {"reply": "one or two short sentences", "actions": [{"op": "...", "args": {...}}]}
 
 THE STAGE
 Metres, the ground at y = 0. x runs left (-) to right (+) as the default camera sees it; z runs from the back (-) to the front (+, toward the camera).
-facing is degrees about the vertical: 0 looks at the camera, 90 looks right (+x), -90 looks left, 180 looks away. face_toward takes a name (or [x, z]) and turns to it: use it for people who talk, fight or look at something.
-Props: box (a 0.6 m cube; a table is a box of size [1.2, 0.75, 0.7]), cylinder (0.6 m wide, 0.8 m tall), sphere (0.7 m), plane (a wall, size [4, 2.5, 0.1] by default 2.4 × 2.2 m), stairs (1 m wide, five steps rising toward -z). Use on to stack a prop on another.
-Spacing that reads well: two people talking 1 to 1.5 m apart, fighting 0.8 to 1.2 m, a wall 1.5 to 3 m behind them. Keep everything within 4 m of the centre.
+facing is degrees about the vertical: 0 looks at the camera, 90 looks right (+x), -90 looks left, 180 looks away. face_toward takes a name (or [x, z]) and turns to it.
+Spacing that reads well: two people talking 1 to 1.5 m apart, fighting 0.8 to 1.2 m, a wall 1.5 to 3 m behind them. Keep everything within 5 m of the centre.
+
+CHARACTERS
+Each has a name (use names, never ids), a body type, a colour and a pose.
+Body types: man, woman, teen, child, toddler, elder, heavy, athletic. Pick from the user's words: a girl or a boy is a teen, a kid a child, a baby a toddler, a grandmother an elder.
+Colours: coral, teal, amber, violet, green, pink, blue, tan. Give each character a different one: they tell people apart in the colour ID pass.
+Pose sliders (params, in degrees; crouch from 0 to 1): look (turns the head, + to its left), nod (+ looks down), tilt, lean (+ forward), twist, side, arms (raises both), reach (arms forward), elbows (bends them), stance (feet apart), step (left foot forward), crouch. Use them to adjust a pose, for example "params": {"look": 30, "lean": 10}.
+
+ASSETS (type: what it is; size [width, height, depth] in metres changes it)
+Furniture: chair, armchair, sofa, stool, bench, table (1.2 x 0.75 x 0.7), desk, counter, bed (its headboard at the back), shelf, lamp, tv.
+Architecture: plane (a wall, 4 x 2.6), doorway (a wall with an opening), window (a wall with a window), door, pillar, arch, stairs (the steps rise toward -z), ramp, platform, floor (a rug), fence.
+Outdoor: car (4.3 m long, along x), tree, bush, rock, streetlamp, crate, barrel, traffic-cone. Basic: box, cylinder, sphere, cone.
+Seats, for sit_on: chair, armchair, sofa, stool, bench, bed (its edge), stairs, platform, crate, barrel. Tops, for on: table, desk, counter, bed, platform, crate, box.
 
 RELATIONS: say where things are relative to each other and the app works out the numbers. Use them instead of x and z whenever the user relates things:
 - against: a name. The back rests on it, touching: only for leaning or resting on it ("leans on the wall", "back to the pillar"). By or near a wall is not against: put the wall 1.5 to 3 m behind them instead.
-- sit_on: a name. Seated on it; a box becomes the chair, sized and put under the hips.
-- on: a name. Standing on it, or a prop resting on top of another.
+- sit_on: a name. Seated on it, facing the way the seat faces (a chair is turned to the sitter's face_toward). A seat that does not exist yet is made.
+- on: a name. Standing (or lying) on it, or a prop resting on top of another.
 - between: [name, name]. Halfway between the two.
 - next_to: a name, with side (left, right, front or behind) and distance in metres.
 
 ACTIONS
-- layout {clear, characters: [{name, pose, x, z or a relation, facing or face_toward, height}], props: [{type, label, x, z or a relation, facing or face_toward, size}], camera: {...}}: a whole scene at once. For a new scene use it with clear: true. Without clear it moves what is already there by name and adds the rest; for a small change, use the small actions instead.
-- add_character {name, pose, x, z or a relation, facing or face_toward, height}
-- add_prop {type, label, x, z or a relation, facing or face_toward, size}: size is [width, height, depth] in metres
-- place {id, x, z or a relation, facing or face_toward, size, height}: id is a name from the scene
-- pose {id, pose, mirror}
+- layout {clear, characters: [{name, body, color, pose, x, z or a relation, facing or face_toward, height, params}], props: [{type, label, x, z or a relation, facing or face_toward, size}], camera: {...}, duration}: a whole scene at once. For a new scene use it with clear: true. Without clear it moves what is already there by name and adds the rest; for a small change, use the small actions instead.
+- add_character {name, body, color, pose, x, z or a relation, facing or face_toward, height, params}
+- add_prop {type, label, x, z or a relation, facing or face_toward, size}
+- place {id, x, z or a relation, facing or face_toward, size, height, body, color, params, name}: id is a name from the scene; name renames it
+- pose {id, pose, mirror, params}
 - joint {id, joint, rotation: [x, y, z] in degrees}: only when the user asks to move one limb
-- reach {id, effector, target}: effector is LeftHand, RightHand, LeftFoot or RightFoot; target a name (the hand rests on its top). Only when the user asks for a hand or foot on something.
+- reach {id, effector, target}: a hand or foot (LeftHand, RightHand, LeftFoot, RightFoot) on a named thing, only when the user asks for it
 - remove {id}
 - camera {snap, of, focal, ratio}: of is a character name or "all"; focal in mm from 14 to 200 (24 wide, 35 natural, 50 normal, 85 portrait)
+
+FOR A VIDEO (the shot plays over a timeline, 5 seconds unless said)
+- camera_move {move, amount, duration}: the camera as it is now is the start and the move sets where it ends. Moves: locked, push-in, pull-out, orbit-left, orbit-right, crane-up, crane-down, truck-left, truck-right, tilt-up, tilt-down, zoom-in, zoom-out, handheld. Snap the camera first if it needs a new angle, then move it.
+- move_to {id, to, side, distance, start, end, gait, pose, face_toward}: someone walks to a name or [x, z] between start and end (seconds), stopping short of it; gait walk, run or none.
+- duration {seconds}: how long the shot is.
 - to_blender {}: send the stage to Blender to refine it there. from_blender {}: bring Blender's changes back.
 
-Poses by what people do: talk or wait stand; argue point or arms-crossed; greet wave; fight, punch or box fight; run run; kneel kneel; sit sit (with sit_on a box); hands in pockets hands-in-pockets; lean on a wall lean-back (with against the wall: back on it, hands in pockets, one foot up on it). A pose already holds the arms and legs: do not add joint or reach for what it shows.
+Poses by what people do: talk or explain talk; wait stand; argue point or arms-crossed; greet wave; think thinking; on the phone phone-call; not knowing shrug; celebrate cheer; surrender hands-up; bow bow; sneak sneak; jump jump; fight fight; punch punch; kick kick; aim aim; carry carry; push push; run run; kneel kneel; sit sit; sit back sit-relaxed; sit on the floor sit-floor; lie down lie; hands in pockets hands-in-pockets; hands on hips hands-on-hips; lean on a wall lean-back (with against the wall: back on it, one foot up on it). A pose already holds the arms and legs: do not add joint or reach for what it shows.
 Every character gets facing or face_toward: people in a scene together face each other or what they act on.
+To make someone look at another without moving them (seated, leaning, lying), use params look and nod; face_toward turns the whole body.
+People on a stage, a podium or a platform get on: its name (anyone placed over a platform stands on it anyway).
 Two people facing each other along x are seen in profile by the front snap: that is the side view of a talk or a duel. The side snap looks along the line between them and hides one behind the other.
 
-Give every character a short name (the user's words when they give one) and use names, never ids. Change only what the user asks for: the stage as it is now is below, with a picture of what the camera frame shows. If the user only asks a question, answer it with no actions. The poses, snaps and frames you may use are listed with the stage; use no others.
+Change only what the user asks for: the stage as it is now is below, with a picture of what the camera frame shows. If the user only asks a question, answer it with no actions. Use only the poses, assets, snaps, moves and frames listed.
 
-EXAMPLE
+EXAMPLES
 User: a girl sits on the stairs while her friend waves at her, wide shot
-{"reply": "She sits on the steps and her friend waves from the side.", "actions": [{"op": "layout", "args": {"clear": true, "props": [{"type": "stairs", "label": "Stairs", "x": -0.6, "z": -0.4}], "characters": [{"name": "Mia", "pose": "sit", "sit_on": "Stairs", "facing": 20}, {"name": "Leo", "pose": "wave", "next_to": "Mia", "side": "right", "distance": 1.6, "face_toward": "Mia"}], "camera": {"snap": "front", "of": "all", "focal": 24, "ratio": "16:9"}}}]}
+{"reply": "She sits on the steps and her friend waves from the side.", "actions": [{"op": "layout", "args": {"clear": true, "props": [{"type": "stairs", "label": "Stairs", "x": -0.6, "z": -0.4}], "characters": [{"name": "Mia", "body": "teen", "color": "violet", "pose": "sit", "sit_on": "Stairs", "facing": 20}, {"name": "Leo", "body": "teen", "color": "teal", "pose": "wave", "next_to": "Mia", "side": "right", "distance": 1.6, "face_toward": "Mia"}], "camera": {"snap": "front", "of": "all", "focal": 24, "ratio": "16:9"}}}]}
 
 User: a woman waits against a pillar with her hands in her pockets
-{"reply": "She leans on the pillar, hands in her pockets.", "actions": [{"op": "layout", "args": {"clear": true, "props": [{"type": "cylinder", "label": "Pillar", "x": 0, "z": -0.6, "size": [0.6, 2.6, 0.6]}], "characters": [{"name": "Ava", "pose": "hands-in-pockets", "against": "Pillar"}], "camera": {"snap": "three-quarter-left", "of": "Ava", "focal": 35, "ratio": "16:9"}}}]}`;
+{"reply": "She leans on the pillar, hands in her pockets.", "actions": [{"op": "layout", "args": {"clear": true, "props": [{"type": "pillar", "label": "Pillar", "x": 0, "z": -0.6}], "characters": [{"name": "Ava", "body": "woman", "color": "amber", "pose": "hands-in-pockets", "against": "Pillar"}], "camera": {"snap": "three-quarter-left", "of": "Ava", "focal": 35, "ratio": "16:9"}}}]}
+
+User: then she walks to the car while the camera pushes in
+{"reply": "She walks to the car as the camera pushes in.", "actions": [{"op": "add_prop", "args": {"type": "car", "label": "Car", "x": 3, "z": -1}}, {"op": "move_to", "args": {"id": "Ava", "to": "Car", "gait": "walk"}}, {"op": "camera_move", "args": {"move": "push-in"}}]}`;
 
 export interface ControlTurn { role: "user" | "assistant"; text: string; did?: string[]; failed?: string[] }
-export const CONTROL_OPS = ["layout", "add_character", "add_prop", "place", "pose", "joint", "reach", "remove", "camera", "to_blender", "from_blender"] as const;
+export const CONTROL_OPS = ["layout", "add_character", "add_prop", "place", "rename", "pose", "joint", "reach", "remove", "camera", "camera_move", "move_to", "key", "duration", "clear_keys", "to_blender", "from_blender"] as const;
 type ControlAction = { op: (typeof CONTROL_OPS)[number]; args: Record<string, unknown> };
 
 const at = (p: unknown) => (Array.isArray(p) ? `x ${p[0]} z ${p[2]}` : "?");
-const list = (v: unknown) => (Array.isArray(v) ? v.slice(0, 40).map(String).join(", ") : "");
+const list = (v: unknown) => (Array.isArray(v) ? v.slice(0, 60).map(String).join(", ") : "");
 
 /** The prompt: the stage as the page reported it, and the conversation so far. */
 export function controlPrompt(scene: Record<string, any>, turns: ControlTurn[], sees: boolean) {
   const cam = scene.camera ?? {};
+  const tl = scene.timeline ?? {};
+  const params = (p: Record<string, number> | undefined) => (p && Object.keys(p).length ? `, sliders ${Object.entries(p).map(([k, v]) => `${k} ${v}`).join(" ")}` : "");
   const lines = [
     "THE STAGE NOW",
     `frame ${cam.ratio ?? "16:9"}, lens ${cam.focal ?? 35} mm, camera at [${(cam.position ?? []).join(", ")}] looking at [${(cam.target ?? []).join(", ")}]`,
+    `timeline: ${tl.duration ?? 5} s, camera move ${tl.camera_move ?? "locked"}`,
     "characters:",
-    ...((scene.characters ?? []) as any[]).slice(0, 12).map((c) => `- ${c.name}: pose ${c.pose ?? "custom"}, ${c.height} m tall, at ${at(c.position)}, facing ${c.facing}${c.visible === false ? ", hidden" : ""}`),
+    ...((scene.characters ?? []) as any[]).slice(0, 12).map((c) => `- ${c.name}: ${c.body ?? "man"}, ${c.color ?? "?"}, pose ${c.pose ?? "custom"}${params(c.params)}, ${c.height} m tall, at ${at(c.position)}, facing ${c.facing}${c.seated_on ? `, seated on ${c.seated_on}` : ""}${c.keys?.length ? `, keyed at ${c.keys.join(", ")} s` : ""}${c.visible === false ? ", hidden" : ""}`),
     ...(scene.characters?.length ? [] : ["none"]),
     "props:",
-    ...((scene.props ?? []) as any[]).slice(0, 24).map((p) => `- ${p.label}: ${p.type}, ${(p.size ?? []).join(" × ")} m, at ${at(p.position)}${p.position?.[1] > 0.01 && p.type !== "sphere" ? ` lifted ${p.position[1]}` : ""}, facing ${p.facing}`),
+    ...((scene.props ?? []) as any[]).slice(0, 30).map((p) => `- ${p.label}: ${p.type}, ${(p.size ?? []).join(" x ")} m, at ${at(p.position)}${p.position?.[1] > 0.01 ? ` lifted ${p.position[1]}` : ""}, facing ${p.facing}`),
     ...(scene.props?.length ? [] : ["none"]),
     `poses you can use: ${list(scene.poses)}`,
+    `assets: ${list((scene.assets ?? []).map((a: any) => a.type))}`,
     `camera snaps: ${list(scene.snaps)}`,
+    `camera moves: ${list(scene.moves)}`,
     `frames: ${list(scene.frames)}`,
     `joints: ${list(scene.joints)}`,
     `the picture attached: ${sees ? "what the camera frame shows now" : "none"}`,
@@ -383,6 +409,7 @@ function tidy(actions: ControlAction[], scene: Record<string, any>) {
     else if (t.scale !== undefined) t.scale = Math.min(4, Math.max(0.1, Number(t.scale) || 1));
   }
   for (const a of actions) if (a.op === "layout") faceSomething(a.args, scene);
+  makeBeforeUse(actions);
   // seats: the chairs on the stage and the ones this answer adds
   const seats = [
     ...((scene.props ?? []) as any[]).map((p) => p.label),
@@ -398,6 +425,38 @@ function tidy(actions: ControlAction[], scene: Record<string, any>) {
     actions.push({ op: "place", args: { id: who, sit_on: free.shift() } });
   }
   seatInOrder(actions);
+}
+
+/**
+ * Things are made before anything refers to them: an add_prop or add_character that comes after
+ * an action naming it (leaning on it, sitting on it, walking to it) is moved in front of that action.
+ */
+function makeBeforeUse(actions: ControlAction[]) {
+  const names = (a: ControlAction) => {
+    const out: string[] = [];
+    const take = (v: unknown) => {
+      if (typeof v === "string") out.push(v.toLowerCase());
+      else if (Array.isArray(v)) v.forEach(take);
+    };
+    const scan = (args: any) => ["against", "sit_on", "on", "between", "next_to", "face_toward", "to", "target", "of"].forEach((k) => take(args?.[k]));
+    scan(a.args);
+    if (a.op === "layout") for (const t of [...(a.args.characters ?? []), ...(a.args.props ?? [])]) scan(t);
+    return out;
+  };
+  const made = (a: ControlAction) => (a.op === "add_prop" ? lc(a.args.label ?? a.args.type) : a.op === "add_character" ? lc(a.args.name) : null);
+  for (let guard = 0; guard < 24; guard++) {
+    let moved = false;
+    for (let i = 0; i < actions.length && !moved; i++) {
+      const wanted = names(actions[i]);
+      const j = actions.findIndex((b, k) => k > i && made(b) && wanted.includes(made(b)!) && !names(b).includes(made(actions[i]) ?? "\u0000"));
+      if (j > i) {
+        const [b] = actions.splice(j, 1);
+        actions.splice(i, 0, b);
+        moved = true;
+      }
+    }
+    if (!moved) return;
+  }
 }
 
 const PLACING = ["x", "z", "next_to", "between", "side", "distance"];
@@ -452,7 +511,8 @@ function faceSomething(args: Record<string, any>, scene: Record<string, any>) {
   const staged = new Set(args.clear ? [] : ((scene.characters ?? []) as any[]).map((c) => String(c.name).toLowerCase()));
   const isNew = (c: any) => !staged.has(String(c?.name).toLowerCase());
   for (const c of characters) if (c && !isNew(c) && Number(c.facing) === 0) delete c.facing;
-  const props = (Array.isArray(args.props) ? args.props : []).filter((p: any) => p?.label && !["plane", "wall", "stairs"].includes(String(p.type)));
+  const SET = ["plane", "wall", "stairs", "doorway", "window", "pillar", "arch", "ramp", "platform", "floor", "fence", "tree", "bush", "rock", "streetlamp"];
+  const props = (Array.isArray(args.props) ? args.props : []).filter((p: any) => p?.label && !SET.includes(String(p.type)));
   const xz = (o: any) => [Number(o?.x) || 0, Number(o?.z) || 0];
   // nobody given a place: side by side along x, 1.2 m apart, facing each other below
   const unplaced = characters.filter((c: any) => c && isNew(c) && c.x === undefined && c.z === undefined && !["against", "sit_on", "on", "between", "next_to"].some((k) => c[k] !== undefined));

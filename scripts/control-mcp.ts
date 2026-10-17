@@ -1,7 +1,8 @@
-// An MCP server (stdio) that lets an agent stage scenes in Control: characters
-// in poses, props, the camera and the frame, a picture of the shot, and the
-// round trip to Blender. It talks to a running Comfyture server, which relays
-// each command to the open Control page.
+// An MCP server (stdio) that lets an agent stage scenes on the Stage: characters
+// (body types, colours, poses and pose sliders), blockout assets, the camera, the
+// frame and a timeline for video (camera moves, walking), a picture of the shot
+// in any control channel, and the round trip to Blender. It talks to a running
+// Comfyture server, which relays each command to the app (the Stage loads in it).
 //
 //   node scripts/control-mcp.ts            COMFYTURE_URL defaults to http://127.0.0.1:5177
 
@@ -15,27 +16,31 @@ const toward = { description: "An id or name to turn toward, or an [x, z] point.
 // where something is relative to others; the page works out the numbers, and a relation wins over x and z
 const relations = {
   against: { type: "string", description: "Back against this (a wall, a pillar): turned away from it, touching it." },
-  sit_on: { type: "string", description: "Seated on this. A box or cylinder becomes the seat, sized and moved under the hips." },
+  sit_on: { type: "string", description: "Seated on this: a chair, sofa, bench, stool, bed edge, step or crate takes the body at a free place; a plain box becomes the seat. A seat that is not there is made." },
   on: { type: "string", description: "Standing on this, or (a prop) resting on top of it." },
   between: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 2, description: "Halfway between two names." },
-  next_to: { type: "string", description: "Beside this, on side (left, right, front, behind) at distance metres (default 1)." },
+  next_to: { type: "string", description: "Beside this, on side (left, right, front, behind), distance metres from its edge (default 0.3)." },
   side: { type: "string" },
   distance: { type: "number" },
 };
+const params = { type: "object", description: "Pose sliders, degrees (crouch 0 to 1): look, nod, tilt, lean, twist, side, arms, reach, elbows, stance, step, crouch.", additionalProperties: { type: "number" } };
 const character = {
   type: "object",
   properties: {
-    name: { type: "string" }, pose: { type: "string", description: "A pose id from control_scene (stand, walk, run, sit, point, ...)." },
-    ...xz, facing: { type: "number" }, face_toward: toward, height: { type: "number", description: "Metres, default 1.75." }, ...relations,
+    name: { type: "string" }, pose: { type: "string", description: "A pose id from control_scene (stand, talk, walk, sit, lean-back, hands-in-pockets, point, ...)." },
+    body: { type: "string", description: "man, woman, teen, child, toddler, elder, heavy or athletic." },
+    color: { type: "string", description: "coral, teal, amber, violet, green, pink, blue or tan: one per character, for the colour ID pass." },
+    ...xz, facing: { type: "number" }, face_toward: toward, height: { type: "number", description: "Metres; the body type sets it." }, params, ...relations,
   },
 };
 const prop = {
   type: "object",
   properties: {
-    type: { type: "string", description: "box, cylinder, sphere, plane (a wall) or stairs." }, label: { type: "string" },
+    type: { type: "string", description: "An asset from control_scene: chair, armchair, sofa, stool, bench, table, desk, counter, bed, shelf, lamp, tv, plane (a wall), doorway, window, door, pillar, arch, stairs, ramp, platform, floor, fence, car, tree, bush, rock, streetlamp, crate, barrel, traffic-cone, box, cylinder, sphere, cone." }, label: { type: "string" },
     ...xz, y: { type: "number", description: "Lift above the ground, e.g. to stack on another prop." },
     facing: { type: "number" }, face_toward: toward,
-    size: { type: "array", items: { type: "number" }, minItems: 1, maxItems: 3, description: "[width, height, depth] in metres. A box is 0.6 m, a wall 2.4 × 2.2 m." },
+    size: { type: "array", items: { type: "number" }, minItems: 1, maxItems: 3, description: "[width, height, depth] in metres; the asset is rebuilt to it (a table keeps its legs)." },
+    params: { type: "object", description: "The asset's own sizes by name (steps, seat, open...), as control_scene lists them.", additionalProperties: { type: "number" } },
     scale: { description: "One number or [x, y, z].", anyOf: [{ type: "number" }, { type: "array", items: { type: "number" }, minItems: 3, maxItems: 3 }] },
     ...relations,
   },
@@ -50,6 +55,7 @@ const camera = {
     ratio: { type: "string", description: "16:9, 9:16, 1:1, 3:2, 2:3, 4:3, 3:4 or 21:9." },
     position: { type: "array", items: { type: "number" }, minItems: 3, maxItems: 3 },
     target: { type: "array", items: { type: "number" }, minItems: 3, maxItems: 3 },
+    move: { type: "string", description: "A camera move over the shot, from the camera as it is (after the snap): see control_camera_move." },
   },
 };
 const id = { type: "string", description: "A character or prop id, or its name." };
@@ -75,7 +81,7 @@ const op = (name: string) => async (args: any) => say(await call("/api/control/c
 const TOOLS: Tool[] = [
   {
     name: "control_scene",
-    description: `Reads the Control stage: characters, props (with their sizes) and the camera, plus the poses, prop types, camera snaps, frames, joints and IK effectors it knows. Read it first. ${COORDS}`,
+    description: `Reads the Stage: characters (body, colour, pose, sliders, keys), props (with their sizes), the camera and the timeline, plus the poses, assets, body types, colours, sliders, snaps, moves, frames, joints and channels it knows. Read it first. ${COORDS}`,
     inputSchema: { type: "object", properties: {} },
     run: op("scene"),
   },
@@ -102,14 +108,14 @@ const TOOLS: Tool[] = [
   },
   {
     name: "control_place",
-    description: `Moves, turns or resizes a character or prop, by numbers or by relation (against, sit_on, on, between, next_to). Characters stay on the ground; props can be lifted with y and sized; characters take a new height. ${COORDS}`,
-    inputSchema: { type: "object", properties: { id, ...xz, y: { type: "number" }, facing: { type: "number" }, face_toward: toward, size: prop.properties.size, scale: prop.properties.scale, height: { type: "number" }, ...relations }, required: ["id"] },
+    description: `Moves, turns, resizes, renames or recolours a character or prop, by numbers or by relation (against, sit_on, on, between, next_to). A character also takes a body type, a height and pose sliders; a prop takes a size or its own params. ${COORDS}`,
+    inputSchema: { type: "object", properties: { id, name: { type: "string", description: "A new name." }, ...xz, y: { type: "number" }, facing: { type: "number" }, face_toward: toward, size: prop.properties.size, params: { type: "object", description: "Pose sliders for a character, sizes for a prop.", additionalProperties: { type: "number" } }, scale: prop.properties.scale, height: { type: "number" }, body: character.properties.body, color: character.properties.color, ...relations }, required: ["id"] },
     run: op("place"),
   },
   {
     name: "control_pose",
-    description: "Puts a character in a preset pose, optionally mirrored left to right.",
-    inputSchema: { type: "object", properties: { id, pose: { type: "string" }, mirror: { type: "boolean" } }, required: ["id", "pose"] },
+    description: "Puts a character in a pose from the library (or one saved on the Stage, by its name), optionally mirrored, with pose sliders laid over it. With params alone, only the sliders change.",
+    inputSchema: { type: "object", properties: { id, pose: { type: "string" }, mirror: { type: "boolean" }, params }, required: ["id"] },
     run: op("pose"),
   },
   {
@@ -144,12 +150,36 @@ const TOOLS: Tool[] = [
   },
   {
     name: "control_look",
-    description: "A picture of what the camera frame shows now, to check the layout.",
-    inputSchema: { type: "object", properties: { width: { type: "number", description: "Pixels on the long side, default 768." } } },
+    description: "A picture of what the camera frame shows, to check the layout: clay, or a control channel (id, depth, normal, pose, lines, mask), at the playhead or at time t.",
+    inputSchema: { type: "object", properties: { width: { type: "number", description: "Pixels on the long side, default 768." }, channel: { type: "string", description: "clay, id, depth, normal, pose, lines or mask." }, t: { type: "number", description: "Seconds into the shot." } } },
     run: async (args) => {
       const url: string = await call("/api/control/command", { op: "look", args });
       return [{ type: "image", data: url.slice(url.indexOf(",") + 1), mimeType: "image/png" }];
     },
+  },
+  {
+    name: "control_camera_move",
+    description: "A camera move over the shot (the timeline): the camera as it is now is the start, the move sets the end. Moves: locked, push-in, pull-out, orbit-left, orbit-right, crane-up, crane-down, truck-left, truck-right, tilt-up, tilt-down, zoom-in, zoom-out, handheld.",
+    inputSchema: { type: "object", properties: { move: { type: "string" }, amount: { type: "number", description: "Scales the move, 0.1 to 3 (default 1)." }, duration: { type: "number", description: "The shot's length in seconds." } }, required: ["move"] },
+    run: op("camera_move"),
+  },
+  {
+    name: "control_move_to",
+    description: "A character walks (or runs) over the shot: keys where they are at start and where they arrive at end (seconds), facing the way they go; the timeline lays a walk cycle over their pose. to is a name (they stop short of it) or an [x, z] point.",
+    inputSchema: { type: "object", properties: { id, to: toward, side: { type: "string" }, distance: { type: "number" }, start: { type: "number" }, end: { type: "number" }, gait: { type: "string", description: "walk, run or none." }, pose: { type: "string", description: "The pose they arrive in." }, face_toward: toward }, required: ["id", "to"] },
+    run: op("move_to"),
+  },
+  {
+    name: "control_key",
+    description: "Records a key for a character, a prop or \"camera\" at time t (default the playhead): the timeline blends between keys. Edits to something that has keys are recorded at the playhead too.",
+    inputSchema: { type: "object", properties: { id: { type: "string", description: "A name, or \"camera\"." }, t: { type: "number" } } },
+    run: op("key"),
+  },
+  {
+    name: "control_duration",
+    description: "Sets how long the shot is, in seconds (1 to 20).",
+    inputSchema: { type: "object", properties: { seconds: { type: "number" } }, required: ["seconds"] },
+    run: op("duration"),
   },
   {
     name: "control_undo",
@@ -188,7 +218,7 @@ async function handle(msg: { id?: number | string; method: string; params?: any 
         protocolVersion: msg.params?.protocolVersion ?? "2025-06-18",
         capabilities: { tools: {} },
         serverInfo: { name: "comfyture-control", version: "0.1.0" },
-        instructions: "Stages reference scenes in Comfyture's Control page (it must be open in a browser). Read control_scene, block the scene with control_layout, check it with control_look, then refine.",
+        instructions: "Stages reference scenes on Comfyture's Stage (the app must be open in a browser). Read control_scene, block the scene with control_layout, check it with control_look (clay or a channel), then refine; for a video, add control_camera_move and control_move_to.",
       };
     case "ping":
       return {};
