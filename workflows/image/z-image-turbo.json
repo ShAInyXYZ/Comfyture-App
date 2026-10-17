@@ -1,0 +1,16 @@
+{
+  "unet": {"class_type": "UNETLoader", "inputs": {"unet_name": "z_image_turbo_bf16.safetensors", "weight_dtype": "default"}},
+  "shift": {"class_type": "ModelSamplingAuraFlow", "inputs": {"model": ["unet", 0], "shift": 3}},
+  "clip": {"class_type": "CLIPLoader", "inputs": {"clip_name": "qwen_3_4b.safetensors", "type": "lumina2", "device": "default"}},
+  "vae": {"class_type": "VAELoader", "inputs": {"vae_name": "ae.safetensors"}},
+  "text": {"class_type": "PrimitiveStringMultiline", "inputs": {"value": ""}},
+  "seed": {"class_type": "PrimitiveInt", "inputs": {"value": 0}},
+  "width": {"class_type": "PrimitiveInt", "inputs": {"value": 1024}},
+  "height": {"class_type": "PrimitiveInt", "inputs": {"value": 1024}},
+  "enc": {"class_type": "CLIPTextEncode", "inputs": {"text": ["text", 0], "clip": ["clip", 0]}},
+  "negative": {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["enc", 0]}},
+  "size": {"class_type": "EmptySD3LatentImage", "inputs": {"width": ["width", 0], "height": ["height", 0], "batch_size": 1}},
+  "sampler": {"class_type": "KSampler", "inputs": {"seed": ["seed", 0], "steps": 8, "cfg": 1, "sampler_name": "res_multistep", "scheduler": "simple", "denoise": 1, "model": ["shift", 0], "positive": ["enc", 0], "negative": ["negative", 0], "latent_image": ["size", 0]}},
+  "decode": {"class_type": "VAEDecode", "inputs": {"samples": ["sampler", 0], "vae": ["vae", 0]}},
+  "frame": {"class_type": "SaveImageAdvanced", "inputs": {"images": ["decode", 0], "filename_prefix": "comfyture/z-image-turbo", "format": "png", "format.bit_depth": "8-bit", "format.input_color_space": "sRGB"}}
+}

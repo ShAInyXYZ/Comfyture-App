@@ -1,0 +1,6 @@
+{
+  "llm": {"class_type": "CLIPLoader", "inputs": {"clip_name": "", "type": "stable_diffusion", "device": "default"}},
+  "brief": {"class_type": "PrimitiveStringMultiline", "inputs": {"value": ""}},
+  "plan": {"class_type": "TextGenerate", "inputs": {"clip": ["llm", 0], "prompt": "", "max_length": 4096, "sampling_mode": "on", "sampling_mode.temperature": 1, "sampling_mode.top_k": 20, "sampling_mode.top_p": 0.95, "sampling_mode.min_p": 0, "sampling_mode.repetition_penalty": 1, "sampling_mode.seed": 0, "sampling_mode.presence_penalty": 0, "thinking": false, "use_default_template": true, "system_prompt": ["brief", 0]}},
+  "out": {"class_type": "SaveText", "inputs": {"text": ["plan", 0], "filename_prefix": "comfyture/enhanced", "format": "txt"}}
+}

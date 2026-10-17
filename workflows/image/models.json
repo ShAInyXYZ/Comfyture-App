@@ -1,0 +1,90 @@
+{
+  "default": "qwen-2.1",
+  "models": [
+    {
+      "id": "qwen-2.1",
+      "name": "Qwen Image 2.1",
+      "about": "Long descriptions, text in the picture, up to 10 references",
+      "multiple": 32,
+      "megapixels": [1, 2, 4],
+      "templates": {
+        "generate": { "graph": "qwen-2.1.json", "steps": 25, "official": "image_qwen_image_2_1_t2i", "enhance": "qwen-2.1-generate" },
+        "edit": { "graph": "qwen-2.1-edit.json", "steps": 25, "official": "image_qwen_image_2_1_image_edit", "enhance": "qwen-2.1-edit", "refs": { "node": "enc", "input": "images.image_{n}", "first": 1, "max": 10, "tag": "<image{n}>", "tagFirst": 1, "single": "the image" } }
+      }
+    },
+    {
+      "id": "qwen-2.1-turbo",
+      "name": "Qwen Image 2.1 Turbo",
+      "about": "Qwen Image 2.1 in 8 steps",
+      "multiple": 32,
+      "megapixels": [1, 2, 4],
+      "templates": {
+        "generate": { "graph": "qwen-2.1-turbo.json", "steps": 8, "official": "image_qwen_image_2_1_turbo_t2i", "enhance": "qwen-2.1-generate" },
+        "edit": { "graph": "qwen-2.1-turbo-edit.json", "steps": 8, "official": "image_qwen_image_2_1_turbo_image_edit", "enhance": "qwen-2.1-edit", "refs": { "node": "enc", "input": "images.image_{n}", "first": 1, "max": 10, "tag": "<image{n}>", "tagFirst": 1, "single": "the image" } }
+      }
+    },
+    {
+      "id": "flux3-klein",
+      "name": "FLUX 3 Klein",
+      "about": "Photographic detail, fast distilled model",
+      "multiple": 16,
+      "megapixels": [1, 2, 4],
+      "templates": {
+        "generate": { "graph": "flux3-klein.json", "steps": 16, "official": "image_flux3_klein_distilled_t2i", "enhance": "flux3-klein-generate" },
+        "edit": { "graph": "flux3-klein-edit.json", "steps": 16, "official": "image_flux3_klein_distilled_image_edit", "enhance": "flux3-klein-edit", "refs": { "node": "refs", "input": "images.image{n}", "first": 0, "max": 10, "tag": "<ref_image_{n}>", "tagFirst": 0 } }
+      }
+    },
+    {
+      "id": "krea2-turbo",
+      "name": "Krea 2 Turbo",
+      "about": "Strong looks and illustration, and style from a picture",
+      "multiple": 16,
+      "megapixels": [1, 2, 4],
+      "templates": {
+        "generate": { "graph": "krea2-turbo.json", "steps": 8, "official": "image_krea2_turbo_t2i_int8", "enhance": "krea2" },
+        "style": { "graph": "krea2-style.json", "steps": 8, "official": "image_krea2_turbo_int8_image_style_reference", "enhance": "krea2", "refs": { "node": "enc", "input": "image{n}", "first": 1, "max": 2, "single": "the reference", "tag": "the reference" } }
+      }
+    },
+    {
+      "id": "z-image-turbo",
+      "name": "Z-Image Turbo",
+      "about": "Quick realistic pictures in 8 steps",
+      "multiple": 16,
+      "megapixels": [1, 2],
+      "templates": {
+        "generate": { "graph": "z-image-turbo.json", "steps": 8, "official": "image_z_image_turbo", "enhance": "z-image" }
+      }
+    }
+  ],
+  "templates": {
+    "generate": { "name": "Text to image", "about": "A new picture from the description" },
+    "edit": { "name": "Image edit", "about": "Change or combine the references as the description says" },
+    "style": { "name": "Style reference", "about": "A new picture in the look of the references" }
+  },
+  "enhancers": {
+    "qwen-2.1-generate": {
+      "clip": "qwen3.5_9b_qwen_image_2.1_pe_t2i.int8_convrot.safetensors", "type": "stable_diffusion", "brief": "prompts/qwen-2.1-generate.md",
+      "max_length": 4096, "sampling": { "temperature": 1, "top_k": 20, "top_p": 0.95, "min_p": 0, "repetition_penalty": 1, "presence_penalty": 1.5 }, "mtp": "auto"
+    },
+    "qwen-2.1-edit": {
+      "clip": "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors", "type": "qwen_image", "brief": "prompts/qwen-2.1-edit.md", "sees": true, "thinking": true,
+      "max_length": 4096, "sampling": { "temperature": 1, "top_k": 20, "top_p": 0.95, "min_p": 0, "repetition_penalty": 1, "presence_penalty": 0 }, "mtp": "auto"
+    },
+    "flux3-klein-generate": {
+      "clip": "qwen3.5_9b_flux3_prompt_upsampler_int8_convrot.safetensors", "type": "flux3", "brief": "prompts/flux3-klein-generate.md",
+      "max_length": 3584, "sampling": { "temperature": 1, "top_k": 1, "top_p": 0.95, "min_p": 0, "repetition_penalty": 1.05, "presence_penalty": 1.5 }, "mtp": "off"
+    },
+    "flux3-klein-edit": {
+      "clip": "qwen3.5_9b_flux3_prompt_upsampler_int8_convrot.safetensors", "type": "flux3", "brief": "prompts/flux3-klein-edit.md", "sees": true,
+      "max_length": 3584, "sampling": { "temperature": 1, "top_k": 1, "top_p": 0.95, "min_p": 0, "repetition_penalty": 1.05, "presence_penalty": 0 }, "mtp": "off"
+    },
+    "krea2": {
+      "clip": "qwen3vl_4b_fp8_scaled.safetensors", "type": "krea2", "brief": "prompts/krea2.md", "inline": true,
+      "max_length": 512, "sampling": { "temperature": 0.7, "top_k": 64, "top_p": 0.95, "min_p": 0.05, "repetition_penalty": 1.05, "presence_penalty": 0 }
+    },
+    "z-image": {
+      "clip": "gemma4_e4b_it_fp8_scaled.safetensors", "type": "stable_diffusion", "brief": "prompts/z-image.md", "written": true,
+      "max_length": 1024, "sampling": { "temperature": 0.7, "top_k": 64, "top_p": 0.95, "min_p": 0.05, "repetition_penalty": 1.05, "presence_penalty": 0 }
+    }
+  }
+}
