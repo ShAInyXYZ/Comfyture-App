@@ -5,15 +5,60 @@
 
 /** Body proportions, saved as a profile. Every value is a multiplier around 1 except height (metres). */
 export const DEFAULT_PROFILE = {
-  name: "Adult",
-  height: 1.75,
+  name: "Man",
+  height: 1.78,
   build: 1,
   head: 1,
   arms: 1,
   legs: 1,
-  shoulders: 1,
-  hips: 1,
+  shoulders: 1.04,
+  hips: 0.97,
+  waist: 1,
+  chest: 1,
+  belly: 1,
 };
+
+/**
+ * The bodies people stage most, as profiles. Heights are metres; the rest are multipliers
+ * around 1: build (limb and torso thickness), head, arm and leg length, shoulder and hip
+ * width, waist width, chest depth and belly depth.
+ */
+export const BODY_TYPES = [
+  { id: "man", name: "Man", profile: { height: 1.78, build: 1, head: 1, arms: 1, legs: 1, shoulders: 1.04, hips: 0.97, waist: 1, chest: 1, belly: 1 } },
+  { id: "woman", name: "Woman", profile: { height: 1.66, build: 0.9, head: 0.98, arms: 0.97, legs: 1.02, shoulders: 0.88, hips: 1.16, waist: 0.82, chest: 1.12, belly: 0.92 } },
+  { id: "teen", name: "Teen", profile: { height: 1.6, build: 0.86, head: 1.06, arms: 1, legs: 1.03, shoulders: 0.94, hips: 0.95, waist: 0.92, chest: 0.94, belly: 0.92 } },
+  { id: "child", name: "Child", profile: { height: 1.22, build: 0.9, head: 1.3, arms: 0.92, legs: 0.9, shoulders: 0.92, hips: 0.98, waist: 1.02, chest: 0.98, belly: 1.08 } },
+  { id: "toddler", name: "Toddler", profile: { height: 0.9, build: 1.02, head: 1.55, arms: 0.85, legs: 0.8, shoulders: 0.9, hips: 1.04, waist: 1.1, chest: 1, belly: 1.2 } },
+  { id: "elder", name: "Elder", profile: { height: 1.68, build: 0.96, head: 1.02, arms: 0.99, legs: 0.97, shoulders: 0.95, hips: 1.02, waist: 1.04, chest: 0.96, belly: 1.12 } },
+  { id: "heavy", name: "Heavy", profile: { height: 1.76, build: 1.3, head: 1.03, arms: 1, legs: 0.98, shoulders: 1.1, hips: 1.2, waist: 1.3, chest: 1.12, belly: 1.45 } },
+  { id: "athletic", name: "Athletic", profile: { height: 1.84, build: 1.08, head: 0.97, arms: 1.03, legs: 1.03, shoulders: 1.2, hips: 0.94, waist: 0.9, chest: 1.08, belly: 0.88 } },
+];
+export const bodyById = (id) => BODY_TYPES.find((b) => b.id === id);
+
+/** Body sliders in the Selected panel: [key, label, min, max, step, unit]. */
+export const BODY_SLIDERS = [
+  ["height", "Height", 0.6, 2.4, 0.01, "m"], ["build", "Build", 0.7, 1.6, 0.01], ["head", "Head", 0.8, 1.7, 0.01],
+  ["shoulders", "Shoulders", 0.75, 1.4, 0.01], ["hips", "Hips", 0.8, 1.4, 0.01], ["waist", "Waist", 0.75, 1.5, 0.01],
+  ["chest", "Chest", 0.8, 1.35, 0.01], ["belly", "Belly", 0.8, 1.7, 0.01], ["legs", "Legs", 0.75, 1.2, 0.01], ["arms", "Arms", 0.8, 1.15, 0.01],
+];
+
+/** One colour per character, apart enough to tell them at a glance; the Colour ID pass prints them flat. */
+export const PALETTE = [
+  ["#e8584f", "Coral"], ["#3fc6c0", "Teal"], ["#f0a63a", "Amber"], ["#8d7cf2", "Violet"],
+  ["#5fbf6a", "Green"], ["#e86fb3", "Pink"], ["#4f8de8", "Blue"], ["#c28a5a", "Tan"],
+];
+export const colorName = (hex) => PALETTE.find(([h]) => h === String(hex).toLowerCase())?.[1] ?? hex;
+
+/**
+ * Pose sliders: turns laid over whichever pose a body holds, so a preset can still look
+ * left, lean in or crouch a little. [key, label, min, max]. Degrees, except crouch (0 to 1).
+ */
+export const PARAMS = [
+  ["look", "Look", -80, 80], ["nod", "Nod", -40, 40], ["tilt", "Tilt", -30, 30],
+  ["lean", "Lean", -30, 60], ["twist", "Twist", -45, 45], ["side", "Side bend", -30, 30],
+  ["arms", "Arms up", -20, 160], ["reach", "Arms forward", -40, 120], ["elbows", "Elbows", -20, 140],
+  ["stance", "Stance", -10, 40], ["step", "Step", -45, 45], ["crouch", "Crouch", 0, 1],
+];
 
 // [name, parent, offset from the parent as a function of the profile]
 // offsets are in units of height (h) and are scaled by the profile's multipliers
