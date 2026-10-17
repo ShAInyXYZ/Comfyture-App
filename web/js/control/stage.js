@@ -6,9 +6,10 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { Mannequin } from "./mannequin.js";
 import { CHAINS, JOINT_NAMES, PALETTE, bodyById } from "./skeleton.js";
-import { poseById } from "./poses.js";
+import { poseById, holdArm } from "./poses.js";
 import { makeProp, propFromJSON, setPropParams, refillProp, registerUserProp, forgetUserProp, registerModelAssets } from "./assets.js";
 import { loadModels, loadUserModels, onUserModels, MODELS, USER } from "./models.js";
 import { Channels } from "./channels.js";
@@ -110,19 +111,28 @@ export class Stage {
     scene.fog = new THREE.Fog("#141416", 14, 34);
     this.scene = scene;
 
-    scene.add(new THREE.HemisphereLight("#dcdad6", "#202024", 1.1));
-    const key = new THREE.DirectionalLight("#ffffff", 2.2);
+    // a studio: a soft room all round (the clay's shading), a key with its shadows, a warm fill
+    // from the other side and a cool rim behind
+    this.envMain = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = this.envMain;
+    scene.environmentIntensity = 0.6;
+    scene.add(new THREE.HemisphereLight("#dcdad6", "#202024", 0.5));
+    const key = new THREE.DirectionalLight("#ffffff", 1.9);
     key.position.set(3.5, 6, 4);
     key.castShadow = true;
-    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.mapSize.set(4096, 4096);
     Object.assign(key.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 0.5, far: 34 });
-    key.shadow.bias = -0.0004;
+    key.shadow.bias = -0.0003;
+    key.shadow.normalBias = 0.02;
     scene.add(key);
-    const rim = new THREE.DirectionalLight("#9fb4ff", 0.5);
-    rim.position.set(-4, 3, -5);
+    const fill = new THREE.DirectionalLight("#ffe9d8", 0.6);
+    fill.position.set(-5, 3, 4.5);
+    scene.add(fill);
+    const rim = new THREE.DirectionalLight("#a9bcff", 0.9);
+    rim.position.set(-4, 3.5, -5);
     scene.add(rim);
 
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: "#1b1b1e", roughness: 1 }));
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: "#202024", roughness: 1 }));
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     ground.userData.ground = true;
@@ -966,6 +976,7 @@ export class Stage {
     helper.visible = false;
     this.handles.visible = false;
     if (only) for (const c of this.characters) if (c !== only && c.root.visible) (c.root.visible = false), hidden.push(c);
+    this.scene.environment = this.envShot;
     try {
       if (channel === "pose") {
         const canvas = this.poseCanvas;
@@ -977,6 +988,7 @@ export class Stage {
       else this.channels.render(r, cam, channel, { width, height });
       return r.domElement.toDataURL(type, quality);
     } finally {
+      this.scene.environment = this.envMain;
       for (const c of hidden) c.root.visible = true;
       helper.visible = true;
       this.handles.visible = true;
@@ -991,6 +1003,8 @@ export class Stage {
     r.shadowMap.enabled = true;
     r.shadowMap.type = THREE.PCFSoftShadowMap;
     this.shotRenderer = r;
+    // its own studio room: a texture one renderer made cannot be drawn by another
+    this.envShot = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
     this.shotCamera = new THREE.PerspectiveCamera(fovOf(this.focal), 16 / 9, 0.05, 200);
     this.poseCanvas = document.createElement("canvas");
   }
@@ -1037,6 +1051,10 @@ export class Stage {
     if (!character) return;
     character.setHold(hand, type);
     character.autoHold[hand] = false;
+    // the arm takes the thing the way it is held: an umbrella up over the head, a bag at the side
+    const arm = type && holdArm(type, hand);
+    if (arm) character.shapePose(arm);
+    character.ground();
     this.commit();
     this.emit("pose");
   }
@@ -1126,11 +1144,14 @@ export class Stage {
     if (this.poseThumbs.has(key)) return this.poseThumbs.get(key);
     if (!this.poseScene) {
       const scene = new THREE.Scene();
-      scene.add(new THREE.HemisphereLight("#e4e2de", "#2a2a2e", 1.4));
-      const light = new THREE.DirectionalLight("#ffffff", 2.4);
+      scene.add(new THREE.HemisphereLight("#e4e2de", "#2a2a2e", 0.9));
+      const light = new THREE.DirectionalLight("#ffffff", 2.2);
       light.position.set(2, 4, 3);
       scene.add(light);
       this.poseScene = scene;
+      this.ensureShotRenderer();
+      scene.environment = this.envShot;
+      scene.environmentIntensity = 0.6;
       this.poseModel = new Mannequin({ name: "thumb", color: "#b9b5ae" });
       scene.add(this.poseModel.root);
       this.poseCamera = new THREE.PerspectiveCamera(30, width / height, 0.05, 50);

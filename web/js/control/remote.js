@@ -8,7 +8,7 @@
 import * as THREE from "three";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { RATIOS, SNAPS, MOVES, fovOf } from "./stage.js";
-import { allPoses } from "./poses.js";
+import { allPoses, holdArm } from "./poses.js";
 import { ASSETS, assetByType, seatOf, topOf, setPropParams } from "./assets.js";
 import { CHAINS, JOINT_NAMES, BODY_TYPES, PALETTE, PARAMS, colorName } from "./skeleton.js";
 import { PASSES } from "./channels.js";
@@ -476,8 +476,11 @@ export function controlOps(stage) {
     const want = hold && typeof hold === "object" ? hold : { right: hold };
     for (const hand of ["right", "left"]) {
       if (want[hand] === undefined && !(hold === null && hand === "left")) continue;
-      c.setHold(hand, one(want[hand] ?? null));
+      const type = one(want[hand] ?? null);
+      c.setHold(hand, type);
       c.autoHold[hand] = false;
+      const arm = type && holdArm(type, hand);
+      if (arm) c.shapePose(arm);
     }
   };
 

@@ -273,6 +273,8 @@ export class Mannequin {
     holder.position.fromArray(grip.position).multiplyScalar(k);
     holder.quaternion.fromArray(grip.quaternion ?? [0, 0, 0, 1]);
     if (grip.scale) holder.scale.fromArray(grip.scale);
+    // a child's bag is a child's: the thing scales with a small hand, never past its own size
+    holder.scale.multiplyScalar(THREE.MathUtils.clamp(k, 0.55, 1));
     const copy = model.scene.clone(true);
     const joint = hand === "left" ? "LeftHand" : "RightHand";
     copy.traverse((o) => {
@@ -343,6 +345,14 @@ export class Mannequin {
       return;
     }
     this.setEulerPose(preset.joints ?? {});
+    this.shapePose(preset);
+  }
+
+  /**
+   * A pose's aims, contacts and grips, laid over the joints as they are: the rest of setPreset,
+   * and how an arm holds what its hand was given (an umbrella up, a bag hanging).
+   */
+  shapePose(preset) {
     const frame = this.root.getWorldQuaternion(new THREE.Quaternion());
     const aim = (names) => {
       for (const name of names) {

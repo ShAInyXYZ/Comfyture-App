@@ -295,6 +295,23 @@ export const POSES = [
     reach: { RightHand: { at: "RightFoot", offset: [-0.03, 0.03, 0.22] }, LeftHand: { at: "LeftLeg", offset: [0, 0.04, 0], surface: "front", clear: 0.01 } } },
 ];
 
+/**
+ * How an arm holds a thing given to a hand outside a pose that brings it: an umbrella up over
+ * the head, a bag hanging at the side, a guitar across the body. Laid over the pose as it is.
+ */
+export function holdArm(type, hand) {
+  const right = hand === "right";
+  const S = right ? "Right" : "Left";
+  const D = right ? R : L;
+  const inward = [right ? 1 : -1, 0, 0];
+  const arms = {
+    umbrella: { aim: { [`${S}Arm`]: D(0.25, -0.75, 0.55), [`${S}ForeArm`]: D(0.05, 0.75, 0.62) }, grip: { [`${S}Hand`]: { palm: inward, thumb: [0, 1, 0] } } },
+    bag: { aim: { [`${S}Arm`]: D(0.14, -1, 0), [`${S}ForeArm`]: D(0.06, -1, 0.06) }, grip: { [`${S}Hand`]: { palm: inward, thumb: [0, 1, 0] } } },
+    guitar: { aim: { [`${S}Arm`]: D(0.3, -0.8, 0.45), [`${S}ForeArm`]: D(-0.85, -0.2, 0.4) }, grip: { [`${S}Hand`]: { palm: [0, 0, -1], thumb: [right ? 1 : -1, 0.6, 0] } } },
+  };
+  return arms[type] ?? null;
+}
+
 export const POSE_CATEGORIES = ["Stand", "Move", "Sit", "Gesture", "Action", "Mine"];
 
 // the poses you saved, from the server; each keeps its joints as quaternions
