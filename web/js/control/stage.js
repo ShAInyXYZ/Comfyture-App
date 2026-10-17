@@ -280,7 +280,7 @@ export class Stage {
     const n = this.characters.length;
     const type = bodyById(body) ?? bodyById("man");
     const c = new Mannequin({ name: name ?? this.freeName(type.name), color: color ?? this.freeColor(), body: type.id, profile });
-    c.setEulerPose(poseById(pose)?.joints ?? {});
+    c.setPreset(poseById(pose) ?? poseById("stand"));
     c.posed = pose;
     c.root.position.set(at?.[0] ?? (n === 0 ? 0 : n % 2 ? 0.9 * Math.ceil(n / 2) : -0.9 * Math.ceil(n / 2)), 0, at?.[2] ?? 0);
     c.root.rotation.y = facing;
@@ -521,11 +521,10 @@ export class Stage {
     if (!character || !preset) return;
     // a pose from the library starts clean: the sliders go back to zero
     character.params = {};
-    if (preset.quaternions) character.setPose(preset.quaternions);
-    else character.setEulerPose(preset.joints);
+    character.setPreset(preset);
     character.posed = id;
     // getting up from a seat steps forward off it, rather than standing inside it
-    if (character.seatedOn && !/^sit/.test(id) && id !== "kneel" && id !== "lie") {
+    if (character.seatedOn && !preset.seat && !/^(kneel|lie)/.test(id)) {
       const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(character.root.quaternion).setY(0).normalize();
       character.root.position.addScaledVector(forward, 0.45);
       character.seatedOn = null;
@@ -989,8 +988,8 @@ export class Stage {
   }
 
   /** A preset on a lone mannequin, three-quarter front, on a clear background. Cached per pose. */
-  poseThumbnail(joints, { width = 132, height = 156, quaternions } = {}) {
-    const key = JSON.stringify(quaternions ?? joints);
+  poseThumbnail(preset, { width = 132, height = 156, body = "man" } = {}) {
+    const key = JSON.stringify([body, preset.quaternions ?? [preset.joints, preset.aim, preset.reach]]);
     this.poseThumbs ??= new Map();
     if (this.poseThumbs.has(key)) return this.poseThumbs.get(key);
     if (!this.poseScene) {
@@ -1005,10 +1004,10 @@ export class Stage {
       this.poseCamera = new THREE.PerspectiveCamera(30, width / height, 0.05, 50);
     }
     const m = this.poseModel;
+    if (m.body !== body) m.setBody(body);
     m.root.position.set(0, 0, 0);
     m.params = {};
-    if (quaternions) m.setPose(quaternions);
-    else m.setEulerPose(joints);
+    m.setPreset(preset);
     m.ground();
     const box = m.bounds();
     const center = box.getCenter(new THREE.Vector3());

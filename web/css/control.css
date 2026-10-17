@@ -46,8 +46,8 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 
 /* the pose and asset libraries */
 .ctl-library { align-content: start; }
-.ctl-tabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
-.ctl-tabs button { padding: .625rem 0 .75rem; border: 0; background: transparent; color: var(--dim); font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; box-shadow: inset 0 -2px 0 transparent; }
+.ctl-tabs { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; border-bottom: 1px solid var(--line); }
+.ctl-tabs button { padding: .625rem 0 .75rem; border: 0; background: transparent; color: var(--dim); font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .14em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; cursor: pointer; box-shadow: inset 0 -2px 0 transparent; }
 .ctl-tabs button:hover { color: var(--text); }
 .ctl-tabs button[aria-selected="true"] { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
 .ctl-chips { display: flex; flex-wrap: wrap; align-items: center; gap: .3125rem; }

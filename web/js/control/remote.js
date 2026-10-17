@@ -44,6 +44,22 @@ const ALIASES = {
     "sit on the floor": "sit-floor", "cross legged": "sit-floor", "cross-legged": "sit-floor", "sitting on the floor": "sit-floor",
     "sit back": "sit-relaxed", relaxed: "sit-relaxed", lounging: "sit-relaxed", kicking: "kick", aiming: "aim", shoot: "aim", shooting: "aim",
     carrying: "carry", holding: "carry", pushing: "push",
+    casual: "stand-weight", contrapposto: "stand-weight", "weight on one leg": "stand-weight", "hands behind back": "hands-behind-back", "hands behind the back": "hands-behind-back",
+    "lean on": "lean-on", "leaning on": "lean-on", "lean on the counter": "lean-on", "lean on the bar": "lean-on", "elbows on": "lean-on", "looking up": "look-up", gazing: "look-up",
+    tired: "slouch", slouching: "slouch", exhausted: "slouch", sad: "slouch", cold: "cold", shivering: "cold", freezing: "cold", "hugging himself": "cold", "hugging herself": "cold",
+    texting: "walk-phone", "walking on the phone": "walk-phone", "looking at phone": "walk-phone", climbing: "climb", ladder: "climb",
+    falling: "fall", stumbling: "fall", tripping: "fall", dancing: "dance",
+    "legs crossed": "sit-cross-legs", "crossed legs": "sit-cross-legs", typing: "sit-desk", working: "sit-desk", "at the desk": "sit-desk", "at a desk": "sit-desk",
+    hunched: "sit-hunched", "elbows on knees": "sit-hunched", driving: "drive", "at the wheel": "drive", "hug knees": "sit-knees-up", "hugging knees": "sit-knees-up",
+    "on the side": "lie-side", "lying on the side": "lie-side", "on the stomach": "lie-front", "lying on the front": "lie-front", prone: "lie-front",
+    "thumbs up": "thumbs-up", approve: "thumbs-up", saluting: "salute", halt: "stop", "hand on heart": "hand-on-heart", pledge: "hand-on-heart",
+    praying: "pray", pray: "pray", "hands together": "pray", "check the time": "look-at-watch", "checking watch": "look-at-watch", impatient: "look-at-watch",
+    confused: "scratch-head", "scratching head": "scratch-head", shocked: "cover-mouth", surprised: "cover-mouth", gasp: "cover-mouth",
+    despair: "hands-on-head", "hands on head": "hands-on-head", "shake hands": "handshake", "shaking hands": "handshake",
+    welcome: "open-arms", welcoming: "open-arms", "open arms": "open-arms", hug: "open-arms", "taking a selfie": "selfie",
+    throwing: "throw", sword: "sword", slash: "sword", strike: "sword", guard: "block", blocking: "block", defend: "block",
+    lifting: "lift", "lift a box": "lift", drinking: "drink", reading: "read", "taking a photo": "photo", camera: "photo", photographing: "photo",
+    "picking up": "pick-up", pulling: "pull", tug: "pull", haul: "pull",
   },
   prop: {
     cube: "box", ball: "sphere", wall: "plane", partition: "plane", column: "pillar", post: "cylinder", pole: "cylinder",
@@ -181,7 +197,7 @@ export function controlOps(stage) {
     o.position.z = surface.z + n.z * depth;
   };
 
-  const SEATED = new Set(["sit", "sit-relaxed", "sit-floor"]);
+  const SEATED = new Set(allPoses().filter((p) => p.seat).map((p) => p.id));
   /**
    * Seated on something. Furniture with a seat (a chair, a sofa, a bench, a bed's edge, a step)
    * takes the body: it goes to a free place on the seat, facing the way the seat does. A plain
@@ -190,7 +206,7 @@ export function controlOps(stage) {
   const sitOn = (c, on) => {
     if (!SEATED.has(c.posed)) {
       c.params = {};
-      c.setEulerPose(allPoses().find((p) => p.id === "sit").joints);
+      c.setPreset(allPoses().find((p) => p.id === "sit"));
       c.posed = "sit";
     }
     const prop = on.prop;
@@ -482,8 +498,7 @@ export function controlOps(stage) {
     if (a.pose !== undefined) {
       const preset = allPoses().find((p) => p.id === pose(a.pose));
       const probe = new character.constructor({ profile: character.profile });
-      if (preset.quaternions) probe.setPose(preset.quaternions);
-      else probe.setEulerPose(preset.joints);
+      probe.setPreset(preset);
       endKey.pose = probe.getPose();
       endKey.posed = preset.id;
     }

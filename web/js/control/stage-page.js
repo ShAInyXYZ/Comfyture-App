@@ -7,7 +7,7 @@
 
 import { h, icon, sprite } from "../dom.js";
 import { Stage, SNAPS, RATIOS, MOVES } from "./stage.js";
-import { POSES, POSE_CATEGORIES, SAVED, setSaved, allPoses } from "./poses.js";
+import { POSES, POSE_CATEGORIES, SAVED, setSaved, allPoses, poseById } from "./poses.js";
 import { ASSETS, ASSET_CATEGORIES, assetByType } from "./assets.js";
 import { JOINT_NAMES, JOINT_LABELS, BODY_TYPES, BODY_SLIDERS, PARAMS, PALETTE, colorName } from "./skeleton.js";
 import { CHANNELS, PASSES } from "./channels.js";
@@ -161,7 +161,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     return [t.x, 0, t.z];
   }
 
-  let tab = "poses";
+  let tab = "cast";
   let poseCat = "Stand";
   let assetCat = "Furniture";
   addEl.replaceChildren(
@@ -175,9 +175,15 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   function library() {
     addEl.lastChild.setAttribute("aria-pressed", String(tab === "assets"));
     const tabs = el("div.ctl-tabs", { role: "tablist" },
-      ...[["poses", "Poses"], ["assets", "Assets"]].map(([id, label]) =>
+      ...[["cast", "Characters"], ["poses", "Poses"], ["assets", "Assets"]].map(([id, label]) =>
         el("button", { type: "button", role: "tab", "aria-selected": String(tab === id), on: { click: () => ((tab = id), library()) } }, label)));
-    if (tab === "poses") {
+    if (tab === "cast") {
+      // the body types, each drawn standing; a click puts one on the stage
+      const grid = el("div.ctl-poses.ctl-cast", {}, ...BODY_TYPES.map((b) =>
+        el("button.ctl-pose.ctl-body", { type: "button", title: `Add ${b.name.toLowerCase()} — ${b.profile.height.toFixed(2)} m`, "aria-label": `Add ${b.name.toLowerCase()}`, on: { click: () => stage.addCharacter({ at: freeSpot(), body: b.id }) } },
+          el("img", { src: stage.poseThumbnail(poseById("stand"), { body: b.id }), alt: "", draggable: false }))));
+      libraryEl.replaceChildren(tabs, grid);
+    } else if (tab === "poses") {
       const target = stage.selection.character;
       const list = poseCat === "Mine" ? SAVED : POSES.filter((p) => p.category === poseCat);
       const chips = el("div.ctl-chips", {},
@@ -187,7 +193,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       const grid = el("div.ctl-poses", {}, ...list.map((p) =>
         el("div.ctl-pose-wrap", {},
           el("button.ctl-pose", { type: "button", title: target ? p.name : `${p.name} — select a character first`, "aria-label": p.name, disabled: !target, on: { click: () => stage.applyPose(p.id) } },
-            el("img", { src: stage.poseThumbnail(p.joints, { quaternions: p.quaternions }), alt: "", draggable: false })),
+            el("img", { src: stage.poseThumbnail(p), alt: "", draggable: false })),
           p.category === "Mine" ? el("button.ctl-mini.ctl-pose-x", { type: "button", title: "Forget this pose", "aria-label": `Forget ${p.name}`, on: { click: () => forgetPose(p.id) } }, icon("close")) : null)));
       if (!list.length) grid.append(el("p.ctl-empty", {}, poseCat === "Mine" ? "Pose a character, then save it here." : "No poses here."));
       libraryEl.replaceChildren(tabs, chips, ...(form ? [form] : []), grid);
