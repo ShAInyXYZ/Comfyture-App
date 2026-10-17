@@ -12,15 +12,15 @@ Comfyture is an open-source preset studio. Pick a photo, pick a preset (a crash 
 
 ## What it does
 
-Comfyture is a desk for directing a shot: give it the frames, write the script, set the camera, roll takes and keep the good one. Then chain shots into a film, or let the Director plan and make the whole film from one sentence.
+Comfyture is a desk for directing a shot: give it the frames, write the script, set the camera, roll takes and keep the good one. Then chain shots into a film, or let Story plan and make the whole film from one sentence.
 
-- **Four sections.** **Create** is the desk. **Director** plans and makes a whole film from a sentence. **Library** holds every take, film and image. **Edit** cuts takes into a film.
+- **Five sections, in the order a film is made.** **Story** plans and makes a whole film from a sentence. **Stage** blocks a scene with mannequins and set pieces and renders it as control references and control videos. **Shot** is the desk. **Cut** cuts takes into a film. **Library** holds every take, film and image.
 - **Assistant.** A floating chat over the desk, like Higgsfield's: a bar at the bottom, the conversation above it when you want it. It knows how the app works: a manual written from the app's own code (which workflow runs for which inputs, every input and its limits, how the script becomes the exact prompt, the presets) goes with every message, together with the open tab's whole state and the latest takes. Say what you want and Gemma 4, running inside ComfyUI with your start photo in view, picks a preset, writes one to four shots with their cuts, sets length, frame, quality and takes, draws or edits the start photo, draws references, sets a paint, switches a video between extend and copy motion, opens the next shot from a take's last frame, and rolls when you ask. Attach images, videos, sounds or text files (the paperclip, a drop, or a paste) and name them with `@` in a message: "use @chef as the cast and @sneaker as the prop, follow @brief". `@` also reaches everything in the Library: an earlier take (`continue from @finding-life`), a film, or any image. The files you name get an accent outline; the assistant sees the named images on one labelled sheet and puts each file where you say. Every change is listed under its reply, with an Undo.
-- **Director.** Describe a film in a sentence. Gemma 4, running inside ComfyUI, writes the shot list; Qwen Image 2.1 draws each shot's first frame; LTX-2.5 rolls every shot with its sound; the takes are cut into one film. Every shot opens as a tab in Create that you can change and roll again.
+- **Story.** Describe a film in a sentence. Gemma 4, running inside ComfyUI, writes the shot list; Qwen Image 2.1 draws each shot's first frame; LTX-2.5 rolls every shot with its sound; the takes are cut into one film. Every shot opens as a tab in Shot that you can change and roll again, and each can be blocked on the Stage.
 - **Image.** A floating window for pictures: step 0 on the desk, above the inputs, and on any input card or in the Library. Pick a model (Qwen Image 2.1 and its Turbo, FLUX 3 Klein, Krea 2 Turbo, Z-Image Turbo) and a template (text to image, image edit, style reference), set the frame, the size and how many, and name references with `@` as in the chat. Every model runs Comfy's official template for it, and Improve rewrites your words with that template's own prompt enhancer, by the rules of the model it is for. Send any result to an input of the open tab: the start or end frame, a keyframe, the cast, the prop or the place. With several results, a notch at the top of the picture switches between them, shows them all at once, or compares two with a slider.
-- **Tabs.** Click any take to open it in a tab with the inputs that made it, while the Draft tab keeps yours. Hover a tab to preview it and drag tabs into order. Next shot opens a new tab that starts on a take's last frame, and Edit takes sends the tabs' takes on to Edit.
-- **Library.** Takes, films and images in one searchable grid. Select takes to add them to Edit, open a take in Create with its inputs, use an image as a start frame, download anything.
-- **Edit.** Put takes in order, trim each one with its two handles, choose a cut or a cross-dissolve, preview the sequence and cut the film. Films keep their clips, so Edit again reopens them.
+- **Tabs.** Click any take to open it in a tab with the inputs that made it, while the Draft tab keeps yours. Hover a tab to preview it and drag tabs into order. Next shot opens a new tab that starts on a take's last frame, and Edit takes sends the tabs' takes on to Cut.
+- **Library.** Takes, films and images in one searchable grid. Select takes to add them to Cut, open a take in Shot with its inputs, use an image as a start frame, download anything.
+- **Cut.** Put takes in order, trim each one with its two handles, choose a cut or a cross-dissolve, preview the sequence and cut the film. Films keep their clips, so Edit again reopens them.
 - **Sources.**
   - A start frame from a photo, a video or a picture made in the Image window. Any input image can be made or edited there ("make it night, add rain").
   - A video to extend, so the shot picks up where the clip ends, or whose motion to copy onto your photo: body and face, or shapes and edges.
@@ -37,7 +37,7 @@ Comfyture is a desk for directing a shot: give it the frames, write the script, 
   - open the next shot on its last frame, to chain shots
   - keep the picture and roll a new sound: LTX-2.5 writes the audio again for the frozen picture
   - cut a 9:16 clip to post, with your photo above the shot
-  - remix it, download it, or send it to Edit to join it with other takes
+  - remix it, download it, or send it to Cut to join it with other takes
 - **28 presets as starting scripts** in three groups: Camera (crash zoom, dolly zoom, 360 orbit, FPV dive, bullet time…), VFX (fire, lightning, disintegrate, portal…) and Transform (gold statue, plush toy, zombie, fifty years older…). A preset fills the script and stays editable. Save your own with one click; each one is a file in `presets/`.
 - **Your GPU or Comfy Cloud.** The app talks to ComfyUI through the official Comfy SDK. Point it at Comfy Cloud with an API key, or at your own ComfyUI through `comfy-api-proxy`. Nothing else changes.
 
@@ -53,11 +53,11 @@ A transformation preset doesn't hope the video model gets there. It paints the d
 
 Cast, prop and location images go onto one sheet on black. Cast and props are cut out automatically with ComfyUI's background removal, and a few words per image tell the model which panel is which. LTX-2.5 with Lightricks' Ingredients IC-LoRA then puts them into a new scene.
 
-## Director
+## Story
 
-![The Director: one sentence, a three-shot plan, each shot's first frame and take, and the film](docs/director.jpg)
+![Story: one sentence, a three-shot plan, each shot's first frame and take, and the film](docs/director.jpg)
 
-The Director is a small harness built from the same parts as the desk. Write what the film is about and pick how many shots. An open-weights LLM, Gemma 4 E4B, runs as a ComfyUI workflow (`workflows/director.json`, core `TextGenerate`) and returns a shot list: a title, a look and a cast shared by every shot, and for each shot its first frame, what happens, the camera move, the framing it ends on, the sound and its length. You can edit the plan before anything renders.
+Story is a small harness built from the same parts as the desk. Write what the film is about and pick how many shots. An open-weights LLM, Gemma 4 E4B, runs as a ComfyUI workflow (`workflows/director.json`, core `TextGenerate`) and returns a shot list: a title, a look and a cast shared by every shot, and for each shot its first frame, what happens, the camera move, the framing it ends on, the sound and its length. You can edit the plan before anything renders.
 
 Make the film opens one tab per shot, draws every first frame with Qwen Image 2.1, rolls each shot with LTX-2.5 as soon as its frame is in, and cuts the finished takes into one film in tab order. With a start photo in the open tab, shot 1 starts on your photo and the plan follows from it.
 
@@ -87,36 +87,46 @@ What changes from the templates:
 A clip can start the shot instead of a photo. Uploads are normalized to 24 fps, at most 1280 px and 20 seconds.
 
 - **Extend this clip.** The clip's last 17 frames guide the start of the new shot, so it picks up exactly where the clip ends and carries on with your script. The result is the clip and its continuation as one file. End frames and keyframes still work.
-- **Copy its motion.** Lightricks' union-control IC-LoRA follows the clip's pose (body, hands, face, from DWPose) or its edges (Canny) while your start photo gives the look. Without a photo the script sets the look. A voice track can drive it too.
+- **Copy its motion.** Lightricks' union-control IC-LoRA follows the clip's pose (body, hands, face, from DWPose) or its edges (Canny) while your start photo gives the look. Without a photo the script sets the look. A voice track can drive it too. A clip that already is a control pass, like a depth, pose or line video from the Stage, guides the shot as it is.
 
-## Control
+## Stage
 
-`/control.html` is a staging table for making your own references: posable mannequins (IK hands and feet, preset poses, mirror), props, a camera with snaps and a real focal length, and the output frame. It is a standalone page for now; the reference passes (depth, pose, line art, masks) come next.
+The Stage is a blocking table for making your own control references, for images and for video: you pose mannequins, set dress the scene with blockout assets, frame it with a real lens, and render it as the passes control models read.
+
+- **Characters.** Eight body types (man, woman, teen, child, toddler, elder, heavy, athletic), each a parametric mannequin: height, build, head, shoulders, hips, waist, chest, belly, legs and arms are sliders. Every character wears its own colour, so you tell them apart on the stage and in the colour ID pass. Double-click a name to rename it.
+- **Poses.** A library of 33 poses in five groups (stand, move, sit, gesture, action), and your own: pose a body, save it, and it waits under Mine. Pose sliders lay over any pose (look, nod, tilt, lean, twist, side bend, arms up, arms forward, elbows, stance, step, crouch), and every joint still turns by hand, with IK on the hands and feet.
+- **Assets.** About thirty parametric set pieces in four groups: furniture (chair, armchair, sofa, stool, bench, table, desk, counter, bed, shelf, lamp, screen), architecture (wall, doorway, window wall, door, pillar, arch, stairs, ramp, platform, floor, fence), outdoor (car, tree, bush, rock, street lamp, crate, barrel, traffic cone) and basic shapes. Their sizes are sliders, and they are rebuilt to them: a wider table keeps its legs. Seats and tops are built in, so a body sits on a chair's seat and a bench seats several.
+- **Channels.** The viewport shows any pass live (keys 1 to 7), and the previews show them all for the frame: clay, colour ID, depth (near is white, as depth models print it), normal, OpenPose (the 18 keypoints and colours of the ControlNet tools), line art and mask. Render references puts every pass of the frame, full size, into the Library, where the Image window and the assistant can use them.
+- **Camera and timeline.** Ten snaps (front, three-quarter, side, back, top, low, high, over the shoulder, close-up), a full-frame focal length and the output frame. Below the viewport, a timeline: keys for the camera and for anything on the stage, with auto-key, and camera moves that set the end of the shot from where the camera is now (push in, pull out, orbit, crane, truck, tilt, zoom, handheld). A body that travels between two keys walks there, or runs, facing the way it goes.
+- **Video references.** Render video plays the timeline frame by frame in one channel (depth, pose, lines or clay) and makes a control clip. Use in Shot puts it in the shot's video input to copy its motion: a depth, pose or line clip guides LTX-2.5 as it is, through the union-control IC-LoRA, and a start photo (or the script) gives the look.
+
+Story's shots each have a Stage it key, which opens the Stage with the shot blocked from what happens in it.
 
 ### The assistant
 
-The chat bar under the viewport stages the scene for you. "Two people arguing by a wall, low angle, vertical for a reel" becomes two mannequins pointing at each other, a wall behind them, a low camera and a 9:16 frame. Follow-ups change only what you name: "put a table between them", "make the one on the left sit down", "send it to Blender". On Comfy Cloud it runs on Claude Haiku 4.5 through Comfy Router, billed in Comfy credits with the same key. Without a Comfy key, or with `COMFYTURE_ASSISTANT=gemma`, it runs on the app's own assistant, Gemma 4 inside ComfyUI, and stays open weights. It gets the stage as it stands and a picture of the frame, and answers with Control commands. Each answer is one undo step. Whatever fails goes back to it once so it can fix its answer.
+On the Stage, the app's chat bar stages the scene. "A kid sits on a bench next to his grandmother, a tree behind them, wide shot" becomes a child and an elder on a bench, a tree behind, a wide lens. Follow-ups change only what you name: "she stands up and walks to the tree while the camera orbits left", "add a man leaning on a car with his hands in his pockets", "send it to Blender". On Comfy Cloud it runs on Claude Haiku 4.5 through Comfy Router, billed in Comfy credits with the same key. Without a Comfy key, or with `COMFYTURE_ASSISTANT=gemma`, it runs on Gemma 4 inside ComfyUI and stays open weights. It gets the stage as it stands and a picture of the frame, and answers with Stage commands. Each answer is one undo step. Whatever fails goes back to it once so it can fix its answer.
 
-The assistant says where things are relative to each other, and Control works out the numbers:
+The assistant says where things are relative to each other, and the Stage works out the numbers:
 - **against:** the back rests on it, touching. "A man leaning back on the wall, hands in his pockets, one foot on the wall" becomes the lean-back pose with the back and the raised sole on the wall.
-- **sit_on:** a box becomes the chair, sized and moved under the hips.
-- **on:** standing on something, or a prop resting on another.
-- **between** two people, or **next_to** someone on a side, at a distance.
-- **size:** props take a size in metres, so a table is `[1.2, 0.75, 0.7]`.
+- **sit_on:** seated on a chair, a sofa, a bench, a step or a bed's edge, at a free place, facing the way the seat does. A plain box becomes a seat sized under the hips.
+- **on:** standing (or lying) on something, or a prop resting on another. Anyone set down over a platform stands on it.
+- **between** two things, or **next_to** something on a side, measured from its edge; walking to something stops beside it.
+- **size:** assets take a size in metres, so a table is `[1.2, 0.75, 0.7]`.
 
-Use it as a first draft. Describe the shot in one message, then fix what is off by hand (drag, pose tiles, snaps) or with short follow-ups that use names.
+Use it as a first draft. Describe the shot in one message, then fix what is off by hand or with short follow-ups that use names.
 
 ### Agents and Blender
 
-The same commands are open to outside agents. `scripts/control-mcp.ts` is an MCP server for them, and the repo's `.mcp.json` registers it for Claude Code. Any MCP client can run `node scripts/control-mcp.ts`. Keep the app running and the Control page open: the page carries out each command.
+The same commands are open to outside agents. `scripts/control-mcp.ts` is an MCP server for them, and the repo's `.mcp.json` registers it for Claude Code. Any MCP client can run `node scripts/control-mcp.ts`. Keep the app running and open in a browser: the Stage loads in it, whichever section is showing, and carries out each command.
 
 | Tool | |
 |---|---|
-| `control_scene` | What is on the stage, with ids, sizes and the camera, plus the poses, props, snaps and frames it knows |
-| `control_layout` | A whole layout in one step: characters, props, camera |
-| `control_add_character` · `control_add_prop` · `control_place` · `control_remove` · `control_clear` | Blocking |
-| `control_pose` · `control_set_joint` · `control_reach` | Posing: presets, single joints, a hand or foot to a point or onto a prop |
-| `control_camera` · `control_look` | Framing, and a picture of what the frame shows |
+| `control_scene` | What is on the stage, with names, bodies, colours, sizes, keys and the camera, plus the poses, assets, body types, colours, sliders, snaps, moves and channels it knows |
+| `control_layout` | A whole layout in one step: characters, props, camera, the shot's length |
+| `control_add_character` · `control_add_prop` · `control_place` · `control_remove` · `control_clear` | Blocking: bodies, colours, names, assets and their sizes, relations |
+| `control_pose` · `control_set_joint` · `control_reach` | Posing: the library and saved poses, pose sliders, single joints, a hand or foot onto something |
+| `control_camera` · `control_look` | Framing, and a picture of the frame in clay or any channel, at any time in the shot |
+| `control_camera_move` · `control_move_to` · `control_key` · `control_duration` | The video: camera moves, walking, keys, the length |
 | `control_to_blender` · `control_from_blender` · `control_blender_status` | The round trip to Blender |
 
 `control_to_blender` rebuilds the stage in a "Comfyture Control" collection in Blender, with the shot camera, lens and resolution; `control_from_blender` brings back what changed there (body positions and turns, joint rotations, props, the camera). It talks to the official [Blender MCP](https://www.blender.org/lab/mcp-server/) add-on (Blender 5.1 or newer) on `localhost:9876`, so the same agent can refine the scene with Blender's own MCP tools in between. Start the add-on's server from Blender, or run Blender without a window:
@@ -192,7 +202,7 @@ Local runs need these files in your ComfyUI `models` folder. On Comfy Cloud noth
 | `qwen_image_2.1_int8_convrot.safetensors` | `diffusion_models` | last frames |
 | `qwen3vl_8b_int8_convrot.safetensors` | `text_encoders` | last-frame prompts |
 | `qwen_image_2.1_vae_bf16.safetensors` | `vae` | last frames |
-| `gemma4_e4b_it_fp8_scaled.safetensors` | `text_encoders` | the Director's shot lists |
+| `gemma4_e4b_it_fp8_scaled.safetensors` | `text_encoders` | Story's shot lists |
 | `ltx-2.3-22b-ic-lora-union-control-ref0.5.safetensors` | `loras` | copying a video's motion |
 | `ltx-2.5-22b-distilled-transformer-bf16.safetensors` | `diffusion_models` | copying a video's motion, as in Lightricks' example |
 | `ltx-2.3-spatial-upscaler-x2-1.1.safetensors` | `latent_upscale_models` | copying a video's motion: the detail pass |
@@ -214,7 +224,7 @@ browser ──► Comfyture server (Node) ──► Comfy SDK ──► Comfy Cl
   - `shot-guided.json`: one LTX-2.5 pass with any number of guide frames. It covers text-to-video, start, end and keyframes, and reference sheets (on the dev model, 30 steps, as the Ingredients LoRA is trained).
   - `shot-motion.json`: LTX-2.5 with the union-control IC-LoRA, two passes, for copying a clip's motion. Extending a clip uses `shot-guided.json` with the clip's last frames as the first guide.
   - `frame-edit.json`: the Qwen Image 2.1 edit that paints end frames and edits any input.
-  - `image-generate.json`: Qwen Image 2.1 text-to-image, for the Director's first frames and the assistant.
+  - `image-generate.json`: Qwen Image 2.1 text-to-image, for Story's first frames and the assistant.
   - `image/`: the Image window's models, one graph per official template, their catalogue (`models.json`), the shared enhancer graph and the enhancers' briefs.
   - `cutout.json`: ComfyUI's background removal, for cast and prop references.
   - `sound.json`: a new sound for a finished picture, which is frozen while LTX-2.5 writes the audio.
@@ -271,9 +281,9 @@ Write the action the way LTX-2.5 reads best: present tense, the motion first, on
 | `COMFYTURE_WORKFLOWS` | | `dev` swaps in tiny stand-in workflows so you can work on the UI without a GPU |
 | `COMFYTURE_URL` | `http://127.0.0.1:5177` | Where `scripts/control-mcp.ts` finds the app |
 | `BLENDER_MCP_HOST` / `BLENDER_MCP_PORT` | `localhost` / `9876` | Where the app finds Blender's MCP add-on |
-| `COMFYTURE_ASSISTANT` | | `gemma` keeps the Control assistant on Gemma 4 instead of Claude through Comfy Router |
-| `COMFYTURE_CLAUDE_MODEL` | `claude-haiku-4-5-20251001` | Which Claude model on Comfy Router the Control assistant uses |
-| `COMFYTURE_DEBUG` | | Set to log the Control assistant's raw answers |
+| `COMFYTURE_ASSISTANT` | | `gemma` keeps the Stage assistant on Gemma 4 instead of Claude through Comfy Router |
+| `COMFYTURE_CLAUDE_MODEL` | `claude-haiku-4-5-20251001` | Which Claude model on Comfy Router the Stage assistant uses |
+| `COMFYTURE_DEBUG` | | Set to log the Stage assistant's raw answers |
 
 ## Credits
 
