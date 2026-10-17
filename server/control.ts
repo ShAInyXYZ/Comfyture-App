@@ -186,3 +186,156 @@ result = {"characters": characters, "props": props, "camera": camera, "ignored":
   if (!applied.ok) throw Object.assign(new Error(applied.error), { status: 409 });
   return { ...(applied.result as object), ignored: scene.ignored };
 }
+
+// ------------------------------------------------------------------ the assistant
+
+/** Who the assistant is on the Control page, what it can do there, and how the stage measures. */
+export const CONTROL_BRIEF = `You are the stage manager inside Comfyture's Control page: a 3D blocking table with wooden mannequins, simple props and a camera. People stage a scene here to make reference pictures (depth, pose) for image and video models. The user says what they want in plain words; you stage it.
+
+Answer with JSON only, no other text:
+{"reply": "one or two short sentences", "actions": [{"op": "...", "args": {...}}]}
+
+THE STAGE
+Metres, the ground at y = 0. x runs left (-) to right (+) as the default camera sees it; z runs from the back (-) to the front (+, toward the camera).
+facing is degrees about the vertical: 0 looks at the camera, 90 looks right (+x), -90 looks left, 180 looks away. face_toward takes a name (or [x, z]) and turns to it: use it for people who talk, fight or look at something.
+Props: box (a 0.6 m cube), cylinder (0.6 m wide, 0.8 m tall), sphere (0.7 m), plane (a wall 2.4 m wide, 2.2 m tall; scale [2, 1, 1] makes it 4.8 m wide), stairs (1 m wide, five steps rising toward -z). y lifts a prop, e.g. y 0.6 stacks it on a box.
+Spacing that reads well: two people talking 1 to 1.5 m apart, fighting 0.8 to 1.2 m, a wall 1.5 to 3 m behind them. Keep everything within 4 m of the centre.
+
+ACTIONS
+- layout {clear, characters: [{name, pose, x, z, facing or face_toward, height}], props: [{type, label, x, z, y, facing or face_toward, scale}], camera: {...}}: a whole scene at once. For a new scene use it with clear: true. Without clear it moves what is already there by name and adds the rest; for a small change, use the small actions instead.
+- add_character {name, pose, x, z, facing or face_toward, height}
+- add_prop {type, label, x, z, y, facing or face_toward, scale}
+- place {id, x, z, y, facing or face_toward, scale, height}: id is a name from the scene
+- pose {id, pose, mirror}
+- joint {id, joint, rotation: [x, y, z] in degrees}
+- reach {id, effector, target}: effector is LeftHand, RightHand, LeftFoot or RightFoot; target a name (the hand rests on its top) or [x, y, z]
+- remove {id}
+- camera {snap, of, focal, ratio}: of is a character name or "all"; focal in mm from 14 to 200 (24 wide, 35 natural, 50 normal, 85 portrait)
+- to_blender {}: send the stage to Blender to refine it there. from_blender {}: bring Blender's changes back.
+
+Poses by what people do: talk or wait stand; argue point or arms-crossed; greet wave; fight, punch or box fight; run run; kneel kneel; sit sit (seated as on a chair, so give them a box to sit on).
+Every character gets facing or face_toward: people in a scene together face each other or what they act on.
+Two people facing each other along x are seen in profile by the front snap: that is the side view of a talk or a duel. The side snap looks along the line between them and hides one behind the other.
+
+Give every character a short name (the user's words when they give one) and use names, never ids. Change only what the user asks for: the stage as it is now is below, with a picture of what the camera frame shows. If the user only asks a question, answer it with no actions. The poses, snaps and frames you may use are listed with the stage; use no others.
+
+EXAMPLE
+User: a girl sits on the stairs while her friend waves at her, wide shot
+{"reply": "She sits on the steps and her friend waves from the side.", "actions": [{"op": "layout", "args": {"clear": true, "props": [{"type": "stairs", "label": "Stairs", "x": -0.6, "z": -0.4}], "characters": [{"name": "Mia", "pose": "sit", "x": -0.6, "z": 0, "facing": 20}, {"name": "Leo", "pose": "wave", "x": 1.2, "z": 0.3, "face_toward": "Mia"}], "camera": {"snap": "front", "of": "all", "focal": 24, "ratio": "16:9"}}}]}`;
+
+export interface ControlTurn { role: "user" | "assistant"; text: string; did?: string[]; failed?: string[] }
+export const CONTROL_OPS = ["layout", "add_character", "add_prop", "place", "pose", "joint", "reach", "remove", "camera", "to_blender", "from_blender"] as const;
+type ControlAction = { op: (typeof CONTROL_OPS)[number]; args: Record<string, unknown> };
+
+const at = (p: unknown) => (Array.isArray(p) ? `x ${p[0]} z ${p[2]}` : "?");
+const list = (v: unknown) => (Array.isArray(v) ? v.slice(0, 40).map(String).join(", ") : "");
+
+/** The prompt: the stage as the page reported it, and the conversation so far. */
+export function controlPrompt(scene: Record<string, any>, turns: ControlTurn[], sees: boolean) {
+  const cam = scene.camera ?? {};
+  const lines = [
+    "THE STAGE NOW",
+    `frame ${cam.ratio ?? "16:9"}, lens ${cam.focal ?? 35} mm, camera at [${(cam.position ?? []).join(", ")}] looking at [${(cam.target ?? []).join(", ")}]`,
+    "characters:",
+    ...((scene.characters ?? []) as any[]).slice(0, 12).map((c) => `- ${c.name}: pose ${c.pose ?? "custom"}, ${c.height} m tall, at ${at(c.position)}, facing ${c.facing}${c.visible === false ? ", hidden" : ""}`),
+    ...(scene.characters?.length ? [] : ["none"]),
+    "props:",
+    ...((scene.props ?? []) as any[]).slice(0, 24).map((p) => `- ${p.label}: ${p.type}, ${(p.size ?? []).join(" × ")} m, at ${at(p.position)}${p.position?.[1] > 0.01 && p.type !== "sphere" ? ` lifted ${p.position[1]}` : ""}, facing ${p.facing}`),
+    ...(scene.props?.length ? [] : ["none"]),
+    `poses you can use: ${list(scene.poses)}`,
+    `camera snaps: ${list(scene.snaps)}`,
+    `frames: ${list(scene.frames)}`,
+    `joints: ${list(scene.joints)}`,
+    `the picture attached: ${sees ? "what the camera frame shows now" : "none"}`,
+    "",
+    "CONVERSATION:",
+    ...turns.slice(-8).map((t) => `${t.role === "user" ? "User" : "Assistant"}: ${t.text.slice(0, 800)}${t.did?.length ? ` [the app applied: ${t.did.join(", ")}]` : ""}${t.failed?.length ? ` [the app could not do: ${t.failed.join("; ")}]` : ""}`),
+  ];
+  return lines.join("\n");
+}
+
+/**
+ * Mends the brackets of JSON a small model wrote: a closer it forgot is put back where the next
+ * one shows it was due, a stray closer is dropped, trailing commas go, open ones are closed.
+ */
+export function mendJson(text: string) {
+  const out: string[] = [];
+  const open: string[] = [];
+  let inString = false;
+  // a comma right before a closer is dropped
+  const close = (c: string) => {
+    let k = out.length;
+    while (k && /\s/.test(out[k - 1])) k--;
+    if (out[k - 1] === ",") out.splice(k - 1, 1);
+    out.push(c);
+  };
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      out.push(ch);
+      if (ch === "\\") out.push(text[++i] ?? "");
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    if (ch === "{" || ch === "[") open.push(ch === "{" ? "}" : "]");
+    if (ch === "}" || ch === "]") {
+      if (!open.includes(ch)) continue;
+      while (open.at(-1) !== ch) close(open.pop()!);
+      close(open.pop()!);
+      continue;
+    }
+    out.push(ch);
+  }
+  while (open.length) close(open.pop()!);
+  return out.join("");
+}
+
+/**
+ * What a small model gets wrong in a layout, put right. A character left without a direction
+ * (it writes facing 0 as a filler) turns to the nearest other one, or, alone, to the first thing
+ * it could act on (not a wall or stairs). And people standing side by side along x are seen in
+ * profile from the front: a side snap of them would look along their line, one behind the other.
+ */
+function faceSomething(args: Record<string, any>) {
+  const characters = Array.isArray(args.characters) ? args.characters : [];
+  const props = (Array.isArray(args.props) ? args.props : []).filter((p: any) => p?.label && !["plane", "wall", "stairs"].includes(String(p.type)));
+  const xz = (o: any) => [Number(o?.x) || 0, Number(o?.z) || 0];
+  const cam = args.camera;
+  if (cam && cam.snap === "side" && (!cam.of || cam.of === "all") && characters.length > 1) {
+    const span = (i: number) => Math.max(...characters.map((c: any) => xz(c)[i])) - Math.min(...characters.map((c: any) => xz(c)[i]));
+    if (span(0) > 2 * span(1)) cam.snap = "front";
+  }
+  for (const c of characters) {
+    if (!c || c.face_toward !== undefined || (c.facing !== undefined && Number(c.facing) !== 0)) continue;
+    const [x, z] = xz(c);
+    const others = characters.filter((o: any) => o !== c && o?.name);
+    const near = others.sort((a: any, b: any) => Math.hypot(xz(a)[0] - x, xz(a)[1] - z) - Math.hypot(xz(b)[0] - x, xz(b)[1] - z))[0];
+    if (near) c.face_toward = near.name;
+    else if (props.length) c.face_toward = props[0].label;
+    if (c.face_toward !== undefined) delete c.facing;
+  }
+}
+
+/** The answer, read leniently: the first JSON object in it, only the actions Control has. */
+export function readControlAnswer(text: string): { reply: string; actions: ControlAction[] } {
+  if (process.env.COMFYTURE_DEBUG) console.log(`control assistant answered\n${text}`);
+  let raw: Record<string, any>;
+  const body = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
+  try {
+    try {
+      raw = JSON.parse(body);
+    } catch {
+      raw = JSON.parse(mendJson(body));
+    }
+  } catch {
+    console.warn(`control assistant: unreadable answer\n${text}`);
+    return { reply: text.replace(/[{}"]/g, "").replace(/\s+/g, " ").trim().slice(0, 600) || "Sorry, I lost my words. Say it again?", actions: [] };
+  }
+  const actions = (Array.isArray(raw.actions) ? raw.actions : [])
+    .slice(0, 12)
+    .map((a: any) => ({ op: String(a?.op ?? a?.do ?? ""), args: a?.args && typeof a.args === "object" ? a.args : {} }))
+    .filter((a: ControlAction) => (CONTROL_OPS as readonly string[]).includes(a.op));
+  for (const a of actions) if (a.op === "layout") faceSomething(a.args);
+  return { reply: String(raw.reply ?? "").replace(/\s+/g, " ").trim().slice(0, 600) || (actions.length ? "Done." : "…"), actions };
+}

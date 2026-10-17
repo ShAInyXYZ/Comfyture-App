@@ -509,10 +509,15 @@ export class Engine extends EventEmitter {
     return parsePlan(Buffer.from(await out.toBytes()).toString("utf8"), options.shots, options.seconds);
   }
 
-  /** The assistant's answer to a prompt (assistant.json, Gemma 4), as text. It doesn't wait in the render queue. */
-  async ask(prompt: string, photo?: string, manual?: string): Promise<string> {
+  /**
+   * The assistant's answer to a prompt (assistant.json, Gemma 4), as text. It doesn't wait in the render queue.
+   * `brief` replaces the shot assistant's brief (Control has its own); `picture` is any image file it should see.
+   */
+  async ask(prompt: string, photo?: string, manual?: string, { brief, picture }: { brief?: string; picture?: string } = {}): Promise<string> {
     if (photo && !(await exists(this.photoPath(photo)))) photo = undefined;
-    const graph = buildPlan(await loadGraph(this.dirs.workflows, "assistant.json"), prompt, random32(), photo ? this.client.assets.fromFile(this.photoPath(photo)) : undefined);
+    const image = picture ?? (photo ? this.photoPath(photo) : undefined);
+    const graph = buildPlan(await loadGraph(this.dirs.workflows, "assistant.json"), prompt, random32(), image ? this.client.assets.fromFile(image) : undefined);
+    if (brief && graph.brief) graph.brief.inputs.value = brief;
     // the brief says who it is and what it may do; the manual, how the app works today
     if (manual && graph.brief) graph.brief.inputs.value = `${graph.brief.inputs.value}\n\n${manual}`;
     const job = await this.execute(graph, new AbortController().signal, { kind: "plan", stage: "frame", queue: false });

@@ -6,7 +6,7 @@
 import * as THREE from "three";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { RATIOS, SNAPS, fovOf } from "./stage.js";
-import { POSES, poseById } from "./poses.js";
+import { POSES } from "./poses.js";
 import { PROP_TYPES } from "./props.js";
 import { CHAINS, JOINT_NAMES } from "./skeleton.js";
 
@@ -23,7 +23,33 @@ const num = (v, name) => {
   return v;
 };
 
-export function connectRemote(stage, { onActivity } = {}) {
+// the words people (and models) use for what Control calls otherwise
+const ALIASES = {
+  pose: {
+    standing: "stand", idle: "stand", talk: "stand", talking: "stand", wait: "stand", waiting: "stand",
+    walking: "walk", running: "run", sitting: "sit", seated: "sit", kneeling: "kneel", crouching: "crouch", squat: "crouch",
+    lying: "lie", "lie down": "lie", "lying down": "lie", pointing: "point", argue: "point", arguing: "point",
+    waving: "wave", greet: "wave", "crossed arms": "arms-crossed", "arms crossed": "arms-crossed",
+    fighting: "fight", punch: "fight", boxing: "fight", landing: "hero-landing", "hero landing": "hero-landing",
+    reaching: "reach", tpose: "t-pose", "t pose": "t-pose",
+  },
+  prop: { table: "box", desk: "box", chair: "box", stool: "box", crate: "box", bench: "box", cube: "box", bed: "box", car: "box", wall: "plane", door: "plane", screen: "plane", pillar: "cylinder", column: "cylinder", barrel: "cylinder", post: "cylinder", ball: "sphere", rock: "sphere", steps: "stairs", stair: "stairs", staircase: "stairs" },
+  snap: { "low angle": "low", "high angle": "high", "close up": "close-up", closeup: "close-up", "over the shoulder": "over-shoulder", "over shoulder": "over-shoulder", profile: "side", "three quarter": "three-quarter-left", "three-quarter": "three-quarter-left", "bird's eye": "top", overhead: "top", wide: "front" },
+  ratio: { vertical: "9:16", portrait: "9:16", reel: "9:16", story: "9:16", square: "1:1", landscape: "16:9", horizontal: "16:9", widescreen: "16:9", cinema: "21:9", cinemascope: "21:9", scope: "21:9" },
+};
+
+/** A name as Control knows it: itself, or what a common word for it means. */
+function known(kind, value, names) {
+  const key = String(value ?? "").trim().toLowerCase();
+  if (names.includes(key)) return key;
+  const loose = key.replace(/[-_]+/g, " ");
+  return ALIASES[kind][loose] ?? ALIASES[kind][key] ?? names.find((n) => n.replace(/-/g, " ") === loose) ?? null;
+}
+
+/** The commands Control takes, from an agent over the server or from the assistant on the page. */
+export function controlOps(stage) {
+  const POSE_IDS = POSES.map((p) => p.id);
+  const pose = (v) => known("pose", v, POSE_IDS) ?? (() => { throw new Error(`No pose "${v}". Poses: ${POSE_IDS.join(", ")}.`); })();
   const find = (id) => {
     const character = stage.characters.find((c) => c.id === id || c.name.toLowerCase() === String(id).toLowerCase());
     if (character) return { character };
@@ -68,7 +94,7 @@ export function connectRemote(stage, { onActivity } = {}) {
 
   const describe = () => ({
     characters: stage.characters.map((c) => ({
-      id: c.id, name: c.name, height: c.profile.height,
+      id: c.id, name: c.name, pose: c.posed ?? "custom", height: c.profile.height,
       position: c.root.position.toArray().map(round), facing: facingOf(c.root), visible: c.root.visible,
     })),
     props: stage.props.map((p) => ({
@@ -80,9 +106,8 @@ export function connectRemote(stage, { onActivity } = {}) {
   });
 
   const addCharacter = (a = {}) => {
-    if (a.pose && !poseById(a.pose)) throw new Error(`No pose "${a.pose}". Poses: ${POSES.map((p) => p.id).join(", ")}.`);
     const c = stage.addCharacter({
-      pose: a.pose ?? "stand",
+      pose: a.pose ? pose(a.pose) : "stand",
       name: typeof a.name === "string" && a.name.trim() ? a.name.trim().slice(0, 40) : undefined,
       at: [a.x ?? 0, 0, a.z ?? 0],
       profile: a.height ? { height: THREE.MathUtils.clamp(num(a.height, "height"), 0.4, 2.6) } : undefined,
@@ -92,8 +117,11 @@ export function connectRemote(stage, { onActivity } = {}) {
   };
 
   const addProp = (a = {}) => {
-    if (!PROP_TYPES.some(([t]) => t === a.type)) throw new Error(`No prop type "${a.type}". Types: ${PROP_TYPES.map(([t]) => t).join(", ")}.`);
-    const p = stage.addProp(a.type, [a.x ?? 0, 0, a.z ?? 0]);
+    const type = known("prop", a.type, PROP_TYPES.map(([t]) => t));
+    if (!type) throw new Error(`No prop type "${a.type}". Types: ${PROP_TYPES.map(([t]) => t).join(", ")}.`);
+    const p = stage.addProp(type, [a.x ?? 0, 0, a.z ?? 0]);
+    // a table, chair or bed named by its word gets a label and a likely size
+    if (!a.label && type !== a.type) p.userData.label = p.name = String(a.type).trim().replace(/^\w/, (c) => c.toUpperCase()).slice(0, 40);
     if (typeof a.label === "string" && a.label.trim()) p.userData.label = p.name = a.label.trim().slice(0, 40);
     place({ prop: p }, a);
     return p;
@@ -101,13 +129,15 @@ export function connectRemote(stage, { onActivity } = {}) {
 
   const camera = (a = {}) => {
     if (a.ratio !== undefined) {
-      if (!RATIOS[a.ratio]) throw new Error(`No frame "${a.ratio}". Frames: ${Object.keys(RATIOS).join(", ")}.`);
-      stage.setRatio(a.ratio);
+      const ratio = known("ratio", a.ratio, Object.keys(RATIOS));
+      if (!ratio) throw new Error(`No frame "${a.ratio}". Frames: ${Object.keys(RATIOS).join(", ")}.`);
+      stage.setRatio(ratio);
     }
     if (a.focal !== undefined) stage.setFocal(num(a.focal, "focal"));
     if (a.snap !== undefined) {
-      if (!SNAPS.some(([s]) => s === a.snap)) throw new Error(`No snap "${a.snap}". Snaps: ${SNAPS.map(([s]) => s).join(", ")}.`);
-      stage.snap(a.snap, a.of && a.of !== "all" ? find(a.of).character ?? null : a.of === "all" ? null : undefined);
+      const snap = known("snap", a.snap, SNAPS.map(([s]) => s));
+      if (!snap) throw new Error(`No snap "${a.snap}". Snaps: ${SNAPS.map(([s]) => s).join(", ")}.`);
+      stage.snap(snap, a.of && a.of !== "all" ? find(a.of).character ?? null : a.of === "all" ? null : undefined);
     }
     if (a.position || a.target) {
       if (a.position) stage.camera.position.fromArray(a.position.map((v, i) => num(v, `position[${i}]`)));
@@ -118,25 +148,35 @@ export function connectRemote(stage, { onActivity } = {}) {
     }
   };
 
-  /** A whole layout in one step: optionally clear, then characters, props and the camera. */
+  /**
+   * A whole layout in one step. With clear it replaces the stage; without, it works by name:
+   * a character or prop already on the stage is moved (and posed), anything new is added.
+   */
   const layout = (a = {}) => {
     if (a.clear) clear();
     const made = { characters: [], props: [] };
+    const same = (x, y) => typeof x === "string" && x.trim().toLowerCase() === String(y).toLowerCase();
     // turning toward something placed later in the same layout waits until everything exists
     const later = [];
     for (const p of a.props ?? []) {
-      const prop = addProp({ ...p, face_toward: undefined });
+      let prop = stage.props.find((x) => same(p.label, x.userData.label));
+      if (prop) place({ prop }, { ...p, face_toward: undefined });
+      else prop = addProp({ ...p, face_toward: undefined });
       made.props.push(prop.userData.id);
       if (p.face_toward !== undefined) later.push([{ prop }, p.face_toward]);
     }
     for (const c of a.characters ?? []) {
-      const character = addCharacter({ ...c, face_toward: undefined });
+      let character = stage.characters.find((x) => same(c.name, x.name));
+      if (character) {
+        place({ character }, { ...c, face_toward: undefined });
+        if (c.pose && pose(c.pose) !== character.posed) stage.applyPose(pose(c.pose), character);
+      } else character = addCharacter({ ...c, face_toward: undefined });
       made.characters.push(character.id);
       if (c.face_toward !== undefined) later.push([{ character }, c.face_toward]);
     }
     for (const [t, toward] of later) place(t, { face_toward: toward });
     if (a.camera) camera(a.camera);
-    else if (made.characters.length || made.props.length) stage.snap("three-quarter-left", null);
+    else if (a.clear && (made.characters.length || made.props.length)) stage.snap("three-quarter-left", null);
     return made;
   };
 
@@ -242,10 +282,10 @@ export function connectRemote(stage, { onActivity } = {}) {
     pose: (a) => {
       const { character } = find(a.id);
       if (!character) throw new Error("Only characters take poses.");
-      if (!poseById(a.pose)) throw new Error(`No pose "${a.pose}". Poses: ${POSES.map((p) => p.id).join(", ")}.`);
-      stage.applyPose(a.pose, character);
+      const id = pose(a.pose);
+      stage.applyPose(id, character);
       if (a.mirror) stage.mirror(character);
-      return { id: character.id, pose: a.pose };
+      return { id: character.id, pose: id };
     },
     joint: (a) => {
       const { character } = find(a.id);
@@ -254,6 +294,7 @@ export function connectRemote(stage, { onActivity } = {}) {
       character.joints[a.joint].quaternion.setFromEuler(new THREE.Euler(x ?? 0, y ?? 0, z ?? 0, "XYZ"));
       character.constrain(a.joint);
       character.ground();
+      character.posed = "custom";
       const e = new THREE.Euler().setFromQuaternion(character.joints[a.joint].quaternion, "XYZ");
       return { id: character.id, joint: a.joint, rotation: [deg(e.x), deg(e.y), deg(e.z)] };
     },
@@ -264,6 +305,7 @@ export function connectRemote(stage, { onActivity } = {}) {
       const box = Array.isArray(a.target) ? null : new THREE.Box3().setFromObject(objectOf(find(a.target)));
       const target = box ? box.getCenter(new THREE.Vector3()).setY(box.max.y) : new THREE.Vector3(...a.target.map((v, i) => num(v, `target[${i}]`)));
       character.reach(a.effector, target);
+      character.posed = "custom";
       const at = character.joints[a.effector].getWorldPosition(new THREE.Vector3());
       return { id: character.id, effector: a.effector, reached: at.toArray().map(round), off_by: round(at.distanceTo(target)) };
     },
@@ -275,6 +317,25 @@ export function connectRemote(stage, { onActivity } = {}) {
   };
   // these read or replace the scene without a step of their own
   const QUIET = new Set(["scene", "look", "export_glb", "undo"]);
+  // the others happen whole or not at all: one that fails puts the stage back as it was
+  for (const [name, run] of Object.entries(OPS)) {
+    if (QUIET.has(name)) continue;
+    OPS[name] = (args) => {
+      const before = stage.toJSON();
+      try {
+        return run(args);
+      } catch (error) {
+        stage.load(before, { keepHistory: true });
+        throw error;
+      }
+    };
+  }
+  return { ops: OPS, quiet: QUIET, describe, look };
+}
+
+/** Carries out commands the server relays, and answers each one. */
+export function connectRemote(stage, { onActivity } = {}) {
+  const { ops: OPS, quiet: QUIET } = controlOps(stage);
 
   const answer = (body) => fetch("api/control/reply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const events = new EventSource("api/control/events");

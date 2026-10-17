@@ -11,7 +11,7 @@ import { manual } from "./manual.ts";
 import { LIMITS } from "./limits.ts";
 import { CloudLibrary } from "./cloud.ts";
 import { ASPECTS, ImageModels } from "./images.ts";
-import { blenderStatus, command, controlConnected, controlEvents, fromBlender, reply, toBlender } from "./control.ts";
+import { blenderStatus, command, CONTROL_BRIEF, controlConnected, controlEvents, controlPrompt, fromBlender, readControlAnswer, reply, toBlender, type ControlTurn } from "./control.ts";
 import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
 
@@ -654,6 +654,34 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   }
   if (path === "/api/control/reply" && method === "POST") {
     return json(res, reply(await jsonBody(req, 48 * 1024 * 1024)) ? 200 : 404, {});
+  }
+  if (path === "/api/control/assist" && method === "POST") {
+    // the assistant on the Control page: the stage as the page sees it, and a picture of the frame
+    const input = await jsonBody(req, 8 * 1024 * 1024);
+    const turns: ControlTurn[] = (Array.isArray(input.messages) ? input.messages : [])
+      .slice(-12)
+      .map((t: Record<string, any>) => ({
+        role: t?.role === "assistant" ? "assistant" : "user",
+        text: text(t?.text, 1500),
+        did: Array.isArray(t?.did) ? t.did.slice(0, 12).map((d: unknown) => text(d, 80)).filter(Boolean) : undefined,
+        failed: Array.isArray(t?.failed) ? t.failed.slice(0, 6).map((d: unknown) => text(d, 300)).filter(Boolean) : undefined,
+      }))
+      .filter((t: ControlTurn) => t.text);
+    if (!turns.length || turns.at(-1)!.role !== "user") throw bad("Say something to the assistant first.");
+    const scene = input.scene && typeof input.scene === "object" ? input.scene : {};
+    let picture: string | undefined;
+    const png = typeof input.look === "string" ? /^data:image\/(png|jpeg);base64,(.+)$/.exec(input.look) : null;
+    if (png) {
+      await mkdir(join(data, "control"), { recursive: true });
+      picture = join(data, "control", `look-${randomBytes(4).toString("hex")}.${png[1] === "png" ? "png" : "jpg"}`);
+      await writeFile(picture, Buffer.from(png[2], "base64"));
+    }
+    try {
+      const answer = await engine.ask(controlPrompt(scene, turns, !!picture), undefined, undefined, { brief: CONTROL_BRIEF, picture });
+      return json(res, 200, readControlAnswer(answer));
+    } finally {
+      if (picture) await rm(picture, { force: true });
+    }
   }
   const bridge = /^\/api\/control\/blender\/(status|push|pull)$/.exec(path);
   if (bridge && method === "POST") {

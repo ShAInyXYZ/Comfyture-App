@@ -190,6 +190,7 @@ export class Stage {
     const n = this.characters.length;
     const c = new Mannequin({ name: name ?? `Character ${n + 1}`, color: PALETTE[n % PALETTE.length], profile });
     c.setEulerPose(poseById(pose)?.joints ?? {});
+    c.posed = pose;
     c.root.position.set(at?.[0] ?? (n === 0 ? 0 : n % 2 ? 0.9 * Math.ceil(n / 2) : -0.9 * Math.ceil(n / 2)), 0, at?.[2] ?? 0);
     c.root.rotation.y = facing;
     c.ground();
@@ -288,8 +289,10 @@ export class Stage {
     const object = this.gizmo.object;
     if (object === this.ikTarget && this.ikTarget.userData.character) {
       this.ikTarget.userData.character.reach(this.ikTarget.userData.effector, this.ikTarget.position);
+      this.ikTarget.userData.character.posed = "custom";
     } else if (character && joint && object === character.joints[joint]) {
       character.constrain(joint);
+      character.posed = "custom";
     }
     this.emit("pose");
   }
@@ -343,6 +346,7 @@ export class Stage {
     const preset = poseById(id);
     if (!character || !preset) return;
     character.setEulerPose(preset.joints);
+    character.posed = id;
     character.ground();
     this.attachGizmo();
     this.commit();
@@ -369,6 +373,7 @@ export class Stage {
     e[axis] = THREE.MathUtils.degToRad(degrees);
     j.quaternion.setFromEuler(e);
     character.constrain(joint);
+    character.posed = "custom";
     this.commit();
     this.emit("pose");
   }
@@ -396,7 +401,9 @@ export class Stage {
   }
 
   snapPose(name, character) {
-    const box = character ? character.bounds() : this.sceneBounds();
+    // the whole scene is framed by its people; the set only counts when there is nobody
+    const people = this.characters.filter((c) => c.root.visible);
+    const box = character ? character.bounds() : people.length ? people.reduce((b, c) => b.union(c.bounds()), new THREE.Box3()) : this.sceneBounds();
     if (box.isEmpty()) return null;
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());

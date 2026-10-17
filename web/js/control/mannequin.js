@@ -233,6 +233,7 @@ export class Mannequin {
       position: this.root.position.toArray(),
       quaternion: this.root.quaternion.toArray(),
       pose: this.getPose(),
+      posed: this.posed,
       visible: this.root.visible,
     };
   }
@@ -242,6 +243,7 @@ export class Mannequin {
     m.root.position.fromArray(data.position ?? [0, 0, 0]);
     m.root.quaternion.fromArray(data.quaternion ?? [0, 0, 0, 1]);
     if (data.pose) m.setPose(data.pose);
+    m.posed = data.posed;
     m.root.visible = data.visible !== false;
     return m;
   }

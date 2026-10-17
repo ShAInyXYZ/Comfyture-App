@@ -7,7 +7,8 @@ import { Stage, SNAPS, RATIOS } from "./stage.js";
 import { POSES } from "./poses.js";
 import { PROP_TYPES } from "./props.js";
 import { JOINT_NAMES, JOINT_LABELS } from "./skeleton.js";
-import { connectRemote } from "./remote.js";
+import { connectRemote, controlOps } from "./remote.js";
+import { mountChat } from "./chat.js";
 
 const $ = (id) => document.getElementById(id);
 const stage = new Stage($("stage"), $("frame"));
@@ -220,6 +221,8 @@ stage.on((kind) => {
 });
 
 installTooltips();
+// the assistant stages the scene from what you ask, with the same commands an outside agent uses
+mountChat($("chat"), stage, controlOps(stage));
 // an agent can stage the scene through the server; the lamp says whether the link is up and what it is doing
 connectRemote(stage, {
   onActivity({ connected, op }) {

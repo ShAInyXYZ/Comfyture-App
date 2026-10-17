@@ -49,6 +49,16 @@ body.ctl { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100dv
 .ctl-pose:disabled { opacity: .45; cursor: default; }
 .ctl-pose img { width: 100%; height: 100%; object-fit: contain; }
 
+/* the middle: the viewport, and the assistant's bar under it (its conversation opens over the viewport) */
+.ctl-mid { display: flex; flex-direction: column; gap: .75rem; min-width: 0; min-height: 0; }
+.ctl-mid .ctl-view { flex: 1 1 auto; }
+.ctl-chat { position: relative; width: min(50rem, 100%); margin: 0 auto; }
+.ctl-chat .chat-panel { position: absolute; left: 0; right: 0; bottom: calc(100% + .5rem); z-index: 5; max-height: min(30rem, 52dvh); }
+.ctl-chat .chat-panel.is-last { max-height: min(14rem, 30dvh); }
+.ctl-bar-row { grid-template-columns: minmax(0, 1fr) auto auto auto; padding-left: .5rem; }
+.msg-chips .chip.is-failed { color: var(--err); }
+.msg-chips .chip.is-failed svg { color: var(--err); }
+
 /* the viewport, its frame and its tools */
 .ctl-view { position: relative; min-width: 0; min-height: 0; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: #141416; overflow: hidden; }
 .ctl-stage { position: absolute; inset: 0; }
@@ -113,7 +123,8 @@ body.ctl { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100dv
 @media (max-width: 900px) {
   body.ctl { height: auto; overflow: auto; }
   .ctl-desk { grid-template-columns: 1fr; padding: .5rem; }
-  .ctl-view { order: -1; height: 62dvh; }
+  .ctl-mid { order: -1; }
+  .ctl-mid .ctl-view { flex: none; height: 62dvh; }
   .ctl-col { overflow: visible; }
   .ctl-tools { bottom: .625rem; padding: .25rem; gap: 0; }
   .ctl-tool { width: 2.375rem; height: 2.375rem; }
