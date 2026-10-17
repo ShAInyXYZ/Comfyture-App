@@ -1,0 +1,268 @@
+{
+ "krea2-turbo": [
+  {
+   "file": "krea2_darkbrush.safetensors",
+   "name": "Dark brush",
+   "words": "monochrome ink wash style",
+   "strength": 1,
+   "source": "Krea"
+  },
+  {
+   "file": "krea2_dotmatrix.safetensors",
+   "name": "Dot matrix",
+   "words": "monochrome stippling style",
+   "strength": 1,
+   "source": "Krea"
+  },
+  {
+   "file": "krea2_kidsdrawing.safetensors",
+   "name": "Kid's drawing",
+   "words": "naive expressive sketch style",
+   "strength": 1,
+   "source": "Krea"
+  },
+  {
+   "file": "krea2_neondrip.safetensors",
+   "name": "Neon drip",
+   "words": "textured abstract style",
+   "strength": 1,
+   "source": "Krea"
+  },
+  {
+   "file": "krea2_rainywindow.safetensors",
+   "name": "Rainy window",
+   "words": "rainy window style",
+   "strength": 1,
+   "source": "Krea"
+  },
+  {
+   "file": "krea2_retroanime.safetensors",
+   "name": "Retro anime",
+   "words": "purple retro anime style",
+   "strength": 1,
+   "source": "Krea"
+  },
+  {
+   "file": "krea2_softwatercolor.safetensors",
+   "name": "Soft watercolor",
+   "words": "art deco watercolor style",
+   "strength": 1,
+   "source": "Krea"
+  },
+  {
+   "file": "krea2_sunsetblur.safetensors",
+   "name": "Sunset blur",
+   "words": "ethereal motion blur style",
+   "strength": 1,
+   "source": "Krea"
+  },
+  {
+   "file": "krea2_vintagetarot.safetensors",
+   "name": "Vintage tarot",
+   "words": "vintage tarot style",
+   "strength": 1,
+   "source": "Krea"
+  },
+  {
+   "file": "krea2-commodore_64_style_pixel_art.safetensors",
+   "name": "C64 pixel art",
+   "words": "c64style",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "krea2-psx_style_lowpoly_psx_n64_dreamcast.safetensors",
+   "name": "Low-poly 90s 3D",
+   "words": "3D low-poly CGI-render",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "krea2-2000s_analog_core.safetensors",
+   "name": "2000s analog",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "krea2-lenovo_ultrareal.safetensors",
+   "name": "Ultra real",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  }
+ ],
+ "z-image-turbo": [
+  {
+   "file": "zimage-cinematic_shot.safetensors",
+   "name": "Cinematic shot",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-35mm_photo_z.safetensors",
+   "name": "35 mm film",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-retro_neo_noir.safetensors",
+   "name": "Neo noir",
+   "words": "retro_neo_noir, retro, retro artstyle",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-dark_atmospheric_style_ce.safetensors",
+   "name": "Dark atmosphere",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-movie_poster_ce.safetensors",
+   "name": "Movie poster",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-octane_render.safetensors",
+   "name": "3D render",
+   "words": "Octane Render",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-classic_oil_painting_ce.safetensors",
+   "name": "Oil painting",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-art_nouveau_style.safetensors",
+   "name": "Art nouveau",
+   "words": "Art Nouveau",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-zyd232_s_ink_style.safetensors",
+   "name": "Ink wash",
+   "words": "水墨风, ink style, zydink",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-sketch_style.safetensors",
+   "name": "Sketch",
+   "words": "sk3tch",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-line_drawing_ce.safetensors",
+   "name": "Line drawing",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-vintage_drawing_ce.safetensors",
+   "name": "Vintage drawing",
+   "words": "Vintage drawing style.",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-retro_80s_vaporwave.safetensors",
+   "name": "80s vaporwave",
+   "words": "Retro 80s Vaporwave",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-hard_edge_pixel_art.safetensors",
+   "name": "Pixel art",
+   "words": "pixel art",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-horror_style.safetensors",
+   "name": "Horror",
+   "words": "h0rr0rstyl3",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-z_image_realistic_water_droplets_wet_effect.safetensors",
+   "name": "Water droplets",
+   "words": "water_droplet_effect",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-handpainted_miniature.safetensors",
+   "name": "Painted miniature",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-3d_stylized_style.safetensors",
+   "name": "Stylized 3D",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-impressionism_oil_painting.safetensors",
+   "name": "Impressionism",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-cute_flat_art.safetensors",
+   "name": "Flat illustration",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  },
+  {
+   "file": "zimage-scrambled_analog_tv_glitch_style.safetensors",
+   "name": "Analog TV glitch",
+   "words": "",
+   "strength": 1,
+   "source": "community"
+  }
+ ],
+ "qwen-2.1": [
+  {
+   "file": "Qwen2.1_Anything2RealCharacters.safetensors",
+   "name": "Anything to real",
+   "words": "",
+   "strength": 1,
+   "source": "community",
+   "templates": [
+    "edit"
+   ],
+   "about": "Turns a character from any style into a realistic person"
+  },
+  {
+   "file": "Qwen2.1_Anime_consistency.safetensors",
+   "name": "Anime consistency",
+   "words": "",
+   "strength": 1,
+   "source": "community",
+   "templates": [
+    "edit"
+   ],
+   "about": "Keeps an anime character the same across edits (experimental)"
+  }
+ ]
+}
