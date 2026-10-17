@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "comfyture-control": {
+      "command": "node",
+      "args": ["scripts/control-mcp.ts"],
+      "env": { "COMFYTURE_URL": "http://127.0.0.1:5177" }
+    }
+  }
+}

@@ -89,6 +89,31 @@ A clip can start the shot instead of a photo. Uploads are normalized to 24 fps, 
 - **Extend this clip.** The clip's last 17 frames guide the start of the new shot, so it picks up exactly where the clip ends and carries on with your script. The result is the clip and its continuation as one file. End frames and keyframes still work.
 - **Copy its motion.** Lightricks' union-control IC-LoRA follows the clip's pose (body, hands, face, from DWPose) or its edges (Canny) while your start photo gives the look. Without a photo the script sets the look. A voice track can drive it too.
 
+## Control
+
+`/control.html` is a staging table for making your own references: posable mannequins (IK hands and feet, preset poses, mirror), props, a camera with snaps and a real focal length, and the output frame. It is a standalone page for now; the reference passes (depth, pose, line art, masks) come next.
+
+### Agents and Blender
+
+`scripts/control-mcp.ts` is an MCP server that lets an agent stage the scene for you: "two people arguing by a wall, low angle, 9:16" becomes characters, poses, props and a camera, which it checks with a picture of the frame. The repo's `.mcp.json` registers it for Claude Code; any MCP client can run `node scripts/control-mcp.ts`. Keep the app running and the Control page open: the page carries out each command and every command is one undo step.
+
+| Tool | |
+|---|---|
+| `control_scene` | What is on the stage, with ids, sizes and the camera, plus the poses, props, snaps and frames it knows |
+| `control_layout` | A whole layout in one step: characters, props, camera |
+| `control_add_character` · `control_add_prop` · `control_place` · `control_remove` · `control_clear` | Blocking |
+| `control_pose` · `control_set_joint` · `control_reach` | Posing: presets, single joints, a hand or foot to a point or onto a prop |
+| `control_camera` · `control_look` | Framing, and a picture of what the frame shows |
+| `control_to_blender` · `control_from_blender` · `control_blender_status` | The round trip to Blender |
+
+`control_to_blender` rebuilds the stage in a "Comfyture Control" collection in Blender, with the shot camera, lens and resolution; `control_from_blender` brings back what changed there (body positions and turns, joint rotations, props, the camera). It talks to the official [Blender MCP](https://www.blender.org/lab/mcp-server/) add-on (Blender 5.1 or newer) on `localhost:9876`, so the same agent can refine the scene with Blender's own MCP tools in between. Start the add-on's server from Blender, or run Blender without a window:
+
+```bash
+blender --background --online-mode --command blender_mcp
+```
+
+The add-on runs whatever Python it is sent. Keep it on localhost.
+
 ## Quick start
 
 You need Node.js 22.18 or newer.
@@ -231,6 +256,8 @@ Write the action the way LTX-2.5 reads best: present tense, the motion first, on
 | `PORT` / `HOST` | `5177` / `127.0.0.1` | Where the app listens |
 | `COMFYTURE_DATA` | `data` | Photos and runs |
 | `COMFYTURE_WORKFLOWS` | | `dev` swaps in tiny stand-in workflows so you can work on the UI without a GPU |
+| `COMFYTURE_URL` | `http://127.0.0.1:5177` | Where `scripts/control-mcp.ts` finds the app |
+| `BLENDER_MCP_HOST` / `BLENDER_MCP_PORT` | `localhost` / `9876` | Where the app finds Blender's MCP add-on |
 
 ## Credits
 
