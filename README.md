@@ -250,4 +250,4 @@ The sample photos in `samples/` were generated for this repository with GPT Imag
 
 ## License
 
-MIT
+MIT, © 2026 Mounir Belahbib (Shiny-Studio OÜ). See [LICENSE](LICENSE).
