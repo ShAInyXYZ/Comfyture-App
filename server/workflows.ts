@@ -232,7 +232,7 @@ export function addClipGuide(graph: Graph, clip: unknown, frames: number): [stri
  * face) or its edges drive the shot, and the start photo, when there is one,
  * gives the look. Without a photo the script alone does.
  */
-export function buildMotion(graph: Graph, clip: unknown, photo: unknown | null, control: "pose" | "edges", v: { prompt: string; frames: number; seed: number }): Graph {
+export function buildMotion(graph: Graph, clip: unknown, photo: unknown | null, control: "pose" | "edges" | "ready", v: { prompt: string; frames: number; seed: number }): Graph {
   set(graph, "video_in", "file", clip);
   set(graph, "prompt", "value", v.prompt);
   set(graph, "clip_frames", "length", v.frames);
@@ -246,6 +246,12 @@ export function buildMotion(graph: Graph, clip: unknown, photo: unknown | null, 
     for (const node of Object.values(graph)) if (node.class_type === "LTXVImgToVideoInplace") node.inputs.bypass = true;
   }
   if (control === "edges") graph.control = { class_type: "Canny", inputs: { image: graph.control.inputs.image, low_threshold: 0.4, high_threshold: 0.8 } };
+  // a clip that already is a control pass (a depth, pose or line video from the Stage) guides the shot as it is
+  if (control === "ready") {
+    const source = graph.control.inputs.image;
+    delete graph.control;
+    for (const node of Object.values(graph)) for (const [k, v] of Object.entries(node.inputs)) if (Array.isArray(v) && v[0] === "control") node.inputs[k] = source;
+  }
   return graph;
 }
 

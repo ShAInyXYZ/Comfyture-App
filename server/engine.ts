@@ -41,7 +41,7 @@ export interface ShotRequest {
   /** A new sound for another take's picture. */
   sound?: { from: string; text: string };
   /** A clip to start from: extended where it ends, or its motion copied onto the start photo. */
-  video?: { file: string; mode: "extend" | "motion"; control: "pose" | "edges"; frames: number; width: number; height: number };
+  video?: { file: string; mode: "extend" | "motion"; control: "pose" | "edges" | "ready"; frames: number; width: number; height: number };
   seconds: number;
   aspect: Aspect;
   quality: Quality;

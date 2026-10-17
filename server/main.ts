@@ -155,7 +155,7 @@ async function clip(v: Record<string, any> | undefined): Promise<ShotRequest["vi
   return {
     file: v.file,
     mode: v.mode === "motion" ? "motion" : "extend",
-    control: v.control === "edges" ? "edges" : "pose",
+    control: v.control === "edges" ? "edges" : v.control === "ready" ? "ready" : "pose",
     frames: info.frames,
     width: info.width,
     height: info.height,
@@ -238,6 +238,22 @@ async function parseShot(input: Record<string, any>): Promise<{ request: ShotReq
 }
 
 const slug = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+
+// ------------------------------------------------------------------ the Stage's saved poses
+
+const posesFile = () => join(data, "control", "poses.json");
+async function readPoses(): Promise<{ id: string; name: string; quaternions: Record<string, number[]>; savedAt?: string }[]> {
+  try {
+    const list = JSON.parse(await readFile(posesFile(), "utf8"));
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+async function writePoses(poses: unknown[]) {
+  await mkdir(join(data, "control"), { recursive: true });
+  await writeFile(posesFile(), JSON.stringify(poses, null, 1));
+}
 
 // ------------------------------------------------------------------ events
 
@@ -690,6 +706,51 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       return json(res, 200, answer);
     } finally {
       if (picture) await rm(picture, { force: true });
+    }
+  }
+  if (path === "/api/control/poses" && method === "GET") return json(res, 200, { poses: await readPoses() });
+  if (path === "/api/control/poses" && method === "POST") {
+    // a pose someone saved on the Stage: its joints as quaternions, under a name
+    const input = await jsonBody(req, 64 * 1024);
+    const name = text(input.name, 40);
+    if (!name) throw bad("Name the pose.");
+    const q = input.quaternions && typeof input.quaternions === "object" ? input.quaternions : {};
+    const quaternions = Object.fromEntries(Object.entries(q).filter(([k, v]) => /^[A-Za-z]{2,16}$/.test(k) && Array.isArray(v) && v.length === 4 && v.every((n) => typeof n === "number" && Number.isFinite(n))).slice(0, 40));
+    if (Object.keys(quaternions).length < 10) throw bad("That pose has no joints.");
+    const poses = await readPoses();
+    const id = `mine-${slug(name)}-${randomBytes(2).toString("hex")}`;
+    poses.push({ id, name, quaternions, savedAt: new Date().toISOString() });
+    await writePoses(poses);
+    return json(res, 201, { id, poses });
+  }
+  const poseId = /^\/api\/control\/poses\/(mine-[\w-]+)$/.exec(path);
+  if (poseId && method === "DELETE") {
+    const poses = (await readPoses()).filter((p) => p.id !== poseId[1]);
+    await writePoses(poses);
+    return json(res, 200, { poses });
+  }
+  if (path === "/api/control/video" && method === "POST") {
+    // the Stage's timeline, frame by frame, as a control video in the library
+    if (!ffmpeg) throw bad("Videos need ffmpeg on the server.", 501);
+    const input = await jsonBody(req, 160 * 1024 * 1024);
+    const frames: string[] = Array.isArray(input.frames) ? input.frames.slice(0, 24 * 20 + 1) : [];
+    if (frames.length < 9) throw bad("A video needs at least 9 frames.");
+    const fps = Math.round(num(input.fps, 8, 60, 24));
+    const dir = join(data, "control", `frames-${randomBytes(4).toString("hex")}`);
+    await mkdir(dir, { recursive: true });
+    try {
+      for (const [i, frame] of frames.entries()) {
+        const m = /^data:image\/(jpeg|png);base64,(.+)$/.exec(String(frame));
+        if (!m) throw bad("Frames must be JPEG or PNG data URLs.");
+        await writeFile(join(dir, `${String(i).padStart(4, "0")}.${m[1] === "png" ? "png" : "jpg"}`), Buffer.from(m[2], "base64"));
+      }
+      const ext = String(frames[0]).startsWith("data:image/png") ? "png" : "jpg";
+      const out = join(dir, "video.mp4");
+      await exec("ffmpeg", ["-v", "error", "-y", "-framerate", String(fps), "-i", join(dir, `%04d.${ext}`), "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p", "-c:v", "libx264", "-crf", "16", "-preset", "medium", "-movflags", "+faststart", out], { maxBuffer: 1 << 20 });
+      const video = await storeVideo(await readFile(out));
+      return json(res, 201, { ...video, name: text(input.name, 60) || "Stage video" });
+    } finally {
+      await rm(dir, { recursive: true, force: true });
     }
   }
   const bridge = /^\/api\/control\/blender\/(status|push|pull)$/.exec(path);
