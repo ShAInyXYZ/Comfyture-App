@@ -6,7 +6,9 @@
 // the live viewport preview, the small previews and the full-size references.
 
 import * as THREE from "three";
-import { headFrame } from "./body.js";
+
+/** The colour ID of anything held in a hand. */
+const HELD = "#d9d4c7";
 
 export const CHANNELS = [
   ["clay", "Clay", "channel-clay"],
@@ -149,7 +151,8 @@ export class Channels {
     hide(s.handles);
     if (channel === "lines") hide(s.ground);
     const pass = channel === "lines" ? this.geo : null;
-    s.characters.forEach((c) => c.root.traverse((m) => m.isMesh && swap(m, pass ?? (channel === "depth" ? this.depth : channel === "normal" ? this.normal : channel === "mask" ? this.white : this.flatColor(`#${c.color.getHexString()}`)))));
+    // a held phone or sword is its own thing in the ID pass, part of its body in the mask
+    s.characters.forEach((c) => c.root.traverse((m) => m.isMesh && swap(m, pass ?? (channel === "depth" ? this.depth : channel === "normal" ? this.normal : channel === "mask" ? this.white : this.flatColor(m.userData.held ? HELD : `#${c.color.getHexString()}`)))));
     s.props.forEach((p, i) => p.traverse((m) => m.isMesh && swap(m, pass ?? (channel === "depth" ? this.depth : channel === "normal" ? this.normal : channel === "mask" ? this.black : this.flatColor(this.propColor(p, i))))));
     swap(s.ground, channel === "depth" ? this.depth : channel === "normal" ? this.normal : channel === "id" ? this.ground : this.black);
     const scene = s.scene;
@@ -206,7 +209,7 @@ export class Channels {
   keypoints(character, camera, width, height) {
     const j = character.joints;
     const world = (o, local) => (local ? o.localToWorld(local.clone()) : o.getWorldPosition(new THREE.Vector3()));
-    const { centre: c, radius: r } = headFrame(character.profile);
+    const { centre: c, radius: r } = character.headFrame();
     const head = j.Head;
     const headCentre = world(head, c);
     // the face: nose, eyes and ears on the head's surface (its right is −x); the eyes sit halfway down the head

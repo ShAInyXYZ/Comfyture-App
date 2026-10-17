@@ -24,19 +24,20 @@ const relations = {
   distance: { type: "number" },
 };
 const params = { type: "object", description: "Pose sliders, degrees (crouch 0 to 1): look, nod, tilt, lean, twist, side, arms, reach, elbows, stance, step, crouch.", additionalProperties: { type: "number" } };
+const hold = { description: "What the hands hold: a hand prop (phone, cup, book, camera, sword, pistol, umbrella, bag, guitar, steering-wheel) for the right hand, { right, left }, or null for empty hands. Poses that hold something bring it.", anyOf: [{ type: "string" }, { type: "null" }, { type: "object", properties: { right: { type: ["string", "null"] }, left: { type: ["string", "null"] } } }] };
 const character = {
   type: "object",
   properties: {
     name: { type: "string" }, pose: { type: "string", description: "A pose id from control_scene (stand, talk, walk, sit, lean-back, hands-in-pockets, point, ...)." },
     body: { type: "string", description: "man, woman, teen, child, toddler, elder, heavy or athletic." },
     color: { type: "string", description: "coral, teal, amber, violet, green, pink, blue or tan: one per character, for the colour ID pass." },
-    ...xz, facing: { type: "number" }, face_toward: toward, height: { type: "number", description: "Metres; the body type sets it." }, params, ...relations,
+    ...xz, facing: { type: "number" }, face_toward: toward, height: { type: "number", description: "Metres; the body type sets it." }, params, hold, ...relations,
   },
 };
 const prop = {
   type: "object",
   properties: {
-    type: { type: "string", description: "An asset from control_scene: chair, armchair, sofa, stool, bench, table, desk, counter, bed, shelf, lamp, tv, plane (a wall), doorway, window, door, pillar, arch, stairs, ramp, platform, floor, fence, car, tree, bush, rock, streetlamp, crate, barrel, traffic-cone, box, cylinder, sphere, cone." }, label: { type: "string" },
+    type: { type: "string", description: "An asset from control_scene: chair, armchair, sofa, stool, bench, table, desk, counter, bed, shelf, lamp, tv, fridge, stove, kitchen-island, office-chair, wardrobe, bathtub, piano, plane (a wall), doorway, window, door, pillar, arch, stairs, ramp, platform, floor, fence, car, tree, pine-tree, palm-tree, bush, rock, streetlamp, bus-stop, trash-bin, mailbox, phone-booth, tent, campfire, rowing-boat, crate, barrel, traffic-cone, box, cylinder, sphere, cone." }, label: { type: "string" },
     ...xz, y: { type: "number", description: "Lift above the ground, e.g. to stack on another prop." },
     facing: { type: "number" }, face_toward: toward,
     size: { type: "array", items: { type: "number" }, minItems: 1, maxItems: 3, description: "[width, height, depth] in metres; the asset is rebuilt to it (a table keeps its legs)." },
@@ -109,7 +110,7 @@ const TOOLS: Tool[] = [
   {
     name: "control_place",
     description: `Moves, turns, resizes, renames or recolours a character or prop, by numbers or by relation (against, sit_on, on, between, next_to). A character also takes a body type, a height and pose sliders; a prop takes a size or its own params. ${COORDS}`,
-    inputSchema: { type: "object", properties: { id, name: { type: "string", description: "A new name." }, ...xz, y: { type: "number" }, facing: { type: "number" }, face_toward: toward, size: prop.properties.size, params: { type: "object", description: "Pose sliders for a character, sizes for a prop.", additionalProperties: { type: "number" } }, scale: prop.properties.scale, height: { type: "number" }, body: character.properties.body, color: character.properties.color, ...relations }, required: ["id"] },
+    inputSchema: { type: "object", properties: { id, name: { type: "string", description: "A new name." }, ...xz, y: { type: "number" }, facing: { type: "number" }, face_toward: toward, size: prop.properties.size, params: { type: "object", description: "Pose sliders for a character, sizes for a prop.", additionalProperties: { type: "number" } }, scale: prop.properties.scale, height: { type: "number" }, body: character.properties.body, color: character.properties.color, hold, ...relations }, required: ["id"] },
     run: op("place"),
   },
   {

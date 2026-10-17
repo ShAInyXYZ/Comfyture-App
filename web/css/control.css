@@ -66,10 +66,17 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 .ctl-pose-x { position: absolute; top: .25rem; right: .25rem; width: 1.375rem; height: 1.375rem; background: rgba(14, 14, 16, .8); opacity: 0; }
 .ctl-pose-wrap:hover .ctl-pose-x { opacity: 1; }
 .ctl-assets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
-.ctl-asset { display: grid; justify-items: center; align-content: center; gap: .4375rem; min-height: 4.75rem; padding: .5rem .25rem; border: 1px solid var(--line); border-radius: .625rem; background: var(--sunk); color: var(--muted); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.ctl-asset { display: grid; place-items: center; aspect-ratio: 132 / 104; padding: 0; border: 1px solid var(--line); border-radius: .625rem; background: radial-gradient(90% 70% at 50% 40%, #2a2a2f, #1a1a1d); color: var(--muted); overflow: hidden; cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.ctl-asset img { width: 100%; height: 100%; object-fit: contain; }
+.ctl-holds { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .375rem; align-items: start; }
+.ctl-hand button { min-width: 1.75rem; }
+.ctl-hold-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.125rem, 1fr)); gap: .25rem; }
+.ctl-hold { display: grid; place-items: center; aspect-ratio: 1; padding: .125rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); color: var(--dim); cursor: pointer; transition: border-color var(--t-fast); }
+.ctl-hold:hover { border-color: var(--accent-line); }
+.ctl-hold[aria-pressed="true"] { border-color: var(--accent); }
+.ctl-hold img { width: 100%; height: 100%; object-fit: contain; }
+.ctl-hold svg.icon { width: 1rem; height: 1rem; }
 .ctl-asset:hover { border-color: var(--accent-line); color: var(--text); }
-.ctl-asset svg.icon { width: 1.6rem; height: 1.6rem; }
-.ctl-asset span { font: 500 var(--fs-micro)/1.2 var(--font-sans); text-align: center; }
 
 /* the middle: the viewport, the timeline, and the assistant's bar (its conversation opens over the viewport) */
 .ctl-mid { display: flex; flex-direction: column; gap: .75rem; min-width: 0; min-height: 0; }

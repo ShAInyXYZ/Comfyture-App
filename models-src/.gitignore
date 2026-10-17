@@ -1,0 +1,9 @@
+# kept on this machine: Blender sources, renders, the old models as references, run logs
+blender/
+previews/
+reference/current/
+reference/current-*
+__pycache__/
+codex-*
+PROMPT.txt
+TASK.md

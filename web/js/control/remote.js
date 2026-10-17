@@ -12,6 +12,7 @@ import { allPoses } from "./poses.js";
 import { ASSETS, assetByType, seatOf, topOf, setPropParams } from "./assets.js";
 import { CHAINS, JOINT_NAMES, BODY_TYPES, PALETTE, PARAMS, colorName } from "./skeleton.js";
 import { PASSES } from "./channels.js";
+import { MODELS } from "./models.js";
 
 const rad = THREE.MathUtils.degToRad;
 const deg = (v) => Math.round(THREE.MathUtils.radToDeg(v) * 10) / 10;
@@ -63,7 +64,13 @@ const ALIASES = {
   },
   prop: {
     cube: "box", ball: "sphere", wall: "plane", partition: "plane", column: "pillar", post: "cylinder", pole: "cylinder",
-    couch: "sofa", settee: "sofa", "arm chair": "armchair", seat: "chair", "office chair": "chair", "bar stool": "stool",
+    couch: "sofa", settee: "sofa", "arm chair": "armchair", seat: "chair", "office chair": "office-chair", "desk chair": "office-chair", "bar stool": "stool",
+    refrigerator: "fridge", oven: "stove", cooker: "stove", hob: "stove", island: "kitchen-island", "kitchen counter island": "kitchen-island",
+    closet: "wardrobe", cupboard: "wardrobe", armoire: "wardrobe", bath: "bathtub", tub: "bathtub", "upright piano": "piano", keyboard: "piano",
+    "bus shelter": "bus-stop", "bus stop": "bus-stop", "trash can": "trash-bin", garbage: "trash-bin", bin: "trash-bin", "litter bin": "trash-bin", dumpster: "trash-bin",
+    "post box": "mailbox", letterbox: "mailbox", "phone box": "phone-booth", "telephone booth": "phone-booth", "phone booth": "phone-booth",
+    fire: "campfire", bonfire: "campfire", pine: "pine-tree", fir: "pine-tree", "christmas tree": "pine-tree", palm: "palm-tree",
+    boat: "rowing-boat", rowboat: "rowing-boat", canoe: "rowing-boat", dinghy: "rowing-boat", camp: "tent",
     "dining table": "table", "coffee table": "table", workbench: "desk", "kitchen counter": "counter", bar: "counter",
     bookcase: "shelf", bookshelf: "shelf", cabinet: "shelf", "floor lamp": "lamp", "standing lamp": "lamp",
     screen: "tv", television: "tv", monitor: "tv", gate: "doorway", entrance: "doorway", archway: "arch",
@@ -71,6 +78,13 @@ const ALIASES = {
     hedge: "bush", shrub: "bush", boulder: "rock", stone: "rock", streetlight: "streetlamp", "street lamp": "streetlamp", lamppost: "streetlamp",
     drum: "barrel", cone: "traffic-cone", "traffic cone": "traffic-cone", steps: "stairs", stair: "stairs", staircase: "stairs",
     vehicle: "car", truck: "car", van: "car", taxi: "car",
+  },
+  hand: {
+    mobile: "phone", smartphone: "phone", cellphone: "phone", "cell phone": "phone", "mobile phone": "phone",
+    mug: "cup", coffee: "cup", glass: "cup", drink: "cup", tea: "cup", novel: "book", magazine: "book", notebook: "book",
+    "photo camera": "camera", gun: "pistol", handgun: "pistol", revolver: "pistol", blade: "sword", katana: "sword",
+    parasol: "umbrella", handbag: "bag", purse: "bag", suitcase: "bag", briefcase: "bag", "shopping bag": "bag",
+    wheel: "steering-wheel", "steering wheel": "steering-wheel",
   },
   body: {
     male: "man", guy: "man", adult: "man", gentleman: "man", female: "woman", lady: "woman", girl: "teen", boy: "teen",
@@ -203,11 +217,23 @@ export function controlOps(stage) {
    * takes the body: it goes to a free place on the seat, facing the way the seat does. A plain
    * box or cylinder becomes the seat instead, sized and put under the hips. Anything else is sat on top of.
    */
+  // what a standing pose keeps when its body sits down: the arms, the chest, the head and what the hands hold
+  const UPPER = ["Chest", "Neck", "Head", ...["Shoulder", "Arm", "ForeArm", "Hand"].flatMap((j) => [`Left${j}`, `Right${j}`])];
   const sitOn = (c, on) => {
     if (!SEATED.has(c.posed)) {
+      const keep = c.posed && !["stand", "t-pose", "walk", "run"].includes(c.posed);
+      const upper = c.getPose();
+      const held = { ...c.hold };
+      const auto = { ...c.autoHold };
       c.params = {};
       c.setPreset(allPoses().find((p) => p.id === "sit"));
-      c.posed = "sit";
+      if (keep) {
+        // seated on the phone, seated with arms crossed: the legs sit, the rest stays
+        for (const n of UPPER) c.base[n] = new THREE.Quaternion().fromArray(upper[n]);
+        for (const hand of ["right", "left"]) if (held[hand] && c.hold[hand] !== held[hand]) (c.setHold(hand, held[hand]), (c.autoHold[hand] = auto[hand]));
+        c.apply();
+      }
+      c.posed = keep ? "custom" : "sit";
     }
     const prop = on.prop;
     const seat = prop ? seatOf(prop) : null;
@@ -315,6 +341,7 @@ export function controlOps(stage) {
       if (a.color !== undefined) c.setColor(color(a.color));
       if (a.params && typeof a.params === "object") c.setParams(Object.fromEntries(Object.entries(a.params).filter(([k, v]) => PARAMS.some(([p]) => p === k) && Number.isFinite(Number(v))).map(([k, v]) => [k, Number(v)])));
       if (a.sit_on === undefined) c.seatedOn = null;
+      if (a.hold !== undefined) holdFor(c, a.hold);
     }
     const related = [a.against, a.sit_on, a.on, a.between, a.next_to].some((v) => v !== undefined);
     if (!related) {
@@ -401,6 +428,7 @@ export function controlOps(stage) {
       position: c.root.position.toArray().map(round), facing: facingOf(c.root), visible: c.root.visible,
       ...(Object.keys(c.params).length ? { params: Object.fromEntries(Object.entries(c.params).filter(([k]) => k !== "swing").map(([k, v]) => [k, round(v)])) } : {}),
       ...(c.seatedOn ? { seated_on: stage.props.find((p) => p.userData.id === c.seatedOn)?.userData.label } : {}),
+      ...(c.hold.right || c.hold.left ? { hold: Object.fromEntries(Object.entries(c.hold).filter(([, v]) => v)) } : {}),
       ...(c.keys.length ? { keys: c.keys.map((k) => round(k.t)) } : {}),
     })),
     props: stage.props.map((p) => ({
@@ -424,8 +452,27 @@ export function controlOps(stage) {
       profile: a.height ? { height: THREE.MathUtils.clamp(num(a.height, "height"), 0.5, 2.6) } : undefined,
     });
     if (a.params) c.setParams(a.params);
+    if (a.hold !== undefined) holdFor(c, a.hold);
     place({ character: c }, { facing: a.facing, ...relations(a) });
     return c;
+  };
+
+  /**
+   * What a character holds: a hand prop's name for the right hand, null for empty hands, or
+   * { right, left }. It replaces what a pose put there.
+   */
+  const holdFor = (c, hold) => {
+    const types = [...MODELS.hand.keys()];
+    const one = (v) => {
+      if (v === null || v === "" || v === false || v === "none") return null;
+      return known("hand", v, types) ?? (() => { throw new Error(`No hand prop "${v}". Hand props: ${types.join(", ")}.`); })();
+    };
+    const want = hold && typeof hold === "object" ? hold : { right: hold };
+    for (const hand of ["right", "left"]) {
+      if (want[hand] === undefined && !(hold === null && hand === "left")) continue;
+      c.setHold(hand, one(want[hand] ?? null));
+      c.autoHold[hand] = false;
+    }
   };
 
   const addProp = (a = {}) => {
@@ -634,6 +681,7 @@ export function controlOps(stage) {
     scene: () => ({
       ...describe(),
       poses: poseIds(),
+      hand_props: [...MODELS.hand.values()].map((h) => ({ type: h.type, name: h.name, poses: h.poses })),
       assets: ASSETS.map((x) => ({ type: x.type, name: x.name, category: x.category, ...(x.seat ? { seat: true } : {}), ...(x.top ? { top: true } : {}) })),
       body_types: BODY_TYPES.map((b) => b.id), colors: PALETTE.map(([, n]) => n.toLowerCase()), params: PARAMS.map(([k, , min, max]) => ({ name: k, min, max })),
       snaps: SNAPS.map(([s]) => s), moves: MOVES.map(([m]) => m), frames: Object.keys(RATIOS), effectors: Object.keys(CHAINS), joints: JOINT_NAMES,

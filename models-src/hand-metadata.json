@@ -1,0 +1,506 @@
+[
+  {
+    "type": "phone",
+    "name": "Phone",
+    "file": "hand/phone.glb",
+    "triangles": 808,
+    "modelGripOrigin": [
+      0,
+      0,
+      0
+    ],
+    "gripCoordinateSpace": "hand-joint-local",
+    "grips": {
+      "right": {
+        "joint": "RightHand",
+        "position": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "left": {
+        "joint": "LeftHand",
+        "position": [
+          0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          -1,
+          1,
+          1
+        ]
+      }
+    },
+    "poses": [
+      "phone-call",
+      "walk-phone"
+    ]
+  },
+  {
+    "type": "cup",
+    "name": "Cup",
+    "file": "hand/cup.glb",
+    "triangles": 1272,
+    "modelGripOrigin": [
+      0,
+      0,
+      0
+    ],
+    "gripCoordinateSpace": "hand-joint-local",
+    "grips": {
+      "right": {
+        "joint": "RightHand",
+        "position": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "left": {
+        "joint": "LeftHand",
+        "position": [
+          0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          -1,
+          1,
+          1
+        ]
+      }
+    },
+    "poses": [
+      "drink"
+    ]
+  },
+  {
+    "type": "book",
+    "name": "Open book",
+    "file": "hand/book.glb",
+    "triangles": 612,
+    "modelGripOrigin": [
+      0,
+      0,
+      0
+    ],
+    "gripCoordinateSpace": "hand-joint-local",
+    "grips": {
+      "right": {
+        "joint": "RightHand",
+        "position": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "left": {
+        "joint": "LeftHand",
+        "position": [
+          0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          -1,
+          1,
+          1
+        ]
+      }
+    },
+    "poses": [
+      "read"
+    ]
+  },
+  {
+    "type": "camera",
+    "name": "Camera",
+    "file": "hand/camera.glb",
+    "triangles": 2212,
+    "modelGripOrigin": [
+      0,
+      0,
+      0
+    ],
+    "gripCoordinateSpace": "hand-joint-local",
+    "grips": {
+      "right": {
+        "joint": "RightHand",
+        "position": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "left": {
+        "joint": "LeftHand",
+        "position": [
+          0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          -1,
+          1,
+          1
+        ]
+      }
+    },
+    "poses": [
+      "photo"
+    ]
+  },
+  {
+    "type": "sword",
+    "name": "Sword",
+    "file": "hand/sword.glb",
+    "triangles": 1842,
+    "modelGripOrigin": [
+      0,
+      0,
+      0
+    ],
+    "gripCoordinateSpace": "hand-joint-local",
+    "grips": {
+      "right": {
+        "joint": "RightHand",
+        "position": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "left": {
+        "joint": "LeftHand",
+        "position": [
+          0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          -1,
+          1,
+          1
+        ]
+      }
+    },
+    "poses": [
+      "sword"
+    ]
+  },
+  {
+    "type": "pistol",
+    "name": "Pistol",
+    "file": "hand/pistol.glb",
+    "triangles": 1052,
+    "modelGripOrigin": [
+      0,
+      0,
+      0
+    ],
+    "gripCoordinateSpace": "hand-joint-local",
+    "grips": {
+      "right": {
+        "joint": "RightHand",
+        "position": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "left": {
+        "joint": "LeftHand",
+        "position": [
+          0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          -1,
+          1,
+          1
+        ]
+      }
+    },
+    "poses": [
+      "aim"
+    ]
+  },
+  {
+    "type": "umbrella",
+    "name": "Umbrella",
+    "file": "hand/umbrella.glb",
+    "triangles": 1852,
+    "modelGripOrigin": [
+      0,
+      0,
+      0
+    ],
+    "gripCoordinateSpace": "hand-joint-local",
+    "grips": {
+      "right": {
+        "joint": "RightHand",
+        "position": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "left": {
+        "joint": "LeftHand",
+        "position": [
+          0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          -1,
+          1,
+          1
+        ]
+      }
+    },
+    "poses": [
+      "stand",
+      "walk"
+    ]
+  },
+  {
+    "type": "bag",
+    "name": "Carry bag",
+    "file": "hand/bag.glb",
+    "triangles": 704,
+    "modelGripOrigin": [
+      0,
+      0,
+      0
+    ],
+    "gripCoordinateSpace": "hand-joint-local",
+    "grips": {
+      "right": {
+        "joint": "RightHand",
+        "position": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "left": {
+        "joint": "LeftHand",
+        "position": [
+          0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          -1,
+          1,
+          1
+        ]
+      }
+    },
+    "poses": [
+      "stand",
+      "walk"
+    ]
+  },
+  {
+    "type": "guitar",
+    "name": "Acoustic guitar",
+    "file": "hand/guitar.glb",
+    "triangles": 4836,
+    "modelGripOrigin": [
+      0,
+      0,
+      0
+    ],
+    "gripCoordinateSpace": "hand-joint-local",
+    "grips": {
+      "right": {
+        "joint": "RightHand",
+        "position": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "left": {
+        "joint": "LeftHand",
+        "position": [
+          0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          -1,
+          1,
+          1
+        ]
+      }
+    },
+    "poses": [
+      "stand",
+      "sit"
+    ]
+  },
+  {
+    "type": "steering-wheel",
+    "name": "Steering wheel",
+    "file": "hand/steering-wheel.glb",
+    "triangles": 1244,
+    "modelGripOrigin": [
+      0,
+      0,
+      0
+    ],
+    "gripCoordinateSpace": "hand-joint-local",
+    "grips": {
+      "right": {
+        "joint": "RightHand",
+        "position": [
+          -0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "left": {
+        "joint": "LeftHand",
+        "position": [
+          0.075,
+          -0.018,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          -1,
+          1,
+          1
+        ]
+      }
+    },
+    "poses": [
+      "drive"
+    ]
+  }
+]

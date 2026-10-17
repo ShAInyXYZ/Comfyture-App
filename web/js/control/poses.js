@@ -7,8 +7,10 @@
 //   reach:  contacts, solved by IK on the body that takes the pose: a hand (or a foot) goes to
 //           a joint plus an offset in heights, and with surface onto the skin on that side and
 //           clear of it, so hands find hips, chins and knees on any body type.
+//   grip:   how a hand holds what it holds, last: where its palm faces and where its thumb
+//           points, in the body's frame ({ RightHand: { palm: [0, 0, 1], thumb: [0, 1, 0] } }).
 // seat says what a pose sits on: a chair (stage furniture takes it) or the floor; kneeling and
-// lying need none.
+// lying need none. hold says what the pose puts in a hand (a hand prop from models/hand).
 
 const L = (x, y, z, twist = 0) => [x, y, z, twist];
 const R = (x, y, z, twist = 0) => [-x, y, z, -twist];
@@ -84,11 +86,12 @@ export const POSES = [
     LeftUpLeg: [-70, 0, 0], LeftLeg: [110, 0, 0], RightUpLeg: [-20, 0, 0], RightLeg: [90, 0, 0], RightFoot: [30, 0, 0],
   } },
   // walking, eyes on the phone held in both hands
-  { id: "walk-phone", category: "Move", name: "Walk on the phone", joints: {
+  { id: "walk-phone", category: "Move", name: "Walk on the phone", hold: { right: "phone" }, joints: {
     Spine: [4, 0, 0], Neck: [12, 0, 0], Head: [26, 0, 0],
     LeftUpLeg: [-22, 0, 0], LeftLeg: [8, 0, 0], LeftFoot: [-6, 0, 0], RightUpLeg: [16, 0, 0], RightLeg: [20, 0, 0], RightFoot: [10, 0, 0] },
     aim: { LeftArm: L(0.12, -1, 0.06), RightArm: R(0.12, -1, 0.06) },
-    reach: { LeftHand: { at: "Chest", offset: [0.025, -0.01, 0], surface: "front", clear: 0.19 }, RightHand: { at: "Chest", offset: [-0.025, -0.01, 0], surface: "front", clear: 0.2 } } },
+    reach: { LeftHand: { at: "Chest", offset: [0.025, -0.01, 0], surface: "front", clear: 0.19 }, RightHand: { at: "Chest", offset: [-0.025, -0.01, 0], surface: "front", clear: 0.2 } },
+    grip: { RightHand: { palm: [0, 0.8, -0.6], thumb: [0, 0.6, 0.8] } } },
   // up a ladder: one hand high, one knee up
   { id: "climb", category: "Move", name: "Climb", joints: { Head: [-16, 0, 0] },
     aim: { RightArm: R(0.12, 1, 0.25), RightForeArm: R(0.05, 1, 0.12), LeftArm: L(0.22, -0.2, 1), LeftForeArm: L(-0.1, 0.9, 0.35),
@@ -122,9 +125,10 @@ export const POSES = [
     aim: { LeftUpLeg: L(0.1, -0.05, 1), LeftLeg: L(0, -1, -0.15), RightUpLeg: R(0.1, -0.05, 1), RightLeg: R(0, -1, -0.15), LeftArm: L(0.1, -0.85, 0.55), RightArm: R(0.1, -0.85, 0.55) },
     reach: { LeftHand: { at: "LeftLeg", to: "RightLeg", offset: [0.02, 0.06, 0.04] }, RightHand: { at: "LeftLeg", to: "RightLeg", offset: [-0.02, 0.05, 0.04] } } },
   // at the wheel: leaning back, feet on the pedals
-  { id: "drive", category: "Sit", name: "Drive", seat: "chair", joints: { Spine: [-8, 0, 0], Head: [6, 0, 0] },
+  { id: "drive", category: "Sit", name: "Drive", hold: { right: "steering-wheel" }, seat: "chair", joints: { Spine: [-8, 0, 0], Head: [6, 0, 0] },
     aim: { LeftUpLeg: L(0.06, 0.1, 1), LeftLeg: L(0, -0.6, 0.8), RightUpLeg: R(0.06, 0.1, 1), RightLeg: R(0, -0.6, 0.8), LeftArm: L(0.22, -0.6, 0.8), RightArm: R(0.22, -0.6, 0.8) },
-    reach: { LeftHand: { at: "Chest", offset: [0.11, 0.02, 0], surface: "front", clear: 0.3 }, RightHand: { at: "Chest", offset: [-0.11, 0, 0], surface: "front", clear: 0.3 } } },
+    reach: { LeftHand: { at: "Chest", offset: [0.1, -0.02, 0], surface: "front", clear: 0.3 }, RightHand: { at: "Chest", offset: [-0.1, -0.02, 0], surface: "front", clear: 0.3 } },
+    grip: { RightHand: { palm: [0, 0.5, -0.87], thumb: [0, 0.87, 0.5] }, LeftHand: { palm: [0, 0.5, -0.87], thumb: [0, 0.87, 0.5] } } },
   { id: "sit-floor", category: "Sit", name: "Sit cross-legged", seat: "floor", joints: { Spine: [10, 0, 0], Head: [-6, 0, 0] },
     aim: { LeftUpLeg: L(0.85, -0.12, 0.55), LeftLeg: L(-0.85, -0.12, 0.42), RightUpLeg: R(0.85, -0.12, 0.55), RightLeg: R(-0.85, -0.12, 0.48), LeftArm: L(0.25, -1, 0.3), RightArm: R(0.25, -1, 0.3) },
     reach: { LeftHand: onKnee("Left", 0.02), RightHand: onKnee("Right", 0.02) } },
@@ -158,8 +162,9 @@ export const POSES = [
   { id: "thinking", category: "Gesture", name: "Thinking", joints: { Head: [6, -6, 6] },
     aim: { RightArm: R(0.15, -1, 0.35), LeftArm: L(0.2, -1, 0.3) },
     reach: { RightHand: { at: "Head", offset: [0, -0.075, 0], surface: "front", clear: 0.03 }, LeftHand: { at: "RightForeArm", offset: [0.0, -0.015, 0.03] } } },
-  { id: "phone-call", category: "Gesture", name: "Phone call", joints: { Head: [4, 0, 8] },
-    aim: { ...relaxedLeft, RightArm: R(0.3, -1, 0.2) }, reach: { RightHand: { at: "Head", offset: [0, -0.02, 0.012], surface: "right", clear: 0.02 } } },
+  { id: "phone-call", category: "Gesture", name: "Phone call", hold: { right: "phone" }, joints: { Head: [4, 0, 8] },
+    aim: { ...relaxedLeft, RightArm: R(0.3, -1, 0.2) }, reach: { RightHand: { at: "Head", offset: [0, -0.02, 0.012], surface: "right", clear: 0.02 } },
+    grip: { RightHand: { palm: [1, 0, 0], thumb: [0, 0.6, -0.5] } } },
   { id: "shrug", category: "Gesture", name: "Shrug", joints: {
     Head: [0, 0, -6], LeftShoulder: [0, 0, 12], RightShoulder: [0, 0, -12],
     LeftArm: [0, -30, -62], LeftForeArm: [0, -70, 0], LeftHand: [0, 0, -20],
@@ -202,8 +207,9 @@ export const POSES = [
     aim: { ...relaxedLeft, RightArm: R(0.12, -1, 0.35), RightForeArm: R(0.05, -0.15, 1, 90) } },
   { id: "open-arms", category: "Gesture", name: "Welcome", joints: { Chest: [-4, 0, 0], Head: [-6, 0, 0] },
     aim: { LeftArm: L(0.8, -0.2, 0.55), LeftForeArm: L(0.5, 0, 0.9), RightArm: R(0.8, -0.2, 0.55), RightForeArm: R(0.5, 0, 0.9) } },
-  { id: "selfie", category: "Gesture", name: "Selfie", joints: { Head: [-8, -10, 6] },
-    aim: { ...relaxedLeft, RightArm: R(0.5, 0.3, 0.8) }, reach: { RightHand: { at: "Head", offset: [-0.12, 0.06, 0.36] } } },
+  { id: "selfie", category: "Gesture", name: "Selfie", hold: { right: "phone" }, joints: { Head: [-8, -10, 6] },
+    aim: { ...relaxedLeft, RightArm: R(0.5, 0.3, 0.8) }, reach: { RightHand: { at: "Head", offset: [-0.12, 0.06, 0.36] } },
+    grip: { RightHand: { palm: [0.3, -0.2, -1], thumb: [0, 1, 0] } } },
 
   // ---------------------------------------------------------------- action
   { id: "fight", category: "Action", name: "Fighting stance", joints: {
@@ -235,9 +241,10 @@ export const POSES = [
   { id: "reach", category: "Action", name: "Reach up", joints: { Chest: [-6, 0, 0], Head: [-24, 0, 0], LeftFoot: [-8, 0, 0], RightFoot: [-8, 0, 0] },
     aim: { ...relaxedLeft, RightArm: R(0.15, 1, 0.12), RightForeArm: R(0.05, 1, 0.08) } },
   // a gun held in both hands, arms out
-  { id: "aim", category: "Action", name: "Aim", joints: { Head: [4, 0, 0] },
+  { id: "aim", category: "Action", name: "Aim", hold: { right: "pistol" }, joints: { Head: [4, 0, 0] },
     aim: { RightArm: R(0.3, -0.1, 1), LeftArm: L(0.45, -0.3, 1), LeftUpLeg: L(0.06, -1, 0.15), RightUpLeg: R(0.06, -1, -0.12), RightHand: R(-0.04, 0.02, 1), LeftHand: L(-0.25, 0.05, 1) },
-    reach: { RightHand: { at: "Chest", offset: [-0.02, 0.06, 0], surface: "front", clear: 0.42 }, LeftHand: { at: "Chest", offset: [-0.02, 0.045, 0], surface: "front", clear: 0.39 } } },
+    reach: { RightHand: { at: "Chest", offset: [-0.02, 0.06, 0], surface: "front", clear: 0.42 }, LeftHand: { at: "Chest", offset: [-0.02, 0.045, 0], surface: "front", clear: 0.39 } },
+    grip: { RightHand: { palm: [1, 0, 0], thumb: [0, 1, 0] } } },
   // a box held in front, leaning back to balance it
   { id: "carry", category: "Action", name: "Carry", joints: { Spine: [-6, 0, 0] },
     aim: { LeftArm: L(0.25, -1, 0.35), RightArm: R(0.25, -1, 0.35) },
@@ -256,9 +263,10 @@ export const POSES = [
     aim: { RightArm: R(0.7, 0.5, -0.5), RightForeArm: R(0, 1, 0.1), LeftArm: L(0.25, 0.1, 1), LeftForeArm: L(0.1, 0.1, 1),
       LeftUpLeg: L(0.1, -1, 0.35), LeftLeg: L(0, -1, 0), RightUpLeg: R(0.1, -1, -0.3), RightLeg: R(0, -1, -0.2) } },
   // a sword raised in both hands, lunging in
-  { id: "sword", category: "Action", name: "Sword strike", joints: { Spine: [6, 0, 0], Head: [-6, 0, 0] },
+  { id: "sword", category: "Action", name: "Sword strike", hold: { right: "sword" }, joints: { Spine: [6, 0, 0], Head: [-6, 0, 0] },
     aim: { LeftArm: L(0.4, 0.8, 0.4), RightArm: R(0.4, 0.8, 0.4), LeftUpLeg: L(0.1, -0.8, 0.6), LeftLeg: L(0, -1, -0.1), RightUpLeg: R(0.06, -1, -0.4), RightLeg: R(0, -1, -0.5) },
-    reach: { RightHand: { at: "Head", offset: [0, 0.16, 0.04] }, LeftHand: { at: "Head", offset: [0.01, 0.12, 0.04] } } },
+    reach: { RightHand: { at: "Head", offset: [0, 0.16, 0.04] }, LeftHand: { at: "Head", offset: [0.01, 0.1, 0.09] } },
+    grip: { RightHand: { palm: [1, 0, 0.3], thumb: [0, 0.75, -0.65] }, LeftHand: { palm: [-1, 0, 0.3], thumb: [0, 0.75, -0.65] } } },
   // forearms up in front of the face
   { id: "block", category: "Action", name: "Guard", joints: { Spine: [6, 0, 0], Head: [12, 0, 0] },
     aim: { LeftArm: L(0.35, -0.3, 0.9), LeftForeArm: L(-0.3, 1, 0.25), RightArm: R(0.35, -0.3, 0.9), RightForeArm: R(-0.3, 1, 0.25),
@@ -269,15 +277,18 @@ export const POSES = [
     LeftUpLeg: [-100, 0, -14], LeftLeg: [118, 0, 0], LeftFoot: [-14, 0, 0], RightUpLeg: [-100, 0, 14], RightLeg: [118, 0, 0], RightFoot: [-14, 0, 0] },
     aim: { LeftArm: L(0.3, -1, 0.4), RightArm: R(0.3, -1, 0.4) },
     reach: { LeftHand: { at: "LeftFoot", offset: [0.12, 0.08, 0.17] }, RightHand: { at: "RightFoot", offset: [-0.12, 0.08, 0.17] } } },
-  { id: "drink", category: "Action", name: "Drink", joints: { Head: [-10, 0, 0] },
-    aim: { ...relaxedLeft, RightArm: R(0.2, -1, 0.45) }, reach: { RightHand: { at: "Head", offset: [0, -0.06, 0], surface: "front", clear: 0.05 } } },
-  { id: "read", category: "Action", name: "Read", joints: { Neck: [8, 0, 0], Head: [28, 0, 0] },
+  { id: "drink", category: "Action", name: "Drink", hold: { right: "cup" }, joints: { Head: [-10, 0, 0] },
+    aim: { ...relaxedLeft, RightArm: R(0.2, -1, 0.45) }, reach: { RightHand: { at: "Head", offset: [-0.04, -0.06, 0], surface: "front", clear: 0.04 } },
+    grip: { RightHand: { palm: [0, 0, -1], thumb: [0, 0.95, -0.3] } } },
+  { id: "read", category: "Action", name: "Read", hold: { right: "book" }, joints: { Neck: [8, 0, 0], Head: [28, 0, 0] },
     aim: { LeftArm: L(0.2, -1, 0.15), RightArm: R(0.2, -1, 0.15) },
-    reach: { LeftHand: { at: "Chest", offset: [0.05, -0.02, 0], surface: "front", clear: 0.2 }, RightHand: { at: "Chest", offset: [-0.05, -0.02, 0], surface: "front", clear: 0.2 } } },
+    reach: { LeftHand: { at: "Chest", offset: [0.15, -0.05, 0], surface: "front", clear: 0.2 }, RightHand: { at: "Chest", offset: [-0.12, -0.08, 0], surface: "front", clear: 0.2 } },
+    grip: { RightHand: { palm: [0, -0.5, 0.87], thumb: [0, 0.87, 0.5] } } },
   // a camera at the eye
-  { id: "photo", category: "Action", name: "Take a photo", joints: { Head: [4, 0, 0] },
+  { id: "photo", category: "Action", name: "Take a photo", hold: { right: "camera" }, joints: { Head: [4, 0, 0] },
     aim: { RightArm: R(0.7, -0.6, 0.3), LeftArm: L(0.3, -1, 0.5) },
-    reach: { RightHand: { at: "Head", offset: [-0.06, 0.02, 0], surface: "front", clear: 0.08 }, LeftHand: { at: "Head", offset: [0.04, 0, 0], surface: "front", clear: 0.08 } } },
+    reach: { RightHand: { at: "Head", offset: [-0.06, 0.02, 0], surface: "front", clear: 0.08 }, LeftHand: { at: "Head", offset: [0.04, 0, 0], surface: "front", clear: 0.08 } },
+    grip: { RightHand: { palm: [1, 0, 0], thumb: [0, 1, 0] } } },
   // bending to pick something up, a hand on the knee
   { id: "pick-up", category: "Action", name: "Pick up", joints: { Spine: [40, 0, 0], Chest: [24, 0, 0], Head: [-20, 0, 0] },
     aim: { LeftUpLeg: L(0, -1, 0.18), LeftLeg: L(0, -1, -0.1), RightUpLeg: R(0, -1, -0.05), LeftArm: L(0.2, -1, 0.3), RightArm: R(0.15, -1, 0.3) },

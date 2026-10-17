@@ -204,13 +204,14 @@ CHARACTERS
 Each has a name (use names, never ids), a body type, a colour and a pose.
 Body types: man, woman, teen, child, toddler, elder, heavy, athletic. Pick from the user's words: a girl or a boy is a teen, a kid a child, a baby a toddler, a grandmother an elder. Each is shaped for its silhouette (a woman's waist and hips, a child's big head, an elder's stoop, a heavy belly, an athlete's shoulders), and every pose fits every body: hands find hips, knees and faces on any of them.
 Colours: coral, teal, amber, violet, green, pink, blue, tan. Give each character a different one: they tell people apart in the colour ID pass.
+Hand props (hold): phone, cup, book, camera, sword, pistol, umbrella, bag, guitar, steering-wheel. "hold": "phone" puts one in the right hand, {"right": "cup", "left": "bag"} fills both, null empties them. Poses that hold something bring it themselves: phone-call, walk-phone and selfie a phone, drink a cup, read a book, photo a camera, sword a sword, aim a pistol, drive a steering wheel. Give hold only for something else (an umbrella on a walk, a bag in a hand).
 Pose sliders (params, in degrees; crouch from 0 to 1): look (turns the head, + to its left), nod (+ looks down), tilt, lean (+ forward), twist, side, arms (raises both), reach (arms forward), elbows (bends them), stance (feet apart), step (left foot forward), crouch. Use them to adjust a pose, for example "params": {"look": 30, "lean": 10}.
 
 ASSETS (type: what it is; size [width, height, depth] in metres changes it)
-Furniture: chair, armchair, sofa, stool, bench, table (1.2 x 0.75 x 0.7), desk, counter, bed (its headboard at the back), shelf, lamp, tv.
+Furniture: chair, armchair, sofa, stool, bench, table (1.2 x 0.75 x 0.7), desk, counter, bed (its headboard at the back), shelf, lamp, tv, fridge, stove, kitchen-island, office-chair, wardrobe, bathtub, piano (upright).
 Architecture: plane (a wall, 4 x 2.6), doorway (a wall with an opening), window (a wall with a window), door, pillar, arch, stairs (the steps rise toward -z), ramp, platform, floor (a rug), fence.
-Outdoor: car (4.3 m long, along x), tree, bush, rock, streetlamp, crate, barrel, traffic-cone. Basic: box, cylinder, sphere, cone.
-Seats, for sit_on: chair, armchair, sofa, stool, bench, bed (its edge), stairs, platform, crate, barrel. Tops, for on: table, desk, counter, bed, platform, crate, box.
+Outdoor: car (4.3 m long, along x), tree, pine-tree, palm-tree, bush, rock, streetlamp, bus-stop (a shelter with a bench), trash-bin, mailbox, phone-booth, tent, campfire, rowing-boat, crate, barrel, traffic-cone. Basic: box, cylinder, sphere, cone.
+Seats, for sit_on: chair, armchair, sofa, stool, bench, office-chair, bed (its edge), stairs, platform, bus-stop, rowing-boat, bathtub (in it), crate, barrel. Tops, for on: table, desk, counter, kitchen-island, bed, platform, crate, box.
 
 RELATIONS: say where things are relative to each other and the app works out the numbers. Use them instead of x and z whenever the user relates things:
 - against: a name. The back rests on it, touching: only for leaning or resting on it ("leans on the wall", "back to the pillar"). By or near a wall is not against: put the wall 1.5 to 3 m behind them instead.
@@ -220,10 +221,10 @@ RELATIONS: say where things are relative to each other and the app works out the
 - next_to: a name, with side (left, right, front or behind) and distance in metres.
 
 ACTIONS
-- layout {clear, characters: [{name, body, color, pose, x, z or a relation, facing or face_toward, height, params}], props: [{type, label, x, z or a relation, facing or face_toward, size}], camera: {...}, duration}: a whole scene at once. For a new scene use it with clear: true. Without clear it moves what is already there by name and adds the rest; for a small change, use the small actions instead.
-- add_character {name, body, color, pose, x, z or a relation, facing or face_toward, height, params}
+- layout {clear, characters: [{name, body, color, pose, hold, x, z or a relation, facing or face_toward, height, params}], props: [{type, label, x, z or a relation, facing or face_toward, size}], camera: {...}, duration}: a whole scene at once. For a new scene use it with clear: true. Without clear it moves what is already there by name and adds the rest; for a small change, use the small actions instead.
+- add_character {name, body, color, pose, hold, x, z or a relation, facing or face_toward, height, params}
 - add_prop {type, label, x, z or a relation, facing or face_toward, size}
-- place {id, x, z or a relation, facing or face_toward, size, height, body, color, params, name}: id is a name from the scene; name renames it
+- place {id, x, z or a relation, facing or face_toward, size, height, body, color, params, hold, name}: id is a name from the scene; name renames it
 - pose {id, pose, mirror, params}
 - joint {id, joint, rotation: [x, y, z] in degrees}: only when the user asks to move one limb
 - reach {id, effector, target}: a hand or foot (LeftHand, RightHand, LeftFoot, RightFoot) on a named thing, only when the user asks for it

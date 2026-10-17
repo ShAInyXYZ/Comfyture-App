@@ -6,7 +6,13 @@
 
 import * as THREE from "three";
 import { JOINTS, JOINT_NAMES, HINGES, CONES, CHAINS, MIRROR, DEFAULT_PROFILE, bodyById } from "./skeleton.js";
-import { bodyParts } from "./body.js";
+import { bodyParts, headFrame } from "./body.js";
+import { MODELS } from "./models.js";
+
+// what a modelled body cannot change: once one of these leaves its type's own value, the body is
+// sculpted in code instead (body.js), which follows every trait
+const SHAPE = ["waist", "chest", "belly", "muscle", "soft", "bust", "glutes", "neck", "stoop"];
+const fitsModel = (p, base) => SHAPE.every((k) => Math.abs((p[k] ?? 0) - (base[k] ?? 0)) < 1e-3);
 
 const CLAY = new THREE.Color("#b9b5ae");
 /** The character's colour as clay: still matte and light, but no two bodies alike. */
@@ -14,7 +20,7 @@ const tint = (color) => color.clone().lerp(CLAY, 0.32);
 let count = 0;
 
 export class Mannequin {
-  constructor({ id, name, color, profile, body } = {}) {
+  constructor({ id, name, color, profile, body, hold } = {}) {
     this.id = id ?? `char-${Date.now().toString(36)}-${count++}`;
     this.name = name ?? "Character";
     this.color = new THREE.Color(color ?? "#e8584f");
@@ -29,8 +35,14 @@ export class Mannequin {
     this.params = {};
     // timeline keys: [{ t, position, quaternion, pose, params }]
     this.keys = [];
+    // what each hand holds (a hand prop's type), and which of those a pose put there
+    this.hold = { right: null, left: null, ...(hold ?? {}) };
+    this.autoHold = { right: false, left: false };
     this.material = new THREE.MeshStandardMaterial({ roughness: 0.78, metalness: 0 });
     this.ballMaterial = new THREE.MeshStandardMaterial({ roughness: 0.7 });
+    // held things are in plain clay, so they read apart from the body
+    this.heldMaterial = new THREE.MeshStandardMaterial({ color: "#a9a59e", roughness: 0.8 });
+    this.heldAccent = new THREE.MeshStandardMaterial({ color: "#76726c", roughness: 0.7 });
     this.setColor(this.color);
     this.build();
   }
@@ -39,7 +51,8 @@ export class Mannequin {
   setColor(color) {
     this.color = new THREE.Color(color);
     this.material.color.copy(tint(this.color));
-    this.ballMaterial.color.copy(tint(this.color).multiplyScalar(0.45));
+    // thin seams read best dark; a model's broad sockets, a shade lighter
+    this.ballMaterial.color.copy(tint(this.color).multiplyScalar(this.model ? 0.66 : 0.45));
   }
 
   /** One of the body types, keeping the pose; its proportions can be tuned after. */
@@ -62,6 +75,19 @@ export class Mannequin {
     for (const j of Object.values(this.joints)) j.removeFromParent();
     this.joints = {};
     this.parts = [];
+    const type = bodyById(this.body);
+    const base = { ...DEFAULT_PROFILE, ...(type?.profile ?? {}) };
+    const model = MODELS.bodies.get(this.body);
+    this.model = model && fitsModel(this.profile, base) ? model : null;
+    if (this.model) this.buildModel(this.model, base);
+    else this.buildSculpted();
+    this.setColor(this.color);
+    for (const hand of ["right", "left"]) if (this.hold[hand]) this.setHold(hand, this.hold[hand]);
+    this.apply();
+  }
+
+  /** The body sculpted in code from the profile: joints from skeleton.js, pieces from body.js. */
+  buildSculpted() {
     const p = this.profile;
     const h = p.height;
     for (const [name, parent, offset] of JOINTS) {
@@ -73,16 +99,128 @@ export class Mannequin {
       (parent ? this.joints[parent] : this.root).add(joint);
       this.joints[name] = joint;
     }
-    for (const [name, geometry, kind] of bodyParts(p)) {
-      const mesh = new THREE.Mesh(geometry, kind === "joint" ? this.ballMaterial : this.material);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.userData.joint = name;
-      mesh.userData.character = this;
-      this.joints[name].add(mesh);
-      this.parts.push(mesh);
+    for (const [name, geometry, kind] of bodyParts(p)) this.addPiece(this.joints[name], geometry, kind === "joint");
+  }
+
+  /**
+   * The modelled body of this type, its joints where the model has them. The frame's sliders
+   * still apply: height scales it all; arms and legs lengthen the bones and their pieces;
+   * shoulders and hips set the joints apart; build thickens the pieces across their bones;
+   * head, hands and feet scale those pieces.
+   */
+  buildModel(model, base) {
+    const p = this.profile;
+    const k = (key) => (p[key] ?? 1) / (base[key] ?? 1);
+    const s = p.height / base.height;
+    const [legs, arms, sh, hips, build, head, hands, feet] = ["legs", "arms", "shoulders", "hips", "build", "head", "hands", "feet"].map(k);
+    const rest = new Map(model.joints.map((j) => [j.name, new THREE.Vector3(...j.local)]));
+    // longer legs lift the hips by what the thigh and shin gain
+    const lift = (rest.get("LeftLeg").length() + rest.get("LeftFoot").length()) * (legs - 1);
+    for (const [name, parent] of JOINTS) {
+      const v = rest.get(name).clone();
+      if (name === "Hips") v.y += lift;
+      if (/^(Left|Right)(Leg|Foot)$/.test(name)) v.multiplyScalar(legs);
+      if (/^(Left|Right)(ForeArm|Hand)$/.test(name)) v.multiplyScalar(arms);
+      if (/^(Left|Right)(Arm|Shoulder)$/.test(name)) v.x *= sh;
+      if (/^(Left|Right)UpLeg$/.test(name)) v.x *= hips;
+      v.multiplyScalar(s);
+      const joint = new THREE.Group();
+      joint.name = name;
+      joint.userData.joint = name;
+      joint.userData.rest = v;
+      joint.position.copy(v);
+      (parent ? this.joints[parent] : this.root).add(joint);
+      this.joints[name] = joint;
     }
-    this.apply();
+    // each joint's pieces go in a sizer that stretches them in the joint's own frame
+    const stretch = (name) => {
+      if (/(Arm|ForeArm)$/.test(name)) return [arms, build, build];
+      if (/Shoulder$/.test(name)) return [sh, build, build];
+      if (/(UpLeg|Leg)$/.test(name)) return [build, legs, build];
+      if (/Hand$/.test(name)) return [hands, hands, hands];
+      if (/(Foot|Toe)$/.test(name)) return [feet, feet, feet];
+      if (name === "Head") return [head, head, head];
+      if (name === "Hips") return [build * hips, build, build];
+      if (name === "Chest") return [build * Math.sqrt(sh), build, build];
+      return [build, build, build];
+    };
+    const sizers = {};
+    model.scene.updateMatrixWorld(true);
+    const inverse = new THREE.Matrix4();
+    const local = new THREE.Matrix4();
+    model.scene.traverse((o) => {
+      if (!o.isMesh) return;
+      // the piece belongs to the nearest joint above it, wherever it is nested
+      let owner = o.parent;
+      while (owner && !this.joints[owner.name]) owner = owner.parent;
+      if (!owner) return;
+      const name = owner.name;
+      if (!sizers[name]) {
+        const sizer = new THREE.Group();
+        sizer.scale.set(...stretch(name).map((v) => v * s));
+        this.joints[name].add(sizer);
+        sizers[name] = sizer;
+      }
+      const mesh = this.addPiece(sizers[name], o.geometry, o.material?.name === "joint", name);
+      local.multiplyMatrices(inverse.copy(owner.matrixWorld).invert(), o.matrixWorld);
+      local.decompose(mesh.position, mesh.quaternion, mesh.scale);
+    });
+    this.modelScale = { s, head };
+  }
+
+  /** One piece of the body on a joint (or a joint's sizer), in clay or in the joint's darker clay. */
+  addPiece(parent, geometry, ball, joint = parent.name) {
+    const mesh = new THREE.Mesh(geometry, ball ? this.ballMaterial : this.material);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.userData.joint = joint;
+    mesh.userData.character = this;
+    parent.add(mesh);
+    this.parts.push(mesh);
+    return mesh;
+  }
+
+  /**
+   * Puts a hand prop (models/hand: a phone, a cup, a sword...) in a hand, or empties it (null).
+   * The prop sits at the palm's grip, scaled to the hand; it stays held through every pose.
+   */
+  setHold(hand, type) {
+    this.held ??= {};
+    this.held[hand]?.removeFromParent();
+    this.parts = this.parts.filter((m) => m.userData.held !== hand);
+    this.held[hand] = null;
+    this.hold[hand] = type || null;
+    const model = type && MODELS.hand.get(type);
+    if (!model) return;
+    const grip = model.grips[hand];
+    const p = this.profile;
+    const base = { ...DEFAULT_PROFILE, ...(bodyById(this.body)?.profile ?? {}) };
+    const k = this.model ? this.model.handSocketScale * this.modelScale.s * ((p.hands ?? 1) / (base.hands ?? 1)) : (p.height / 1.78) * (p.hands ?? 1);
+    const holder = new THREE.Group();
+    holder.position.fromArray(grip.position).multiplyScalar(k);
+    holder.quaternion.fromArray(grip.quaternion ?? [0, 0, 0, 1]);
+    if (grip.scale) holder.scale.fromArray(grip.scale);
+    const copy = model.scene.clone(true);
+    const joint = hand === "left" ? "LeftHand" : "RightHand";
+    copy.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material = o.material?.name === "accent" ? this.heldAccent : this.heldMaterial;
+      o.castShadow = o.receiveShadow = true;
+      Object.assign(o.userData, { joint, character: this, held: hand });
+      this.parts.push(o);
+    });
+    holder.add(copy);
+    this.joints[joint].add(holder);
+    this.held[hand] = holder;
+    this.root.updateMatrixWorld(true);
+  }
+
+  /** Where the head is in the Head joint's frame (its centre and half-height), for the face's keypoints. */
+  headFrame() {
+    const hb = this.model?.headBounds;
+    if (!hb) return headFrame(this.profile);
+    const k = this.modelScale.s * this.modelScale.head;
+    return { centre: new THREE.Vector3(...hb.centre).multiplyScalar(k), radius: ((hb.max[1] - hb.min[1]) / 2) * k };
   }
 
   /** The base pose (before the sliders): every joint's local rotation, as [x, y, z, w]. */
@@ -120,6 +258,13 @@ export class Mannequin {
    */
   setPreset(preset) {
     if (!preset) return;
+    // what the pose puts in the hands, replacing only what an earlier pose put there
+    for (const hand of ["right", "left"]) {
+      const want = preset.hold?.[hand] ?? null;
+      if (want) this.setHold(hand, want);
+      else if (this.autoHold[hand]) this.setHold(hand, null);
+      this.autoHold[hand] = Boolean(want);
+    }
     if (preset.quaternions) {
       this.setPose(preset.quaternions);
       return;
@@ -152,6 +297,19 @@ export class Mannequin {
       this.reach(effector, target);
     }
     aim(["LeftHand", "RightHand"]);
+    // a hand that holds something can say how: where its palm faces and where its thumb points
+    for (const [name, g] of Object.entries(preset.grip ?? {})) {
+      const joint = this.joints[name];
+      this.root.updateMatrixWorld(true);
+      const z = new THREE.Vector3(...g.thumb).normalize().applyQuaternion(frame);
+      const y = new THREE.Vector3(...g.palm).negate().applyQuaternion(frame);
+      y.addScaledVector(z, -y.dot(z)).normalize();
+      const x = new THREE.Vector3().crossVectors(y, z);
+      const world = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+      joint.quaternion.copy(joint.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(world));
+      joint.updateMatrixWorld(true);
+      this.absorb([name]);
+    }
     this.apply();
   }
 
@@ -190,7 +348,8 @@ export class Mannequin {
 
   /** The sliders' turns, with the body's own stoop. */
   deltas() {
-    return paramDeltas(this.params, this.profile.stoop);
+    // a modelled elder is already stooped in its joints
+    return paramDeltas(this.params, this.model ? 0 : this.profile.stoop);
   }
 
   /** Writes base and sliders into the joints. */
@@ -224,6 +383,11 @@ export class Mannequin {
     for (const k of ["look", "tilt", "twist", "side", "step", "swing"]) if (params[k]) params[k] = -params[k];
     this.params = params;
     this.setPose(flipped);
+    // what each hand held goes to the other
+    const { right, left } = this.hold;
+    this.setHold("right", left);
+    this.setHold("left", right);
+    this.autoHold = { right: this.autoHold.left, left: this.autoHold.right };
   }
 
   /** Keeps a joint's rotation inside its limits: hinges on their axis and range, ball joints within a cone. */
@@ -322,6 +486,7 @@ export class Mannequin {
       params: { ...this.params },
       posed: this.posed,
       visible: this.root.visible,
+      hold: this.hold.right || this.hold.left ? { ...this.hold } : undefined,
       keys: this.keys?.length ? this.keys : undefined,
     };
   }

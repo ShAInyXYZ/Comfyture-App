@@ -6,8 +6,11 @@
 // seats and tops say where a body sits and where things rest.
 
 import * as THREE from "three";
+import { MODELS } from "./models.js";
 
 const clay = () => new THREE.MeshStandardMaterial({ color: "#a9a59e", roughness: 0.85 });
+// the parts of a model that read apart: glass, a screen, a shade
+const accentClay = () => new THREE.MeshStandardMaterial({ color: "#86827c", roughness: 0.7 });
 
 // shape helpers: each takes its centre
 const box = (w, h, d, x = 0, y = 0, z = 0) => at(new THREE.BoxGeometry(w, h, d), x, y, z);
@@ -265,6 +268,39 @@ export const ASSETS = [
     build: (p) => [box(p.h * 0.55, 0.03, p.h * 0.55, 0, 0.015), cyl(0.03, p.h * 0.2, p.h - 0.03, 0, 0.03 + (p.h - 0.03) / 2)] },
 ];
 
+/**
+ * A piece that exists only as a model (models/props): sized by width, height and depth around the
+ * model's own, its seat and top scaling with it; until the model loads it stands in as a box.
+ */
+function modelled(type, name, category, icon, [w, h, d], seat, top) {
+  const range = (v) => [Math.round(v * 40) / 100, Math.round(v * 250) / 100];
+  return {
+    type, name, category, icon, model: true,
+    params: [["w", "Width", ...range(w), 0.01, w], ["h", "Height", ...range(h), 0.01, h], ["d", "Depth", ...range(d), 0.01, d]],
+    build: (p) => [box(p.w, p.h, p.d, 0, p.h / 2)],
+    seat: seat && ((p) => ({ y: seat.y * (p.h / h), z: seat.z * (p.d / d), x: seat.x.map((x) => x * (p.w / w)) })),
+    top: top && ((p) => top * (p.h / h)),
+  };
+}
+ASSETS.push(
+  modelled("fridge", "Fridge", "Furniture", "asset-shelf", [0.76, 1.82, 0.781], null, 1.82),
+  modelled("stove", "Stove", "Furniture", "asset-counter", [0.72, 0.934, 0.717], null, 0.934),
+  modelled("kitchen-island", "Kitchen island", "Furniture", "asset-counter", [1.7, 0.92, 0.94], null, 0.92),
+  modelled("office-chair", "Office chair", "Furniture", "asset-chair", [0.65, 1.033, 0.621], { y: 0.49, z: 0.035, x: [0.0] }, null),
+  modelled("wardrobe", "Wardrobe", "Furniture", "asset-shelf", [1.3, 2.05, 0.692], null, 2.05),
+  modelled("bathtub", "Bathtub", "Furniture", "asset-bed", [1.873, 0.838, 0.897], { y: 0.2, z: 0.05, x: [0.0] }, null),
+  modelled("piano", "Piano", "Furniture", "asset-counter", [1.5, 1.23, 0.755], null, 1.23),
+  modelled("bus-stop", "Bus stop", "Outdoor", "asset-bench", [3.08, 2.3, 1.42], { y: 0.47, z: -0.21, x: [-0.65, 0.0, 0.65] }, null),
+  modelled("trash-bin", "Trash bin", "Outdoor", "asset-barrel", [0.62, 1.005, 0.62], null, null),
+  modelled("mailbox", "Mailbox", "Outdoor", "asset-streetlamp", [0.49, 1.58, 0.701], null, null),
+  modelled("phone-booth", "Phone booth", "Outdoor", "asset-door", [1.02, 2.39, 1.02], null, null),
+  modelled("tent", "Tent", "Outdoor", "asset-cone", [2.328, 1.513, 2.909], null, null),
+  modelled("campfire", "Campfire", "Outdoor", "asset-rock", [1.24, 0.876, 1.143], null, null),
+  modelled("pine-tree", "Pine tree", "Outdoor", "asset-tree", [2.148, 4.0, 2.004], null, null),
+  modelled("palm-tree", "Palm tree", "Outdoor", "asset-tree", [3.51, 4.014, 3.564], null, null),
+  modelled("rowing-boat", "Rowing boat", "Outdoor", "asset-car", [1.27, 0.55, 3.29], { y: 0.35, z: 0.0, x: [-0.0] }, null),
+);
+
 const BY_TYPE = new Map(ASSETS.map((a) => [a.type, a]));
 export const assetByType = (type) => BY_TYPE.get(type);
 export const ASSET_CATEGORIES = [...new Set(ASSETS.map((a) => a.category))];
@@ -286,20 +322,82 @@ export const topOf = (prop) => assetByType(prop.userData.type)?.top?.(prop.userD
 
 let count = 0;
 
+// The modelled pieces (models/props) stand in for the built ones whenever their sizes allow: a
+// model is scaled to the size the built piece would have, so seats and tops stay where they are.
+const SIZES = new Set(["w", "h", "d", "r", "s", "l"]);
+// a stool's or a bench's seat is its height; elsewhere the seat is a shape
+const AS_SIZE = { stool: ["seat"], bench: ["seat"] };
+// stretched, these would widen an opening, the steps or the gaps between posts: built instead
+const KEEPS_SHAPE = { doorway: ["w"], window: ["w"], arch: ["w"], fence: ["w"], stairs: ["w"] };
+// where a model's frame differs from the built piece's: a turn about y, then an offset
+const MODEL_FIX = { stairs: { turn: Math.PI, offset: [0, 0, -0.6] }, streetlamp: { offset: [0.43, 0, 0] } };
+
+function modelFits(def, params) {
+  const defaults = paramsOf(def.type);
+  return def.params.every(([k]) => {
+    if (Math.abs(params[k] - defaults[k]) < 1e-6) return true;
+    if (KEEPS_SHAPE[def.type]?.includes(k)) return false;
+    return SIZES.has(k) || AS_SIZE[def.type]?.includes(k);
+  });
+}
+
+const builtSizes = new Map();
+/** The size of the built piece, for these sizes. */
+function builtSize(def, params) {
+  const key = `${def.type}:${JSON.stringify(params)}`;
+  if (!builtSizes.has(key)) {
+    const group = new THREE.Group();
+    for (const piece of def.build(params)) group.add(piece);
+    group.updateMatrixWorld(true);
+    builtSizes.set(key, new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3()));
+    group.traverse((o) => o.geometry?.dispose());
+  }
+  return builtSizes.get(key);
+}
+
+/** The model of a piece, scaled to these sizes, its materials the prop's own. */
+function modelPiece(def, model, object) {
+  const ratio = builtSize(def, object.userData.params).clone().divide(builtSize(def, paramsOf(def.type)));
+  const sizer = new THREE.Group();
+  sizer.scale.copy(ratio);
+  const fix = new THREE.Group();
+  const f = MODEL_FIX[def.type];
+  if (f) {
+    fix.rotation.y = f.turn ?? 0;
+    fix.position.fromArray(f.offset ?? [0, 0, 0]);
+  }
+  const copy = model.scene.clone(true);
+  copy.traverse((o) => {
+    if (!o.isMesh) return;
+    o.material = o.material?.name === "accent" ? object.userData.accent : object.userData.material;
+    o.castShadow = o.receiveShadow = true;
+    // the geometry belongs to the model, shared by every copy
+    o.userData.shared = true;
+  });
+  fix.add(copy);
+  sizer.add(fix);
+  return sizer;
+}
+
 /** (Re)builds the pieces of a prop from its type and sizes, keeping where it stands. */
 function fill(object) {
   const def = assetByType(object.userData.type) ?? assetByType("box");
   for (const child of [...object.children]) {
-    child.traverse((o) => o.geometry?.dispose());
+    child.traverse((o) => !o.userData.shared && o.geometry?.dispose());
     object.remove(child);
   }
-  for (const piece of def.build(object.userData.params)) {
-    piece.traverse((o) => {
-      if (!o.isMesh) return;
-      o.material = object.userData.material;
-      o.castShadow = o.receiveShadow = true;
-    });
-    object.add(piece);
+  const model = MODELS.props.get(def.type);
+  object.userData.modelled = Boolean(model && modelFits(def, object.userData.params));
+  if (object.userData.modelled) object.add(modelPiece(def, model, object));
+  else {
+    for (const piece of def.build(object.userData.params)) {
+      piece.traverse((o) => {
+        if (!o.isMesh) return;
+        o.material = object.userData.material;
+        o.castShadow = o.receiveShadow = true;
+      });
+      object.add(piece);
+    }
   }
   // child meshes point back at their prop, so a click on a table leg picks the table
   object.traverse((o) => {
@@ -319,6 +417,7 @@ export function makeProp(type, id, params) {
     label: def.name,
     params: paramsOf(def.type, params),
     material: clay(),
+    accent: accentClay(),
     keys: [],
     toJSON: () => ({
       id: object.userData.id,
@@ -341,6 +440,9 @@ export function setPropParams(object, patch) {
   object.userData.params = paramsOf(object.userData.type, { ...object.userData.params, ...patch });
   fill(object);
 }
+
+/** Rebuilds a prop as it is (once the models have loaded, a built piece becomes its model). */
+export const refillProp = (object) => fill(object);
 
 export function propFromJSON(data) {
   const def = assetByType(data.type) ?? assetByType("box");

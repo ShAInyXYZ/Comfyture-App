@@ -12,6 +12,7 @@ import { ASSETS, ASSET_CATEGORIES, assetByType } from "./assets.js";
 import { JOINT_NAMES, JOINT_LABELS, BODY_TYPES, BODY_SLIDERS, PARAMS, PALETTE, colorName } from "./skeleton.js";
 import { CHANNELS, PASSES } from "./channels.js";
 import { controlOps, connectRemote } from "./remote.js";
+import { MODELS } from "./models.js";
 
 const TOOLS = [
   ["select", "web-cursor", "Select", "Q"],
@@ -200,7 +201,8 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     } else {
       const chips = el("div.ctl-chips", {}, ...ASSET_CATEGORIES.map((c) => el("button.ctl-chip-key", { type: "button", "aria-pressed": String(assetCat === c), on: { click: () => ((assetCat = c), library()) } }, c)));
       const grid = el("div.ctl-assets", {}, ...ASSETS.filter((a) => a.category === assetCat).map((a) =>
-        el("button.ctl-asset", { type: "button", title: `Add ${a.name.toLowerCase()}`, on: { click: () => stage.addProp(a.type, freeSpot()) } }, sprite(a.icon), el("span", {}, a.name))));
+        el("button.ctl-asset", { type: "button", title: a.name, "aria-label": `Add ${a.name.toLowerCase()}`, on: { click: () => stage.addProp(a.type, freeSpot()) } },
+          el("img", { src: stage.propThumbnail(a.type), alt: "", draggable: false }))));
       libraryEl.replaceChildren(tabs, chips, grid);
     }
   }
@@ -385,6 +387,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   }
   const format = (v, step, unit) => (unit === "m" ? `${v.toFixed(2)} m` : unit === "°" ? `${Math.round(v)}°` : step < 1 ? v.toFixed(2) : String(Math.round(v)));
 
+  let holdHand = "right";
   function selected() {
     const { character, joint, prop } = stage.selection;
     if (!character && !prop) return selectedEl.replaceChildren(el("p.ctl-empty", {}, "Nothing selected. Click a body or a prop."));
@@ -415,6 +418,15 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       el("button.ctl-swatch", { type: "button", "aria-pressed": String(hex === c), title: cname, "aria-label": cname, style: { "--swatch": c }, on: { click: () => stage.setColor(character, c) } })));
     const bodies = el("div.ctl-bodies", { role: "group", "aria-label": "Body type" }, ...BODY_TYPES.map((b) =>
       el("button.ctl-body", { type: "button", "aria-pressed": String(character.body === b.id), title: b.name, on: { click: () => stage.setBody(character, b.id) } }, sprite(`body-${b.id}`), el("span", {}, b.name))));
+    // what the hands hold: a hand at a time, the props drawn
+    const holds = MODELS.hand.size ? el("div.ctl-holds", {},
+      el("div.segment.is-sm.ctl-hand", { role: "group", "aria-label": "Hand" }, ...[["right", "R", "Right hand"], ["left", "L", "Left hand"]].map(([h, short, label]) =>
+        el("button", { type: "button", "aria-pressed": String(holdHand === h), title: label, on: { click: () => ((holdHand = h), selected()) } }, short))),
+      el("div.ctl-hold-row", {},
+        el("button.ctl-hold", { type: "button", "aria-pressed": String(!character.hold[holdHand]), title: "Empty hand", "aria-label": "Empty hand", on: { click: () => (stage.setHold(character, holdHand, null), selected()) } }, icon("close")),
+        ...[...MODELS.hand.values()].map((h) =>
+          el("button.ctl-hold", { type: "button", "aria-pressed": String(character.hold[holdHand] === h.type), title: h.name, "aria-label": h.name, on: { click: () => (stage.setHold(character, holdHand, h.type), selected()) } },
+            el("img", { src: stage.handThumbnail(h.type), alt: "", draggable: false }))))) : null;
     const bodyKeys = advanced ? BODY_SLIDERS.map(([k]) => k) : BODY_MAIN;
     const poseKeys = advanced ? PARAMS.map(([k]) => k) : POSE_MAIN;
     const bodyCol = el("div.ctl-sliders", {}, el("span.ctl-label.is-sub", {}, "Body"), ...bodyKeys.map((k) => {
@@ -427,6 +439,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     }));
     selectedEl.replaceChildren(head, swatches,
       el("span.ctl-label.is-sub", {}, "Body type"), bodies,
+      ...(holds ? [el("span.ctl-label.is-sub", {}, "In hand"), holds] : []),
       el("div.ctl-columns", {}, bodyCol, poseCol),
       el("div.ctl-row", {},
         el("button.key.is-sm.is-quiet", { type: "button", "aria-pressed": String(advanced), on: { click: () => ((advanced = !advanced), selected()) } }, advanced ? "Fewer" : "Advanced"),

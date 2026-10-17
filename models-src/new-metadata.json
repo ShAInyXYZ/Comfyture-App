@@ -1,0 +1,268 @@
+[
+  {
+    "type": "fridge",
+    "name": "Refrigerator",
+    "file": "props/fridge.glb",
+    "triangles": 876,
+    "category": "Furniture",
+    "size": [
+      0.76,
+      1.82,
+      0.780917
+    ],
+    "seat": null,
+    "top": 1.82,
+    "modules": []
+  },
+  {
+    "type": "stove",
+    "name": "Oven and stove",
+    "file": "props/stove.glb",
+    "triangles": 5352,
+    "category": "Furniture",
+    "size": [
+      0.72,
+      0.934,
+      0.716877
+    ],
+    "seat": null,
+    "top": 0.934,
+    "modules": []
+  },
+  {
+    "type": "kitchen-island",
+    "name": "Kitchen island",
+    "file": "props/kitchen-island.glb",
+    "triangles": 1740,
+    "category": "Furniture",
+    "size": [
+      1.7,
+      0.92,
+      0.94
+    ],
+    "seat": null,
+    "top": 0.92,
+    "modules": []
+  },
+  {
+    "type": "office-chair",
+    "name": "Office chair",
+    "file": "props/office-chair.glb",
+    "triangles": 2412,
+    "category": "Furniture",
+    "size": [
+      0.65,
+      1.032551,
+      0.620592
+    ],
+    "seat": {
+      "y": 0.49,
+      "z": 0.035,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "modules": []
+  },
+  {
+    "type": "wardrobe",
+    "name": "Wardrobe",
+    "file": "props/wardrobe.glb",
+    "triangles": 876,
+    "category": "Furniture",
+    "size": [
+      1.3,
+      2.05,
+      0.691885
+    ],
+    "seat": null,
+    "top": 2.05,
+    "modules": []
+  },
+  {
+    "type": "bathtub",
+    "name": "Freestanding bathtub",
+    "file": "props/bathtub.glb",
+    "triangles": 2732,
+    "category": "Furniture",
+    "size": [
+      1.872885,
+      0.837571,
+      0.897252
+    ],
+    "seat": {
+      "y": 0.2,
+      "z": 0.05,
+      "x": [
+        0.0
+      ]
+    },
+    "top": null,
+    "modules": []
+  },
+  {
+    "type": "piano",
+    "name": "Upright piano",
+    "file": "props/piano.glb",
+    "triangles": 3732,
+    "category": "Furniture",
+    "size": [
+      1.5,
+      1.23,
+      0.755
+    ],
+    "seat": null,
+    "top": 1.23,
+    "modules": []
+  },
+  {
+    "type": "bus-stop",
+    "name": "Bus shelter",
+    "file": "props/bus-stop.glb",
+    "triangles": 2780,
+    "category": "Outdoor",
+    "size": [
+      3.08,
+      2.3,
+      1.42
+    ],
+    "seat": {
+      "y": 0.47,
+      "z": -0.21,
+      "x": [
+        -0.65,
+        0.0,
+        0.65
+      ]
+    },
+    "top": null,
+    "modules": []
+  },
+  {
+    "type": "trash-bin",
+    "name": "Street litter bin",
+    "file": "props/trash-bin.glb",
+    "triangles": 4348,
+    "category": "Outdoor",
+    "size": [
+      0.62,
+      1.005,
+      0.62
+    ],
+    "seat": null,
+    "top": null,
+    "modules": []
+  },
+  {
+    "type": "mailbox",
+    "name": "Post-mounted mailbox",
+    "file": "props/mailbox.glb",
+    "triangles": 1188,
+    "category": "Outdoor",
+    "size": [
+      0.49,
+      1.58,
+      0.70062
+    ],
+    "seat": null,
+    "top": null,
+    "modules": []
+  },
+  {
+    "type": "phone-booth",
+    "name": "Telephone booth",
+    "file": "props/phone-booth.glb",
+    "triangles": 3468,
+    "category": "Outdoor",
+    "size": [
+      1.02,
+      2.39,
+      1.02
+    ],
+    "seat": null,
+    "top": null,
+    "modules": []
+  },
+  {
+    "type": "tent",
+    "name": "A-frame camping tent",
+    "file": "props/tent.glb",
+    "triangles": 1600,
+    "category": "Outdoor",
+    "size": [
+      2.328318,
+      1.513491,
+      2.908521
+    ],
+    "seat": null,
+    "top": null,
+    "modules": []
+  },
+  {
+    "type": "campfire",
+    "name": "Campfire and stone ring",
+    "file": "props/campfire.glb",
+    "triangles": 2228,
+    "category": "Outdoor",
+    "size": [
+      1.24,
+      0.875891,
+      1.143014
+    ],
+    "seat": null,
+    "top": null,
+    "modules": []
+  },
+  {
+    "type": "pine-tree",
+    "name": "Layered pine tree",
+    "file": "props/pine-tree.glb",
+    "triangles": 1756,
+    "category": "Outdoor",
+    "size": [
+      2.147725,
+      4.0,
+      2.004388
+    ],
+    "seat": null,
+    "top": null,
+    "modules": []
+  },
+  {
+    "type": "palm-tree",
+    "name": "Curved palm tree",
+    "file": "props/palm-tree.glb",
+    "triangles": 4980,
+    "category": "Outdoor",
+    "size": [
+      3.510346,
+      4.013954,
+      3.564499
+    ],
+    "seat": null,
+    "top": null,
+    "modules": []
+  },
+  {
+    "type": "rowing-boat",
+    "name": "Rowing boat",
+    "file": "props/rowing-boat.glb",
+    "triangles": 2872,
+    "category": "Outdoor",
+    "size": [
+      1.269889,
+      0.549634,
+      3.290215
+    ],
+    "seat": {
+      "y": 0.350001,
+      "z": 0.000196,
+      "x": [
+        -2e-06
+      ]
+    },
+    "top": null,
+    "modules": []
+  }
+]

@@ -9,7 +9,8 @@ import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { Mannequin } from "./mannequin.js";
 import { CHAINS, JOINT_NAMES, PALETTE, bodyById } from "./skeleton.js";
 import { poseById } from "./poses.js";
-import { makeProp, propFromJSON, setPropParams } from "./assets.js";
+import { makeProp, propFromJSON, setPropParams, refillProp } from "./assets.js";
+import { loadModels, MODELS } from "./models.js";
 import { Channels } from "./channels.js";
 
 /** Vertical field of view (degrees) of a lens on a full-frame (36 × 24 mm) sensor. */
@@ -164,6 +165,8 @@ export class Stage {
 
     new ResizeObserver(() => this.resize()).observe(container);
     this.resize();
+    // the modelled bodies and pieces load behind the first frames and replace the built ones
+    loadModels().then(() => this.refreshModels());
   }
 
   // ------------------------------------------------------------ events
@@ -987,6 +990,91 @@ export class Stage {
     return canvas.toDataURL("image/png");
   }
 
+  /**
+   * The modelled bodies and pieces have loaded: everything on the stage takes them. A body in a
+   * library pose solves its contacts again on its new shape.
+   */
+  refreshModels() {
+    for (const c of this.characters) {
+      c.build();
+      const preset = poseById(c.posed);
+      if (preset && !preset.quaternions) c.setPreset(preset);
+      if (!c.seatedOn) c.ground();
+    }
+    for (const p of this.props) refillProp(p);
+    this.poseModel?.build();
+    this.poseThumbs?.clear();
+    this.attachGizmo();
+    this.emit("scene");
+  }
+
+  /** Puts a hand prop in a character's hand (or empties it), by hand, as the user chose it. */
+  setHold(character, hand, type) {
+    if (!character) return;
+    character.setHold(hand, type);
+    character.autoHold[hand] = false;
+    this.commit();
+    this.emit("pose");
+  }
+
+  /** A hand prop alone, on a clear background. Cached per type. */
+  handThumbnail(type, { width = 64, height = 64 } = {}) {
+    const key = `hand:${type}`;
+    this.poseThumbs ??= new Map();
+    if (this.poseThumbs.has(key)) return this.poseThumbs.get(key);
+    const model = MODELS.hand.get(type);
+    if (!model) return "";
+    this.poseThumbnail(poseById("stand"));
+    const object = model.scene.clone(true);
+    const clay = new THREE.MeshStandardMaterial({ color: "#c9c5be", roughness: 0.8 });
+    object.traverse((o) => o.isMesh && (o.material = clay));
+    this.poseModel.root.visible = false;
+    this.poseScene.add(object);
+    const url = this.stillOf(object, width, height, new THREE.Vector3(0.6, 0.5, 1));
+    this.poseScene.remove(object);
+    this.poseModel.root.visible = true;
+    this.poseThumbs.set(key, url);
+    return url;
+  }
+
+  /** Frames an object in the thumbnail scene from a direction and renders it. */
+  stillOf(object, width, height, from) {
+    const box = new THREE.Box3().setFromObject(object);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const cam = this.poseCamera;
+    cam.aspect = width / height;
+    cam.updateProjectionMatrix();
+    const span = Math.max(size.y, size.x * (height / width), size.z * (height / width), 0.05);
+    const dist = (span / 2) / Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * 1.25;
+    cam.position.copy(center).add(from.clone().normalize().multiplyScalar(dist + Math.max(size.x, size.z) / 2));
+    cam.lookAt(center);
+    this.ensureShotRenderer();
+    const r = this.shotRenderer;
+    r.setSize(width, height, false);
+    r.setClearColor(0x000000, 0);
+    r.clear();
+    r.render(this.poseScene, cam);
+    return r.domElement.toDataURL("image/png");
+  }
+
+  /** A piece of the set alone, three-quarter front, on a clear background. Cached per type. */
+  propThumbnail(type, { width = 132, height = 104 } = {}) {
+    const key = `prop:${type}`;
+    this.poseThumbs ??= new Map();
+    if (this.poseThumbs.has(key)) return this.poseThumbs.get(key);
+    this.poseThumbnail(poseById("stand"));
+    const object = makeProp(type, "thumb");
+    this.poseModel.root.visible = false;
+    this.poseScene.add(object);
+    const url = this.stillOf(object, width, height, new THREE.Vector3(0.55, 0.42, 1));
+    this.poseScene.remove(object);
+    object.traverse((o) => !o.userData.shared && o.geometry?.dispose());
+    this.poseModel.root.visible = true;
+    this.poseThumbs.set(key, url);
+    return url;
+  }
+
   /** A preset on a lone mannequin, three-quarter front, on a clear background. Cached per pose. */
   poseThumbnail(preset, { width = 132, height = 156, body = "man" } = {}) {
     const key = JSON.stringify([body, preset.quaternions ?? [preset.joints, preset.aim, preset.reach]]);
@@ -1013,6 +1101,8 @@ export class Stage {
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     const cam = this.poseCamera;
+    cam.aspect = width / height;
+    cam.updateProjectionMatrix();
     const span = Math.max(size.y, size.x * (height / width), size.z * (height / width));
     const dist = (span / 2) / Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * 1.12;
     cam.position.copy(center).add(new THREE.Vector3(0.45, 0.12, 1).normalize().multiplyScalar(dist + size.z / 2));

@@ -1,0 +1,1454 @@
+{
+ "units": "metres",
+ "up": "+Y",
+ "front": "+Z",
+ "ground": "y = 0, centred on x and z",
+ "seat": "y: seat height, z: where the hips go (front/back), x: the places along the width",
+ "top": "the height things rest on",
+ "assets": [
+  {
+   "type": "box",
+   "name": "Box",
+   "category": "Basic",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.1,
+     "max": 6,
+     "step": 0.05,
+     "default": 0.6
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.05,
+     "max": 4,
+     "step": 0.05,
+     "default": 0.6
+    },
+    {
+     "key": "d",
+     "label": "Depth",
+     "min": 0.1,
+     "max": 6,
+     "step": 0.05,
+     "default": 0.6
+    }
+   ],
+   "defaults": {
+    "w": 0.6,
+    "h": 0.6,
+    "d": 0.6
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": 0.6,
+   "size_at_defaults": [
+    0.6,
+    0.6,
+    0.6
+   ]
+  },
+  {
+   "type": "cylinder",
+   "name": "Cylinder",
+   "category": "Basic",
+   "params": [
+    {
+     "key": "r",
+     "label": "Radius",
+     "min": 0.05,
+     "max": 3,
+     "step": 0.01,
+     "default": 0.3
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.05,
+     "max": 6,
+     "step": 0.05,
+     "default": 0.8
+    }
+   ],
+   "defaults": {
+    "r": 0.3,
+    "h": 0.8
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": 0.8,
+   "size_at_defaults": [
+    0.6,
+    0.8,
+    0.6
+   ]
+  },
+  {
+   "type": "sphere",
+   "name": "Sphere",
+   "category": "Basic",
+   "params": [
+    {
+     "key": "r",
+     "label": "Radius",
+     "min": 0.05,
+     "max": 3,
+     "step": 0.01,
+     "default": 0.35
+    }
+   ],
+   "defaults": {
+    "r": 0.35
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    0.7,
+    0.7,
+    0.7
+   ]
+  },
+  {
+   "type": "cone",
+   "name": "Cone",
+   "category": "Basic",
+   "params": [
+    {
+     "key": "r",
+     "label": "Radius",
+     "min": 0.05,
+     "max": 2,
+     "step": 0.01,
+     "default": 0.25
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.1,
+     "max": 4,
+     "step": 0.05,
+     "default": 0.7
+    }
+   ],
+   "defaults": {
+    "r": 0.25,
+    "h": 0.7
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    0.55,
+    0.7,
+    0.55
+   ]
+  },
+  {
+   "type": "plane",
+   "name": "Wall",
+   "category": "Architecture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.2,
+     "max": 20,
+     "step": 0.1,
+     "default": 4
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.2,
+     "max": 8,
+     "step": 0.05,
+     "default": 2.6
+    },
+    {
+     "key": "d",
+     "label": "Thickness",
+     "min": 0.02,
+     "max": 1,
+     "step": 0.01,
+     "default": 0.12
+    }
+   ],
+   "defaults": {
+    "w": 4,
+    "h": 2.6,
+    "d": 0.12
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    4,
+    2.6,
+    0.12
+   ]
+  },
+  {
+   "type": "doorway",
+   "name": "Doorway",
+   "category": "Architecture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 1.2,
+     "max": 20,
+     "step": 0.1,
+     "default": 4
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 2.2,
+     "max": 8,
+     "step": 0.05,
+     "default": 2.7
+    },
+    {
+     "key": "d",
+     "label": "Thickness",
+     "min": 0.05,
+     "max": 1,
+     "step": 0.01,
+     "default": 0.15
+    },
+    {
+     "key": "door",
+     "label": "Opening",
+     "min": 0.6,
+     "max": 3,
+     "step": 0.05,
+     "default": 1
+    },
+    {
+     "key": "doorH",
+     "label": "Opening height",
+     "min": 1.6,
+     "max": 3.5,
+     "step": 0.05,
+     "default": 2.1
+    }
+   ],
+   "defaults": {
+    "w": 4,
+    "h": 2.7,
+    "d": 0.15,
+    "door": 1,
+    "doorH": 2.1
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    4,
+    2.7,
+    0.15
+   ]
+  },
+  {
+   "type": "window",
+   "name": "Window wall",
+   "category": "Architecture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 1.2,
+     "max": 20,
+     "step": 0.1,
+     "default": 4
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 1.8,
+     "max": 8,
+     "step": 0.05,
+     "default": 2.7
+    },
+    {
+     "key": "d",
+     "label": "Thickness",
+     "min": 0.05,
+     "max": 1,
+     "step": 0.01,
+     "default": 0.15
+    },
+    {
+     "key": "win",
+     "label": "Window width",
+     "min": 0.4,
+     "max": 4,
+     "step": 0.05,
+     "default": 1.4
+    },
+    {
+     "key": "winH",
+     "label": "Window height",
+     "min": 0.3,
+     "max": 3,
+     "step": 0.05,
+     "default": 1.2
+    },
+    {
+     "key": "sill",
+     "label": "Sill height",
+     "min": 0.2,
+     "max": 2,
+     "step": 0.05,
+     "default": 0.9
+    }
+   ],
+   "defaults": {
+    "w": 4,
+    "h": 2.7,
+    "d": 0.15,
+    "win": 1.4,
+    "winH": 1.2,
+    "sill": 0.9
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    4,
+    2.7,
+    0.21
+   ]
+  },
+  {
+   "type": "door",
+   "name": "Door",
+   "category": "Architecture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.6,
+     "max": 2,
+     "step": 0.05,
+     "default": 0.9
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 1.6,
+     "max": 3,
+     "step": 0.05,
+     "default": 2.1
+    },
+    {
+     "key": "open",
+     "label": "Open",
+     "min": 0,
+     "max": 120,
+     "step": 1,
+     "default": 0
+    }
+   ],
+   "defaults": {
+    "w": 0.9,
+    "h": 2.1,
+    "open": 0
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    1.02,
+    2.16,
+    0.1
+   ]
+  },
+  {
+   "type": "pillar",
+   "name": "Pillar",
+   "category": "Architecture",
+   "params": [
+    {
+     "key": "r",
+     "label": "Radius",
+     "min": 0.08,
+     "max": 1.5,
+     "step": 0.01,
+     "default": 0.25
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.5,
+     "max": 12,
+     "step": 0.05,
+     "default": 3
+    }
+   ],
+   "defaults": {
+    "r": 0.25,
+    "h": 3
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    0.65,
+    3,
+    0.65
+   ]
+  },
+  {
+   "type": "arch",
+   "name": "Arch",
+   "category": "Architecture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 1,
+     "max": 12,
+     "step": 0.1,
+     "default": 2.6
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 1.5,
+     "max": 10,
+     "step": 0.05,
+     "default": 3.2
+    },
+    {
+     "key": "d",
+     "label": "Depth",
+     "min": 0.1,
+     "max": 2,
+     "step": 0.05,
+     "default": 0.5
+    },
+    {
+     "key": "open",
+     "label": "Opening",
+     "min": 0.5,
+     "max": 10,
+     "step": 0.05,
+     "default": 1.6
+    }
+   ],
+   "defaults": {
+    "w": 2.6,
+    "h": 3.2,
+    "d": 0.5,
+    "open": 1.6
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    2.6,
+    3.2,
+    0.5
+   ]
+  },
+  {
+   "type": "stairs",
+   "name": "Stairs",
+   "category": "Architecture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.5,
+     "max": 6,
+     "step": 0.05,
+     "default": 1
+    },
+    {
+     "key": "steps",
+     "label": "Steps",
+     "min": 1,
+     "max": 20,
+     "step": 1,
+     "default": 5
+    },
+    {
+     "key": "rise",
+     "label": "Step height",
+     "min": 0.08,
+     "max": 0.3,
+     "step": 0.01,
+     "default": 0.18
+    },
+    {
+     "key": "run",
+     "label": "Step depth",
+     "min": 0.15,
+     "max": 0.6,
+     "step": 0.01,
+     "default": 0.3
+    }
+   ],
+   "defaults": {
+    "w": 1,
+    "steps": 5,
+    "rise": 0.18,
+    "run": 0.3
+   },
+   "seat_at_defaults": {
+    "y": 0.36,
+    "z": -0.3,
+    "x": [
+     0
+    ]
+   },
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    1,
+    0.9,
+    1.5
+   ]
+  },
+  {
+   "type": "ramp",
+   "name": "Ramp",
+   "category": "Architecture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.4,
+     "max": 8,
+     "step": 0.05,
+     "default": 1.2
+    },
+    {
+     "key": "d",
+     "label": "Length",
+     "min": 0.4,
+     "max": 10,
+     "step": 0.05,
+     "default": 2
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.05,
+     "max": 4,
+     "step": 0.05,
+     "default": 0.6
+    }
+   ],
+   "defaults": {
+    "w": 1.2,
+    "d": 2,
+    "h": 0.6
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    1.2,
+    0.6,
+    2
+   ]
+  },
+  {
+   "type": "platform",
+   "name": "Platform",
+   "category": "Architecture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.4,
+     "max": 12,
+     "step": 0.05,
+     "default": 2
+    },
+    {
+     "key": "d",
+     "label": "Depth",
+     "min": 0.4,
+     "max": 12,
+     "step": 0.05,
+     "default": 2
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.05,
+     "max": 3,
+     "step": 0.05,
+     "default": 0.4
+    }
+   ],
+   "defaults": {
+    "w": 2,
+    "d": 2,
+    "h": 0.4
+   },
+   "seat_at_defaults": {
+    "y": 0.4,
+    "z": 0.85,
+    "x": [
+     -0.6666666666666666,
+     0,
+     0.6666666666666666
+    ]
+   },
+   "top_at_defaults": 0.4,
+   "size_at_defaults": [
+    2,
+    0.4,
+    2
+   ]
+  },
+  {
+   "type": "floor",
+   "name": "Floor",
+   "category": "Architecture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.4,
+     "max": 30,
+     "step": 0.1,
+     "default": 3
+    },
+    {
+     "key": "d",
+     "label": "Depth",
+     "min": 0.4,
+     "max": 30,
+     "step": 0.1,
+     "default": 2
+    }
+   ],
+   "defaults": {
+    "w": 3,
+    "d": 2
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    3,
+    0.012,
+    2
+   ]
+  },
+  {
+   "type": "fence",
+   "name": "Fence",
+   "category": "Architecture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Length",
+     "min": 0.5,
+     "max": 20,
+     "step": 0.1,
+     "default": 2.4
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.4,
+     "max": 3,
+     "step": 0.05,
+     "default": 1.1
+    }
+   ],
+   "defaults": {
+    "w": 2.4,
+    "h": 1.1
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    2.48,
+    1.1,
+    0.08
+   ]
+  },
+  {
+   "type": "chair",
+   "name": "Chair",
+   "category": "Furniture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.35,
+     "max": 0.8,
+     "step": 0.01,
+     "default": 0.46
+    },
+    {
+     "key": "d",
+     "label": "Depth",
+     "min": 0.35,
+     "max": 0.8,
+     "step": 0.01,
+     "default": 0.46
+    },
+    {
+     "key": "seat",
+     "label": "Seat height",
+     "min": 0.3,
+     "max": 0.8,
+     "step": 0.01,
+     "default": 0.46
+    },
+    {
+     "key": "h",
+     "label": "Back height",
+     "min": 0.6,
+     "max": 1.4,
+     "step": 0.01,
+     "default": 0.9
+    }
+   ],
+   "defaults": {
+    "w": 0.46,
+    "d": 0.46,
+    "seat": 0.46,
+    "h": 0.9
+   },
+   "seat_at_defaults": {
+    "y": 0.46,
+    "z": -0.02,
+    "x": [
+     0
+    ]
+   },
+   "top_at_defaults": 0.46,
+   "size_at_defaults": [
+    0.46,
+    0.9,
+    0.46
+   ]
+  },
+  {
+   "type": "armchair",
+   "name": "Armchair",
+   "category": "Furniture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.6,
+     "max": 1.4,
+     "step": 0.01,
+     "default": 0.9
+    },
+    {
+     "key": "d",
+     "label": "Depth",
+     "min": 0.6,
+     "max": 1.2,
+     "step": 0.01,
+     "default": 0.85
+    },
+    {
+     "key": "seat",
+     "label": "Seat height",
+     "min": 0.3,
+     "max": 0.6,
+     "step": 0.01,
+     "default": 0.42
+    },
+    {
+     "key": "h",
+     "label": "Back height",
+     "min": 0.6,
+     "max": 1.3,
+     "step": 0.01,
+     "default": 0.9
+    }
+   ],
+   "defaults": {
+    "w": 0.9,
+    "d": 0.85,
+    "seat": 0.42,
+    "h": 0.9
+   },
+   "seat_at_defaults": {
+    "y": 0.42,
+    "z": 0.02,
+    "x": [
+     0
+    ]
+   },
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    0.9,
+    0.9,
+    0.85
+   ]
+  },
+  {
+   "type": "sofa",
+   "name": "Sofa",
+   "category": "Furniture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 1,
+     "max": 4,
+     "step": 0.05,
+     "default": 2
+    },
+    {
+     "key": "d",
+     "label": "Depth",
+     "min": 0.6,
+     "max": 1.4,
+     "step": 0.01,
+     "default": 0.9
+    },
+    {
+     "key": "seat",
+     "label": "Seat height",
+     "min": 0.3,
+     "max": 0.6,
+     "step": 0.01,
+     "default": 0.42
+    },
+    {
+     "key": "h",
+     "label": "Back height",
+     "min": 0.6,
+     "max": 1.2,
+     "step": 0.01,
+     "default": 0.85
+    }
+   ],
+   "defaults": {
+    "w": 2,
+    "d": 0.9,
+    "seat": 0.42,
+    "h": 0.85
+   },
+   "seat_at_defaults": {
+    "y": 0.42,
+    "z": 0.04,
+    "x": [
+     -0.41000000000000003,
+     0.41000000000000003
+    ]
+   },
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    2,
+    0.85,
+    0.9
+   ]
+  },
+  {
+   "type": "stool",
+   "name": "Stool",
+   "category": "Furniture",
+   "params": [
+    {
+     "key": "r",
+     "label": "Radius",
+     "min": 0.12,
+     "max": 0.35,
+     "step": 0.01,
+     "default": 0.18
+    },
+    {
+     "key": "seat",
+     "label": "Height",
+     "min": 0.3,
+     "max": 1.1,
+     "step": 0.01,
+     "default": 0.65
+    }
+   ],
+   "defaults": {
+    "r": 0.18,
+    "seat": 0.65
+   },
+   "seat_at_defaults": {
+    "y": 0.65,
+    "z": 0,
+    "x": [
+     0
+    ]
+   },
+   "top_at_defaults": 0.65,
+   "size_at_defaults": [
+    0.36,
+    0.65,
+    0.36
+   ]
+  },
+  {
+   "type": "bench",
+   "name": "Bench",
+   "category": "Furniture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Length",
+     "min": 0.6,
+     "max": 6,
+     "step": 0.05,
+     "default": 1.6
+    },
+    {
+     "key": "d",
+     "label": "Depth",
+     "min": 0.25,
+     "max": 0.8,
+     "step": 0.01,
+     "default": 0.4
+    },
+    {
+     "key": "seat",
+     "label": "Seat height",
+     "min": 0.25,
+     "max": 0.7,
+     "step": 0.01,
+     "default": 0.45
+    }
+   ],
+   "defaults": {
+    "w": 1.6,
+    "d": 0.4,
+    "seat": 0.45
+   },
+   "seat_at_defaults": {
+    "y": 0.45,
+    "z": 0,
+    "x": [
+     -0.4,
+     0.4
+    ]
+   },
+   "top_at_defaults": 0.45,
+   "size_at_defaults": [
+    1.6,
+    0.45,
+    0.4
+   ]
+  },
+  {
+   "type": "table",
+   "name": "Table",
+   "category": "Furniture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.4,
+     "max": 4,
+     "step": 0.05,
+     "default": 1.2
+    },
+    {
+     "key": "d",
+     "label": "Depth",
+     "min": 0.4,
+     "max": 2,
+     "step": 0.05,
+     "default": 0.7
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.3,
+     "max": 1.2,
+     "step": 0.01,
+     "default": 0.75
+    }
+   ],
+   "defaults": {
+    "w": 1.2,
+    "d": 0.7,
+    "h": 0.75
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": 0.75,
+   "size_at_defaults": [
+    1.2,
+    0.75,
+    0.7
+   ]
+  },
+  {
+   "type": "desk",
+   "name": "Desk",
+   "category": "Furniture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.6,
+     "max": 3,
+     "step": 0.05,
+     "default": 1.4
+    },
+    {
+     "key": "d",
+     "label": "Depth",
+     "min": 0.4,
+     "max": 1.2,
+     "step": 0.05,
+     "default": 0.7
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.5,
+     "max": 1.1,
+     "step": 0.01,
+     "default": 0.75
+    }
+   ],
+   "defaults": {
+    "w": 1.4,
+    "d": 0.7,
+    "h": 0.75
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": 0.75,
+   "size_at_defaults": [
+    1.4,
+    0.75,
+    0.7
+   ]
+  },
+  {
+   "type": "counter",
+   "name": "Counter",
+   "category": "Furniture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Length",
+     "min": 0.6,
+     "max": 8,
+     "step": 0.05,
+     "default": 2
+    },
+    {
+     "key": "d",
+     "label": "Depth",
+     "min": 0.3,
+     "max": 1.2,
+     "step": 0.01,
+     "default": 0.6
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.6,
+     "max": 1.3,
+     "step": 0.01,
+     "default": 1.05
+    }
+   ],
+   "defaults": {
+    "w": 2,
+    "d": 0.6,
+    "h": 1.05
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": 1.05,
+   "size_at_defaults": [
+    2.04,
+    1.05,
+    0.6
+   ]
+  },
+  {
+   "type": "bed",
+   "name": "Bed",
+   "category": "Furniture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.8,
+     "max": 2.4,
+     "step": 0.05,
+     "default": 1.6
+    },
+    {
+     "key": "d",
+     "label": "Length",
+     "min": 1.6,
+     "max": 2.6,
+     "step": 0.05,
+     "default": 2.05
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.25,
+     "max": 0.8,
+     "step": 0.01,
+     "default": 0.45
+    }
+   ],
+   "defaults": {
+    "w": 1.6,
+    "d": 2.05,
+    "h": 0.45
+   },
+   "seat_at_defaults": {
+    "y": 0.45,
+    "z": 0.7749999999999999,
+    "x": [
+     -0.4,
+     0.4
+    ]
+   },
+   "top_at_defaults": 0.45,
+   "size_at_defaults": [
+    1.6,
+    1,
+    2.05
+   ]
+  },
+  {
+   "type": "shelf",
+   "name": "Shelf",
+   "category": "Furniture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.4,
+     "max": 4,
+     "step": 0.05,
+     "default": 1
+    },
+    {
+     "key": "d",
+     "label": "Depth",
+     "min": 0.2,
+     "max": 0.8,
+     "step": 0.01,
+     "default": 0.35
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.4,
+     "max": 3,
+     "step": 0.05,
+     "default": 1.9
+    }
+   ],
+   "defaults": {
+    "w": 1,
+    "d": 0.35,
+    "h": 1.9
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": 1.9,
+   "size_at_defaults": [
+    1,
+    1.9,
+    0.35
+   ]
+  },
+  {
+   "type": "lamp",
+   "name": "Floor lamp",
+   "category": "Furniture",
+   "params": [
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.8,
+     "max": 2.4,
+     "step": 0.05,
+     "default": 1.7
+    }
+   ],
+   "defaults": {
+    "h": 1.7
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    0.44,
+    1.7,
+    0.44
+   ]
+  },
+  {
+   "type": "tv",
+   "name": "Screen",
+   "category": "Furniture",
+   "params": [
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 0.4,
+     "max": 3,
+     "step": 0.05,
+     "default": 1.2
+    }
+   ],
+   "defaults": {
+    "w": 1.2
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    1.32,
+    1.175,
+    0.4
+   ]
+  },
+  {
+   "type": "car",
+   "name": "Car",
+   "category": "Outdoor",
+   "params": [
+    {
+     "key": "l",
+     "label": "Length",
+     "min": 2.5,
+     "max": 6,
+     "step": 0.05,
+     "default": 4.3
+    },
+    {
+     "key": "w",
+     "label": "Width",
+     "min": 1.4,
+     "max": 2.4,
+     "step": 0.05,
+     "default": 1.8
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 1.1,
+     "max": 2.2,
+     "step": 0.05,
+     "default": 1.45
+    }
+   ],
+   "defaults": {
+    "l": 4.3,
+    "w": 1.8,
+    "h": 1.45
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    4.3,
+    1.45,
+    1.84
+   ]
+  },
+  {
+   "type": "tree",
+   "name": "Tree",
+   "category": "Outdoor",
+   "params": [
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 1.5,
+     "max": 15,
+     "step": 0.1,
+     "default": 4.5
+    },
+    {
+     "key": "crown",
+     "label": "Crown",
+     "min": 0.6,
+     "max": 8,
+     "step": 0.1,
+     "default": 2.4
+    }
+   ],
+   "defaults": {
+    "h": 4.5,
+    "crown": 2.4
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    2.4,
+    4.62,
+    2.4
+   ]
+  },
+  {
+   "type": "bush",
+   "name": "Bush",
+   "category": "Outdoor",
+   "params": [
+    {
+     "key": "s",
+     "label": "Size",
+     "min": 0.3,
+     "max": 3,
+     "step": 0.05,
+     "default": 1
+    }
+   ],
+   "defaults": {
+    "s": 1
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    1.24,
+    0.756,
+    0.84
+   ]
+  },
+  {
+   "type": "rock",
+   "name": "Rock",
+   "category": "Outdoor",
+   "params": [
+    {
+     "key": "s",
+     "label": "Size",
+     "min": 0.2,
+     "max": 4,
+     "step": 0.05,
+     "default": 0.8
+    }
+   ],
+   "defaults": {
+    "s": 0.8
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": 0.536,
+   "size_at_defaults": [
+    0.9342,
+    0.5231,
+    0.7473
+   ]
+  },
+  {
+   "type": "streetlamp",
+   "name": "Street lamp",
+   "category": "Outdoor",
+   "params": [
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 2.5,
+     "max": 9,
+     "step": 0.1,
+     "default": 4.5
+    }
+   ],
+   "defaults": {
+    "h": 4.5
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    1.14,
+    4.5,
+    0.28
+   ]
+  },
+  {
+   "type": "crate",
+   "name": "Crate",
+   "category": "Outdoor",
+   "params": [
+    {
+     "key": "s",
+     "label": "Size",
+     "min": 0.2,
+     "max": 2,
+     "step": 0.05,
+     "default": 0.6
+    }
+   ],
+   "defaults": {
+    "s": 0.6
+   },
+   "seat_at_defaults": {
+    "y": 0.6,
+    "z": 0,
+    "x": [
+     0
+    ]
+   },
+   "top_at_defaults": 0.6,
+   "size_at_defaults": [
+    0.604,
+    0.604,
+    0.604
+   ]
+  },
+  {
+   "type": "barrel",
+   "name": "Barrel",
+   "category": "Outdoor",
+   "params": [
+    {
+     "key": "r",
+     "label": "Radius",
+     "min": 0.15,
+     "max": 1,
+     "step": 0.01,
+     "default": 0.3
+    },
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.3,
+     "max": 2,
+     "step": 0.05,
+     "default": 0.9
+    }
+   ],
+   "defaults": {
+    "r": 0.3,
+    "h": 0.9
+   },
+   "seat_at_defaults": {
+    "y": 0.9,
+    "z": 0,
+    "x": [
+     0
+    ]
+   },
+   "top_at_defaults": 0.9,
+   "size_at_defaults": [
+    0.6,
+    0.9,
+    0.6
+   ]
+  },
+  {
+   "type": "traffic-cone",
+   "name": "Traffic cone",
+   "category": "Outdoor",
+   "params": [
+    {
+     "key": "h",
+     "label": "Height",
+     "min": 0.3,
+     "max": 1.2,
+     "step": 0.01,
+     "default": 0.7
+    }
+   ],
+   "defaults": {
+    "h": 0.7
+   },
+   "seat_at_defaults": null,
+   "top_at_defaults": null,
+   "size_at_defaults": [
+    0.385,
+    0.7,
+    0.385
+   ]
+  }
+ ]
+}
