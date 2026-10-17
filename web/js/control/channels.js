@@ -6,6 +6,7 @@
 // the live viewport preview, the small previews and the full-size references.
 
 import * as THREE from "three";
+import { headFrame } from "./body.js";
 
 export const CHANNELS = [
   ["clay", "Clay", "channel-clay"],
@@ -205,16 +206,17 @@ export class Channels {
   keypoints(character, camera, width, height) {
     const j = character.joints;
     const world = (o, local) => (local ? o.localToWorld(local.clone()) : o.getWorldPosition(new THREE.Vector3()));
-    const s = 0.066 * character.profile.height * character.profile.head;
+    const { centre: c, radius: r } = headFrame(character.profile);
     const head = j.Head;
-    const headCentre = world(head, new THREE.Vector3(0, s * 1.05, s * 0.06));
-    // the face: nose, eyes and ears on the head's surface (its right is −x)
+    const headCentre = world(head, c);
+    // the face: nose, eyes and ears on the head's surface (its right is −x); the eyes sit halfway down the head
+    const at = (x, y, z) => world(head, new THREE.Vector3(c.x + x * r, c.y + y * r, c.z + z * r));
     const face = {
-      nose: world(head, new THREE.Vector3(0, s * 0.92, s * 1.02)),
-      rEye: world(head, new THREE.Vector3(-s * 0.34, s * 1.18, s * 0.86)),
-      lEye: world(head, new THREE.Vector3(s * 0.34, s * 1.18, s * 0.86)),
-      rEar: world(head, new THREE.Vector3(-s * 0.84, s * 1.06, s * 0.04)),
-      lEar: world(head, new THREE.Vector3(s * 0.84, s * 1.06, s * 0.04)),
+      nose: at(0, -0.2, 1.0),
+      rEye: at(-0.32, 0.02, 0.8),
+      lEye: at(0.32, 0.02, 0.8),
+      rEar: at(-0.82, -0.05, -0.05),
+      lEar: at(0.82, -0.05, -0.05),
     };
     const eye = camera.getWorldPosition(new THREE.Vector3());
     // a face point is seen when it faces the camera, so a back view has no nose or eyes

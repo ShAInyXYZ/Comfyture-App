@@ -1,22 +1,16 @@
-// A wooden artist's mannequin: a joint hierarchy (one Object3D per joint, named
-// after skeleton.js) with clay segments and ball joints hung on it, tinted with
-// the character's colour. The pose is a base (each joint's local rotation) with
-// the pose sliders laid over it; the profile sets the segment lengths and widths.
+// An artist's mannequin: a joint hierarchy (one Object3D per joint, named after
+// skeleton.js) with the sculpted pieces of body.js hung on it, tinted with the
+// character's colour, the ball joints a shade darker. The pose is a base (each
+// joint's local rotation) with the pose sliders laid over it; the profile sets
+// the bones' lengths and the body's shape.
 
 import * as THREE from "three";
-import { JOINTS, JOINT_NAMES, SEGMENTS, HINGES, CONES, CHAINS, MIRROR, DEFAULT_PROFILE, bodyById } from "./skeleton.js";
+import { JOINTS, JOINT_NAMES, HINGES, CONES, CHAINS, MIRROR, DEFAULT_PROFILE, bodyById } from "./skeleton.js";
+import { bodyParts } from "./body.js";
 
 const CLAY = new THREE.Color("#b9b5ae");
 /** The character's colour as clay: still matte and light, but no two bodies alike. */
 const tint = (color) => color.clone().lerp(CLAY, 0.32);
-const geometryCache = new Map();
-const unitSphere = () => geometryCache.get("sphere") ?? geometryCache.set("sphere", new THREE.SphereGeometry(1, 28, 18)).get("sphere");
-function capsule(radius, length) {
-  const key = `capsule:${radius.toFixed(4)}:${length.toFixed(4)}`;
-  if (!geometryCache.has(key)) geometryCache.set(key, new THREE.CapsuleGeometry(radius, length, 6, 18));
-  return geometryCache.get(key);
-}
-
 let count = 0;
 
 export class Mannequin {
@@ -45,7 +39,7 @@ export class Mannequin {
   setColor(color) {
     this.color = new THREE.Color(color);
     this.material.color.copy(tint(this.color));
-    this.ballMaterial.color.copy(tint(this.color).multiplyScalar(0.82));
+    this.ballMaterial.color.copy(tint(this.color).multiplyScalar(0.45));
   }
 
   /** One of the body types, keeping the pose; its proportions can be tuned after. */
@@ -63,7 +57,7 @@ export class Mannequin {
     this.build();
   }
 
-  /** Builds (or rebuilds) the joints and segments from the profile, keeping the pose. */
+  /** Builds (or rebuilds) the joints and the body from the profile, keeping the pose. */
   build() {
     for (const j of Object.values(this.joints)) j.removeFromParent();
     this.joints = {};
@@ -79,63 +73,16 @@ export class Mannequin {
       (parent ? this.joints[parent] : this.root).add(joint);
       this.joints[name] = joint;
     }
-    for (const [name, kind, radius] of SEGMENTS) this.addSegment(name, kind, radius * h * p.build);
-    this.apply();
-  }
-
-  /** The clay piece a joint owns: from the joint toward its child (or a head, a hand, a foot). */
-  addSegment(name, kind, r) {
-    const joint = this.joints[name];
-    const p = this.profile;
-    const h = p.height;
-    const child = Object.values(this.joints).find((j) => j.parent === joint && !j.name.endsWith("Shoulder") && !j.name.endsWith("UpLeg"));
-    const to = child ? child.userData.rest.clone() : new THREE.Vector3(0, 0.1 * h, 0);
-    const piece = (geometry, position, scale, quaternion) => {
-      const mesh = new THREE.Mesh(geometry, this.material);
-      mesh.position.copy(position);
-      mesh.scale.copy(scale);
-      if (quaternion) mesh.quaternion.copy(quaternion);
+    for (const [name, geometry, kind] of bodyParts(p)) {
+      const mesh = new THREE.Mesh(geometry, kind === "joint" ? this.ballMaterial : this.material);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.userData.joint = name;
       mesh.userData.character = this;
-      joint.add(mesh);
+      this.joints[name].add(mesh);
       this.parts.push(mesh);
-      return mesh;
-    };
-    const along = (v) => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.clone().normalize());
-    if (kind === "head") {
-      const s = 0.066 * h * p.head;
-      piece(unitSphere(), new THREE.Vector3(0, s * 1.05, s * 0.06), new THREE.Vector3(s * 0.86, s * 1.12, s * 0.96));
-    } else if (kind === "pelvis") {
-      piece(unitSphere(), new THREE.Vector3(0, 0.012 * h, 0), new THREE.Vector3(r * 1.12 * p.hips, r * 0.72, r * 0.74 * Math.max(1, (p.belly + p.hips) / 2)));
-    } else if (kind === "waist") {
-      piece(unitSphere(), to.clone().multiplyScalar(0.5), new THREE.Vector3(r * 0.92 * p.waist, to.length() * 0.6, r * 0.68 * p.belly));
-    } else if (kind === "chest") {
-      piece(unitSphere(), new THREE.Vector3(0, to.y * 0.52, 0.004 * h * p.chest), new THREE.Vector3(r * 1.16 * p.shoulders, to.y * 0.6, r * 0.72 * p.chest));
-    } else if (kind === "hand") {
-      const dir = Math.sign(joint.userData.rest.x) || 1;
-      piece(unitSphere(), new THREE.Vector3(dir * 0.045 * h * p.arms, 0, 0), new THREE.Vector3(0.048 * h * p.arms, r * 0.55, r * 1.25));
-    } else if (kind === "foot") {
-      piece(unitSphere(), new THREE.Vector3(0, -0.025 * h, 0.035 * h), new THREE.Vector3(r * 1.05, r * 0.9, 0.075 * h));
-    } else if (kind === "toe") {
-      piece(unitSphere(), new THREE.Vector3(0, 0, 0.022 * h), new THREE.Vector3(r * 1.05, r * 0.6, 0.035 * h));
-    } else {
-      // a limb, the neck, a clavicle: a capsule from the joint to its child, sized for real
-      // (scaling a capsule would squash its round ends)
-      const len = to.length();
-      piece(capsule(r, Math.max(0.001, len - r)), to.clone().multiplyScalar(0.5), new THREE.Vector3(1, 1, 1), along(to));
     }
-    // ball joints at the elbows, knees, wrists, ankles, shoulders and hips
-    if (["LeftForeArm", "RightForeArm", "LeftLeg", "RightLeg", "LeftArm", "RightArm", "LeftUpLeg", "RightUpLeg", "LeftHand", "RightHand", "LeftFoot", "RightFoot", "Neck"].includes(name)) {
-      const ball = new THREE.Mesh(unitSphere(), this.ballMaterial);
-      ball.scale.setScalar(r * 1.08);
-      ball.castShadow = true;
-      ball.userData.joint = name;
-      ball.userData.character = this;
-      joint.add(ball);
-      this.parts.push(ball);
-    }
+    this.apply();
   }
 
   /** The base pose (before the sliders): every joint's local rotation, as [x, y, z, w]. */
@@ -163,6 +110,77 @@ export class Mannequin {
     this.apply();
   }
 
+  /**
+   * A pose from the library: its angles (or a saved pose's quaternions), then its aims, then its
+   * contacts. An aim points a bone along a direction in the body's own frame (+x its left, +y up,
+   * +z forward), with an optional twist about the bone (degrees), so a pose reads the way a
+   * person would say it: "the forearm points up". A contact puts a hand or a foot on a point of
+   * this body, reached by IK (see contact()), so a hand finds the hip or the chin of any body,
+   * tall or small, thin or heavy.
+   */
+  setPreset(preset) {
+    if (!preset) return;
+    if (preset.quaternions) {
+      this.setPose(preset.quaternions);
+      return;
+    }
+    this.setEulerPose(preset.joints ?? {});
+    const frame = this.root.getWorldQuaternion(new THREE.Quaternion());
+    const aim = (names) => {
+      for (const name of names) {
+        const dir = preset.aim?.[name];
+        if (!dir) continue;
+        const joint = this.joints[name];
+        this.root.updateMatrixWorld(true);
+        const parent = joint.parent.getWorldQuaternion(new THREE.Quaternion());
+        const want = new THREE.Vector3(dir[0], dir[1], dir[2]).normalize().applyQuaternion(frame).applyQuaternion(parent.invert());
+        const rest = boneDirection(this, name);
+        joint.quaternion.setFromUnitVectors(rest, want);
+        if (dir[3]) joint.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(rest, THREE.MathUtils.degToRad(dir[3])));
+        joint.updateMatrixWorld(true);
+        this.absorb([name]);
+      }
+      this.apply();
+    };
+    // the limbs first; the hands after their contacts, so a hand reached to a hip can still point down into a pocket
+    aim(JOINT_NAMES.filter((n) => !n.endsWith("Hand")));
+    for (const [effector, spec] of Object.entries(preset.reach ?? {})) {
+      this.root.updateMatrixWorld(true);
+      const target = this.contact(spec, effector);
+      // twice: the second pass mends what the first left when the chain was folded tight
+      this.reach(effector, target);
+      this.reach(effector, target);
+    }
+    aim(["LeftHand", "RightHand"]);
+    this.apply();
+  }
+
+  /**
+   * Where a contact is, in world space: a joint (or the middle of two), plus an offset in units
+   * of height, in the body's frame or a joint's (frame). With surface ("front", "back", "left",
+   * "right", "top"), the point moves out that way onto the body's skin and clear of it by
+   * `clear` (heights), so a hand rests on a belly or a hip wherever this body's surface is.
+   */
+  contact({ at, to, offset = [0, 0, 0], frame, surface, clear = 0 }, effector = "") {
+    const h = this.profile.height;
+    const q = (frame ? this.joints[frame] : this.root).getWorldQuaternion(new THREE.Quaternion());
+    const point = this.joints[at].getWorldPosition(new THREE.Vector3());
+    if (to) point.lerp(this.joints[to].getWorldPosition(new THREE.Vector3()), 0.5);
+    point.add(new THREE.Vector3(...offset).multiplyScalar(h).applyQuaternion(q));
+    if (surface) {
+      const dir = new THREE.Vector3(...SURFACES[surface]).applyQuaternion(q);
+      // the skin is the piece at the joint and its neighbours (so a big head is not taken for the
+      // top of a toddler's knee), less the limb being placed
+      const joint = this.joints[at];
+      const near = new Set([at, joint.parent?.name, ...JOINT_NAMES.filter((n) => this.joints[n].parent === joint)]);
+      const chain = CHAINS[effector] ? [effector, CHAINS[effector].mid, CHAINS[effector].root] : [];
+      const skin = this.parts.filter((m) => near.has(m.userData.joint) && !chain.includes(m.userData.joint));
+      const hit = new THREE.Raycaster(point.clone().addScaledVector(dir, 2), dir.clone().negate(), 0, 4).intersectObjects(skin, false)[0];
+      if (hit) point.copy(hit.point).addScaledVector(dir, clear * h);
+    }
+    return point;
+  }
+
   /** Sets some pose sliders (degrees; crouch 0 to 1) and shows the result. */
   setParams(patch) {
     this.params = { ...this.params, ...patch };
@@ -170,9 +188,14 @@ export class Mannequin {
     this.apply();
   }
 
+  /** The sliders' turns, with the body's own stoop. */
+  deltas() {
+    return paramDeltas(this.params, this.profile.stoop);
+  }
+
   /** Writes base and sliders into the joints. */
   apply() {
-    const deltas = paramDeltas(this.params);
+    const deltas = this.deltas();
     for (const n of JOINT_NAMES) {
       const base = this.base[n] ?? new THREE.Quaternion();
       this.joints[n].quaternion.copy(deltas[n] ? deltas[n].clone().multiply(base) : base);
@@ -182,7 +205,7 @@ export class Mannequin {
 
   /** Takes what the joints show now (after a drag, IK or an import) as the base, the sliders still laid over it. */
   absorb(names = JOINT_NAMES) {
-    const deltas = paramDeltas(this.params);
+    const deltas = this.deltas();
     for (const n of names) {
       const q = this.joints[n].quaternion.clone();
       this.base[n] = deltas[n] ? deltas[n].clone().invert().multiply(q) : q;
@@ -318,13 +341,23 @@ export class Mannequin {
 }
 
 const D = THREE.MathUtils.degToRad;
+const SURFACES = { front: [0, 0, 1], back: [0, 0, -1], left: [1, 0, 0], right: [-1, 0, 0], top: [0, 1, 0], bottom: [0, -1, 0] };
+
+/** Which way a joint's bone runs at rest, in its own frame: toward its child, or on for a hand, the head, the toes. */
+function boneDirection(m, name) {
+  const child = JOINT_NAMES.find((n) => m.joints[n].parent === m.joints[name] && !n.endsWith("Shoulder") && !n.endsWith("UpLeg"));
+  if (child) return m.joints[child].userData.rest.clone().normalize();
+  if (name.endsWith("Hand")) return new THREE.Vector3(name.startsWith("Left") ? 1 : -1, 0, 0);
+  if (name.endsWith("Toe")) return new THREE.Vector3(0, 0, 1);
+  return new THREE.Vector3(0, 1, 0);
+}
 
 /**
  * What the pose sliders add to each joint, as turns about the parent's axes (so "look"
  * turns the head about the neck whatever the pose). Degrees, and crouch from 0 to 1;
  * swing is the arms' walking swing, which the timeline drives.
  */
-export function paramDeltas(p = {}) {
+export function paramDeltas(p = {}, stoop = 0) {
   const e = {};
   const add = (joint, x = 0, y = 0, z = 0) => {
     const v = (e[joint] ??= [0, 0, 0]);
@@ -357,6 +390,13 @@ export function paramDeltas(p = {}) {
       add(`${s}Foot`, -44 * crouch, 0, 0);
     }
     add("Spine", 18 * crouch, 0, 0);
+  }
+  // an elder's stoop: the upper back rounds, the neck comes forward and the head lifts to look ahead
+  if (stoop) {
+    add("Spine", 4 * stoop, 0, 0);
+    add("Chest", 13 * stoop, 0, 0);
+    add("Neck", 16 * stoop, 0, 0);
+    add("Head", -26 * stoop, 0, 0);
   }
   return Object.fromEntries(Object.entries(e).filter(([, a]) => a.some((x) => x)).map(([j, [x, y, z]]) => [j, new THREE.Quaternion().setFromEuler(new THREE.Euler(D(x), D(y), D(z), "XYZ"))]));
 }
