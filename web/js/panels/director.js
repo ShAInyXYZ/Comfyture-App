@@ -2,6 +2,7 @@ import { h, icon, sprite } from "../dom.js";
 import { state, setDirector, planFilm, makeFilm, rollMissing, openPlanAsTabs, switchTab, askStage } from "../store.js";
 import { CAMERA_LABELS } from "../script.js";
 import { go } from "../router.js";
+import { stageReady } from "../control/link.js";
 
 const STEP = { waiting: ["Waiting", null], frame: ["Drawing the first frame", "busy"], shot: ["Rolling", "busy"], done: ["Done", "ok"], failed: ["Failed", "crit"] };
 const STEPS = [
@@ -92,16 +93,18 @@ function shotCard(plan, shot, i, dir) {
         [3, 4, 5, 6, 7, 8].map((n) => h("option", { value: n, selected: n === shot.seconds }, `${n} s`))),
       started ? h("span.dir-step", { title: st.error ?? "" }, h("span.lamp", { dataset: tone ? { tone } : {} }), label) : null,
       h("span.spacer"),
-      h("button.key.is-sm.is-icon", { type: "button", title: "Stage it — block this shot on the Stage, for its references", "aria-label": `Stage shot ${i + 1}`, on: { click: () => stageShot(plan, shot) } }, sprite("section-stage")),
+      h("button.key.is-sm.is-icon", { type: "button", title: "Stage it — block this shot on the Stage, for its references", "aria-label": `Stage shot ${i + 1}`, on: { click: () => stageShot(plan, shot, i) } }, sprite("section-stage")),
     ),
     st.error ? h("p.dir-shot-error", {}, st.error) : null,
   );
 }
 
-/** Blocks a planned shot on the Stage: the assistant stages what happens, from its camera. */
-function stageShot(plan, shot) {
+/** Blocks a planned shot on the Stage, as a stage of its own: the assistant stages what happens, from its camera. */
+async function stageShot(plan, shot, i) {
   go("stage");
   const camera = CAMERA_LABELS[shot.camera] ? `, camera ${CAMERA_LABELS[shot.camera].toLowerCase()}` : "";
+  const { projects } = await stageReady;
+  await projects?.newProject(`${plan.title ? `${plan.title} — ` : ""}Shot ${i + 1}`.slice(0, 60)).catch(() => null);
   askStage(`New scene: ${shot.action}${camera}. ${plan.cast ? `Cast: ${plan.cast}. ` : ""}Frame ${state.director.aspect ?? "16:9"}, ${shot.seconds} seconds.`);
 }
 

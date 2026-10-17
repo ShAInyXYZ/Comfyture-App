@@ -12,7 +12,7 @@ import { ASSETS, assetCategories, assetByType } from "./assets.js";
 import { JOINT_NAMES, JOINT_LABELS, BODY_TYPES, BODY_SLIDERS, PARAMS, PALETTE, colorName } from "./skeleton.js";
 import { CHANNELS, PASSES } from "./channels.js";
 import { controlOps, connectRemote, wordsFor } from "./remote.js";
-import { MODELS, USER, holdables, importModel, forgetModel } from "./models.js";
+import { MODELS, USER, holdables, importModel, forgetModel, loadNewUserModels } from "./models.js";
 
 const TOOLS = [
   ["select", "web-cursor", "Select", "Q"],
@@ -50,8 +50,9 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   const addEl = el("div.ctl-add");
   const linkLamp = el("span.lamp.ctl-link", { tabindex: "0", role: "status", "data-tooltip": "Agent link — waiting for the server" });
   const libraryEl = el("section.ctl-panel.ctl-grow.ctl-library");
+  const projectEl = el("div.ctl-project");
   const left = el("aside.ctl-col.ctl-left",
-    el("section.ctl-panel", el("div.ctl-row", el("h2.ctl-label", {}, "Scene"), linkLamp), outlinerEl, addEl),
+    el("section.ctl-panel", projectEl, el("div.ctl-row", el("h2.ctl-label", {}, "Scene"), linkLamp), outlinerEl, addEl),
     libraryEl);
 
   const snapsEl = el("div.ctl-snaps");
@@ -687,16 +688,19 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     },
   });
 
-  // a first scene to block: two people and a table
-  const a = stage.addCharacter({ pose: "talk", at: [-0.75, 0, 0.1], name: "Hero" });
-  const b = stage.addCharacter({ pose: "arms-crossed", at: [0.75, 0, -0.1], name: "Rival", body: "woman" });
-  a.root.rotation.y = 1.2;
-  b.root.rotation.y = -1.5;
-  stage.addProp("table", [0, 0, -1.4]);
-  stage.select({});
-  stage.history = [];
-  stage.commit();
-  stage.snap("three-quarter-left", null);
+  // every stage is a project, kept as it changes; the last one opens again
+  const projects = projectsOf(stage, { el, toast, projectEl, starter: () => {
+    // the very first stage: two people and a table to block
+    const a = stage.addCharacter({ pose: "talk", at: [-0.75, 0, 0.1], name: "Hero" });
+    const b = stage.addCharacter({ pose: "arms-crossed", at: [0.75, 0, -0.1], name: "Rival", body: "woman" });
+    a.root.rotation.y = 1.2;
+    b.root.rotation.y = -1.5;
+    stage.addProp("table", [0, 0, -1.4]);
+    stage.select({});
+    stage.history = [];
+    stage.commit();
+    stage.snap("three-quarter-left", null);
+  } });
   channelPill();
   frame();
   outliner();
@@ -707,5 +711,203 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   snaps();
   previews();
   renderKeys();
-  return { stage, ops, describe, chatSlot, root };
+  projects.openLast();
+  return { stage, ops, describe, chatSlot, root, projects };
+}
+
+/**
+ * The Stage's projects: each stage kept on the server under its name, saved a moment after
+ * every change, with a picture of its frame; opened, made, duplicated and deleted from the bar
+ * over the scene, and shared as one file that carries the user's own models with it.
+ */
+function projectsOf(stage, { el, toast, projectEl, starter }) {
+  const json = { "Content-Type": "application/json" };
+  const call = async (url, opts) => {
+    const res = await fetch(url, opts);
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error ?? `The stage could not be reached (${res.status}).`);
+    return body;
+  };
+  const remember = (id) => {
+    try {
+      localStorage.setItem("comfyture.stage", id);
+    } catch {}
+  };
+  const lastId = () => {
+    try {
+      return localStorage.getItem("comfyture.stage");
+    } catch {
+      return null;
+    }
+  };
+  const thumb = () => stage.frameStill("clay", { long: 360, type: "image/jpeg", quality: 0.72 });
+  let project = null;
+  let timer = 0;
+  let pending = null;
+
+  const nameField = el("input.ctl-name-field.ctl-project-name", { maxLength: 60, "aria-label": "Stage name", placeholder: "Name this stage",
+    on: { change: (e) => rename(e.target.value), keydown: (e) => (e.stopPropagation(), e.key === "Enter" && e.target.blur()) } });
+  const lamp = el("span.lamp.ctl-saved", { tabindex: "0", role: "status", "data-tooltip": "Not saved yet" });
+  const key = (name, label, run, extra = {}) => el("button.ctl-mini", { type: "button", title: label, "aria-label": label, on: { click: run }, ...extra }, icon(name));
+  let arming = 0;
+  const del = key("trash", "Delete this stage — click twice", () => {
+    if (Date.now() - arming > 2500) {
+      arming = Date.now();
+      del.setAttribute("aria-pressed", "true");
+      setTimeout(() => del.setAttribute("aria-pressed", "false"), 2500);
+      return toast("Click once more to delete this stage.");
+    }
+    arming = 0;
+    remove();
+  });
+  projectEl.replaceChildren(
+    el("div.ctl-project-head", {}, nameField, lamp),
+    el("div.ctl-project-keys", { role: "toolbar", "aria-label": "Stage" },
+      key("grid", "Your stages", browse),
+      key("plus", "New stage", () => create()),
+      el("button.ctl-mini", { type: "button", title: "Duplicate this stage", "aria-label": "Duplicate this stage", on: { click: duplicate } }, sprite("copy")),
+      key("download", "Export to share — one file, with your own models in it", exportFile),
+      key("upload", "Import a stage someone shared", importFile),
+      del));
+
+  function show(p) {
+    project = p;
+    nameField.value = p?.name ?? "";
+    if (p) remember(p.id);
+  }
+  function saved(when) {
+    lamp.dataset.tone = "ok";
+    lamp.dataset.tooltip = `Saved ${new Date(when).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  }
+  async function save() {
+    if (!project) return;
+    clearTimeout(timer);
+    lamp.dataset.tone = "busy";
+    lamp.dataset.tooltip = "Saving…";
+    const id = project.id;
+    pending = call(`api/control/stages/${id}`, { method: "PUT", headers: json, body: JSON.stringify({ scene: stage.toJSON(), thumb: thumb() }) })
+      .then((b) => project?.id === id && saved(b.stage.updatedAt))
+      .catch((e) => ((lamp.dataset.tone = "crit"), (lamp.dataset.tooltip = e.message)));
+    return pending;
+  }
+  // a moment after any change, the stage is kept
+  stage.on((kind) => {
+    if (kind !== "history" || !project) return;
+    clearTimeout(timer);
+    lamp.dataset.tone = "busy";
+    lamp.dataset.tooltip = "Changed — saving in a moment";
+    timer = setTimeout(save, 1200);
+  });
+
+  async function open(id) {
+    if (project && timer) await save();
+    const { stage: p } = await call(`api/control/stages/${id}`);
+    stage.load(p.scene ?? { version: 2 });
+    stage.select({});
+    show(p);
+    saved(p.updatedAt);
+  }
+  async function create(name, scene) {
+    if (project && timer) await save();
+    const count = (await call("api/control/stages")).stages.length;
+    if (!scene) stage.load({ version: 2 });
+    const { stage: p } = await call("api/control/stages", { method: "POST", headers: json, body: JSON.stringify({ name: name ?? `Stage ${count + 1}`, scene: scene ?? stage.toJSON(), thumb: thumb() }) });
+    show(p);
+    saved(p.updatedAt);
+    return p;
+  }
+  async function duplicate() {
+    if (!project) return;
+    await save();
+    await create(`${project.name} copy`, stage.toJSON());
+    toast(`"${project.name}" is a copy you can change freely.`);
+  }
+  async function rename(name) {
+    if (!project || !name.trim()) return (nameField.value = project?.name ?? "");
+    const { stage: p } = await call(`api/control/stages/${project.id}`, { method: "PUT", headers: json, body: JSON.stringify({ name: name.trim() }) });
+    project.name = p.name;
+    nameField.value = p.name;
+  }
+  async function remove() {
+    if (!project) return;
+    const gone = project.name;
+    clearTimeout(timer);
+    const { stages } = await call(`api/control/stages/${project.id}`, { method: "DELETE" });
+    project = null;
+    if (stages.length) await open(stages[0].id);
+    else await create("Stage 1");
+    toast(`"${gone}" is deleted.`);
+  }
+  async function exportFile() {
+    if (!project) return;
+    await save();
+    const a = el("a", { href: `api/control/stages/${project.id}/export`, download: "" });
+    document.body.append(a);
+    a.click();
+    a.remove();
+  }
+  function importFile() {
+    const input = el("input", { type: "file", accept: ".json,application/json", hidden: true });
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      input.remove();
+      if (!file) return;
+      try {
+        toast(`Bringing in ${file.name}…`);
+        const { stage: p } = await call("api/control/stages/import", { method: "POST", headers: json, body: await file.text() });
+        await loadNewUserModels();
+        await open(p.id);
+        toast(`"${p.name}" is open, with its models.`);
+      } catch (e) {
+        toast(e.message, { tone: "crit" });
+      }
+    });
+    document.body.append(input);
+    input.click();
+  }
+
+  /** Your stages, each with its frame, in a window over the app. */
+  async function browse() {
+    if (project && timer) await save();
+    const { stages } = await call("api/control/stages");
+    const d = el("dialog.dialog.ctl-projects-window", {});
+    const ago = (t) => {
+      const m = Math.round((Date.now() - new Date(t).getTime()) / 60000);
+      return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : new Date(t).toLocaleDateString();
+    };
+    const card = (p) => el("button.ctl-project-card", { type: "button", "aria-pressed": String(p.id === project?.id), title: `Open "${p.name}"`, on: { click: async () => (d.close(), await open(p.id)) } },
+      p.thumb ? el("img", { src: p.thumb, alt: "", draggable: false }) : el("span.ctl-project-blank", {}, icon("film")),
+      el("span.ctl-project-name-line", {}, p.name), el("span.ctl-project-when", {}, ago(p.updatedAt)));
+    d.append(
+      el("div.ctl-projects-head", {}, el("h2", {}, "Your stages"),
+        el("div.ctl-project-keys", {},
+          key("plus", "New stage", async () => (d.close(), await create())),
+          key("upload", "Import a stage someone shared", () => (d.close(), importFile())),
+          key("close", "Close", () => d.close()))),
+      el("div.ctl-projects-grid", {}, ...stages.map(card)));
+    d.addEventListener("close", () => d.remove());
+    d.addEventListener("click", (e) => e.target === d && d.close());
+    document.body.append(d);
+    d.showModal();
+  }
+
+  return {
+    current: () => project,
+    open,
+    newProject: (name) => create(name),
+    /** The last stage opens again; the very first time, a starter scene becomes the first stage. */
+    async openLast() {
+      try {
+        const last = lastId();
+        const { stages } = await call("api/control/stages");
+        const id = stages.some((p) => p.id === last) ? last : stages[0]?.id;
+        if (id) return await open(id);
+        starter();
+        await create("First stage", stage.toJSON());
+      } catch (e) {
+        starter();
+        toast(e.message, { tone: "crit" });
+      }
+    },
+  };
 }

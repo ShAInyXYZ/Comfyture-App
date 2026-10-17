@@ -196,6 +196,22 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 /* the selection */
 .ctl-selected { display: grid; gap: .75rem; }
 .ctl-sel-head { display: flex; align-items: center; gap: .375rem; }
+/* the stage's project: its name, whether it is saved, and its keys */
+.ctl-project { display: grid; gap: .375rem; padding-bottom: .625rem; margin-bottom: .125rem; border-bottom: 1px solid var(--line); }
+.ctl-project-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; align-items: center; }
+.ctl-project-keys { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; }
+.ctl-project-keys .ctl-mini[aria-pressed="true"] { color: var(--err); box-shadow: inset 0 0 0 1px var(--err); }
+.ctl-projects-window { width: min(60rem, calc(100vw - 2rem)); }
+.ctl-projects-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .875rem; }
+.ctl-projects-head h2 { margin: 0; }
+.ctl-projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); gap: .75rem; max-height: 70vh; overflow: auto; }
+.ctl-project-card { display: grid; gap: .3rem; padding: .4375rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--sunk); color: var(--text); text-align: left; cursor: pointer; transition: border-color var(--t-fast); }
+.ctl-project-card:hover { border-color: var(--accent-line); }
+.ctl-project-card[aria-pressed="true"] { border-color: var(--accent); }
+.ctl-project-card img, .ctl-project-blank { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: .5rem; background: #111114; }
+.ctl-project-blank { display: grid; place-items: center; color: var(--dim); }
+.ctl-project-name-line { font: 600 var(--fs-small)/1.3 var(--font-sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctl-project-when { font: 400 var(--fs-micro)/1 var(--font-mono); color: var(--dim); }
 .ctl-name-field { flex: 1 1 auto; min-width: 0; height: 2.375rem; padding: 0 .625rem; border: 1px solid transparent; border-radius: .5rem; background: var(--sunk); color: var(--text); font: 600 var(--fs-title)/1 var(--font-sans); outline: 0; user-select: text; -webkit-user-select: text; }
 .ctl-name-field:focus { border-color: var(--accent-line); }
 .ctl-swatches { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: .3125rem; }

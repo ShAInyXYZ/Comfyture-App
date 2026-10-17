@@ -282,6 +282,45 @@ function looksLike(ext: string, b: Buffer) {
   return true;
 }
 
+// ------------------------------------------------------------------ the Stage's projects
+
+// a stage as its own project: its name, its scene (characters, props, camera, timeline) and a
+// small picture of its frame, kept one file each; shared as one file with the user's models in it
+type StageFile = { id: string; name: string; createdAt: string; updatedAt: string; scene: unknown; thumb?: string };
+const stagesDir = () => join(data, "control", "stages");
+const stageId = (s: string) => /^stage-[\w-]{1,80}$/.test(s);
+async function readStage(id: string): Promise<StageFile | null> {
+  if (!stageId(id)) return null;
+  try {
+    return JSON.parse(await readFile(join(stagesDir(), `${id}.json`), "utf8"));
+  } catch {
+    return null;
+  }
+}
+async function writeStage(stage: StageFile) {
+  await mkdir(stagesDir(), { recursive: true });
+  await writeFile(join(stagesDir(), `${stage.id}.json`), JSON.stringify(stage));
+}
+async function listStages() {
+  let files: string[] = [];
+  try {
+    files = (await readdir(stagesDir())).filter((f) => f.endsWith(".json"));
+  } catch {
+    return [];
+  }
+  const all = await Promise.all(files.map((f) => readStage(f.slice(0, -5))));
+  return all.filter((x): x is StageFile => !!x).map(({ id, name, createdAt, updatedAt, thumb }) => ({ id, name, createdAt, updatedAt, thumb })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+/** The user's models a scene uses: its rigged characters and its own props. */
+function modelsIn(scene: any): string[] {
+  const ids = new Set<string>();
+  for (const c of scene?.characters ?? []) if (typeof c?.rig === "string") ids.add(c.rig);
+  for (const p of scene?.props ?? []) if (typeof p?.type === "string" && /^obj-/.test(p.type)) ids.add(p.type);
+  return [...ids];
+}
+const newStageId = (name: string) => `stage-${slug(name) || "stage"}-${randomBytes(3).toString("hex")}`;
+const stageName = (v: unknown, fallback = "Stage") => text(v, 60) || fallback;
+
 // ------------------------------------------------------------------ events
 
 const listeners = new Set<ServerResponse>();
@@ -784,6 +823,73 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const left = list.filter((m) => m.id !== modelId[1]);
     await writeModels(left);
     return json(res, 200, { models: left });
+  }
+  if (path === "/api/control/stages" && method === "GET") return json(res, 200, { stages: await listStages() });
+  if (path === "/api/control/stages" && method === "POST") {
+    const input = await jsonBody(req, 64 * 1024 * 1024);
+    const now = new Date().toISOString();
+    const name = stageName(input.name);
+    const stage: StageFile = { id: newStageId(name), name, createdAt: now, updatedAt: now, scene: input.scene ?? { version: 2 }, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined };
+    await writeStage(stage);
+    return json(res, 201, { stage });
+  }
+  if (path === "/api/control/stages/import" && method === "POST") {
+    // a stage someone shared: its scene, and the models of their own it uses
+    const input = await jsonBody(req, 450 * 1024 * 1024);
+    if (input.format !== "comfyture-stage" || !input.scene) throw bad("That is not a Comfyture stage file.");
+    const known = await readModels();
+    for (const m of Array.isArray(input.models) ? input.models : []) {
+      const entry = m?.entry;
+      if (!entry || typeof m.data !== "string" || !/^(rig|obj)-[\w-]+$/.test(entry.id) || !MODEL_EXT.has(entry.ext)) continue;
+      if (known.some((k) => k.id === entry.id)) continue;
+      const bytes = Buffer.from(m.data, "base64");
+      if (!looksLike(entry.ext, bytes)) continue;
+      await mkdir(modelsDir(), { recursive: true });
+      await writeFile(join(modelsDir(), `${entry.id}.${entry.ext}`), bytes);
+      known.push({ id: entry.id, name: text(entry.name, 60) || entry.id, kind: entry.kind === "character" ? "character" : "prop", file: `${entry.id}.${entry.ext}`, ext: entry.ext, bytes: bytes.length, addedAt: new Date().toISOString() });
+    }
+    await writeModels(known);
+    const now = new Date().toISOString();
+    const name = stageName(input.name, "Shared stage");
+    const stage: StageFile = { id: newStageId(name), name, createdAt: now, updatedAt: now, scene: input.scene, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined };
+    await writeStage(stage);
+    return json(res, 201, { stage, models: known });
+  }
+  const stageRoute = /^\/api\/control\/stages\/(stage-[\w-]+)(\/export)?$/.exec(path);
+  if (stageRoute) {
+    const id = stageRoute[1];
+    const stage = await readStage(id);
+    if (!stage) throw bad("No such stage.", 404);
+    if (stageRoute[2] && method === "GET") {
+      // one file to share: the stage, and the user's own models it uses
+      const list = await readModels();
+      const models = [];
+      for (const mid of modelsIn(stage.scene)) {
+        const entry = list.find((m) => m.id === mid);
+        if (!entry) continue;
+        try {
+          models.push({ entry: { id: entry.id, name: entry.name, kind: entry.kind, ext: entry.ext }, data: (await readFile(join(modelsDir(), entry.file))).toString("base64") });
+        } catch {}
+      }
+      const file = JSON.stringify({ format: "comfyture-stage", version: 1, name: stage.name, scene: stage.scene, thumb: stage.thumb, models });
+      res.writeHead(200, { "Content-Type": "application/json", "Content-Disposition": `attachment; filename="${(slug(stage.name) || "stage")}.stage.json"`, "Cache-Control": "no-store" });
+      return res.end(file);
+    }
+    if (method === "GET") return json(res, 200, { stage });
+    if (method === "PUT") {
+      const input = await jsonBody(req, 64 * 1024 * 1024);
+      if (input.name !== undefined) stage.name = stageName(input.name, stage.name);
+      if (input.scene !== undefined) stage.scene = input.scene;
+      if (typeof input.thumb === "string") stage.thumb = input.thumb.slice(0, 400_000);
+      stage.updatedAt = new Date().toISOString();
+      await writeStage(stage);
+      const { scene: _scene, ...meta } = stage;
+      return json(res, 200, { stage: meta });
+    }
+    if (method === "DELETE") {
+      await rm(join(stagesDir(), `${id}.json`), { force: true });
+      return json(res, 200, { stages: await listStages() });
+    }
   }
   if (path === "/api/control/video" && method === "POST") {
     // the Stage's timeline, frame by frame, as a control video in the library

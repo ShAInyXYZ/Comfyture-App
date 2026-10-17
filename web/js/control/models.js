@@ -113,6 +113,15 @@ export function loadUserModels() {
   return userLoading;
 }
 
+/** Loads what the server has that is not here yet (after a shared stage brought its models). */
+export async function loadNewUserModels() {
+  const res = await fetch("api/control/models");
+  const { models = [] } = res.ok ? await res.json() : {};
+  const fresh = models.filter((m) => !USER.list.some((k) => k.id === m.id));
+  USER.list = models;
+  await Promise.allSettled(fresh.map(loadUserModel));
+}
+
 /** Brings a model file: kept on the server, then loaded as a rigged character or a prop. */
 export async function importModel(file, kind) {
   const res = await fetch(`api/control/models?name=${encodeURIComponent(file.name)}&kind=${kind}`, { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: file });
