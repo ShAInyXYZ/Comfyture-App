@@ -208,7 +208,7 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 .ctl-project-card { display: grid; gap: .3rem; padding: .4375rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--sunk); color: var(--text); text-align: left; cursor: pointer; transition: border-color var(--t-fast); }
 .ctl-project-card:hover { border-color: var(--accent-line); }
 .ctl-project-card[aria-pressed="true"] { border-color: var(--accent); }
-.ctl-project-card img, .ctl-project-blank { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: .5rem; background: #111114; }
+.ctl-project-card img, .ctl-project-blank { width: 100%; aspect-ratio: 16 / 9; object-fit: contain; border-radius: .5rem; background: #111114; }
 .ctl-project-blank { display: grid; place-items: center; color: var(--dim); }
 .ctl-project-name-line { font: 600 var(--fs-small)/1.3 var(--font-sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ctl-project-when { font: 400 var(--fs-micro)/1 var(--font-mono); color: var(--dim); }

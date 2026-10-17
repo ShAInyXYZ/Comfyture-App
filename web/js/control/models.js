@@ -17,6 +17,39 @@ export function holdables(assetByType) {
   return out;
 }
 
+/**
+ * Whether a mesh is an open sheet (a backdrop's paper, a canopy, a tablecloth) rather than a
+ * closed solid: then it is drawn from both sides. Read once per geometry, which clones share.
+ */
+export function openSurface(geometry) {
+  if (geometry.userData.open !== undefined) return geometry.userData.open;
+  const pos = geometry.attributes.position;
+  const index = geometry.index;
+  // corners at one place are one corner, whatever normals split them
+  const weld = new Map();
+  const ids = new Int32Array(pos.count);
+  for (let i = 0; i < pos.count; i++) {
+    const key = `${Math.round(pos.getX(i) * 1e4)},${Math.round(pos.getY(i) * 1e4)},${Math.round(pos.getZ(i) * 1e4)}`;
+    if (!weld.has(key)) weld.set(key, weld.size);
+    ids[i] = weld.get(key);
+  }
+  // an edge only one face has is a border
+  const edges = new Map();
+  const count = index ? index.count : pos.count;
+  const at = (i) => ids[index ? index.getX(i) : i];
+  for (let t = 0; t + 2 < count; t += 3) {
+    for (let k = 0; k < 3; k++) {
+      const a = at(t + k);
+      const b = at(t + ((k + 1) % 3));
+      const key = a < b ? a * 2 ** 21 + b : b * 2 ** 21 + a;
+      edges.set(key, (edges.get(key) ?? 0) + 1);
+    }
+  }
+  let border = 0;
+  for (const n of edges.values()) if (n === 1) border++;
+  return (geometry.userData.open = border > 0.05 * edges.size);
+}
+
 let loading = null;
 
 /** Loads the manifest and every model in it (once); resolves to MODELS either way. */

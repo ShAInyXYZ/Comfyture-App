@@ -321,6 +321,47 @@ function modelsIn(scene: any): string[] {
 const newStageId = (name: string) => `stage-${slug(name) || "stage"}-${randomBytes(3).toString("hex")}`;
 const stageName = (v: unknown, fallback = "Stage") => text(v, 60) || fallback;
 
+/** A stage file someone shared, kept as a new stage: its scene, and the models of theirs it uses. */
+async function importStage(input: any, when = new Date()) {
+  if (input?.format !== "comfyture-stage" || !input.scene) throw bad("That is not a Comfyture stage file.");
+  const known = await readModels();
+  for (const m of Array.isArray(input.models) ? input.models : []) {
+    const entry = m?.entry;
+    if (!entry || typeof m.data !== "string" || !/^(rig|obj)-[\w-]+$/.test(entry.id) || !MODEL_EXT.has(entry.ext)) continue;
+    if (known.some((k) => k.id === entry.id)) continue;
+    const bytes = Buffer.from(m.data, "base64");
+    if (!looksLike(entry.ext, bytes)) continue;
+    await mkdir(modelsDir(), { recursive: true });
+    await writeFile(join(modelsDir(), `${entry.id}.${entry.ext}`), bytes);
+    known.push({ id: entry.id, name: text(entry.name, 60) || entry.id, kind: entry.kind === "character" ? "character" : "prop", file: `${entry.id}.${entry.ext}`, ext: entry.ext, bytes: bytes.length, addedAt: new Date().toISOString() });
+  }
+  await writeModels(known);
+  const now = when.toISOString();
+  const name = stageName(input.name, "Shared stage");
+  const stage: StageFile = { id: newStageId(name), name, createdAt: now, updatedAt: now, scene: input.scene, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined };
+  await writeStage(stage);
+  return { stage, models: known };
+}
+
+// the first time the Stage opens, the example stages are there to open, change and delete;
+// after that the folder is the user's, and a deleted example stays deleted
+let seeding: Promise<void> | null = null;
+async function seedStages() {
+  if (await access(stagesDir()).then(() => true, () => false)) return;
+  await mkdir(stagesDir(), { recursive: true });
+  const dir = join(root, "stages");
+  const files = (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith(".stage.json")).sort();
+  // the first example is the newest, so it is the one that opens
+  const start = Date.now();
+  for (const [i, file] of files.entries()) {
+    try {
+      await importStage(JSON.parse(await readFile(join(dir, file), "utf8")), new Date(start - i * 1000));
+    } catch (e) {
+      console.warn(`stages: ${file} was not added:`, (e as Error).message);
+    }
+  }
+}
+
 // ------------------------------------------------------------------ events
 
 const listeners = new Set<ServerResponse>();
@@ -824,7 +865,10 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     await writeModels(left);
     return json(res, 200, { models: left });
   }
-  if (path === "/api/control/stages" && method === "GET") return json(res, 200, { stages: await listStages() });
+  if (path === "/api/control/stages" && method === "GET") {
+    await (seeding ??= seedStages().catch((e) => console.warn("stages: the examples were not added:", e.message)));
+    return json(res, 200, { stages: await listStages() });
+  }
   if (path === "/api/control/stages" && method === "POST") {
     const input = await jsonBody(req, 64 * 1024 * 1024);
     const now = new Date().toISOString();
@@ -835,25 +879,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   }
   if (path === "/api/control/stages/import" && method === "POST") {
     // a stage someone shared: its scene, and the models of their own it uses
-    const input = await jsonBody(req, 450 * 1024 * 1024);
-    if (input.format !== "comfyture-stage" || !input.scene) throw bad("That is not a Comfyture stage file.");
-    const known = await readModels();
-    for (const m of Array.isArray(input.models) ? input.models : []) {
-      const entry = m?.entry;
-      if (!entry || typeof m.data !== "string" || !/^(rig|obj)-[\w-]+$/.test(entry.id) || !MODEL_EXT.has(entry.ext)) continue;
-      if (known.some((k) => k.id === entry.id)) continue;
-      const bytes = Buffer.from(m.data, "base64");
-      if (!looksLike(entry.ext, bytes)) continue;
-      await mkdir(modelsDir(), { recursive: true });
-      await writeFile(join(modelsDir(), `${entry.id}.${entry.ext}`), bytes);
-      known.push({ id: entry.id, name: text(entry.name, 60) || entry.id, kind: entry.kind === "character" ? "character" : "prop", file: `${entry.id}.${entry.ext}`, ext: entry.ext, bytes: bytes.length, addedAt: new Date().toISOString() });
-    }
-    await writeModels(known);
-    const now = new Date().toISOString();
-    const name = stageName(input.name, "Shared stage");
-    const stage: StageFile = { id: newStageId(name), name, createdAt: now, updatedAt: now, scene: input.scene, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined };
-    await writeStage(stage);
-    return json(res, 201, { stage, models: known });
+    return json(res, 201, await importStage(await jsonBody(req, 450 * 1024 * 1024)));
   }
   const stageRoute = /^\/api\/control\/stages\/(stage-[\w-]+)(\/export)?$/.exec(path);
   if (stageRoute) {

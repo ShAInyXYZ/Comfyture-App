@@ -1068,7 +1068,7 @@ export class Stage {
     if (!model) return "";
     this.poseThumbnail(poseById("stand"));
     const object = model.scene.clone(true);
-    const clay = new THREE.MeshStandardMaterial({ color: "#c9c5be", roughness: 0.8 });
+    const clay = new THREE.MeshStandardMaterial({ color: "#c9c5be", roughness: 0.8, side: THREE.DoubleSide });
     object.traverse((o) => o.isMesh && (o.material = clay));
     this.poseModel.root.visible = false;
     this.poseScene.add(object);

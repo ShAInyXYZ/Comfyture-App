@@ -689,18 +689,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   });
 
   // every stage is a project, kept as it changes; the last one opens again
-  const projects = projectsOf(stage, { el, toast, projectEl, starter: () => {
-    // the very first stage: two people and a table to block
-    const a = stage.addCharacter({ pose: "talk", at: [-0.75, 0, 0.1], name: "Hero" });
-    const b = stage.addCharacter({ pose: "arms-crossed", at: [0.75, 0, -0.1], name: "Rival", body: "woman" });
-    a.root.rotation.y = 1.2;
-    b.root.rotation.y = -1.5;
-    stage.addProp("table", [0, 0, -1.4]);
-    stage.select({});
-    stage.history = [];
-    stage.commit();
-    stage.snap("three-quarter-left", null);
-  } });
+  const projects = projectsOf(stage, { el, toast, projectEl });
   channelPill();
   frame();
   outliner();
@@ -720,7 +709,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
  * every change, with a picture of its frame; opened, made, duplicated and deleted from the bar
  * over the scene, and shared as one file that carries the user's own models with it.
  */
-function projectsOf(stage, { el, toast, projectEl, starter }) {
+function projectsOf(stage, { el, toast, projectEl }) {
   const json = { "Content-Type": "application/json" };
   const call = async (url, opts) => {
     const res = await fetch(url, opts);
@@ -766,8 +755,8 @@ function projectsOf(stage, { el, toast, projectEl, starter }) {
       key("grid", "Your stages", browse),
       key("plus", "New stage", () => create()),
       el("button.ctl-mini", { type: "button", title: "Duplicate this stage", "aria-label": "Duplicate this stage", on: { click: duplicate } }, sprite("copy")),
-      key("download", "Export to share — one file, with your own models in it", exportFile),
-      key("upload", "Import a stage someone shared", importFile),
+      el("button.ctl-mini", { type: "button", title: "Export to share — one file, with your own models in it", "aria-label": "Export to share", on: { click: exportFile } }, sprite("export")),
+      el("button.ctl-mini", { type: "button", title: "Import a stage someone shared", "aria-label": "Import a stage someone shared", on: { click: importFile } }, sprite("import")),
       del));
 
   function show(p) {
@@ -882,7 +871,7 @@ function projectsOf(stage, { el, toast, projectEl, starter }) {
       el("div.ctl-projects-head", {}, el("h2", {}, "Your stages"),
         el("div.ctl-project-keys", {},
           key("plus", "New stage", async () => (d.close(), await create())),
-          key("upload", "Import a stage someone shared", () => (d.close(), importFile())),
+          el("button.ctl-mini", { type: "button", title: "Import a stage someone shared", "aria-label": "Import a stage someone shared", on: { click: () => (d.close(), importFile()) } }, sprite("import")),
           key("close", "Close", () => d.close()))),
       el("div.ctl-projects-grid", {}, ...stages.map(card)));
     d.addEventListener("close", () => d.remove());
@@ -895,17 +884,15 @@ function projectsOf(stage, { el, toast, projectEl, starter }) {
     current: () => project,
     open,
     newProject: (name) => create(name),
-    /** The last stage opens again; the very first time, a starter scene becomes the first stage. */
+    /** The last stage opens again; the very first time, the newest of the example stages. */
     async openLast() {
       try {
         const last = lastId();
         const { stages } = await call("api/control/stages");
         const id = stages.some((p) => p.id === last) ? last : stages[0]?.id;
         if (id) return await open(id);
-        starter();
-        await create("First stage", stage.toJSON());
+        await create("Stage 1");
       } catch (e) {
-        starter();
         toast(e.message, { tone: "crit" });
       }
     },

@@ -98,6 +98,19 @@ export class Channels {
     this.targets = new WeakMap();
   }
 
+  /** The same pass material drawn from both sides, for a sheet (a backdrop's paper, a canopy). */
+  twoSided(material) {
+    this.sheets ??= new Map();
+    if (!this.sheets.has(material)) {
+      const copy = material.clone();
+      copy.side = THREE.DoubleSide;
+      // the depth range is set on the one material and read by its copy
+      if (material.uniforms) copy.uniforms = material.uniforms;
+      this.sheets.set(material, copy);
+    }
+    return this.sheets.get(material);
+  }
+
   /** A flat material per colour, made once. */
   flatColor(hex) {
     if (!this.flat.has(hex)) this.flat.set(hex, new THREE.MeshBasicMaterial({ color: hex }));
@@ -148,7 +161,7 @@ export class Channels {
     const saved = [];
     const swap = (mesh, material) => {
       saved.push([mesh, mesh.material]);
-      mesh.material = material;
+      mesh.material = mesh.material?.side === THREE.DoubleSide ? this.twoSided(material) : material;
     };
     const hidden = [];
     const hide = (o) => {

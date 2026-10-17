@@ -6,7 +6,7 @@
 // seats and tops say where a body sits and where things rest.
 
 import * as THREE from "three";
-import { MODELS } from "./models.js";
+import { MODELS, openSurface } from "./models.js";
 
 const clay = () => new THREE.MeshStandardMaterial({ color: "#a9a59e", roughness: 0.85 });
 // the parts of a model that read apart: glass, a screen, a shade
@@ -397,7 +397,11 @@ function dress(scene, object, keep) {
   const copy = scene.clone(true);
   copy.traverse((o) => {
     if (!o.isMesh) return;
-    if (!keep) o.material = o.material?.name === "accent" ? object.userData.accent : object.userData.material;
+    if (!keep) {
+      const key = o.material?.name === "accent" ? "accent" : "material";
+      // a sheet (a backdrop's paper, a canopy) shows from behind as well
+      o.material = openSurface(o.geometry) ? (object.userData[`${key}Sheet`] ??= Object.assign(object.userData[key].clone(), { side: THREE.DoubleSide })) : object.userData[key];
+    }
     o.castShadow = o.receiveShadow = true;
     o.userData.shared = true;
   });
