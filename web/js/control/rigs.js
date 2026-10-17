@@ -102,7 +102,7 @@ export function readRig(model) {
   if (!bones.length) throw new Error("This model has no rig. Import it as a prop instead.");
   const map = mapBones(bones);
   const missing = NEEDED.filter((j) => !map[j]);
-  if (missing.length) throw new Error(`Its rig is missing ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? "…" : ""}. Bones found: ${bones.slice(0, 8).map((b) => b.name).join(", ")}…`);
+  if (missing.length) throw new Error(`Its rig is missing ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? "…" : ""}. Bones found: ${[...new Set(bones.map((b) => b.name))].slice(0, 10).join(", ")}…`);
   // in metres, on the ground, facing +Z with its left at +X
   const scene = new THREE.Group();
   const turn = new THREE.Group();
