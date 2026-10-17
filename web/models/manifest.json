@@ -19490,5 +19490,238 @@
         "wheel"
       ]
     }
+  ],
+  "animals": [
+    {
+      "type": "baby-chick",
+      "name": "Baby chick",
+      "file": "animals/baby-chick.glb",
+      "size": [
+        0.315294,
+        0.3,
+        0.222
+      ],
+      "triangles": 5696,
+      "clips": [
+        "stand",
+        "sit",
+        "lie",
+        "walk",
+        "hop"
+      ],
+      "loops": [
+        "walk",
+        "hop"
+      ],
+      "themes": [
+        "animals",
+        "kids"
+      ],
+      "tags": [
+        "chick",
+        "chicken",
+        "bird",
+        "baby",
+        "cute",
+        "farm"
+      ],
+      "materials": [
+        "body",
+        "accent",
+        "eye"
+      ]
+    },
+    {
+      "type": "baby-squirrel",
+      "name": "Baby squirrel",
+      "file": "animals/baby-squirrel.glb",
+      "size": [
+        0.219218,
+        0.36,
+        0.371447
+      ],
+      "triangles": 7480,
+      "clips": [
+        "stand",
+        "sit",
+        "lie",
+        "walk",
+        "hop"
+      ],
+      "loops": [
+        "walk",
+        "hop"
+      ],
+      "themes": [
+        "animals",
+        "kids"
+      ],
+      "tags": [
+        "squirrel",
+        "baby",
+        "cute",
+        "woodland"
+      ],
+      "materials": [
+        "body",
+        "accent",
+        "eye"
+      ]
+    },
+    {
+      "type": "puppy",
+      "name": "Puppy",
+      "file": "animals/puppy.glb",
+      "size": [
+        0.361708,
+        0.4,
+        0.546589
+      ],
+      "triangles": 7392,
+      "clips": [
+        "stand",
+        "sit",
+        "lie",
+        "walk",
+        "hop"
+      ],
+      "loops": [
+        "walk",
+        "hop"
+      ],
+      "themes": [
+        "animals",
+        "kids"
+      ],
+      "tags": [
+        "puppy",
+        "dog",
+        "doggy",
+        "baby",
+        "cute",
+        "pet"
+      ],
+      "materials": [
+        "body",
+        "accent",
+        "eye"
+      ]
+    },
+    {
+      "type": "kitten",
+      "name": "Kitten",
+      "file": "animals/kitten.glb",
+      "size": [
+        0.234061,
+        0.36,
+        0.469674
+      ],
+      "triangles": 7424,
+      "clips": [
+        "stand",
+        "sit",
+        "lie",
+        "walk",
+        "hop"
+      ],
+      "loops": [
+        "walk",
+        "hop"
+      ],
+      "themes": [
+        "animals",
+        "kids"
+      ],
+      "tags": [
+        "kitten",
+        "cat",
+        "kitty",
+        "baby",
+        "cute",
+        "pet"
+      ],
+      "materials": [
+        "body",
+        "accent",
+        "eye"
+      ]
+    },
+    {
+      "type": "bunny",
+      "name": "Bunny",
+      "file": "animals/bunny.glb",
+      "size": [
+        0.197397,
+        0.36,
+        0.239049
+      ],
+      "triangles": 7512,
+      "clips": [
+        "stand",
+        "sit",
+        "lie",
+        "walk",
+        "hop"
+      ],
+      "loops": [
+        "walk",
+        "hop"
+      ],
+      "themes": [
+        "animals",
+        "kids"
+      ],
+      "tags": [
+        "bunny",
+        "rabbit",
+        "baby",
+        "cute",
+        "pet"
+      ],
+      "materials": [
+        "body",
+        "accent",
+        "eye"
+      ]
+    },
+    {
+      "type": "piglet",
+      "name": "Piglet",
+      "file": "animals/piglet.glb",
+      "size": [
+        0.272503,
+        0.34,
+        0.49111
+      ],
+      "triangles": 7812,
+      "clips": [
+        "stand",
+        "sit",
+        "lie",
+        "walk",
+        "hop"
+      ],
+      "loops": [
+        "walk",
+        "hop"
+      ],
+      "themes": [
+        "animals",
+        "kids"
+      ],
+      "tags": [
+        "piglet",
+        "pig",
+        "piggy",
+        "baby",
+        "cute",
+        "farm"
+      ],
+      "materials": [
+        "body",
+        "accent",
+        "eye"
+      ]
+    }
   ]
 }

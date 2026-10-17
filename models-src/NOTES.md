@@ -206,3 +206,57 @@ python3 models-src/verify_library.py --report models-src/previews/batch2-validat
 ```
 
 Use `render_batch2.tiles()` in Blender to regenerate missing/stale GLB tiles, `render_batch2.held()` and `full_hold_source()` for hand previews, and `render_batch2.reimport()` for the import pass. Finish with `python3 models-src/compose_batch2.py`. The original `assemble_manifest.py` also preserves the batch 2 additions through the shared assembly routine. The machine-readable checklist is `batch2-requirements.json`; authored budgets and priorities are recorded in `batch2-spec.json`.
+
+## Batch 3
+
+Delivered 18 October 2026: **six baby animals**, authored from scratch in the connected Blender 5.2.1 session against `reference/cute-style.png`. The previous bipedal attempt remains set aside in `blender/batch3-bipedal/`; its objects were removed from the open scene, and none of its geometry or rigs were reused.
+
+| Animal | Stand height | Triangles | Natural form |
+|---|---:|---:|---|
+| Baby chick | 0.30 m | 5,696 | One egg-shaped body/head, wing nubs, a small orange beak and two little feet |
+| Baby squirrel | 0.36 m | 7,480 | Seated haunches, tiny front paws, round ears and a large smooth tail curling up its back |
+| Puppy | 0.40 m | 7,392 | Low rounded loaf on four short legs, a large head, floppy ears and a tiny tail |
+| Kitten | 0.36 m | 7,424 | Four short legs, a large head, rounded triangular ears and a long curved tail |
+| Bunny | 0.36 m, ears included | 7,512 | Round seated body, long rounded ears, little paws and a pom-pom tail |
+| Piglet | 0.34 m | 7,812 | Round loaf on four tiny legs, folded ears, a flat oval snout and a curly tail |
+
+The production files are `web/models/animals/<id>.glb`; IDs are `baby-chick`, `baby-squirrel`, `puppy`, `kitten`, `bunny` and `piglet`. A new top-level `animals` array in `web/models/manifest.json` records paths, measured stand dimensions, actual indexed triangle counts, clips, loops, themes, tags and materials. All 393 earlier GLBs and all existing manifest entries remain unchanged, checked against `batch3-baseline.json`. No application code, git state or system packages were changed.
+
+### Shape, material and rig
+
+Each animal has one skinned `Body` mesh, two separate plain `Eye.L` / `Eye.R` meshes weighted to `Head`, and its own natural `AnimalRig`. Large rounded masses and overlapping appendage volumes share one body mesh; smooth weight blends across the torso and two-bone limbs keep deformation soft. There are no mouths, blush, patches, stripes, spots, fur, whiskers, toes, eye-highlight meshes, textures or external dependencies.
+
+The three PBR materials are exactly `body`, `accent` and `eye`. Body and accent roughness are 0.4; eyes are near-black glossy dots with roughness 0.28. Highlights come from lighting. Smooth normals are exported. The GLBs contain no cameras or lights.
+
+`Root` starts at the ground under the model centre, followed by `Spine`, `Chest` and `Head`. The chick has two two-bone leg chains and wing bones. The other animals have their own fore/hind two-bone chains, ears and tail; the squirrel and kitten also have a tail-tip bone. These are animal skeletons, not the earlier 21-joint mannequin hierarchy. Head scale compensation keeps the mammals' heads round during body movement. Everything needed for playback is baked into the exported clips; no runtime IK or constraints are required.
+
+### Clips and integration
+
+Every GLB contains exactly **`stand`, `sit`, `lie`, `walk`, `hop`**. `stand`, `sit` and `lie` are still clips with two identical keys at frames 1 and 2. Squirrel and bunny `stand` is their normal upright seated stance. The resting poses recline or tuck the body and keep visible supporting paws on the floor.
+
+`walk` and `hop` are one-second, 24-fps loops with matching endpoints at frames 1 and 25. Walking is in place. **`hop` is a grounded squash/stretch bounce**: the brief explicitly requires contact with the floor in every frame, so there is no airborne interval. Animated contact clearance is approximately 0.6 mm to keep interpolated frames above the floor; held poses touch zero. Small baked `Root` translations keep the evaluated bounds centred and grounded. Preserve these tracks; they are pose compensation, not travel/root motion.
+
+For the loader, discover entries from `manifest.animals`, resolve `file` relative to `/models/`, and load each GLB with its skin and animations. Models are already in metres, **+Y up, facing +Z**, centred on X/Z; `size` is `[width, height, depth]` in `stand`. Use an animation mixer and select clips by exact name. Play still poses once and hold/clamp their final frame; repeat `walk` and `hop`. Move the containing model object along the Stage timeline for travel. Clone the skeleton as well as the scene when instancing a skinned animal (for example, Three.js `SkeletonUtils.clone`). The existing humanoid pose presets must not be applied to these rigs. App integration itself is intentionally outside this batch.
+
+### Sources, previews and checks
+
+Editable native sources are `blender/animal-<id>.blend`. `blender/batch3-animals-review.blend` presents the six delivered GLBs together and is left open in Blender; `blender/batch3-preview-<id>.blend` retains each animal's studio setup and imported clips. The modelling and animation source is `build_animals.py`, with per-animal measured metadata in `animal-<id>-metadata.json`.
+
+- `previews/batch3-animals.png`: all six in `stand`, side by side at one world scale and in a soft three-quarter studio view, with the supplied reference beside the modelled chick.
+- `previews/batch3-poses.png`: six rows by five clips; walk and hop show the 0.50-second frame.
+- `previews/animals-tiles/`: actual GLB renders used by both sheets; composition only adds labels, margins and the supplied reference.
+- `previews/batch3-render-evidence.json` and `previews/batch3-preview-composition.json`: render source hashes and sheet composition evidence.
+- `previews/batch3-validation.json`: independent binary checks plus Blender re-import, **six passes and zero errors**. Every frame and intervening half frame is evaluated for contact and centring. Exact clip names/timing, loop seams, orientation, stand size/height, skin/eye structure, material names, texture absence and triangle limits are checked. The report also verifies preservation of the earlier library and records each imported action binding.
+
+Both sheets were visually reviewed against the reference for species silhouettes, restrained detail, rounded shapes, paw contact and distinct resting poses. Final validation found exact loop endpoint agreement, less than 0.7 mm ground clearance and less than 0.2 mm horizontal centring error.
+
+Rebuild from the repository root (Blender is already installed):
+
+```sh
+blender -b -noaudio --python models-src/build_animals.py
+python3 models-src/verify_animals.py
+blender -b -noaudio --python models-src/render_animals.py -- --force
+python3 models-src/compose_animals.py
+```
+
+In the open Blender Python session, put `models-src` on `sys.path`, then use `build_animals.run()` or `build_animals.run(ids=["puppy"])`. The builder replaces only its own `Batch3.Animal` collection, writes only the six animal deliveries and refreshes the `animals` manifest member. Re-render and re-verify after changes. The verifier exits its isolated background process after flushing the report to avoid this host's unrelated PulseAudio shutdown hang.

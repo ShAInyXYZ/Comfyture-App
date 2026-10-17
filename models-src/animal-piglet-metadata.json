@@ -1,0 +1,39 @@
+{
+  "type": "piglet",
+  "name": "Piglet",
+  "file": "animals/piglet.glb",
+  "size": [
+    0.272503,
+    0.34,
+    0.49111
+  ],
+  "triangles": 7812,
+  "clips": [
+    "stand",
+    "sit",
+    "lie",
+    "walk",
+    "hop"
+  ],
+  "loops": [
+    "walk",
+    "hop"
+  ],
+  "themes": [
+    "animals",
+    "kids"
+  ],
+  "tags": [
+    "piglet",
+    "pig",
+    "piggy",
+    "baby",
+    "cute",
+    "farm"
+  ],
+  "materials": [
+    "body",
+    "accent",
+    "eye"
+  ]
+}

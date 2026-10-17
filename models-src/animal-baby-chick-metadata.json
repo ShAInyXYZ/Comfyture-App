@@ -1,0 +1,39 @@
+{
+  "type": "baby-chick",
+  "name": "Baby chick",
+  "file": "animals/baby-chick.glb",
+  "size": [
+    0.315294,
+    0.3,
+    0.222
+  ],
+  "triangles": 5696,
+  "clips": [
+    "stand",
+    "sit",
+    "lie",
+    "walk",
+    "hop"
+  ],
+  "loops": [
+    "walk",
+    "hop"
+  ],
+  "themes": [
+    "animals",
+    "kids"
+  ],
+  "tags": [
+    "chick",
+    "chicken",
+    "bird",
+    "baby",
+    "cute",
+    "farm"
+  ],
+  "materials": [
+    "body",
+    "accent",
+    "eye"
+  ]
+}

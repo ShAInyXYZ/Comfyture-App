@@ -1,0 +1,39 @@
+{
+  "type": "puppy",
+  "name": "Puppy",
+  "file": "animals/puppy.glb",
+  "size": [
+    0.361708,
+    0.4,
+    0.546589
+  ],
+  "triangles": 7392,
+  "clips": [
+    "stand",
+    "sit",
+    "lie",
+    "walk",
+    "hop"
+  ],
+  "loops": [
+    "walk",
+    "hop"
+  ],
+  "themes": [
+    "animals",
+    "kids"
+  ],
+  "tags": [
+    "puppy",
+    "dog",
+    "doggy",
+    "baby",
+    "cute",
+    "pet"
+  ],
+  "materials": [
+    "body",
+    "accent",
+    "eye"
+  ]
+}

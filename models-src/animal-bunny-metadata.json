@@ -1,0 +1,38 @@
+{
+  "type": "bunny",
+  "name": "Bunny",
+  "file": "animals/bunny.glb",
+  "size": [
+    0.197397,
+    0.36,
+    0.239049
+  ],
+  "triangles": 7512,
+  "clips": [
+    "stand",
+    "sit",
+    "lie",
+    "walk",
+    "hop"
+  ],
+  "loops": [
+    "walk",
+    "hop"
+  ],
+  "themes": [
+    "animals",
+    "kids"
+  ],
+  "tags": [
+    "bunny",
+    "rabbit",
+    "baby",
+    "cute",
+    "pet"
+  ],
+  "materials": [
+    "body",
+    "accent",
+    "eye"
+  ]
+}

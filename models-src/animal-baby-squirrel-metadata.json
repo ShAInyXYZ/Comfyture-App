@@ -1,0 +1,37 @@
+{
+  "type": "baby-squirrel",
+  "name": "Baby squirrel",
+  "file": "animals/baby-squirrel.glb",
+  "size": [
+    0.219218,
+    0.36,
+    0.371447
+  ],
+  "triangles": 7480,
+  "clips": [
+    "stand",
+    "sit",
+    "lie",
+    "walk",
+    "hop"
+  ],
+  "loops": [
+    "walk",
+    "hop"
+  ],
+  "themes": [
+    "animals",
+    "kids"
+  ],
+  "tags": [
+    "squirrel",
+    "baby",
+    "cute",
+    "woodland"
+  ],
+  "materials": [
+    "body",
+    "accent",
+    "eye"
+  ]
+}

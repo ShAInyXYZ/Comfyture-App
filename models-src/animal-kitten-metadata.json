@@ -1,0 +1,39 @@
+{
+  "type": "kitten",
+  "name": "Kitten",
+  "file": "animals/kitten.glb",
+  "size": [
+    0.234061,
+    0.36,
+    0.469674
+  ],
+  "triangles": 7424,
+  "clips": [
+    "stand",
+    "sit",
+    "lie",
+    "walk",
+    "hop"
+  ],
+  "loops": [
+    "walk",
+    "hop"
+  ],
+  "themes": [
+    "animals",
+    "kids"
+  ],
+  "tags": [
+    "kitten",
+    "cat",
+    "kitty",
+    "baby",
+    "cute",
+    "pet"
+  ],
+  "materials": [
+    "body",
+    "accent",
+    "eye"
+  ]
+}
