@@ -101,7 +101,7 @@ export function renderTabs(el) {
     }
     if (t.film) {
       if (group?.film !== t.film) {
-        group = { film: t.film, el: h("div.tab-group", { title: `Made by the Director: ${t.film}` }, h("span.tab-group-name", {}, icon("sparkle"), t.film)) };
+        group = { film: t.film, el: h("div.tab-group", { title: `Made in Story: ${t.film}` }, h("span.tab-group-name", {}, icon("sparkle"), t.film)) };
         nodes.push(group.el);
       }
       group.el.append(node.el);

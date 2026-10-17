@@ -1,5 +1,5 @@
-import { h, icon } from "../dom.js";
-import { state, setDirector, planFilm, makeFilm, rollMissing, openPlanAsTabs, switchTab } from "../store.js";
+import { h, icon, sprite } from "../dom.js";
+import { state, setDirector, planFilm, makeFilm, rollMissing, openPlanAsTabs, switchTab, askStage } from "../store.js";
 import { CAMERA_LABELS } from "../script.js";
 import { go } from "../router.js";
 
@@ -73,10 +73,10 @@ function shotCard(plan, shot, i, dir) {
   const [label, tone] = STEP[st.step] ?? STEP.waiting;
   const tab = state.director.tabs?.[i];
   return h("article.dir-shot", {},
-    h("div.dir-thumb", { className: tone === "busy" ? "is-busy" : "", title: tab ? "Open this shot in Create" : "", on: { click: () => {
+    h("div.dir-thumb", { className: tone === "busy" ? "is-busy" : "", title: tab ? "Open this shot in Shot" : "", on: { click: () => {
       if (tab && state.tabs.some((t) => t.id === tab)) {
         switchTab(tab);
-        go("create");
+        go("shot");
       }
     } } }, picture),
     h("div.dir-shot-head", {},
@@ -91,9 +91,18 @@ function shotCard(plan, shot, i, dir) {
       h("select.chip-select", { disabled: locked, "aria-label": "Seconds", on: { change: (e) => (shot.seconds = Number(e.target.value)) } },
         [3, 4, 5, 6, 7, 8].map((n) => h("option", { value: n, selected: n === shot.seconds }, `${n} s`))),
       started ? h("span.dir-step", { title: st.error ?? "" }, h("span.lamp", { dataset: tone ? { tone } : {} }), label) : null,
+      h("span.spacer"),
+      h("button.key.is-sm.is-icon", { type: "button", title: "Stage it — block this shot on the Stage, for its references", "aria-label": `Stage shot ${i + 1}`, on: { click: () => stageShot(plan, shot) } }, sprite("section-stage")),
     ),
     st.error ? h("p.dir-shot-error", {}, st.error) : null,
   );
+}
+
+/** Blocks a planned shot on the Stage: the assistant stages what happens, from its camera. */
+function stageShot(plan, shot) {
+  go("stage");
+  const camera = CAMERA_LABELS[shot.camera] ? `, camera ${CAMERA_LABELS[shot.camera].toLowerCase()}` : "";
+  askStage(`New scene: ${shot.action}${camera}. ${plan.cast ? `Cast: ${plan.cast}. ` : ""}Frame ${state.director.aspect ?? "16:9"}, ${shot.seconds} seconds.`);
 }
 
 function result(dir) {
@@ -128,7 +137,7 @@ function result(dir) {
     h("div.dir-shots", {}, plan.shots.map((s, i) => shotCard(plan, s, i, dir))),
     dir.error ? h("p.dir-error", {}, dir.error) : null,
     h("div.dir-actions", {},
-      h("button.key", { type: "button", disabled: making, on: { click: () => (openPlanAsTabs(), go("create")) } }, icon("open"), "Open as tabs in Create"),
+      h("button.key", { type: "button", disabled: making, on: { click: () => (openPlanAsTabs(), go("shot")) } }, icon("open"), "Open as tabs in Shot"),
       h("span.spacer"),
       making ? h("span.dir-progress", {}, h("span.lamp", { dataset: { tone: "busy" } }), dir.phase === "cutting" ? "Cutting the film…" : `${done} of ${plan.shots.length} shots done`) : null,
       make,
@@ -142,7 +151,7 @@ export function renderDirector(el) {
   const keep = [...el.querySelectorAll("textarea, input")].find((n) => n === document.activeElement);
   const top = window.scrollY;
   el.replaceChildren(
-    h("div.page-head", {}, h("h1", {}, "Director"), h("span.hint", {}, "An idea in, a film out: planned, drawn, rolled and cut on your ComfyUI.")),
+    h("div.page-head", {}, h("h1", {}, "Story"), h("span.hint", {}, "An idea in, a film out: planned, drawn, rolled and cut on your ComfyUI.")),
     h("div.dir-page", {}, brief(dir, busy), result(dir)),
   );
   window.scrollTo({ top });

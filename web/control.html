@@ -3,72 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Control · Comfyture</title>
-  <meta name="description" content="Pose mannequins, place props and cameras, and make your own references for images and videos.">
+  <title>Stage · Comfyture</title>
+  <meta http-equiv="refresh" content="0; url=./#/stage">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/material.css">
-  <link rel="stylesheet" href="css/app.css">
-  <link rel="stylesheet" href="css/control.css">
-  <script type="importmap">
-    { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
-  </script>
 </head>
-<body class="ctl">
-  <header class="top">
-    <div class="top-in ctl-top">
-      <a class="wordmark" href="./#/create" aria-label="Comfyture"><img src="brand/wordmark.svg" alt="Comfyture" draggable="false"></a>
-      <span class="ctl-section">Control</span>
-      <span class="spacer"></span>
-      <span class="lamp ctl-link" id="link" tabindex="0" role="status" data-tooltip="Agent link — waiting for the server"></span>
-      <button class="ctl-render" type="button" id="render" disabled title="Render references — the passes come in the next step"></button>
-    </div>
-  </header>
-
-  <main class="ctl-desk">
-    <aside class="ctl-col ctl-left">
-      <section class="ctl-panel" aria-labelledby="scene-title">
-        <h2 class="ctl-label" id="scene-title">Scene</h2>
-        <div class="ctl-outliner" id="outliner" role="tree" aria-label="Scene"></div>
-        <div class="ctl-add" id="add" role="group" aria-label="Add"></div>
-      </section>
-      <section class="ctl-panel ctl-grow" aria-labelledby="pose-title">
-        <h2 class="ctl-label" id="pose-title">Pose</h2>
-        <div class="ctl-poses" id="poses"></div>
-      </section>
-    </aside>
-
-    <div class="ctl-mid">
-      <section class="ctl-view" aria-label="Viewport">
-        <div class="ctl-stage" id="stage"></div>
-        <div class="ctl-frame" id="frame" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="third v1"></i><i class="third v2"></i><i class="third h1"></i><i class="third h2"></i><i class="safe"></i></div>
-        <div class="ctl-tools" id="tools" role="toolbar" aria-label="Tools"></div>
-        <p class="ctl-hint" id="hint"></p>
-      </section>
-      <div class="ctl-chat" id="chat" aria-label="Assistant"></div>
-    </div>
-
-    <aside class="ctl-col ctl-right">
-      <section class="ctl-panel" aria-labelledby="camera-title">
-        <h2 class="ctl-label" id="camera-title">Camera</h2>
-        <div class="ctl-snaps" id="snaps"></div>
-        <div class="ctl-focal">
-          <div class="ctl-row"><span class="ctl-label is-sub">Focal length</span><output class="ctl-readout" id="focal-out"></output></div>
-          <input type="range" id="focal" min="14" max="200" step="1" aria-label="Focal length">
-          <div class="ctl-scale"><span>14</span><span>200</span></div>
-        </div>
-      </section>
-      <section class="ctl-panel" aria-labelledby="frame-title">
-        <h2 class="ctl-label" id="frame-title">Frame</h2>
-        <div class="ctl-ratios" id="ratios" role="group" aria-label="Frame"></div>
-        <div class="ctl-toggles" id="guides"></div>
-      </section>
-      <section class="ctl-panel ctl-grow" aria-labelledby="sel-title">
-        <h2 class="ctl-label" id="sel-title">Selected</h2>
-        <div id="selected"></div>
-      </section>
-    </aside>
-  </main>
-
-  <script type="module" src="js/control/page.js"></script>
+<body>
+  <!-- Control is the Stage section now -->
+  <p><a href="./#/stage">Open the Stage</a></p>
+  <script>location.replace("./#/stage");</script>
 </body>
 </html>

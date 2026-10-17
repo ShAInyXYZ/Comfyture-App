@@ -16,6 +16,7 @@ import { renderLibrary } from "./panels/library.js";
 import { renderEdit } from "./panels/edit.js";
 import { renderAssistant } from "./panels/assistant.js";
 import { renderImage } from "./panels/image.js";
+import { renderStage, mountStage } from "./panels/stage.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -23,19 +24,21 @@ const $ = (id) => document.getElementById(id);
 const panels = {
   nav: [$("nav"), renderNav],
   status: [$("cloud"), renderStatus],
-  sources: [$("sources"), renderSources, "create"],
-  monitor: [$("monitor"), renderMonitor, "create"],
-  script: [$("script"), renderScript, "create"],
-  presets: [$("presets"), renderPresets, "create"],
-  settings: [$("settings"), renderSettings, "create"],
-  takes: [$("takes"), renderTakes, "create"],
-  assistant: [$("assistant"), renderAssistant, "create"],
+  sources: [$("sources"), renderSources, "shot"],
+  monitor: [$("monitor"), renderMonitor, "shot"],
+  script: [$("script"), renderScript, "shot"],
+  presets: [$("presets"), renderPresets, "shot"],
+  settings: [$("settings"), renderSettings, "shot"],
+  takes: [$("takes"), renderTakes, "shot"],
+  // the assistant's bar is the Shot's and the Stage's: it draws wherever it is docked
+  assistant: [$("assistant"), renderAssistant],
+  stage: [$("page-stage"), renderStage, "stage"],
   image: [$("image"), renderImage],
-  tabs: [$("tabs"), renderTabs, "create"],
-  actions: [$("actions"), renderActions, "create"],
-  director: [$("page-director"), renderDirector, "director"],
+  tabs: [$("tabs"), renderTabs, "shot"],
+  actions: [$("actions"), renderActions, "shot"],
+  director: [$("page-story"), renderDirector, "story"],
   library: [$("page-library"), renderLibrary, "library"],
-  edit: [$("page-edit"), renderEdit, "edit"],
+  edit: [$("page-cut"), renderEdit, "cut"],
 };
 
 // Redraws are batched to one per frame; text fields keep focus because the
@@ -88,12 +91,25 @@ onChange((scopes) => {
 });
 
 /** Shows the section the address names, and draws what changed while it was hidden. */
+/** The assistant's bar floats over the Shot's desk and docks under the Stage's viewport. */
+function dockAssistant(page = currentPage()) {
+  const bar = $("assistant");
+  const slot = page === "stage" ? $("stage-chat") : $("page-shot");
+  bar.hidden = !slot || !["shot", "stage"].includes(page);
+  if (slot && bar.parentElement !== slot) slot.append(bar);
+  bar.classList.toggle("is-docked", page === "stage");
+  pending.add("assistant");
+  flush();
+}
+document.addEventListener("stage:ready", () => dockAssistant());
+
 function showPage() {
   const page = currentPage();
   for (const el of document.querySelectorAll(".page")) el.hidden = el.dataset.page !== page;
+  dockAssistant(page);
   document.body.dataset.page = page;
   document.title = `${PAGES[page]} · Comfyture`;
-  if (page !== "create") document.querySelectorAll("#page-create video").forEach((v) => v.pause());
+  if (page !== "shot") document.querySelectorAll("#page-shot video").forEach((v) => v.pause());
   for (const [name, [, , owner]] of Object.entries(panels)) {
     if (owner === page && (stale.has(name) || !panels[name][0].childElementCount)) pending.add(name);
     if (owner === page) stale.delete(name);
@@ -105,7 +121,7 @@ function showPage() {
 window.addEventListener("hashchange", showPage);
 
 document.addEventListener("keydown", (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && currentPage() === "create" && !state.image.open) {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && currentPage() === "shot" && !state.image.open) {
     e.preventDefault();
     roll();
   }
@@ -117,6 +133,8 @@ installTooltips();
 load()
   .then(() => {
     showPage();
+    // the Stage (three.js and all) loads in the background, so the assistant and agents can use it from anywhere
+    (window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1200)))(() => mountStage());
     const repo = document.getElementById("repo-link");
     if (state.info?.repository) {
       repo.href = state.info.repository;

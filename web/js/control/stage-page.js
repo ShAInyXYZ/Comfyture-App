@@ -1,0 +1,583 @@
+// The Stage tab: a blocking table for references. The scene and the libraries of
+// poses and assets on the left, the framed viewport with its channels, tools and
+// timeline in the middle (the app's assistant docks under it), and the camera,
+// the frame, the selection's controls and the channel previews on the right.
+// Everything the panels show comes from the stage; everything they change goes
+// through it, so undo covers all.
+
+import { h, icon, sprite } from "../dom.js";
+import { Stage, SNAPS, RATIOS, MOVES } from "./stage.js";
+import { POSES, POSE_CATEGORIES, SAVED, setSaved, allPoses } from "./poses.js";
+import { ASSETS, ASSET_CATEGORIES, assetByType } from "./assets.js";
+import { JOINT_NAMES, JOINT_LABELS, BODY_TYPES, BODY_SLIDERS, PARAMS, PALETTE, colorName } from "./skeleton.js";
+import { CHANNELS, PASSES } from "./channels.js";
+import { controlOps, connectRemote } from "./remote.js";
+
+const TOOLS = [
+  ["select", "web-cursor", "Select", "Q"],
+  ["rotate", "transform-rotate", "Rotate — turn the selected joint", "E"],
+  ["move", "transform-move", "Move — the body, a prop, or a hand or foot by IK", "W"],
+  ["scale", "transform-scale", "Scale — props", "R"],
+];
+const CHANNEL_ICON = { clay: "view-material", id: "channel-id", depth: "channel-depth", normal: "view-normals", pose: "channel-pose", lines: "view-wireframe", mask: "material-mask" };
+// the camera moves on the panel, with their icons (a flipped icon for the way back)
+const MOVE_KEYS = [
+  ["locked", "camera-locked"], ["push-in", "camera-push-in"], ["pull-out", "camera-pull-out"], ["orbit-left", "camera-orbit-left"], ["orbit-right", "camera-orbit"], ["crane-up", "camera-crane-up"],
+  ["crane-down", "camera-crane-down"], ["truck-left", "camera-truck-left"], ["truck-right", "camera-truck-right"], ["zoom-in", "camera-zoom-in"], ["zoom-out", "camera-zoom-out"], ["handheld", "camera-shake"],
+];
+const BODY_MAIN = ["height", "build", "shoulders", "hips", "head"];
+const POSE_MAIN = ["look", "nod", "lean", "twist", "arms", "stance", "crouch"];
+
+const fmt = (t) => `${String(Math.floor(t / 60)).padStart(2, "0")}:${(t % 60).toFixed(1).padStart(4, "0")}`;
+const assetIcon = (type) => assetByType(type)?.icon ?? "prop-box";
+
+/** Builds the Stage into `root` and returns the stage and its commands. */
+export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = () => {} } = {}) {
+  // like h(), and a first child may come where the props would (an element, text or a list)
+  const el = (tag, props, ...children) =>
+    props instanceof Node || typeof props === "string" || Array.isArray(props) ? h(tag, {}, props, ...children) : h(tag, props ?? {}, ...children);
+  const stageEl = el("div.ctl-stage");
+  const frameEl = el("div.ctl-frame", { "aria-hidden": "true" }, ...["tl", "tr", "bl", "br"].map((c) => el(`i.c.${c}`)), ...["v1", "v2", "h1", "h2"].map((c) => el(`i.third.${c}`)), el("i.safe"));
+  const channelsPill = el("div.ctl-channels", { role: "toolbar", "aria-label": "Channel" });
+  const toolsEl = el("div.ctl-tools", { role: "toolbar", "aria-label": "Tools" });
+  const hintEl = el("p.ctl-hint");
+  const view = el("section.ctl-view", { "aria-label": "Viewport" }, stageEl, frameEl, channelsPill, toolsEl, hintEl);
+  const timelineEl = el("section.ctl-timeline", { "aria-label": "Timeline" });
+  const chatSlot = el("div.ctl-chat", { id: "stage-chat" });
+
+  const outlinerEl = el("div.ctl-outliner", { role: "tree", "aria-label": "Scene" });
+  const addEl = el("div.ctl-add");
+  const linkLamp = el("span.lamp.ctl-link", { tabindex: "0", role: "status", "data-tooltip": "Agent link — waiting for the server" });
+  const libraryEl = el("section.ctl-panel.ctl-grow.ctl-library");
+  const left = el("aside.ctl-col.ctl-left",
+    el("section.ctl-panel", el("div.ctl-row", el("h2.ctl-label", {}, "Scene"), linkLamp), outlinerEl, addEl),
+    libraryEl);
+
+  const snapsEl = el("div.ctl-snaps");
+  const focal = el("input", { type: "range", min: 14, max: 200, step: 1, "aria-label": "Focal length" });
+  const focalOut = el("output.ctl-readout");
+  const movesEl = el("div.ctl-moves", { role: "group", "aria-label": "Camera move" });
+  const ratiosEl = el("div.ctl-ratios", { role: "group", "aria-label": "Frame" });
+  const guidesEl = el("div.ctl-toggles");
+  const selectedEl = el("div.ctl-selected");
+  const previewsEl = el("div.ctl-previews");
+  const renderEl = el("div.ctl-render-keys");
+  const right = el("aside.ctl-col.ctl-right",
+    el("section.ctl-panel", el("h2.ctl-label", {}, "Camera"), snapsEl,
+      el("div.ctl-focal", el("div.ctl-row", el("span.ctl-label.is-sub", {}, "Focal length"), focalOut), focal),
+      el("span.ctl-label.is-sub", {}, "Move"), movesEl),
+    el("section.ctl-panel", el("h2.ctl-label", {}, "Frame"), el("div.ctl-frame-row", ratiosEl, guidesEl)),
+    el("section.ctl-panel", el("h2.ctl-label", {}, "Selected"), selectedEl),
+    el("section.ctl-panel", el("h2.ctl-label", {}, "Channels"), previewsEl, renderEl));
+
+  root.replaceChildren(el("div.ctl-desk", left, el("div.ctl-mid", view, timelineEl, chatSlot), right));
+
+  const stage = new Stage(stageEl, frameEl);
+  const { ops, describe } = controlOps(stage);
+  window.controlStage = stage;
+
+  // ---------------------------------------------------------------- scene outliner
+
+  const expanded = new Set();
+  let renaming = null;
+  function nameField(target, current) {
+    const input = el("input.ctl-rename", { value: current, "aria-label": "Name", maxLength: 40 });
+    const done = (keep) => {
+      if (renaming !== target) return;
+      renaming = null;
+      if (keep && input.value.trim() && input.value.trim() !== current) stage.rename(target, input.value);
+      else outliner();
+    };
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") done(true);
+      if (e.key === "Escape") done(false);
+      e.stopPropagation();
+    });
+    input.addEventListener("blur", () => done(true));
+    requestAnimationFrame(() => (input.focus(), input.select()));
+    return input;
+  }
+  const isRenaming = (t) => renaming && (renaming.character ?? renaming.prop) === (t.character ?? t.prop);
+
+  function outliner() {
+    const sel = stage.selection;
+    const row = (props, ...children) => el("div.ctl-node", { role: "treeitem", ...props }, ...children);
+    const eye = (visible, set) =>
+      el("button.ctl-mini", { type: "button", "aria-pressed": String(!visible), title: visible ? "Hide" : "Show", "aria-label": visible ? "Hide" : "Show", on: { click: (e) => (e.stopPropagation(), set(!visible)) } }, sprite("eye"));
+    const items = [];
+    for (const c of stage.characters) {
+      const open = expanded.has(c.id);
+      const target = { character: c };
+      items.push(row({
+        className: `is-character${sel.character === c && !sel.joint ? " is-selected" : ""}${sel.character === c ? " is-within" : ""}`,
+        on: { click: () => stage.select({ character: c }), dblclick: () => ((renaming = target), outliner()) },
+      },
+        el("button.ctl-mini.ctl-fold", { type: "button", "aria-expanded": String(open), "aria-label": open ? "Fold" : "Show the joints", on: { click: (e) => (e.stopPropagation(), open ? expanded.delete(c.id) : expanded.add(c.id), outliner()) } }, icon("chevron")),
+        el("span.ctl-chip", { style: { background: `#${c.color.getHexString()}` }, title: colorName(`#${c.color.getHexString()}`) }),
+        el("span.ctl-mini.ctl-glyph", { title: BODY_TYPES.find((b) => b.id === c.body)?.name }, sprite(`body-${c.body}`)),
+        isRenaming(target) ? nameField(target, c.name) : el("span.ctl-name", { title: "Double-click to rename" }, c.name),
+        eye(c.root.visible, (v) => (c.setVisible(v), stage.commit(), stage.render(), outliner())),
+        el("button.ctl-mini", { type: "button", title: "Remove", "aria-label": `Remove ${c.name}`, on: { click: (e) => (e.stopPropagation(), stage.remove(target)) } }, icon("trash")),
+      ));
+      if (open) {
+        for (const j of JOINT_NAMES) {
+          items.push(row({ className: `is-joint${sel.character === c && sel.joint === j ? " is-selected" : ""}`, style: { "--depth": String(depth(j)) }, on: { click: () => stage.select({ character: c, joint: j }) } },
+            el("span.ctl-name", {}, JOINT_LABELS[j])));
+        }
+      }
+    }
+    for (const p of stage.props) {
+      const target = { prop: p };
+      items.push(row({ className: sel.prop === p ? "is-selected" : "", on: { click: () => stage.select({ prop: p }), dblclick: () => ((renaming = target), outliner()) } },
+        el("span.ctl-mini.ctl-glyph", {}, sprite(assetIcon(p.userData.type))),
+        isRenaming(target) ? nameField(target, p.userData.label) : el("span.ctl-name", { title: "Double-click to rename" }, p.userData.label),
+        eye(p.visible, (v) => ((p.visible = v), stage.commit(), stage.render(), outliner())),
+        el("button.ctl-mini", { type: "button", title: "Remove", "aria-label": `Remove ${p.userData.label}`, on: { click: (e) => (e.stopPropagation(), stage.remove(target)) } }, icon("trash")),
+      ));
+    }
+    if (!items.length) items.push(el("p.ctl-empty", {}, "Add a character, or ask the assistant for a scene."));
+    outlinerEl.replaceChildren(...items);
+  }
+
+  function depth(joint) {
+    const PARENT = { Spine: "Hips", Chest: "Spine", Neck: "Chest", Head: "Neck", LeftShoulder: "Chest", RightShoulder: "Chest", LeftArm: "LeftShoulder", RightArm: "RightShoulder", LeftForeArm: "LeftArm", RightForeArm: "RightArm", LeftHand: "LeftForeArm", RightHand: "RightForeArm", LeftUpLeg: "Hips", RightUpLeg: "Hips", LeftLeg: "LeftUpLeg", RightLeg: "RightUpLeg", LeftFoot: "LeftLeg", RightFoot: "RightLeg", LeftToe: "LeftFoot", RightToe: "RightFoot" };
+    let d = 0;
+    for (let j = PARENT[joint]; j; j = PARENT[j]) d++;
+    return Math.min(d, 5);
+  }
+
+  /** Somewhere free in front of the camera's target, for a new character or asset. */
+  function freeSpot() {
+    const t = stage.orbit.target;
+    const taken = [...stage.characters.map((c) => c.root.position), ...stage.props.map((p) => p.position)];
+    for (let ring = 0; ring < 6; ring++) {
+      for (let i = 0; i < Math.max(1, ring * 6); i++) {
+        const a = (i / Math.max(1, ring * 6)) * Math.PI * 2;
+        const x = t.x + Math.cos(a) * ring * 0.9;
+        const z = t.z + Math.sin(a) * ring * 0.9;
+        if (taken.every((p) => Math.hypot(p.x - x, p.z - z) > 0.8)) return [x, 0, z];
+      }
+    }
+    return [t.x, 0, t.z];
+  }
+
+  let tab = "poses";
+  let poseCat = "Stand";
+  let assetCat = "Furniture";
+  addEl.replaceChildren(
+    el("button.ctl-tile", { type: "button", title: "Add a character", "aria-label": "Add a character", on: { click: () => stage.addCharacter({ at: freeSpot() }) } }, sprite("character-add")),
+    el("button.ctl-tile.is-wide", { type: "button", title: "Blockout assets", "aria-pressed": "false", on: { click: () => ((tab = "assets"), library()) } }, sprite("asset-library"), el("span", {}, "Assets")),
+  );
+
+  // ---------------------------------------------------------------- poses and assets
+
+  let saving = false;
+  function library() {
+    addEl.lastChild.setAttribute("aria-pressed", String(tab === "assets"));
+    const tabs = el("div.ctl-tabs", { role: "tablist" },
+      ...[["poses", "Poses"], ["assets", "Assets"]].map(([id, label]) =>
+        el("button", { type: "button", role: "tab", "aria-selected": String(tab === id), on: { click: () => ((tab = id), library()) } }, label)));
+    if (tab === "poses") {
+      const target = stage.selection.character;
+      const list = poseCat === "Mine" ? SAVED : POSES.filter((p) => p.category === poseCat);
+      const chips = el("div.ctl-chips", {},
+        ...POSE_CATEGORIES.map((c) => el("button.ctl-chip-key", { type: "button", "aria-pressed": String(poseCat === c), on: { click: () => ((poseCat = c), library()) } }, c)),
+        el("button.ctl-mini.ctl-save", { type: "button", title: target ? "Save this pose" : "Save the pose — select a character first", "aria-label": "Save the pose", disabled: !target, on: { click: () => ((saving = !saving), library()) } }, sprite("pose-save")));
+      const form = saving && target ? savePoseForm(target) : null;
+      const grid = el("div.ctl-poses", {}, ...list.map((p) =>
+        el("div.ctl-pose-wrap", {},
+          el("button.ctl-pose", { type: "button", title: target ? p.name : `${p.name} — select a character first`, "aria-label": p.name, disabled: !target, on: { click: () => stage.applyPose(p.id) } },
+            el("img", { src: stage.poseThumbnail(p.joints, { quaternions: p.quaternions }), alt: "", draggable: false })),
+          p.category === "Mine" ? el("button.ctl-mini.ctl-pose-x", { type: "button", title: "Forget this pose", "aria-label": `Forget ${p.name}`, on: { click: () => forgetPose(p.id) } }, icon("close")) : null)));
+      if (!list.length) grid.append(el("p.ctl-empty", {}, poseCat === "Mine" ? "Pose a character, then save it here." : "No poses here."));
+      libraryEl.replaceChildren(tabs, chips, ...(form ? [form] : []), grid);
+    } else {
+      const chips = el("div.ctl-chips", {}, ...ASSET_CATEGORIES.map((c) => el("button.ctl-chip-key", { type: "button", "aria-pressed": String(assetCat === c), on: { click: () => ((assetCat = c), library()) } }, c)));
+      const grid = el("div.ctl-assets", {}, ...ASSETS.filter((a) => a.category === assetCat).map((a) =>
+        el("button.ctl-asset", { type: "button", title: `Add ${a.name.toLowerCase()}`, on: { click: () => stage.addProp(a.type, freeSpot()) } }, sprite(a.icon), el("span", {}, a.name))));
+      libraryEl.replaceChildren(tabs, chips, grid);
+    }
+  }
+
+  function savePoseForm(character) {
+    const input = el("input.field.ctl-pose-name", { placeholder: "Name the pose", maxLength: 40, value: character.posed && character.posed !== "custom" ? "" : "" });
+    const save = async () => {
+      const name = input.value.trim() || `Pose ${SAVED.length + 1}`;
+      const res = await fetch("api/control/poses", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, quaternions: character.getFinalPose() }) });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) return toast(body.error ?? "The pose was not saved.", { tone: "crit" });
+      setSaved(body.poses);
+      saving = false;
+      poseCat = "Mine";
+      library();
+      toast(`Saved "${name}" to your poses.`);
+    };
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") save();
+      if (e.key === "Escape") ((saving = false), library());
+      e.stopPropagation();
+    });
+    requestAnimationFrame(() => input.focus());
+    return el("div.ctl-pose-form", {}, input, el("button.key.is-sm.is-primary", { type: "button", on: { click: save } }, "Save"));
+  }
+
+  async function forgetPose(id) {
+    const res = await fetch(`api/control/poses/${encodeURIComponent(id)}`, { method: "DELETE" });
+    const body = await res.json().catch(() => ({}));
+    if (res.ok) setSaved(body.poses);
+    library();
+  }
+
+  fetch("api/control/poses").then((r) => r.json()).then((b) => (setSaved(b.poses), library())).catch(() => {});
+
+  // ---------------------------------------------------------------- viewport: channels, tools, hint
+
+  function channelPill() {
+    channelsPill.replaceChildren(...CHANNELS.map(([id, label], i) =>
+      el("button.ctl-channel", { type: "button", "aria-pressed": String(stage.channel === id), title: label, "data-tooltip-key": String(i + 1), "aria-label": label, on: { click: () => stage.setChannel(id) } },
+        sprite(CHANNEL_ICON[id]), el("span", {}, label))));
+  }
+
+  function tools() {
+    const sel = stage.selection;
+    const key = (ic, label, extra = {}) => el("button.ctl-tool", { type: "button", "aria-label": label, title: label, ...extra }, sprite(ic));
+    toolsEl.replaceChildren(
+      ...TOOLS.map(([id, ic, label, k]) => key(ic, label, { "aria-pressed": String(stage.tool === id), "data-tooltip-key": k, on: { click: () => stage.setTool(id) } })),
+      el("span.ctl-sep"),
+      key("flip-h", "Mirror the pose", { "data-tooltip-key": "M", disabled: !sel.character, on: { click: () => stage.mirror() } }),
+      key("pose-rest", "Back to standing", { disabled: !sel.character, on: { click: () => stage.resetPose() } }),
+      key("copy", "Duplicate", { "data-tooltip-key": "Ctrl D", disabled: !sel.character && !sel.prop, on: { click: () => stage.duplicate() } }),
+      el("span.ctl-sep"),
+      key("edit-undo", "Undo", { "data-tooltip-key": "Ctrl Z", disabled: stage.history.length < 2, on: { click: () => stage.undo() } }),
+      key("edit-redo", "Redo", { "data-tooltip-key": "Ctrl Shift Z", disabled: !stage.future.length, on: { click: () => stage.redo() } }),
+    );
+    const hint = !stage.characters.length && !stage.props.length ? "Add a character, or ask the assistant for a scene"
+      : !sel.character && !sel.prop ? "Click a body or a prop"
+      : stage.tool === "rotate" && sel.character && !sel.joint ? "Click a body part to turn its joint"
+      : stage.tool === "move" && sel.character ? "Drag the yellow handles to place a hand or foot"
+      : "";
+    hintEl.textContent = hint;
+    hintEl.hidden = !hint;
+  }
+
+  // ---------------------------------------------------------------- timeline
+
+  let pickedKey = null;
+  function timeline() {
+    const D = stage.duration;
+    const sel = stage.selection;
+    const selTarget = sel.character ? { character: sel.character } : sel.prop ? { prop: sel.prop } : null;
+    const tracks = stage.tracks();
+    if (selTarget && !tracks.some((t) => (t.target.character ?? t.target.prop) === (selTarget.character ?? selTarget.prop))) {
+      tracks.push({ target: selTarget, id: "sel", name: sel.character?.name ?? sel.prop.userData.label, color: sel.character ? `#${sel.character.color.getHexString()}` : undefined, keys: [] });
+    }
+    const keyTarget = selTarget ?? { camera: true };
+    const duration = el("input.ctl-duration", { type: "number", min: 1, max: 20, step: 0.5, value: D, "aria-label": "Length in seconds", on: { change: (e) => stage.setDuration(Number(e.target.value) || 5) } });
+    const transport = el("div.ctl-transport", {},
+      el("button.ctl-tool", { type: "button", "aria-label": stage.playing ? "Pause" : "Play", title: stage.playing ? "Pause" : "Play", "data-tooltip-key": "Space", on: { click: () => stage.play() } }, icon(stage.playing ? "pause" : "play")),
+      el("span.ctl-time", { "data-time": "" }, `${fmt(stage.time)} / ${fmt(D)}`),
+      el("span.spacer"),
+      el("button.ctl-tool", { type: "button", "aria-pressed": String(stage.autoKey), title: "Auto-key — edits to anything with keys are recorded at the playhead", "aria-label": "Auto-key", on: { click: () => ((stage.autoKey = !stage.autoKey), timeline()) } }, sprite("keyframe-auto")),
+      el("button.ctl-tool", { type: "button", title: `Key ${keyTarget.camera ? "the camera" : sel.character?.name ?? sel.prop?.userData.label} at the playhead`, "data-tooltip-key": "K", "aria-label": "Key", on: { click: () => stage.key(keyTarget) } }, sprite("keyframe")),
+      el("button.ctl-tool", { type: "button", title: "Remove the picked key", "aria-label": "Remove the key", disabled: !pickedKey, on: { click: () => pickedKey && (stage.removeKey(pickedKey.target, pickedKey.t), (pickedKey = null)) } }, icon("trash")),
+      el("label.ctl-length", { title: "Length of the shot" }, duration, el("span", {}, "s")));
+    // the ruler: ticks every half second, numbered every second (or every two on a long shot)
+    const ruler = el("div.ctl-ruler", { "aria-hidden": "true" });
+    const step = D > 10 ? 2 : 1;
+    for (let t = 0; t <= D + 1e-6; t += 0.5) {
+      const major = Math.abs(t / step - Math.round(t / step)) < 1e-6;
+      ruler.append(el(`i${major ? ".is-major" : ""}`, { style: { left: `${(t / D) * 100}%` } }, major ? el("b", {}, t.toFixed(1)) : null));
+    }
+    const lane = (t) => {
+      const keys = t.keys.map((k) => el("button.ctl-key", {
+        type: "button",
+        className: pickedKey && pickedKey.id === t.id && Math.abs(pickedKey.t - k.t) < 1e-3 ? "is-picked" : "",
+        style: { left: `${(k.t / D) * 100}%`, ...(t.color ? { "--key": t.color } : {}) },
+        title: `${t.name} · ${k.t.toFixed(2)} s`,
+        "aria-label": `${t.name} key at ${k.t.toFixed(2)} seconds`,
+        on: { click: (e) => (e.stopPropagation(), (pickedKey = { id: t.id, target: t.target, t: k.t }), stage.setTime(k.t), timeline()) },
+      }));
+      return el("div.ctl-track", { className: t.target.camera ? "is-camera" : "" },
+        el("span.ctl-track-name", {}, t.color ? el("span.ctl-chip", { style: { background: t.color } }) : sprite("scene-camera"), el("span", {}, t.name)),
+        el("div.ctl-lane", { style: t.color ? { "--key": t.color } : {} }, ...keys));
+    };
+    const head = el("div.ctl-playhead", { style: { "--t": String(stage.time / D) } });
+    const scrub = el("div.ctl-scrub", {}, ruler, ...tracks.map(lane), head);
+    // scrubbing: press and drag anywhere on the ruler or the lanes
+    scrub.addEventListener("pointerdown", (e) => {
+      if (e.target.closest(".ctl-key")) return;
+      const area = scrub.querySelector(".ctl-ruler").getBoundingClientRect();
+      const seek = (x) => stage.setTime(((x - area.left) / area.width) * D);
+      seek(e.clientX);
+      scrub.setPointerCapture(e.pointerId);
+      const move = (m) => seek(m.clientX);
+      scrub.addEventListener("pointermove", move);
+      scrub.addEventListener("pointerup", () => scrub.removeEventListener("pointermove", move), { once: true });
+    });
+    timelineEl.replaceChildren(transport, scrub);
+  }
+  /** Just the playhead and the readout, when only the time moved. */
+  function playhead() {
+    const head = timelineEl.querySelector(".ctl-playhead");
+    if (head) head.style.setProperty("--t", String(stage.time / stage.duration));
+    const readout = timelineEl.querySelector("[data-time]");
+    if (readout) readout.textContent = `${fmt(stage.time)} / ${fmt(stage.duration)}`;
+  }
+
+  // ---------------------------------------------------------------- camera and frame
+
+  let snapTimer = 0;
+  function snaps() {
+    clearTimeout(snapTimer);
+    // the tiles show the scene from each angle; they follow the pose, a moment after it settles
+    snapTimer = setTimeout(() => {
+      if (stage.playing) return;
+      const c = stage.selection.character ?? stage.characters[0];
+      snapsEl.replaceChildren(...SNAPS.map(([id, label]) => {
+        const pose = c ? stage.snapPose(id, c) : null;
+        return el("button.ctl-snap", { type: "button", title: label, "aria-pressed": String(stage.lastSnap === id), disabled: !c, on: { click: () => stage.snap(id) } },
+          el("span.ctl-snap-pic", {}, pose ? el("img", { src: stage.thumbnail(pose, { width: 128, height: 72 }), alt: "", draggable: false }) : sprite("scene-render")),
+          el("span.ctl-snap-name", {}, label));
+      }));
+    }, 140);
+  }
+
+  focal.addEventListener("input", () => stage.setFocal(Number(focal.value)));
+  focal.addEventListener("change", () => stage.commit());
+
+  function frame() {
+    focal.value = String(stage.focal);
+    focalOut.textContent = `${stage.focal} mm`;
+    const active = stage.cameraKeys.length ? (stage.handheld ? "handheld" : stage.lastMove) : "locked";
+    movesEl.replaceChildren(...MOVE_KEYS.map(([id, ic]) => {
+      const label = MOVES.find(([m]) => m === id)?.[1] ?? id;
+      return el("button.ctl-move", { type: "button", "aria-pressed": String(active === id), title: `${label} — from the camera now to the end of the shot`, "aria-label": label, on: { click: () => stage.cameraMove(id) } }, sprite(ic));
+    }));
+    ratiosEl.replaceChildren(...Object.keys(RATIOS).map((r) =>
+      el("button.ctl-ratio", { type: "button", "aria-pressed": String(stage.ratio === r), title: r, "aria-label": r, on: { click: () => (stage.setRatio(r), stage.commit()) } },
+        sprite(`ratio-${r.replace(":", "-")}`), el("span", {}, r))));
+    guidesEl.replaceChildren(
+      toggle("Thirds", stage.guides.thirds, (v) => stage.setGuides({ thirds: v })),
+      toggle("Safe frame", stage.guides.safe, (v) => stage.setGuides({ safe: v })));
+  }
+
+  function toggle(label, on, set) {
+    return el("button.ctl-toggle", { type: "button", "aria-pressed": String(on), on: { click: () => set(!on) } }, el("span.ctl-box"), label);
+  }
+
+  // ---------------------------------------------------------------- the selection
+
+  let advanced = false;
+  /** A slider with its readout: it shows the change live and commits once let go. */
+  function slider([key, label, min, max, step = 1, unit = ""], value, set) {
+    const out = el("output", {}, format(value, step, unit));
+    const input = el("input", { type: "range", min, max, step, value, "aria-label": label });
+    input.addEventListener("input", () => ((out.textContent = format(Number(input.value), step, unit)), set(Number(input.value), false)));
+    input.addEventListener("change", () => set(Number(input.value), true));
+    input.addEventListener("dblclick", () => set(key === "height" ? 1.78 : key in { build: 1, head: 1, shoulders: 1, hips: 1, waist: 1, chest: 1, belly: 1, legs: 1, arms: 1 } ? 1 : 0, true));
+    return el("label.ctl-slider", { title: `${label} — double-click to reset` }, el("span", {}, label), input, out);
+  }
+  const format = (v, step, unit) => (unit === "m" ? `${v.toFixed(2)} m` : unit === "°" ? `${Math.round(v)}°` : step < 1 ? v.toFixed(2) : String(Math.round(v)));
+
+  function selected() {
+    const { character, joint, prop } = stage.selection;
+    if (!character && !prop) return selectedEl.replaceChildren(el("p.ctl-empty", {}, "Nothing selected. Click a body or a prop."));
+    const target = character ? { character } : { prop };
+    const name = el("input.ctl-name-field", {
+      value: character?.name ?? prop.userData.label, maxLength: 40, "aria-label": "Name",
+      on: { change: (e) => stage.rename(target, e.target.value), keydown: (e) => (e.stopPropagation(), e.key === "Enter" && e.target.blur()) },
+    });
+    const head = el("div.ctl-sel-head", {}, name, el("span.ctl-mini.ctl-glyph", { title: "Rename" }, icon("pencil")));
+    if (prop) {
+      const def = assetByType(prop.userData.type);
+      const sliders = (def?.params ?? []).map((p) => slider([p[0], p[1], p[2], p[3], p[4], p[0] === "open" ? "°" : p[0] === "steps" ? "" : "m"],
+        prop.userData.params[p[0]], (v, commit) => stage.setPropParams(prop, { [p[0]]: v }, { commit })));
+      return selectedEl.replaceChildren(head, el("p.ctl-sub", {}, def?.name ?? "Prop"), el("div.ctl-sliders", {}, ...sliders));
+    }
+    if (joint) {
+      const euler = stage.jointEuler();
+      return selectedEl.replaceChildren(head,
+        el("p.ctl-sub", {}, JOINT_LABELS[joint]),
+        el("div.ctl-xyz", {}, ...["x", "y", "z"].map((a, i) =>
+          el("label.ctl-num", {}, el("span", {}, a.toUpperCase()),
+            el("input", { type: "number", step: 1, value: euler[i], "aria-label": `${JOINT_LABELS[joint]} ${a}`, on: { change: (e) => stage.setJointEuler(a, Number(e.target.value) || 0), keydown: (e) => e.stopPropagation() } }),
+            el("i", {}, "°")))),
+        el("button.key.is-sm.is-quiet", { type: "button", on: { click: () => stage.select({ character }) } }, "Whole body"));
+    }
+    const hex = `#${character.color.getHexString()}`;
+    const swatches = el("div.ctl-swatches", { role: "group", "aria-label": "Colour" }, ...PALETTE.map(([c, cname]) =>
+      el("button.ctl-swatch", { type: "button", "aria-pressed": String(hex === c), title: cname, "aria-label": cname, style: { "--swatch": c }, on: { click: () => stage.setColor(character, c) } })));
+    const bodies = el("div.ctl-bodies", { role: "group", "aria-label": "Body type" }, ...BODY_TYPES.map((b) =>
+      el("button.ctl-body", { type: "button", "aria-pressed": String(character.body === b.id), title: b.name, on: { click: () => stage.setBody(character, b.id) } }, sprite(`body-${b.id}`), el("span", {}, b.name))));
+    const bodyKeys = advanced ? BODY_SLIDERS.map(([k]) => k) : BODY_MAIN;
+    const poseKeys = advanced ? PARAMS.map(([k]) => k) : POSE_MAIN;
+    const bodyCol = el("div.ctl-sliders", {}, el("span.ctl-label.is-sub", {}, "Body"), ...bodyKeys.map((k) => {
+      const def = BODY_SLIDERS.find(([key]) => key === k);
+      return slider(def, character.profile[k] ?? 1, (v, commit) => stage.setProfile(character, { [k]: v }, { commit }));
+    }));
+    const poseCol = el("div.ctl-sliders", {}, el("span.ctl-label.is-sub", {}, "Pose"), ...poseKeys.map((k) => {
+      const [key, label, min, max] = PARAMS.find(([p]) => p === k);
+      return slider([key, label, min, max, key === "crouch" ? 0.01 : 1, key === "crouch" ? "" : "°"], character.params[k] ?? 0, (v, commit) => stage.setParams({ [k]: v }, character, { commit }));
+    }));
+    selectedEl.replaceChildren(head, swatches,
+      el("span.ctl-label.is-sub", {}, "Body type"), bodies,
+      el("div.ctl-columns", {}, bodyCol, poseCol),
+      el("div.ctl-row", {},
+        el("button.key.is-sm.is-quiet", { type: "button", "aria-pressed": String(advanced), on: { click: () => ((advanced = !advanced), selected()) } }, advanced ? "Fewer" : "Advanced"),
+        el("button.key.is-sm.is-quiet", { type: "button", title: "Pose sliders back to zero", on: { click: () => ((character.params = {}), stage.setParams({}, character)) } }, icon("remix"), "Reset")));
+  }
+
+  function readouts() {
+    const euler = stage.jointEuler();
+    if (!euler) return;
+    selectedEl.querySelectorAll(".ctl-num input").forEach((input, i) => {
+      if (document.activeElement !== input) input.value = String(euler[i]);
+    });
+  }
+
+  // ---------------------------------------------------------------- channels: previews and renders
+
+  let previewTimer = 0;
+  function previews() {
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(() => {
+      if (stage.playing || root.closest("[hidden]")) return;
+      previewsEl.replaceChildren(...PASSES.map((id) => {
+        const label = CHANNELS.find(([c]) => c === id)[1];
+        return el("button.ctl-preview", { type: "button", "aria-pressed": String(stage.channel === id), title: `${label} — show it in the viewport`, on: { click: () => stage.setChannel(stage.channel === id ? "clay" : id) } },
+          el("img", { src: stage.frameStill(id, { long: 240 }), alt: "", draggable: false }), el("span", {}, label));
+      }));
+    }, 260);
+  }
+
+  let videoChannel = "depth";
+  let rendering = false;
+  function renderKeys() {
+    renderEl.replaceChildren(
+      el("button.key.is-primary.ctl-render-refs", { type: "button", disabled: rendering || !stage.characters.length && !stage.props.length, on: { click: renderReferences } }, sprite("scene-render"), "Render references"),
+      el("div.ctl-video-row", {},
+        el("div.segment.is-sm", { role: "group", "aria-label": "Video channel" }, ...["depth", "pose", "lines", "clay"].map((c) =>
+          el("button", { type: "button", "aria-pressed": String(videoChannel === c), on: { click: () => ((videoChannel = c), renderKeys()) } }, CHANNELS.find(([id]) => id === c)[1]))),
+        el("button.key.ctl-render-video", { type: "button", disabled: rendering || !stage.characters.length && !stage.props.length, on: { click: renderVideo } }, icon("video"), "Render video")));
+  }
+
+  async function upload(dataUrl, name) {
+    const blob = await (await fetch(dataUrl)).blob();
+    const res = await fetch(`api/photos?name=${encodeURIComponent(name)}`, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Upload failed.");
+    return res.json();
+  }
+
+  /** Every channel of the frame as it is now, full size, into the Library. */
+  async function renderReferences() {
+    rendering = true;
+    renderKeys();
+    try {
+      const shot = (stage.characters[0]?.name ?? "stage").toLowerCase();
+      const passes = ["clay", ...PASSES];
+      for (const id of passes) await upload(stage.frameStill(id, { long: 1536 }), `stage ${shot} ${id}`);
+      toast(`${passes.length} references are in the Library: clay, ${PASSES.join(", ")}.`, { action: { label: "Open Library", run: () => go("library") } });
+    } catch (error) {
+      toast(error.message, { tone: "crit" });
+    } finally {
+      rendering = false;
+      renderKeys();
+    }
+  }
+
+  /** The timeline, frame by frame, in one channel, as a video for motion control. */
+  async function renderVideo() {
+    rendering = true;
+    renderKeys();
+    const was = stage.time;
+    try {
+      const frames = [];
+      const count = Math.round(stage.duration * stage.fps) + 1;
+      for (let f = 0; f < count; f++) {
+        stage.time = f / stage.fps;
+        stage.evaluate();
+        frames.push(stage.frameStill(videoChannel, { long: 768, type: "image/jpeg", quality: 0.92 }));
+        if (f % 12 === 0) toast(`Rendering ${videoChannel}… ${Math.round((f / count) * 100)}%`);
+      }
+      const label = CHANNELS.find(([id]) => id === videoChannel)[1];
+      const res = await fetch("api/control/video", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ frames, fps: stage.fps, name: `Stage ${label.toLowerCase()}` }) });
+      const video = await res.json();
+      if (!res.ok) throw new Error(video.error ?? "The video was not made.");
+      toast(`A ${stage.duration} s ${label.toLowerCase()} video is ready.`, { action: { label: "Use in Shot", run: () => useVideo(video, `Stage ${label.toLowerCase()}`, videoChannel) } });
+    } catch (error) {
+      toast(error.message, { tone: "crit" });
+    } finally {
+      stage.setTime(was);
+      rendering = false;
+      renderKeys();
+    }
+  }
+
+  // ---------------------------------------------------------------- keys
+
+  document.addEventListener("keydown", (e) => {
+    // only while the Stage is on screen, and never while typing or over a window
+    if (root.closest("[hidden]") || document.body.classList.contains("has-window")) return;
+    if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
+    const k = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && k === "z") return e.preventDefault(), e.shiftKey ? stage.redo() : stage.undo();
+    if ((e.ctrlKey || e.metaKey) && k === "y") return e.preventDefault(), stage.redo();
+    if ((e.ctrlKey || e.metaKey) && k === "d") return e.preventDefault(), stage.duplicate();
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const tool = { q: "select", e: "rotate", w: "move", r: "scale" }[k];
+    if (tool) return stage.setTool(tool);
+    if (k === " ") return e.preventDefault(), stage.play();
+    if (k === "k") return stage.key(stage.selection.character ? { character: stage.selection.character } : stage.selection.prop ? { prop: stage.selection.prop } : { camera: true });
+    if (k === "m") return stage.mirror();
+    if (k === "f") return stage.snap("front");
+    if (/^[1-7]$/.test(k)) return stage.setChannel(CHANNELS[Number(k) - 1][0]);
+    if (k === "delete" || k === "backspace") return pickedKey ? (stage.removeKey(pickedKey.target, pickedKey.t), (pickedKey = null)) : stage.remove();
+    if (k === "escape") return stage.select({});
+  });
+
+  // ---------------------------------------------------------------- wiring
+
+  stage.on((kind) => {
+    if (kind === "selection") (outliner(), tools(), selected(), snaps(), library(), timeline());
+    else if (kind === "pose") (readouts(), snaps(), previews());
+    else if (kind === "scene") (outliner(), tools(), selected(), snaps(), library(), frame(), timeline(), previews(), renderKeys());
+    else if (kind === "history") (tools(), outliner(), timeline(), previews(), renderKeys(), frame());
+    else if (kind === "tool") (tools(), outliner());
+    else if (kind === "frame") (frame(), snaps(), previews());
+    else if (kind === "camera") (previews(), frame());
+    else if (kind === "channel") (channelPill(), previews());
+    else if (kind === "timeline") (timeline(), frame());
+    else if (kind === "time") (playhead(), stage.playing ? null : previews());
+  });
+
+  // an agent can stage the scene through the server; the lamp says whether the link is up and what it is doing
+  connectRemote(stage, {
+    onActivity({ connected, op }) {
+      if (connected) linkLamp.dataset.tone = op ? "busy" : "ok";
+      else delete linkLamp.dataset.tone;
+      linkLamp.dataset.tooltip = !connected ? "Agent link — waiting for the server" : op ? `Agent link — ${op.replace(/_/g, " ")}` : "Agent link — ready for commands";
+    },
+  });
+
+  // a first scene to block: two people and a table
+  const a = stage.addCharacter({ pose: "talk", at: [-0.75, 0, 0.1], name: "Hero" });
+  const b = stage.addCharacter({ pose: "arms-crossed", at: [0.75, 0, -0.1], name: "Rival", body: "woman" });
+  a.root.rotation.y = 1.2;
+  b.root.rotation.y = -1.5;
+  stage.addProp("table", [0, 0, -1.4]);
+  stage.select({});
+  stage.history = [];
+  stage.commit();
+  stage.snap("three-quarter-left", null);
+  channelPill();
+  frame();
+  outliner();
+  tools();
+  selected();
+  library();
+  timeline();
+  snaps();
+  previews();
+  renderKeys();
+  return { stage, ops, describe, chatSlot, root };
+}

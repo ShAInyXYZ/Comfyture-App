@@ -8,11 +8,15 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/material.css">
   <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/control.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+  </script>
 </head>
 <body>
   <header class="top">
     <div class="top-in">
-      <a class="wordmark" href="#/create" aria-label="Comfyture"><img src="brand/wordmark.svg" alt="Comfyture" draggable="false"></a>
+      <a class="wordmark" href="#/shot" aria-label="Comfyture"><img src="brand/wordmark.svg" alt="Comfyture" draggable="false"></a>
       <nav class="sections" id="nav" aria-label="Sections"></nav>
       <div class="top-tools">
         <span class="cloud" id="cloud"></span>
@@ -21,8 +25,8 @@
     </div>
   </header>
 
-  <!-- Create: the desk, one shot at a time, with a tab for every shot -->
-  <div class="page" id="page-create" data-page="create">
+  <!-- Shot: the desk, one shot at a time, with a tab for every shot -->
+  <div class="page" id="page-shot" data-page="shot">
     <div class="subbar">
       <div class="subbar-in">
         <nav class="tabs" id="tabs" role="tablist" aria-label="Shots"></nav>
@@ -51,9 +55,10 @@
     <section class="chat-float" id="assistant" aria-label="Assistant"></section>
   </div>
 
-  <main class="page page-wide" id="page-director" data-page="director" hidden></main>
+  <main class="page page-wide" id="page-story" data-page="story" hidden></main>
+  <main class="page page-stage" id="page-stage" data-page="stage" hidden></main>
   <main class="page page-wide" id="page-library" data-page="library" hidden></main>
-  <main class="page page-wide" id="page-edit" data-page="edit" hidden></main>
+  <main class="page page-wide" id="page-cut" data-page="cut" hidden></main>
 
   <!-- the Image window: a floating window over a dimmed page, opened from the cards and the Library -->
   <div class="img-layer" id="image" hidden></div>

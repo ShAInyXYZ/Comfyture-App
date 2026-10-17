@@ -47,7 +47,7 @@ function takeCard(run) {
   const media = done
     ? h("video", { src: `${run.video}#t=0.5`, muted: true, loop: true, preload: "metadata", draggable: false })
     : h("img", { src: state.previews.get(run.id) ?? run.frame ?? (run.request.start ? `media/photos/${run.request.start}` : ""), alt: "", draggable: false });
-  const card = h("article.lib-card", { className: picked.has(run.id) ? "is-picked" : "", on: { click: () => (openTake(run.id), go("create")) } },
+  const card = h("article.lib-card", { className: picked.has(run.id) ? "is-picked" : "", on: { click: () => (openTake(run.id), go("shot")) } },
     h("div.lib-thumb", {}, media, done ? pickBox(run.id) : null, h("span.lib-dur", {}, `${takeLength(run).toFixed(1)} s`)),
     h("div.lib-meta", {},
       h("b", {}, run.takes > 1 ? `${run.request.name} · ${run.take}/${run.takes}` : run.request.name),
@@ -80,7 +80,7 @@ function filmCard(film) {
             e.stopPropagation();
             state.edit.clips = film.clips.filter((c) => state.runs.some((r) => r.id === c.id)).map((c) => ({ run: c.id, from: c.from, to: c.to })) ;
             setEdit({ fade: film.transition === "fade", name: film.name });
-            go("edit");
+            go("cut");
           } } }, icon("scissors"), "Edit again")
         : null,
       h("a.key.is-sm.is-icon.is-quiet", { href: `${film.url}?download=comfyture-${slug(film.name)}.mp4`, "aria-label": "Download", title: "Download", on: { click: (e) => e.stopPropagation() } }, icon("download")),
@@ -148,6 +148,6 @@ export function renderLibrary(el) {
         h("button.key.is-quiet", { type: "button", on: { click: () => (picked.clear(), renderLibrary(el)) } }, "Clear"))),
     shown.length
       ? h("div.lib-grid", {}, kind === "takes" ? takes.map(takeCard) : kind === "films" ? films.map(filmCard) : photos.map(imageCard))
-      : h("p.lib-empty", {}, query ? `Nothing matches "${query.trim()}".` : kind === "takes" ? "Takes you roll appear here." : kind === "films" ? "Films you cut in Edit or with the Director appear here." : "Images you upload, generate or paint appear here."),
+      : h("p.lib-empty", {}, query ? `Nothing matches "${query.trim()}".` : kind === "takes" ? "Takes you roll appear here." : kind === "films" ? "Films you cut in Cut or make in Story appear here." : "Images you upload, generate or paint appear here."),
   );
 }

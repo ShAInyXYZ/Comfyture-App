@@ -80,7 +80,7 @@ function togglePlay() {
 }
 
 function syncPlay() {
-  const key = document.querySelector("#page-edit [data-act=play]");
+  const key = document.querySelector("#page-cut [data-act=play]");
   if (!key) return;
   const on = !video().paused && player.playing;
   key.replaceChildren(icon(on ? "pause" : "play"));
@@ -88,12 +88,12 @@ function syncPlay() {
 }
 
 function highlight() {
-  document.querySelectorAll("#page-edit .clip").forEach((c, i) => c.classList.toggle("is-playing", i === player.index && player.playing));
-  document.querySelectorAll("#page-edit .seg-clip").forEach((c, i) => c.classList.toggle("is-playing", i === player.index));
+  document.querySelectorAll("#page-cut .clip").forEach((c, i) => c.classList.toggle("is-playing", i === player.index && player.playing));
+  document.querySelectorAll("#page-cut .seg-clip").forEach((c, i) => c.classList.toggle("is-playing", i === player.index));
 }
 
 function moveHead() {
-  const head = document.querySelector("#page-edit .edit-head");
+  const head = document.querySelector("#page-cut .edit-head");
   if (!head) return;
   const lens = state.edit.clips.map(clipLen);
   const total = lens.reduce((t, l) => t + l, 0) || 1;
@@ -112,9 +112,9 @@ function trimRow(clip, i) {
     label.textContent = `${fmt(clip.from)} → ${fmt(clip.to ?? length)}`;
     const card = label.closest(".clip");
     card?.querySelector(".clip-len")?.replaceChildren(fmt(clipLen(clip)));
-    const seg = document.querySelectorAll("#page-edit .seg-clip")[i];
+    const seg = document.querySelectorAll("#page-cut .seg-clip")[i];
     if (seg) seg.style.flexGrow = String(clipLen(clip));
-    document.querySelector("#page-edit .edit-total")?.replaceChildren(fmt(totalLength()));
+    document.querySelector("#page-cut .edit-total")?.replaceChildren(fmt(totalLength()));
   };
   const from = h("input", {
     type: "range", min: 0, max: length, step: 0.1, value: clip.from, "aria-label": "Start of the clip",
@@ -240,7 +240,7 @@ export function renderEdit(el) {
               icon("scissors"),
               h("b", {}, "Nothing to cut yet"),
               h("p", {}, "Send the takes of your Create tabs here, or pick takes below or in the Library."),
-              h("a.key.is-primary", { href: "#/create" }, "Back to Create")),
+              h("a.key.is-primary", { href: "#/shot" }, "Back to Shot")),
         picker(),
       ),
       h("aside.edit-side", {},

@@ -1,6 +1,11 @@
 import { h, icon, sprite } from "../dom.js";
-import { state, ask, undoAssistant, clearChat, attach, detach, mentions, mentionables, adopt } from "../store.js";
+import { state, ask, askStage, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt } from "../store.js";
 import { view } from "../viewer.js";
+import { currentPage } from "../router.js";
+
+// on the Stage the bar stages a scene; on the Shot it sets up the shot: one bar, two conversations
+const onStage = () => currentPage() === "stage";
+const PLACEHOLDER = { shot: "Describe the shot · @ for a file", stage: "Stage a scene — two people arguing by a wall, low angle" };
 
 const KIND_ICON = { video: "video", audio: "sound" };
 
@@ -50,7 +55,7 @@ function insertMention(input, name) {
 /** The picker over the composer: the files whose names start with what follows the @. */
 function updatePicker() {
   const c = composer;
-  const at = mentionAt(c.input);
+  const at = onStage() ? null : mentionAt(c.input);
   // the conversation's files first, then the Library: takes, films, images, presets
   const q = at?.query ?? "";
   const found = at ? mentionables().filter((f) => f.name.startsWith(q) || (q && f.title?.toLowerCase().includes(q))) : [];
@@ -100,13 +105,14 @@ function makeComposer() {
   };
   const send = () => {
     const text = input.value;
-    if (!text.trim() || state.chat.busy) return;
+    if (!text.trim() || (onStage() ? state.stageChat.busy : state.chat.busy)) return;
     input.value = "";
     grow();
     composer.picker.hidden = true;
     markMentioned();
     open = true;
-    ask(text);
+    if (onStage()) askStage(text);
+    else ask(text);
   };
   input.addEventListener("input", () => (grow(), updatePicker(), markMentioned()));
   input.addEventListener("click", updatePicker);
@@ -143,7 +149,7 @@ function makeComposer() {
     }
   });
   fileInput.addEventListener("change", () => (attach([...fileInput.files]), (fileInput.value = "")));
-  const clip = h("button.composer-key", { type: "button", title: "Attach — images, videos, sounds or text; or drop them here", "aria-label": "Attach files", on: { click: () => fileInput.click() } }, sprite("paperclip"));
+  const clip = h("button.composer-key.clip-key", { type: "button", title: "Attach — images, videos, sounds or text; or drop them here", "aria-label": "Attach files", on: { click: () => fileInput.click() } }, sprite("paperclip"));
   const key = h("button.send", { type: "button", title: "Send — Enter", "aria-label": "Send", on: { click: send } }, sprite("send"));
   const tray = h("div.file-tray");
   const picker = h("div.mention-picker", { hidden: true, role: "listbox", "aria-label": "Files" });
@@ -180,6 +186,16 @@ function fileChip(f) {
 
 function message(m, last) {
   const files = (m.files ?? []).map((n) => state.chat.files.find((f) => f.name === n)).filter(Boolean);
+  if (m.stage && m.role === "assistant") {
+    return h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
+      h("p", {}, m.text),
+      m.did?.length || m.failed?.length
+        ? h("div.msg-chips", {},
+          ...(m.did ?? []).map((d) => h("span.chip", {}, icon(d === "Undone" ? "remix" : "check"), d)),
+          ...(m.failed ?? []).map((f) => h("span.chip.is-failed", { title: f }, icon("close"), f.split(":")[0].replace(/_/g, " "))))
+        : null,
+      last && m.undo ? h("button.key.is-sm.is-quiet.undo", { type: "button", title: "Put the stage back as it was", on: { click: () => undoStage(m) } }, icon("remix"), "Undo") : null);
+  }
   if (m.role === "user") {
     return h("div.msg.is-user", {},
       h("p", {}, m.text),
@@ -193,11 +209,15 @@ function message(m, last) {
 }
 
 export function renderAssistant(el) {
-  const { messages, busy, files, attaching } = state.chat;
+  const stage = onStage();
+  const { messages, busy } = stage ? state.stageChat : state.chat;
+  const { files, attaching } = state.chat;
   const c = composer ?? makeComposer();
   c.key.disabled = !!busy;
-  c.tray.replaceChildren(...files.map(fileChip), ...(attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
-  c.tray.hidden = !files.length && !attaching;
+  c.input.placeholder = PLACEHOLDER[stage ? "stage" : "shot"];
+  c.tray.replaceChildren(...(stage ? [] : files.map(fileChip)), ...(!stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
+  c.tray.hidden = stage || (!files.length && !attaching);
+  c.el.classList.toggle("is-stage", stage);
   markMentioned();
   // a new answer opens the conversation, so its changes and its Undo are in view
   const answers = messages.filter((m) => m.role === "assistant").length;
@@ -235,7 +255,7 @@ export function renderAssistant(el) {
   }
   // drop files anywhere on the assistant
   el.ondragover = (e) => {
-    if (![...e.dataTransfer.types].includes("Files")) return;
+    if (onStage() || ![...e.dataTransfer.types].includes("Files")) return;
     e.preventDefault();
     el.classList.add("is-drop");
   };

@@ -414,7 +414,7 @@ body { padding: 0 0 .875rem; }
 .typing i:nth-child(3) { animation-delay: .4s; }
 @keyframes typing { 0%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }
 /* outside the fitted desk the page scrolls: leave room so the bar never sits on the last row */
-@media not ((min-width: 1281px) and (min-height: 900px)) { #page-create { padding-bottom: calc(var(--chat-h, 3.5rem) + 2.5rem); } }
+@media not ((min-width: 1281px) and (min-height: 900px)) { #page-shot { padding-bottom: calc(var(--chat-h, 3.5rem) + 2.5rem); } }
 
 /* the bar: the conversation's files ride just above it, as in a chat */
 .composer { position: relative; display: grid; gap: .5rem; }
@@ -910,7 +910,7 @@ body.has-window { overflow: hidden; }
 .step-zero:hover > svg:last-child { transform: translateX(2px); opacity: 1; }
 
 /* on Create the toast stands above the chat bar instead of on it */
-body[data-page="create"]:not(.has-window) .toast { bottom: calc(var(--chat-h, 3.5rem) + 2rem); }
+body[data-page="shot"]:not(.has-window) .toast { bottom: calc(var(--chat-h, 3.5rem) + 2rem); }
 
 /* ---- the other sections: wide pages with a head ---------------------------- */
 

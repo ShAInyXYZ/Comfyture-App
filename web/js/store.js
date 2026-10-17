@@ -6,6 +6,7 @@ import { normalize } from "./photo.js";
 import { emptyShot, PANELS, finalPrompt } from "./script.js";
 import { view } from "./viewer.js";
 import { go, currentPage } from "./router.js";
+import { stageReady } from "./control/link.js";
 
 const KEY = "comfyture.draft.v2";
 const TABS = "comfyture.tabs.v1";
@@ -127,6 +128,8 @@ export const state = {
   draft: null,
   /** The assistant's conversation: {role, text, did?, error?}; busy while it thinks or works. */
   chat: { ...loadChat(), busy: null, attaching: 0 },
+  // the assistant's conversation on the Stage, apart from the shot's
+  stageChat: { messages: [], busy: null },
   /** The Edit page: the clips of the film being cut. */
   edit: loadEdit(),
   /** The image library, newest first. */
@@ -674,7 +677,7 @@ export function addToEdit(...ids) {
   state.edit.clips.push(...have.map((r) => ({ run: r.id, from: 0, to: null })));
   saveEdit();
   changed("edit");
-  toast(`${have.length} take${have.length > 1 ? "s" : ""} added to Edit.`, { action: { label: "Open Edit", run: () => go("edit") } });
+  toast(`${have.length} take${have.length > 1 ? "s" : ""} added to Cut.`, { action: { label: "Open Cut", run: () => go("cut") } });
 }
 
 /** Starts the film from the takes the tabs show, in tab order, and opens Edit. */
@@ -684,7 +687,7 @@ export function editFromTabs() {
   state.edit.clips = takes.map((r) => ({ run: r.id, from: 0, to: null }));
   saveEdit();
   changed("edit");
-  go("edit");
+  go("cut");
 }
 
 export function removeClip(i) {
@@ -1029,7 +1032,7 @@ export function useImage(photo) {
     d.startMode = "photo";
   }, "sources", "monitor", "settings");
   state.ab = "a";
-  go("create");
+  go("shot");
   toast("That image is the start frame now.");
 }
 
@@ -1461,10 +1464,56 @@ export function undoAssistant(message) {
 }
 
 export function clearChat() {
+  if (currentPage() === "stage") {
+    state.stageChat.messages = [];
+    return changed("assistant");
+  }
   state.chat.messages = [];
   state.chat.files = [];
   saveChat();
   changed("assistant");
+}
+
+// -------------------------------------------------------------- the assistant on the Stage
+
+/** Asks the assistant to stage something: it answers with Control commands, run on the stage. */
+export async function askStage(text) {
+  const words = text.trim();
+  const chat = state.stageChat;
+  if (!words || chat.busy) return;
+  chat.messages.push({ role: "user", text: words });
+  chat.busy = "Staging";
+  changed("assistant");
+  try {
+    const [{ stageAssist }, api] = await Promise.all([import("./control/assist.js"), stageReady]);
+    chat.messages.push(await stageAssist(api, chat.messages, (busy) => ((chat.busy = busy), changed("assistant"))));
+  } catch (error) {
+    chat.messages.push({ role: "assistant", stage: true, text: error.message ?? String(error), error: true });
+  } finally {
+    chat.busy = null;
+    changed("assistant");
+  }
+}
+
+/** Puts the stage back as it was before an answer (one step, or two when it mended itself). */
+export async function undoStage(message) {
+  if (!message.undo) return;
+  const { stage } = await stageReady;
+  for (let i = 0; i < (message.steps ?? 1); i++) stage.undo();
+  message.undo = false;
+  message.did = [...(message.did ?? []), "Undone"];
+  changed("assistant");
+}
+
+/** A control video from the Stage becomes the shot's video: its motion drives the shot. */
+export function useStageVideo(video, name, channel) {
+  edit((d) => {
+    // depth, pose and lines are already control passes; a clay render is read for its edges
+    d.video = { ...video, name, mode: "motion", control: channel === "clay" ? "edges" : "ready" };
+    d.startMode = "video";
+  }, "sources", "settings", "monitor");
+  go("shot");
+  toast(`${name} drives the shot's motion. Add a start photo for the look, or let the script set it.`);
 }
 
 // -------------------------------------------------------------- the Image window
@@ -1669,13 +1718,13 @@ export function placePhoto(slot, photo) {
       d.keyframes.push({ photo: p, time: Math.round(d.seconds * 5) / 10, strength: 0.7 });
       d.keyframes.sort((a, b) => a.time - b.time);
     }, "sources", "monitor", "settings");
-    if (currentPage() !== "create") go("create");
+    if (currentPage() !== "shot") go("shot");
     return toast("That picture is a keyframe now, in the middle of the shot.");
   }
   if (slot === "start") state.draft.startMode = "photo";
   putPhoto(slot, p);
   if (slot === "cast" || slot === "prop") attempt(() => cutout(slot, p));
   const where = { start: "the start frame", end: "the end frame", cast: "the cast", prop: "the prop", location: "the place" }[slot];
-  if (currentPage() !== "create") go("create");
+  if (currentPage() !== "shot") go("shot");
   toast(`That picture is ${where} now.`);
 }

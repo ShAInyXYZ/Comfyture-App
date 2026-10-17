@@ -189,6 +189,7 @@ function videoBody() {
           h("div.segment", { role: "group", "aria-label": "Follow" },
             h("button", { type: "button", "aria-pressed": String(v.control === "pose"), on: { click: () => setV({ control: "pose" }) } }, "Body and face"),
             h("button", { type: "button", "aria-pressed": String(v.control === "edges"), on: { click: () => setV({ control: "edges" }) } }, "Shapes and edges"),
+            h("button", { type: "button", "aria-pressed": String(v.control === "ready"), title: "The clip already is a control pass — a depth, pose or line video from the Stage", on: { click: () => setV({ control: "ready" }) } }, "As it is"),
           ),
           d.start
             ? h("div.pair", {}, media(d.start), h("span.hint", {}, "This photo gets the clip's motion. Change it under Photo."))
@@ -376,7 +377,7 @@ export function renderSources(el) {
 /** Paste anywhere outside a text field: it becomes the start frame. */
 export function listenForPaste() {
   document.addEventListener("paste", (e) => {
-    if (e.target.closest?.("input, textarea") || currentPage() !== "create" || state.image.open) return;
+    if (e.target.closest?.("input, textarea") || currentPage() !== "shot" || state.image.open) return;
     const file = imageFrom(e.clipboardData);
     if (file) setFrame("start", file);
   });
