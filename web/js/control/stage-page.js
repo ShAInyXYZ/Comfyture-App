@@ -33,6 +33,9 @@ const fmt = (t) => `${String(Math.floor(t / 60)).padStart(2, "0")}:${(t % 60).to
 const assetIcon = (type) => assetByType(type)?.icon ?? "prop-box";
 
 /** Builds the Stage into `root` and returns the stage and its commands. */
+// what an animal's clips are called on the Stage
+const ANIMAL_POSES = { stand: "Stand", sit: "Sit", lie: "Lie down", walk: "Walk", hop: "Hop" };
+
 export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = () => {} } = {}) {
   // like h(), and a first child may come where the props would (an element, text or a list)
   const el = (tag, props, ...children) =>
@@ -247,7 +250,10 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       // a click puts one on the stage
       const rigTile = (r) => el("button.ctl-pose.ctl-body", { type: "button", title: `Add ${r.name.toLowerCase()} — ${r.height.toFixed(2)} m`, "aria-label": `Add ${r.name.toLowerCase()}`, on: { click: () => stage.addCharacter({ at: freeSpot(), rig: r.id }) } },
         lazyImg(() => stage.poseThumbnail(poseById("stand"), { rig: r.id })));
-      const animals = [...MODELS.rigs.values()];
+      // the baby animals: pieces of the set that hold a pose, added like a character
+      const animals = ASSETS.filter((a) => a.animal).map((a) =>
+        el("button.ctl-pose.ctl-body", { type: "button", title: `Add a ${a.name.toLowerCase()}`, "aria-label": `Add a ${a.name.toLowerCase()}`, on: { click: () => stage.select({ prop: stage.addProp(a.type, freeSpot()) }) } },
+          lazyImg(() => stage.propThumbnail(a.type))));
       const people = el("div.ctl-poses.ctl-cast", {},
         ...BODY_TYPES.map((b) =>
           el("button.ctl-pose.ctl-body", { type: "button", title: `Add ${b.name.toLowerCase()} — ${b.profile.height.toFixed(2)} m`, "aria-label": `Add ${b.name.toLowerCase()}`, on: { click: () => stage.addCharacter({ at: freeSpot(), body: b.id }) } },
@@ -257,7 +263,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
         el("button.ctl-pose.ctl-import", { type: "button", title: "Import a rigged character — GLB, glTF, VRM or FBX; Mixamo, Unreal, VRoid and similar rigs", "aria-label": "Import a rigged character", on: { click: () => bring("character") } }, sprite("character-import")));
       libraryEl.replaceChildren(tabs, el("div.ctl-results", {},
         el("span.ctl-label.is-sub", {}, "People"), people,
-        ...(animals.length ? [el("span.ctl-label.is-sub", {}, "Animals"), el("div.ctl-poses.ctl-cast", {}, ...animals.map(rigTile))] : []),
+        ...(animals.length ? [el("span.ctl-label.is-sub", {}, "Animals"), el("div.ctl-poses.ctl-cast", {}, ...animals)] : []),
         el("span.ctl-label.is-sub", {}, "Yours"), yours));
     } else if (tab === "poses") {
       const target = stage.selection.character;
@@ -286,7 +292,8 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       const fill = () => {
         // what a piece is called and about, and what a body can do with it (sit on it, set things on it, hold it)
         const about = (a) => [a.name, a.type, a.category, ...(a.themes ?? []), ...(a.tags ?? []), ...wordsFor("prop", a.type), a.seat ? "seat sit" : "", a.top ? "surface top" : "", a.holdable ? "hold hand" : ""];
-        const all = ASSETS.filter((a) => !assetQuery || finds(assetQuery, about(a)));
+        // the animals are in Characters
+        const all = ASSETS.filter((a) => !a.animal && (!assetQuery || finds(assetQuery, about(a))));
         const groups = assetCategories().map((c) => [c, all.filter((a) => a.category === c)]).filter(([, list]) => list.length);
         results.replaceChildren(...groups.flatMap(([c, list]) => [
           el("span.ctl-label.is-sub", {}, c === "Mine" ? "Yours" : c),
@@ -481,7 +488,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     const input = el("input", { type: "range", min, max, step, value, "aria-label": label });
     input.addEventListener("input", () => ((out.textContent = format(Number(input.value), step, unit)), set(Number(input.value), false)));
     input.addEventListener("change", () => set(Number(input.value), true));
-    input.addEventListener("dblclick", () => set(key === "height" ? 1.78 : key in { build: 1, head: 1, shoulders: 1, hips: 1, waist: 1, chest: 1, belly: 1, legs: 1, arms: 1 } ? 1 : 0, true));
+    input.addEventListener("dblclick", () => set(key === "height" ? 1.78 : key in { build: 1, head: 1, shoulders: 1, hips: 1, waist: 1, chest: 1, belly: 1, legs: 1, arms: 1, size: 1 } ? 1 : 0, true));
     return el("label.ctl-slider", { title: `${label} — double-click to reset` }, el("span", {}, label), input, out);
   }
   const format = (v, step, unit) => (unit === "m" ? `${v.toFixed(2)} m` : unit === "°" ? `${Math.round(v)}°` : step < 1 ? v.toFixed(2) : String(Math.round(v)));
@@ -509,6 +516,14 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     const head = el("div.ctl-sel-head", {}, name, el("span.ctl-mini.ctl-glyph", { title: "Rename" }, icon("pencil")));
     if (prop) {
       const def = assetByType(prop.userData.type);
+      if (def?.animal) {
+        // an animal: its poses, each drawn, and one size for all of it
+        const poses = el("div.ctl-animal-poses", { role: "group", "aria-label": "Pose" }, ...def.poses.map((p) =>
+          el("button.ctl-pose.ctl-animal-pose", { type: "button", "aria-pressed": String((prop.userData.pose ?? "stand") === p), title: ANIMAL_POSES[p] ?? p, "aria-label": ANIMAL_POSES[p] ?? p, on: { click: () => (stage.setAnimalPose(prop, p), selected()) } },
+            lazyImg(() => stage.propThumbnail(def.type, { pose: p, width: 96, height: 84 })))));
+        const size = slider(["size", "Size", 0.3, 3, 0.01, "×"], prop.scale.y, (v, commit) => stage.setPropScale(prop, v, { commit }));
+        return selectedEl.replaceChildren(head, el("p.ctl-sub", {}, def.name), el("span.ctl-label.is-sub", {}, "Pose"), poses, el("div.ctl-sliders", {}, size));
+      }
       const sliders = (def?.params ?? []).map((p) => slider([p[0], p[1], p[2], p[3], p[4], p[0] === "open" ? "°" : p[0] === "steps" ? "" : "m"],
         prop.userData.params[p[0]], (v, commit) => stage.setPropParams(prop, { [p[0]]: v }, { commit })));
       return selectedEl.replaceChildren(head, el("p.ctl-sub", {}, def?.name ?? "Prop"), el("div.ctl-sliders", {}, ...sliders));

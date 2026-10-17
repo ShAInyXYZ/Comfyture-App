@@ -10,7 +10,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { Mannequin } from "./mannequin.js";
 import { CHAINS, JOINT_NAMES, PALETTE, bodyById } from "./skeleton.js";
 import { poseById, holdArm } from "./poses.js";
-import { makeProp, propFromJSON, setPropParams, refillProp, registerUserProp, forgetUserProp, registerModelAssets } from "./assets.js";
+import { makeProp, propFromJSON, setPropParams, refillProp, registerUserProp, forgetUserProp, registerModelAssets, registerAnimals, isAnimal, poseAnimal, setAnimalPose, assetByType } from "./assets.js";
 import { loadModels, loadUserModels, onUserModels, MODELS, USER, rigById } from "./models.js";
 import { Channels } from "./channels.js";
 
@@ -189,7 +189,7 @@ export class Stage {
     // the modelled bodies and pieces load behind the first frames and replace the built ones,
     // then the user's own: rigged characters and props
     loadModels().then((m) => {
-      if (m.manifest) registerModelAssets(m.manifest.assets ?? []);
+      if (m.manifest) (registerModelAssets(m.manifest.assets ?? []), registerAnimals(m.manifest.animals ?? []));
       this.refreshModels();
       loadUserModels();
     });
@@ -907,11 +907,22 @@ export class Stage {
     }
     for (const p of this.props) {
       const k = bracket(p.userData.keys, t);
-      if (!k) continue;
-      const [a, b, u] = k;
-      p.position.fromArray(lerpArr(a.position, b.position, u));
-      p.quaternion.slerpQuaternions(new THREE.Quaternion(...a.quaternion), new THREE.Quaternion(...b.quaternion), u);
-      p.scale.fromArray(lerpArr(a.scale ?? [1, 1, 1], b.scale ?? [1, 1, 1], u));
+      let walk = null;
+      if (k) {
+        const [a, b, u] = k;
+        p.position.fromArray(lerpArr(a.position, b.position, u));
+        const [qa, qb] = [new THREE.Quaternion(...a.quaternion), new THREE.Quaternion(...b.quaternion)];
+        p.quaternion.slerpQuaternions(qa, qb, u);
+        p.scale.fromArray(lerpArr(a.scale ?? [1, 1, 1], b.scale ?? [1, 1, 1], u));
+        // an animal that travels between two keys walks there, facing the way it goes
+        const travel = new THREE.Vector3(...b.position).sub(new THREE.Vector3(...a.position)).setY(0);
+        if (isAnimal(p) && a !== b && travel.length() / Math.max(1e-3, b.t - a.t) > 0.05) {
+          const stride = 0.6 * Math.max(...(assetByType(p.userData.type)?.params ?? []).map((q) => q[5] ?? 0.3)) * p.scale.y;
+          walk = p.position.clone().sub(new THREE.Vector3(...a.position)).setY(0).length() / Math.max(0.05, stride);
+          if (qa.angleTo(qb) < 1e-3) p.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(travel.x, travel.z));
+        }
+      }
+      if (isAnimal(p)) poseAnimal(p, { time: t, walk });
     }
     this.attachGizmo();
   }
@@ -1046,6 +1057,23 @@ export class Stage {
     this.emit("scene");
   }
 
+  /** An animal's pose: one of its clips. */
+  setAnimalPose(prop, pose) {
+    setAnimalPose(prop, pose, this.time);
+    this.commit();
+    this.emit("pose");
+    this.render();
+  }
+
+  /** A piece's size as one factor for all of it (an animal). */
+  setPropScale(prop, factor, { commit = true } = {}) {
+    prop.scale.setScalar(THREE.MathUtils.clamp(factor, 0.05, 10));
+    prop.updateMatrixWorld(true);
+    if (commit) this.commit();
+    this.emit("pose");
+    this.render();
+  }
+
   /** Puts a hand prop in a character's hand (or empties it), by hand, as the user chose it. */
   setHold(character, hand, type) {
     if (!character) return;
@@ -1121,12 +1149,17 @@ export class Stage {
   }
 
   /** A piece of the set alone, three-quarter front, on a clear background. Cached per type. */
-  propThumbnail(type, { width = 132, height = 104 } = {}) {
-    const key = `prop:${type}`;
+  propThumbnail(type, { width = 132, height = 104, pose = null } = {}) {
+    const key = `prop:${type}${pose ? `:${pose}` : ""}`;
     this.poseThumbs ??= new Map();
     if (this.poseThumbs.has(key)) return this.poseThumbs.get(key);
     this.poseThumbnail(poseById("stand"));
     const object = makeProp(type, "thumb");
+    // an animal in one of its poses (the middle of a loop, so a walk is mid-stride)
+    if (pose && isAnimal(object)) {
+      object.userData.pose = pose;
+      poseAnimal(object, { time: 0.5 });
+    }
     this.poseModel.root.visible = false;
     this.poseScene.add(object);
     const url = this.stillOf(object, width, height, new THREE.Vector3(0.55, 0.42, 1));

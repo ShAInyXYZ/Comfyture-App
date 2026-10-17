@@ -6,6 +6,7 @@
 // seats and tops say where a body sits and where things rest.
 
 import * as THREE from "three";
+import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
 import { MODELS, openSurface } from "./models.js";
 
 const clay = () => new THREE.MeshStandardMaterial({ color: "#a9a59e", roughness: 0.85 });
@@ -331,6 +332,71 @@ export function registerModelAssets(list) {
   }
 }
 
+/**
+ * The library's baby animals: each its own rigged model in its own colours, with five clips
+ * (stand, sit, lie, walk, hop). On the Stage an animal is a piece of the set that holds a pose,
+ * one of its clips; one that travels between keys walks.
+ */
+export function registerAnimals(list) {
+  for (const a of list) {
+    if (BY_TYPE.has(a.type) || !Array.isArray(a.size) || a.size.length !== 3) continue;
+    const def = modelled(a.type, a.name ?? a.type, "Animals", "prop-box", a.size.map((v) => Math.max(0.01, v)), null, null);
+    Object.assign(def, { animal: true, poses: a.clips ?? ["stand"], loops: a.loops ?? [], themes: a.themes ?? ["animals"], tags: a.tags ?? [] });
+    ASSETS.push(def);
+    BY_TYPE.set(a.type, def);
+  }
+}
+export const isAnimal = (object) => Boolean(object?.userData?.prop && BY_TYPE.get(object.userData.type)?.animal);
+
+/**
+ * An animal in its pose: a held pose is its clip's first frame, a loop plays at `time`, and
+ * `walk` (the share of a stride, 0 to 1) walks it whatever its pose.
+ */
+export function poseAnimal(object, { time = 0, walk = null } = {}) {
+  const { mixer, clips } = object.userData;
+  if (!mixer || !clips?.length) return;
+  const name = walk !== null ? "walk" : object.userData.pose ?? "stand";
+  const clip = clips.find((c) => c.name === name) ?? clips.find((c) => c.name === "stand") ?? clips[0];
+  if (object.userData.clip !== clip) {
+    mixer.stopAllAction();
+    mixer.clipAction(clip).play();
+    object.userData.clip = clip;
+  }
+  const loops = BY_TYPE.get(object.userData.type)?.loops?.includes(clip.name);
+  mixer.setTime(walk !== null ? (((walk % 1) + 1) % 1) * clip.duration : loops ? time % clip.duration : 0);
+  object.updateMatrixWorld(true);
+  // what the frame, the picking and the ground see is the pose, not the rest
+  object.traverse((o) => o.isSkinnedMesh && (o.computeBoundingBox(), o.computeBoundingSphere()));
+}
+
+/** Sets the pose an animal holds (one of its clips). */
+export function setAnimalPose(object, pose, time = 0) {
+  const def = BY_TYPE.get(object.userData.type);
+  if (!def?.animal) throw new Error("Only animals take poses among the set pieces.");
+  if (!def.poses.includes(pose)) throw new Error(`No pose "${pose}" for the ${def.name.toLowerCase()}. Poses: ${def.poses.join(", ")}.`);
+  object.userData.pose = pose;
+  poseAnimal(object, { time });
+}
+
+/** An animal's model, skinned and in its own colours, at its size, with its clips ready. */
+function animalPiece(def, animal, object) {
+  const sizer = new THREE.Group();
+  sizer.scale.copy(builtSize(def, object.userData.params).clone().divide(builtSize(def, paramsOf(def.type))));
+  const copy = cloneSkinned(animal.scene);
+  copy.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = o.receiveShadow = true;
+    o.frustumCulled = false;
+    // the geometry is the model's: it stays when the prop is rebuilt
+    o.userData.shared = true;
+  });
+  sizer.add(copy);
+  object.userData.mixer = new THREE.AnimationMixer(copy);
+  object.userData.clips = animal.clips;
+  object.userData.clip = null;
+  return sizer;
+}
+
 /** One of the user's own props, as a piece of the catalogue under Mine, kept in its own materials. */
 export function registerUserProp(entry) {
   MODELS.props.set(entry.id, { ...entry, keepMaterials: true });
@@ -514,10 +580,14 @@ function fill(object) {
     object.remove(child);
   }
   const model = MODELS.props.get(def.type);
+  const animal = def.animal ? MODELS.animals.get(def.type) : null;
   const params = object.userData.params;
   const assembled = model && !atDefaults(def, params) && !modelFits(def, params) ? ASSEMBLE[def.type]?.(params, object) : null;
-  object.userData.modelled = Boolean(model && (assembled || modelFits(def, params)));
-  if (assembled) for (const piece of assembled) object.add(piece);
+  object.userData.modelled = Boolean(animal || (model && (assembled || modelFits(def, params))));
+  if (animal) {
+    object.add(animalPiece(def, animal, object));
+    poseAnimal(object);
+  } else if (assembled) for (const piece of assembled) object.add(piece);
   else if (object.userData.modelled) object.add(modelPiece(def, model, object));
   else {
     for (const piece of def.build(object.userData.params)) {
@@ -560,6 +630,7 @@ export function makeProp(type, id, params) {
       scale: object.scale.toArray(),
       visible: object.visible,
       keys: object.userData.keys?.length ? object.userData.keys : undefined,
+      pose: object.userData.pose ?? undefined,
     }),
   };
   fill(object);
@@ -586,6 +657,11 @@ export function propFromJSON(data) {
   object.scale.fromArray(data.scale ?? [1, 1, 1]);
   object.visible = data.visible !== false;
   object.userData.keys = data.keys ? structuredClone(data.keys) : [];
+  // an animal's pose, kept even before its model has come
+  if (typeof data.pose === "string") {
+    object.userData.pose = data.pose;
+    poseAnimal(object);
+  }
   // the old box, sphere and cylinder stood on their centre: lift them onto the ground once
   if (!data.params && ["box", "cylinder", "sphere", "plane"].includes(def.type)) {
     const lift = { box: def.legacy?.h ?? 0.6, cylinder: 0.8, sphere: 0.7, plane: 2.2 }[def.type] / 2;

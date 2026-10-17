@@ -84,6 +84,9 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 .ctl-search { width: 100%; min-width: 0; padding-left: 2rem; user-select: text; -webkit-user-select: text; }
 .ctl-search::-webkit-search-cancel-button { filter: grayscale(1) brightness(1.6); }
 .ctl-results { display: grid; gap: .5rem; align-content: start; }
+.ctl-animal-poses { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .3125rem; margin-bottom: .5rem; }
+.ctl-animal-pose { padding: .125rem; }
+.ctl-animal-pose[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
 .ctl-results > .ctl-label { margin-top: .25rem; }
 .ctl-import { color: var(--dim); background: transparent; border-style: dashed; }
 .ctl-import:hover { color: var(--text); }

@@ -9,7 +9,7 @@ import * as THREE from "three";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { RATIOS, SNAPS, MOVES, fovOf } from "./stage.js";
 import { allPoses, holdArm } from "./poses.js";
-import { ASSETS, assetByType, seatOf, topOf, setPropParams } from "./assets.js";
+import { ASSETS, assetByType, seatOf, topOf, setPropParams, isAnimal, setAnimalPose } from "./assets.js";
 import { CHAINS, JOINT_NAMES, BODY_TYPES, PALETTE, PARAMS, colorName } from "./skeleton.js";
 import { PASSES } from "./channels.js";
 import { MODELS, USER, rigById, holdables } from "./models.js";
@@ -26,6 +26,10 @@ const num = (v, name) => {
   if (typeof v !== "number" || !Number.isFinite(v)) throw new Error(`${name} must be a number.`);
   return v;
 };
+
+// an animal's poses, from the words people use for them
+const ANIMAL_POSE = { stand: "stand", standing: "stand", idle: "stand", sit: "sit", sitting: "sit", seated: "sit", lie: "lie", lying: "lie", "lie down": "lie", "lying down": "lie", sleep: "lie", sleeping: "lie", curled: "lie", walk: "walk", walking: "walk", trot: "walk", trotting: "walk", waddle: "walk", run: "walk", running: "walk", hop: "hop", hopping: "hop", jump: "hop", jumping: "hop", bounce: "hop", bouncing: "hop", play: "hop", playing: "hop" };
+const animalPose = (v) => ANIMAL_POSE[String(v).trim().toLowerCase()] ?? String(v).trim().toLowerCase();
 
 // the words people (and models) use for what Control calls otherwise
 const ALIASES = {
@@ -361,6 +365,7 @@ export function controlOps(stage) {
       if (a.face_toward !== undefined) face(o, a.face_toward);
     }
     if (t.prop) {
+      if (a.pose !== undefined && isAnimal(o)) setAnimalPose(o, animalPose(a.pose), stage.time);
       if (a.params && typeof a.params === "object") setPropParams(o, a.params);
       if (a.size !== undefined) {
         o.scale.set(1, 1, 1);
@@ -439,18 +444,19 @@ export function controlOps(stage) {
       id: p.userData.id, type: p.userData.type, label: p.userData.label,
       position: p.position.toArray().map(round), facing: facingOf(p),
       size: new THREE.Box3().setFromObject(p).getSize(new THREE.Vector3()).toArray().map(round),
+      ...(isAnimal(p) ? { animal: true, pose: p.userData.pose ?? "stand" } : {}),
       ...(p.userData.keys.length ? { keys: p.userData.keys.map((k) => round(k.t)) } : {}),
     })),
     camera: { position: stage.camera.position.toArray().map(round), target: stage.orbit.target.toArray().map(round), focal: stage.focal, ratio: stage.ratio },
     timeline: { duration: stage.duration, time: round(stage.time), camera_move: stage.cameraKeys.length ? (stage.handheld ? "handheld" : stage.lastMove ?? "keyed") : "locked", camera_keys: stage.cameraKeys.map((k) => round(k.t)) },
   });
 
-  /** A rigged character by its id or its name: one of the library's animals, or one of the user's. */
+  /** One of the user's rigged characters by its id or its name. */
   const rigNamed = (v) => {
     const key = String(v).trim().toLowerCase();
-    const all = [...MODELS.rigs.values(), ...USER.rigs.values()];
-    const found = all.find((r) => r.id === v || r.id === key || r.name.toLowerCase() === key) ?? all.find((r) => r.name.toLowerCase().includes(key) || r.tags?.includes(key));
-    if (!found) throw new Error(`No character "${v}". Animals: ${[...MODELS.rigs.keys()].join(", ") || "none"}.`);
+    const all = [...USER.rigs.values()];
+    const found = all.find((r) => r.id === v || r.id === key || r.name.toLowerCase() === key) ?? all.find((r) => r.name.toLowerCase().includes(key));
+    if (!found) throw new Error(`No rigged character "${v}". Yours: ${all.map((r) => r.name).join(", ") || "none"}. For an animal, add_prop with its type.`);
     return found.id;
   };
 
@@ -542,8 +548,9 @@ export function controlOps(stage) {
    * timeline lays a walk over whatever pose they hold; gait "run" runs, "none" glides.
    */
   const moveTo = (a = {}) => {
-    const { character } = find(a.id);
-    if (!character) throw new Error("Only characters walk.");
+    const { character, prop } = find(a.id);
+    if (prop && isAnimal(prop)) return animalTo(prop, a);
+    if (!character) throw new Error("Only characters and animals walk.");
     if (a.duration !== undefined) stage.setDuration(num(a.duration, "duration"));
     const t0 = THREE.MathUtils.clamp(a.start !== undefined ? num(a.start, "start") : 0, 0, stage.duration);
     const t1 = THREE.MathUtils.clamp(a.end !== undefined ? num(a.end, "end") : stage.duration, t0 + 0.2, stage.duration);
@@ -573,6 +580,27 @@ export function controlOps(stage) {
     stage.setTime(t0);
     stage.emit("timeline");
     return { id: character.id, from: from.map(round), to: [round(x), round(z)], start: t0, end: t1 };
+  };
+
+  /** An animal goes somewhere over the shot: a key where it is and one where it arrives; it walks between them. */
+  const animalTo = (prop, a) => {
+    if (a.duration !== undefined) stage.setDuration(num(a.duration, "duration"));
+    const t0 = THREE.MathUtils.clamp(a.start !== undefined ? num(a.start, "start") : 0, 0, stage.duration);
+    const t1 = THREE.MathUtils.clamp(a.end !== undefined ? num(a.end, "end") : stage.duration, t0 + 0.2, stage.duration);
+    const from = groundXZ(prop);
+    const [x, z] = spot(a, from, prop);
+    stage.time = t0;
+    const startKey = stage.keyFor({ prop }, t0);
+    const heading = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(x - from[0], z - from[1])).toArray();
+    startKey.quaternion = heading;
+    const endKey = { ...structuredClone(startKey), t: t1, position: [x, prop.position.y, z] };
+    prop.userData.keys = prop.userData.keys.filter((k) => k.t < t0 - 1e-3 || k.t > t1 + 1e-3);
+    prop.userData.keys.push(startKey, endKey);
+    prop.userData.keys.sort((p, n) => p.t - n.t);
+    if (a.pose !== undefined) setAnimalPose(prop, animalPose(a.pose), t1);
+    stage.setTime(t0);
+    stage.emit("timeline");
+    return { id: prop.userData.id, from: from.map(round), to: [round(x), round(z)], start: t0, end: t1 };
   };
 
   /**
@@ -627,13 +655,30 @@ export function controlOps(stage) {
    */
   const inFrame = (look = "") => {
     const held = holdables(assetByType);
-    const cast = stage.characters.filter((c) => c.root.visible).slice(0, 8);
+    // the cast: the characters, and the animals (pieces of the set that act like them)
+    const cast = [
+      ...stage.characters.filter((c) => c.root.visible).map((c) => {
+        const posed = allPoses().find((p) => p.id === c.posed)?.name?.toLowerCase();
+        const seat = c.seatedOn ? stage.props.find((p) => p.userData.id === c.seatedOn) : null;
+        const things = Object.values(c.hold ?? {}).filter(Boolean).map((t) => article((held.get(t)?.name ?? t).toLowerCase().replace(/-/g, " ")));
+        const who = c.rigId ? article((rigById(c.rigId)?.name ?? "character").toLowerCase()) : A_PERSON[c.body] ?? "a person";
+        return {
+          name: c.name, who, at: c.joints.Head.getWorldPosition(new THREE.Vector3()),
+          figure: c.rigId ? `the ${who.replace(/^an? /, "")}` : `the ${SEEN[colorName(`#${c.color.getHexString()}`)] ?? "clay"} figure`,
+          doing: [posed && posed !== "custom" ? posed : null, seat ? `on the ${(assetByType(seat.userData.type)?.name ?? seat.userData.label).toLowerCase()}` : null, things.length ? `holding ${things.join(" and ")}` : null].filter(Boolean).join(", "),
+        };
+      }),
+      ...stage.props.filter((p) => p.visible && isAnimal(p)).map((p) => {
+        const kind = (assetByType(p.userData.type)?.name ?? "animal").toLowerCase();
+        const box = new THREE.Box3().setFromObject(p);
+        return { name: p.userData.label, who: article(`cute ${kind}`), at: box.getCenter(new THREE.Vector3()).setY(box.max.y), figure: `the ${kind}`, doing: { stand: "standing", sit: "sitting", lie: "lying down", walk: "walking", hop: "hopping" }[p.userData.pose ?? "stand"] ?? "" };
+      }),
+    ].slice(0, 10);
     const eye = stage.camera.getWorldPosition(new THREE.Vector3());
-    const heads = cast.map((c) => c.joints.Head.getWorldPosition(new THREE.Vector3()));
-    const far = heads.map((v) => v.distanceTo(eye));
+    const far = cast.map((c) => c.at.distanceTo(eye));
     const [near, back] = [Math.min(...far), Math.max(...far)];
     const width = stage.container.clientWidth;
-    // what the words say of each character by name goes with that character's figure
+    // what the words say of each one by name goes with that one's figure
     const said = new Map();
     const rest = [];
     let last = null;
@@ -650,23 +695,17 @@ export function controlOps(stage) {
       }
     }
     const people = cast.map((c, i) => {
-      const who = c.rigId ? article((rigById(c.rigId)?.name ?? "character").toLowerCase()) : A_PERSON[c.body] ?? "a person";
-      const posed = allPoses().find((p) => p.id === c.posed)?.name?.toLowerCase();
-      const seat = c.seatedOn ? stage.props.find((p) => p.userData.id === c.seatedOn) : null;
-      const things = Object.values(c.hold ?? {}).filter(Boolean).map((t) => article((held.get(t)?.name ?? t).toLowerCase().replace(/-/g, " ")));
       // across the frame (not the viewport around it), and near or far when the cast spreads out
-      const x = heads[i].clone().project(stage.camera).x * (width / Math.max(1, stage.frame?.w ?? width));
+      const x = c.at.clone().project(stage.camera).x * (width / Math.max(1, stage.frame?.w ?? width));
       const side = x < -0.33 ? "on the left" : x > 0.33 ? "on the right" : "in the middle";
       const depth = back - near > 1.2 ? (far[i] - near < 0.25 * (back - near) ? ", in front" : back - far[i] < 0.25 * (back - near) ? ", at the back" : "") : "";
-      const figure = c.rigId ? `the ${who.replace(/^an? /, "")} ${side}${depth}` : `the ${SEEN[colorName(`#${c.color.getHexString()}`)] ?? "clay"} figure ${side}${depth}`;
       const words = said.get(c)?.join(", ").replace(/[.;!?]+$/, "");
-      const doing = [posed && posed !== "custom" ? posed : null, seat ? `on the ${(assetByType(seat.userData.type)?.name ?? seat.userData.label).toLowerCase()}` : null, things.length ? `holding ${things.join(" and ")}` : null].filter(Boolean).join(", ");
-      return `${figure} is ${c.name}${words ? `: ${words}` : `, ${who}${doing ? `, ${doing}` : ""}`}`;
+      return `${c.figure} ${side}${depth} is ${c.name}${words ? `: ${words}` : `, ${c.who}${c.doing ? `, ${c.doing}` : ""}`}`;
     });
-    const things = [...new Set(stage.props.filter((p) => p.visible).map((p) => (assetByType(p.userData.type)?.name ?? p.userData.label).toLowerCase()))].slice(0, 14).map(article);
-    const count = ["no one", "one character", "two characters", "three characters", "four characters", "five characters", "six characters", "seven characters", "eight characters"][people.length];
+    const things = [...new Set(stage.props.filter((p) => p.visible && !isAnimal(p)).map((p) => (assetByType(p.userData.type)?.name ?? p.userData.label).toLowerCase()))].slice(0, 14).map(article);
+    const count = ["no one", "one character", "two characters", "three characters", "four characters", "five characters", "six characters", "seven characters", "eight characters", "nine characters", "ten characters"][people.length];
     const joined = rest.reduce((a, x) => (!a ? x : /[.;!?]$/.test(a) ? `${a} ${x}` : `${a}, ${x}`), "");
-    return { count: people.length, rest: joined, words: [people.length ? `exactly ${count}, and no one else: ${people.join("; ")}` : "", things.length ? `with ${things.join(", ")}` : ""].filter(Boolean).join(" — ") };
+    return { count: people.length, mannequins: stage.characters.some((c) => c.root.visible && !c.rigId), rest: joined, words: [people.length ? `exactly ${count}, and no one else: ${people.join("; ")}` : "", things.length ? `with ${things.join(", ")}` : ""].filter(Boolean).join(" — ") };
   };
 
   /**
@@ -687,7 +726,7 @@ export function controlOps(stage) {
     // who is who first, so each description finds its figure; then the place, the light, the style
     const prompt = [
       "Render @frame as a finished image. Keep its exact composition: the camera, the framing, and every person and object where they are and posed as they are.",
-      who.count ? "Each coloured clay mannequin becomes the real character described for it, with natural skin, hair and clothes: its colour only tells it apart and is not its skin or its clothing, and none stays a mannequin." : "",
+      who.mannequins ? "Each coloured clay mannequin becomes the real character described for it, with natural skin, hair and clothes: its colour only tells it apart and is not its skin or its clothing, and none stays a mannequin." : "",
       who.words ? `In the frame, ${who.words}.` : "",
       "The clay blockouts become real things, with real materials, textures and light.",
       `${(look ? who.rest : "") || "A cinematic film still, natural light"}.`.replace(/\.\.$/, "."),
@@ -785,8 +824,8 @@ export function controlOps(stage) {
       poses: poseIds(),
       hand_props: [...holdables(assetByType).values()].map((h) => h.type),
       user_characters: [...USER.rigs.values()].map((r) => ({ rig: r.id, name: r.name, height: Math.round(r.height * 100) / 100 })),
-      animals: [...MODELS.rigs.values()].map((r) => ({ rig: r.id, name: r.name, height: Math.round(r.height * 100) / 100 })),
-      assets: ASSETS.map((x) => ({ type: x.type, name: x.name, category: x.category, ...(x.seat ? { seat: true } : {}), ...(x.top ? { top: true } : {}) })),
+      animals: ASSETS.filter((x) => x.animal).map((x) => ({ type: x.type, name: x.name, poses: x.poses })),
+      assets: ASSETS.filter((x) => !x.animal).map((x) => ({ type: x.type, name: x.name, category: x.category, ...(x.seat ? { seat: true } : {}), ...(x.top ? { top: true } : {}) })),
       body_types: BODY_TYPES.map((b) => b.id), colors: PALETTE.map(([, n]) => n.toLowerCase()), params: PARAMS.map(([k, , min, max]) => ({ name: k, min, max })),
       snaps: SNAPS.map(([s]) => s), moves: MOVES.map(([m]) => m), frames: Object.keys(RATIOS), effectors: Object.keys(CHAINS), joints: JOINT_NAMES,
       channels: ["clay", ...PASSES], lens: { focal: stage.focal, vertical_fov: Math.round(fovOf(stage.focal) * 10) / 10 },
@@ -806,8 +845,13 @@ export function controlOps(stage) {
       return describe();
     },
     pose: (a) => {
-      const { character } = find(a.id);
-      if (!character) throw new Error("Only characters take poses.");
+      const { character, prop } = find(a.id);
+      // an animal holds one of its own poses
+      if (prop && isAnimal(prop)) {
+        setAnimalPose(prop, animalPose(a.pose ?? "stand"), stage.time);
+        return { id: prop.userData.id, pose: prop.userData.pose };
+      }
+      if (!character) throw new Error("Only characters and animals take poses.");
       // only sliders: the pose stays, the sliders change
       if (a.pose === undefined && a.params) {
         character.setParams(a.params);

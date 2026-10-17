@@ -203,7 +203,7 @@ Spacing that reads well: two people talking 1 to 1.5 m apart, fighting 0.8 to 1.
 CHARACTERS
 Each has a name (use names, never ids), a body type, a colour and a pose.
 Body types: man, woman, teen, child, toddler, elder, heavy, athletic. Pick from the user's words: a girl or a boy is a teen, a kid a child, a baby a toddler, a grandmother an elder. Each is shaped for its silhouette (a woman's waist and hips, a child's big head, an elder's stoop, a heavy belly, an athlete's shoulders), and every pose fits every body: hands find hips, knees and faces on any of them.
-Animals: cute baby animals (a baby chick, a puppy, a kitten, a bunny…) are rigged characters too, listed under "animal characters" below: add one with add_character (or in a layout) with rig: its id instead of a body. They stand upright like toy mascots and take every pose. For an animal that is only part of the set (a dog lying by the door, a pigeon), use the Creatures assets instead.
+Animals: the cute baby animals listed under "animals" below (a baby chick, a puppy, a kitten…) act like characters but are added as set pieces: add_prop (or props in a layout) with their type, a label that is their name ("Biscuit") and a pose: stand, sit, lie, walk or hop. pose {id, pose} changes it, and one that move_to or keys carry walks. Give them facing or face_toward like anyone. The Creatures assets are plain set dressing (a horse, a pigeon).
 Colours: coral, teal, amber, violet, green, pink, blue, tan. Give each character a different one: they tell people apart in the colour ID pass.
 Hand props (hold): phone, cup, book, camera, sword, pistol, umbrella, bag, guitar, steering-wheel, and every small piece listed under "what a hand can hold" (a bottle, an apple, a coffee). "hold": "phone" puts one in the right hand, {"right": "cup", "left": "bag"} fills both, null empties them. Poses that hold something bring it themselves: phone-call, walk-phone and selfie a phone, drink a cup, read a book, photo a camera, sword a sword, aim a pistol, drive a steering wheel. Give hold only for something else (an umbrella on a walk, a bag in a hand).
 Pose sliders (params, in degrees; crouch from 0 to 1): look (turns the head, + to its left), nod (+ looks down), tilt, lean (+ forward), twist, side, arms (raises both), reach (arms forward), elbows (bends them), stance (feet apart), step (left foot forward), crouch. Use them to adjust a pose, for example "params": {"look": 30, "lean": 10}.
@@ -223,8 +223,8 @@ RELATIONS: say where things are relative to each other and the app works out the
 
 ACTIONS
 - layout {clear, characters: [{name, body, color, pose, hold, x, z or a relation, facing or face_toward, height, params}], props: [{type, label, x, z or a relation, facing or face_toward, size}], camera: {...}, duration}: a whole scene at once. For a new scene use it with clear: true. Without clear it moves what is already there by name and adds the rest; for a small change, use the small actions instead.
-- add_character {name, body (or rig: an animal's id, or one of the user's own rigged characters), color, pose, hold, x, z or a relation, facing or face_toward, height, params}
-- add_prop {type, label, x, z or a relation, facing or face_toward, size}
+- add_character {name, body (or rig: one of the user's own rigged characters), color, pose, hold, x, z or a relation, facing or face_toward, height, params}
+- add_prop {type, label, x, z or a relation, facing or face_toward, size, pose (animals only)}
 - place {id, x, z or a relation, facing or face_toward, size, height, body, color, params, hold, name}: id is a name from the scene; name renames it
 - pose {id, pose, mirror, params}
 - joint {id, joint, rotation: [x, y, z] in degrees}: only when the user asks to move one limb
@@ -285,15 +285,15 @@ export function controlPrompt(scene: Record<string, any>, turns: ControlTurn[], 
     `frame ${cam.ratio ?? "16:9"}, lens ${cam.focal ?? 35} mm, camera at [${(cam.position ?? []).join(", ")}] looking at [${(cam.target ?? []).join(", ")}]`,
     `timeline: ${tl.duration ?? 5} s, camera move ${tl.camera_move ?? "locked"}`,
     "characters:",
-    ...((scene.characters ?? []) as any[]).slice(0, 12).map((c) => `- ${c.name}: ${c.rig ? ((scene.animals ?? []) as any[]).find((a) => a.rig === c.rig)?.name.toLowerCase() ?? "the user's own rigged character" : c.body ?? "man"}, ${c.color ?? "?"}, pose ${c.pose ?? "custom"}${params(c.params)}, ${c.height} m tall, at ${at(c.position)}, facing ${c.facing}${c.seated_on ? `, seated on ${c.seated_on}` : ""}${c.hold ? `, holding ${Object.entries(c.hold).map(([h, t]) => `${t} (${h} hand)`).join(" and ")}` : ""}${c.keys?.length ? `, keyed at ${c.keys.join(", ")} s` : ""}${c.visible === false ? ", hidden" : ""}`),
+    ...((scene.characters ?? []) as any[]).slice(0, 12).map((c) => `- ${c.name}: ${c.rig ? "the user's own rigged character" : c.body ?? "man"}, ${c.color ?? "?"}, pose ${c.pose ?? "custom"}${params(c.params)}, ${c.height} m tall, at ${at(c.position)}, facing ${c.facing}${c.seated_on ? `, seated on ${c.seated_on}` : ""}${c.hold ? `, holding ${Object.entries(c.hold).map(([h, t]) => `${t} (${h} hand)`).join(" and ")}` : ""}${c.keys?.length ? `, keyed at ${c.keys.join(", ")} s` : ""}${c.visible === false ? ", hidden" : ""}`),
     ...(scene.characters?.length ? [] : ["none"]),
     "props:",
-    ...((scene.props ?? []) as any[]).slice(0, 30).map((p) => `- ${p.label}: ${p.type}, ${(p.size ?? []).join(" x ")} m, at ${at(p.position)}${p.position?.[1] > 0.01 ? ` lifted ${p.position[1]}` : ""}, facing ${p.facing}`),
+    ...((scene.props ?? []) as any[]).slice(0, 30).map((p) => `- ${p.label}: ${p.animal ? `the animal ${p.type}, pose ${p.pose}` : p.type}, ${(p.size ?? []).join(" x ")} m, at ${at(p.position)}${p.position?.[1] > 0.01 ? ` lifted ${p.position[1]}` : ""}, facing ${p.facing}`),
     ...(scene.props?.length ? [] : ["none"]),
     `poses you can use: ${list(scene.poses)}`,
     `assets by category: ${byCategory(scene.assets)}`,
     `what a hand can hold: ${(scene.hand_props ?? []).map(String).join(", ")}`,
-    ...(scene.animals?.length ? [`animal characters (add_character with rig: the id): ${(scene.animals as any[]).map((r) => `${r.rig} (${r.name.toLowerCase()}, ${r.height} m)`).join(", ")}`] : []),
+    ...(scene.animals?.length ? [`animals (add_prop with type and pose): ${(scene.animals as any[]).map((a) => `${a.type} (${(a.poses ?? []).join("/")})`).join(", ")}`] : []),
     ...(scene.user_characters?.length ? [`the user's own rigged characters (add_character with rig: their name): ${(scene.user_characters as any[]).map((r) => `${r.name} (${r.height} m)`).join(", ")}`] : []),
     `camera snaps: ${list(scene.snaps)}`,
     `camera moves: ${list(scene.moves)}`,
