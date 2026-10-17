@@ -2,12 +2,21 @@
    the framed viewport with its channels, tools, timeline and the assistant's bar, and
    the camera, the frame, the selection's controls and the channel previews. */
 
-#page-stage { height: calc(100dvh - 3.5rem - 1px); overflow: hidden; user-select: none; -webkit-user-select: none; }
+#page-stage { display: flex; flex-direction: column; height: calc(100dvh - 3.5rem - 1px); overflow: hidden; user-select: none; -webkit-user-select: none; }
 #page-stage[hidden] { display: none; }
 #page-stage img { -webkit-user-drag: none; user-select: none; }
 body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 
-.ctl-desk { display: grid; grid-template-columns: minmax(18rem, 21rem) minmax(0, 1fr) minmax(19rem, 23rem); gap: .75rem; height: 100%; min-height: 0; padding: .75rem; }
+.ctl-desk { display: grid; grid-template-columns: minmax(18rem, 21rem) minmax(0, 1fr) minmax(19rem, 23rem); gap: .75rem; flex: 1 1 0; width: 100%; min-height: 0; padding: .75rem; }
+/* the stages' tabs: the open one carries its saved lamp; renaming happens in the tab */
+.ctl-subbar { flex: none; }
+.ctl-stage-tab .lamp { flex: none; }
+.tab-rename { width: 10rem; height: 1.875rem; padding: 0 .4375rem; border: 1px solid var(--accent-line); border-radius: .4375rem; background: var(--sunk); color: var(--text); font: 500 var(--fs-body)/1 var(--font-sans); outline: 0; user-select: text; -webkit-user-select: text; }
+.ctl-stage-actions { gap: .25rem; }
+.subbar-actions .key.ctl-stage-key { width: 2.25rem; padding: 0; }
+.ctl-stage-key svg.icon { width: 1.05rem; height: 1.05rem; }
+.ctl-stage-key[aria-pressed="true"] { color: var(--err); box-shadow: inset 0 0 0 1px var(--err); }
+.tab-preview.is-stage img { object-fit: contain; background: #111114; }
 .ctl-col { display: flex; flex-direction: column; gap: .75rem; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .ctl-panel { display: grid; align-content: start; gap: .75rem; padding: 1rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); }
 .ctl-grow { flex: 1 1 auto; }
@@ -96,8 +105,7 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 .ctl-chat { position: relative; width: min(52rem, 100%); margin: 0 auto; }
 .chat-float.is-docked { position: relative; left: auto; bottom: auto; width: 100%; transform: none; z-index: 5; }
 .chat-float.is-docked .chat-panel { position: absolute; left: 0; right: 0; bottom: calc(100% + .5rem); max-height: min(28rem, 48dvh); }
-.composer.is-stage .clip-key { display: none; }
-.composer.is-stage .bar-row { grid-template-columns: minmax(0, 1fr) auto auto auto; padding-left: .5rem; }
+.composer.is-stage .clip-key, .composer:not(.is-stage) .render-key { display: none; }
 .msg-chips .chip.is-failed, .msg-chips .chip.is-failed svg { color: var(--err); }
 
 .ctl-view { position: relative; min-width: 0; min-height: 12rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: #141416; overflow: hidden; }
@@ -197,10 +205,7 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 .ctl-selected { display: grid; gap: .75rem; }
 .ctl-sel-head { display: flex; align-items: center; gap: .375rem; }
 /* the stage's project: its name, whether it is saved, and its keys */
-.ctl-project { display: grid; gap: .375rem; padding-bottom: .625rem; margin-bottom: .125rem; border-bottom: 1px solid var(--line); }
-.ctl-project-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; align-items: center; }
 .ctl-project-keys { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; }
-.ctl-project-keys .ctl-mini[aria-pressed="true"] { color: var(--err); box-shadow: inset 0 0 0 1px var(--err); }
 .ctl-projects-window { width: min(60rem, calc(100vw - 2rem)); }
 .ctl-projects-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .875rem; }
 .ctl-projects-head h2 { margin: 0; }
@@ -257,7 +262,7 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 @media (max-width: 900px) {
   #page-stage { height: auto; overflow: visible; }
   body[data-page="stage"] { overflow: auto; }
-  .ctl-desk { grid-template-columns: 1fr; height: auto; padding: .5rem; }
+  .ctl-desk { grid-template-columns: 1fr; flex: none; height: auto; padding: .5rem; }
   .ctl-mid { order: -1; }
   .ctl-mid .ctl-view { flex: none; height: 58dvh; }
   .ctl-col { overflow: visible; }

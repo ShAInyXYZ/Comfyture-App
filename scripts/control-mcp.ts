@@ -31,7 +31,7 @@ const character = {
     name: { type: "string" }, pose: { type: "string", description: "A pose id from control_scene (stand, talk, walk, sit, lean-back, hands-in-pockets, point, ...)." },
     body: { type: "string", description: "man, woman, teen, child, toddler, elder, heavy or athletic." },
     color: { type: "string", description: "coral, teal, amber, violet, green, pink, blue or tan: one per character, for the colour ID pass." },
-    rig: { type: "string", description: "One of the user's own rigged characters (control_scene lists them under user_characters), by id or name, in place of a body type." },
+    rig: { type: "string", description: "A rigged character in place of a body type, by id or name: one of the library's baby animals (control_scene lists them under animals) or one of the user's own (under user_characters)." },
     ...xz, facing: { type: "number" }, face_toward: toward, height: { type: "number", description: "Metres; the body type sets it." }, params, hold, ...relations,
   },
 };
@@ -158,6 +158,12 @@ const TOOLS: Tool[] = [
       const url: string = await call("/api/control/command", { op: "look", args });
       return [{ type: "image", data: url.slice(url.indexOf(",") + 1), mimeType: "image/png" }];
     },
+  },
+  {
+    name: "control_render_image",
+    description: "A finished picture of what the camera frame shows: the clay frame is its layout and prompt its look (who each character is and wears, the place, the light, the style). An image edit with the app's default image model; the pictures land in the Library. Answers with their job ids.",
+    inputSchema: { type: "object", properties: { prompt: { type: "string", description: "The look, as a full image description." }, count: { type: "number", description: "1 to 4 versions, default 1." } } },
+    run: op("render_image"),
   },
   {
     name: "control_camera_move",

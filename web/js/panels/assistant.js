@@ -1,5 +1,5 @@
 import { h, icon, sprite } from "../dom.js";
-import { state, ask, askStage, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt } from "../store.js";
+import { state, ask, askStage, renderStageImage, useStageRender, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt } from "../store.js";
 import { view } from "../viewer.js";
 import { currentPage } from "../router.js";
 
@@ -97,11 +97,11 @@ function markMentioned() {
 // ---------------------------------------------------------------- composer
 
 function makeComposer() {
-  const input = h("textarea.chat-input", { rows: 1, placeholder: "Describe the shot · @ for a file", "aria-label": "Message the assistant" });
+  const input = h("textarea.chat-input", { rows: 2, placeholder: "Describe the shot · @ for a file", "aria-label": "Message the assistant" });
   const fileInput = h("input", { type: "file", multiple: true, hidden: true, accept: "image/*,video/mp4,video/webm,video/quicktime,audio/*,text/plain,text/markdown,.md,.txt,.json,.csv" });
   const grow = () => {
     input.style.height = "auto";
-    input.style.height = `${Math.min(input.scrollHeight, 132)}px`;
+    input.style.height = `${Math.min(input.scrollHeight, 160)}px`;
   };
   const send = () => {
     const text = input.value;
@@ -151,15 +151,29 @@ function makeComposer() {
   fileInput.addEventListener("change", () => (attach([...fileInput.files]), (fileInput.value = "")));
   const clip = h("button.composer-key.clip-key", { type: "button", title: "Attach — images, videos, sounds or text; or drop them here", "aria-label": "Attach files", on: { click: () => fileInput.click() } }, sprite("paperclip"));
   const key = h("button.send", { type: "button", title: "Send — Enter", "aria-label": "Send", on: { click: send } }, sprite("send"));
+  // on the Stage: a finished picture of the frame, in the look the words describe
+  const render = h("button.composer-key.render-key", {
+    type: "button",
+    title: "Render an image of the frame — what you type sets its look",
+    "aria-label": "Render an image of the frame",
+    on: { click: () => {
+      if (state.stageChat.busy) return;
+      const words = input.value;
+      input.value = "";
+      grow();
+      open = true;
+      renderStageImage(words);
+    } },
+  }, sprite("image-generate"));
   const tray = h("div.file-tray");
   const picker = h("div.mention-picker", { hidden: true, role: "listbox", "aria-label": "Files" });
   const toggle = h("button.composer-key.thread-key", { type: "button", "aria-label": "Conversation", on: { click: () => ((open = !open), renderAssistant(document.getElementById("assistant"))) } });
   const status = h("span.bar-status");
-  const bar = h("div.chat-bar", {}, tray, h("div.bar-row", {}, clip, input, status, toggle, key));
+  const bar = h("div.chat-bar", {}, tray, input, h("div.bar-row", {}, clip, render, h("span.spacer"), status, toggle, key));
   const el = h("div.composer", {}, picker, bar, fileInput);
   // the page keeps room for the bar at its real height, files and all
   new ResizeObserver(() => document.documentElement.style.setProperty("--chat-h", `${Math.ceil(bar.getBoundingClientRect().height)}px`)).observe(bar);
-  composer = { el, input, key, tray, picker, toggle, status, pick: 0, list: [], filter: "image" };
+  composer = { el, input, key, render, tray, picker, toggle, status, pick: 0, list: [], filter: "image" };
   return composer;
 }
 
@@ -184,11 +198,25 @@ function fileChip(f) {
 
 // ---------------------------------------------------------------- the thread
 
+/** A picture the Stage is rendering: its progress, then the picture, to look at or start a shot from. */
+function renderTile(id) {
+  const r = state.image.results.find((x) => x.id === id);
+  if (!r || r.status === "failed") return h("span.msg-render.is-failed", { title: r?.error ?? "That picture didn't work." }, icon("close"));
+  if (r.status !== "done" || !r.photo) {
+    return h("span.msg-render.is-running", { style: { aspectRatio: r.aspect?.replace(":", " / ") ?? "16 / 9" }, title: "Rendering…" },
+      h("span.typing", {}, h("i"), h("i"), h("i")), h("i.msg-render-bar", { style: { width: `${Math.round((r.progress ?? 0) * 100)}%` } }));
+  }
+  return h("span.msg-render", { style: { aspectRatio: `${r.photo.width} / ${r.photo.height}` } },
+    h("button.msg-render-look", { type: "button", title: "Look at it", "aria-label": "Look at the picture", on: { click: () => view(r.photo.url) } }, h("img", { src: r.photo.url, alt: "", draggable: false })),
+    h("button.msg-render-use", { type: "button", title: "Start a shot from it", "aria-label": "Start a shot from it", on: { click: () => useStageRender(r.photo) } }, icon("video")));
+}
+
 function message(m, last) {
   const files = (m.files ?? []).map((n) => state.chat.files.find((f) => f.name === n)).filter(Boolean);
   if (m.stage && m.role === "assistant") {
     return h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
       h("p", {}, m.text),
+      m.renders?.length ? h("div.msg-renders", {}, m.renders.map(renderTile)) : null,
       m.did?.length || m.failed?.length
         ? h("div.msg-chips", {},
           ...(m.did ?? []).map((d) => h("span.chip", {}, icon(d === "Undone" ? "remix" : "check"), d)),
@@ -214,6 +242,7 @@ export function renderAssistant(el) {
   const { files, attaching } = state.chat;
   const c = composer ?? makeComposer();
   c.key.disabled = !!busy;
+  c.render.disabled = !!busy;
   c.input.placeholder = PLACEHOLDER[stage ? "stage" : "shot"];
   c.tray.replaceChildren(...(stage ? [] : files.map(fileChip)), ...(!stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
   c.tray.hidden = stage || (!files.length && !attaching);

@@ -203,6 +203,7 @@ Spacing that reads well: two people talking 1 to 1.5 m apart, fighting 0.8 to 1.
 CHARACTERS
 Each has a name (use names, never ids), a body type, a colour and a pose.
 Body types: man, woman, teen, child, toddler, elder, heavy, athletic. Pick from the user's words: a girl or a boy is a teen, a kid a child, a baby a toddler, a grandmother an elder. Each is shaped for its silhouette (a woman's waist and hips, a child's big head, an elder's stoop, a heavy belly, an athlete's shoulders), and every pose fits every body: hands find hips, knees and faces on any of them.
+Animals: cute baby animals (a baby chick, a puppy, a kitten, a bunny…) are rigged characters too, listed under "animal characters" below: add one with add_character (or in a layout) with rig: its id instead of a body. They stand upright like toy mascots and take every pose. For an animal that is only part of the set (a dog lying by the door, a pigeon), use the Creatures assets instead.
 Colours: coral, teal, amber, violet, green, pink, blue, tan. Give each character a different one: they tell people apart in the colour ID pass.
 Hand props (hold): phone, cup, book, camera, sword, pistol, umbrella, bag, guitar, steering-wheel, and every small piece listed under "what a hand can hold" (a bottle, an apple, a coffee). "hold": "phone" puts one in the right hand, {"right": "cup", "left": "bag"} fills both, null empties them. Poses that hold something bring it themselves: phone-call, walk-phone and selfie a phone, drink a cup, read a book, photo a camera, sword a sword, aim a pistol, drive a steering wheel. Give hold only for something else (an umbrella on a walk, a bag in a hand).
 Pose sliders (params, in degrees; crouch from 0 to 1): look (turns the head, + to its left), nod (+ looks down), tilt, lean (+ forward), twist, side, arms (raises both), reach (arms forward), elbows (bends them), stance (feet apart), step (left foot forward), crouch. Use them to adjust a pose, for example "params": {"look": 30, "lean": 10}.
@@ -222,7 +223,7 @@ RELATIONS: say where things are relative to each other and the app works out the
 
 ACTIONS
 - layout {clear, characters: [{name, body, color, pose, hold, x, z or a relation, facing or face_toward, height, params}], props: [{type, label, x, z or a relation, facing or face_toward, size}], camera: {...}, duration}: a whole scene at once. For a new scene use it with clear: true. Without clear it moves what is already there by name and adds the rest; for a small change, use the small actions instead.
-- add_character {name, body (or rig: one of the user's own rigged characters), color, pose, hold, x, z or a relation, facing or face_toward, height, params}
+- add_character {name, body (or rig: an animal's id, or one of the user's own rigged characters), color, pose, hold, x, z or a relation, facing or face_toward, height, params}
 - add_prop {type, label, x, z or a relation, facing or face_toward, size}
 - place {id, x, z or a relation, facing or face_toward, size, height, body, color, params, hold, name}: id is a name from the scene; name renames it
 - pose {id, pose, mirror, params}
@@ -236,6 +237,9 @@ FOR A VIDEO (the shot plays over a timeline, 5 seconds unless said)
 - move_to {id, to, side, distance, start, end, gait, pose, face_toward}: someone walks to a name or [x, z] between start and end (seconds), stopping short of it; gait walk, run or none.
 - duration {seconds}: how long the shot is.
 - to_blender {}: send the stage to Blender to refine it there. from_blender {}: bring Blender's changes back.
+
+A PICTURE OF THE FRAME
+- render_image {prompt, count}: a finished picture of what the camera frame shows: the frame is its layout, and prompt says how it looks. Write prompt as a full image description in English: who each character is and what they wear, one sentence each, by name ("Mo is a businessman in a grey suit"), then the place, the time of day, the light, the weather and the style ("a rainy night in Tokyo, neon reflections, cinematic"). Never describe a character by its mannequin colour (coral, teal, amber…): those colours only tell the figures apart, and the app tells the image model which figure is which. count is 1 to 4 versions (1 unless asked). Use it when the user asks to render, to make an image or a picture of the scene, or to see it for real. It runs after the other actions, so stage the changes they ask for in the same answer.
 
 Poses by what people do. Standing: wait stand, casual stand-weight, arms-crossed, hands-on-hips, hands-in-pockets, hands-behind-back, lean on a wall lean-back (with against the wall: back on it, one foot up on it), lean on a counter or a bar lean-on, look-up, tired slouch, cold, t-pose. Moving: walk, run, sneak, jump, walking while texting walk-phone, climb, stumble fall, dance. Sitting: sit on a chair sit, sit back sit-relaxed, legs crossed sit-cross-legs, at a desk or typing sit-desk, elbows on knees sit-hunched, at the wheel drive (with sit_on the car's seat or a chair), on the floor sit-floor, hugging the knees sit-knees-up, kneel, crouch, lie down lie, lie-side, lie on the front lie-front. Gestures: talk or explain talk, argue point or arms-crossed, greet wave, think thinking, on the phone phone-call, not knowing shrug, celebrate cheer, surrender hands-up, bow, thumbs-up, facepalm, salute, stop, hand-on-heart, pray, waiting or impatient look-at-watch, confused scratch-head, shocked cover-mouth, despair hands-on-head, offer a hand handshake, welcome open-arms, selfie. Action: fight, punch, kick, hero-landing, reach up reach, aim, carry, push, pull, throw, sword, block, lift a box lift, drink, read, take a photo photo, pick-up. A pose already holds the arms and legs: do not add joint or reach for what it shows.
 Every character gets facing or face_toward: people in a scene together face each other or what they act on.
@@ -253,10 +257,13 @@ User: a woman waits against a pillar with her hands in her pockets
 {"reply": "She leans on the pillar, hands in her pockets.", "actions": [{"op": "layout", "args": {"clear": true, "props": [{"type": "pillar", "label": "Pillar", "x": 0, "z": -0.6}], "characters": [{"name": "Ava", "body": "woman", "color": "amber", "pose": "hands-in-pockets", "against": "Pillar"}], "camera": {"snap": "three-quarter-left", "of": "Ava", "focal": 35, "ratio": "16:9"}}}]}
 
 User: then she walks to the car while the camera pushes in
-{"reply": "She walks to the car as the camera pushes in.", "actions": [{"op": "add_prop", "args": {"type": "car", "label": "Car", "x": 3, "z": -1}}, {"op": "move_to", "args": {"id": "Ava", "to": "Car", "gait": "walk"}}, {"op": "camera_move", "args": {"move": "push-in"}}]}`;
+{"reply": "She walks to the car as the camera pushes in.", "actions": [{"op": "add_prop", "args": {"type": "car", "label": "Car", "x": 3, "z": -1}}, {"op": "move_to", "args": {"id": "Ava", "to": "Car", "gait": "walk"}}, {"op": "camera_move", "args": {"move": "push-in"}}]}
+
+User: render it as a rainy evening in Paris
+{"reply": "Rendering her by the car on a rainy Paris evening.", "actions": [{"op": "render_image", "args": {"prompt": "A rainy evening on a Paris street, wet cobblestones reflecting warm shop lights. Ava is a young woman in a beige trench coat with dark hair, walking to a small vintage car. Cinematic, shallow depth of field.", "count": 1}}]}`;
 
 export interface ControlTurn { role: "user" | "assistant"; text: string; did?: string[]; failed?: string[] }
-export const CONTROL_OPS = ["layout", "add_character", "add_prop", "place", "rename", "pose", "joint", "reach", "remove", "camera", "camera_move", "move_to", "key", "duration", "clear_keys", "to_blender", "from_blender"] as const;
+export const CONTROL_OPS = ["layout", "add_character", "add_prop", "place", "rename", "pose", "joint", "reach", "remove", "camera", "camera_move", "move_to", "key", "duration", "clear_keys", "to_blender", "from_blender", "render_image"] as const;
 type ControlAction = { op: (typeof CONTROL_OPS)[number]; args: Record<string, unknown> };
 
 const at = (p: unknown) => (Array.isArray(p) ? `x ${p[0]} z ${p[2]}` : "?");
@@ -278,7 +285,7 @@ export function controlPrompt(scene: Record<string, any>, turns: ControlTurn[], 
     `frame ${cam.ratio ?? "16:9"}, lens ${cam.focal ?? 35} mm, camera at [${(cam.position ?? []).join(", ")}] looking at [${(cam.target ?? []).join(", ")}]`,
     `timeline: ${tl.duration ?? 5} s, camera move ${tl.camera_move ?? "locked"}`,
     "characters:",
-    ...((scene.characters ?? []) as any[]).slice(0, 12).map((c) => `- ${c.name}: ${c.rig ? "the user's own rigged character" : c.body ?? "man"}, ${c.color ?? "?"}, pose ${c.pose ?? "custom"}${params(c.params)}, ${c.height} m tall, at ${at(c.position)}, facing ${c.facing}${c.seated_on ? `, seated on ${c.seated_on}` : ""}${c.hold ? `, holding ${Object.entries(c.hold).map(([h, t]) => `${t} (${h} hand)`).join(" and ")}` : ""}${c.keys?.length ? `, keyed at ${c.keys.join(", ")} s` : ""}${c.visible === false ? ", hidden" : ""}`),
+    ...((scene.characters ?? []) as any[]).slice(0, 12).map((c) => `- ${c.name}: ${c.rig ? ((scene.animals ?? []) as any[]).find((a) => a.rig === c.rig)?.name.toLowerCase() ?? "the user's own rigged character" : c.body ?? "man"}, ${c.color ?? "?"}, pose ${c.pose ?? "custom"}${params(c.params)}, ${c.height} m tall, at ${at(c.position)}, facing ${c.facing}${c.seated_on ? `, seated on ${c.seated_on}` : ""}${c.hold ? `, holding ${Object.entries(c.hold).map(([h, t]) => `${t} (${h} hand)`).join(" and ")}` : ""}${c.keys?.length ? `, keyed at ${c.keys.join(", ")} s` : ""}${c.visible === false ? ", hidden" : ""}`),
     ...(scene.characters?.length ? [] : ["none"]),
     "props:",
     ...((scene.props ?? []) as any[]).slice(0, 30).map((p) => `- ${p.label}: ${p.type}, ${(p.size ?? []).join(" x ")} m, at ${at(p.position)}${p.position?.[1] > 0.01 ? ` lifted ${p.position[1]}` : ""}, facing ${p.facing}`),
@@ -286,6 +293,7 @@ export function controlPrompt(scene: Record<string, any>, turns: ControlTurn[], 
     `poses you can use: ${list(scene.poses)}`,
     `assets by category: ${byCategory(scene.assets)}`,
     `what a hand can hold: ${(scene.hand_props ?? []).map(String).join(", ")}`,
+    ...(scene.animals?.length ? [`animal characters (add_character with rig: the id): ${(scene.animals as any[]).map((r) => `${r.rig} (${r.name.toLowerCase()}, ${r.height} m)`).join(", ")}`] : []),
     ...(scene.user_characters?.length ? [`the user's own rigged characters (add_character with rig: their name): ${(scene.user_characters as any[]).map((r) => `${r.name} (${r.height} m)`).join(", ")}`] : []),
     `camera snaps: ${list(scene.snaps)}`,
     `camera moves: ${list(scene.moves)}`,

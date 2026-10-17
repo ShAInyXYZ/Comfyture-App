@@ -12,7 +12,7 @@ import { ASSETS, assetCategories, assetByType } from "./assets.js";
 import { JOINT_NAMES, JOINT_LABELS, BODY_TYPES, BODY_SLIDERS, PARAMS, PALETTE, colorName } from "./skeleton.js";
 import { CHANNELS, PASSES } from "./channels.js";
 import { controlOps, connectRemote, wordsFor } from "./remote.js";
-import { MODELS, USER, holdables, importModel, forgetModel, loadNewUserModels } from "./models.js";
+import { MODELS, USER, rigById, holdables, importModel, forgetModel, loadNewUserModels } from "./models.js";
 
 const TOOLS = [
   ["select", "web-cursor", "Select", "Q"],
@@ -50,10 +50,13 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   const addEl = el("div.ctl-add");
   const linkLamp = el("span.lamp.ctl-link", { tabindex: "0", role: "status", "data-tooltip": "Agent link — waiting for the server" });
   const libraryEl = el("section.ctl-panel.ctl-grow.ctl-library");
-  const projectEl = el("div.ctl-project");
   const left = el("aside.ctl-col.ctl-left",
-    el("section.ctl-panel", projectEl, el("div.ctl-row", el("h2.ctl-label", {}, "Scene"), linkLamp), outlinerEl, addEl),
+    el("section.ctl-panel", el("div.ctl-row", el("h2.ctl-label", {}, "Scene"), linkLamp), outlinerEl, addEl),
     libraryEl);
+  // the stages open as tabs on a bar over the desk, as shots do, with the stage's keys at its end
+  const tabsEl = el("nav.tabs.ctl-stage-tabs", { role: "tablist", "aria-label": "Stages" });
+  const actionsEl = el("div.subbar-actions.ctl-stage-actions", { role: "toolbar", "aria-label": "Stage" });
+  const subbar = el("div.subbar.ctl-subbar", el("div.subbar-in", tabsEl, actionsEl));
 
   const snapsEl = el("div.ctl-snaps");
   const focal = el("input", { type: "range", min: 14, max: 200, step: 1, "aria-label": "Focal length" });
@@ -72,7 +75,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     el("section.ctl-panel", el("h2.ctl-label", {}, "Selected"), selectedEl),
     el("section.ctl-panel", el("h2.ctl-label", {}, "Channels"), previewsEl, renderEl));
 
-  root.replaceChildren(el("div.ctl-desk", left, el("div.ctl-mid", view, timelineEl, chatSlot), right));
+  root.replaceChildren(subbar, el("div.ctl-desk", left, el("div.ctl-mid", view, timelineEl, chatSlot), right));
 
   const stage = new Stage(stageEl, frameEl);
   const { ops, describe } = controlOps(stage);
@@ -240,18 +243,22 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       ...[["cast", "Characters"], ["poses", "Poses"], ["assets", "Assets"]].map(([id, label]) =>
         el("button", { type: "button", role: "tab", "aria-selected": String(tab === id), on: { click: () => ((tab = id), library()) } }, label)));
     if (tab === "cast") {
-      // the body types and the user's own characters, each drawn standing; a click puts one on the stage
-      const grid = el("div.ctl-poses.ctl-cast", {},
+      // the body types, the library's animals and the user's own characters, each drawn standing;
+      // a click puts one on the stage
+      const rigTile = (r) => el("button.ctl-pose.ctl-body", { type: "button", title: `Add ${r.name.toLowerCase()} — ${r.height.toFixed(2)} m`, "aria-label": `Add ${r.name.toLowerCase()}`, on: { click: () => stage.addCharacter({ at: freeSpot(), rig: r.id }) } },
+        lazyImg(() => stage.poseThumbnail(poseById("stand"), { rig: r.id })));
+      const animals = [...MODELS.rigs.values()];
+      const people = el("div.ctl-poses.ctl-cast", {},
         ...BODY_TYPES.map((b) =>
           el("button.ctl-pose.ctl-body", { type: "button", title: `Add ${b.name.toLowerCase()} — ${b.profile.height.toFixed(2)} m`, "aria-label": `Add ${b.name.toLowerCase()}`, on: { click: () => stage.addCharacter({ at: freeSpot(), body: b.id }) } },
-            lazyImg(() => stage.poseThumbnail(poseById("stand"), { body: b.id })))),
-        ...[...USER.rigs.values()].map((r) =>
-          el("div.ctl-pose-wrap", {},
-            el("button.ctl-pose.ctl-body", { type: "button", title: `Add ${r.name} — ${r.height.toFixed(2)} m, rigged`, "aria-label": `Add ${r.name}`, on: { click: () => stage.addCharacter({ at: freeSpot(), rig: r.id }) } },
-              lazyImg(() => stage.poseThumbnail(poseById("stand"), { rig: r.id }))),
-            forget(r.id, r.name))),
+            lazyImg(() => stage.poseThumbnail(poseById("stand"), { body: b.id })))));
+      const yours = el("div.ctl-poses.ctl-cast", {},
+        ...[...USER.rigs.values()].map((r) => el("div.ctl-pose-wrap", {}, rigTile(r), forget(r.id, r.name))),
         el("button.ctl-pose.ctl-import", { type: "button", title: "Import a rigged character — GLB, glTF, VRM or FBX; Mixamo, Unreal, VRoid and similar rigs", "aria-label": "Import a rigged character", on: { click: () => bring("character") } }, sprite("character-import")));
-      libraryEl.replaceChildren(tabs, grid);
+      libraryEl.replaceChildren(tabs, el("div.ctl-results", {},
+        el("span.ctl-label.is-sub", {}, "People"), people,
+        ...(animals.length ? [el("span.ctl-label.is-sub", {}, "Animals"), el("div.ctl-poses.ctl-cast", {}, ...animals.map(rigTile))] : []),
+        el("span.ctl-label.is-sub", {}, "Yours"), yours));
     } else if (tab === "poses") {
       const target = stage.selection.character;
       const results = el("div.ctl-results");
@@ -545,10 +552,11 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       const [key, label, min, max] = PARAMS.find(([p]) => p === k);
       return slider([key, label, min, max, key === "crouch" ? 0.01 : 1, key === "crouch" ? "" : "°"], character.params[k] ?? 0, (v, commit) => stage.setParams({ [k]: v }, character, { commit }));
     }));
-    const rig = character.rigId ? USER.rigs.get(character.rigId) : null;
+    const rig = character.rigId ? rigById(character.rigId) : null;
+    const about = !rig ? "This rigged character is loading…" : rig.builtIn ? `${rig.name}: rigged, so it takes every pose. A body type turns it into a mannequin.` : `${rig.name}, your rigged character: its rig follows every pose. A body type turns it back into a mannequin.`;
     selectedEl.replaceChildren(head, swatches,
       el("span.ctl-label.is-sub", {}, "Body type"), bodies,
-      ...(character.rigId ? [el("p.ctl-sub", {}, rig ? `${rig.name}, your rigged character: its rig follows every pose. A body type turns it back into a mannequin.` : "Your rigged character is loading…")] : []),
+      ...(character.rigId ? [el("p.ctl-sub", {}, about)] : []),
       ...(holds ? [el("span.ctl-label.is-sub", {}, "In hand"), holds] : []),
       el("div.ctl-columns", {}, bodyCol, poseCol),
       el("div.ctl-row", {},
@@ -689,7 +697,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   });
 
   // every stage is a project, kept as it changes; the last one opens again
-  const projects = projectsOf(stage, { el, toast, projectEl });
+  const projects = projectsOf(stage, { el, toast, tabsEl, actionsEl });
   channelPill();
   frame();
   outliner();
@@ -706,10 +714,11 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
 
 /**
  * The Stage's projects: each stage kept on the server under its name, saved a moment after
- * every change, with a picture of its frame; opened, made, duplicated and deleted from the bar
- * over the scene, and shared as one file that carries the user's own models with it.
+ * every change, with a picture of its frame. The stages you work on are tabs on the bar over
+ * the desk, as shots are; its keys open your stages, duplicate, share and delete one, and a
+ * shared file carries the user's own models with it.
  */
-function projectsOf(stage, { el, toast, projectEl }) {
+function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
   const json = { "Content-Type": "application/json" };
   const call = async (url, opts) => {
     const res = await fetch(url, opts);
@@ -717,29 +726,37 @@ function projectsOf(stage, { el, toast, projectEl }) {
     if (!res.ok) throw new Error(body.error ?? `The stage could not be reached (${res.status}).`);
     return body;
   };
-  const remember = (id) => {
+  const LAST = "comfyture.stage";
+  const TABS = "comfyture.stage.tabs";
+  const read = (key) => {
     try {
-      localStorage.setItem("comfyture.stage", id);
-    } catch {}
-  };
-  const lastId = () => {
-    try {
-      return localStorage.getItem("comfyture.stage");
+      return localStorage.getItem(key);
     } catch {
       return null;
     }
   };
+  const write = (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch {}
+  };
   const thumb = () => stage.frameStill("clay", { long: 360, type: "image/jpeg", quality: 0.72 });
+  const ago = (t) => {
+    const m = Math.round((Date.now() - new Date(t).getTime()) / 60000);
+    return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : new Date(t).toLocaleDateString();
+  };
   let project = null;
   let timer = 0;
   let pending = null;
+  // the open stages, in their order, and what the server says of each (name, picture, when)
+  let tabs = [];
+  const known = new Map();
+  let renaming = false;
 
-  const nameField = el("input.ctl-name-field.ctl-project-name", { maxLength: 60, "aria-label": "Stage name", placeholder: "Name this stage",
-    on: { change: (e) => rename(e.target.value), keydown: (e) => (e.stopPropagation(), e.key === "Enter" && e.target.blur()) } });
-  const lamp = el("span.lamp.ctl-saved", { tabindex: "0", role: "status", "data-tooltip": "Not saved yet" });
-  const key = (name, label, run, extra = {}) => el("button.ctl-mini", { type: "button", title: label, "aria-label": label, on: { click: run }, ...extra }, icon(name));
+  const lamp = el("span.lamp.ctl-saved", { role: "status", "data-tooltip": "Not saved yet" });
+  const key = (glyph, label, run) => el("button.key.is-icon.ctl-stage-key", { type: "button", title: label, "aria-label": label, on: { click: run } }, glyph);
   let arming = 0;
-  const del = key("trash", "Delete this stage — click twice", () => {
+  const del = key(icon("trash"), "Delete this stage — click twice", () => {
     if (Date.now() - arming > 2500) {
       arming = Date.now();
       del.setAttribute("aria-pressed", "true");
@@ -749,33 +766,124 @@ function projectsOf(stage, { el, toast, projectEl }) {
     arming = 0;
     remove();
   });
-  projectEl.replaceChildren(
-    el("div.ctl-project-head", {}, nameField, lamp),
-    el("div.ctl-project-keys", { role: "toolbar", "aria-label": "Stage" },
-      key("grid", "Your stages", browse),
-      key("plus", "New stage", () => create()),
-      el("button.ctl-mini", { type: "button", title: "Duplicate this stage", "aria-label": "Duplicate this stage", on: { click: duplicate } }, sprite("copy")),
-      el("button.ctl-mini", { type: "button", title: "Export to share — one file, with your own models in it", "aria-label": "Export to share", on: { click: exportFile } }, sprite("export")),
-      el("button.ctl-mini", { type: "button", title: "Import a stage someone shared", "aria-label": "Import a stage someone shared", on: { click: importFile } }, sprite("import")),
-      del));
+  actionsEl.replaceChildren(
+    key(icon("grid"), "Your stages", browse),
+    key(sprite("copy"), "Duplicate this stage", duplicate),
+    key(sprite("export"), "Export to share — one file, with your own models in it", exportFile),
+    key(sprite("import"), "Import a stage someone shared", importFile),
+    del);
 
+  // ---------------------------------------------------------------- the tabs
+
+  let preview = null;
+  const hidePreview = () => (preview?.remove(), (preview = null));
+  function showPreview(p, tab) {
+    hidePreview();
+    if (!p.thumb) return;
+    const box = tab.getBoundingClientRect();
+    preview = el("div.tab-preview.is-stage", { style: { left: `${Math.min(innerWidth - 256, box.left)}px`, top: `${box.bottom + 8}px` } },
+      el("img", { src: p.thumb, alt: "" }), el("b", {}, p.name, el("span", {}, ago(p.updatedAt))));
+    document.body.append(preview);
+  }
+
+  function renameField(p) {
+    const input = el("input.tab-rename", { value: p.name, maxLength: 60, "aria-label": "Stage name" });
+    const done = (keep) => {
+      if (!renaming) return;
+      renaming = false;
+      if (keep) rename(input.value);
+      else render();
+    };
+    input.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter") done(true);
+      if (e.key === "Escape") done(false);
+    });
+    input.addEventListener("blur", () => done(true));
+    input.addEventListener("click", (e) => e.stopPropagation());
+    requestAnimationFrame(() => (input.focus(), input.select()));
+    return input;
+  }
+
+  function tabEl(id) {
+    const p = known.get(id) ?? { id, name: "…" };
+    const active = id === project?.id;
+    const tab = el("div.tab.ctl-stage-tab", {
+      role: "tab",
+      tabindex: "0",
+      "aria-selected": String(active),
+      title: active ? "Double-click to rename" : undefined,
+      on: {
+        click: () => !active && open(id).catch((e) => toast(e.message, { tone: "crit" })),
+        dblclick: () => active && !renaming && ((renaming = true), hidePreview(), render()),
+        keydown: (e) => (e.key === "Enter" || e.key === " ") && e.target === tab && (e.preventDefault(), tab.click()),
+      },
+    },
+      p.thumb ? el("img.tab-thumb", { src: p.thumb, alt: "", draggable: false }) : el("span.tab-thumb.is-icon", {}, icon("film")),
+      active && renaming ? renameField(p) : el("span.tab-name", {}, p.name),
+      active ? lamp : null,
+      tabs.length > 1 ? el("span.tab-close", { role: "button", "aria-label": `Close ${p.name}`, title: "Close the tab — the stage is kept", on: { click: (e) => (e.stopPropagation(), closeTab(id)) } }, icon("close")) : null);
+    tab.addEventListener("pointerenter", () => !renaming && showPreview(p, tab));
+    tab.addEventListener("pointerleave", hidePreview);
+    return tab;
+  }
+
+  function render() {
+    hidePreview();
+    tabsEl.replaceChildren(...tabs.map(tabEl),
+      el("button.tab-add", { type: "button", title: "A new, empty stage in its own tab", on: { click: () => create().catch((e) => toast(e.message, { tone: "crit" })) } }, icon("plus"), "New stage"));
+    tabsEl.classList.toggle("is-overflowing", tabsEl.scrollWidth > tabsEl.clientWidth + 1);
+    tabsEl.querySelector('.tab[aria-selected="true"]')?.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }
+  tabsEl.onwheel = (e) => {
+    if (tabsEl.scrollWidth <= tabsEl.clientWidth || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+    tabsEl.scrollLeft += e.deltaY;
+    e.preventDefault();
+  };
+
+  /** A stage gets a tab of its own, next to the one open. */
+  function addTab(id) {
+    if (tabs.includes(id)) return;
+    const at = tabs.indexOf(project?.id);
+    tabs.splice(at < 0 ? tabs.length : at + 1, 0, id);
+  }
   function show(p) {
+    const { scene: _scene, ...meta } = p;
+    known.set(p.id, { ...known.get(p.id), ...meta });
+    addTab(p.id);
     project = p;
-    nameField.value = p?.name ?? "";
-    if (p) remember(p.id);
+    write(LAST, p.id);
+    write(TABS, JSON.stringify(tabs));
+    render();
   }
   function saved(when) {
     lamp.dataset.tone = "ok";
     lamp.dataset.tooltip = `Saved ${new Date(when).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
   }
+
+  // ---------------------------------------------------------------- keeping, opening, making
+
+  async function list() {
+    const { stages } = await call("api/control/stages");
+    known.clear();
+    for (const p of stages) known.set(p.id, p);
+    tabs = tabs.filter((id) => known.has(id));
+    return stages;
+  }
   async function save() {
     if (!project) return;
     clearTimeout(timer);
+    timer = 0;
     lamp.dataset.tone = "busy";
     lamp.dataset.tooltip = "Saving…";
     const id = project.id;
     pending = call(`api/control/stages/${id}`, { method: "PUT", headers: json, body: JSON.stringify({ scene: stage.toJSON(), thumb: thumb() }) })
-      .then((b) => project?.id === id && saved(b.stage.updatedAt))
+      .then((b) => {
+        known.set(id, { ...known.get(id), ...b.stage });
+        if (project?.id === id) saved(b.stage.updatedAt);
+        // the tab's picture follows the frame, unless its name is being typed
+        if (!renaming) render();
+      })
       .catch((e) => ((lamp.dataset.tone = "crit"), (lamp.dataset.tooltip = e.message)));
     return pending;
   }
@@ -798,7 +906,7 @@ function projectsOf(stage, { el, toast, projectEl }) {
   }
   async function create(name, scene) {
     if (project && timer) await save();
-    const count = (await call("api/control/stages")).stages.length;
+    const count = (await list()).length;
     if (!scene) stage.load({ version: 2 });
     const { stage: p } = await call("api/control/stages", { method: "POST", headers: json, body: JSON.stringify({ name: name ?? `Stage ${count + 1}`, scene: scene ?? stage.toJSON(), thumb: thumb() }) });
     show(p);
@@ -812,20 +920,42 @@ function projectsOf(stage, { el, toast, projectEl }) {
     toast(`"${project.name}" is a copy you can change freely.`);
   }
   async function rename(name) {
-    if (!project || !name.trim()) return (nameField.value = project?.name ?? "");
+    if (!project || !name.trim() || name.trim() === project.name) return render();
     const { stage: p } = await call(`api/control/stages/${project.id}`, { method: "PUT", headers: json, body: JSON.stringify({ name: name.trim() }) });
     project.name = p.name;
-    nameField.value = p.name;
+    known.set(p.id, { ...known.get(p.id), ...p });
+    render();
+  }
+  /** The tab goes, the stage stays (in Your stages); the one beside it opens. */
+  async function closeTab(id) {
+    if (tabs.length < 2) return;
+    const at = tabs.indexOf(id);
+    if (id === project?.id) {
+      if (timer) await save();
+      const next = tabs[at + 1] ?? tabs[at - 1];
+      tabs.splice(at, 1);
+      project = null;
+      await open(next);
+    } else {
+      tabs.splice(at, 1);
+      write(TABS, JSON.stringify(tabs));
+      render();
+    }
   }
   async function remove() {
     if (!project) return;
-    const gone = project.name;
+    const gone = project;
     clearTimeout(timer);
-    const { stages } = await call(`api/control/stages/${project.id}`, { method: "DELETE" });
+    timer = 0;
+    const at = tabs.indexOf(gone.id);
+    const { stages } = await call(`api/control/stages/${gone.id}`, { method: "DELETE" });
+    known.delete(gone.id);
+    tabs = tabs.filter((id) => id !== gone.id);
     project = null;
-    if (stages.length) await open(stages[0].id);
+    const next = tabs[at] ?? tabs[at - 1] ?? stages[0]?.id;
+    if (next) await open(next);
     else await create("Stage 1");
-    toast(`"${gone}" is deleted.`);
+    toast(`"${gone.name}" is deleted.`);
   }
   async function exportFile() {
     if (!project) return;
@@ -855,41 +985,44 @@ function projectsOf(stage, { el, toast, projectEl }) {
     input.click();
   }
 
-  /** Your stages, each with its frame, in a window over the app. */
+  /** Your stages, each with its frame, in a window over the app: one opens in a tab. */
   async function browse() {
     if (project && timer) await save();
-    const { stages } = await call("api/control/stages");
+    const stages = await list();
     const d = el("dialog.dialog.ctl-projects-window", {});
-    const ago = (t) => {
-      const m = Math.round((Date.now() - new Date(t).getTime()) / 60000);
-      return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : new Date(t).toLocaleDateString();
-    };
     const card = (p) => el("button.ctl-project-card", { type: "button", "aria-pressed": String(p.id === project?.id), title: `Open "${p.name}"`, on: { click: async () => (d.close(), await open(p.id)) } },
       p.thumb ? el("img", { src: p.thumb, alt: "", draggable: false }) : el("span.ctl-project-blank", {}, icon("film")),
       el("span.ctl-project-name-line", {}, p.name), el("span.ctl-project-when", {}, ago(p.updatedAt)));
     d.append(
       el("div.ctl-projects-head", {}, el("h2", {}, "Your stages"),
         el("div.ctl-project-keys", {},
-          key("plus", "New stage", async () => (d.close(), await create())),
-          el("button.ctl-mini", { type: "button", title: "Import a stage someone shared", "aria-label": "Import a stage someone shared", on: { click: () => (d.close(), importFile()) } }, sprite("import")),
-          key("close", "Close", () => d.close()))),
+          key(icon("plus"), "New stage", async () => (d.close(), await create())),
+          key(sprite("import"), "Import a stage someone shared", () => (d.close(), importFile())),
+          key(icon("close"), "Close", () => d.close()))),
       el("div.ctl-projects-grid", {}, ...stages.map(card)));
     d.addEventListener("close", () => d.remove());
     d.addEventListener("click", (e) => e.target === d && d.close());
     document.body.append(d);
     d.showModal();
+    render();
   }
 
   return {
     current: () => project,
     open,
     newProject: (name) => create(name),
-    /** The last stage opens again; the very first time, the newest of the example stages. */
+    /** The stages open last open again; the very first time, every stage (the examples) has a tab. */
     async openLast() {
       try {
-        const last = lastId();
-        const { stages } = await call("api/control/stages");
-        const id = stages.some((p) => p.id === last) ? last : stages[0]?.id;
+        const stages = await list();
+        let kept = null;
+        try {
+          kept = JSON.parse(read(TABS) ?? "null");
+        } catch {}
+        tabs = Array.isArray(kept) ? kept.filter((id) => known.has(id)) : [];
+        if (!tabs.length) tabs = stages.slice(0, 8).map((p) => p.id);
+        const last = read(LAST);
+        const id = tabs.includes(last) ? last : tabs[0];
         if (id) return await open(id);
         await create("Stage 1");
       } catch (e) {

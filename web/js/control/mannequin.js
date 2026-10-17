@@ -7,7 +7,7 @@
 import * as THREE from "three";
 import { JOINTS, JOINT_NAMES, HINGES, CONES, CHAINS, MIRROR, DEFAULT_PROFILE, bodyById } from "./skeleton.js";
 import { bodyParts, headFrame } from "./body.js";
-import { MODELS, USER } from "./models.js";
+import { MODELS, rigById } from "./models.js";
 import { assetByType } from "./assets.js";
 import { clone as cloneRigged } from "three/addons/utils/SkeletonUtils.js";
 
@@ -25,7 +25,7 @@ export class Mannequin {
     this.body = bodyById(body) ? body : "man";
     // a character someone brought, rigged: its id among the user's models
     this.rigId = rig ?? null;
-    this.profile = { ...DEFAULT_PROFILE, ...(bodyById(this.body)?.profile ?? {}), ...(this.rigId && USER.rigs.get(this.rigId) ? { height: USER.rigs.get(this.rigId).height } : {}), ...profile };
+    this.profile = { ...DEFAULT_PROFILE, ...(bodyById(this.body)?.profile ?? {}), ...(this.rigId && rigById(this.rigId) ? { height: rigById(this.rigId).height } : {}), ...profile };
     this.root = new THREE.Group();
     this.root.name = this.id;
     this.root.userData.character = this;
@@ -68,7 +68,7 @@ export class Mannequin {
 
   /** One of the user's rigged characters as this body, at its own height. */
   setRig(id) {
-    const rig = USER.rigs.get(id);
+    const rig = rigById(id);
     this.rigId = id;
     if (rig) this.profile = { ...this.profile, height: rig.height };
     this.build();
@@ -88,7 +88,7 @@ export class Mannequin {
     const type = bodyById(this.body);
     const base = { ...DEFAULT_PROFILE, ...(type?.profile ?? {}) };
     const model = MODELS.bodies.get(this.body);
-    const rig = this.rigId ? USER.rigs.get(this.rigId) : null;
+    const rig = this.rigId ? rigById(this.rigId) : null;
     this.rigScene?.removeFromParent();
     this.rigScene = null;
     this.rigDrive = null;

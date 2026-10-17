@@ -11,7 +11,7 @@ import { Mannequin } from "./mannequin.js";
 import { CHAINS, JOINT_NAMES, PALETTE, bodyById } from "./skeleton.js";
 import { poseById, holdArm } from "./poses.js";
 import { makeProp, propFromJSON, setPropParams, refillProp, registerUserProp, forgetUserProp, registerModelAssets } from "./assets.js";
-import { loadModels, loadUserModels, onUserModels, MODELS, USER } from "./models.js";
+import { loadModels, loadUserModels, onUserModels, MODELS, USER, rigById } from "./models.js";
 import { Channels } from "./channels.js";
 
 /** Vertical field of view (degrees) of a lens on a full-frame (36 × 24 mm) sensor. */
@@ -311,7 +311,7 @@ export class Stage {
   addCharacter({ pose = "stand", at, name, facing = 0, profile, body = "man", color, rig } = {}) {
     const n = this.characters.length;
     const type = bodyById(body) ?? bodyById("man");
-    const own = rig ? USER.rigs.get(rig) : null;
+    const own = rig ? rigById(rig) : null;
     const c = new Mannequin({ name: name ?? this.freeName(own?.name ?? type.name), color: color ?? this.freeColor(), body: type.id, profile, rig: own ? rig : undefined });
     c.setPreset(poseById(pose) ?? poseById("stand"));
     c.posed = pose;

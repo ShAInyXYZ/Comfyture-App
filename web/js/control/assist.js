@@ -22,13 +22,16 @@ const LABEL = {
   duration: (a) => `Shot length ${a.seconds ?? a.duration} s`,
   to_blender: () => "Sent to Blender",
   from_blender: () => "Back from Blender",
+  render_image: (a, r) => (r.jobs?.length > 1 ? `Rendering ${r.jobs.length} images` : "Rendering an image"),
 };
+// what waits for the stage to be set first, and takes its time: a picture of the frame
+const AFTER = new Set(["render_image"]);
 
 /** Runs an answer's commands: the stage ones as one undo step, then the trip to Blender. */
 async function apply({ stage, ops }, actions) {
   const did = [];
   const failed = [];
-  const local = actions.filter((a) => ops[a.op]);
+  const local = actions.filter((a) => ops[a.op] && !AFTER.has(a.op));
   const before = stage.history.length;
   const castBefore = stage.characters.length;
   if (local.length) {
@@ -55,7 +58,17 @@ async function apply({ stage, ops }, actions) {
     if (res.ok) did.push(LABEL[op]());
     else failed.push(body.error ?? `${op} failed`);
   }
-  return { did, failed, undo: stage.history.length > before };
+  const renders = [];
+  for (const { op, args } of actions.filter((a) => AFTER.has(a.op))) {
+    try {
+      const result = await ops[op](args ?? {});
+      renders.push(result);
+      did.push(LABEL[op](args, result));
+    } catch (error) {
+      failed.push(`${op}: ${error.message}`);
+    }
+  }
+  return { did, failed, undo: stage.history.length > before, renders };
 }
 
 /**
@@ -87,7 +100,7 @@ export async function stageAssist(api, messages, onBusy = () => {}) {
     const fix = await ask(told);
     const again = await apply(api, fix.actions ?? []);
     answer = { reply: again.failed.length ? answer.reply : fix.reply || answer.reply };
-    done = { did: [...done.did, ...again.did], failed: again.failed, undo: done.undo || again.undo, steps: (done.undo ? 1 : 0) + (again.undo ? 1 : 0) };
+    done = { did: [...done.did, ...again.did], failed: again.failed, undo: done.undo || again.undo, steps: (done.undo ? 1 : 0) + (again.undo ? 1 : 0), renders: [...done.renders, ...again.renders] };
   }
   return { role: "assistant", stage: true, text: answer.reply, ...done };
 }

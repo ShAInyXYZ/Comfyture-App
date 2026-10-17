@@ -4,7 +4,7 @@
 
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-export const MODELS = { ready: false, manifest: null, bodies: new Map(), props: new Map(), modules: new Map(), hand: new Map() };
+export const MODELS = { ready: false, manifest: null, bodies: new Map(), props: new Map(), modules: new Map(), hand: new Map(), rigs: new Map() };
 
 /** What a hand can hold: the hand props, and every piece of the set with a grip. { type: { name, scene, grips } } */
 export function holdables(assetByType) {
@@ -68,6 +68,10 @@ export function loadModels(base = "models/") {
       for (const m of a.modules ?? []) jobs.push(scene(m.file).then((s) => MODELS.modules.set(m.type, { ...m, scene: s })));
     }
     for (const h of manifest.handProps ?? []) jobs.push(scene(h.file).then((s) => MODELS.hand.set(h.type, { ...h, scene: s })));
+    // the library's own rigged characters (the baby animals), read onto the Stage's skeleton like the user's
+    for (const c of manifest.characters ?? []) {
+      jobs.push(Promise.all([scene(c.file), import("./rigs.js")]).then(([s, { readRig }]) => MODELS.rigs.set(c.id, { ...c, ...readRig(s), builtIn: true })));
+    }
     const results = await Promise.allSettled(jobs);
     const failed = results.filter((r) => r.status === "rejected");
     if (failed.length) console.warn(`models: ${failed.length} of ${results.length} did not load`, failed[0].reason);
@@ -85,6 +89,8 @@ export function loadModels(base = "models/") {
 
 // what the server keeps (characters with their rigs, props), and the loaded rigs and props
 export const USER = { list: [], rigs: new Map(), props: new Map(), failed: new Map() };
+/** A rigged character by its id: one of the user's, or one of the library's. */
+export const rigById = (id) => (id ? USER.rigs.get(id) ?? MODELS.rigs.get(id) ?? null : null);
 const listeners = new Set();
 /** Called (with the model's entry) whenever one of the user's models has loaded or gone. */
 export const onUserModels = (fn) => (listeners.add(fn), () => listeners.delete(fn));

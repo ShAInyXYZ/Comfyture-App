@@ -408,6 +408,19 @@ body { padding: 0 0 .875rem; }
 .msg-chips .chip { background: var(--s2); color: var(--muted); }
 .msg-chips .chip svg { width: .75rem; height: .75rem; color: var(--accent); }
 .msg .undo { margin-top: .375rem; }
+/* the pictures a Stage answer renders: progress, then the picture to look at or start a shot from */
+.msg-renders { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); gap: .375rem; min-width: min(24rem, 70vw); margin-top: .5rem; }
+.msg-render { position: relative; display: block; overflow: hidden; border-radius: .625rem; background: var(--s2); }
+.msg-render-look { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.msg-render img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.msg-render-use { position: absolute; right: .375rem; bottom: .375rem; display: grid; place-items: center; width: 2rem; height: 2rem; border: 0; border-radius: .5rem; background: rgba(18, 18, 20, .8); color: var(--text); cursor: pointer; opacity: 0; transition: opacity var(--t-fast), color var(--t-fast); }
+.msg-render-use:hover { color: var(--accent); }
+.msg-render:hover .msg-render-use, .msg-render-use:focus-visible { opacity: 1; }
+.msg-render-use svg { width: 1rem; height: 1rem; }
+.msg-render.is-running { display: grid; place-items: center; }
+.msg-render-bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); transition: width .3s; }
+.msg-render.is-failed { display: grid; place-items: center; aspect-ratio: 16 / 9; color: var(--err); }
+.msg-render.is-failed svg { width: 1rem; height: 1rem; }
 .typing { display: inline-flex; gap: .25rem; }
 .typing i { width: .375rem; height: .375rem; border-radius: 50%; background: var(--accent); opacity: .3; animation: typing 1.2s ease-in-out infinite; }
 .typing i:nth-child(2) { animation-delay: .2s; }
@@ -418,18 +431,25 @@ body { padding: 0 0 .875rem; }
 
 /* the bar: the conversation's files ride just above it, as in a chat */
 .composer { position: relative; display: grid; gap: .5rem; }
-.chat-bar { display: grid; gap: .375rem; padding: .375rem .375rem .375rem .5rem; border: 1px solid var(--line2); border-radius: 1.625rem; background: var(--s2); box-shadow: var(--float); transition: border-color var(--t-fast); }
-.chat-bar:has(.file-tray:not([hidden])) { border-radius: 1.25rem; padding-top: .5rem; }
-.bar-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; align-items: end; gap: .25rem; }
+/* a squircle card: what you write on top, its keys on a row underneath, as in the Image window */
+.chat-bar { display: grid; gap: .625rem; padding: .875rem .75rem .75rem 1rem; border: 1px solid var(--line2); border-radius: calc(.875rem * var(--corner-k)); background: var(--s2); box-shadow: var(--float); transition: border-color var(--t-fast); }
+.chat-bar:has(.file-tray:not([hidden])) { padding-top: .75rem; }
+.bar-row { display: flex; align-items: center; gap: .375rem; }
+.bar-row [hidden] { display: none; }
+.bar-status { display: inline-flex; align-items: center; padding: 0 .5rem; }
 .chat-bar:focus-within { border-color: var(--accent-line); }
-.chat-input { min-height: 2.5rem; max-height: 8.25rem; padding: .5625rem .375rem; border: 0; background: transparent; color: var(--text); font: 400 var(--fs-title)/1.45 var(--font-sans); resize: none; outline: 0; }
+.chat-input { min-height: 3.375rem; max-height: 10rem; padding: .125rem .25rem 0 .125rem; border: 0; background: transparent; color: var(--text); font: 400 var(--fs-title)/1.5 var(--font-sans); resize: none; outline: 0; }
 .chat-input::placeholder { color: var(--dim); }
-.composer-key, .send { position: relative; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; padding: 0; border: 0; border-radius: 50%; cursor: pointer; }
-.composer-key { background: transparent; color: var(--muted); }
-.composer-key:hover, .composer-key[aria-pressed="true"] { background: var(--s3); color: var(--text); }
-.send { background: var(--accent); color: var(--accent-ink); }
-.send:disabled { background: var(--shell); color: var(--faint); cursor: default; }
+.composer-key, .send { position: relative; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; padding: 0; border: 1px solid transparent; border-radius: calc(.5rem * var(--corner-k)); cursor: pointer; transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
+.composer-key { border-color: var(--line2); background: var(--s1); color: var(--muted); }
+.composer-key:hover:not(:disabled), .composer-key[aria-pressed="true"] { background: var(--s3); color: var(--text); }
+.composer-key:disabled { color: var(--faint); cursor: default; }
+.send { width: 3rem; background: var(--accent); color: var(--accent-ink); box-shadow: 0 2px 12px rgba(242, 255, 89, .14); }
+.send:disabled { background: var(--shell); box-shadow: none; color: var(--faint); cursor: default; }
 .composer-key svg.icon, .send svg.icon { width: 1.125rem; height: 1.125rem; }
+@supports (corner-shape: squircle) {
+  .chat-bar, .chat-panel, .composer-key, .send, .img-window, .img-bar, .img-view { corner-shape: squircle; }
+}
 .thread-count { position: absolute; right: .125rem; top: .125rem; display: grid; place-items: center; min-width: 1rem; height: 1rem; padding: 0 .25rem; border-radius: var(--r-pill); background: var(--accent); color: var(--accent-ink); font: 700 .5625rem/1 var(--font-mono); }
 .bar-status { display: grid; place-items: center; align-self: center; min-width: 0; }
 .bar-status:empty { display: none; }

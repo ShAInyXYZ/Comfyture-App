@@ -1486,7 +1486,7 @@ export async function askStage(text) {
   changed("assistant");
   try {
     const [{ stageAssist }, api] = await Promise.all([import("./control/assist.js"), stageReady]);
-    chat.messages.push(await stageAssist(api, chat.messages, (busy) => ((chat.busy = busy), changed("assistant"))));
+    chat.messages.push(adoptRenders(await stageAssist(api, chat.messages, (busy) => ((chat.busy = busy), changed("assistant")))));
   } catch (error) {
     chat.messages.push({ role: "assistant", stage: true, text: error.message ?? String(error), error: true });
   } finally {
@@ -1494,6 +1494,43 @@ export async function askStage(text) {
     changed("assistant");
   }
 }
+
+/**
+ * The pictures an answer started become the Image window's results too, so they fill in as
+ * they render; the message keeps their ids.
+ */
+function adoptRenders(message) {
+  const renders = message.renders ?? [];
+  message.renders = renders.flatMap((r) => r.jobs.map((j) => j.id));
+  for (const r of renders) {
+    state.image.results.unshift(...r.jobs.map((j) => ({ id: j.id, status: "running", progress: 0, prompt: r.look || r.prompt, label: "Stage render", aspect: r.aspect })));
+  }
+  if (renders.length) changed("image");
+  return message;
+}
+
+/** A finished picture of the Stage's frame, in the look the words describe, in the Stage's conversation. */
+export async function renderStageImage(words = "") {
+  const look = words.trim();
+  const chat = state.stageChat;
+  if (chat.busy) return;
+  chat.messages.push({ role: "user", text: look ? `Render it: ${look}` : "Render the frame as an image." });
+  chat.busy = "Rendering";
+  changed("assistant");
+  try {
+    const { ops } = await stageReady;
+    const render = await ops.render_image({ prompt: look });
+    chat.messages.push(adoptRenders({ role: "assistant", stage: true, text: look ? "Rendering the frame in that look." : "Rendering the frame as a film still. Type a look first to change it (a rainy night, a 90s sitcom, Pixar)…", did: ["Rendering an image"], renders: [render] }));
+  } catch (error) {
+    chat.messages.push({ role: "assistant", stage: true, text: error.message ?? String(error), error: true });
+  } finally {
+    chat.busy = null;
+    changed("assistant");
+  }
+}
+
+/** A picture rendered from the Stage starts a shot: it is the open tab's start frame. */
+export const useStageRender = (photo) => placePhoto("start", photo);
 
 /** Puts the stage back as it was before an answer (one step, or two when it mended itself). */
 export async function undoStage(message) {
@@ -1705,6 +1742,8 @@ function imageJob(job) {
   if (job.status === "failed") toast(job.error ?? "That picture didn't work.", { tone: "crit" });
   if (job.status === "done") api.photos().then((photos) => ((state.photos = photos), changed("library"))).catch(() => {});
   changed("image");
+  // a picture the Stage asked for fills in in its conversation
+  if (state.stageChat.messages.some((m) => m.renders?.includes(job.id))) changed("assistant");
 }
 
 /**

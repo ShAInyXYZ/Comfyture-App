@@ -12,7 +12,7 @@ import { allPoses, holdArm } from "./poses.js";
 import { ASSETS, assetByType, seatOf, topOf, setPropParams } from "./assets.js";
 import { CHAINS, JOINT_NAMES, BODY_TYPES, PALETTE, PARAMS, colorName } from "./skeleton.js";
 import { PASSES } from "./channels.js";
-import { MODELS, USER, holdables } from "./models.js";
+import { MODELS, USER, rigById, holdables } from "./models.js";
 
 const rad = THREE.MathUtils.degToRad;
 const deg = (v) => Math.round(THREE.MathUtils.radToDeg(v) * 10) / 10;
@@ -445,6 +445,15 @@ export function controlOps(stage) {
     timeline: { duration: stage.duration, time: round(stage.time), camera_move: stage.cameraKeys.length ? (stage.handheld ? "handheld" : stage.lastMove ?? "keyed") : "locked", camera_keys: stage.cameraKeys.map((k) => round(k.t)) },
   });
 
+  /** A rigged character by its id or its name: one of the library's animals, or one of the user's. */
+  const rigNamed = (v) => {
+    const key = String(v).trim().toLowerCase();
+    const all = [...MODELS.rigs.values(), ...USER.rigs.values()];
+    const found = all.find((r) => r.id === v || r.id === key || r.name.toLowerCase() === key) ?? all.find((r) => r.name.toLowerCase().includes(key) || r.tags?.includes(key));
+    if (!found) throw new Error(`No character "${v}". Animals: ${[...MODELS.rigs.keys()].join(", ") || "none"}.`);
+    return found.id;
+  };
+
   const addCharacter = (a = {}) => {
     const c = stage.addCharacter({
       pose: a.pose ? pose(a.pose) : "stand",
@@ -454,7 +463,7 @@ export function controlOps(stage) {
       body: a.body !== undefined ? body(a.body) : undefined,
       color: a.color !== undefined ? color(a.color) : undefined,
       // one of the user's own rigged characters, by its id or its name
-      rig: a.rig !== undefined ? [...USER.rigs.values()].find((r) => r.id === a.rig || r.name.toLowerCase() === String(a.rig).toLowerCase())?.id : undefined,
+      rig: a.rig !== undefined ? rigNamed(a.rig) : undefined,
       profile: a.height ? { height: THREE.MathUtils.clamp(num(a.height, "height"), 0.5, 2.6) } : undefined,
     });
     if (a.params) c.setParams(a.params);
@@ -606,6 +615,90 @@ export function controlOps(stage) {
     stage.handheld = 0;
   };
 
+  // ------------------------------------------------------------ a finished picture of the frame
+
+  const A_PERSON = { man: "a man", woman: "a woman", teen: "a teenager", child: "a child", toddler: "a toddler", elder: "an older person", heavy: "a heavyset person", athletic: "an athletic person" };
+  const article = (words) => (/^[aeiou]/i.test(words) ? `an ${words}` : `a ${words}`);
+  // what a model sees of each mannequin's colour in the clay frame
+  const SEEN = { Coral: "red", Teal: "turquoise", Amber: "yellow", Violet: "purple", Green: "green", Pink: "pink", Blue: "blue", Tan: "brown" };
+  /**
+   * Who and what the frame holds, in plain words, for a picture's description: each character
+   * by name with the colour and the place a model sees it at, so the words find the right figure.
+   */
+  const inFrame = (look = "") => {
+    const held = holdables(assetByType);
+    const cast = stage.characters.filter((c) => c.root.visible).slice(0, 8);
+    const eye = stage.camera.getWorldPosition(new THREE.Vector3());
+    const heads = cast.map((c) => c.joints.Head.getWorldPosition(new THREE.Vector3()));
+    const far = heads.map((v) => v.distanceTo(eye));
+    const [near, back] = [Math.min(...far), Math.max(...far)];
+    const width = stage.container.clientWidth;
+    // what the words say of each character by name goes with that character's figure
+    const said = new Map();
+    const rest = [];
+    let last = null;
+    for (const clause of look.split(/(?<=[.;!?])\s+|,\s+/).map((x) => x.trim()).filter(Boolean)) {
+      const named = cast.find((c) => new RegExp(`\\b${c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(clause));
+      // a clause that names no one carries on from one that did, until the sentence ends
+      const owner = named ?? (last && !/[.;!?]$/.test(said.get(last).at(-1)) ? last : null);
+      if (owner) {
+        said.set(owner, [...(said.get(owner) ?? []), clause]);
+        last = owner;
+      } else {
+        rest.push(clause);
+        last = null;
+      }
+    }
+    const people = cast.map((c, i) => {
+      const who = c.rigId ? article((rigById(c.rigId)?.name ?? "character").toLowerCase()) : A_PERSON[c.body] ?? "a person";
+      const posed = allPoses().find((p) => p.id === c.posed)?.name?.toLowerCase();
+      const seat = c.seatedOn ? stage.props.find((p) => p.userData.id === c.seatedOn) : null;
+      const things = Object.values(c.hold ?? {}).filter(Boolean).map((t) => article((held.get(t)?.name ?? t).toLowerCase().replace(/-/g, " ")));
+      // across the frame (not the viewport around it), and near or far when the cast spreads out
+      const x = heads[i].clone().project(stage.camera).x * (width / Math.max(1, stage.frame?.w ?? width));
+      const side = x < -0.33 ? "on the left" : x > 0.33 ? "on the right" : "in the middle";
+      const depth = back - near > 1.2 ? (far[i] - near < 0.25 * (back - near) ? ", in front" : back - far[i] < 0.25 * (back - near) ? ", at the back" : "") : "";
+      const figure = c.rigId ? `the ${who.replace(/^an? /, "")} ${side}${depth}` : `the ${SEEN[colorName(`#${c.color.getHexString()}`)] ?? "clay"} figure ${side}${depth}`;
+      const words = said.get(c)?.join(", ").replace(/[.;!?]+$/, "");
+      const doing = [posed && posed !== "custom" ? posed : null, seat ? `on the ${(assetByType(seat.userData.type)?.name ?? seat.userData.label).toLowerCase()}` : null, things.length ? `holding ${things.join(" and ")}` : null].filter(Boolean).join(", ");
+      return `${figure} is ${c.name}${words ? `: ${words}` : `, ${who}${doing ? `, ${doing}` : ""}`}`;
+    });
+    const things = [...new Set(stage.props.filter((p) => p.visible).map((p) => (assetByType(p.userData.type)?.name ?? p.userData.label).toLowerCase()))].slice(0, 14).map(article);
+    const count = ["no one", "one character", "two characters", "three characters", "four characters", "five characters", "six characters", "seven characters", "eight characters"][people.length];
+    const joined = rest.reduce((a, x) => (!a ? x : /[.;!?]$/.test(a) ? `${a} ${x}` : `${a}, ${x}`), "");
+    return { count: people.length, rest: joined, words: [people.length ? `exactly ${count}, and no one else: ${people.join("; ")}` : "", things.length ? `with ${things.join(", ")}` : ""].filter(Boolean).join(" — ") };
+  };
+
+  /**
+   * A finished picture of what the camera frame shows: the clay frame is its layout, the words
+   * its look. An image edit with the Image window's default model; the picture lands in the
+   * Library. Answers with its jobs.
+   */
+  const MANNEQUIN = new RegExp(`\\b(?:(an?)\\s+)?(?:${PALETTE.map(([, n]) => n).join("|")})(?:[- ](?:toned|coloured|colored|skinned))?\\s+(?=(man|woman|teen|teenager|child|kid|boy|girl|person|elder|toddler|baby|figure|mannequin)\\b)`, "gi");
+  const renderImage = async (a = {}) => {
+    if (!stage.characters.length && !stage.props.length) throw new Error("The stage is empty: stage a scene first.");
+    // "a teal man" is the mannequin's ID colour, not the man: the words keep the person
+    const look = String(a.prompt ?? "").trim().slice(0, 1500).replace(MANNEQUIN, (m, art, noun) => (art ? `${/^[aeiou]/i.test(noun) ? "an" : "a"} ` : ""));
+    const blob = await (await fetch(stage.frameStill("clay", { long: 1536 }))).blob();
+    const kept = await fetch(`api/photos?name=${encodeURIComponent("stage frame")}`, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
+    const frame = await kept.json().catch(() => ({}));
+    if (!kept.ok) throw new Error(frame.error ?? "The frame was not kept.");
+    const who = inFrame(look);
+    // who is who first, so each description finds its figure; then the place, the light, the style
+    const prompt = [
+      "Render @frame as a finished image. Keep its exact composition: the camera, the framing, and every person and object where they are and posed as they are.",
+      who.count ? "Each coloured clay mannequin becomes the real character described for it, with natural skin, hair and clothes: its colour only tells it apart and is not its skin or its clothing, and none stays a mannequin." : "",
+      who.words ? `In the frame, ${who.words}.` : "",
+      "The clay blockouts become real things, with real materials, textures and light.",
+      `${(look ? who.rest : "") || "A cinematic film still, natural light"}.`.replace(/\.\.$/, "."),
+    ].filter(Boolean).join(" ");
+    const count = Math.round(THREE.MathUtils.clamp(Number(a.count) || 1, 1, 4));
+    const res = await fetch("api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ template: "edit", prompt, aspect: stage.ratio, refs: [{ file: frame.file, name: "frame" }], count, megapixels: 1 }) });
+    const jobs = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(jobs.error ?? "The picture was not started.");
+    return { jobs: jobs.map((j) => ({ id: j.id })), prompt, look, aspect: stage.ratio, frame: { file: frame.file, url: frame.url } };
+  };
+
   /** What the frame shows, as a PNG data URL, in any channel (clay by default). */
   const look = (a = {}) => {
     const long = Math.round(THREE.MathUtils.clamp(a.width ?? 768, 128, 1600));
@@ -692,6 +785,7 @@ export function controlOps(stage) {
       poses: poseIds(),
       hand_props: [...holdables(assetByType).values()].map((h) => h.type),
       user_characters: [...USER.rigs.values()].map((r) => ({ rig: r.id, name: r.name, height: Math.round(r.height * 100) / 100 })),
+      animals: [...MODELS.rigs.values()].map((r) => ({ rig: r.id, name: r.name, height: Math.round(r.height * 100) / 100 })),
       assets: ASSETS.map((x) => ({ type: x.type, name: x.name, category: x.category, ...(x.seat ? { seat: true } : {}), ...(x.top ? { top: true } : {}) })),
       body_types: BODY_TYPES.map((b) => b.id), colors: PALETTE.map(([, n]) => n.toLowerCase()), params: PARAMS.map(([k, , min, max]) => ({ name: k, min, max })),
       snaps: SNAPS.map(([s]) => s), moves: MOVES.map(([m]) => m), frames: Object.keys(RATIOS), effectors: Object.keys(CHAINS), joints: JOINT_NAMES,
@@ -773,10 +867,11 @@ export function controlOps(stage) {
     look,
     undo: () => (stage.undo(), describe()),
     export_glb: async () => ({ glb: await exportGlb(), camera: describe().camera }),
+    render_image: renderImage,
     apply_blender: applyBlender,
   };
   // these read or replace the scene without a step of their own
-  const QUIET = new Set(["scene", "look", "export_glb", "undo", "time"]);
+  const QUIET = new Set(["scene", "look", "export_glb", "undo", "time", "render_image"]);
   // the others happen whole or not at all: one that fails puts the stage back as it was
   for (const [name, run] of Object.entries(OPS)) {
     if (QUIET.has(name)) continue;
