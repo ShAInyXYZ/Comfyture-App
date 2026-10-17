@@ -52,6 +52,7 @@ export function mountChat(el, stage, { ops, look }) {
     const failed = [];
     const local = actions.filter((a) => ops[a.op]);
     const before = stage.history.length;
+    const castBefore = stage.characters.length;
     if (local.length) {
       stage.batch(() => {
         for (const { op, args } of local) {
@@ -64,6 +65,9 @@ export function mountChat(el, stage, { ops, look }) {
           }
         }
       });
+      // someone new with no word on the camera: the same angle, framing everyone
+      const cast = stage.characters.length;
+      if (cast > castBefore && !local.some((a) => a.op === "camera" || (a.op === "layout" && a.args?.camera))) stage.snap(stage.lastSnap ?? "three-quarter-left", null);
       // a fresh layout is looked at, not edited: no gizmo over the frame
       if (local.some((a) => a.op === "layout")) stage.select({});
       stage.render();

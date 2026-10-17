@@ -677,8 +677,12 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       await writeFile(picture, Buffer.from(png[2], "base64"));
     }
     try {
-      const answer = await engine.ask(controlPrompt(scene, turns, !!picture), undefined, undefined, { brief: CONTROL_BRIEF, picture });
-      return json(res, 200, readControlAnswer(answer));
+      const prompt = controlPrompt(scene, turns, !!picture);
+      let answer = readControlAnswer(await engine.ask(prompt, undefined, undefined, { brief: CONTROL_BRIEF, picture }), scene);
+      // JSON it could not close is asked for once more, never shown
+      if (answer.unreadable) answer = readControlAnswer(await engine.ask(`${prompt}\n\nYour last answer was not valid JSON. Answer again: one JSON object, every bracket closed.`, undefined, undefined, { brief: CONTROL_BRIEF, picture }), scene);
+      if (answer.unreadable) answer = { reply: "I could not put that together. Try it in smaller steps?", actions: [] };
+      return json(res, 200, answer);
     } finally {
       if (picture) await rm(picture, { force: true });
     }

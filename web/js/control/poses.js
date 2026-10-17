@@ -82,6 +82,17 @@ export const POSES = [
     RightArm: [0, 0, -82], RightForeArm: [0, 6, 0],
     LeftFoot: [-8, 0, 0], RightFoot: [-8, 0, 0],
   } },
+  // hands in the front pockets, solved by reaching each hand to the hip and kept as angles
+  { id: "hands-in-pockets", name: "Hands in pockets", joints: {
+    Head: [2, 0, 0],
+    LeftArm: [4, 1, -74], LeftForeArm: [-11, -27, -44], RightArm: [4, -1, 74], RightForeArm: [-11, 27, 44],
+  } },
+  // leaning back on a wall: the body tipped back from the feet, hands in pockets, the right sole flat on the wall
+  { id: "lean-back", name: "Lean back", joints: {
+    Hips: [-11, 0, 0], Spine: [-2, 0, 0], Head: [10, 12, 0],
+    LeftArm: [1, 0, -78], LeftForeArm: [-7, -22, -34], RightArm: [1, 0, 78], RightForeArm: [-7, 22, 34],
+    LeftUpLeg: [2, 0, -3], RightUpLeg: [-15, 0, 3], RightLeg: [80, 0, 0], RightFoot: [25, 0, 0],
+  } },
   { id: "t-pose", name: "T-pose", joints: {} },
 ];
 

@@ -198,22 +198,29 @@ Answer with JSON only, no other text:
 THE STAGE
 Metres, the ground at y = 0. x runs left (-) to right (+) as the default camera sees it; z runs from the back (-) to the front (+, toward the camera).
 facing is degrees about the vertical: 0 looks at the camera, 90 looks right (+x), -90 looks left, 180 looks away. face_toward takes a name (or [x, z]) and turns to it: use it for people who talk, fight or look at something.
-Props: box (a 0.6 m cube), cylinder (0.6 m wide, 0.8 m tall), sphere (0.7 m), plane (a wall 2.4 m wide, 2.2 m tall; scale [2, 1, 1] makes it 4.8 m wide), stairs (1 m wide, five steps rising toward -z). y lifts a prop, e.g. y 0.6 stacks it on a box.
+Props: box (a 0.6 m cube; a table is a box of size [1.2, 0.75, 0.7]), cylinder (0.6 m wide, 0.8 m tall), sphere (0.7 m), plane (a wall, size [4, 2.5, 0.1] by default 2.4 × 2.2 m), stairs (1 m wide, five steps rising toward -z). Use on to stack a prop on another.
 Spacing that reads well: two people talking 1 to 1.5 m apart, fighting 0.8 to 1.2 m, a wall 1.5 to 3 m behind them. Keep everything within 4 m of the centre.
 
+RELATIONS: say where things are relative to each other and the app works out the numbers. Use them instead of x and z whenever the user relates things:
+- against: a name. The back rests on it, touching: only for leaning or resting on it ("leans on the wall", "back to the pillar"). By or near a wall is not against: put the wall 1.5 to 3 m behind them instead.
+- sit_on: a name. Seated on it; a box becomes the chair, sized and put under the hips.
+- on: a name. Standing on it, or a prop resting on top of another.
+- between: [name, name]. Halfway between the two.
+- next_to: a name, with side (left, right, front or behind) and distance in metres.
+
 ACTIONS
-- layout {clear, characters: [{name, pose, x, z, facing or face_toward, height}], props: [{type, label, x, z, y, facing or face_toward, scale}], camera: {...}}: a whole scene at once. For a new scene use it with clear: true. Without clear it moves what is already there by name and adds the rest; for a small change, use the small actions instead.
-- add_character {name, pose, x, z, facing or face_toward, height}
-- add_prop {type, label, x, z, y, facing or face_toward, scale}
-- place {id, x, z, y, facing or face_toward, scale, height}: id is a name from the scene
+- layout {clear, characters: [{name, pose, x, z or a relation, facing or face_toward, height}], props: [{type, label, x, z or a relation, facing or face_toward, size}], camera: {...}}: a whole scene at once. For a new scene use it with clear: true. Without clear it moves what is already there by name and adds the rest; for a small change, use the small actions instead.
+- add_character {name, pose, x, z or a relation, facing or face_toward, height}
+- add_prop {type, label, x, z or a relation, facing or face_toward, size}: size is [width, height, depth] in metres
+- place {id, x, z or a relation, facing or face_toward, size, height}: id is a name from the scene
 - pose {id, pose, mirror}
-- joint {id, joint, rotation: [x, y, z] in degrees}
-- reach {id, effector, target}: effector is LeftHand, RightHand, LeftFoot or RightFoot; target a name (the hand rests on its top) or [x, y, z]
+- joint {id, joint, rotation: [x, y, z] in degrees}: only when the user asks to move one limb
+- reach {id, effector, target}: effector is LeftHand, RightHand, LeftFoot or RightFoot; target a name (the hand rests on its top). Only when the user asks for a hand or foot on something.
 - remove {id}
 - camera {snap, of, focal, ratio}: of is a character name or "all"; focal in mm from 14 to 200 (24 wide, 35 natural, 50 normal, 85 portrait)
 - to_blender {}: send the stage to Blender to refine it there. from_blender {}: bring Blender's changes back.
 
-Poses by what people do: talk or wait stand; argue point or arms-crossed; greet wave; fight, punch or box fight; run run; kneel kneel; sit sit (seated as on a chair, so give them a box to sit on).
+Poses by what people do: talk or wait stand; argue point or arms-crossed; greet wave; fight, punch or box fight; run run; kneel kneel; sit sit (with sit_on a box); hands in pockets hands-in-pockets; lean on a wall lean-back (with against the wall: back on it, hands in pockets, one foot up on it). A pose already holds the arms and legs: do not add joint or reach for what it shows.
 Every character gets facing or face_toward: people in a scene together face each other or what they act on.
 Two people facing each other along x are seen in profile by the front snap: that is the side view of a talk or a duel. The side snap looks along the line between them and hides one behind the other.
 
@@ -221,7 +228,10 @@ Give every character a short name (the user's words when they give one) and use 
 
 EXAMPLE
 User: a girl sits on the stairs while her friend waves at her, wide shot
-{"reply": "She sits on the steps and her friend waves from the side.", "actions": [{"op": "layout", "args": {"clear": true, "props": [{"type": "stairs", "label": "Stairs", "x": -0.6, "z": -0.4}], "characters": [{"name": "Mia", "pose": "sit", "x": -0.6, "z": 0, "facing": 20}, {"name": "Leo", "pose": "wave", "x": 1.2, "z": 0.3, "face_toward": "Mia"}], "camera": {"snap": "front", "of": "all", "focal": 24, "ratio": "16:9"}}}]}`;
+{"reply": "She sits on the steps and her friend waves from the side.", "actions": [{"op": "layout", "args": {"clear": true, "props": [{"type": "stairs", "label": "Stairs", "x": -0.6, "z": -0.4}], "characters": [{"name": "Mia", "pose": "sit", "sit_on": "Stairs", "facing": 20}, {"name": "Leo", "pose": "wave", "next_to": "Mia", "side": "right", "distance": 1.6, "face_toward": "Mia"}], "camera": {"snap": "front", "of": "all", "focal": 24, "ratio": "16:9"}}}]}
+
+User: a woman waits against a pillar with her hands in her pockets
+{"reply": "She leans on the pillar, hands in her pockets.", "actions": [{"op": "layout", "args": {"clear": true, "props": [{"type": "cylinder", "label": "Pillar", "x": 0, "z": -0.6, "size": [0.6, 2.6, 0.6]}], "characters": [{"name": "Ava", "pose": "hands-in-pockets", "against": "Pillar"}], "camera": {"snap": "three-quarter-left", "of": "Ava", "focal": 35, "ratio": "16:9"}}}]}`;
 
 export interface ControlTurn { role: "user" | "assistant"; text: string; did?: string[]; failed?: string[] }
 export const CONTROL_OPS = ["layout", "add_character", "add_prop", "place", "pose", "joint", "reach", "remove", "camera", "to_blender", "from_blender"] as const;
@@ -256,12 +266,15 @@ export function controlPrompt(scene: Record<string, any>, turns: ControlTurn[], 
 
 /**
  * Mends the brackets of JSON a small model wrote: a closer it forgot is put back where the next
- * one shows it was due, a stray closer is dropped, trailing commas go, open ones are closed.
+ * one shows it was due (or where a new object starts in place of a key), a stray closer is
+ * dropped, trailing commas go, and whatever is still open at the end is closed.
  */
 export function mendJson(text: string) {
   const out: string[] = [];
   const open: string[] = [];
   let inString = false;
+  // inside an object after { or a comma, only a key may come
+  let wantKey = false;
   // a comma right before a closer is dropped
   const close = (c: string) => {
     let k = out.length;
@@ -277,8 +290,20 @@ export function mendJson(text: string) {
       else if (ch === '"') inString = false;
       continue;
     }
+    if (/\s/.test(ch)) {
+      out.push(ch);
+      continue;
+    }
+    // {"op": ..., "args": {...}, {"op": ... : the object before this one was never closed
+    if (wantKey && (ch === "{" || ch === "[") && open.includes("]")) {
+      while (open.at(-1) === "}") close(open.pop()!);
+      out.push(",");
+    }
+    wantKey = false;
     if (ch === '"') inString = true;
-    if (ch === "{" || ch === "[") open.push(ch === "{" ? "}" : "]");
+    if (ch === "{") (open.push("}"), (wantKey = true));
+    if (ch === "[") open.push("]");
+    if (ch === ",") wantKey = open.at(-1) === "}";
     if (ch === "}" || ch === "]") {
       if (!open.includes(ch)) continue;
       while (open.at(-1) !== ch) close(open.pop()!);
@@ -287,8 +312,119 @@ export function mendJson(text: string) {
     }
     out.push(ch);
   }
+  if (inString) out.push('"');
   while (open.length) close(open.pop()!);
   return out.join("");
+}
+
+/** Numbers and lists of numbers a model wrote as strings ("[0.5, 0.4, 0.5]", "1.2") become numbers. */
+function unquote(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(unquote);
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, unquote(v)]));
+  if (typeof value === "string") {
+    const t = value.trim();
+    if (/^\[\s*-?\d+(\.\d+)?(\s*,\s*-?\d+(\.\d+)?)*\s*\]$/.test(t)) return JSON.parse(t);
+    if (/^-?\d+(\.\d+)?$/.test(t)) return Number(t);
+  }
+  return value;
+}
+
+const RELATION_KEYS = ["face_toward", "against", "sit_on", "on", "between", "next_to"];
+
+/**
+ * The shapes a small model invents for relations, made into the one Control reads: a relation
+ * named as its own op ({"op": "face_toward", "args": {"id", "target"}}), or wrapped in a
+ * place ({"relation": "next_to", "args": {"target", "side", "distance"}}).
+ */
+function reshape(a: { op: string; args: Record<string, any> }): ControlAction {
+  const unwrap = (args: Record<string, any>) => {
+    const kind = typeof args.relation === "string" ? args.relation.trim().toLowerCase().replace(/\s+/g, "_") : null;
+    if (!kind || !RELATION_KEYS.includes(kind)) return args;
+    const inner = args.args && typeof args.args === "object" ? args.args : args;
+    const { relation, args: _, target, ...rest } = { ...args, ...inner };
+    return { ...rest, [kind]: inner.target ?? inner.name ?? inner.id ?? target };
+  };
+  if (RELATION_KEYS.includes(a.op)) {
+    const { id, name, target, of, ...rest } = a.args;
+    return { op: "place", args: { ...rest, id: id ?? name, [a.op]: target ?? of ?? rest[a.op] } };
+  }
+  if (["place", "add_character", "add_prop"].includes(a.op)) return { op: a.op as ControlAction["op"], args: unwrap(a.args) };
+  if (a.op === "layout") {
+    for (const k of ["characters", "props"]) if (Array.isArray(a.args[k])) a.args[k] = a.args[k].map((t: any) => (t && typeof t === "object" ? unwrap(t) : t));
+  }
+  return a as ControlAction;
+}
+
+const SEAT = /chair|stool|bench|seat|sofa|couch|throne/i;
+const SITS = /^(sit|sitting|seated)$/i;
+
+/**
+ * A small model's habits, put right across the whole answer: a name written as facing is a
+ * face_toward; y is a filler it sets to a centre height, so it goes (on stacks things); a scale in
+ * metres is capped; and someone told to sit, with a chair about and no sit_on, sits on it.
+ */
+function tidy(actions: ControlAction[], scene: Record<string, any>) {
+  const things: Record<string, any>[] = [];
+  for (const { op, args } of actions) {
+    if (op === "layout") things.push(...(Array.isArray(args.characters) ? args.characters : []), ...(Array.isArray(args.props) ? args.props : []));
+    if (op === "add_character" || op === "add_prop" || op === "place") things.push(args);
+  }
+  for (const t of things) {
+    if (!t || typeof t !== "object") continue;
+    if (typeof t.facing === "string" && !Number.isFinite(Number(t.facing))) {
+      t.face_toward ??= t.facing;
+      delete t.facing;
+    }
+    delete t.y;
+    // against a wall while facing someone else is standing by it, not leaning on it
+    if (t.against !== undefined && t.face_toward !== undefined && lc(t.face_toward) !== lc(t.against) && !/lean/i.test(String(t.pose))) delete t.against;
+    if (t.against !== undefined && t.face_toward !== undefined) delete t.face_toward;
+    if (Array.isArray(t.scale)) t.scale = t.scale.map((v: unknown) => Math.min(4, Math.max(0.1, Number(v) || 1)));
+    else if (t.scale !== undefined) t.scale = Math.min(4, Math.max(0.1, Number(t.scale) || 1));
+  }
+  for (const a of actions) if (a.op === "layout") faceSomething(a.args, scene);
+  // seats: the chairs on the stage and the ones this answer adds
+  const seats = [
+    ...((scene.props ?? []) as any[]).map((p) => p.label),
+    ...actions.flatMap(({ op, args }) => (op === "add_prop" ? [args.label] : op === "layout" && Array.isArray(args.props) ? args.props.map((p: any) => p?.label) : [])),
+  ].filter((l) => typeof l === "string" && SEAT.test(l));
+  const sitters = actions.flatMap(({ op, args }) =>
+    op === "layout" && Array.isArray(args.characters) ? args.characters.filter((c: any) => SITS.test(String(c?.pose)) && c.sit_on === undefined).map((c: any) => c.name)
+    : (op === "add_character" || op === "pose") && SITS.test(String(args.pose)) && args.sit_on === undefined ? [args.name ?? args.id] : []).filter(Boolean);
+  const free = [...new Set(seats)];
+  const seated = new Set(actions.filter((a) => a.op === "place" && a.args.sit_on !== undefined).map((a) => String(a.args.id).toLowerCase()));
+  for (const who of [...new Set(sitters)].filter((w) => !seated.has(String(w).toLowerCase()))) {
+    if (!free.length) break;
+    actions.push({ op: "place", args: { id: who, sit_on: free.shift() } });
+  }
+  seatInOrder(actions);
+}
+
+const PLACING = ["x", "z", "next_to", "between", "side", "distance"];
+const placing = (args: Record<string, any>) => Object.fromEntries(PLACING.filter((k) => args[k] !== undefined).map((k) => [k, args[k]]));
+const lc = (v: unknown) => String(v ?? "").toLowerCase();
+
+/**
+ * Sitting comes last for whoever sits: first they go where the seat was meant to be (when only
+ * the seat was given a place), then they turn, then they sit, and the seat is moved under them.
+ */
+function seatInOrder(actions: ControlAction[]) {
+  for (const sit of actions.filter((a) => a.op === "place" && a.args.sit_on !== undefined)) {
+    const who = lc(sit.args.id);
+    const seat = lc(sit.args.sit_on);
+    const about = (name: string) => actions.flatMap(({ op, args }) =>
+      op === "layout" ? [...(args.characters ?? []), ...(args.props ?? [])].filter((t: any) => lc(t?.name ?? t?.label) === name)
+      : (op === "add_character" && lc(args.name) === name) || (op === "add_prop" && lc(args.label) === name) || (op === "place" && args !== sit.args && lc(args.id) === name) ? [args] : []);
+    const mine = Object.assign({}, ...about(who).map(placing));
+    const theirs = Object.assign({}, ...about(seat).map(placing));
+    // the turns this person makes, taken out to come just before the sitting
+    const turns = actions.filter((a) => a !== sit && a.op === "place" && lc(a.args.id) === who && Object.keys(a.args).every((k) => ["id", "face_toward", "facing"].includes(k)));
+    for (const t of turns) actions.splice(actions.indexOf(t), 1);
+    const before: ControlAction[] = [];
+    if (!Object.keys(mine).length && Object.keys(theirs).length) before.push({ op: "place", args: { id: sit.args.id, ...theirs } });
+    before.push(...turns);
+    actions.splice(actions.indexOf(sit), 0, ...before);
+  }
 }
 
 /**
@@ -297,45 +433,63 @@ export function mendJson(text: string) {
  * it could act on (not a wall or stairs). And people standing side by side along x are seen in
  * profile from the front: a side snap of them would look along their line, one behind the other.
  */
-function faceSomething(args: Record<string, any>) {
+function faceSomething(args: Record<string, any>, scene: Record<string, any>) {
   const characters = Array.isArray(args.characters) ? args.characters : [];
+  // without clear, someone already on the stage keeps their place and the way they face, unless told
+  const staged = new Set(args.clear ? [] : ((scene.characters ?? []) as any[]).map((c) => String(c.name).toLowerCase()));
+  const isNew = (c: any) => !staged.has(String(c?.name).toLowerCase());
+  for (const c of characters) if (c && !isNew(c) && Number(c.facing) === 0) delete c.facing;
   const props = (Array.isArray(args.props) ? args.props : []).filter((p: any) => p?.label && !["plane", "wall", "stairs"].includes(String(p.type)));
   const xz = (o: any) => [Number(o?.x) || 0, Number(o?.z) || 0];
+  // nobody given a place: side by side along x, 1.2 m apart, facing each other below
+  const unplaced = characters.filter((c: any) => c && isNew(c) && c.x === undefined && c.z === undefined && !["against", "sit_on", "on", "between", "next_to"].some((k) => c[k] !== undefined));
+  if (unplaced.length > 1 && unplaced.length === characters.filter(isNew).length) {
+    unplaced.forEach((c: any, i: number) => {
+      c.x = Math.round((i - (unplaced.length - 1) / 2) * 1.2 * 100) / 100;
+      c.z = 0;
+      if (Number(c.facing) === 180 || Number(c.facing) === 0) delete c.facing;
+    });
+  }
   const cam = args.camera;
   if (cam && cam.snap === "side" && (!cam.of || cam.of === "all") && characters.length > 1) {
     const span = (i: number) => Math.max(...characters.map((c: any) => xz(c)[i])) - Math.min(...characters.map((c: any) => xz(c)[i]));
     if (span(0) > 2 * span(1)) cam.snap = "front";
   }
   for (const c of characters) {
-    if (!c || c.face_toward !== undefined || (c.facing !== undefined && Number(c.facing) !== 0)) continue;
+    // leaning sets its own direction; someone seated or standing on something still looks at people, not at it
+    if (!c || !isNew(c) || c.against !== undefined) continue;
+    if (c.face_toward !== undefined || (c.facing !== undefined && Number(c.facing) !== 0)) continue;
     const [x, z] = xz(c);
     const others = characters.filter((o: any) => o !== c && o?.name);
     const near = others.sort((a: any, b: any) => Math.hypot(xz(a)[0] - x, xz(a)[1] - z) - Math.hypot(xz(b)[0] - x, xz(b)[1] - z))[0];
     if (near) c.face_toward = near.name;
-    else if (props.length) c.face_toward = props[0].label;
+    else if (props.length && c.sit_on === undefined && c.on === undefined) c.face_toward = props[0].label;
     if (c.face_toward !== undefined) delete c.facing;
   }
 }
 
 /** The answer, read leniently: the first JSON object in it, only the actions Control has. */
-export function readControlAnswer(text: string): { reply: string; actions: ControlAction[] } {
+export function readControlAnswer(text: string, scene: Record<string, any> = {}): { reply: string; actions: ControlAction[]; unreadable?: boolean } {
   if (process.env.COMFYTURE_DEBUG) console.log(`control assistant answered\n${text}`);
   let raw: Record<string, any>;
-  const body = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
+  const start = text.indexOf("{");
+  const body = start < 0 ? "" : text.slice(start);
   try {
     try {
-      raw = JSON.parse(body);
+      raw = JSON.parse(body.slice(0, body.lastIndexOf("}") + 1));
     } catch {
-      raw = JSON.parse(mendJson(body));
+      raw = JSON.parse(mendJson(body.replace(/```\s*$/, "").trim()));
     }
   } catch {
+    // plain words with no JSON are a reply; broken JSON is never shown
+    if (start < 0 && text.trim()) return { reply: text.replace(/\s+/g, " ").trim().slice(0, 600), actions: [] };
     console.warn(`control assistant: unreadable answer\n${text}`);
-    return { reply: text.replace(/[{}"]/g, "").replace(/\s+/g, " ").trim().slice(0, 600) || "Sorry, I lost my words. Say it again?", actions: [] };
+    return { reply: "", actions: [], unreadable: true };
   }
   const actions = (Array.isArray(raw.actions) ? raw.actions : [])
     .slice(0, 12)
-    .map((a: any) => ({ op: String(a?.op ?? a?.do ?? ""), args: a?.args && typeof a.args === "object" ? a.args : {} }))
+    .map((a: any) => reshape({ op: String(a?.op ?? a?.do ?? ""), args: a?.args && typeof a.args === "object" ? (unquote(a.args) as Record<string, any>) : {} }))
     .filter((a: ControlAction) => (CONTROL_OPS as readonly string[]).includes(a.op));
-  for (const a of actions) if (a.op === "layout") faceSomething(a.args);
+  tidy(actions, scene);
   return { reply: String(raw.reply ?? "").replace(/\s+/g, " ").trim().slice(0, 600) || (actions.length ? "Done." : "…"), actions };
 }

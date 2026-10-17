@@ -12,11 +12,21 @@ const BASE = (process.env.COMFYTURE_URL ?? "http://127.0.0.1:5177").replace(/\/$
 const COORDS = "Metres, Y up, ground at y = 0. X is screen right and +Z points at the default camera. Facing is degrees about Y: 0 looks at the camera (+Z), 90 looks right (+X), 180 looks away.";
 const xz = { x: { type: "number" }, z: { type: "number" } };
 const toward = { description: "An id or name to turn toward, or an [x, z] point.", anyOf: [{ type: "string" }, { type: "array", items: { type: "number" }, minItems: 2, maxItems: 2 }] };
+// where something is relative to others; the page works out the numbers, and a relation wins over x and z
+const relations = {
+  against: { type: "string", description: "Back against this (a wall, a pillar): turned away from it, touching it." },
+  sit_on: { type: "string", description: "Seated on this. A box or cylinder becomes the seat, sized and moved under the hips." },
+  on: { type: "string", description: "Standing on this, or (a prop) resting on top of it." },
+  between: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 2, description: "Halfway between two names." },
+  next_to: { type: "string", description: "Beside this, on side (left, right, front, behind) at distance metres (default 1)." },
+  side: { type: "string" },
+  distance: { type: "number" },
+};
 const character = {
   type: "object",
   properties: {
     name: { type: "string" }, pose: { type: "string", description: "A pose id from control_scene (stand, walk, run, sit, point, ...)." },
-    ...xz, facing: { type: "number" }, face_toward: toward, height: { type: "number", description: "Metres, default 1.75." },
+    ...xz, facing: { type: "number" }, face_toward: toward, height: { type: "number", description: "Metres, default 1.75." }, ...relations,
   },
 };
 const prop = {
@@ -25,7 +35,9 @@ const prop = {
     type: { type: "string", description: "box, cylinder, sphere, plane (a wall) or stairs." }, label: { type: "string" },
     ...xz, y: { type: "number", description: "Lift above the ground, e.g. to stack on another prop." },
     facing: { type: "number" }, face_toward: toward,
-    scale: { description: "One number or [x, y, z]. A box is 0.6 m, a wall 2.4 × 2.2 m.", anyOf: [{ type: "number" }, { type: "array", items: { type: "number" }, minItems: 3, maxItems: 3 }] },
+    size: { type: "array", items: { type: "number" }, minItems: 1, maxItems: 3, description: "[width, height, depth] in metres. A box is 0.6 m, a wall 2.4 × 2.2 m." },
+    scale: { description: "One number or [x, y, z].", anyOf: [{ type: "number" }, { type: "array", items: { type: "number" }, minItems: 3, maxItems: 3 }] },
+    ...relations,
   },
   required: ["type"],
 };
@@ -90,8 +102,8 @@ const TOOLS: Tool[] = [
   },
   {
     name: "control_place",
-    description: `Moves, turns or resizes a character or prop. Characters stay on the ground; props can be lifted with y and scaled; characters take a new height. ${COORDS}`,
-    inputSchema: { type: "object", properties: { id, ...xz, y: { type: "number" }, facing: { type: "number" }, face_toward: toward, scale: prop.properties.scale, height: { type: "number" } }, required: ["id"] },
+    description: `Moves, turns or resizes a character or prop, by numbers or by relation (against, sit_on, on, between, next_to). Characters stay on the ground; props can be lifted with y and sized; characters take a new height. ${COORDS}`,
+    inputSchema: { type: "object", properties: { id, ...xz, y: { type: "number" }, facing: { type: "number" }, face_toward: toward, size: prop.properties.size, scale: prop.properties.scale, height: { type: "number" }, ...relations }, required: ["id"] },
     run: op("place"),
   },
   {

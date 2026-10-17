@@ -32,6 +32,8 @@ const ALIASES = {
     waving: "wave", greet: "wave", "crossed arms": "arms-crossed", "arms crossed": "arms-crossed",
     fighting: "fight", punch: "fight", boxing: "fight", landing: "hero-landing", "hero landing": "hero-landing",
     reaching: "reach", tpose: "t-pose", "t pose": "t-pose",
+    lean: "lean-back", leaning: "lean-back", "leaning back": "lean-back", "lean on wall": "lean-back", "lean against wall": "lean-back",
+    pockets: "hands-in-pockets", "hands in pocket": "hands-in-pockets", "hand in pocket": "hands-in-pockets",
   },
   prop: { table: "box", desk: "box", chair: "box", stool: "box", crate: "box", bench: "box", cube: "box", bed: "box", car: "box", wall: "plane", door: "plane", screen: "plane", pillar: "cylinder", column: "cylinder", barrel: "cylinder", post: "cylinder", ball: "sphere", rock: "sphere", steps: "stairs", stair: "stairs", staircase: "stairs" },
   snap: { "low angle": "low", "high angle": "high", "close up": "close-up", closeup: "close-up", "over the shoulder": "over-shoulder", "over shoulder": "over-shoulder", profile: "side", "three quarter": "three-quarter-left", "three-quarter": "three-quarter-left", "bird's eye": "top", overhead: "top", wide: "front" },
@@ -70,16 +72,136 @@ export function controlOps(stage) {
     object.rotation.set(0, Math.atan2(x - object.position.x, z - object.position.z), 0);
   };
 
-  /** Moves and turns a character or prop: x, y, z, facing (degrees), face_toward, scale. */
+  /** A box around an object in its own frame (turned and scaled with it), from its meshes. */
+  const ownBox = (o) => {
+    o.updateMatrixWorld(true);
+    const inv = o.matrixWorld.clone().invert();
+    const box = new THREE.Box3();
+    o.traverse((m) => {
+      if (!m.isMesh) return;
+      if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+      box.union(m.geometry.boundingBox.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld)));
+    });
+    return box;
+  };
+
+  /** How far a body reaches behind its root, the way it faces: the gap between its root and a wall at its back. */
+  const backDepth = (o) => {
+    const [q, p] = [o.quaternion.clone(), o.position.clone()];
+    o.quaternion.identity();
+    o.position.set(0, p.y, 0);
+    o.updateMatrixWorld(true);
+    const depth = -new THREE.Box3().setFromObject(o).min.z;
+    o.quaternion.copy(q);
+    o.position.copy(p);
+    o.updateMatrixWorld(true);
+    return depth;
+  };
+
+  /** Back against something: on the face of it nearest to where the body is, facing away, touching it. */
+  const lean = (o, target) => {
+    const w = objectOf(target);
+    const box = ownBox(w);
+    const local = w.worldToLocal(o.position.clone());
+    const mid = box.getCenter(new THREE.Vector3());
+    const half = box.getSize(new THREE.Vector3()).multiplyScalar(0.5);
+    const rel = local.clone().sub(mid);
+    const onZ = Math.abs(rel.z) / Math.max(half.z, 1e-3) >= Math.abs(rel.x) / Math.max(half.x, 1e-3);
+    const sign = Math.sign(onZ ? rel.z : rel.x) || 1;
+    const clamp = THREE.MathUtils.clamp;
+    const surface = onZ
+      ? new THREE.Vector3(clamp(local.x, box.min.x, box.max.x), 0, sign > 0 ? box.max.z : box.min.z)
+      : new THREE.Vector3(sign > 0 ? box.max.x : box.min.x, 0, clamp(local.z, box.min.z, box.max.z));
+    const n = (onZ ? new THREE.Vector3(0, 0, sign) : new THREE.Vector3(sign, 0, 0)).transformDirection(w.matrixWorld).setY(0).normalize();
+    w.localToWorld(surface);
+    o.rotation.set(0, Math.atan2(n.x, n.z), 0);
+    const depth = backDepth(o) + 0.005;
+    o.position.x = surface.x + n.x * depth;
+    o.position.z = surface.z + n.z * depth;
+  };
+
+  /** Seated on something. A box or cylinder becomes the seat, sized and put under the hips; anything else is sat on top of. */
+  const sitOn = (c, target) => {
+    if (c.posed !== "sit") {
+      c.setEulerPose(POSES.find((p) => p.id === "sit").joints);
+      c.posed = "sit";
+      c.ground();
+    }
+    const hips = c.joints.Hips.getWorldPosition(new THREE.Vector3());
+    const seat = hips.y - 0.06 * (c.profile.height / 1.75);
+    const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(c.root.quaternion).setY(0).normalize();
+    const prop = target.prop;
+    if (prop && (prop.userData.type === "box" || prop.userData.type === "cylinder")) {
+      const tall = prop.userData.type === "box" ? 0.6 : 0.8;
+      prop.rotation.set(0, c.root.rotation.y, 0);
+      prop.scale.set(0.75, Math.max(0.1, seat) / tall, 0.75);
+      prop.position.set(hips.x + forward.x * 0.12, 0, hips.z + forward.z * 0.12);
+      stage.placeOnGround(prop);
+      return;
+    }
+    const box = new THREE.Box3().setFromObject(objectOf(target));
+    const top = box.getCenter(new THREE.Vector3());
+    c.root.position.x += top.x - hips.x;
+    c.root.position.z += top.z - hips.z;
+    c.root.position.y += box.max.y - seat;
+    c.root.updateMatrixWorld(true);
+  };
+
+  /** On top of something: a body stands on it, a prop rests on it. */
+  const standOn = (o, target) => {
+    const box = new THREE.Box3().setFromObject(objectOf(target));
+    const top = box.getCenter(new THREE.Vector3());
+    o.position.x = top.x;
+    o.position.z = top.z;
+    o.updateMatrixWorld(true);
+    o.position.y += box.max.y - new THREE.Box3().setFromObject(o).min.y;
+  };
+
+  // each prop type's size at scale 1, in metres
+  const SIZES = { box: [0.6, 0.6, 0.6], cylinder: [0.6, 0.8, 0.6], sphere: [0.7, 0.7, 0.7], plane: [2.4, 2.2, 0.08], stairs: [1, 0.9, 1.5] };
+
+  const SIDES = { left: [-1, 0], right: [1, 0], front: [0, 1], "in front": [0, 1], "in front of": [0, 1], behind: [0, -1], back: [0, -1] };
+
+  /**
+   * Moves and turns a character or prop: x, y, z, facing (degrees), face_toward, scale, height, or
+   * where it is relative to others, worked out here: against (back to it), sit_on, on, between
+   * [a, b], next_to with side (left, right, front, behind) and distance. A relation wins over x and z.
+   */
   const place = (t, a) => {
     const o = objectOf(t);
-    if (a.x !== undefined) o.position.x = num(a.x, "x");
-    if (a.z !== undefined) o.position.z = num(a.z, "z");
-    if (a.facing !== undefined) o.rotation.set(0, rad(num(a.facing, "facing")), 0);
-    if (a.face_toward !== undefined) face(o, a.face_toward);
+    const related = [a.against, a.sit_on, a.on, a.between, a.next_to].some((v) => v !== undefined);
+    if (!related) {
+      if (a.x !== undefined) o.position.x = num(a.x, "x");
+      if (a.z !== undefined) o.position.z = num(a.z, "z");
+    }
+    if (a.between !== undefined) {
+      const two = Array.isArray(a.between) && a.between.length === 2 ? a.between : String(a.between).split(/\s*(?:,|\band\b)\s*/).filter(Boolean);
+      if (two.length !== 2) throw new Error("between takes two names.");
+      const [p, q] = two.map(where);
+      o.position.x = (p[0] + q[0]) / 2;
+      o.position.z = (p[1] + q[1]) / 2;
+    }
+    if (a.next_to !== undefined) {
+      const [x, z] = where(a.next_to);
+      const d = a.distance !== undefined ? num(a.distance, "distance") : 1;
+      const [dx, dz] = SIDES[String(a.side ?? "right").toLowerCase().trim()] ?? SIDES.right;
+      o.position.x = x + dx * d;
+      o.position.z = z + dz * d;
+    }
+    // leaning sets its own direction: away from what the back rests on
+    if (a.against === undefined) {
+      if (a.facing !== undefined) o.rotation.set(0, rad(num(a.facing, "facing")), 0);
+      if (a.face_toward !== undefined) face(o, a.face_toward);
+    }
     if (t.prop && a.scale !== undefined) {
       const s = Array.isArray(a.scale) ? a.scale : [a.scale, a.scale, a.scale];
       o.scale.set(...s.map((v, i) => Math.max(0.01, num(v, `scale[${i}]`))));
+    }
+    // a size in metres: width, height, depth of the prop as it stands (any left out stay)
+    if (t.prop && a.size !== undefined) {
+      const want = Array.isArray(a.size) ? a.size : [a.size];
+      const base = SIZES[o.userData.type] ?? SIZES.box;
+      want.slice(0, 3).forEach((v, i) => (o.scale.setComponent(i, Math.max(0.02, num(v, `size[${i}]`)) / base[i])));
     }
     if (t.character && a.height !== undefined) {
       t.character.profile = { ...t.character.profile, height: THREE.MathUtils.clamp(num(a.height, "height"), 0.4, 2.6) };
@@ -88,9 +210,33 @@ export function controlOps(stage) {
     if (t.character) t.character.ground();
     else {
       stage.placeOnGround(o);
-      if (a.y !== undefined) o.position.y += num(a.y, "y");
+      if (a.y !== undefined && a.on === undefined) o.position.y += num(a.y, "y");
+    }
+    if (a.on !== undefined) standOn(o, find(a.on));
+    if (a.sit_on !== undefined && t.character) sitOn(t.character, findOr(a.sit_on, () => ({ prop: addProp({ type: "box", label: String(a.sit_on) }) })));
+    if (a.against !== undefined) lean(o, findOr(a.against, () => wallBehind(o, String(a.against))));
+  };
+
+  /** A seat or a wall named but not on the stage is made, rather than failing the whole command. */
+  const findOr = (name, make) => {
+    try {
+      return find(name);
+    } catch {
+      return make();
     }
   };
+  const wallBehind = (o, label) => {
+    const wall = addProp({ type: "plane", label });
+    const back = new THREE.Vector3(0, 0, -0.6).applyQuaternion(o.quaternion);
+    wall.position.set(o.position.x + back.x, wall.position.y, o.position.z + back.z);
+    wall.rotation.set(0, o.rotation.y, 0);
+    return { prop: wall };
+  };
+
+  // what places a thing relative to others, done once everything in a layout exists
+  const RELATIONS = ["face_toward", "against", "sit_on", "on", "between", "next_to", "side", "distance"];
+  const relations = (a) => Object.fromEntries(RELATIONS.filter((k) => a[k] !== undefined).map((k) => [k, a[k]]));
+  const plain = (a) => Object.fromEntries(Object.entries(a).filter(([k]) => !RELATIONS.includes(k)));
 
   const describe = () => ({
     characters: stage.characters.map((c) => ({
@@ -109,17 +255,18 @@ export function controlOps(stage) {
     const c = stage.addCharacter({
       pose: a.pose ? pose(a.pose) : "stand",
       name: typeof a.name === "string" && a.name.trim() ? a.name.trim().slice(0, 40) : undefined,
-      at: [a.x ?? 0, 0, a.z ?? 0],
+      // no place given: the stage spreads newcomers out
+      at: a.x === undefined && a.z === undefined ? undefined : [a.x ?? 0, 0, a.z ?? 0],
       profile: a.height ? { height: THREE.MathUtils.clamp(num(a.height, "height"), 0.4, 2.6) } : undefined,
     });
-    place({ character: c }, { facing: a.facing, face_toward: a.face_toward });
+    place({ character: c }, { facing: a.facing, ...relations(a) });
     return c;
   };
 
   const addProp = (a = {}) => {
     const type = known("prop", a.type, PROP_TYPES.map(([t]) => t));
     if (!type) throw new Error(`No prop type "${a.type}". Types: ${PROP_TYPES.map(([t]) => t).join(", ")}.`);
-    const p = stage.addProp(type, [a.x ?? 0, 0, a.z ?? 0]);
+    const p = stage.addProp(type, a.x === undefined && a.z === undefined ? undefined : [a.x ?? 0, 0, a.z ?? 0]);
     // a table, chair or bed named by its word gets a label and a likely size
     if (!a.label && type !== a.type) p.userData.label = p.name = String(a.type).trim().replace(/^\w/, (c) => c.toUpperCase()).slice(0, 40);
     if (typeof a.label === "string" && a.label.trim()) p.userData.label = p.name = a.label.trim().slice(0, 40);
@@ -156,25 +303,25 @@ export function controlOps(stage) {
     if (a.clear) clear();
     const made = { characters: [], props: [] };
     const same = (x, y) => typeof x === "string" && x.trim().toLowerCase() === String(y).toLowerCase();
-    // turning toward something placed later in the same layout waits until everything exists
+    // placing relative to something made later in the same layout waits until everything exists
     const later = [];
     for (const p of a.props ?? []) {
       let prop = stage.props.find((x) => same(p.label, x.userData.label));
-      if (prop) place({ prop }, { ...p, face_toward: undefined });
-      else prop = addProp({ ...p, face_toward: undefined });
+      if (prop) place({ prop }, plain(p));
+      else prop = addProp(plain(p));
       made.props.push(prop.userData.id);
-      if (p.face_toward !== undefined) later.push([{ prop }, p.face_toward]);
+      if (Object.keys(relations(p)).length) later.push([{ prop }, relations(p)]);
     }
     for (const c of a.characters ?? []) {
       let character = stage.characters.find((x) => same(c.name, x.name));
       if (character) {
-        place({ character }, { ...c, face_toward: undefined });
+        place({ character }, plain(c));
         if (c.pose && pose(c.pose) !== character.posed) stage.applyPose(pose(c.pose), character);
-      } else character = addCharacter({ ...c, face_toward: undefined });
+      } else character = addCharacter(plain(c));
       made.characters.push(character.id);
-      if (c.face_toward !== undefined) later.push([{ character }, c.face_toward]);
+      if (Object.keys(relations(c)).length) later.push([{ character }, relations(c)]);
     }
-    for (const [t, toward] of later) place(t, { face_toward: toward });
+    for (const [t, r] of later) place(t, r);
     if (a.camera) camera(a.camera);
     else if (a.clear && (made.characters.length || made.props.length)) stage.snap("three-quarter-left", null);
     return made;

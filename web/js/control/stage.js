@@ -392,6 +392,7 @@ export class Stage {
   snap(name, character = this.selection.character ?? this.characters[0]) {
     const pose = this.snapPose(name, character);
     if (!pose) return;
+    this.lastSnap = name;
     this.camera.position.copy(pose.position);
     this.orbit.target.copy(pose.target);
     this.camera.up.set(0, 1, 0);
