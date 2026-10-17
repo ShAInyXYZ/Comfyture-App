@@ -93,9 +93,13 @@ A clip can start the shot instead of a photo. Uploads are normalized to 24 fps, 
 
 `/control.html` is a staging table for making your own references: posable mannequins (IK hands and feet, preset poses, mirror), props, a camera with snaps and a real focal length, and the output frame. It is a standalone page for now; the reference passes (depth, pose, line art, masks) come next.
 
+### The assistant
+
+The chat bar under the viewport stages the scene for you. "Two people arguing by a wall, low angle, vertical for a reel" becomes two mannequins pointing at each other, a wall behind them, a low camera and a 9:16 frame. Follow-ups change only what you name: "put a table between them", "make the one on the left sit down", "send it to Blender". It is the same assistant as the app's, Gemma 4 inside ComfyUI. It gets the stage as it stands and a picture of the frame, and answers with Control commands. Each answer is one undo step. Whatever fails goes back to it once so it can fix its answer.
+
 ### Agents and Blender
 
-`scripts/control-mcp.ts` is an MCP server that lets an agent stage the scene for you: "two people arguing by a wall, low angle, 9:16" becomes characters, poses, props and a camera, which it checks with a picture of the frame. The repo's `.mcp.json` registers it for Claude Code; any MCP client can run `node scripts/control-mcp.ts`. Keep the app running and the Control page open: the page carries out each command and every command is one undo step.
+The same commands are open to outside agents. `scripts/control-mcp.ts` is an MCP server for them, and the repo's `.mcp.json` registers it for Claude Code. Any MCP client can run `node scripts/control-mcp.ts`. Keep the app running and the Control page open: the page carries out each command.
 
 | Tool | |
 |---|---|
@@ -258,6 +262,7 @@ Write the action the way LTX-2.5 reads best: present tense, the motion first, on
 | `COMFYTURE_WORKFLOWS` | | `dev` swaps in tiny stand-in workflows so you can work on the UI without a GPU |
 | `COMFYTURE_URL` | `http://127.0.0.1:5177` | Where `scripts/control-mcp.ts` finds the app |
 | `BLENDER_MCP_HOST` / `BLENDER_MCP_PORT` | `localhost` / `9876` | Where the app finds Blender's MCP add-on |
+| `COMFYTURE_DEBUG` | | Set to log the Control assistant's raw answers |
 
 ## Credits
 
