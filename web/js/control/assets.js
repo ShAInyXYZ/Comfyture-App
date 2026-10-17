@@ -304,6 +304,52 @@ ASSETS.push(
 const BY_TYPE = new Map(ASSETS.map((a) => [a.type, a]));
 export const assetByType = (type) => BY_TYPE.get(type);
 export const ASSET_CATEGORIES = [...new Set(ASSETS.map((a) => a.category))];
+/** The categories in the order the library lists them; anything new after. */
+export function assetCategories() {
+  const order = ["Furniture", "Objects", "Food", "Products", "Studio", "Architecture", "Outdoor", "Vehicles", "Fantasy", "Creatures", "Basic", "Mine"];
+  const have = new Set(ASSETS.map((a) => a.category));
+  return [...order.filter((c) => have.has(c)), ...[...have].filter((c) => !order.includes(c))];
+}
+
+/**
+ * The model manifest's word on every piece: themes and tags for the search, a hand's grip for a
+ * piece that can be held, and the pieces that exist only as models (they join the catalogue).
+ */
+export function registerModelAssets(list) {
+  for (const a of list) {
+    if (a.module) continue;
+    let def = BY_TYPE.get(a.type);
+    if (!def) {
+      if (!Array.isArray(a.size) || a.size.length !== 3) continue;
+      def = modelled(a.type, a.name ?? a.type, a.category ?? "Objects", "prop-box", a.size.map((v) => Math.max(0.01, v)), a.seat ?? null, a.top ?? null);
+      ASSETS.push(def);
+      BY_TYPE.set(a.type, def);
+    }
+    def.themes = a.themes ?? def.themes ?? [];
+    def.tags = a.tags ?? def.tags ?? [];
+    if (a.holdable) def.holdable = a.holdable;
+  }
+}
+
+/** One of the user's own props, as a piece of the catalogue under Mine, kept in its own materials. */
+export function registerUserProp(entry) {
+  MODELS.props.set(entry.id, { ...entry, keepMaterials: true });
+  if (BY_TYPE.has(entry.id)) return;
+  const size = entry.size.map((v) => Math.max(0.01, v));
+  const def = modelled(entry.id, entry.name, "Mine", "prop-box", size, null, size[1]);
+  def.themes = ["mine"];
+  def.tags = String(entry.name).toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  def.user = true;
+  ASSETS.push(def);
+  BY_TYPE.set(entry.id, def);
+}
+
+export function forgetUserProp(id) {
+  MODELS.props.delete(id);
+  BY_TYPE.delete(id);
+  const i = ASSETS.findIndex((a) => a.type === id);
+  if (i >= 0) ASSETS.splice(i, 1);
+}
 /** [type, name] for every asset, the way the panels list them. */
 export const PROP_TYPES = ASSETS.map((a) => [a.type, a.name]);
 
@@ -332,13 +378,85 @@ const KEEPS_SHAPE = { doorway: ["w"], window: ["w"], arch: ["w"], fence: ["w"], 
 // where a model's frame differs from the built piece's: a turn about y, then an offset
 const MODEL_FIX = { stairs: { turn: Math.PI, offset: [0, 0, -0.6] }, streetlamp: { offset: [0.43, 0, 0] } };
 
+// what a model's own parts answer for: a door's leaf swings open on the model itself
+const MODEL_PARAMS = { door: ["open"] };
+
 function modelFits(def, params) {
   const defaults = paramsOf(def.type);
   return def.params.every(([k]) => {
     if (Math.abs(params[k] - defaults[k]) < 1e-6) return true;
+    if (MODEL_PARAMS[def.type]?.includes(k)) return true;
     if (KEEPS_SHAPE[def.type]?.includes(k)) return false;
     return SIZES.has(k) || AS_SIZE[def.type]?.includes(k);
   });
+}
+const atDefaults = (def, params) => Object.entries(paramsOf(def.type)).every(([k, v]) => Math.abs(params[k] - v) < 1e-6);
+
+/** A clone of a model's scene in the prop's materials (or its own), its geometry shared. */
+function dress(scene, object, keep) {
+  const copy = scene.clone(true);
+  copy.traverse((o) => {
+    if (!o.isMesh) return;
+    if (!keep) o.material = o.material?.name === "accent" ? object.userData.accent : object.userData.material;
+    o.castShadow = o.receiveShadow = true;
+    o.userData.shared = true;
+  });
+  return copy;
+}
+/** A model's scene scaled to a box: size [w, h, d], standing at (x, y, z) on its base. */
+function fitted(scene, object, from, [w, h, d], [x, y, z]) {
+  const g = new THREE.Group();
+  g.add(dress(scene, object));
+  g.scale.set(w / from[0], h / from[1], d / from[2]);
+  g.position.set(x, y, z);
+  return g;
+}
+
+/**
+ * Pieces put together from a model's modules or its walls, once their shape leaves the
+ * defaults: a staircase of any steps from its step, a fence of any length from its posts and
+ * rails, a doorway or a window wall of any size from the wall's own slab.
+ */
+const ASSEMBLE = {
+  stairs(p, object) {
+    const step = MODELS.modules.get("stairs.step");
+    if (!step) return null;
+    const n = Math.round(p.steps);
+    return Array.from({ length: n }, (_, i) => fitted(step.scene, object, step.size, [p.w, p.rise * (i + 1), p.run], [0, 0, -i * p.run]));
+  },
+  fence(p, object) {
+    const post = MODELS.modules.get("fence.post");
+    const rail = MODELS.modules.get("fence.rail");
+    if (!post || !rail) return null;
+    const gaps = Math.max(1, Math.round(p.w / 0.8));
+    const s = p.w / gaps;
+    const k = p.h / 1.1;
+    const out = [];
+    for (let i = 0; i <= gaps; i++) out.push(fitted(post.scene, object, post.size, [post.size[0], p.h, post.size[2]], [-p.w / 2 + i * s, 0, 0]));
+    for (let i = 0; i < gaps; i++) for (const y of [0.383, 0.867]) out.push(fitted(rail.scene, object, rail.size, [s, rail.size[1], rail.size[2]], [-p.w / 2 + (i + 0.5) * s, y * k, 0]));
+    return out;
+  },
+};
+// a doorway's or a window wall's pieces, each box of it made of the wall's slab
+for (const type of ["doorway", "window"]) {
+  ASSEMBLE[type] = (p, object) => {
+    const wall = MODELS.props.get("plane");
+    if (!wall) return null;
+    const out = [];
+    for (const piece of assetByType(type).build(p)) {
+      piece.updateMatrixWorld(true);
+      const prm = piece.geometry?.parameters;
+      if (piece.isMesh && prm?.width !== undefined && prm.depth > 0.02) {
+        out.push(fitted(wall.scene, object, wall.size, [prm.width * piece.scale.x, prm.height * piece.scale.y, prm.depth * piece.scale.z], [piece.position.x, piece.position.y - (prm.height * piece.scale.y) / 2, piece.position.z]));
+        piece.geometry.dispose();
+      } else {
+        // glass and anything thin stays as it was built, in the accent
+        piece.traverse((o) => o.isMesh && ((o.material = object.userData.accent), (o.castShadow = o.receiveShadow = true)));
+        out.push(piece);
+      }
+    }
+    return out;
+  };
 }
 
 const builtSizes = new Map();
@@ -366,14 +484,19 @@ function modelPiece(def, model, object) {
     fix.rotation.y = f.turn ?? 0;
     fix.position.fromArray(f.offset ?? [0, 0, 0]);
   }
-  const copy = model.scene.clone(true);
-  copy.traverse((o) => {
-    if (!o.isMesh) return;
-    o.material = o.material?.name === "accent" ? object.userData.accent : object.userData.material;
-    o.castShadow = o.receiveShadow = true;
-    // the geometry belongs to the model, shared by every copy
-    o.userData.shared = true;
-  });
+  const copy = dress(model.scene, object, model.keepMaterials);
+  // a door's leaf on its hinge, at the left of the frame, swung open
+  const open = def.type === "door" ? object.userData.params.open : 0;
+  if (open) {
+    const hinge = new THREE.Group();
+    hinge.position.set(-paramsOf("door").w / 2, 0, 0);
+    copy.add(hinge);
+    copy.updateMatrixWorld(true);
+    const leaf = [];
+    copy.traverse((o) => o.isMesh && /slab|panel|handle|lever|escutcheon/.test(o.name) && leaf.push(o));
+    for (const o of leaf) hinge.attach(o);
+    hinge.rotation.y = THREE.MathUtils.degToRad(-open);
+  }
   fix.add(copy);
   sizer.add(fix);
   return sizer;
@@ -387,8 +510,11 @@ function fill(object) {
     object.remove(child);
   }
   const model = MODELS.props.get(def.type);
-  object.userData.modelled = Boolean(model && modelFits(def, object.userData.params));
-  if (object.userData.modelled) object.add(modelPiece(def, model, object));
+  const params = object.userData.params;
+  const assembled = model && !atDefaults(def, params) && !modelFits(def, params) ? ASSEMBLE[def.type]?.(params, object) : null;
+  object.userData.modelled = Boolean(model && (assembled || modelFits(def, params)));
+  if (assembled) for (const piece of assembled) object.add(piece);
+  else if (object.userData.modelled) object.add(modelPiece(def, model, object));
   else {
     for (const piece of def.build(object.userData.params)) {
       piece.traverse((o) => {
@@ -407,7 +533,8 @@ function fill(object) {
 }
 
 export function makeProp(type, id, params) {
-  const def = assetByType(type) ?? assetByType("box");
+  // a piece whose model is not here yet keeps its type, standing in as a box until it comes
+  const def = assetByType(type) ?? { ...assetByType("box"), type: String(type), name: String(type) };
   const object = new THREE.Group();
   object.name = def.name;
   object.userData = {
@@ -445,7 +572,7 @@ export function setPropParams(object, patch) {
 export const refillProp = (object) => fill(object);
 
 export function propFromJSON(data) {
-  const def = assetByType(data.type) ?? assetByType("box");
+  const def = assetByType(data.type) ?? { ...assetByType("box"), type: data.type };
   // a scene from before the assets were parametric keeps the old sizes
   const object = makeProp(def.type, data.id, data.params ?? def.legacy);
   object.userData.label = data.label ?? object.userData.label;

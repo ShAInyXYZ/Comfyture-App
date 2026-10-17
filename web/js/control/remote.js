@@ -12,7 +12,7 @@ import { allPoses } from "./poses.js";
 import { ASSETS, assetByType, seatOf, topOf, setPropParams } from "./assets.js";
 import { CHAINS, JOINT_NAMES, BODY_TYPES, PALETTE, PARAMS, colorName } from "./skeleton.js";
 import { PASSES } from "./channels.js";
-import { MODELS } from "./models.js";
+import { MODELS, USER, holdables } from "./models.js";
 
 const rad = THREE.MathUtils.degToRad;
 const deg = (v) => Math.round(THREE.MathUtils.radToDeg(v) * 10) / 10;
@@ -101,6 +101,9 @@ const ALIASES = {
     "track left": "truck-left", "track right": "truck-right", "slide left": "truck-left", "slide right": "truck-right", pan: "truck-right",
     "tilt up": "tilt-up", "tilt down": "tilt-down", "zoom in": "zoom-in", "zoom out": "zoom-out", shaky: "handheld", "hand held": "handheld", shake: "handheld" },
 };
+
+/** The common words for a pose, a prop or a hand prop: what people search with. */
+export const wordsFor = (kind, id) => Object.entries(ALIASES[kind] ?? {}).filter(([, v]) => v === id).map(([k]) => k);
 
 /** A name as Control knows it: itself, or what a common word for it means. */
 function known(kind, value, names) {
@@ -429,6 +432,7 @@ export function controlOps(stage) {
       ...(Object.keys(c.params).length ? { params: Object.fromEntries(Object.entries(c.params).filter(([k]) => k !== "swing").map(([k, v]) => [k, round(v)])) } : {}),
       ...(c.seatedOn ? { seated_on: stage.props.find((p) => p.userData.id === c.seatedOn)?.userData.label } : {}),
       ...(c.hold.right || c.hold.left ? { hold: Object.fromEntries(Object.entries(c.hold).filter(([, v]) => v)) } : {}),
+      ...(c.rigId ? { rig: c.rigId } : {}),
       ...(c.keys.length ? { keys: c.keys.map((k) => round(k.t)) } : {}),
     })),
     props: stage.props.map((p) => ({
@@ -449,6 +453,8 @@ export function controlOps(stage) {
       at: a.x === undefined && a.z === undefined ? undefined : [a.x ?? 0, 0, a.z ?? 0],
       body: a.body !== undefined ? body(a.body) : undefined,
       color: a.color !== undefined ? color(a.color) : undefined,
+      // one of the user's own rigged characters, by its id or its name
+      rig: a.rig !== undefined ? [...USER.rigs.values()].find((r) => r.id === a.rig || r.name.toLowerCase() === String(a.rig).toLowerCase())?.id : undefined,
       profile: a.height ? { height: THREE.MathUtils.clamp(num(a.height, "height"), 0.5, 2.6) } : undefined,
     });
     if (a.params) c.setParams(a.params);
@@ -462,7 +468,7 @@ export function controlOps(stage) {
    * { right, left }. It replaces what a pose put there.
    */
   const holdFor = (c, hold) => {
-    const types = [...MODELS.hand.keys()];
+    const types = [...holdables(assetByType).keys()];
     const one = (v) => {
       if (v === null || v === "" || v === false || v === "none") return null;
       return known("hand", v, types) ?? (() => { throw new Error(`No hand prop "${v}". Hand props: ${types.join(", ")}.`); })();
@@ -681,7 +687,8 @@ export function controlOps(stage) {
     scene: () => ({
       ...describe(),
       poses: poseIds(),
-      hand_props: [...MODELS.hand.values()].map((h) => ({ type: h.type, name: h.name, poses: h.poses })),
+      hand_props: [...holdables(assetByType).values()].map((h) => h.type),
+      user_characters: [...USER.rigs.values()].map((r) => ({ rig: r.id, name: r.name, height: Math.round(r.height * 100) / 100 })),
       assets: ASSETS.map((x) => ({ type: x.type, name: x.name, category: x.category, ...(x.seat ? { seat: true } : {}), ...(x.top ? { top: true } : {}) })),
       body_types: BODY_TYPES.map((b) => b.id), colors: PALETTE.map(([, n]) => n.toLowerCase()), params: PARAMS.map(([k, , min, max]) => ({ name: k, min, max })),
       snaps: SNAPS.map(([s]) => s), moves: MOVES.map(([m]) => m), frames: Object.keys(RATIOS), effectors: Object.keys(CHAINS), joints: JOINT_NAMES,

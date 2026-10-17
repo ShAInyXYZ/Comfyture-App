@@ -27,13 +27,21 @@ export const PASSES = CHANNELS.filter(([id]) => id !== "clay").map(([id]) => id)
 const LIMBS = [[2, 3], [2, 6], [3, 4], [4, 5], [6, 7], [7, 8], [2, 9], [9, 10], [10, 11], [2, 12], [12, 13], [13, 14], [2, 1], [1, 15], [15, 17], [1, 16], [16, 18]];
 const COLORS = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0], [85, 255, 0], [0, 255, 0], [0, 255, 85], [0, 255, 170], [0, 255, 255], [0, 170, 255], [0, 85, 255], [0, 0, 255], [85, 0, 255], [170, 0, 255], [255, 0, 255], [255, 0, 170], [255, 0, 85]];
 
+// skinned (an imported, rigged character) as well as rigid
 const depthVertex = /* glsl */ `
+  #include <common>
+  #include <skinning_pars_vertex>
   varying float vDepth;
   varying vec3 vNormal;
   void main() {
-    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    #include <beginnormal_vertex>
+    #include <skinbase_vertex>
+    #include <skinnormal_vertex>
+    #include <begin_vertex>
+    #include <skinning_vertex>
+    vec4 mv = modelViewMatrix * vec4(transformed, 1.0);
     vDepth = -mv.z;
-    vNormal = normalize(normalMatrix * normal);
+    vNormal = normalize(normalMatrix * objectNormal);
     gl_Position = projectionMatrix * mv;
   }`;
 // disparity (1/z) between the nearest and farthest thing on the stage, as depth models print it

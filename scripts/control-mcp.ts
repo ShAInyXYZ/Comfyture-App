@@ -31,6 +31,7 @@ const character = {
     name: { type: "string" }, pose: { type: "string", description: "A pose id from control_scene (stand, talk, walk, sit, lean-back, hands-in-pockets, point, ...)." },
     body: { type: "string", description: "man, woman, teen, child, toddler, elder, heavy or athletic." },
     color: { type: "string", description: "coral, teal, amber, violet, green, pink, blue or tan: one per character, for the colour ID pass." },
+    rig: { type: "string", description: "One of the user's own rigged characters (control_scene lists them under user_characters), by id or name, in place of a body type." },
     ...xz, facing: { type: "number" }, face_toward: toward, height: { type: "number", description: "Metres; the body type sets it." }, params, hold, ...relations,
   },
 };

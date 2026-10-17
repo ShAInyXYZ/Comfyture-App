@@ -7,12 +7,10 @@
 import * as THREE from "three";
 import { JOINTS, JOINT_NAMES, HINGES, CONES, CHAINS, MIRROR, DEFAULT_PROFILE, bodyById } from "./skeleton.js";
 import { bodyParts, headFrame } from "./body.js";
-import { MODELS } from "./models.js";
+import { MODELS, USER } from "./models.js";
+import { assetByType } from "./assets.js";
+import { clone as cloneRigged } from "three/addons/utils/SkeletonUtils.js";
 
-// what a modelled body cannot change: once one of these leaves its type's own value, the body is
-// sculpted in code instead (body.js), which follows every trait
-const SHAPE = ["waist", "chest", "belly", "muscle", "soft", "bust", "glutes", "neck", "stoop"];
-const fitsModel = (p, base) => SHAPE.every((k) => Math.abs((p[k] ?? 0) - (base[k] ?? 0)) < 1e-3);
 
 const CLAY = new THREE.Color("#b9b5ae");
 /** The character's colour as clay: still matte and light, but no two bodies alike. */
@@ -20,12 +18,14 @@ const tint = (color) => color.clone().lerp(CLAY, 0.32);
 let count = 0;
 
 export class Mannequin {
-  constructor({ id, name, color, profile, body, hold } = {}) {
+  constructor({ id, name, color, profile, body, hold, rig } = {}) {
     this.id = id ?? `char-${Date.now().toString(36)}-${count++}`;
     this.name = name ?? "Character";
     this.color = new THREE.Color(color ?? "#e8584f");
     this.body = bodyById(body) ? body : "man";
-    this.profile = { ...DEFAULT_PROFILE, ...(bodyById(this.body)?.profile ?? {}), ...profile };
+    // a character someone brought, rigged: its id among the user's models
+    this.rigId = rig ?? null;
+    this.profile = { ...DEFAULT_PROFILE, ...(bodyById(this.body)?.profile ?? {}), ...(this.rigId && USER.rigs.get(this.rigId) ? { height: USER.rigs.get(this.rigId).height } : {}), ...profile };
     this.root = new THREE.Group();
     this.root.name = this.id;
     this.root.userData.character = this;
@@ -60,7 +60,16 @@ export class Mannequin {
     const type = bodyById(id);
     if (!type) return;
     this.body = id;
+    this.rigId = null;
     this.profile = { ...DEFAULT_PROFILE, ...type.profile };
+    this.build();
+  }
+
+  /** One of the user's rigged characters as this body, at its own height. */
+  setRig(id) {
+    const rig = USER.rigs.get(id);
+    this.rigId = id;
+    if (rig) this.profile = { ...this.profile, height: rig.height };
     this.build();
   }
 
@@ -78,8 +87,14 @@ export class Mannequin {
     const type = bodyById(this.body);
     const base = { ...DEFAULT_PROFILE, ...(type?.profile ?? {}) };
     const model = MODELS.bodies.get(this.body);
-    this.model = model && fitsModel(this.profile, base) ? model : null;
-    if (this.model) this.buildModel(this.model, base);
+    const rig = this.rigId ? USER.rigs.get(this.rigId) : null;
+    this.rigScene?.removeFromParent();
+    this.rigScene = null;
+    this.rigDrive = null;
+    // the modelled body whenever there is one: every slider shapes it (see buildModel)
+    this.model = !rig && model ? model : null;
+    if (rig) this.buildRig(rig);
+    else if (this.model) this.buildModel(this.model, base);
     else this.buildSculpted();
     this.setColor(this.color);
     for (const hand of ["right", "left"]) if (this.hold[hand]) this.setHold(hand, this.hold[hand]);
@@ -111,8 +126,12 @@ export class Mannequin {
   buildModel(model, base) {
     const p = this.profile;
     const k = (key) => (p[key] ?? 1) / (base[key] ?? 1);
+    // how far a shape trait has moved from the type's own
+    const dk = (key, none = 1) => (p[key] ?? none) - (base[key] ?? none);
     const s = p.height / base.height;
     const [legs, arms, sh, hips, build, head, hands, feet] = ["legs", "arms", "shoulders", "hips", "build", "head", "hands", "feet"].map(k);
+    const soft = 1 + 0.35 * dk("soft");
+    const muscle = 1 + 0.22 * dk("muscle");
     const rest = new Map(model.joints.map((j) => [j.name, new THREE.Vector3(...j.local)]));
     // longer legs lift the hips by what the thigh and shin gain
     const lift = (rest.get("LeftLeg").length() + rest.get("LeftFoot").length()) * (legs - 1);
@@ -133,15 +152,20 @@ export class Mannequin {
       this.joints[name] = joint;
     }
     // each joint's pieces go in a sizer that stretches them in the joint's own frame
+    // across each bone: the frame (build), the flesh (softness) and the muscle; the trunk takes
+    // the waist, belly, chest, bust and glutes, the neck its own
     const stretch = (name) => {
-      if (/(Arm|ForeArm)$/.test(name)) return [arms, build, build];
-      if (/Shoulder$/.test(name)) return [sh, build, build];
-      if (/(UpLeg|Leg)$/.test(name)) return [build, legs, build];
+      if (/(Arm|ForeArm)$/.test(name)) return [arms, build * soft * muscle, build * soft * muscle];
+      if (/Shoulder$/.test(name)) return [sh, build * muscle, build * muscle];
+      if (/UpLeg$/.test(name)) return [build * soft * muscle, legs, build * soft * muscle];
+      if (/Leg$/.test(name)) return [build * muscle, legs, build * muscle * (1 + 0.08 * dk("muscle"))];
       if (/Hand$/.test(name)) return [hands, hands, hands];
       if (/(Foot|Toe)$/.test(name)) return [feet, feet, feet];
       if (name === "Head") return [head, head, head];
-      if (name === "Hips") return [build * hips, build, build];
-      if (name === "Chest") return [build * Math.sqrt(sh), build, build];
+      if (name === "Hips") return [build * hips * soft, build, build * soft * (1 + 0.25 * dk("glutes"))];
+      if (name === "Spine") return [build * k("waist") * soft * (1 + 0.15 * dk("belly")), build, build * soft * (1 + 0.45 * dk("belly"))];
+      if (name === "Chest") return [build * Math.sqrt(sh) * soft * (1 + 0.08 * dk("muscle")), build, build * k("chest") * soft * (1 + 0.15 * dk("bust", 0))];
+      if (name === "Neck") return [build * k("neck"), build, build * k("neck")];
       return [build, build, build];
     };
     const sizers = {};
@@ -168,6 +192,50 @@ export class Mannequin {
     this.modelScale = { s, head };
   }
 
+  /**
+   * A rigged character the user brought: the Stage's joints where its bones are (its arms laid
+   * out in a T), and its own model, skinned, following them (see driveRig). Height scales it.
+   */
+  buildRig(rig) {
+    const s = this.profile.height / rig.height;
+    for (const j of rig.joints) {
+      const joint = new THREE.Group();
+      joint.name = j.name;
+      joint.userData.joint = j.name;
+      joint.userData.rest = new THREE.Vector3(...j.local).multiplyScalar(s);
+      joint.position.copy(joint.userData.rest);
+      (j.parent ? this.joints[j.parent] : this.root).add(joint);
+      this.joints[j.name] = joint;
+    }
+    const copy = cloneRigged(rig.scene);
+    copy.scale.setScalar(s);
+    this.root.add(copy);
+    const bones = new Map();
+    copy.traverse((o) => {
+      if (o.isBone) bones.set(o.name, o);
+      if (!o.isMesh) return;
+      o.castShadow = o.receiveShadow = true;
+      Object.assign(o.userData, { joint: "Hips", character: this, rigged: true });
+      this.parts.push(o);
+    });
+    this.rigScene = copy;
+    this.rigDrive = rig.drive.map((d) => ({ joint: d.joint, bone: bones.get(d.bone), align: new THREE.Quaternion(...d.align), bind: new THREE.Quaternion(...d.bind) })).filter((d) => d.bone);
+  }
+
+  /** Turns the rig's bones to follow the joints: each bone keeps its own bind turn, aligned to the Stage's rest. */
+  driveRig() {
+    if (!this.rigDrive) return;
+    this.root.updateMatrixWorld(true);
+    const into = this.root.getWorldQuaternion(new THREE.Quaternion()).invert();
+    for (const d of this.rigDrive) {
+      const joint = into.clone().multiply(this.joints[d.joint].getWorldQuaternion(new THREE.Quaternion()));
+      const want = joint.multiply(d.align).multiply(d.bind);
+      const parent = into.clone().multiply(d.bone.parent.getWorldQuaternion(new THREE.Quaternion()));
+      d.bone.quaternion.copy(parent.invert().multiply(want));
+      d.bone.updateMatrixWorld(true);
+    }
+  }
+
   /** One piece of the body on a joint (or a joint's sizer), in clay or in the joint's darker clay. */
   addPiece(parent, geometry, ball, joint = parent.name) {
     const mesh = new THREE.Mesh(geometry, ball ? this.ballMaterial : this.material);
@@ -190,7 +258,12 @@ export class Mannequin {
     this.parts = this.parts.filter((m) => m.userData.held !== hand);
     this.held[hand] = null;
     this.hold[hand] = type || null;
-    const model = type && MODELS.hand.get(type);
+    // a hand prop, or a piece of the set that can be held (a bottle, an apple, a book)
+    const model = type && (MODELS.hand.get(type) ?? (() => {
+      const def = assetByType(type);
+      const piece = MODELS.props.get(type);
+      return def?.holdable?.grips && piece ? { scene: piece.scene, grips: def.holdable.grips } : null;
+    })());
     if (!model) return;
     const grip = model.grips[hand];
     const p = this.profile;
@@ -332,7 +405,9 @@ export class Mannequin {
       const joint = this.joints[at];
       const near = new Set([at, joint.parent?.name, ...JOINT_NAMES.filter((n) => this.joints[n].parent === joint)]);
       const chain = CHAINS[effector] ? [effector, CHAINS[effector].mid, CHAINS[effector].root] : [];
-      const skin = this.parts.filter((m) => near.has(m.userData.joint) && !chain.includes(m.userData.joint));
+      const skin = this.parts.filter((m) => m.userData.rigged || (near.has(m.userData.joint) && !chain.includes(m.userData.joint)));
+      this.driveRig();
+      for (const m of skin) if (m.isSkinnedMesh) m.computeBoundingSphere();
       const hit = new THREE.Raycaster(point.clone().addScaledVector(dir, 2), dir.clone().negate(), 0, 4).intersectObjects(skin, false)[0];
       if (hit) point.copy(hit.point).addScaledVector(dir, clear * h);
     }
@@ -348,8 +423,9 @@ export class Mannequin {
 
   /** The sliders' turns, with the body's own stoop. */
   deltas() {
-    // a modelled elder is already stooped in its joints
-    return paramDeltas(this.params, this.model ? 0 : this.profile.stoop);
+    // a modelled body is stooped in its joints as its type is (the elder): only the difference bends it
+    const base = this.model ? bodyById(this.body)?.profile.stoop ?? 0 : 0;
+    return paramDeltas(this.params, (this.profile.stoop ?? 0) - base);
   }
 
   /** Writes base and sliders into the joints. */
@@ -360,6 +436,7 @@ export class Mannequin {
       this.joints[n].quaternion.copy(deltas[n] ? deltas[n].clone().multiply(base) : base);
     }
     this.root.updateMatrixWorld(true);
+    this.driveRig();
   }
 
   /** Takes what the joints show now (after a drag, IK or an import) as the base, the sliders still laid over it. */
@@ -453,7 +530,9 @@ export class Mannequin {
 
   /** Box around the whole body in world space. */
   bounds() {
-    return new THREE.Box3().setFromObject(this.root);
+    // a skinned model's box is the pose's, read from its vertices
+    this.driveRig();
+    return new THREE.Box3().setFromObject(this.root, Boolean(this.rigScene));
   }
 
   /** Box around the head, for close-ups. */
@@ -487,6 +566,7 @@ export class Mannequin {
       posed: this.posed,
       visible: this.root.visible,
       hold: this.hold.right || this.hold.left ? { ...this.hold } : undefined,
+      rig: this.rigId ?? undefined,
       keys: this.keys?.length ? this.keys : undefined,
     };
   }

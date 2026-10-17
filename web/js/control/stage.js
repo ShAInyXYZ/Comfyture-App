@@ -9,8 +9,8 @@ import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { Mannequin } from "./mannequin.js";
 import { CHAINS, JOINT_NAMES, PALETTE, bodyById } from "./skeleton.js";
 import { poseById } from "./poses.js";
-import { makeProp, propFromJSON, setPropParams, refillProp } from "./assets.js";
-import { loadModels, MODELS } from "./models.js";
+import { makeProp, propFromJSON, setPropParams, refillProp, registerUserProp, forgetUserProp, registerModelAssets } from "./assets.js";
+import { loadModels, loadUserModels, onUserModels, MODELS, USER } from "./models.js";
 import { Channels } from "./channels.js";
 
 /** Vertical field of view (degrees) of a lens on a full-frame (36 × 24 mm) sensor. */
@@ -53,6 +53,17 @@ function upsert(keys, key) {
   if (i >= 0) keys[i] = key;
   else keys.push(key);
   keys.sort((a, b) => a.t - b.t);
+}
+
+/** The joint of a body nearest a point (a click on a skinned model). */
+function nearestJoint(c, point) {
+  let best = "Hips";
+  let near = Infinity;
+  for (const [name, joint] of Object.entries(c.joints)) {
+    const d = joint.getWorldPosition(new THREE.Vector3()).distanceTo(point);
+    if (d < near) (near = d), (best = name);
+  }
+  return best;
 }
 
 export class Stage {
@@ -165,8 +176,14 @@ export class Stage {
 
     new ResizeObserver(() => this.resize()).observe(container);
     this.resize();
-    // the modelled bodies and pieces load behind the first frames and replace the built ones
-    loadModels().then(() => this.refreshModels());
+    // the modelled bodies and pieces load behind the first frames and replace the built ones,
+    // then the user's own: rigged characters and props
+    loadModels().then((m) => {
+      if (m.manifest) registerModelAssets(m.manifest.assets ?? []);
+      this.refreshModels();
+      loadUserModels();
+    });
+    onUserModels((entry) => this.refreshUserModel(entry));
   }
 
   // ------------------------------------------------------------ events
@@ -244,6 +261,8 @@ export class Stage {
     if (this.pending) return;
     this.pending = requestAnimationFrame(() => {
       this.pending = 0;
+      // rigged characters follow their joints, however those were turned
+      for (const c of this.characters) c.driveRig();
       this.updateHandles();
       const r = this.renderer;
       const layer = this.poseLayer;
@@ -279,10 +298,11 @@ export class Stage {
     for (let i = 2; ; i++) if (!taken.has(`${base} ${i}`.toLowerCase())) return `${base} ${i}`;
   }
 
-  addCharacter({ pose = "stand", at, name, facing = 0, profile, body = "man", color } = {}) {
+  addCharacter({ pose = "stand", at, name, facing = 0, profile, body = "man", color, rig } = {}) {
     const n = this.characters.length;
     const type = bodyById(body) ?? bodyById("man");
-    const c = new Mannequin({ name: name ?? this.freeName(type.name), color: color ?? this.freeColor(), body: type.id, profile });
+    const own = rig ? USER.rigs.get(rig) : null;
+    const c = new Mannequin({ name: name ?? this.freeName(own?.name ?? type.name), color: color ?? this.freeColor(), body: type.id, profile, rig: own ? rig : undefined });
     c.setPreset(poseById(pose) ?? poseById("stand"));
     c.posed = pose;
     c.root.position.set(at?.[0] ?? (n === 0 ? 0 : n % 2 ? 0.9 * Math.ceil(n / 2) : -0.9 * Math.ceil(n / 2)), 0, at?.[2] ?? 0);
@@ -490,6 +510,7 @@ export class Stage {
       return;
     }
     const targets = [...this.characters.flatMap((c) => c.parts), ...this.props];
+    for (const m of targets) if (m.isSkinnedMesh) m.computeBoundingSphere();
     const hit = this.raycaster.intersectObjects(targets, true)[0];
     if (!hit) return this.select({});
     let o = hit.object;
@@ -499,7 +520,9 @@ export class Stage {
       const c = o.userData.character;
       // the first click on another body selects the body; a click on a selected body picks the joint
       if (this.selection.character !== c) return this.select({ character: c, joint: null });
-      return this.select({ character: c, joint: hit.object.userData.joint });
+      // a skinned model is one mesh: the joint is the one nearest the click
+      const joint = hit.object.userData.rigged ? nearestJoint(c, hit.point) : hit.object.userData.joint;
+      return this.select({ character: c, joint });
     }
   }
 
@@ -926,6 +949,7 @@ export class Stage {
    * linear and come out dark).
    */
   thumbnail(pose, { width = 192, height = 108, only, channel = "clay", type = "image/png", quality } = {}) {
+    for (const c of this.characters) c.driveRig();
     this.ensureShotRenderer();
     const r = this.shotRenderer;
     r.setSize(width, height, false);
@@ -1022,7 +1046,7 @@ export class Stage {
     const key = `hand:${type}`;
     this.poseThumbs ??= new Map();
     if (this.poseThumbs.has(key)) return this.poseThumbs.get(key);
-    const model = MODELS.hand.get(type);
+    const model = MODELS.hand.get(type) ?? MODELS.props.get(type);
     if (!model) return "";
     this.poseThumbnail(poseById("stand"));
     const object = model.scene.clone(true);
@@ -1058,6 +1082,26 @@ export class Stage {
     return r.domElement.toDataURL("image/png");
   }
 
+  /** One of the user's models has loaded (or gone): the bodies and props made of it take it. */
+  refreshUserModel(entry) {
+    if (entry.kind === "prop" || USER.props.has(entry.id) || entry.gone && !USER.rigs.has(entry.id)) {
+      if (entry.gone) forgetUserProp(entry.id);
+      else if (USER.props.has(entry.id)) registerUserProp(USER.props.get(entry.id));
+      for (const p of this.props) if (p.userData.type === entry.id) refillProp(p);
+    }
+    for (const c of this.characters) {
+      if (c.rigId !== entry.id) continue;
+      if (entry.gone) c.setBody(c.body);
+      else c.setRig(entry.id);
+      const preset = poseById(c.posed);
+      if (preset && !preset.quaternions) c.setPreset(preset);
+      if (!c.seatedOn) c.ground();
+    }
+    this.poseThumbs?.clear();
+    this.attachGizmo();
+    this.emit("scene");
+  }
+
   /** A piece of the set alone, three-quarter front, on a clear background. Cached per type. */
   propThumbnail(type, { width = 132, height = 104 } = {}) {
     const key = `prop:${type}`;
@@ -1076,8 +1120,8 @@ export class Stage {
   }
 
   /** A preset on a lone mannequin, three-quarter front, on a clear background. Cached per pose. */
-  poseThumbnail(preset, { width = 132, height = 156, body = "man" } = {}) {
-    const key = JSON.stringify([body, preset.quaternions ?? [preset.joints, preset.aim, preset.reach]]);
+  poseThumbnail(preset, { width = 132, height = 156, body = "man", rig = null } = {}) {
+    const key = JSON.stringify([rig ?? body, preset.quaternions ?? [preset.joints, preset.aim, preset.reach]]);
     this.poseThumbs ??= new Map();
     if (this.poseThumbs.has(key)) return this.poseThumbs.get(key);
     if (!this.poseScene) {
@@ -1092,7 +1136,8 @@ export class Stage {
       this.poseCamera = new THREE.PerspectiveCamera(30, width / height, 0.05, 50);
     }
     const m = this.poseModel;
-    if (m.body !== body) m.setBody(body);
+    if (rig && m.rigId !== rig) m.setRig(rig);
+    else if (!rig && (m.body !== body || m.rigId)) m.setBody(body);
     m.root.position.set(0, 0, 0);
     m.params = {};
     m.setPreset(preset);

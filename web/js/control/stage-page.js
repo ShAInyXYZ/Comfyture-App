@@ -8,11 +8,11 @@
 import { h, icon, sprite } from "../dom.js";
 import { Stage, SNAPS, RATIOS, MOVES } from "./stage.js";
 import { POSES, POSE_CATEGORIES, SAVED, setSaved, allPoses, poseById } from "./poses.js";
-import { ASSETS, ASSET_CATEGORIES, assetByType } from "./assets.js";
+import { ASSETS, assetCategories, assetByType } from "./assets.js";
 import { JOINT_NAMES, JOINT_LABELS, BODY_TYPES, BODY_SLIDERS, PARAMS, PALETTE, colorName } from "./skeleton.js";
 import { CHANNELS, PASSES } from "./channels.js";
-import { controlOps, connectRemote } from "./remote.js";
-import { MODELS } from "./models.js";
+import { controlOps, connectRemote, wordsFor } from "./remote.js";
+import { MODELS, USER, holdables, importModel, forgetModel } from "./models.js";
 
 const TOOLS = [
   ["select", "web-cursor", "Select", "Q"],
@@ -163,14 +163,74 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   }
 
   let tab = "cast";
-  let poseCat = "Stand";
-  let assetCat = "Furniture";
+  let poseQuery = "";
+  let assetQuery = "";
   addEl.replaceChildren(
     el("button.ctl-tile", { type: "button", title: "Add a character", "aria-label": "Add a character", on: { click: () => stage.addCharacter({ at: freeSpot() }) } }, sprite("character-add")),
     el("button.ctl-tile.is-wide", { type: "button", title: "Blockout assets", "aria-pressed": "false", on: { click: () => ((tab = "assets"), library()) } }, sprite("asset-library"), el("span", {}, "Assets")),
   );
 
   // ---------------------------------------------------------------- poses and assets
+
+  // a thumbnail is drawn when its tile scrolls into view, so a long library opens at once
+  const drawn = new IntersectionObserver((seen) => {
+    for (const e of seen) {
+      if (!e.isIntersecting) continue;
+      const img = e.target;
+      drawn.unobserve(img);
+      img.src = img._draw();
+    }
+  }, { rootMargin: "240px" });
+  const lazyImg = (draw) => {
+    const img = el("img", { alt: "", draggable: false });
+    img._draw = draw;
+    drawn.observe(img);
+    return img;
+  };
+
+  /** Every word of the query is somewhere in what the thing is called or about. */
+  const finds = (query, words) => {
+    const hay = words.filter(Boolean).join(" ").toLowerCase().replace(/[-_]+/g, " ");
+    return query.toLowerCase().split(/\s+/).filter(Boolean).every((w) => hay.includes(w));
+  };
+  /** A search field that keeps its value and its caret through the panel's redraws. */
+  const searchField = (value, label, onInput) => {
+    const input = el("input.field.ctl-search", { type: "search", value, placeholder: label, "aria-label": label, autocomplete: "off", spellcheck: false,
+      on: { input: (e) => onInput(e.target.value), keydown: (e) => (e.stopPropagation(), e.key === "Escape" && ((e.target.value = ""), onInput(""))) } });
+    return el("label.ctl-search-row", {}, icon("search"), input);
+  };
+  const keepFocus = (selector, render) => {
+    const had = document.activeElement?.matches?.(selector) ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
+    render();
+    if (had) {
+      const input = libraryEl.querySelector(selector);
+      input?.focus();
+      input?.setSelectionRange(...had);
+    }
+  };
+  const fileInput = el("input", { type: "file", hidden: true });
+  libraryEl.after(fileInput);
+  /** Brings a model in: a rigged character (GLB, glTF, VRM, FBX) or a prop (also OBJ). */
+  function bring(kind) {
+    fileInput.accept = kind === "character" ? ".glb,.gltf,.vrm,.fbx" : ".glb,.gltf,.fbx,.obj";
+    fileInput.onchange = async () => {
+      const file = fileInput.files?.[0];
+      fileInput.value = "";
+      if (!file) return;
+      toast(`Bringing in ${file.name}…`);
+      try {
+        const model = await importModel(file, kind);
+        if (kind === "character") stage.addCharacter({ at: freeSpot(), rig: model.id });
+        else stage.addProp(model.id, freeSpot());
+        toast(`${model.name} is on the stage${kind === "character" ? ": its rig follows every pose" : ""}.`);
+      } catch (e) {
+        toast(e.message, { tone: "crit" });
+      }
+      library();
+    };
+    fileInput.click();
+  }
+  const forget = (id, name) => el("button.ctl-mini.ctl-pose-x", { type: "button", title: `Forget ${name}`, "aria-label": `Forget ${name}`, on: { click: async (e) => (e.stopPropagation(), await forgetModel(id), library()) } }, icon("close"));
 
   let saving = false;
   function library() {
@@ -179,31 +239,62 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       ...[["cast", "Characters"], ["poses", "Poses"], ["assets", "Assets"]].map(([id, label]) =>
         el("button", { type: "button", role: "tab", "aria-selected": String(tab === id), on: { click: () => ((tab = id), library()) } }, label)));
     if (tab === "cast") {
-      // the body types, each drawn standing; a click puts one on the stage
-      const grid = el("div.ctl-poses.ctl-cast", {}, ...BODY_TYPES.map((b) =>
-        el("button.ctl-pose.ctl-body", { type: "button", title: `Add ${b.name.toLowerCase()} — ${b.profile.height.toFixed(2)} m`, "aria-label": `Add ${b.name.toLowerCase()}`, on: { click: () => stage.addCharacter({ at: freeSpot(), body: b.id }) } },
-          el("img", { src: stage.poseThumbnail(poseById("stand"), { body: b.id }), alt: "", draggable: false }))));
+      // the body types and the user's own characters, each drawn standing; a click puts one on the stage
+      const grid = el("div.ctl-poses.ctl-cast", {},
+        ...BODY_TYPES.map((b) =>
+          el("button.ctl-pose.ctl-body", { type: "button", title: `Add ${b.name.toLowerCase()} — ${b.profile.height.toFixed(2)} m`, "aria-label": `Add ${b.name.toLowerCase()}`, on: { click: () => stage.addCharacter({ at: freeSpot(), body: b.id }) } },
+            lazyImg(() => stage.poseThumbnail(poseById("stand"), { body: b.id })))),
+        ...[...USER.rigs.values()].map((r) =>
+          el("div.ctl-pose-wrap", {},
+            el("button.ctl-pose.ctl-body", { type: "button", title: `Add ${r.name} — ${r.height.toFixed(2)} m, rigged`, "aria-label": `Add ${r.name}`, on: { click: () => stage.addCharacter({ at: freeSpot(), rig: r.id }) } },
+              lazyImg(() => stage.poseThumbnail(poseById("stand"), { rig: r.id }))),
+            forget(r.id, r.name))),
+        el("button.ctl-pose.ctl-import", { type: "button", title: "Import a rigged character — GLB, glTF, VRM or FBX; Mixamo, Unreal, VRoid and similar rigs", "aria-label": "Import a rigged character", on: { click: () => bring("character") } }, sprite("character-import")));
       libraryEl.replaceChildren(tabs, grid);
     } else if (tab === "poses") {
       const target = stage.selection.character;
-      const list = poseCat === "Mine" ? SAVED : POSES.filter((p) => p.category === poseCat);
-      const chips = el("div.ctl-chips", {},
-        ...POSE_CATEGORIES.map((c) => el("button.ctl-chip-key", { type: "button", "aria-pressed": String(poseCat === c), on: { click: () => ((poseCat = c), library()) } }, c)),
+      const results = el("div.ctl-results");
+      const fill = () => {
+        const all = allPoses().filter((p) => !poseQuery || finds(poseQuery, [p.name, p.id, p.category, ...wordsFor("pose", p.id), ...(p.hold ? Object.values(p.hold) : [])]));
+        const groups = POSE_CATEGORIES.map((c) => [c, all.filter((p) => p.category === c)]).filter(([, list]) => list.length);
+        results.replaceChildren(...groups.flatMap(([c, list]) => [
+          el("span.ctl-label.is-sub", {}, c),
+          el("div.ctl-poses", {}, ...list.map((p) =>
+            el("div.ctl-pose-wrap", {},
+              el("button.ctl-pose", { type: "button", title: target ? p.name : `${p.name} — select a character first`, "aria-label": p.name, disabled: !target, on: { click: () => stage.applyPose(p.id) } },
+                lazyImg(() => stage.poseThumbnail(p))),
+              p.category === "Mine" ? el("button.ctl-mini.ctl-pose-x", { type: "button", title: "Forget this pose", "aria-label": `Forget ${p.name}`, on: { click: () => forgetPose(p.id) } }, icon("close")) : null))),
+        ]));
+        if (!groups.length) results.append(el("p.ctl-empty", {}, poseQuery ? `No pose for "${poseQuery}".` : "No poses."));
+      };
+      const head = el("div.ctl-search-head", {},
+        searchField(poseQuery, "Search poses: sit, phone, fight…", (v) => ((poseQuery = v), fill())),
         el("button.ctl-mini.ctl-save", { type: "button", title: target ? "Save this pose" : "Save the pose — select a character first", "aria-label": "Save the pose", disabled: !target, on: { click: () => ((saving = !saving), library()) } }, sprite("pose-save")));
       const form = saving && target ? savePoseForm(target) : null;
-      const grid = el("div.ctl-poses", {}, ...list.map((p) =>
-        el("div.ctl-pose-wrap", {},
-          el("button.ctl-pose", { type: "button", title: target ? p.name : `${p.name} — select a character first`, "aria-label": p.name, disabled: !target, on: { click: () => stage.applyPose(p.id) } },
-            el("img", { src: stage.poseThumbnail(p), alt: "", draggable: false })),
-          p.category === "Mine" ? el("button.ctl-mini.ctl-pose-x", { type: "button", title: "Forget this pose", "aria-label": `Forget ${p.name}`, on: { click: () => forgetPose(p.id) } }, icon("close")) : null)));
-      if (!list.length) grid.append(el("p.ctl-empty", {}, poseCat === "Mine" ? "Pose a character, then save it here." : "No poses here."));
-      libraryEl.replaceChildren(tabs, chips, ...(form ? [form] : []), grid);
+      fill();
+      keepFocus(".ctl-search", () => libraryEl.replaceChildren(tabs, head, ...(form ? [form] : []), results));
     } else {
-      const chips = el("div.ctl-chips", {}, ...ASSET_CATEGORIES.map((c) => el("button.ctl-chip-key", { type: "button", "aria-pressed": String(assetCat === c), on: { click: () => ((assetCat = c), library()) } }, c)));
-      const grid = el("div.ctl-assets", {}, ...ASSETS.filter((a) => a.category === assetCat).map((a) =>
-        el("button.ctl-asset", { type: "button", title: a.name, "aria-label": `Add ${a.name.toLowerCase()}`, on: { click: () => stage.addProp(a.type, freeSpot()) } },
-          el("img", { src: stage.propThumbnail(a.type), alt: "", draggable: false }))));
-      libraryEl.replaceChildren(tabs, chips, grid);
+      const results = el("div.ctl-results");
+      const fill = () => {
+        // what a piece is called and about, and what a body can do with it (sit on it, set things on it, hold it)
+        const about = (a) => [a.name, a.type, a.category, ...(a.themes ?? []), ...(a.tags ?? []), ...wordsFor("prop", a.type), a.seat ? "seat sit" : "", a.top ? "surface top" : "", a.holdable ? "hold hand" : ""];
+        const all = ASSETS.filter((a) => !assetQuery || finds(assetQuery, about(a)));
+        const groups = assetCategories().map((c) => [c, all.filter((a) => a.category === c)]).filter(([, list]) => list.length);
+        results.replaceChildren(...groups.flatMap(([c, list]) => [
+          el("span.ctl-label.is-sub", {}, c === "Mine" ? "Yours" : c),
+          el("div.ctl-assets", {}, ...list.map((a) =>
+            el("div.ctl-pose-wrap", {},
+              el("button.ctl-asset", { type: "button", title: a.themes?.length ? `${a.name} — ${a.themes.join(", ")}` : a.name, "aria-label": `Add ${a.name.toLowerCase()}`, on: { click: () => stage.addProp(a.type, freeSpot()) } },
+                lazyImg(() => stage.propThumbnail(a.type))),
+              a.user ? forget(a.type, a.name) : null))),
+        ]));
+        if (!groups.length) results.append(el("p.ctl-empty", {}, `Nothing for "${assetQuery}". Try a theme: kitchen, food, office, street, studio, product…`));
+      };
+      const head = el("div.ctl-search-head", {},
+        searchField(assetQuery, "Search by name or theme: chair, kitchen, drinks…", (v) => ((assetQuery = v), fill())),
+        el("button.ctl-mini", { type: "button", title: "Import a model — GLB, glTF, FBX or OBJ", "aria-label": "Import a model", on: { click: () => bring("prop") } }, sprite("model-import")));
+      fill();
+      keepFocus(".ctl-search", () => libraryEl.replaceChildren(tabs, head, results));
     }
   }
 
@@ -216,7 +307,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       if (!res.ok) return toast(body.error ?? "The pose was not saved.", { tone: "crit" });
       setSaved(body.poses);
       saving = false;
-      poseCat = "Mine";
+      poseQuery = "";
       library();
       toast(`Saved "${name}" to your poses.`);
     };
@@ -388,6 +479,17 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   const format = (v, step, unit) => (unit === "m" ? `${v.toFixed(2)} m` : unit === "°" ? `${Math.round(v)}°` : step < 1 ? v.toFixed(2) : String(Math.round(v)));
 
   let holdHand = "right";
+  let holdQuery = "";
+  /** Redraws the Selected panel, keeping the caret in a search field that had it. */
+  const keepSelected = (selector) => {
+    const had = document.activeElement?.matches?.(selector) ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
+    selected();
+    if (had) {
+      const input = selectedEl.querySelector(selector);
+      input?.focus();
+      input?.setSelectionRange(...had);
+    }
+  };
   function selected() {
     const { character, joint, prop } = stage.selection;
     if (!character && !prop) return selectedEl.replaceChildren(el("p.ctl-empty", {}, "Nothing selected. Click a body or a prop."));
@@ -417,17 +519,22 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     const swatches = el("div.ctl-swatches", { role: "group", "aria-label": "Colour" }, ...PALETTE.map(([c, cname]) =>
       el("button.ctl-swatch", { type: "button", "aria-pressed": String(hex === c), title: cname, "aria-label": cname, style: { "--swatch": c }, on: { click: () => stage.setColor(character, c) } })));
     const bodies = el("div.ctl-bodies", { role: "group", "aria-label": "Body type" }, ...BODY_TYPES.map((b) =>
-      el("button.ctl-body", { type: "button", "aria-pressed": String(character.body === b.id), title: b.name, on: { click: () => stage.setBody(character, b.id) } }, sprite(`body-${b.id}`), el("span", {}, b.name))));
-    // what the hands hold: a hand at a time, the props drawn
-    const holds = MODELS.hand.size ? el("div.ctl-holds", {},
+      el("button.ctl-body", { type: "button", "aria-pressed": String(!character.rigId && character.body === b.id), title: b.name, on: { click: () => stage.setBody(character, b.id) } }, sprite(`body-${b.id}`), el("span", {}, b.name))));
+    // what the hands hold: a hand at a time, the props drawn; a search when there are many
+    const can = holdables(assetByType);
+    const holdList = [...can.values()].filter((h) => !holdQuery || finds(holdQuery, [h.name, h.type, ...h.themes, ...h.tags, ...wordsFor("hand", h.type)]))
+      .sort((a, b) => (a.piece ? 1 : 0) - (b.piece ? 1 : 0)).slice(0, holdQuery ? 40 : 15);
+    const holds = can.size ? el("div.ctl-holds", {},
       el("div.segment.is-sm.ctl-hand", { role: "group", "aria-label": "Hand" }, ...[["right", "R", "Right hand"], ["left", "L", "Left hand"]].map(([h, short, label]) =>
         el("button", { type: "button", "aria-pressed": String(holdHand === h), title: label, on: { click: () => ((holdHand = h), selected()) } }, short))),
-      el("div.ctl-hold-row", {},
-        el("button.ctl-hold", { type: "button", "aria-pressed": String(!character.hold[holdHand]), title: "Empty hand", "aria-label": "Empty hand", on: { click: () => (stage.setHold(character, holdHand, null), selected()) } }, icon("close")),
-        ...[...MODELS.hand.values()].map((h) =>
-          el("button.ctl-hold", { type: "button", "aria-pressed": String(character.hold[holdHand] === h.type), title: h.name, "aria-label": h.name, on: { click: () => (stage.setHold(character, holdHand, h.type), selected()) } },
-            el("img", { src: stage.handThumbnail(h.type), alt: "", draggable: false }))))) : null;
-    const bodyKeys = advanced ? BODY_SLIDERS.map(([k]) => k) : BODY_MAIN;
+      el("div.ctl-hold-list", {},
+        can.size > 15 ? searchField(holdQuery, "Find something to hold…", (v) => ((holdQuery = v), keepSelected(".ctl-holds .ctl-search"))) : null,
+        el("div.ctl-hold-row", {},
+          el("button.ctl-hold", { type: "button", "aria-pressed": String(!character.hold[holdHand]), title: "Empty hand", "aria-label": "Empty hand", on: { click: () => (stage.setHold(character, holdHand, null), selected()) } }, icon("close")),
+          ...holdList.map((h) =>
+            el("button.ctl-hold", { type: "button", "aria-pressed": String(character.hold[holdHand] === h.type), title: h.name, "aria-label": h.name, on: { click: () => (stage.setHold(character, holdHand, h.type), selected()) } },
+              lazyImg(() => stage.handThumbnail(h.type))))))) : null;
+    const bodyKeys = character.rigId ? ["height"] : advanced ? BODY_SLIDERS.map(([k]) => k) : BODY_MAIN;
     const poseKeys = advanced ? PARAMS.map(([k]) => k) : POSE_MAIN;
     const bodyCol = el("div.ctl-sliders", {}, el("span.ctl-label.is-sub", {}, "Body"), ...bodyKeys.map((k) => {
       const def = BODY_SLIDERS.find(([key]) => key === k);
@@ -437,8 +544,10 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       const [key, label, min, max] = PARAMS.find(([p]) => p === k);
       return slider([key, label, min, max, key === "crouch" ? 0.01 : 1, key === "crouch" ? "" : "°"], character.params[k] ?? 0, (v, commit) => stage.setParams({ [k]: v }, character, { commit }));
     }));
+    const rig = character.rigId ? USER.rigs.get(character.rigId) : null;
     selectedEl.replaceChildren(head, swatches,
       el("span.ctl-label.is-sub", {}, "Body type"), bodies,
+      ...(character.rigId ? [el("p.ctl-sub", {}, rig ? `${rig.name}, your rigged character: its rig follows every pose. A body type turns it back into a mannequin.` : "Your rigged character is loading…")] : []),
       ...(holds ? [el("span.ctl-label.is-sub", {}, "In hand"), holds] : []),
       el("div.ctl-columns", {}, bodyCol, poseCol),
       el("div.ctl-row", {},

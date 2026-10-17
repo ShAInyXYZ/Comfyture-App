@@ -204,7 +204,7 @@ CHARACTERS
 Each has a name (use names, never ids), a body type, a colour and a pose.
 Body types: man, woman, teen, child, toddler, elder, heavy, athletic. Pick from the user's words: a girl or a boy is a teen, a kid a child, a baby a toddler, a grandmother an elder. Each is shaped for its silhouette (a woman's waist and hips, a child's big head, an elder's stoop, a heavy belly, an athlete's shoulders), and every pose fits every body: hands find hips, knees and faces on any of them.
 Colours: coral, teal, amber, violet, green, pink, blue, tan. Give each character a different one: they tell people apart in the colour ID pass.
-Hand props (hold): phone, cup, book, camera, sword, pistol, umbrella, bag, guitar, steering-wheel. "hold": "phone" puts one in the right hand, {"right": "cup", "left": "bag"} fills both, null empties them. Poses that hold something bring it themselves: phone-call, walk-phone and selfie a phone, drink a cup, read a book, photo a camera, sword a sword, aim a pistol, drive a steering wheel. Give hold only for something else (an umbrella on a walk, a bag in a hand).
+Hand props (hold): phone, cup, book, camera, sword, pistol, umbrella, bag, guitar, steering-wheel, and every small piece listed under "what a hand can hold" (a bottle, an apple, a coffee). "hold": "phone" puts one in the right hand, {"right": "cup", "left": "bag"} fills both, null empties them. Poses that hold something bring it themselves: phone-call, walk-phone and selfie a phone, drink a cup, read a book, photo a camera, sword a sword, aim a pistol, drive a steering wheel. Give hold only for something else (an umbrella on a walk, a bag in a hand).
 Pose sliders (params, in degrees; crouch from 0 to 1): look (turns the head, + to its left), nod (+ looks down), tilt, lean (+ forward), twist, side, arms (raises both), reach (arms forward), elbows (bends them), stance (feet apart), step (left foot forward), crouch. Use them to adjust a pose, for example "params": {"look": 30, "lean": 10}.
 
 ASSETS (type: what it is; size [width, height, depth] in metres changes it)
@@ -222,7 +222,7 @@ RELATIONS: say where things are relative to each other and the app works out the
 
 ACTIONS
 - layout {clear, characters: [{name, body, color, pose, hold, x, z or a relation, facing or face_toward, height, params}], props: [{type, label, x, z or a relation, facing or face_toward, size}], camera: {...}, duration}: a whole scene at once. For a new scene use it with clear: true. Without clear it moves what is already there by name and adds the rest; for a small change, use the small actions instead.
-- add_character {name, body, color, pose, hold, x, z or a relation, facing or face_toward, height, params}
+- add_character {name, body (or rig: one of the user's own rigged characters), color, pose, hold, x, z or a relation, facing or face_toward, height, params}
 - add_prop {type, label, x, z or a relation, facing or face_toward, size}
 - place {id, x, z or a relation, facing or face_toward, size, height, body, color, params, hold, name}: id is a name from the scene; name renames it
 - pose {id, pose, mirror, params}
@@ -261,6 +261,12 @@ type ControlAction = { op: (typeof CONTROL_OPS)[number]; args: Record<string, un
 
 const at = (p: unknown) => (Array.isArray(p) ? `x ${p[0]} z ${p[2]}` : "?");
 const list = (v: unknown) => (Array.isArray(v) ? v.slice(0, 60).map(String).join(", ") : "");
+/** Every asset type, grouped by its category: "Furniture: chair, sofa…; Food: …". */
+const byCategory = (assets: unknown) => {
+  const groups = new Map<string, string[]>();
+  for (const a of (Array.isArray(assets) ? assets : []) as any[]) groups.set(a.category ?? "Other", [...(groups.get(a.category ?? "Other") ?? []), a.type]);
+  return [...groups].map(([c, l]) => `${c}: ${l.join(", ")}`).join("; ");
+};
 
 /** The prompt: the stage as the page reported it, and the conversation so far. */
 export function controlPrompt(scene: Record<string, any>, turns: ControlTurn[], sees: boolean) {
@@ -272,13 +278,15 @@ export function controlPrompt(scene: Record<string, any>, turns: ControlTurn[], 
     `frame ${cam.ratio ?? "16:9"}, lens ${cam.focal ?? 35} mm, camera at [${(cam.position ?? []).join(", ")}] looking at [${(cam.target ?? []).join(", ")}]`,
     `timeline: ${tl.duration ?? 5} s, camera move ${tl.camera_move ?? "locked"}`,
     "characters:",
-    ...((scene.characters ?? []) as any[]).slice(0, 12).map((c) => `- ${c.name}: ${c.body ?? "man"}, ${c.color ?? "?"}, pose ${c.pose ?? "custom"}${params(c.params)}, ${c.height} m tall, at ${at(c.position)}, facing ${c.facing}${c.seated_on ? `, seated on ${c.seated_on}` : ""}${c.keys?.length ? `, keyed at ${c.keys.join(", ")} s` : ""}${c.visible === false ? ", hidden" : ""}`),
+    ...((scene.characters ?? []) as any[]).slice(0, 12).map((c) => `- ${c.name}: ${c.rig ? "the user's own rigged character" : c.body ?? "man"}, ${c.color ?? "?"}, pose ${c.pose ?? "custom"}${params(c.params)}, ${c.height} m tall, at ${at(c.position)}, facing ${c.facing}${c.seated_on ? `, seated on ${c.seated_on}` : ""}${c.hold ? `, holding ${Object.entries(c.hold).map(([h, t]) => `${t} (${h} hand)`).join(" and ")}` : ""}${c.keys?.length ? `, keyed at ${c.keys.join(", ")} s` : ""}${c.visible === false ? ", hidden" : ""}`),
     ...(scene.characters?.length ? [] : ["none"]),
     "props:",
     ...((scene.props ?? []) as any[]).slice(0, 30).map((p) => `- ${p.label}: ${p.type}, ${(p.size ?? []).join(" x ")} m, at ${at(p.position)}${p.position?.[1] > 0.01 ? ` lifted ${p.position[1]}` : ""}, facing ${p.facing}`),
     ...(scene.props?.length ? [] : ["none"]),
     `poses you can use: ${list(scene.poses)}`,
-    `assets: ${list((scene.assets ?? []).map((a: any) => a.type))}`,
+    `assets by category: ${byCategory(scene.assets)}`,
+    `what a hand can hold: ${(scene.hand_props ?? []).map(String).join(", ")}`,
+    ...(scene.user_characters?.length ? [`the user's own rigged characters (add_character with rig: their name): ${(scene.user_characters as any[]).map((r) => `${r.name} (${r.height} m)`).join(", ")}`] : []),
     `camera snaps: ${list(scene.snaps)}`,
     `camera moves: ${list(scene.moves)}`,
     `frames: ${list(scene.frames)}`,

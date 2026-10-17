@@ -68,8 +68,20 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 .ctl-assets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
 .ctl-asset { display: grid; place-items: center; aspect-ratio: 132 / 104; padding: 0; border: 1px solid var(--line); border-radius: .625rem; background: radial-gradient(90% 70% at 50% 40%, #2a2a2f, #1a1a1d); color: var(--muted); overflow: hidden; cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
 .ctl-asset img { width: 100%; height: 100%; object-fit: contain; }
+/* the library's search: a field with its icon, and what it finds, grouped */
+.ctl-search-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .375rem; align-items: center; }
+.ctl-search-row { position: relative; display: block; min-width: 0; }
+.ctl-search-row > svg { position: absolute; left: .625rem; top: 50%; width: .95rem; height: .95rem; transform: translateY(-50%); color: var(--dim); pointer-events: none; }
+.ctl-search { width: 100%; min-width: 0; padding-left: 2rem; user-select: text; -webkit-user-select: text; }
+.ctl-search::-webkit-search-cancel-button { filter: grayscale(1) brightness(1.6); }
+.ctl-results { display: grid; gap: .5rem; align-content: start; }
+.ctl-results > .ctl-label { margin-top: .25rem; }
+.ctl-import { color: var(--dim); background: transparent; border-style: dashed; }
+.ctl-import:hover { color: var(--text); }
+.ctl-import svg.icon { width: 1.75rem; height: 1.75rem; }
 .ctl-holds { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .375rem; align-items: start; }
 .ctl-hand button { min-width: 1.75rem; }
+.ctl-hold-list { display: grid; gap: .375rem; min-width: 0; }
 .ctl-hold-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.125rem, 1fr)); gap: .25rem; }
 .ctl-hold { display: grid; place-items: center; aspect-ratio: 1; padding: .125rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); color: var(--dim); cursor: pointer; transition: border-color var(--t-fast); }
 .ctl-hold:hover { border-color: var(--accent-line); }

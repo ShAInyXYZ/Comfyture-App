@@ -255,6 +255,33 @@ async function writePoses(poses: unknown[]) {
   await writeFile(posesFile(), JSON.stringify(poses, null, 1));
 }
 
+// ------------------------------------------------------------------ the Stage's imported models
+
+// characters with their rigs and plain props, as people bring them: one file each
+const MODEL_EXT = new Set(["glb", "gltf", "vrm", "fbx", "obj"]);
+type UserModel = { id: string; name: string; kind: "character" | "prop"; file: string; ext: string; bytes: number; addedAt: string };
+const modelsDir = () => join(data, "control", "models");
+const modelsFile = () => join(data, "control", "models.json");
+async function readModels(): Promise<UserModel[]> {
+  try {
+    const list = JSON.parse(await readFile(modelsFile(), "utf8"));
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+async function writeModels(list: UserModel[]) {
+  await mkdir(join(data, "control"), { recursive: true });
+  await writeFile(modelsFile(), JSON.stringify(list, null, 1));
+}
+/** Whether the bytes look like the format the name says. */
+function looksLike(ext: string, b: Buffer) {
+  if (ext === "glb" || ext === "vrm") return b.subarray(0, 4).toString("latin1") === "glTF";
+  if (ext === "fbx") return b.subarray(0, 18).toString("latin1") === "Kaydara FBX Binary" || /FBX/.test(b.subarray(0, 512).toString("latin1"));
+  if (ext === "gltf") return b.subarray(0, 64).toString("utf8").trimStart().startsWith("{");
+  return true;
+}
+
 // ------------------------------------------------------------------ events
 
 const listeners = new Set<ServerResponse>();
@@ -728,6 +755,35 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const poses = (await readPoses()).filter((p) => p.id !== poseId[1]);
     await writePoses(poses);
     return json(res, 200, { poses });
+  }
+  if (path === "/api/control/models" && method === "GET") return json(res, 200, { models: await readModels() });
+  if (path === "/api/control/models" && method === "POST") {
+    // a model someone brings: a rigged character to pose, or a prop to stage
+    const name = text(url.searchParams.get("name") ?? "", 80) || "Model";
+    const kind = url.searchParams.get("kind") === "character" ? "character" : "prop";
+    const ext = (/\.([a-z0-9]+)$/i.exec(name)?.[1] ?? "").toLowerCase();
+    if (!MODEL_EXT.has(ext)) throw bad("Bring a GLB, glTF, VRM, FBX or OBJ file.");
+    const bytes = await body(req, 300 * 1024 * 1024);
+    if (!bytes.length || !looksLike(ext, bytes)) throw bad(`That file is not a ${ext.toUpperCase()}.`);
+    const id = `${kind === "character" ? "rig" : "obj"}-${slug(name.replace(/\.[^.]+$/, "")) || "model"}-${randomBytes(3).toString("hex")}`;
+    await mkdir(modelsDir(), { recursive: true });
+    await writeFile(join(modelsDir(), `${id}.${ext}`), bytes);
+    const entry: UserModel = { id, name: name.replace(/\.[^.]+$/, "").slice(0, 60), kind, file: `${id}.${ext}`, ext, bytes: bytes.length, addedAt: new Date().toISOString() };
+    const list = await readModels();
+    list.push(entry);
+    await writeModels(list);
+    return json(res, 201, { model: entry, models: list });
+  }
+  const modelFile = /^\/api\/control\/models\/file\/((?:rig|obj)-[\w-]+\.(?:glb|gltf|vrm|fbx|obj))$/.exec(path);
+  if (modelFile && method === "GET") return sendFile(req, res, join(modelsDir(), modelFile[1]), "private, max-age=31536000, immutable");
+  const modelId = /^\/api\/control\/models\/((?:rig|obj)-[\w-]+)$/.exec(path);
+  if (modelId && method === "DELETE") {
+    const list = await readModels();
+    const gone = list.find((m) => m.id === modelId[1]);
+    if (gone) await rm(join(modelsDir(), gone.file), { force: true });
+    const left = list.filter((m) => m.id !== modelId[1]);
+    await writeModels(left);
+    return json(res, 200, { models: left });
   }
   if (path === "/api/control/video" && method === "POST") {
     // the Stage's timeline, frame by frame, as a control video in the library
