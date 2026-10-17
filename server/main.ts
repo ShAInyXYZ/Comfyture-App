@@ -11,6 +11,7 @@ import { manual } from "./manual.ts";
 import { LIMITS } from "./limits.ts";
 import { CloudLibrary } from "./cloud.ts";
 import { ASPECTS, ImageModels } from "./images.ts";
+import { blenderStatus, command, controlConnected, controlEvents, fromBlender, reply, toBlender } from "./control.ts";
 import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
 
@@ -643,6 +644,21 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       listeners.delete(res);
     });
     return;
+  }
+  if (path === "/api/control/events" && method === "GET") return controlEvents(req, res);
+  if (path === "/api/control/status" && method === "GET") return json(res, 200, { page: controlConnected() });
+  if (path === "/api/control/command" && method === "POST") {
+    const input = await jsonBody(req);
+    const answer = await command(text(input.op, 40), input.args && typeof input.args === "object" ? input.args : {});
+    return json(res, answer.ok ? 200 : 409, answer.ok ? { result: answer.result } : { error: answer.error });
+  }
+  if (path === "/api/control/reply" && method === "POST") {
+    return json(res, reply(await jsonBody(req, 48 * 1024 * 1024)) ? 200 : 404, {});
+  }
+  const bridge = /^\/api\/control\/blender\/(status|push|pull)$/.exec(path);
+  if (bridge && method === "POST") {
+    const result = bridge[1] === "status" ? await blenderStatus() : bridge[1] === "push" ? await toBlender() : await fromBlender();
+    return json(res, 200, { result });
   }
   const flow = /^\/api\/runs\/([\w-]+)\/workflow$/.exec(path);
   if (flow && method === "GET") {

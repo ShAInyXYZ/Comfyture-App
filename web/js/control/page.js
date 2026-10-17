@@ -7,6 +7,7 @@ import { Stage, SNAPS, RATIOS } from "./stage.js";
 import { POSES } from "./poses.js";
 import { PROP_TYPES } from "./props.js";
 import { JOINT_NAMES, JOINT_LABELS } from "./skeleton.js";
+import { connectRemote } from "./remote.js";
 
 const $ = (id) => document.getElementById(id);
 const stage = new Stage($("stage"), $("frame"));
@@ -219,6 +220,15 @@ stage.on((kind) => {
 });
 
 installTooltips();
+// an agent can stage the scene through the server; the lamp says whether the link is up and what it is doing
+connectRemote(stage, {
+  onActivity({ connected, op }) {
+    const lamp = $("link");
+    if (connected) lamp.dataset.tone = op ? "busy" : "ok";
+    else delete lamp.dataset.tone;
+    lamp.dataset.tooltip = !connected ? "Agent link — waiting for the server" : op ? `Agent link — ${op.replace(/_/g, " ")}` : "Agent link — ready for commands";
+  },
+});
 // a first scene to block: two characters and a box
 const a = stage.addCharacter({ pose: "walk", at: [-0.55, 0, 0.2] });
 const b = stage.addCharacter({ pose: "point", at: [0.8, 0, -0.45] });

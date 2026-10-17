@@ -186,11 +186,12 @@ export class Stage {
 
   // ------------------------------------------------------------ scene contents
 
-  addCharacter({ pose = "stand", at } = {}) {
+  addCharacter({ pose = "stand", at, name, facing = 0, profile } = {}) {
     const n = this.characters.length;
-    const c = new Mannequin({ name: `Character ${n + 1}`, color: PALETTE[n % PALETTE.length] });
+    const c = new Mannequin({ name: name ?? `Character ${n + 1}`, color: PALETTE[n % PALETTE.length], profile });
     c.setEulerPose(poseById(pose)?.joints ?? {});
     c.root.position.set(at?.[0] ?? (n === 0 ? 0 : n % 2 ? 0.9 * Math.ceil(n / 2) : -0.9 * Math.ceil(n / 2)), 0, at?.[2] ?? 0);
+    c.root.rotation.y = facing;
     c.ground();
     this.scene.add(c.root);
     this.characters.push(c);
@@ -199,10 +200,10 @@ export class Stage {
     return c;
   }
 
-  addProp(type) {
+  addProp(type, at) {
     const prop = makeProp(type);
     const n = this.props.length;
-    prop.position.set(1.4 + (n % 3) * 0.7, 0, 0.4 + Math.floor(n / 3) * 0.7);
+    prop.position.set(at?.[0] ?? 1.4 + (n % 3) * 0.7, 0, at?.[2] ?? 0.4 + Math.floor(n / 3) * 0.7);
     this.placeOnGround(prop);
     this.scene.add(prop);
     this.props.push(prop);
@@ -449,16 +450,23 @@ export class Stage {
 
   // ------------------------------------------------------------ thumbnails
 
-  /** A small picture of the scene from a camera pose, for the snap and pose tiles. */
+  /**
+   * A picture of the scene from a camera pose, for the snap tiles and an agent's look. A second
+   * renderer draws it to its own canvas, so it gets the viewport's tone mapping and colour (a
+   * render target would stay linear and come out dark).
+   */
   thumbnail(pose, { width = 192, height = 108, only } = {}) {
-    if (!this.thumbTarget || this.thumbTarget.width !== width || this.thumbTarget.height !== height) {
-      this.thumbTarget?.dispose();
-      this.thumbTarget = new THREE.WebGLRenderTarget(width, height, { samples: 4 });
-      this.thumbCamera = new THREE.PerspectiveCamera(fovOf(this.focal), width / height, 0.05, 200);
-      this.thumbCanvas = document.createElement("canvas");
-      Object.assign(this.thumbCanvas, { width, height });
+    if (!this.shotRenderer) {
+      const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+      for (const k of ["outputColorSpace", "toneMapping", "toneMappingExposure"]) r[k] = this.renderer[k];
+      r.shadowMap.enabled = true;
+      r.shadowMap.type = THREE.PCFSoftShadowMap;
+      this.shotRenderer = r;
+      this.shotCamera = new THREE.PerspectiveCamera(fovOf(this.focal), width / height, 0.05, 200);
     }
-    const cam = this.thumbCamera;
+    const r = this.shotRenderer;
+    r.setSize(width, height, false);
+    const cam = this.shotCamera;
     cam.fov = fovOf(this.focal);
     cam.aspect = width / height;
     cam.position.copy(pose.position);
@@ -469,15 +477,11 @@ export class Stage {
     helper.visible = false;
     this.handles.visible = false;
     if (only) for (const c of this.characters) if (c !== only && c.root.visible) (c.root.visible = false), hidden.push(c);
-    this.renderer.setRenderTarget(this.thumbTarget);
-    this.renderer.render(this.scene, cam);
-    const pixels = new Uint8Array(width * height * 4);
-    this.renderer.readRenderTargetPixels(this.thumbTarget, 0, 0, width, height, pixels);
-    this.renderer.setRenderTarget(null);
+    r.render(this.scene, cam);
     for (const c of hidden) c.root.visible = true;
     helper.visible = true;
     this.handles.visible = true;
-    return this.readCanvas(pixels, width, height);
+    return r.domElement.toDataURL("image/png");
   }
 
   /** RGBA pixels from a render target (bottom-up) as a PNG data URL. */
@@ -571,8 +575,20 @@ export class Stage {
     this.emit("scene");
   }
 
+  /** Runs fn as one step of history, however many changes it makes. */
+  batch(fn) {
+    this.batching = true;
+    try {
+      return fn();
+    } finally {
+      this.batching = false;
+      this.commit();
+    }
+  }
+
   /** Saves the scene as it is now as one step of history. */
   commit() {
+    if (this.batching) return;
     const snap = JSON.stringify(this.toJSON());
     if (this.history.at(-1) === snap) return;
     this.history.push(snap);
