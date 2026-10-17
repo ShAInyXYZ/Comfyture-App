@@ -6,7 +6,8 @@
 // through it, so undo covers all.
 
 import { h, icon, sprite } from "../dom.js";
-import { Stage, SNAPS, RATIOS, MOVES } from "./stage.js";
+import { view as viewImage } from "../viewer.js";
+import { Stage, SNAPS, RATIOS, MOVES, updateRun } from "./stage.js";
 import { POSES, POSE_CATEGORIES, SAVED, setSaved, allPoses, poseById } from "./poses.js";
 import { ASSETS, assetCategories, assetByType } from "./assets.js";
 import { JOINT_NAMES, JOINT_LABELS, BODY_TYPES, BODY_SLIDERS, PARAMS, PALETTE, colorName } from "./skeleton.js";
@@ -33,10 +34,12 @@ const fmt = (t) => `${String(Math.floor(t / 60)).padStart(2, "0")}:${(t % 60).to
 const assetIcon = (type) => assetByType(type)?.icon ?? "prop-box";
 
 /** Builds the Stage into `root` and returns the stage and its commands. */
+const THREE_CLAMP = (v) => Math.min(1, Math.max(0, v));
+
 // what an animal's clips are called on the Stage
 const ANIMAL_POSES = { stand: "Stand", sit: "Sit", lie: "Lie down", walk: "Walk", hop: "Hop" };
 
-export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = () => {} } = {}) {
+export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = () => {}, usePhoto = () => {} } = {}) {
   // like h(), and a first child may come where the props would (an element, text or a list)
   const el = (tag, props, ...children) =>
     props instanceof Node || typeof props === "string" || Array.isArray(props) ? h(tag, {}, props, ...children) : h(tag, props ?? {}, ...children);
@@ -45,7 +48,10 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   const channelsPill = el("div.ctl-channels", { role: "toolbar", "aria-label": "Channel" });
   const toolsEl = el("div.ctl-tools", { role: "toolbar", "aria-label": "Tools" });
   const hintEl = el("p.ctl-hint");
-  const view = el("section.ctl-view", { "aria-label": "Viewport" }, stageEl, frameEl, channelsPill, toolsEl, hintEl);
+  // the pictures rendered from this stage: their key at the foot of the viewport, and one over the frame
+  const runView = el("div.ctl-run-view", { hidden: true });
+  const runsEl = el("div.ctl-runs");
+  const view = el("section.ctl-view", { "aria-label": "Viewport" }, stageEl, frameEl, runView, channelsPill, toolsEl, runsEl, hintEl);
   const timelineEl = el("section.ctl-timeline", { "aria-label": "Timeline" });
   const chatSlot = el("div.ctl-chat", { id: "stage-chat" });
 
@@ -665,6 +671,97 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     }
   }
 
+  // ---------------------------------------------------------------- the pictures of the frame
+
+  let runsOpen = false;
+  let shown = null;
+  let split = 0.5;
+  const ratioOf = (r) => (r.camera?.ratio ?? "16:9").replace(":", " / ");
+  /** One picture in the strip: running, failed, or the picture, which shows it from its camera. */
+  function runTile(r) {
+    if (r.status === "done" && r.photo) {
+      return el("button.ctl-run", { type: "button", role: "listitem", "aria-pressed": String(shown?.id === r.id), style: { aspectRatio: ratioOf(r) }, title: r.look ? `${r.look} — show it from its camera` : "Show it from its camera", on: { click: () => (shown?.id === r.id ? closeRun() : viewRun(r)) } },
+        el("img", { src: r.photo.url, alt: "", draggable: false }));
+    }
+    if (r.status === "failed") return el("span.ctl-run.is-failed", { role: "listitem", style: { aspectRatio: ratioOf(r) }, title: r.error ?? "That picture didn't work." }, icon("close"));
+    return el("span.ctl-run.is-running", { role: "listitem", style: { aspectRatio: ratioOf(r) }, title: "Rendering…" },
+      el("span.typing", {}, el("i"), el("i"), el("i")), el("i.ctl-run-bar", { style: { width: `${Math.round((r.progress ?? 0) * 100)}%` } }));
+  }
+  /** The key at the foot of the viewport, the strip of pictures over it, and what to do with the one shown. */
+  function runsBar() {
+    const count = stage.runs.length;
+    const key = el("button.ctl-tool.ctl-runs-key", {
+      type: "button", "aria-pressed": String(runsOpen), "aria-label": "Renders",
+      title: count ? "Renders — the pictures made from this stage, each from its camera" : "Renders — none yet: type a look under the scene and press the picture key",
+      on: { click: () => ((runsOpen = !runsOpen), runsBar()) },
+    }, sprite("image-history"), count ? el("span.ctl-runs-count", {}, String(count)) : null);
+    const tool = (glyph, label, run) => el("button.ctl-tool", { type: "button", title: label, "aria-label": label, on: { click: run } }, glyph);
+    const actions = shown ? [el("span.ctl-sep"),
+      tool(icon("expand"), "Look at it, full size", () => viewImage(shown.photo.url)),
+      tool(icon("video"), "Start a shot from it", () => usePhoto(shown.photo)),
+      tool(icon("trash"), "Forget this picture — it stays in the Library", () => {
+        const id = shown.id;
+        closeRun();
+        stage.removeRun(id);
+      }),
+      tool(icon("close"), "Back to the stage — Esc", closeRun)] : [];
+    runsEl.replaceChildren(
+      ...(runsOpen && count ? [el("div.ctl-runs-strip", { role: "list", "aria-label": "Renders" }, ...stage.runs.map(runTile))] : []),
+      el("div.ctl-runs-pill", { role: "toolbar", "aria-label": "Renders" }, key, ...actions));
+  }
+  /** A picture from where it was made: the camera and the moment go back, the picture lies over the frame, cut by the compare bar. */
+  function viewRun(r) {
+    if (!r?.photo) return;
+    if (Number.isFinite(r.time)) stage.setTime(r.time);
+    if (r.camera) stage.setCameraState(r.camera);
+    shown = r;
+    // the conversation folds away so the picture and its keys are in view
+    document.dispatchEvent(new CustomEvent("assistant:fold"));
+    const handle = el("button.cmp-handle", { type: "button", role: "slider", "aria-label": "Compare the picture with the stage", "aria-valuemin": 0, "aria-valuemax": 100 }, sprite("image-compare"));
+    const set = (f) => {
+      split = THREE_CLAMP(f);
+      runView.style.setProperty("--x", `${split * 100}%`);
+      handle.setAttribute("aria-valuenow", String(Math.round(split * 100)));
+    };
+    const at = (e) => {
+      const box = runView.getBoundingClientRect();
+      set((e.clientX - box.left) / box.width);
+    };
+    runView.onpointerdown = (e) => {
+      runView.setPointerCapture(e.pointerId);
+      at(e);
+      handle.focus({ preventScroll: true });
+    };
+    runView.onpointermove = (e) => runView.hasPointerCapture(e.pointerId) && at(e);
+    handle.onkeydown = (e) => {
+      const step = { ArrowLeft: -0.02, ArrowRight: 0.02, Home: -1, End: 1 }[e.key];
+      if (step === undefined) return;
+      e.preventDefault();
+      e.stopPropagation();
+      set(Math.abs(step) === 1 ? (step < 0 ? 0 : 1) : split + (e.shiftKey ? step * 5 : step));
+    };
+    runView.replaceChildren(el("img.ctl-run-pic", { src: r.photo.url, alt: "", draggable: false }), el("span.cmp-line"), handle,
+      el("span.cmp-tag.is-a", {}, "Render"), el("span.cmp-tag.is-b", {}, "Stage"));
+    set(split);
+    runView.hidden = false;
+    placeRun();
+    runsBar();
+  }
+  // the picture covers the frame exactly, wherever the frame is
+  function placeRun() {
+    if (runView.hidden || !stage.frame) return;
+    Object.assign(runView.style, { left: `${stage.frame.x}px`, top: `${stage.frame.y}px`, width: `${stage.frame.w}px`, height: `${stage.frame.h}px` });
+  }
+  function closeRun() {
+    if (!shown) return;
+    shown = null;
+    runView.hidden = true;
+    runView.replaceChildren();
+    runsBar();
+  }
+  // turning the camera away leaves the picture's view
+  stage.orbit.addEventListener("start", closeRun);
+
   // ---------------------------------------------------------------- keys
 
   document.addEventListener("keydown", (e) => {
@@ -684,7 +781,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     if (k === "f") return stage.snap("front");
     if (/^[1-7]$/.test(k)) return stage.setChannel(CHANNELS[Number(k) - 1][0]);
     if (k === "delete" || k === "backspace") return pickedKey ? (stage.removeKey(pickedKey.target, pickedKey.t), (pickedKey = null)) : stage.remove();
-    if (k === "escape") return stage.select({});
+    if (k === "escape") return shown ? closeRun() : stage.select({});
   });
 
   // ---------------------------------------------------------------- wiring
@@ -700,6 +797,9 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     else if (kind === "channel") (channelPill(), previews());
     else if (kind === "timeline") (timeline(), frame());
     else if (kind === "time") (playhead(), stage.playing ? null : previews());
+    else if (kind === "runs") runsBar();
+    if (kind === "frame") placeRun();
+    if (kind === "scene") closeRun();
   });
 
   // an agent can stage the scene through the server; the lamp says whether the link is up and what it is doing
@@ -723,8 +823,9 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   snaps();
   previews();
   renderKeys();
+  runsBar();
   projects.openLast();
-  return { stage, ops, describe, chatSlot, root, projects };
+  return { stage, ops, describe, chatSlot, root, projects, viewRun: (id) => viewRun(stage.runs.find((r) => r.id === id)) };
 }
 
 /**
@@ -763,6 +864,21 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
   let project = null;
   let timer = 0;
   let pending = null;
+  // the pictures of stages no longer open whose renders are still on their way
+  const elsewhere = new Map();
+  stage.runElsewhere = (job) => {
+    for (const [id, runs] of elsewhere) {
+      const run = runs.find((r) => r.id === job.id);
+      if (!run) continue;
+      updateRun(run, job);
+      if (run.status !== "running") call(`api/control/stages/${id}`, { method: "PUT", headers: json, body: JSON.stringify({ renders: runs }) }).catch(() => {});
+      return;
+    }
+  };
+  // a picture still rendering when the page closed is not coming back
+  const settled = (runs) => (Array.isArray(runs) ? runs : []).map((r) => (r.status === "running" && Date.now() - new Date(r.at).getTime() > 15 * 60_000 ? { ...r, status: "failed", error: "Interrupted: the page closed while it rendered." } : r));
+  /** The stage that was open keeps its pictures (and hears of the ones still rendering). */
+  const leave = () => project && stage.runs.some((r) => r.status === "running") && elsewhere.set(project.id, stage.runs);
   // the open stages, in their order, and what the server says of each (name, picture, when)
   let tabs = [];
   const known = new Map();
@@ -892,7 +1008,7 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
     lamp.dataset.tone = "busy";
     lamp.dataset.tooltip = "Saving…";
     const id = project.id;
-    pending = call(`api/control/stages/${id}`, { method: "PUT", headers: json, body: JSON.stringify({ scene: stage.toJSON(), thumb: thumb() }) })
+    pending = call(`api/control/stages/${id}`, { method: "PUT", headers: json, body: JSON.stringify({ scene: stage.toJSON(), thumb: thumb(), renders: stage.runs }) })
       .then((b) => {
         known.set(id, { ...known.get(id), ...b.stage });
         if (project?.id === id) saved(b.stage.updatedAt);
@@ -902,9 +1018,9 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
       .catch((e) => ((lamp.dataset.tone = "crit"), (lamp.dataset.tooltip = e.message)));
     return pending;
   }
-  // a moment after any change, the stage is kept
+  // a moment after any change (or a picture's), the stage is kept
   stage.on((kind) => {
-    if (kind !== "history" || !project) return;
+    if ((kind !== "history" && kind !== "runs") || !project) return;
     clearTimeout(timer);
     lamp.dataset.tone = "busy";
     lamp.dataset.tooltip = "Changed — saving in a moment";
@@ -914,7 +1030,11 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
   async function open(id) {
     if (project && timer) await save();
     const { stage: p } = await call(`api/control/stages/${id}`);
+    leave();
+    elsewhere.delete(id);
+    stage.runs = settled(p.renders);
     stage.load(p.scene ?? { version: 2 });
+    stage.emit("runs");
     stage.select({});
     show(p);
     saved(p.updatedAt);
@@ -922,8 +1042,12 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
   async function create(name, scene) {
     if (project && timer) await save();
     const count = (await list()).length;
+    leave();
+    // a copy keeps the pictures made from it; a new stage has none
+    stage.runs = scene ? stage.runs.map((r) => ({ ...r })) : [];
     if (!scene) stage.load({ version: 2 });
-    const { stage: p } = await call("api/control/stages", { method: "POST", headers: json, body: JSON.stringify({ name: name ?? `Stage ${count + 1}`, scene: scene ?? stage.toJSON(), thumb: thumb() }) });
+    stage.emit("runs");
+    const { stage: p } = await call("api/control/stages", { method: "POST", headers: json, body: JSON.stringify({ name: name ?? `Stage ${count + 1}`, scene: scene ?? stage.toJSON(), thumb: thumb(), renders: stage.runs }) });
     show(p);
     saved(p.updatedAt);
     return p;

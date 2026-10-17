@@ -38,6 +38,14 @@ const ease = (u) => u * u * (3 - 2 * u);
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 /** The key before and after time t, and how far between them (eased). */
+/** What a picture's job says of it, on its run: running, done with its picture, or failed. */
+export function updateRun(run, job) {
+  run.status = job.status === "done" ? "done" : job.status === "failed" || job.status === "canceled" ? "failed" : "running";
+  if (Number.isFinite(job.progress)) run.progress = job.progress;
+  if (job.photo) run.photo = { file: job.photo.file, url: job.photo.url, width: job.photo.width, height: job.photo.height };
+  if (job.error) run.error = String(job.error).slice(0, 300);
+}
+
 function bracket(keys, t) {
   if (!keys.length) return null;
   if (t <= keys[0].t) return [keys[0], keys[0], 0];
@@ -186,6 +194,8 @@ export class Stage {
 
     new ResizeObserver(() => this.resize()).observe(container);
     this.resize();
+    // the pictures rendered from this stage, newest first, each with the camera it was made from
+    this.runs = [];
     // the modelled bodies and pieces load behind the first frames and replace the built ones,
     // then the user's own: rigged characters and props
     loadModels().then((m) => {
@@ -612,6 +622,41 @@ export class Stage {
     if (!character || !joint) return null;
     const e = new THREE.Euler().setFromQuaternion(character.joints[joint].quaternion, "XYZ");
     return [e.x, e.y, e.z].map((v) => Math.round(THREE.MathUtils.radToDeg(v)));
+  }
+
+  // ------------------------------------------------------------ pictures of the frame
+
+  /** A picture started from the frame, kept with the camera and the moment it was made from. */
+  addRun(run) {
+    this.runs.unshift(run);
+    this.emit("runs");
+  }
+
+  /** A picture's job moved on: its progress, then its picture or what went wrong. */
+  runDone(job) {
+    const run = this.runs.find((r) => r.id === job.id);
+    if (!run) return this.runElsewhere?.(job);
+    updateRun(run, job);
+    this.emit("runs");
+  }
+
+  removeRun(id) {
+    this.runs = this.runs.filter((r) => r.id !== id);
+    this.emit("runs");
+  }
+
+  /** The camera where a picture was made from: its place, its aim, its lens and its frame. */
+  setCameraState({ position, target, focal, ratio }) {
+    this.lastSnap = null;
+    this.camera.position.fromArray(position);
+    this.orbit.target.fromArray(target);
+    this.camera.up.set(0, 1, 0);
+    if (focal) this.focal = THREE.MathUtils.clamp(Math.round(focal), 14, 200);
+    if (ratio && RATIOS[ratio]) this.ratio = ratio;
+    this.orbit.update();
+    this.resize();
+    this.emit("camera");
+    this.emit("frame");
   }
 
   // ------------------------------------------------------------ camera

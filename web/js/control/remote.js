@@ -735,6 +735,9 @@ export function controlOps(stage) {
     const res = await fetch("api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ template: "edit", prompt, aspect: stage.ratio, refs: [{ file: frame.file, name: "frame" }], count, megapixels: 1 }) });
     const jobs = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(jobs.error ?? "The picture was not started.");
+    // each picture is kept with the stage, with the camera it was made from, to look at it from there again
+    const camera = { ...stage.cameraState(), ratio: stage.ratio };
+    for (const j of [...jobs].reverse()) stage.addRun({ id: j.id, status: "running", progress: 0, look, camera, time: stage.time, at: new Date().toISOString(), frame: { file: frame.file, url: frame.url } });
     return { jobs: jobs.map((j) => ({ id: j.id })), prompt, look, aspect: stage.ratio, frame: { file: frame.file, url: frame.url } };
   };
 

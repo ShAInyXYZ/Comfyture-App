@@ -2,6 +2,7 @@ import { h, icon, sprite } from "../dom.js";
 import { state, ask, askStage, renderStageImage, useStageRender, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt } from "../store.js";
 import { view } from "../viewer.js";
 import { currentPage } from "../router.js";
+import { stageReady } from "../control/link.js";
 
 // on the Stage the bar stages a scene; on the Shot it sets up the shot: one bar, two conversations
 const onStage = () => currentPage() === "stage";
@@ -207,7 +208,7 @@ function renderTile(id) {
       h("span.typing", {}, h("i"), h("i"), h("i")), h("i.msg-render-bar", { style: { width: `${Math.round((r.progress ?? 0) * 100)}%` } }));
   }
   return h("span.msg-render", { style: { aspectRatio: `${r.photo.width} / ${r.photo.height}` } },
-    h("button.msg-render-look", { type: "button", title: "Look at it", "aria-label": "Look at the picture", on: { click: () => view(r.photo.url) } }, h("img", { src: r.photo.url, alt: "", draggable: false })),
+    h("button.msg-render-look", { type: "button", title: onStage() ? "Show it from its camera, over the stage" : "Look at it", "aria-label": "Look at the picture", on: { click: () => (onStage() ? stageReady.then((api) => api.viewRun(id)) : view(r.photo.url)) } }, h("img", { src: r.photo.url, alt: "", draggable: false })),
     h("button.msg-render-use", { type: "button", title: "Start a shot from it", "aria-label": "Start a shot from it", on: { click: () => useStageRender(r.photo) } }, icon("video")));
 }
 
@@ -235,6 +236,13 @@ function message(m, last) {
     last && m.undo ? h("button.key.is-sm.is-quiet.undo", { type: "button", title: "Put the shot back as it was", on: { click: () => undoAssistant(m) } }, icon("remix"), "Undo") : null,
   );
 }
+
+// a picture shown over the Stage's frame asks for room
+document.addEventListener("assistant:fold", () => {
+  if (!open) return;
+  open = false;
+  renderAssistant(document.getElementById("assistant"));
+});
 
 export function renderAssistant(el) {
   const stage = onStage();

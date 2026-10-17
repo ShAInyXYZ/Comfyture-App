@@ -286,7 +286,9 @@ function looksLike(ext: string, b: Buffer) {
 
 // a stage as its own project: its name, its scene (characters, props, camera, timeline) and a
 // small picture of its frame, kept one file each; shared as one file with the user's models in it
-type StageFile = { id: string; name: string; createdAt: string; updatedAt: string; scene: unknown; thumb?: string };
+type StageFile = { id: string; name: string; createdAt: string; updatedAt: string; scene: unknown; thumb?: string; renders?: unknown[] };
+/** The pictures rendered from a stage, as the page keeps them (the pictures themselves are in the Library). */
+const stageRenders = (v: unknown) => (Array.isArray(v) ? v.filter((r) => r && typeof r === "object").slice(0, 200) : undefined);
 const stagesDir = () => join(data, "control", "stages");
 const stageId = (s: string) => /^stage-[\w-]{1,80}$/.test(s);
 async function readStage(id: string): Promise<StageFile | null> {
@@ -873,7 +875,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const input = await jsonBody(req, 64 * 1024 * 1024);
     const now = new Date().toISOString();
     const name = stageName(input.name);
-    const stage: StageFile = { id: newStageId(name), name, createdAt: now, updatedAt: now, scene: input.scene ?? { version: 2 }, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined };
+    const stage: StageFile = { id: newStageId(name), name, createdAt: now, updatedAt: now, scene: input.scene ?? { version: 2 }, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined, renders: stageRenders(input.renders) };
     await writeStage(stage);
     return json(res, 201, { stage });
   }
@@ -907,9 +909,10 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       if (input.name !== undefined) stage.name = stageName(input.name, stage.name);
       if (input.scene !== undefined) stage.scene = input.scene;
       if (typeof input.thumb === "string") stage.thumb = input.thumb.slice(0, 400_000);
+      if (input.renders !== undefined) stage.renders = stageRenders(input.renders);
       stage.updatedAt = new Date().toISOString();
       await writeStage(stage);
-      const { scene: _scene, ...meta } = stage;
+      const { scene: _scene, renders: _renders, ...meta } = stage;
       return json(res, 200, { stage: meta });
     }
     if (method === "DELETE") {
