@@ -305,7 +305,7 @@ Write the action the way LTX-2.5 reads best: present tense, the motion first, on
 | `COMFYTURE_WORKFLOWS` | | `dev` swaps in tiny stand-in workflows so you can work on the UI without a GPU |
 | `COMFYTURE_URL` | `http://127.0.0.1:5177` | Where `scripts/control-mcp.ts` finds the app |
 | `BLENDER_MCP_HOST` / `BLENDER_MCP_PORT` | `localhost` / `9876` | Where the app finds Blender's MCP add-on |
-| `COMFYTURE_LLM` | `claude-sonnet-5-5` with a Comfy key, else `gemma-4` | The writer's default (Story's writers and assistant, the Cut editor): `claude-sonnet-5-5`, `claude-haiku-4-5-20251001` (both through Comfy Router) or `gemma-4` (open weights, in ComfyUI). Each bar can pick another. |
+| `COMFYTURE_LLM` | `claude-sonnet-5-5` with a Comfy key, else `gemma-4` | The writer's default (Story's writers and assistant, the Cut editor): `claude-sonnet-5-5`, `claude-haiku-4-5-20251001`, `gpt-6-sol`, `gpt-6-luna`, `gemini-3.1-pro-preview`, `gemini-3.8-flash` (through Comfy Router) or `gemma-4` (open weights, in ComfyUI). Each bar can pick another. |
 | `COMFYTURE_LLM_ASSISTANT` | `claude-haiku-4-5-20251001` with a Comfy key, else `gemma-4` | The quick assistants' default (Shot and Stage), from the same three |
 | `COMFYTURE_DEBUG` | | Set to log the Stage assistant's raw answers |
 
@@ -319,7 +319,7 @@ Every picture, video and sound model the app runs is open weights, through Comfy
 | LTX IC-LoRAs: [Ingredients](https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Ingredients), [Pixel Spatial Upscaler](https://huggingface.co/Lightricks/LTX-2.5-22b-IC-LoRA-Pixel-Spatial-Upscaler) | references, Production's detail pass |
 | [Qwen Image 2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1) | painted end frames |
 | [Gemma 4](https://huggingface.co/Comfy-Org/gemma-4) | LTX-2.5's text encoder, the optional prompt enhancer, and the open-weights writer |
-| Claude Sonnet 5.5, Claude Haiku 4.5 (Anthropic, through [Comfy Router](https://docs.comfy.org/development/comfy-router/models)) | the writers and assistants by default: Story, Cut, Shot and Stage |
+| Claude Sonnet 5.5, Claude Haiku 4.5 (Anthropic), GPT-6 Sol and Luna (OpenAI), Gemini 3.1 Pro and 3.8 Flash (Google), all through [Comfy Router](https://docs.comfy.org/development/comfy-router/models) | the writers and assistants: Sonnet 5.5 writes and Haiku 4.5 assists by default, and every bar can pick another |
 | [BiRefNet](https://huggingface.co/Comfy-Org/BiRefNet) | cutting cast and props out for the reference sheet |
 | [Comfy SDK](https://www.npmjs.com/package/@comfyorg/sdk) | talking to Comfy Cloud or your own ComfyUI |
 | [Manrope](https://github.com/sharanda/manrope), [IBM Plex Mono](https://github.com/IBM/plex) | the interface type (SIL Open Font License, in `web/fonts/`) |

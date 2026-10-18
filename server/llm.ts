@@ -1,22 +1,30 @@
-// The writers' models: Claude on Comfy Router, billed in Comfy credits with the same Comfy key as
-// everything else, or Gemma 4 running inside ComfyUI (open weights). Two roles, each with its own
-// default: the writer (Story's writers and its assistant, the Cut editor) on Claude Sonnet 5.5, and
-// the quick assistants (Shot and Stage) on Claude Haiku 4.5. The pages pick another; without a
-// Comfy key only Gemma 4 is offered. COMFYTURE_LLM and COMFYTURE_LLM_ASSISTANT set the defaults.
+// The writers' models: Claude, GPT and Gemini on Comfy Router, billed in Comfy credits with the
+// same Comfy key as everything else, or Gemma 4 running inside ComfyUI (open weights). Two roles,
+// each with its own default: the writer (Story's writers and its assistant, the Cut editor) on
+// Claude Sonnet 5.5, and the quick assistants (Shot and Stage) on Claude Haiku 4.5. The pages pick
+// another; without a Comfy key only Gemma 4 is offered. COMFYTURE_LLM and COMFYTURE_LLM_ASSISTANT
+// set the defaults.
 
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 
-// tuned: whether it takes a temperature; forced: whether it can be made to answer through a tool.
-// Sonnet 5.5 thinks before it answers, so it turns both down; told to use the tool, it does on its own.
-export type Llm = { id: string; name: string; about: string; router: boolean; tuned?: boolean; forced?: boolean };
+// provider: how Router is spoken to (Anthropic's Messages, OpenAI's Responses, Google's generateContent);
+// tuned: whether it takes a temperature; forced: whether it can be made to answer through a tool
+// (Sonnet 5.5 thinks before it answers, so it turns both down; told to use the tool, it does)
+type Provider = "anthropic" | "openai" | "vertexai" | "comfyui";
+export type Llm = { id: string; name: string; about: string; provider: Provider; tuned?: boolean; forced?: boolean };
 const LLMS: Llm[] = [
-  { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", about: "The strongest writer, for stories, edits and the assistants", router: true },
-  { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", about: "Quick and cheap", router: true, tuned: true, forced: true },
-  { id: "gemma-4", name: "Gemma 4", about: "Open weights, inside ComfyUI", router: false },
+  { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", about: "Anthropic · the strongest writer, for stories and edits", provider: "anthropic" },
+  { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", about: "Anthropic · quick and cheap, for the assistants", provider: "anthropic", tuned: true, forced: true },
+  { id: "gpt-6-sol", name: "GPT-6 Sol", about: "OpenAI · a strong writer, priced like Sonnet", provider: "openai" },
+  { id: "gpt-6-luna", name: "GPT-6 Luna", about: "OpenAI · the cheapest, a tenth of Haiku", provider: "openai" },
+  { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", about: "Google · a strong writer, a little cheaper", provider: "vertexai", tuned: true },
+  { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash", about: "Google · quick", provider: "vertexai", tuned: true },
+  { id: "gemma-4", name: "Gemma 4", about: "Open weights, inside ComfyUI", provider: "comfyui" },
 ];
 const hasKey = () => !!process.env.COMFY_API_KEY?.trim();
-export const llms = () => LLMS.filter((m) => !m.router || hasKey()).map(({ id, name, about, router }) => ({ id, name, about, router }));
+const model = (id: string) => LLMS.find((m) => m.id === id);
+export const llms = () => LLMS.filter((m) => m.provider === "comfyui" || hasKey()).map(({ id, name, about, provider }) => ({ id, name, about, provider, router: provider !== "comfyui" }));
 export type Role = "writer" | "assistant";
 export function defaultLlm(role: Role = "writer") {
   // COMFYTURE_ASSISTANT=gemma, from before there was a choice, still keeps everything on Gemma 4
@@ -28,10 +36,12 @@ export function defaultLlm(role: Role = "writer") {
 }
 /** The model a request asks for, if it may be used; else its role's default. */
 export const pickLlm = (v: unknown, role: Role = "writer") => (typeof v === "string" && llms().some((m) => m.id === v) ? v : defaultLlm(role));
-export const onRouter = (id: string) => LLMS.find((m) => m.id === id)?.router === true;
-export const llmName = (id: string) => LLMS.find((m) => m.id === id)?.name ?? id;
+export const onRouter = (id: string) => !!model(id) && model(id)!.provider !== "comfyui";
+/** Whether the model can be handed a tool to answer through (Claude); the others write the JSON as text. */
+export const takesTools = (id: string) => model(id)?.provider === "anthropic";
+export const llmName = (id: string) => model(id)?.name ?? id;
 
-/** A picture file as Claude takes it: inline, base64, with its type read from its first bytes. */
+/** A picture file as the models take it: inline, base64, with its type read from its first bytes. */
 export async function imageBlock(path: string) {
   const bytes = await readFile(path);
   const type = bytes[0] === 0x89 ? "image/png" : bytes[0] === 0xff ? "image/jpeg" : bytes.subarray(8, 12).toString() === "WEBP" ? "image/webp" : "image/png";
@@ -39,30 +49,65 @@ export async function imageBlock(path: string) {
 }
 
 type Tool = { name: string; description: string; input_schema: unknown };
+type Ask = { maxTokens?: number; temperature?: number; image?: { type: string; data: string }; tool?: Tool };
+
 /**
- * Claude through Comfy Router: the brief as its system prompt (cached), the prompt and a picture if
- * there is one. It answers with its text, or with the input of the tool it was made to call, as JSON.
+ * A model on Comfy Router: the brief as its system prompt, the prompt and a picture if there is one.
+ * It answers with its text; a Claude handed a tool answers with the tool's input, as JSON.
  */
-export async function routerAsk(model: string, system: string, prompt: string, { maxTokens = 3000, temperature = 0.7, image, tool }: { maxTokens?: number; temperature?: number; image?: { type: string; data: string }; tool?: Tool } = {}) {
+export async function routerAsk(id: string, system: string, prompt: string, opts: Ask = {}) {
+  const m = model(id);
+  if (!m || m.provider === "comfyui") throw new Error(`${id} is not on Comfy Router.`);
+  const { body, read } = m.provider === "openai" ? openai(m, system, prompt, opts) : m.provider === "vertexai" ? vertex(m, system, prompt, opts) : anthropic(m, system, prompt, opts);
+  const res = await fetch(`https://api.comfy.org/v2/models/${m.provider}/${m.id}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-API-Key": process.env.COMFY_API_KEY!.trim(), "Idempotency-Key": randomUUID() },
+    body: JSON.stringify(body),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(`${m.name}: ${out?.error?.message ?? out?.detail ?? out?.message ?? `${res.status} ${res.statusText}`}`), { status: 502 });
+  if (process.env.COMFYTURE_DEBUG) console.log(`${m.id} usage ${JSON.stringify(out.usage ?? out.usageMetadata)}`);
+  const text = read(out);
+  if (!text) throw Object.assign(new Error(`${m.name} answered nothing. Try again?`), { status: 502 });
+  return text;
+}
+
+function anthropic(m: Llm, system: string, prompt: string, { maxTokens = 3000, temperature = 0.7, image, tool }: Ask) {
   const content: Record<string, unknown>[] = [];
   if (image) content.push({ type: "image", source: { type: "base64", media_type: image.type, data: image.data } });
   content.push({ type: "text", text: prompt });
-  const res = await fetch(`https://api.comfy.org/v2/models/anthropic/${model}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-API-Key": process.env.COMFY_API_KEY!.trim(), "Idempotency-Key": randomUUID() },
-    body: JSON.stringify({
-      model,
+  return {
+    body: {
+      model: m.id,
       max_tokens: maxTokens,
-      ...(LLMS.find((m) => m.id === model)?.tuned ? { temperature } : {}),
+      ...(m.tuned ? { temperature } : {}),
       system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
-      ...(tool ? { tools: [tool], tool_choice: LLMS.find((m) => m.id === model)?.forced ? { type: "tool", name: tool.name } : { type: "auto" } } : {}),
+      ...(tool ? { tools: [tool], tool_choice: m.forced ? { type: "tool", name: tool.name } : { type: "auto" } } : {}),
       messages: [{ role: "user", content }],
-    }),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(`${llmName(model)}: ${body?.error?.message ?? body?.detail ?? body?.message ?? `${res.status} ${res.statusText}`}`), { status: 502 });
-  if (process.env.COMFYTURE_DEBUG) console.log(`${model} usage ${JSON.stringify(body.usage)}`);
-  const call = (body.content ?? []).find((c: any) => c.type === "tool_use");
-  if (call) return JSON.stringify(call.input);
-  return String((body.content ?? []).map((c: any) => c.text ?? "").join(""));
+    },
+    read: (out: any) => {
+      const call = (out.content ?? []).find((c: any) => c.type === "tool_use");
+      return call ? JSON.stringify(call.input) : String((out.content ?? []).map((c: any) => c.text ?? "").join(""));
+    },
+  };
+}
+
+// OpenAI's Responses API: the GPT-6 ids reason, so their room covers the thinking too, kept brief
+function openai(m: Llm, system: string, prompt: string, { maxTokens = 3000, image }: Ask) {
+  const content: Record<string, unknown>[] = [{ type: "input_text", text: prompt }];
+  if (image) content.push({ type: "input_image", image_url: `data:${image.type};base64,${image.data}` });
+  return {
+    body: { instructions: system, input: [{ role: "user", content }], max_output_tokens: maxTokens * 3, reasoning: { effort: "low" } },
+    read: (out: any) => String((out.output ?? []).filter((o: any) => o.type === "message").flatMap((o: any) => o.content ?? []).filter((c: any) => c.type === "output_text").map((c: any) => c.text ?? "").join("")),
+  };
+}
+
+// Google's generateContent: thought parts are left out of the answer
+function vertex(m: Llm, system: string, prompt: string, { maxTokens = 3000, temperature = 0.7, image }: Ask) {
+  const parts: Record<string, unknown>[] = [{ text: prompt }];
+  if (image) parts.push({ inlineData: { mimeType: image.type, data: image.data } });
+  return {
+    body: { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts }], generationConfig: { maxOutputTokens: Math.min(65536, maxTokens * 3), temperature } },
+    read: (out: any) => String((out.candidates?.[0]?.content?.parts ?? []).filter((p: any) => !p.thought).map((p: any) => p.text ?? "").join("")),
+  };
 }
