@@ -161,9 +161,15 @@ const TOOLS: Tool[] = [
   },
   {
     name: "control_render_image",
-    description: "A finished picture of what the camera frame shows: the clay frame is its layout and prompt its look (who each character is and wears, the place, the light, the style). An image edit with the app's default image model; the pictures land in the Library. Answers with their job ids.",
+    description: "A finished picture of what the camera frame shows: the clay frame is its layout and prompt its look (who each character without a sheet is and wears, what each one does, the place, the light, the style). Each sheet's words and pictures go with the frame. An image edit with the app's default image model; the pictures land in the Library. Answers with their job ids.",
     inputSchema: { type: "object", properties: { prompt: { type: "string", description: "The look, as a full image description." }, count: { type: "number", description: "1 to 4 versions, default 1." } } },
     run: op("render_image"),
+  },
+  {
+    name: "control_tag",
+    description: "Writes on a character's sheet who they are and how they look (age, face, hair, clothes), or on a piece's sheet what it is (material, colour, brand). Every render sends a sheet's words and pictures with the frame, so a render's prompt only says what they do.",
+    inputSchema: { type: "object", properties: { id: { type: "string", description: "The character's or piece's name." }, description: { type: "string", description: "One or two sentences." } }, required: ["id", "description"] },
+    run: op("tag"),
   },
   {
     name: "control_camera_move",

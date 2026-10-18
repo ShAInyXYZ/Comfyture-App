@@ -620,6 +620,7 @@ export function makeProp(type, id, params) {
     material: clay(),
     accent: accentClay(),
     keys: [],
+    tag: { description: "", refs: [] },
     toJSON: () => ({
       id: object.userData.id,
       type: object.userData.type,
@@ -631,7 +632,7 @@ export function makeProp(type, id, params) {
       visible: object.visible,
       keys: object.userData.keys?.length ? object.userData.keys : undefined,
       pose: object.userData.pose ?? undefined,
-      ref: object.userData.ref ?? undefined,
+      tag: object.userData.tag?.description || object.userData.tag?.refs?.length ? object.userData.tag : undefined,
     }),
   };
   fill(object);
@@ -658,8 +659,8 @@ export function propFromJSON(data) {
   object.scale.fromArray(data.scale ?? [1, 1, 1]);
   object.visible = data.visible !== false;
   object.userData.keys = data.keys ? structuredClone(data.keys) : [];
-  // a picture of the very thing (the product, the car), for a render to follow
-  object.userData.ref = data.ref?.file ? data.ref : null;
+  // what the very thing is, for a render: a few words and pictures (the product, the car); an older one picture is its first
+  object.userData.tag = { description: String(data.tag?.description ?? "").slice(0, 600), refs: Array.isArray(data.tag?.refs) ? data.tag.refs.filter((r) => r?.file).slice(0, 8) : data.ref?.file ? [data.ref] : [] };
   // an animal's pose, kept even before its model has come
   if (typeof data.pose === "string") {
     object.userData.pose = data.pose;

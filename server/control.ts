@@ -239,7 +239,8 @@ FOR A VIDEO (the shot plays over a timeline, 5 seconds unless said)
 - to_blender {}: send the stage to Blender to refine it there. from_blender {}: bring Blender's changes back.
 
 A PICTURE OF THE FRAME
-- render_image {prompt, count}: a finished picture of what the camera frame shows: the frame is its layout, and prompt says how it looks. Write prompt as a full image description in English: who each character is and what they wear, one sentence each, by name ("Mo is a businessman in a grey suit"), then the place, the time of day, the light, the weather and the style ("a rainy night in Tokyo, neon reflections, cinematic"). Never describe a character by its mannequin colour (coral, teal, amber…): those colours only tell the figures apart, and the app tells the image model which figure is which. count is 1 to 4 versions (1 unless asked). A character or piece listed with "has a picture" is drawn to look like that picture (a face, an outfit, a product): say what it does, not what it looks like. Use it when the user asks to render, to make an image or a picture of the scene, or to see it for real. It runs after the other actions, so stage the changes they ask for in the same answer.
+- render_image {prompt, count}: a finished picture of what the camera frame shows: the frame is its layout, and prompt says how it looks. Write prompt as a full image description in English: who each character without a sheet is and what they wear, one sentence each, by name ("Mo is a businessman in a grey suit"), then what each one does, then the place, the time of day, the light, the weather and the style ("a rainy night in Tokyo, neon reflections, cinematic"). Never describe a character by its mannequin colour (coral, teal, amber…): those colours only tell the figures apart, and the app tells the image model which figure is which. count is 1 to 4 versions (1 unless asked). A character or piece listed with a sheet is drawn from it: the app sends its words and its pictures (a face, an outfit, a product) with the frame, so name it and say what it does, never what it looks like. Use it when the user asks to render, to make an image or a picture of the scene, or to see it for real. It runs after the other actions, so stage the changes they ask for in the same answer.
+- tag {id, description}: writes on a character's sheet who they are and how they look (age, face, hair, clothes, in one or two sentences), or on a piece's sheet what it is (material, colour, brand); every render follows it. Use it when the user says how someone looks for good ("Mia has curly red hair and a striped shirt"), not for one render.
 
 Poses by what people do. Standing: wait stand, casual stand-weight, arms-crossed, hands-on-hips, hands-in-pockets, hands-behind-back, lean on a wall lean-back (with against the wall: back on it, one foot up on it), lean on a counter or a bar lean-on, look-up, tired slouch, cold, t-pose. Moving: walk, run, sneak, jump, walking while texting walk-phone, climb, stumble fall, dance. Sitting: sit on a chair sit, sit back sit-relaxed, legs crossed sit-cross-legs, at a desk or typing sit-desk, elbows on knees sit-hunched, at the wheel drive (with sit_on the car's seat or a chair), on the floor sit-floor, hugging the knees sit-knees-up, kneel, crouch, lie down lie, lie-side, lie on the front lie-front. Gestures: talk or explain talk, argue point or arms-crossed, greet wave, think thinking, on the phone phone-call, not knowing shrug, celebrate cheer, surrender hands-up, bow, thumbs-up, facepalm, salute, stop, hand-on-heart, pray, waiting or impatient look-at-watch, confused scratch-head, shocked cover-mouth, despair hands-on-head, offer a hand handshake, welcome open-arms, selfie. Action: fight, punch, kick, hero-landing, reach up reach, aim, carry, push, pull, throw, sword, block, lift a box lift, drink, read, take a photo photo, pick-up. A pose already holds the arms and legs: do not add joint or reach for what it shows.
 Every character gets facing or face_toward: people in a scene together face each other or what they act on.
@@ -263,7 +264,7 @@ User: render it as a rainy evening in Paris
 {"reply": "Rendering her by the car on a rainy Paris evening.", "actions": [{"op": "render_image", "args": {"prompt": "A rainy evening on a Paris street, wet cobblestones reflecting warm shop lights. Ava is a young woman in a beige trench coat with dark hair, walking to a small vintage car. Cinematic, shallow depth of field.", "count": 1}}]}`;
 
 export interface ControlTurn { role: "user" | "assistant"; text: string; did?: string[]; failed?: string[] }
-export const CONTROL_OPS = ["layout", "add_character", "add_prop", "place", "rename", "pose", "joint", "reach", "remove", "camera", "camera_move", "move_to", "key", "duration", "clear_keys", "to_blender", "from_blender", "render_image"] as const;
+export const CONTROL_OPS = ["layout", "add_character", "add_prop", "place", "rename", "pose", "joint", "reach", "remove", "camera", "camera_move", "move_to", "key", "duration", "clear_keys", "to_blender", "from_blender", "render_image", "tag"] as const;
 type ControlAction = { op: (typeof CONTROL_OPS)[number]; args: Record<string, unknown> };
 
 const at = (p: unknown) => (Array.isArray(p) ? `x ${p[0]} z ${p[2]}` : "?");
@@ -273,6 +274,14 @@ const byCategory = (assets: unknown) => {
   const groups = new Map<string, string[]>();
   for (const a of (Array.isArray(assets) ? assets : []) as any[]) groups.set(a.category ?? "Other", [...(groups.get(a.category ?? "Other") ?? []), a.type]);
   return [...groups].map(([c, l]) => `${c}: ${l.join(", ")}`).join("; ");
+};
+
+/** A character's or piece's sheet, as the brief lists it: its words, and how many pictures go with them. */
+const sheet = (v: any) => {
+  if (!v || typeof v !== "object") return "";
+  const words = String(v.description ?? "").replace(/\s+/g, " ").trim().slice(0, 300).replace(/"/g, "'");
+  const pics = Number(v.pictures) || 0;
+  return `, with a sheet${words ? ` ("${words}")` : ""}${pics ? ` and ${pics} ${pics === 1 ? "picture" : "pictures"}` : ""}`;
 };
 
 /** The prompt: the stage as the page reported it, and the conversation so far. */
@@ -285,10 +294,10 @@ export function controlPrompt(scene: Record<string, any>, turns: ControlTurn[], 
     `frame ${cam.ratio ?? "16:9"}, lens ${cam.focal ?? 35} mm, camera at [${(cam.position ?? []).join(", ")}] looking at [${(cam.target ?? []).join(", ")}]`,
     `timeline: ${tl.duration ?? 5} s, camera move ${tl.camera_move ?? "locked"}`,
     "characters:",
-    ...((scene.characters ?? []) as any[]).slice(0, 12).map((c) => `- ${c.name}: ${c.rig ? "the user's own rigged character" : c.body ?? "man"}, ${c.color ?? "?"}, pose ${c.pose ?? "custom"}${params(c.params)}, ${c.height} m tall, at ${at(c.position)}, facing ${c.facing}${c.seated_on ? `, seated on ${c.seated_on}` : ""}${c.picture ? ", has a picture" : ""}${c.hold ? `, holding ${Object.entries(c.hold).map(([h, t]) => `${t} (${h} hand)`).join(" and ")}` : ""}${c.keys?.length ? `, keyed at ${c.keys.join(", ")} s` : ""}${c.visible === false ? ", hidden" : ""}`),
+    ...((scene.characters ?? []) as any[]).slice(0, 12).map((c) => `- ${c.name}: ${c.rig ? "the user's own rigged character" : c.body ?? "man"}, ${c.color ?? "?"}, pose ${c.pose ?? "custom"}${params(c.params)}, ${c.height} m tall, at ${at(c.position)}, facing ${c.facing}${c.seated_on ? `, seated on ${c.seated_on}` : ""}${sheet(c.sheet)}${c.hold ? `, holding ${Object.entries(c.hold).map(([h, t]) => `${t} (${h} hand)`).join(" and ")}` : ""}${c.keys?.length ? `, keyed at ${c.keys.join(", ")} s` : ""}${c.visible === false ? ", hidden" : ""}`),
     ...(scene.characters?.length ? [] : ["none"]),
     "props:",
-    ...((scene.props ?? []) as any[]).slice(0, 30).map((p) => `- ${p.label}: ${p.animal ? `the animal ${p.type}, pose ${p.pose}` : p.type}${p.picture ? ", has a picture" : ""}, ${(p.size ?? []).join(" x ")} m, at ${at(p.position)}${p.position?.[1] > 0.01 ? ` lifted ${p.position[1]}` : ""}, facing ${p.facing}`),
+    ...((scene.props ?? []) as any[]).slice(0, 30).map((p) => `- ${p.label}: ${p.animal ? `the animal ${p.type}, pose ${p.pose}` : p.type}${sheet(p.sheet)}, ${(p.size ?? []).join(" x ")} m, at ${at(p.position)}${p.position?.[1] > 0.01 ? ` lifted ${p.position[1]}` : ""}, facing ${p.facing}`),
     ...(scene.props?.length ? [] : ["none"]),
     `poses you can use: ${list(scene.poses)}`,
     `assets by category: ${byCategory(scene.assets)}`,

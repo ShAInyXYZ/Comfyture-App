@@ -1816,23 +1816,25 @@ export const editStageRun = (run, stageId) =>
   });
 
 /**
- * The Image window, to make a picture of a character or a piece of the Stage: a description to
- * start from; the first picture made becomes its picture (renders then follow it).
+ * The Image window, to make a sheet for a character or a piece of the Stage: its sheet's words to
+ * start from (a turnaround for a character, views of the thing for a piece); what it makes goes on
+ * that sheet, so renders follow it.
  */
-export const makeStageRef = ({ kind, id, name, what }) =>
+export const makeStageRef = ({ kind, id, name, what, description, stageId }) =>
   attempt(async () => {
     const im = state.image;
     if (!im.catalogue) im.catalogue = await api.imageModels();
     im.refs = [];
     const person = { man: "a man", woman: "a woman", teen: "a teenager", child: "a child", toddler: "a toddler", elder: "an older person", heavy: "a heavyset person", athletic: "an athletic person" }[what];
+    const words = String(description ?? "").trim().replace(/[.;]+$/, "").replace(/^(A|An|The) /, (m) => m.toLowerCase());
     im.prompt = kind === "character"
-      ? `${name}, ${person ?? "a character"}: a full-length character reference, front view, standing, plain light grey background, soft even studio light.`
-      : `${name}${what ? `, ${what.toLowerCase()}` : ""}: a product photo of the object alone, three-quarter view, plain light grey background, soft studio light.`;
+      ? `A character sheet of ${name}, ${words || person || "a character"}. Three full-length views side by side: front, three-quarter and back, standing in a relaxed neutral pose, the same face, hair and clothes in every view. Plain light grey background, soft even studio light.`
+      : `A reference sheet of ${name}${words ? `, ${words}` : what ? `, ${what.toLowerCase()}` : ""}. The object alone in three views side by side: front, three-quarter and side. Plain light grey background, soft studio light.`;
     im.before = null;
     im.keep = false;
-    im.origin = { stageRef: { kind, id, name } };
+    im.origin = { stageRef: { kind, id, name, stageId } };
     im.open = true;
-    setImage({ template: "generate", aspect: kind === "character" ? "3:4" : "1:1", count: 1 });
+    setImage({ template: "generate", aspect: "16:9", count: 1 });
   });
 
 /** A paint event for one of the window's pictures. */
@@ -1843,11 +1845,16 @@ function imageJob(job) {
   if (!r) return;
   Object.assign(r, { status: job.status, progress: job.progress ?? r.progress, photo: job.photo ?? r.photo, error: job.error });
   if (job.status === "failed") toast(job.error ?? "That picture didn't work.", { tone: "crit" });
-  // the first picture made for one on the Stage becomes its picture
+  // a picture made for one on the Stage goes on its sheet
   const ref = r.origin?.stageRef;
-  if (ref && job.status === "done" && job.photo && !state.image.results.some((x) => x !== r && x.attached === ref.id)) {
-    r.attached = ref.id;
-    stageReady.then(({ stage }) => stage.setRefById(ref, job.photo) && toast(`That picture is ${ref.name}'s now: renders follow it.`));
+  if (ref && job.status === "done" && job.photo && !r.attached) {
+    r.attached = true;
+    stageReady.then(({ stage, projects }) => {
+      const target = (!ref.stageId || projects.current()?.id === ref.stageId) && stage.targetById(ref);
+      if (!target) return;
+      stage.addTagRef(target, job.photo);
+      toast(`On ${ref.name}'s sheet now: renders follow it.`);
+    });
   }
   if (job.status === "done") api.photos().then((photos) => ((state.photos = photos), changed("library"))).catch(() => {});
   changed("image");

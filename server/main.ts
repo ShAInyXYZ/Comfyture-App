@@ -323,6 +323,12 @@ function modelsIn(scene: any): string[] {
 const newStageId = (name: string) => `stage-${slug(name) || "stage"}-${randomBytes(3).toString("hex")}`;
 const stageName = (v: unknown, fallback = "Stage") => text(v, 60) || fallback;
 
+/** Every picture on a scene's sheets (its characters' and pieces'), each once. */
+function sheetRefs(scene: any): any[] {
+  const refs = [...(scene?.characters ?? []), ...(scene?.props ?? [])].flatMap((t: any) => (Array.isArray(t?.tag?.refs) ? t.tag.refs : []));
+  return refs.filter((r: any) => typeof r?.file === "string" && /^[\w.-]+$/.test(r.file));
+}
+
 /** A stage file someone shared, kept as a new stage: its scene, and the models of theirs it uses. */
 async function importStage(input: any, when = new Date()) {
   if (input?.format !== "comfyture-stage" || !input.scene) throw bad("That is not a Comfyture stage file.");
@@ -340,13 +346,26 @@ async function importStage(input: any, when = new Date()) {
   await writeModels(known);
   const now = when.toISOString();
   const name = stageName(input.name, "Shared stage");
-  // the renders that came with it: each picture into the Library, its run pointing at it
+  // the pictures on its sheets: each into the Library, the sheets pointing at them
+  const kept = new Map<string, { file: string; url: string; width: number; height: number }>();
+  for (const pic of Array.isArray(input.pictures) ? input.pictures.slice(0, 200) : []) {
+    if (typeof pic?.file !== "string" || typeof pic.data !== "string" || kept.has(pic.file)) continue;
+    try {
+      const photo = await engine.storeImage(Buffer.from(pic.data, "base64"), text(pic.name, 60) || `${name} sheet`);
+      kept.set(pic.file, { file: photo.file, url: photo.url, width: photo.width, height: photo.height });
+    } catch {}
+  }
+  for (const t of [...(input.scene.characters ?? []), ...(input.scene.props ?? [])] as any[]) {
+    if (Array.isArray(t?.tag?.refs)) t.tag.refs = t.tag.refs.map((r: any) => kept.get(r?.file) ?? null).filter(Boolean);
+  }
+  // the renders that came with it: each picture into the Library, its run pointing at it (and at the sheets it sent)
   const renders = [];
   for (const r of Array.isArray(input.renders) ? input.renders.slice(0, 50) : []) {
     if (!r || typeof r.data !== "string") continue;
     try {
       const photo = await engine.storeImage(Buffer.from(r.data, "base64"), `${name} render`);
       const { data: _data, frame: _frame, ...run } = r;
+      if (Array.isArray(run.settings?.refs)) run.settings = { ...run.settings, refs: run.settings.refs.map((x: any) => (kept.has(x?.file) ? { ...x, ...kept.get(x.file) } : x)) };
       renders.push({ ...run, status: "done", photo: { file: photo.file, url: photo.url, width: photo.width, height: photo.height } });
     } catch {}
   }
@@ -922,7 +941,15 @@ async function route(req: IncomingMessage, res: ServerResponse) {
           renders.push({ ...run, data: (await readFile(engine.photoPath(r.photo.file))).toString("base64") });
         } catch {}
       }
-      const file = JSON.stringify({ format: "comfyture-stage", version: 1, name: stage.name, scene: stage.scene, thumb: stage.thumb, models, renders });
+      // the pictures on its sheets
+      const pictures = [];
+      for (const r of sheetRefs(stage.scene)) {
+        if (pictures.some((p) => p.file === r.file)) continue;
+        try {
+          pictures.push({ file: r.file, name: engine.imageName(r.file), data: (await readFile(engine.photoPath(r.file))).toString("base64") });
+        } catch {}
+      }
+      const file = JSON.stringify({ format: "comfyture-stage", version: 1, name: stage.name, scene: stage.scene, thumb: stage.thumb, models, renders, pictures });
       res.writeHead(200, { "Content-Type": "application/json", "Content-Disposition": `attachment; filename="${(slug(stage.name) || "stage")}.stage.json"`, "Cache-Control": "no-store" });
       return res.end(file);
     }

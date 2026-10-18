@@ -23,6 +23,7 @@ const LABEL = {
   to_blender: () => "Sent to Blender",
   from_blender: () => "Back from Blender",
   render_image: (a, r) => (r.jobs?.length > 1 ? `Rendering ${r.jobs.length} images` : "Rendering an image"),
+  tag: (a) => `${a.id}'s sheet`,
 };
 // what waits for the stage to be set first, and takes its time: a picture of the frame
 const AFTER = new Set(["render_image"]);

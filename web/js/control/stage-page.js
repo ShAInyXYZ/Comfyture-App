@@ -124,12 +124,13 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       const target = { character: c };
       items.push(row({
         className: `is-character${sel.character === c && !sel.joint ? " is-selected" : ""}${sel.character === c ? " is-within" : ""}`,
-        on: { click: () => stage.select({ character: c }), dblclick: () => ((renaming = target), outliner()) },
+        on: { click: () => stage.select({ character: c }), dblclick: () => ((renaming = target), outliner()), pointerenter: (e) => peek(target, e.currentTarget), pointerleave: unpeek },
       },
         el("button.ctl-mini.ctl-fold", { type: "button", "aria-expanded": String(open), "aria-label": open ? "Fold" : "Show the joints", on: { click: (e) => (e.stopPropagation(), open ? expanded.delete(c.id) : expanded.add(c.id), outliner()) } }, icon("chevron")),
         el("span.ctl-chip", { style: { background: `#${c.color.getHexString()}` }, title: colorName(`#${c.color.getHexString()}`) }),
         el("span.ctl-mini.ctl-glyph", { title: BODY_TYPES.find((b) => b.id === c.body)?.name }, sprite(`body-${c.body}`)),
         isRenaming(target) ? nameField(target, c.name) : el("span.ctl-name", { title: "Double-click to rename" }, c.name),
+        sheetKey(target),
         eye(c.root.visible, (v) => (c.setVisible(v), stage.commit(), stage.render(), outliner())),
         el("button.ctl-mini", { type: "button", title: "Remove", "aria-label": `Remove ${c.name}`, on: { click: (e) => (e.stopPropagation(), stage.remove(target)) } }, icon("trash")),
       ));
@@ -142,9 +143,10 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     }
     for (const p of stage.props) {
       const target = { prop: p };
-      items.push(row({ className: sel.prop === p ? "is-selected" : "", on: { click: () => stage.select({ prop: p }), dblclick: () => ((renaming = target), outliner()) } },
+      items.push(row({ className: sel.prop === p ? "is-selected" : "", on: { click: () => stage.select({ prop: p }), dblclick: () => ((renaming = target), outliner()), pointerenter: (e) => peek(target, e.currentTarget), pointerleave: unpeek } },
         el("span.ctl-mini.ctl-glyph", {}, sprite(assetIcon(p.userData.type))),
         isRenaming(target) ? nameField(target, p.userData.label) : el("span.ctl-name", { title: "Double-click to rename" }, p.userData.label),
+        sheetKey(target),
         eye(p.visible, (v) => ((p.visible = v), stage.commit(), stage.render(), outliner())),
         el("button.ctl-mini", { type: "button", title: "Remove", "aria-label": `Remove ${p.userData.label}`, on: { click: (e) => (e.stopPropagation(), stage.remove(target)) } }, icon("trash")),
       ));
@@ -565,42 +567,198 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       toast(e.message, { tone: "crit" });
     }
   }
-  /** A picture of who this is (or what), kept on it: picked, dropped, or made in the Image window. */
-  function refRow(target) {
+  // ---------------------------------------------------------------- sheets: who each one is, in words and pictures
+
+  const tagOf = (target) => stage.tagOf(target) ?? { description: "", refs: [] };
+  const hasSheet = (target) => Boolean(tagOf(target).description.trim() || tagOf(target).refs.length);
+  const nameOf = (target) => (target.character ? target.character.name : target.prop.userData.label);
+  const MOST_PICTURES = 8;
+  const picture = (r, props = {}) => el("img", { src: r.url, alt: "", draggable: false, ...(r.width && r.height ? { style: { aspectRatio: `${r.width} / ${r.height}` } } : {}), ...props });
+
+  /** A sheet's key in the Scene list: its first picture, or the sheet's mark; a click opens it. */
+  function sheetKey(target) {
+    const tag = tagOf(target);
+    const label = `${nameOf(target)}'s sheet`;
+    return el(`button.ctl-mini.ctl-sheet-key${hasSheet(target) ? ".is-set" : ""}`, { type: "button", title: label, "aria-label": label, on: { click: (e) => (e.stopPropagation(), openSheet(target)) } },
+      tag.refs[0] ? picture(tag.refs[0], { style: {} }) : sprite("character-sheet"),
+      tag.refs.length > 1 ? el("i.ctl-sheet-count", {}, String(tag.refs.length)) : null);
+  }
+
+  // a sheet as a card over the app, beside its row in the Scene list or by the pointer on the stage
+  const peekEl = el("div.ctl-peek", { hidden: true, "aria-hidden": "true" });
+  document.body.append(peekEl);
+  let peeking = null;
+  function peek(target, at) {
+    if (!hasSheet(target) || sheet) return unpeek();
     const thing = target.character ?? target.prop;
-    const ref = target.character ? thing.ref : thing.userData.ref;
-    const who = target.character ? thing.name : thing.userData.label;
-    const keep = async (file) => {
-      if (!file?.type?.startsWith("image/")) return;
-      try {
-        const res = await fetch(`api/photos?name=${encodeURIComponent(who)}`, { method: "POST", headers: { "Content-Type": file.type }, body: file });
-        const photo = await res.json();
-        if (!res.ok) throw new Error(photo.error ?? "That picture was not kept.");
-        stage.setRef(target, photo);
-      } catch (e) {
-        toast(e.message, { tone: "crit" });
+    if (peeking !== thing || peekEl.hidden) {
+      peeking = thing;
+      const tag = tagOf(target);
+      peekEl.replaceChildren(
+        el("strong.ctl-peek-name", {}, nameOf(target)),
+        tag.refs.length ? el("div.ctl-peek-pics", {}, ...tag.refs.slice(0, 4).map((r) => picture(r))) : null,
+        tag.description.trim() ? el("p.ctl-peek-words", {}, tag.description.trim()) : null);
+      peekEl.hidden = false;
+    }
+    const box = peekEl.getBoundingClientRect();
+    const near = at instanceof Element ? at.getBoundingClientRect() : { left: at.x - 16, right: at.x + 16, top: at.y + 16 };
+    let x = near.right + 12;
+    if (x + box.width > innerWidth - 8) x = near.left - box.width - 12;
+    const y = Math.min(Math.max(8, near.top), innerHeight - box.height - 8);
+    peekEl.style.transform = `translate(${Math.round(Math.max(8, x))}px, ${Math.round(y)}px)`;
+  }
+  function unpeek() {
+    peeking = null;
+    peekEl.hidden = true;
+  }
+  // on the stage: what is under the pointer, a few times a second, while no button is down
+  let hoverAt = null;
+  let hoverWait = 0;
+  stageEl.addEventListener("pointermove", (e) => {
+    if (e.buttons || e.pointerType === "touch") return ((hoverAt = null), unpeek());
+    hoverAt = { x: e.clientX, y: e.clientY };
+    hoverWait ||= setTimeout(() => {
+      hoverWait = 0;
+      const t = hoverAt && stage.thingAt(hoverAt.x, hoverAt.y);
+      if (t) peek(t, hoverAt);
+      else unpeek();
+    }, 70);
+  });
+  for (const ev of ["pointerleave", "pointerdown", "wheel"]) stageEl.addEventListener(ev, () => ((hoverAt = null), unpeek()), { passive: true });
+
+  /** One's sheet in the Selected panel: its pictures and words; a click opens it. */
+  function sheetCard(target) {
+    const tag = tagOf(target);
+    const who = nameOf(target);
+    const open = () => openSheet(target);
+    if (!hasSheet(target)) {
+      return el("button.ctl-sheet-card.is-empty", { type: "button", title: `${who}'s sheet`, on: { click: open } },
+        sprite("character-sheet"), el("span", {}, target.character ? `Who ${who} is, and pictures` : `What ${who} is, and pictures`));
+    }
+    return el("button.ctl-sheet-card", { type: "button", title: `${who}'s sheet`, on: { click: open } },
+      tag.refs.length ? el("span.ctl-sheet-card-pics", {}, ...tag.refs.slice(0, 3).map((r) => picture(r)), tag.refs.length > 3 ? el("i", {}, `+${tag.refs.length - 3}`) : null) : null,
+      tag.description.trim() ? el("span.ctl-sheet-card-words", {}, tag.description.trim()) : null);
+  }
+
+  let sheet = null;
+  /**
+   * One's sheet in a window over the app: the words renders say of them, and the pictures that go
+   * with the frame; pictures come from a file, from the Library, or made in the Image window.
+   */
+  function openSheet(target) {
+    sheet?.dialog.close();
+    unpeek();
+    const thing = target.character ?? target.prop;
+    const kind = target.character ? "character" : "prop";
+    const d = el("dialog.dialog.ctl-sheet-window", {});
+    const title = el("h2", {}, nameOf(target));
+    let wait = 0;
+    const keepWords = () => {
+      clearTimeout(wait);
+      wait = 0;
+      if (words.value !== tagOf(target).description) stage.setTag(target, { description: words.value });
+    };
+    const words = el("textarea.field.ctl-sheet-words", {
+      rows: 3, maxLength: 600, value: tagOf(target).description, "aria-label": kind === "character" ? `Who ${nameOf(target)} is` : `What ${nameOf(target)} is`,
+      placeholder: kind === "character" ? "Age, face, hair, clothes: a woman in her thirties, curly red hair, a navy striped shirt" : "Material, colour, make: a dark green vintage city bike with a wicker basket",
+      on: { input: () => (clearTimeout(wait), (wait = setTimeout(keepWords, 700))), change: keepWords },
+    });
+    const full = () => tagOf(target).refs.length >= MOST_PICTURES && (toast(`A sheet holds ${MOST_PICTURES} pictures.`), true);
+    const keep = async (files) => {
+      for (const file of [...(files ?? [])].filter((f) => f.type?.startsWith("image/"))) {
+        if (full()) return;
+        try {
+          const res = await fetch(`api/photos?name=${encodeURIComponent(`${nameOf(target)} sheet`)}`, { method: "POST", headers: { "Content-Type": file.type }, body: file });
+          const photo = await res.json();
+          if (!res.ok) throw new Error(photo.error ?? "That picture was not kept.");
+          stage.addTagRef(target, photo);
+        } catch (e) {
+          toast(e.message, { tone: "crit" });
+        }
       }
+      if (!libraryPane.hidden) loadLibrary();
     };
     const pick = () => {
-      const input = el("input", { type: "file", accept: "image/png,image/jpeg,image/webp", hidden: true });
-      input.addEventListener("change", () => (keep(input.files?.[0]), input.remove()));
-      document.body.append(input);
+      const input = el("input", { type: "file", accept: "image/png,image/jpeg,image/webp", multiple: true, hidden: true });
+      input.addEventListener("change", () => (keep(input.files), input.remove()));
+      d.append(input);
       input.click();
     };
-    const tile = ref
-      ? el("button.ctl-ref-pic", { type: "button", title: `${who}'s picture — look at it`, "aria-label": `Look at ${who}'s picture`, on: { click: () => viewImage(ref.url) } }, el("img", { src: ref.url, alt: "", draggable: false }))
-      : el("button.ctl-ref-pic.is-empty", { type: "button", title: `A picture of ${who} — pick one, or drop it here`, "aria-label": `Pick a picture of ${who}`, on: { click: pick } }, sprite("image-reference"));
-    tile.addEventListener("dragover", (e) => [...e.dataTransfer.types].includes("Files") && e.preventDefault());
-    tile.addEventListener("drop", (e) => (e.preventDefault(), keep(e.dataTransfer.files?.[0])));
-    const key = (glyph, label, run) => el("button.ctl-mini", { type: "button", title: label, "aria-label": label, on: { click: run } }, glyph);
-    const kind = target.character ? "character" : "prop";
-    return el("div.ctl-ref", {}, tile,
-      el("div.ctl-ref-side", {},
-        el("p.ctl-sub", {}, ref ? `Renders follow this picture for ${who}.` : `A face, an outfit or a product for ${who}: renders follow it.`),
-        el("div.ctl-ref-keys", {},
-          key(sprite("image-upload"), ref ? "Another picture" : "Pick a picture", pick),
-          key(sprite("image-generate"), `Make a picture of ${who} in the Image window`, () => makeRef({ kind, id: target.character ? thing.id : thing.userData.id, name: who, what: target.character ? thing.body : assetByType(thing.userData.type)?.name })),
-          ...(ref ? [key(icon("trash"), "No picture", () => stage.setRef(target, null))] : []))));
+    const key = (glyph, label, run, extra = {}) => el("button.key.is-sm.is-icon", { type: "button", title: label, "aria-label": label, on: { click: run }, ...extra }, glyph);
+    // the pictures on the sheet, and a tile to add more
+    const pics = el("div.ctl-sheet-pics");
+    const tile = (r) => el("div.ctl-sheet-pic", {},
+      el("button.ctl-sheet-look", { type: "button", title: "Look at it, full size", "aria-label": "Look at it, full size", on: { click: () => viewImage(r.url) } }, picture(r)),
+      el("button.ctl-mini.ctl-sheet-off", { type: "button", title: "Off the sheet", "aria-label": "Take it off the sheet", on: { click: () => stage.removeTagRef(target, r.file) } }, icon("trash")));
+    const addTile = el("button.ctl-sheet-add", { type: "button", title: "Add pictures — or drop them here", "aria-label": "Add pictures", on: { click: pick } }, sprite("image-upload"));
+    // the Library, to take pictures from
+    let photos = null;
+    let query = "";
+    const libGrid = el("div.ctl-sheet-lib-grid");
+    const libraryPane = el("div.ctl-sheet-library", { hidden: true }, searchField("", "Search the Library…", (v) => ((query = v), drawLibrary())), libGrid);
+    const drawLibrary = () => {
+      const on = new Set(tagOf(target).refs.map((r) => r.file));
+      const list = (photos ?? []).filter((p) => !query || finds(query, [p.name, p.file]));
+      libGrid.replaceChildren(...(!photos ? [el("p.ctl-empty", {}, "…")] : list.length ? list.map((p) =>
+        el("button.ctl-sheet-lib-pic", { type: "button", "aria-pressed": String(on.has(p.file)), title: on.has(p.file) ? `${p.name} — on the sheet` : p.name,
+          on: { click: () => (on.has(p.file) ? stage.removeTagRef(target, p.file) : full() || stage.addTagRef(target, p)) } },
+          el("img", { src: p.url, alt: "", loading: "lazy", draggable: false }))) : [el("p.ctl-empty", {}, query ? "Nothing by that name." : "The Library is empty.")]));
+    };
+    const loadLibrary = async () => {
+      try {
+        photos = await (await fetch("api/photos")).json();
+      } catch {
+        photos = [];
+      }
+      drawLibrary();
+    };
+    const libKey = key(sprite("image-library"), "From the Library", () => {
+      libraryPane.hidden = !libraryPane.hidden;
+      libKey.setAttribute("aria-pressed", String(!libraryPane.hidden));
+      if (libraryPane.hidden) return;
+      drawLibrary();
+      loadLibrary();
+      libraryPane.querySelector("input")?.focus();
+    }, { "aria-pressed": "false" });
+    const make = () => {
+      keepWords();
+      d.close();
+      makeRef({ kind, id: target.character ? thing.id : thing.userData.id, name: nameOf(target), what: target.character ? thing.body : assetByType(thing.userData.type)?.name, description: tagOf(target).description, stageId: projects.current()?.id });
+    };
+    const draw = () => {
+      const tag = tagOf(target);
+      title.textContent = nameOf(target);
+      if (document.activeElement !== words && !wait) words.value = tag.description;
+      pics.replaceChildren(...tag.refs.map(tile), ...(tag.refs.length < MOST_PICTURES ? [addTile] : []));
+      if (!libraryPane.hidden) drawLibrary();
+    };
+    d.append(
+      el("div.ctl-sheet-head", {},
+        target.character ? el("span.ctl-chip", { style: { background: `#${thing.color.getHexString()}` } }) : el("span.ctl-mini.ctl-glyph", {}, sprite(assetIcon(thing.userData.type))),
+        title,
+        el("div.ctl-project-keys", {},
+          key(sprite("image-upload"), "Import pictures", pick),
+          libKey,
+          key(sprite("image-generate"), `Make a sheet of ${nameOf(target)} in the Image window`, make),
+          key(icon("close"), "Close", () => d.close()))),
+      words, pics, libraryPane);
+    draw();
+    // pictures dropped anywhere on the window go on the sheet
+    d.addEventListener("dragover", (e) => [...e.dataTransfer.types].includes("Files") && (e.preventDefault(), d.classList.add("is-dropping")));
+    d.addEventListener("dragleave", (e) => e.target === d && d.classList.remove("is-dropping"));
+    d.addEventListener("drop", (e) => (e.preventDefault(), d.classList.remove("is-dropping"), keep(e.dataTransfer.files)));
+    // the stage's keys wait while it is open
+    d.addEventListener("keydown", (e) => e.stopPropagation());
+    d.addEventListener("click", (e) => e.target === d && d.close());
+    d.addEventListener("close", () => {
+      keepWords();
+      d.remove();
+      if (sheet?.dialog === d) sheet = null;
+    });
+    sheet = { dialog: d, thing, draw };
+    document.body.append(d);
+    d.showModal();
+    (hasSheet(target) ? d : words).focus?.();
   }
 
   function selected() {
@@ -622,13 +780,13 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
           el("button.ctl-pose.ctl-animal-pose", { type: "button", "aria-pressed": String((prop.userData.pose ?? "stand") === p), title: ANIMAL_POSES[p] ?? p, "aria-label": ANIMAL_POSES[p] ?? p, on: { click: () => (stage.setAnimalPose(prop, p), selected()) } },
             lazyImg(() => stage.propThumbnail(def.type, { pose: p, width: 96, height: 84 })))));
         const size = slider(["size", "Size", 0.3, 3, 0.01, "×"], prop.scale.y, (v, commit) => stage.setPropScale(prop, v, { commit }));
-        return selectedEl.replaceChildren(head, el("p.ctl-sub", {}, def.name), el("span.ctl-label.is-sub", {}, "Pose"), poses, el("div.ctl-sliders", {}, size),
-          el("span.ctl-label.is-sub", {}, "Looks like"), refRow(target));
+        return selectedEl.replaceChildren(head, el("p.ctl-sub", {}, def.name), el("span.ctl-label.is-sub", {}, "Sheet"), sheetCard(target),
+          el("span.ctl-label.is-sub", {}, "Pose"), poses, el("div.ctl-sliders", {}, size));
       }
       const sliders = (def?.params ?? []).map((p) => slider([p[0], p[1], p[2], p[3], p[4], p[0] === "open" ? "°" : p[0] === "steps" ? "" : "m"],
         prop.userData.params[p[0]], (v, commit) => stage.setPropParams(prop, { [p[0]]: v }, { commit })));
-      return selectedEl.replaceChildren(head, el("p.ctl-sub", {}, def?.name ?? "Prop"), el("div.ctl-sliders", {}, ...sliders),
-        el("span.ctl-label.is-sub", {}, "Looks like"), refRow(target));
+      return selectedEl.replaceChildren(head, el("p.ctl-sub", {}, def?.name ?? "Prop"), el("span.ctl-label.is-sub", {}, "Sheet"), sheetCard(target),
+        el("div.ctl-sliders", {}, ...sliders));
     }
     if (joint) {
       const euler = stage.jointEuler();
@@ -672,7 +830,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     const rig = character.rigId ? rigById(character.rigId) : null;
     const about = !rig ? "This rigged character is loading…" : rig.builtIn ? `${rig.name}: rigged, so it takes every pose. A body type turns it into a mannequin.` : `${rig.name}, your rigged character: its rig follows every pose. A body type turns it back into a mannequin.`;
     selectedEl.replaceChildren(head, swatches,
-      el("span.ctl-label.is-sub", {}, "Looks like"), refRow(target),
+      el("span.ctl-label.is-sub", {}, "Sheet"), sheetCard(target),
       el("span.ctl-label.is-sub", {}, "Body type"), bodies,
       ...(character.rigId ? [el("p.ctl-sub", {}, about)] : []),
       ...(holds ? [el("span.ctl-label.is-sub", {}, "In hand"), holds] : []),
@@ -961,6 +1119,11 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     else if (kind === "timeline") (timeline(), frame());
     else if (kind === "time") (playhead(), stage.playing ? null : previews());
     else if (kind === "runs") (runsBar(), shown && JSON.stringify(shown.fit ?? null) !== drawnFit && drawRun());
+    else if (kind === "tags") (outliner(), shown || selected(), sheet?.draw(), unpeek());
+    if (kind === "scene" || kind === "history") {
+      if (sheet && !stage.characters.includes(sheet.thing) && !stage.props.includes(sheet.thing)) sheet.dialog.close();
+      else sheet?.draw();
+    }
     if (kind === "frame") placeRun();
     if (kind === "scene") closeRun();
     // apart, the stage's half follows the channel shown

@@ -18,15 +18,16 @@ const tint = (color) => color.clone().lerp(CLAY, 0.32);
 let count = 0;
 
 export class Mannequin {
-  constructor({ id, name, color, profile, body, hold, rig, ref } = {}) {
+  constructor({ id, name, color, profile, body, hold, rig, tag, ref } = {}) {
     this.id = id ?? `char-${Date.now().toString(36)}-${count++}`;
     this.name = name ?? "Character";
     this.color = new THREE.Color(color ?? "#e8584f");
     this.body = bodyById(body) ? body : "man";
     // a character someone brought, rigged: its id among the user's models
     this.rigId = rig ?? null;
-    // a picture of who this is (a face, an outfit), for a render to follow: { file, url, width, height }
-    this.ref = ref?.file ? ref : null;
+    // who this is, for a render: a few words and pictures (a character sheet), called by @name; an
+    // older stage's one picture is its first
+    this.tag = { description: String(tag?.description ?? "").slice(0, 600), refs: Array.isArray(tag?.refs) ? tag.refs.filter((r) => r?.file).slice(0, 8) : ref?.file ? [ref] : [] };
     this.profile = { ...DEFAULT_PROFILE, ...(bodyById(this.body)?.profile ?? {}), ...(this.rigId && rigById(this.rigId) ? { height: rigById(this.rigId).height } : {}), ...profile };
     this.root = new THREE.Group();
     this.root.name = this.id;
@@ -583,7 +584,7 @@ export class Mannequin {
       visible: this.root.visible,
       hold: this.hold.right || this.hold.left ? { ...this.hold } : undefined,
       rig: this.rigId ?? undefined,
-      ref: this.ref ?? undefined,
+      tag: this.tag.description || this.tag.refs.length ? this.tag : undefined,
       keys: this.keys?.length ? this.keys : undefined,
     };
   }

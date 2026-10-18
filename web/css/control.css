@@ -130,15 +130,53 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 .ctl-run-keys { justify-content: flex-start; gap: .375rem; }
 
 /* who a character or a piece looks like: its picture, and the keys to give it one */
-.ctl-ref { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: .625rem; align-items: center; margin-bottom: .5rem; }
-.ctl-ref-pic { display: grid; place-items: center; width: 4.5rem; aspect-ratio: 3 / 4; padding: 0; border: 1px solid var(--line2); border-radius: .5rem; background: var(--sunk); color: var(--dim); overflow: hidden; cursor: pointer; }
-.ctl-ref-pic img { width: 100%; height: 100%; object-fit: cover; }
-.ctl-ref-pic.is-empty { border-style: dashed; }
-.ctl-ref-pic.is-empty:hover { color: var(--text); border-color: var(--muted); }
-.ctl-ref-pic svg { width: 1.25rem; height: 1.25rem; }
-.ctl-ref-side { display: grid; gap: .375rem; min-width: 0; }
-.ctl-ref-side .ctl-sub { margin: 0; }
-.ctl-ref-keys { display: flex; gap: .25rem; }
+/* a sheet: who one is (or what), in words and pictures that go with every render */
+.ctl-sheet-key { position: relative; overflow: visible; }
+.ctl-sheet-key.is-set { color: var(--text); }
+.ctl-sheet-key img { width: 1.25rem; height: 1.25rem; border-radius: .3125rem; object-fit: cover; outline: 1px solid var(--line2); }
+.ctl-sheet-count { position: absolute; right: -.125rem; bottom: -.0625rem; display: grid; place-items: center; min-width: .875rem; height: .875rem; padding: 0 .1875rem; border-radius: var(--r-pill); background: var(--s3); color: var(--text); font: 600 .5625rem/1 var(--font-mono); font-style: normal; }
+.ctl-sheet-card { display: grid; gap: .5rem; width: 100%; margin-bottom: .5rem; padding: .5rem; border: 1px solid var(--line); border-radius: calc(.625rem * var(--corner-k)); background: var(--sunk); color: var(--muted); text-align: left; cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.ctl-sheet-card:hover { border-color: var(--line2); color: var(--text); }
+.ctl-sheet-card.is-empty { grid-template-columns: auto minmax(0, 1fr); align-items: center; border-style: dashed; font: 500 var(--fs-small)/1.3 var(--font-sans); }
+.ctl-sheet-card.is-empty svg { width: 1.125rem; height: 1.125rem; }
+.ctl-sheet-card-pics { display: flex; align-items: center; gap: .25rem; min-width: 0; overflow: hidden; }
+.ctl-sheet-card-pics img { flex: 0 1 auto; min-width: 0; height: 3.5rem; width: auto; object-fit: cover; border-radius: .375rem; background: #111114; }
+.ctl-sheet-card-pics i { padding: 0 .25rem; font: 500 var(--fs-micro)/1 var(--font-mono); font-style: normal; color: var(--dim); }
+.ctl-sheet-card-words { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font: 400 var(--fs-small)/1.4 var(--font-sans); }
+.ctl-peek { position: fixed; left: 0; top: 0; z-index: 900; display: grid; gap: .5rem; width: max-content; max-width: min(28rem, calc(100vw - 1rem)); padding: .625rem; border: 1px solid transparent; border-radius: calc(.75rem * var(--corner-k)); background: var(--face); box-shadow: var(--float); pointer-events: none; }
+.ctl-peek[hidden] { display: none; }
+.ctl-peek-name { font: 600 var(--fs-body)/1.2 var(--font-sans); color: var(--text); }
+.ctl-peek-pics { display: flex; flex-wrap: wrap; gap: .375rem; }
+.ctl-peek-pics img { height: 7rem; width: auto; max-width: 100%; object-fit: contain; border-radius: .5rem; background: #111114; }
+.ctl-peek-pics img:only-child { height: 10rem; }
+.ctl-peek-words { max-width: 26rem; margin: 0; font: 400 var(--fs-small)/1.45 var(--font-sans); color: var(--muted); }
+.ctl-sheet-window { width: min(46rem, calc(100vw - 2rem)); gap: .75rem; }
+.ctl-sheet-window[open] { display: grid; }
+.ctl-sheet-window.is-dropping { border-color: var(--accent-line); }
+.ctl-sheet-head { display: flex; align-items: center; gap: .625rem; }
+.ctl-sheet-head h2 { flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctl-sheet-head .ctl-chip { width: .875rem; height: .875rem; }
+.ctl-sheet-words { width: 100%; min-height: 4.75rem; padding: .625rem .75rem; border-radius: calc(.5rem * var(--corner-k)); color: var(--text); font: 400 var(--fs-body)/1.5 var(--font-sans); resize: vertical; }
+.ctl-sheet-pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr)); gap: .5rem; }
+.ctl-sheet-pic { position: relative; min-width: 0; }
+.ctl-sheet-look { display: block; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: calc(.5rem * var(--corner-k)); background: #111114; overflow: hidden; cursor: zoom-in; }
+.ctl-sheet-look img { display: block; width: 100%; height: 7.5rem; object-fit: contain; }
+.ctl-sheet-off { position: absolute; top: .25rem; right: .25rem; background: rgba(14, 14, 16, .82); opacity: 0; transition: opacity var(--t-fast); }
+.ctl-sheet-pic:hover .ctl-sheet-off, .ctl-sheet-off:focus-visible { opacity: 1; }
+.ctl-sheet-add { display: grid; place-items: center; min-height: 7.5rem; padding: 0; border: 1px dashed var(--line2); border-radius: calc(.5rem * var(--corner-k)); background: transparent; color: var(--dim); cursor: pointer; }
+.ctl-sheet-add:hover { border-color: var(--muted); color: var(--text); }
+.ctl-sheet-add svg { width: 1.5rem; height: 1.5rem; }
+.ctl-sheet-library { display: grid; gap: .5rem; padding-top: .75rem; border-top: 1px solid var(--line); }
+.ctl-sheet-library[hidden] { display: none; }
+.ctl-sheet-lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 6.5rem), 1fr)); gap: .375rem; max-height: 40vh; overflow: auto; }
+.ctl-sheet-lib-pic { position: relative; aspect-ratio: 1; padding: 0; border: 1px solid transparent; border-radius: .4375rem; background: #111114; overflow: hidden; cursor: pointer; }
+.ctl-sheet-lib-pic img { width: 100%; height: 100%; object-fit: cover; }
+.ctl-sheet-lib-pic:hover { border-color: var(--line2); }
+.ctl-sheet-lib-pic[aria-pressed="true"] { border-color: var(--accent); }
+.ctl-sheet-lib-pic[aria-pressed="true"]::after { content: ""; position: absolute; inset: 0; background: rgba(242, 255, 89, .12); }
+@supports (corner-shape: squircle) {
+  .ctl-sheet-card, .ctl-peek, .ctl-sheet-words, .ctl-sheet-look, .ctl-sheet-add { corner-shape: squircle; }
+}
 .msg-chips .chip.is-failed, .msg-chips .chip.is-failed svg { color: var(--err); }
 
 .ctl-view { position: relative; min-width: 0; min-height: 12rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: #141416; overflow: hidden; }

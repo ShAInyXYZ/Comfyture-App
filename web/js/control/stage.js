@@ -517,6 +517,18 @@ export class Stage {
     this.emit("pose");
   }
 
+  /** The character or piece under a point of the viewport, if any (for a hover, so nothing changes). */
+  thingAt(clientX, clientY) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.pointer.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const targets = [...this.characters.filter((c) => c.root.visible).flatMap((c) => c.parts), ...this.props.filter((p) => p.visible)];
+    const hit = this.raycaster.intersectObjects(targets, true)[0];
+    let o = hit?.object;
+    while (o && !o.userData.prop && !o.userData.character) o = o.userData.propRoot ?? o.parent;
+    return o?.userData.prop ? { prop: o } : o?.userData.character ? { character: o.userData.character } : null;
+  }
+
   /** A click: a body part selects its joint, a handle its hand or foot, a prop itself, empty space nothing. */
   pick(e) {
     const rect = this.renderer.domElement.getBoundingClientRect();
@@ -650,23 +662,37 @@ export class Stage {
     return this.thumbnail({ position: new THREE.Vector3(...camera.position), target: new THREE.Vector3(...camera.target), focal: camera.focal }, { width, height, channel });
   }
 
-  // ------------------------------------------------------------ pictures of who's who
+  // ------------------------------------------------------------ who's who: each one's sheet
 
-  /** A character's or a piece's own picture, for a render to follow; null takes it away. */
-  setRef(target, photo) {
-    const ref = photo?.file ? { file: photo.file, url: photo.url, width: photo.width, height: photo.height } : null;
-    if (target.character) target.character.ref = ref;
-    else if (target.prop) target.prop.userData.ref = ref;
-    else return;
-    this.commit();
-    this.emit("selection");
+  /** A character's or a piece's sheet: { description, refs }, the words and pictures a render calls it by. */
+  tagOf(target) {
+    if (target.character) return target.character.tag;
+    if (target.prop) return (target.prop.userData.tag ??= { description: "", refs: [] });
+    return null;
   }
 
-  /** The same, for one named by its id ({ kind: "character" | "prop", id }), if it is still on the stage. */
-  setRefById({ kind, id }, photo) {
+  /** Changes a sheet: its words, or its pictures (each { file, url, width, height }). */
+  setTag(target, { description, refs } = {}) {
+    const tag = this.tagOf(target);
+    if (!tag) return;
+    if (description !== undefined) tag.description = String(description).slice(0, 600);
+    if (refs !== undefined) tag.refs = refs.filter((r) => r?.file).slice(0, 8).map(({ file, url, width, height }) => ({ file, url, width, height }));
+    this.commit();
+    this.emit("tags");
+  }
+  addTagRef(target, photo) {
+    const tag = this.tagOf(target);
+    if (!tag || !photo?.file || tag.refs.some((r) => r.file === photo.file)) return;
+    this.setTag(target, { refs: [...tag.refs, photo] });
+  }
+  removeTagRef(target, file) {
+    const tag = this.tagOf(target);
+    if (tag) this.setTag(target, { refs: tag.refs.filter((r) => r.file !== file) });
+  }
+  /** The one named by its id ({ kind: "character" | "prop", id }), if it is still on the stage. */
+  targetById({ kind, id }) {
     const target = kind === "character" ? { character: this.characters.find((c) => c.id === id) } : { prop: this.props.find((p) => p.userData.id === id) };
-    if (target.character || target.prop) this.setRef(target, photo);
-    return Boolean(target.character || target.prop);
+    return target.character || target.prop ? target : null;
   }
 
   /** The camera where a picture was made from: its place, its aim, its lens and its frame. */

@@ -438,7 +438,7 @@ export function controlOps(stage) {
       ...(c.seatedOn ? { seated_on: stage.props.find((p) => p.userData.id === c.seatedOn)?.userData.label } : {}),
       ...(c.hold.right || c.hold.left ? { hold: Object.fromEntries(Object.entries(c.hold).filter(([, v]) => v)) } : {}),
       ...(c.rigId ? { rig: c.rigId } : {}),
-      ...(c.ref ? { picture: true } : {}),
+      ...(c.tag.description || c.tag.refs.length ? { sheet: { description: c.tag.description, pictures: c.tag.refs.length } } : {}),
       ...(c.keys.length ? { keys: c.keys.map((k) => round(k.t)) } : {}),
     })),
     props: stage.props.map((p) => ({
@@ -446,7 +446,7 @@ export function controlOps(stage) {
       position: p.position.toArray().map(round), facing: facingOf(p),
       size: new THREE.Box3().setFromObject(p).getSize(new THREE.Vector3()).toArray().map(round),
       ...(isAnimal(p) ? { animal: true, pose: p.userData.pose ?? "stand" } : {}),
-      ...(p.userData.ref ? { picture: true } : {}),
+      ...(p.userData.tag?.description || p.userData.tag?.refs?.length ? { sheet: { description: p.userData.tag.description, pictures: p.userData.tag.refs.length } } : {}),
       ...(p.userData.keys.length ? { keys: p.userData.keys.map((k) => round(k.t)) } : {}),
     })),
     camera: { position: stage.camera.position.toArray().map(round), target: stage.orbit.target.toArray().map(round), focal: stage.focal, ratio: stage.ratio },
@@ -655,39 +655,59 @@ export function controlOps(stage) {
    * Who and what the frame holds, in plain words, for a picture's description: each character
    * by name with the colour and the place a model sees it at, so the words find the right figure.
    */
-  const inFrame = (look = "", tags = referenced().tags) => {
+  const inFrame = (look = "", who = referenced()) => {
     const held = holdables(assetByType);
+    const sheet = (t) => t.tag ?? t.userData?.tag ?? { description: "", refs: [] };
+    // a sheet's words, to follow a colon: "A woman…" reads "a woman…", no full stop
+    const lower = (t) => t.trim().replace(/[.;]+$/, "").replace(/^(A|An|The) /, (m) => m.toLowerCase());
+    // how a body is, when a picture of it standing could say otherwise: seated (and on what), lying, crouching
+    const posture = (c) => {
+      const at = (j) => c.joints[j].getWorldPosition(new THREE.Vector3());
+      const [hips, head] = [at("Hips"), at("Head")];
+      if (head.clone().sub(hips).normalize().y < 0.5) return "lying down";
+      const feet = Math.min(at("LeftFoot").y, at("RightFoot").y);
+      const low = (hips.y - feet) / Math.max(0.5, c.profile.height ?? 1.7);
+      if (low > 0.36) return "";
+      // what it sits on: the seat it was put on, a seat under its hips, or anything whose top they rest on (a log)
+      const under = (p, seats) => {
+        if (!p.visible || isAnimal(p) || (seats && !assetByType(p.userData.type)?.seat)) return false;
+        const b = new THREE.Box3().setFromObject(p);
+        return hips.x > b.min.x - 0.15 && hips.x < b.max.x + 0.15 && hips.z > b.min.z - 0.15 && hips.z < b.max.z + 0.15 && b.min.y < hips.y && (seats || (b.max.y > 0.15 && b.max.y < hips.y + 0.15));
+      };
+      const seat = stage.props.find((p) => p.userData.id === c.seatedOn) ?? stage.props.find((p) => under(p, true)) ?? stage.props.find((p) => under(p, false));
+      if (seat) return `sitting on the ${(assetByType(seat.userData.type)?.name ?? "seat").toLowerCase()}`;
+      return low < 0.14 ? "sitting on the ground" : "crouching";
+    };
+    const ANIMAL_POSTURE = { sit: "sitting", lie: "lying down", walk: "walking", hop: "hopping" };
     // the cast: the characters, and the animals (pieces of the set that act like them)
     const cast = [
       ...stage.characters.filter((c) => c.root.visible).map((c) => {
-        const posed = allPoses().find((p) => p.id === c.posed)?.name?.toLowerCase();
-        const tag = tags.get(c);
-        const seat = c.seatedOn ? stage.props.find((p) => p.userData.id === c.seatedOn) : null;
         const things = Object.values(c.hold ?? {}).filter(Boolean).map((t) => article((held.get(t)?.name ?? t).toLowerCase().replace(/-/g, " ")));
-        const who = c.rigId ? article((rigById(c.rigId)?.name ?? "character").toLowerCase()) : A_PERSON[c.body] ?? "a person";
+        const kind = c.rigId ? (rigById(c.rigId)?.name ?? "character").toLowerCase() : null;
         return {
-          name: c.name, who, tag, at: c.joints.Head.getWorldPosition(new THREE.Vector3()),
-          figure: c.rigId ? `the ${who.replace(/^an? /, "")}` : `the ${SEEN[colorName(`#${c.color.getHexString()}`)] ?? "clay"} figure`,
-          doing: [posed && posed !== "custom" ? posed : null, seat ? `on the ${(assetByType(seat.userData.type)?.name ?? seat.userData.label).toLowerCase()}` : null, things.length ? `holding ${things.join(" and ")}` : null].filter(Boolean).join(", "),
+          thing: c, name: c.name, at: c.joints.Head.getWorldPosition(new THREE.Vector3()),
+          who: kind ? article(kind) : A_PERSON[c.body] ?? "a person",
+          figure: kind ? `the ${kind}` : `the ${SEEN[colorName(`#${c.color.getHexString()}`)] ?? "clay"} figure`,
+          posture: posture(c),
+          holding: things.length ? `holding ${things.join(" and ")}` : "",
         };
       }),
       ...stage.props.filter((p) => p.visible && isAnimal(p)).map((p) => {
         const kind = (assetByType(p.userData.type)?.name ?? "animal").toLowerCase();
         const box = new THREE.Box3().setFromObject(p);
-        return { name: p.userData.label, who: article(`cute ${kind}`), tag: tags.get(p), at: box.getCenter(new THREE.Vector3()).setY(box.max.y), figure: `the ${kind}`, doing: { stand: "standing", sit: "sitting", lie: "lying down", walk: "walking", hop: "hopping" }[p.userData.pose ?? "stand"] ?? "" };
+        return { thing: p, name: p.userData.label, who: article(`cute ${kind}`), at: box.getCenter(new THREE.Vector3()).setY(box.max.y), figure: `the ${kind}`, posture: ANIMAL_POSTURE[p.userData.pose] ?? "", holding: "" };
       }),
     ].slice(0, 10);
     const eye = stage.camera.getWorldPosition(new THREE.Vector3());
     const far = cast.map((c) => c.at.distanceTo(eye));
     const [near, back] = [Math.min(...far), Math.max(...far)];
     const width = stage.container.clientWidth;
-    // what the words say of each one by name goes with that one's figure
+    // what the words say of each one by name goes with that one
     const said = new Map();
     const rest = [];
     let last = null;
     for (const clause of look.split(/(?<=[.;!?])\s+|,\s+/).map((x) => x.trim()).filter(Boolean)) {
-      const named = cast.find((c) => new RegExp(`\\b${c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(clause));
-      // a clause that names no one carries on from one that did, until the sentence ends
+      const named = cast.find((c) => new RegExp(`(^|[^\\w@])@?${c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(clause));
       const owner = named ?? (last && !/[.;!?]$/.test(said.get(last).at(-1)) ? last : null);
       if (owner) {
         said.set(owner, [...(said.get(owner) ?? []), clause]);
@@ -697,20 +717,40 @@ export function controlOps(stage) {
         last = null;
       }
     }
-    const people = cast.map((c, i) => {
-      // across the frame (not the viewport around it), and near or far when the cast spreads out
+    // one line each: which figure, its name and @tag, its sheet's words, then what the words say of it
+    const lines = cast.map((c, i) => {
       const x = c.at.clone().project(stage.camera).x * (width / Math.max(1, stage.frame?.w ?? width));
       const side = x < -0.33 ? "on the left" : x > 0.33 ? "on the right" : "in the middle";
       const depth = back - near > 1.2 ? (far[i] - near < 0.25 * (back - near) ? ", in front" : back - far[i] < 0.25 * (back - near) ? ", at the back" : "") : "";
-      const words = said.get(c)?.join(", ").replace(/[.;!?]+$/, "");
-      return `${c.figure} ${side}${depth} is ${c.name}${c.tag ? ` and looks exactly like @${c.tag}` : ""}${words ? `: ${words}` : `, ${c.who}${c.doing ? `, ${c.doing}` : ""}`}`;
+      const pics = who.named.get(c.thing) ?? [];
+      const words = lower(sheet(c.thing).description);
+      const own = said.get(c)?.join(", ").replace(/[.;!?]+$/, "");
+      const name = pics.length ? `${c.name}, who looks exactly like ${pics.map((n) => `@${n}`).join(" and ")}` : c.name;
+      const about = [words || c.who, c.posture, c.holding, own].filter(Boolean).join("; ");
+      return `${c.figure[0].toUpperCase()}${c.figure.slice(1)} ${side}${depth} becomes ${name}: ${about}.`;
     });
-    const things = [...new Set(stage.props.filter((p) => p.visible && !isAnimal(p)).map((p) => (assetByType(p.userData.type)?.name ?? p.userData.label).toLowerCase()))].slice(0, 14).map(article);
-    // a piece with a picture of its own is that very thing (the product, the car)
-    const pictured = stage.props.filter((p) => p.visible && !isAnimal(p) && tags.has(p)).map((p) => `the ${(assetByType(p.userData.type)?.name ?? p.userData.label).toLowerCase()} (${p.userData.label}) looks exactly like @${tags.get(p)}`);
-    const count = ["no one", "one character", "two characters", "three characters", "four characters", "five characters", "six characters", "seven characters", "eight characters", "nine characters", "ten characters"][people.length];
+    // the pieces with a sheet of their own are those very things (the product, the car); the rest are named once
+    const pieces = stage.props.filter((p) => p.visible && !isAnimal(p));
+    const pictured = pieces.filter((p) => who.tags.has(p)).map((p) => {
+      const pics = who.named.get(p) ?? [];
+      const words = lower(sheet(p).description);
+      return `the ${(assetByType(p.userData.type)?.name ?? p.userData.label).toLowerCase()}${pics.length ? ` is exactly the one in ${pics.map((n) => `@${n}`).join(" and ")}` : ""}${words ? `: ${words}` : ""}`;
+    });
+    const set = [...new Set(pieces.filter((p) => !who.tags.has(p)).map((p) => (assetByType(p.userData.type)?.name ?? p.userData.label).toLowerCase()))].slice(0, 10).map(article);
+    const count = ["no one", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"][lines.length];
     const joined = rest.reduce((a, x) => (!a ? x : /[.;!?]$/.test(a) ? `${a} ${x}` : `${a}, ${x}`), "");
-    return { count: people.length, mannequins: stage.characters.some((c) => c.root.visible && !c.rigId), rest: joined, words: [people.length ? `exactly ${count}, and no one else: ${people.join("; ")}` : "", things.length ? `with ${things.join(", ")}` : "", pictured.join("; ")].filter(Boolean).join(" — ") };
+    // how many in all, and none left as clay: a figure kept beside its person is the likeliest slip
+    const people = cast.every((c) => stage.characters.includes(c.thing)) ? (lines.length === 1 ? "person" : "people") : lines.length === 1 ? "character" : "characters";
+    const sheeted = cast.some((c) => who.named.get(c.thing)?.length);
+    const all = `${count[0].toUpperCase()}${count.slice(1)} ${people} in all, and no clay figure, mannequin or statue is left${sheeted ? ": their pictures only show how each one looks, never where they are" : ""}.`;
+    return {
+      count: lines.length,
+      mannequins: stage.characters.some((c) => c.root.visible && !c.rigId),
+      cast: lines.length ? `${lines.join(" ")} ${all}` : "",
+      pieces: pictured.length ? `${pictured.join("; ")}.`.replace(/^t/, "T") : "",
+      set: set.length ? `Set: ${set.join(", ")}.` : "",
+      rest: joined,
+    };
   };
 
   // the image models that can edit a picture, and the one a render uses: asked for, chosen on the Stage, or the default
@@ -729,19 +769,39 @@ export function controlOps(stage) {
     return [snap(h * ratio), snap(h)];
   };
   const slug = (v) => String(v).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "ref";
-  /** The characters and pieces with a picture of their own, each with the @name the prompt calls it by. */
-  const referenced = () => {
+  /**
+   * Who's who for a render: each visible character and piece with a sheet (words or pictures),
+   * the @tag the prompt calls it by, and the pictures it sends, one each first, then the rest.
+   */
+  const referenced = (most = 9) => {
     const tags = new Map();
     const taken = new Set(["frame"]);
-    const things = [...stage.characters.filter((c) => c.root.visible && c.ref), ...stage.props.filter((p) => p.visible && p.userData.ref)];
-    for (const t of things.slice(0, 9)) {
-      const base = slug(t.name ?? t.userData.label);
-      let tag = base;
-      for (let i = 2; taken.has(tag); i++) tag = `${base}-${i}`;
-      taken.add(tag);
-      tags.set(t, tag);
+    const name = (base) => {
+      let n = base;
+      for (let i = 2; taken.has(n); i++) n = `${base}-${i}`;
+      taken.add(n);
+      return n;
+    };
+    const sheet = (t) => t.tag ?? t.userData?.tag;
+    for (const t of [...stage.characters.filter((c) => c.root.visible), ...stage.props.filter((p) => p.visible)]) {
+      const g = sheet(t);
+      if (g && (g.description?.trim() || g.refs?.length)) tags.set(t, name(slug(t.name ?? t.userData.label)));
     }
-    return { tags, refs: [...tags].map(([t, tag]) => ({ ...(t.ref ?? t.userData.ref), name: tag })) };
+    const refs = [];
+    const named = new Map();
+    for (let round = 0; refs.length < most; round++) {
+      let more = false;
+      for (const [t, tag] of tags) {
+        const pic = sheet(t).refs[round];
+        if (!pic || refs.length >= most) continue;
+        const n = round ? name(`${tag}-${round + 1}`) : tag;
+        refs.push({ file: pic.file, url: pic.url, width: pic.width, height: pic.height, name: n });
+        named.set(t, [...(named.get(t) ?? []), n]);
+        more = true;
+      }
+      if (!more) break;
+    }
+    return { tags, refs, named };
   };
   const MANNEQUIN = new RegExp(`\\b(?:(an?)\\s+)?(?:${PALETTE.map(([, n]) => n).join("|")})(?:[- ](?:toned|coloured|colored|skinned))?\\s+(?=(man|woman|teen|teenager|child|kid|boy|girl|person|elder|toddler|baby|figure|mannequin)\\b)`, "gi");
   // "a teal man" is the mannequin's ID colour, not the man: the words keep the person
@@ -762,18 +822,20 @@ export function controlOps(stage) {
     const kept = await fetch(`api/photos?name=${encodeURIComponent("stage frame")}`, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
     const frame = await kept.json().catch(() => ({}));
     if (!kept.ok) throw new Error(frame.error ?? "The frame was not kept.");
-    const { tags, refs } = referenced();
-    const who = inFrame(look, tags);
-    // who is who first, so each description finds its figure; then the place, the light, the style
-    const prompt = a.raw ? String(a.raw).trim().slice(0, 6000) : [
-      "Render @frame as a finished image. Keep its exact composition: the camera, the framing, and every person and object where they are and posed as they are.",
-      who.mannequins ? "Each coloured clay mannequin becomes the real character described for it, with natural skin, hair and clothes: its colour only tells it apart and is not its skin or its clothing, and none stays a mannequin." : "",
-      who.words ? `In the frame, ${who.words}.` : "",
-      "The clay blockouts become real things, with real materials, textures and light.",
-      `${(look ? who.rest : "") || "A cinematic film still, natural light"}.`.replace(/\.\.$/, "."),
-    ].filter(Boolean).join(" ");
     const most = model?.templates.find((t) => t.id === "edit")?.refs ?? 10;
-    return { model, look, width, height, ratio, frame: { file: frame.file, url: frame.url, width: frame.width, height: frame.height }, refs: [{ file: frame.file, url: frame.url, name: "frame" }, ...refs].slice(0, most), prompt };
+    const who = referenced(most - 1);
+    const scene = inFrame(look, who);
+    // the frame, then who is who (each by its @tag and its sheet), the pieces, and the look
+    const prompt = a.raw ? String(a.raw).trim().slice(0, 6000) : [
+      "Render @frame as a finished image. Keep its camera, framing and layout: everyone and everything stays where it is, posed as it is.",
+      scene.mannequins ? "Each clay figure turns into a real person in its very place and pose; its colour only marks who it is." : "",
+      scene.cast,
+      "The clay pieces become real things.",
+      scene.pieces,
+      scene.set,
+      `${(look ? scene.rest : "") || "A cinematic film still, natural light"}.`.replace(/\.\.$/, "."),
+    ].filter(Boolean).join(" ");
+    return { model, look, width, height, ratio, frame: { file: frame.file, url: frame.url, width: frame.width, height: frame.height }, refs: [{ file: frame.file, url: frame.url, name: "frame" }, ...who.refs], prompt };
   };
 
   /**
@@ -980,6 +1042,11 @@ export function controlOps(stage) {
     export_glb: async () => ({ glb: await exportGlb(), camera: describe().camera }),
     render_image: renderImage,
     render_prompt: renderPrompt,
+    tag: (a) => {
+      const t = find(a.id);
+      stage.setTag(t, { description: a.description ?? "" });
+      return { id: a.id, sheet: stage.tagOf(t) };
+    },
     apply_blender: applyBlender,
   };
   // these read or replace the scene without a step of their own
