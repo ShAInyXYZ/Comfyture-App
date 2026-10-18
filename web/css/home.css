@@ -62,6 +62,9 @@ body[data-page="home"] #nav { visibility: hidden; }
 /* a genre picked lights up like the length and the frame */
 .home-pick.is-genre.is-set .sel-trigger { border-color: var(--accent); background: var(--accent); }
 .home-pick.is-genre.is-set .sel-trigger .sel-label { color: var(--accent-ink); font-weight: 600; }
+/* a picked genre shows its picture beside its name */
+.home-pick .tile-trigger { gap: .5625rem; }
+.home-pick.is-set .tile-trigger { padding-left: .5rem; }
 .home-model { display: inline-flex; align-items: center; gap: .5rem; height: var(--bar-h); padding: 0 1rem; border: 1px solid var(--line2); border-radius: var(--bar-r); color: var(--text); font: 500 var(--fs-title)/1 var(--font-sans); }
 .home-model svg { width: 1.125rem; height: 1.125rem; color: var(--muted); }
 .home-write { height: var(--bar-h); padding: 0 1.75rem; border-radius: var(--bar-r); font-size: var(--fs-heading); }

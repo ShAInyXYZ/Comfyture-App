@@ -113,6 +113,25 @@ export function toggle(el, { value, onChange, label }) {
 }
 
 /**
+ * Places a floating panel by its trigger: under it, or over it when there is more room there, as wide
+ * as asked (or centred on it), never past the window's edge. It is pinned by its top, and a panel
+ * taller than its room scrolls.
+ */
+function float(panel, box, width, centre = false) {
+  width = Math.min(innerWidth - 16, width);
+  const left = centre ? box.left + (box.width - width) / 2 : box.left;
+  Object.assign(panel.style, { left: `${Math.max(8, Math.min(left, innerWidth - width - 8))}px`, width: `${width}px` });
+  const below = innerHeight - box.bottom;
+  const up = below < panel.offsetHeight + 12 && box.top > below;
+  const cap = parseFloat(getComputedStyle(panel).maxHeight) || Infinity;
+  const room = Math.max(120, Math.min(cap, (up ? box.top : below) - 14));
+  panel.style.maxHeight = `${room}px`;
+  const top = up ? box.top - 6 - panel.offsetHeight : box.bottom + 6;
+  panel.style.top = `${top}px`;
+  return { room, cap, top };
+}
+
+/**
  * A select: a trigger showing the chosen item, and a floating menu of the items, each with a second
  * line, a meta (a short value at the row's end) and optional tags; a note closes the menu, and width
  * "fit" makes it only as wide as its rows. Items may carry a group (with a groupIcon and a groupMeta):
@@ -282,19 +301,10 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
     if (current().group) unfold(current().group, true);
     document.body.append(menu);
     const box = trigger.getBoundingClientRect();
-    const below = innerHeight - box.bottom;
-    // wide enough for the second lines (or, fitted, for its rows), and never past the window's edge
-    const width = Math.min(innerWidth - 16, Math.max(box.width, fit ? Math.ceil(menu.scrollWidth) + 2 : 432));
-    Object.assign(menu.style, { left: `${Math.max(8, Math.min(box.left, innerWidth - width - 8))}px`, width: `${width}px` });
-    // below the trigger, or above it when there is more room there; a list taller than its room scrolls
-    const up = below < menu.offsetHeight + 12 && box.top > below;
-    const cap = parseFloat(getComputedStyle(menu).maxHeight) || Infinity;
-    const room = Math.max(120, Math.min(cap, (up ? box.top : below) - 14));
-    menu.style.maxHeight = `${room}px`;
-    // pinned by its top either way, so an unfolding group grows it downward (over the trigger, when
-    // dropped up) and nothing above the pointer moves; never past the window's edge
-    const top = up ? box.top - 6 - menu.offsetHeight : box.bottom + 6;
-    menu.style.top = `${top}px`;
+    // wide enough for the second lines (or, fitted, for its rows)
+    const { room, cap, top } = float(menu, box, Math.max(box.width, fit ? Math.ceil(menu.scrollWidth) + 2 : 432));
+    // an unfolding group grows it downward (over the trigger, when dropped up), so nothing above
+    // the pointer moves; never past the window's edge
     if (groups.size) grow = `${Math.max(room, Math.min(cap, innerHeight - 8 - top))}px`;
     trigger.dataset.state = "open";
     highlight(Math.max(0, items.findIndex((i) => i.value === value)), "open");
@@ -313,6 +323,130 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       pick(items[at]);
+    } else if (e.key === "Escape" || e.key === "Tab") {
+      e.stopPropagation();
+      close();
+    }
+  });
+  return trigger;
+}
+
+/**
+ * A select of pictures: a trigger showing the chosen one (its picture and its name), and a floating
+ * panel of tiles in a grid, with a key for none at its head. Arrows move across the grid, Enter
+ * picks, Escape or a click elsewhere closes. items: [{ value, label, image }]
+ */
+export function tilePicker({ items, value, onChange, label, none, columns = 4 }) {
+  const picture = (src, cls) => {
+    const img = document.createElement("img");
+    img.className = cls;
+    img.src = src;
+    img.alt = "";
+    img.draggable = false;
+    img.decoding = "async";
+    return img;
+  };
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "sel-trigger tile-trigger";
+  trigger.setAttribute("aria-haspopup", "dialog");
+  trigger.setAttribute("aria-label", label);
+  const chosen = () => items.find((i) => i.value === value);
+  const draw = () => {
+    const name = document.createElement("span");
+    name.className = "sel-label";
+    name.textContent = chosen()?.label ?? none;
+    trigger.replaceChildren(...(chosen()?.image ? [picture(chosen().image, "tile-thumb")] : []), name);
+  };
+  draw();
+
+  let panel = null;
+  let grid = null;
+  let tiles = [];
+  let at = -1;
+  const close = () => {
+    if (!panel) return;
+    panel.remove();
+    panel = null;
+    trigger.dataset.state = "closed";
+    document.removeEventListener("pointerdown", outside, true);
+  };
+  const outside = (e) => !panel?.contains(e.target) && !trigger.contains(e.target) && close();
+  const highlight = (i, keys = false) => {
+    at = Math.max(0, Math.min(items.length - 1, i));
+    tiles.forEach((t, k) => t.toggleAttribute("data-highlighted", k === at));
+    if (keys) tiles[at].scrollIntoView({ block: "nearest" });
+  };
+  const pick = (v) => {
+    value = v;
+    draw();
+    trigger.focus();
+    onChange(v);
+    close();
+  };
+  const open = () => {
+    panel = document.createElement("div");
+    panel.className = "tile-panel";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-label", label);
+    const head = document.createElement("div");
+    head.className = "tile-head";
+    const title = document.createElement("span");
+    title.className = "tile-title";
+    title.textContent = label;
+    const nothing = document.createElement("button");
+    nothing.type = "button";
+    nothing.className = "tile-none";
+    nothing.textContent = none;
+    if (!chosen()) nothing.toggleAttribute("data-selected", true);
+    nothing.addEventListener("click", () => pick(""));
+    head.append(title, nothing);
+    grid = document.createElement("div");
+    grid.className = "tile-grid";
+    grid.setAttribute("role", "listbox");
+    grid.style.setProperty("--cols", columns);
+    tiles = items.map((item, i) => {
+      const t = document.createElement("button");
+      t.type = "button";
+      t.className = "tile";
+      t.setAttribute("role", "option");
+      t.setAttribute("aria-selected", String(item.value === value));
+      if (item.value === value) t.toggleAttribute("data-selected", true);
+      const name = document.createElement("span");
+      name.className = "tile-name";
+      name.textContent = item.label;
+      t.append(picture(item.image, "tile-img"), name);
+      t.addEventListener("pointerenter", () => highlight(i));
+      t.addEventListener("click", () => pick(item.value));
+      grid.append(t);
+      return t;
+    });
+    panel.append(head, grid);
+    // the keys stay with the trigger, where the arrows are read
+    panel.addEventListener("mousedown", (e) => e.preventDefault());
+    document.body.append(panel);
+    float(panel, trigger.getBoundingClientRect(), panel.offsetWidth, true);
+    trigger.dataset.state = "open";
+    at = items.findIndex((i) => i.value === value);
+    if (at >= 0) highlight(at, true);
+    document.addEventListener("pointerdown", outside, true);
+  };
+  trigger.addEventListener("click", () => (panel ? close() : open()));
+  trigger.addEventListener("keydown", (e) => {
+    if (!panel && ["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) {
+      e.preventDefault();
+      return open();
+    }
+    if (!panel) return;
+    // as many to a row as the grid shows (fewer on a phone)
+    const cols = getComputedStyle(grid).gridTemplateColumns.split(" ").length;
+    const step = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: cols, ArrowUp: -cols }[e.key];
+    if (step) {
+      e.preventDefault();
+      highlight(at < 0 ? 0 : at + step, true);
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (at >= 0) pick(items[at].value);
     } else if (e.key === "Escape" || e.key === "Tab") {
       e.stopPropagation();
       close();

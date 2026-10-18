@@ -1,7 +1,7 @@
 import { h, icon, sprite, ago } from "../dom.js";
 import { changed, toast, newTab, openTake, writers } from "../store.js";
 import { writerPicker } from "../writer-menu.js";
-import { dropdown } from "../controls.js";
+import { tilePicker } from "../controls.js";
 import { go, currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
 import { view } from "../viewer.js";
@@ -24,7 +24,7 @@ const KIND = {
 // one key each for the length and the frame: a click steps to the next (Shift, the one before)
 const LENGTHS = [[10, "10 s"], [20, "20 s"], [30, "30 s"], [60, "1 min"], [120, "2 min"], [300, "5 min"]];
 // the genre the idea is written in ("" leaves it to the writer)
-const GENRES = [["", "Any genre"], ["Drama", "Drama"], ["Comedy", "Comedy"], ["Thriller", "Thriller"], ["Horror", "Horror"], ["Sci-fi", "Sci-fi"], ["Fantasy", "Fantasy"], ["Romance", "Romance"], ["Adventure", "Adventure"], ["Animation", "Animation"], ["Documentary", "Documentary"], ["Commercial", "Commercial"], ["Music video", "Music video"]];
+const GENRES = [["Drama", "drama"], ["Comedy", "comedy"], ["Thriller", "thriller"], ["Horror", "horror"], ["Sci-fi", "scifi"], ["Fantasy", "fantasy"], ["Romance", "romance"], ["Adventure", "adventure"], ["Animation", "animation"], ["Documentary", "documentary"], ["Commercial", "commercial"], ["Music video", "music-video"]].map(([value, file]) => ({ value, label: value, image: `img/genres/${file}.webp` }));
 const ASPECTS = [["16:9", "16:9", "ratio-16-9", "Wide"], ["9:16", "9:16", "ratio-9-16", "Tall, for phones"], ["1:1", "1:1", "ratio-1-1", "Square"]];
 /** A key that shows its value and steps through the values on each click, from the value as it is then. */
 function stepper(label, list, get, set, glyph, hint) {
@@ -248,7 +248,7 @@ function hero() {
       h("div.home-prompt-foot", {},
         stepper("Length", LENGTHS, () => home.length, (v) => (home.length = v), "duration"),
         stepper("Frame", ASPECTS, () => home.aspect, (v) => (home.aspect = v), null, (a) => a[3]),
-        h("span.home-pick.is-genre", { className: home.genre ? "is-set" : "", title: "Genre\nThe idea is written in it" }, dropdown({ label: "Genre", value: home.genre, items: GENRES.map(([value, label]) => ({ value, label })), onChange: (v) => ((home.genre = v), redraw()) })),
+        h("span.home-pick.is-genre", { className: home.genre ? "is-set" : "", title: "Genre\nThe idea is written in it" }, tilePicker({ label: "Genre", none: "Any genre", value: home.genre, items: GENRES, onChange: (v) => ((home.genre = v), redraw()) })),
         h("span.spacer"),
         writers().length > 1 ? h("span.home-pick.is-model", { title: "Writer\nThe model that writes the story" }, writerPicker("writer")) : h("span.home-model.is-one", { title: "The story is written by Gemma 4, inside ComfyUI" }, sprite("prompt-enhance"), writers()[0]?.name ?? "Gemma 4"),
         h("button.home-attach", { type: "button", title: "Attach pictures or videos\nThe story is built around them: who, where, the look", "aria-label": "Attach pictures or videos", "aria-expanded": "false", on: { click: (e) => attach(e.currentTarget) } }, sprite("paperclip")),
