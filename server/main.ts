@@ -11,7 +11,8 @@ import { manual } from "./manual.ts";
 import { LIMITS } from "./limits.ts";
 import { CloudLibrary } from "./cloud.ts";
 import { ASPECTS, ImageModels } from "./images.ts";
-import { askClaude, blenderStatus, command, CONTROL_BRIEF, CONTROL_MODEL, controlConnected, controlEvents, controlModelName, controlPrompt, fromBlender, readControlAnswer, reply, toBlender, type ControlTurn } from "./control.ts";
+import { askClaude, blenderStatus, command, CONTROL_BRIEF, controlConnected, controlEvents, controlPrompt, fromBlender, readControlAnswer, reply, toBlender, type ControlTurn } from "./control.ts";
+import { llms, defaultLlm, pickLlm, onRouter, llmName, routerAsk, imageBlock } from "./llm.ts";
 import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
 import { readStory, storyBrief, storyPrompt, STORY_ASSIST_BRIEF, storyAssistPrompt, readStoryAssist, type StoryStep } from "./story.ts";
@@ -368,6 +369,13 @@ function summary(kind: string, body: any) {
   }
   return {};
 }
+/** A writer's answer from the model the page picked: Claude on Comfy Router, or Gemma 4 inside ComfyUI. */
+async function write(model: string, brief: string, prompt: string, opts: { maxLength?: number; temperature?: number; picture?: string } = {}) {
+  if (!onRouter(model)) return engine.write(brief, prompt, opts);
+  const image = opts.picture ? await imageBlock(engine.photoPath(opts.picture)) : undefined;
+  return routerAsk(model, brief, prompt, { maxTokens: Math.max(1024, opts.maxLength ?? 3000), temperature: opts.temperature ?? 0.7, image });
+}
+
 /** The films rendered in Cut, newest first. */
 async function listReels() {
   const dir = join(data, "reels");
@@ -707,7 +715,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   const method = req.method ?? "GET";
 
   if (path === "/api/info" && method === "GET") {
-    return json(res, 200, { target: target.kind, url: new URL(target.url).origin, workflows: workflowSet, repository, reels: ffmpeg });
+    return json(res, 200, { target: target.kind, url: new URL(target.url).origin, workflows: workflowSet, repository, reels: ffmpeg, llms: { models: llms(), default: defaultLlm() } });
   }
   if (path === "/api/presets" && method === "GET") {
     if (url.searchParams.has("reload")) await reloadPresets();
@@ -839,7 +847,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const input = await jsonBody(req, 2 * 1024 * 1024);
     const turns = (Array.isArray(input.messages) ? input.messages : []).map((m: any) => ({ role: m?.role === "assistant" ? "assistant" : "user", text: text(m?.text, 1200) })).filter((m: any) => m.text);
     if (!turns.length) throw bad("Say what to change.");
-    const reply = await engine.write(CUT_BRIEF, cutPrompt(input.cut, turns), { maxLength: 1200, temperature: 0.4 });
+    const reply = await write(pickLlm(input.model), CUT_BRIEF, cutPrompt(input.cut, turns), { maxLength: 1200, temperature: 0.4 });
     return json(res, 200, readCutAnswer(reply));
   }
   const cutRender = /^\/api\/cuts\/([\w-]+)\/render$/.exec(path);
@@ -962,7 +970,12 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       mentioned: f?.mentioned === true,
     })).filter((f: ChatFile) => f.name);
     const sees = seen ? text(input.sees, 400) || "the start photo" : "";
-    const answer = readAnswer(await engine.ask(assistantPrompt(shot, turns, sees, files), seen, manual(list)), new Set(list.map((p) => p.id)), files);
+    const model = pickLlm(input.model);
+    const prompt = assistantPrompt(shot, turns, sees, files);
+    const said = onRouter(model)
+      ? await routerAsk(model, `${await engine.assistantBrief()}\n\n${manual(list)}`, prompt, { maxTokens: 1600, temperature: 0.5, image: seen ? await imageBlock(engine.photoPath(seen)) : undefined })
+      : await engine.ask(prompt, seen, manual(list));
+    const answer = readAnswer(said, new Set(list.map((p) => p.id)), files);
     fillTransitions(answer.actions, turns.at(-1)!.text);
     fillUses(answer.actions, turns.at(-1)!.text, files);
     // references set start photos aside, so drawing one for a reference shot is wasted work
@@ -992,7 +1005,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const only = Math.round(Number(input.only)) || undefined;
     // the user's references (pictures, frames of videos) on one sheet the writer sees
     const sheet = step === "board" ? undefined : await photo(input.sheet).catch(() => undefined);
-    const reply = await engine.write(storyBrief(step), storyPrompt(step, input.story ?? {}, text(input.ask, 800), only, !!sheet), { maxLength: step === "idea" ? 1200 : 3600, picture: sheet });
+    const reply = await write(pickLlm(input.model), storyBrief(step), storyPrompt(step, input.story ?? {}, text(input.ask, 800), only, !!sheet), { maxLength: step === "idea" ? 1200 : 3600, picture: sheet });
     return json(res, 200, readStory(step, reply));
   }
   if (path === "/api/story/assist" && method === "POST") {
@@ -1001,12 +1014,13 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const turns = (Array.isArray(input.messages) ? input.messages : []).map((m: any) => ({ role: m?.role === "assistant" ? "assistant" : "user", text: text(m?.text, 1200) })).filter((m: any) => m.text);
     if (!turns.length) throw bad("Say what to change.");
     const prompt = storyAssistPrompt(input.story ?? {}, text(input.selected, 300) || null, turns);
-    let reply = await engine.write(STORY_ASSIST_BRIEF, prompt, { maxLength: 2400, temperature: 0.4 });
+    const model = pickLlm(input.model);
+    let reply = await write(model, STORY_ASSIST_BRIEF, prompt, { maxLength: 2400, temperature: 0.4 });
     if (process.env.COMFYTURE_DEBUG) console.log(`story assistant answered\n${reply}`);
     let out = readStoryAssist(reply);
     // a small writer sometimes drops a brace: once more, with its answer to mend
     if (out.broken) {
-      reply = await engine.write(STORY_ASSIST_BRIEF, `${prompt}\n\nYOUR LAST ANSWER WAS NOT VALID JSON:\n${reply.slice(0, 4000)}\n\nWrite the same answer again as valid JSON only: {"reply": "...", "ops": [{"op": ...}, ...]}`, { maxLength: 2400, temperature: 0.2 });
+      reply = await write(model, STORY_ASSIST_BRIEF, `${prompt}\n\nYOUR LAST ANSWER WAS NOT VALID JSON:\n${reply.slice(0, 4000)}\n\nWrite the same answer again as valid JSON only: {"reply": "...", "ops": [{"op": ...}, ...]}`, { maxLength: 2400, temperature: 0.2 });
       if (process.env.COMFYTURE_DEBUG) console.log(`story assistant answered again\n${reply}`);
       out = readStoryAssist(reply);
     }
@@ -1188,7 +1202,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     return;
   }
   if (path === "/api/control/events" && method === "GET") return controlEvents(req, res);
-  if (path === "/api/control/status" && method === "GET") return json(res, 200, { page: controlConnected(), assistant: controlModelName() });
+  if (path === "/api/control/status" && method === "GET") return json(res, 200, { page: controlConnected(), assistant: llmName(defaultLlm()) });
   if (path === "/api/control/command" && method === "POST") {
     const input = await jsonBody(req);
     const answer = await command(text(input.op, 40), input.args && typeof input.args === "object" ? input.args : {});
@@ -1213,15 +1227,17 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const scene = input.scene && typeof input.scene === "object" ? input.scene : {};
     let picture: string | undefined;
     const png = typeof input.look === "string" ? /^data:image\/(png|jpeg);base64,(.+)$/.exec(input.look) : null;
+    const model = pickLlm(input.model);
+    const claude = onRouter(model);
     // Gemma reads the picture from a file it uploads; Claude takes it inline
-    if (png && CONTROL_MODEL === "gemma") {
+    if (png && !claude) {
       await mkdir(join(data, "control"), { recursive: true });
       picture = join(data, "control", `look-${randomBytes(4).toString("hex")}.${png[1] === "png" ? "png" : "jpg"}`);
       await writeFile(picture, Buffer.from(png[2], "base64"));
     }
     const ask = (prompt: string) =>
-      CONTROL_MODEL === "claude"
-        ? askClaude(prompt, png ? { type: png[1], data: png[2] } : undefined)
+      claude
+        ? askClaude(model, prompt, png ? { type: png[1], data: png[2] } : undefined)
         : engine.ask(prompt, undefined, undefined, { brief: CONTROL_BRIEF, picture });
     try {
       const prompt = controlPrompt(scene, turns, !!png);
@@ -1459,5 +1475,5 @@ createServer((req, res) => {
   console.log(`Comfyture  http://${host}:${port}`);
   console.log(`ComfyUI    ${target.kind} · ${target.url} · ${workflowSet}`);
   console.log(`Presets    ${presets.size}`);
-  console.log(`Control    assistant ${controlModelName()}`);
+  console.log(`Writers    ${llmName(defaultLlm())}${onRouter(defaultLlm()) ? " on Comfy Router" : " in ComfyUI"}`);
 });

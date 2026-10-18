@@ -1,6 +1,6 @@
 import { h, icon, sprite } from "../dom.js";
 import {
-  state, ask, askStage, renderStageImage, useStageRender, improveStageLook, setStageModel, stageModels, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt, toast,
+  state, ask, askStage, renderStageImage, useStageRender, improveStageLook, setStageModel, stageModels, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt, toast, writer, writers, setWriter,
   attachPhoto, attachStageMap, setStageMap, addStagePicture, removeStagePicture, attachStagePictures,
 } from "../store.js";
 import { pillField, pillText } from "../pills.js";
@@ -396,13 +396,14 @@ export function renderAssistant(el) {
   const c = composer ?? makeComposer();
   c.key.disabled = !!busy;
   c.render.disabled = !!busy;
+  // the writer (the model that answers here), on every page; on the Stage, the image model beside it
+  const llm = writers().length > 1 ? [dropdown({ label: "Writer", value: writer(), items: writers().map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setWriter(id) })] : [];
   if (stage) {
     const models = stageModels();
     const value = state.stageModel && models.some((m) => m.id === state.stageModel) ? state.stageModel : state.image.catalogue?.default ?? models[0]?.id;
-    c.modelSlot.replaceChildren(...(models.length > 1 ? [dropdown({ label: "Image model", value, items: models.map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setStageModel(id) })] : []));
-  }
+    c.modelSlot.replaceChildren(...llm, ...(models.length > 1 ? [dropdown({ label: "Image model", value, items: models.map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setStageModel(id) })] : []));
+  } else c.modelSlot.replaceChildren(...llm);
   c.input.placeholder = PLACEHOLDER[storyPage ? "story" : cutPage ? "cut" : stage ? "stage" : "shot"];
-  if (storyPage || cutPage) c.modelSlot.replaceChildren(h("span.chip.composer-chip", { title: storyPage ? "The story is written by Gemma 4, in ComfyUI" : "The editor is Gemma 4, in ComfyUI" }, sprite("prompt-enhance"), "Gemma 4"));
   const inputs = state.stageChat.inputs;
   c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : files.map(fileChip)), ...(!stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
   // on Story, what the assistant will edit: the block (or the card) that is picked

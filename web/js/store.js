@@ -229,6 +229,9 @@ export function edit(fn, ...scopes) {
 export async function load() {
   const [info, presets, samples, runs, films, photos] = await Promise.all([api.info(), api.presets(), api.samples(), api.runs(), api.films().catch(() => []), api.photos().catch(() => [])]);
   Object.assign(state, { info, presets, samples, runs, films, photos });
+  try {
+    state.llm = localStorage.getItem(LLM) || null;
+  } catch {}
   const preset = presetById(state.draft.preset);
   state.group = preset?.category ?? "camera";
   if (!state.draft.preset && !state.draft.script.shots.some((s) => s.action) && presets[0]) {
@@ -1499,6 +1502,7 @@ export async function ask(text) {
     const sheet = shown.length ? await sheetOf(shown) : null;
     const spots = SPOTS[Math.min(4, shown.length)] ?? [];
     const answer = await api.assistant({
+      model: writer(),
       messages: chat.messages.filter((m) => !m.error).map((m) => ({ role: m.role, text: m.text, did: m.did })),
       shot: shotSummary(),
       photo: sheet?.file ?? state.draft.start?.file,
@@ -1563,7 +1567,7 @@ export async function askStage(text) {
   changed("assistant");
   try {
     const [{ stageAssist }, api] = await Promise.all([import("./control/assist.js"), stageReady]);
-    chat.messages.push(adoptRenders(await stageAssist(api, chat.messages, (busy) => ((chat.busy = busy), changed("assistant")))));
+    chat.messages.push(adoptRenders(await stageAssist(api, chat.messages, (busy) => ((chat.busy = busy), changed("assistant")), writer())));
   } catch (error) {
     chat.messages.push({ role: "assistant", stage: true, text: error.message ?? String(error), error: true });
   } finally {
@@ -1596,6 +1600,23 @@ state.stageModel = (() => {
   }
 })();
 stageReady.then(({ stage }) => (stage.renderModel = state.stageModel));
+// ---------------------------------------------------------------- the writer: which model writes and assists
+
+const LLM = "comfyture.llm";
+/** The writer the pages use (Claude Sonnet 5.5 on Comfy Router unless you pick another), from those the server offers. */
+export function writer() {
+  const offered = state.info?.llms?.models ?? [];
+  return offered.some((m) => m.id === state.llm) ? state.llm : state.info?.llms?.default;
+}
+export function setWriter(id) {
+  state.llm = id;
+  try {
+    localStorage.setItem(LLM, id);
+  } catch {}
+  changed("assistant", "home");
+}
+export const writers = () => state.info?.llms?.models ?? [];
+
 export function setStageModel(id) {
   state.stageModel = id;
   try {

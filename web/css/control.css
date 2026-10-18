@@ -108,9 +108,10 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 .ctl-chat { position: relative; width: min(52rem, 100%); margin: 0 auto; }
 .chat-float.is-docked { position: relative; left: auto; bottom: auto; width: 100%; transform: none; z-index: 5; }
 .chat-float.is-docked .chat-panel { position: absolute; left: 0; right: 0; bottom: calc(100% + .5rem); max-height: min(28rem, 48dvh); }
-.composer:not(.is-stage) .render-key, .composer:not(.is-stage) .stage-only, .composer:not(.is-stage) .composer-model { display: none; }
+.composer:not(.is-stage) .render-key, .composer:not(.is-stage) .stage-only { display: none; }
 /* the Stage's model, a quiet select beside its keys */
-.composer-model { display: inline-flex; min-width: 0; }
+.composer-model { display: inline-flex; gap: .375rem; min-width: 0; }
+.composer-model:empty { display: none; }
 .composer-model .sel-trigger { min-height: 2.5rem; max-width: 14rem; padding: 0 .625rem 0 .75rem; border: 1px solid var(--line2); border-radius: calc(.5rem * var(--corner-k)); background: var(--s1); }
 .composer-model .sel-desc { display: none; }
 .composer-model .sel-label { font-size: var(--fs-small); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

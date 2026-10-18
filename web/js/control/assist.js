@@ -76,13 +76,14 @@ async function apply({ stage, ops }, actions) {
  * Asks the assistant about the stage. `messages` is the conversation so far, ending with
  * what was just said; `onBusy` hears what it is doing. Returns the answer as a message.
  */
-export async function stageAssist(api, messages, onBusy = () => {}) {
+export async function stageAssist(api, messages, onBusy = () => {}, model) {
   const { stage, ops } = api;
   const ask = async (extra = []) => {
     const res = await fetch("api/control/assist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        model,
         messages: [...messages, ...extra].filter((m) => !m.error).map(({ role, text, did, failed }) => ({ role, text, did, failed })),
         scene: ops.scene(),
         look: stage.frameStill("clay", { long: 640 }),

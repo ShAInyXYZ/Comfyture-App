@@ -5,7 +5,7 @@
 // feed Stage (blocked from their words), Shot (prompts and frames) and Cut (an edit in order).
 // Stories are kept on the server, one per tab, with undo.
 
-import { state, changed, toast, drawPicture, rollAsTab, switchTab, sheetOf } from "./store.js";
+import { state, changed, toast, drawPicture, rollAsTab, switchTab, sheetOf, writer } from "./store.js";
 import { expandTags } from "./pills.js";
 import { go } from "./router.js";
 
@@ -331,7 +331,7 @@ function unique(b) {
   }
 }
 
-// ---------------------------------------------------------------- writing it with Gemma
+// ---------------------------------------------------------------- writing it (with the writer picked on the bar)
 
 /** What the step writers read: the story as scenes (with their beats and lines) and shots. */
 function payload(b) {
@@ -368,7 +368,7 @@ export async function write(step, { only } = {}) {
   try {
     const one = only && scenesOf(b).find((s) => s.scene?.id === only)?.n;
     const sheet = step === "board" ? null : await refSheet(b).catch(() => null);
-    const out = await send("api/story/write", "POST", { step, story: payload(b), only: one, sheet: sheet?.file });
+    const out = await send("api/story/write", "POST", { step, model: writer(), story: payload(b), only: one, sheet: sheet?.file });
     if (step === "idea") Object.assign(b.idea, out);
     if (step === "script") {
       // the cast and places it names, keeping what each one had (words, pictures, colour)
@@ -452,7 +452,7 @@ export async function askStory(text) {
       selected = `[${sid.get(sel.id)}] the ${x.kind}${x.kind === "shot" ? ` ${codeOf(x.id)}` : ""}: ${String(x.text || x.summary || x.action || x.slug || "").slice(0, 200)}`;
     } else if (sel) selected = selectionLabel(sel);
     const st = payload(b);
-    const out = await send("api/story/assist", "POST", { story: { ...st, blocks: b.blocks.map((x) => ({ ...x, sid: sid.get(x.id), photo: undefined, still: undefined })) }, selected, messages: story.chat.messages.slice(-8).map((m) => ({ role: m.role, text: m.text })) });
+    const out = await send("api/story/assist", "POST", { model: writer(), story: { ...st, blocks: b.blocks.map((x) => ({ ...x, sid: sid.get(x.id), photo: undefined, still: undefined })) }, selected, messages: story.chat.messages.slice(-8).map((m) => ({ role: m.role, text: m.text })) });
     const did = apply(out.ops, back);
     story.chat.messages.push({ role: "assistant", text: out.reply || (did.length ? "Done." : "Nothing to change."), did });
   } catch (e) {

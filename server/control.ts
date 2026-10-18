@@ -3,9 +3,10 @@
 // stage and replies. The same relay pushes the staged scene into Blender and
 // pulls it back, through the official Blender MCP add-on's socket.
 
+import { routerAsk } from "./llm.ts";
 import { connect } from "node:net";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes } from "node:crypto";
 
 type Reply = { ok: boolean; result?: unknown; error?: string };
 type Waiting = { resolve: (r: Reply) => void; timer: NodeJS.Timeout };
@@ -595,19 +596,6 @@ export function readControlAnswer(text: string, scene: Record<string, any> = {})
 
 // ------------------------------------------------------------------ the assistant on Claude
 
-/**
- * Which model answers on the Control page: Claude Haiku through Comfy Router when there is a Comfy
- * key (billed in Comfy credits like everything else), else Gemma 4 in ComfyUI.
- */
-export const CONTROL_MODEL = (() => {
-  const want = process.env.COMFYTURE_ASSISTANT?.trim().toLowerCase();
-  if (want === "gemma") return "gemma";
-  if (process.env.COMFY_API_KEY?.trim()) return "claude";
-  return "gemma";
-})();
-const CLAUDE_MODEL = process.env.COMFYTURE_CLAUDE_MODEL?.trim() || "claude-haiku-4-5-20251001";
-export const controlModelName = () => (CONTROL_MODEL === "claude" ? CLAUDE_MODEL : "gemma-4-e4b");
-
 // the answer as a tool call, so it always arrives as JSON in this shape
 const STAGE_TOOL = {
   name: "stage",
@@ -629,26 +617,6 @@ const STAGE_TOOL = {
   },
 };
 
-/** The assistant's answer from Claude through Comfy Router (Anthropic's Messages format), as the JSON text the Gemma path would give. */
-export async function askClaude(prompt: string, picture?: { type: string; data: string }) {
-  const content: Record<string, unknown>[] = [];
-  if (picture) content.push({ type: "image", source: { type: "base64", media_type: `image/${picture.type}`, data: picture.data } });
-  content.push({ type: "text", text: prompt });
-  const res = await fetch(`https://api.comfy.org/v2/models/anthropic/${CLAUDE_MODEL}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-API-Key": process.env.COMFY_API_KEY!.trim(), "Idempotency-Key": randomUUID() },
-    body: JSON.stringify({
-      model: CLAUDE_MODEL,
-      max_tokens: 2000,
-      system: [{ type: "text", text: CONTROL_BRIEF, cache_control: { type: "ephemeral" } }],
-      tools: [STAGE_TOOL],
-      tool_choice: { type: "tool", name: "stage" },
-      messages: [{ role: "user", content }],
-    }),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(`Claude: ${body?.error?.message ?? body?.message ?? `${res.status} ${res.statusText}`}`), { status: 502 });
-  const call = (body.content ?? []).find((c: any) => c.type === "tool_use");
-  if (process.env.COMFYTURE_DEBUG) console.log(`claude usage ${JSON.stringify(body.usage)}`);
-  return call ? JSON.stringify(call.input) : String((body.content ?? []).map((c: any) => c.text ?? "").join(" "));
-}
+/** The Stage assistant on Claude (Comfy Router): its answer always comes as the stage tool's input, so always JSON. */
+export const askClaude = (model: string, prompt: string, picture?: { type: string; data: string }) =>
+  routerAsk(model, CONTROL_BRIEF, prompt, { maxTokens: 2000, temperature: 0.5, image: picture ? { type: `image/${picture.type}`, data: picture.data } : undefined, tool: STAGE_TOOL });

@@ -546,6 +546,12 @@ export class Engine extends EventEmitter {
     return Buffer.from(await out.toBytes()).toString("utf8");
   }
 
+  /** The Shot assistant's own brief, as its workflow carries it, for a writer outside ComfyUI. */
+  async assistantBrief() {
+    const graph = await loadGraph(this.dirs.workflows, "assistant.json");
+    return String(graph.brief?.inputs?.value ?? "");
+  }
+
   async ask(prompt: string, photo?: string, manual?: string, { brief, picture }: { brief?: string; picture?: string } = {}): Promise<string> {
     if (photo && !(await exists(this.photoPath(photo)))) photo = undefined;
     const image = picture ?? (photo ? this.photoPath(photo) : undefined);

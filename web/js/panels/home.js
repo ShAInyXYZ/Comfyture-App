@@ -1,5 +1,6 @@
 import { h, icon, sprite, ago } from "../dom.js";
-import { changed, toast, newTab, openTake } from "../store.js";
+import { changed, toast, newTab, openTake, writer, writers, setWriter } from "../store.js";
+import { dropdown } from "../controls.js";
 import { go, currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
 import { view } from "../viewer.js";
@@ -83,7 +84,7 @@ const START = [
   ["edit-scissors", "A new, empty edit in Cut", async () => (await loadCuts(), await newCut("New edit"), go("cut"))],
 ];
 
-/** A whole story from one sentence: a new story with the brief, and Gemma 4 writing it while Story shows it. */
+/** A whole story from one sentence: a new story with the brief, and the writer writing it while Story shows it. */
 async function writeStory() {
   const brief = home.brief.trim() || (home.refs.length ? "A short film built around the attached references." : "");
   if (!brief) return document.querySelector(".home-brief")?.focus();
@@ -228,7 +229,7 @@ function hero() {
         h("i.home-rule"),
         seg("Frame", ASPECTS.map((a) => [a, a]), home.aspect, (v) => (home.aspect = v)),
         h("span.spacer"),
-        h("span.home-model", { title: "Gemma 4 writes the idea, the script and how everyone looks, inside ComfyUI" }, sprite("prompt-enhance"), "Gemma 4"),
+        writers().length > 1 ? h("span.home-model", {}, dropdown({ label: "Writer", value: writer(), items: writers().map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setWriter(id) })) : h("span.home-model.is-one", { title: "The story is written by Gemma 4, inside ComfyUI" }, sprite("prompt-enhance"), writers()[0]?.name ?? "Gemma 4"),
         h("button.key.is-primary.home-write", { type: "button", disabled: home.starting, title: "Enter", on: { click: writeStory } }, sprite("prompt-enhance"), home.starting ? "Starting…" : "Write the story"))),
     h("div.home-new", { role: "group", "aria-label": "Start something empty" },
       ...START.map(([glyph, tip, run]) => h("button.home-new-key", { type: "button", title: tip, "aria-label": tip, on: { click: () => Promise.resolve(run()).catch(fail) } }, sprite(glyph)))),

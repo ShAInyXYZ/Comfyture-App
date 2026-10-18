@@ -4,7 +4,7 @@
 // undo; a film is rendered on the server from the timeline into the Library.
 
 import { api } from "./api.js";
-import { state, changed, toast, rollAsTab } from "./store.js";
+import { state, changed, toast, rollAsTab, writer } from "./store.js";
 
 const TABS = "comfyture.cut.tabs";
 const LAST = "comfyture.cut.last";
@@ -708,7 +708,7 @@ export async function askCut(text) {
   cut.chat.busy = "Editing";
   update("assistant");
   try {
-    const out = await send("api/cut/assist", "POST", { messages: cut.chat.messages.slice(-8), cut: summary() });
+    const out = await send("api/cut/assist", "POST", { model: writer(), messages: cut.chat.messages.slice(-8), cut: summary() });
     const did = applyActions(out.actions);
     cut.chat.messages.push({ role: "assistant", text: out.reply || (did.length ? "Done." : "Nothing to change."), did });
   } catch (e) {
