@@ -396,8 +396,9 @@ export function renderAssistant(el) {
   const c = composer ?? makeComposer();
   c.key.disabled = !!busy;
   c.render.disabled = !!busy;
-  // the writer (the model that answers here), on every page; on the Stage, the image model beside it
-  const llm = writers().length > 1 ? [dropdown({ label: "Writer", value: writer(), items: writers().map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setWriter(id) })] : [];
+  // the model that answers here, on every page: the writer on Story and Cut, the assistant on Shot and the Stage
+  const role = storyPage || cutPage ? "writer" : "assistant";
+  const llm = writers().length > 1 ? [dropdown({ label: role === "writer" ? "Writer" : "Assistant", value: writer(role), items: writers().map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setWriter(id, role) })] : [];
   if (stage) {
     const models = stageModels();
     const value = state.stageModel && models.some((m) => m.id === state.stageModel) ? state.stageModel : state.image.catalogue?.default ?? models[0]?.id;

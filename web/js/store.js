@@ -230,7 +230,7 @@ export async function load() {
   const [info, presets, samples, runs, films, photos] = await Promise.all([api.info(), api.presets(), api.samples(), api.runs(), api.films().catch(() => []), api.photos().catch(() => [])]);
   Object.assign(state, { info, presets, samples, runs, films, photos });
   try {
-    state.llm = localStorage.getItem(LLM) || null;
+    state.llm = { writer: localStorage.getItem(LLM.writer), assistant: localStorage.getItem(LLM.assistant) };
   } catch {}
   const preset = presetById(state.draft.preset);
   state.group = preset?.category ?? "camera";
@@ -1502,7 +1502,7 @@ export async function ask(text) {
     const sheet = shown.length ? await sheetOf(shown) : null;
     const spots = SPOTS[Math.min(4, shown.length)] ?? [];
     const answer = await api.assistant({
-      model: writer(),
+      model: writer("assistant"),
       messages: chat.messages.filter((m) => !m.error).map((m) => ({ role: m.role, text: m.text, did: m.did })),
       shot: shotSummary(),
       photo: sheet?.file ?? state.draft.start?.file,
@@ -1567,7 +1567,7 @@ export async function askStage(text) {
   changed("assistant");
   try {
     const [{ stageAssist }, api] = await Promise.all([import("./control/assist.js"), stageReady]);
-    chat.messages.push(adoptRenders(await stageAssist(api, chat.messages, (busy) => ((chat.busy = busy), changed("assistant")), writer())));
+    chat.messages.push(adoptRenders(await stageAssist(api, chat.messages, (busy) => ((chat.busy = busy), changed("assistant")), writer("assistant"))));
   } catch (error) {
     chat.messages.push({ role: "assistant", stage: true, text: error.message ?? String(error), error: true });
   } finally {
@@ -1602,16 +1602,18 @@ state.stageModel = (() => {
 stageReady.then(({ stage }) => (stage.renderModel = state.stageModel));
 // ---------------------------------------------------------------- the writer: which model writes and assists
 
-const LLM = "comfyture.llm";
-/** The writer the pages use (Claude Sonnet 5.5 on Comfy Router unless you pick another), from those the server offers. */
-export function writer() {
+// two roles, each kept apart: the writer (Story, Cut) and the quick assistants (Shot, Stage)
+const LLM = { writer: "comfyture.llm", assistant: "comfyture.llm.assistant" };
+/** The model a role uses (Sonnet 5.5 writes, Haiku 4.5 assists, unless you pick another), from those the server offers. */
+export function writer(role = "writer") {
   const offered = state.info?.llms?.models ?? [];
-  return offered.some((m) => m.id === state.llm) ? state.llm : state.info?.llms?.default;
+  const kept = state.llm?.[role];
+  return offered.some((m) => m.id === kept) ? kept : role === "assistant" ? state.info?.llms?.assistant ?? state.info?.llms?.default : state.info?.llms?.default;
 }
-export function setWriter(id) {
-  state.llm = id;
+export function setWriter(id, role = "writer") {
+  state.llm = { ...state.llm, [role]: id };
   try {
-    localStorage.setItem(LLM, id);
+    localStorage.setItem(LLM[role], id);
   } catch {}
   changed("assistant", "home");
 }

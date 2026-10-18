@@ -13,7 +13,7 @@ import { loadCuts, openCut, newCut, deleteCut } from "../cut.js";
 // shots were blocked on, its takes and its edits, together on one card that opens on hover.
 
 // refs: pictures and videos attached to the prompt, for the story to be built around
-const home = { films: [], loaded: 0, loading: null, error: null, query: "", brief: "", length: 60, aspect: "16:9", starting: false, armed: null, refs: [], adding: 0 };
+const home = { films: [], loaded: 0, loading: null, error: null, query: "", brief: "", length: 60, aspect: "16:9", genre: "", starting: false, armed: null, refs: [], adding: 0 };
 const KIND = {
   story: { label: "Story", icon: "section-story" },
   stage: { label: "Stage", icon: "section-stage" },
@@ -21,6 +21,8 @@ const KIND = {
   take: { label: "Take", icon: "section-shot" },
 };
 const LENGTHS = [[30, "30 s"], [60, "1 min"], [120, "2 min"]];
+// the genre the idea is written in ("" leaves it to the writer)
+const GENRES = [["", "Any genre"], ["Drama", "Drama"], ["Comedy", "Comedy"], ["Thriller", "Thriller"], ["Horror", "Horror"], ["Sci-fi", "Sci-fi"], ["Fantasy", "Fantasy"], ["Romance", "Romance"], ["Adventure", "Adventure"], ["Animation", "Animation"], ["Documentary", "Documentary"], ["Commercial", "Commercial"], ["Music video", "Music video"]];
 const ASPECTS = ["16:9", "9:16", "1:1"];
 const redraw = () => changed("home");
 const call = async (path, init) => {
@@ -94,7 +96,7 @@ async function writeStory() {
   try {
     await loadStories();
     await newStory();
-    Object.assign(story.project.body.idea, { brief, length: home.length, aspect: home.aspect, refs: home.refs.slice(0, 4) });
+    Object.assign(story.project.body.idea, { brief, length: home.length, aspect: home.aspect, genre: home.genre, refs: home.refs.slice(0, 4) });
     commitStory();
     home.brief = "";
     home.refs = [];
@@ -224,12 +226,12 @@ function hero() {
       field,
       refs(),
       h("div.home-prompt-foot", {},
-        h("button.home-attach", { type: "button", title: "Attach pictures or videos\nThe story is built around them: who, where, the look", "aria-label": "Attach pictures or videos", "aria-expanded": "false", on: { click: (e) => attach(e.currentTarget) } }, sprite("paperclip")),
         seg("Length", LENGTHS, home.length, (v) => (home.length = v)),
-        h("i.home-rule"),
         seg("Frame", ASPECTS.map((a) => [a, a]), home.aspect, (v) => (home.aspect = v)),
+        h("span.home-pick.is-genre", { title: "Genre\nThe idea is written in it" }, dropdown({ label: "Genre", value: home.genre, items: GENRES.map(([value, label]) => ({ value, label })), onChange: (v) => (home.genre = v) })),
         h("span.spacer"),
-        writers().length > 1 ? h("span.home-model", {}, dropdown({ label: "Writer", value: writer(), items: writers().map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setWriter(id) })) : h("span.home-model.is-one", { title: "The story is written by Gemma 4, inside ComfyUI" }, sprite("prompt-enhance"), writers()[0]?.name ?? "Gemma 4"),
+        writers().length > 1 ? h("span.home-pick.is-model", { title: "Writer\nThe model that writes the story" }, dropdown({ label: "Writer", value: writer(), items: writers().map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setWriter(id) })) : h("span.home-model.is-one", { title: "The story is written by Gemma 4, inside ComfyUI" }, sprite("prompt-enhance"), writers()[0]?.name ?? "Gemma 4"),
+        h("button.home-attach", { type: "button", title: "Attach pictures or videos\nThe story is built around them: who, where, the look", "aria-label": "Attach pictures or videos", "aria-expanded": "false", on: { click: (e) => attach(e.currentTarget) } }, sprite("paperclip")),
         h("button.key.is-primary.home-write", { type: "button", disabled: home.starting, title: "Enter", on: { click: writeStory } }, sprite("prompt-enhance"), home.starting ? "Starting…" : "Write the story"))),
     h("div.home-new", { role: "group", "aria-label": "Start something empty" },
       ...START.map(([glyph, tip, run]) => h("button.home-new-key", { type: "button", title: tip, "aria-label": tip, on: { click: () => Promise.resolve(run()).catch(fail) } }, sprite(glyph)))),

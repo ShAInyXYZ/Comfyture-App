@@ -715,7 +715,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   const method = req.method ?? "GET";
 
   if (path === "/api/info" && method === "GET") {
-    return json(res, 200, { target: target.kind, url: new URL(target.url).origin, workflows: workflowSet, repository, reels: ffmpeg, llms: { models: llms(), default: defaultLlm() } });
+    return json(res, 200, { target: target.kind, url: new URL(target.url).origin, workflows: workflowSet, repository, reels: ffmpeg, llms: { models: llms(), default: defaultLlm("writer"), assistant: defaultLlm("assistant") } });
   }
   if (path === "/api/presets" && method === "GET") {
     if (url.searchParams.has("reload")) await reloadPresets();
@@ -970,7 +970,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       mentioned: f?.mentioned === true,
     })).filter((f: ChatFile) => f.name);
     const sees = seen ? text(input.sees, 400) || "the start photo" : "";
-    const model = pickLlm(input.model);
+    const model = pickLlm(input.model, "assistant");
     const prompt = assistantPrompt(shot, turns, sees, files);
     const said = onRouter(model)
       ? await routerAsk(model, `${await engine.assistantBrief()}\n\n${manual(list)}`, prompt, { maxTokens: 1600, temperature: 0.5, image: seen ? await imageBlock(engine.photoPath(seen)) : undefined })
@@ -1202,7 +1202,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     return;
   }
   if (path === "/api/control/events" && method === "GET") return controlEvents(req, res);
-  if (path === "/api/control/status" && method === "GET") return json(res, 200, { page: controlConnected(), assistant: llmName(defaultLlm()) });
+  if (path === "/api/control/status" && method === "GET") return json(res, 200, { page: controlConnected(), assistant: llmName(defaultLlm("assistant")) });
   if (path === "/api/control/command" && method === "POST") {
     const input = await jsonBody(req);
     const answer = await command(text(input.op, 40), input.args && typeof input.args === "object" ? input.args : {});
@@ -1227,7 +1227,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const scene = input.scene && typeof input.scene === "object" ? input.scene : {};
     let picture: string | undefined;
     const png = typeof input.look === "string" ? /^data:image\/(png|jpeg);base64,(.+)$/.exec(input.look) : null;
-    const model = pickLlm(input.model);
+    const model = pickLlm(input.model, "assistant");
     const claude = onRouter(model);
     // Gemma reads the picture from a file it uploads; Claude takes it inline
     if (png && !claude) {
@@ -1475,5 +1475,5 @@ createServer((req, res) => {
   console.log(`Comfyture  http://${host}:${port}`);
   console.log(`ComfyUI    ${target.kind} · ${target.url} · ${workflowSet}`);
   console.log(`Presets    ${presets.size}`);
-  console.log(`Writers    ${llmName(defaultLlm())}${onRouter(defaultLlm()) ? " on Comfy Router" : " in ComfyUI"}`);
+  console.log(`Writers    ${llmName(defaultLlm("writer"))} · assistants ${llmName(defaultLlm("assistant"))}${onRouter(defaultLlm("writer")) ? " on Comfy Router" : " in ComfyUI"}`);
 });

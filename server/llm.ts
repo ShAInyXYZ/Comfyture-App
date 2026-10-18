@@ -1,6 +1,8 @@
 // The writers' models: Claude on Comfy Router, billed in Comfy credits with the same Comfy key as
-// everything else, or Gemma 4 running inside ComfyUI (open weights). The pages pick one; without a
-// Comfy key only Gemma 4 is offered. COMFYTURE_LLM sets the default.
+// everything else, or Gemma 4 running inside ComfyUI (open weights). Two roles, each with its own
+// default: the writer (Story's writers and its assistant, the Cut editor) on Claude Sonnet 5.5, and
+// the quick assistants (Shot and Stage) on Claude Haiku 4.5. The pages pick another; without a
+// Comfy key only Gemma 4 is offered. COMFYTURE_LLM and COMFYTURE_LLM_ASSISTANT set the defaults.
 
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
@@ -15,14 +17,17 @@ const LLMS: Llm[] = [
 ];
 const hasKey = () => !!process.env.COMFY_API_KEY?.trim();
 export const llms = () => LLMS.filter((m) => !m.router || hasKey()).map(({ id, name, about, router }) => ({ id, name, about, router }));
-export function defaultLlm() {
+export type Role = "writer" | "assistant";
+export function defaultLlm(role: Role = "writer") {
   // COMFYTURE_ASSISTANT=gemma, from before there was a choice, still keeps everything on Gemma 4
-  const want = process.env.COMFYTURE_LLM?.trim() || (process.env.COMFYTURE_ASSISTANT?.trim().toLowerCase() === "gemma" ? "gemma-4" : "");
+  const gemma = process.env.COMFYTURE_ASSISTANT?.trim().toLowerCase() === "gemma" ? "gemma-4" : "";
+  const want = (role === "assistant" ? process.env.COMFYTURE_LLM_ASSISTANT?.trim() : process.env.COMFYTURE_LLM?.trim()) || gemma;
   if (want && llms().some((m) => m.id === want)) return want;
-  return hasKey() ? "claude-sonnet-5-5" : "gemma-4";
+  if (!hasKey()) return "gemma-4";
+  return role === "assistant" ? "claude-haiku-4-5-20251001" : "claude-sonnet-5-5";
 }
-/** The model a request asks for, if it may be used; else the default. */
-export const pickLlm = (v: unknown) => (typeof v === "string" && llms().some((m) => m.id === v) ? v : defaultLlm());
+/** The model a request asks for, if it may be used; else its role's default. */
+export const pickLlm = (v: unknown, role: Role = "writer") => (typeof v === "string" && llms().some((m) => m.id === v) ? v : defaultLlm(role));
 export const onRouter = (id: string) => LLMS.find((m) => m.id === id)?.router === true;
 export const llmName = (id: string) => LLMS.find((m) => m.id === id)?.name ?? id;
 
