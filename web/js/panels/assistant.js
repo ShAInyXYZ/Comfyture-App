@@ -1,5 +1,6 @@
 import { h, icon, sprite } from "../dom.js";
-import { state, ask, askStage, renderStageImage, useStageRender, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt } from "../store.js";
+import { state, ask, askStage, renderStageImage, useStageRender, improveStageLook, setStageModel, stageModels, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt, toast } from "../store.js";
+import { dropdown } from "../controls.js";
 import { view } from "../viewer.js";
 import { currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
@@ -160,21 +161,55 @@ function makeComposer() {
     on: { click: () => {
       if (state.stageChat.busy) return;
       const words = input.value;
+      const raw = composer.improved && words.trim().length > 0;
       input.value = "";
       grow();
+      forget();
       open = true;
-      renderStageImage(words);
+      renderStageImage(words, { raw });
     } },
   }, sprite("image-generate"));
+  // the model it renders with, and the words made better by that model's own guide
+  const modelSlot = h("span.composer-model");
+  const improve = h("button.composer-key.improve-key.stage-only", {
+    type: "button",
+    title: "Improve the words with the chosen model's own prompt guide — it reads the frame and who's who",
+    "aria-label": "Improve the words",
+    on: { click: async () => {
+      const words = input.value.trim();
+      if (!words || composer.improving) return;
+      composer.improving = true;
+      improve.classList.add("is-busy");
+      try {
+        const better = await improveStageLook(words);
+        composer.before = words;
+        composer.improved = true;
+        input.value = better;
+        grow();
+        undo.hidden = false;
+      } catch (error) {
+        toast(error.message ?? String(error), { tone: "crit" });
+      } finally {
+        composer.improving = false;
+        improve.classList.remove("is-busy");
+      }
+    } },
+  }, sprite("prompt-enhance"));
+  const undo = h("button.composer-key.stage-only", { type: "button", hidden: true, title: "Put my words back", "aria-label": "Put my words back", on: { click: () => ((input.value = composer.before ?? ""), grow(), forget()) } }, icon("remix"));
+  const forget = () => {
+    composer.improved = false;
+    composer.before = null;
+    undo.hidden = true;
+  };
   const tray = h("div.file-tray");
   const picker = h("div.mention-picker", { hidden: true, role: "listbox", "aria-label": "Files" });
   const toggle = h("button.composer-key.thread-key", { type: "button", "aria-label": "Conversation", on: { click: () => ((open = !open), renderAssistant(document.getElementById("assistant"))) } });
   const status = h("span.bar-status");
-  const bar = h("div.chat-bar", {}, tray, input, h("div.bar-row", {}, clip, render, h("span.spacer"), status, toggle, key));
+  const bar = h("div.chat-bar", {}, tray, input, h("div.bar-row", {}, clip, render, modelSlot, improve, undo, h("span.spacer"), status, toggle, key));
   const el = h("div.composer", {}, picker, bar, fileInput);
   // the page keeps room for the bar at its real height, files and all
   new ResizeObserver(() => document.documentElement.style.setProperty("--chat-h", `${Math.ceil(bar.getBoundingClientRect().height)}px`)).observe(bar);
-  composer = { el, input, key, render, tray, picker, toggle, status, pick: 0, list: [], filter: "image" };
+  composer = { el, input, key, render, modelSlot, improve, tray, picker, toggle, status, pick: 0, list: [], filter: "image", improved: false, before: null };
   return composer;
 }
 
@@ -251,6 +286,11 @@ export function renderAssistant(el) {
   const c = composer ?? makeComposer();
   c.key.disabled = !!busy;
   c.render.disabled = !!busy;
+  if (stage) {
+    const models = stageModels();
+    const value = state.stageModel && models.some((m) => m.id === state.stageModel) ? state.stageModel : state.image.catalogue?.default ?? models[0]?.id;
+    c.modelSlot.replaceChildren(...(models.length > 1 ? [dropdown({ label: "Image model", value, items: models.map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setStageModel(id) })] : []));
+  }
   c.input.placeholder = PLACEHOLDER[stage ? "stage" : "shot"];
   c.tray.replaceChildren(...(stage ? [] : files.map(fileChip)), ...(!stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
   c.tray.hidden = stage || (!files.length && !attaching);

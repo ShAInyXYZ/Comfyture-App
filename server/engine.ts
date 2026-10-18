@@ -250,6 +250,19 @@ async function exists(path: string) {
   }
 }
 
+/** An enhancer's answer as the prompt alone: some answer in JSON ({"rewritten_prompt": "..."}) or in a code fence. */
+export function unwrapPrompt(text: string) {
+  const bare = text.trim().replace(/^```(?:json|text)?\s*/i, "").replace(/\s*```$/, "").trim();
+  if (!bare.startsWith("{")) return bare;
+  try {
+    const o = JSON.parse(bare);
+    const v = o.rewritten_prompt ?? o.prompt ?? o.text ?? Object.values(o).find((x) => typeof x === "string");
+    return typeof v === "string" && v.trim() ? v.trim() : bare;
+  } catch {
+    return bare;
+  }
+}
+
 export class Engine extends EventEmitter {
   readonly client: Comfy;
   private runs = new Map<string, Run>();
@@ -626,7 +639,7 @@ export class Engine extends EventEmitter {
     const job = await this.execute(graph, new AbortController().signal, { kind: "plan", stage: "frame", queue: false });
     const [out] = job.getOutputs("out");
     if (!out) throw new Error("The enhancer returned nothing. Try again?");
-    return Buffer.from(await out.toBytes()).toString("utf8").trim();
+    return unwrapPrompt(Buffer.from(await out.toBytes()).toString("utf8"));
   }
 
   /** A workflow that makes a photo (from another one, or from nothing), tracked like a paint job. */

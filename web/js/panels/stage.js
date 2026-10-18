@@ -1,4 +1,4 @@
-import { toast, useStageVideo, useStageRender } from "../store.js";
+import { toast, useStageVideo, useStageRender, editStageRun, makeStageRef } from "../store.js";
 import { go } from "../router.js";
 import { setStage } from "../control/link.js";
 
@@ -9,7 +9,7 @@ export function mountStage() {
   if (!mounting) {
     const el = document.getElementById("page-stage");
     mounting = import("../control/stage-page.js").then(({ mountStage: mount }) => {
-      const api = mount(el, { toast, go, useVideo: useStageVideo, usePhoto: useStageRender });
+      const api = mount(el, { toast, go, useVideo: useStageVideo, usePhoto: useStageRender, editRunWith: editStageRun, makeRef: makeStageRef });
       setStage(api);
       document.dispatchEvent(new CustomEvent("stage:ready"));
       return api;

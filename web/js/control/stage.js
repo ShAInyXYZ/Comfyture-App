@@ -645,6 +645,30 @@ export class Stage {
     this.emit("runs");
   }
 
+  /** A clay still (or any channel) from a saved camera, at a size of its own: a render's frame, made again. */
+  stillFrom(camera, { width, height, channel = "clay" } = {}) {
+    return this.thumbnail({ position: new THREE.Vector3(...camera.position), target: new THREE.Vector3(...camera.target), focal: camera.focal }, { width, height, channel });
+  }
+
+  // ------------------------------------------------------------ pictures of who's who
+
+  /** A character's or a piece's own picture, for a render to follow; null takes it away. */
+  setRef(target, photo) {
+    const ref = photo?.file ? { file: photo.file, url: photo.url, width: photo.width, height: photo.height } : null;
+    if (target.character) target.character.ref = ref;
+    else if (target.prop) target.prop.userData.ref = ref;
+    else return;
+    this.commit();
+    this.emit("selection");
+  }
+
+  /** The same, for one named by its id ({ kind: "character" | "prop", id }), if it is still on the stage. */
+  setRefById({ kind, id }, photo) {
+    const target = kind === "character" ? { character: this.characters.find((c) => c.id === id) } : { prop: this.props.find((p) => p.userData.id === id) };
+    if (target.character || target.prop) this.setRef(target, photo);
+    return Boolean(target.character || target.prop);
+  }
+
   /** The camera where a picture was made from: its place, its aim, its lens and its frame. */
   setCameraState({ position, target, focal, ratio }) {
     this.lastSnap = null;

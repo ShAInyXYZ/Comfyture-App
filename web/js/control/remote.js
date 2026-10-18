@@ -438,6 +438,7 @@ export function controlOps(stage) {
       ...(c.seatedOn ? { seated_on: stage.props.find((p) => p.userData.id === c.seatedOn)?.userData.label } : {}),
       ...(c.hold.right || c.hold.left ? { hold: Object.fromEntries(Object.entries(c.hold).filter(([, v]) => v)) } : {}),
       ...(c.rigId ? { rig: c.rigId } : {}),
+      ...(c.ref ? { picture: true } : {}),
       ...(c.keys.length ? { keys: c.keys.map((k) => round(k.t)) } : {}),
     })),
     props: stage.props.map((p) => ({
@@ -445,6 +446,7 @@ export function controlOps(stage) {
       position: p.position.toArray().map(round), facing: facingOf(p),
       size: new THREE.Box3().setFromObject(p).getSize(new THREE.Vector3()).toArray().map(round),
       ...(isAnimal(p) ? { animal: true, pose: p.userData.pose ?? "stand" } : {}),
+      ...(p.userData.ref ? { picture: true } : {}),
       ...(p.userData.keys.length ? { keys: p.userData.keys.map((k) => round(k.t)) } : {}),
     })),
     camera: { position: stage.camera.position.toArray().map(round), target: stage.orbit.target.toArray().map(round), focal: stage.focal, ratio: stage.ratio },
@@ -653,17 +655,18 @@ export function controlOps(stage) {
    * Who and what the frame holds, in plain words, for a picture's description: each character
    * by name with the colour and the place a model sees it at, so the words find the right figure.
    */
-  const inFrame = (look = "") => {
+  const inFrame = (look = "", tags = referenced().tags) => {
     const held = holdables(assetByType);
     // the cast: the characters, and the animals (pieces of the set that act like them)
     const cast = [
       ...stage.characters.filter((c) => c.root.visible).map((c) => {
         const posed = allPoses().find((p) => p.id === c.posed)?.name?.toLowerCase();
+        const tag = tags.get(c);
         const seat = c.seatedOn ? stage.props.find((p) => p.userData.id === c.seatedOn) : null;
         const things = Object.values(c.hold ?? {}).filter(Boolean).map((t) => article((held.get(t)?.name ?? t).toLowerCase().replace(/-/g, " ")));
         const who = c.rigId ? article((rigById(c.rigId)?.name ?? "character").toLowerCase()) : A_PERSON[c.body] ?? "a person";
         return {
-          name: c.name, who, at: c.joints.Head.getWorldPosition(new THREE.Vector3()),
+          name: c.name, who, tag, at: c.joints.Head.getWorldPosition(new THREE.Vector3()),
           figure: c.rigId ? `the ${who.replace(/^an? /, "")}` : `the ${SEEN[colorName(`#${c.color.getHexString()}`)] ?? "clay"} figure`,
           doing: [posed && posed !== "custom" ? posed : null, seat ? `on the ${(assetByType(seat.userData.type)?.name ?? seat.userData.label).toLowerCase()}` : null, things.length ? `holding ${things.join(" and ")}` : null].filter(Boolean).join(", "),
         };
@@ -671,7 +674,7 @@ export function controlOps(stage) {
       ...stage.props.filter((p) => p.visible && isAnimal(p)).map((p) => {
         const kind = (assetByType(p.userData.type)?.name ?? "animal").toLowerCase();
         const box = new THREE.Box3().setFromObject(p);
-        return { name: p.userData.label, who: article(`cute ${kind}`), at: box.getCenter(new THREE.Vector3()).setY(box.max.y), figure: `the ${kind}`, doing: { stand: "standing", sit: "sitting", lie: "lying down", walk: "walking", hop: "hopping" }[p.userData.pose ?? "stand"] ?? "" };
+        return { name: p.userData.label, who: article(`cute ${kind}`), tag: tags.get(p), at: box.getCenter(new THREE.Vector3()).setY(box.max.y), figure: `the ${kind}`, doing: { stand: "standing", sit: "sitting", lie: "lying down", walk: "walking", hop: "hopping" }[p.userData.pose ?? "stand"] ?? "" };
       }),
     ].slice(0, 10);
     const eye = stage.camera.getWorldPosition(new THREE.Vector3());
@@ -700,61 +703,106 @@ export function controlOps(stage) {
       const side = x < -0.33 ? "on the left" : x > 0.33 ? "on the right" : "in the middle";
       const depth = back - near > 1.2 ? (far[i] - near < 0.25 * (back - near) ? ", in front" : back - far[i] < 0.25 * (back - near) ? ", at the back" : "") : "";
       const words = said.get(c)?.join(", ").replace(/[.;!?]+$/, "");
-      return `${c.figure} ${side}${depth} is ${c.name}${words ? `: ${words}` : `, ${c.who}${c.doing ? `, ${c.doing}` : ""}`}`;
+      return `${c.figure} ${side}${depth} is ${c.name}${c.tag ? ` and looks exactly like @${c.tag}` : ""}${words ? `: ${words}` : `, ${c.who}${c.doing ? `, ${c.doing}` : ""}`}`;
     });
     const things = [...new Set(stage.props.filter((p) => p.visible && !isAnimal(p)).map((p) => (assetByType(p.userData.type)?.name ?? p.userData.label).toLowerCase()))].slice(0, 14).map(article);
+    // a piece with a picture of its own is that very thing (the product, the car)
+    const pictured = stage.props.filter((p) => p.visible && !isAnimal(p) && tags.has(p)).map((p) => `the ${(assetByType(p.userData.type)?.name ?? p.userData.label).toLowerCase()} (${p.userData.label}) looks exactly like @${tags.get(p)}`);
     const count = ["no one", "one character", "two characters", "three characters", "four characters", "five characters", "six characters", "seven characters", "eight characters", "nine characters", "ten characters"][people.length];
     const joined = rest.reduce((a, x) => (!a ? x : /[.;!?]$/.test(a) ? `${a} ${x}` : `${a}, ${x}`), "");
-    return { count: people.length, mannequins: stage.characters.some((c) => c.root.visible && !c.rigId), rest: joined, words: [people.length ? `exactly ${count}, and no one else: ${people.join("; ")}` : "", things.length ? `with ${things.join(", ")}` : ""].filter(Boolean).join(" — ") };
+    return { count: people.length, mannequins: stage.characters.some((c) => c.root.visible && !c.rigId), rest: joined, words: [people.length ? `exactly ${count}, and no one else: ${people.join("; ")}` : "", things.length ? `with ${things.join(", ")}` : "", pictured.join("; ")].filter(Boolean).join(" — ") };
   };
 
-  /**
-   * A finished picture of what the camera frame shows: the clay frame is its layout, the words
-   * its look. An image edit with the Image window's default model; the picture lands in the
-   * Library. Answers with its jobs.
-   */
-  // the size the default image model draws a frame of this shape at: a megapixel, its sides on its grid
-  let imageModel = null;
-  const drawSize = async (ratio) => {
-    imageModel ??= fetch("api/image/models").then((r) => r.json()).then((c) => c.models.find((m) => m.id === c.default) ?? c.models[0]).catch(() => null);
-    const m = await imageModel;
-    const [mp, multiple] = [m?.megapixels?.[0] ?? 1, m?.multiple ?? 32];
+  // the image models that can edit a picture, and the one a render uses: asked for, chosen on the Stage, or the default
+  let catalogue = null;
+  const modelOf = async (id) => {
+    catalogue ??= fetch("api/image/models").then((r) => r.json()).catch(() => null);
+    const c = await catalogue;
+    const edits = (c?.models ?? []).filter((m) => m.templates.some((t) => t.id === "edit"));
+    return edits.find((m) => m.id === id) ?? edits.find((m) => m.id === stage.renderModel) ?? edits.find((m) => m.id === c?.default) ?? edits[0] ?? null;
+  };
+  // the size a model draws a frame of this shape at: its first megapixel size, its sides on its grid
+  const drawSize = (model, ratio) => {
+    const [mp, multiple] = [model?.megapixels?.[0] ?? 1, model?.multiple ?? 32];
     const h = Math.sqrt((mp * 1024 * 1024) / ratio);
     const snap = (v) => Math.max(256, Math.round(v / multiple) * multiple);
     return [snap(h * ratio), snap(h)];
   };
+  const slug = (v) => String(v).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "ref";
+  /** The characters and pieces with a picture of their own, each with the @name the prompt calls it by. */
+  const referenced = () => {
+    const tags = new Map();
+    const taken = new Set(["frame"]);
+    const things = [...stage.characters.filter((c) => c.root.visible && c.ref), ...stage.props.filter((p) => p.visible && p.userData.ref)];
+    for (const t of things.slice(0, 9)) {
+      const base = slug(t.name ?? t.userData.label);
+      let tag = base;
+      for (let i = 2; taken.has(tag); i++) tag = `${base}-${i}`;
+      taken.add(tag);
+      tags.set(t, tag);
+    }
+    return { tags, refs: [...tags].map(([t, tag]) => ({ ...(t.ref ?? t.userData.ref), name: tag })) };
+  };
   const MANNEQUIN = new RegExp(`\\b(?:(an?)\\s+)?(?:${PALETTE.map(([, n]) => n).join("|")})(?:[- ](?:toned|coloured|colored|skinned))?\\s+(?=(man|woman|teen|teenager|child|kid|boy|girl|person|elder|toddler|baby|figure|mannequin)\\b)`, "gi");
-  const renderImage = async (a = {}) => {
+  // "a teal man" is the mannequin's ID colour, not the man: the words keep the person
+  const clean = (v) => String(v ?? "").trim().slice(0, 1500).replace(MANNEQUIN, (m, art, noun) => (art ? `${/^[aeiou]/i.test(noun) ? "an" : "a"} ` : ""));
+
+  /**
+   * Everything a render asks for: the model, the clay frame at the model's own size (kept in the
+   * Library, so nothing is rescaled on the way), the references, and the words. `raw` is a whole
+   * prompt to send as it is (an improved one, or one made again).
+   */
+  const composeRender = async (a = {}) => {
     if (!stage.characters.length && !stage.props.length) throw new Error("The stage is empty: stage a scene first.");
-    // "a teal man" is the mannequin's ID colour, not the man: the words keep the person
-    const look = String(a.prompt ?? "").trim().slice(0, 1500).replace(MANNEQUIN, (m, art, noun) => (art ? `${/^[aeiou]/i.test(noun) ? "an" : "a"} ` : ""));
-    // the clay frame at the very size the model draws at, so nothing is rescaled on the way
+    const model = await modelOf(a.model);
+    const look = clean(a.prompt);
     const ratio = RATIOS[stage.ratio];
-    const [width, height] = await drawSize(ratio);
+    const [width, height] = drawSize(model, ratio);
     const blob = await (await fetch(stage.thumbnail({ position: stage.camera.position, target: stage.orbit.target, focal: stage.focal }, { width, height, channel: "clay" }))).blob();
     const kept = await fetch(`api/photos?name=${encodeURIComponent("stage frame")}`, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
     const frame = await kept.json().catch(() => ({}));
     if (!kept.ok) throw new Error(frame.error ?? "The frame was not kept.");
-    const who = inFrame(look);
+    const { tags, refs } = referenced();
+    const who = inFrame(look, tags);
     // who is who first, so each description finds its figure; then the place, the light, the style
-    const prompt = [
+    const prompt = a.raw ? String(a.raw).trim().slice(0, 6000) : [
       "Render @frame as a finished image. Keep its exact composition: the camera, the framing, and every person and object where they are and posed as they are.",
       who.mannequins ? "Each coloured clay mannequin becomes the real character described for it, with natural skin, hair and clothes: its colour only tells it apart and is not its skin or its clothing, and none stays a mannequin." : "",
       who.words ? `In the frame, ${who.words}.` : "",
       "The clay blockouts become real things, with real materials, textures and light.",
       `${(look ? who.rest : "") || "A cinematic film still, natural light"}.`.replace(/\.\.$/, "."),
     ].filter(Boolean).join(" ");
+    const most = model?.templates.find((t) => t.id === "edit")?.refs ?? 10;
+    return { model, look, width, height, ratio, frame: { file: frame.file, url: frame.url, width: frame.width, height: frame.height }, refs: [{ file: frame.file, url: frame.url, name: "frame" }, ...refs].slice(0, most), prompt };
+  };
+
+  /**
+   * A finished picture of what the camera frame shows: the clay frame is its layout, the words
+   * its look. The picture starts from the frame itself, kept a little, so the model draws over the
+   * stage's layout instead of composing its own. Each one is kept with the stage, with the camera
+   * and the settings it was made with. Answers with its jobs.
+   */
+  const renderImage = async (a = {}) => {
+    const r = await composeRender(a);
     const count = Math.round(THREE.MathUtils.clamp(Number(a.count) || 1, 1, 4));
-    // the picture starts from the frame itself, kept a little: the model draws over the stage's layout instead of composing its own
-    const res = await fetch("api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ template: "edit", prompt, aspect: stage.ratio, refs: [{ file: frame.file, name: "frame" }], count, megapixels: 1, keep: 0.97, name: look || "Stage render" }) });
+    const seed = Number.isSafeInteger(a.seed) && a.seed >= 0 ? a.seed : Math.floor(Math.random() * 2 ** 32);
+    const megapixels = r.model?.megapixels?.[0] ?? 1;
+    const keep = 0.97;
+    const res = await fetch("api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: r.model?.id, template: "edit", prompt: r.prompt, aspect: stage.ratio, refs: r.refs.map(({ file, name }) => ({ file, name })), count, megapixels, keep, seed, name: r.look || "Stage render" }) });
     const jobs = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(jobs.error ?? "The picture was not started.");
-    // each picture is kept with the stage, with the camera it was made from, to look at it from there again
     const camera = { ...stage.cameraState(), ratio: stage.ratio };
     // the model's size is a touch wider or narrower than the frame (its sides fall on its grid): the picture spans that much more
-    const fit = { sx: Math.round(((width / height) / ratio) * 10000) / 10000, sy: 1, dx: 0, dy: 0 };
-    for (const j of [...jobs].reverse()) stage.addRun({ id: j.id, status: "running", progress: 0, look, camera, fit, time: stage.time, at: new Date().toISOString(), frame: { file: frame.file, url: frame.url } });
-    return { jobs: jobs.map((j) => ({ id: j.id })), prompt, look, aspect: stage.ratio, frame: { file: frame.file, url: frame.url } };
+    const fit = { sx: Math.round(((r.width / r.height) / r.ratio) * 10000) / 10000, sy: 1, dx: 0, dy: 0 };
+    const settings = { model: r.model?.id, modelName: r.model?.name, template: "edit", keep, megapixels, width: r.width, height: r.height, prompt: r.prompt, refs: r.refs.slice(1) };
+    jobs.forEach((j, i) => stage.addRun({ id: j.id, status: "running", progress: 0, look: r.look, camera, fit, time: stage.time, at: new Date().toISOString(), frame: r.frame, settings: { ...settings, seed: seed + i } }));
+    return { jobs: jobs.map((j) => ({ id: j.id })), prompt: r.prompt, look: r.look, aspect: stage.ratio, frame: r.frame };
+  };
+
+  /** A render's request without the render: for the prompt enhancer, which reads it and the frame. */
+  const renderPrompt = async (a = {}) => {
+    const r = await composeRender(a);
+    return { model: r.model?.id, template: "edit", prompt: r.prompt, aspect: stage.ratio, refs: r.refs.map(({ file, name }) => ({ file, name })) };
   };
 
   /** What the frame shows, as a PNG data URL, in any channel (clay by default). */
@@ -931,10 +979,11 @@ export function controlOps(stage) {
     undo: () => (stage.undo(), describe()),
     export_glb: async () => ({ glb: await exportGlb(), camera: describe().camera }),
     render_image: renderImage,
+    render_prompt: renderPrompt,
     apply_blender: applyBlender,
   };
   // these read or replace the scene without a step of their own
-  const QUIET = new Set(["scene", "look", "export_glb", "undo", "time", "render_image"]);
+  const QUIET = new Set(["scene", "look", "export_glb", "undo", "time", "render_image", "render_prompt"]);
   // the others happen whole or not at all: one that fails puts the stage back as it was
   for (const [name, run] of Object.entries(OPS)) {
     if (QUIET.has(name)) continue;

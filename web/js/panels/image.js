@@ -5,7 +5,7 @@ import {
 } from "../store.js";
 import { view } from "../viewer.js";
 import { imageFrom } from "../photo.js";
-import { dropdown } from "../controls.js";
+import { dropdown, toggle } from "../controls.js";
 
 const TEMPLATE_ICON = { generate: "text-to-image", edit: "image-edit", style: "image-reference" };
 const RATIOS = { "1:1": 1, "4:3": 4 / 3, "3:4": 3 / 4, "3:2": 3 / 2, "2:3": 2 / 3, "16:9": 16 / 9, "9:16": 9 / 16, "21:9": 21 / 9 };
@@ -305,6 +305,13 @@ function rail(im, choice) {
     h("button.key.is-icon", { type: "button", "aria-label": "New seed", title: "New seed", on: { click: () => setImage({ seed: Math.floor(Math.random() * 2 ** 32), lockSeed: true }) } }, icon("dice")),
   );
 
+  // an edit can start from its first picture rather than from noise: its layout then stays put (a Stage render's does)
+  const keepSwitch = h("button", { type: "button" });
+  toggle(keepSwitch, { value: !!im.keep, label: "Keep the first picture's layout", onChange: (v) => setImage({ keep: v }) });
+  const layout = choice.template.id === "edit" && first
+    ? h("label.switch-row", { title: `Start from @${first.name} itself, so what it shows stays where it is (a Stage render lies over its stage)` }, keepSwitch, `Keep @${first.name}'s layout`)
+    : null;
+
   counts.classList.add("img-counts");
   // what will run, in one quiet line at the foot of the column
   const t = choice.template;
@@ -317,6 +324,7 @@ function rail(im, choice) {
     group("Model", models),
     loraGroup(im, choice),
     group("Template", templates),
+    ...(layout ? [group("Layout", layout)] : []),
     group("Frame", frames),
     group("Size", sizes, h("span.img-readout", {}, `${size.width} × ${size.height}`)),
     group("Pictures", counts),

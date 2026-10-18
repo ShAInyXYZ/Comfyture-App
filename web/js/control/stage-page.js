@@ -39,7 +39,7 @@ const THREE_CLAMP = (v) => Math.min(1, Math.max(0, v));
 // what an animal's clips are called on the Stage
 const ANIMAL_POSES = { stand: "Stand", sit: "Sit", lie: "Lie down", walk: "Walk", hop: "Hop" };
 
-export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = () => {}, usePhoto = () => {} } = {}) {
+export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = () => {}, usePhoto = () => {}, editRunWith = () => {}, makeRef = () => {} } = {}) {
   // like h(), and a first child may come where the props would (an element, text or a list)
   const el = (tag, props, ...children) =>
     props instanceof Node || typeof props === "string" || Array.isArray(props) ? h(tag, {}, props, ...children) : h(tag, props ?? {}, ...children);
@@ -511,7 +511,101 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       input?.setSelectionRange(...had);
     }
   };
+  // ---------------------------------------------------------------- a render's details, and pictures of who's who
+
+  let modelNames = null;
+  fetch("api/image/models").then((r) => r.json()).then((c) => (modelNames = new Map(c.models.map((m) => [m.id, m.name])))).catch(() => {});
+  /** The render shown: what made it, the words it was made from, and what to do with it. */
+  function runInfo(r) {
+    const s = r.settings ?? {};
+    const fact = (label, value) => el("div.ctl-fact", {}, el("span", {}, label), el("b", {}, value ?? "—"));
+    const when = r.at ? new Date(r.at) : null;
+    const key = (glyph, label, run) => el("button.key.is-sm.is-icon", { type: "button", title: label, "aria-label": label, on: { click: run } }, glyph);
+    selectedEl.replaceChildren(
+      el("div.ctl-run-head", {}, el("b", {}, "Render"), el("span", {}, when ? `${when.toLocaleDateString()} ${when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "")),
+      ...(r.look ? [el("p.ctl-run-look", {}, r.look)] : []),
+      el("div.ctl-facts", {},
+        fact("Model", s.modelName ?? modelNames?.get(s.model) ?? (s.model ? s.model : null)),
+        fact("Template", s.template === "edit" ? "Image edit" : s.template),
+        fact("Size", s.width ? `${s.width} × ${s.height}` : `${r.photo.width} × ${r.photo.height}`),
+        fact("Seed", Number.isSafeInteger(s.seed) ? String(s.seed) : null),
+        fact("Denoise", s.keep ? `${s.keep} from the frame` : null),
+        fact("Camera", r.camera ? `${r.camera.ratio} · ${r.camera.focal} mm` : null),
+        ...(s.refs?.length ? [fact("Pictures", s.refs.map((x) => `@${x.name}`).join(" "))] : [])),
+      ...(s.prompt ? [el("details.ctl-run-prompt", {}, el("summary", {}, "Prompt"), el("p", {}, s.prompt))] : []),
+      el("div.ctl-row.ctl-run-keys", {},
+        el("button.key.is-sm", { type: "button", title: "Open it in the Image window: change the words or the settings, and make it again", on: { click: () => editRun(r) } }, icon("pencil"), "Edit"),
+        key(icon("remix"), "Again — the same, with a new seed", () => again(r)),
+        key(icon("video"), "Start a shot from it", () => usePhoto(r.photo)),
+        key(icon("expand"), "Look at it, full size", () => viewImage(r.photo.url))));
+  }
+  /** Into the Image window with everything it was made with; a frame made again from its camera if it has none. */
+  async function editRun(r) {
+    try {
+      let frame = r.frame;
+      if (!frame?.file && r.camera) {
+        const [w, h] = r.settings?.width ? [r.settings.width, r.settings.height] : [r.photo.width, r.photo.height];
+        const blob = await (await fetch(stage.stillFrom(r.camera, { width: w, height: h }))).blob();
+        const res = await fetch("api/photos?name=stage%20frame", { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
+        frame = await res.json();
+        if (!res.ok) throw new Error(frame.error ?? "The frame was not kept.");
+      }
+      editRunWith({ ...r, frame }, projects.current()?.id);
+    } catch (e) {
+      toast(e.message, { tone: "crit" });
+    }
+  }
+  /** The same render once more, with a new seed, from where it was made. */
+  async function again(r) {
+    try {
+      if (r.camera) stage.setCameraState(r.camera);
+      await ops.render_image({ prompt: r.look, raw: r.settings?.prompt, model: r.settings?.model });
+      toast("Making it again — it comes into the strip.");
+    } catch (e) {
+      toast(e.message, { tone: "crit" });
+    }
+  }
+  /** A picture of who this is (or what), kept on it: picked, dropped, or made in the Image window. */
+  function refRow(target) {
+    const thing = target.character ?? target.prop;
+    const ref = target.character ? thing.ref : thing.userData.ref;
+    const who = target.character ? thing.name : thing.userData.label;
+    const keep = async (file) => {
+      if (!file?.type?.startsWith("image/")) return;
+      try {
+        const res = await fetch(`api/photos?name=${encodeURIComponent(who)}`, { method: "POST", headers: { "Content-Type": file.type }, body: file });
+        const photo = await res.json();
+        if (!res.ok) throw new Error(photo.error ?? "That picture was not kept.");
+        stage.setRef(target, photo);
+      } catch (e) {
+        toast(e.message, { tone: "crit" });
+      }
+    };
+    const pick = () => {
+      const input = el("input", { type: "file", accept: "image/png,image/jpeg,image/webp", hidden: true });
+      input.addEventListener("change", () => (keep(input.files?.[0]), input.remove()));
+      document.body.append(input);
+      input.click();
+    };
+    const tile = ref
+      ? el("button.ctl-ref-pic", { type: "button", title: `${who}'s picture — look at it`, "aria-label": `Look at ${who}'s picture`, on: { click: () => viewImage(ref.url) } }, el("img", { src: ref.url, alt: "", draggable: false }))
+      : el("button.ctl-ref-pic.is-empty", { type: "button", title: `A picture of ${who} — pick one, or drop it here`, "aria-label": `Pick a picture of ${who}`, on: { click: pick } }, sprite("image-reference"));
+    tile.addEventListener("dragover", (e) => [...e.dataTransfer.types].includes("Files") && e.preventDefault());
+    tile.addEventListener("drop", (e) => (e.preventDefault(), keep(e.dataTransfer.files?.[0])));
+    const key = (glyph, label, run) => el("button.ctl-mini", { type: "button", title: label, "aria-label": label, on: { click: run } }, glyph);
+    const kind = target.character ? "character" : "prop";
+    return el("div.ctl-ref", {}, tile,
+      el("div.ctl-ref-side", {},
+        el("p.ctl-sub", {}, ref ? `Renders follow this picture for ${who}.` : `A face, an outfit or a product for ${who}: renders follow it.`),
+        el("div.ctl-ref-keys", {},
+          key(sprite("image-upload"), ref ? "Another picture" : "Pick a picture", pick),
+          key(sprite("image-generate"), `Make a picture of ${who} in the Image window`, () => makeRef({ kind, id: target.character ? thing.id : thing.userData.id, name: who, what: target.character ? thing.body : assetByType(thing.userData.type)?.name })),
+          ...(ref ? [key(icon("trash"), "No picture", () => stage.setRef(target, null))] : []))));
+  }
+
   function selected() {
+    // a render shown over the frame: its details instead
+    if (shown) return runInfo(shown);
     const { character, joint, prop } = stage.selection;
     if (!character && !prop) return selectedEl.replaceChildren(el("p.ctl-empty", {}, "Nothing selected. Click a body or a prop."));
     const target = character ? { character } : { prop };
@@ -528,11 +622,13 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
           el("button.ctl-pose.ctl-animal-pose", { type: "button", "aria-pressed": String((prop.userData.pose ?? "stand") === p), title: ANIMAL_POSES[p] ?? p, "aria-label": ANIMAL_POSES[p] ?? p, on: { click: () => (stage.setAnimalPose(prop, p), selected()) } },
             lazyImg(() => stage.propThumbnail(def.type, { pose: p, width: 96, height: 84 })))));
         const size = slider(["size", "Size", 0.3, 3, 0.01, "×"], prop.scale.y, (v, commit) => stage.setPropScale(prop, v, { commit }));
-        return selectedEl.replaceChildren(head, el("p.ctl-sub", {}, def.name), el("span.ctl-label.is-sub", {}, "Pose"), poses, el("div.ctl-sliders", {}, size));
+        return selectedEl.replaceChildren(head, el("p.ctl-sub", {}, def.name), el("span.ctl-label.is-sub", {}, "Pose"), poses, el("div.ctl-sliders", {}, size),
+          el("span.ctl-label.is-sub", {}, "Looks like"), refRow(target));
       }
       const sliders = (def?.params ?? []).map((p) => slider([p[0], p[1], p[2], p[3], p[4], p[0] === "open" ? "°" : p[0] === "steps" ? "" : "m"],
         prop.userData.params[p[0]], (v, commit) => stage.setPropParams(prop, { [p[0]]: v }, { commit })));
-      return selectedEl.replaceChildren(head, el("p.ctl-sub", {}, def?.name ?? "Prop"), el("div.ctl-sliders", {}, ...sliders));
+      return selectedEl.replaceChildren(head, el("p.ctl-sub", {}, def?.name ?? "Prop"), el("div.ctl-sliders", {}, ...sliders),
+        el("span.ctl-label.is-sub", {}, "Looks like"), refRow(target));
     }
     if (joint) {
       const euler = stage.jointEuler();
@@ -576,6 +672,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     const rig = character.rigId ? rigById(character.rigId) : null;
     const about = !rig ? "This rigged character is loading…" : rig.builtIn ? `${rig.name}: rigged, so it takes every pose. A body type turns it into a mannequin.` : `${rig.name}, your rigged character: its rig follows every pose. A body type turns it back into a mannequin.`;
     selectedEl.replaceChildren(head, swatches,
+      el("span.ctl-label.is-sub", {}, "Looks like"), refRow(target),
       el("span.ctl-label.is-sub", {}, "Body type"), bodies,
       ...(character.rigId ? [el("p.ctl-sub", {}, about)] : []),
       ...(holds ? [el("span.ctl-label.is-sub", {}, "In hand"), holds] : []),
@@ -724,6 +821,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     document.dispatchEvent(new CustomEvent("assistant:fold"));
     drawRun();
     runsBar();
+    selected();
   }
   let drawnFit = null;
   /** The shown picture: over the frame and cut by the compare bar, or apart from a still of the stage. */
@@ -740,8 +838,8 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       runView.onpointerdown = runView.onpointermove = null;
       runView.classList.add("is-apart");
       runView.replaceChildren(el(`div.ctl-apart.${landscape ? "is-stacked" : "is-across"}`, {},
-        el("figure.ctl-apart-pane", {}, el("img", { src: r.photo.url, alt: "", draggable: false, on: { load: tagApart } }), el("span.cmp-tag.is-a", {}, "Render")),
-        el("figure.ctl-apart-pane", {}, el("img", { src: still, alt: "", draggable: false, on: { load: tagApart } }), el("span.cmp-tag.is-a", {}, stage.channel && stage.channel !== "clay" ? `Stage · ${channel?.[1] ?? stage.channel}` : "Stage"))));
+        el("figure.ctl-apart-pane", {}, el("img", { src: r.photo.url, alt: "", draggable: false, on: { load: layoutApart } }), el("span.cmp-tag.is-a", {}, "Render")),
+        el("figure.ctl-apart-pane", {}, el("img", { src: still, alt: "", draggable: false, on: { load: layoutApart } }), el("span.cmp-tag.is-a", {}, stage.channel && stage.channel !== "clay" ? `Stage · ${channel?.[1] ?? stage.channel}` : "Stage"))));
       return placeRun();
     }
     runView.classList.remove("is-apart");
@@ -776,22 +874,41 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     set(split);
     placeRun();
   }
-  /** Apart, each picture's name sits on its corner, wherever fitting it in its half puts it. */
-  function tagApart() {
-    for (const pane of runView.querySelectorAll(".ctl-apart-pane")) {
-      const img = pane.querySelector("img");
-      const tag = pane.querySelector(".cmp-tag");
-      if (!img?.naturalWidth || !tag) continue;
-      const [w, h] = [pane.clientWidth, pane.clientHeight];
-      const a = img.naturalWidth / img.naturalHeight;
-      const shown = Math.min(w, h * a);
-      Object.assign(tag.style, { left: `${(w - shown) / 2 + 12}px`, top: `${(h - shown / a) / 2 + 12}px` });
+  /**
+   * Apart, the two pictures share the room edge to edge: one above the other for a landscape
+   * frame, side by side for a portrait one, as large as both fit, centred together.
+   */
+  function layoutApart() {
+    const box = runView.querySelector(".ctl-apart");
+    const panes = box ? [...box.querySelectorAll(".ctl-apart-pane")] : [];
+    const [a1, a2] = panes.map((p) => p.querySelector("img")).map((i) => (i?.naturalWidth ? i.naturalWidth / i.naturalHeight : 0));
+    if (panes.length !== 2 || !a1 || !a2) return;
+    const css = getComputedStyle(box);
+    const [pl, pr, pt, pb] = ["paddingLeft", "paddingRight", "paddingTop", "paddingBottom"].map((k) => parseFloat(css[k]) || 0);
+    const [W, H, gap] = [box.clientWidth - pl - pr, box.clientHeight - pt - pb, 4];
+    let rects;
+    if (box.classList.contains("is-stacked")) {
+      const w = Math.min(W, (H - gap) / (1 / a1 + 1 / a2));
+      const [h1, h2] = [w / a1, w / a2];
+      const top = pt + (H - h1 - h2 - gap) / 2;
+      const left = pl + (W - w) / 2;
+      rects = [[left, top, w, h1], [left, top + h1 + gap, w, h2]];
+    } else {
+      const h = Math.min(H, (W - gap) / (a1 + a2));
+      const [w1, w2] = [h * a1, h * a2];
+      const left = pl + (W - w1 - w2 - gap) / 2;
+      const top = pt + (H - h) / 2;
+      rects = [[left, top, w1, h], [left + w1 + gap, top, w2, h]];
     }
+    panes.forEach((pane, i) => {
+      const [left, top, width, height] = rects[i];
+      Object.assign(pane.style, { left: `${left}px`, top: `${top}px`, width: `${width}px`, height: `${height}px` });
+    });
   }
   // over the frame it covers the frame, wherever the frame is; apart, it takes the viewport
   function placeRun() {
     if (runView.hidden || !stage.frame) return;
-    if (runMode === "apart") return Object.assign(runView.style, { left: "0px", top: "0px", width: "100%", height: "100%" }), requestAnimationFrame(tagApart);
+    if (runMode === "apart") return Object.assign(runView.style, { left: "0px", top: "0px", width: "100%", height: "100%" }), requestAnimationFrame(layoutApart);
     Object.assign(runView.style, { left: `${stage.frame.x}px`, top: `${stage.frame.y}px`, width: `${stage.frame.w}px`, height: `${stage.frame.h}px` });
   }
   function closeRun() {
@@ -801,6 +918,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     runView.classList.remove("is-apart");
     runView.replaceChildren();
     runsBar();
+    selected();
   }
   // turning the camera away leaves the picture's view
   stage.orbit.addEventListener("start", closeRun);
@@ -830,6 +948,8 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   // ---------------------------------------------------------------- wiring
 
   stage.on((kind) => {
+    // picking something on the stage leaves the render shown
+    if (kind === "selection" && shown && (stage.selection.character || stage.selection.prop)) closeRun();
     if (kind === "selection") (outliner(), tools(), selected(), snaps(), library(), timeline());
     else if (kind === "pose") (readouts(), snaps(), previews());
     else if (kind === "scene") (outliner(), tools(), selected(), snaps(), library(), frame(), timeline(), previews(), renderKeys());

@@ -68,7 +68,7 @@
     },
     "qwen-2.1-edit": {
       "clip": "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors", "type": "qwen_image", "brief": "prompts/qwen-2.1-edit.md", "sees": true, "thinking": true,
-      "max_length": 4096, "sampling": { "temperature": 1, "top_k": 20, "top_p": 0.95, "min_p": 0, "repetition_penalty": 1, "presence_penalty": 0 }, "mtp": "auto"
+      "max_length": 8192, "sampling": { "temperature": 1, "top_k": 20, "top_p": 0.95, "min_p": 0, "repetition_penalty": 1, "presence_penalty": 0 }, "mtp": "auto"
     },
     "flux3-klein-generate": {
       "clip": "qwen3.5_9b_flux3_prompt_upsampler_int8_convrot.safetensors", "type": "flux3", "brief": "prompts/flux3-klein-generate.md",

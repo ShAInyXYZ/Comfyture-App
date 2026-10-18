@@ -138,7 +138,7 @@ export const state = {
    * The Image window: the models (official templates) and what you chose, the references you
    * gave it, and the pictures it made this visit (newest first).
    */
-  image: { ...loadImage(), open: false, catalogue: null, seed: 0, lockSeed: false, refs: [], results: [], shown: null, enhancing: false, before: null },
+  image: { ...loadImage(), open: false, catalogue: null, seed: 0, lockSeed: false, refs: [], results: [], shown: null, enhancing: false, before: null, keep: false, origin: null },
   /** The Director: the idea, its plan, and how far making the film has got. */
   director: { phase: "idle", idea: "", shots: 4, seconds: 5, aspect: "16:9", fromPhoto: false, plan: null, shotsState: [], film: null, error: null },
 };
@@ -1509,8 +1509,45 @@ function adoptRenders(message) {
   return message;
 }
 
-/** A finished picture of the Stage's frame, in the look the words describe, in the Stage's conversation. */
-export async function renderStageImage(words = "") {
+// the image model the Stage renders with, chosen on its chat bar
+const STAGE_MODEL = "comfyture.stage.model";
+state.stageModel = (() => {
+  try {
+    return localStorage.getItem(STAGE_MODEL);
+  } catch {
+    return null;
+  }
+})();
+stageReady.then(({ stage }) => (stage.renderModel = state.stageModel));
+export function setStageModel(id) {
+  state.stageModel = id;
+  try {
+    localStorage.setItem(STAGE_MODEL, id);
+  } catch {}
+  stageReady.then(({ stage }) => (stage.renderModel = id));
+  changed("assistant");
+}
+/** The image models, once, for the Stage's chat bar. */
+let catalogueLoading = null;
+export function stageModels() {
+  if (!state.image.catalogue) catalogueLoading ??= api.imageModels().then((c) => ((state.image.catalogue ??= c), changed("assistant"))).catch(() => (catalogueLoading = null));
+  return (state.image.catalogue?.models ?? []).filter((m) => m.templates.some((t) => t.id === "edit"));
+}
+
+/**
+ * The words for a Stage render, rewritten by the chosen model's own enhancer: it reads the
+ * whole request (who is which figure, the frame itself) and writes the prompt that model reads best.
+ */
+export async function improveStageLook(words) {
+  const { ops } = await stageReady;
+  const request = await ops.render_prompt({ prompt: words, model: state.stageModel });
+  // the enhancer now and then answers nothing: once more before giving up
+  const { prompt } = await api.enhanceImage(request).catch((e) => (/returned nothing/i.test(e.message) ? api.enhanceImage(request) : Promise.reject(e)));
+  return prompt;
+}
+
+/** A finished picture of the Stage's frame, in the look the words describe, in the Stage's conversation. raw: words already a whole prompt. */
+export async function renderStageImage(words = "", { raw = false } = {}) {
   const look = words.trim();
   const chat = state.stageChat;
   if (chat.busy) return;
@@ -1519,7 +1556,7 @@ export async function renderStageImage(words = "") {
   changed("assistant");
   try {
     const { ops } = await stageReady;
-    const render = await ops.render_image({ prompt: look });
+    const render = await ops.render_image({ prompt: raw ? "" : look, raw: raw ? look : undefined, model: state.stageModel });
     chat.messages.push(adoptRenders({ role: "assistant", stage: true, text: look ? "Rendering the frame in that look." : "Rendering the frame as a film still. Type a look first to change it (a rainy night, a 90s sitcom, Pixar)…", did: ["Rendering an image"], renders: [render] }));
   } catch (error) {
     chat.messages.push({ role: "assistant", stage: true, text: error.message ?? String(error), error: true });
@@ -1600,6 +1637,8 @@ export function setImage(patch) {
 export const openImage = ({ refs = [], template } = {}) =>
   attempt(async () => {
     const im = state.image;
+    // opened on its own, what it makes is its own (not a Stage render's, not a Stage picture)
+    im.origin = null;
     im.open = true;
     for (const r of refs) addImageRef(r);
     changed("image");
@@ -1641,11 +1680,12 @@ function refName(base) {
 }
 
 /** Adds a picture to the window's references: {file, url, width, height, name?}. */
-export function addImageRef(photo) {
+export function addImageRef(photo, as) {
   const im = state.image;
   if (!photo?.file || im.refs.some((r) => r.file === photo.file)) return;
   const known = mentionables().find((f) => f.kind === "image" && f.file === photo.file);
-  im.refs.push({ file: photo.file, url: photo.url, width: photo.width, height: photo.height, name: known?.name ?? refName(photo.name), title: photo.name ?? known?.title });
+  // a name the prompt already calls it by (@frame, @mario) stays its name
+  im.refs.push({ file: photo.file, url: photo.url, width: photo.width, height: photo.height, name: as ?? known?.name ?? refName(photo.name), title: photo.name ?? known?.title });
   const choice = imageChoice();
   if (choice && !choice.takesRefs) {
     const withRefs = choice.model.templates.find((t) => t.refs > 0);
@@ -1727,11 +1767,72 @@ export const generateImages = () =>
     if (choice.takesRefs && !im.refs.length) throw new Error(`${choice.template.id === "style" ? "Style reference" : "Image edit"} works from a picture: add a reference, or pick Text to image.`);
     const seed = im.lockSeed ? im.seed : Math.floor(Math.random() * 2 ** 32);
     im.seed = seed;
-    const jobs = await api.image({ ...imageRequest(), megapixels: im.megapixels, count: im.count, seed });
+    // an edit can start from its first picture, so the layout stays where that picture has it
+    const keep = im.keep && choice.takesRefs && choice.template.id === "edit" ? 0.97 : undefined;
+    const request = imageRequest();
+    const jobs = await api.image({ ...request, megapixels: im.megapixels, count: im.count, seed, keep });
     const label = `${choice.model.name} · ${im.catalogue.templates[choice.template.id]?.name ?? choice.template.id}`;
-    im.results.unshift(...jobs.map((j, i) => ({ id: j.id, status: "running", progress: 0, prompt: im.prompt, label, seed: seed + i, aspect: im.aspect })));
+    im.results.unshift(...jobs.map((j, i) => ({ id: j.id, status: "running", progress: 0, prompt: im.prompt, label, seed: seed + i, aspect: im.aspect, origin: im.origin ?? null })));
     im.shown = jobs[0]?.id ?? im.shown;
     changed("image");
+    // made again from a Stage render: the new pictures join that stage's renders, from the same camera
+    const from = im.origin?.stageRun;
+    if (from) {
+      const { stage, projects } = await stageReady;
+      if (projects.current()?.id === from.stageId) {
+        const size = imageSize(choice.model, im.aspect, im.megapixels, im.refs[0]);
+        const settings = { model: choice.model.id, modelName: choice.model.name, template: choice.template.id, keep, megapixels: im.megapixels, width: size.width, height: size.height, prompt: im.prompt, refs: request.refs.filter((r) => r.name !== "frame").map((r) => ({ ...im.refs.find((x) => x.file === r.file), name: r.name })) };
+        jobs.forEach((j, i) => stage.addRun({ id: j.id, status: "running", progress: 0, look: from.look, camera: from.camera, fit: from.fit, time: from.time, at: new Date().toISOString(), frame: from.frame, settings: { ...settings, seed: seed + i } }));
+      }
+    }
+  });
+
+/** The size a model draws at for a frame, as the server works it out. */
+function imageSize(model, aspect, megapixels, first) {
+  const ASPECTS = { "1:1": 1, "4:3": 4 / 3, "3:4": 3 / 4, "3:2": 3 / 2, "2:3": 2 / 3, "16:9": 16 / 9, "9:16": 9 / 16, "21:9": 21 / 9 };
+  const ratio = aspect === "auto" && first ? first.width / first.height : ASPECTS[aspect] ?? 1;
+  const mp = model.megapixels.includes(megapixels) ? megapixels : model.megapixels[0];
+  const h = Math.sqrt((mp * 1024 * 1024) / ratio);
+  const snap = (v) => Math.max(256, Math.round(v / model.multiple) * model.multiple);
+  return { width: snap(h * ratio), height: snap(h) };
+}
+
+/** A Stage render into the Image window: its frame as @frame, its pictures, its words, its seed and model, the layout kept. */
+export const editStageRun = (run, stageId) =>
+  attempt(async () => {
+    const im = state.image;
+    if (!im.catalogue) im.catalogue = await api.imageModels();
+    const s = run.settings ?? {};
+    im.refs = [];
+    if (run.frame?.file) addImageRef(run.frame, "frame");
+    for (const r of s.refs ?? []) if (r?.file) addImageRef(r, r.name);
+    im.prompt = s.prompt ?? run.look ?? "";
+    im.before = null;
+    if (Number.isSafeInteger(s.seed)) Object.assign(im, { seed: s.seed, lockSeed: true });
+    im.keep = s.keep !== undefined ? Boolean(s.keep) : true;
+    im.origin = { stageRun: { stageId, camera: run.camera, time: run.time, frame: run.frame, fit: run.fit, look: run.look } };
+    im.open = true;
+    setImage({ model: s.model ?? im.model, template: "edit", aspect: run.camera?.ratio ?? im.aspect, megapixels: s.megapixels ?? im.megapixels, count: 1 });
+  });
+
+/**
+ * The Image window, to make a picture of a character or a piece of the Stage: a description to
+ * start from; the first picture made becomes its picture (renders then follow it).
+ */
+export const makeStageRef = ({ kind, id, name, what }) =>
+  attempt(async () => {
+    const im = state.image;
+    if (!im.catalogue) im.catalogue = await api.imageModels();
+    im.refs = [];
+    const person = { man: "a man", woman: "a woman", teen: "a teenager", child: "a child", toddler: "a toddler", elder: "an older person", heavy: "a heavyset person", athletic: "an athletic person" }[what];
+    im.prompt = kind === "character"
+      ? `${name}, ${person ?? "a character"}: a full-length character reference, front view, standing, plain light grey background, soft even studio light.`
+      : `${name}${what ? `, ${what.toLowerCase()}` : ""}: a product photo of the object alone, three-quarter view, plain light grey background, soft studio light.`;
+    im.before = null;
+    im.keep = false;
+    im.origin = { stageRef: { kind, id, name } };
+    im.open = true;
+    setImage({ template: "generate", aspect: kind === "character" ? "3:4" : "1:1", count: 1 });
   });
 
 /** A paint event for one of the window's pictures. */
@@ -1742,6 +1843,12 @@ function imageJob(job) {
   if (!r) return;
   Object.assign(r, { status: job.status, progress: job.progress ?? r.progress, photo: job.photo ?? r.photo, error: job.error });
   if (job.status === "failed") toast(job.error ?? "That picture didn't work.", { tone: "crit" });
+  // the first picture made for one on the Stage becomes its picture
+  const ref = r.origin?.stageRef;
+  if (ref && job.status === "done" && job.photo && !state.image.results.some((x) => x !== r && x.attached === ref.id)) {
+    r.attached = ref.id;
+    stageReady.then(({ stage }) => stage.setRefById(ref, job.photo) && toast(`That picture is ${ref.name}'s now: renders follow it.`));
+  }
   if (job.status === "done") api.photos().then((photos) => ((state.photos = photos), changed("library"))).catch(() => {});
   changed("image");
   // a picture the Stage asked for fills in in its conversation
