@@ -169,7 +169,7 @@ const SECTION = { story: "Story", stage: "Stage", cut: "Cut", take: "Shot" };
 function part(kind, id, pic, name, { video, time } = {}) {
   const media = video ? h("video", { src: video, poster: pic ?? "", muted: true, loop: true, playsInline: true, preload: "none" }) : pic ? h("img", { src: pic, alt: "", loading: "lazy", draggable: false }) : h("span.film-part-empty", {}, sprite(KIND[kind].icon));
   return h("button.film-part", {
-    type: "button", className: `is-${kind}`, title: `${name} — Open in ${SECTION[kind]}`, "aria-label": `${name}: open in ${SECTION[kind]}`,
+    type: "button", className: `is-${kind}`, title: `${name}\nOpen in ${SECTION[kind]}`, "aria-label": `${name}: open in ${SECTION[kind]}`,
     on: {
       click: (e) => (e.stopPropagation(), openPart(kind, id)),
       mouseenter: () => video && media.play?.().catch(() => {}),

@@ -16,7 +16,8 @@ function make(tag, className, text) {
 
 function fill(tip, el) {
   const raw = el.dataset.tooltip;
-  const cut = raw.search(/\n| — /);
+  // a line break wins over " — ", so a label that has a dash of its own stays whole
+  const cut = raw.includes("\n") ? raw.indexOf("\n") : raw.indexOf(" — ");
   const label = cut < 0 ? raw : raw.slice(0, cut);
   const hint = cut < 0 ? "" : raw.slice(cut).replace(/^\n| — /, "").trim();
   const text = make("span", "tip-text");
