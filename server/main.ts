@@ -316,7 +316,8 @@ async function listStages() {
     return [];
   }
   const all = await Promise.all(files.map((f) => readStage(f.slice(0, -5))));
-  return all.filter((x): x is StageFile => !!x).map(({ id, name, createdAt, updatedAt, thumb, project }) => ({ id, name, createdAt, updatedAt, thumb, project })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const made = (renders: unknown[] = []) => renders.map((r: any) => r?.status === "done" && r.photo?.url ? { url: r.photo.url, at: r.at } : null).filter(Boolean).reverse().slice(0, 8);
+  return all.filter((x): x is StageFile => !!x).map(({ id, name, createdAt, updatedAt, thumb, project, renders }) => ({ id, name, createdAt, updatedAt, thumb, project, renders: made(renders) })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 /** The user's models a scene uses: its rigged characters and its own props. */
 function modelsIn(scene: any): string[] {
@@ -367,6 +368,20 @@ function summary(kind: string, body: any) {
   }
   return {};
 }
+/** The films rendered in Cut, newest first. */
+async function listReels() {
+  const dir = join(data, "reels");
+  const films: any[] = [];
+  for (const name of (await readdir(dir).catch(() => [] as string[])).filter((n) => n.endsWith(".json"))) {
+    try {
+      films.push(JSON.parse(await readFile(join(dir, name), "utf8")));
+    } catch {
+      // a film without readable details is skipped
+    }
+  }
+  return films.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+}
+
 /**
  * The films: a story with everything made for it (the stages its shots were blocked on, its takes,
  * its edits), and every stage or edit made on its own as a film of its own, newest first. A thing
@@ -374,12 +389,13 @@ function summary(kind: string, body: any) {
  * ("Ocean's Glowing Gift — 2A", "1A · Ocean's Glowing Gift").
  */
 async function listFilms() {
-  const [stories, cuts, stages] = await Promise.all([listProjects("stories"), listProjects("cuts"), listStages()]);
+  const [stories, cuts, stages, reels] = await Promise.all([listProjects("stories"), listProjects("cuts"), listStages(), listReels()]);
   const runs = engine.list();
-  type Film = { id: string; kind: string; name: string; updatedAt: string; thumb?: string; story: any; stages: any[]; cuts: any[]; takes: any[] };
+  const take = (r: any) => ({ id: r.id, name: r.request.name, status: r.status, video: r.video, still: r.request.start ? `/media/photos/${r.request.start}` : r.frame, seconds: r.request.seconds, createdAt: r.createdAt });
+  type Film = { id: string; kind: string; name: string; updatedAt: string; thumb?: string; story: any; stages: any[]; cuts: any[]; takes: any[]; reels: any[] };
   const films = new Map<string, Film>();
   const add = (id: string, kind: string, name: string, updatedAt: string) => {
-    if (!films.has(id)) films.set(id, { id, kind, name, updatedAt, story: null, stages: [], cuts: [], takes: [] });
+    if (!films.has(id)) films.set(id, { id, kind, name, updatedAt, story: null, stages: [], cuts: [], takes: [], reels: [] });
     return films.get(id)!;
   };
   for (const s of stories) add(s.id, "story", s.name, s.updatedAt).story = s;
@@ -399,21 +415,54 @@ async function listFilms() {
   }
   // a story's takes: the ones its shots were rolled into, and the ones made from its shots in Shot
   const rolled = new Map(stories.flatMap((s) => ((s.info as any).runs ?? []).map((r: string) => [r, s.id] as const)));
+  const placed = new Map<string, string>();
   for (const r of runs) {
-    const id = (r.request.project && films.has(r.request.project) ? r.request.project : undefined) ?? rolled.get(r.id) ?? (/^\d+[A-Z] · (.+)$/.test(r.request.name) ? byName.get(/^\d+[A-Z] · (.+)$/.exec(r.request.name)![1].toLowerCase()) : undefined);
-    if (id) films.get(id)!.takes.push({ id: r.id, name: r.request.name, status: r.status, video: r.video, frame: r.frame, seconds: r.request.seconds, createdAt: r.createdAt });
+    const named = /^\d+[A-Z] · (.+)$/.exec(r.request.name);
+    const id = (r.request.project && films.has(r.request.project) ? r.request.project : undefined) ?? rolled.get(r.id) ?? (named ? byName.get(named[1].toLowerCase()) : undefined);
+    if (id) films.get(id)!.takes.push(take(r)), placed.set(r.id, id);
+  }
+  // a film rendered in Cut belongs where its edit (or its takes) are; rendered from loose takes, it is a project of its own
+  const ofCut = new Map([...films.values()].flatMap((f) => f.cuts.map((c) => [c.id, f.id] as const)));
+  for (const reel of reels) {
+    const id = (reel.cut && ofCut.get(reel.cut)) ?? (reel.takes ?? []).map((t: string) => placed.get(t)).find(Boolean);
+    const film = id ? films.get(id)! : add(`film-${reel.id}`, "film", reel.name || "Film", reel.createdAt);
+    if (!id) for (const t of reel.takes ?? []) {
+      const r = runs.find((x) => x.id === t);
+      if (r && !placed.has(t)) film.takes.push(take(r)), placed.set(t, film.id);
+    }
+    const first = runs.find((x) => x.id === reel.takes?.[0]);
+    film.reels.push({ id: reel.id, url: reel.url, name: reel.name, seconds: reel.seconds, createdAt: reel.createdAt, still: first ? take(first).still : undefined });
   }
   return [...films.values()].map((f) => {
-    const times = [f.updatedAt, ...f.stages.map((x) => x.updatedAt), ...f.cuts.map((x) => x.updatedAt), ...f.takes.map((x) => x.createdAt)].filter(Boolean).sort();
     const info = (f.story?.info ?? {}) as any;
     const { runs: _runs, ...story } = info;
+    const done = f.takes.filter((t) => t.status === "done" && t.video).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    const renders = f.stages.flatMap((s) => s.renders ?? []).sort((a: any, b: any) => String(b.at).localeCompare(String(a.at)));
+    const frames: string[] = info.frames ?? [];
+    // what each section has made: the storyboard, the stages' renders, the takes, the films
+    const outputs = {
+      story: { count: info.drawn ?? frames.length, pic: frames[0] },
+      stage: { count: renders.length, pic: renders[0]?.url },
+      shot: { count: done.length, pic: done[0]?.still, video: done[0]?.video, seconds: done[0]?.seconds, id: done[0]?.id },
+      cut: { count: f.reels.length, pic: f.reels[0]?.still, video: f.reels[0]?.url, seconds: f.reels[0]?.seconds },
+    };
+    // the cover: the finished film if there is one, else the newest output down the line
+    const cover = f.reels[0] ? { kind: "film", pic: f.reels[0].still, video: f.reels[0].url, seconds: f.reels[0].seconds }
+      : done[0] ? { kind: "take", pic: done[0].still, video: done[0].video, seconds: done[0].seconds }
+      : renders[0] ? { kind: "render", pic: renders[0].url }
+      : frames.length ? { kind: "storyboard", pic: frames[frames.length - 1] }
+      : { kind: f.kind, pic: f.story?.thumb ?? f.stages.find((x) => x.thumb)?.thumb ?? f.cuts.find((x) => x.thumb)?.thumb };
+    const times = [f.updatedAt, ...f.stages.map((x) => x.updatedAt), ...f.cuts.map((x) => x.updatedAt), ...f.takes.map((x) => x.createdAt), ...f.reels.map((x) => x.createdAt)].filter(Boolean).sort();
     return {
-      ...f,
+      id: f.id, kind: f.kind, name: f.name,
       updatedAt: times.at(-1) ?? f.updatedAt,
-      thumb: f.story?.thumb ?? f.stages.find((x) => x.thumb)?.thumb ?? f.cuts.find((x) => x.thumb)?.thumb ?? f.takes.find((x) => x.frame)?.frame,
+      cover, outputs,
       story: f.story ? { id: f.story.id, name: f.story.name, thumb: f.story.thumb, updatedAt: f.story.updatedAt, ...story } : null,
-      takes: f.takes.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 12),
-      counts: { scenes: info.scenes ?? 0, shots: info.shots ?? 0, drawn: info.drawn ?? 0, stages: f.stages.length, takes: f.takes.length, cuts: f.cuts.length },
+      stages: f.stages.map(({ id, name, thumb }) => ({ id, name, thumb })),
+      cuts: f.cuts.map(({ id, name, thumb }) => ({ id, name, thumb })),
+      takes: done.slice(0, 12),
+      reels: f.reels,
+      counts: { scenes: info.scenes ?? 0, shots: info.shots ?? 0, drawn: info.drawn ?? 0, stages: f.stages.length, renders: renders.length, takes: done.length, cuts: f.cuts.length, films: f.reels.length },
     };
   }).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
@@ -1076,18 +1125,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     await writeFile(join(data, "reels", `${id}.json`), JSON.stringify(film, null, 2));
     return json(res, 201, film);
   }
-  if (path === "/api/reels" && method === "GET") {
-    const dir = join(data, "reels");
-    const films = [];
-    for (const name of (await readdir(dir).catch(() => [] as string[])).filter((n) => n.endsWith(".json"))) {
-      try {
-        films.push(JSON.parse(await readFile(join(dir, name), "utf8")));
-      } catch {
-        // a film without readable details is skipped
-      }
-    }
-    return json(res, 200, films.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
-  }
+  if (path === "/api/reels" && method === "GET") return json(res, 200, await listReels());
   const reel = path.match(/^\/api\/reels\/([\w-]+)$/);
   if (reel && method === "DELETE") {
     await rm(join(data, "reels", `${reel[1]}.mp4`), { force: true });

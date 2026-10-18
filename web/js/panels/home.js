@@ -2,6 +2,7 @@ import { h, icon, sprite, ago } from "../dom.js";
 import { changed, toast, newTab, openTake } from "../store.js";
 import { go, currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
+import { view } from "../viewer.js";
 import { story, loadStories, openStory, newStory, deleteStory, writeAll, commit as commitStory } from "../story.js";
 import { loadCuts, openCut, newCut, deleteCut } from "../cut.js";
 
@@ -70,8 +71,8 @@ async function openPart(kind, id) {
     fail(e);
   }
 }
-/** A project opens on what it grew from: its story, or the stage or edit it is. */
-const openFilm = (f) => (f.story ? openPart("story", f.story.id) : f.stages[0] ? openPart("stage", f.stages[0].id) : f.cuts[0] ? openPart("cut", f.cuts[0].id) : null);
+/** A project opens on what it grew from: its story, or the stage or edit it is; a finished film made on its own plays. */
+const openFilm = (f) => (f.story ? openPart("story", f.story.id) : f.stages[0] ? openPart("stage", f.stages[0].id) : f.cuts[0] ? openPart("cut", f.cuts[0].id) : f.reels[0] ? view(f.reels[0].url, "video") : null);
 
 const START = [
   ["section-story", "A new story, from an empty page", async () => (await loadStories(), await newStory(), go("story"))],
@@ -135,9 +136,9 @@ function hero() {
     on: { keydown: (e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), writeStory()), input: (e) => (home.brief = e.target.value) },
   });
   const seg = (label, items, value, set) => h("div.segment", { role: "group", "aria-label": label }, ...items.map(([v, l]) => h("button", { type: "button", "aria-pressed": String(value === v), on: { click: () => (set(v), redraw()) } }, l)));
-  const lit = home.films.find((f) => f.story?.thumb) ?? home.films.find((f) => f.thumb);
+  const lit = home.films.find((f) => f.story?.thumb) ?? home.films.find((f) => f.cover?.pic);
   const last = home.films.find((f) => f.story);
-  return h("section.home-hero", { style: lit ? { "--hero": `url("${lit.story?.thumb ?? lit.thumb}")` } : {} },
+  return h("section.home-hero", { style: lit ? { "--hero": `url("${lit.story?.thumb ?? lit.cover.pic}")` } : {} },
     h("h1.home-ask", {}, h("label", { for: "home-brief" }, "What's your film about?")),
     h("div.home-prompt", {},
       field,
@@ -152,65 +153,112 @@ function hero() {
     h("div.home-new", { role: "group", "aria-label": "Start something empty" },
       ...START.map(([glyph, tip, run]) => h("button.home-new-key", { type: "button", title: tip, "aria-label": tip, on: { click: () => Promise.resolve(run()).catch(fail) } }, sprite(glyph)))),
     last ? h("button.home-continue", { type: "button", title: "Open its story", on: { click: () => openFilm(last) } },
-      last.thumb ? h("img", { src: last.thumb, alt: "", draggable: false }) : null,
-      h("span", {}, "Continue"), h("b", {}, last.name), icon("arrow"), h("span.home-continue-facts", {}, counts(last, true))) : null);
+      last.story?.thumb ? h("img", { src: last.story.thumb, alt: "", draggable: false }) : null,
+      h("span", {}, "Continue"), h("b", {}, last.name), icon("arrow"), h("span.home-continue-facts", {}, counts(last))) : null);
 }
 
-/** "7 scenes · 2 stages · 6 shots · 1 edit": what a project holds. */
-function counts(f, short = false) {
+/** "7 scenes · 7 shots": how far a story has come, for the line under the prompt. */
+function counts(f) {
   const c = f.counts ?? {};
   const n = (v, one, many = `${one}s`) => (v ? `${v} ${v === 1 ? one : many}` : null);
-  return [n(c.scenes, "scene"), short ? null : n(c.stages, "stage"), n(c.shots, "shot"), short ? null : n(c.takes, "take"), short ? null : n(c.cuts, "edit")].filter(Boolean).join(" · ")
-    || (f.story ? (f.story.logline ? "The idea, no script yet" : "Not written yet") : f.kind === "stage" ? "1 stage" : "1 edit");
+  return [n(c.scenes, "scene"), n(c.shots, "shot")].filter(Boolean).join(" · ") || (f.story?.logline ? "the idea" : "not written yet");
 }
 
-const SECTION = { story: "Story", stage: "Stage", cut: "Cut", take: "Shot" };
-/** A part of a project as a small picture that opens it where it is made; a take plays while the pointer is on it. */
-function part(kind, id, pic, name, { video, time } = {}) {
-  const media = video ? h("video", { src: video, poster: pic ?? "", muted: true, loop: true, playsInline: true, preload: "none" }) : pic ? h("img", { src: pic, alt: "", loading: "lazy", draggable: false }) : h("span.film-part-empty", {}, sprite(KIND[kind].icon));
-  return h("button.film-part", {
-    type: "button", className: `is-${kind}`, title: `${name}\nOpen in ${SECTION[kind]}`, "aria-label": `${name}: open in ${SECTION[kind]}`,
-    on: {
-      click: (e) => (e.stopPropagation(), openPart(kind, id)),
-      mouseenter: () => video && media.play?.().catch(() => {}),
-      mouseleave: () => video && (media.pause(), (media.currentTime = 0)),
+// the four sections a film is made in, and what each one makes
+const SECTIONS = [
+  ["story", "Story", "section-story", (n) => `${n} ${n === 1 ? "frame" : "frames"}`],
+  ["stage", "Stage", "section-stage", (n) => `${n} ${n === 1 ? "render" : "renders"}`],
+  ["shot", "Shot", "section-shot", (n) => `${n} ${n === 1 ? "take" : "takes"}`],
+  ["cut", "Cut", "edit-scissors", (n) => `${n} ${n === 1 ? "film" : "films"}`],
+];
+const COVER = { film: ["Film", "edit-scissors"], take: ["Take", "section-shot"], render: ["Render", "section-stage"], storyboard: ["Storyboard", "section-story"], story: ["Story", "section-story"], stage: ["Stage", "section-stage"], cut: ["Edit", "edit-scissors"] };
+const secs = (v) => (v ? `${Number(v).toFixed(1)} s` : "");
+
+/** A picture or a clip that plays while the pointer is on its card (or its tile), with a line for how far it has played. */
+function media(pic, video, cls = "") {
+  if (!video) return pic ? h(`img${cls}`, { src: pic, alt: "", loading: "lazy", draggable: false }) : null;
+  const v = h(`video${cls}`, { src: pic ? video : `${video}#t=0.5`, poster: pic ?? "", muted: true, loop: true, playsInline: true, preload: pic ? "none" : "metadata" });
+  return v;
+}
+const playIn = (root, on) => root.querySelectorAll(root.classList.contains("film-out") ? "video" : ":scope > .film-cover > video.film-key").forEach((v) => (on ? v.play().catch(() => {}) : (v.pause(), (v.currentTime = 0))));
+
+/** Where a section's output opens: the story, the stage it was rendered on, the take in Shot, the edit in Cut. */
+function openOutput(f, key) {
+  if (key === "story") return f.story ? openPart("story", f.story.id) : null;
+  if (key === "stage") return f.stages[0] ? openPart("stage", f.stages[0].id) : null;
+  if (key === "shot") return f.outputs.shot.id ? openPart("take", f.outputs.shot.id) : null;
+  if (key === "cut") return f.cuts[0] ? openPart("cut", f.cuts[0].id) : f.reels[0] ? view(f.reels[0].url, "video") : null;
+}
+
+/** What each section has made, one tile each, over the foot of the cover: an empty one says that section has made nothing yet. */
+function outputs(f) {
+  return h("div.film-outs", {}, ...SECTIONS.map(([key, label, glyph, count]) => {
+    const o = f.outputs?.[key] ?? { count: 0 };
+    const made = o.count > 0;
+    const tile = h("button.film-out", {
+      type: "button", className: `is-${key}${made ? "" : " is-empty"}`, disabled: !made, title: made ? `${label}: ${count(o.count)}\nOpen in ${label}` : `${label}: nothing yet`,
+      on: { click: (e) => (e.stopPropagation(), openOutput(f, key)), mouseenter: () => playIn(tile, true), mouseleave: () => playIn(tile, false) },
     },
-  }, media, video ? h("span.film-part-play", {}, icon("play")) : null, time ? h("span.film-part-time", {}, time) : null);
+      made ? media(o.pic, o.video) : null,
+      h("span.film-out-label", {}, sprite(glyph), h("span", {}, made ? count(o.count) : `${label}`), made ? null : h("em", {}, "—")),
+      key === "cut" && made ? h("span.film-out-film", {}, "Film") : null,
+      o.video && o.seconds && key !== "cut" ? h("span.film-out-time", {}, secs(o.seconds)) : null);
+    return tile;
+  }));
 }
 
-/** What a project holds, shown over its cover with the pointer on it: its story's frames, its stages, its takes, its edits. */
-function inside(f) {
-  const group = (kind, label, items) => (items.length ? h("div.film-group", { className: `is-${kind}`, style: { flexGrow: items.length } }, h("span.film-group-label", {}, sprite(KIND[kind].icon), label), h("div.film-group-row", {}, ...items)) : null);
-  const frames = (f.story?.frames ?? []).slice(0, 5);
-  const takes = f.takes.filter((t) => t.status === "done").slice(0, 3);
-  const rest = [
-    group("stage", "Stages", f.stages.slice(0, 2).map((s) => part("stage", s.id, s.thumb, s.name))),
-    group("take", "Shots / takes", takes.map((t) => part("take", t.id, t.frame, t.name, { video: t.video, time: `${Number(t.seconds ?? 0).toFixed(1)} s` }))),
-    group("cut", "Edits", f.cuts.slice(0, 1).map((c) => part("cut", c.id, c.thumb, c.name))),
-  ].filter(Boolean);
-  const many = (f.story ? 1 : 0) + f.stages.length + takes.length + f.cuts.length;
-  if (many < 2) return null;
-  return h("div.film-inside", {},
-    f.story ? h("div.film-group.is-story", {},
-      h("span.film-group-label", {}, sprite("section-story"), "Story", h("b", {}, f.story.name)),
-      h("div.film-strip", {}, ...(frames.length ? frames : [f.story.thumb]).map((url) => part("story", f.story.id, url, f.story.name)))) : null,
-    rest.length ? h("div.film-groups", {}, ...rest) : null);
+/** The four sections and how far each has come, as lamps: lit once it has made something. */
+function steps(f, boxes = false) {
+  return h(boxes ? "div.film-boxes" : "div.film-pipe", {}, ...SECTIONS.map(([key, label, glyph, count]) => {
+    const n = f.outputs?.[key]?.count ?? 0;
+    return h("span.film-step", { className: n ? "is-lit" : "", title: n ? `${label}: ${count(n)}` : `${label}: nothing yet` },
+      sprite(glyph), h("span.film-step-text", {}, h("b", {}, h("i.film-lamp"), label), h("span", {}, count(n))));
+  }));
 }
 
-function card(f) {
-  const kind = KIND[f.kind] ?? KIND.story;
+/** A project's card: what it has made last (or finished) on its cover, the clip playing while the pointer is on it. */
+function card(f, featured = false) {
   const armed = home.armed === f.id;
-  const open = inside(f);
-  return h("article.film-card", { className: `${armed ? "is-armed" : ""}${open ? " has-inside" : ""}`, tabindex: "0", on: { click: () => openFilm(f), keydown: (e) => e.key === "Enter" && e.target === e.currentTarget && openFilm(f) } },
+  const [what, glyph] = COVER[f.cover?.kind] ?? COVER.story;
+  const cover = f.cover ?? {};
+  const made = SECTIONS.filter(([key]) => f.outputs?.[key]?.count > 0);
+  const single = !f.story && made.length <= 1;
+  const el = h("article.film-card", {
+    className: `${featured ? "is-featured" : ""}${armed ? " is-armed" : ""}`, tabindex: "0",
+    on: { click: () => openFilm(f), keydown: (e) => e.key === "Enter" && e.target === e.currentTarget && openFilm(f), mouseenter: () => playIn(el, true), mouseleave: () => playIn(el, false) },
+  },
     h("div.film-cover", {},
-      f.thumb ? h("img.film-key", { src: f.thumb, alt: "", loading: "lazy", draggable: false }) : h("span.film-cover-empty", {}, sprite(kind.icon)),
-      open,
-      h("button.film-delete", { type: "button", title: armed ? "Click again: the story, stages and edits go (the takes stay in the Library)" : "Delete the project", "aria-label": "Delete the project", "aria-pressed": String(armed), on: { click: (e) => (e.stopPropagation(), removeFilm(f)) } }, icon("trash"))),
-    h("div.film-text", {},
-      h("b.film-name", {}, f.name),
-      h("p.film-logline", {}, f.story?.logline || (f.kind === "stage" ? "A stage" : f.kind === "cut" ? "An edit" : "Not written yet")),
-      h("div.film-foot", {}, sprite(kind.icon), h("span.film-counts", {}, counts(f)), h("span.film-ago", {}, ago(f.updatedAt)))));
+      media(cover.pic, cover.video, ".film-key") ?? h("span.film-cover-empty", {}, sprite(glyph)),
+      h("span.film-badge", {}, sprite(glyph), what),
+      cover.video ? h("span.film-length", {}, icon("play"), secs(cover.seconds)) : null,
+      cover.video ? h("i.film-played") : null,
+      single ? null : outputs(f),
+      f.kind === "film" ? null : h("button.film-delete", { type: "button", title: armed ? "Click again: the story, stages and edits go (the takes and films stay in the Library)" : "Delete the project", "aria-label": "Delete the project", "aria-pressed": String(armed), on: { click: (e) => (e.stopPropagation(), removeFilm(f)) } }, icon("trash"))),
+    featured
+      ? h("div.film-side", {},
+        h("span.film-what", {}, what),
+        h("div.film-row", {}, h("b.film-name", {}, f.name), cover.video ? h("span.film-ago", {}, secs(cover.seconds)) : h("span.film-ago", {}, ago(f.updatedAt))),
+        h("p.film-logline", {}, f.story?.logline || (f.kind === "film" ? "A finished film." : "")),
+        steps(f, true))
+      : h("div.film-text", {},
+        h("div.film-row", {}, h("b.film-name", {}, f.name), h("span.film-ago", {}, ago(f.updatedAt))),
+        single
+          ? h("div.film-foot", {}, sprite(made[0]?.[2] ?? glyph), h("span", {}, made[0] ? made[0][3](f.outputs[made[0][0]].count) : f.kind === "stage" ? "no render yet" : "not rendered yet"))
+          : [h("p.film-logline", {}, f.story?.logline || (f.kind === "film" ? "A finished film." : "")), steps(f)]));
+  // the clip on the cover draws how far it has played
+  const v = el.querySelector(".film-key");
+  const line = el.querySelector(".film-played");
+  if (v?.tagName === "VIDEO" && line) v.addEventListener("timeupdate", () => line.style.setProperty("--played", `${(v.currentTime / (v.duration || 1)) * 100}%`));
+  return el;
 }
+
+// the featured card: the newest finished film, else the newest project that has made something (a take, a render, a frame)
+const OUTPUT = new Set(["film", "take", "render", "storyboard"]);
+const featureFirst = (list, on) => {
+  const film = list.findIndex((f) => f.cover?.kind === "film");
+  const i = !on ? -1 : film >= 0 ? film : list.findIndex((f) => OUTPUT.has(f.cover?.kind));
+  return i > 0 ? [list[i], ...list.slice(0, i), ...list.slice(i + 1)] : list;
+};
 
 /** The cards that match the search; the search redraws only these, so its field keeps the caret. */
 function results() {
@@ -219,7 +267,7 @@ function results() {
   return h("div.home-results", {},
     home.error ? h("p.home-empty", {}, home.error)
       : !home.loaded ? h("div.home-empty", {}, h("span.typing", {}, h("i"), h("i"), h("i")))
-      : shown.length ? h("div.film-grid", {}, ...shown.map(card))
+      : shown.length ? h("div.film-grid", {}, ...featureFirst(shown, !q).map((f, i) => card(f, i === 0 && !q)))
       : h("p.home-empty", {}, q ? "Nothing by that name." : "No projects yet: write the first one above."));
 }
 const refreshResults = () => document.querySelector(".home-results")?.replaceWith(results());
