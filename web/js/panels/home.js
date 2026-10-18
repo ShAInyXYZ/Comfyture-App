@@ -280,6 +280,31 @@ async function addFiles(files) {
     }
   }
 }
+// A picture or a video pasted anywhere on the screen, or dropped anywhere on it, goes on the prompt
+// as a reference; while files are dragged over the screen the prompt lights up to take them.
+const mediaFiles = (list) => [...(list ?? [])].filter((f) => /^(image|video)\//.test(f.type));
+const carriesFiles = (e) => [...(e.dataTransfer?.types ?? [])].includes("Files");
+const lightPrompt = (on) => document.querySelector(".home-prompt")?.classList.toggle("is-drop", on);
+let dragDepth = 0;
+document.addEventListener("paste", (e) => {
+  const files = currentPage() === "home" ? mediaFiles(e.clipboardData?.files) : [];
+  if (!files.length) return;
+  e.preventDefault();
+  addFiles(files);
+});
+document.addEventListener("dragenter", (e) => currentPage() === "home" && carriesFiles(e) && (dragDepth++, lightPrompt(true)));
+document.addEventListener("dragleave", (e) => currentPage() === "home" && carriesFiles(e) && --dragDepth <= 0 && ((dragDepth = 0), lightPrompt(false)));
+// without this, a file let go of beside the prompt would open in the tab instead
+document.addEventListener("dragover", (e) => currentPage() === "home" && carriesFiles(e) && e.preventDefault());
+document.addEventListener("drop", (e) => {
+  if (currentPage() !== "home" || !carriesFiles(e)) return;
+  e.preventDefault();
+  dragDepth = 0;
+  lightPrompt(false);
+  const files = mediaFiles(e.dataTransfer.files);
+  if (files.length) addFiles(files);
+  else toast("Pictures and videos only: they become the story's references.");
+});
 function attach(anchor) {
   attachMenu(anchor, {
     files: addFiles,
@@ -312,13 +337,7 @@ function hero() {
   const last = home.films.find((f) => f.story);
   return h("section.home-hero", { style: lit ? { "--hero": `url("${lit.story?.thumb ?? lit.cover.pic}")` } : {} },
     h("h1.home-ask", {}, h("label", { for: "home-brief" }, "What's your film about?")),
-    h("div.home-prompt", {
-      on: {
-        dragover: (e) => [...e.dataTransfer.types].includes("Files") && (e.preventDefault(), e.currentTarget.classList.add("is-drop")),
-        dragleave: (e) => e.currentTarget.classList.remove("is-drop"),
-        drop: (e) => (e.preventDefault(), e.currentTarget.classList.remove("is-drop"), addFiles(e.dataTransfer.files)),
-      },
-    },
+    h("div.home-prompt", {},
       field,
       refs(),
       h("div.home-prompt-foot", {},
