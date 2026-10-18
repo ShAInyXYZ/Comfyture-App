@@ -48,6 +48,8 @@ export interface ShotRequest {
   enhance: boolean;
   review: boolean;
   strengths: { start: number; end: number };
+  /** The film it was made for (a story's project), so its takes show inside that project. */
+  project?: string;
 }
 
 export type RunStatus = "queued" | "frame" | "review" | "shot" | "done" | "failed" | "canceled";

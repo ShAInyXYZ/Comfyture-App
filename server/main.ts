@@ -233,12 +233,15 @@ async function parseShot(input: Record<string, any>): Promise<{ request: ShotReq
     enhance: input.enhance === true,
     review: input.review !== false,
     strengths: { start: num(input.strengths?.start, 0, 1, 1), end: num(input.strengths?.end, 0, 1, 0.85) },
+    project: projectId(input.project),
   };
   const takes = Math.round(num(input.takes, 1, 4, 1));
   const seed = Number.isSafeInteger(input.seed) && input.seed >= 0 ? input.seed : undefined;
   return { request, takes, seed };
 }
 
+/** A project's id as the pages send it: the id of the story a film grew from. */
+const projectId = (v: unknown) => (typeof v === "string" && /^[\w-]{1,80}$/.test(v) ? v : undefined);
 const slug = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
 
 // ------------------------------------------------------------------ the Stage's saved poses
@@ -288,7 +291,7 @@ function looksLike(ext: string, b: Buffer) {
 
 // a stage as its own project: its name, its scene (characters, props, camera, timeline) and a
 // small picture of its frame, kept one file each; shared as one file with the user's models in it
-type StageFile = { id: string; name: string; createdAt: string; updatedAt: string; scene: unknown; thumb?: string; renders?: unknown[] };
+type StageFile = { id: string; name: string; createdAt: string; updatedAt: string; scene: unknown; thumb?: string; renders?: unknown[]; project?: string };
 /** The pictures rendered from a stage, as the page keeps them (the pictures themselves are in the Library). */
 const stageRenders = (v: unknown) => (Array.isArray(v) ? v.filter((r) => r && typeof r === "object").slice(0, 200) : undefined);
 const stagesDir = () => join(data, "control", "stages");
@@ -313,7 +316,7 @@ async function listStages() {
     return [];
   }
   const all = await Promise.all(files.map((f) => readStage(f.slice(0, -5))));
-  return all.filter((x): x is StageFile => !!x).map(({ id, name, createdAt, updatedAt, thumb }) => ({ id, name, createdAt, updatedAt, thumb })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return all.filter((x): x is StageFile => !!x).map(({ id, name, createdAt, updatedAt, thumb, project }) => ({ id, name, createdAt, updatedAt, thumb, project })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 /** The user's models a scene uses: its rigged characters and its own props. */
 function modelsIn(scene: any): string[] {
@@ -329,7 +332,7 @@ const stageName = (v: unknown, fallback = "Stage") => text(v, 60) || fallback;
  * The projects of a kind that live on the server, one JSON file each: Story's stories and Cut's
  * edits. Each is { id, name, createdAt, updatedAt, thumb?, body }, the body the page's own.
  */
-type Project = { id: string; name: string; createdAt: string; updatedAt: string; thumb?: string; body: unknown };
+type Project = { id: string; name: string; createdAt: string; updatedAt: string; thumb?: string; body: unknown; project?: string };
 const projectsDir = (kind: string) => join(data, kind);
 async function readProject(kind: string, id: string): Promise<Project | null> {
   if (!/^[\w-]+$/.test(id)) return null;
@@ -346,7 +349,7 @@ async function writeProject(kind: string, p: Project) {
 async function listProjects(kind: string) {
   const files = (await readdir(projectsDir(kind)).catch(() => [] as string[])).filter((f) => f.endsWith(".json"));
   const all = await Promise.all(files.map((f) => readProject(kind, f.slice(0, -5))));
-  return all.filter((x): x is Project => !!x).map(({ id, name, createdAt, updatedAt, thumb, body }) => ({ id, name, createdAt, updatedAt, thumb, info: summary(kind, body) })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return all.filter((x): x is Project => !!x).map(({ id, name, createdAt, updatedAt, thumb, body, project }) => ({ id, name, createdAt, updatedAt, thumb, project, info: summary(kind, body) })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 /** How far a project has come, for its card on the welcome screen: a story's scenes, shots and frames, an edit's clips. */
 function summary(kind: string, body: any) {
@@ -355,7 +358,7 @@ function summary(kind: string, body: any) {
     const shots = blocks.length ? blocks.filter((b) => b?.kind === "shot") : Array.isArray(body?.board?.shots) ? body.board.shots : [];
     const scenes = blocks.length ? blocks.filter((b) => b?.kind === "scene").length : body?.script?.scenes?.length ?? 0;
     const pic = (s: any) => (s?.still ?? s?.photo)?.url;
-    return { logline: text(body?.idea?.logline, 200), scenes, shots: shots.length, drawn: shots.filter((s: any) => s?.photo).length, rolled: shots.filter((s: any) => s?.run).length, cast: body?.cast?.length ?? 0, frames: shots.map(pic).filter(Boolean).slice(0, 6) };
+    return { logline: text(body?.idea?.logline, 200), scenes, shots: shots.length, drawn: shots.filter((s: any) => s?.photo).length, rolled: shots.filter((s: any) => s?.run).length, cast: body?.cast?.length ?? 0, frames: shots.map(pic).filter(Boolean).slice(0, 8), runs: shots.map((s: any) => s?.run).filter((r: unknown) => typeof r === "string") };
   }
   if (kind === "cuts") {
     const tracks: any[] = Array.isArray(body?.tracks) ? body.tracks : [];
@@ -364,6 +367,57 @@ function summary(kind: string, body: any) {
   }
   return {};
 }
+/**
+ * The films: a story with everything made for it (the stages its shots were blocked on, its takes,
+ * its edits), and every stage or edit made on its own as a film of its own, newest first. A thing
+ * made for a story names it (its project); older ones are matched by the names they were given
+ * ("Ocean's Glowing Gift — 2A", "1A · Ocean's Glowing Gift").
+ */
+async function listFilms() {
+  const [stories, cuts, stages] = await Promise.all([listProjects("stories"), listProjects("cuts"), listStages()]);
+  const runs = engine.list();
+  type Film = { id: string; kind: string; name: string; updatedAt: string; thumb?: string; story: any; stages: any[]; cuts: any[]; takes: any[] };
+  const films = new Map<string, Film>();
+  const add = (id: string, kind: string, name: string, updatedAt: string) => {
+    if (!films.has(id)) films.set(id, { id, kind, name, updatedAt, story: null, stages: [], cuts: [], takes: [] });
+    return films.get(id)!;
+  };
+  for (const s of stories) add(s.id, "story", s.name, s.updatedAt).story = s;
+  const byName = new Map(stories.map((s) => [s.name.toLowerCase(), s.id]));
+  const owner = (project: string | undefined, name: string, pattern?: RegExp) => {
+    if (project && films.has(project)) return project;
+    const m = pattern ? pattern.exec(name) : null;
+    return byName.get((m ? m[1] : name).toLowerCase());
+  };
+  for (const st of stages) {
+    const id = owner(st.project, st.name, /^(.*) — \d+[A-Z]$/);
+    (id ? films.get(id)! : add(st.id, "stage", st.name, st.updatedAt)).stages.push(st);
+  }
+  for (const c of cuts) {
+    const id = owner(c.project, c.name);
+    (id ? films.get(id)! : add(c.id, "cut", c.name, c.updatedAt)).cuts.push(c);
+  }
+  // a story's takes: the ones its shots were rolled into, and the ones made from its shots in Shot
+  const rolled = new Map(stories.flatMap((s) => ((s.info as any).runs ?? []).map((r: string) => [r, s.id] as const)));
+  for (const r of runs) {
+    const id = (r.request.project && films.has(r.request.project) ? r.request.project : undefined) ?? rolled.get(r.id) ?? (/^\d+[A-Z] · (.+)$/.test(r.request.name) ? byName.get(/^\d+[A-Z] · (.+)$/.exec(r.request.name)![1].toLowerCase()) : undefined);
+    if (id) films.get(id)!.takes.push({ id: r.id, name: r.request.name, status: r.status, video: r.video, frame: r.frame, seconds: r.request.seconds, createdAt: r.createdAt });
+  }
+  return [...films.values()].map((f) => {
+    const times = [f.updatedAt, ...f.stages.map((x) => x.updatedAt), ...f.cuts.map((x) => x.updatedAt), ...f.takes.map((x) => x.createdAt)].filter(Boolean).sort();
+    const info = (f.story?.info ?? {}) as any;
+    const { runs: _runs, ...story } = info;
+    return {
+      ...f,
+      updatedAt: times.at(-1) ?? f.updatedAt,
+      thumb: f.story?.thumb ?? f.stages.find((x) => x.thumb)?.thumb ?? f.cuts.find((x) => x.thumb)?.thumb ?? f.takes.find((x) => x.frame)?.frame,
+      story: f.story ? { id: f.story.id, name: f.story.name, thumb: f.story.thumb, updatedAt: f.story.updatedAt, ...story } : null,
+      takes: f.takes.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 12),
+      counts: { scenes: info.scenes ?? 0, shots: info.shots ?? 0, drawn: info.drawn ?? 0, stages: f.stages.length, takes: f.takes.length, cuts: f.cuts.length },
+    };
+  }).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
 /** GET/POST /api/<kind>, GET/PUT/DELETE /api/<kind>/<id>: answers when the path is one of these. */
 async function projectRoute(kind: string, path: string, method: string, req: IncomingMessage, res: ServerResponse) {
   if (path === `/api/${kind}` && method === "GET") return json(res, 200, { [kind]: await listProjects(kind) });
@@ -371,7 +425,7 @@ async function projectRoute(kind: string, path: string, method: string, req: Inc
     const input = await jsonBody(req, 32 * 1024 * 1024);
     const now = new Date().toISOString();
     const name = text(input.name, 60) || "Untitled";
-    const p: Project = { id: `${kind.slice(0, 5)}-${slug(name) || "new"}-${randomBytes(3).toString("hex")}`, name, createdAt: now, updatedAt: now, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined, body: input.body ?? {} };
+    const p: Project = { id: `${kind.slice(0, 5)}-${slug(name) || "new"}-${randomBytes(3).toString("hex")}`, name, createdAt: now, updatedAt: now, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined, body: input.body ?? {}, project: projectId(input.project) };
     await writeProject(kind, p);
     return json(res, 201, { project: p });
   }
@@ -908,6 +962,10 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const { broken, ...answer } = out;
     return json(res, 200, answer);
   }
+  if (path === "/api/projects" && method === "GET") {
+    await (seeding ??= seedStages().catch((e) => console.warn("stages: the examples were not added:", e.message)));
+    return json(res, 200, { projects: await listFilms() });
+  }
   for (const kind of ["stories", "cuts"]) {
     if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {
       const answered = await projectRoute(kind, path, method, req, res);
@@ -1194,7 +1252,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const input = await jsonBody(req, 64 * 1024 * 1024);
     const now = new Date().toISOString();
     const name = stageName(input.name);
-    const stage: StageFile = { id: newStageId(name), name, createdAt: now, updatedAt: now, scene: input.scene ?? { version: 2 }, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined, renders: stageRenders(input.renders) };
+    const stage: StageFile = { id: newStageId(name), name, createdAt: now, updatedAt: now, scene: input.scene ?? { version: 2 }, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined, renders: stageRenders(input.renders), project: projectId(input.project) };
     await writeStage(stage);
     return json(res, 201, { stage });
   }

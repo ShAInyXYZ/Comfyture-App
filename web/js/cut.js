@@ -224,10 +224,11 @@ export async function openCut(id) {
 }
 
 /** A new edit, with clips to start from (each { src, from, to, join }). */
-export async function newCut(name = "Untitled cut", clips = []) {
+export async function newCut(name = "Untitled cut", clips = [], extra = {}) {
   const b = normalize();
   mainTrack(b).items = clips.map((c) => ({ id: uid(), from: 0, to: null, speed: 1, volume: 1, sound: true, ...c }));
-  const { project } = await send("api/cuts", "POST", { name, body: b });
+  // extra.project: the film it is made for, so the edit shows inside it
+  const { project } = await send("api/cuts", "POST", { name, body: b, ...extra });
   cut.list.unshift({ id: project.id, name: project.name, updatedAt: project.updatedAt });
   await openCut(project.id);
 }

@@ -544,6 +544,8 @@ export async function request(d = state.draft, tab = state.tab) {
     review: d.review,
     takes: d.takes,
     seed: d.lockSeed ? d.seed : undefined,
+    // a tab opened from a story rolls its takes for that film
+    project: state.tabs.find((t) => t.id === tab)?.project,
   };
 }
 
@@ -951,12 +953,12 @@ export async function drawPicture(body) {
  * made the first time, rolled again in place after. Answers with the tab, the take, and a promise
  * of the finished take.
  */
-export async function rollAsTab({ tab, name, group, start, shot, seconds, aspect, audio, video }) {
+export async function rollAsTab({ tab, name, group, project, start, shot, seconds, aspect, audio, video }) {
   let t = state.tabs.find((x) => x.id === tab);
   // audio: a track the shot follows ({ file, url, duration, lipsync }); video: a clip to extend or follow ({ file, mode })
   const draft = { ...freshDraft(), name, script: { shots: [{ ...emptyShot(), ...shot }], raw: "" }, start, seconds, aspect, review: false, audio: audio ?? null, ...(video ? { video, startMode: "video" } : {}) };
   if (!t) {
-    t = { id: tab ?? `story-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, run: null, film: group, draft };
+    t = { id: tab ?? `story-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, run: null, film: group, project, draft };
     state.tabs.push(t);
   } else t.draft = { ...t.draft, ...draft, seed: t.draft.seed };
   persist();
@@ -969,8 +971,8 @@ export async function rollAsTab({ tab, name, group, start, shot, seconds, aspect
 }
 
 /** A shot from Story opened as a Shot tab to craft it there (its frame, words and line), without rolling it. */
-export function openStoryShot({ name, group, start, shot, seconds, aspect }) {
-  const t = { id: `story-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, run: null, film: group, draft: { ...freshDraft(), name, script: { shots: [{ ...emptyShot(), ...shot }], raw: "" }, start, seconds, aspect, review: false } };
+export function openStoryShot({ name, group, project, start, shot, seconds, aspect }) {
+  const t = { id: `story-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, run: null, film: group, project, draft: { ...freshDraft(), name, script: { shots: [{ ...emptyShot(), ...shot }], raw: "" }, start, seconds, aspect, review: false } };
   state.tabs.push(t);
   persist();
   switchTab(t.id);

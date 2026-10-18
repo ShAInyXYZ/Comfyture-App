@@ -623,7 +623,7 @@ export async function rollShot(id) {
   update();
   try {
     const first = await filmFrame(b, shot);
-    const r = await rollAsTab({ tab: shot.tab, name: `${codeOf(id)} · ${b.idea.title || story.project.name}`.slice(0, 60), group: b.idea.title || story.project.name, start: first, shot: shotSpec(b, shot), seconds: shot.seconds, aspect: b.idea.aspect });
+    const r = await rollAsTab({ tab: shot.tab, name: `${codeOf(id)} · ${b.idea.title || story.project.name}`.slice(0, 60), group: b.idea.title || story.project.name, project: story.project.id, start: first, shot: shotSpec(b, shot), seconds: shot.seconds, aspect: b.idea.aspect });
     shot.tab = r.tab;
     shot.run = r.run;
     commit({ history: false });
@@ -655,7 +655,7 @@ export async function openInShot(id) {
     // a sketch is turned into a film still first: the video model starts from a real picture
     const first = shot.photo ? await filmFrame(b, shot) : null;
     const { openStoryShot } = await import("./store.js");
-    shot.tab = openStoryShot({ name: `${codeOf(id)} · ${b.idea.title || story.project.name}`.slice(0, 60), group: b.idea.title || story.project.name, start: first, shot: shotSpec(b, shot), seconds: shot.seconds, aspect: b.idea.aspect });
+    shot.tab = openStoryShot({ name: `${codeOf(id)} · ${b.idea.title || story.project.name}`.slice(0, 60), group: b.idea.title || story.project.name, project: story.project.id, start: first, shot: shotSpec(b, shot), seconds: shot.seconds, aspect: b.idea.aspect });
     commit({ history: false });
     go("shot");
   } catch (e) {
@@ -675,7 +675,7 @@ export async function stageShot(id) {
   const { askStage } = await import("./store.js");
   go("stage");
   const { projects } = await stageReady;
-  await projects?.newProject(`${b.idea.title || story.project.name} — ${codeOf(id)}`.slice(0, 60)).catch(() => null);
+  await projects?.newProject(`${b.idea.title || story.project.name} — ${codeOf(id)}`.slice(0, 60), { project: story.project.id }).catch(() => null);
   const names = bible(b).map((x) => ({ tag: x.tag, name: x.name }));
   const who = castOf(b, `${shot.frame} ${shot.action}`).filter((m) => m.person).map((m) => `${m.name} (${m.words || m.about})`).join("; ");
   const CAM = { locked: "locked", "push-in": "pushing in", "pull-out": "pulling out", orbit: "orbiting", "crane-up": "craning up", handheld: "handheld" };
@@ -704,7 +704,7 @@ export async function sendToCut() {
   const { newCut, cut, track, layout, commit: commitCut, loadCuts } = await import("./cut.js");
   go("cut");
   await (cut.ready ?? loadCuts());
-  await newCut(b.idea.title || story.project.name, clips);
+  await newCut(b.idea.title || story.project.name, clips, { project: story.project.id });
   if (b.idea.title) track("t1").items.push({ id: uid(), text: b.idea.title.toUpperCase(), start: 0, length: 3, style: "center" });
   // each scene marked where its first shot starts
   const l = layout();

@@ -1375,7 +1375,7 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
     show(p);
     saved(p.updatedAt);
   }
-  async function create(name, scene) {
+  async function create(name, scene, extra = {}) {
     if (project && timer) await save();
     const count = (await list()).length;
     leave();
@@ -1383,7 +1383,7 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
     stage.runs = scene ? stage.runs.map((r) => ({ ...r })) : [];
     if (!scene) stage.load({ version: 2 });
     stage.emit("runs");
-    const { stage: p } = await call("api/control/stages", { method: "POST", headers: json, body: JSON.stringify({ name: name ?? `Stage ${count + 1}`, scene: scene ?? stage.toJSON(), thumb: thumb(), renders: stage.runs }) });
+    const { stage: p } = await call("api/control/stages", { method: "POST", headers: json, body: JSON.stringify({ name: name ?? `Stage ${count + 1}`, scene: scene ?? stage.toJSON(), thumb: thumb(), renders: stage.runs, ...extra }) });
     show(p);
     saved(p.updatedAt);
     return p;
@@ -1485,7 +1485,8 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
   return {
     current: () => project,
     open,
-    newProject: (name) => create(name),
+    /** A new stage; made for a story, it says which (its project), so it shows inside that film. */
+    newProject: (name, extra) => create(name, undefined, extra),
     /** A stage deleted from elsewhere (the welcome screen): its tab goes with it. */
     async remove(id) {
       if (project?.id === id) return remove();
