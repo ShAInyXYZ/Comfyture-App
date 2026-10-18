@@ -1452,7 +1452,7 @@ export const mentions = (text) => {
  * The assistant sees one picture: the images a message mentions (or the latest attached ones),
  * laid out on a sheet with their @names, so it can tell which is which.
  */
-async function sheetOf(images) {
+export async function sheetOf(images) {
   const cells = images.slice(0, 4);
   const loaded = await Promise.all(cells.map((f) => new Promise((ok, no) => {
     const img = new Image();

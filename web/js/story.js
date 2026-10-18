@@ -5,7 +5,7 @@
 // feed Stage (blocked from their words), Shot (prompts and frames) and Cut (an edit in order).
 // Stories are kept on the server, one per tab, with undo.
 
-import { state, changed, toast, drawPicture, rollAsTab, switchTab } from "./store.js";
+import { state, changed, toast, drawPicture, rollAsTab, switchTab, sheetOf } from "./store.js";
 import { expandTags } from "./pills.js";
 import { go } from "./router.js";
 
@@ -57,7 +57,8 @@ const ref = (kind, x, i) => ({ id: x.id ?? uid(), name: x.name ?? "", tag: x.tag
 function normalize(b = {}) {
   const out = {
     v: 2,
-    idea: { brief: "", length: 60, aspect: "16:9", genre: "", tone: "", title: "", logline: "", synopsis: "", ...b.idea },
+    // refs: the user's references for the film (pictures, videos with a still), shown to the writers on one sheet
+    idea: { brief: "", length: 60, aspect: "16:9", genre: "", tone: "", title: "", logline: "", synopsis: "", refs: [], ...b.idea },
     cast: (b.cast ?? []).map((c, i) => ref("cast", c, i)),
     places: (b.places ?? []).map((p, i) => ref("places", p, i)),
     props: (b.props ?? []).map((p, i) => ref("props", p, i)),
@@ -344,6 +345,17 @@ function payload(b) {
   return { idea: b.idea, cast: b.cast.map(strip), places: b.places.map(strip), props: b.props.map(strip), look: { words: b.look.words, palette: b.look.palette }, script: { scenes }, board: { shots: shotsOf(b).map((s) => ({ ...s.block, photo: undefined, still: undefined, scene: s.scene.n })) } };
 }
 
+/** The user's references on one labelled sheet for the writers, made again only when they change. */
+async function refSheet(b) {
+  const refs = (b.idea.refs ?? []).filter((r) => r.kind === "video" ? r.still?.url : r.url).slice(0, 4);
+  if (!refs.length) return null;
+  const key = refs.map((r) => r.file).join(",");
+  if (b.idea.sheet?.key === key) return b.idea.sheet;
+  const photo = await sheetOf(refs.map((r) => ({ name: r.name, url: r.kind === "video" ? r.still.url : r.url })));
+  b.idea.sheet = { file: photo.file, url: photo.url, key };
+  return b.idea.sheet;
+}
+
 /** A part of the story written from what is above it: the idea, the script, the bible's words, the shots. */
 export async function write(step, { only } = {}) {
   const b = body();
@@ -355,7 +367,8 @@ export async function write(step, { only } = {}) {
   update();
   try {
     const one = only && scenesOf(b).find((s) => s.scene?.id === only)?.n;
-    const out = await send("api/story/write", "POST", { step, story: payload(b), only: one });
+    const sheet = step === "board" ? null : await refSheet(b).catch(() => null);
+    const out = await send("api/story/write", "POST", { step, story: payload(b), only: one, sheet: sheet?.file });
     if (step === "idea") Object.assign(b.idea, out);
     if (step === "script") {
       // the cast and places it names, keeping what each one had (words, pictures, colour)

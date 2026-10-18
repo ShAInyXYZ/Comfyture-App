@@ -110,6 +110,18 @@ function bibleColumn(b) {
 
 // ---------------------------------------------------------------- center: the story, top to bottom
 
+/** The pictures and videos the story was built around, each with its @name. */
+function refStrip(i) {
+  const refs = i.refs ?? [];
+  if (!refs.length) return null;
+  return h("div.doc-refs", { on: { click: (e) => e.stopPropagation() } },
+    h("span.story-group", {}, "References"),
+    ...refs.map((r) => h("button.doc-ref", { type: "button", title: `@${r.name}\n${r.kind === "video" ? "A reference video" : "A reference picture"}`, on: { click: () => view(r.url, r.kind === "video" ? "video" : "image") } },
+      h("img", { src: r.kind === "video" ? r.still?.url ?? "" : r.url, alt: "", draggable: false }),
+      r.kind === "video" ? h("span.doc-ref-video", {}, icon("play")) : null,
+      h("span.doc-ref-name", {}, `@${r.name}`))));
+}
+
 function titleBlock(b) {
   const i = b.idea;
   if (!i.logline && !i.title) {
@@ -122,13 +134,15 @@ function titleBlock(b) {
         h("div.segment", { role: "group", "aria-label": "Frame" }, ...["16:9", "9:16", "1:1"].map((v) => h("button", { type: "button", "aria-pressed": String(i.aspect === v), on: { click: () => ((i.aspect = v), commit()) } }, v))),
         h("span.spacer"),
         h("button.key.is-primary", { type: "button", disabled: busy("idea") || busy("script") || busy("world"), on: { click: () => writeAll() } }, sprite("prompt-enhance"), busy("idea") ? "Writing the idea…" : busy("script") ? "Writing the script…" : busy("world") ? "Describing the cast…" : "Write the story")),
+      refStrip(i),
       h("p.doc-hint", {}, "Gemma 4 writes the idea, then the script, then who and where it is. Or start from an empty page and add blocks with the + below."));
   }
   return h("header.doc-title", { className: isSel("idea") ? "is-selected" : "", on: { click: () => select("idea") } },
     h("div.doc-title-row", {}, h("h1", {}, i.title || "Untitled"), h("span.spacer"),
       h("div.doc-chips", {}, ...[i.genre, i.tone, LENGTHS.find(([v]) => v === i.length)?.[1] ?? `${i.length} s`, i.aspect].filter(Boolean).map((t) => h("span.chip", {}, t)))),
     i.logline ? h("p.doc-logline", {}, i.logline) : null,
-    i.synopsis ? pillText("p.doc-synopsis", i.synopsis, storyLookup) : null);
+    i.synopsis ? pillText("p.doc-synopsis", i.synopsis, storyLookup) : null,
+    refStrip(i));
 }
 
 /** The thin line between two blocks that adds one there: a scene, an action, a line, a shot or a note. */

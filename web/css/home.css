@@ -18,6 +18,32 @@
 .home-prompt:focus-within { border-color: var(--accent-line); }
 .home-brief { width: 100%; min-height: 2.6em; max-height: 6.5em; padding: 0; border: 0; outline: 0; background: transparent; resize: none; field-sizing: content; color: var(--text); font: 400 var(--fs-display)/1.3 var(--font-sans); font-size: clamp(1.375rem, 2.2vw, 2.375rem); letter-spacing: -.01em; caret-color: var(--accent); }
 .home-brief::placeholder { color: var(--muted); }
+/* the field grows with its words and never shows a scrollbar */
+.home-brief { overflow-y: auto; scrollbar-width: none; }
+.home-brief::-webkit-scrollbar { display: none; }
+.home-prompt.is-drop { border-color: var(--accent); box-shadow: var(--float), 0 0 0 4px rgba(242, 255, 89, .12); }
+
+/* the references attached to the prompt */
+.home-refs { display: flex; flex-wrap: wrap; gap: .5rem; }
+.home-refs[hidden] { display: none; }
+.home-ref { position: relative; width: 8.5rem; aspect-ratio: 16 / 10; overflow: hidden; border: 1px solid var(--line2); border-radius: calc(.5rem * var(--corner-k)); background: #111114; }
+.home-ref img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.home-ref.is-adding { display: grid; place-items: center; border-style: dashed; }
+.home-ref-name { position: absolute; left: .3125rem; bottom: .3125rem; max-width: calc(100% - .625rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: .1875rem .375rem; border-radius: .3125rem; background: rgba(10, 10, 12, .82); color: var(--accent); font: 500 var(--fs-micro)/1 var(--font-mono); }
+.home-ref-video { position: absolute; left: .3125rem; top: .3125rem; display: inline-flex; align-items: center; gap: .25rem; padding: .1875rem .375rem; border-radius: .3125rem; background: rgba(10, 10, 12, .82); color: var(--text); font: 500 var(--fs-micro)/1 var(--font-mono); }
+.home-ref-video svg { width: .625rem; height: .625rem; }
+.home-ref-x { position: absolute; top: .25rem; right: .25rem; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; padding: 0; border: 0; border-radius: 50%; background: rgba(10, 10, 12, .82); color: var(--text); opacity: 0; cursor: pointer; transition: opacity var(--t-fast); }
+.home-ref:hover .home-ref-x, .home-ref-x:focus-visible { opacity: 1; }
+.home-ref-x svg { width: .75rem; height: .75rem; }
+.home-attach { display: grid; place-items: center; width: 3rem; height: 3rem; padding: 0; border: 1px solid var(--line2); border-radius: calc(.5625rem * var(--corner-k)); background: transparent; color: var(--text); cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
+.home-attach:hover, .home-attach[aria-expanded="true"] { border-color: var(--text); background: var(--s2); }
+.home-attach svg { width: 1.25rem; height: 1.25rem; }
+.home-library { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 1px solid var(--line); border-radius: calc(.5rem * var(--corner-k)); color: var(--muted); }
+.home-library:hover { color: var(--text); border-color: var(--line2); }
+.home-library svg { width: 1.125rem; height: 1.125rem; }
+
+/* the sections' tabs stay off the welcome screen: its keys and its cards lead into them */
+body[data-page="home"] #nav { visibility: hidden; }
 .home-prompt-foot { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
 .home-prompt-foot .segment { padding: 4px; }
 .home-prompt-foot .segment > button { min-width: 4.75rem; height: 2.625rem; font-size: var(--fs-title); }

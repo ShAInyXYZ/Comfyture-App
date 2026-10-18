@@ -3,6 +3,7 @@ import { changed, toast, newTab, openTake } from "../store.js";
 import { go, currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
 import { view } from "../viewer.js";
+import { attachMenu } from "../attach.js";
 import { story, loadStories, openStory, newStory, deleteStory, writeAll, commit as commitStory } from "../story.js";
 import { loadCuts, openCut, newCut, deleteCut } from "../cut.js";
 
@@ -10,7 +11,8 @@ import { loadCuts, openCut, newCut, deleteCut } from "../cut.js";
 // story from one sentence; under it, the projects. A project is a film: its story, the stages its
 // shots were blocked on, its takes and its edits, together on one card that opens on hover.
 
-const home = { films: [], loaded: 0, loading: null, error: null, query: "", brief: "", length: 60, aspect: "16:9", starting: false, armed: null };
+// refs: pictures and videos attached to the prompt, for the story to be built around
+const home = { films: [], loaded: 0, loading: null, error: null, query: "", brief: "", length: 60, aspect: "16:9", starting: false, armed: null, refs: [], adding: 0 };
 const KIND = {
   story: { label: "Story", icon: "section-story" },
   stage: { label: "Stage", icon: "section-stage" },
@@ -83,16 +85,18 @@ const START = [
 
 /** A whole story from one sentence: a new story with the brief, and Gemma 4 writing it while Story shows it. */
 async function writeStory() {
-  const brief = home.brief.trim();
+  const brief = home.brief.trim() || (home.refs.length ? "A short film built around the attached references." : "");
   if (!brief) return document.querySelector(".home-brief")?.focus();
+  if (home.adding) return toast("A moment: an attachment is still coming in.");
   home.starting = true;
   redraw();
   try {
     await loadStories();
     await newStory();
-    Object.assign(story.project.body.idea, { brief, length: home.length, aspect: home.aspect });
+    Object.assign(story.project.body.idea, { brief, length: home.length, aspect: home.aspect, refs: home.refs.slice(0, 4) });
     commitStory();
     home.brief = "";
+    home.refs = [];
     go("story");
     writeAll();
   } catch (e) {
@@ -127,6 +131,75 @@ async function removeFilm(f) {
   load();
 }
 
+// ---------------------------------------------------------------- the references attached to the prompt
+
+const slugName = (n) => String(n ?? "").toLowerCase().replace(/\.[a-z0-9]{2,4}$/, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24) || "ref";
+/** A name the writers can call it by (@lighthouse), never twice. */
+function nameFor(n) {
+  const base = slugName(n);
+  let name = base;
+  for (let i = 2; home.refs.some((r) => r.name === name); i++) name = `${base}-${i}`;
+  return name;
+}
+const upload = async (path, blob, type) => {
+  const res = await fetch(path, { method: "POST", headers: { "Content-Type": type }, body: blob });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(out.error ?? res.statusText);
+  return out;
+};
+/** A video's frame, as a picture the writers can see. */
+async function stillOf(url, name) {
+  const v = Object.assign(document.createElement("video"), { muted: true, preload: "auto", src: url });
+  await new Promise((ok, no) => ((v.onloadeddata = ok), (v.onerror = () => no(new Error("That video can't be read.")))));
+  v.currentTime = Math.min(1, (v.duration || 2) / 2);
+  await new Promise((ok) => (v.onseeked = ok));
+  const c = new OffscreenCanvas(v.videoWidth, v.videoHeight);
+  c.getContext("2d").drawImage(v, 0, 0);
+  return upload(`api/photos?name=${encodeURIComponent(`${name} still`)}`, await c.convertToBlob({ type: "image/jpeg", quality: 0.9 }), "image/jpeg");
+}
+/** Pictures and videos from the computer: kept in the Library, and on the prompt. */
+async function addFiles(files) {
+  for (const f of [...(files ?? [])].filter((x) => /^(image|video)\//.test(x.type))) {
+    if (home.refs.length >= 4) return toast("Four references at most: the writers see them on one sheet.");
+    home.adding++;
+    refreshRefs();
+    try {
+      if (f.type.startsWith("image/")) {
+        const p = await upload(`api/photos?name=${encodeURIComponent(f.name)}`, f, f.type);
+        home.refs.push({ kind: "image", file: p.file, url: p.url, name: nameFor(f.name) });
+      } else {
+        const v = await upload("api/videos", f, f.type);
+        const name = nameFor(f.name);
+        home.refs.push({ kind: "video", file: v.file, url: v.url, seconds: v.seconds, name, still: await stillOf(v.url, name) });
+      }
+    } catch (e) {
+      fail(e);
+    } finally {
+      home.adding--;
+      refreshRefs();
+    }
+  }
+}
+function attach(anchor) {
+  attachMenu(anchor, {
+    files: addFiles,
+    picture: (p) => home.refs.length < 4 && !home.refs.some((r) => r.file === p.file) && (home.refs.push({ kind: "image", file: p.file, url: p.url, name: nameFor(p.name ?? p.file) }), refreshRefs()),
+    taken: (p) => home.refs.some((r) => r.file === p.file),
+    accept: "image/png,image/jpeg,image/webp,video/mp4,video/webm,video/quicktime",
+  });
+}
+/** The references on the prompt, each with its @name; drawn in place so the field keeps its words and caret. */
+function refs() {
+  return h("div.home-refs", { hidden: !home.refs.length && !home.adding },
+    ...home.refs.map((r, i) => h("div.home-ref", { title: `@${r.name}\n${r.kind === "video" ? "A reference video" : "A reference picture"}` },
+      h("img", { src: r.kind === "video" ? r.still?.url ?? "" : r.url, alt: "", draggable: false }),
+      r.kind === "video" ? h("span.home-ref-video", {}, icon("play"), r.seconds ? `${Number(r.seconds).toFixed(1)} s` : "") : null,
+      h("span.home-ref-name", {}, `@${r.name}`),
+      h("button.home-ref-x", { type: "button", title: "Take it off", "aria-label": `Take @${r.name} off`, on: { click: () => (home.refs.splice(i, 1), refreshRefs()) } }, icon("close")))),
+    home.adding ? h("div.home-ref.is-adding", {}, h("span.typing", {}, h("i"), h("i"), h("i"))) : null);
+}
+const refreshRefs = () => document.querySelector(".home-refs")?.replaceWith(refs());
+
 // ---------------------------------------------------------------- the screen
 
 /** The heart of the screen: what the film is about, and the story written from it. */
@@ -140,15 +213,22 @@ function hero() {
   const last = home.films.find((f) => f.story);
   return h("section.home-hero", { style: lit ? { "--hero": `url("${lit.story?.thumb ?? lit.cover.pic}")` } : {} },
     h("h1.home-ask", {}, h("label", { for: "home-brief" }, "What's your film about?")),
-    h("div.home-prompt", {},
+    h("div.home-prompt", {
+      on: {
+        dragover: (e) => [...e.dataTransfer.types].includes("Files") && (e.preventDefault(), e.currentTarget.classList.add("is-drop")),
+        dragleave: (e) => e.currentTarget.classList.remove("is-drop"),
+        drop: (e) => (e.preventDefault(), e.currentTarget.classList.remove("is-drop"), addFiles(e.dataTransfer.files)),
+      },
+    },
       field,
+      refs(),
       h("div.home-prompt-foot", {},
+        h("button.home-attach", { type: "button", title: "Attach pictures or videos\nThe story is built around them: who, where, the look", "aria-label": "Attach pictures or videos", "aria-expanded": "false", on: { click: (e) => attach(e.currentTarget) } }, sprite("paperclip")),
         seg("Length", LENGTHS, home.length, (v) => (home.length = v)),
         h("i.home-rule"),
         seg("Frame", ASPECTS.map((a) => [a, a]), home.aspect, (v) => (home.aspect = v)),
-        h("i.home-rule"),
-        h("span.home-model", { title: "Gemma 4 writes the idea, the script and how everyone looks, inside ComfyUI" }, sprite("prompt-enhance"), "Gemma 4"),
         h("span.spacer"),
+        h("span.home-model", { title: "Gemma 4 writes the idea, the script and how everyone looks, inside ComfyUI" }, sprite("prompt-enhance"), "Gemma 4"),
         h("button.key.is-primary.home-write", { type: "button", disabled: home.starting, title: "Enter", on: { click: writeStory } }, sprite("prompt-enhance"), home.starting ? "Starting…" : "Write the story"))),
     h("div.home-new", { role: "group", "aria-label": "Start something empty" },
       ...START.map(([glyph, tip, run]) => h("button.home-new-key", { type: "button", title: tip, "aria-label": tip, on: { click: () => Promise.resolve(run()).catch(fail) } }, sprite(glyph)))),
@@ -277,6 +357,7 @@ function projects() {
     h("div.home-head", {},
       h("span.card-label", {}, "Projects"),
       h("span.spacer"),
+      h("a.home-library", { href: "#/library", title: "Library\nEvery take, film and picture" }, sprite("batch")),
       h("label.home-search", {}, icon("search"), h("input", { type: "search", value: home.query, placeholder: "Search projects", "aria-label": "Search the projects", on: { input: (e) => ((home.query = e.target.value), refreshResults()) } }))),
     results());
 }

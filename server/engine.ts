@@ -534,8 +534,10 @@ export class Engine extends EventEmitter {
    * Gemma 4 in ComfyUI writes text from a brief and a prompt (a story step, as JSON), out of the
    * render queue like the assistant's answers, so it never waits behind takes.
    */
-  async write(brief: string, prompt: string, { maxLength = 3000, temperature = 0.7 }: { maxLength?: number; temperature?: number } = {}): Promise<string> {
-    const graph = buildPlan(await loadGraph(this.dirs.workflows, "director.json"), prompt, random32());
+  /** Gemma 4 writes from a brief and a prompt; a picture (a photo's file), when given, is in its view as it writes. */
+  async write(brief: string, prompt: string, { maxLength = 3000, temperature = 0.7, picture }: { maxLength?: number; temperature?: number; picture?: string } = {}): Promise<string> {
+    const image = picture && (await exists(this.photoPath(picture))) ? this.client.assets.fromFile(this.photoPath(picture)) : undefined;
+    const graph = buildPlan(await loadGraph(this.dirs.workflows, "director.json"), prompt, random32(), image);
     if (graph.brief) graph.brief.inputs.value = brief;
     if (graph.plan) Object.assign(graph.plan.inputs, { max_length: maxLength, "sampling_mode.temperature": temperature });
     const job = await this.execute(graph, new AbortController().signal, { kind: "plan", stage: "frame", queue: false });

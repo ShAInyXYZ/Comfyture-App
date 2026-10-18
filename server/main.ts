@@ -990,7 +990,9 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const step = ["idea", "script", "world", "board"].includes(input.step) ? (input.step as StoryStep) : null;
     if (!step) throw bad("Which step?");
     const only = Math.round(Number(input.only)) || undefined;
-    const reply = await engine.write(storyBrief(step), storyPrompt(step, input.story ?? {}, text(input.ask, 800), only), { maxLength: step === "idea" ? 1200 : 3600 });
+    // the user's references (pictures, frames of videos) on one sheet the writer sees
+    const sheet = step === "board" ? undefined : await photo(input.sheet).catch(() => undefined);
+    const reply = await engine.write(storyBrief(step), storyPrompt(step, input.story ?? {}, text(input.ask, 800), only, !!sheet), { maxLength: step === "idea" ? 1200 : 3600, picture: sheet });
     return json(res, 200, readStory(step, reply));
   }
   if (path === "/api/story/assist" && method === "POST") {

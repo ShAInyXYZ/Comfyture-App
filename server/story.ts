@@ -27,7 +27,7 @@ Rules: every scene gets two to four shots (never just one), in order; vary the s
 };
 
 /** What the writer of a step reads: the steps before it, and what to change if asked. */
-export function storyPrompt(step: StoryStep, story: any, ask?: string, only?: number): string {
+export function storyPrompt(step: StoryStep, story: any, ask?: string, only?: number, seen = false): string {
   const idea = story?.idea ?? {};
   const script = story?.script ?? {};
   const lines: string[] = [];
@@ -56,6 +56,9 @@ export function storyPrompt(step: StoryStep, story: any, ask?: string, only?: nu
     : step === "script" ? { cast: story?.cast, places: story?.places, scenes: script.scenes }
     : step === "world" ? { cast: list(story?.cast, 8).map((c: any) => ({ name: c.name, words: c.words })), places: list(story?.places, 6).map((p: any) => ({ name: p.name, words: p.words })), props: list(story?.props, 8).map((p: any) => ({ name: p.name, words: p.words })), look: story?.look }
     : { shots: story?.board?.shots };
+  // the user's references, on the picture the writer sees
+  const refs = list(story?.idea?.refs, 4).map((r: any) => `@${text(r.name, 30)} (${r.kind === "video" ? "a frame of a reference video" : "a reference picture"})`);
+  if (seen && refs.length) lines.push(`The picture shows the user's references, each under its @name: ${refs.join(", ")}. ${step === "world" ? "Describe the people, places and things that appear in them exactly as they look there." : "Build the film around them: who and what they show, where, and their look."}`);
   if (ask?.trim()) lines.push(`The ${step === "world" ? "cast and world" : step} as it is now: ${JSON.stringify(current).slice(0, 6000)}`, `Change it: ${text(ask, 800)}. Answer with the whole ${step === "world" ? "cast and world" : step} again, changed.`);
   return lines.join("\n");
 }
