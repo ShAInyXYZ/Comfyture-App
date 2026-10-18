@@ -369,6 +369,9 @@ function summary(kind: string, body: any) {
   }
   return {};
 }
+/** How long a script or a storyboard may run: a five-minute film needs room for fifteen scenes and their shots. */
+const storyRoom = (length: unknown) => Math.round(Math.min(9000, Math.max(3600, (Number(length) || 60) * 30)));
+
 /** A writer's answer from the model the page picked: Claude on Comfy Router, or Gemma 4 inside ComfyUI. */
 async function write(model: string, brief: string, prompt: string, opts: { maxLength?: number; temperature?: number; picture?: string } = {}) {
   if (!onRouter(model)) return engine.write(brief, prompt, opts);
@@ -1005,7 +1008,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const only = Math.round(Number(input.only)) || undefined;
     // the user's references (pictures, frames of videos) on one sheet the writer sees
     const sheet = step === "board" ? undefined : await photo(input.sheet).catch(() => undefined);
-    const reply = await write(pickLlm(input.model), storyBrief(step), storyPrompt(step, input.story ?? {}, text(input.ask, 800), only, !!sheet), { maxLength: step === "idea" ? 1200 : 3600, picture: sheet });
+    const reply = await write(pickLlm(input.model), storyBrief(step), storyPrompt(step, input.story ?? {}, text(input.ask, 800), only, !!sheet), { maxLength: step === "idea" ? 1200 : storyRoom(input.story?.idea?.length), picture: sheet });
     return json(res, 200, readStory(step, reply));
   }
   if (path === "/api/story/assist" && method === "POST") {

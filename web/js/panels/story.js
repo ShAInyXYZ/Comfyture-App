@@ -12,7 +12,7 @@ import {
 } from "../story.js";
 
 const CAMERA_ICON = { locked: "camera-locked", "push-in": "camera-push-in", "pull-out": "camera-pull-out", orbit: "camera-orbit", "crane-up": "camera-crane-up", handheld: "camera-handheld" };
-const LENGTHS = [[30, "30 s"], [60, "1 min"], [90, "1:30"], [120, "2 min"]];
+const LENGTHS = [[10, "10 s"], [20, "20 s"], [30, "30 s"], [60, "1 min"], [120, "2 min"], [300, "5 min"]];
 const KIND_GLYPH = { scene: () => sprite("scene-camera"), action: () => icon("pencil"), line: () => sprite("message"), shot: () => sprite("frame-first"), note: () => sprite("file") };
 const busy = (k) => story.busy.has(k);
 const key = (glyph, label, run, extra = {}) => h("button.key.is-icon", { type: "button", title: label, "aria-label": label, on: { click: (e) => (e.stopPropagation(), run(e)) }, ...extra }, glyph);

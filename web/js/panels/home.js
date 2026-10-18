@@ -20,10 +20,30 @@ const KIND = {
   cut: { label: "Edit", icon: "edit-scissors" },
   take: { label: "Take", icon: "section-shot" },
 };
-const LENGTHS = [[30, "30 s"], [60, "1 min"], [120, "2 min"]];
+// one key each for the length and the frame: a click steps to the next (Shift, the one before)
+const LENGTHS = [[10, "10 s"], [20, "20 s"], [30, "30 s"], [60, "1 min"], [120, "2 min"], [300, "5 min"]];
 // the genre the idea is written in ("" leaves it to the writer)
 const GENRES = [["", "Any genre"], ["Drama", "Drama"], ["Comedy", "Comedy"], ["Thriller", "Thriller"], ["Horror", "Horror"], ["Sci-fi", "Sci-fi"], ["Fantasy", "Fantasy"], ["Romance", "Romance"], ["Adventure", "Adventure"], ["Animation", "Animation"], ["Documentary", "Documentary"], ["Commercial", "Commercial"], ["Music video", "Music video"]];
-const ASPECTS = ["16:9", "9:16", "1:1"];
+const ASPECTS = [["16:9", "16:9", "ratio-16-9", "Wide"], ["9:16", "9:16", "ratio-9-16", "Tall, for phones"], ["1:1", "1:1", "ratio-1-1", "Square"]];
+/** A key that shows its value and steps through the values on each click, from the value as it is then. */
+function stepper(label, list, get, set, glyph, hint) {
+  const key = h("button.home-step", { type: "button" });
+  const show = () => {
+    const item = list.find(([v]) => v === get()) ?? list[0];
+    key.title = `${label}: ${item[1]}${hint ? ` — ${hint(item)}` : ""}\nClick for the next, Shift-click for the one before`;
+    key.setAttribute("aria-label", `${label}: ${item[1]}`);
+    key.replaceChildren(sprite(item[2] ?? glyph), h("span", {}, item[1]));
+  };
+  const step = (by) => {
+    const i = Math.max(0, list.findIndex(([v]) => v === get()));
+    set(list[(i + by + list.length) % list.length][0]);
+    show();
+  };
+  key.addEventListener("click", (e) => step(e.shiftKey ? -1 : 1));
+  key.addEventListener("contextmenu", (e) => (e.preventDefault(), step(-1)));
+  show();
+  return key;
+}
 const redraw = () => changed("home");
 const call = async (path, init) => {
   const res = await fetch(path, init);
@@ -211,7 +231,6 @@ function hero() {
     rows: 2, value: home.brief, placeholder: "an old lighthouse keeper and a girl carry a glowing jellyfish back to the sea", "aria-label": "What the film is about",
     on: { keydown: (e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), writeStory()), input: (e) => (home.brief = e.target.value) },
   });
-  const seg = (label, items, value, set) => h("div.segment", { role: "group", "aria-label": label }, ...items.map(([v, l]) => h("button", { type: "button", "aria-pressed": String(value === v), on: { click: () => (set(v), redraw()) } }, l)));
   const lit = home.films.find((f) => f.story?.thumb) ?? home.films.find((f) => f.cover?.pic);
   const last = home.films.find((f) => f.story);
   return h("section.home-hero", { style: lit ? { "--hero": `url("${lit.story?.thumb ?? lit.cover.pic}")` } : {} },
@@ -226,9 +245,9 @@ function hero() {
       field,
       refs(),
       h("div.home-prompt-foot", {},
-        seg("Length", LENGTHS, home.length, (v) => (home.length = v)),
-        seg("Frame", ASPECTS.map((a) => [a, a]), home.aspect, (v) => (home.aspect = v)),
-        h("span.home-pick.is-genre", { title: "Genre\nThe idea is written in it" }, dropdown({ label: "Genre", value: home.genre, items: GENRES.map(([value, label]) => ({ value, label })), onChange: (v) => (home.genre = v) })),
+        stepper("Length", LENGTHS, () => home.length, (v) => (home.length = v), "duration"),
+        stepper("Frame", ASPECTS, () => home.aspect, (v) => (home.aspect = v), null, (a) => a[3]),
+        h("span.home-pick.is-genre", { className: home.genre ? "is-set" : "", title: "Genre\nThe idea is written in it" }, dropdown({ label: "Genre", value: home.genre, items: GENRES.map(([value, label]) => ({ value, label })), onChange: (v) => ((home.genre = v), redraw()) })),
         h("span.spacer"),
         writers().length > 1 ? h("span.home-pick.is-model", { title: "Writer\nThe model that writes the story" }, dropdown({ label: "Writer", value: writer(), items: writers().map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setWriter(id) })) : h("span.home-model.is-one", { title: "The story is written by Gemma 4, inside ComfyUI" }, sprite("prompt-enhance"), writers()[0]?.name ?? "Gemma 4"),
         h("button.home-attach", { type: "button", title: "Attach pictures or videos\nThe story is built around them: who, where, the look", "aria-label": "Attach pictures or videos", "aria-expanded": "false", on: { click: (e) => attach(e.currentTarget) } }, sprite("paperclip")),

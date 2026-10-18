@@ -11,13 +11,13 @@ const list = (v: unknown, max: number) => (Array.isArray(v) ? v.slice(0, max) : 
 export const tagOf = (name: string) => name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24) || "someone";
 
 const BRIEFS: Record<StoryStep, string> = {
-  idea: `You develop stories for short films (30 seconds to 3 minutes) made with AI video, one shot at a time.
+  idea: `You develop stories for short films (10 seconds to 5 minutes) made with AI video, one shot at a time.
 From the user's idea, write the story's foundation. Answer with JSON only, no other words:
 {"title": "two to five words", "logline": "one sentence: who wants what, and what stands in the way", "synopsis": "one paragraph of four to six sentences: the beginning, the turn, the end", "genre": "one or two words", "tone": "three words"}
 Rules: concrete and visual, things a camera can see; one to four characters; one or two places; the end lands; no camera words.`,
   script: `You are the screenwriter of a short AI film. From its title, logline and synopsis, write the script as scenes. Answer with JSON only, no other words:
 {"cast": [{"name": "a character's name", "about": "who they are, in a few words"}], "places": [{"name": "a place's name", "about": "what it is, in a few words"}], "scenes": [{"slug": "EXT. THE PLACE — NIGHT", "place": "a place's name", "summary": "one sentence", "beats": ["something we see happen"], "lines": [{"who": "a character's name", "line": "a short line", "how": "whispers"}]}]}
-Rules: the cast is everyone who acts in the story, people or animals (an animal that does things is cast, never a prop), each with a name of this story's world (a person's first name, or what the others call them: "the fox"); as many scenes as the length allows (about one per 20 seconds, two to six); two to five beats per scene, each one thing we see; dialogue short and sparse: a line has at most twelve words, and many scenes have none; every speaker is in cast and every scene's place in places; names never change.`,
+Rules: the cast is everyone who acts in the story, people or animals (an animal that does things is cast, never a prop), each with a name of this story's world (a person's first name, or what the others call them: "the fox"); as many scenes as the length allows (about one per 20 seconds: one for 10 seconds, three for a minute, fifteen for five minutes); two to five beats per scene, each one thing we see; dialogue short and sparse: a line has at most twelve words, and many scenes have none; every speaker is in cast and every scene's place in places; names never change.`,
   world: `You are the production designer of a short AI film. For each character and place of the script, write how they look, to draw reference sheets from, and the film's look. Answer with JSON only, no other words:
 {"cast": [{"name": "as in the script", "words": "a ten-year-old girl, curly dark hair, freckles, a bright yellow raincoat, red rubber boots"}], "places": [{"name": "as in the script", "words": "a black-sand beach under a lighthouse at night, wet rocks, heavy surf"}], "props": [{"name": "an object", "words": "a brass oil lantern with a cracked glass, glowing amber"}], "look": {"words": "the film's style: medium, light, colour, lens, texture", "palette": ["#1b2a3a", "#2f4b66", "#e8b04a", "#9fd3e6", "#0d1117", "#c9ced6"]}}
 Rules: every character and place of the script, by its name in the script; visual facts only (age, build, face, hair, clothes and their colours for people; species, size, fur or feathers and markings for animals; place, time of day, weather, light for places; shape, material and colour for props); props are objects only, never a character, and only the key ones the story turns on; a character's clothes stay the same all film; the palette is six hex colours that fit the look.`,
@@ -31,7 +31,7 @@ export function storyPrompt(step: StoryStep, story: any, ask?: string, only?: nu
   const idea = story?.idea ?? {};
   const script = story?.script ?? {};
   const lines: string[] = [];
-  const seconds = Math.round(Math.min(180, Math.max(15, Number(idea.length) || 60)));
+  const seconds = Math.round(Math.min(300, Math.max(10, Number(idea.length) || 60)));
   if (step === "idea") {
     lines.push(`Idea: ${text(idea.brief, 1500) || text(idea.logline, 400) || "a short film"}`, `Length: about ${seconds} seconds`, `Frame: ${idea.aspect ?? "16:9"}`);
     if (idea.genre || idea.tone) lines.push(`Wanted: ${[idea.genre, idea.tone].filter(Boolean).join(", ")}`);
