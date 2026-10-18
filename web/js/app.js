@@ -63,6 +63,10 @@ window.addEventListener("pointermove", (e) => press && Math.hypot(e.clientX - pr
 window.addEventListener("pointerup", () => press && setTimeout(release), true);
 window.addEventListener("pointercancel", release, true);
 
+// a key is found again after a redraw by its class and its name
+const KEYS = "button, a[href], [tabindex]";
+const keyName = (n) => `${n.className}|${n.dataset.focusKey || n.getAttribute("aria-label") || n.dataset.tooltip || n.title || n.textContent.trim()}`;
+
 function flush() {
   if (scheduled) return;
   scheduled = true;
@@ -85,9 +89,12 @@ function flush() {
       // a redraw replaces the panel's children, which would scroll it back to the top
       const top = el.scrollTop;
       const lists = new Map([...el.querySelectorAll("[data-scroll-key]")].map((n) => [n.dataset.scrollKey, n.scrollTop]));
+      // and the key the focus was on (a menu's, just picked from) would leave it on the page itself
+      const focused = el.contains(active) && active.matches(KEYS) ? keyName(active) : null;
       render(el);
       el.scrollTop = top;
       for (const n of el.querySelectorAll("[data-scroll-key]")) if (lists.has(n.dataset.scrollKey)) n.scrollTop = lists.get(n.dataset.scrollKey);
+      if (focused && !el.contains(document.activeElement)) [...el.querySelectorAll(KEYS)].find((n) => keyName(n) === focused)?.focus({ preventScroll: true });
     }
     pending.clear();
     for (const name of held) pending.add(name);

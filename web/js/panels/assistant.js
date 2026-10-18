@@ -1,6 +1,6 @@
 import { h, icon, sprite } from "../dom.js";
 import {
-  state, ask, askStage, renderStageImage, useStageRender, improveStageLook, setStageModel, stageModels, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt, toast, writer, writers, setWriter,
+  state, ask, askStage, renderStageImage, useStageRender, improveStageLook, setStageModel, stageModels, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt, toast, writers,
   attachPhoto, attachStageMap, setStageMap, addStagePicture, removeStagePicture, attachStagePictures,
 } from "../store.js";
 import { pillField, pillText } from "../pills.js";
@@ -8,6 +8,7 @@ import { attachMenu, MAPS, MAP_TAG, MAP_OF_TAG } from "../attach.js";
 import { story, askStory, storyLookup, selectionLabel, select as selectInStory } from "../story.js";
 import { cut, askCut } from "../cut.js";
 import { dropdown } from "../controls.js";
+import { writerPicker } from "../writer-menu.js";
 import { view } from "../viewer.js";
 import { currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
@@ -398,7 +399,7 @@ export function renderAssistant(el) {
   c.render.disabled = !!busy;
   // the model that answers here, on every page: the writer on Story and Cut, the assistant on Shot and the Stage
   const role = storyPage || cutPage ? "writer" : "assistant";
-  const llm = writers().length > 1 ? [dropdown({ label: role === "writer" ? "Writer" : "Assistant", value: writer(role), items: writers().map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setWriter(id, role) })] : [];
+  const llm = writers().length > 1 ? [writerPicker(role)] : [];
   if (stage) {
     const models = stageModels();
     const value = state.stageModel && models.some((m) => m.id === state.stageModel) ? state.stageModel : state.image.catalogue?.default ?? models[0]?.id;

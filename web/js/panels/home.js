@@ -1,5 +1,6 @@
 import { h, icon, sprite, ago } from "../dom.js";
-import { changed, toast, newTab, openTake, writer, writers, setWriter } from "../store.js";
+import { changed, toast, newTab, openTake, writers } from "../store.js";
+import { writerPicker } from "../writer-menu.js";
 import { dropdown } from "../controls.js";
 import { go, currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
@@ -249,7 +250,7 @@ function hero() {
         stepper("Frame", ASPECTS, () => home.aspect, (v) => (home.aspect = v), null, (a) => a[3]),
         h("span.home-pick.is-genre", { className: home.genre ? "is-set" : "", title: "Genre\nThe idea is written in it" }, dropdown({ label: "Genre", value: home.genre, items: GENRES.map(([value, label]) => ({ value, label })), onChange: (v) => ((home.genre = v), redraw()) })),
         h("span.spacer"),
-        writers().length > 1 ? h("span.home-pick.is-model", { title: "Writer\nThe model that writes the story" }, dropdown({ label: "Writer", value: writer(), items: writers().map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setWriter(id) })) : h("span.home-model.is-one", { title: "The story is written by Gemma 4, inside ComfyUI" }, sprite("prompt-enhance"), writers()[0]?.name ?? "Gemma 4"),
+        writers().length > 1 ? h("span.home-pick.is-model", { title: "Writer\nThe model that writes the story" }, writerPicker("writer")) : h("span.home-model.is-one", { title: "The story is written by Gemma 4, inside ComfyUI" }, sprite("prompt-enhance"), writers()[0]?.name ?? "Gemma 4"),
         h("button.home-attach", { type: "button", title: "Attach pictures or videos\nThe story is built around them: who, where, the look", "aria-label": "Attach pictures or videos", "aria-expanded": "false", on: { click: (e) => attach(e.currentTarget) } }, sprite("paperclip")),
         h("button.key.is-primary.home-write", { type: "button", disabled: home.starting, title: "Enter", on: { click: writeStory } }, sprite("prompt-enhance"), home.starting ? "Starting…" : "Write the story"))),
     h("div.home-new", { role: "group", "aria-label": "Start something empty" },

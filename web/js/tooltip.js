@@ -89,7 +89,8 @@ export function installTooltips() {
   };
   const show = (el, delay, x = null) => {
     hide();
-    if (!el?.dataset.tooltip || el.matches(":disabled")) return;
+    // nor over the menu it has just opened
+    if (!el?.dataset.tooltip || el.matches(":disabled, [data-state='open']")) return;
     pointerX = x;
     timer = setTimeout(() => {
       if (!el.isConnected) return;
@@ -136,10 +137,12 @@ export function installTooltips() {
       press = null;
     }
   }, true);
-  document.addEventListener("focusin", (e) => Date.now() - lastTouch > 800 && show(e.target.closest?.("[data-tooltip]"), 100));
+  // the keyboard's focus only: a click focuses what it lands on, and that is no reason for a tip
+  document.addEventListener("focusin", (e) => Date.now() - lastTouch > 800 && e.target.matches?.(":focus-visible") && show(e.target.closest?.("[data-tooltip]"), 100));
   document.addEventListener("focusout", hide);
   document.addEventListener("pointerdown", hide, true);
-  document.addEventListener("keydown", (e) => e.key === "Escape" && hide(), true);
+  // a key pressed is the control in use (Enter opens a menu, Escape closes it): the tip steps aside
+  document.addEventListener("keydown", hide, true);
   document.addEventListener("scroll", hide, true);
   // the panels redraw all the time: every title they add becomes a tip
   migrate(document.body);

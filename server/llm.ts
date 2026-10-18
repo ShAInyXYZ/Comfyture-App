@@ -12,19 +12,20 @@ import { randomUUID } from "node:crypto";
 // tuned: whether it takes a temperature; forced: whether it can be made to answer through a tool
 // (Sonnet 5.5 thinks before it answers, so it turns both down; told to use the tool, it does)
 type Provider = "anthropic" | "openai" | "vertexai" | "comfyui";
-export type Llm = { id: string; name: string; about: string; provider: Provider; tuned?: boolean; forced?: boolean };
+// rates: Comfy credits per 1K tokens read and written (Comfy's partner pricing), for the picker's prices
+export type Llm = { id: string; name: string; about: string; provider: Provider; rates?: [number, number]; tuned?: boolean; forced?: boolean };
 const LLMS: Llm[] = [
-  { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", about: "Anthropic · the strongest writer, for stories and edits", provider: "anthropic" },
-  { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", about: "Anthropic · quick and cheap, for the assistants", provider: "anthropic", tuned: true, forced: true },
-  { id: "gpt-6-sol", name: "GPT-6 Sol", about: "OpenAI · a strong writer, priced like Sonnet", provider: "openai" },
-  { id: "gpt-6-luna", name: "GPT-6 Luna", about: "OpenAI · the cheapest, a tenth of Haiku", provider: "openai" },
-  { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", about: "Google · a strong writer, a little cheaper", provider: "vertexai", tuned: true },
-  { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash", about: "Google · quick", provider: "vertexai", tuned: true },
+  { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", about: "The strongest writer", provider: "anthropic", rates: [0.603, 3.017] },
+  { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", about: "Quick, for the assistants", provider: "anthropic", rates: [0.302, 1.509], tuned: true, forced: true },
+  { id: "gpt-6-sol", name: "GPT-6 Sol", about: "A strong writer", provider: "openai", rates: [0.603, 3.017] },
+  { id: "gpt-6-luna", name: "GPT-6 Luna", about: "The cheapest", provider: "openai", rates: [0.030, 0.151] },
+  { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", about: "A strong writer, slower", provider: "vertexai", rates: [0.422, 2.532], tuned: true },
+  { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash", about: "Quick", provider: "vertexai", rates: [0.453, 2.263], tuned: true },
   { id: "gemma-4", name: "Gemma 4", about: "Open weights, inside ComfyUI", provider: "comfyui" },
 ];
 const hasKey = () => !!process.env.COMFY_API_KEY?.trim();
 const model = (id: string) => LLMS.find((m) => m.id === id);
-export const llms = () => LLMS.filter((m) => m.provider === "comfyui" || hasKey()).map(({ id, name, about, provider }) => ({ id, name, about, provider, router: provider !== "comfyui" }));
+export const llms = () => LLMS.filter((m) => m.provider === "comfyui" || hasKey()).map(({ id, name, about, provider, rates }) => ({ id, name, about, provider, rates, router: provider !== "comfyui" }));
 export type Role = "writer" | "assistant";
 export function defaultLlm(role: Role = "writer") {
   // COMFYTURE_ASSISTANT=gemma, from before there was a choice, still keeps everything on Gemma 4

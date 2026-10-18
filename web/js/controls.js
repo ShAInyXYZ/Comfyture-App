@@ -117,7 +117,12 @@ export function toggle(el, { value, onChange, label }) {
  * and optional tags. Arrows move, Enter picks, Escape or a click elsewhere closes.
  * items: [{ value, label, desc?, extra?: Node }]
  */
-export function dropdown({ items, value, onChange, label, onOpen, onClose }) {
+/**
+ * A select: a trigger showing the chosen item, and a menu of the items. An item may carry a group
+ * (a header with its glyph starts each group) and a meta (a short value at the row's end); a note
+ * closes the menu; width "fit" makes the menu only as wide as its rows.
+ */
+export function dropdown({ items, value, onChange, label, onOpen, onClose, note, width: fit }) {
   const current = () => items.find((i) => i.value === value) ?? items[0];
   const chev = '<svg class="sel-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
   const trigger = document.createElement("button");
@@ -159,8 +164,9 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose }) {
   const outside = (e) => !menu?.contains(e.target) && !trigger.contains(e.target) && close();
   const highlight = (i) => {
     at = (i + items.length) % items.length;
-    menu.querySelectorAll(".sel-item").forEach((n, k) => n.toggleAttribute("data-highlighted", k === at));
-    menu.children[at]?.scrollIntoView({ block: "nearest" });
+    const rows = menu.querySelectorAll(".sel-item");
+    rows.forEach((n, k) => n.toggleAttribute("data-highlighted", k === at));
+    rows[at]?.scrollIntoView({ block: "nearest" });
   };
   const pick = (item) => {
     value = item.value;
@@ -174,27 +180,54 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose }) {
     menu = document.createElement("div");
     menu.className = "sel-menu";
     menu.setAttribute("role", "listbox");
+    if (fit) menu.classList.add("is-fit");
+    let group = null;
     items.forEach((item, i) => {
+      if (item.group && item.group !== group) {
+        group = item.group;
+        const head = document.createElement("div");
+        head.className = "sel-group";
+        head.setAttribute("role", "presentation");
+        if (item.groupIcon) head.append(item.groupIcon());
+        head.append(document.createTextNode(item.group));
+        menu.append(head);
+      }
       const row = document.createElement("button");
       row.type = "button";
       row.className = "sel-item";
       row.setAttribute("role", "option");
       if (item.value === value) row.toggleAttribute("data-selected", true);
       row.append(face(item));
+      if (item.meta) {
+        const m = document.createElement("span");
+        m.className = "sel-meta";
+        m.textContent = item.meta;
+        row.append(m);
+      }
       // the chosen one is lit in the accent; nothing else marks it
       if (item.extra) row.append(item.extra.cloneNode(true));
       row.addEventListener("pointerenter", () => highlight(i));
       row.addEventListener("click", () => pick(item));
       menu.append(row);
     });
+    if (note) {
+      const n = document.createElement("p");
+      n.className = "sel-note";
+      n.textContent = note;
+      menu.append(n);
+    }
     document.body.append(menu);
     const box = trigger.getBoundingClientRect();
     const below = innerHeight - box.bottom;
-    // wide enough for the second lines, and never past the window's edge
-    const width = Math.min(innerWidth - 16, Math.max(box.width, 432));
+    // wide enough for the second lines (or, fitted, for its rows), and never past the window's edge
+    const width = Math.min(innerWidth - 16, Math.max(box.width, fit ? Math.ceil(menu.scrollWidth) + 2 : 432));
     Object.assign(menu.style, { left: `${Math.max(8, Math.min(box.left, innerWidth - width - 8))}px`, width: `${width}px` });
-    if (below < menu.offsetHeight + 12 && box.top > below) menu.style.bottom = `${innerHeight - box.top + 6}px`;
+    const up = below < menu.offsetHeight + 12 && box.top > below;
+    if (up) menu.style.bottom = `${innerHeight - box.top + 6}px`;
     else menu.style.top = `${box.bottom + 6}px`;
+    // a list taller than the room on its side scrolls inside it, never past the window's edge
+    const room = (up ? box.top : below) - 14;
+    if (menu.offsetHeight > room) menu.style.maxHeight = `${room}px`;
     trigger.dataset.state = "open";
     highlight(Math.max(0, items.findIndex((i) => i.value === value)));
     document.addEventListener("pointerdown", outside, true);
