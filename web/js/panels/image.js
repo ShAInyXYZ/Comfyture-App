@@ -1,11 +1,13 @@
 import { h, icon, sprite } from "../dom.js";
 import {
   state, imageChoice, setImage, setImagePrompt, closeImage, addImageRef, removeImageRef, uploadImageRefs, imageMentionables,
-  enhanceImage, unenhanceImage, generateImages, placePhoto, addImageLora, removeImageLora, setLoraStrength,
+  enhanceImage, unenhanceImage, generateImages, placePhoto, addImageLora, removeImageLora, setLoraStrength, addStageMap, removeStageMap,
 } from "../store.js";
 import { view } from "../viewer.js";
 import { imageFrom } from "../photo.js";
 import { dropdown, toggle } from "../controls.js";
+import { pillField } from "../pills.js";
+import { attachMenu, MAP_TAG, MAP_OF_TAG } from "../attach.js";
 
 const TEMPLATE_ICON = { generate: "text-to-image", edit: "image-edit", style: "image-reference" };
 const RATIOS = { "1:1": 1, "4:3": 4 / 3, "3:4": 3 / 4, "3:2": 3 / 2, "2:3": 2 / 3, "16:9": 16 / 9, "9:16": 9 / 16, "21:9": 21 / 9 };
@@ -91,17 +93,32 @@ function markMentioned() {
   composer.tray.querySelectorAll(".file-chip").forEach((chip) => chip.classList.toggle("is-mentioned", named.has(chip.dataset.name)));
 }
 
+/**
+ * What an @name in the window's prompt stands for, to draw its pill and its card: a reference, a
+ * control map, or someone's sheet (from a Stage render: their words and pictures).
+ */
+function lookup(name) {
+  const im = state.image;
+  const ref = im.refs.find((r) => r.name === name);
+  const of = im.cast.find((c) => c.tag === name || c.pictures?.includes(name));
+  if (of) {
+    const pictures = im.refs.filter((r) => of.pictures?.includes(r.name));
+    return { title: of.name, color: of.color, url: (ref ?? pictures[0])?.url, pictures, words: of.words, note: pictures.length ? null : "No picture: its words go with the prompt." };
+  }
+  if (!ref) return null;
+  const map = MAP_OF_TAG[name];
+  return { title: map ? `@${name}` : ref.title ?? `@${name}`, url: ref.url, pictures: [ref], note: map ? "A control map of the Stage" : `${ref.width} × ${ref.height}` };
+}
+
 function makeComposer() {
-  const input = h("textarea.chat-input.img-input", { rows: 3, placeholder: "Describe the picture · @ for a reference", "aria-label": "Describe the picture" });
+  const input = pillField({ placeholder: "Describe the picture · @ for a reference", label: "Describe the picture", lookup, className: "chat-input img-input" });
   const fileInput = h("input", { type: "file", multiple: true, hidden: true, accept: "image/*" });
-  const grow = () => {
-    input.style.height = "auto";
-    input.style.height = `${Math.min(input.scrollHeight, 200)}px`;
-  };
+  // the field grows with its words, up to its CSS height
+  const grow = () => {};
   input.addEventListener("input", () => (setImagePrompt(input.value), grow(), updatePicker(), markMentioned(), syncKeys()));
   input.addEventListener("click", updatePicker);
   // a redraw blurs it for a moment; the picker only goes when the focus really left
-  input.addEventListener("blur", () => setTimeout(() => document.activeElement !== input && (composer.picker.hidden = true), 120));
+  input.addEventListener("blur", () => setTimeout(() => document.activeElement !== input.el && (composer.picker.hidden = true), 120));
   input.addEventListener("keydown", (e) => {
     const c = composer;
     if (!c.picker.hidden && c.list?.length) {
@@ -133,13 +150,22 @@ function makeComposer() {
     }
   });
   fileInput.addEventListener("change", () => (uploadImageRefs([...fileInput.files]), (fileInput.value = "")));
-  const clip = h("button.img-key", { type: "button", title: "Add a reference — or drop, paste, or name one with @", "aria-label": "Add a reference", on: { click: () => fileInput.click() } }, sprite("paperclip"));
+  // the paperclip opens its two frames: pictures (from the computer, or the Library), and the Stage's control maps
+  const clip = h("button.img-key", { type: "button", title: "Add a reference — a picture, or a control map of the Stage", "aria-label": "Add a reference", "aria-expanded": "false" }, sprite("paperclip"));
+  clip.addEventListener("click", () => attachMenu(clip, {
+    files: (files) => uploadImageRefs(files),
+    picture: (photo) => addImageRef(photo),
+    taken: (photo) => state.image.refs.some((r) => r.file === photo.file),
+    map: (id, on) => (on ? addStageMap(id) : removeStageMap(id)),
+    chosen: (id) => state.image.refs.some((r) => r.name === MAP_TAG[id]),
+    camera: state.image.origin?.stageRun?.camera ?? null,
+  }));
   const improve = h("button.img-key.improve-key", { type: "button", "aria-label": "Improve the prompt", on: { click: enhanceImage } }, sprite("prompt-enhance"));
   const undo = h("button.img-key", { type: "button", title: "Put my words back", "aria-label": "Put my words back", on: { click: unenhanceImage } }, icon("remix"));
   const go = h("button.img-go", { type: "button", title: "Generate — Ctrl + Enter", on: { click: generateImages } }, sprite("image-generate"), h("span", {}, "Generate"));
   const tray = h("div.file-tray");
   const picker = h("div.mention-picker.is-images", { hidden: true, role: "listbox", "aria-label": "Pictures" });
-  const bar = h("div.img-bar", {}, tray, input, h("div.img-row", {}, clip, h("span.spacer"), undo, improve, go));
+  const bar = h("div.img-bar", {}, tray, input.el, h("div.img-row", {}, clip, h("span.spacer"), undo, improve, go));
   const el = h("div.composer.img-composer", {}, picker, bar, fileInput);
   composer = { el, input, tray, picker, improve, undo, go, pick: 0, list: [], grow };
   return composer;
@@ -532,12 +558,11 @@ export function renderImage(el) {
   if (!im.open) return;
   const c = composer ?? makeComposer();
   // building the new window moves the composer, which drops its focus: note the caret first
-  const typing = document.activeElement === c.input;
+  const typing = document.activeElement === c.input.el;
   const caret = [c.input.selectionStart, c.input.selectionEnd];
-  if (c.input.value !== im.prompt) {
-    c.input.value = im.prompt;
-    requestAnimationFrame(c.grow);
-  }
+  if (c.input.value !== im.prompt) c.input.value = im.prompt;
+  // what the names stand for may have changed (a reference added or taken away)
+  else c.input.refresh();
   const choice = imageChoice();
   if (!choice) {
     el.replaceChildren(h("section.img-window", { role: "dialog", "aria-modal": "true", "aria-label": "Image" }, h("div.img-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))));

@@ -205,6 +205,17 @@ export function tagRefs(prompt: string, names: string[], slots?: RefSlots) {
   });
 }
 
+/** The other way: a prompt the enhancer wrote with the model's own tags ("<image2>") back to @names. */
+export function untagRefs(prompt: string, names: string[], slots?: RefSlots) {
+  if (!slots?.tag?.includes("{n}") || !names.length) return prompt;
+  const [before, after] = slots.tag.split("{n}");
+  const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return prompt.replace(new RegExp(`${esc(before)}(\\d+)${esc(after)}`, "g"), (all, n: string) => {
+    const name = names[Number(n) - (slots.tagFirst ?? 0)];
+    return name ? `@${name}` : all;
+  });
+}
+
 /** LoRAs between the model loader and everything that used it, one after another. */
 function addLoras(graph: Graph, loras: Lora[]) {
   if (!loras.length) return;

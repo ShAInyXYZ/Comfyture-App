@@ -12,7 +12,7 @@ import {
   buildProduction, buildSound, loadGraph, outputSize, type Aspect, type Graph, type Guide, type Quality,
 } from "./workflows.ts";
 import { CAMERA } from "../web/js/script.js";
-import type { ImageModels } from "./images.ts";
+import { untagRefs, type ImageModels } from "./images.ts";
 
 export interface Dialogue { speaker?: string; language?: string; line: string }
 export interface Shot {
@@ -639,7 +639,8 @@ export class Engine extends EventEmitter {
     const job = await this.execute(graph, new AbortController().signal, { kind: "plan", stage: "frame", queue: false });
     const [out] = job.getOutputs("out");
     if (!out) throw new Error("The enhancer returned nothing. Try again?");
-    return unwrapPrompt(Buffer.from(await out.toBytes()).toString("utf8"));
+    // its tags back to the names the prompt calls the references by, so they read as pills again
+    return untagRefs(unwrapPrompt(Buffer.from(await out.toBytes()).toString("utf8")), v.names, images.pick(v.model, v.template).template.refs);
   }
 
   /** A workflow that makes a photo (from another one, or from nothing), tracked like a paint job. */

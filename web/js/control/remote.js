@@ -13,6 +13,8 @@ import { ASSETS, assetByType, seatOf, topOf, setPropParams, isAnimal, setAnimalP
 import { CHAINS, JOINT_NAMES, BODY_TYPES, PALETTE, PARAMS, colorName } from "./skeleton.js";
 import { PASSES } from "./channels.js";
 import { MODELS, USER, rigById, holdables } from "./models.js";
+import { expandTags } from "../pills.js";
+import { MAP_TAG } from "../attach.js";
 
 const rad = THREE.MathUtils.degToRad;
 const deg = (v) => Math.round(THREE.MathUtils.radToDeg(v) * 10) / 10;
@@ -651,16 +653,20 @@ export function controlOps(stage) {
   const article = (words) => (/^[aeiou]/i.test(words) ? `an ${words}` : `a ${words}`);
   // what a model sees of each mannequin's colour in the clay frame
   const SEEN = { Coral: "red", Teal: "turquoise", Amber: "yellow", Violet: "purple", Green: "green", Pink: "pink", Blue: "blue", Tan: "brown" };
+  const ANIMAL_POSTURE = { sit: "sitting", lie: "lying down", walk: "walking", hop: "hopping" };
+  // what each control map is to the model, when a render sends it
+  const MAP_ROLE = { depth: "@depth is its depth", normal: "@normal is which way each surface faces", pose: "@pose is everyone's pose", lines: "@lines is its outlines", mask: "@mask is where the people are", clay: "@clay is the stage in clay" };
   /**
-   * Who and what the frame holds, in plain words, for a picture's description: each character
-   * by name with the colour and the place a model sees it at, so the words find the right figure.
+   * Who is who in the frame, as short as it can be: each one's @tag, by its colour in the colour
+   * map (or by its place, without one), with how it sits or what it holds when a picture of it
+   * standing could say otherwise. What each sheet says goes to the model with its pill (expand).
    */
-  const inFrame = (look = "", who = referenced()) => {
+  const legendOf = (who, byColour) => {
     const held = holdables(assetByType);
     const sheet = (t) => t.tag ?? t.userData?.tag ?? { description: "", refs: [] };
-    // a sheet's words, to follow a colon: "A woman…" reads "a woman…", no full stop
-    const lower = (t) => t.trim().replace(/[.;]+$/, "").replace(/^(A|An|The) /, (m) => m.toLowerCase());
-    // how a body is, when a picture of it standing could say otherwise: seated (and on what), lying, crouching
+    // a sheet's words, to follow a name: "A woman…" reads "a woman…", no full stop
+    const lower = (t) => String(t ?? "").trim().replace(/[.;]+$/, "").replace(/^(A|An|The) /, (m) => m.toLowerCase());
+    // how a body is: seated (and on what), lying, crouching; nothing when it stands
     const posture = (c) => {
       const at = (j) => c.joints[j].getWorldPosition(new THREE.Vector3());
       const [hips, head] = [at("Hips"), at("Head")];
@@ -678,79 +684,49 @@ export function controlOps(stage) {
       if (seat) return `sitting on the ${(assetByType(seat.userData.type)?.name ?? "seat").toLowerCase()}`;
       return low < 0.14 ? "sitting on the ground" : "crouching";
     };
-    const ANIMAL_POSTURE = { sit: "sitting", lie: "lying down", walk: "walking", hop: "hopping" };
-    // the cast: the characters, and the animals (pieces of the set that act like them)
+    const typeName = (p) => (assetByType(p.userData.type)?.name ?? p.userData.label).toLowerCase();
+    // the characters, then the animals (pieces of the set that act like them)
     const cast = [
       ...stage.characters.filter((c) => c.root.visible).map((c) => {
         const things = Object.values(c.hold ?? {}).filter(Boolean).map((t) => article((held.get(t)?.name ?? t).toLowerCase().replace(/-/g, " ")));
         const kind = c.rigId ? (rigById(c.rigId)?.name ?? "character").toLowerCase() : null;
+        const colour = SEEN[colorName(`#${c.color.getHexString()}`)] ?? "clay";
         return {
-          thing: c, name: c.name, at: c.joints.Head.getWorldPosition(new THREE.Vector3()),
+          thing: c, person: true, rigged: Boolean(kind), colour, at: c.joints.Head.getWorldPosition(new THREE.Vector3()),
           who: kind ? article(kind) : A_PERSON[c.body] ?? "a person",
-          figure: kind ? `the ${kind}` : `the ${SEEN[colorName(`#${c.color.getHexString()}`)] ?? "clay"} figure`,
-          posture: posture(c),
-          holding: things.length ? `holding ${things.join(" and ")}` : "",
+          figure: kind ? `the ${kind}` : `the ${colour} figure`,
+          how: [posture(c), things.length ? `holding ${things.join(" and ")}` : ""].filter(Boolean).join(", "),
         };
       }),
       ...stage.props.filter((p) => p.visible && isAnimal(p)).map((p) => {
-        const kind = (assetByType(p.userData.type)?.name ?? "animal").toLowerCase();
         const box = new THREE.Box3().setFromObject(p);
-        return { thing: p, name: p.userData.label, who: article(`cute ${kind}`), at: box.getCenter(new THREE.Vector3()).setY(box.max.y), figure: `the ${kind}`, posture: ANIMAL_POSTURE[p.userData.pose] ?? "", holding: "" };
+        return { thing: p, person: false, who: article(`cute ${typeName(p)}`), figure: `the ${typeName(p)}`, at: box.getCenter(new THREE.Vector3()).setY(box.max.y), how: ANIMAL_POSTURE[p.userData.pose] ?? "" };
       }),
-    ].slice(0, 10);
+    ].filter((c) => who.tags.has(c.thing)).slice(0, 10);
+    // where each one is in the frame, for the legend without a colour map
     const eye = stage.camera.getWorldPosition(new THREE.Vector3());
     const far = cast.map((c) => c.at.distanceTo(eye));
     const [near, back] = [Math.min(...far), Math.max(...far)];
     const width = stage.container.clientWidth;
-    // what the words say of each one by name goes with that one
-    const said = new Map();
-    const rest = [];
-    let last = null;
-    for (const clause of look.split(/(?<=[.;!?])\s+|,\s+/).map((x) => x.trim()).filter(Boolean)) {
-      const named = cast.find((c) => new RegExp(`(^|[^\\w@])@?${c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(clause));
-      const owner = named ?? (last && !/[.;!?]$/.test(said.get(last).at(-1)) ? last : null);
-      if (owner) {
-        said.set(owner, [...(said.get(owner) ?? []), clause]);
-        last = owner;
-      } else {
-        rest.push(clause);
-        last = null;
-      }
-    }
-    // one line each: which figure, its name and @tag, its sheet's words, then what the words say of it
-    const lines = cast.map((c, i) => {
+    const entries = cast.map((c, i) => {
+      const tag = `@${who.tags.get(c.thing)}`;
+      const how = c.how ? `, ${c.how}` : "";
+      if (byColour && c.person && !c.rigged) return `${c.colour} is ${tag}${how}`;
       const x = c.at.clone().project(stage.camera).x * (width / Math.max(1, stage.frame?.w ?? width));
       const side = x < -0.33 ? "on the left" : x > 0.33 ? "on the right" : "in the middle";
       const depth = back - near > 1.2 ? (far[i] - near < 0.25 * (back - near) ? ", in front" : back - far[i] < 0.25 * (back - near) ? ", at the back" : "") : "";
-      const pics = who.named.get(c.thing) ?? [];
-      const words = lower(sheet(c.thing).description);
-      const own = said.get(c)?.join(", ").replace(/[.;!?]+$/, "");
-      const name = pics.length ? `${c.name}, who looks exactly like ${pics.map((n) => `@${n}`).join(" and ")}` : c.name;
-      const about = [words || c.who, c.posture, c.holding, own].filter(Boolean).join("; ");
-      return `${c.figure[0].toUpperCase()}${c.figure.slice(1)} ${side}${depth} becomes ${name}: ${about}.`;
+      return `${c.figure} ${side}${depth} is ${tag}${how}`;
     });
-    // the pieces with a sheet of their own are those very things (the product, the car); the rest are named once
+    // the pieces: those with a sheet by their pill, the rest by what they are
     const pieces = stage.props.filter((p) => p.visible && !isAnimal(p));
-    const pictured = pieces.filter((p) => who.tags.has(p)).map((p) => {
-      const pics = who.named.get(p) ?? [];
-      const words = lower(sheet(p).description);
-      return `the ${(assetByType(p.userData.type)?.name ?? p.userData.label).toLowerCase()}${pics.length ? ` is exactly the one in ${pics.map((n) => `@${n}`).join(" and ")}` : ""}${words ? `: ${words}` : ""}`;
-    });
-    const set = [...new Set(pieces.filter((p) => !who.tags.has(p)).map((p) => (assetByType(p.userData.type)?.name ?? p.userData.label).toLowerCase()))].slice(0, 10).map(article);
-    const count = ["no one", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"][lines.length];
-    const joined = rest.reduce((a, x) => (!a ? x : /[.;!?]$/.test(a) ? `${a} ${x}` : `${a}, ${x}`), "");
-    // how many in all, and none left as clay: a figure kept beside its person is the likeliest slip
-    const people = cast.every((c) => stage.characters.includes(c.thing)) ? (lines.length === 1 ? "person" : "people") : lines.length === 1 ? "character" : "characters";
-    const sheeted = cast.some((c) => who.named.get(c.thing)?.length);
-    const all = `${count[0].toUpperCase()}${count.slice(1)} ${people} in all, and no clay figure, mannequin or statue is left${sheeted ? ": their pictures only show how each one looks, never where they are" : ""}.`;
-    return {
-      count: lines.length,
-      mannequins: stage.characters.some((c) => c.root.visible && !c.rigId),
-      cast: lines.length ? `${lines.join(" ")} ${all}` : "",
-      pieces: pictured.length ? `${pictured.join("; ")}.`.replace(/^t/, "T") : "",
-      set: set.length ? `Set: ${set.join(", ")}.` : "",
-      rest: joined,
-    };
+    const set = [...new Set(pieces.map((p) => (who.tags.has(p) ? `@${who.tags.get(p)}` : article(typeName(p)))))].slice(0, 12);
+    // what each pill carries to the model: its sheet's words (or what it is, with no sheet), and its pictures
+    const expand = [
+      ...cast.map((c) => ({ tag: who.tags.get(c.thing), name: c.person ? c.thing.name : c.thing.userData.label, person: c.person, color: c.person ? `#${c.thing.color.getHexString()}` : undefined, words: lower(sheet(c.thing).description) || (who.named.get(c.thing)?.length ? "" : c.who), pictures: who.named.get(c.thing) ?? [] })),
+      ...pieces.filter((p) => who.tags.has(p)).map((p) => ({ tag: who.tags.get(p), name: p.userData.label, person: false, words: lower(sheet(p).description), pictures: who.named.get(p) ?? [] })),
+    ];
+    const people = cast.filter((c) => c.person).length;
+    return { entries, set, expand, people, everyone: cast.length, onlyPeople: people === cast.length, mannequins: cast.some((c) => c.person && !c.rigged) };
   };
 
   // the image models that can edit a picture, and the one a render uses: asked for, chosen on the Stage, or the default
@@ -770,12 +746,12 @@ export function controlOps(stage) {
   };
   const slug = (v) => String(v).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "ref";
   /**
-   * Who's who for a render: each visible character and piece with a sheet (words or pictures),
-   * the @tag the prompt calls it by, and the pictures it sends, one each first, then the rest.
+   * Who's who for a render: every visible character and animal, and each piece with a sheet, by the
+   * @tag the prompt calls it; and the pictures their sheets send, one each first, then the rest.
    */
-  const referenced = (most = 9) => {
+  const referenced = (most = 7) => {
     const tags = new Map();
-    const taken = new Set(["frame"]);
+    const taken = new Set(["frame", ...Object.values(MAP_TAG)]);
     const name = (base) => {
       let n = base;
       for (let i = 2; taken.has(n); i++) n = `${base}-${i}`;
@@ -783,19 +759,18 @@ export function controlOps(stage) {
       return n;
     };
     const sheet = (t) => t.tag ?? t.userData?.tag;
-    for (const t of [...stage.characters.filter((c) => c.root.visible), ...stage.props.filter((p) => p.visible)]) {
-      const g = sheet(t);
-      if (g && (g.description?.trim() || g.refs?.length)) tags.set(t, name(slug(t.name ?? t.userData.label)));
-    }
+    const has = (t) => Boolean(sheet(t)?.description?.trim() || sheet(t)?.refs?.length);
+    for (const c of stage.characters.filter((c) => c.root.visible)) tags.set(c, name(slug(c.name)));
+    for (const p of stage.props.filter((p) => p.visible && (isAnimal(p) || has(p)))) tags.set(p, name(slug(p.userData.label)));
     const refs = [];
     const named = new Map();
     for (let round = 0; refs.length < most; round++) {
       let more = false;
       for (const [t, tag] of tags) {
-        const pic = sheet(t).refs[round];
+        const pic = sheet(t)?.refs?.[round];
         if (!pic || refs.length >= most) continue;
         const n = round ? name(`${tag}-${round + 1}`) : tag;
-        refs.push({ file: pic.file, url: pic.url, width: pic.width, height: pic.height, name: n });
+        refs.push({ file: pic.file, url: pic.url, width: pic.width, height: pic.height, name: n, sheet: tag });
         named.set(t, [...(named.get(t) ?? []), n]);
         more = true;
       }
@@ -818,24 +793,41 @@ export function controlOps(stage) {
     const look = clean(a.prompt);
     const ratio = RATIOS[stage.ratio];
     const [width, height] = drawSize(model, ratio);
-    const blob = await (await fetch(stage.thumbnail({ position: stage.camera.position, target: stage.orbit.target, focal: stage.focal }, { width, height, channel: "clay" }))).blob();
-    const kept = await fetch(`api/photos?name=${encodeURIComponent("stage frame")}`, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
-    const frame = await kept.json().catch(() => ({}));
-    if (!kept.ok) throw new Error(frame.error ?? "The frame was not kept.");
+    // the frame and each control map, drawn at the model's own size and kept as pictures
+    // the colour map says who is who; a depth map (black far away) tends to leave a black backdrop, so it is asked for
+    const maps = [...new Set(a.maps ?? ["id"])].filter((m) => MAP_TAG[m] && m !== "clay");
+    const cam = { position: stage.camera.position, target: stage.orbit.target, focal: stage.focal };
+    const keep = async (channel, name) => {
+      const blob = await (await fetch(stage.thumbnail(cam, { width, height, channel }))).blob();
+      const res = await fetch(`api/photos?name=${encodeURIComponent(name)}`, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
+      const photo = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(photo.error ?? "The frame was not kept.");
+      return { file: photo.file, url: photo.url, width: photo.width, height: photo.height };
+    };
+    const [frame, ...drawn] = await Promise.all([keep("clay", "stage frame"), ...maps.map((m) => keep(m, `stage ${MAP_TAG[m]}`))]);
+    const mapRefs = drawn.map((p, i) => ({ ...p, name: MAP_TAG[maps[i]], map: maps[i] }));
     const most = model?.templates.find((t) => t.id === "edit")?.refs ?? 10;
-    const who = referenced(most - 1);
-    const scene = inFrame(look, who);
-    // the frame, then who is who (each by its @tag and its sheet), the pieces, and the look
+    // pictures attached to the bar go along too, by their own names
+    const extra = (a.extra ?? []).filter((x) => x?.file).slice(0, Math.max(0, most - 1 - mapRefs.length));
+    const who = referenced(Math.max(0, most - 1 - mapRefs.length - extra.length));
+    const byColour = maps.includes("id");
+    const scene = legendOf(who, byColour);
+    const count = ["no one", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"][scene.everyone] ?? String(scene.everyone);
+    const roles = maps.filter((m) => MAP_ROLE[m]).map((m) => MAP_ROLE[m]);
+    // the maps say where things are, never how they look: no black backdrop from them
+    const only = maps.length ? `${maps.map((m) => `@${MAP_TAG[m]}`).join(" and ")} only ${maps.length > 1 ? "give" : "gives"} where things are: the light, the colours and what is behind the set come from these words, never a black backdrop.` : "";
+    // what you read: the frame, its maps, who is who by pill, the pieces, the look
     const prompt = a.raw ? String(a.raw).trim().slice(0, 6000) : [
-      "Render @frame as a finished image. Keep its camera, framing and layout: everyone and everything stays where it is, posed as it is.",
-      scene.mannequins ? "Each clay figure turns into a real person in its very place and pose; its colour only marks who it is." : "",
-      scene.cast,
-      "The clay pieces become real things.",
-      scene.pieces,
-      scene.set,
-      `${(look ? scene.rest : "") || "A cinematic film still, natural light"}.`.replace(/\.\.$/, "."),
+      `Render @frame as a finished image. Keep its camera, framing and layout${roles.length ? `; ${roles.join(", ")}` : ""}.`,
+      scene.entries.length ? (byColour && scene.mannequins ? `In @colour-id each bright colour is one person, in their very place and pose: ${scene.entries.join("; ")}.` : `Everyone stays in their very place and pose: ${scene.entries.join("; ")}.`) : "",
+      scene.everyone ? `${count[0].toUpperCase()}${count.slice(1)} ${scene.onlyPeople ? (scene.everyone === 1 ? "person" : "people") : scene.everyone === 1 ? "character" : "characters"} in all, and no clay figure, mannequin or statue is left.` : "",
+      scene.set.length ? `The clay pieces become real things: ${scene.set.join(", ")}.` : "The clay pieces become real things.",
+      only,
+      `${look || "A cinematic film still, natural light"}.`.replace(/\.\.$/, "."),
     ].filter(Boolean).join(" ");
-    return { model, look, width, height, ratio, frame: { file: frame.file, url: frame.url, width: frame.width, height: frame.height }, refs: [{ file: frame.file, url: frame.url, name: "frame" }, ...who.refs], prompt };
+    // what the model reads: each sheet's words and pictures on its pill
+    const sent = expandTags(prompt, scene.expand);
+    return { model, look, width, height, ratio, maps, frame, refs: [{ ...frame, name: "frame" }, ...mapRefs, ...extra, ...who.refs], prompt, sent, cast: scene.expand };
   };
 
   /**
@@ -850,21 +842,31 @@ export function controlOps(stage) {
     const seed = Number.isSafeInteger(a.seed) && a.seed >= 0 ? a.seed : Math.floor(Math.random() * 2 ** 32);
     const megapixels = r.model?.megapixels?.[0] ?? 1;
     const keep = 0.97;
-    const res = await fetch("api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: r.model?.id, template: "edit", prompt: r.prompt, aspect: stage.ratio, refs: r.refs.map(({ file, name }) => ({ file, name })), count, megapixels, keep, seed, name: r.look || "Stage render" }) });
+    const res = await fetch("api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: r.model?.id, template: "edit", prompt: r.sent, aspect: stage.ratio, refs: r.refs.map(({ file, name }) => ({ file, name })), count, megapixels, keep, seed, name: r.look || "Stage render" }) });
     const jobs = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(jobs.error ?? "The picture was not started.");
     const camera = { ...stage.cameraState(), ratio: stage.ratio };
     // the model's size is a touch wider or narrower than the frame (its sides fall on its grid): the picture spans that much more
     const fit = { sx: Math.round(((r.width / r.height) / r.ratio) * 10000) / 10000, sy: 1, dx: 0, dy: 0 };
-    const settings = { model: r.model?.id, modelName: r.model?.name, template: "edit", keep, megapixels, width: r.width, height: r.height, prompt: r.prompt, refs: r.refs.slice(1) };
+    const settings = { model: r.model?.id, modelName: r.model?.name, template: "edit", keep, megapixels, width: r.width, height: r.height, prompt: r.prompt, sent: r.sent, cast: r.cast, maps: r.maps, refs: r.refs.slice(1) };
     jobs.forEach((j, i) => stage.addRun({ id: j.id, status: "running", progress: 0, look: r.look, camera, fit, time: stage.time, at: new Date().toISOString(), frame: r.frame, settings: { ...settings, seed: seed + i } }));
-    return { jobs: jobs.map((j) => ({ id: j.id })), prompt: r.prompt, look: r.look, aspect: stage.ratio, frame: r.frame };
+    return { jobs: jobs.map((j) => ({ id: j.id })), prompt: r.prompt, sent: r.sent, look: r.look, aspect: stage.ratio, frame: r.frame };
+  };
+
+  /** Who the bar's @names are right now: every character and animal, and each piece with a sheet. */
+  const castNow = () => {
+    const who = referenced(0);
+    return [...who.tags].map(([t, tag]) => {
+      const sheet = t.tag ?? t.userData?.tag ?? { description: "", refs: [] };
+      const person = stage.characters.includes(t);
+      return { tag, name: person ? t.name : t.userData.label, person, animal: !person && isAnimal(t), color: person ? `#${t.color.getHexString()}` : undefined, words: sheet.description, pictures: sheet.refs };
+    });
   };
 
   /** A render's request without the render: for the prompt enhancer, which reads it and the frame. */
   const renderPrompt = async (a = {}) => {
     const r = await composeRender(a);
-    return { model: r.model?.id, template: "edit", prompt: r.prompt, aspect: stage.ratio, refs: r.refs.map(({ file, name }) => ({ file, name })) };
+    return { model: r.model?.id, template: "edit", prompt: r.prompt, aspect: stage.ratio, refs: r.refs.map(({ file, name }) => ({ file, name })), cast: r.cast };
   };
 
   /** What the frame shows, as a PNG data URL, in any channel (clay by default). */
@@ -1042,6 +1044,7 @@ export function controlOps(stage) {
     export_glb: async () => ({ glb: await exportGlb(), camera: describe().camera }),
     render_image: renderImage,
     render_prompt: renderPrompt,
+    cast: castNow,
     tag: (a) => {
       const t = find(a.id);
       stage.setTag(t, { description: a.description ?? "" });
@@ -1050,7 +1053,7 @@ export function controlOps(stage) {
     apply_blender: applyBlender,
   };
   // these read or replace the scene without a step of their own
-  const QUIET = new Set(["scene", "look", "export_glb", "undo", "time", "render_image", "render_prompt"]);
+  const QUIET = new Set(["scene", "look", "export_glb", "undo", "time", "render_image", "render_prompt", "cast"]);
   // the others happen whole or not at all: one that fails puts the stage back as it was
   for (const [name, run] of Object.entries(OPS)) {
     if (QUIET.has(name)) continue;

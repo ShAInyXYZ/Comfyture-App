@@ -7,6 +7,8 @@ import { emptyShot, PANELS, finalPrompt } from "./script.js";
 import { view } from "./viewer.js";
 import { go, currentPage } from "./router.js";
 import { stageReady } from "./control/link.js";
+import { expandTags } from "./pills.js";
+import { MAP_TAG } from "./attach.js";
 
 const KEY = "comfyture.draft.v2";
 const TABS = "comfyture.tabs.v1";
@@ -108,6 +110,23 @@ function loadImage() {
   }
 }
 
+/** What a Stage render sends besides the frame: control maps (colour ID unless changed: depth darkens the backdrop) and pictures. */
+function loadStageInputs() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("comfyture.stage.inputs")) ?? {};
+    return { maps: Array.isArray(saved.maps) ? saved.maps : ["id"], pictures: [] };
+  } catch {
+    return { maps: ["id"], pictures: [] };
+  }
+}
+const saveStageInputs = () => {
+  try {
+    localStorage.setItem("comfyture.stage.inputs", JSON.stringify({ maps: state.stageChat.inputs.maps }));
+  } catch {
+    // the choice just won't survive a reload
+  }
+};
+
 const opened = loadTabs();
 
 export const state = {
@@ -129,7 +148,7 @@ export const state = {
   /** The assistant's conversation: {role, text, did?, error?}; busy while it thinks or works. */
   chat: { ...loadChat(), busy: null, attaching: 0 },
   // the assistant's conversation on the Stage, apart from the shot's
-  stageChat: { messages: [], busy: null },
+  stageChat: { messages: [], busy: null, inputs: loadStageInputs() },
   /** The Edit page: the clips of the film being cut. */
   edit: loadEdit(),
   /** The image library, newest first. */
@@ -138,7 +157,7 @@ export const state = {
    * The Image window: the models (official templates) and what you chose, the references you
    * gave it, and the pictures it made this visit (newest first).
    */
-  image: { ...loadImage(), open: false, catalogue: null, seed: 0, lockSeed: false, refs: [], results: [], shown: null, enhancing: false, before: null, keep: false, origin: null },
+  image: { ...loadImage(), open: false, catalogue: null, seed: 0, lockSeed: false, refs: [], results: [], shown: null, enhancing: false, before: null, keep: false, origin: null, cast: [] },
   /** The Director: the idea, its plan, and how far making the film has got. */
   director: { phase: "idle", idea: "", shots: 4, seconds: 5, aspect: "16:9", fromPhoto: false, plan: null, shotsState: [], film: null, error: null },
 };
@@ -1365,6 +1384,25 @@ export function adopt(name) {
   changed("assistant");
 }
 
+/** A picture from the Library (or a map of the Stage) into the conversation, under a name of its own. */
+export function attachPhoto(photo, as) {
+  if (!photo?.file || state.chat.files.some((f) => f.file === photo.file)) return;
+  const name = as && !state.chat.files.some((f) => f.name === as) ? as : nameFor({ name: `${photo.name ?? "picture"}.png` });
+  state.chat.files.push({ file: photo.file, url: photo.url, width: photo.width, height: photo.height, kind: "image", name, title: photo.name ?? name });
+  saveChat();
+  changed("assistant");
+}
+
+/** A control map of the Stage, drawn from its camera, into the conversation. */
+export const attachStageMap = (channel) =>
+  attempt(async () => {
+    const name = MAP_TAG[channel];
+    if (!name || state.chat.files.some((f) => f.name === name)) return;
+    const { stage } = await stageReady;
+    const url = stage.thumbnail({ position: stage.camera.position, target: stage.orbit.target, focal: stage.focal }, { width: 1376, height: Math.round(1376 / (stage.frame?.w && stage.frame?.h ? stage.frame.w / stage.frame.h : 16 / 9)), channel });
+    attachPhoto(await api.upload(await (await fetch(url)).blob(), `stage ${name}`), name);
+  });
+
 /** The @names a text mentions that @ can name (attached or in the Library). */
 export const mentions = (text) => {
   const names = new Set(mentionables().map((f) => f.name));
@@ -1540,7 +1578,8 @@ export function stageModels() {
  */
 export async function improveStageLook(words) {
   const { ops } = await stageReady;
-  const request = await ops.render_prompt({ prompt: words, model: state.stageModel });
+  const { maps, pictures } = state.stageChat.inputs;
+  const request = await ops.render_prompt({ prompt: words, model: state.stageModel, maps, extra: pictures });
   // the enhancer now and then answers nothing: once more before giving up
   const { prompt } = await api.enhanceImage(request).catch((e) => (/returned nothing/i.test(e.message) ? api.enhanceImage(request) : Promise.reject(e)));
   return prompt;
@@ -1556,7 +1595,8 @@ export async function renderStageImage(words = "", { raw = false } = {}) {
   changed("assistant");
   try {
     const { ops } = await stageReady;
-    const render = await ops.render_image({ prompt: raw ? "" : look, raw: raw ? look : undefined, model: state.stageModel });
+    const { maps, pictures } = chat.inputs;
+    const render = await ops.render_image({ prompt: raw ? "" : look, raw: raw ? look : undefined, model: state.stageModel, maps, extra: pictures });
     chat.messages.push(adoptRenders({ role: "assistant", stage: true, text: look ? "Rendering the frame in that look." : "Rendering the frame as a film still. Type a look first to change it (a rainy night, a 90s sitcom, Pixar)…", did: ["Rendering an image"], renders: [render] }));
   } catch (error) {
     chat.messages.push({ role: "assistant", stage: true, text: error.message ?? String(error), error: true });
@@ -1639,6 +1679,7 @@ export const openImage = ({ refs = [], template } = {}) =>
     const im = state.image;
     // opened on its own, what it makes is its own (not a Stage render's, not a Stage picture)
     im.origin = null;
+    im.cast = [];
     im.open = true;
     for (const r of refs) addImageRef(r);
     changed("image");
@@ -1725,11 +1766,59 @@ function orderedRefs() {
   return [...new Set([...first, ...rest])].slice(0, imageChoice()?.template.refs ?? 0);
 }
 
-function imageRequest() {
+function imageRequest({ expand = true } = {}) {
   const im = state.image;
   const { model, template } = imageChoice();
-  return { model: model.id, template: template.id, prompt: im.prompt, aspect: im.aspect, refs: orderedRefs().map((r) => ({ file: r.file, name: r.name })), loras: im.loras };
+  const refs = orderedRefs();
+  // a sheet's pill carries its words, and only the pictures that go with this request
+  const cast = im.cast.map((c) => ({ ...c, pictures: (c.pictures ?? []).filter((n) => refs.some((r) => r.name === n)) }));
+  return { model: model.id, template: template.id, prompt: expand ? expandTags(im.prompt, cast) : im.prompt, aspect: im.aspect, refs: refs.map((r) => ({ file: r.file, name: r.name })), loras: im.loras };
 }
+
+/** A control map of the Stage as a reference: drawn from the render's camera when the window came from one. */
+export const addStageMap = (channel) =>
+  attempt(async () => {
+    const im = state.image;
+    const name = MAP_TAG[channel];
+    if (!name || im.refs.some((r) => r.name === name)) return;
+    const { stage } = await stageReady;
+    const from = im.origin?.stageRun;
+    const choice = imageChoice();
+    const size = choice ? imageSize(choice.model, im.aspect, im.megapixels, im.refs[0]) : { width: 1376, height: 768 };
+    const url = from?.camera ? stage.stillFrom(from.camera, { ...size, channel }) : stage.thumbnail({ position: stage.camera.position, target: stage.orbit.target, focal: stage.focal }, { ...size, channel });
+    const photo = await api.upload(await (await fetch(url)).blob(), `stage ${name}`);
+    addImageRef({ ...photo, name }, name);
+  });
+export const removeStageMap = (channel) => {
+  const ref = state.image.refs.find((r) => r.name === MAP_TAG[channel]);
+  if (ref) removeImageRef(ref.file);
+};
+
+/** The Stage bar's inputs: a map in or out of every render, a picture added or taken away. */
+export function setStageMap(channel, on) {
+  const inputs = state.stageChat.inputs;
+  inputs.maps = on ? [...new Set([...inputs.maps, channel])] : inputs.maps.filter((m) => m !== channel);
+  saveStageInputs();
+  changed("assistant");
+}
+export function addStagePicture(photo) {
+  const inputs = state.stageChat.inputs;
+  if (!photo?.file || inputs.pictures.some((p) => p.file === photo.file)) return;
+  const taken = new Set(inputs.pictures.map((p) => p.name));
+  const base = slugOf(photo.name || "picture");
+  let name = base;
+  for (let i = 2; taken.has(name) || Object.values(MAP_TAG).includes(name) || name === "frame"; i++) name = `${base}-${i}`;
+  inputs.pictures.push({ file: photo.file, url: photo.url, width: photo.width, height: photo.height, name, title: photo.name });
+  changed("assistant");
+}
+export function removeStagePicture(name) {
+  state.stageChat.inputs.pictures = state.stageChat.inputs.pictures.filter((p) => p.name !== name);
+  changed("assistant");
+}
+export const attachStagePictures = (files) =>
+  attempt(async () => {
+    for (const file of files) if (file.type?.startsWith("image/")) addStagePicture({ ...(await upload(file)), name: file.name.replace(/\.\w+$/, "") });
+  });
 
 /** Rewrites the prompt with the template's own enhancer; the words before can be put back. */
 export const enhanceImage = () =>
@@ -1739,7 +1828,7 @@ export const enhanceImage = () =>
     im.enhancing = true;
     changed("image");
     try {
-      const { prompt } = await api.enhanceImage(imageRequest());
+      const { prompt } = await api.enhanceImage(imageRequest({ expand: false }));
       im.before = im.prompt;
       im.prompt = prompt;
       saveImage();
@@ -1781,7 +1870,7 @@ export const generateImages = () =>
       const { stage, projects } = await stageReady;
       if (projects.current()?.id === from.stageId) {
         const size = imageSize(choice.model, im.aspect, im.megapixels, im.refs[0]);
-        const settings = { model: choice.model.id, modelName: choice.model.name, template: choice.template.id, keep, megapixels: im.megapixels, width: size.width, height: size.height, prompt: im.prompt, refs: request.refs.filter((r) => r.name !== "frame").map((r) => ({ ...im.refs.find((x) => x.file === r.file), name: r.name })) };
+        const settings = { model: choice.model.id, modelName: choice.model.name, template: choice.template.id, keep, megapixels: im.megapixels, width: size.width, height: size.height, prompt: im.prompt, sent: request.prompt, cast: im.cast, refs: request.refs.filter((r) => r.name !== "frame").map((r) => ({ ...im.refs.find((x) => x.file === r.file), name: r.name })) };
         jobs.forEach((j, i) => stage.addRun({ id: j.id, status: "running", progress: 0, look: from.look, camera: from.camera, fit: from.fit, time: from.time, at: new Date().toISOString(), frame: from.frame, settings: { ...settings, seed: seed + i } }));
       }
     }
@@ -1806,6 +1895,7 @@ export const editStageRun = (run, stageId) =>
     im.refs = [];
     if (run.frame?.file) addImageRef(run.frame, "frame");
     for (const r of s.refs ?? []) if (r?.file) addImageRef(r, r.name);
+    im.cast = Array.isArray(s.cast) ? s.cast : [];
     im.prompt = s.prompt ?? run.look ?? "";
     im.before = null;
     if (Number.isSafeInteger(s.seed)) Object.assign(im, { seed: s.seed, lockSeed: true });

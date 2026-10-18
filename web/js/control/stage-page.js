@@ -7,6 +7,9 @@
 
 import { h, icon, sprite } from "../dom.js";
 import { view as viewImage } from "../viewer.js";
+import { peek as peekCard, unpeek } from "../peek.js";
+import { pillText } from "../pills.js";
+import { MAP_OF_TAG } from "../attach.js";
 import { Stage, SNAPS, RATIOS, MOVES, updateRun } from "./stage.js";
 import { POSES, POSE_CATEGORIES, SAVED, setSaved, allPoses, poseById } from "./poses.js";
 import { ASSETS, assetCategories, assetByType } from "./assets.js";
@@ -533,13 +536,28 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
         fact("Seed", Number.isSafeInteger(s.seed) ? String(s.seed) : null),
         fact("Denoise", s.keep ? `${s.keep} from the frame` : null),
         fact("Camera", r.camera ? `${r.camera.ratio} · ${r.camera.focal} mm` : null),
-        ...(s.refs?.length ? [fact("Pictures", s.refs.map((x) => `@${x.name}`).join(" "))] : [])),
-      ...(s.prompt ? [el("details.ctl-run-prompt", {}, el("summary", {}, "Prompt"), el("p", {}, s.prompt))] : []),
+        ...(s.refs?.length ? [el("div.ctl-fact", {}, el("span", {}, "Inputs"), pillText("b", s.refs.map((x) => `@${x.name}`).join(" "), runLookup(r)))] : [])),
+      ...(s.prompt ? [el("details.ctl-run-prompt", {}, el("summary", {}, "Prompt"), pillText("p", s.prompt, runLookup(r)))] : []),
       el("div.ctl-row.ctl-run-keys", {},
         el("button.key.is-sm", { type: "button", title: "Open it in the Image window: change the words or the settings, and make it again", on: { click: () => editRun(r) } }, icon("pencil"), "Edit"),
         key(icon("remix"), "Again — the same, with a new seed", () => again(r)),
         key(icon("video"), "Start a shot from it", () => usePhoto(r.photo)),
         key(icon("expand"), "Look at it, full size", () => viewImage(r.photo.url))));
+  }
+  /** What a render's @names were: its frame and maps, its pictures, and whose sheet each one is. */
+  function runLookup(r) {
+    const s = r.settings ?? {};
+    const refs = [...(r.frame?.file ? [{ ...r.frame, name: "frame" }] : []), ...(s.refs ?? [])];
+    return (name) => {
+      const ref = refs.find((x) => x.name === name);
+      const of = (s.cast ?? []).find((c) => c.tag === name || c.pictures?.includes(name));
+      if (of) {
+        const pictures = refs.filter((x) => of.pictures?.includes(x.name));
+        return { title: of.name, color: of.color, url: (ref ?? pictures[0])?.url, pictures, words: of.words };
+      }
+      if (!ref) return null;
+      return { title: MAP_OF_TAG[name] || name === "frame" ? `@${name}` : ref.title ?? `@${name}`, url: ref.url, pictures: [ref], note: name === "frame" ? "The clay frame it started from" : MAP_OF_TAG[name] ? "A control map of the Stage" : null };
+    };
   }
   /** Into the Image window with everything it was made with; a frame made again from its camera if it has none. */
   async function editRun(r) {
@@ -585,31 +603,11 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   }
 
   // a sheet as a card over the app, beside its row in the Scene list or by the pointer on the stage
-  const peekEl = el("div.ctl-peek", { hidden: true, "aria-hidden": "true" });
-  document.body.append(peekEl);
-  let peeking = null;
   function peek(target, at) {
     if (!hasSheet(target) || sheet) return unpeek();
+    const tag = tagOf(target);
     const thing = target.character ?? target.prop;
-    if (peeking !== thing || peekEl.hidden) {
-      peeking = thing;
-      const tag = tagOf(target);
-      peekEl.replaceChildren(
-        el("strong.ctl-peek-name", {}, nameOf(target)),
-        tag.refs.length ? el("div.ctl-peek-pics", {}, ...tag.refs.slice(0, 4).map((r) => picture(r))) : null,
-        tag.description.trim() ? el("p.ctl-peek-words", {}, tag.description.trim()) : null);
-      peekEl.hidden = false;
-    }
-    const box = peekEl.getBoundingClientRect();
-    const near = at instanceof Element ? at.getBoundingClientRect() : { left: at.x - 16, right: at.x + 16, top: at.y + 16 };
-    let x = near.right + 12;
-    if (x + box.width > innerWidth - 8) x = near.left - box.width - 12;
-    const y = Math.min(Math.max(8, near.top), innerHeight - box.height - 8);
-    peekEl.style.transform = `translate(${Math.round(Math.max(8, x))}px, ${Math.round(y)}px)`;
-  }
-  function unpeek() {
-    peeking = null;
-    peekEl.hidden = true;
+    peekCard(thing, { title: nameOf(target), color: target.character ? `#${target.character.color.getHexString()}` : null, pictures: tag.refs, words: tag.description.trim() }, at);
   }
   // on the stage: what is under the pointer, a few times a second, while no button is down
   let hoverAt = null;

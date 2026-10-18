@@ -1,5 +1,10 @@
 import { h, icon, sprite } from "../dom.js";
-import { state, ask, askStage, renderStageImage, useStageRender, improveStageLook, setStageModel, stageModels, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt, toast } from "../store.js";
+import {
+  state, ask, askStage, renderStageImage, useStageRender, improveStageLook, setStageModel, stageModels, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt, toast,
+  attachPhoto, attachStageMap, setStageMap, addStagePicture, removeStagePicture, attachStagePictures,
+} from "../store.js";
+import { pillField, pillText } from "../pills.js";
+import { attachMenu, MAPS, MAP_TAG, MAP_OF_TAG } from "../attach.js";
 import { dropdown } from "../controls.js";
 import { view } from "../viewer.js";
 import { currentPage } from "../router.js";
@@ -7,6 +12,35 @@ import { stageReady } from "../control/link.js";
 
 // on the Stage the bar stages a scene; on the Shot it sets up the shot: one bar, two conversations
 const onStage = () => currentPage() === "stage";
+// the Stage, once it has mounted: who its @names are
+let stageApi = null;
+stageReady.then((a) => (stageApi = a));
+const MAP_ICON = { id: "channel-id", depth: "channel-depth", pose: "channel-pose", normal: "view-normals", lines: "scene-render", mask: "material-mask", clay: "view-material" };
+
+/** What an @name in the bar stands for, to draw its pill and its card. */
+function lookup(name) {
+  if (onStage()) {
+    const c = stageApi?.ops.cast?.().find((x) => x.tag === name);
+    if (c) return { title: c.name, color: c.color, url: c.pictures[0]?.url, pictures: c.pictures, words: c.words, note: c.pictures.length || c.words ? null : "No sheet yet: the key beside the eye in the Scene list opens one." };
+    if (name === "frame") return { title: "@frame", note: "The clay frame every render starts from" };
+    const map = MAP_OF_TAG[name];
+    if (map) return { title: MAPS.find(([id]) => id === map)[2].split(" — ")[0], note: state.stageChat.inputs.maps.includes(map) ? "A control map, sent with every render" : "Not sent: the paperclip adds it" };
+    const p = state.stageChat.inputs.pictures.find((x) => x.name === name);
+    return p ? { title: p.title ?? `@${name}`, url: p.url, pictures: [p], note: "Sent with every render" } : null;
+  }
+  const f = mentionables().find((x) => x.name === name);
+  if (!f) return null;
+  const picture = f.kind === "image" ? f.url : f.poster;
+  return { title: f.title ?? `@${name}`, url: picture, pictures: picture ? [{ url: picture, width: f.width, height: f.height }] : [], note: describe(f) };
+}
+
+/** On the Stage, what @ can name: everyone on it, its control maps, and the pictures the bar sends. */
+function stageMentionables() {
+  const cast = (stageApi?.ops.cast?.() ?? []).map((c) => ({ name: c.tag, title: c.name, color: c.color, url: c.pictures[0]?.url, about: c.pictures.length ? `${c.pictures.length} ${c.pictures.length === 1 ? "picture" : "pictures"}` : c.words ? "words" : c.person ? "no sheet" : "" }));
+  const maps = [["frame", "Clay frame"], ...MAPS.filter(([id]) => id !== "clay").map(([id, tag, about]) => [tag, about.split(" — ")[0]])].map(([tag, title]) => ({ name: tag, title, map: MAP_OF_TAG[tag] ?? "clay", about: "map" }));
+  const pictures = state.stageChat.inputs.pictures.map((p) => ({ name: p.name, title: p.title, url: p.url, about: "picture" }));
+  return [...cast, ...pictures, ...maps];
+}
 const PLACEHOLDER = { shot: "Describe the shot · @ for a file", stage: "Stage a scene — two people arguing by a wall, low angle" };
 
 const KIND_ICON = { video: "video", audio: "sound" };
@@ -45,7 +79,7 @@ function mentionAt(input) {
 function insertMention(input, name) {
   const at = mentionAt(input);
   if (!at) return;
-  adopt(name);
+  if (!onStage()) adopt(name);
   const after = input.value.slice(input.selectionStart);
   input.value = `${input.value.slice(0, at.from)}@${name} ${after.replace(/^\S*/, "").replace(/^ /, "")}`;
   const caret = at.from + name.length + 2;
@@ -57,7 +91,8 @@ function insertMention(input, name) {
 /** The picker over the composer: the files whose names start with what follows the @. */
 function updatePicker() {
   const c = composer;
-  const at = onStage() ? null : mentionAt(c.input);
+  if (onStage()) return updateStagePicker();
+  const at = mentionAt(c.input);
   // the conversation's files first, then the Library: takes, films, images, presets
   const q = at?.query ?? "";
   const found = at ? mentionables().filter((f) => f.name.startsWith(q) || (q && f.title?.toLowerCase().includes(q))) : [];
@@ -90,21 +125,38 @@ function updatePicker() {
   c.list = list;
 }
 
+/** On the Stage: everyone whose name starts with what follows the @, then the maps and pictures. */
+function updateStagePicker() {
+  const c = composer;
+  const at = mentionAt(c.input);
+  const q = at?.query ?? "";
+  const all = at ? stageMentionables() : [];
+  const list = all.filter((f) => f.name.startsWith(q) || (q && f.title?.toLowerCase().includes(q))).slice(0, 40);
+  const exact = list.length === 1 && list[0].name === q;
+  c.pick = Math.min(c.pick, Math.max(0, list.length - 1));
+  c.picker.hidden = !at || !list.length || exact;
+  c.picker.replaceChildren(h("div.pick-grid.is-cast", {}, ...list.map((f, i) =>
+    h("button.pick-file", { type: "button", className: i === c.pick ? "is-active" : "", title: f.title, on: { mousedown: (e) => (e.preventDefault(), insertMention(c.input, f.name)) } },
+      h("span.pick-thumb", {}, f.url ? h("img", { src: f.url, alt: "", draggable: false }) : f.color ? h("i.pick-swatch", { style: { background: f.color } }) : sprite(MAP_ICON[f.map] ?? "file")),
+      h("span.pick-name", {}, h("b", {}, `@${f.name}`), h("span", {}, f.title === f.name ? f.about : [f.title, f.about].filter(Boolean).join(" · ")))))));
+  c.picker.querySelector(".pick-file.is-active")?.scrollIntoView({ block: "nearest" });
+  c.list = list;
+}
+
 /** The files named in the message being typed get the accent outline, so you see which is which. */
 function markMentioned() {
-  const named = new Set(mentions(composer.input.value));
+  const text = composer.input.value;
+  const named = new Set(onStage() ? [...text.matchAll(/@([a-z0-9][a-z0-9-]*)/gi)].map((m) => m[1].toLowerCase()) : mentions(text));
   composer.tray.querySelectorAll(".file-chip").forEach((chip) => chip.classList.toggle("is-mentioned", named.has(chip.dataset.name)));
 }
 
 // ---------------------------------------------------------------- composer
 
 function makeComposer() {
-  const input = h("textarea.chat-input", { rows: 2, placeholder: "Describe the shot · @ for a file", "aria-label": "Message the assistant" });
+  const input = pillField({ placeholder: "Describe the shot · @ for a file", label: "Message the assistant", lookup, className: "chat-input" });
   const fileInput = h("input", { type: "file", multiple: true, hidden: true, accept: "image/*,video/mp4,video/webm,video/quicktime,audio/*,text/plain,text/markdown,.md,.txt,.json,.csv" });
-  const grow = () => {
-    input.style.height = "auto";
-    input.style.height = `${Math.min(input.scrollHeight, 160)}px`;
-  };
+  // the field grows with its words, up to its CSS height
+  const grow = () => {};
   const send = () => {
     const text = input.value;
     if (!text.trim() || (onStage() ? state.stageChat.busy : state.chat.busy)) return;
@@ -119,7 +171,7 @@ function makeComposer() {
   input.addEventListener("input", () => (grow(), updatePicker(), markMentioned()));
   input.addEventListener("click", updatePicker);
   // a redraw blurs it for a moment; the picker only goes when the focus really left
-  input.addEventListener("blur", () => setTimeout(() => document.activeElement !== input && (composer.picker.hidden = true), 120));
+  input.addEventListener("blur", () => setTimeout(() => document.activeElement !== input.el && (composer.picker.hidden = true), 120));
   input.addEventListener("keydown", (e) => {
     const c = composer;
     if (!c.picker.hidden && c.list?.length) {
@@ -147,11 +199,30 @@ function makeComposer() {
     const files = [...(e.clipboardData?.files ?? [])];
     if (files.length) {
       e.preventDefault();
-      attach(files);
+      if (onStage()) attachStagePictures(files);
+      else attach(files);
     }
   });
   fileInput.addEventListener("change", () => (attach([...fileInput.files]), (fileInput.value = "")));
-  const clip = h("button.composer-key.clip-key", { type: "button", title: "Attach — images, videos, sounds or text; or drop them here", "aria-label": "Attach files", on: { click: () => fileInput.click() } }, sprite("paperclip"));
+  // the paperclip opens its two frames: files (from the computer, or the Library), and the Stage's control maps
+  const clip = h("button.composer-key.clip-key", { type: "button", title: "Attach — a file, a picture from the Library, or a control map of the Stage", "aria-label": "Attach", "aria-expanded": "false" }, sprite("paperclip"));
+  clip.addEventListener("click", () => {
+    const inputs = state.stageChat.inputs;
+    attachMenu(clip, onStage() ? {
+      files: (files) => attachStagePictures(files),
+      picture: (photo) => addStagePicture(photo),
+      taken: (photo) => inputs.pictures.some((p) => p.file === photo.file),
+      map: (id, on) => setStageMap(id, on),
+      chosen: (id) => inputs.maps.includes(id),
+    } : {
+      files: (files) => attach(files),
+      accept: fileInput.accept,
+      picture: (photo) => attachPhoto(photo),
+      taken: (photo) => state.chat.files.some((f) => f.file === photo.file),
+      map: (id, on) => (on ? attachStageMap(id) : detach(MAP_TAG[id])),
+      chosen: (id) => state.chat.files.some((f) => f.name === MAP_TAG[id]),
+    });
+  });
   const key = h("button.send", { type: "button", title: "Send — Enter", "aria-label": "Send", on: { click: send } }, sprite("send"));
   // on the Stage: a finished picture of the frame, in the look the words describe
   const render = h("button.composer-key.render-key", {
@@ -205,7 +276,7 @@ function makeComposer() {
   const picker = h("div.mention-picker", { hidden: true, role: "listbox", "aria-label": "Files" });
   const toggle = h("button.composer-key.thread-key", { type: "button", "aria-label": "Conversation", on: { click: () => ((open = !open), renderAssistant(document.getElementById("assistant"))) } });
   const status = h("span.bar-status");
-  const bar = h("div.chat-bar", {}, tray, input, h("div.bar-row", {}, clip, render, modelSlot, improve, undo, h("span.spacer"), status, toggle, key));
+  const bar = h("div.chat-bar", {}, tray, input.el, h("div.bar-row", {}, clip, render, modelSlot, improve, undo, h("span.spacer"), status, toggle, key));
   const el = h("div.composer", {}, picker, bar, fileInput);
   // the page keeps room for the bar at its real height, files and all
   new ResizeObserver(() => document.documentElement.style.setProperty("--chat-h", `${Math.ceil(bar.getBoundingClientRect().height)}px`)).observe(bar);
@@ -221,6 +292,22 @@ function mention(name) {
   input.value = `${input.value}${pad}@${name} `;
   input.focus();
   input.dispatchEvent(new Event("input"));
+}
+
+/** On the Stage, a control map every render sends: its mark and its @name; × leaves it out. */
+function mapChip(id) {
+  const [, tag, about] = MAPS.find(([m]) => m === id) ?? [id, id, id];
+  return h("div.file-chip.is-map", { dataset: { name: tag }, title: `${about} — sent with every render` },
+    h("span.chip-thumb.is-glyph", {}, sprite(MAP_ICON[id] ?? "file")),
+    h("button.chip-name", { type: "button", "aria-label": `Mention @${tag}`, on: { click: () => mention(tag) } }, `@${tag}`),
+    h("button.chip-x", { type: "button", "aria-label": `Leave @${tag} out`, title: "Leave it out", on: { click: () => setStageMap(id, false) } }, icon("close")));
+}
+/** On the Stage, a picture every render sends, by its @name. */
+function stagePictureChip(p) {
+  return h("div.file-chip", { dataset: { name: p.name }, title: `${p.title ?? p.name} — sent with every render` },
+    h("button.chip-thumb", { type: "button", "aria-label": `Look at @${p.name}`, on: { click: () => view(p.url) } }, h("img", { src: p.url, alt: "", draggable: false })),
+    h("button.chip-name", { type: "button", "aria-label": `Mention @${p.name}`, on: { click: () => mention(p.name) } }, `@${p.name}`),
+    h("button.chip-x", { type: "button", "aria-label": `Remove @${p.name}`, title: "Remove", on: { click: () => removeStagePicture(p.name) } }, icon("close")));
 }
 
 function fileChip(f) {
@@ -262,7 +349,7 @@ function message(m, last) {
   }
   if (m.role === "user") {
     return h("div.msg.is-user", {},
-      h("p", {}, m.text),
+      pillText("p", m.text, lookup),
       files.length ? h("div.msg-files", {}, files.map((f) => h("span.msg-file", { title: `@${f.name}` }, thumb(f)))) : null);
   }
   return h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
@@ -292,8 +379,10 @@ export function renderAssistant(el) {
     c.modelSlot.replaceChildren(...(models.length > 1 ? [dropdown({ label: "Image model", value, items: models.map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setStageModel(id) })] : []));
   }
   c.input.placeholder = PLACEHOLDER[stage ? "stage" : "shot"];
-  c.tray.replaceChildren(...(stage ? [] : files.map(fileChip)), ...(!stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
-  c.tray.hidden = stage || (!files.length && !attaching);
+  const inputs = state.stageChat.inputs;
+  c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : files.map(fileChip)), ...(!stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
+  c.tray.hidden = stage ? !inputs.maps.length && !inputs.pictures.length : !files.length && !attaching;
+  c.input.refresh();
   c.el.classList.toggle("is-stage", stage);
   markMentioned();
   // a new answer opens the conversation, so its changes and its Undo are in view
@@ -323,7 +412,7 @@ export function renderAssistant(el) {
   );
   el.classList.toggle("is-open", open);
   // moving the composer drops its focus: keep the caret where it was, in the same task
-  const typing = document.activeElement === c.input;
+  const typing = document.activeElement === c.input.el;
   const caret = [c.input.selectionStart, c.input.selectionEnd];
   el.replaceChildren(panel, c.el);
   if (typing) {
@@ -332,7 +421,7 @@ export function renderAssistant(el) {
   }
   // drop files anywhere on the assistant
   el.ondragover = (e) => {
-    if (onStage() || ![...e.dataTransfer.types].includes("Files")) return;
+    if (![...e.dataTransfer.types].includes("Files")) return;
     e.preventDefault();
     el.classList.add("is-drop");
   };
@@ -341,7 +430,8 @@ export function renderAssistant(el) {
     if (!e.dataTransfer.files.length) return;
     e.preventDefault();
     el.classList.remove("is-drop");
-    attach([...e.dataTransfer.files]);
+    if (onStage()) attachStagePictures([...e.dataTransfer.files]);
+    else attach([...e.dataTransfer.files]);
   };
   el.onkeydown = (e) => {
     if (e.key === "Escape" && open && composer.picker.hidden) {

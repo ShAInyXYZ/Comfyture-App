@@ -161,8 +161,8 @@ const TOOLS: Tool[] = [
   },
   {
     name: "control_render_image",
-    description: "A finished picture of what the camera frame shows: the clay frame is its layout and prompt its look (who each character without a sheet is and wears, what each one does, the place, the light, the style). Each sheet's words and pictures go with the frame. An image edit with the app's default image model; the pictures land in the Library. Answers with their job ids.",
-    inputSchema: { type: "object", properties: { prompt: { type: "string", description: "The look, as a full image description." }, count: { type: "number", description: "1 to 4 versions, default 1." } } },
+    description: "A finished picture of what the camera frame shows: the clay frame is its layout and prompt what happens and its look (each character by @name, the place, the light, the style). The frame goes with its depth and colour maps, and each sheet's words and pictures with its @name. An image edit with the app's default image model; the pictures land in the Library. Answers with their job ids.",
+    inputSchema: { type: "object", properties: { prompt: { type: "string", description: "What happens and the look; call characters by @name (@mia)." }, count: { type: "number", description: "1 to 4 versions, default 1." }, maps: { type: "array", items: { type: "string" }, description: "Control maps sent with the frame: id, depth, normal, pose, lines, mask. Default id (the colour map); depth tends to darken the backdrop." } } },
     run: op("render_image"),
   },
   {
