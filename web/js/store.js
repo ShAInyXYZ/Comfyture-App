@@ -968,6 +968,16 @@ export async function rollAsTab({ tab, name, group, start, shot, seconds, aspect
   return { tab: t.id, run: run.id, done: waitFor("run", run.id) };
 }
 
+/** A shot from Story opened as a Shot tab to craft it there (its frame, words and line), without rolling it. */
+export function openStoryShot({ name, group, start, shot, seconds, aspect }) {
+  const t = { id: `story-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, run: null, film: group, draft: { ...freshDraft(), name, script: { shots: [{ ...emptyShot(), ...shot }], raw: "" }, start, seconds, aspect, review: false } };
+  state.tabs.push(t);
+  persist();
+  switchTab(t.id);
+  changed("tabs");
+  return t.id;
+}
+
 /** Opens the plan as tabs, one per shot, after the open tab. */
 function openPlan() {
   const { plan } = state.director;

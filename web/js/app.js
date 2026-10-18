@@ -48,12 +48,26 @@ const pending = new Set();
 const stale = new Set();
 let scheduled = false;
 
+// A press holds the redraw of the panel it is in until its click has landed (or a drag starts):
+// a redraw between the button going down and up takes the pressed thing away, and the click with it.
+let press = null;
+const release = () => press && ((press = null), pending.size && flush());
+window.addEventListener("pointerdown", (e) => {
+  press = { target: e.target, x: e.clientX, y: e.clientY };
+  const mine = press;
+  setTimeout(() => press === mine && release(), 700);
+}, true);
+window.addEventListener("pointermove", (e) => press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 4 && release(), true);
+window.addEventListener("pointerup", () => press && setTimeout(release), true);
+window.addEventListener("pointercancel", release, true);
+
 function flush() {
   if (scheduled) return;
   scheduled = true;
   requestAnimationFrame(() => {
     scheduled = false;
     const active = document.activeElement;
+    const held = [];
     for (const name of pending) {
       const [el, render, page] = panels[name];
       if (page && page !== currentPage()) {
@@ -61,7 +75,11 @@ function flush() {
         continue;
       }
       // the assistant and the Image window keep their composers across redraws, so they can always draw
-      if (name !== "monitor" && name !== "assistant" && name !== "image" && el.contains(active) && active.matches("input, textarea, select")) continue;
+      if (name !== "monitor" && name !== "assistant" && name !== "image" && el.contains(active) && !$("assistant").contains(active) && active.matches("input, textarea, select, [contenteditable]:not([contenteditable=false])")) continue;
+      if (press && el.contains(press.target)) {
+        held.push(name);
+        continue;
+      }
       // a redraw replaces the panel's children, which would scroll it back to the top
       const top = el.scrollTop;
       const lists = new Map([...el.querySelectorAll("[data-scroll-key]")].map((n) => [n.dataset.scrollKey, n.scrollTop]));
@@ -70,6 +88,7 @@ function flush() {
       for (const n of el.querySelectorAll("[data-scroll-key]")) if (lists.has(n.dataset.scrollKey)) n.scrollTop = lists.get(n.dataset.scrollKey);
     }
     pending.clear();
+    for (const name of held) pending.add(name);
   });
 }
 

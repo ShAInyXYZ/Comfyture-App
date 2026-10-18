@@ -5,7 +5,7 @@ import {
 } from "../store.js";
 import { pillField, pillText } from "../pills.js";
 import { attachMenu, MAPS, MAP_TAG, MAP_OF_TAG } from "../attach.js";
-import { story, askStory, storyLookup } from "../story.js";
+import { story, askStory, storyLookup, selectionLabel, select as selectInStory } from "../story.js";
 import { cut, askCut } from "../cut.js";
 import { dropdown } from "../controls.js";
 import { view } from "../viewer.js";
@@ -167,8 +167,9 @@ function makeComposer() {
   const send = () => {
     const text = input.value;
     if (onStory()) {
-      if (!text.trim() || story.busy.size) return;
+      if (!text.trim() || story.busy.has("assist")) return;
       input.value = "";
+      open = true;
       return askStory(text);
     }
     if (onCut()) {
@@ -367,6 +368,7 @@ function message(m, last) {
   }
   if (m.role === "user") {
     return h("div.msg.is-user", {},
+      m.about ? h("span.msg-about", {}, m.about) : null,
       pillText("p", m.text, lookup),
       files.length ? h("div.msg-files", {}, files.map((f) => h("span.msg-file", { title: `@${f.name}` }, thumb(f)))) : null);
   }
@@ -389,7 +391,7 @@ export function renderAssistant(el) {
   const storyPage = onStory();
   const writing = [...story.busy].find((k) => !k.includes(":"));
   const cutPage = onCut();
-  const { messages, busy } = storyPage ? { messages: [], busy: writing ? "Writing" : null } : cutPage ? cut.chat : stage ? state.stageChat : state.chat;
+  const { messages, busy } = storyPage ? { messages: story.chat.messages, busy: story.busy.has("assist") ? "Editing" : writing ? "Writing" : null } : cutPage ? cut.chat : stage ? state.stageChat : state.chat;
   const { files, attaching } = state.chat;
   const c = composer ?? makeComposer();
   c.key.disabled = !!busy;
@@ -403,7 +405,12 @@ export function renderAssistant(el) {
   if (storyPage || cutPage) c.modelSlot.replaceChildren(h("span.chip.composer-chip", { title: storyPage ? "The story is written by Gemma 4, in ComfyUI" : "The editor is Gemma 4, in ComfyUI" }, sprite("prompt-enhance"), "Gemma 4"));
   const inputs = state.stageChat.inputs;
   c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : files.map(fileChip)), ...(!stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
-  c.tray.hidden = storyPage || cutPage || (stage ? !inputs.maps.length && !inputs.pictures.length : !files.length && !attaching);
+  // on Story, what the assistant will edit: the block (or the card) that is picked
+  if (storyPage) {
+    const label = selectionLabel();
+    c.tray.replaceChildren(...(label ? [h("div.file-chip.is-context", { title: "The assistant edits what is picked; it knows the whole story" }, h("span.chip-thumb.is-glyph", {}, sprite("prompt-enhance")), h("span.chip-name", {}, `Editing: ${label}`), h("button.chip-x", { type: "button", "aria-label": "Edit the whole story", title: "The whole story", on: { click: () => selectInStory(null) } }, icon("close")))] : []));
+  }
+  c.tray.hidden = storyPage ? !selectionLabel() : cutPage || (stage ? !inputs.maps.length && !inputs.pictures.length : !files.length && !attaching);
   c.el.classList.toggle("is-story", storyPage);
   c.el.classList.toggle("is-cut", cutPage);
   c.input.refresh();

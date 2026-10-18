@@ -14,7 +14,7 @@ import { ASPECTS, ImageModels } from "./images.ts";
 import { askClaude, blenderStatus, command, CONTROL_BRIEF, CONTROL_MODEL, controlConnected, controlEvents, controlModelName, controlPrompt, fromBlender, readControlAnswer, reply, toBlender, type ControlTurn } from "./control.ts";
 import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
-import { readStory, storyBrief, storyPrompt, type StoryStep } from "./story.ts";
+import { readStory, storyBrief, storyPrompt, STORY_ASSIST_BRIEF, storyAssistPrompt, readStoryAssist, type StoryStep } from "./story.ts";
 import { planCut, CUT_BRIEF, cutPrompt, readCutAnswer, type CutBody, type CutItem, type Source } from "./cut.ts";
 
 const root = resolve(import.meta.dirname, "..");
@@ -870,8 +870,27 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const input = await jsonBody(req, 8 * 1024 * 1024);
     const step = ["idea", "script", "world", "board"].includes(input.step) ? (input.step as StoryStep) : null;
     if (!step) throw bad("Which step?");
-    const reply = await engine.write(storyBrief(step), storyPrompt(step, input.story ?? {}, text(input.ask, 800)), { maxLength: step === "idea" ? 1200 : 3600 });
+    const only = Math.round(Number(input.only)) || undefined;
+    const reply = await engine.write(storyBrief(step), storyPrompt(step, input.story ?? {}, text(input.ask, 800), only), { maxLength: step === "idea" ? 1200 : 3600 });
     return json(res, 200, readStory(step, reply));
+  }
+  if (path === "/api/story/assist" && method === "POST") {
+    // the story assistant, with the whole story in mind: it answers with the edits to make
+    const input = await jsonBody(req, 8 * 1024 * 1024);
+    const turns = (Array.isArray(input.messages) ? input.messages : []).map((m: any) => ({ role: m?.role === "assistant" ? "assistant" : "user", text: text(m?.text, 1200) })).filter((m: any) => m.text);
+    if (!turns.length) throw bad("Say what to change.");
+    const prompt = storyAssistPrompt(input.story ?? {}, text(input.selected, 300) || null, turns);
+    let reply = await engine.write(STORY_ASSIST_BRIEF, prompt, { maxLength: 2400, temperature: 0.4 });
+    if (process.env.COMFYTURE_DEBUG) console.log(`story assistant answered\n${reply}`);
+    let out = readStoryAssist(reply);
+    // a small writer sometimes drops a brace: once more, with its answer to mend
+    if (out.broken) {
+      reply = await engine.write(STORY_ASSIST_BRIEF, `${prompt}\n\nYOUR LAST ANSWER WAS NOT VALID JSON:\n${reply.slice(0, 4000)}\n\nWrite the same answer again as valid JSON only: {"reply": "...", "ops": [{"op": ...}, ...]}`, { maxLength: 2400, temperature: 0.2 });
+      if (process.env.COMFYTURE_DEBUG) console.log(`story assistant answered again\n${reply}`);
+      out = readStoryAssist(reply);
+    }
+    const { broken, ...answer } = out;
+    return json(res, 200, answer);
   }
   for (const kind of ["stories", "cuts"]) {
     if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {

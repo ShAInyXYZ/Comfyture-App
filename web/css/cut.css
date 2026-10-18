@@ -82,7 +82,7 @@ body[data-page="cut"] { padding-bottom: 0; overflow: hidden; }
 .cut-ai .key { justify-content: center; padding: 0 .5rem; }
 .cut-ai .key svg { width: 1rem; height: 1rem; }
 .cut-title-text { width: 100%; padding: .5rem; color: var(--text); font: 600 var(--fs-body)/1.4 var(--font-sans); resize: vertical; }
-.cut-render { flex: none; margin-top: auto; }
+.cut-render { display: inline-flex; align-items: center; justify-content: center; gap: .625rem; flex: none; margin-top: auto; }
 .cut-render svg { width: 1.125rem; height: 1.125rem; }
 
 /* the timeline */
