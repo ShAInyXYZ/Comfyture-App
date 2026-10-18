@@ -8,7 +8,8 @@
     "check": "node --env-file-if-exists=.env scripts/smoke.ts data/smoke.png",
     "check:workflows": "node scripts/check-workflows.ts",
     "previews": "node --env-file-if-exists=.env scripts/previews.ts",
-    "demo-site": "node scripts/demo-site.ts"
+    "demo-site": "node scripts/demo-site.ts",
+    "www": "python3 scripts/www-media.py"
   },
   "license": "MIT",
   "dependencies": {

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comfyture · Open-source AI filmmaking studio</title>
+<meta name="description" content="Comfyture turns a photo or one sentence into video with sound: 28 presets, a story desk, a staging table and an editing room. Open source, built on ComfyUI and LTX-2.5.">
+<meta name="theme-color" content="#0f0b13">
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml"><link rel="icon" href="brand/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
+<meta property="og:title" content="Comfyture"><meta property="og:description" content="One photo in, a cinematic shot with sound out. One sentence in, a short film out. Open source."><meta property="og:image" content="media/film/desert-dawn-rescue.jpg">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="gh" viewBox="0 0 24 24"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></symbol></svg>
+
+<div class="ticker" aria-hidden="true"><div class="tr" id="ticker"></div></div>
+<header class="bar"><div class="wrap">
+  <a href="#top" aria-label="Comfyture"><span class="wm"></span></a>
+  <nav aria-label="Main"><a href="#presets">Presets</a><a href="#talk">Talk</a><a href="#lff">Last frame</a><a href="#story">Story</a><a href="#stage">Stage</a><a href="#shot">Shot</a><a href="#cut">Cut</a><a href="#library">Library</a><a href="#made">Made with it</a><a href="#models">Models</a><a href="#run">Run it</a><a href="#faq">FAQ</a></nav>
+  <div class="end"><a class="gh" href="https://github.com/ShAInyXYZ/Comfyture"><svg><use href="#gh"/></svg><span>GitHub</span></a><a class="btn sm" href="demo/">Open the demo</a></div>
+</div></header>
+
+<main id="top">
+<!-- hero: the film is the page -->
+<section class="hero">
+  <video id="film-v" muted loop playsinline autoplay preload="auto" poster="media/film/desert-dawn-rescue.jpg" src="media/film/desert-dawn-rescue.mp4"></video>
+  <div class="in">
+    <div>
+      <span class="chip y">Open source · MIT</span>
+      <h1>Direct a shot.<em>Or a whole film.</em></h1>
+      <p class="lead">One photo in, a cinematic shot with sound out. One sentence in, a short film out. Presets, a story desk, a staging table and an editing room, on your own GPU or in the cloud.</p>
+      <div class="cta"><a class="btn" href="demo/">Open the live demo <svg class="ico"><use href="media/icons.svg#arrow-right"/></svg></a><a class="btn ghost" href="#presets">Browse 28 presets</a></div>
+    </div>
+    <div class="side">
+      <div class="now"><b>Desert Dawn Rescue</b>23 s film · four shots from one story · made in Comfyture</div>
+      <div class="shots" id="film-shots" role="group" aria-label="Jump to a shot"></div>
+      <button class="round" id="film-sound" type="button" aria-label="Turn the sound on" aria-pressed="false"><svg class="ico"><use href="media/icons.svg#player-volume-off"/></svg></button>
+    </div>
+  </div>
+</section>
+
+<!-- every preset, moving -->
+<div class="marq" aria-label="Presets playing" id="marq"></div>
+
+<!-- what's inside -->
+<div class="promos wrap" style="max-width:none">
+  <a class="promo" href="#talk"><video muted loop playsinline preload="none" data-src="media/takes/not-tonight.mp4" poster="media/takes/not-tonight.jpg"></video><span class="chip y">Sound included</span><div class="t"><b>Say a line</b><span>Voice and lip sync come with the shot.</span></div></a>
+  <a class="promo" href="#lff"><video muted loop playsinline preload="none" data-src="media/presets/gold-statue/preview.mp4" poster="media/presets/gold-statue/poster.jpg"></video><span class="chip y">Last frame first</span><div class="t"><b>Paint the ending</b><span>Check where the shot lands before you roll it.</span></div></a>
+  <a class="promo" href="#talk"><video muted loop playsinline preload="none" data-src="media/takes/chef-copied-motion.mp4" poster="media/takes/chef-copied-motion.jpg"></video><span class="chip y">Copy motion</span><div class="t"><b>Copy any move</b><span>A clip’s pose drives your photo.</span></div></a>
+  <a class="promo" href="#story"><video muted loop playsinline preload="none" data-src="media/takes/finding-life.mp4" poster="media/takes/finding-life.jpg"></video><span class="chip y">Story</span><div class="t"><b>A film from a sentence</b><span>Bible, script, storyboard, every shot.</span></div></a>
+</div>
+
+<!-- the shelf -->
+<section class="sec" id="presets"><div class="wrap">
+  <div class="sh"><div><h2>Everything you <em>can make</em></h2><p>28 presets. Each is a starting script: a motion, a camera, the sound that goes with it. Click one to open it.</p></div>
+    <div class="tabs" id="p-tabs"><button type="button" aria-pressed="true" data-f="">All</button><button type="button" aria-pressed="false" data-f="camera">Camera</button><button type="button" aria-pressed="false" data-f="vfx">Effects</button><button type="button" aria-pressed="false" data-f="transform">Transformations</button><label class="find"><svg class="ico"><use href="media/icons.svg#search"/></svg><input id="p-q" type="search" placeholder="Search" aria-label="Search presets" autocomplete="off"></label></div></div>
+  <div class="mosaic" id="mosaic"></div>
+</div></section>
+
+<!-- talking, copying, extending -->
+<section class="banner" id="talk">
+  <div class="talkb">
+    <div class="clip" id="tk-a"></div>
+    <div class="mid"><span class="chip y">Sound included</span><h2 style="margin-top:14px">Say a line.<br><em>Get the voice.</em></h2><p class="lead">Write the line and the speaker. The voice and the lip sync come with the shot, picture and sound made together by LTX-2.5.</p><q>Not tonight. I am going home.</q></div>
+    <div class="clip" id="tk-b"></div>
+  </div>
+</section>
+<section class="banner plum" id="copy">
+  <div class="talkb">
+    <div class="clip" id="cp-a"></div>
+    <div class="mid"><span class="chip y">Video in</span><h2 style="margin-top:14px">Copy any move.<br><em>Carry on any clip.</em></h2><p class="lead">A video’s pose or edges drive your photo while it gives the look. Or extend a clip: its last frames guide the new shot, so it picks up exactly where it ends.</p></div>
+    <div class="clip" id="cp-b"></div>
+  </div>
+</section>
+
+<div class="stats">
+  <div class="stat"><b>28</b><span>presets that play</span></div><div class="stat"><b>372</b><span>set pieces to stage</span></div><div class="stat"><b>72</b><span>poses, 8 mannequins</span></div><div class="stat"><b>7</b><span>control maps rendered</span></div><div class="stat"><b>10</b><span>open models named</span></div>
+</div>
+
+<!-- last frame first -->
+<section class="sec" id="lff"><div class="wrap">
+  <div class="sh"><div><h2>Last frame <em>first</em></h2><p>A transformation doesn’t hope the video model gets there. It paints the destination first: Qwen Image 2.1 edits your photo into the final frame, you check it, and LTX-2.5 animates between the two.</p></div><a class="btn ghost sm" href="#presets">All 9 transformations</a></div>
+  <div class="lff">
+    <figure><img src="media/samples/dancer.jpg" alt="The starting photo: a dancer lit red and blue, one arm raised" loading="lazy"><figcaption><b>Your photo</b><span>Any picture you already have.</span></figcaption></figure>
+    <span class="ar"><svg class="ico"><use href="media/icons.svg#arrow-right"/></svg></span>
+    <figure><img src="media/presets/gold-statue/last.jpg" alt="The painted last frame: the same dancer as a gold statue" loading="lazy"><figcaption><b>The painted ending</b><span>Qwen Image 2.1 edits it. Paint again until it’s right.</span></figcaption></figure>
+    <span class="ar"><svg class="ico"><use href="media/icons.svg#arrow-right"/></svg></span>
+    <figure><video muted loop playsinline preload="none" data-src="media/presets/gold-statue/preview.mp4" poster="media/presets/gold-statue/poster.jpg"></video><figcaption><b>The shot</b><span>LTX-2.5 turns toward that frame, with its sound.</span></figcaption></figure>
+  </div>
+</div></section>
+
+<!-- the rooms -->
+<section class="room" id="story">
+  <span class="big" aria-hidden="true">Story</span>
+  <div class="head"><div><span class="chip y">Room 1</span><h2 style="margin-top:14px">A film from <em>one sentence.</em></h2><div class="chips"><span class="chip">Story bible with @tags</span><span class="chip">Script as a document</span><span class="chip">Storyboard</span><span class="chip">Story assistant</span><span class="chip">Board · draw · block · roll</span></div></div>
+    <div class="lead"><p>One screen like a producer’s desk. Write the brief and the writer makes the idea, the script, then how everyone and everything looks. Cast, places and props keep their pictures in every prompt that names them.</p><div class="acts"><a class="btn sm" href="demo/">Open Story in the demo</a></div></div></div>
+  <button class="pic" type="button" data-zoom="media/app/story.jpg" aria-label="Enlarge Story"><img src="media/app/story.jpg" alt="Story: the bible with cast, places and props, the script and storyboard, and the inspector" width="2000" height="1125" loading="lazy"></button>
+</section>
+
+<section class="room y" id="stage">
+  <span class="big" aria-hidden="true">Stage</span>
+  <div class="head"><div><span class="chip y">Room 2</span><h2 style="margin-top:14px">Block the scene <em>before you shoot it.</em></h2><div class="chips"><span class="chip">8 mannequins · 72 poses</span><span class="chip">372 set pieces</span><span class="chip">Real lens and camera snaps</span><span class="chip">7 control maps</span><span class="chip">Stage it with a sentence</span></div></div>
+    <div class="lead"><p>A blocking table for your own control references, for images and for video. Pose figures, dress the set, frame it, and render clay, colour ID, depth, normal, OpenPose, line art and mask. Import your own rigged characters too.</p><div class="acts"><a class="btn sm" href="demo/">Open Stage in the demo</a></div></div></div>
+  <button class="pic" type="button" data-zoom="media/app/stage-bus.jpg" aria-label="Enlarge the Stage"><img src="media/app/stage-bus.jpg" alt="The Stage: a rainy bus stop blocked with three mannequins" width="2000" height="1125" loading="lazy"></button>
+  <div class="more"><button class="pic" type="button" data-zoom="media/app/stage-kitchen.jpg" aria-label="Enlarge the kitchen"><img src="media/app/stage-kitchen.jpg" alt="A morning kitchen staged with three figures" loading="lazy"></button><button class="pic" type="button" data-zoom="media/app/stage-perfume.jpg" aria-label="Enlarge the perfume stage"><img src="media/app/stage-perfume.jpg" alt="A perfume launch staged on a podium" loading="lazy"></button></div>
+</section>
+
+<section class="room" id="shot">
+  <span class="big" aria-hidden="true">Shot</span>
+  <div class="head"><div><span class="chip y">Room 3</span><h2 style="margin-top:14px">The desk where a <em>shot gets made.</em></h2><div class="chips"><span class="chip">Photo, video or generated start</span><span class="chip">End frame · keyframes</span><span class="chip">References: cast, prop, place</span><span class="chip">Multi-shot script</span><span class="chip">1 to 4 takes</span><span class="chip">Next shot from last frame</span></div></div>
+    <div class="lead"><p>Give it the frames, write the script, set the camera, roll takes and keep the good one. The Prompt view shows the exact text sent to the model, and every shot gets a tab.</p><div class="acts"><a class="btn sm" href="demo/">Open Shot in the demo</a></div></div></div>
+  <button class="pic" type="button" data-zoom="media/app/shot.jpg" aria-label="Enlarge the Shot desk"><img src="media/app/shot.jpg" alt="The Shot desk: inputs, monitor, script, presets and the take log" width="2000" height="1125" loading="lazy"></button>
+</section>
+
+<section class="room p" id="cut">
+  <span class="big" aria-hidden="true">Cut</span>
+  <div class="head"><div><span class="chip y">Room 4</span><h2 style="margin-top:14px">An editing room that <em>makes what’s missing.</em></h2><div class="chips"><span class="chip">Music · ACE-Step 1.5</span><span class="chip">Sound effects · Stable Audio 3</span><span class="chip">Voice lines · LTX-2.5</span><span class="chip">Titles and overlays</span><span class="chip">Ask the editor</span><span class="chip">Lip-sync and extend a clip</span></div></div>
+    <div class="lead"><p>A non-linear editor: trim, split, dissolve, speed up, push in, grade and fade, with the program monitor playing the film as it will render. Music ducks under the voices.</p><div class="acts"><a class="btn sm" style="background:var(--ink);color:var(--yellow)" href="demo/">Open Cut in the demo</a></div></div></div>
+  <button class="pic" type="button" data-zoom="media/app/cut.jpg" aria-label="Enlarge Cut"><img src="media/app/cut.jpg" alt="Cut: the media bin, the monitor, the edit panel and the timeline" width="2000" height="1125" loading="lazy"></button>
+</section>
+
+<section class="room y" id="library">
+  <span class="big" aria-hidden="true">Library</span>
+  <div class="head"><div><span class="chip y">Room 5</span><h2 style="margin-top:14px">Everything you’ve made, <em>one grid.</em></h2><div class="chips"><span class="chip">Takes · films · images</span><span class="chip">Searchable</span><span class="chip">Reopen with the inputs</span><span class="chip">@ reaches it all</span></div></div>
+    <div class="lead"><p>Click a take to open it in a tab with the inputs that made it. Name an earlier take, a film or any image in a message: “continue from @finding-life”. Kept on your machine, next to the workflow that made each take.</p></div></div>
+  <button class="pic" type="button" data-zoom="media/app/library.jpg" aria-label="Enlarge the Library"><img src="media/app/library.jpg" alt="The Library: a grid of takes" width="2000" height="1125" loading="lazy"></button>
+</section>
+
+<!-- made with it -->
+<section class="sec" id="made"><div class="wrap">
+  <div class="sh"><div><h2>Made in <em>Comfyture</em></h2><p>Real takes from the app’s own take log. Click one to see the exact prompt behind it.</p></div>
+    <div class="tabs" id="t-tabs"><button type="button" aria-pressed="true" data-k="">All</button><button type="button" aria-pressed="false" data-k="Story shot">Story shots</button><button type="button" aria-pressed="false" data-k="Talking shot">Talking</button><button type="button" aria-pressed="false" data-k="Copy motion">Copy motion</button><button type="button" aria-pressed="false" data-k="From the Stage">From the Stage</button></div></div>
+  <div class="cols" id="t-grid"></div>
+</div></section>
+
+<!-- models -->
+<section class="sec" id="models"><div class="wrap">
+  <div class="sh"><div><h2>Open models, <em>named</em></h2><p>Every picture, video and sound model is open weights. Each runs as Comfy’s own template for it, on your GPU or on Comfy Cloud.</p></div></div>
+  <div class="runway" aria-hidden="true"><div class="tr" id="runway"></div></div>
+  <div class="models">
+    <div class="model"><span class="chip y">Video · sound</span><b>LTX-2.5</b><span>Picture and sound generated together in one pass. References and motion copy use Lightricks’ IC-LoRAs.</span></div>
+    <div class="model"><span class="chip">Image</span><b>Qwen Image 2.1</b><span>Pictures and the painted last frame, up to 2K. Edit with up to 10 references. A Turbo version too.</span></div>
+    <div class="model"><span class="chip">Image</span><b>FLUX 3 Klein</b><span>Text to image and image edit, up to 4 MP.</span></div>
+    <div class="model"><span class="chip">Image</span><b>Krea 2 Turbo</b><span>Text to image and style references, with nine official style LoRAs.</span></div>
+    <div class="model"><span class="chip">Image</span><b>Z-Image Turbo</b><span>Fast text to image, up to 2 MP.</span></div>
+    <div class="model"><span class="chip p">Music</span><b>ACE-Step 1.5</b><span>Music from a few words, in Cut.</span></div>
+    <div class="model"><span class="chip p">Sound</span><b>Stable Audio 3</b><span>Sound effects from a sentence.</span></div>
+    <div class="model"><span class="chip">Writer</span><b>Gemma 4</b><span>Open weights, inside ComfyUI: shot lists, prompt enhancer and assistant.</span></div>
+    <div class="model"><span class="chip">Writer</span><b>Claude Sonnet 5.5</b><span>The default writer through Comfy Router. Claude Haiku 4.5 assists on the bars.</span></div>
+    <div class="model"><span class="chip">Tools</span><b>BiRefNet · DWPose</b><span>Cut cast and props out for references; follow a clip’s pose or edges.</span></div>
+  </div>
+</div></section>
+
+<!-- run it -->
+<section class="sec" id="run"><div class="wrap">
+  <div class="sh"><div><h2>Run it <em>your way</em></h2><p>The same code on your own GPU or on Comfy Cloud. Only where the models live changes.</p></div></div>
+  <div class="run">
+    <div class="box"><span class="chip y" style="align-self:flex-start">Comfy Cloud</span><h3>No GPU needed</h3><p>You need a Comfy API key and a paid Comfy Cloud plan. Cloud has the models.</p>
+<pre><b>git</b> clone &lt;this repo&gt; comfyture &amp;&amp; cd comfyture
+<b>npm</b> install
+echo "COMFY_API_KEY=comfyui-..." &gt; .env
+<b>npm</b> start          # http://127.0.0.1:5177</pre></div>
+    <div class="box"><span class="chip" style="align-self:flex-start">Your GPU</span><h3>Everything local</h3><p>A recent ComfyUI with the models, and the official Comfy API v2 proxy next to it.</p>
+<pre>pip install comfy-api-proxy
+comfy-api-proxy run      # Comfy API v2 on 127.0.0.1:8189
+<b>npm</b> start              # http://127.0.0.1:5177</pre></div>
+    <div class="box"><h3>Try it without either</h3><p>The live demo is the app as static files: presets and takes play, and every prompt and workflow is there. Rolling is off. <code>npm run dev</code> starts the app with tiny stand-in workflows, so you can work on the interface without a GPU or credits.</p><a class="btn sm" style="align-self:flex-start" href="demo/">Open the live demo</a></div>
+    <div class="box"><h3>Make your own preset</h3><p>A preset is a readable file: a name, a family, a script of shots with camera and sound, and an optional instruction to paint the last frame. Copy one, change the words, and it appears on the shelf.</p><a class="btn ghost sm" style="align-self:flex-start" href="https://github.com/ShAInyXYZ/Comfyture#make-a-preset">How presets work</a></div>
+  </div>
+</div></section>
+
+<!-- faq -->
+<section class="sec" id="faq"><div class="wrap">
+  <div class="sh"><div><h2>Questions</h2></div></div>
+  <div class="faq">
+    <details><summary>Is it free? <svg class="ico"><use href="media/icons.svg#chevron-down"/></svg></summary><p>The code is MIT licensed and the models are open weights, so running it on your own GPU costs only your hardware. Comfy Cloud needs an API key and a paid Comfy Cloud plan, and the Claude writers are billed in Comfy credits through Comfy Router. Gemma 4 runs inside ComfyUI if you want everything open.</p></details>
+    <details><summary>What do I need to run it locally? <svg class="ico"><use href="media/icons.svg#chevron-down"/></svg></summary><p>Node.js 22.18 or newer, a recent ComfyUI with the models from the README (a script fetches them), and the Comfy API v2 proxy. Accept the model terms on the Lightricks pages before downloading.</p></details>
+    <details><summary>Can I make my own presets? <svg class="ico"><use href="media/icons.svg#chevron-down"/></svg></summary><p>Yes. A preset is a folder with a readable <code>preset.json</code> (and a poster and preview if you want them on the shelf). The 28 that ship are all made this way.</p></details>
+    <details><summary>Does the video have sound? <svg class="ico"><use href="media/icons.svg#chevron-down"/></svg></summary><p>Yes. LTX-2.5 generates the picture and the audio together: the whoosh of a zoom, the crackle of fire, a line of dialogue with lip sync. Cut adds music, effects and voice tracks on top.</p></details>
+    <details><summary>Can I try it without a server? <svg class="ico"><use href="media/icons.svg#chevron-down"/></svg></summary><p>The live demo is the app as static files with the presets, sample photos and a take log. Everything plays; rolling is off. Run <code>npm run demo-site</code> to build your own copy for any static host.</p></details>
+    <details><summary>Is it affiliated with ComfyUI? <svg class="ico"><use href="media/icons.svg#chevron-down"/></svg></summary><p>No. Comfyture is an independent open-source project built on the Comfy Developer Platform. It borrows ComfyUI’s yellow as a nod and does not use its logo.</p></details>
+  </div>
+</div></section>
+
+<a class="roll" href="demo/"><svg class="arr" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 40 40 8M14 8h26v26"/></svg><h2>Roll your<br>first take.</h2><p>Open the live demo and play every preset, or clone it and run it on your own GPU.</p><div class="row"><span class="btn">Open the live demo</span></div></a>
+</main>
+
+<footer><div class="wrap">
+  <div><a href="#top" aria-label="Comfyture"><span class="wm"></span></a><p>One photo in, a shot with sound out. One sentence in, a short film out. Independent and open source, built for Comfy’s #OpenSourceHiggsfield challenge.</p></div>
+  <div><h4>Product</h4><ul><li><a href="#presets">Presets</a></li><li><a href="#story">Story</a></li><li><a href="#stage">Stage</a></li><li><a href="#shot">Shot</a></li><li><a href="#cut">Cut</a></li><li><a href="#library">Library</a></li></ul></div>
+  <div><h4>Build</h4><ul><li><a href="#models">Models</a></li><li><a href="#run">Run it</a></li><li><a href="https://github.com/ShAInyXYZ/Comfyture">GitHub</a></li><li><a href="demo/">Live demo</a></li></ul></div>
+  <div><h4>More</h4><ul><li><a href="#faq">FAQ</a></li><li><a href="brand/index.html">Brand</a></li><li>MIT licence</li></ul></div>
+</div></footer>
+
+<dialog class="view" id="view" aria-label="Player"><div class="vb"><div class="pl" id="v-pl"></div><div class="info" id="v-info"></div><button class="round x" type="button" id="v-x" aria-label="Close"><svg class="ico"><use href="media/icons.svg#x"/></svg></button></div></dialog>
+<dialog class="zoom" id="zoom"><img alt="" id="zoom-i"></dialog>
+<script src="site.js"></script>
+</body></html>

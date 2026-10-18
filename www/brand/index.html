@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comfyture · Brand identity</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root {
+  --yellow: #F2FF59; --ink: #211927; --plum: #49378B; --white: #F0EFED;
+  --char: #19191C; --line: rgba(240,239,237,.14); --mute: rgba(240,239,237,.64); --dim: rgba(240,239,237,.42);
+  --sans: "Manrope", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --r: 1.25rem;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--ink); color: var(--white); font: 400 1rem/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+img { display: block; max-width: 100%; -webkit-user-drag: none; user-select: none; }
+a { color: inherit; }
+.wrap { max-width: 76rem; margin: 0 auto; padding: 0 1.5rem; }
+.mono { font-family: var(--mono); }
+.kicker { font: 500 .75rem/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin: 0 0 1rem; }
+
+/* nav */
+.nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--ink) 92%, transparent); border-bottom: 1px solid var(--line); backdrop-filter: blur(10px); }
+.nav .wrap { display: flex; align-items: center; gap: 2rem; height: 3.5rem; }
+.nav img { height: 1.5rem; width: auto; }
+.nav nav { display: flex; gap: 1.5rem; margin-left: auto; font-size: .875rem; color: var(--mute); overflow-x: auto; scrollbar-width: none; }
+.nav nav a { text-decoration: none; white-space: nowrap; }
+.nav nav a:hover { color: var(--yellow); }
+
+/* hero */
+.hero { padding: clamp(4rem, 10vw, 8rem) 0 clamp(3rem, 7vw, 6rem); }
+.hero img { width: min(100%, 52rem); height: auto; margin: 0 0 2.5rem; }
+.hero p { max-width: 36rem; margin: 0; font-size: 1.25rem; line-height: 1.45; color: var(--mute); }
+.hero p b { color: var(--white); font-weight: 600; }
+
+section.sec { padding: clamp(3rem, 6vw, 5rem) 0; border-top: 1px solid var(--line); }
+.sec h2 { margin: 0 0 .75rem; font-size: clamp(1.75rem, 3.4vw, 2.5rem); line-height: 1.1; letter-spacing: -.02em; font-weight: 800; }
+.sec .lede { max-width: 40rem; margin: 0 0 3rem; color: var(--mute); }
+
+/* panels */
+.panel { position: relative; display: grid; place-items: center; min-height: 15rem; padding: 2rem; border-radius: var(--r); background: var(--char); overflow: hidden; }
+.panel.y { background: var(--yellow); color: var(--ink); } .panel.p { background: var(--plum); } .panel.w { background: var(--white); color: var(--ink); } .panel.i { background: #17101d; }
+.panel .tag { position: absolute; left: 1rem; bottom: .875rem; font: 500 .6875rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; opacity: .62; }
+.panel .tag2 { position: absolute; right: 1rem; bottom: .875rem; font: 500 .6875rem/1 var(--mono); opacity: .62; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.cap { margin: 1rem 0 0; font-size: .875rem; color: var(--mute); max-width: 30rem; }
+.cap b { color: var(--white); font-weight: 600; }
+
+/* clear space */
+.clear { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
+.cs { position: relative; display: inline-block; padding: var(--x); outline: 1.5px dashed rgba(242,255,89,.55); outline-offset: 0; }
+.cs::before { content: ""; position: absolute; inset: var(--x); outline: 1px solid rgba(240,239,237,.3); }
+.cs img { position: relative; }
+.cs .x { position: absolute; font: 500 .75rem/1 var(--mono); color: var(--yellow); }
+.cs .x.t { top: calc(var(--x) / 2 - .4rem); left: 50%; translate: -50% 0; }
+.cs .x.l { left: calc(var(--x) / 2 - .25rem); top: 50%; translate: 0 -50%; }
+.sizes { display: flex; align-items: flex-end; gap: 2.5rem; flex-wrap: wrap; }
+.sizes figure { margin: 0; display: grid; gap: .75rem; justify-items: start; }
+.sizes figcaption { font: 500 .6875rem/1 var(--mono); color: var(--dim); }
+
+/* browser tab mocks */
+.chrome { border-radius: .75rem; padding: .625rem .625rem 0; }
+.chrome.dark { background: #202124; } .chrome.light { background: #dee1e6; color: #202124; }
+.tabs { display: flex; gap: .25rem; align-items: flex-end; }
+.tab { display: flex; align-items: center; gap: .5rem; width: 14rem; height: 2.25rem; padding: 0 .75rem; border-radius: .625rem .625rem 0 0; font: 400 .75rem/1 system-ui, sans-serif; }
+.chrome.dark .tab.on { background: #35363a; color: #e8eaed; } .chrome.light .tab.on { background: #fff; }
+.tab.off { opacity: .6; width: 10rem; }
+.tab img { width: 1rem; height: 1rem; border-radius: .2rem; flex: none; }
+.tab .x { margin-left: auto; opacity: .6; }
+.urlbar { height: 2.25rem; background: #35363a; border-radius: 0; margin: 0 -.625rem; padding: .375rem .75rem; display: flex; }
+.chrome.light .urlbar { background: #fff; }
+.urlbar i { flex: 1; border-radius: 99px; background: rgba(255,255,255,.08); }
+.chrome.light .urlbar i { background: #f1f3f4; }
+
+/* app icon ladder & masks */
+.ladder { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 2rem; }
+.ladder figure { margin: 0; display: grid; gap: .625rem; justify-items: center; }
+.ladder figcaption { font: 500 .6875rem/1 var(--mono); color: var(--dim); }
+.masks { display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap; }
+.mask { width: 6rem; height: 6rem; overflow: hidden; background: var(--yellow); }
+.mask img { width: 100%; height: 100%; }
+.dock { display: flex; gap: .875rem; padding: .875rem; border-radius: 1.5rem; background: rgba(255,255,255,.08); border: 1px solid var(--line); width: max-content; }
+.dock span { width: 3.75rem; height: 3.75rem; border-radius: 1rem; background: linear-gradient(135deg, #3a4a6b, #1d2535); display: block; }
+.dock span:nth-child(2) { background: linear-gradient(135deg, #5a3a4b, #2b1d25); } .dock span:nth-child(4) { background: linear-gradient(135deg, #3a6b55, #1d3529); }
+.dock img { width: 3.75rem; height: 3.75rem; }
+
+/* header mock */
+.appbar { display: flex; align-items: center; gap: 2rem; height: 3.5rem; padding: 0 1.25rem; border-radius: var(--r) var(--r) 0 0; background: #19191c; border: 1px solid var(--line); border-bottom: 0; font: 600 .8125rem/1 var(--sans); color: rgba(240,239,237,.64); }
+.appbar img { height: 1.75rem; width: auto; }
+.appbar .on { color: #fff; box-shadow: inset 0 -3px 0 var(--yellow); height: 100%; display: inline-flex; align-items: center; padding: 0 .75rem; }
+.appbody { height: 4.5rem; border-radius: 0 0 var(--r) var(--r); background: #121214; border: 1px solid var(--line); border-top: 1px solid var(--line); }
+
+/* colour */
+.sw { border-radius: var(--r); padding: 1.5rem; min-height: 15rem; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; border: 1px solid var(--line); transition: transform .15s cubic-bezier(.16,1,.3,1); }
+.sw:hover { transform: translateY(-3px); }
+.sw b { font-size: 1.5rem; letter-spacing: -.01em; }
+.sw dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .25rem 1rem; font: 500 .75rem/1.3 var(--mono); }
+.sw dt { opacity: .6; } .sw dd { margin: 0; }
+.sw p { margin: .5rem 0 0; font-size: .8125rem; line-height: 1.4; opacity: .8; }
+table.t { width: 100%; border-collapse: collapse; margin-top: 2.5rem; font-size: .875rem; }
+.t th { text-align: left; font: 500 .6875rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); padding: .75rem 1rem; border-bottom: 1px solid var(--line); }
+.t td { padding: .875rem 1rem; border-bottom: 1px solid var(--line); vertical-align: middle; color: var(--mute); }
+.t td:first-child { color: var(--white); }
+.pair { display: inline-flex; align-items: center; justify-content: center; width: 4.5rem; height: 2.25rem; border-radius: .5rem; font: 700 .875rem/1 var(--sans); }
+.ratio { font: 500 .8125rem/1 var(--mono); }
+.ok { color: var(--yellow); } .no { color: #ff8a7a; }
+.bar { display: flex; height: 3rem; border-radius: .75rem; overflow: hidden; margin: 2.5rem 0 .75rem; }
+.bar i { display: block; }
+
+/* type */
+.type { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.type .panel { align-items: start; justify-items: start; place-items: start; min-height: 18rem; padding: 2rem; background: var(--char); }
+.type .big { font-size: 5.5rem; line-height: 1; letter-spacing: -.03em; margin: 0 0 1rem; }
+.type p { margin: 0; color: var(--mute); }
+.type .specimen { margin-top: 1.5rem; font-size: 1.125rem; }
+
+/* do / dont */
+.dd { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.dd figure { margin: 0; }
+.dd .box { display: grid; place-items: center; height: 11rem; border-radius: 1rem; background: var(--char); overflow: hidden; position: relative; }
+.dd .box img { height: 5.5rem; width: auto; }
+.dd figcaption { margin-top: .75rem; font-size: .8125rem; color: var(--mute); }
+.dd figcaption b { display: block; font: 600 .6875rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; margin-bottom: .375rem; }
+.dd .good figcaption b { color: var(--yellow); } .dd .bad figcaption b { color: #ff8a7a; }
+.dd .bad .box::after { content: ""; position: absolute; right: .75rem; top: .75rem; width: 1.25rem; height: 1.25rem; background: linear-gradient(45deg, transparent 45%, #ff8a7a 45% 55%, transparent 55%), linear-gradient(-45deg, transparent 45%, #ff8a7a 45% 55%, transparent 55%); }
+
+/* downloads */
+.files td img { height: 2.5rem; width: auto; max-width: 5rem; object-fit: contain; }
+.files td.p { width: 6rem; }
+.files .th { background: var(--char); border-radius: .5rem; padding: .375rem; display: inline-grid; place-items: center; min-width: 3.25rem; min-height: 3.25rem; }
+.files .th.y { background: var(--yellow); }
+.files a { text-decoration: none; border-bottom: 1px solid var(--dim); }
+.files a:hover { color: var(--yellow); border-color: var(--yellow); }
+pre { margin: 2rem 0 0; padding: 1.25rem 1.5rem; border-radius: var(--r); background: #150f1a; border: 1px solid var(--line); overflow: auto; font: 400 .8125rem/1.7 var(--mono); color: var(--mute); position: relative; }
+pre b { color: var(--yellow); font-weight: 500; }
+button.copy { all: unset; cursor: pointer; position: absolute; top: .875rem; right: .875rem; font: 500 .6875rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); padding: .375rem .625rem; border: 1px solid var(--line); border-radius: .5rem; }
+button.copy:hover { color: var(--yellow); border-color: var(--yellow); }
+footer { padding: 3rem 0 5rem; border-top: 1px solid var(--line); color: var(--dim); font-size: .8125rem; }
+.toast { position: fixed; left: 50%; bottom: 1.5rem; translate: -50% 1rem; opacity: 0; padding: .625rem 1rem; border-radius: .75rem; background: var(--yellow); color: var(--ink); font: 600 .8125rem/1 var(--mono); transition: opacity .15s, translate .2s cubic-bezier(.16,1,.3,1); pointer-events: none; }
+.toast.on { opacity: 1; translate: -50% 0; }
+@media (max-width: 56rem) { .grid3, .grid4, .dd { grid-template-columns: repeat(2, minmax(0, 1fr)); } .clear, .type { grid-template-columns: 1fr; } }
+@media (max-width: 36rem) { .grid3, .grid2, .grid4, .dd { grid-template-columns: 1fr; } .nav nav { display: none; } .type .big { font-size: 4rem; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .sw, .toast { transition: none; } }
+
+/* story */
+.story { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 3rem; align-items: center; }
+.jar { width: min(100%, 22rem); height: auto; margin: 0 auto; display: block; }
+.pun { display: grid; gap: .5rem; margin: 0 0 1.5rem; font-weight: 800; font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1; letter-spacing: -.03em; }
+.pun small { display: block; font: 500 .6875rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin-bottom: .5rem; }
+.pun span span { color: var(--dim); } .pun em { font-style: normal; color: var(--yellow); }
+.pun .arrow { color: var(--dim); font-weight: 500; font-size: 1.5rem; }
+.story p { color: var(--mute); max-width: 32rem; margin: 0 0 1rem; } .story p b { color: var(--white); font-weight: 600; }
+.anat { position: relative; display: grid; place-items: center; min-height: 22rem; background: var(--char); border-radius: var(--r); }
+.anat img { height: 15rem; width: auto; }
+.anat i { position: absolute; font: 500 .75rem/1 var(--mono); color: var(--white); padding: .375rem .625rem; border: 1px solid var(--line); border-radius: 99px; background: var(--ink); }
+.anat i.l { left: calc(50% + 4rem); top: 2.5rem; } .anat i.c { left: calc(50% - 11rem); bottom: 3.5rem; }
+.anat i.l::before { content: ""; position: absolute; right: 100%; top: 50%; width: 3.5rem; border-top: 1px dashed var(--white); opacity: .6; }
+.anat i.c::before { content: ""; position: absolute; left: 100%; top: 50%; width: 3rem; border-top: 1px dashed var(--yellow); opacity: .7; }
+.path { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.path figure { margin: 0; }
+.path img { width: 100%; height: auto; border-radius: .875rem; border: 1px solid var(--line); }
+.path figcaption { margin-top: .75rem; font-size: .8125rem; color: var(--mute); }
+.path figcaption b { display: block; font: 600 .6875rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--white); margin-bottom: .375rem; }
+.path figure.final figcaption b { color: var(--yellow); }
+.path figure.final img { border-color: var(--yellow); }
+.origin { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 3rem; }
+.origin div { display: grid; gap: .875rem; align-content: start; padding: 1.5rem; border-radius: var(--r); background: var(--char); }
+.origin .chip { height: 3.5rem; border-radius: .75rem; display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; font: 600 .75rem/1 var(--mono); }
+.origin b { font-size: 1.0625rem; } .origin p { margin: 0; font-size: .875rem; color: var(--mute); }
+.fine { margin-top: 2rem; font-size: .8125rem; color: var(--dim); max-width: 44rem; }
+@media (max-width: 56rem) { .story, .origin { grid-template-columns: 1fr; } .path { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 36rem) { .path { grid-template-columns: 1fr; } }
+</style></head><body>
+
+<header class="nav"><div class="wrap"><img src="wordmark.svg" alt="Comfyture"><nav aria-label="Sections"><a href="#story">Story</a><a href="#logo">Logo</a><a href="#space">Space &amp; size</a><a href="#colour-ways">Colourways</a><a href="#icon">App icon</a><a href="#colour">Colour</a><a href="#type">Type</a><a href="#rules">Rules</a><a href="#files">Files</a></nav></div></header>
+
+<main>
+<div class="wrap hero">
+  <p class="kicker">Brand identity · v1</p>
+  <img src="wordmark.svg" alt="Comfyture">
+  <p><b>Comfyture</b> is Comfy plus <i>confiture</i>, the French word for jam. It is lettered, never typeset, and its first letter wears a fitted jar lid.</p>
+</div>
+
+<section class="sec" id="story"><div class="wrap">
+  <p class="kicker">01 · Story</p><h2>Comfy, plus a jar of jam</h2>
+  <p class="lede">The name is a pun. In French, jam and preserves are <i>confiture</i>. Swap the <i>con</i> for <i>com</i>, the <i>fi</i> for <i>fy</i>, and you have Comfyture: a desk for making shots, named like something you put up in a jar and keep.</p>
+  <div class="story">
+    <svg class="jar" viewBox="0 0 260 310" role="img" aria-label="A jam jar with a yellow lid and a label carrying the Comfyture mark">
+      <defs><clipPath id="glass"><path d="M62 88h136a22 22 0 0 1 22 22v158a30 30 0 0 1-30 30H70a30 30 0 0 1-30-30V110a22 22 0 0 1 22-22z"/></clipPath></defs>
+      <ellipse cx="130" cy="300" rx="92" ry="7" fill="#000" opacity=".28"/>
+      <path d="M62 88h136a22 22 0 0 1 22 22v158a30 30 0 0 1-30 30H70a30 30 0 0 1-30-30V110a22 22 0 0 1 22-22z" fill="#F0EFED" fill-opacity=".07"/>
+      <g clip-path="url(#glass)"><rect x="30" y="122" width="200" height="190" fill="#49378B"/><ellipse cx="130" cy="122" rx="86" ry="6" fill="#5b47a3"/></g>
+      <path d="M62 88h136a22 22 0 0 1 22 22v158a30 30 0 0 1-30 30H70a30 30 0 0 1-30-30V110a22 22 0 0 1 22-22z" fill="none" stroke="#F0EFED" stroke-opacity=".55" stroke-width="4"/>
+      <path d="M58 118v132" stroke="#F0EFED" stroke-opacity=".35" stroke-width="6" stroke-linecap="round"/>
+      <rect x="62" y="150" width="136" height="104" rx="18" fill="#F2FF59"/>
+      <image href="mark-ink.svg" x="97" y="161" width="66" height="82" preserveAspectRatio="xMidYMid meet"/>
+      <rect x="54" y="62" width="152" height="30" rx="9" fill="#d4e04a"/>
+      <rect x="60" y="24" width="140" height="46" rx="12" fill="#F2FF59"/>
+      <path d="M82 34v26M100 34v26M118 34v26M136 34v26M154 34v26M172 34v26M190 34v26" stroke="#211927" stroke-opacity=".16" stroke-width="3" stroke-linecap="round"/>
+      <path d="M72 30c36-8 82-8 118 0" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <div class="pun"><small>From the shelf to the desk</small><span>con<em>fi</em>ture</span><span class="arrow">↓</span><span>com<em>fy</em>ture</span></div>
+      <p><b>Comfy</b> is for ComfyUI, the engine it runs on. <b>-ture</b> is for the jar: the thing that keeps a shot until you are ready to open it.</p>
+      <p>The brief was <b>a jam label meets creative software</b>: the warmth of a well-printed European preserve, drawn like a modern tool. The lid on the C is where the two meet.</p>
+    </div>
+  </div>
+
+  <p class="kicker" style="margin-top:4rem">The lid</p>
+  <div class="grid2" style="align-items:center">
+    <div class="anat"><img src="story/anatomy.svg" alt="The mark taken apart: the C in yellow and its lid in warm white"><i class="l">the lid</i><i class="c">the C</i></div>
+    <div class="story" style="display:block"><p>The first letter wears a <b>fitted, curved jar lid</b> that follows the upper contour of the C. It is a separate shape, a small gap away, so the C reads as a vessel and the lid as the thing you lift.</p><p>That is why the lid is never left out and never joined to the C: it is the one detail that says jar.</p></div>
+  </div>
+
+  <p class="kicker" style="margin-top:4rem">Colour, and where it came from</p>
+  <div class="origin">
+    <div><span class="chip" style="background:var(--yellow);color:var(--ink)"><span>Acid yellow</span><span>#F2FF59</span></span><b>ComfyUI’s yellow</b><p>Comfyture is built on ComfyUI, so it keeps its lemon-yellow as the one accent: the same colour that lights “selected” and “go” in the app. On the jar it is the label.</p></div>
+    <div><span class="chip" style="background:var(--char);color:var(--white);border:1px solid var(--line)"><span>Charcoal &amp; ink</span><span>#121214 · #211927</span></span><b>The product’s own surfaces</b><p>The app’s dark panels carry over unchanged, so the brand and the product feel like one object. Ink is the warmer cousin used on pages and covers.</p></div>
+    <div><span class="chip" style="background:var(--plum);color:var(--white)"><span>Plum</span><span>#49378B</span></span><b>The jam</b><p>The only colour the product doesn’t have: the fruit. Used sparingly, as a second ground for the wordmark, never as a UI colour.</p></div>
+  </div>
+  <p class="fine">Comfyture is an independent, open-source project. It uses ComfyUI’s yellow as a nod to where it runs; it does not use, imitate or alter ComfyUI’s own logo.</p>
+
+  <p class="kicker" style="margin-top:4rem">How we got here · 16 Oct 2026</p>
+  <div class="path">
+    <figure><img src="story/01_preserve_seal.jpg" alt="" loading="lazy"><figcaption><b>01 · Preserve seal</b>A scalloped jam label, the C as a fruit. Too literal: it sold jam, not software.</figcaption></figure>
+    <figure><img src="story/02_jar_monogram.jpg" alt="" loading="lazy"><figcaption><b>02 · Jar monogram</b>A C that is a jar. Strong shape, but heavy and cold next to the product.</figcaption></figure>
+    <figure><img src="story/03_ribbon_wordmark.jpg" alt="" loading="lazy"><figcaption><b>03 · Ribbon wordmark</b>The flowing script in a label oval. The lettering that stayed.</figcaption></figure>
+    <figure class="final"><img src="story/07_fitted_lid.jpg" alt="" loading="lazy"><figcaption><b>07 · Lid on C · approved</b>The script with a lid fitted to the first letter: warmth from the label, the jar from the lid.</figcaption></figure>
+  </div>
+</div></section>
+
+<section class="sec" id="logo"><div class="wrap">
+  <p class="kicker">02 · The system</p><h2>Three marks, one hand</h2>
+  <p class="lede">The wordmark is the signature. The mark is its first letter with the lid, for places that are square or small. The app icon is the mark on its tile. They share one set of curves, traced from the approved lettering.</p>
+  <div class="grid3">
+    <div><div class="panel"><img src="wordmark.svg" alt="Comfyture wordmark" style="width:88%"><span class="tag">Wordmark</span></div><p class="cap"><b>Signature.</b> Headers, documents, the README, the demo end card. Default colour is yellow on ink.</p></div>
+    <div><div class="panel"><img src="mark.svg" alt="Comfyture mark" style="height:9.5rem"><span class="tag">Mark</span></div><p class="cap"><b>The C with its lid.</b> Two shapes: the lid is part of the mark and is never left out, never joined to the C.</p></div>
+    <div><div class="panel y"><img src="icon.svg" alt="Comfyture app icon" style="height:10rem"><span class="tag">App icon</span></div><p class="cap"><b>The tile.</b> Mark in ink on yellow, corners at 22.5 % of the side. Used as favicon, dock icon and store icon.</p></div>
+  </div>
+</div></section>
+
+<section class="sec" id="space"><div class="wrap">
+  <p class="kicker">03 · Space and size</p><h2>Room to breathe</h2>
+  <p class="lede">Keep a margin of <span class="mono" style="color:var(--yellow)">x</span> on every side, where x is the height of the lid. Nothing enters it: no text, no edges, no other marks.</p>
+  <div class="clear">
+    <div class="panel" style="min-height:20rem"><span class="cs" style="--x:2.1rem"><img src="wordmark.svg" alt="" style="width:21rem"><span class="x t">x</span><span class="x l">x</span></span><span class="tag">Wordmark</span></div>
+    <div class="panel" style="min-height:20rem"><span class="cs" style="--x:1.6rem"><img src="mark.svg" alt="" style="height:9rem"><span class="x t">x</span><span class="x l">x</span></span><span class="tag">Mark</span></div>
+  </div>
+  <p class="kicker" style="margin-top:3rem">Smallest sizes</p>
+  <div class="sizes">
+    <figure><img src="wordmark.svg" alt="" style="width:96px"><figcaption>Wordmark · 96 px wide</figcaption></figure>
+    <figure><img src="mark.svg" alt="" style="height:24px"><figcaption>Mark · 24 px tall</figcaption></figure>
+    <figure><img src="icon-16.png" alt="" width="16" height="16"><figcaption>Icon · 16 px</figcaption></figure>
+    <figure><img src="icon-32.png" alt="" width="32" height="32"><figcaption>Icon · 32 px</figcaption></figure>
+  </div>
+</div></section>
+
+<section class="sec" id="colour-ways"><div class="wrap">
+  <p class="kicker">04 · Colourways</p><h2>Yellow carries it</h2>
+  <p class="lede">The yellow lettering is the identity. It sits on ink, on plum, or flips to ink on yellow. Warm white takes ink. Never put yellow on white: it disappears.</p>
+  <div class="grid4">
+    <div class="panel i"><img src="wordmark.svg" alt="" style="width:86%"><span class="tag">Yellow on ink</span><span class="tag2">15.6 : 1</span></div>
+    <div class="panel y"><img src="wordmark-ink.svg" alt="" style="width:86%"><span class="tag">Ink on yellow</span><span class="tag2">15.6 : 1</span></div>
+    <div class="panel p"><img src="wordmark.svg" alt="" style="width:86%"><span class="tag">Yellow on plum</span><span class="tag2">8.7 : 1</span></div>
+    <div class="panel w"><img src="wordmark-ink.svg" alt="" style="width:86%"><span class="tag">Ink on warm white</span><span class="tag2">14.8 : 1</span></div>
+  </div>
+  <div class="grid4" style="margin-top:1rem">
+    <div class="panel i" style="min-height:11rem"><img src="icon.svg" alt="" style="height:6.5rem"><span class="tag">Yellow tile</span></div>
+    <div class="panel y" style="min-height:11rem"><img src="icon-ink.svg" alt="" style="height:6.5rem"><span class="tag">Ink tile</span></div>
+    <div class="panel w" style="min-height:11rem"><img src="icon-plum.svg" alt="" style="height:6.5rem"><span class="tag">Plum tile</span></div>
+    <div class="panel p" style="min-height:11rem"><img src="icon.svg" alt="" style="height:6.5rem"><span class="tag">Yellow tile on plum</span></div>
+  </div>
+</div></section>
+
+<section class="sec" id="icon"><div class="wrap">
+  <p class="kicker">05 · App icon</p><h2>Small, then smaller</h2>
+  <p class="lede">The favicon is the same tile with the mark drawn 20 % larger so the C and its lid still read at 16 px. Browsers get SVG first, an ICO as fallback, and a 180 px touch icon.</p>
+  <div class="grid2">
+    <div class="chrome dark"><div class="tabs"><div class="tab on"><img src="favicon.svg" alt="">Comfyture<span class="x">×</span></div><div class="tab off"><img src="favicon.svg" alt="" style="opacity:.0">New tab</div></div><div class="urlbar"><i></i></div></div>
+    <div class="chrome light"><div class="tabs"><div class="tab on"><img src="favicon.svg" alt="">Comfyture<span class="x">×</span></div><div class="tab off"><img src="favicon.svg" alt="" style="opacity:0">New tab</div></div><div class="urlbar"><i></i></div></div>
+  </div>
+  <p class="kicker" style="margin-top:3rem">Sizes, actual pixels</p>
+  <div class="ladder">
+    <figure><img src="icon-16.png" width="16" height="16" alt=""><figcaption>16</figcaption></figure>
+    <figure><img src="icon-32.png" width="32" height="32" alt=""><figcaption>32</figcaption></figure>
+    <figure><img src="icon-48.png" width="48" height="48" alt=""><figcaption>48</figcaption></figure>
+    <figure><img src="icon-64.png" width="64" height="64" alt=""><figcaption>64</figcaption></figure>
+    <figure><img src="icon-128.png" width="128" height="128" alt=""><figcaption>128</figcaption></figure>
+    <figure><img src="apple-touch-icon.png" width="180" height="180" alt="" style="border-radius:22.5%"><figcaption>180 touch</figcaption></figure>
+    <figure><img src="icon-256.png" width="256" height="256" alt=""><figcaption>256</figcaption></figure>
+  </div>
+  <div class="grid2" style="margin-top:3rem;align-items:start">
+    <div><p class="kicker">Maskable · any platform shape</p><div class="masks">
+      <div class="mask" style="border-radius:50%"><img src="icon-maskable.svg" alt=""></div><div class="mask" style="border-radius:28%"><img src="icon-maskable.svg" alt=""></div><div class="mask" style="border-radius:12%"><img src="icon-maskable.svg" alt=""></div></div>
+      <p class="cap">Full-bleed yellow with the mark inside the safe 80 % circle, so round, squircle and square masks all keep the lid.</p></div>
+    <div><p class="kicker">In a dock</p><div class="dock"><span></span><img src="icon.svg" alt=""><span></span><span></span></div></div>
+  </div>
+  <p class="kicker" style="margin-top:3rem">In the app header</p>
+  <div class="appbar"><img src="wordmark.svg" alt="Comfyture"><span class="on">Create</span><span>Director</span><span>Library</span><span>Edit</span></div><div class="appbody"></div>
+</div></section>
+
+<section class="sec" id="colour"><div class="wrap">
+  <p class="kicker">06 · Colour</p><h2>Four colours, one rule</h2>
+  <p class="lede">Yellow is the signal; ink is the page it signals on. Plum, the jam, is a second voice for covers and pages. The story of each is in <a href="#story" style="color:var(--yellow)">Story</a>. Click a swatch to copy its hex.</p>
+  <div class="grid4">
+    <div class="sw" style="background:var(--yellow);color:var(--ink)" data-hex="#F2FF59"><b>Yellow</b><div><dl><dt>HEX</dt><dd>#F2FF59</dd><dt>RGB</dt><dd>242 255 89</dd></dl><p>The mark, the accent in the app, every “go” and “selected”.</p></div></div>
+    <div class="sw" style="background:var(--ink)" data-hex="#211927"><b>Ink</b><div><dl><dt>HEX</dt><dd>#211927</dd><dt>RGB</dt><dd>33 25 39</dd></dl><p>Pages, covers and the mark on yellow. In the app the surfaces stay charcoal.</p></div></div>
+    <div class="sw" style="background:var(--plum)" data-hex="#49378B"><b>Plum</b><div><dl><dt>HEX</dt><dd>#49378B</dd><dt>RGB</dt><dd>73 55 139</dd></dl><p>The alternative ground for the wordmark: covers, social, slides.</p></div></div>
+    <div class="sw" style="background:var(--white);color:var(--ink)" data-hex="#F0EFED"><b>Warm white</b><div><dl><dt>HEX</dt><dd>#F0EFED</dd><dt>RGB</dt><dd>240 239 237</dd></dl><p>Light grounds and text on dark. Never pure white.</p></div></div>
+  </div>
+  <div class="bar" aria-label="Proportion on a typical page"><i style="flex:56;background:var(--ink)"></i><i style="flex:22;background:var(--white)"></i><i style="flex:14;background:var(--plum)"></i><i style="flex:8;background:var(--yellow)"></i></div>
+  <p class="cap" style="max-width:none">Proportion on a typical page: mostly ink, a lot of warm white for text, plum as a second ground, yellow in small, deliberate amounts.</p>
+  <table class="t"><thead><tr><th>Pairing</th><th>Sample</th><th>Contrast</th><th>Use</th></tr></thead><tbody>
+    <tr><td>Yellow on ink</td><td><span class="pair" style="background:var(--ink);color:var(--yellow)">Aa</span></td><td class="ratio ok">15.6 : 1</td><td>Wordmark, mark, buttons, large and small text</td></tr>
+    <tr><td>Ink on yellow</td><td><span class="pair" style="background:var(--yellow);color:var(--ink)">Aa</span></td><td class="ratio ok">15.6 : 1</td><td>App icon, primary buttons</td></tr>
+    <tr><td>Yellow on plum</td><td><span class="pair" style="background:var(--plum);color:var(--yellow)">Aa</span></td><td class="ratio ok">8.7 : 1</td><td>Alternative wordmark ground</td></tr>
+    <tr><td>Warm white on plum</td><td><span class="pair" style="background:var(--plum);color:var(--white)">Aa</span></td><td class="ratio ok">8.3 : 1</td><td>Text on plum</td></tr>
+    <tr><td>Warm white on ink</td><td><span class="pair" style="background:var(--ink);color:var(--white)">Aa</span></td><td class="ratio ok">14.8 : 1</td><td>Body text on dark</td></tr>
+    <tr><td>Yellow on warm white</td><td><span class="pair" style="background:var(--white);color:var(--yellow)">Aa</span></td><td class="ratio no">1.1 : 1</td><td>Never</td></tr>
+    <tr><td>Plum on ink</td><td><span class="pair" style="background:var(--ink);color:var(--plum)">Aa</span></td><td class="ratio no">1.8 : 1</td><td>Never for text or the mark</td></tr>
+  </tbody></table>
+</div></section>
+
+<section class="sec" id="type"><div class="wrap">
+  <p class="kicker">07 · Type</p><h2>Lettered logo, plain type</h2>
+  <p class="lede">The logo is lettering and is only ever placed as artwork. Everything else is set in two open fonts that ship with the app.</p>
+  <div class="type">
+    <div class="panel"><p class="kicker">Manrope · 400–800</p><p class="big" style="font-weight:800">Aa</p><p>Interface, headings and prose. 800 for display, 600 for names, 400 for reading.</p><p class="specimen" style="font-weight:600">A photo, a sentence and a camera move make a shot.</p></div>
+    <div class="panel"><p class="kicker">IBM Plex Mono · 400–600</p><p class="big mono" style="font-weight:500">01</p><p>Numbers, labels, ids and readouts. Tabular figures, small caps tracking.</p><p class="specimen mono" style="font-size:.9375rem;letter-spacing:.04em">16:9 · 1280×720 · 24 FPS · SEED 0</p></div>
+  </div>
+</div></section>
+
+<section class="sec" id="rules"><div class="wrap">
+  <p class="kicker">08 · Rules</p><h2>Keep the lid on</h2>
+  <p class="lede">A few ways the mark stays itself, and the ways it stops being itself.</p>
+  <div class="dd">
+    <figure class="good"><div class="box"><img src="mark.svg" alt=""></div><figcaption><b>Do</b>Use the supplied files, on ink, plum, yellow or warm white.</figcaption></figure>
+    <figure class="good"><div class="box" style="background:var(--yellow)"><img src="mark-ink.svg" alt=""></div><figcaption><b>Do</b>Flip to ink when the ground is yellow.</figcaption></figure>
+    <figure class="bad"><div class="box"><img src="mark.svg" alt="" style="transform:scale(1.5,.7)"></div><figcaption><b>Don’t</b>Stretch, squash or skew it.</figcaption></figure>
+    <figure class="bad"><div class="box"><img src="mark.svg" alt="" style="transform:rotate(-14deg)"></div><figcaption><b>Don’t</b>Rotate or tilt it.</figcaption></figure>
+    <figure class="bad"><div class="box"><img src="mark.svg" alt="" style="filter:hue-rotate(140deg) saturate(1.6)"></div><figcaption><b>Don’t</b>Recolour it outside the four colours.</figcaption></figure>
+    <figure class="bad"><div class="box" style="background:var(--white)"><img src="mark.svg" alt=""></div><figcaption><b>Don’t</b>Put yellow on white or any light ground.</figcaption></figure>
+    <figure class="bad"><div class="box"><img src="mark.svg" alt="" style="filter:drop-shadow(0 8px 6px rgba(0,0,0,.7)) drop-shadow(0 0 14px #f2ff59)"></div><figcaption><b>Don’t</b>Add shadows, glows or outlines.</figcaption></figure>
+    <figure class="bad"><div class="box" style="background:repeating-linear-gradient(45deg,#49378b 0 14px,#c04a6a 14px 28px,#2a8a7a 28px 42px)"><img src="mark.svg" alt=""></div><figcaption><b>Don’t</b>Sit it on busy pictures or patterns.</figcaption></figure>
+  </div>
+</div></section>
+
+<section class="sec" id="files"><div class="wrap">
+  <p class="kicker">09 · Files</p><h2>Everything, ready to use</h2>
+  <p class="lede">SVG for anything that scales, PNG where it has to be a picture. All files are built from the approved lettering by <span class="mono" style="color:var(--yellow)">scripts/brand-build.py</span>.</p>
+  <table class="t files"><thead><tr><th></th><th>File</th><th>Format</th><th>Use</th></tr></thead><tbody>
+    <tr><td class="p"><span class="th"><img src="wordmark.svg" alt=""></span></td><td><a href="wordmark.svg" download>wordmark.svg</a></td><td class="mono">SVG</td><td>Yellow wordmark, for dark grounds</td></tr>
+    <tr><td class="p"><span class="th y"><img src="wordmark-ink.svg" alt=""></span></td><td><a href="wordmark-ink.svg" download>wordmark-ink.svg</a></td><td class="mono">SVG</td><td>Ink wordmark, for yellow and light grounds</td></tr>
+    <tr><td class="p"><span class="th"><img src="wordmark-white.svg" alt=""></span></td><td><a href="wordmark-white.svg" download>wordmark-white.svg</a></td><td class="mono">SVG</td><td>Warm-white wordmark, one-colour print on dark</td></tr>
+    <tr><td class="p"><span class="th"><img src="wordmark-2400.png" alt=""></span></td><td><a href="wordmark-2400.png" download>wordmark-2400.png</a></td><td class="mono">PNG · 2400 wide</td><td>Transparent, yellow</td></tr>
+    <tr><td class="p"><span class="th"><img src="mark.svg" alt=""></span></td><td><a href="mark.svg" download>mark.svg</a></td><td class="mono">SVG</td><td>The C with its lid, yellow</td></tr>
+    <tr><td class="p"><span class="th y"><img src="mark-ink.svg" alt=""></span></td><td><a href="mark-ink.svg" download>mark-ink.svg</a></td><td class="mono">SVG</td><td>Ink mark; also <a href="mark-white.svg" download>white</a> and <a href="mark-plum.svg" download>plum</a></td></tr>
+    <tr><td class="p"><span class="th"><img src="mark-1024.png" alt=""></span></td><td><a href="mark-1024.png" download>mark-1024.png</a></td><td class="mono">PNG · 1024 tall</td><td>Transparent; <a href="mark-ink-1024.png" download>ink version</a></td></tr>
+    <tr><td class="p"><span class="th"><img src="icon.svg" alt=""></span></td><td><a href="icon.svg" download>icon.svg</a></td><td class="mono">SVG</td><td>App icon: ink mark on yellow tile. Also <a href="icon-ink.svg" download>ink</a>, <a href="icon-plum.svg" download>plum</a>, <a href="icon-white.svg" download>white</a></td></tr>
+    <tr><td class="p"><span class="th"><img src="favicon.svg" alt=""></span></td><td><a href="favicon.svg" download>favicon.svg</a></td><td class="mono">SVG</td><td>Browser tab: larger mark for 16 px</td></tr>
+    <tr><td class="p"><span class="th"><img src="icon-32.png" alt=""></span></td><td><a href="favicon.ico" download>favicon.ico</a></td><td class="mono">ICO · 16 32 48</td><td>Fallback for older browsers</td></tr>
+    <tr><td class="p"><span class="th"><img src="apple-touch-icon.png" alt="" style="border-radius:22%"></span></td><td><a href="apple-touch-icon.png" download>apple-touch-icon.png</a></td><td class="mono">PNG · 180</td><td>iOS home screen</td></tr>
+    <tr><td class="p"><span class="th"><img src="icon-maskable.svg" alt=""></span></td><td><a href="icon-maskable-512.png" download>icon-maskable-512.png</a></td><td class="mono">PNG · 512</td><td>Android and PWA; <a href="icon-maskable.svg" download>SVG</a></td></tr>
+    <tr><td class="p"><span class="th"><img src="icon-512.png" alt=""></span></td><td><a href="icon-512.png" download>icon-512.png</a></td><td class="mono">PNG · 16–1024</td><td>
+      <a href="icon-16.png" download>16</a> · <a href="icon-32.png" download>32</a> · <a href="icon-48.png" download>48</a> · <a href="icon-64.png" download>64</a> · <a href="icon-128.png" download>128</a> · <a href="icon-180.png" download>180</a> · <a href="icon-192.png" download>192</a> · <a href="icon-256.png" download>256</a> · <a href="icon-512.png" download>512</a> · <a href="icon-1024.png" download>1024</a></td></tr>
+    <tr><td class="p"><span class="th"><img src="icon-ink-512.png" alt=""></span></td><td><a href="icon-ink-512.png" download>icon-ink-512.png</a></td><td class="mono">PNG · 512</td><td>Yellow mark on ink tile</td></tr>
+    <tr><td class="p"></td><td><a href="site.webmanifest" download>site.webmanifest</a></td><td class="mono">JSON</td><td>Name, colours and the icon set for installs</td></tr>
+  </tbody></table>
+<pre id="snip"><button class="copy" type="button" id="cp">Copy</button><b>&lt;link</b> rel="icon" href="brand/favicon.svg" type="image/svg+xml"<b>&gt;</b>
+<b>&lt;link</b> rel="icon" href="brand/favicon.ico" sizes="48x48"<b>&gt;</b>
+<b>&lt;link</b> rel="apple-touch-icon" href="brand/apple-touch-icon.png"<b>&gt;</b>
+<b>&lt;link</b> rel="manifest" href="brand/site.webmanifest"<b>&gt;</b>
+<b>&lt;meta</b> name="theme-color" content="#19191c"<b>&gt;</b></pre>
+</div></section>
+</main>
+<footer><div class="wrap">Comfyture brand identity · the approved direction is “Lid on C”, kept in <span class="mono">docs/brand/approved/</span>.</div></footer>
+<div class="toast" id="toast" role="status"></div>
+<script>
+const toast = document.getElementById("toast");
+function say(t) { toast.textContent = t; toast.classList.add("on"); clearTimeout(say.t); say.t = setTimeout(() => toast.classList.remove("on"), 1400); }
+function copy(text, label) { (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => say(label + " copied"), () => say(text)); }
+document.querySelectorAll(".sw").forEach((s) => s.addEventListener("click", () => copy(s.dataset.hex, s.dataset.hex)));
+document.getElementById("cp").addEventListener("click", () => copy(document.getElementById("snip").innerText.replace(/^Copy\s*/, "").trim(), "Head tags"));
+</script></body></html>
