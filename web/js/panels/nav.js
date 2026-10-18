@@ -2,6 +2,7 @@ import { h, sprite } from "../dom.js";
 import { state } from "../store.js";
 import { PAGES, currentPage } from "../router.js";
 import { story } from "../story.js";
+import { cut } from "../cut.js";
 
 const ICON = { story: "section-story", stage: "section-stage", shot: "section-shot", cut: "edit-scissors", library: "batch" };
 
@@ -21,7 +22,7 @@ export function renderNav(el) {
       const writing = [...story.busy].some((k) => !k.includes(":"));
       return h("span.section-badge", {}, h("span.lamp", { dataset: { tone: "busy" } }), writing ? "Writing" : `Drawing ${story.busy.size}`);
     }
-    if (id === "cut" && state.edit.clips.length) return h("span.section-badge", {}, String(state.edit.clips.length));
+    if (id === "cut" && cut.busy.size) return h("span.section-badge", {}, h("span.lamp", { dataset: { tone: "busy" } }), cut.busy.has("render") ? "Rendering" : `Making ${cut.busy.size}`);
     return null;
   };
   el.replaceChildren(...Object.entries(PAGES).map(([id, label]) =>

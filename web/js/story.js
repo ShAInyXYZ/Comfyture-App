@@ -315,6 +315,7 @@ export async function drawShot(id) {
     const photo = await drawPicture({ model: "qwen-2.1", template: refs.length ? "edit" : "generate", prompt, aspect: b.idea.aspect, refs });
     shot.photo = { file: photo.file, url: photo.url, width: photo.width, height: photo.height };
     shot.drawnAs = b.board.style;
+    shot.still = null;
     touch();
   } catch (e) {
     toast(`${shot.code}: ${e.message}`, { tone: "crit" });
@@ -348,11 +349,21 @@ export async function rollShot(id) {
   try {
     if (!shot.photo) await drawShot(id);
     if (!shot.photo) throw new Error("Its frame isn't drawn.");
+    // a pencil sketch plans the shot; the take starts from a film frame of it, in the look, with the sheets of who is in it
+    if (shot.drawnAs === "sketch" && !shot.still) {
+      const members = castOf(b, shot.frame).filter((m) => m.refs?.length).slice(0, 5);
+      const cast = castOf(b, shot.frame).map((m) => ({ tag: m.tag, name: m.name, person: m.person, words: lower(m.words || m.about), pictures: members.includes(m) ? [m.tag] : [] }));
+      const prompt = `Turn @sketch, a storyboard panel, into a finished cinematic film still: the same framing, the same places and poses, real people and places with real light. ${expandTags(shot.frame || shot.action, cast)}.${lookWords(b)}`;
+      const photo = await drawPicture({ model: "qwen-2.1", template: "edit", prompt, aspect: b.idea.aspect, refs: [{ file: shot.photo.file, name: "sketch" }, ...members.map((m) => ({ file: m.refs[0].file, name: m.tag }))] });
+      shot.still = { file: photo.file, url: photo.url, width: photo.width, height: photo.height };
+      touch();
+    }
+    const first = shot.drawnAs === "sketch" && shot.still ? shot.still : shot.photo;
     const names = [...b.cast, ...b.places].map((x) => ({ tag: x.tag, name: x.name }));
     const plain = (t) => expandTags(String(t ?? ""), names);
     const who = shot.line ? speaker(b, shot.line.who) : null;
     const spec = { action: plain(shot.action), camera: shot.camera, framing: "", sound: plain(shot.sound), dialogue: shot.line?.text ? [{ speaker: who ? `${who.name}, ${lower(who.words || who.about) || "the speaker"}` : shot.line.who, line: shot.line.text }] : [] };
-    const r = await rollAsTab({ tab: shot.tab, name: `${shot.code} · ${b.idea.title || story.project.name}`.slice(0, 60), group: b.idea.title || story.project.name, start: shot.photo, shot: spec, seconds: shot.seconds, aspect: b.idea.aspect });
+    const r = await rollAsTab({ tab: shot.tab, name: `${shot.code} · ${b.idea.title || story.project.name}`.slice(0, 60), group: b.idea.title || story.project.name, start: first, shot: spec, seconds: shot.seconds, aspect: b.idea.aspect });
     shot.tab = r.tab;
     shot.run = r.run;
     touch();
@@ -377,18 +388,14 @@ export function openShotTab(shot) {
   go("shot");
 }
 
-/** The finished takes, in board order, into Cut. */
-export function sendToCut() {
+/** The finished takes, in board order, into a new edit in Cut. */
+export async function sendToCut() {
   const b = body();
   const takes = b.board.shots.map(takeOf).filter((r) => r?.status === "done");
   if (!takes.length) return toast("No shot is rolled yet.");
-  state.edit.clips = takes.map((r) => ({ run: r.id, from: 0, to: null }));
-  state.edit.name = b.idea.title || story.project.name;
-  try {
-    localStorage.setItem("comfyture.edit.v1", JSON.stringify({ clips: state.edit.clips, fade: state.edit.fade, name: state.edit.name }));
-  } catch {}
-  changed("edit");
+  const { cutFromTakes } = await import("./cut.js");
   go("cut");
+  await cutFromTakes(b.idea.title || story.project.name, takes.map((r) => r.id));
   toast(`${takes.length} of ${b.board.shots.length} shots in Cut, in board order.`);
 }
 

@@ -15,7 +15,7 @@ import { askClaude, blenderStatus, command, CONTROL_BRIEF, CONTROL_MODEL, contro
 import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
 import { readStory, storyBrief, storyPrompt, type StoryStep } from "./story.ts";
-import { planCut, type CutBody, type CutItem, type Source } from "./cut.ts";
+import { planCut, CUT_BRIEF, cutPrompt, readCutAnswer, type CutBody, type CutItem, type Source } from "./cut.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -714,6 +714,14 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     } finally {
       await rm(tmp, { force: true });
     }
+  }
+  if (path === "/api/cut/assist" && method === "POST") {
+    // the editor's assistant: Gemma 4 reads the edit and answers with the changes to make
+    const input = await jsonBody(req, 2 * 1024 * 1024);
+    const turns = (Array.isArray(input.messages) ? input.messages : []).map((m: any) => ({ role: m?.role === "assistant" ? "assistant" : "user", text: text(m?.text, 1200) })).filter((m: any) => m.text);
+    if (!turns.length) throw bad("Say what to change.");
+    const reply = await engine.write(CUT_BRIEF, cutPrompt(input.cut, turns), { maxLength: 1200, temperature: 0.4 });
+    return json(res, 200, readCutAnswer(reply));
   }
   const cutRender = /^\/api\/cuts\/([\w-]+)\/render$/.exec(path);
   if (cutRender && method === "POST") {

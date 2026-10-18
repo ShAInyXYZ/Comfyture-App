@@ -213,3 +213,61 @@ export function planCut(body: CutBody, source: (item: CutItem) => Source | null,
   }
   return { inputs, video: vf.join(";"), audio: af.join(";"), seconds: T, titles };
 }
+
+// ------------------------------------------------------------------ the editor's assistant
+
+/** What the assistant may do to a cut, and how it says so. Clips are numbered from 1, as the page shows them. */
+export const CUT_BRIEF = `You are the film editor in Comfyture's Cut room. The user asks for changes to the edit; you answer with JSON only, no other words:
+{"reply": "one short sentence of what you did", "actions": [ ... ]}
+Actions (clip numbers are the numbers on the Video track, from 1; times are seconds from the start of the film):
+- {"op": "trim", "clip": 1, "seconds": 3}: the clip runs that long (keeping its start)
+- {"op": "move", "clip": 3, "to": 1}: the clip moves to that place in the order
+- {"op": "remove", "clip": 2}
+- {"op": "join", "clip": 2, "join": "dissolve"}: how the clip comes in after the one before: "cut" or "dissolve"
+- {"op": "motion", "clip": 1, "move": "push"}: push (in), pull (out), left, right, up (pans), or none
+- {"op": "fade", "clip": 1, "in": 0.5, "out": 1}: fades from and to black, in seconds
+- {"op": "grade", "clip": 1, "look": "warm"}: natural, warm, cool, film or mono; "clip": "all" grades every clip
+- {"op": "speed", "clip": 1, "speed": 0.5}: 0.25 to 4
+- {"op": "title", "text": "THE LIGHTHOUSE KEEPER", "at": 0, "length": 3, "style": "center"}: or "lower" for a lower third
+- {"op": "music", "prompt": "gentle piano and strings, hopeful", "at": 0, "seconds": 30}: new music, made from the words
+- {"op": "sound", "prompt": "rain on a window", "at": 4, "seconds": 6}: a new sound effect at a time; "clip": 2 instead of "at" puts it under that clip
+- {"op": "voice", "who": "a girl of ten, soft and curious", "line": "It's still glowing.", "at": 5}: a new voice line ("clip" works too)
+- {"op": "volume", "track": "music", "level": 0.5}: the level of a track: clips, voice, music or effects (0 to 1.5)
+- {"op": "render"}: render the film into the Library
+Rules: change only what is asked; use the clip numbers and times of the edit as it is below; a scene the user names by what it shows is the clip whose name says it; when the user only asks a question, answer it with no actions.`;
+
+export function cutPrompt(summary: any, turns: { role: string; text: string }[]) {
+  const s = summary ?? {};
+  const lines = [
+    "THE EDIT NOW",
+    `length ${s.length ?? 0} s, frame ${s.aspect ?? "16:9"}`,
+    "Video track:",
+    ...(Array.isArray(s.clips) ? s.clips.slice(0, 40).map((c: any) => `${c.n}. "${String(c.name ?? "").slice(0, 60)}" at ${c.start} s for ${c.length} s${c.join === "dissolve" ? ", dissolves in" : ""}${c.motion ? `, ${c.motion}` : ""}${c.grade ? `, ${c.grade}` : ""}${c.speed && c.speed !== 1 ? `, ${c.speed}x` : ""}`) : []),
+    ...(s.clips?.length ? [] : ["(empty)"]),
+    "Sounds:",
+    ...(Array.isArray(s.sounds) ? s.sounds.slice(0, 40).map((x: any) => `- ${x.track}: "${String(x.name ?? "").slice(0, 60)}" at ${x.start} s for ${x.length} s`) : []),
+    ...(s.sounds?.length ? [] : ["(none)"]),
+    "Titles:",
+    ...(Array.isArray(s.titles) ? s.titles.slice(0, 12).map((x: any) => `- "${String(x.text ?? "").slice(0, 60)}" at ${x.start} s for ${x.length} s`) : []),
+    ...(s.titles?.length ? [] : ["(none)"]),
+    "",
+    "THE CONVERSATION",
+    ...turns.slice(-8).map((t) => `${t.role === "user" ? "User" : "Editor"}: ${String(t.text).slice(0, 600)}`),
+  ];
+  return lines.join("\n");
+}
+
+const OPS = new Set(["trim", "move", "remove", "join", "motion", "fade", "grade", "speed", "title", "music", "sound", "voice", "volume", "render"]);
+/** The assistant's answer, read whole and checked: only known actions, with their fields in range. */
+export function readCutAnswer(reply: string) {
+  const from = reply.indexOf("{");
+  const to = reply.lastIndexOf("}");
+  let raw: any;
+  try {
+    raw = JSON.parse(reply.slice(from, to + 1));
+  } catch {
+    return { reply: reply.replace(/[{}]/g, "").trim().slice(0, 400) || "I didn't get that. Say it again?", actions: [] };
+  }
+  const actions = (Array.isArray(raw.actions) ? raw.actions : []).filter((a: any) => a && OPS.has(a.op)).slice(0, 20);
+  return { reply: String(raw.reply ?? "").slice(0, 400), actions };
+}

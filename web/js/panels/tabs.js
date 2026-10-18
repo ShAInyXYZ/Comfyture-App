@@ -141,8 +141,8 @@ export function renderActions(el) {
       type: "button",
       disabled: n < 1,
       className: n >= 2 ? "is-primary" : false,
-      title: n < 1 ? "Open finished takes in tabs, then send them to Edit to cut them into a film." : "Send the takes of these tabs to Edit, in tab order",
+      title: n < 1 ? "Open finished takes in tabs, then send them to Cut to edit them into a film." : "Send the takes of these tabs to Cut, in tab order",
       on: { click: editFromTabs },
-    }, icon("scissors"), n >= 1 ? `Edit ${n} take${n > 1 ? "s" : ""}` : "Edit takes", icon("arrow")),
+    }, icon("scissors"), n >= 1 ? `Cut ${n} take${n > 1 ? "s" : ""}` : "Cut takes", icon("arrow")),
   );
 }

@@ -200,7 +200,7 @@ function panel(b, s) {
   const tone = take?.status === "done" ? "ok" : take && take.status !== "failed" ? "busy" : take?.status === "failed" ? "crit" : null;
   const card = h("article.story-panel", { className: story.selected === s.id ? "is-selected" : "", draggable: true, on: { click: () => selectShot(s.id) } },
     h("div.story-frame", { className: drawing ? "is-drawing" : "" },
-      s.photo ? h("img", { src: s.photo.url, alt: "", draggable: false }) : h("span.story-frame-empty", {}, sprite("image-generate")),
+      (b.step === "shots" && s.still) || s.photo ? h("img", { src: (b.step === "shots" && s.still ? s.still : s.photo).url, alt: "", draggable: false }) : h("span.story-frame-empty", {}, sprite("image-generate")),
       h("span.story-code", {}, s.code),
       h("span.story-size", {}, SIZES.find(([v]) => v === s.size)?.[1] ?? s.size),
       h("span.story-secs", {}, `${s.seconds} s`),

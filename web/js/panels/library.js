@@ -1,5 +1,6 @@
 import { h, icon, sprite, ago } from "../dom.js";
-import { state, openTake, remove, removeFilm, addToEdit, useImage, loadPhotos, takeLength, setEdit, openImage } from "../store.js";
+import { state, openTake, remove, removeFilm, useImage, loadPhotos, takeLength, openImage } from "../store.js";
+import { addTakesToCut, editFilm } from "../cut.js";
 import { workflowUrl } from "../api.js";
 import { go } from "../router.js";
 import { view } from "../viewer.js";
@@ -53,7 +54,7 @@ function takeCard(run) {
       h("b", {}, run.takes > 1 ? `${run.request.name} · ${run.take}/${run.takes}` : run.request.name),
       h("span.lib-sub", {}, h("span.lamp", { dataset: tone ? { tone } : {} }), run.error ?? label, h("em", {}, ago(run.createdAt)))),
     h("div.lib-actions", {},
-      done ? h("button.key.is-sm", { type: "button", title: "Add to the film in Edit", on: { click: (e) => (e.stopPropagation(), addToEdit(run.id)) } }, icon("plus"), "Edit") : null,
+      done ? h("button.key.is-sm", { type: "button", title: "Add it to the open edit in Cut", on: { click: (e) => (e.stopPropagation(), addTakesToCut([run.id])) } }, icon("plus"), "Cut") : null,
       done ? h("a.key.is-sm.is-icon.is-quiet", { href: `${run.video}?download=comfyture-${slug(run.request.name)}-take${run.take}.mp4`, "aria-label": "Download", title: "Download", on: { click: (e) => e.stopPropagation() } }, icon("download")) : null,
       h("a.key.is-sm.is-icon.is-quiet", { href: workflowUrl(run.id), "aria-label": "ComfyUI workflow", title: "ComfyUI workflow", on: { click: (e) => e.stopPropagation() } }, icon("flow")),
       !["queued", "frame", "review", "shot"].includes(run.status) ? twoStep("Delete take", () => remove(run.id)) : null,
@@ -75,13 +76,8 @@ function filmCard(film) {
       h("span.lib-dur", {}, `${film.seconds.toFixed(1)} s`)),
     h("div.lib-meta", {}, h("b", {}, film.name), h("span.lib-sub", {}, `${film.takes.length} clips${film.transition === "fade" ? " · dissolves" : ""}`, h("em", {}, ago(film.createdAt)))),
     h("div.lib-actions", {},
-      film.clips
-        ? h("button.key.is-sm", { type: "button", title: "Open this film's clips in Edit", on: { click: (e) => {
-            e.stopPropagation();
-            state.edit.clips = film.clips.filter((c) => state.runs.some((r) => r.id === c.id)).map((c) => ({ run: c.id, from: c.from, to: c.to })) ;
-            setEdit({ fade: film.transition === "fade", name: film.name });
-            go("cut");
-          } } }, icon("scissors"), "Edit again")
+      film.clips || film.cut || film.takes?.length
+        ? h("button.key.is-sm", { type: "button", title: "Edit it again in Cut", on: { click: (e) => (e.stopPropagation(), go("cut"), editFilm(film)) } }, icon("scissors"), "Edit again")
         : null,
       h("a.key.is-sm.is-icon.is-quiet", { href: `${film.url}?download=comfyture-${slug(film.name)}.mp4`, "aria-label": "Download", title: "Download", on: { click: (e) => e.stopPropagation() } }, icon("download")),
       twoStep("Delete film", () => removeFilm(film.id)),
@@ -144,7 +140,7 @@ export function renderLibrary(el) {
       kind === "images" ? h("button.key", { type: "button", title: "Make a picture in the Image window", on: { click: () => openImage() } }, sprite("image-generate"), "New image") : null,
       h("div.lib-selection", { hidden: !picked.size },
         h("b", {}, `${picked.size} selected`),
-        h("button.key.is-primary", { type: "button", on: { click: () => (addToEdit(...picked), picked.clear(), renderLibrary(el)) } }, icon("scissors"), "Add to Edit"),
+        h("button.key.is-primary", { type: "button", on: { click: () => (addTakesToCut([...picked]), picked.clear(), renderLibrary(el), go("cut")) } }, icon("scissors"), "Add to Cut"),
         h("button.key.is-quiet", { type: "button", on: { click: () => (picked.clear(), renderLibrary(el)) } }, "Clear"))),
     shown.length
       ? h("div.lib-grid", {}, kind === "takes" ? takes.map(takeCard) : kind === "films" ? films.map(filmCard) : photos.map(imageCard))

@@ -6,6 +6,7 @@ import {
 import { pillField, pillText } from "../pills.js";
 import { attachMenu, MAPS, MAP_TAG, MAP_OF_TAG } from "../attach.js";
 import { story, askStory, storyLookup } from "../story.js";
+import { cut, askCut } from "../cut.js";
 import { dropdown } from "../controls.js";
 import { view } from "../viewer.js";
 import { currentPage } from "../router.js";
@@ -15,6 +16,8 @@ import { stageReady } from "../control/link.js";
 const onStage = () => currentPage() === "stage";
 // on Story the bar changes the step that is open: "add a scene where she finds the jellyfish"
 const onStory = () => currentPage() === "story";
+// on Cut the bar asks the editor: "trim the first shot to 3 s and put rain under scene 2"
+const onCut = () => currentPage() === "cut";
 // the Stage, once it has mounted: who its @names are
 let stageApi = null;
 stageReady.then((a) => (stageApi = a));
@@ -45,7 +48,7 @@ function stageMentionables() {
   const pictures = state.stageChat.inputs.pictures.map((p) => ({ name: p.name, title: p.title, url: p.url, about: "picture" }));
   return [...cast, ...pictures, ...maps];
 }
-const PLACEHOLDER = { shot: "Describe the shot · @ for a file", stage: "Stage a scene — two people arguing by a wall, low angle", story: "Ask the story assistant — add a scene where Mara finds the jellyfish" };
+const PLACEHOLDER = { shot: "Describe the shot · @ for a file", stage: "Stage a scene — two people arguing by a wall, low angle", story: "Ask the story assistant — add a scene where Mara finds the jellyfish", cut: "Ask the editor — trim the first shot to 3 s and put rain under scene 2" };
 
 const KIND_ICON = { video: "video", audio: "sound" };
 
@@ -167,6 +170,12 @@ function makeComposer() {
       if (!text.trim() || story.busy.size) return;
       input.value = "";
       return askStory(text);
+    }
+    if (onCut()) {
+      if (!text.trim() || cut.chat.busy) return;
+      input.value = "";
+      open = true;
+      return askCut(text);
     }
     if (!text.trim() || (onStage() ? state.stageChat.busy : state.chat.busy)) return;
     input.value = "";
@@ -379,7 +388,8 @@ export function renderAssistant(el) {
   const stage = onStage();
   const storyPage = onStory();
   const writing = [...story.busy].find((k) => !k.includes(":"));
-  const { messages, busy } = storyPage ? { messages: [], busy: writing ? "Writing" : null } : stage ? state.stageChat : state.chat;
+  const cutPage = onCut();
+  const { messages, busy } = storyPage ? { messages: [], busy: writing ? "Writing" : null } : cutPage ? cut.chat : stage ? state.stageChat : state.chat;
   const { files, attaching } = state.chat;
   const c = composer ?? makeComposer();
   c.key.disabled = !!busy;
@@ -389,12 +399,13 @@ export function renderAssistant(el) {
     const value = state.stageModel && models.some((m) => m.id === state.stageModel) ? state.stageModel : state.image.catalogue?.default ?? models[0]?.id;
     c.modelSlot.replaceChildren(...(models.length > 1 ? [dropdown({ label: "Image model", value, items: models.map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setStageModel(id) })] : []));
   }
-  c.input.placeholder = PLACEHOLDER[storyPage ? "story" : stage ? "stage" : "shot"];
-  if (storyPage) c.modelSlot.replaceChildren(h("span.chip.composer-chip", { title: "The story is written by Gemma 4, in ComfyUI" }, sprite("prompt-enhance"), "Gemma 4"));
+  c.input.placeholder = PLACEHOLDER[storyPage ? "story" : cutPage ? "cut" : stage ? "stage" : "shot"];
+  if (storyPage || cutPage) c.modelSlot.replaceChildren(h("span.chip.composer-chip", { title: storyPage ? "The story is written by Gemma 4, in ComfyUI" : "The editor is Gemma 4, in ComfyUI" }, sprite("prompt-enhance"), "Gemma 4"));
   const inputs = state.stageChat.inputs;
   c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : files.map(fileChip)), ...(!stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
-  c.tray.hidden = storyPage || (stage ? !inputs.maps.length && !inputs.pictures.length : !files.length && !attaching);
+  c.tray.hidden = storyPage || cutPage || (stage ? !inputs.maps.length && !inputs.pictures.length : !files.length && !attaching);
   c.el.classList.toggle("is-story", storyPage);
+  c.el.classList.toggle("is-cut", cutPage);
   c.input.refresh();
   c.el.classList.toggle("is-stage", stage);
   markMentioned();

@@ -700,13 +700,12 @@ export function addToEdit(...ids) {
 }
 
 /** Starts the film from the takes the tabs show, in tab order, and opens Edit. */
-export function editFromTabs() {
+export async function editFromTabs() {
   const takes = filmTakes();
-  if (!takes.length) return toast("Open finished takes in tabs first, then send them to Edit.");
-  state.edit.clips = takes.map((r) => ({ run: r.id, from: 0, to: null }));
-  saveEdit();
-  changed("edit");
+  if (!takes.length) return toast("Open finished takes in tabs first, then send them to Cut.");
+  const { cutFromTakes } = await import("./cut.js");
   go("cut");
+  await cutFromTakes(activeTab()?.film ?? "Untitled cut", takes.map((r) => r.id));
 }
 
 export function removeClip(i) {
@@ -952,9 +951,10 @@ export async function drawPicture(body) {
  * made the first time, rolled again in place after. Answers with the tab, the take, and a promise
  * of the finished take.
  */
-export async function rollAsTab({ tab, name, group, start, shot, seconds, aspect }) {
+export async function rollAsTab({ tab, name, group, start, shot, seconds, aspect, audio, video }) {
   let t = state.tabs.find((x) => x.id === tab);
-  const draft = { ...freshDraft(), name, script: { shots: [{ ...emptyShot(), ...shot }], raw: "" }, start, seconds, aspect, review: false };
+  // audio: a track the shot follows ({ file, url, duration, lipsync }); video: a clip to extend or follow ({ file, mode })
+  const draft = { ...freshDraft(), name, script: { shots: [{ ...emptyShot(), ...shot }], raw: "" }, start, seconds, aspect, review: false, audio: audio ?? null, ...(video ? { video, startMode: "video" } : {}) };
   if (!t) {
     t = { id: tab ?? `story-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, run: null, film: group, draft };
     state.tabs.push(t);

@@ -13,7 +13,7 @@ import { renderStory } from "./panels/story.js";
 import { renderStatus } from "./panels/status.js";
 import { renderNav } from "./panels/nav.js";
 import { renderLibrary } from "./panels/library.js";
-import { renderEdit } from "./panels/edit.js";
+import { renderCut } from "./panels/cut.js";
 import { renderAssistant } from "./panels/assistant.js";
 import { renderImage } from "./panels/image.js";
 import { renderStage, mountStage } from "./panels/stage.js";
@@ -38,7 +38,7 @@ const panels = {
   actions: [$("actions"), renderActions, "shot"],
   story: [$("page-story"), renderStory, "story"],
   library: [$("page-library"), renderLibrary, "library"],
-  edit: [$("page-cut"), renderEdit, "cut"],
+  cut: [$("page-cut"), renderCut, "cut"],
 };
 
 // Redraws are batched to one per frame; text fields keep focus because the
@@ -81,9 +81,9 @@ onChange((scopes) => {
     else if (scope === "director") pending.add("tabs").add("nav");
     else if (panels[scope]) pending.add(scope);
     // the header's keys and status follow the takes, the tabs and any running job
-    if (["takes", "tabs", "paint", "sources", "director", "edit"].includes(scope)) pending.add("actions").add("status").add("nav");
+    if (["takes", "tabs", "paint", "sources", "director", "edit", "cut"].includes(scope)) pending.add("actions").add("status").add("nav");
     // takes and films are the library's and the edit's material too
-    if (scope === "takes") pending.add("library").add("edit").add("story");
+    if (scope === "takes") pending.add("library").add("cut").add("story");
     if (scope === "sources") pending.add("assistant");
     if (scope === "tabs" || scope === "takes") pending.add("tabs");
   }
@@ -94,16 +94,17 @@ onChange((scopes) => {
 /** The assistant's bar floats over the Shot's desk and docks under the Stage's viewport. */
 function dockAssistant(page = currentPage()) {
   const bar = $("assistant");
-  const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : $("page-shot");
-  bar.hidden = !slot || !["shot", "stage", "story"].includes(page);
+  const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : page === "cut" ? $("cut-chat") : $("page-shot");
+  bar.hidden = !slot || !["shot", "stage", "story", "cut"].includes(page);
   if (slot && bar.parentElement !== slot) slot.append(bar);
-  bar.classList.toggle("is-docked", page === "stage" || page === "story");
+  bar.classList.toggle("is-docked", page === "stage" || page === "story" || page === "cut");
   pending.add("assistant");
   flush();
 }
 document.addEventListener("stage:ready", () => dockAssistant());
 // Story draws its page (and the bar's slot) when its first story has come
 document.addEventListener("story:drawn", () => currentPage() === "story" && $("assistant").parentElement?.id !== "story-chat" && dockAssistant());
+document.addEventListener("cut:drawn", () => currentPage() === "cut" && $("assistant").parentElement?.id !== "cut-chat" && dockAssistant());
 
 function showPage() {
   const page = currentPage();
