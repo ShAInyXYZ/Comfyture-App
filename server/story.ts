@@ -26,6 +26,38 @@ Rules: every character and place of the script, by its name in the script; visua
 Rules: every scene gets two to four shots (never just one), in order; vary the sizes (open a scene wide, go close for feelings); size is wide, medium, close or ots (over the shoulder); camera is one of locked, push-in, pull-out, orbit, crane-up, handheld; seconds 3 to 8, the total near the film's length; in frame, call characters and places only by their @tags; a line of dialogue goes in the shot of the one who says it, else line is null; sound names what we hear.`,
 };
 
+// A prompt written as a few takes at once, on Home: each the idea of a different film and what it
+// looks like, for its moodboard (its key moment, its hero, its place). The one picked is started.
+export const IDEAS_BRIEF = `You develop stories for short films (10 seconds to 5 minutes) made with AI video, one shot at a time.
+From the user's idea, write takes on it: each the foundation of a different film, and how it looks, for a moodboard. Answer with JSON only, no other words:
+{"ideas": [{"title": "two to five words", "logline": "one sentence: who wants what, and what stands in the way", "synopsis": "one paragraph of four to six sentences: the beginning, the turn, the end", "genre": "one or two words", "tone": "three words", "look": "the film's style in one line: medium, light, colour, lens, texture", "hero": {"name": "the main character's name", "words": "how they look: age, build, face, hair, clothes and their colours (for an animal: species, size, fur or feathers, markings)"}, "place": {"name": "the main place's name", "words": "what it is, the time of day, the weather, the light"}, "moment": "the film's key moment as one picture: who does what, where, in what light"}]}
+Rules: exactly as many takes as asked; each faithful to the idea and clearly different from the others (who it follows, the tone, the turn, the ending, the look); concrete and visual, things a camera can see; one to four characters, one or two places; the end lands; no camera words in the logline and synopsis.`;
+
+/** What the writer of the takes reads: the idea as the first step would, and how many takes. */
+export const ideasPrompt = (story: any, count: number, seen = false) => `${storyPrompt("idea", story, undefined, undefined, seen)}\nTakes: ${count}`;
+
+/** The takes, checked and clamped: the ones without a logline are left out. */
+export function readIdeas(reply: string, count: number) {
+  let raw: any;
+  try {
+    raw = loose(reply);
+  } catch {
+    throw new Error("The writer's answer didn't come back whole. Try again?");
+  }
+  const looks = (o: any, n: number) => ({ name: text(o?.name, n), words: text(o?.words, 300) });
+  return list(raw?.ideas, count).map((i: any) => ({
+    title: text(i?.title, 60) || "Untitled",
+    logline: text(i?.logline, 300),
+    synopsis: text(i?.synopsis, 1400),
+    genre: text(i?.genre, 40),
+    tone: text(i?.tone, 60),
+    look: text(i?.look, 300),
+    hero: looks(i?.hero, 30),
+    place: looks(i?.place, 40),
+    moment: text(i?.moment, 500),
+  })).filter((i: any) => i.logline);
+}
+
 /** What the writer of a step reads: the steps before it, and what to change if asked. */
 export function storyPrompt(step: StoryStep, story: any, ask?: string, only?: number, seen = false): string {
   const idea = story?.idea ?? {};

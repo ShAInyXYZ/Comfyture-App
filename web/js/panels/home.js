@@ -1,20 +1,27 @@
 import { h, icon, sprite, ago } from "../dom.js";
-import { changed, toast, newTab, openTake, writers } from "../store.js";
+import { changed, toast, newTab, openTake, writer, writers, sheetOf, drawPicture } from "../store.js";
 import { writerPicker } from "../writer-menu.js";
 import { tilePicker } from "../controls.js";
 import { go, currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
 import { view } from "../viewer.js";
 import { attachMenu } from "../attach.js";
-import { story, loadStories, openStory, newStory, deleteStory, writeAll, commit as commitStory } from "../story.js";
+import { story, loadStories, openStory, newStory, deleteStory, writeTake, tagOf, commit as commitStory } from "../story.js";
 import { loadCuts, openCut, newCut, deleteCut } from "../cut.js";
 
-// The welcome screen: where Comfyture opens. Its heart is the prompt that writes a whole film's
-// story from one sentence; under it, the projects. A project is a film: its story, the stages its
-// shots were blocked on, its takes and its edits, together on one card that opens on hover.
+// The welcome screen: where Comfyture opens. Its heart is the prompt: one sentence becomes one,
+// two or four variants, each a brief with its moodboard, and the one picked is started as a story.
+// Under it, the projects. A project is a film: its story, the stages its shots were blocked on, its
+// takes and its edits, together on one card that opens on hover.
 
-// refs: pictures and videos attached to the prompt, for the story to be built around
-const home = { films: [], loaded: 0, loading: null, error: null, query: "", brief: "", length: 60, aspect: "16:9", genre: "", starting: false, armed: null, refs: [], adding: 0 };
+// refs: pictures and videos attached to the prompt, for the story to be built around; count: how
+// many variants the prompt is written as; ideas: the variants written last, kept until one is started
+const IDEAS = "comfyture.home.ideas";
+const home = { films: [], loaded: 0, loading: null, error: null, query: "", brief: "", length: 60, aspect: "16:9", genre: "", count: 4, ideas: null, starting: false, armed: null, refs: [], adding: 0 };
+try {
+  home.ideas = JSON.parse(localStorage.getItem(IDEAS) ?? "null");
+} catch {}
+if (home.ideas?.writing) home.ideas = null;
 const KIND = {
   story: { label: "Story", icon: "section-story" },
   stage: { label: "Stage", icon: "section-stage" },
@@ -26,6 +33,7 @@ const LENGTHS = [[10, "10 s"], [20, "20 s"], [30, "30 s"], [60, "1 min"], [120, 
 // the genre the idea is written in ("" leaves it to the writer)
 const GENRES = [["Drama", "drama"], ["Comedy", "comedy"], ["Thriller", "thriller"], ["Horror", "horror"], ["Sci-fi", "scifi"], ["Fantasy", "fantasy"], ["Romance", "romance"], ["Adventure", "adventure"], ["Animation", "animation"], ["Documentary", "documentary"], ["Commercial", "commercial"], ["Music video", "music-video"]].map(([value, file]) => ({ value, label: value, image: `img/genres/${file}.webp` }));
 const ASPECTS = [["16:9", "16:9", "ratio-16-9", "Wide"], ["9:16", "9:16", "ratio-9-16", "Tall, for phones"], ["1:1", "1:1", "ratio-1-1", "Square"]];
+const COUNTS = [[1, "1", "variants-1"], [2, "2", "variants-2"], [4, "4", "variants-4"]];
 /** A key that shows its value and steps through the values on each click, from the value as it is then. */
 function stepper(label, list, get, set, glyph, hint) {
   const key = h("button.home-step", { type: "button" });
@@ -108,21 +116,87 @@ const START = [
 ];
 
 /** A whole story from one sentence: a new story with the brief, and the writer writing it while Story shows it. */
-async function writeStory() {
+/** The prompt as one, two or four variants: each a brief, then its moodboard drawn. */
+async function imagine() {
   const brief = home.brief.trim() || (home.refs.length ? "A short film built around the attached references." : "");
   if (!brief) return document.querySelector(".home-brief")?.focus();
   if (home.adding) return toast("A moment: an attachment is still coming in.");
-  home.starting = true;
+  if (home.ideas?.writing) return;
+  const run = { brief, length: home.length, aspect: home.aspect, genre: home.genre, refs: home.refs.slice(0, 4), count: home.count, takes: [], writing: true };
+  home.ideas = run;
+  redraw();
+  try {
+    // the references on one sheet the writer sees, each under its @name
+    const pics = run.refs.filter((r) => (r.kind === "video" ? r.still?.url : r.url));
+    const sheet = pics.length ? await sheetOf(pics.map((r) => ({ name: r.name, url: r.kind === "video" ? r.still.url : r.url }))).catch(() => null) : null;
+    const { ideas } = await call("api/story/ideas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ count: run.count, model: writer(), story: { idea: { brief, length: run.length, aspect: run.aspect, genre: run.genre, refs: run.refs } }, sheet: sheet?.file }) });
+    if (home.ideas !== run) return;
+    const stamp = Date.now().toString(36);
+    run.takes = ideas.map((t, i) => ({ ...t, id: `${stamp}${i}`, frames: {} }));
+    run.writing = false;
+    keepIdeas();
+    redraw();
+    run.takes.forEach((t) => drawTake(run, t));
+  } catch (e) {
+    if (home.ideas === run) home.ideas = null;
+    redraw();
+    fail(e);
+  }
+}
+
+// a variant's moodboard: its key moment in the film's frame, its hero, its place
+const FRAMES = [
+  ["moment", (t) => `A cinematic film still from "${t.title}": ${t.moment || t.logline}`],
+  // alone, so the picture can stand for them in the story's cast
+  ["hero", (t) => `${t.hero.name}${t.hero.words ? `, ${t.hero.words}` : ""}. A cinematic medium shot of them alone in their world, looking off camera, nobody else in the frame`],
+  ["place", (t) => `${t.place.words || t.place.name}. A cinematic establishing shot of ${t.place.name || "the place"}, with nobody in it`],
+];
+function drawTake(run, t) {
+  const look = t.look ? ` In the film's look: ${t.look.replace(/\.$/, "")}.` : "";
+  const refs = run.refs.map((r) => (r.kind === "video" ? r.still && { file: r.still.file, name: r.name } : { file: r.file, name: r.name })).filter(Boolean);
+  for (const [key, words] of FRAMES) {
+    if (t.frames[key]?.url || t.frames[key]?.busy) continue;
+    t.frames[key] = { busy: true };
+    drawPicture({ model: "qwen-2.1", template: refs.length ? "edit" : "generate", prompt: `${words(t).replace(/\.$/, "")}.${look}`, aspect: run.aspect, refs, name: `${t.title} · moodboard` })
+      .then((photo) => (t.frames[key] = { file: photo.file, url: photo.url, width: photo.width, height: photo.height }))
+      .catch(() => (t.frames[key] = { failed: true }))
+      .finally(() => (keepIdeas(), home.ideas === run && refreshTakes()));
+  }
+}
+// what was drawing when the page closed is drawn again
+setTimeout(() => home.ideas?.takes?.forEach((t) => {
+  for (const [key] of FRAMES) if (t.frames[key]?.busy) delete t.frames[key];
+  drawTake(home.ideas, t);
+}), 0);
+const keepIdeas = () => {
+  try {
+    if (home.ideas && !home.ideas.writing) localStorage.setItem(IDEAS, JSON.stringify(home.ideas));
+    else if (!home.ideas) localStorage.removeItem(IDEAS);
+  } catch {}
+};
+
+/** The variant picked becomes the story: its idea written, its moodboard its look; the script and the world follow. */
+async function startTake(run, t) {
+  if (home.starting) return;
+  home.starting = t.id;
   redraw();
   try {
     await loadStories();
-    await newStory();
-    Object.assign(story.project.body.idea, { brief, length: home.length, aspect: home.aspect, genre: home.genre, refs: home.refs.slice(0, 4) });
+    await newStory(t.title);
+    const b = story.project.body;
+    // the moodboard goes along as references the writer sees, after the user's own
+    const board = [["moment", "moment"], ["hero", tagOf(t.hero.name || "hero")], ["place", tagOf(t.place.name || "place")]]
+      .filter(([k]) => t.frames[k]?.url).map(([k, name]) => ({ kind: "image", file: t.frames[k].file, url: t.frames[k].url, name }));
+    Object.assign(b.idea, { brief: run.brief, length: run.length, aspect: run.aspect, genre: t.genre, tone: t.tone, title: t.title, logline: t.logline, synopsis: t.synopsis, refs: [...run.refs, ...board].slice(0, 4) });
+    if (t.look) b.look.words = t.look;
+    if (t.frames.moment?.url) b.look.refs = [t.frames.moment];
     commitStory();
+    home.ideas = null;
     home.brief = "";
     home.refs = [];
+    keepIdeas();
     go("story");
-    writeAll();
+    writeTake(t);
   } catch (e) {
     fail(e);
   } finally {
@@ -230,7 +304,7 @@ const refreshRefs = () => document.querySelector(".home-refs")?.replaceWith(refs
 function hero() {
   const field = h("textarea.home-brief#home-brief", {
     rows: 2, value: home.brief, placeholder: "an old lighthouse keeper and a girl carry a glowing jellyfish back to the sea", "aria-label": "What the film is about",
-    on: { keydown: (e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), writeStory()), input: (e) => (home.brief = e.target.value) },
+    on: { keydown: (e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), imagine()), input: (e) => (home.brief = e.target.value) },
   });
   const lit = home.films.find((f) => f.story?.thumb) ?? home.films.find((f) => f.cover?.pic);
   const last = home.films.find((f) => f.story);
@@ -247,17 +321,62 @@ function hero() {
       refs(),
       h("div.home-prompt-foot", {},
         stepper("Length", LENGTHS, () => home.length, (v) => (home.length = v), "duration"),
+        stepper("Variants", COUNTS, () => home.count, (v) => (home.count = v), null, () => "each a brief with its moodboard, to start the one you like"),
         stepper("Frame", ASPECTS, () => home.aspect, (v) => (home.aspect = v), null, (a) => a[3]),
         h("span.home-pick.is-genre", { className: home.genre ? "is-set" : "", title: "Genre\nThe idea is written in it" }, tilePicker({ label: "Genre", none: "Any genre", value: home.genre, items: GENRES, onChange: (v) => ((home.genre = v), redraw()) })),
         h("span.spacer"),
         writers().length > 1 ? h("span.home-pick.is-model", { title: "Writer\nThe model that writes the story" }, writerPicker("writer")) : h("span.home-model.is-one", { title: "The story is written by Gemma 4, inside ComfyUI" }, sprite("prompt-enhance"), writers()[0]?.name ?? "Gemma 4"),
         h("button.home-attach", { type: "button", title: "Attach pictures or videos\nThe story is built around them: who, where, the look", "aria-label": "Attach pictures or videos", "aria-expanded": "false", on: { click: (e) => attach(e.currentTarget) } }, sprite("paperclip")),
-        h("button.key.is-primary.home-write", { type: "button", disabled: home.starting, title: "Enter", on: { click: writeStory } }, sprite("prompt-enhance"), home.starting ? "Starting…" : "Write the story"))),
+        h("button.key.is-primary.home-write", { type: "button", disabled: !!home.starting || !!home.ideas?.writing, title: "Enter", on: { click: imagine } }, sprite("prompt-enhance"), home.ideas?.writing ? "Imagining…" : "Imagine"))),
+    takes(),
     h("div.home-new", { role: "group", "aria-label": "Start something empty" },
       ...START.map(([glyph, tip, run]) => h("button.home-new-key", { type: "button", title: tip, "aria-label": tip, on: { click: () => Promise.resolve(run()).catch(fail) } }, sprite(glyph)))),
     last ? h("button.home-continue", { type: "button", title: "Open its story", on: { click: () => openFilm(last) } },
       last.story?.thumb ? h("img", { src: last.story.thumb, alt: "", draggable: false }) : null,
       h("span", {}, "Continue"), h("b", {}, last.name), icon("arrow"), h("span.home-continue-facts", {}, counts(last))) : null);
+}
+
+/** The variants of the prompt, side by side: each a brief with its moodboard, and a key to start it. */
+function takes() {
+  const run = home.ideas;
+  if (!run) return null;
+  const n = run.writing ? run.count : run.takes.length;
+  const shape = run.aspect === "9:16" ? "tall" : run.aspect === "1:1" ? "square" : "wide";
+  return h("section.home-takes", { "aria-label": "The variants", dataset: { shape } },
+    h("div.home-takes-head", {},
+      h("span.card-label", {}, run.writing ? "Imagining" : n === 1 ? "A variant" : `${n} variants`),
+      h("span.home-takes-brief", { title: run.brief }, run.brief),
+      run.writing ? null : h("button.home-takes-x", { type: "button", title: "Put them away", "aria-label": "Put the variants away", on: { click: () => ((home.ideas = null), keepIdeas(), redraw()) } }, icon("close"))),
+    h("div.home-takes-row", { dataset: { n } }, ...(run.writing ? Array.from({ length: n }, writingCard) : run.takes.map((t) => takeCard(run, t)))));
+}
+const refreshTakes = () => {
+  const now = document.querySelector(".home-takes");
+  if (now) now.replaceWith(takes() ?? "");
+  else redraw();
+};
+const BOARD = ["moment", "hero", "place"];
+function writingCard() {
+  return h("article.home-take.is-writing", { "aria-busy": "true" },
+    h("div.take-board", {}, ...BOARD.map((k) => h(`div.take-frame.is-${k}`))),
+    h("div.take-text", {}, h("span.take-line"), h("span.take-line"), h("span.take-line.is-short")),
+    h("span.typing.take-wait", {}, h("i"), h("i"), h("i")));
+}
+function takeCard(run, t) {
+  const frame = (key) => {
+    const f = t.frames[key];
+    return h(`div.take-frame.is-${key}`, { title: key === "moment" ? "The key moment" : key === "hero" ? t.hero.name || "The hero" : t.place.name || "The place" },
+      f?.url ? h("img", { src: f.url, alt: "", draggable: false, on: { click: () => view(f.url, "image") } })
+        : f?.failed ? h("button.take-redraw", { type: "button", title: "Draw it again", "aria-label": "Draw it again", on: { click: () => (delete t.frames[key], drawTake(run, t), refreshTakes()) } }, icon("remix"))
+        : h("span.typing", {}, h("i"), h("i"), h("i")));
+  };
+  return h("article.home-take", {},
+    h("div.take-board", {}, ...BOARD.map(frame)),
+    h("div.take-text", {},
+      h("h3.take-title", {}, t.title),
+      h("p.take-logline", {}, t.logline),
+      h("p.take-synopsis", {}, t.synopsis),
+      h("div.take-chips", {}, ...[t.genre, t.tone].filter(Boolean).map((c) => h("span.chip", {}, c)))),
+    h("button.key.is-primary.take-start", { type: "button", disabled: !!home.starting, on: { click: () => startTake(run, t) } }, sprite("section-story"), home.starting === t.id ? "Starting…" : "Start the story"));
 }
 
 /** "7 scenes · 7 shots": how far a story has come, for the line under the prompt. */

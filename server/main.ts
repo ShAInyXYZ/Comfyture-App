@@ -15,7 +15,7 @@ import { askClaude, blenderStatus, command, CONTROL_BRIEF, controlConnected, con
 import { llms, defaultLlm, pickLlm, onRouter, llmName, routerAsk, imageBlock } from "./llm.ts";
 import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
-import { readStory, storyBrief, storyPrompt, STORY_ASSIST_BRIEF, storyAssistPrompt, readStoryAssist, type StoryStep } from "./story.ts";
+import { readStory, storyBrief, storyPrompt, STORY_ASSIST_BRIEF, storyAssistPrompt, readStoryAssist, IDEAS_BRIEF, ideasPrompt, readIdeas, type StoryStep } from "./story.ts";
 import { planCut, CUT_BRIEF, cutPrompt, readCutAnswer, type CutBody, type CutItem, type Source } from "./cut.ts";
 
 const root = resolve(import.meta.dirname, "..");
@@ -1010,6 +1010,16 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const sheet = step === "board" ? undefined : await photo(input.sheet).catch(() => undefined);
     const reply = await write(pickLlm(input.model), storyBrief(step), storyPrompt(step, input.story ?? {}, text(input.ask, 800), only, !!sheet), { maxLength: step === "idea" ? 1200 : storyRoom(input.story?.idea?.length), picture: sheet });
     return json(res, 200, readStory(step, reply));
+  }
+  // a prompt as one, two or four takes, each the idea of a different film with what its moodboard shows
+  if (path === "/api/story/ideas" && method === "POST") {
+    const input = await jsonBody(req, 8 * 1024 * 1024);
+    const count = [1, 2, 4].includes(Number(input.count)) ? Number(input.count) : 4;
+    const sheet = await photo(input.sheet).catch(() => undefined);
+    const reply = await write(pickLlm(input.model), IDEAS_BRIEF, ideasPrompt(input.story ?? {}, count, !!sheet), { maxLength: 600 + count * 900, picture: sheet });
+    const ideas = readIdeas(reply, count);
+    if (!ideas.length) throw Object.assign(new Error("The writer wrote no takes. Try again?"), { status: 502 });
+    return json(res, 200, { ideas });
   }
   if (path === "/api/story/assist" && method === "POST") {
     // the story assistant, with the whole story in mind: it answers with the edits to make

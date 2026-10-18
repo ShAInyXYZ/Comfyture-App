@@ -155,7 +155,7 @@ export function touch({ now = false, quiet = false } = {}) {
   const p = story.project;
   const keep = async () => {
     const b = p.body;
-    const thumb = b.blocks.find((x) => x.kind === "shot" && x.photo)?.photo?.url ?? b.cast.find((c) => c.refs[0])?.refs[0].url ?? b.places.find((x) => x.refs[0])?.refs[0].url;
+    const thumb = b.blocks.find((x) => x.kind === "shot" && x.photo)?.photo?.url ?? b.look.refs?.[0]?.url ?? b.cast.find((c) => c.refs[0])?.refs[0].url ?? b.places.find((x) => x.refs[0])?.refs[0].url;
     const name = b.idea.title || p.name;
     await send(`api/stories/${p.id}`, "PUT", { name, body: b, thumb }).catch((e) => toast(e.message, { tone: "crit" }));
     p.name = name;
@@ -429,6 +429,23 @@ export async function writeAll() {
   if (!body()?.idea.logline) return;
   await write("script");
   if (scenesOf().some((s) => s.scene)) await write("world");
+}
+
+/**
+ * A story started from a take picked on Home: its idea is written and its moodboard is its look. The
+ * script and the world are written from it, the take's hero and place keeping their pictures.
+ */
+export async function writeTake(take) {
+  await write("script");
+  const b = body();
+  if (!b || !scenesOf(b).some((s) => s.scene)) return;
+  const first = (v) => String(v ?? "").toLowerCase().split(/\s+/)[0];
+  const find = (list, name) => name && (list.find((x) => x.name.toLowerCase() === name.toLowerCase()) ?? list.find((x) => first(x.name) === first(name)));
+  const hero = find(b.cast, take.hero?.name);
+  if (hero && take.frames?.hero?.url && !hero.refs.length) addRefPicture("cast", hero.id, take.frames.hero);
+  const place = find(b.places, take.place?.name);
+  if (place && take.frames?.place?.url && !place.refs.length) addRefPicture("places", place.id, take.frames.place);
+  await write("world");
 }
 
 // ---------------------------------------------------------------- the story assistant

@@ -10,7 +10,7 @@ const PROVIDERS = {
   vertexai: ["Google", () => sprite("brand-google")],
   comfyui: ["Open weights", () => icon("flow")],
 };
-// a whole draft from one sentence (idea, script, cast, storyboard) reads about 7.5K tokens and writes about 5K
+// a draft from one sentence (its variants, its script, its cast) reads about 7.5K tokens and writes about 5K
 const draft = (rates) => (rates ? Math.max(1, Math.round(rates[0] * 7.5 + rates[1] * 5)) : null);
 
 const price = (costs) => (costs.includes(null) ? "GPU time" : `≈ ${[...new Set([Math.min(...costs), Math.max(...costs)])].join("–")} cr`);
@@ -27,4 +27,4 @@ export const writerItems = () => {
 
 /** The picker for a role: the writer (Story, Cut) or the assistant (Shot, Stage). */
 export const writerPicker = (role = "writer", label = role === "writer" ? "Writer" : "Assistant") =>
-  dropdown({ label, value: writer(role), items: writerItems(), onChange: (id) => setWriter(id, role), width: "fit", note: "Comfy credits for a whole story draft: idea, script, cast and storyboard" });
+  dropdown({ label, value: writer(role), items: writerItems(), onChange: (id) => setWriter(id, role), width: "fit", note: "Comfy credits for a story draft: its variants, its script and its cast" });
