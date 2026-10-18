@@ -152,8 +152,9 @@ function stick(panel, trigger, close) {
 }
 
 /**
- * A select: a trigger showing the chosen item, and a floating menu of the items, each with a second
- * line, a meta (a short value at the row's end) and optional tags; a note closes the menu, and width
+ * A select: a trigger showing the chosen item (or its short name, with its glyph), and a floating menu
+ * of the items, each with a second line, a meta (a short value at the row's end) and optional tags;
+ * a note closes the menu, and width
  * "fit" makes it only as wide as its rows. Items may carry a group (with a groupIcon and a groupMeta):
  * the menu then lists the groups with the chosen item's open, and another unfolds under the pointer
  * resting on its header, a tap, or the arrows reaching it. Arrows move, Enter picks, Escape or a
@@ -182,8 +183,12 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
     }
     return text;
   };
+  // on the trigger, an item may go by a short name, its glyph before it
   const draw = () => {
-    trigger.replaceChildren(face(current()));
+    const item = current();
+    const glyph = item.glyph?.();
+    glyph?.classList.add("sel-glyph");
+    trigger.replaceChildren(...(glyph ? [glyph] : []), face(item.short ? { label: item.short } : item));
     trigger.insertAdjacentHTML("beforeend", chev);
   };
   draw();

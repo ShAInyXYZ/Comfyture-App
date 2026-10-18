@@ -25,7 +25,10 @@ export interface ImageTemplate { graph: string; official: string; enhance: strin
 export interface ImageModel {
   id: string;
   name: string;
+  // its name on a bar, and about how long a picture takes on Comfy Cloud (a megapixel, warm)
+  short?: string;
   about: string;
+  seconds?: number;
   multiple: number;
   megapixels: number[];
   templates: Partial<Record<TemplateId, ImageTemplate>>;
@@ -90,7 +93,9 @@ export class ImageModels {
       models: c.models.map((m) => ({
         id: m.id,
         name: m.name,
+        short: m.short ?? m.name,
         about: m.about,
+        seconds: m.seconds ?? null,
         megapixels: m.megapixels,
         multiple: m.multiple,
         loras: this.loras[m.id] ?? [],

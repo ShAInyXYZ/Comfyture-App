@@ -1,8 +1,9 @@
 import { sprite, icon } from "./dom.js";
-import { writer, writers, setWriter } from "./store.js";
+import { state, writer, writers, setWriter, artist, artists, setArtist } from "./store.js";
 import { dropdown } from "./controls.js";
 
-// The writer picker: the models grouped by who makes them, each with what a story draft costs on it.
+// The writer's and the artist's pickers: the language models grouped by who makes them, each with what a
+// story draft costs on it, and the image models, each with what a picture costs.
 
 const PROVIDERS = {
   anthropic: ["Anthropic", () => sprite("brand-anthropic")],
@@ -21,10 +22,28 @@ export const writerItems = () => {
   return list.map((m) => {
     const [group, groupIcon] = PROVIDERS[m.provider] ?? [m.provider, () => sprite("prompt-enhance")];
     const groupMeta = price(list.filter((x) => x.provider === m.provider).map((x) => draft(x.rates)));
-    return { value: m.id, label: m.name, desc: m.about, group, groupIcon, groupMeta, meta: price([draft(m.rates)]) };
+    return { value: m.id, label: m.name, short: m.short, glyph: groupIcon, desc: m.about, group, groupIcon, groupMeta, meta: price([draft(m.rates)]) };
   });
 };
 
 /** The picker for a role: the writer (Story, Cut) or the assistant (Shot, Stage). */
 export const writerPicker = (role = "writer", label = role === "writer" ? "Writer" : "Assistant") =>
   dropdown({ label, value: writer(role), items: writerItems(), onChange: (id) => setWriter(id, role), width: "fit", note: "Comfy credits for a story draft: its variants, its script and its cast" });
+
+// Comfy Cloud bills a GPU second at 0.266 credits; a picture's seconds are measured warm, at a megapixel
+const GPU_SECOND = 0.266;
+export const artistItems = () => {
+  const cloud = state.info?.target === "comfy-cloud";
+  return artists().map((m) => ({
+    value: m.id,
+    label: m.name,
+    short: m.short,
+    glyph: () => sprite("image-generate"),
+    desc: m.about,
+    meta: !cloud ? "your GPU" : m.seconds ? `≈ ${Math.max(1, Math.round(m.seconds * GPU_SECOND))} cr` : "GPU time",
+  }));
+};
+
+/** The picker for the artist: the image model that draws the moodboards and the story's pictures. */
+export const artistPicker = () =>
+  dropdown({ label: "Artist", value: artist(), items: artistItems(), onChange: setArtist, width: "fit", note: state.info?.target === "comfy-cloud" ? "Comfy credits a picture on Comfy Cloud; a moodboard is three pictures a variant" : "Drawn on your own GPU: no credits" });

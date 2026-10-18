@@ -1619,6 +1619,35 @@ export function setWriter(id, role = "writer") {
 }
 export const writers = () => state.info?.llms?.models ?? [];
 
+// the artist: the image model that draws the moodboards and the story's pictures, kept per browser
+const ARTIST = "comfyture.artist";
+let artistsLoading = null;
+/** The image models the artist can be, loaded once. */
+export function artists() {
+  if (!state.image.catalogue) artistsLoading ??= api.imageModels().then((c) => ((state.image.catalogue ??= c), changed("home", "assistant"))).catch(() => (artistsLoading = null));
+  return state.image.catalogue?.models ?? [];
+}
+export function artist() {
+  let kept = null;
+  try {
+    kept = localStorage.getItem(ARTIST);
+  } catch {}
+  const list = state.image.catalogue?.models ?? [];
+  return list.some((m) => m.id === kept) ? kept : state.image.catalogue?.default ?? kept ?? "qwen-2.1";
+}
+export function setArtist(id) {
+  try {
+    localStorage.setItem(ARTIST, id);
+  } catch {}
+  changed("home", "assistant");
+}
+/** Who draws a picture: the artist, or Qwen Image 2.1 when the artist has no such template (pictures to follow, say). */
+export function artistFor(template) {
+  const id = artist();
+  const m = (state.image.catalogue?.models ?? []).find((x) => x.id === id);
+  return !m || m.templates.some((t) => t.id === template) ? id : "qwen-2.1";
+}
+
 export function setStageModel(id) {
   state.stageModel = id;
   try {

@@ -4,7 +4,9 @@
     {
       "id": "qwen-2.1",
       "name": "Qwen Image 2.1",
+      "short": "Qwen 2.1",
       "about": "Long descriptions, text in the picture, up to 10 references",
+      "seconds": 10,
       "multiple": 32,
       "megapixels": [1, 2, 4],
       "templates": {
@@ -15,7 +17,9 @@
     {
       "id": "qwen-2.1-turbo",
       "name": "Qwen Image 2.1 Turbo",
+      "short": "Qwen Turbo",
       "about": "Qwen Image 2.1 in 8 steps",
+      "seconds": 12,
       "multiple": 32,
       "megapixels": [1, 2, 4],
       "templates": {
@@ -26,7 +30,9 @@
     {
       "id": "flux3-klein",
       "name": "FLUX 3 Klein",
+      "short": "FLUX Klein",
       "about": "Photographic detail, fast distilled model",
+      "seconds": 11,
       "multiple": 16,
       "megapixels": [1, 2, 4],
       "templates": {
@@ -37,7 +43,9 @@
     {
       "id": "krea2-turbo",
       "name": "Krea 2 Turbo",
+      "short": "Krea Turbo",
       "about": "Strong looks and illustration, and style from a picture",
+      "seconds": 21,
       "multiple": 16,
       "megapixels": [1, 2, 4],
       "templates": {
@@ -48,7 +56,9 @@
     {
       "id": "z-image-turbo",
       "name": "Z-Image Turbo",
+      "short": "Z-Image",
       "about": "Quick realistic pictures in 8 steps",
+      "seconds": 9,
       "multiple": 16,
       "megapixels": [1, 2],
       "templates": {

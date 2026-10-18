@@ -1,6 +1,6 @@
 import { h, icon, sprite, ago } from "../dom.js";
-import { changed, toast, newTab, openTake, writer, writers, sheetOf, drawPicture } from "../store.js";
-import { writerPicker } from "../writer-menu.js";
+import { changed, toast, newTab, openTake, writer, writers, artists, artistFor, sheetOf, drawPicture } from "../store.js";
+import { writerPicker, artistPicker } from "../writer-menu.js";
 import { tilePicker } from "../controls.js";
 import { go, currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
@@ -157,7 +157,8 @@ function drawTake(run, t) {
   for (const [key, words] of FRAMES) {
     if (t.frames[key]?.url || t.frames[key]?.busy) continue;
     t.frames[key] = { busy: true };
-    drawPicture({ model: "qwen-2.1", template: refs.length ? "edit" : "generate", prompt: `${words(t).replace(/\.$/, "")}.${look}`, aspect: run.aspect, refs, name: `${t.title} · moodboard` })
+    const template = refs.length ? "edit" : "generate";
+    drawPicture({ model: artistFor(template), template, prompt: `${words(t).replace(/\.$/, "")}.${look}`, aspect: run.aspect, refs, name: `${t.title} · moodboard` })
       .then((photo) => (t.frames[key] = { file: photo.file, url: photo.url, width: photo.width, height: photo.height }))
       .catch(() => (t.frames[key] = { failed: true }))
       .finally(() => (keepIdeas(), home.ideas === run && refreshTakes()));
@@ -326,6 +327,7 @@ function hero() {
         h("span.home-pick.is-genre", { className: home.genre ? "is-set" : "", title: "Genre\nThe idea is written in it" }, tilePicker({ label: "Genre", none: "Any genre", value: home.genre, items: GENRES, onChange: (v) => ((home.genre = v), redraw()) })),
         h("span.spacer"),
         writers().length > 1 ? h("span.home-pick.is-model", { title: "Writer\nThe model that writes the story" }, writerPicker("writer")) : h("span.home-model.is-one", { title: "The story is written by Gemma 4, inside ComfyUI" }, sprite("prompt-enhance"), writers()[0]?.name ?? "Gemma 4"),
+        artists().length ? h("span.home-pick.is-model.is-artist", { title: "Artist\nThe model that draws the moodboards and the story's pictures" }, artistPicker()) : null,
         h("button.home-attach", { type: "button", title: "Attach pictures or videos\nThe story is built around them: who, where, the look", "aria-label": "Attach pictures or videos", "aria-expanded": "false", on: { click: (e) => attach(e.currentTarget) } }, sprite("paperclip")),
         h("button.key.is-primary.home-write", { type: "button", disabled: !!home.starting || !!home.ideas?.writing, title: "Enter", on: { click: imagine } }, sprite("prompt-enhance"), home.ideas?.writing ? "Imagining…" : "Imagine"))),
     takes(),

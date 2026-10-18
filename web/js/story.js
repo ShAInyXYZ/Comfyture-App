@@ -5,7 +5,7 @@
 // feed Stage (blocked from their words), Shot (prompts and frames) and Cut (an edit in order).
 // Stories are kept on the server, one per tab, with undo.
 
-import { state, changed, toast, drawPicture, rollAsTab, switchTab, sheetOf, writer } from "./store.js";
+import { state, changed, toast, drawPicture, rollAsTab, switchTab, sheetOf, writer, artistFor } from "./store.js";
 import { expandTags } from "./pills.js";
 import { go } from "./router.js";
 
@@ -556,7 +556,7 @@ export async function drawRef(kind, id) {
   story.busy.add(key);
   update();
   try {
-    const photo = await drawPicture({ model: "qwen-2.1", template: "generate", prompt, aspect: kind === "cast" ? "16:9" : kind === "props" ? "1:1" : b.idea.aspect });
+    const photo = await drawPicture({ model: artistFor("generate"), template: "generate", prompt, aspect: kind === "cast" ? "16:9" : kind === "props" ? "1:1" : b.idea.aspect });
     item.refs = [...(item.refs ?? []), { file: photo.file, url: photo.url, width: photo.width, height: photo.height }].slice(-6);
     commit();
   } catch (e) {
@@ -604,7 +604,7 @@ export async function drawShot(id) {
   story.busy.add(key);
   update();
   try {
-    const photo = await drawPicture({ model: "qwen-2.1", template: refs.length ? "edit" : "generate", prompt, aspect: b.idea.aspect, refs });
+    const photo = await drawPicture({ model: artistFor(refs.length ? "edit" : "generate"), template: refs.length ? "edit" : "generate", prompt, aspect: b.idea.aspect, refs });
     shot.photo = { file: photo.file, url: photo.url, width: photo.width, height: photo.height };
     shot.drawnAs = b.style;
     shot.still = null;
@@ -637,7 +637,7 @@ async function filmFrame(b, shot) {
   const members = castOf(b, shot.frame).filter((m) => m.refs?.length).slice(0, 5);
   const cast = castOf(b, shot.frame).map((m) => ({ tag: m.tag, name: m.name, person: m.person, words: lower(m.words || m.about), pictures: members.includes(m) ? [m.tag] : [] }));
   const prompt = `Turn @sketch, a storyboard panel, into a finished cinematic film still: the same framing, the same places and poses, real people and places with real light. ${expandTags(shot.frame || shot.action, cast)}.${lookWords(b)}`;
-  const photo = await drawPicture({ model: "qwen-2.1", template: "edit", prompt, aspect: b.idea.aspect, refs: [{ file: shot.photo.file, name: "sketch" }, ...members.map((m) => ({ file: m.refs[0].file, name: m.tag }))] });
+  const photo = await drawPicture({ model: artistFor("edit"), template: "edit", prompt, aspect: b.idea.aspect, refs: [{ file: shot.photo.file, name: "sketch" }, ...members.map((m) => ({ file: m.refs[0].file, name: m.tag }))] });
   shot.still = { file: photo.file, url: photo.url, width: photo.width, height: photo.height };
   commit({ history: false });
   return shot.still;

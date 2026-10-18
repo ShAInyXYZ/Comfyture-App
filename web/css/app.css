@@ -815,6 +815,8 @@ body.has-window { overflow: hidden; }
 /* a select: the value on a trigger, the options in a floating menu with a second line each */
 .sel-trigger { display: flex; align-items: center; gap: .5rem; width: 100%; min-height: 2.875rem; padding: .375rem .625rem .375rem .75rem; border: 1px solid transparent; border-radius: .625rem; background: var(--inset); color: var(--text); text-align: left; cursor: pointer; transition: background var(--t-fast), box-shadow var(--t-fast); }
 .sel-trigger:hover { background: var(--inset-deep); }
+/* an item's glyph before its short name on the trigger (the writer's maker, the artist) */
+.sel-trigger .sel-glyph { flex: none; width: 1.0625rem; height: 1.0625rem; color: var(--muted); }
 .sel-trigger[data-state="open"] { box-shadow: 0 0 0 1px var(--accent-line); }
 .sel-text { display: grid; gap: .1875rem; flex: 1 1 auto; min-width: 0; }
 .sel-label { font: 600 var(--fs-body)/1.15 var(--font-sans); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
