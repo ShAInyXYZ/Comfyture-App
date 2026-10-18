@@ -132,6 +132,26 @@ function float(panel, box, width, centre = false) {
 }
 
 /**
+ * Keeps a floating panel by its trigger while the page under it scrolls, and closes it once the
+ * trigger is out of sight. Returns what stops it.
+ */
+function stick(panel, trigger, close) {
+  const from = trigger.getBoundingClientRect();
+  let frame = 0;
+  const follow = (e) => {
+    if (panel.contains(e.target)) return;
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      const now = trigger.getBoundingClientRect();
+      if (!trigger.isConnected || now.bottom < 0 || now.top > innerHeight) return close();
+      panel.style.translate = `${now.left - from.left}px ${now.top - from.top}px`;
+    });
+  };
+  document.addEventListener("scroll", follow, true);
+  return () => (cancelAnimationFrame(frame), document.removeEventListener("scroll", follow, true));
+}
+
+/**
  * A select: a trigger showing the chosen item, and a floating menu of the items, each with a second
  * line, a meta (a short value at the row's end) and optional tags; a note closes the menu, and width
  * "fit" makes it only as wide as its rows. Items may carry a group (with a groupIcon and a groupMeta):
@@ -174,9 +194,11 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
   let groups = new Map();
   let resting = 0;
   let grow = "";
+  let unstick = null;
   const close = () => {
     if (!menu) return;
     clearTimeout(resting);
+    unstick();
     menu.remove();
     menu = null;
     trigger.dataset.state = "closed";
@@ -309,6 +331,7 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
     trigger.dataset.state = "open";
     highlight(Math.max(0, items.findIndex((i) => i.value === value)), "open");
     document.addEventListener("pointerdown", outside, true);
+    unstick = stick(menu, trigger, close);
   };
   trigger.addEventListener("click", () => (menu ? close() : open()));
   trigger.addEventListener("keydown", (e) => {
@@ -364,8 +387,10 @@ export function tilePicker({ items, value, onChange, label, none, columns = 4 })
   let grid = null;
   let tiles = [];
   let at = -1;
+  let unstick = null;
   const close = () => {
     if (!panel) return;
+    unstick();
     panel.remove();
     panel = null;
     trigger.dataset.state = "closed";
@@ -430,6 +455,7 @@ export function tilePicker({ items, value, onChange, label, none, columns = 4 })
     at = items.findIndex((i) => i.value === value);
     if (at >= 0) highlight(at, true);
     document.addEventListener("pointerdown", outside, true);
+    unstick = stick(panel, trigger, close);
   };
   trigger.addEventListener("click", () => (panel ? close() : open()));
   trigger.addEventListener("keydown", (e) => {
