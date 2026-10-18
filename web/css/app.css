@@ -826,9 +826,21 @@ body.has-window { overflow: hidden; }
 .sel-item { display: flex; align-items: center; gap: .625rem; width: 100%; min-height: 2.875rem; padding: .375rem .625rem; border: 0; border-radius: .5rem; background: transparent; color: var(--muted); text-align: left; cursor: pointer; }
 .sel-item[data-highlighted] { background: var(--s3); }
 .sel-menu.is-fit { width: max-content; max-width: min(22rem, calc(100vw - 16px)); max-height: min(40rem, 86dvh); }
-.sel-group { display: flex; align-items: center; gap: .4375rem; padding: .5rem .625rem .25rem; font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
-.sel-group:not(:first-child) { margin-top: .25rem; border-top: 1px solid var(--line); padding-top: .625rem; }
-.sel-group svg { width: .875rem; height: .875rem; color: var(--muted); }
+/* a group: its header, then its rows folded away until it opens */
+.sel-sect { display: grid; gap: 2px; }
+.sel-sect + .sel-sect { padding-top: 2px; border-top: 1px solid var(--line); }
+.sel-group { display: flex; align-items: center; gap: .5rem; width: 100%; min-height: 2.5rem; padding: .375rem .625rem; border: 0; border-radius: .5rem; background: transparent; color: var(--muted); font: 600 var(--fs-small)/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; text-align: left; cursor: pointer; transition: background var(--t-fast), color var(--t-fast); }
+.sel-group:hover, .sel-group[aria-expanded="true"] { color: var(--text); }
+.sel-group:hover { background: var(--s3); }
+.sel-group svg { flex: none; width: 1rem; height: 1rem; color: var(--muted); }
+.sel-group[data-current] svg { color: var(--accent); }
+.sel-group .sel-meta { letter-spacing: 0; text-transform: none; color: var(--dim); transition: opacity var(--t-fast); }
+.sel-group[aria-expanded="true"] .sel-meta { opacity: 0; }
+.sel-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 160ms var(--ease-out); }
+.sel-fold.is-open { grid-template-rows: 1fr; }
+.sel-fold-in { display: grid; gap: 2px; min-height: 0; overflow: hidden; visibility: hidden; transition: visibility 0s 160ms; }
+.sel-fold.is-open .sel-fold-in { visibility: visible; transition-delay: 0s; }
+.sel-fold .sel-item { padding-left: 2.125rem; }
 .sel-meta { margin-left: auto; padding-left: 1rem; font: 500 var(--fs-small)/1 var(--font-mono); color: var(--muted); white-space: nowrap; }
 .sel-item[data-selected] .sel-meta { color: var(--accent); }
 .sel-note { margin: .25rem 0 0; padding: .5rem .625rem .375rem; border-top: 1px solid var(--line); color: var(--dim); font: 400 var(--fs-micro)/1.4 var(--font-sans); }

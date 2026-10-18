@@ -113,14 +113,12 @@ export function toggle(el, { value, onChange, label }) {
 }
 
 /**
- * A select: a trigger showing the value, and a floating menu of options, each with a second line
- * and optional tags. Arrows move, Enter picks, Escape or a click elsewhere closes.
- * items: [{ value, label, desc?, extra?: Node }]
- */
-/**
- * A select: a trigger showing the chosen item, and a menu of the items. An item may carry a group
- * (a header with its glyph starts each group) and a meta (a short value at the row's end); a note
- * closes the menu; width "fit" makes the menu only as wide as its rows.
+ * A select: a trigger showing the chosen item, and a floating menu of the items, each with a second
+ * line, a meta (a short value at the row's end) and optional tags; a note closes the menu, and width
+ * "fit" makes it only as wide as its rows. Items may carry a group (with a groupIcon and a groupMeta):
+ * the menu then lists the groups with the chosen item's open, and another unfolds under the pointer
+ * resting on its header, a tap, or the arrows reaching it. Arrows move, Enter picks, Escape or a
+ * click elsewhere closes.
  */
 export function dropdown({ items, value, onChange, label, onOpen, onClose, note, width: fit }) {
   const current = () => items.find((i) => i.value === value) ?? items[0];
@@ -153,8 +151,13 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
 
   let menu = null;
   let at = 0;
+  let rows = [];
+  let groups = new Map();
+  let resting = 0;
+  let grow = "";
   const close = () => {
     if (!menu) return;
+    clearTimeout(resting);
     menu.remove();
     menu = null;
     trigger.dataset.state = "closed";
@@ -162,11 +165,75 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
     onClose?.();
   };
   const outside = (e) => !menu?.contains(e.target) && !trigger.contains(e.target) && close();
-  const highlight = (i) => {
+  // A group unfolds below its header, and the header under the pointer must not move: the menu is
+  // pinned by its top, the groups above stay as they are and those below fold. Without a pointer
+  // (a tap, the arrows), only that group is open.
+  const unfold = (name, only = false) => {
+    if (grow) menu.style.maxHeight = grow;
+    const names = [...groups.keys()];
+    const k = names.indexOf(name);
+    names.forEach((n, j) => {
+      const g = groups.get(n);
+      const on = n === name || (!only && j < k && g.fold.classList.contains("is-open"));
+      g.head.setAttribute("aria-expanded", String(on));
+      g.fold.classList.toggle("is-open", on);
+    });
+  };
+  // a group's header (its glyph, its name, its meta) and its rows, folded away until it opens
+  const section = (item) => {
+    const sect = document.createElement("div");
+    sect.className = "sel-sect";
+    sect.setAttribute("role", "group");
+    sect.setAttribute("aria-label", item.group);
+    const head = document.createElement("button");
+    head.type = "button";
+    head.className = "sel-group";
+    head.setAttribute("aria-expanded", "false");
+    if (item.groupIcon) head.append(item.groupIcon());
+    const name = document.createElement("span");
+    name.textContent = item.group;
+    head.append(name);
+    if (item.groupMeta) {
+      const m = document.createElement("span");
+      m.className = "sel-meta";
+      m.textContent = item.groupMeta;
+      head.append(m);
+    }
+    if (items.some((x) => x.group === item.group && x.value === value)) head.toggleAttribute("data-current", true);
+    const fold = document.createElement("div");
+    fold.className = "sel-fold";
+    const list = document.createElement("div");
+    list.className = "sel-fold-in";
+    fold.append(list);
+    sect.append(head, fold);
+    menu.append(sect);
+    // resting on a header unfolds it; passing over it on the way to another does not
+    head.addEventListener("pointerenter", (e) => {
+      clearTimeout(resting);
+      if (e.pointerType === "mouse") resting = setTimeout(() => menu && unfold(item.group), 90);
+    });
+    head.addEventListener("pointerleave", () => clearTimeout(resting));
+    // the focus stays on the trigger, where the arrows are read
+    head.addEventListener("mousedown", (e) => e.preventDefault());
+    head.addEventListener("click", (e) => {
+      clearTimeout(resting);
+      unfold(item.group, !!e.pointerType && e.pointerType !== "mouse");
+    });
+    return { head, fold, list };
+  };
+  // the pointer only lights a row; the arrows (and the menu opening) bring it into view, its group unfolded
+  const highlight = (i, how = "pointer") => {
     at = (i + items.length) % items.length;
-    const rows = menu.querySelectorAll(".sel-item");
     rows.forEach((n, k) => n.toggleAttribute("data-highlighted", k === at));
-    rows[at]?.scrollIntoView({ block: "nearest" });
+    if (how === "pointer") return;
+    const row = rows[at];
+    const fold = groups.get(items[at].group)?.fold;
+    if (how === "keys" && fold && !fold.classList.contains("is-open")) {
+      unfold(items[at].group, true);
+      const done = (e) => e.target === fold && (fold.removeEventListener("transitionend", done), row.scrollIntoView({ block: "nearest" }));
+      fold.addEventListener("transitionend", done);
+    }
+    row.scrollIntoView({ block: "nearest" });
   };
   const pick = (item) => {
     value = item.value;
@@ -181,17 +248,11 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
     menu.className = "sel-menu";
     menu.setAttribute("role", "listbox");
     if (fit) menu.classList.add("is-fit");
-    let group = null;
+    rows = [];
+    groups = new Map();
+    grow = "";
     items.forEach((item, i) => {
-      if (item.group && item.group !== group) {
-        group = item.group;
-        const head = document.createElement("div");
-        head.className = "sel-group";
-        head.setAttribute("role", "presentation");
-        if (item.groupIcon) head.append(item.groupIcon());
-        head.append(document.createTextNode(item.group));
-        menu.append(head);
-      }
+      if (item.group && !groups.has(item.group)) groups.set(item.group, section(item));
       const row = document.createElement("button");
       row.type = "button";
       row.className = "sel-item";
@@ -208,7 +269,8 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
       if (item.extra) row.append(item.extra.cloneNode(true));
       row.addEventListener("pointerenter", () => highlight(i));
       row.addEventListener("click", () => pick(item));
-      menu.append(row);
+      (item.group ? groups.get(item.group).list : menu).append(row);
+      rows.push(row);
     });
     if (note) {
       const n = document.createElement("p");
@@ -216,20 +278,26 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
       n.textContent = note;
       menu.append(n);
     }
+    // the chosen item's group is open from the start, without unfolding
+    if (current().group) unfold(current().group, true);
     document.body.append(menu);
     const box = trigger.getBoundingClientRect();
     const below = innerHeight - box.bottom;
     // wide enough for the second lines (or, fitted, for its rows), and never past the window's edge
     const width = Math.min(innerWidth - 16, Math.max(box.width, fit ? Math.ceil(menu.scrollWidth) + 2 : 432));
     Object.assign(menu.style, { left: `${Math.max(8, Math.min(box.left, innerWidth - width - 8))}px`, width: `${width}px` });
+    // below the trigger, or above it when there is more room there; a list taller than its room scrolls
     const up = below < menu.offsetHeight + 12 && box.top > below;
-    if (up) menu.style.bottom = `${innerHeight - box.top + 6}px`;
-    else menu.style.top = `${box.bottom + 6}px`;
-    // a list taller than the room on its side scrolls inside it, never past the window's edge
-    const room = (up ? box.top : below) - 14;
-    if (menu.offsetHeight > room) menu.style.maxHeight = `${room}px`;
+    const cap = parseFloat(getComputedStyle(menu).maxHeight) || Infinity;
+    const room = Math.max(120, Math.min(cap, (up ? box.top : below) - 14));
+    menu.style.maxHeight = `${room}px`;
+    // pinned by its top either way, so an unfolding group grows it downward (over the trigger, when
+    // dropped up) and nothing above the pointer moves; never past the window's edge
+    const top = up ? box.top - 6 - menu.offsetHeight : box.bottom + 6;
+    menu.style.top = `${top}px`;
+    if (groups.size) grow = `${Math.max(room, Math.min(cap, innerHeight - 8 - top))}px`;
     trigger.dataset.state = "open";
-    highlight(Math.max(0, items.findIndex((i) => i.value === value)));
+    highlight(Math.max(0, items.findIndex((i) => i.value === value)), "open");
     document.addEventListener("pointerdown", outside, true);
   };
   trigger.addEventListener("click", () => (menu ? close() : open()));
@@ -241,7 +309,7 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
     if (!menu) return;
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
-      highlight(at + (e.key === "ArrowDown" ? 1 : -1));
+      highlight(at + (e.key === "ArrowDown" ? 1 : -1), "keys");
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       pick(items[at]);
