@@ -703,6 +703,28 @@ export class Engine extends EventEmitter {
     return job;
   }
 
+  /** A picture made outside ComfyUI (a partner model on Comfy Router), tracked like a paint job. */
+  externalPhotoJob(name: string, make: () => Promise<Buffer>, seconds = 25): Paint {
+    const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
+    this.paints.set(job.id, job);
+    const emit = () => this.emit("paint", job);
+    // the maker sends no readings: the bar follows the time such a picture takes
+    const started = Date.now();
+    const tick = setInterval(() => ((job.progress = Math.min(0.95, (Date.now() - started) / 1000 / seconds)), emit()), 1000);
+    (async () => {
+      try {
+        job.photo = await this.storeImage(await make(), name);
+        job.status = "done";
+      } catch (error) {
+        job.status = "failed";
+        job.error = describe(error);
+      }
+      clearInterval(tick);
+      emit();
+    })();
+    return job;
+  }
+
   /** A workflow that makes a photo (from another one, or from nothing), tracked like a paint job. */
   private photoJob(kind: "paint" | "cutout" | "generate", source: string | null, name: string, build: (photo: unknown) => Promise<Graph>): Paint {
     const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
@@ -750,7 +772,7 @@ export class Engine extends EventEmitter {
   async storeImage(bytes: Buffer, name?: string) {
     const size = imageSize(bytes);
     if (!size) throw new Error("The workflow returned an image I can't read.");
-    const ext = bytes.readUInt32BE(0) === 0x89504e47 ? ".png" : ".jpg";
+    const ext = bytes.readUInt32BE(0) === 0x89504e47 ? ".png" : bytes.toString("ascii", 8, 12) === "WEBP" ? ".webp" : ".jpg";
     const file = `${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}${ext}`;
     const path = this.photoPath(file);
     if (!(await exists(path))) await writeFile(path, bytes);

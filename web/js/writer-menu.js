@@ -32,16 +32,24 @@ export const writerPicker = (role = "writer", label = role === "writer" ? "Write
 
 // Comfy Cloud bills a GPU second at 0.266 credits; a picture's seconds are measured warm, at a megapixel
 const GPU_SECOND = 0.266;
+// the partners' models by who makes them, the open-weights ones (in ComfyUI) after them
+const BRANDS = { openai: "brand-openai", google: "brand-google", bytedance: "brand-bytedance", qwen: "brand-qwen" };
 export const artistItems = () => {
   const cloud = state.info?.target === "comfy-cloud";
-  return artists().map((m) => ({
-    value: m.id,
-    label: m.name,
-    short: m.short,
-    glyph: () => sprite("image-generate"),
-    desc: m.about,
-    meta: !cloud ? "your GPU" : m.seconds ? `≈ ${Math.max(1, Math.round(m.seconds * GPU_SECOND))} cr` : "GPU time",
-  }));
+  const list = artists();
+  return [...list.filter((m) => m.router), ...list.filter((m) => !m.router)].map((m) => {
+    const groupIcon = m.router ? (BRANDS[m.maker] ? () => sprite(BRANDS[m.maker]) : null) : () => icon("flow");
+    return {
+      value: m.id,
+      label: m.name,
+      short: m.short,
+      glyph: groupIcon ?? (() => sprite("image-generate")),
+      desc: m.about,
+      group: m.router ? m.makerName : "Open weights",
+      groupIcon,
+      meta: m.router ? `≈ ${m.credits} cr` : !cloud ? "your GPU" : m.seconds ? `≈ ${Math.max(1, Math.round(m.seconds * GPU_SECOND))} cr` : "GPU time",
+    };
+  });
 };
 
 /** The picker for the artist: the image model that draws the moodboards and the story's pictures. */

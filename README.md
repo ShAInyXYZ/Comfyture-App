@@ -2,9 +2,9 @@
 
 **One photo in, a cinematic shot with sound out. One sentence in, a short film out.**
 
-Comfyture is an open-source preset studio. Pick a photo, pick a preset (a crash zoom, setting yourself on fire, turning into a gold statue) and get a short video with synchronized sound. Every preset is a readable file and every picture, video and sound model is open weights; the writers and assistants run on Claude Sonnet 5.5 through Comfy Router by default, or on open-weights Gemma 4 if you pick it. It's built on the [Comfy Developer Platform](https://docs.comfy.org/development/overview), and the same code runs on your own GPU or on Comfy Cloud.
+Comfyture is an open-source preset studio. Pick a photo, pick a preset (a crash zoom, setting yourself on fire, turning into a gold statue) and get a short video with synchronized sound. Every preset is a readable file. The video and sound models are open weights, and so are the pictures by default (Qwen Image 2.1); the artist picker adds the partners' image models on Comfy Router (GPT Image 2.5, Nano Banana, FLUX.2 and FLUX 3, Seedream 5, Qwen Image 3.0, Kling, Luma, Runway), billed in Comfy credits with the same key. The writers and assistants run on Claude Sonnet 5.5 through Comfy Router by default, or on open-weights Gemma 4 if you pick it. `COMFYTURE_OPEN_WEIGHTS=1` keeps every partner model out. It's built on the [Comfy Developer Platform](https://docs.comfy.org/development/overview), and the same code runs on your own GPU or on Comfy Cloud.
 
-> Built for Comfy's #OpenSourceHiggsfield challenge: a preset video studio that is open source, with open-weights models for every picture, video and sound.
+> Built for Comfy's #OpenSourceHiggsfield challenge: a preset video studio that is open source, open weights by default for every picture, video and sound, with the partners' models on Comfy Router one pick away.
 
 ![The Comfyture desk: sources, monitor, script, presets, shot settings and the take log](docs/desk.jpg)
 
@@ -307,11 +307,12 @@ Write the action the way LTX-2.5 reads best: present tense, the motion first, on
 | `BLENDER_MCP_HOST` / `BLENDER_MCP_PORT` | `localhost` / `9876` | Where the app finds Blender's MCP add-on |
 | `COMFYTURE_LLM` | `claude-sonnet-5-5` with a Comfy key, else `gemma-4` | The writer's default (Story's writers and assistant, the Cut editor): `claude-sonnet-5-5`, `claude-haiku-4-5-20251001`, `gpt-6-sol`, `gpt-6-luna`, `gemini-3.1-pro-preview`, `gemini-3.8-flash` (through Comfy Router) or `gemma-4` (open weights, in ComfyUI). Each bar can pick another. |
 | `COMFYTURE_LLM_ASSISTANT` | `claude-haiku-4-5-20251001` with a Comfy key, else `gemma-4` | The quick assistants' default (Shot and Stage), from the same three |
-| `COMFYTURE_DEBUG` | | Set to log the Stage assistant's raw answers |
+| `COMFYTURE_OPEN_WEIGHTS` | | Set to offer only open-weights models: no partner writers or artists through Comfy Router |
+| `COMFYTURE_DEBUG` | | Set to log the Stage assistant's raw answers (and what each Router picture cost) |
 
 ## Credits
 
-Every picture, video and sound model the app runs is open weights, through ComfyUI. The writers and assistants default to Claude Sonnet 5.5 through Comfy Router, a partner API billed in Comfy credits with the same key; pick Gemma 4 on a bar, or set `COMFYTURE_LLM=gemma-4`, and the whole app runs on open weights.
+Every video and sound model the app runs is open weights, through ComfyUI, and so is the default artist. The writers and assistants default to Claude Sonnet 5.5 through Comfy Router, a partner API billed in Comfy credits with the same key, and the artist picker offers the partners' image models there too. Pick Gemma 4 and an open-weights artist on the bar, or set `COMFYTURE_OPEN_WEIGHTS=1`, and the whole app runs on open weights.
 
 | What | Used for |
 |---|---|
@@ -320,6 +321,7 @@ Every picture, video and sound model the app runs is open weights, through Comfy
 | [Qwen Image 2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1) | painted end frames |
 | [Gemma 4](https://huggingface.co/Comfy-Org/gemma-4) | LTX-2.5's text encoder, the optional prompt enhancer, and the open-weights writer |
 | Claude Sonnet 5.5, Claude Haiku 4.5 (Anthropic), GPT-6 Sol and Luna (OpenAI), Gemini 3.1 Pro and 3.8 Flash (Google), all through [Comfy Router](https://docs.comfy.org/development/comfy-router/models) | the writers and assistants: Sonnet 5.5 writes and Haiku 4.5 assists by default, and every bar can pick another |
+| GPT Image 2.5 Flare and Sunburst (OpenAI), Nano Banana 2.1 and Pro (Google), FLUX.2 Pro and FLUX 3 (Black Forest Labs), Seedream 5 Pro and Flash (ByteDance), Qwen Image 3.0 Pro, Kling Image O1, Luma Uni-1, Runway Gen-4 Image, all through [Comfy Router](https://docs.comfy.org/development/comfy-router/models) | the artist, when one of them is picked: moodboards, sheets and storyboard frames (2 to 35 credits a picture) |
 | [BiRefNet](https://huggingface.co/Comfy-Org/BiRefNet) | cutting cast and props out for the reference sheet |
 | [Comfy SDK](https://www.npmjs.com/package/@comfyorg/sdk) | talking to Comfy Cloud or your own ComfyUI |
 | [Manrope](https://github.com/sharanda/manrope), [IBM Plex Mono](https://github.com/IBM/plex) | the interface type (SIL Open Font License, in `web/fonts/`) |

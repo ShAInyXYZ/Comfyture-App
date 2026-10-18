@@ -16,6 +16,7 @@ import { llms, defaultLlm, pickLlm, onRouter, llmName, routerAsk, imageBlock } f
 import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
 import { readStory, storyBrief, storyPrompt, STORY_ASSIST_BRIEF, storyAssistPrompt, readStoryAssist, IDEAS_BRIEF, ideasPrompt, readIdeas, type StoryStep } from "./story.ts";
+import { isRouterImage, routerImages, routerDraw } from "./router-images.ts";
 import { planCut, CUT_BRIEF, cutPrompt, readCutAnswer, type CutBody, type CutItem, type Source } from "./cut.ts";
 
 const root = resolve(import.meta.dirname, "..");
@@ -905,7 +906,9 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   }
   if (path === "/api/image/models" && method === "GET") {
     await images.ready;
-    return json(res, 200, images.list());
+    // the open-weights models in ComfyUI, then the partners' on Comfy Router
+    const list = images.list();
+    return json(res, 200, { ...list, models: [...list.models, ...routerImages()] });
   }
   if ((path === "/api/image" || path === "/api/image/enhance") && method === "POST") {
     const input = await jsonBody(req);
@@ -923,6 +926,20 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     await images.ready;
     const model = text(input.model, 40) || images.list().default;
     const template = ["generate", "edit", "style"].includes(input.template) ? input.template : "generate";
+    if (isRouterImage(model)) {
+      if (path === "/api/image/enhance") return json(res, 200, { prompt });
+      // "auto" follows the first reference's shape, to the nearest frame there is
+      let aspect = input.aspect in ASPECTS ? input.aspect : "1:1";
+      const first = refs[0] ? imageSize(await readFile(engine.photoPath(refs[0]))) : null;
+      if (input.aspect === "auto" && first) aspect = Object.entries(ASPECTS).reduce((a, b) => (Math.abs(Math.log(b[1] / (first.width / first.height))) < Math.abs(Math.log(a[1] / (first.width / first.height))) ? b : a))[0];
+      const pics = template === "generate" ? [] : await Promise.all(refs.map(async (f) => imageBlock(engine.photoPath(f))));
+      const count = Math.round(num(input.count, 1, 4, 1));
+      const seed = Number.isSafeInteger(input.seed) && input.seed >= 0 ? input.seed : randomBytes(4).readUInt32BE(0);
+      const name = text(input.name, 80) || prompt;
+      const jobs = Array.from({ length: count }, (_, i) =>
+        engine.externalPhotoJob(name, async () => (await routerDraw(model, { prompt, aspect, refs: pics.map((p) => ({ mime: p.type, data: p.data })), names, seed: seed + i })).bytes));
+      return json(res, 202, jobs);
+    }
     try {
       images.pick(model, template);
     } catch (error) {

@@ -146,7 +146,8 @@ async function imagine() {
 
 // a variant's moodboard: its key moment in the film's frame, its hero, its place
 const FRAMES = [
-  ["moment", (t) => `A cinematic film still from "${t.title}": ${t.moment || t.logline}`],
+  // the moment names its hero, so the picture is told what they are; a title in quotes would be lettered on it
+  ["moment", (t) => `A cinematic film still: ${(t.moment || t.logline).replace(/\.$/, "")}${t.hero.name && t.hero.words ? `. ${t.hero.name} is ${t.hero.words.replace(/\.$/, "")}` : ""}`],
   // alone, so the picture can stand for them in the story's cast
   ["hero", (t) => `${t.hero.name}${t.hero.words ? `, ${t.hero.words}` : ""}. A cinematic medium shot of them alone in their world, looking off camera, nobody else in the frame`],
   ["place", (t) => `${t.place.words || t.place.name}. A cinematic establishing shot of ${t.place.name || "the place"}, with nobody in it`],

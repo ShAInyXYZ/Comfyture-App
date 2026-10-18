@@ -2,8 +2,8 @@
 // same Comfy key as everything else, or Gemma 4 running inside ComfyUI (open weights). Two roles,
 // each with its own default: the writer (Story's writers and its assistant, the Cut editor) on
 // Claude Sonnet 5.5, and the quick assistants (Shot and Stage) on Claude Haiku 4.5. The pages pick
-// another; without a Comfy key only Gemma 4 is offered. COMFYTURE_LLM and COMFYTURE_LLM_ASSISTANT
-// set the defaults.
+// another; without a Comfy key (or with COMFYTURE_OPEN_WEIGHTS) only Gemma 4 is offered.
+// COMFYTURE_LLM and COMFYTURE_LLM_ASSISTANT set the defaults.
 
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
@@ -24,7 +24,8 @@ const LLMS: Llm[] = [
   { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash", short: "3.8 Flash", about: "Quick", provider: "vertexai", rates: [0.453, 2.263], tuned: true },
   { id: "gemma-4", name: "Gemma 4", short: "Gemma 4", about: "Open weights, inside ComfyUI", provider: "comfyui" },
 ];
-const hasKey = () => !!process.env.COMFY_API_KEY?.trim();
+// COMFYTURE_OPEN_WEIGHTS keeps every partner model out, the writers' and the artists'
+const hasKey = () => !!process.env.COMFY_API_KEY?.trim() && !process.env.COMFYTURE_OPEN_WEIGHTS?.trim();
 const model = (id: string) => LLMS.find((m) => m.id === id);
 export const llms = () => LLMS.filter((m) => m.provider === "comfyui" || hasKey()).map(({ id, name, short, about, provider, rates }) => ({ id, name, short, about, provider, rates, router: provider !== "comfyui" }));
 export type Role = "writer" | "assistant";
