@@ -5,11 +5,12 @@
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 
-// tuned: whether it takes a temperature (Sonnet 5.5 turns a request with one down)
-export type Llm = { id: string; name: string; about: string; router: boolean; tuned?: boolean };
+// tuned: whether it takes a temperature; forced: whether it can be made to answer through a tool.
+// Sonnet 5.5 thinks before it answers, so it turns both down; told to use the tool, it does on its own.
+export type Llm = { id: string; name: string; about: string; router: boolean; tuned?: boolean; forced?: boolean };
 const LLMS: Llm[] = [
   { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", about: "The strongest writer, for stories, edits and the assistants", router: true },
-  { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", about: "Quick and cheap", router: true, tuned: true },
+  { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", about: "Quick and cheap", router: true, tuned: true, forced: true },
   { id: "gemma-4", name: "Gemma 4", about: "Open weights, inside ComfyUI", router: false },
 ];
 const hasKey = () => !!process.env.COMFY_API_KEY?.trim();
@@ -49,7 +50,7 @@ export async function routerAsk(model: string, system: string, prompt: string, {
       max_tokens: maxTokens,
       ...(LLMS.find((m) => m.id === model)?.tuned ? { temperature } : {}),
       system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
-      ...(tool ? { tools: [tool], tool_choice: { type: "tool", name: tool.name } } : {}),
+      ...(tool ? { tools: [tool], tool_choice: LLMS.find((m) => m.id === model)?.forced ? { type: "tool", name: tool.name } : { type: "auto" } } : {}),
       messages: [{ role: "user", content }],
     }),
   });
