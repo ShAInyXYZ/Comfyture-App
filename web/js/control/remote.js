@@ -25,8 +25,10 @@ const facingOf = (o) => {
   return deg(Math.atan2(ahead.x, ahead.z));
 };
 const num = (v, name) => {
-  if (typeof v !== "number" || !Number.isFinite(v)) throw new Error(`${name} must be a number.`);
-  return v;
+  // "7", "7 s" and 7 are the same seven
+  const n = typeof v === "string" && v.trim() ? Number.parseFloat(v) : v;
+  if (typeof n !== "number" || !Number.isFinite(n)) throw new Error(`${name} must be a number.`);
+  return n;
 };
 
 // an animal's poses, from the words people use for them
@@ -1037,7 +1039,7 @@ export function controlOps(stage) {
       } else stage.clearKeys(target(a.id));
       return describe().timeline;
     },
-    duration: (a) => (stage.setDuration(num(a.seconds ?? a.duration, "seconds")), describe().timeline),
+    duration: (a) => (stage.setDuration(num(typeof a === "object" && a ? a.seconds ?? a.duration ?? a.value : a, "seconds")), describe().timeline),
     time: (a) => (stage.setTime(num(a.t, "t")), describe()),
     look,
     undo: () => (stage.undo(), describe()),
