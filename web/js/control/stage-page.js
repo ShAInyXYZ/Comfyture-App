@@ -676,6 +676,8 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   let runsOpen = false;
   let shown = null;
   let split = 0.5;
+  // over the stage with the compare bar, or apart
+  let runMode = "compare";
   const ratioOf = (r) => (r.camera?.ratio ?? "16:9").replace(":", " / ");
   /** One picture in the strip: running, failed, or the picture, which shows it from its camera. */
   function runTile(r) {
@@ -697,6 +699,9 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     }, sprite("image-history"), count ? el("span.ctl-runs-count", {}, String(count)) : null);
     const tool = (glyph, label, run) => el("button.ctl-tool", { type: "button", title: label, "aria-label": label, on: { click: run } }, glyph);
     const actions = shown ? [el("span.ctl-sep"),
+      runMode === "compare"
+        ? tool(sprite("image-side-by-side"), "Side by side — the picture and the stage apart", () => ((runMode = "apart"), drawRun(), runsBar()))
+        : tool(sprite("image-compare"), "Over the stage, with the compare bar", () => ((runMode = "compare"), drawRun(), runsBar())),
       tool(icon("expand"), "Look at it, full size", () => viewImage(shown.photo.url)),
       tool(icon("video"), "Start a shot from it", () => usePhoto(shown.photo)),
       tool(icon("trash"), "Forget this picture — it stays in the Library", () => {
@@ -709,7 +714,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       ...(runsOpen && count ? [el("div.ctl-runs-strip", { role: "list", "aria-label": "Renders" }, ...stage.runs.map(runTile))] : []),
       el("div.ctl-runs-pill", { role: "toolbar", "aria-label": "Renders" }, key, ...actions));
   }
-  /** A picture from where it was made: the camera and the moment go back, the picture lies over the frame, cut by the compare bar. */
+  /** A picture from where it was made: the camera and the moment go back, and the picture shows the way last chosen. */
   function viewRun(r) {
     if (!r?.photo) return;
     if (Number.isFinite(r.time)) stage.setTime(r.time);
@@ -717,6 +722,31 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     shown = r;
     // the conversation folds away so the picture and its keys are in view
     document.dispatchEvent(new CustomEvent("assistant:fold"));
+    drawRun();
+    runsBar();
+  }
+  let drawnFit = null;
+  /** The shown picture: over the frame and cut by the compare bar, or apart from a still of the stage. */
+  function drawRun() {
+    const r = shown;
+    if (!r) return;
+    drawnFit = JSON.stringify(r.fit ?? null);
+    runView.hidden = false;
+    if (runMode === "apart") {
+      // landscape pictures one above the other, portrait ones side by side, each whole
+      const landscape = r.photo.width >= r.photo.height;
+      const channel = CHANNELS.find(([c]) => c === stage.channel);
+      const still = stage.frameStill(stage.channel ?? "clay", { long: 1280, type: "image/jpeg", quality: 0.9 });
+      runView.onpointerdown = runView.onpointermove = null;
+      runView.classList.add("is-apart");
+      runView.replaceChildren(el(`div.ctl-apart.${landscape ? "is-stacked" : "is-across"}`, {},
+        el("figure.ctl-apart-pane", {}, el("img", { src: r.photo.url, alt: "", draggable: false, on: { load: tagApart } }), el("span.cmp-tag.is-a", {}, "Render")),
+        el("figure.ctl-apart-pane", {}, el("img", { src: still, alt: "", draggable: false, on: { load: tagApart } }), el("span.cmp-tag.is-a", {}, stage.channel && stage.channel !== "clay" ? `Stage · ${channel?.[1] ?? stage.channel}` : "Stage"))));
+      return placeRun();
+    }
+    runView.classList.remove("is-apart");
+    // the picture over the span it was drawn for, so what it drew lies over what the stage holds
+    const t = r.fit ?? { sx: 1, sy: 1, dx: 0, dy: 0 };
     const handle = el("button.cmp-handle", { type: "button", role: "slider", "aria-label": "Compare the picture with the stage", "aria-valuemin": 0, "aria-valuemax": 100 }, sprite("image-compare"));
     const set = (f) => {
       split = THREE_CLAMP(f);
@@ -740,22 +770,35 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       e.stopPropagation();
       set(Math.abs(step) === 1 ? (step < 0 ? 0 : 1) : split + (e.shiftKey ? step * 5 : step));
     };
-    runView.replaceChildren(el("img.ctl-run-pic", { src: r.photo.url, alt: "", draggable: false }), el("span.cmp-line"), handle,
-      el("span.cmp-tag.is-a", {}, "Render"), el("span.cmp-tag.is-b", {}, "Stage"));
+    runView.replaceChildren(
+      el("div.ctl-run-clip", {}, el("img.ctl-run-pic", { src: r.photo.url, alt: "", draggable: false, style: { transform: `translate(${t.dx * 100}%, ${t.dy * 100}%) scale(${t.sx}, ${t.sy})` } })),
+      el("span.cmp-line"), handle, el("span.cmp-tag.is-a", {}, "Render"), el("span.cmp-tag.is-b", {}, "Stage"));
     set(split);
-    runView.hidden = false;
     placeRun();
-    runsBar();
   }
-  // the picture covers the frame exactly, wherever the frame is
+  /** Apart, each picture's name sits on its corner, wherever fitting it in its half puts it. */
+  function tagApart() {
+    for (const pane of runView.querySelectorAll(".ctl-apart-pane")) {
+      const img = pane.querySelector("img");
+      const tag = pane.querySelector(".cmp-tag");
+      if (!img?.naturalWidth || !tag) continue;
+      const [w, h] = [pane.clientWidth, pane.clientHeight];
+      const a = img.naturalWidth / img.naturalHeight;
+      const shown = Math.min(w, h * a);
+      Object.assign(tag.style, { left: `${(w - shown) / 2 + 12}px`, top: `${(h - shown / a) / 2 + 12}px` });
+    }
+  }
+  // over the frame it covers the frame, wherever the frame is; apart, it takes the viewport
   function placeRun() {
     if (runView.hidden || !stage.frame) return;
+    if (runMode === "apart") return Object.assign(runView.style, { left: "0px", top: "0px", width: "100%", height: "100%" }), requestAnimationFrame(tagApart);
     Object.assign(runView.style, { left: `${stage.frame.x}px`, top: `${stage.frame.y}px`, width: `${stage.frame.w}px`, height: `${stage.frame.h}px` });
   }
   function closeRun() {
     if (!shown) return;
     shown = null;
     runView.hidden = true;
+    runView.classList.remove("is-apart");
     runView.replaceChildren();
     runsBar();
   }
@@ -797,9 +840,11 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     else if (kind === "channel") (channelPill(), previews());
     else if (kind === "timeline") (timeline(), frame());
     else if (kind === "time") (playhead(), stage.playing ? null : previews());
-    else if (kind === "runs") runsBar();
+    else if (kind === "runs") (runsBar(), shown && JSON.stringify(shown.fit ?? null) !== drawnFit && drawRun());
     if (kind === "frame") placeRun();
     if (kind === "scene") closeRun();
+    // apart, the stage's half follows the channel shown
+    if (kind === "channel" && shown && runMode === "apart") drawRun();
   });
 
   // an agent can stage the scene through the server; the lamp says whether the link is up and what it is doing

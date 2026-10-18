@@ -134,7 +134,7 @@ export class ImageModels {
     });
   }
 
-  async build(modelId: string, templateId: string, v: { prompt: string; names?: string[]; width: number; height: number; seed: number; refs: unknown[]; loras?: { file: string; strength?: number }[] }): Promise<Graph> {
+  async build(modelId: string, templateId: string, v: { prompt: string; names?: string[]; width: number; height: number; seed: number; refs: unknown[]; loras?: { file: string; strength?: number }[]; keep?: number }): Promise<Graph> {
     const { template } = this.pick(modelId, templateId);
     const graph = await loadGraph(this.dir, template.graph);
     const loras = this.lorasFor(modelId, templateId, v.loras ?? []);
@@ -148,6 +148,7 @@ export class ImageModels {
     if (template.refs) {
       if (!v.refs.length) throw new Error("Add a reference picture first: this template works from one.");
       wireRefs(graph, template.refs, v.refs);
+      if (v.keep !== undefined) keepLayout(graph, v.keep);
     }
     return graph;
   }
@@ -219,6 +220,21 @@ function addLoras(graph: Graph, loras: Lora[]) {
 }
 
 /** One LoadImage per reference, plugged into the template's reference inputs in order. */
+/**
+ * The picture starts from the first reference rather than from noise: scaled to the output and
+ * encoded, then sampled with `keep` as the denoise, so its layout stays where the reference has it
+ * (a Stage render lies over the stage it came from). Graphs without a plain sampler are left as they are.
+ */
+function keepLayout(graph: Graph, keep: number) {
+  const id = (type: string) => Object.keys(graph).find((k) => graph[k].class_type === type);
+  const [sampler, vae] = [id("KSampler"), id("VAELoader")];
+  if (!sampler || !vae || !graph.ref_1 || !graph.width || !graph.height) return;
+  graph.start = { class_type: "ImageScale", inputs: { image: ["ref_1", 0], upscale_method: "lanczos", width: ["width", 0], height: ["height", 0], crop: "disabled" } };
+  graph.start_latent = { class_type: "VAEEncode", inputs: { pixels: ["start", 0], vae: [vae, 0] } };
+  graph[sampler].inputs.latent_image = ["start_latent", 0];
+  graph[sampler].inputs.denoise = Math.min(0.98, Math.max(0.5, keep));
+}
+
 function wireRefs(graph: Graph, slots: RefSlots, refs: unknown[]) {
   refs.slice(0, slots.max).forEach((ref, i) => {
     graph[`ref_${i + 1}`] = { class_type: "LoadImage", inputs: { image: ref } };

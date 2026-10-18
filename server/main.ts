@@ -557,6 +557,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       seed: Number.isSafeInteger(input.seed) && input.seed >= 0 ? input.seed : randomBytes(4).readUInt32BE(0),
       // what the Library calls the picture, when the prompt's first words would not say it
       name: text(input.name, 80) || undefined,
+      // an edit that starts from its first reference keeps that reference's layout (the Stage's render)
+      keep: Number.isFinite(input.keep) ? Math.min(0.98, Math.max(0.5, input.keep)) : undefined,
     });
     return json(res, 202, jobs);
   }

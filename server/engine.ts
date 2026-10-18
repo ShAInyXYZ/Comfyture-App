@@ -607,7 +607,7 @@ export class Engine extends EventEmitter {
   }
 
   /** Pictures from the Image window: one job per picture, each with its own seed. */
-  async image(v: { model: string; template: string; prompt: string; aspect: string; megapixels: number; seed: number; count: number; refs: string[]; names: string[]; loras: { file: string; strength?: number }[]; name?: string }): Promise<Paint[]> {
+  async image(v: { model: string; template: string; prompt: string; aspect: string; megapixels: number; seed: number; count: number; refs: string[]; names: string[]; loras: { file: string; strength?: number }[]; name?: string; keep?: number }): Promise<Paint[]> {
     const images = this.images!;
     await images.ready;
     const { model } = images.pick(v.model, v.template);
@@ -615,7 +615,7 @@ export class Engine extends EventEmitter {
     const size = images.size(model, v.aspect, v.megapixels, first);
     return Array.from({ length: v.count }, (_, i) =>
       this.photoJob(v.template === "generate" ? "generate" : "paint", null, v.name || v.prompt, async () =>
-        images.build(v.model, v.template, { prompt: v.prompt, names: v.names, loras: v.loras, ...size, seed: v.seed + i, refs: await this.refAssets(v.refs) })));
+        images.build(v.model, v.template, { prompt: v.prompt, names: v.names, loras: v.loras, ...size, seed: v.seed + i, refs: await this.refAssets(v.refs), keep: v.keep })));
   }
 
   /** The prompt rewritten by the template's own enhancer. It doesn't wait in the render queue. */

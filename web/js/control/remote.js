@@ -713,12 +713,25 @@ export function controlOps(stage) {
    * its look. An image edit with the Image window's default model; the picture lands in the
    * Library. Answers with its jobs.
    */
+  // the size the default image model draws a frame of this shape at: a megapixel, its sides on its grid
+  let imageModel = null;
+  const drawSize = async (ratio) => {
+    imageModel ??= fetch("api/image/models").then((r) => r.json()).then((c) => c.models.find((m) => m.id === c.default) ?? c.models[0]).catch(() => null);
+    const m = await imageModel;
+    const [mp, multiple] = [m?.megapixels?.[0] ?? 1, m?.multiple ?? 32];
+    const h = Math.sqrt((mp * 1024 * 1024) / ratio);
+    const snap = (v) => Math.max(256, Math.round(v / multiple) * multiple);
+    return [snap(h * ratio), snap(h)];
+  };
   const MANNEQUIN = new RegExp(`\\b(?:(an?)\\s+)?(?:${PALETTE.map(([, n]) => n).join("|")})(?:[- ](?:toned|coloured|colored|skinned))?\\s+(?=(man|woman|teen|teenager|child|kid|boy|girl|person|elder|toddler|baby|figure|mannequin)\\b)`, "gi");
   const renderImage = async (a = {}) => {
     if (!stage.characters.length && !stage.props.length) throw new Error("The stage is empty: stage a scene first.");
     // "a teal man" is the mannequin's ID colour, not the man: the words keep the person
     const look = String(a.prompt ?? "").trim().slice(0, 1500).replace(MANNEQUIN, (m, art, noun) => (art ? `${/^[aeiou]/i.test(noun) ? "an" : "a"} ` : ""));
-    const blob = await (await fetch(stage.frameStill("clay", { long: 1536 }))).blob();
+    // the clay frame at the very size the model draws at, so nothing is rescaled on the way
+    const ratio = RATIOS[stage.ratio];
+    const [width, height] = await drawSize(ratio);
+    const blob = await (await fetch(stage.thumbnail({ position: stage.camera.position, target: stage.orbit.target, focal: stage.focal }, { width, height, channel: "clay" }))).blob();
     const kept = await fetch(`api/photos?name=${encodeURIComponent("stage frame")}`, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
     const frame = await kept.json().catch(() => ({}));
     if (!kept.ok) throw new Error(frame.error ?? "The frame was not kept.");
@@ -732,12 +745,15 @@ export function controlOps(stage) {
       `${(look ? who.rest : "") || "A cinematic film still, natural light"}.`.replace(/\.\.$/, "."),
     ].filter(Boolean).join(" ");
     const count = Math.round(THREE.MathUtils.clamp(Number(a.count) || 1, 1, 4));
-    const res = await fetch("api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ template: "edit", prompt, aspect: stage.ratio, refs: [{ file: frame.file, name: "frame" }], count, megapixels: 1, name: look || "Stage render" }) });
+    // the picture starts from the frame itself, kept a little: the model draws over the stage's layout instead of composing its own
+    const res = await fetch("api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ template: "edit", prompt, aspect: stage.ratio, refs: [{ file: frame.file, name: "frame" }], count, megapixels: 1, keep: 0.97, name: look || "Stage render" }) });
     const jobs = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(jobs.error ?? "The picture was not started.");
     // each picture is kept with the stage, with the camera it was made from, to look at it from there again
     const camera = { ...stage.cameraState(), ratio: stage.ratio };
-    for (const j of [...jobs].reverse()) stage.addRun({ id: j.id, status: "running", progress: 0, look, camera, time: stage.time, at: new Date().toISOString(), frame: { file: frame.file, url: frame.url } });
+    // the model's size is a touch wider or narrower than the frame (its sides fall on its grid): the picture spans that much more
+    const fit = { sx: Math.round(((width / height) / ratio) * 10000) / 10000, sy: 1, dx: 0, dy: 0 };
+    for (const j of [...jobs].reverse()) stage.addRun({ id: j.id, status: "running", progress: 0, look, camera, fit, time: stage.time, at: new Date().toISOString(), frame: { file: frame.file, url: frame.url } });
     return { jobs: jobs.map((j) => ({ id: j.id })), prompt, look, aspect: stage.ratio, frame: { file: frame.file, url: frame.url } };
   };
 
