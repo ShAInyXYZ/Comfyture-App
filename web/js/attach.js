@@ -66,7 +66,7 @@ export function attachMenu(anchor, { files, picture, map, chosen = () => false, 
   }, { "aria-pressed": "false" });
   // the maps, each drawn small from the camera, in or out with a click
   const mapTiles = h("div.attach-maps", { role: "group", "aria-label": "Control maps" });
-  stageReady.then(({ stage }) => {
+  if (map) stageReady.then(({ stage }) => {
     const draw = (channel) => {
       try {
         if (camera) return stage.stillFrom(camera, { width: 160, height: 90, channel });
@@ -99,7 +99,7 @@ export function attachMenu(anchor, { files, picture, map, chosen = () => false, 
       h("section.attach-frame.is-sources", {},
         tile(sprite("image-upload"), "From your computer", "Computer", () => input.click()),
         libKey),
-      h("section.attach-frame.is-maps", {}, h("span.attach-label", {}, "Control"), mapTiles)),
+      map ? h("section.attach-frame.is-maps", {}, h("span.attach-label", {}, "Control"), mapTiles) : null),
     library, input);
   document.body.append(el);
   menu = { el, anchor };

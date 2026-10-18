@@ -941,6 +941,33 @@ function shotDraft(plan, shot) {
   };
 }
 
+/** One picture from the Image API, waited for: { model, template, prompt, aspect, refs } to its photo. */
+export async function drawPicture(body) {
+  const [job] = await api.image({ count: 1, megapixels: 1, seed: Math.floor(Math.random() * 2 ** 31), ...body });
+  return (await waitFor("job", job.id)).photo;
+}
+
+/**
+ * A shot from elsewhere (a Story panel) rolled as a Shot tab of its own, in its story's group:
+ * made the first time, rolled again in place after. Answers with the tab, the take, and a promise
+ * of the finished take.
+ */
+export async function rollAsTab({ tab, name, group, start, shot, seconds, aspect }) {
+  let t = state.tabs.find((x) => x.id === tab);
+  const draft = { ...freshDraft(), name, script: { shots: [{ ...emptyShot(), ...shot }], raw: "" }, start, seconds, aspect, review: false };
+  if (!t) {
+    t = { id: tab ?? `story-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, run: null, film: group, draft };
+    state.tabs.push(t);
+  } else t.draft = { ...t.draft, ...draft, seed: t.draft.seed };
+  persist();
+  changed("tabs");
+  const [run] = await api.shoot({ ...(await request(t.draft, t.id)), takes: 1 });
+  t.run = run.id;
+  persist();
+  changed("tabs");
+  return { tab: t.id, run: run.id, done: waitFor("run", run.id) };
+}
+
 /** Opens the plan as tabs, one per shot, after the open tab. */
 function openPlan() {
   const { plan } = state.director;

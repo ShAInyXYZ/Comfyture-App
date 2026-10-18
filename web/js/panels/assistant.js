@@ -5,6 +5,7 @@ import {
 } from "../store.js";
 import { pillField, pillText } from "../pills.js";
 import { attachMenu, MAPS, MAP_TAG, MAP_OF_TAG } from "../attach.js";
+import { story, askStory, storyLookup } from "../story.js";
 import { dropdown } from "../controls.js";
 import { view } from "../viewer.js";
 import { currentPage } from "../router.js";
@@ -12,6 +13,8 @@ import { stageReady } from "../control/link.js";
 
 // on the Stage the bar stages a scene; on the Shot it sets up the shot: one bar, two conversations
 const onStage = () => currentPage() === "stage";
+// on Story the bar changes the step that is open: "add a scene where she finds the jellyfish"
+const onStory = () => currentPage() === "story";
 // the Stage, once it has mounted: who its @names are
 let stageApi = null;
 stageReady.then((a) => (stageApi = a));
@@ -19,6 +22,7 @@ const MAP_ICON = { id: "channel-id", depth: "channel-depth", pose: "channel-pose
 
 /** What an @name in the bar stands for, to draw its pill and its card. */
 function lookup(name) {
+  if (onStory()) return storyLookup(name);
   if (onStage()) {
     const c = stageApi?.ops.cast?.().find((x) => x.tag === name);
     if (c) return { title: c.name, color: c.color, url: c.pictures[0]?.url, pictures: c.pictures, words: c.words, note: c.pictures.length || c.words ? null : "No sheet yet: the key beside the eye in the Scene list opens one." };
@@ -41,7 +45,7 @@ function stageMentionables() {
   const pictures = state.stageChat.inputs.pictures.map((p) => ({ name: p.name, title: p.title, url: p.url, about: "picture" }));
   return [...cast, ...pictures, ...maps];
 }
-const PLACEHOLDER = { shot: "Describe the shot · @ for a file", stage: "Stage a scene — two people arguing by a wall, low angle" };
+const PLACEHOLDER = { shot: "Describe the shot · @ for a file", stage: "Stage a scene — two people arguing by a wall, low angle", story: "Ask the story assistant — add a scene where Mara finds the jellyfish" };
 
 const KIND_ICON = { video: "video", audio: "sound" };
 
@@ -159,6 +163,11 @@ function makeComposer() {
   const grow = () => {};
   const send = () => {
     const text = input.value;
+    if (onStory()) {
+      if (!text.trim() || story.busy.size) return;
+      input.value = "";
+      return askStory(text);
+    }
     if (!text.trim() || (onStage() ? state.stageChat.busy : state.chat.busy)) return;
     input.value = "";
     grow();
@@ -368,7 +377,9 @@ document.addEventListener("assistant:fold", () => {
 
 export function renderAssistant(el) {
   const stage = onStage();
-  const { messages, busy } = stage ? state.stageChat : state.chat;
+  const storyPage = onStory();
+  const writing = [...story.busy].find((k) => !k.includes(":"));
+  const { messages, busy } = storyPage ? { messages: [], busy: writing ? "Writing" : null } : stage ? state.stageChat : state.chat;
   const { files, attaching } = state.chat;
   const c = composer ?? makeComposer();
   c.key.disabled = !!busy;
@@ -378,10 +389,12 @@ export function renderAssistant(el) {
     const value = state.stageModel && models.some((m) => m.id === state.stageModel) ? state.stageModel : state.image.catalogue?.default ?? models[0]?.id;
     c.modelSlot.replaceChildren(...(models.length > 1 ? [dropdown({ label: "Image model", value, items: models.map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setStageModel(id) })] : []));
   }
-  c.input.placeholder = PLACEHOLDER[stage ? "stage" : "shot"];
+  c.input.placeholder = PLACEHOLDER[storyPage ? "story" : stage ? "stage" : "shot"];
+  if (storyPage) c.modelSlot.replaceChildren(h("span.chip.composer-chip", { title: "The story is written by Gemma 4, in ComfyUI" }, sprite("prompt-enhance"), "Gemma 4"));
   const inputs = state.stageChat.inputs;
   c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : files.map(fileChip)), ...(!stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
-  c.tray.hidden = stage ? !inputs.maps.length && !inputs.pictures.length : !files.length && !attaching;
+  c.tray.hidden = storyPage || (stage ? !inputs.maps.length && !inputs.pictures.length : !files.length && !attaching);
+  c.el.classList.toggle("is-story", storyPage);
   c.input.refresh();
   c.el.classList.toggle("is-stage", stage);
   markMentioned();

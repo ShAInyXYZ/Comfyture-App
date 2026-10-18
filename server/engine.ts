@@ -90,14 +90,16 @@ export interface Paint {
   status: "running" | "done" | "failed";
   progress: number;
   photo?: { file: string; url: string; width: number; height: number };
+  /** a sound a workflow made: music or an effect, kept in the audio library */
+  audio?: { file: string; url: string; seconds: number; name: string; kind: string };
   error?: string;
 }
 
 const TERMINAL = new Set(["succeeded", "failed", "canceled", "expired"]);
 
-type Kind = "paint" | "cutout" | "generate" | "plan" | "i2v" | "guided" | "references" | "production" | "sound" | "motion";
+type Kind = "paint" | "cutout" | "generate" | "plan" | "i2v" | "guided" | "references" | "production" | "sound" | "motion" | "music" | "sfx";
 /** First guesses before any job has finished: seconds per job for paint, per unit otherwise. */
-const DEFAULT_RATE: Record<Kind, number> = { paint: 25, cutout: 8, generate: 25, plan: 30, i2v: 10, guided: 14, references: 140, production: 30, sound: 7, motion: 12 };
+const DEFAULT_RATE: Record<Kind, number> = { paint: 25, cutout: 8, generate: 25, plan: 30, i2v: 10, guided: 14, references: 140, production: 30, sound: 7, motion: 12, music: 40, sfx: 15 };
 /** Kinds timed per job rather than per second of video. */
 const PER_JOB = new Set<Kind>(["paint", "cutout", "generate", "plan"]);
 
@@ -526,6 +528,20 @@ export class Engine extends EventEmitter {
    * The assistant's answer to a prompt (assistant.json, Gemma 4), as text. It doesn't wait in the render queue.
    * `brief` replaces the shot assistant's brief (Control has its own); `picture` is any image file it should see.
    */
+  /**
+   * Gemma 4 in ComfyUI writes text from a brief and a prompt (a story step, as JSON), out of the
+   * render queue like the assistant's answers, so it never waits behind takes.
+   */
+  async write(brief: string, prompt: string, { maxLength = 3000, temperature = 0.7 }: { maxLength?: number; temperature?: number } = {}): Promise<string> {
+    const graph = buildPlan(await loadGraph(this.dirs.workflows, "director.json"), prompt, random32());
+    if (graph.brief) graph.brief.inputs.value = brief;
+    if (graph.plan) Object.assign(graph.plan.inputs, { max_length: maxLength, "sampling_mode.temperature": temperature });
+    const job = await this.execute(graph, new AbortController().signal, { kind: "plan", stage: "frame", queue: false });
+    const [out] = job.getOutputs("out");
+    if (!out) throw new Error("The writer returned nothing. Try again?");
+    return Buffer.from(await out.toBytes()).toString("utf8");
+  }
+
   async ask(prompt: string, photo?: string, manual?: string, { brief, picture }: { brief?: string; picture?: string } = {}): Promise<string> {
     if (photo && !(await exists(this.photoPath(photo)))) photo = undefined;
     const image = picture ?? (photo ? this.photoPath(photo) : undefined);
@@ -641,6 +657,40 @@ export class Engine extends EventEmitter {
     if (!out) throw new Error("The enhancer returned nothing. Try again?");
     // its tags back to the names the prompt calls the references by, so they read as pills again
     return untagRefs(unwrapPrompt(Buffer.from(await out.toBytes()).toString("utf8")), v.names, images.pick(v.model, v.template).template.refs);
+  }
+
+  /**
+   * Music (ACE-Step 1.5) or a sound effect (Stable Audio 3 small SFX) from words, tracked like a
+   * paint job; keep() stores what it made in the audio library.
+   */
+  audioJob(kind: "music" | "sfx", v: { prompt: string; seconds: number; lyrics?: string; bpm?: number; seed: number }, keep: (bytes: Buffer) => Promise<Paint["audio"]>): Paint {
+    const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
+    this.paints.set(job.id, job);
+    const emit = () => this.emit("paint", job);
+    (async () => {
+      try {
+        const graph = await loadGraph(this.dirs.workflows, kind === "music" ? "audio/music.json" : "audio/sfx.json");
+        if (kind === "music") {
+          Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 100) });
+          Object.assign(graph.latent.inputs, { seconds: v.seconds });
+          graph.sample.inputs.seed = v.seed;
+        } else {
+          graph.positive.inputs.text = v.prompt;
+          graph.latent.inputs.seconds = v.seconds;
+          graph.sample.inputs.seed = v.seed;
+        }
+        const result = await this.execute(graph, new AbortController().signal, { kind, stage: "frame", queue: false, onProgress: (p) => ((job.progress = p), emit()) });
+        const [out] = result.getOutputs("out");
+        if (!out) throw new Error(`The ${kind === "music" ? "music" : "sound"} workflow returned nothing.`);
+        job.audio = await keep(Buffer.from(await out.toBytes()));
+        job.status = "done";
+      } catch (error) {
+        job.status = "failed";
+        job.error = describe(error);
+      }
+      emit();
+    })();
+    return job;
   }
 
   /** A workflow that makes a photo (from another one, or from nothing), tracked like a paint job. */

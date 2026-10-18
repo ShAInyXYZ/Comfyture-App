@@ -1,6 +1,7 @@
 import { h, sprite } from "../dom.js";
 import { state } from "../store.js";
 import { PAGES, currentPage } from "../router.js";
+import { story } from "../story.js";
 
 const ICON = { story: "section-story", stage: "section-stage", shot: "section-shot", cut: "edit-scissors", library: "batch" };
 
@@ -14,6 +15,11 @@ export function renderNav(el) {
     if (id === "story" && busy) {
       const text = dir.phase === "planning" ? "Planning" : dir.phase === "cutting" ? "Cutting" : `${done}/${dir.plan.shots.length}`;
       return h("span.section-badge", {}, h("span.lamp", { dataset: { tone: "busy" } }), text);
+    }
+    // a story at work: writing a step, or drawing its sheets and panels
+    if (id === "story" && story.busy.size) {
+      const writing = [...story.busy].some((k) => !k.includes(":"));
+      return h("span.section-badge", {}, h("span.lamp", { dataset: { tone: "busy" } }), writing ? "Writing" : `Drawing ${story.busy.size}`);
     }
     if (id === "cut" && state.edit.clips.length) return h("span.section-badge", {}, String(state.edit.clips.length));
     return null;

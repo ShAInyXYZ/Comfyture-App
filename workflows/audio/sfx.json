@@ -1,0 +1,97 @@
+{
+ "ckpt": {
+  "class_type": "CheckpointLoaderSimple",
+  "inputs": {
+   "ckpt_name": "stable_audio_3_small_sfx.safetensors"
+  },
+  "_meta": {
+   "title": "A sound effect for a cut: Stable Audio 3 small SFX, wired as Comfy's official Stable Audio 3 template does (t5gemma text encoder, 8 lcm steps, cfg 1). The prompt, seconds and seed are set per request."
+  }
+ },
+ "clip": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "t5gemma_b_b_ul2.safetensors",
+   "type": "stable_audio",
+   "device": "default"
+  }
+ },
+ "positive": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "clip": [
+    "clip",
+    0
+   ],
+   "text": ""
+  }
+ },
+ "negative": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "clip": [
+    "clip",
+    0
+   ],
+   "text": ""
+  }
+ },
+ "latent": {
+  "class_type": "EmptyLatentAudio",
+  "inputs": {
+   "seconds": 6,
+   "batch_size": 1
+  }
+ },
+ "sample": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "ckpt",
+    0
+   ],
+   "seed": 0,
+   "steps": 8,
+   "cfg": 1,
+   "sampler_name": "lcm",
+   "scheduler": "simple",
+   "positive": [
+    "positive",
+    0
+   ],
+   "negative": [
+    "negative",
+    0
+   ],
+   "latent_image": [
+    "latent",
+    0
+   ],
+   "denoise": 1
+  }
+ },
+ "decode": {
+  "class_type": "VAEDecodeAudio",
+  "inputs": {
+   "samples": [
+    "sample",
+    0
+   ],
+   "vae": [
+    "ckpt",
+    2
+   ]
+  }
+ },
+ "out": {
+  "class_type": "SaveAudioMP3",
+  "inputs": {
+   "audio": [
+    "decode",
+    0
+   ],
+   "filename_prefix": "comfyture/sound",
+   "quality": "V0"
+  }
+ }
+}

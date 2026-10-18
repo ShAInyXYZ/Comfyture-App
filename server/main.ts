@@ -14,6 +14,8 @@ import { ASPECTS, ImageModels } from "./images.ts";
 import { askClaude, blenderStatus, command, CONTROL_BRIEF, CONTROL_MODEL, controlConnected, controlEvents, controlModelName, controlPrompt, fromBlender, readControlAnswer, reply, toBlender, type ControlTurn } from "./control.ts";
 import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
+import { readStory, storyBrief, storyPrompt, type StoryStep } from "./story.ts";
+import { planCut, type CutBody, type CutItem, type Source } from "./cut.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -323,6 +325,179 @@ function modelsIn(scene: any): string[] {
 const newStageId = (name: string) => `stage-${slug(name) || "stage"}-${randomBytes(3).toString("hex")}`;
 const stageName = (v: unknown, fallback = "Stage") => text(v, 60) || fallback;
 
+/**
+ * The projects of a kind that live on the server, one JSON file each: Story's stories and Cut's
+ * edits. Each is { id, name, createdAt, updatedAt, thumb?, body }, the body the page's own.
+ */
+type Project = { id: string; name: string; createdAt: string; updatedAt: string; thumb?: string; body: unknown };
+const projectsDir = (kind: string) => join(data, kind);
+async function readProject(kind: string, id: string): Promise<Project | null> {
+  if (!/^[\w-]+$/.test(id)) return null;
+  try {
+    return JSON.parse(await readFile(join(projectsDir(kind), `${id}.json`), "utf8"));
+  } catch {
+    return null;
+  }
+}
+async function writeProject(kind: string, p: Project) {
+  await mkdir(projectsDir(kind), { recursive: true });
+  await writeFile(join(projectsDir(kind), `${p.id}.json`), JSON.stringify(p));
+}
+async function listProjects(kind: string) {
+  const files = (await readdir(projectsDir(kind)).catch(() => [] as string[])).filter((f) => f.endsWith(".json"));
+  const all = await Promise.all(files.map((f) => readProject(kind, f.slice(0, -5))));
+  return all.filter((x): x is Project => !!x).map(({ id, name, createdAt, updatedAt, thumb }) => ({ id, name, createdAt, updatedAt, thumb })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+/** GET/POST /api/<kind>, GET/PUT/DELETE /api/<kind>/<id>: answers when the path is one of these. */
+async function projectRoute(kind: string, path: string, method: string, req: IncomingMessage, res: ServerResponse) {
+  if (path === `/api/${kind}` && method === "GET") return json(res, 200, { [kind]: await listProjects(kind) });
+  if (path === `/api/${kind}` && method === "POST") {
+    const input = await jsonBody(req, 32 * 1024 * 1024);
+    const now = new Date().toISOString();
+    const name = text(input.name, 60) || "Untitled";
+    const p: Project = { id: `${kind.slice(0, 5)}-${slug(name) || "new"}-${randomBytes(3).toString("hex")}`, name, createdAt: now, updatedAt: now, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined, body: input.body ?? {} };
+    await writeProject(kind, p);
+    return json(res, 201, { project: p });
+  }
+  const m = new RegExp(`^/api/${kind}/([\\w-]+)$`).exec(path);
+  if (!m) return false;
+  const p = await readProject(kind, m[1]);
+  if (!p) throw bad("No such project.", 404);
+  if (method === "GET") return json(res, 200, { project: p });
+  if (method === "PUT") {
+    const input = await jsonBody(req, 32 * 1024 * 1024);
+    if (input.name !== undefined) p.name = text(input.name, 60) || p.name;
+    if (input.body !== undefined) p.body = input.body;
+    if (typeof input.thumb === "string") p.thumb = input.thumb.slice(0, 400_000);
+    p.updatedAt = new Date().toISOString();
+    await writeProject(kind, p);
+    return json(res, 200, { project: { id: p.id, name: p.name, updatedAt: p.updatedAt } });
+  }
+  if (method === "DELETE") {
+    await rm(join(projectsDir(kind), `${p.id}.json`), { force: true });
+    return json(res, 200, { [kind]: await listProjects(kind) });
+  }
+  return false;
+}
+
+// ------------------------------------------------------------------ the audio library
+
+/** Every sound kept: uploads, music, effects and voice lines, with a name, a kind and a length. */
+type AudioEntry = { file: string; url: string; name: string; kind: string; seconds: number; prompt?: string; createdAt: string };
+const audioIndexPath = () => join(data, "audio", "index.json");
+async function readAudioIndex(): Promise<Record<string, AudioEntry>> {
+  try {
+    return JSON.parse(await readFile(audioIndexPath(), "utf8"));
+  } catch {
+    return {};
+  }
+}
+let audioWrite: Promise<unknown> = Promise.resolve();
+async function noteAudio(entry: AudioEntry) {
+  audioWrite = audioWrite.then(async () => {
+    const index = await readAudioIndex();
+    index[entry.file] = { ...index[entry.file], ...entry };
+    await mkdir(join(data, "audio"), { recursive: true });
+    await writeFile(audioIndexPath(), JSON.stringify(index, null, 1));
+  });
+  await audioWrite;
+  return entry;
+}
+/** How long a sound or a video runs, and whether it has a picture and a sound. */
+const probed = new Map<string, Promise<{ duration: number; hasAudio: boolean; hasVideo: boolean; width: number; height: number }>>();
+function probeMedia(path: string) {
+  if (!probed.has(path)) {
+    probed.set(path, exec("ffprobe", ["-v", "error", "-show_entries", "format=duration:stream=codec_type,width,height", "-of", "json", path]).then(({ stdout }) => {
+      const j = JSON.parse(stdout);
+      const video = (j.streams ?? []).find((x: any) => x.codec_type === "video");
+      return { duration: Number(j.format?.duration) || 0, hasAudio: (j.streams ?? []).some((x: any) => x.codec_type === "audio"), hasVideo: !!video, width: Number(video?.width) || 0, height: Number(video?.height) || 0 };
+    }).catch(() => ({ duration: 0, hasAudio: false, hasVideo: false, width: 0, height: 0 })));
+  }
+  return probed.get(path)!;
+}
+/** A sound into the library: its bytes kept by their hash, its name and kind noted. */
+async function keepAudio(bytes: Buffer, ext: string, meta: { name: string; kind: string; prompt?: string }) {
+  const file = `${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}${ext}`;
+  const path = join(data, "audio", file);
+  await mkdir(join(data, "audio"), { recursive: true });
+  if (!(await exists(path))) await writeFile(path, bytes);
+  const seconds = Math.round((await probeMedia(path)).duration * 100) / 100;
+  return noteAudio({ file, url: `/media/audio/${file}`, name: text(meta.name, 60) || meta.kind, kind: meta.kind, seconds, prompt: meta.prompt, createdAt: new Date().toISOString() });
+}
+
+// ------------------------------------------------------------------ a cut, rendered
+
+/** The first font on this machine drawtext can use, for titles. */
+const TITLE_FONTS = ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf", "/System/Library/Fonts/Supplemental/Arial Bold.ttf", "/Library/Fonts/Arial Bold.ttf", "C:/Windows/Fonts/arialbd.ttf"];
+let titleFont: Promise<string | null> | null = null;
+const findFont = () => (titleFont ??= (async () => {
+  for (const f of TITLE_FONTS) if (await exists(f)) return f;
+  return null;
+})());
+
+/** Where a timeline item's file is: a take, a film, an uploaded video, a picture or a sound. */
+function itemPath(src: CutItem["src"]) {
+  const id = String(src?.id ?? src?.file ?? "");
+  if (!/^[\w.-]+$/.test(id)) return null;
+  if (src?.kind === "take") return join(data, "runs", id, "shot.mp4");
+  if (src?.kind === "film") return join(data, "reels", `${id}.mp4`);
+  if (src?.kind === "video") return join(data, "videos", id);
+  if (src?.kind === "photo") return engine.photoPath(id);
+  if (src?.kind === "audio") return join(data, "audio", id);
+  return null;
+}
+
+/** Renders a cut's timeline into a film in the Library: picture and sound apart, then joined. */
+async function renderCut(project: { id: string; name: string; body: any }) {
+  const body = project.body as CutBody;
+  if (!Array.isArray(body?.tracks)) throw bad("This cut has no timeline.");
+  const sources = new Map<string, Source>();
+  for (const t of body.tracks) {
+    for (const it of t.items ?? []) {
+      if (t.kind === "title") continue;
+      const path = itemPath(it.src);
+      if (!path || !(await exists(path))) continue;
+      const still = it.src?.kind === "photo";
+      const m = still ? { duration: 3600, hasAudio: false } : await probeMedia(path);
+      sources.set(it.id, { path, still, hasAudio: m.hasAudio, duration: m.duration });
+    }
+  }
+  // the film's frame: its first video clip's, else 1280 wide in the cut's shape
+  const main = body.tracks.find((t) => t.kind === "video" && t.main) ?? body.tracks.find((t) => t.kind === "video");
+  const firstVideo = main?.items.map((it) => sources.get(it.id)).find((x) => x && !x.still);
+  const probe = firstVideo ? await probeMedia(firstVideo.path) : null;
+  const ratio = { "16:9": 16 / 9, "9:16": 9 / 16, "1:1": 1, "4:3": 4 / 3, "21:9": 21 / 9 }[(project.body as any).aspect as string] ?? 16 / 9;
+  const width = probe?.width || (ratio >= 1 ? 1280 : Math.round((1280 * ratio) / 2) * 2);
+  const height = probe?.height || (ratio >= 1 ? Math.round(1280 / ratio / 2) * 2 : 1280);
+  const id = `${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${randomBytes(3).toString("hex")}`;
+  await mkdir(join(data, "reels"), { recursive: true });
+  const work = join(data, "reels", `${id}.work`);
+  await mkdir(work, { recursive: true });
+  try {
+    // each title's words in a file of its own, so no text is ever escaped into the graph
+    const titleTexts = body.tracks.filter((t) => t.kind === "title" && !t.mute).flatMap((t) => t.items).filter((it) => it.text?.trim());
+    await Promise.all(titleTexts.map((it, i) => writeFile(join(work, `title-${i}.txt`), String(it.text).slice(0, 200))));
+    const plan = planCut(body, (it) => sources.get(it.id) ?? null, { width, height, font: await findFont(), titleFile: (i) => join(work, `title-${i}.txt`) });
+    const inputs = plan.inputs.flat();
+    const picture = join(work, "picture.mp4");
+    const sound = join(work, "sound.m4a");
+    const out = join(data, "reels", `${id}.mp4`);
+    await Promise.all([
+      exec("ffmpeg", ["-v", "error", "-y", ...inputs, "-filter_complex", plan.video, "-map", "[v]", "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p", "-r", "24", picture], { maxBuffer: 1 << 22 }),
+      exec("ffmpeg", ["-v", "error", "-y", ...inputs, "-filter_complex", plan.audio, "-map", "[a]", "-c:a", "aac", "-b:a", "192k", sound], { maxBuffer: 1 << 22 }),
+    ]).catch((e) => {
+      throw new Error(`The film didn't render: ${String(e.stderr ?? e.message).split("\n").filter(Boolean).slice(-2).join(" ")}`);
+    });
+    await exec("ffmpeg", ["-v", "error", "-y", "-i", picture, "-i", sound, "-c", "copy", "-movflags", "+faststart", out], { maxBuffer: 1 << 20 });
+    const takes = body.tracks.flatMap((t) => t.items).filter((it) => it.src?.kind === "take").map((it) => String(it.src!.id));
+    const film = { id, url: `/media/reels/${id}.mp4`, name: text(project.name, 60) || "Film", takes: [...new Set(takes)], cut: project.id, seconds: Math.round(plan.seconds * 10) / 10, createdAt: new Date().toISOString() };
+    await writeFile(join(data, "reels", `${id}.json`), JSON.stringify(film, null, 2));
+    return film;
+  } finally {
+    await rm(work, { recursive: true, force: true });
+  }
+}
+
 /** Every picture on a scene's sheets (its characters' and pieces'), each once. */
 function sheetRefs(scene: any): any[] {
   const refs = [...(scene?.characters ?? []), ...(scene?.props ?? [])].flatMap((t: any) => (Array.isArray(t?.tag?.refs) ? t.tag.refs : []));
@@ -491,6 +666,62 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (!(await exists(source))) throw bad("That take or film is gone.", 404);
     return json(res, 200, await storeVideo(await readFile(source)));
   }
+  if (path === "/api/audio" && method === "GET") {
+    // every sound kept, newest first: those noted, and any file on disk from before the index
+    const index = await readAudioIndex();
+    const files = (await readdir(join(data, "audio")).catch(() => [] as string[])).filter((f) => /\.(mp3|wav|ogg|flac|m4a)$/i.test(f));
+    const list: AudioEntry[] = [];
+    for (const file of files) {
+      const known = index[file];
+      if (known) list.push(known);
+      else {
+        const p = join(data, "audio", file);
+        list.push({ file, url: `/media/audio/${file}`, name: file.replace(/\.\w+$/, ""), kind: "upload", seconds: Math.round((await probeMedia(p)).duration * 100) / 100, createdAt: (await stat(p)).mtime.toISOString() });
+      }
+    }
+    return json(res, 200, list.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+  }
+  if ((path === "/api/audio/music" || path === "/api/audio/sound") && method === "POST") {
+    const input = await jsonBody(req);
+    const prompt = text(input.prompt, 800);
+    if (!prompt) throw bad(path.endsWith("music") ? "Say what the music is like." : "Say what the sound is.");
+    const music = path.endsWith("music");
+    const seconds = num(input.seconds, 1, music ? 240 : 30, music ? 30 : 6);
+    const name = text(input.name, 60) || prompt.slice(0, 40);
+    const job = engine.audioJob(music ? "music" : "sfx", { prompt, seconds, lyrics: text(input.lyrics, 2000), bpm: num(input.bpm, 40, 220, 100), seed: randomBytes(4).readUInt32BE(0) }, async (bytes) => {
+      const kept = await keepAudio(bytes, ".mp3", { name, kind: music ? "music" : "sound", prompt });
+      return { file: kept.file, url: kept.url, seconds: kept.seconds, name: kept.name, kind: kept.kind };
+    });
+    return json(res, 202, job);
+  }
+  if (path === "/api/audio/from" && method === "POST") {
+    // a take's own sound (a voice line LTX-2.5 said) into the library
+    if (!ffmpeg) throw bad("Taking the sound from a take needs ffmpeg on the server.", 501);
+    const input = await jsonBody(req);
+    const run = engine.get(String(input.run ?? ""));
+    if (!run || run.status !== "done") throw bad("That take isn't finished.");
+    const src = join(data, "runs", run.id, "shot.mp4");
+    const tmp = join(data, "audio", `${run.id}.voice.mp3`);
+    await mkdir(join(data, "audio"), { recursive: true });
+    const from = num(input.from, 0, 60, 0);
+    const to = input.to === undefined ? undefined : num(input.to, from + 0.1, 60, from + 5);
+    try {
+      await exec("ffmpeg", ["-v", "error", "-y", "-ss", String(from), ...(to ? ["-to", String(to)] : []), "-i", src, "-vn", "-ac", "2", "-ar", "48000", "-b:a", "192k", tmp], { maxBuffer: 1 << 20 });
+      const bytes = await readFile(tmp);
+      return json(res, 200, await keepAudio(bytes, ".mp3", { name: text(input.name, 60) || `${run.request.name} sound`, kind: text(input.kind, 20) || "voice", prompt: text(input.prompt, 300) }));
+    } catch (e) {
+      throw bad(`That take's sound couldn't be read: ${(e as Error).message.slice(0, 120)}`);
+    } finally {
+      await rm(tmp, { force: true });
+    }
+  }
+  const cutRender = /^\/api\/cuts\/([\w-]+)\/render$/.exec(path);
+  if (cutRender && method === "POST") {
+    if (!ffmpeg) throw bad("Films need ffmpeg on the server.", 501);
+    const project = await readProject("cuts", cutRender[1]);
+    if (!project) throw bad("No such cut.", 404);
+    return json(res, 201, await renderCut(project));
+  }
   if (path === "/api/audio" && method === "POST") {
     const type = (req.headers["content-type"] ?? "").split(";")[0].trim().toLowerCase();
     if (VIDEO_TYPES.has(type)) {
@@ -516,10 +747,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const ext = AUDIO_EXT[type];
     if (!ext) throw bad("Use an MP3, WAV, OGG, FLAC or M4A file, or a video with sound.", 415);
     const bytes = await body(req, 25 * 1024 * 1024);
-    const file = `${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}${ext}`;
-    const path = join(data, "audio", file);
-    if (!(await exists(path))) await writeFile(path, bytes);
-    return json(res, 200, { file, url: `/media/audio/${file}` });
+    const kept = await keepAudio(bytes, ext, { name: url.searchParams.get("name") || "Sound", kind: url.searchParams.get("kind") || "upload" });
+    return json(res, 200, kept);
   }
   if (path === "/api/paint" && method === "POST") {
     const input = await jsonBody(req);
@@ -627,6 +856,20 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       answer.reply = `${answer.reply.replace(/\s*(When you('| a)re ready|Let me know|Tell me|Say|Just)[^.]*\.?$/i, "")} Rolling it now.`.trim();
     }
     return json(res, 200, answer);
+  }
+  // a story's step, written (or changed, when asked) by Gemma 4 from the steps before it
+  if (path === "/api/story/write" && method === "POST") {
+    const input = await jsonBody(req, 8 * 1024 * 1024);
+    const step = ["idea", "script", "world", "board"].includes(input.step) ? (input.step as StoryStep) : null;
+    if (!step) throw bad("Which step?");
+    const reply = await engine.write(storyBrief(step), storyPrompt(step, input.story ?? {}, text(input.ask, 800)), { maxLength: step === "idea" ? 1200 : 3600 });
+    return json(res, 200, readStory(step, reply));
+  }
+  for (const kind of ["stories", "cuts"]) {
+    if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {
+      const answered = await projectRoute(kind, path, method, req, res);
+      if (answered !== false) return answered;
+    }
   }
   if (path === "/api/director" && method === "POST") {
     const input = await jsonBody(req);

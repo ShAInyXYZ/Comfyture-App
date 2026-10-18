@@ -9,7 +9,7 @@ import { renderPresets } from "./panels/presets.js";
 import { renderSettings } from "./panels/settings.js";
 import { renderTakes } from "./panels/takes.js";
 import { renderTabs, renderActions } from "./panels/tabs.js";
-import { renderDirector } from "./panels/director.js";
+import { renderStory } from "./panels/story.js";
 import { renderStatus } from "./panels/status.js";
 import { renderNav } from "./panels/nav.js";
 import { renderLibrary } from "./panels/library.js";
@@ -36,7 +36,7 @@ const panels = {
   image: [$("image"), renderImage],
   tabs: [$("tabs"), renderTabs, "shot"],
   actions: [$("actions"), renderActions, "shot"],
-  director: [$("page-story"), renderDirector, "story"],
+  story: [$("page-story"), renderStory, "story"],
   library: [$("page-library"), renderLibrary, "library"],
   edit: [$("page-cut"), renderEdit, "cut"],
 };
@@ -78,12 +78,12 @@ onChange((scopes) => {
     if (scope === "all") Object.keys(panels).forEach((p) => pending.add(p));
     else if (scope === "preview") pending.add("monitor").add("takes").add("tabs");
     else if (scope === "paint") pending.add("sources");
-    else if (scope === "director") pending.add("tabs").add("director").add("nav");
+    else if (scope === "director") pending.add("tabs").add("nav");
     else if (panels[scope]) pending.add(scope);
     // the header's keys and status follow the takes, the tabs and any running job
     if (["takes", "tabs", "paint", "sources", "director", "edit"].includes(scope)) pending.add("actions").add("status").add("nav");
     // takes and films are the library's and the edit's material too
-    if (scope === "takes") pending.add("library").add("edit");
+    if (scope === "takes") pending.add("library").add("edit").add("story");
     if (scope === "sources") pending.add("assistant");
     if (scope === "tabs" || scope === "takes") pending.add("tabs");
   }
@@ -94,14 +94,16 @@ onChange((scopes) => {
 /** The assistant's bar floats over the Shot's desk and docks under the Stage's viewport. */
 function dockAssistant(page = currentPage()) {
   const bar = $("assistant");
-  const slot = page === "stage" ? $("stage-chat") : $("page-shot");
-  bar.hidden = !slot || !["shot", "stage"].includes(page);
+  const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : $("page-shot");
+  bar.hidden = !slot || !["shot", "stage", "story"].includes(page);
   if (slot && bar.parentElement !== slot) slot.append(bar);
-  bar.classList.toggle("is-docked", page === "stage");
+  bar.classList.toggle("is-docked", page === "stage" || page === "story");
   pending.add("assistant");
   flush();
 }
 document.addEventListener("stage:ready", () => dockAssistant());
+// Story draws its page (and the bar's slot) when its first story has come
+document.addEventListener("story:drawn", () => currentPage() === "story" && $("assistant").parentElement?.id !== "story-chat" && dockAssistant());
 
 function showPage() {
   const page = currentPage();
