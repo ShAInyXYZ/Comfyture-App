@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="css/control.css">
   <link rel="stylesheet" href="css/story.css">
   <link rel="stylesheet" href="css/cut.css">
+  <link rel="stylesheet" href="css/home.css">
   <script type="importmap">
     { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
   </script>
@@ -18,7 +19,7 @@
 <body>
   <header class="top">
     <div class="top-in">
-      <a class="wordmark" href="#/shot" aria-label="Comfyture"><img src="brand/wordmark.svg" alt="Comfyture" draggable="false"></a>
+      <a class="wordmark" href="#/home" aria-label="Comfyture: your projects"><img src="brand/wordmark.svg" alt="Comfyture" draggable="false"></a>
       <nav class="sections" id="nav" aria-label="Sections"></nav>
       <div class="top-tools">
         <span class="cloud" id="cloud"></span>
@@ -57,6 +58,8 @@
     <section class="chat-float" id="assistant" aria-label="Assistant"></section>
   </div>
 
+  <!-- the welcome screen: every project, and a new one from a sentence -->
+  <main class="page page-wide" id="page-home" data-page="home" hidden></main>
   <main class="page page-wide" id="page-story" data-page="story" hidden></main>
   <main class="page page-stage" id="page-stage" data-page="stage" hidden></main>
   <main class="page page-wide" id="page-library" data-page="library" hidden></main>

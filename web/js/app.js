@@ -14,6 +14,7 @@ import { renderStatus } from "./panels/status.js";
 import { renderNav } from "./panels/nav.js";
 import { renderLibrary } from "./panels/library.js";
 import { renderCut } from "./panels/cut.js";
+import { renderHome } from "./panels/home.js";
 import { renderAssistant } from "./panels/assistant.js";
 import { renderImage } from "./panels/image.js";
 import { renderStage, mountStage } from "./panels/stage.js";
@@ -39,6 +40,7 @@ const panels = {
   story: [$("page-story"), renderStory, "story"],
   library: [$("page-library"), renderLibrary, "library"],
   cut: [$("page-cut"), renderCut, "cut"],
+  home: [$("page-home"), renderHome, "home"],
 };
 
 // Redraws are batched to one per frame; text fields keep focus because the
@@ -130,7 +132,7 @@ function showPage() {
   for (const el of document.querySelectorAll(".page")) el.hidden = el.dataset.page !== page;
   dockAssistant(page);
   document.body.dataset.page = page;
-  document.title = `${PAGES[page]} · Comfyture`;
+  document.title = PAGES[page] ? `${PAGES[page]} · Comfyture` : "Comfyture";
   if (page !== "shot") document.querySelectorAll("#page-shot video").forEach((v) => v.pause());
   for (const [name, [, , owner]] of Object.entries(panels)) {
     if (owner === page && (stale.has(name) || !panels[name][0].childElementCount)) pending.add(name);

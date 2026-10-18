@@ -41,7 +41,7 @@ const call = async (path, init) => {
 const send = (path, method, data) => call(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
 const uid = () => Math.random().toString(36).slice(2, 9);
 export const tagOf = (name) => String(name ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24) || "someone";
-const update = () => changed("story", "nav", "assistant");
+const update = () => changed("story", "nav", "assistant", "home");
 /** A redraw of the story's screen, with nothing changed. */
 export const refresh = () => update();
 const lower = (t) => String(t ?? "").trim().replace(/[.;]+$/, "").replace(/^(A|An|The) /, (m) => m.toLowerCase());

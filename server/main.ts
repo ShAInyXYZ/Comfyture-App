@@ -346,7 +346,23 @@ async function writeProject(kind: string, p: Project) {
 async function listProjects(kind: string) {
   const files = (await readdir(projectsDir(kind)).catch(() => [] as string[])).filter((f) => f.endsWith(".json"));
   const all = await Promise.all(files.map((f) => readProject(kind, f.slice(0, -5))));
-  return all.filter((x): x is Project => !!x).map(({ id, name, createdAt, updatedAt, thumb }) => ({ id, name, createdAt, updatedAt, thumb })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return all.filter((x): x is Project => !!x).map(({ id, name, createdAt, updatedAt, thumb, body }) => ({ id, name, createdAt, updatedAt, thumb, info: summary(kind, body) })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+/** How far a project has come, for its card on the welcome screen: a story's scenes, shots and frames, an edit's clips. */
+function summary(kind: string, body: any) {
+  if (kind === "stories") {
+    const blocks: any[] = Array.isArray(body?.blocks) ? body.blocks : [];
+    const shots = blocks.length ? blocks.filter((b) => b?.kind === "shot") : Array.isArray(body?.board?.shots) ? body.board.shots : [];
+    const scenes = blocks.length ? blocks.filter((b) => b?.kind === "scene").length : body?.script?.scenes?.length ?? 0;
+    const pic = (s: any) => (s?.still ?? s?.photo)?.url;
+    return { logline: text(body?.idea?.logline, 200), scenes, shots: shots.length, drawn: shots.filter((s: any) => s?.photo).length, rolled: shots.filter((s: any) => s?.run).length, cast: body?.cast?.length ?? 0, frames: shots.map(pic).filter(Boolean).slice(0, 6) };
+  }
+  if (kind === "cuts") {
+    const tracks: any[] = Array.isArray(body?.tracks) ? body.tracks : [];
+    const main = tracks.find((t) => t?.main)?.items ?? [];
+    return { clips: main.length, titles: tracks.find((t) => t?.kind === "title")?.items?.length ?? 0, sounds: tracks.filter((t) => t?.kind === "audio").reduce((n, t) => n + (t.items?.length ?? 0), 0) };
+  }
+  return {};
 }
 /** GET/POST /api/<kind>, GET/PUT/DELETE /api/<kind>/<id>: answers when the path is one of these. */
 async function projectRoute(kind: string, path: string, method: string, req: IncomingMessage, res: ServerResponse) {

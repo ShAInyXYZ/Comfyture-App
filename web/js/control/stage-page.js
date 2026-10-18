@@ -1486,6 +1486,15 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
     current: () => project,
     open,
     newProject: (name) => create(name),
+    /** A stage deleted from elsewhere (the welcome screen): its tab goes with it. */
+    async remove(id) {
+      if (project?.id === id) return remove();
+      await call(`api/control/stages/${id}`, { method: "DELETE" });
+      known.delete(id);
+      tabs = tabs.filter((x) => x !== id);
+      write(TABS, JSON.stringify(tabs));
+      render();
+    },
     /** The stages open last open again; the very first time, every stage (the examples) has a tab. */
     async openLast() {
       try {
