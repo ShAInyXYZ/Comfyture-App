@@ -340,7 +340,17 @@ async function importStage(input: any, when = new Date()) {
   await writeModels(known);
   const now = when.toISOString();
   const name = stageName(input.name, "Shared stage");
-  const stage: StageFile = { id: newStageId(name), name, createdAt: now, updatedAt: now, scene: input.scene, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined };
+  // the renders that came with it: each picture into the Library, its run pointing at it
+  const renders = [];
+  for (const r of Array.isArray(input.renders) ? input.renders.slice(0, 50) : []) {
+    if (!r || typeof r.data !== "string") continue;
+    try {
+      const photo = await engine.storeImage(Buffer.from(r.data, "base64"), `${name} render`);
+      const { data: _data, frame: _frame, ...run } = r;
+      renders.push({ ...run, status: "done", photo: { file: photo.file, url: photo.url, width: photo.width, height: photo.height } });
+    } catch {}
+  }
+  const stage: StageFile = { id: newStageId(name), name, createdAt: now, updatedAt: now, scene: input.scene, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined, renders: renders.length ? renders : undefined };
   await writeStage(stage);
   return { stage, models: known };
 }
@@ -545,6 +555,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       megapixels: num(input.megapixels, 0.5, 4, 1),
       count: Math.round(num(input.count, 1, 4, 1)),
       seed: Number.isSafeInteger(input.seed) && input.seed >= 0 ? input.seed : randomBytes(4).readUInt32BE(0),
+      // what the Library calls the picture, when the prompt's first words would not say it
+      name: text(input.name, 80) || undefined,
     });
     return json(res, 202, jobs);
   }
@@ -899,7 +911,16 @@ async function route(req: IncomingMessage, res: ServerResponse) {
           models.push({ entry: { id: entry.id, name: entry.name, kind: entry.kind, ext: entry.ext }, data: (await readFile(join(modelsDir(), entry.file))).toString("base64") });
         } catch {}
       }
-      const file = JSON.stringify({ format: "comfyture-stage", version: 1, name: stage.name, scene: stage.scene, thumb: stage.thumb, models });
+      // its renders, with their pictures
+      const renders = [];
+      for (const r of (stage.renders ?? []) as any[]) {
+        if (r?.status !== "done" || typeof r.photo?.file !== "string" || !/^[\w.-]+$/.test(r.photo.file)) continue;
+        try {
+          const { frame: _frame, ...run } = r;
+          renders.push({ ...run, data: (await readFile(engine.photoPath(r.photo.file))).toString("base64") });
+        } catch {}
+      }
+      const file = JSON.stringify({ format: "comfyture-stage", version: 1, name: stage.name, scene: stage.scene, thumb: stage.thumb, models, renders });
       res.writeHead(200, { "Content-Type": "application/json", "Content-Disposition": `attachment; filename="${(slug(stage.name) || "stage")}.stage.json"`, "Cache-Control": "no-store" });
       return res.end(file);
     }

@@ -1736,15 +1736,16 @@ export const generateImages = () =>
 
 /** A paint event for one of the window's pictures. */
 function imageJob(job) {
+  // a picture the Stage asked for is kept with its stage, however it was asked for
+  stageReady.then(({ stage }) => stage.runDone(job));
   const r = state.image.results.find((x) => x.id === job.id);
   if (!r) return;
   Object.assign(r, { status: job.status, progress: job.progress ?? r.progress, photo: job.photo ?? r.photo, error: job.error });
   if (job.status === "failed") toast(job.error ?? "That picture didn't work.", { tone: "crit" });
   if (job.status === "done") api.photos().then((photos) => ((state.photos = photos), changed("library"))).catch(() => {});
   changed("image");
-  // a picture the Stage asked for fills in in its conversation, and in the stage's own pictures
+  // a picture the Stage asked for fills in in its conversation
   if (state.stageChat.messages.some((m) => m.renders?.includes(job.id))) changed("assistant");
-  stageReady.then(({ stage }) => stage.runDone(job));
 }
 
 /**

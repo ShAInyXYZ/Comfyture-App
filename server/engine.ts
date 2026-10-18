@@ -607,14 +607,14 @@ export class Engine extends EventEmitter {
   }
 
   /** Pictures from the Image window: one job per picture, each with its own seed. */
-  async image(v: { model: string; template: string; prompt: string; aspect: string; megapixels: number; seed: number; count: number; refs: string[]; names: string[]; loras: { file: string; strength?: number }[] }): Promise<Paint[]> {
+  async image(v: { model: string; template: string; prompt: string; aspect: string; megapixels: number; seed: number; count: number; refs: string[]; names: string[]; loras: { file: string; strength?: number }[]; name?: string }): Promise<Paint[]> {
     const images = this.images!;
     await images.ready;
     const { model } = images.pick(v.model, v.template);
     const first = v.refs[0] ? imageSize(await readFile(this.photoPath(v.refs[0]))) ?? undefined : undefined;
     const size = images.size(model, v.aspect, v.megapixels, first);
     return Array.from({ length: v.count }, (_, i) =>
-      this.photoJob(v.template === "generate" ? "generate" : "paint", null, v.prompt, async () =>
+      this.photoJob(v.template === "generate" ? "generate" : "paint", null, v.name || v.prompt, async () =>
         images.build(v.model, v.template, { prompt: v.prompt, names: v.names, loras: v.loras, ...size, seed: v.seed + i, refs: await this.refAssets(v.refs) })));
   }
 

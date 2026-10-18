@@ -866,6 +866,9 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
   let pending = null;
   // the pictures of stages no longer open whose renders are still on their way
   const elsewhere = new Map();
+  // whether this page changed the renders since it last kept them, and while it shows the ones it opened with
+  let runsChanged = false;
+  let loadingRuns = false;
   stage.runElsewhere = (job) => {
     for (const [id, runs] of elsewhere) {
       const run = runs.find((r) => r.id === job.id);
@@ -1008,7 +1011,10 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
     lamp.dataset.tone = "busy";
     lamp.dataset.tooltip = "Saving…";
     const id = project.id;
-    pending = call(`api/control/stages/${id}`, { method: "PUT", headers: json, body: JSON.stringify({ scene: stage.toJSON(), thumb: thumb(), renders: stage.runs }) })
+    // the renders go only when this page changed them: an older page never writes over newer ones
+    const renders = runsChanged ? stage.runs : undefined;
+    runsChanged = false;
+    pending = call(`api/control/stages/${id}`, { method: "PUT", headers: json, body: JSON.stringify({ scene: stage.toJSON(), thumb: thumb(), renders }) })
       .then((b) => {
         known.set(id, { ...known.get(id), ...b.stage });
         if (project?.id === id) saved(b.stage.updatedAt);
@@ -1020,7 +1026,8 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
   }
   // a moment after any change (or a picture's), the stage is kept
   stage.on((kind) => {
-    if ((kind !== "history" && kind !== "runs") || !project) return;
+    if (kind === "runs" && !loadingRuns) runsChanged = true;
+    if ((kind !== "history" && kind !== "runs") || !project || loadingRuns) return;
     clearTimeout(timer);
     lamp.dataset.tone = "busy";
     lamp.dataset.tooltip = "Changed — saving in a moment";
@@ -1034,7 +1041,10 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
     elsewhere.delete(id);
     stage.runs = settled(p.renders);
     stage.load(p.scene ?? { version: 2 });
+    // showing the renders it came with is not a change to keep
+    loadingRuns = true;
     stage.emit("runs");
+    loadingRuns = false;
     stage.select({});
     show(p);
     saved(p.updatedAt);

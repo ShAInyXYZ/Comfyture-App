@@ -732,7 +732,7 @@ export function controlOps(stage) {
       `${(look ? who.rest : "") || "A cinematic film still, natural light"}.`.replace(/\.\.$/, "."),
     ].filter(Boolean).join(" ");
     const count = Math.round(THREE.MathUtils.clamp(Number(a.count) || 1, 1, 4));
-    const res = await fetch("api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ template: "edit", prompt, aspect: stage.ratio, refs: [{ file: frame.file, name: "frame" }], count, megapixels: 1 }) });
+    const res = await fetch("api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ template: "edit", prompt, aspect: stage.ratio, refs: [{ file: frame.file, name: "frame" }], count, megapixels: 1, name: look || "Stage render" }) });
     const jobs = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(jobs.error ?? "The picture was not started.");
     // each picture is kept with the stage, with the camera it was made from, to look at it from there again
