@@ -6,7 +6,7 @@
 #page-home[hidden] { display: none; }
 #page-home img { -webkit-user-drag: none; user-select: none; }
 .home { min-height: calc(100dvh - 3.5rem - 1px); }
-.home-in { display: grid; gap: 1.5rem; max-width: 112rem; margin: 0 auto; padding: 1.25rem 1.5rem 3rem; }
+.home-in { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; max-width: 112rem; margin: 0 auto; padding: 1.25rem 1.5rem 3rem; }
 .home-head { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; margin-bottom: .875rem; }
 .home .card-label { font: 600 var(--fs-small)/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--text); }
 
@@ -75,6 +75,7 @@
 .home-facts { font: 400 var(--fs-small)/1.3 var(--font-mono); color: var(--muted); }
 
 /* the takes made last */
+.home-takes { min-width: 0; }
 .home-takes-row { display: grid; grid-auto-flow: column; grid-auto-columns: 13rem; justify-content: start; gap: .625rem; overflow-x: auto; padding-bottom: .25rem; scrollbar-width: thin; }
 .home-take { display: grid; gap: .375rem; padding: 0; border: 0; background: none; color: var(--muted); text-align: left; cursor: pointer; }
 .home-take video { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: calc(.4375rem * var(--corner-k)); background: #111114; border: 1px solid var(--line); }
