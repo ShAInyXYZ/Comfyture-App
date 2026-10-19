@@ -13,7 +13,7 @@ import {
 } from "./workflows.ts";
 import { CAMERA } from "../web/js/script.js";
 import { untagRefs, type ImageModels } from "./images.ts";
-import { isRouterVideo, routerVideo, routerVideoName, routerVideoSeconds } from "./router-videos.ts";
+import { isRouterVideo, routerVideo, routerVideoName, routerVideoSeconds, routerVideoLength } from "./router-videos.ts";
 
 export interface Dialogue { speaker?: string; language?: string; line: string }
 export interface Shot {
@@ -937,10 +937,20 @@ export class Engine extends EventEmitter {
       const bytes = await readFile(this.photoPath(r.start));
       const mime = bytes[0] === 0x89 ? "image/png" : bytes.toString("ascii", 8, 12) === "WEBP" ? "image/webp" : "image/jpeg";
       const { bytes: clip } = await routerVideo(r.model!, { prompt: run.prompt, start: { mime, data: bytes.toString("base64") }, seconds: r.seconds, aspect: r.aspect === "auto" ? (run.size.width >= run.size.height * 1.2 ? "16:9" : run.size.height >= run.size.width * 1.2 ? "9:16" : "1:1") : r.aspect, seed: run.seed, signal });
-      await writeFile(join(this.runDir(run.id), "shot.mp4"), clip);
+      const file = join(this.runDir(run.id), "shot.mp4");
+      // a silent clip gets a silent track, so the edit mixes it like every other take
+      const raw = join(this.runDir(run.id), "router.mp4");
+      await writeFile(raw, clip);
+      const streams = this.checks.ffmpeg ? String((await exec("ffprobe", ["-v", "error", "-show_entries", "stream=codec_type", "-of", "csv=p=0", raw]).catch(() => ({ stdout: "audio" }))).stdout) : "audio";
+      if (!streams.includes("audio")) await exec("ffmpeg", ["-nostdin", "-v", "error", "-y", "-i", raw, "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo", "-shortest", "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", file]);
+      else await writeFile(file, clip);
+      await rm(raw, { force: true });
     } finally {
       clearInterval(tick);
     }
+    // Veo makes four, six or eight seconds, Kling at least three: the take is as long as the clip
+    const made = routerVideoLength(r.model!, r.seconds);
+    if (made !== r.seconds) run.length = made;
     run.seconds.shot = Math.round((Date.now() - started) / 1000);
     await this.update(run, { status: "done", stage: "", progress: 1, video: `/media/runs/${run.id}/shot.mp4` });
   }

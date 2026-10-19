@@ -57,7 +57,7 @@ export const artistPicker = () =>
   dropdown({ label: "Artist", value: artist(), items: artistItems(), onChange: setArtist, width: "fit", note: state.info?.target === "comfy-cloud" ? "Comfy credits a picture on Comfy Cloud; a moodboard is three pictures a variant" : "Drawn on your own GPU: no credits" });
 
 // the video models: the partners' by who makes them, LTX-2.5 (open weights, in ComfyUI) after them
-const VIDEO_BRANDS = { google: "brand-google", bytedance: "brand-bytedance", openai: "brand-openai", qwen: "brand-qwen" };
+const VIDEO_BRANDS = { google: "brand-google", bytedance: "brand-bytedance", openai: "brand-openai", qwen: "brand-qwen", minimax: "brand-minimax" };
 export const videoItems = () => {
   const cloud = state.info?.target === "comfy-cloud";
   const list = videoModels();

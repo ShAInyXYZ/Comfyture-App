@@ -245,7 +245,7 @@ async function parseShot(input: Record<string, any>): Promise<{ request: ShotReq
 }
 
 // about how long LTX-2.5 runs on Comfy Cloud for a five-second shot at 720p, for its price on the picker
-const LTX_SHOT_SECONDS = 60;
+const LTX_SHOT_SECONDS = 90;
 
 /** A project's id as the pages send it: the id of the story a film grew from. */
 const projectId = (v: unknown) => (typeof v === "string" && /^[\w-]{1,80}$/.test(v) ? v : undefined);
