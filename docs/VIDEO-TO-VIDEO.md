@@ -32,7 +32,12 @@ Rules:
 
 ## Swapping who is in a clip
 
-The graph is `workflows/shot-swap.json`, built by `buildSwap()` in `server/workflows.ts`. It is Lightricks' `LTX-2.5_ICLoRA_Union_Control_Distilled` example, node for node, plus the frozen-audio part of their `LTX-2.5_A2V_Two_Stage_Distilled` example:
+Two graphs, both built by `buildSwap()` in `server/workflows.ts`:
+
+- **`workflows/shot-swap-dev.json` (best quality, used for our trend previews).** It runs the dev model with Lightricks' guidance: 30 Euler steps, `MultimodalGuider` at video cfg 3, rescale 0.7 and audio-to-video guidance 3, the voice's lever on the mouths. STG is off, because it crashes on Comfy Cloud's current ComfyUI. The first stage is 960×640; the second, 1920×1280, uses dev with the distilled LoRA. The pose is read once at full size and **added again in the second stage**, so mouths and paws keep the source's fine motion. Union strength is 0.7. Lightricks' default negative prompt is used without its anti-cartoon terms. One 5 s shot takes about 4–5 minutes. The study behind it: [LTX-2.5-STUDY.md](LTX-2.5-STUDY.md).
+- **`workflows/shot-swap.json` (fast).** This is the distilled version described below, about 1 minute a shot.
+
+The fast graph is Lightricks' `LTX-2.5_ICLoRA_Union_Control_Distilled` example, node for node, plus the frozen-audio part of their `LTX-2.5_A2V_Two_Stage_Distilled` example:
 
 1. **The motion:** the source clip, resized to the stage-1 size, goes through `DWPreprocessor` (body, hands and face) and into `LTXAddVideoICLoRAGuide` with the union-control IC-LoRA (`ltx-2.3-22b-ic-lora-union-control-ref0.5`, strength 1). "ref0.5" means the guide is read at half the generation size: `LTXICLoRALoaderModelOnly` reads that factor (2) from the file and hands it to the guide node. Feed the guide at the generation size; the node does the rest.
 2. **Who is in it:** the first frame, an edited still with the new characters standing exactly where the people stood, at their size. It is pinned in both stages. Its quality goes into every frame.

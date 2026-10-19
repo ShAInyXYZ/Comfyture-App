@@ -263,7 +263,7 @@ export function buildMotion(graph: Graph, clip: unknown, photo: unknown | null, 
  * guide, for an edit IC-LoRA. The first frame says who is in it. width and height are the first stage's,
  * multiples of 64; frames is 8n + 1.
  */
-export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audio: unknown; from: number; prompt: string; frames: number; width: number; height: number; seed: number; face?: boolean; control?: "pose" | "frames"; lora?: string }) {
+export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audio: unknown; from: number; prompt: string; frames: number; width: number; height: number; seed: number; face?: boolean; control?: "pose" | "frames"; lora?: string; strength?: number }) {
   set(graph, "video_in", "file", v.clip);
   set(graph, "photo", "image", v.photo);
   set(graph, "audio_in", "audio", v.audio);
@@ -274,8 +274,13 @@ export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audi
     set(graph, node, "height", v.height);
     set(graph, node, "length", v.frames);
   }
-  set(graph, "guide_fit", "resize_type.width", v.width);
-  set(graph, "guide_fit", "resize_type.height", v.height);
+  // shot-swap-dev reads the pose at the full size (it guides stage 2 too) and halves it for stage 1
+  const full = graph.control_half ? 2 : 1;
+  set(graph, "guide_fit", "resize_type.width", v.width * full);
+  set(graph, "guide_fit", "resize_type.height", v.height * full);
+  set(graph, "control_half", "resize_type.width", v.width);
+  set(graph, "control_half", "resize_type.height", v.height);
+  if (v.strength !== undefined) set(graph, "ic_lora", "strength_model", v.strength);
   // the track covers every frame: one shorter and the model makes up the mouths of the last
   set(graph, "audio_cut", "start_index", v.from);
   set(graph, "audio_cut", "duration", v.frames / 24);

@@ -1,6 +1,7 @@
 // One swap take on Comfy Cloud from local files, to try the workflow before it runs in the app:
 //   node --env-file=.env scripts/try-swap.ts spec.json
-// spec: { clip, photo, audio, from, frames, width, height, prompt, seed, face?, control?, lora?, loras?, out }
+// spec: { graph?, clip, photo, audio, from, frames, width, height, prompt, seed, face?, control?, lora?, strength?, loras?, out }
+// (graph: shot-swap.json, the default, or shot-swap-dev.json; width and height are the first stage's)
 // (paths relative to where it runs; loras: [{ file, strength }] chained before the IC-LoRA)
 import { Comfy } from "@comfyorg/sdk";
 import { readFile } from "node:fs/promises";
@@ -13,7 +14,7 @@ const spec = JSON.parse(await readFile(process.argv[2], "utf8"));
 const client = new Comfy({ clientInfo: "comfyture/0.1" });
 const library = new CloudLibrary(process.env.COMFY_API_KEY!.trim());
 const asset = (path: string) => client.assets.fromFile(resolve(path));
-const graph = buildSwap(await loadGraph(resolve(import.meta.dirname, "..", "workflows"), "shot-swap.json"), {
+const graph = buildSwap(await loadGraph(resolve(import.meta.dirname, "..", "workflows"), spec.graph ?? "shot-swap.json"), {
   ...spec,
   clip: asset(spec.clip),
   photo: asset(spec.photo),
@@ -33,6 +34,9 @@ for await (const ev of job.events()) {
 }
 await job.wait().catch((e: Error) => console.log("error", e.message));
 const [video] = job.getOutputs("video");
-if (!video) throw new Error(`no video (status ${job.status})`);
+if (!video) {
+  console.log("error", JSON.stringify((job as unknown as { error?: unknown }).error ?? null, null, 1).slice(0, 3000));
+  throw new Error(`no video (status ${job.status})`);
+}
 await video.toFile(resolve(spec.out));
 console.log("saved", spec.out, Math.round((Date.now() - started) / 1000), "s");
