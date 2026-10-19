@@ -9,7 +9,7 @@ import { artistItems } from "../writer-menu.js";
 import { view } from "../viewer.js";
 import {
   mixer, loadMixes, openMix, removeMix, save, useVideo, addCast, setCast, removeCast, castKinds, CAST_MAX,
-  shotLength, shotState, setShot, select, redo, mixIt, mixing, estimate, take, mixLoras, setMixLoras,
+  shotLength, shotState, setShot, select, redo, mixIt, mixing, estimate, take, mixLoras, setMixLoras, rolled,
 } from "../mixer.js";
 import { loraStack } from "../loras.js";
 import { TRENDS, CREW, KINDS, trendById, crewById, trendArt, crewFace } from "../mixer-trends.js";
@@ -102,9 +102,12 @@ function recipe(t) {
         m?.body.music ? keep(`music:${m.body.music.url}`, () => h("audio", { src: m.body.music.url, controls: true, preload: "none" })) : h("span.mx-music-icon", {}, sprite("audio-music")),
         ...[t.music?.bpm ? `${t.music.bpm} BPM` : null, t.music?.genre, t.music?.mood].filter(Boolean).map((x) => h("span.mx-chip", {}, x)),
         h("span.mx-chip.is-own", { title: "A new track made for your mix in the trend's feel: never the trend's own song" }, "Our own track")),
-      h("div.mx-cast-head", {}, h("span.label", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "The crew by default. Swap them, or drop a photo of your own")),
-      h("div.mx-roles", {}, ...cast.map((c) => role(c))),
-      mixStack(),
+      // who stars in it beside how it is made
+      h("div.mx-lower", {},
+        h("div.mx-cast-col", {},
+          h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "The crew by default. Swap them, or pick your own.")),
+          h("div.mx-roles", {}, ...cast.map((c) => role(c)))),
+        madeWith({ music: true })),
       m ? progress(m) : null,
       h("button.mx-go", { type: "button", disabled: busy, title: "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
         sprite("product-mixer"), h("span", {}, busy ? "Making it" : m?.body.film ? "Make it again" : "Make it"), cost && !busy ? h("em", {}, `≈ ${cost} cr`) : null)));
@@ -124,10 +127,9 @@ function preview(t, m) {
 function role(c) {
   const on = pick.role === c.role;
   return h(`div.mx-role${on ? ".is-on" : ""}`, {},
-    h("span.label", {}, c.role),
     h("button.mx-role-face", { type: "button", title: on ? "Pick someone at the side, or drop a photo here" : `Pick who plays the ${c.role.toLowerCase()}`, on: { click: () => pickRole(c.role) } }, h("img", { src: faceOf(c.who), alt: "", draggable: false })),
-    h("span.mx-role-text", {}, h("b", {}, nameOf(c.who)), h("em", {}, c.who.crew ? crewById(c.who.crew).role : "Your star")),
-    h("button.key.is-icon.is-quiet", { type: "button", title: "Another of the crew", on: { click: () => swapRole(c.role) } }, sprite("cast-swap")),
+    h("span.mx-role-text", {}, h("span.label", {}, c.role), h("b", {}, nameOf(c.who)), h("em", {}, c.who.crew ? crewById(c.who.crew).role : "Your star")),
+    h("button.mx-role-swap", { type: "button", title: "Another of the crew", "aria-label": "Another of the crew", on: { click: () => swapRole(c.role) } }, sprite("cast-swap")),
     h("button.mx-role-drop", { type: "button", title: "Someone else plays this role: one of our characters, a star of yours, a picture from the Library or your computer", on: { click: (e) => openPicker(e.currentTarget, { title: `Who plays the ${c.role.toLowerCase()}`, stars: stars.list, onPick: (choice) => castChoice(c.role, choice) }), dragover: (e) => e.preventDefault(), drop: (e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith("image/")) addStar(f, c.role); } } }, icon("plus"), h("span", {}, "Pick")));
 }
 
@@ -155,27 +157,46 @@ function remix(m) {
       m?.body.film ? player(m) : h("div.mx-screen", {}, mixer.splitting ? h("div.mx-screen-empty", {}, h("span.lamp", { dataset: { tone: "busy" } }), h("span", {}, "Finding the cuts")) : e?.video ? loopVideo("edit", e.video.url) : null),
       h("button.key.mx-back", { type: "button", on: { click: () => ((mixer.mix = null), changedMixer()) } }, icon("chevron"), "Back to the trends")),
     h("div.mx-remix-right", {},
-      h("span.label", {}, "Shots"),
+      h("div.mx-section-head", {}, h("h3", {}, "Shots")),
       strip(m),
       shotFix(m),
-      h("div.mx-cast-head", {}, h("span.label", {}, "Your cast"), h("em", {}, `${m?.body.cast.length ?? 0} / ${CAST_MAX}: who the edit is about`)),
+      h("div.mx-section-head", {}, h("h3", {}, "Your cast"), h("em", {}, `${m?.body.cast.length ?? 0} / ${CAST_MAX}: who the edit is about`)),
       h("div.mx-cast", {}, ...Array.from({ length: CAST_MAX }, (_, i) => castSlot(m, i))),
-      h("div.mx-pickers", {}, lookPicker(), ltxReadout()),
-      mixStack(),
+      madeWith({ music: false }),
       goKey(m)));
 }
 
-const ltxReadout = () => h("span.mx-readout", { title: "LTX-2.5 rolls every shot" }, sprite("section-shot"), h("span", {}, h("b", {}, "LTX-2.5"), h("em", {}, state.info?.target === "comfy-cloud" ? "≈ 4.8 cr/s" : "your GPU")));
+// ---------------------------------------------------------------- how it is made
 
-/** The LoRAs every take is rolled with: Pixar Toon by default, like the crew. */
-const mixStack = () => h("div.mx-loras", {}, h("span.label", {}, "LoRAs"), loraStack(mixLoras(), (list) => (setMixLoras(list), changed("mixer"))));
+// Comfy Cloud bills a GPU second at 0.266 credits: ACE-Step takes about 1.3 of them a second of music
+const MUSIC_CR = (1.3 * 0.266).toFixed(1);
+const cloud = () => state.info?.target === "comfy-cloud";
 
-/** The image model that redraws the frames: only those that draw from references. */
-function lookPicker() {
-  const items = artistItems().filter((it) => artists().find((x) => x.id === it.value)?.templates.some((t) => t.id === "edit"));
+/** One of the models a mix is made with: its part, the model, what it costs, and what hangs off it. */
+const modelRow = (glyph, part, model, cost, ...more) =>
+  h("div.mx-model", {}, h("span.mx-model-icon", {}, glyph), h("span.mx-model-text", {}, h("span.label", {}, part), model), h("span.mx-model-cost", {}, cost), ...more);
+
+/**
+ * How a mix is made, at a glance: the picture model that redraws its first frames with the cast,
+ * LTX-2.5 with the LoRAs it rolls with (Pixar Toon by default, like the crew), and the music model.
+ */
+function madeWith({ music }) {
+  return h("div.mx-made", {},
+    h("div.mx-section-head", {}, h("h3", {}, "Made with")),
+    pictureRow(),
+    modelRow(sprite("film-make"), "Video", h("b", {}, "LTX-2.5"), cloud() ? "≈ 4.8 cr/s" : "your GPU",
+      h("div.mx-model-loras", {}, h("span.label", {}, "LoRAs"), loraStack(mixLoras(), (list) => (setMixLoras(list), changed("mixer"))))),
+    music ? modelRow(sprite("audio-music"), "Music", h("b", {}, "ACE-Step 1.5"), cloud() ? `≈ ${MUSIC_CR} cr/s` : "your GPU") : null);
+}
+
+/** The picture model that redraws the first frames with your cast: only those that draw from references. */
+function pictureRow() {
+  const items = artistItems().filter((it) => artists().find((x) => x.id === it.value)?.templates.some((t) => t.id === "edit")).map(({ short, ...it }) => it);
   const value = items.some((it) => it.value === artist()) ? artist() : items[0]?.value;
-  if (!value) return h("span.mx-readout", {}, sprite("image-generate"), h("span", {}, h("b", {}, "Look"), h("em", {}, "loading")));
-  return dropdown({ label: "Look", value, items, onChange: (id) => (setArtist(id), changedMixer()), width: "fit", note: "Draws each shot's first frame with your cast" });
+  const picker = value
+    ? dropdown({ label: "Picture model", value, items, onChange: (id) => (setArtist(id), changedMixer()), width: "fit", note: "Redraws the first frame with your cast" })
+    : h("b", {}, "Loading");
+  return modelRow(sprite("image-generate"), "Picture", picker, items.find((it) => it.value === value)?.meta ?? "");
 }
 
 function castSlot(m, i) {
@@ -191,7 +212,7 @@ function castSlot(m, i) {
 function goKey(m) {
   const busy = mixing() || mixer.busy.has("render");
   const cost = estimate(m);
-  const done = m?.body.shots.length && m.body.shots.every((s) => take(s)?.status === "done");
+  const done = m?.body.shots.length && m.body.shots.every(rolled);
   return h("button.mx-go", { type: "button", disabled: busy || !m?.body.edit || !m?.body.cast.length, title: !m?.body.cast.length ? "Add a photo to the cast first" : "Every shot drawn with your cast, rolled and cut together", on: { click: () => mixIt() } },
     sprite("product-mixer"), h("span", {}, busy ? (mixer.busy.has("render") ? "Cutting" : "Mixing") : done ? "Mix again" : "Mix it"),
     cost !== null && !busy && state.info?.target === "comfy-cloud" ? h("em", {}, `≈ ${cost} cr`) : null);

@@ -31,6 +31,9 @@ export function setMixLoras(list) {
     localStorage.setItem(LORAS, JSON.stringify(list));
   } catch {}
 }
+const sameLoras = (a, b) => JSON.stringify((a ?? []).map((l) => [l.id, l.strength])) === JSON.stringify((b ?? []).map((l) => [l.id, l.strength]));
+/** Whether a shot's take is done, rolled with the LoRAs picked now (a shot rolled with others is rolled again). */
+export const rolled = (s) => take(s)?.status === "done" && sameLoras(take(s).request?.loras, mixLoras());
 const update = () => changed("mixer");
 
 const call = async (path, init) => {
@@ -352,7 +355,7 @@ export async function mixIt() {
   m.body.film = null;
   update();
   try {
-    const todo = m.body.shots.map((s, i) => i).filter((i) => take(m.body.shots[i])?.status !== "done");
+    const todo = m.body.shots.map((s, i) => i).filter((i) => !rolled(m.body.shots[i]));
     let next = 0;
     const worker = async () => {
       while (next < todo.length) {
@@ -368,7 +371,7 @@ export async function mixIt() {
       }
     };
     await Promise.all([worker(), worker(), worker()]);
-    if (m.body.shots.every((s) => take(s)?.status === "done")) await assemble(m);
+    if (m.body.shots.every(rolled)) await assemble(m);
     else toast("Some shots didn't come out: fix them on their own, then mix again.");
   } finally {
     mixer.busy.delete("mix");
@@ -419,7 +422,7 @@ export function estimate(m = mixer.mix) {
   if (!m?.body.edit) return null;
   const look = (state.image.catalogue?.models ?? []).find((x) => x.id === artistFor("edit"));
   const perLook = look?.router ? look.credits ?? 8 : (look?.seconds ?? 10) * 0.266;
-  const shots = m.body.shots.filter((s) => take(s)?.status !== "done");
+  const shots = m.body.shots.filter((s) => !rolled(s));
   const seconds = shots.reduce((t, s) => t + Math.min(10, Math.max(2, Math.ceil(shotLength(s)))), 0);
   const looks = shots.filter((s) => !s.look && (s.frame || m.body.cast.length > 1 || s.note)).length;
   // LTX-2.5 on Comfy Cloud: about 18 s of GPU per second of video at 720p
