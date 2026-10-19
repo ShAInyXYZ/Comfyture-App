@@ -1,5 +1,5 @@
 import { h, icon, sprite } from "../dom.js";
-import { openImage, writer, writers } from "../store.js";
+import { openImage, writer, writers, inProject } from "../store.js";
 import { view } from "../viewer.js";
 import { CAMERA_LABELS } from "../script.js";
 import { pillField, pillText } from "../pills.js";
@@ -49,9 +49,11 @@ function subbar() {
       h("span.tab-name", {}, active ? p.name : s.name),
       story.tabs.length > 1 ? h("span.tab-close", { role: "button", "aria-label": `Close ${s.name}`, title: "Close the tab — the story is kept", on: { click: (e) => (e.stopPropagation(), closeStory(id)) } }, icon("close")) : null);
   };
-  const others = story.list.filter((s) => !story.tabs.includes(s.id));
+  // the open project's story only (with none open, every story)
+  const shown = story.tabs.filter((id) => id === p?.id || inProject("story", { id }));
+  const others = story.list.filter((s) => !story.tabs.includes(s.id) && inProject("story", s));
   return h("div.subbar", {}, h("div.subbar-in", {},
-    h("nav.tabs", { role: "tablist", "aria-label": "Stories" }, ...story.tabs.map(tab),
+    h("nav.tabs", { role: "tablist", "aria-label": "Stories" }, ...shown.map(tab),
       h("button.tab-add", { type: "button", title: "A new story in its own tab", on: { click: () => newStory() } }, icon("plus"), "New story")),
     h("div.subbar-actions", {},
       others.length ? h("select.chip-select.story-open", { "aria-label": "Open a story", on: { change: (e) => e.target.value && openStory(e.target.value) } },

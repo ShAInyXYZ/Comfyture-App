@@ -1,5 +1,5 @@
 import { h, icon, sprite, ago } from "../dom.js";
-import { changed, toast, newTab, openTake, writer, writers, artists, artistFor, videoModels, sheetOf, drawPicture } from "../store.js";
+import { state, changed, toast, newTab, openTake, writer, writers, artists, artistFor, videoModels, sheetOf, drawPicture, setProject } from "../store.js";
 import { writerPicker, artistPicker, videoPicker } from "../writer-menu.js";
 import { tilePicker } from "../controls.js";
 import { mentionAt, putMention } from "../mentions.js";
@@ -89,6 +89,8 @@ function load() {
   home.loading ??= (async () => {
     try {
       home.films = (await call("api/projects")).projects;
+      // what each project holds, for the sections to keep to the open one
+      state.projects = home.films;
       home.error = null;
     } catch (e) {
       home.error = e.message;
@@ -128,14 +130,15 @@ async function openPart(kind, id) {
     fail(e);
   }
 }
-/** A project opens on what it grew from: its story, or the stage or edit it is; a finished film made on its own plays. */
-const openFilm = (f) => (f.story ? openPart("story", f.story.id) : f.stages[0] ? openPart("stage", f.stages[0].id) : f.cuts[0] ? openPart("cut", f.cuts[0].id) : f.reels[0] ? view(f.reels[0].url, "video") : null);
+/** A project opens on what it grew from: its story, or the stage or edit it is; a finished film made on its own plays. The app goes into it. */
+const openFilm = (f) => (setProject(f.id), f.story ? openPart("story", f.story.id) : f.stages[0] ? openPart("stage", f.stages[0].id) : f.cuts[0] ? openPart("cut", f.cuts[0].id) : f.reels[0] ? view(f.reels[0].url, "video") : null);
 
+// each starts outside any film (a new story is a film of its own)
 const START = [
   ["section-story", "A new story, from an empty page", async () => (await loadStories(), await newStory(), go("story"))],
-  ["section-stage", "A new, empty stage to block a scene on", async () => (go("stage"), await (await stageReady).projects.newProject())],
-  ["section-shot", "A new shot on the desk", () => (newTab(), go("shot"))],
-  ["edit-scissors", "A new, empty edit in Cut", async () => (await loadCuts(), await newCut("New edit"), go("cut"))],
+  ["section-stage", "A new, empty stage to block a scene on", async () => (setProject(null), go("stage"), await (await stageReady).projects.newProject())],
+  ["section-shot", "A new shot on the desk", () => (setProject(null), newTab(), go("shot"))],
+  ["edit-scissors", "A new, empty edit in Cut", async () => (setProject(null), await loadCuts(), await newCut("New edit"), go("cut"))],
 ];
 
 /** A whole story from one sentence: a new story with the brief, and the writer writing it while Story shows it. */
@@ -615,6 +618,7 @@ const playIn = (root, on) => root.querySelectorAll(root.classList.contains("film
 
 /** Where a section's output opens: the story, the stage it was rendered on, the take in Shot, the edit in Cut. */
 function openOutput(f, key) {
+  setProject(f.id);
   if (key === "story") return f.story ? openPart("story", f.story.id) : null;
   if (key === "stage") return f.stages[0] ? openPart("stage", f.stages[0].id) : null;
   if (key === "shot") return f.outputs.shot.id ? openPart("take", f.outputs.shot.id) : null;

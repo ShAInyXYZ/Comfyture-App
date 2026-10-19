@@ -18,6 +18,8 @@ import { renderHome } from "./panels/home.js";
 import { renderAssistant } from "./panels/assistant.js";
 import { renderImage } from "./panels/image.js";
 import { renderStage, mountStage } from "./panels/stage.js";
+// the open film, kept in step with the section on screen
+import "./project.js";
 
 const $ = (id) => document.getElementById(id);
 

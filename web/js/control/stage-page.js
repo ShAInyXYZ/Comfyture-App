@@ -6,6 +6,7 @@
 // through it, so undo covers all.
 
 import { h, icon, sprite } from "../dom.js";
+import { state as app, inProject, projectNow } from "../store.js";
 import { view as viewImage } from "../viewer.js";
 import { peek as peekCard, unpeek } from "../peek.js";
 import { pillText } from "../pills.js";
@@ -1290,11 +1291,14 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
 
   function render() {
     hidePreview();
-    tabsEl.replaceChildren(...tabs.map(tabEl),
+    // the open project's stages only (with none open, every stage)
+    tabsEl.replaceChildren(...tabs.filter((id) => id === project?.id || inProject("stage", known.get(id) ?? { id })).map(tabEl),
       el("button.tab-add", { type: "button", title: "A new, empty stage in its own tab", on: { click: () => create().catch((e) => toast(e.message, { tone: "crit" })) } }, icon("plus"), "New stage"));
     tabsEl.classList.toggle("is-overflowing", tabsEl.scrollWidth > tabsEl.clientWidth + 1);
     tabsEl.querySelector('.tab[aria-selected="true"]')?.scrollIntoView({ inline: "nearest", block: "nearest" });
   }
+  // another film opened (or left): the bar shows its stages
+  window.addEventListener("comfyture:project", () => render());
   tabsEl.onwheel = (e) => {
     if (tabsEl.scrollWidth <= tabsEl.clientWidth || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
     tabsEl.scrollLeft += e.deltaY;
@@ -1383,7 +1387,8 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
     stage.runs = scene ? stage.runs.map((r) => ({ ...r })) : [];
     if (!scene) stage.load({ version: 2 });
     stage.emit("runs");
-    const { stage: p } = await call("api/control/stages", { method: "POST", headers: json, body: JSON.stringify({ name: name ?? `Stage ${count + 1}`, scene: scene ?? stage.toJSON(), thumb: thumb(), renders: stage.runs, ...extra }) });
+    // a stage made in an open project is made for it
+    const { stage: p } = await call("api/control/stages", { method: "POST", headers: json, body: JSON.stringify({ name: name ?? `Stage ${count + 1}`, scene: scene ?? stage.toJSON(), thumb: thumb(), renders: stage.runs, ...extra, project: extra.project ?? app.project ?? undefined }) });
     show(p);
     saved(p.updatedAt);
     return p;
@@ -1482,9 +1487,12 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
     render();
   }
 
+  let opening = null;
   return {
     current: () => project,
     open,
+    /** Every stage, as the server lists them (with the project each was made for). */
+    list: () => list(),
     /** A new stage; made for a story, it says which (its project), so it shows inside that film. */
     newProject: (name, extra) => create(name, undefined, extra),
     /** A stage deleted from elsewhere (the welcome screen): its tab goes with it. */
@@ -1497,22 +1505,33 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
       render();
     },
     /** The stages open last open again; the very first time, every stage (the examples) has a tab. */
-    async openLast() {
-      try {
-        const stages = await list();
-        let kept = null;
+    /** The stages open last open again (the open project's, when one is open); the very first time, every stage (the examples) has a tab. */
+    openLast() {
+      opening ??= (async () => {
         try {
-          kept = JSON.parse(read(TABS) ?? "null");
-        } catch {}
-        tabs = Array.isArray(kept) ? kept.filter((id) => known.has(id)) : [];
-        if (!tabs.length) tabs = stages.slice(0, 8).map((p) => p.id);
-        const last = read(LAST);
-        const id = tabs.includes(last) ? last : tabs[0];
-        if (id) return await open(id);
-        await create("Stage 1");
-      } catch (e) {
-        toast(e.message, { tone: "crit" });
-      }
+          const stages = await list();
+          let kept = null;
+          try {
+            kept = JSON.parse(read(TABS) ?? "null");
+          } catch {}
+          tabs = Array.isArray(kept) ? kept.filter((id) => known.has(id)) : [];
+          if (!tabs.length) tabs = stages.slice(0, 8).map((p) => p.id);
+          const mine = (id) => inProject("stage", known.get(id) ?? { id });
+          const last = read(LAST);
+          const id = tabs.includes(last) && mine(last) ? last : tabs.find(mine) ?? stages.find((x) => inProject("stage", x))?.id;
+          if (id) {
+            if (!tabs.includes(id)) tabs.push(id);
+            return await open(id);
+          }
+          // a project with no stage yet gets one of its own
+          await create(app.project ? `${projectNow()?.name ?? "Film"} — stage` : "Stage 1");
+        } catch (e) {
+          toast(e.message, { tone: "crit" });
+        }
+      })();
+      return opening;
     },
+    /** Once the stages open last are open. */
+    settled: () => opening,
   };
 }

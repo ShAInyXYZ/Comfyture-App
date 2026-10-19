@@ -631,14 +631,62 @@ export function openTake(id) {
   if (!run) return;
   const existing = state.tabs.find((t) => t.run === id && t.id !== "draft");
   if (existing) return switchTab(existing.id);
-  const tab = { id: `take-${id}`, run: id, draft: draftFromRun(run) };
+  // a take of a film opens in that film's tabs
+  const tab = { id: `take-${id}`, run: id, project: run.request?.project ?? state.project ?? undefined, draft: draftFromRun(run) };
   const at = state.tabs.findIndex((t) => t.id === state.tab);
   state.tabs.splice(at + 1, 0, tab);
   switchTab(tab.id);
 }
 
+// ---------------------------------------------------------------- the project the app is in
+
+// A project is a film: its story (whose id is the project's) and the stages, takes and edits made
+// for it. Opened from Home (or a story's tab), every section shows its work only and what is made
+// there is made for it; with none open, every section shows everything.
+const PROJECT = "comfyture.project";
+try {
+  state.project = localStorage.getItem(PROJECT) || null;
+} catch {
+  state.project = null;
+}
+state.projects = [];
+/** What each project holds, as Home lists them: how older work (with no project of its own) is placed. */
+export async function loadProjects() {
+  try {
+    state.projects = (await (await fetch("api/projects")).json()).projects ?? [];
+  } catch {}
+  changed("all");
+  return state.projects;
+}
+export function setProject(id) {
+  if ((id || null) === state.project) return;
+  state.project = id || null;
+  try {
+    id ? localStorage.setItem(PROJECT, id) : localStorage.removeItem(PROJECT);
+  } catch {}
+  changed("all");
+  window.dispatchEvent(new CustomEvent("comfyture:project"));
+}
+export const projectNow = () => state.projects.find((p) => p.id === state.project) ?? null;
+/** Whether a piece of work belongs to the open project; with none open, everything does. */
+export function inProject(kind, item) {
+  const pid = state.project;
+  if (!pid || !item) return true;
+  if (item.project) return item.project === pid;
+  const p = projectNow();
+  if (item.id === pid) return true;
+  if (!p) return false;
+  if (kind === "story") return p.story?.id === item.id;
+  if (kind === "stage") return (p.stages ?? []).some((s) => s.id === item.id);
+  if (kind === "cut") return (p.cuts ?? []).some((c) => c.id === item.id);
+  if (kind === "take") return (p.takes ?? []).some((t) => t.id === item.id);
+  if (kind === "film") return (p.reels ?? []).some((r) => r.id === item.id) || (!!item.cut && (p.cuts ?? []).some((c) => c.id === item.cut));
+  if (kind === "tab") return (!!item.run && (p.takes ?? []).some((t) => t.id === item.run)) || (!!item.film && item.film === p.name);
+  return false;
+}
+
 export function newTab() {
-  const tab = { id: `shot-${Date.now().toString(36)}`, run: null, draft: { ...freshDraft(), name: "New shot" } };
+  const tab = { id: `shot-${Date.now().toString(36)}`, run: null, project: state.project ?? undefined, draft: { ...freshDraft(), name: "New shot" } };
   state.tabs.push(tab);
   switchTab(tab.id);
 }

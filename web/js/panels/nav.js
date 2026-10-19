@@ -1,5 +1,5 @@
-import { h, sprite } from "../dom.js";
-import { state } from "../store.js";
+import { h, sprite, icon } from "../dom.js";
+import { state, setProject, projectNow } from "../store.js";
 import { PAGES, currentPage } from "../router.js";
 import { story } from "../story.js";
 import { cut } from "../cut.js";
@@ -25,6 +25,12 @@ export function renderNav(el) {
     if (id === "cut" && cut.busy.size) return h("span.section-badge", {}, h("span.lamp", { dataset: { tone: "busy" } }), cut.busy.has("render") ? "Rendering" : `Making ${cut.busy.size}`);
     return null;
   };
-  el.replaceChildren(...Object.entries(PAGES).map(([id, label]) =>
-    h("a.section", { href: `#/${id}`, "aria-current": id === page ? "page" : undefined }, sprite(ICON[id]), h("span", {}, label), badge(id))));
+  // the project open, before its sections: its name leads home, the cross leaves it
+  const p = state.project ? projectNow() ?? story.list.find((s) => s.id === state.project) ?? { name: "This film" } : null;
+  el.replaceChildren(
+    ...(p ? [h("span.project-chip", {},
+      h("a.project-chip-name", { href: "#/home", title: "The film open\nEvery section shows its work only" }, p.cover?.pic || p.thumb ? h("img", { src: p.cover?.pic ?? p.thumb, alt: "", draggable: false }) : sprite("film-make"), h("span", {}, p.name)),
+      h("button.project-chip-x", { type: "button", title: "Leave the film\nEvery section shows all your work again", "aria-label": "Leave the film", on: { click: () => setProject(null) } }, icon("close")))] : []),
+    ...Object.entries(PAGES).map(([id, label]) =>
+      h("a.section", { href: `#/${id}`, "aria-current": id === page ? "page" : undefined }, sprite(ICON[id]), h("span", {}, label), badge(id))));
 }

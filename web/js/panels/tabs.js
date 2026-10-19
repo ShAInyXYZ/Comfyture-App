@@ -1,5 +1,5 @@
 import { h, icon } from "../dom.js";
-import { state, switchTab, closeTab, moveTab, newTab, editFromTabs, filmTakes } from "../store.js";
+import { state, switchTab, closeTab, moveTab, newTab, editFromTabs, filmTakes, inProject } from "../store.js";
 
 const STATE_TONE = { queued: "busy", frame: "busy", shot: "busy", review: "warn", done: "ok", failed: "crit" };
 let preview = null;
@@ -92,7 +92,8 @@ export function renderTabs(el) {
   // the tabs a Director film made sit together under its title
   const nodes = [];
   let group = null;
-  state.tabs.forEach((t, i) => {
+  // the open project's tabs only
+  state.tabs.filter((t) => t.id === state.tab || inProject("tab", t)).forEach((t, i) => {
     const sig = tabSig(t, i);
     let node = built.get(t.id);
     if (node?.sig !== sig) {

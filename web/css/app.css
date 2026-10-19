@@ -847,6 +847,15 @@ body.has-window { overflow: hidden; }
 .sel-item[data-selected] .sel-meta { color: var(--accent); }
 .sel-note { margin: .25rem 0 0; padding: .5rem .625rem .375rem; border-top: 1px solid var(--line); color: var(--dim); font: 400 var(--fs-micro)/1.4 var(--font-sans); }
 
+/* the film open: its name before the sections, a cross to leave it */
+.project-chip { display: inline-flex; align-items: center; gap: .125rem; height: 2.25rem; margin-right: .75rem; padding: 0 .25rem 0 .375rem; border: 1px solid var(--accent-line); border-radius: 999px; background: var(--accent-soft); }
+.project-chip-name { display: inline-flex; align-items: center; gap: .5rem; max-width: 16rem; color: var(--accent); font: 600 var(--fs-small)/1 var(--font-sans); text-decoration: none; }
+.project-chip-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-chip-name img, .project-chip-name svg { flex: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; object-fit: cover; }
+.project-chip-x { display: grid; place-items: center; width: 1.625rem; height: 1.625rem; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--accent); cursor: pointer; opacity: .7; }
+.project-chip-x:hover { opacity: 1; background: rgba(242, 255, 89, .14); }
+.project-chip-x svg { width: .75rem; height: .75rem; }
+
 /* the whole film being made: a card over every page, its steps lit as they are done */
 .film-run { position: fixed; left: 1rem; bottom: 1rem; z-index: 40; width: min(22rem, calc(100vw - 2rem)); padding: .875rem 1rem 1rem; border: 1px solid var(--line2); border-radius: calc(.875rem * var(--corner-k, 1)); background: var(--s2); box-shadow: var(--float); }
 .film-run[hidden] { display: none; }

@@ -5,7 +5,7 @@
 // feed Stage (blocked from their words), Shot (prompts and frames) and Cut (an edit in order).
 // Stories are kept on the server, one per tab, with undo.
 
-import { state, changed, toast, drawPicture, rollAsTab, switchTab, sheetOf, writer, artistFor, videoModel } from "./store.js";
+import { state, changed, toast, drawPicture, rollAsTab, switchTab, sheetOf, writer, artistFor, videoModel, setProject } from "./store.js";
 import { expandTags } from "./pills.js";
 import { go } from "./router.js";
 
@@ -225,6 +225,8 @@ export async function openStory(id) {
 export async function newStory(name = "Untitled story") {
   const { project } = await send("api/stories", "POST", { name, body: normalize() });
   story.list.unshift({ id: project.id, name: project.name, updatedAt: project.updatedAt });
+  // a new story is a new project: the app goes into it
+  setProject(project.id);
   await openStory(project.id);
 }
 export async function duplicateStory() {

@@ -1,6 +1,6 @@
 import { h, icon } from "../dom.js";
 import { workflowUrl } from "../api.js";
-import { state, openTake, approve, reframe, cancel, remove, remix, useSettings, useLastFrame, continueFrom, shareClip, newSound, removeFilm } from "../store.js";
+import { state, openTake, approve, reframe, cancel, remove, remix, useSettings, useLastFrame, continueFrom, shareClip, newSound, removeFilm, inProject } from "../store.js";
 import { view } from "../viewer.js";
 
 const STATE = {
@@ -184,19 +184,21 @@ const runSig = (run) => JSON.stringify([
 ]);
 
 export function renderTakes(el) {
-  const runs = state.runs;
+  // the open project's takes and films only
+  const runs = state.runs.filter((r) => inProject("take", { id: r.id, project: r.request?.project }));
+  const films = state.films.filter((f) => inProject("film", f));
   const before = el.querySelector(".shelf");
   const scroll = [before?.scrollLeft ?? 0, before?.scrollTop ?? 0];
   el.replaceChildren(
     h("div.card-head", {},
       h("span.card-label", {}, "Take log"),
       h("span.card-hint", {}, runs.length
-        ? `${runs.length} take${runs.length > 1 ? "s" : ""}${state.films.length ? ` · ${state.films.length} film${state.films.length > 1 ? "s" : ""}` : ""}`
+        ? `${runs.length} take${runs.length > 1 ? "s" : ""}${films.length ? ` · ${films.length} film${films.length > 1 ? "s" : ""}` : ""}`
         : ""),
     ),
-    runs.length || state.films.length
+    runs.length || films.length
       ? h("div.shelf", {},
-          state.films.map((f) => cached(`film:${f.id}`, `${f.name}|${f.seconds}`, () => filmCard(f))),
+          films.map((f) => cached(`film:${f.id}`, `${f.name}|${f.seconds}`, () => filmCard(f))),
           runs.map((r) => cached(r.id, runSig(r), () => card(r))))
       : h("p.shelf-empty", {}, "Takes you roll appear here, newest first."),
   );
