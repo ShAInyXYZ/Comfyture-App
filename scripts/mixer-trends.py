@@ -4,7 +4,9 @@ Reads docs/brand/mixer-crew (the crew's sheets, lineup and trend illustrations, 
 revisions first) and docs/research/trends-2026-10-19/trend-recipes.json, and writes:
   web/brand/mixer/trends/<id>.webp   each trend's cover, at a size for the web
   web/brand/mixer/crew/<name>.png    each crew cat: a round avatar and a clean reference picture
-  web/js/mixer-trends.js             the shelf: names, kinds, lengths, casts, beats and music feel
+  web/js/mixer-trends.js             the shelf: names, kinds, lengths, casts, beats and music feel, and for a
+                                     trend we have made ourselves (web/brand/mixer/trends/<id>/recipe.json)
+                                     its preview and its recipe
 Source frames from the review are never copied: only our own artwork goes on the shelf.
 
 Run from the repository root: python3 scripts/mixer-trends.py
@@ -145,6 +147,18 @@ def main():
         })
         if trends[-1]["caption"]:
             trends[-1]["caption"] = trends[-1]["caption"].split(":", 1)[1].strip().strip('"“”').rstrip(".")
+        # a trend we have made ourselves: its preview, and the recipe a version with other characters is made from
+        recipe_file = OUT_ART / slug / "recipe.json"
+        if recipe_file.exists():
+            recipe = json.loads(recipe_file.read_text())
+            trends[-1].update({
+                "seconds": round(recipe["seconds"]),
+                "beats": recipe.get("beats") or trends[-1]["beats"],
+                "aspect": recipe["aspect"],
+                "preview": f"brand/mixer/trends/{slug}/{recipe['preview']}",
+                "poster": f"brand/mixer/trends/{slug}/{recipe['poster']}",
+                "recipe": f"brand/mixer/trends/{slug}/recipe.json",
+            })
 
     # the crew: a round avatar from the lineup, and a clean front view from each sheet for the models
     lineup = Image.open(CREW_DIR / "crew-lineup-v1.png").convert("RGB")

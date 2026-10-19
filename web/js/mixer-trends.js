@@ -33,7 +33,7 @@ export const TRENDS = [
     "id": "hotel-lobby",
     "name": "Hotel Lobby",
     "kind": "duo",
-    "seconds": 15,
+    "seconds": 18,
     "heat": 5,
     "cast": [
       {
@@ -47,24 +47,29 @@ export const TRENDS = [
     ],
     "beats": [
       {
-        "from": 0.0,
-        "to": 1.0,
-        "text": "Praline leans into a shared hanging mic while Sesame already nods"
+        "from": 0,
+        "to": 2.6,
+        "text": "Praline rubs both paws while Sesame raps into a paw"
       },
       {
-        "from": 1.0,
-        "to": 6.0,
-        "text": "Praline performs a new rhythmic line; Sesame answers with a shoulder bounce"
+        "from": 2.6,
+        "to": 7.0,
+        "text": "Praline raps at the mic; Sesame throws a paw at the camera"
       },
       {
-        "from": 6.0,
-        "to": 11.0,
-        "text": "Roles swap"
+        "from": 7.0,
+        "to": 10.4,
+        "text": "Praline raps to Sesame; Sesame answers with both paws"
       },
       {
-        "from": 11.0,
-        "to": 15.0,
-        "text": "Both hold an original closing pose"
+        "from": 10.4,
+        "to": 14.2,
+        "text": "Sesame spins around while Praline keeps the verse going"
+      },
+      {
+        "from": 14.2,
+        "to": 18.0,
+        "text": "Sesame salutes; Praline throws both paws up"
       }
     ],
     "music": {
@@ -78,7 +83,11 @@ export const TRENDS = [
         "original sparse synth motif"
       ]
     },
-    "caption": null
+    "caption": null,
+    "aspect": "3:2",
+    "preview": "brand/mixer/trends/hotel-lobby/preview.mp4",
+    "poster": "brand/mixer/trends/hotel-lobby/poster.webp",
+    "recipe": "brand/mixer/trends/hotel-lobby/recipe.json"
   },
   {
     "id": "smalltown-boy",
