@@ -10,7 +10,7 @@
 .welcome-slide { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 42%) minmax(0, 1fr); opacity: 0; visibility: hidden; transition: opacity .6s var(--ease-out), visibility 0s .6s; }
 .welcome-slide.is-on { opacity: 1; visibility: visible; transition: opacity .6s var(--ease-out); }
 /* the art fills the right and fades into the dark the words stand on */
-.welcome-slide-art { position: absolute; top: 0; right: 0; width: 70%; height: 100%; object-fit: cover; object-position: center 45%; -webkit-mask-image: linear-gradient(to right, transparent, #000 40%); mask-image: linear-gradient(to right, transparent, #000 40%); transform: scale(1.04); transition: transform 7s linear; }
+.welcome-slide-art { position: absolute; top: 0; right: 0; width: 70%; height: 100%; object-fit: cover; object-position: 62% 45%; -webkit-mask-image: linear-gradient(to right, transparent, #000 40%); mask-image: linear-gradient(to right, transparent, #000 40%); transform: scale(1.04); transition: transform 7s linear; }
 .welcome-slide.is-on .welcome-slide-art { transform: scale(1); }
 .welcome-slide-text { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 1.25rem; padding: 0 0 2.5rem clamp(1.5rem, 4vw, 4.5rem); }
 .welcome-eyebrow { display: inline-flex; align-items: center; gap: .625rem; color: var(--accent); font: 600 var(--fs-small)/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
@@ -32,7 +32,8 @@
 .welcome-menu { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(2, minmax(17rem, 21rem)); gap: 1rem; }
 .welcome-card { position: relative; display: block; overflow: hidden; border-radius: calc(1.125rem * var(--corner-k, 1)); background: var(--sunk); color: var(--text); text-decoration: none; isolation: isolate; }
 .welcome-card.is-kitchen { grid-row: span 2; }
-.welcome-card-art { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; transition: transform .5s var(--ease-out), filter .3s; }
+/* each cover's star stands centre-right: the crop keeps it in view */
+.welcome-card-art { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; object-position: 62% 42%; transition: transform .5s var(--ease-out), filter .3s; }
 .welcome-card::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgba(10, 9, 12, .92), rgba(10, 9, 12, .55) 38%, transparent 68%); }
 .welcome-card:hover .welcome-card-art { transform: scale(1.04); }
 .welcome-card:focus-visible { outline: var(--focus-w, 2px) solid var(--accent); outline-offset: 3px; }
