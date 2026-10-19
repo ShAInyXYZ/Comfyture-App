@@ -372,7 +372,8 @@ function summary(kind: string, body: any) {
   if (kind === "cuts") {
     const tracks: any[] = Array.isArray(body?.tracks) ? body.tracks : [];
     const main = tracks.find((t) => t?.main)?.items ?? [];
-    return { clips: main.length, titles: tracks.find((t) => t?.kind === "title")?.items?.length ?? 0, sounds: tracks.filter((t) => t?.kind === "audio").reduce((n, t) => n + (t.items?.length ?? 0), 0) };
+    // an edit another product made for its own video (a Mixer remix, a Jam music video) says which
+    return { clips: main.length, titles: tracks.find((t) => t?.kind === "title")?.items?.length ?? 0, sounds: tracks.filter((t) => t?.kind === "audio").reduce((n, t) => n + (t.items?.length ?? 0), 0), product: typeof body?.product === "string" ? body.product : undefined };
   }
   return {};
 }
@@ -427,7 +428,10 @@ async function listFilms() {
     const id = owner(st.project, st.name, /^(.*) — \d+[A-Z]$/);
     (id ? films.get(id)! : add(st.id, "stage", st.name, st.updatedAt)).stages.push(st);
   }
+  // Kitchen's films only: the edits Mixer and Jam made for their videos stay with them
+  const elsewhere = new Set(cuts.filter((c) => (c.info as any).product).map((c) => c.id));
   for (const c of cuts) {
+    if (elsewhere.has(c.id)) continue;
     const id = owner(c.project, c.name);
     (id ? films.get(id)! : add(c.id, "cut", c.name, c.updatedAt)).cuts.push(c);
   }
@@ -442,6 +446,7 @@ async function listFilms() {
   // a film rendered in Cut belongs where its edit (or its takes) are; rendered from loose takes, it is a project of its own
   const ofCut = new Map([...films.values()].flatMap((f) => f.cuts.map((c) => [c.id, f.id] as const)));
   for (const reel of reels) {
+    if (reel.cut && elsewhere.has(reel.cut)) continue;
     const id = (reel.cut && ofCut.get(reel.cut)) ?? (reel.takes ?? []).map((t: string) => placed.get(t)).find(Boolean);
     const film = id ? films.get(id)! : add(`film-${reel.id}`, "film", reel.name || "Film", reel.createdAt);
     if (!id) for (const t of reel.takes ?? []) {

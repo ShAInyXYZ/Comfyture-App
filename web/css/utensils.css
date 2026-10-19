@@ -16,6 +16,8 @@
 .ut-head { display: flex; align-items: center; gap: .625rem; min-height: 1.75rem; }
 .ut-sub { margin: .375rem 0 0; font: 400 var(--fs-small)/1 var(--font-mono); color: var(--dim); }
 .ut-count { margin-left: auto; font: 500 var(--fs-small)/1 var(--font-mono); color: var(--dim); }
+.ut-empty { display: grid; justify-items: center; gap: .75rem; padding: 1.5rem .5rem; text-align: center; }
+.ut-empty .star { height: 8rem; }
 
 /* ---- the shelf ----------------------------------------------------------------------------- */
 .ut-shelf { position: sticky; top: 1rem; }

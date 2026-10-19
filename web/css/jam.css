@@ -81,7 +81,7 @@
 .jm-screen > video, .jm-screen > img { flex: none; width: auto; height: 100%; max-width: 100%; aspect-ratio: 9 / 16; object-fit: cover; }
 .jm-screen-empty { align-self: center; }
 .jm-screen-empty { display: grid; justify-items: center; gap: .75rem; color: var(--dim); font: 500 var(--fs-body)/1 var(--font-sans); }
-.jm-screen-empty svg.icon { width: 3.5rem; height: 3.5rem; color: var(--line2); }
+.jm-screen-empty .star { height: 12rem; }
 /* the caption over the preview, as the render will draw it */
 .jm-caption { position: absolute; left: 50%; transform: translateX(-50%); max-width: min(90%, 22rem); text-align: center; pointer-events: none; }
 .jm-caption:empty { display: none; }

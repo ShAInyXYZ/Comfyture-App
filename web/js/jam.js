@@ -584,7 +584,7 @@ async function assemble(j) {
       { id: "music", kind: "audio", role: "music", items: [{ id: "track", src: { kind: "audio", id: b.part.file }, start: 0, from: 0, to: b.part.seconds }] },
     ];
     if (b.captions !== "none" && b.lines.length) tracks.push({ id: "captions", kind: "title", items: b.lines.map((l, i) => ({ id: `c${i + 1}`, text: l.text, start: l.from, length: Math.max(0.6, l.to - l.from), style: b.captions === "lower" ? "lower" : b.captions })) });
-    const body = { aspect: "9:16", tracks, duck: false };
+    const body = { aspect: "9:16", tracks, duck: false, product: "jam" };
     let id = b.cut;
     if (id) await send(`api/cuts/${id}`, "PUT", { name: j.name, body }).catch(() => (id = null));
     if (!id) id = (await send("api/cuts", "POST", { name: j.name, body })).project.id;

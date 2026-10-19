@@ -102,7 +102,7 @@ function player(m) {
   if (!film) {
     const t = take(shot);
     const still = t?.status === "done" ? loopVideo("screen", t.video, shot.look?.url) : shot?.look ? h("img", { src: shot.look.url, alt: "", draggable: false }) : null;
-    return h("div.mx-stage", {}, h("div.mx-screen", { dataset: { empty: still ? undefined : "" } }, still ?? h("div.mx-screen-empty", {}, sprite("product-mixer"), h("span", {}, mixing() ? "Mixing" : "Your mix plays here"))));
+    return h("div.mx-stage", {}, h("div.mx-screen", { dataset: { empty: still ? undefined : "" } }, still ?? h("div.mx-screen-empty", {}, h("img.star", { src: "brand/cast/praline.png", alt: "", draggable: false }), h("span", {}, mixing() ? "Mixing" : "Your mix plays here"))));
   }
   const video = keep(`film:${film.url}`, () => {
     const v = h("video", { src: film.url, poster: film.poster, playsInline: true, preload: "metadata", loop: true, draggable: false, disablePictureInPicture: true });

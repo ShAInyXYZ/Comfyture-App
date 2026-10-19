@@ -148,7 +148,7 @@ function shootPanel(b) {
 
 function welcome() {
   return h("div.mc-welcome", {},
-    h("span.mc-welcome-mark", {}, sprite("product-macaron")),
+    h("img.star", { src: "brand/cast/brioche.png", alt: "", draggable: false }),
     h("h1", {}, "Macaron"),
     h("p", {}, "Ready-to-post content for a brand: its kit, its products, a template, and the shoot."),
     h("div.mc-welcome-keys", {},

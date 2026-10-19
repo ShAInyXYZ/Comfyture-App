@@ -372,7 +372,7 @@ async function assemble(m) {
     });
     const tracks = [{ id: "video", kind: "video", main: true, items }];
     if (m.body.edit.sound) tracks.push({ id: "music", kind: "audio", role: "music", items: [{ id: "edit-sound", src: { kind: "audio", id: m.body.edit.sound.file }, start: 0, from: 0, to: m.body.edit.video.seconds }] });
-    const body = { aspect: m.body.aspect, tracks };
+    const body = { aspect: m.body.aspect, tracks, product: "mixer" };
     let id = m.body.cut;
     if (id) await send(`api/cuts/${id}`, "PUT", { name: m.name, body }).catch(() => (id = null));
     if (!id) id = (await send("api/cuts", "POST", { name: m.name, body })).project.id;

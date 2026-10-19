@@ -75,7 +75,7 @@ div.mx-edit-empty { cursor: default; border-style: solid; border-color: transpar
 .mx-screen { display: grid; place-items: center; height: clamp(18rem, 44vh, 30rem); overflow: hidden; border-radius: calc(.875rem * var(--corner-k, 1)); background: var(--sunk); }
 .mx-screen > video, .mx-screen > img { height: 100%; max-width: 100%; object-fit: contain; }
 .mx-screen-empty { display: grid; justify-items: center; gap: .75rem; color: var(--dim); font: 500 var(--fs-body)/1 var(--font-sans); }
-.mx-screen-empty svg.icon { width: 3rem; height: 3rem; color: var(--line2); }
+.mx-screen-empty .star { height: 11rem; }
 .mx-transport { display: flex; align-items: center; gap: .625rem; padding: .375rem; border-radius: .875rem; background: var(--sunk); }
 .mx-time { flex: none; font: 500 var(--fs-body)/1 var(--font-mono); color: var(--text); }
 .mx-time b { font-weight: 500; }

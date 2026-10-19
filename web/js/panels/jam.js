@@ -162,7 +162,7 @@ function videoPanel(j) {
   let screen;
   if (b?.film) screen = h("div.jm-screen", {}, el);
   else screen = h("div.jm-screen.jm-preview", {},
-    b?.artist || b?.looks?.performance ? h("img", { src: b.looks.performance?.url ?? b.artist.url, alt: "", draggable: false }) : h("div.jm-screen-empty", {}, sprite("product-jam"), h("span", {}, "Your music video plays here")),
+    b?.artist || b?.looks?.performance ? h("img", { src: b.looks.performance?.url ?? b.artist.url, alt: "", draggable: false }) : h("div.jm-screen-empty", {}, h("img.star", { src: "brand/cast/pickle.png", alt: "", draggable: false }), h("span", {}, "Your music video plays here")),
     h(`span.jm-caption.is-${b?.captions ?? "karaoke"}`, {}),
     el && !b.film ? h("span.hidden-player", {}, el) : null);
   const name = (j?.name ?? "jam").toLowerCase().replace(/[^a-z0-9]+/g, "-");

@@ -190,7 +190,7 @@ function results() {
   const list = utensils.results;
   return h("section.ut-panel.ut-results", {},
     h("div.ut-head", {}, h("span.card-label", {}, "Results"), h("span.ut-count", {}, list.length === 1 ? "1 result" : `${list.length} results`)),
-    list.length ? null : h("p.hint", {}, "What every tool makes is kept here, newest first."),
+    list.length ? null : h("div.ut-empty", {}, h("img.star", { src: "brand/cast/truffle.png", alt: "", draggable: false }), h("p.hint", {}, "What every tool makes is kept here, newest first.")),
     h("div.ut-list", { dataset: { scrollKey: "ut-results" } }, ...list.map((r) => {
       const t = toolById(r.tool);
       const pic = r.kind === "image" ? h(`img${r.clear ? ".is-clear" : ""}`, { src: r.url, alt: "", draggable: false, loading: "lazy" })

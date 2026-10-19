@@ -129,8 +129,7 @@
 
 /* no brand yet */
 .mc-welcome { display: grid; justify-items: center; align-content: center; gap: .875rem; min-height: calc(100dvh - var(--head) - 2rem); text-align: center; }
-.mc-welcome-mark { display: grid; place-items: center; width: 7rem; height: 7rem; margin-bottom: .5rem; border-radius: calc(1.5rem * var(--corner-k, 1)); background: var(--sunk); color: var(--accent); }
-.mc-welcome-mark svg.icon { width: 4rem; height: 4rem; }
+.mc-welcome .star { height: 12rem; margin-bottom: .25rem; }
 .mc-welcome h1 { margin: 0; font: 800 2.5rem/1 var(--font-sans); letter-spacing: -.02em; text-transform: uppercase; }
 .mc-welcome p { max-width: 30rem; margin: 0; color: var(--muted); font: 400 var(--fs-title)/1.45 var(--font-sans); }
 .mc-welcome-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: .625rem; margin-top: .75rem; }
@@ -138,7 +137,7 @@
 .mc-welcome-keys .key { min-height: 3.25rem; padding: 0 1.25rem; border-radius: .875rem; font-size: var(--fs-body); }
 
 @supports (corner-shape: squircle) {
-  .mc-panel, .mc-logo, .mc-swatch i, .mc-swatch.is-add, .mc-font, .mc-dos label, .mc-drop, .mc-product, .mc-product img, .mc-filters button, .mc-template, .mc-hero, .mc-formats button, .mc-stepper, .mc-guard, .mc-go, .mc-out, .mc-welcome-mark, .mc-welcome-keys .key { corner-shape: squircle; }
+  .mc-panel, .mc-logo, .mc-swatch i, .mc-swatch.is-add, .mc-font, .mc-dos label, .mc-drop, .mc-product, .mc-product img, .mc-filters button, .mc-template, .mc-hero, .mc-formats button, .mc-stepper, .mc-guard, .mc-go, .mc-out, .mc-welcome-keys .key { corner-shape: squircle; }
 }
 
 @media (max-width: 1280px) {
