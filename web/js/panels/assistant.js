@@ -8,6 +8,7 @@ import { attachMenu, MAPS, MAP_TAG, MAP_OF_TAG } from "../attach.js";
 import { story, askStory, storyLookup, selectionLabel, select as selectInStory } from "../story.js";
 import { cut, askCut } from "../cut.js";
 import { dropdown } from "../controls.js";
+import { mentionAt } from "../mentions.js";
 import { writerPicker } from "../writer-menu.js";
 import { view } from "../viewer.js";
 import { currentPage } from "../router.js";
@@ -76,13 +77,6 @@ const describe = (f) =>
   f.kind === "image" ? `${f.width} × ${f.height}` : f.kind === "video" ? `${f.duration?.toFixed(1)} s` : f.kind === "audio" ? `sound · ${f.duration?.toFixed(1)} s` : f.source === "preset" ? "json" : (f.title?.match(/\.(\w+)$/)?.[1] ?? "text");
 
 // ---------------------------------------------------------------- @ mentions
-
-/** The @word being typed at the caret, if any. */
-function mentionAt(input) {
-  const before = input.value.slice(0, input.selectionStart);
-  const m = before.match(/(?:^|\s)@([a-z0-9-]*)$/i);
-  return m ? { query: m[1].toLowerCase(), from: before.length - m[1].length - 1 } : null;
-}
 
 function insertMention(input, name) {
   const at = mentionAt(input);

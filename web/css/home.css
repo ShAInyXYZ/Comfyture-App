@@ -22,6 +22,10 @@
 .home-brief { overflow-y: auto; scrollbar-width: none; }
 .home-brief::-webkit-scrollbar { display: none; }
 .home-prompt.is-drop { border-color: var(--accent); box-shadow: var(--float), 0 0 0 4px rgba(242, 255, 89, .12); }
+/* the prompt sits over what comes after it, so the @ picker under it is never covered */
+.home-prompt { position: relative; z-index: 2; }
+.home-mentions { top: calc(100% + .5rem); bottom: auto; left: 2rem; width: min(40rem, calc(100% - 4rem)); min-width: 0; }
+.pick-grid.is-refs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 /* the references attached to the prompt */
 .home-refs { display: flex; flex-wrap: wrap; gap: .5rem; }
@@ -29,6 +33,12 @@
 .home-ref { position: relative; width: 8.5rem; aspect-ratio: 16 / 10; overflow: hidden; border: 1px solid var(--line2); border-radius: calc(.5rem * var(--corner-k)); background: #111114; }
 .home-ref img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .home-ref.is-adding { display: grid; place-items: center; border-style: dashed; }
+/* a click names it in the prompt; its name is a key of its own that renames it; named, it is lit */
+.home-ref:not(.is-adding) { cursor: pointer; }
+.home-ref.is-mentioned { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+button.home-ref-name { border: 0; cursor: text; }
+button.home-ref-name:hover { color: var(--text); }
+.home-ref-rename { position: absolute; left: .3125rem; right: .3125rem; bottom: .3125rem; height: 1.375rem; padding: 0 .375rem; border: 1px solid var(--accent); border-radius: .3125rem; background: rgba(10, 10, 12, .92); color: var(--accent); font: 500 var(--fs-micro)/1 var(--font-mono); outline: 0; }
 .home-ref-name { position: absolute; left: .3125rem; bottom: .3125rem; max-width: calc(100% - .625rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: .1875rem .375rem; border-radius: .3125rem; background: rgba(10, 10, 12, .82); color: var(--accent); font: 500 var(--fs-micro)/1 var(--font-mono); }
 .home-ref-video { position: absolute; left: .3125rem; top: .3125rem; display: inline-flex; align-items: center; gap: .25rem; padding: .1875rem .375rem; border-radius: .3125rem; background: rgba(10, 10, 12, .82); color: var(--text); font: 500 var(--fs-micro)/1 var(--font-mono); }
 .home-ref-video svg { width: .625rem; height: .625rem; }

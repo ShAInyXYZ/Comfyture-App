@@ -2,6 +2,7 @@ import { h, icon, sprite, ago } from "../dom.js";
 import { changed, toast, newTab, openTake, writer, writers, artists, artistFor, sheetOf, drawPicture } from "../store.js";
 import { writerPicker, artistPicker } from "../writer-menu.js";
 import { tilePicker } from "../controls.js";
+import { mentionAt, putMention } from "../mentions.js";
 import { go, currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
 import { view } from "../viewer.js";
@@ -266,7 +267,8 @@ async function addFiles(files) {
     try {
       if (f.type.startsWith("image/")) {
         const p = await upload(`api/photos?name=${encodeURIComponent(f.name)}`, f, f.type);
-        home.refs.push({ kind: "image", file: p.file, url: p.url, name: nameFor(f.name) });
+        // a pasted picture comes as "image.png": it is a ref until it is renamed
+        home.refs.push({ kind: "image", file: p.file, url: p.url, name: nameFor(/^image\.(png|jpe?g|webp|gif)$/i.test(f.name) ? "ref" : f.name) });
       } else {
         const v = await upload("api/videos", f, f.type);
         const name = nameFor(f.name);
@@ -313,17 +315,99 @@ function attach(anchor) {
     accept: "image/png,image/jpeg,image/webp,video/mp4,video/webm,video/quicktime",
   });
 }
-/** The references on the prompt, each with its @name; drawn in place so the field keeps its words and caret. */
+/**
+ * The references on the prompt, each with its @name; drawn in place so the field keeps its words
+ * and caret. A click on one names it in the prompt; a click on its name renames it; the ones the
+ * prompt names are lit.
+ */
 function refs() {
+  const named = mentioned();
   return h("div.home-refs", { hidden: !home.refs.length && !home.adding },
-    ...home.refs.map((r, i) => h("div.home-ref", { title: `@${r.name}\n${r.kind === "video" ? "A reference video" : "A reference picture"}` },
-      h("img", { src: r.kind === "video" ? r.still?.url ?? "" : r.url, alt: "", draggable: false }),
+    ...home.refs.map((r, i) => h("div.home-ref", { className: named.has(r.name) ? "is-mentioned" : "", title: `Name @${r.name} in the prompt\n${r.kind === "video" ? "A reference video" : "A reference picture"}`, on: { click: () => putMention(document.querySelector(".home-brief"), r.name) } },
+      h("img", { src: refPicture(r), alt: "", draggable: false }),
       r.kind === "video" ? h("span.home-ref-video", {}, icon("play"), r.seconds ? `${Number(r.seconds).toFixed(1)} s` : "") : null,
-      h("span.home-ref-name", {}, `@${r.name}`),
-      h("button.home-ref-x", { type: "button", title: "Take it off", "aria-label": `Take @${r.name} off`, on: { click: () => (home.refs.splice(i, 1), refreshRefs()) } }, icon("close")))),
+      h("button.home-ref-name", { type: "button", title: "Rename it", "aria-label": `Rename @${r.name}`, on: { click: (e) => (e.stopPropagation(), rename(r, e.currentTarget)) } }, `@${r.name}`),
+      h("button.home-ref-x", { type: "button", title: "Take it off", "aria-label": `Take @${r.name} off`, on: { click: (e) => (e.stopPropagation(), home.refs.splice(i, 1), refreshRefs(), updateMentions()) } }, icon("close")))),
     home.adding ? h("div.home-ref.is-adding", {}, h("span.typing", {}, h("i"), h("i"), h("i"))) : null);
 }
 const refreshRefs = () => document.querySelector(".home-refs")?.replaceWith(refs());
+const refPicture = (r) => (r.kind === "video" ? r.still?.url ?? "" : r.url);
+/** The references the prompt names. */
+const mentioned = () => new Set([...home.brief.matchAll(/@([a-z0-9][a-z0-9-]*)/gi)].map((m) => m[1].toLowerCase()));
+
+/** A reference renamed in place: the prompt's @old becomes @new, and no two share a name. */
+function rename(r, button) {
+  const field = h("input.home-ref-rename", { value: r.name, maxLength: 24, "aria-label": "Its name", spellcheck: false });
+  let done = false;
+  const finish = (keep) => {
+    if (done) return;
+    done = true;
+    const base = slugName(field.value);
+    if (keep && base !== r.name) {
+      let name = base;
+      for (let i = 2; home.refs.some((x) => x !== r && x.name === name); i++) name = `${base}-${i}`;
+      const brief = document.querySelector(".home-brief");
+      home.brief = home.brief.replace(new RegExp(`@${r.name}(?![a-z0-9-])`, "gi"), `@${name}`);
+      if (brief) brief.value = home.brief;
+      r.name = name;
+    }
+    refreshRefs();
+  };
+  field.addEventListener("click", (e) => e.stopPropagation());
+  field.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") e.preventDefault(), finish(true);
+    if (e.key === "Escape") e.preventDefault(), finish(false);
+  });
+  field.addEventListener("blur", () => finish(true));
+  button.replaceWith(field);
+  field.focus();
+  field.select();
+}
+
+/** Under the prompt while an @ is typed: the references whose names start with what follows it. */
+function updateMentions() {
+  const input = document.querySelector(".home-brief");
+  const picker = document.querySelector(".home-mentions");
+  // (the chips' titles become tooltips, so they are found by their class)
+  const named = mentioned();
+  document.querySelectorAll(".home-ref:not(.is-adding)").forEach((chip, i) => chip.classList.toggle("is-mentioned", named.has(home.refs[i]?.name)));
+  if (!input || !picker) return;
+  const at = document.activeElement === input ? mentionAt(input) : null;
+  const list = at ? home.refs.filter((r) => r.name.startsWith(at.query)) : [];
+  // a name typed out in full needs no picker
+  const exact = list.length === 1 && list[0].name === at?.query;
+  home.mentioning = at && !exact ? list : [];
+  home.pick = Math.min(home.pick ?? 0, Math.max(0, list.length - 1));
+  picker.hidden = !home.mentioning.length;
+  picker.replaceChildren(h("div.pick-grid.is-refs", {}, ...home.mentioning.map((r, i) =>
+    h("button.pick-file", { type: "button", className: i === home.pick ? "is-active" : "", on: { mousedown: (e) => (e.preventDefault(), putMention(input, r.name)) } },
+      h("span.pick-thumb", {}, h("img", { src: refPicture(r), alt: "", draggable: false })),
+      h("span.pick-name", {}, h("b", {}, `@${r.name}`), h("span", {}, r.kind === "video" ? "A reference video" : "A reference picture"))))));
+}
+/** The prompt's keys while the picker is up: the arrows pick, Tab or Enter names it, Escape closes it. */
+function mentionKeys(e) {
+  const list = home.mentioning ?? [];
+  if (!list.length) return false;
+  const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+  if (step) {
+    e.preventDefault();
+    home.pick = Math.min(list.length - 1, Math.max(0, home.pick + step));
+    updateMentions();
+    return true;
+  }
+  if (e.key === "Tab" || e.key === "Enter") {
+    e.preventDefault();
+    putMention(e.currentTarget, list[home.pick].name);
+    return true;
+  }
+  if (e.key === "Escape") {
+    e.preventDefault();
+    home.mentioning = [];
+    document.querySelector(".home-mentions")?.toggleAttribute("hidden", true);
+    return true;
+  }
+  return false;
+}
 
 // ---------------------------------------------------------------- the screen
 
@@ -331,7 +415,14 @@ const refreshRefs = () => document.querySelector(".home-refs")?.replaceWith(refs
 function hero() {
   const field = h("textarea.home-brief#home-brief", {
     rows: 2, value: home.brief, placeholder: "an old lighthouse keeper and a girl carry a glowing jellyfish back to the sea", "aria-label": "What the film is about",
-    on: { keydown: (e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), imagine()), input: (e) => (home.brief = e.target.value) },
+    on: {
+      keydown: (e) => mentionKeys(e) || (e.key === "Enter" && !e.shiftKey && !e.isComposing && (e.preventDefault(), imagine())),
+      input: (e) => ((home.brief = e.target.value), updateMentions()),
+      click: updateMentions,
+      keyup: (e) => e.key.startsWith("Arrow") && !home.mentioning?.length && updateMentions(),
+      // a redraw blurs it for a moment; the picker only goes when the focus really left
+      blur: () => setTimeout(() => document.activeElement?.classList.contains("home-brief") || updateMentions(), 120),
+    },
   });
   const lit = home.films.find((f) => f.story?.thumb) ?? home.films.find((f) => f.cover?.pic);
   const last = home.films.find((f) => f.story);
@@ -340,6 +431,7 @@ function hero() {
     h("div.home-prompt", {},
       field,
       refs(),
+      h("div.mention-picker.home-mentions", { hidden: true, role: "listbox", "aria-label": "References" }),
       h("div.home-prompt-foot", {},
         stepper("Length", LENGTHS, () => home.length, (v) => (home.length = v), "duration"),
         stepper("Variants", COUNTS, () => home.count, (v) => (home.count = v), null, () => "each a brief with its moodboard, to start the one you like"),
