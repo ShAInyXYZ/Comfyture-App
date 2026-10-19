@@ -117,5 +117,10 @@
    "to": 18.0,
    "text": "Sesame salutes; Praline throws both paws up"
   }
- ]
+ ],
+ "portrait": {
+  "preview": "preview-portrait.mp4",
+  "poster": "poster-portrait.webp",
+  "about": "The preview for a phone screen (9:16): each shot framed to the duo, the wide one cropped, the others whole over the same shot blurred."
+ }
 }

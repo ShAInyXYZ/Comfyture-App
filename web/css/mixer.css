@@ -81,17 +81,9 @@
 
 /* under the music: who stars in it (left) beside how it is made (right) */
 .mx-recipe-body { container-type: inline-size; }
-/* a landscape trend: its screen beside the recipe's head, the cast and the models under both */
-.mx-recipe.is-wide { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-areas: "preview head" "rest rest"; }
-.mx-recipe.is-wide > .mx-preview { grid-area: preview; align-self: start; }
-.mx-recipe.is-wide .mx-screen { aspect-ratio: 3 / 2; }
-.mx-recipe-head { grid-area: head; display: grid; align-content: start; gap: 1rem; min-width: 0; }
-.mx-recipe-rest { grid-area: rest; display: grid; align-content: start; gap: 1rem; min-width: 0; container-type: inline-size; }
 .mx-screen-tag { position: absolute; top: .625rem; left: .625rem; z-index: 1; padding: .3125rem .5625rem; border-radius: .5rem; background: rgba(14, 14, 16, .72); color: var(--text); font: 600 var(--fs-small)/1 var(--font-sans); backdrop-filter: blur(6px); }
-/* a trend with a preview plays it on hover, whole, over its blurred cover */
-.mx-card-video { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: contain; opacity: 0; pointer-events: none; transition: opacity var(--t-fast); }
-.mx-card.has-preview > img { transition: filter var(--t-fast), transform var(--t-fast); }
-.mx-card.has-preview:hover > img { filter: blur(14px) brightness(.55); transform: scale(1.08); }
+/* a trend with a preview plays it on hover, over its cover */
+.mx-card-video { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; opacity: 0; pointer-events: none; transition: opacity var(--t-fast); }
 .mx-card.has-preview:hover .mx-card-video { opacity: 1; }
 .mx-card-len, .mx-card-heat, .mx-card-foot { z-index: 2; }
 .mx-lower { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); align-items: start; gap: 1.5rem; }
@@ -254,7 +246,6 @@
 }
 @media (max-width: 820px) {
   .mixer { padding: .75rem .625rem 2rem; }
-  .mx-recipe.is-wide { grid-template-columns: minmax(0, 1fr); grid-template-areas: "preview" "head" "rest"; }
   .mx-work { grid-template-columns: minmax(0, 1fr); }
   .mx-preview, .mx-remix-left .mx-screen { max-width: 20rem; justify-self: center; width: 100%; }
   .mx-cards { grid-auto-columns: 9.5rem; }

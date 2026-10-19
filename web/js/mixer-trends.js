@@ -85,8 +85,8 @@ export const TRENDS = [
     },
     "caption": null,
     "aspect": "3:2",
-    "preview": "brand/mixer/trends/hotel-lobby/preview.mp4",
-    "poster": "brand/mixer/trends/hotel-lobby/poster.webp",
+    "preview": "brand/mixer/trends/hotel-lobby/preview-portrait.mp4",
+    "poster": "brand/mixer/trends/hotel-lobby/poster-portrait.webp",
     "recipe": "brand/mixer/trends/hotel-lobby/recipe.json"
   },
   {

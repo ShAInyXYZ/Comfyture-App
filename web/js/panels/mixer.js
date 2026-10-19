@@ -120,9 +120,6 @@ function recipe(t) {
       h("button.mx-go", { type: "button", disabled: busy, title: "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
         sprite("product-mixer"), h("span", {}, busy ? "Making it" : m?.body.film ? "Make it again" : "Make it"), cost && !busy ? h("em", {}, `≈ ${cost} cr`) : null),
   ];
-  // a landscape trend (made from a landscape source) shows wide: its screen beside the recipe's head, the rest under both
-  if (t.aspect && t.aspect !== "9:16")
-    return h("section.mx-work.mx-recipe.is-wide", {}, preview(t, m), h("div.mx-recipe-head", {}, ...head), h("div.mx-recipe-rest", {}, ...rest));
   return h("section.mx-work.mx-recipe", {}, preview(t, m), h("div.mx-recipe-body", {}, ...head, ...rest));
 }
 
