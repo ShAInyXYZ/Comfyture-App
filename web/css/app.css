@@ -7,7 +7,7 @@ body { padding: 0 0 .875rem; }
 .top { background: var(--s1); border-bottom: 1px solid var(--line); }
 .top-in {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 2rem;
   height: 3.5rem;
@@ -18,6 +18,23 @@ body { padding: 0 0 .875rem; }
 .wordmark { display: inline-flex; align-items: center; height: 100%; text-decoration: none; }
 .wordmark img { display: block; height: 2rem; width: auto; user-select: none; -webkit-user-drag: none; }
 .top-tools { display: flex; align-items: center; gap: 1rem; }
+/* the products: icons in one recess, the open one lit and named; Kitchen's rooms after a hairline */
+.products { display: flex; align-items: center; gap: .125rem; padding: .25rem; border-radius: calc(.875rem * var(--corner-k, 1)); background: var(--sunk); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .5); }
+.product { display: inline-flex; align-items: center; gap: .5rem; height: 2.25rem; min-width: 2.25rem; padding: 0 .5625rem; border-radius: calc(.625rem * var(--corner-k, 1)); color: var(--dim); font: 600 var(--fs-small)/1 var(--font-sans); text-decoration: none; white-space: nowrap; transition: background var(--t-fast), color var(--t-fast); }
+.product svg, .product svg.icon { flex: none; width: 1.125rem; height: 1.125rem; }
+.product:hover { color: var(--text); background: var(--s2); }
+.product[aria-current="page"] { padding-right: .875rem; background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-line); }
+.sections:not(:empty) { padding-left: 1.25rem; border-left: 1px solid var(--line); }
+.top-in { column-gap: 1.25rem; }
+
+/* a product still to be built: its home, its name and what it is for */
+.product-home { display: grid; justify-items: center; align-content: center; gap: .75rem; min-height: calc(100dvh - 9rem); text-align: center; }
+.product-home-mark { display: grid; place-items: center; width: 6rem; height: 6rem; margin-bottom: .75rem; border-radius: calc(1.5rem * var(--corner-k, 1)); background: var(--sunk); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .55); color: var(--accent); }
+.product-home-mark svg.icon { width: 3rem; height: 3rem; }
+.product-home h1 { margin: 0; font: 700 2.5rem/1.1 var(--font-sans); color: var(--text); }
+.product-home p { margin: 0; color: var(--muted); font-size: var(--fs-title); }
+.product-home-soon { display: inline-flex; align-items: center; gap: .5rem; margin-top: 1rem; padding: .375rem .75rem; border-radius: var(--r-pill); background: var(--sunk); color: var(--dim); font: 500 var(--fs-micro)/1 var(--font-mono); text-transform: uppercase; letter-spacing: .08em; }
+@supports (corner-shape: squircle) { .products, .product, .product-home-mark { corner-shape: squircle; } }
 .sections { display: flex; align-items: stretch; align-self: stretch; gap: .25rem; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .section { position: relative; display: inline-flex; align-items: center; gap: .625rem; padding: 0 1.125rem; color: var(--muted); font: 600 var(--fs-body)/1 var(--font-sans); text-decoration: none; white-space: nowrap; transition: background var(--t-fast), color var(--t-fast); }
 .section svg { width: 1.1rem; height: 1.1rem; }
@@ -1238,7 +1255,10 @@ body[data-page="shot"]:not(.has-window) .toast { bottom: calc(var(--chat-h, 3.5r
   .top-actions .key { padding: 0 .75rem; }
   .cloud span:last-child { display: none; }
   .top-in { grid-template-columns: minmax(0, 1fr) auto; }
+  .products { grid-column: 1 / -1; order: 2; justify-self: start; }
   .sections { grid-column: 1 / -1; order: 3; height: 3rem; }
+  .sections:not(:empty) { padding-left: 0; border-left: 0; }
+  .sections:empty { display: none; }
   .section { padding: 0 .875rem; }
   .subbar-in { padding: 0 .625rem; }
   .subbar-actions .key { padding: 0 .625rem; }

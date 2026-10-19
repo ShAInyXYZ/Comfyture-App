@@ -115,8 +115,6 @@ button.home-ref-name:hover { color: var(--text); }
   .home-take, .take-frame, .home-brief .pill, .home-brief .pill img { corner-shape: squircle; }
 }
 
-/* the sections' tabs stay off the welcome screen: its keys and its cards lead into them */
-body[data-page="home"] #nav { visibility: hidden; }
 .home-prompt-foot { display: flex; flex-wrap: wrap; align-items: center; gap: .625rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
 /* every control of the bar one height, one squircle */
 .home-prompt-foot { --bar-h: 3.25rem; --bar-r: 1.125rem; }

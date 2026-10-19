@@ -1,14 +1,33 @@
 import { h, sprite, icon } from "../dom.js";
 import { state, setProject, projectNow } from "../store.js";
-import { PAGES, currentPage } from "../router.js";
+import { PAGES, PRODUCTS, currentPage, productOf } from "../router.js";
 import { story } from "../story.js";
 import { cut } from "../cut.js";
 
 const ICON = { story: "section-story", stage: "section-stage", shot: "section-shot", cut: "edit-scissors", library: "batch" };
 
-/** The sections. Story shows how far a film has got; Cut shows how many clips wait in it. */
+/** The products: one icon each, the one open lit and named; its tooltip says what it is for. */
+export function renderProducts(el) {
+  const now = productOf(currentPage());
+  el.replaceChildren(...Object.entries(PRODUCTS).map(([id, [name, line]]) =>
+    h("a.product", { href: `#/${id === "kitchen" ? "home" : id}`, title: `${name}\n${line}`, "aria-label": name, "aria-current": id === now ? "page" : undefined },
+      sprite(`product-${id}`), id === now ? h("span", {}, name) : null)));
+}
+
+/** A product still to be built: its home, empty but for its name. */
+export function renderProduct(el) {
+  const [name, line] = PRODUCTS[el.dataset.page];
+  el.replaceChildren(h("div.product-home", {},
+    h("span.product-home-mark", {}, sprite(`product-${el.dataset.page}`)),
+    h("h1", {}, name),
+    h("p", {}, line),
+    h("span.product-home-soon", {}, h("span.lamp", { dataset: { tone: "idle" } }), "On the stove")));
+}
+
+/** Kitchen's rooms (nothing in the other products). Story shows how far a film has got; Cut shows how many clips wait in it. */
 export function renderNav(el) {
   const page = currentPage();
+  if (productOf(page) !== "kitchen") return el.replaceChildren();
   const dir = state.director;
   const busy = ["planning", "making", "cutting"].includes(dir.phase);
   const done = dir.shotsState.filter((s) => s.step === "done").length;

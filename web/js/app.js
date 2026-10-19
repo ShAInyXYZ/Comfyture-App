@@ -1,7 +1,7 @@
 import { icon } from "./dom.js";
 import { installTooltips } from "./tooltip.js";
 import { state, load, onChange, roll, toast } from "./store.js";
-import { PAGES, currentPage } from "./router.js";
+import { PAGES, PRODUCTS, currentPage, productOf } from "./router.js";
 import { renderSources, listenForPaste } from "./panels/sources.js";
 import { renderMonitor } from "./panels/monitor.js";
 import { renderScript } from "./panels/script.js";
@@ -11,7 +11,7 @@ import { renderTakes } from "./panels/takes.js";
 import { renderTabs, renderActions } from "./panels/tabs.js";
 import { renderStory } from "./panels/story.js";
 import { renderStatus } from "./panels/status.js";
-import { renderNav } from "./panels/nav.js";
+import { renderNav, renderProducts, renderProduct } from "./panels/nav.js";
 import { renderLibrary } from "./panels/library.js";
 import { renderCut } from "./panels/cut.js";
 import { renderHome } from "./panels/home.js";
@@ -25,6 +25,7 @@ const $ = (id) => document.getElementById(id);
 
 // every panel, the element it draws into, and the section it belongs to (none: always on screen)
 const panels = {
+  products: [$("products"), renderProducts],
   nav: [$("nav"), renderNav],
   status: [$("cloud"), renderStatus],
   sources: [$("sources"), renderSources, "shot"],
@@ -43,6 +44,10 @@ const panels = {
   library: [$("page-library"), renderLibrary, "library"],
   cut: [$("page-cut"), renderCut, "cut"],
   home: [$("page-home"), renderHome, "home"],
+  mixer: [$("page-mixer"), renderProduct, "mixer"],
+  jam: [$("page-jam"), renderProduct, "jam"],
+  macaron: [$("page-macaron"), renderProduct, "macaron"],
+  utensils: [$("page-utensils"), renderProduct, "utensils"],
 };
 
 // Redraws are batched to one per frame; text fields keep focus because the
@@ -141,13 +146,14 @@ function showPage() {
   for (const el of document.querySelectorAll(".page")) el.hidden = el.dataset.page !== page;
   dockAssistant(page);
   document.body.dataset.page = page;
-  document.title = PAGES[page] ? `${PAGES[page]} · Comfyture` : "Comfyture";
+  document.body.dataset.product = productOf(page);
+  document.title = `${PAGES[page] ?? PRODUCTS[productOf(page)][0]} · Comfyture`;
   if (page !== "shot") document.querySelectorAll("#page-shot video").forEach((v) => v.pause());
   for (const [name, [, , owner]] of Object.entries(panels)) {
     if (owner === page && (stale.has(name) || !panels[name][0].childElementCount)) pending.add(name);
     if (owner === page) stale.delete(name);
   }
-  pending.add("nav");
+  pending.add("nav").add("products");
   flush();
   window.scrollTo({ top: 0 });
 }
