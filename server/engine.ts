@@ -13,6 +13,7 @@ import {
 } from "./workflows.ts";
 import { CAMERA } from "../web/js/script.js";
 import { untagRefs, type ImageModels } from "./images.ts";
+import { isRouterVideo, routerVideo, routerVideoName, routerVideoSeconds } from "./router-videos.ts";
 
 export interface Dialogue { speaker?: string; language?: string; line: string }
 export interface Shot {
@@ -50,6 +51,8 @@ export interface ShotRequest {
   strengths: { start: number; end: number };
   /** The film it was made for (a story's project), so its takes show inside that project. */
   project?: string;
+  /** The video model that rolls it, when not LTX-2.5: a partner's on Comfy Router. */
+  model?: string;
 }
 
 export type RunStatus = "queued" | "frame" | "review" | "shot" | "done" | "failed" | "canceled";
@@ -190,23 +193,25 @@ function previewImage(data: Uint8Array): { bytes: Buffer; type: string } | null 
 async function looksBlack(path: string, seconds: number, ffmpeg: boolean) {
   const { size } = await stat(path);
   const rate = size / Math.max(1, seconds);
-  if (rate > 60 * 1024) return false;
-  if (rate < 40 * 1024 || !ffmpeg) return true;
+  if (!ffmpeg) return rate < 40 * 1024;
   try {
-    // a failed render is black all over; a dark scene still has something bright in it
-    for (const at of [1, Math.max(1, seconds / 2)]) {
+    // A failed render is black all over, or for most of its length with the picture coming in at
+    // the end (whose bytes alone can look like a whole shot's); a dark scene still has something
+    // bright in it. Its head, middle and tail are looked at: black in two of them, it is black.
+    let dark = 0;
+    for (const at of [Math.min(0.5, seconds / 4), seconds / 2, Math.max(0.5, seconds - 0.6)]) {
       const { stdout } = await exec(
         "ffmpeg",
-        ["-nostdin", "-v", "error", "-ss", String(at), "-i", path, "-frames:v", "1", "-vf", "scale=64:-1", "-f", "rawvideo", "-pix_fmt", "gray", "-"],
+        ["-nostdin", "-v", "error", "-ss", at.toFixed(2), "-i", path, "-frames:v", "1", "-vf", "scale=64:-1", "-f", "rawvideo", "-pix_fmt", "gray", "-"],
         { encoding: "buffer", maxBuffer: 1 << 20 },
       );
       const pixels = stdout as unknown as Buffer;
       // black renders peak at 4 to 12; the darkest real shots still reach 60 and up somewhere
-      if (pixels.length && pixels.reduce((top, v) => Math.max(top, v), 0) > 32) return false;
+      if (!pixels.length || pixels.reduce((top, v) => Math.max(top, v), 0) <= 32) dark++;
     }
-    return true;
+    return dark >= 2;
   } catch {
-    return true;
+    return rate < 40 * 1024;
   }
 }
 
@@ -857,6 +862,7 @@ export class Engine extends EventEmitter {
   private async shoot(run: Run, signal: AbortSignal, attempt = 0): Promise<void> {
     const started = Date.now();
     const r = run.request;
+    if (r.model && isRouterVideo(r.model)) return this.routerShoot(run, signal);
     const start = r.end?.paint && !r.end.file ? 0.2 : 0;
     await this.update(run, { status: "shot", stage: "Rolling camera", phase: "roll", progress: start, error: undefined });
     const asset = (file: string) => this.assetFor(this.photoPath(file));
@@ -910,6 +916,30 @@ export class Engine extends EventEmitter {
       run.seed = random32();
       await this.update(run, { stage: fallback ? "Black picture twice: rolling in one pass" : "Black picture: rolling again with a new seed", progress: start });
       return this.shoot(run, signal, attempt + 1);
+    }
+    run.seconds.shot = Math.round((Date.now() - started) / 1000);
+    await this.update(run, { status: "done", stage: "", progress: 1, video: `/media/runs/${run.id}/shot.mp4` });
+  }
+
+  /**
+   * A take rolled by a partner's video model on Comfy Router: the start frame and the prompt the
+   * script makes, the clip downloaded into the take's folder like LTX-2.5's. The maker sends no
+   * readings, so the bar follows the time such a clip takes.
+   */
+  private async routerShoot(run: Run, signal: AbortSignal) {
+    const started = Date.now();
+    const r = run.request;
+    if (!r.start) throw new Error("A partner's video model starts from a picture: give the shot a start frame.");
+    const expected = routerVideoSeconds(r.model!, r.seconds);
+    await this.update(run, { status: "shot", stage: `Rolling with ${routerVideoName(r.model!)}`, phase: "roll", progress: 0, error: undefined });
+    const tick = setInterval(() => void this.update(run, { progress: Math.min(0.95, (Date.now() - started) / 1000 / expected) }, false), 2000);
+    try {
+      const bytes = await readFile(this.photoPath(r.start));
+      const mime = bytes[0] === 0x89 ? "image/png" : bytes.toString("ascii", 8, 12) === "WEBP" ? "image/webp" : "image/jpeg";
+      const { bytes: clip } = await routerVideo(r.model!, { prompt: run.prompt, start: { mime, data: bytes.toString("base64") }, seconds: r.seconds, aspect: r.aspect === "auto" ? (run.size.width >= run.size.height * 1.2 ? "16:9" : run.size.height >= run.size.width * 1.2 ? "9:16" : "1:1") : r.aspect, seed: run.seed, signal });
+      await writeFile(join(this.runDir(run.id), "shot.mp4"), clip);
+    } finally {
+      clearInterval(tick);
     }
     run.seconds.shot = Math.round((Date.now() - started) / 1000);
     await this.update(run, { status: "done", stage: "", progress: 1, video: `/media/runs/${run.id}/shot.mp4` });

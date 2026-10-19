@@ -16,10 +16,10 @@ From the user's idea, write the story's foundation. Answer with JSON only, no ot
 {"title": "two to five words", "logline": "one sentence: who wants what, and what stands in the way", "synopsis": "one paragraph of four to six sentences: the beginning, the turn, the end", "genre": "one or two words", "tone": "three words"}
 Rules: concrete and visual, things a camera can see; one to four characters; one or two places; the end lands; no camera words.`,
   script: `You are the screenwriter of a short AI film. From its title, logline and synopsis, write the script as scenes. Answer with JSON only, no other words:
-{"cast": [{"name": "a character's name", "about": "who they are, in a few words"}], "places": [{"name": "a place's name", "about": "what it is, in a few words"}], "scenes": [{"slug": "EXT. THE PLACE — NIGHT", "place": "a place's name", "summary": "one sentence", "beats": ["something we see happen"], "lines": [{"who": "a character's name", "line": "a short line", "how": "whispers"}]}]}
+{"cast": [{"name": "a character's name", "about": "who they are, in a few words", "ref": "@name of the reference picture that shows them, or empty"}], "places": [{"name": "a place's name", "about": "what it is, in a few words", "ref": "@name of the reference picture that shows it, or empty"}], "scenes": [{"slug": "EXT. THE PLACE — NIGHT", "place": "a place's name", "summary": "one sentence", "beats": ["something we see happen"], "lines": [{"who": "a character's name", "line": "a short line", "how": "whispers"}]}]}
 Rules: the cast is everyone who acts in the story, people or animals (an animal that does things is cast, never a prop), each with a name of this story's world (a person's first name, or what the others call them: "the fox"); as many scenes as the length allows (about one per 20 seconds: one for 10 seconds, three for a minute, fifteen for five minutes); two to five beats per scene, each one thing we see; dialogue short and sparse: a line has at most twelve words, and many scenes have none; every speaker is in cast and every scene's place in places; names never change.`,
   world: `You are the production designer of a short AI film. For each character and place of the script, write how they look, to draw reference sheets from, and the film's look. Answer with JSON only, no other words:
-{"cast": [{"name": "as in the script", "words": "a ten-year-old girl, curly dark hair, freckles, a bright yellow raincoat, red rubber boots"}], "places": [{"name": "as in the script", "words": "a black-sand beach under a lighthouse at night, wet rocks, heavy surf"}], "props": [{"name": "an object", "words": "a brass oil lantern with a cracked glass, glowing amber"}], "look": {"words": "the film's style: medium, light, colour, lens, texture", "palette": ["#1b2a3a", "#2f4b66", "#e8b04a", "#9fd3e6", "#0d1117", "#c9ced6"]}}
+{"cast": [{"name": "as in the script", "words": "a ten-year-old girl, curly dark hair, freckles, a bright yellow raincoat, red rubber boots"}], "places": [{"name": "as in the script", "words": "a black-sand beach under a lighthouse at night, wet rocks, heavy surf"}], "props": [{"name": "an object", "words": "a brass oil lantern with a cracked glass, glowing amber", "ref": "@name of the reference picture that shows it, or empty"}], "look": {"words": "the film's style: medium, light, colour, lens, texture", "palette": ["#1b2a3a", "#2f4b66", "#e8b04a", "#9fd3e6", "#0d1117", "#c9ced6"]}}
 Rules: every character and place of the script, by its name in the script; visual facts only (age, build, face, hair, clothes and their colours for people; species, size, fur or feathers and markings for animals; place, time of day, weather, light for places; shape, material and colour for props); props are objects only, never a character, and only the key ones the story turns on; a character's clothes stay the same all film; the palette is six hex colours that fit the look.`,
   board: `You are the storyboard artist of a short AI film. Break each scene into shots for an AI video model that makes each shot from its first frame. Answer with JSON only, no other words:
 {"shots": [{"scene": 1, "size": "wide", "camera": "push-in", "seconds": 5, "action": "what happens in the shot, present tense, one or two sentences", "frame": "the first frame as a picture: who (by @tag), where (by @tag), what they do, the light", "line": {"who": "a character's name", "text": "a short line"}, "sound": "what we hear"}]}
@@ -89,12 +89,14 @@ export function storyPrompt(step: StoryStep, story: any, ask?: string, only?: nu
     : step === "world" ? { cast: list(story?.cast, 8).map((c: any) => ({ name: c.name, words: c.words })), places: list(story?.places, 6).map((p: any) => ({ name: p.name, words: p.words })), props: list(story?.props, 8).map((p: any) => ({ name: p.name, words: p.words })), look: story?.look }
     : { shots: story?.board?.shots };
   // the user's references, on the picture the writer sees
-  const refs = list(story?.idea?.refs, 4).map((r: any) => `@${text(r.name, 30)} (${r.kind === "video" ? "a frame of a reference video" : "a reference picture"})`);
-  if (seen && refs.length) lines.push(`The picture shows the user's references, each under its @name: ${refs.join(", ")}. ${step === "world" ? "Describe the people, places and things that appear in them exactly as they look there." : "Build the film around them: who and what they show, where, and their look."}`);
+  const refs = list(story?.idea?.refs, 9).map((r: any) => `@${text(r.name, 30)} (${r.kind === "video" ? "a frame of a reference video" : "a reference picture"})`);
+  if (seen && refs.length) lines.push(`The picture shows the user's references, each under its @name: ${refs.join(", ")}. ${step === "world" ? "Describe the people, places and things that appear in them exactly as they look there, and give each one shown the @name of its picture in ref." : step === "script" ? "Build the film around them: who and what they show, where, and their look; give each character and place one of them shows the @name of its picture in ref." : "Build the film around them: who and what they show, where, and their look."}`);
   if (ask?.trim()) lines.push(`The ${step === "world" ? "cast and world" : step} as it is now: ${JSON.stringify(current).slice(0, 6000)}`, `Change it: ${text(ask, 800)}. Answer with the whole ${step === "world" ? "cast and world" : step} again, changed.`);
   return lines.join("\n");
 }
 const pick = (o: any, keys: string[]) => Object.fromEntries(keys.map((k) => [k, o?.[k]]));
+// a reference named by a writer: "@chick" or "chick", as the pages name references
+const refName = (v: unknown) => text(v, 30).replace(/^@/, "").toLowerCase().replace(/[^a-z0-9-]/g, "");
 
 export const storyBrief = (step: StoryStep) => BRIEFS[step];
 
@@ -116,8 +118,8 @@ export function readStory(step: StoryStep, reply: string): any {
     return { title: text(raw.title, 60) || "Untitled", logline: text(raw.logline, 300), synopsis: text(raw.synopsis, 1400), genre: text(raw.genre, 40), tone: text(raw.tone, 60) };
   }
   if (step === "script") {
-    const cast = list(raw.cast, 6).map((c: any) => ({ name: text(c?.name, 30), about: text(c?.about, 200) })).filter((c) => c.name);
-    const places = list(raw.places, 5).map((p: any) => ({ name: text(p?.name, 40), about: text(p?.about, 200) })).filter((p) => p.name);
+    const cast = list(raw.cast, 6).map((c: any) => ({ name: text(c?.name, 30), about: text(c?.about, 200), ref: refName(c?.ref) })).filter((c) => c.name);
+    const places = list(raw.places, 5).map((p: any) => ({ name: text(p?.name, 40), about: text(p?.about, 200), ref: refName(p?.ref) })).filter((p) => p.name);
     const scenes = list(raw.scenes, 8).map((s: any) => ({
       slug: text(s?.slug, 80).toUpperCase(),
       place: text(s?.place, 40),
@@ -133,7 +135,7 @@ export function readStory(step: StoryStep, reply: string): any {
     return {
       cast: list(raw.cast, 6).map((c: any) => ({ name: text(c?.name, 30), words: text(c?.words, 400) })).filter((c) => c.name),
       places: list(raw.places, 5).map((p: any) => ({ name: text(p?.name, 40), words: text(p?.words, 400) })).filter((p) => p.name),
-      props: list(raw.props, 8).map((p: any) => ({ name: text(p?.name, 40), words: text(p?.words, 400) })).filter((p) => p.name),
+      props: list(raw.props, 8).map((p: any) => ({ name: text(p?.name, 40), words: text(p?.words, 400), ref: refName(p?.ref) })).filter((p) => p.name),
       look: { words: text(raw.look?.words, 400), palette: list(raw.look?.palette, 6).map(hex).filter(Boolean) },
     };
   }

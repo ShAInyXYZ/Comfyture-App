@@ -17,6 +17,7 @@ import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
 import { readStory, storyBrief, storyPrompt, STORY_ASSIST_BRIEF, storyAssistPrompt, readStoryAssist, IDEAS_BRIEF, ideasPrompt, readIdeas, type StoryStep } from "./story.ts";
 import { isRouterImage, routerImages, routerDraw } from "./router-images.ts";
+import { isRouterVideo, routerVideos } from "./router-videos.ts";
 import { planCut, CUT_BRIEF, cutPrompt, readCutAnswer, type CutBody, type CutItem, type Source } from "./cut.ts";
 
 const root = resolve(import.meta.dirname, "..");
@@ -236,11 +237,15 @@ async function parseShot(input: Record<string, any>): Promise<{ request: ShotReq
     review: input.review !== false,
     strengths: { start: num(input.strengths?.start, 0, 1, 1), end: num(input.strengths?.end, 0, 1, 0.85) },
     project: projectId(input.project),
+    model: typeof input.model === "string" && isRouterVideo(input.model) ? input.model : undefined,
   };
   const takes = Math.round(num(input.takes, 1, 4, 1));
   const seed = Number.isSafeInteger(input.seed) && input.seed >= 0 ? input.seed : undefined;
   return { request, takes, seed };
 }
+
+// about how long LTX-2.5 runs on Comfy Cloud for a five-second shot at 720p, for its price on the picker
+const LTX_SHOT_SECONDS = 60;
 
 /** A project's id as the pages send it: the id of the story a film grew from. */
 const projectId = (v: unknown) => (typeof v === "string" && /^[\w-]{1,80}$/.test(v) ? v : undefined);
@@ -610,12 +615,17 @@ async function renderCut(project: { id: string; name: string; body: any }) {
     await Promise.all(titleTexts.map((it, i) => writeFile(join(work, `title-${i}.txt`), String(it.text).slice(0, 200))));
     const plan = planCut(body, (it) => sources.get(it.id) ?? null, { width, height, font: await findFont(), titleFile: (i) => join(work, `title-${i}.txt`) });
     const inputs = plan.inputs.flat();
+    // the sound reads the same inputs in the same places, but a still is opened once, not looped:
+    // looped, an input nothing in the sound reads spun ffmpeg forever
+    const once = plan.inputs.flatMap((a) => a.filter((x, i) => !["-loop", "-framerate"].includes(x) && !["-loop", "-framerate"].includes(a[i - 1])));
     const picture = join(work, "picture.mp4");
     const sound = join(work, "sound.m4a");
     const out = join(data, "reels", `${id}.mp4`);
+    // a render that hangs is stopped, not waited on forever
+    const limit = { maxBuffer: 1 << 22, timeout: 20 * 60 * 1000 };
     await Promise.all([
-      exec("ffmpeg", ["-v", "error", "-y", ...inputs, "-filter_complex", plan.video, "-map", "[v]", "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p", "-r", "24", picture], { maxBuffer: 1 << 22 }),
-      exec("ffmpeg", ["-v", "error", "-y", ...inputs, "-filter_complex", plan.audio, "-map", "[a]", "-c:a", "aac", "-b:a", "192k", sound], { maxBuffer: 1 << 22 }),
+      exec("ffmpeg", ["-v", "error", "-y", ...inputs, "-filter_complex", plan.video, "-map", "[v]", "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p", "-r", "24", picture], limit),
+      exec("ffmpeg", ["-v", "error", "-y", ...once, "-filter_complex", plan.audio, "-map", "[a]", "-c:a", "aac", "-b:a", "192k", sound], limit),
     ]).catch((e) => {
       throw new Error(`The film didn't render: ${String(e.stderr ?? e.message).split("\n").filter(Boolean).slice(-2).join(" ")}`);
     });
@@ -903,6 +913,10 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (!prompt) throw bad("Describe the image.");
     const aspect = ["3:2", "16:9", "9:16", "1:1"].includes(input.aspect) ? input.aspect : "3:2";
     return json(res, 202, engine.generate(prompt, aspect, Number.isSafeInteger(input.seed) ? input.seed : undefined));
+  }
+  // the video models that roll the shots: LTX-2.5 in ComfyUI, then the partners' on Comfy Router
+  if (path === "/api/video/models" && method === "GET") {
+    return json(res, 200, { default: "ltx-2.5", models: [{ id: "ltx-2.5", name: "LTX-2.5", short: "LTX-2.5", about: "Open weights: picture and sound in one pass", maker: "open", router: false, seconds: LTX_SHOT_SECONDS, sound: true }, ...routerVideos()] });
   }
   if (path === "/api/image/models" && method === "GET") {
     await images.ready;

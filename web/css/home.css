@@ -53,6 +53,14 @@ button.home-ref-name:hover { color: var(--text); }
 .home-ref-x svg { width: .75rem; height: .75rem; }
 .home-attach { display: grid; place-items: center; width: var(--bar-h, 3.25rem); height: var(--bar-h, 3.25rem); padding: 0; border: 1px solid var(--line2); border-radius: var(--bar-r, 1.125rem); background: transparent; color: var(--text); cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
 .home-attach:hover, .home-attach[aria-expanded="true"] { border-color: var(--text); background: var(--s2); }
+/* the main key and, joined to its right edge, the switch that makes it make the whole film */
+.home-go { display: inline-flex; align-items: stretch; height: var(--bar-h, 3.25rem); }
+.home-go .home-write { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.home-mode { display: grid; place-items: center; width: 3rem; padding: 0 .125rem 0 0; border: 0; border-left: 1px solid rgba(20, 20, 20, .22); border-radius: 0 var(--bar-r, 1.125rem) var(--bar-r, 1.125rem) 0; background: var(--accent); color: var(--accent-ink); cursor: pointer; filter: brightness(.9); transition: filter var(--t-fast), box-shadow var(--t-fast); }
+.home-mode:hover { filter: brightness(.97); }
+.home-mode[aria-pressed="true"] { filter: none; box-shadow: inset 0 0 0 2px rgba(20, 20, 20, .55); }
+.home-mode svg { width: 1.375rem; height: 1.375rem; }
+.home-step:disabled { opacity: .38; cursor: default; filter: none; }
 .home-attach svg { width: 1.25rem; height: 1.25rem; }
 .home-library { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 1px solid var(--line); border-radius: calc(.5rem * var(--corner-k)); color: var(--muted); }
 .home-library:hover { color: var(--text); border-color: var(--line2); }
@@ -134,7 +142,7 @@ body[data-page="home"] #nav { visibility: hidden; }
 .home-write svg { width: 1.375rem; height: 1.375rem; }
 @supports (corner-shape: squircle) {
   .home-prompt-foot { --bar-r: calc(1.125rem * var(--corner-k)); }
-  .home-step, .home-pick .sel-trigger, .home-model, .home-attach, .home-write { corner-shape: squircle; }
+  .home-step, .home-pick .sel-trigger, .home-model, .home-attach, .home-mode, .home-write { corner-shape: squircle; }
 }
 
 /* under the prompt: the empty starts, and the film last worked on */

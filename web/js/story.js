@@ -5,7 +5,7 @@
 // feed Stage (blocked from their words), Shot (prompts and frames) and Cut (an edit in order).
 // Stories are kept on the server, one per tab, with undo.
 
-import { state, changed, toast, drawPicture, rollAsTab, switchTab, sheetOf, writer, artistFor } from "./store.js";
+import { state, changed, toast, drawPicture, rollAsTab, switchTab, sheetOf, writer, artistFor, videoModel } from "./store.js";
 import { expandTags } from "./pills.js";
 import { go } from "./router.js";
 
@@ -347,11 +347,11 @@ function payload(b) {
 
 /** The user's references on one labelled sheet for the writers, made again only when they change. */
 async function refSheet(b) {
-  const refs = (b.idea.refs ?? []).filter((r) => r.kind === "video" ? r.still?.url : r.url).slice(0, 4);
+  const refs = (b.idea.refs ?? []).filter((r) => r.kind === "video" ? r.still?.url : r.url).slice(0, 9);
   if (!refs.length) return null;
   const key = refs.map((r) => r.file).join(",");
   if (b.idea.sheet?.key === key) return b.idea.sheet;
-  const photo = await sheetOf(refs.map((r) => ({ name: r.name, url: r.kind === "video" ? r.still.url : r.url })));
+  const photo = await sheetOf(refs.map((r) => ({ name: r.name, url: r.kind === "video" ? r.still.url : r.url })), 9);
   b.idea.sheet = { file: photo.file, url: photo.url, key };
   return b.idea.sheet;
 }
@@ -379,6 +379,8 @@ export async function write(step, { only } = {}) {
       b.cast = keep("cast", out.cast);
       b.places = keep("places", out.places);
       unique(b);
+      pictureFromRef(b, "cast", out.cast);
+      pictureFromRef(b, "places", out.places);
       const placeTag = (name) => b.places.find((p) => p.name.toLowerCase() === String(name ?? "").toLowerCase())?.tag ?? "";
       // names in the script become pills: "Mara kneels" reads "@mara kneels"
       const known = bible(b).filter((x) => x.name.length > 1);
@@ -400,6 +402,7 @@ export async function write(step, { only } = {}) {
         }
       }
       unique(b);
+      for (const kind of ["cast", "places", "props"]) pictureFromRef(b, kind, out[kind] ?? []);
       b.look.words = out.look.words || b.look.words;
       if (out.look.palette.length) b.look.palette = out.look.palette;
     }
@@ -420,6 +423,17 @@ export async function write(step, { only } = {}) {
   } finally {
     story.busy.delete(step);
     update();
+  }
+}
+
+/** The user's own reference pictures on whom they show, as the writer named them: a sheet to draw them from. */
+function pictureFromRef(b, kind, answers) {
+  for (const a of answers) {
+    const r = a.ref && (b.idea.refs ?? []).find((x) => x.name === a.ref);
+    const item = r && b[kind].find((x) => x.name.toLowerCase() === a.name.toLowerCase());
+    const pic = r && (r.kind === "video" ? r.still : r);
+    if (!item || !pic?.url || item.refs.some((x) => x.file === pic.file)) continue;
+    item.refs = [{ file: pic.file, url: pic.url, width: pic.width, height: pic.height }, ...item.refs].slice(0, 6);
   }
 }
 
@@ -653,7 +667,7 @@ export async function rollShot(id) {
   update();
   try {
     const first = await filmFrame(b, shot);
-    const r = await rollAsTab({ tab: shot.tab, name: `${codeOf(id)} · ${b.idea.title || story.project.name}`.slice(0, 60), group: b.idea.title || story.project.name, project: story.project.id, start: first, shot: shotSpec(b, shot), seconds: shot.seconds, aspect: b.idea.aspect });
+    const r = await rollAsTab({ tab: shot.tab, name: `${codeOf(id)} · ${b.idea.title || story.project.name}`.slice(0, 60), group: b.idea.title || story.project.name, project: story.project.id, start: first, shot: shotSpec(b, shot), seconds: shot.seconds, aspect: b.idea.aspect, model: videoModel() });
     shot.tab = r.tab;
     shot.run = r.run;
     commit({ history: false });

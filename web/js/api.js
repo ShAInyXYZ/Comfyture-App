@@ -36,6 +36,7 @@ export const api = {
   paint: (body) => post("api/paint", body),
   generate: (body) => post("api/generate", body),
   imageModels: () => request("api/image/models"),
+  videoModels: () => request("api/video/models"),
   image: (body) => post("api/image", body),
   enhanceImage: (body) => post("api/image/enhance", body),
   director: (body) => post("api/director", body),

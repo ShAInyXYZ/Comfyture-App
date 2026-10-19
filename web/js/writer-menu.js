@@ -1,5 +1,5 @@
 import { sprite, icon } from "./dom.js";
-import { state, writer, writers, setWriter, artist, artists, setArtist } from "./store.js";
+import { state, writer, writers, setWriter, artist, artists, setArtist, videoModel, videoModels, setVideoModel } from "./store.js";
 import { dropdown } from "./controls.js";
 
 // The writer's and the artist's pickers: the language models grouped by who makes them, each with what a
@@ -55,3 +55,27 @@ export const artistItems = () => {
 /** The picker for the artist: the image model that draws the moodboards and the story's pictures. */
 export const artistPicker = () =>
   dropdown({ label: "Artist", value: artist(), items: artistItems(), onChange: setArtist, width: "fit", note: state.info?.target === "comfy-cloud" ? "Comfy credits a picture on Comfy Cloud; a moodboard is three pictures a variant" : "Drawn on your own GPU: no credits" });
+
+// the video models: the partners' by who makes them, LTX-2.5 (open weights, in ComfyUI) after them
+const VIDEO_BRANDS = { google: "brand-google", bytedance: "brand-bytedance", openai: "brand-openai", qwen: "brand-qwen" };
+export const videoItems = () => {
+  const cloud = state.info?.target === "comfy-cloud";
+  const list = videoModels();
+  return [...list.filter((m) => m.router), ...list.filter((m) => !m.router)].map((m) => {
+    const groupIcon = m.router ? (VIDEO_BRANDS[m.maker] ? () => sprite(VIDEO_BRANDS[m.maker]) : null) : () => icon("flow");
+    return {
+      value: m.id,
+      label: m.name,
+      short: m.short,
+      glyph: groupIcon ?? (() => sprite("section-shot")),
+      desc: `${m.about}${m.sound ? "" : " · no sound"}`,
+      group: m.router ? m.makerName : "Open weights",
+      groupIcon,
+      meta: m.router ? `≈ ${m.credits} cr` : !cloud ? "your GPU" : `≈ ${Math.max(1, Math.round(m.seconds * GPU_SECOND))} cr`,
+    };
+  });
+};
+
+/** The picker for the video model that rolls a whole film's shots. */
+export const videoPicker = () =>
+  dropdown({ label: "Video", value: videoModel(), items: videoItems(), onChange: setVideoModel, width: "fit", note: "Comfy credits for a five-second shot; a minute of film is about ten shots" });

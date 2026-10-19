@@ -549,6 +549,8 @@ export async function request(d = state.draft, tab = state.tab) {
     seed: d.lockSeed ? d.seed : undefined,
     // a tab opened from a story rolls its takes for that film
     project: state.tabs.find((t) => t.id === tab)?.project,
+    // a partner's video model, when the shot was given one (LTX-2.5 otherwise)
+    model: d.model && d.model !== "ltx-2.5" ? d.model : undefined,
   };
 }
 
@@ -956,10 +958,10 @@ export async function drawPicture(body) {
  * made the first time, rolled again in place after. Answers with the tab, the take, and a promise
  * of the finished take.
  */
-export async function rollAsTab({ tab, name, group, project, start, shot, seconds, aspect, audio, video }) {
+export async function rollAsTab({ tab, name, group, project, start, shot, seconds, aspect, audio, video, model }) {
   let t = state.tabs.find((x) => x.id === tab);
   // audio: a track the shot follows ({ file, url, duration, lipsync }); video: a clip to extend or follow ({ file, mode })
-  const draft = { ...freshDraft(), name, script: { shots: [{ ...emptyShot(), ...shot }], raw: "" }, start, seconds, aspect, review: false, audio: audio ?? null, ...(video ? { video, startMode: "video" } : {}) };
+  const draft = { ...freshDraft(), name, script: { shots: [{ ...emptyShot(), ...shot }], raw: "" }, start, seconds, aspect, review: false, audio: audio ?? null, ...(video ? { video, startMode: "video" } : {}), ...(model ? { model } : {}) };
   if (!t) {
     t = { id: tab ?? `story-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, run: null, film: group, project, draft };
     state.tabs.push(t);
@@ -1455,16 +1457,17 @@ export const mentions = (text) => {
  * The assistant sees one picture: the images a message mentions (or the latest attached ones),
  * laid out on a sheet with their @names, so it can tell which is which.
  */
-export async function sheetOf(images) {
-  const cells = images.slice(0, 4);
+export async function sheetOf(images, max = 4) {
+  const cells = images.slice(0, max);
   const loaded = await Promise.all(cells.map((f) => new Promise((ok, no) => {
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => no(new Error(`@${f.name} could not be read.`));
     img.src = f.url;
   })));
-  const W = 1536, H = cells.length === 1 ? 1024 : 1152;
-  const cols = cells.length === 1 ? 1 : 2, rows = cells.length > 2 ? 2 : 1;
+  // one, two side by side, four in a square, up to nine in three rows of three
+  const cols = cells.length === 1 ? 1 : cells.length <= 4 ? 2 : 3, rows = Math.ceil(cells.length / cols);
+  const W = 1536, H = rows === 1 ? (cells.length === 1 ? 1024 : 1152) : rows === 2 ? 1152 : 1536;
   const cw = W / cols, ch = H / rows;
   const canvas = new OffscreenCanvas(W, H);
   const g = canvas.getContext("2d");
@@ -1641,6 +1644,27 @@ export function setArtist(id) {
   } catch {}
   changed("home", "assistant");
 }
+// the video model that rolls the shots of a whole film, LTX-2.5 unless another is picked, kept per browser
+const VIDEO = "comfyture.video";
+let videoLoading = null;
+export function videoModels() {
+  if (!state.videoModels) videoLoading ??= api.videoModels().then((c) => ((state.videoModels = c), changed("home"))).catch(() => (videoLoading = null));
+  return state.videoModels?.models ?? [];
+}
+export function videoModel() {
+  let kept = null;
+  try {
+    kept = localStorage.getItem(VIDEO);
+  } catch {}
+  return (state.videoModels?.models ?? []).some((m) => m.id === kept) ? kept : "ltx-2.5";
+}
+export function setVideoModel(id) {
+  try {
+    localStorage.setItem(VIDEO, id);
+  } catch {}
+  changed("home");
+}
+
 /** Who draws a picture: the artist, or Qwen Image 2.1 when the artist has no such template (pictures to follow, say). */
 export function artistFor(template) {
   const id = artist();
