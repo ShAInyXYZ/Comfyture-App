@@ -2,7 +2,7 @@
    the framed viewport with its channels, tools, timeline and the assistant's bar, and
    the camera, the frame, the selection's controls and the channel previews. */
 
-#page-stage { display: flex; flex-direction: column; height: calc(100dvh - 3.5rem - 1px); overflow: hidden; user-select: none; -webkit-user-select: none; }
+#page-stage { display: flex; flex-direction: column; height: calc(100dvh - var(--head)); overflow: hidden; user-select: none; -webkit-user-select: none; }
 #page-stage[hidden] { display: none; }
 #page-stage img { -webkit-user-drag: none; user-select: none; }
 body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }

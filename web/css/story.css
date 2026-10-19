@@ -2,7 +2,7 @@
    story itself as one document of scenes, actions, lines, shots and notes, and the inspector of
    what is picked; the story assistant on the bar under the document. */
 
-#page-story { position: relative; display: flex; flex-direction: column; width: 100%; height: calc(100dvh - 3.5rem - 1px); margin: 0; overflow: hidden; }
+#page-story { position: relative; display: flex; flex-direction: column; width: 100%; height: calc(100dvh - var(--head)); margin: 0; overflow: hidden; }
 #page-story[hidden] { display: none; }
 #page-story img { -webkit-user-drag: none; user-select: none; }
 body[data-page="story"] { padding-bottom: 0; overflow: hidden; }

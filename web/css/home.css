@@ -5,7 +5,7 @@
 #page-home { width: 100%; margin: 0; }
 #page-home[hidden] { display: none; }
 #page-home img { -webkit-user-drag: none; user-select: none; }
-.home { min-height: calc(100dvh - 3.5rem - 1px); }
+.home { min-height: calc(100dvh - var(--head)); }
 .home .card-label { font: 600 var(--fs-small)/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--text); }
 
 /* the hero: the question and the prompt, big, in the middle of the first screen */

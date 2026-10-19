@@ -102,7 +102,7 @@ function load() {
   })();
   return home.loading;
 }
-addEventListener("hashchange", () => currentPage() === "home" && load());
+addEventListener("hashchange", () => currentPage() === "kitchen" && load());
 
 // ---------------------------------------------------------------- what the keys do
 
@@ -131,7 +131,7 @@ async function openPart(kind, id) {
   }
 }
 /** A project opens on what it grew from: its story, or the stage or edit it is; a finished film made on its own plays. The app goes into it. */
-const openFilm = (f) => (setProject(f.id), f.story ? openPart("story", f.story.id) : f.stages[0] ? openPart("stage", f.stages[0].id) : f.cuts[0] ? openPart("cut", f.cuts[0].id) : f.reels[0] ? view(f.reels[0].url, "video") : null);
+export const openFilm = (f) => (setProject(f.id), f.story ? openPart("story", f.story.id) : f.stages[0] ? openPart("stage", f.stages[0].id) : f.cuts[0] ? openPart("cut", f.cuts[0].id) : f.reels[0] ? view(f.reels[0].url, "video") : null);
 
 /** A new, empty project: a story of its own, which is the film (its stages, shots and edits are made inside it). */
 const newProject = async () => (await loadStories(), await newStory(), go("story"));
@@ -338,17 +338,17 @@ const carriesFiles = (e) => [...(e.dataTransfer?.types ?? [])].includes("Files")
 const lightPrompt = (on) => document.querySelector(".home-prompt")?.classList.toggle("is-drop", on);
 let dragDepth = 0;
 document.addEventListener("paste", (e) => {
-  const files = currentPage() === "home" ? mediaFiles(e.clipboardData?.files) : [];
+  const files = currentPage() === "kitchen" ? mediaFiles(e.clipboardData?.files) : [];
   if (!files.length) return;
   e.preventDefault();
   addFiles(files);
 });
-document.addEventListener("dragenter", (e) => currentPage() === "home" && carriesFiles(e) && (dragDepth++, lightPrompt(true)));
-document.addEventListener("dragleave", (e) => currentPage() === "home" && carriesFiles(e) && --dragDepth <= 0 && ((dragDepth = 0), lightPrompt(false)));
+document.addEventListener("dragenter", (e) => currentPage() === "kitchen" && carriesFiles(e) && (dragDepth++, lightPrompt(true)));
+document.addEventListener("dragleave", (e) => currentPage() === "kitchen" && carriesFiles(e) && --dragDepth <= 0 && ((dragDepth = 0), lightPrompt(false)));
 // without this, a file let go of beside the prompt would open in the tab instead
-document.addEventListener("dragover", (e) => currentPage() === "home" && carriesFiles(e) && e.preventDefault());
+document.addEventListener("dragover", (e) => currentPage() === "kitchen" && carriesFiles(e) && e.preventDefault());
 document.addEventListener("drop", (e) => {
-  if (currentPage() !== "home" || !carriesFiles(e)) return;
+  if (currentPage() !== "kitchen" || !carriesFiles(e)) return;
   e.preventDefault();
   dragDepth = 0;
   lightPrompt(false);

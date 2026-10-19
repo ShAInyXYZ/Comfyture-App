@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/story.css">
   <link rel="stylesheet" href="css/cut.css">
   <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/welcome.css">
   <script type="importmap">
     { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
   </script>
@@ -19,14 +20,15 @@
 <body>
   <header class="top">
     <div class="top-in">
-      <a class="wordmark" href="#/home" aria-label="Comfyture: your projects"><img src="brand/wordmark.svg" alt="Comfyture" draggable="false"></a>
+      <a class="wordmark" href="#/home" aria-label="Comfyture: home"><img src="brand/wordmark.svg" alt="Comfyture" draggable="false"></a>
       <nav class="products" id="products" aria-label="Products"></nav>
-      <nav class="sections" id="nav" aria-label="Sections"></nav>
       <div class="top-tools">
         <span class="cloud" id="cloud"></span>
         <a class="top-link" href="https://github.com/" target="_blank" rel="noreferrer" aria-label="Source code on GitHub" id="repo-link"></a>
       </div>
     </div>
+    <!-- Kitchen's own bar: the film open and the rooms -->
+    <div class="rooms"><nav class="rooms-in" id="nav" aria-label="Kitchen"></nav></div>
   </header>
 
   <!-- Shot: the desk, one shot at a time, with a tab for every shot -->
@@ -60,7 +62,10 @@
   </div>
 
   <!-- the welcome screen: every project, and a new one from a sentence -->
+  <!-- the app's home: the five products -->
   <main class="page page-wide" id="page-home" data-page="home" hidden></main>
+  <!-- Kitchen's home: a film from a sentence, and every project -->
+  <main class="page page-wide" id="page-kitchen" data-page="kitchen" hidden></main>
   <main class="page page-wide" id="page-story" data-page="story" hidden></main>
   <main class="page page-stage" id="page-stage" data-page="stage" hidden></main>
   <main class="page page-wide" id="page-library" data-page="library" hidden></main>

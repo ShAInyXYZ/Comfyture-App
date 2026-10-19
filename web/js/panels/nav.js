@@ -6,12 +6,12 @@ import { cut } from "../cut.js";
 
 const ICON = { story: "section-story", stage: "section-stage", shot: "section-shot", cut: "edit-scissors", library: "batch" };
 
-/** The products: one icon each, the one open lit and named; its tooltip says what it is for. */
+/** The products: each its mark and its name, the one open lit; its tooltip says what it is for. */
 export function renderProducts(el) {
   const now = productOf(currentPage());
   el.replaceChildren(...Object.entries(PRODUCTS).map(([id, [name, line]]) =>
-    h("a.product", { href: `#/${id === "kitchen" ? "home" : id}`, title: `${name}\n${line}`, "aria-label": name, "aria-current": id === now ? "page" : undefined },
-      sprite(`product-${id}`), id === now ? h("span", {}, name) : null)));
+    h("a.product", { href: `#/${id}`, title: line, "aria-current": id === now ? "page" : undefined },
+      sprite(`product-${id}`), h("span", {}, name))));
 }
 
 /** A product still to be built: its home, empty but for its name. */
@@ -48,7 +48,7 @@ export function renderNav(el) {
   const p = state.project ? projectNow() ?? story.list.find((s) => s.id === state.project) ?? { name: "This film" } : null;
   el.replaceChildren(
     ...(p ? [h("span.project-chip", {},
-      h("a.project-chip-name", { href: "#/home", title: "The film open\nEvery section shows its work only" }, p.cover?.pic || p.thumb ? h("img", { src: p.cover?.pic ?? p.thumb, alt: "", draggable: false }) : sprite("film-make"), h("span", {}, p.name)),
+      h("a.project-chip-name", { href: "#/kitchen", title: "The film open\nEvery section shows its work only" }, p.cover?.pic || p.thumb ? h("img", { src: p.cover?.pic ?? p.thumb, alt: "", draggable: false }) : sprite("film-make"), h("span", {}, p.name)),
       h("button.project-chip-x", { type: "button", title: "Leave the film\nEvery section shows all your work again", "aria-label": "Leave the film", on: { click: () => setProject(null) } }, icon("close")))] : []),
     ...Object.entries(PAGES).map(([id, label]) =>
       h("a.section", { href: `#/${id}`, "aria-current": id === page ? "page" : undefined }, sprite(ICON[id]), h("span", {}, label), badge(id))));
