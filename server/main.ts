@@ -1185,6 +1185,22 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const v = await probeVideo(outPath);
     return json(res, 200, { file: out, url: `/media/videos/${out}`, ...v });
   }
+  // Mixer's stars: the photos people cast into trends (their pet, themselves), newest first
+  if (path === "/api/mixer/stars" && method === "GET") {
+    try {
+      return json(res, 200, JSON.parse(await readFile(join(data, "mixer-stars.json"), "utf8")));
+    } catch {
+      return json(res, 200, []);
+    }
+  }
+  if (path === "/api/mixer/stars" && method === "PUT") {
+    const list = await jsonBody(req);
+    if (!Array.isArray(list)) throw bad("Send the list of stars.");
+    const stars = [];
+    for (const s of list.slice(0, 40)) if (await photo(s?.file).catch(() => undefined)) stars.push({ file: s.file, url: `/media/photos/${s.file}`, name: text(s.name, 30) || "Star" });
+    await writeFile(join(data, "mixer-stars.json"), JSON.stringify(stars));
+    return json(res, 200, stars);
+  }
   if (path === "/api/mixer/split" && method === "POST") {
     // an edit to remix, at its cuts: each shot's first frame and clip, and the edit's sound
     if (!ffmpeg) throw bad("Mixer needs ffmpeg on the server.", 501);

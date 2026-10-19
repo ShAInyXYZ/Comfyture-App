@@ -1,5 +1,6 @@
-// Mixer's screen: the edit and the cast on the left, the mix (its player and its shots) in the
-// middle, the shot picked and the mixes kept on the right, the recipes along the bottom.
+// Mixer's screen: what's trending along the top; the trend picked (its cover, its beats, its music
+// and who stars in it) in the middle, or the edit someone dropped in to remix; the crew, your own
+// stars and the mixes made at the side.
 import { h, icon, sprite, pad2, ago } from "../dom.js";
 import { state, toast, changed, artist, setArtist, artists } from "../store.js";
 import { currentPage, go } from "../router.js";
@@ -7,16 +8,20 @@ import { dropdown } from "../controls.js";
 import { artistItems } from "../writer-menu.js";
 import { view } from "../viewer.js";
 import {
-  mixer, loadMixes, openMix, newMix, removeMix, save, useVideo, useRecipe, addCast, setCast, removeCast, castKinds, CAST_MAX,
+  mixer, loadMixes, openMix, removeMix, save, useVideo, addCast, setCast, removeCast, castKinds, CAST_MAX,
   shotLength, shotState, setShot, select, redo, mixIt, mixing, estimate, take,
 } from "../mixer.js";
+import { TRENDS, CREW, KINDS, trendById, crewById, trendArt, crewFace } from "../mixer-trends.js";
+import { pick, castOf, selectTrend, setKind, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, makeTrend, making, takesOf, estimate as trendCost } from "../mixer-trend.js";
 
 const KIND_LABEL = { person: "Person", product: "Product", outfit: "Outfit", other: "Other" };
 const STEP_TONE = { done: "ok", rolling: "busy", drawing: "busy", failed: "crit", drawn: "accent", waiting: null };
 const time = (s) => `${Math.floor(s / 60)}:${pad2(Math.floor(s % 60))}`;
 const secs = (s) => `${(Math.round(s * 10) / 10).toFixed(1)} s`;
-let filter = "all";
+const span = (a, b) => `${Math.round(a * 10) / 10}–${Math.round(b * 10) / 10} s`;
+const KIND_NAME = Object.fromEntries(KINDS);
 let armed = null;
+const changedMixer = () => changed("mixer");
 
 // the videos on screen stay the same elements from one redraw to the next, so they keep playing
 const kept = new Map();
@@ -26,45 +31,122 @@ function keep(key, make) {
   return el;
 }
 const loopVideo = (slot, src, poster) => keep(`${slot}:${src}`, () => h("video", { src, poster, muted: true, loop: true, autoplay: true, playsInline: true, preload: "metadata", draggable: false, disablePictureInPicture: true }));
-
-const pick = (accept, multiple, fn) => {
+const pickFile = (accept, multiple, fn) => {
   const input = h("input", { type: "file", accept, multiple, hidden: true, on: { change: () => (fn([...input.files]), input.remove()) } });
   document.body.append(input);
   input.click();
 };
+/** Who a role is played by, as a face: one of the crew, or a star's photo. */
+const faceOf = (who) => (who?.crew ? crewFace(who.crew) : who?.star?.url);
+const nameOf = (who) => (who?.crew ? crewById(who.crew)?.name : who?.star?.name ?? "Star");
 
-// ---------------------------------------------------------------- the edit and the cast
+// ---------------------------------------------------------------- what's trending
 
-function editPanel(m) {
+function feed() {
+  const list = TRENDS.filter((t) => pick.kind === "all" || t.kind === pick.kind);
+  const cards = h("div.mx-cards", { dataset: { scrollKey: "mx-cards" } }, ...list.map(card));
+  const nudge = (d) => cards.scrollBy({ left: d * cards.clientWidth * 0.8, behavior: "smooth" });
+  return h("section.mx-feed", {},
+    h("div.mx-feed-head", {},
+      h("h1", {}, "Trending now"), h("p", {}, "Viral trends, made yours."),
+      h("div.mx-kinds", {}, ...KINDS.map(([id, label]) => h("button", { type: "button", "aria-pressed": String(pick.kind === id), on: { click: () => setKind(id) } }, label))),
+      h("div.mx-nudge", {},
+        h("button.key.is-icon", { type: "button", "aria-label": "Back", on: { click: () => nudge(-1) } }, icon("chevron")),
+        h("button.key.is-icon", { type: "button", "aria-label": "More", on: { click: () => nudge(1) } }, icon("chevron")))),
+    cards);
+}
+function card(t) {
+  const lit = t.heat >= 5 ? 3 : t.heat >= 4 ? 2 : 1;
+  const on = t.id === pick.trend && !remixing();
+  return h(`button.mx-card${on ? ".is-on" : ""}`, { type: "button", title: `${t.name}\n${KIND_NAME[t.kind]} · ${t.seconds} s`, on: { click: () => selectTrend(t.id) } },
+    h("img", { src: trendArt(t), alt: "", draggable: false, loading: "lazy" }),
+    h("span.mx-card-len", {}, `0:${pad2(Math.round(t.seconds))}`),
+    h("span.mx-card-heat", { title: lit === 3 ? "Very hot right now" : lit === 2 ? "Hot right now" : "Warm" }, sprite("trend-heat"), ...[0, 1, 2].map((k) => h(`i${k < lit ? ".is-lit" : ""}`))),
+    h("span.mx-card-foot", {},
+      h("b", {}, t.name),
+      h("span.mx-faces", {}, ...t.cast.map((c) => h("img", { src: crewFace(c.crew), alt: crewById(c.crew)?.name ?? "", draggable: false })))));
+}
+
+// ---------------------------------------------------------------- the trend picked
+
+const remixing = () => !!mixer.mix?.body?.edit || mixer.splitting;
+/** The open mix, when it is this trend's. */
+const trendMix = (t) => (mixer.mix?.body?.kind === "trend" && mixer.mix.body.trend?.id === t.id ? mixer.mix : null);
+
+function recipe(t) {
+  const m = trendMix(t);
+  const cast = castOf(t);
+  const busy = making();
+  const cost = trendCost(t);
+  return h("section.mx-work.mx-recipe", {},
+    preview(t, m),
+    h("div.mx-recipe-body", {},
+      h("div.mx-recipe-title", {}, h("span.label", {}, "Trend recipe"), h("h2", {}, t.name), h("span.mx-recipe-meta", {}, `${t.seconds} s · ${KIND_NAME[t.kind]}${t.caption ? ` · “${t.caption}”` : ""}`)),
+      h("div.mx-beats", {}, ...t.beats.map((b) => h("div.mx-beat", { style: { flexGrow: String(Math.max(0.6, b.to - b.from)) } }, h("i"), h("b", {}, span(b.from, b.to)), h("span", {}, b.text)))),
+      h("div.mx-music", {},
+        m?.body.music ? keep(`music:${m.body.music.url}`, () => h("audio", { src: m.body.music.url, controls: true, preload: "none" })) : h("span.mx-music-icon", {}, sprite("audio-music")),
+        ...[t.music?.bpm ? `${t.music.bpm} BPM` : null, t.music?.genre, t.music?.mood].filter(Boolean).map((x) => h("span.mx-chip", {}, x)),
+        h("span.mx-chip.is-own", { title: "A new track made for your mix in the trend's feel: never the trend's own song" }, "Our own track")),
+      h("div.mx-cast-head", {}, h("span.label", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "The crew by default. Swap them, or drop a photo of your own")),
+      h("div.mx-roles", {}, ...cast.map((c) => role(c))),
+      m ? progress(m) : null,
+      h("button.mx-go", { type: "button", disabled: busy, title: "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
+        sprite("product-mixer"), h("span", {}, busy ? "Making it" : m?.body.film ? "Make it again" : "Make it"), cost && !busy ? h("em", {}, `≈ ${cost} cr`) : null)));
+}
+
+function preview(t, m) {
+  const film = m?.body.film;
+  if (film) return h("div.mx-preview", {}, player(m));
+  const first = m?.body.shots?.[0]?.look?.url;
+  return h("div.mx-preview", {},
+    h("div.mx-screen.is-cover", {},
+      h("img", { src: first ?? trendArt(t), alt: "", draggable: false }),
+      h("span.mx-card-len", {}, `0:${pad2(Math.round(t.seconds))}`),
+      making() ? h("span.mx-making", {}, h("span.lamp", { dataset: { tone: "busy" } }), "Making your version") : h("span.mx-cover-note", {}, "Your version plays here")));
+}
+
+function role(c) {
+  const on = pick.role === c.role;
+  return h(`div.mx-role${on ? ".is-on" : ""}`, {},
+    h("span.label", {}, c.role),
+    h("button.mx-role-face", { type: "button", title: on ? "Pick someone at the side, or drop a photo here" : `Pick who plays the ${c.role.toLowerCase()}`, on: { click: () => pickRole(c.role) } }, h("img", { src: faceOf(c.who), alt: "", draggable: false })),
+    h("span.mx-role-text", {}, h("b", {}, nameOf(c.who)), h("em", {}, c.who.crew ? crewById(c.who.crew).role : "Your star")),
+    h("button.key.is-icon.is-quiet", { type: "button", title: "Another of the crew", on: { click: () => swapRole(c.role) } }, sprite("cast-swap")),
+    h("button.mx-role-drop", { type: "button", title: "A photo of your own plays this role: your pet, you, a friend", on: { click: () => pickFile("image/*", false, ([f]) => f && addStar(f, c.role)), dragover: (e) => e.preventDefault(), drop: (e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith("image/")) addStar(f, c.role); } } }, icon("plus"), h("span", {}, "Your photo")));
+}
+
+/** How far making the open trend has come: its first frame, its takes, its track, the cut. */
+function progress(m) {
+  const shots = m.body.shots ?? [];
+  const done = shots.filter((s) => take(s)?.status === "done").length;
+  const steps = [
+    ["First frame", shots[0]?.look ? "ok" : making() ? "busy" : null],
+    [`Takes ${done}/${shots.length || takesOf(trendById(m.body.trend.id)).length}`, shots.length && done === shots.length ? "ok" : shots.some((s) => s.run) ? "busy" : null],
+    ["Track", m.body.music ? "ok" : making() ? "busy" : null],
+    ["Cut", m.body.film ? "ok" : making() && done === shots.length && shots.length ? "busy" : null],
+  ];
+  return h("div.mx-steps", {}, ...steps.map(([label, tone]) => h("span", {}, h("span.lamp", { dataset: tone ? { tone } : {} }), label)));
+}
+
+// ---------------------------------------------------------------- an edit someone dropped in, remixed
+
+function remix(m) {
   const e = m?.body.edit;
   const shots = m?.body.shots ?? [];
-  let well;
-  if (mixer.splitting) well = h("div.mx-edit-empty", {}, h("span.lamp", { dataset: { tone: "busy" } }), h("span", {}, "Finding the cuts"));
-  else if (e?.kind === "video") well = loopVideo("edit", e.video.url);
-  else if (e?.kind === "recipe") well = loopVideo("edit", e.preview, e.poster);
-  else
-    well = h("button.mx-edit-empty", { type: "button", title: "Drop an edit you like\nA video with cuts and music: any length up to 20 s", on: { click: () => pick("video/*", false, ([f]) => f && useVideo(f)) } },
-      icon("upload"), h("span", {}, "Drop an edit"), h("em", {}, "or pick a recipe below"));
-  const playing = (well.tagName === "VIDEO");
-  return h("section.mx-panel.mx-edit", {},
-    h("div.mx-head", {},
-      h("span.card-label", {}, "The edit"),
-      h("div.card-tools", {},
-        e ? h("button.key.is-icon.is-quiet", { type: "button", title: "Another edit\nDrop or pick a video", on: { click: () => pick("video/*", false, ([f]) => f && useVideo(f)) } }, icon("loop")) : null)),
-    h("div.mx-edit-well", {}, well,
-      playing ? h("button.mx-play", { type: "button", title: "Play the edit with its sound", on: { click: () => ((well.muted = !well.muted), well.play()) } }, icon(well.muted ? "mute" : "sound")) : null,
-      e?.kind === "recipe" ? h("span.mx-edit-tag", {}, "Recipe") : null),
-    h("div.mx-edit-meta", {}, e
-      ? [h("b", {}, e.name), h("span", {}, e.kind === "video" ? `${time(e.video.seconds)} · ${shots.length} ${shots.length === 1 ? "cut" : "cuts"}${e.sound ? " · sound" : ""}` : `${secs(e.seconds)} · 1 cut`)]
-      : [h("span", {}, "No edit yet")]),
-    h("div.mx-head", {}, h("span.card-label", {}, "Your cast"), h("span.mx-count", {}, `${m?.body.cast.length ?? 0} / ${CAST_MAX}`)),
-    h("div.mx-cast", {}, ...Array.from({ length: CAST_MAX }, (_, i) => castSlot(m, i))),
-    h("div.mx-pickers", {},
-      lookPicker(),
-      h("span.mx-readout", { title: "LTX-2.5 rolls every shot, copying its motion\nOpen weights, picture and sound in one pass" }, sprite("section-shot"), h("span", {}, h("b", {}, "LTX-2.5"), h("em", {}, state.info?.target === "comfy-cloud" ? "≈ 4.8 cr/s" : "your GPU")))),
-    goKey(m));
+  return h("section.mx-work.mx-remix", {},
+    h("div.mx-remix-left", {},
+      h("div.mx-remix-title", {}, h("span.label", {}, "Remix"), h("h2", {}, e?.name ?? "Your edit"), h("span.mx-recipe-meta", {}, e?.video ? `${time(e.video.seconds)} · ${shots.length} ${shots.length === 1 ? "cut" : "cuts"}${e.sound ? " · its sound kept" : ""}` : "Finding the cuts")),
+      m?.body.film ? player(m) : h("div.mx-screen", {}, mixer.splitting ? h("div.mx-screen-empty", {}, h("span.lamp", { dataset: { tone: "busy" } }), h("span", {}, "Finding the cuts")) : e?.video ? loopVideo("edit", e.video.url) : null),
+      h("button.key.mx-back", { type: "button", on: { click: () => ((mixer.mix = null), changedMixer()) } }, icon("chevron"), "Back to the trends")),
+    h("div.mx-remix-right", {},
+      h("span.label", {}, "Shots"),
+      strip(m),
+      shotFix(m),
+      h("div.mx-cast-head", {}, h("span.label", {}, "Your cast"), h("em", {}, `${m?.body.cast.length ?? 0} / ${CAST_MAX}: who the edit is about`)),
+      h("div.mx-cast", {}, ...Array.from({ length: CAST_MAX }, (_, i) => castSlot(m, i))),
+      h("div.mx-pickers", {}, lookPicker(), h("span.mx-readout", { title: "LTX-2.5 rolls every shot, copying its motion" }, sprite("section-shot"), h("span", {}, h("b", {}, "LTX-2.5"), h("em", {}, state.info?.target === "comfy-cloud" ? "≈ 4.8 cr/s" : "your GPU")))),
+      goKey(m)));
 }
-const changedMixer = () => changed("mixer");
 
 /** The image model that redraws the frames: only those that draw from references. */
 function lookPicker() {
@@ -77,42 +159,31 @@ function lookPicker() {
 function castSlot(m, i) {
   const c = m?.body.cast[i];
   if (!c)
-    return h("button.mx-slot.is-empty", { type: "button", title: "A photo of who or what the mix is about\nDrop, paste or pick: a face, a product, an outfit", on: { click: () => pick("image/*", true, (files) => files.forEach((f) => addCast(f))) } },
-      icon("plus"), h("span", {}, "Drop or paste"));
+    return h("button.mx-slot.is-empty", { type: "button", title: "A photo of who or what the edit is about\nDrop, paste or pick: a face, a pet, a product, an outfit", on: { click: () => pickFile("image/*", true, (files) => files.forEach((f) => addCast(f))) } }, icon("plus"));
   return h("div.mx-slot", {},
     h("button.mx-slot-pic", { type: "button", title: `@${c.name}\nClick to see it`, on: { click: () => view(c.url) } }, h("img", { src: c.url, alt: "", draggable: false })),
     h("button.mx-slot-x", { type: "button", title: "Take it out", "aria-label": "Take it out", on: { click: () => removeCast(i) } }, icon("close")),
-    h("button.mx-slot-kind", { type: "button", title: `@${c.name}: ${KIND_LABEL[c.kind].toLowerCase()}\nClick for what else it is: a person, a product, an outfit`, on: { click: () => setCast(i, { kind: castKinds[(castKinds.indexOf(c.kind) + 1) % castKinds.length] }) } }, KIND_LABEL[c.kind]));
+    h("button.mx-slot-kind", { type: "button", title: `@${c.name}: ${KIND_LABEL[c.kind].toLowerCase()}\nClick for what else it is`, on: { click: () => setCast(i, { kind: castKinds[(castKinds.indexOf(c.kind) + 1) % castKinds.length] }) } }, KIND_LABEL[c.kind]));
 }
 
 function goKey(m) {
   const busy = mixing() || mixer.busy.has("render");
   const cost = estimate(m);
   const done = m?.body.shots.length && m.body.shots.every((s) => take(s)?.status === "done");
-  return h("button.mx-go", { type: "button", disabled: busy || !m?.body.edit || !m?.body.cast.length, title: !m?.body.edit ? "Pick a recipe or drop an edit first" : !m?.body.cast.length ? "Add a photo to the cast first" : done ? "Every shot is made: mixing again cuts them together again" : "Every shot drawn with your cast, rolled and cut together", on: { click: () => mixIt() } },
+  return h("button.mx-go", { type: "button", disabled: busy || !m?.body.edit || !m?.body.cast.length, title: !m?.body.cast.length ? "Add a photo to the cast first" : "Every shot drawn with your cast, rolled and cut together", on: { click: () => mixIt() } },
     sprite("product-mixer"), h("span", {}, busy ? (mixer.busy.has("render") ? "Cutting" : "Mixing") : done ? "Mix again" : "Mix it"),
     cost !== null && !busy && state.info?.target === "comfy-cloud" ? h("em", {}, `≈ ${cost} cr`) : null);
 }
 
-// ---------------------------------------------------------------- the mix: the player and the shots
-
 function player(m) {
-  const film = m?.body.film;
-  const shot = m?.body.shots[mixer.selected];
-  if (!film) {
-    const t = take(shot);
-    const still = t?.status === "done" ? loopVideo("screen", t.video, shot.look?.url) : shot?.look ? h("img", { src: shot.look.url, alt: "", draggable: false }) : null;
-    return h("div.mx-stage", {}, h("div.mx-screen", { dataset: { empty: still ? undefined : "" } }, still ?? h("div.mx-screen-empty", {}, h("img.star", { src: "brand/cast/praline.png", alt: "", draggable: false }), h("span", {}, mixing() ? "Mixing" : "Your mix plays here"))));
-  }
+  const film = m.body.film;
   const video = keep(`film:${film.url}`, () => {
     const v = h("video", { src: film.url, poster: film.poster, playsInline: true, preload: "metadata", loop: true, draggable: false, disablePictureInPicture: true });
-    v.addEventListener("timeupdate", () => tick(v));
-    v.addEventListener("play", () => tick(v));
-    v.addEventListener("pause", () => tick(v));
+    for (const ev of ["timeupdate", "play", "pause"]) v.addEventListener(ev, () => tick(v));
     return v;
   });
-  const total = film.seconds || m.body.edit?.video?.seconds || 1;
-  const marks = m.body.edit?.kind === "video" ? m.body.shots.slice(1).map((s) => s.from / total) : [];
+  const total = film.seconds || 1;
+  const marks = (m.body.shots ?? []).slice(1).map((s) => s.from / total);
   const bar = h("div.mx-bar", { on: { pointerdown: (e) => seek(e, video, bar) } }, h("i.mx-bar-fill"), ...marks.map((f) => h("b", { style: { left: `${f * 100}%` } })));
   const name = (m.name || "mix").toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const el = h("div.mx-stage", {},
@@ -160,15 +231,13 @@ async function openInCut(id) {
 function strip(m) {
   const shots = m?.body.shots ?? [];
   if (!shots.length) return h("div.mx-strip-empty", {}, "The edit's shots line up here, each with your version under it.");
-  const recipe = m.body.edit?.kind === "recipe";
   return h("div.mx-strip", { dataset: { scrollKey: "mx-strip" } },
     h("div.mx-strip-rows", {}, h("span", {}, "Original"), h("span", {}, "Remix")),
     ...shots.map((s, i) => {
       const st = shotState(s, i);
-      const orig = s.frame?.url ?? (recipe ? m.body.edit.poster : null);
       return h(`button.mx-shot${i === mixer.selected ? ".is-on" : ""}`, { type: "button", on: { click: () => select(i) } },
         h("span.mx-shot-head", {}, `${pad2(i + 1)} · ${secs(shotLength(s))}`),
-        h("span.mx-thumb", {}, orig ? h("img", { src: orig, alt: "", draggable: false, loading: "lazy" }) : null),
+        h("span.mx-thumb", {}, s.frame ? h("img", { src: s.frame.url, alt: "", draggable: false, loading: "lazy" }) : null),
         icon("chevron"),
         h("span.mx-thumb.is-remix", {}, s.look ? h("img", { src: s.look.url, alt: "", draggable: false, loading: "lazy" }) : null,
           st.step === "rolling" ? h("i.mx-progress", { style: { width: `${Math.round((st.progress ?? 0) * 100)}%` } }) : null),
@@ -177,105 +246,94 @@ function strip(m) {
     }));
 }
 
-// ---------------------------------------------------------------- the shot picked, and the mixes kept
-
-function inspector(m) {
+function shotFix(m) {
   const s = m?.body.shots[mixer.selected];
+  if (!s) return null;
   const i = mixer.selected;
-  const parts = [];
-  if (s) {
-    const t = take(s);
-    const st = shotState(s, i);
-    const busy = st.step === "rolling" || st.step === "drawing" || mixing();
-    const orig = s.frame?.url ?? m.body.edit?.poster;
-    parts.push(
-      h("div.mx-head", {}, h("span.card-label", {}, `Shot ${pad2(i + 1)}`), h("span.mx-count", {}, secs(shotLength(s)))),
-      h("div.mx-pair", {},
-        h("figure", {}, orig ? h("img", { src: orig, alt: "", draggable: false }) : null, h("figcaption", {}, "Original")),
-        h("figure", {}, t?.status === "done" ? loopVideo("pair", t.video, s.look?.url) : s.look ? h("img", { src: s.look.url, alt: "", draggable: false }) : null, h("figcaption", {}, "Remix"))),
-      s.clip
-        ? h("div.mx-motion", {}, h("span.label", {}, "Motion"),
-          h("div.selector", { role: "group" }, ...[["pose", "Pose", "Copies the body's moves"], ["edges", "Edges", "Copies the outlines: for objects, places, camera moves"], ["free", "Free", "Doesn't copy: the note says what happens"]].map(([v, label, tip]) =>
-            h("button", { type: "button", "aria-pressed": String(s.motion === v), title: tip, on: { click: () => setShot(i, { motion: v }) } }, label))))
-        : null,
-      h("textarea.field.mx-note", { rows: 2, placeholder: "Fix it: e.g. sunglasses on, looking left", value: s.note ?? "", dataset: { focus: `note:${m.id}:${i}` }, on: { input: (e) => ((s.note = e.target.value), save()) } }),
-      h("div.mx-keys", {},
-        h("button.key", { type: "button", disabled: busy || !m.body.cast.length, title: "Draws this shot's first frame again, with the note", on: { click: () => redo(i, { draw: true }) } }, icon("image"), "Redraw frame"),
-        h("button.key", { type: "button", disabled: busy || !s.look, title: "Rolls this shot again from its frame", on: { click: () => redo(i, { draw: false }) } }, icon("remix"), "Roll again")),
-      st.step === "failed" ? h("p.mx-error", {}, st.note) : null,
-    );
-  } else parts.push(h("div.mx-head", {}, h("span.card-label", {}, "The shot")), h("p.hint", {}, "Pick a shot in the strip to see it here and fix it."));
-  parts.push(
-    h("div.mx-head.is-gap", {}, h("span.card-label", {}, "My mixes"),
-      h("div.card-tools", {}, h("button.key.is-icon.is-quiet", { type: "button", title: "A new mix", on: { click: () => newMix() } }, icon("plus")))),
-    h("div.mx-mixes", { dataset: { scrollKey: "mx-mixes" } }, ...mixer.list.map((row) =>
-      h(`div.mx-row${row.id === m?.id ? ".is-on" : ""}`, {},
-        h("button.mx-row-open", { type: "button", on: { click: () => openMix(row.id) } },
-          h("span.mx-row-pic", {}, row.thumb ? h("img", { src: row.thumb, alt: "", draggable: false, loading: "lazy" }) : sprite("product-mixer")),
-          h("span.mx-row-text", {}, h("b", {}, row.name), h("em", {}, ago(row.updatedAt)))),
-        h(`button.key.is-icon.is-quiet${armed === row.id ? ".is-armed" : ""}`, { type: "button", title: armed === row.id ? "Click again to delete it" : "Delete this mix", on: { click: () => (armed === row.id ? ((armed = null), removeMix(row.id)) : ((armed = row.id), changedMixer(), setTimeout(() => armed === row.id && ((armed = null), changedMixer()), 3000))) } }, icon("trash"))))),
-    mixer.list.length ? null : h("p.hint", {}, "Your mixes are kept here."));
-  return h("section.mx-panel.mx-side", {}, ...parts);
+  const st = shotState(s, i);
+  const busy = st.step === "rolling" || st.step === "drawing" || mixing();
+  return h("div.mx-fix", {},
+    s.clip
+      ? h("div.selector.mx-motion", { role: "group", title: "How this shot copies the original" }, ...[["pose", "Pose", "Copies the body's moves"], ["edges", "Edges", "Copies the outlines: objects, places, camera moves"], ["free", "Free", "Doesn't copy: the note says what happens"]].map(([v, label, tip]) =>
+        h("button", { type: "button", "aria-pressed": String(s.motion === v), title: tip, on: { click: () => setShot(i, { motion: v }) } }, label)))
+      : null,
+    h("textarea.field.mx-note", { rows: 1, placeholder: `Fix shot ${i + 1}: e.g. sunglasses on, looking left`, value: s.note ?? "", dataset: { focus: `note:${m.id}:${i}` }, on: { input: (e) => ((s.note = e.target.value), save()) } }),
+    h("button.key", { type: "button", disabled: busy || !m.body.cast.length, title: "Draws this shot's first frame again, with the note", on: { click: () => redo(i, { draw: true }) } }, icon("image")),
+    h("button.key", { type: "button", disabled: busy || !s.look, title: "Rolls this shot again from its frame", on: { click: () => redo(i, { draw: false }) } }, icon("remix")),
+    st.step === "failed" ? h("p.mx-error", {}, st.note) : null);
 }
 
-// ---------------------------------------------------------------- the recipes
+// ---------------------------------------------------------------- the crew, your stars, the mixes
 
-const GROUPS = [["all", "All"], ["camera", "Camera"], ["vfx", "Effects"], ["transform", "Transformations"]];
-function recipes(m) {
-  const list = state.presets.filter((p) => filter === "all" || p.category === filter);
-  const current = m?.body.edit?.kind === "recipe" ? m.body.edit.preset : null;
-  return h("section.mx-recipes", {},
-    h("div.mx-head", {}, h("span.card-label", {}, "Recipes"),
-      h("div.mx-filters", {}, ...GROUPS.map(([id, label]) => h("button", { type: "button", "aria-pressed": String(filter === id), on: { click: () => ((filter = id), changedMixer()) } }, label)))),
-    h("div.mx-shelf", { dataset: { scrollKey: "mx-shelf" } }, ...list.map((p) =>
-      h(`button.mx-recipe${p.id === current ? ".is-on" : ""}`, { type: "button", title: p.blurb, on: { click: () => useRecipe(p.id), pointerenter: (e) => hoverPlay(e.currentTarget, p, true), pointerleave: (e) => hoverPlay(e.currentTarget, p, false) } },
-        h("img", { src: p.poster, alt: "", draggable: false, loading: "lazy" }),
-        h("span.mx-recipe-text", {}, h("b", {}, p.name), h("em", {}, "1 cut"))))));
+function aside() {
+  const firstRole = () => pick.role ?? castOf()[0]?.role;
+  return h("aside.mx-aside", {},
+    h("section.mx-panel", {},
+      h("div.mx-head", {}, h("span.card-label", {}, "The crew")),
+      h("div.mx-crew", {}, ...CREW.map((c) =>
+        h("button.mx-crew-cat", { type: "button", title: `${c.name}, ${c.look}\n${pick.role ? `Plays the ${pick.role.toLowerCase()}` : "Click to cast"}`, on: { click: () => !remixing() && setRole(firstRole(), { crew: c.id }) } },
+          h("img", { src: crewFace(c.id), alt: "", draggable: false }), h("b", {}, c.name), h("em", {}, c.role))))),
+    h("section.mx-panel", {},
+      h("div.mx-head", {}, h("span.card-label", {}, "Your stars")),
+      h("div.mx-stars", {},
+        ...stars.list.map((s) => h("div.mx-star", {},
+          h("button.mx-star-pic", { type: "button", title: `${s.name}\n${pick.role ? `Plays the ${pick.role.toLowerCase()}` : "Click to cast"}`, on: { click: () => !remixing() && setRole(firstRole(), { star: s }) } }, h("img", { src: s.url, alt: "", draggable: false })),
+          h("span", {}, s.name),
+          h("button.mx-star-x", { type: "button", title: "Take it off", "aria-label": "Take it off", on: { click: () => removeStar(s.file) } }, icon("close")))),
+        h("button.mx-star.is-add", { type: "button", title: "A photo of your own to cast: your pet, you, a friend", on: { click: () => pickFile("image/*", true, (fs) => fs.forEach((f) => addStar(f, null))) } }, icon("plus"), h("span", {}, "Add a photo")))),
+    h("section.mx-panel", {},
+      h("div.mx-head", {}, h("span.card-label", {}, "My mixes"), h("span.mx-count", {}, mixer.list.length ? String(mixer.list.length) : "")),
+      mixer.list.length
+        ? h("div.mx-mixes", { dataset: { scrollKey: "mx-mixes" } }, ...mixer.list.map((row) =>
+          h(`div.mx-mix${row.id === mixer.mix?.id ? ".is-on" : ""}`, {},
+            h("button.mx-mix-open", { type: "button", title: `Open ${row.name}`, on: { click: () => openOne(row.id) } },
+              row.thumb ? h("img", { src: row.thumb, alt: "", draggable: false, loading: "lazy" }) : h("span.mx-mix-none", {}, sprite("product-mixer")),
+              h("span.mx-mix-text", {}, h("b", {}, row.name), h("em", {}, ago(row.updatedAt)))),
+            h(`button.mx-mix-x${armed === row.id ? ".is-armed" : ""}`, { type: "button", title: armed === row.id ? "Click again to delete it" : "Delete this mix", on: { click: () => (armed === row.id ? ((armed = null), removeMix(row.id)) : ((armed = row.id), changedMixer(), setTimeout(() => armed === row.id && ((armed = null), changedMixer()), 3000))) } }, icon("trash")))))
+        : h("p.hint", {}, "What you make is kept here.")),
+    h("button.mx-remix-drop", { type: "button", title: "Any edit you like, remixed shot by shot with your cast\nA vertical video with cuts and music, up to 20 s", on: { click: () => pickFile("video/*", false, ([f]) => f && useVideo(f)) } },
+      icon("upload"), h("span", {}, h("b", {}, "Remix any edit"), h("em", {}, "Drop a video you like"))));
 }
-function hoverPlay(card, p, on) {
-  let v = card.querySelector("video");
-  if (on && !v) card.prepend((v = h("video", { src: p.preview, muted: true, loop: true, autoplay: true, playsInline: true, draggable: false })));
-  else if (!on && v) v.remove();
+async function openOne(id) {
+  await openMix(id);
+  const t = mixer.mix?.body?.trend;
+  if (mixer.mix?.body?.kind === "trend" && t) {
+    pick.trend = t.id;
+    pick.cast = { trend: t.id, roles: structuredClone(t.cast) };
+  }
+  changedMixer();
 }
 
 // ---------------------------------------------------------------- the screen
 
 export function renderMixer(el) {
   loadMixes();
-  const m = mixer.mix;
+  loadStars();
+  const t = trendById(pick.trend) ?? TRENDS[0];
   // a note being typed keeps its place when the takes' progress redraws the screen
   const active = document.activeElement;
   const focus = el.contains(active) ? active.dataset.focus : null;
   const sel = focus ? [active.selectionStart, active.selectionEnd] : null;
-  el.replaceChildren(h("div.mixer", {},
-    editPanel(m),
-    h("section.mx-panel.mx-mix", {},
-      h("div.mx-head", {}, h("span.card-label", {}, "The mix"),
-        m ? h("input.mx-name", { value: m.name, "aria-label": "The mix's name", dataset: { focus: `name:${m.id}` }, on: { input: (e) => ((m.name = e.target.value.slice(0, 60)), save()) } }) : h("span.card-hint", {}, "Trends, in one command")),
-      player(m),
-      h("div.mx-head", {}, h("span.card-label", {}, "Shots")),
-      strip(m)),
-    inspector(m),
-    recipes(m)));
+  el.replaceChildren(h("div.mixer", {}, feed(), remixing() ? remix(mixer.mix) : recipe(t), aside()));
   if (focus) {
     const back = el.querySelector(`[data-focus="${CSS.escape(focus)}"]`);
     back?.focus({ preventScroll: true });
-    if (back && sel) back.setSelectionRange(...sel);
+    if (back && sel) back.setSelectionRange?.(...sel);
   }
 }
 
-// a video dropped anywhere on Mixer is the edit, a picture joins the cast, a pasted picture too
+// dropped on Mixer: a video is an edit to remix; a photo is a star (or, while remixing, the cast)
 const files = (list) => [...(list ?? [])];
 document.addEventListener("dragover", (e) => currentPage() === "mixer" && e.dataTransfer?.types?.includes("Files") && e.preventDefault());
 document.addEventListener("drop", (e) => {
   if (currentPage() !== "mixer" || !e.dataTransfer?.files?.length) return;
   e.preventDefault();
-  for (const f of files(e.dataTransfer.files)) f.type.startsWith("video/") ? useVideo(f) : f.type.startsWith("image/") ? addCast(f) : toast("Drop a video (the edit) or a photo (the cast).");
+  for (const f of files(e.dataTransfer.files)) f.type.startsWith("video/") ? useVideo(f) : f.type.startsWith("image/") ? (remixing() ? addCast(f) : addStar(f)) : toast("Drop a video to remix, or a photo to cast.");
 });
 document.addEventListener("paste", (e) => {
   if (currentPage() !== "mixer" || e.target.closest?.("input, textarea")) return;
   const pics = files(e.clipboardData?.files).filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/"));
   if (!pics.length) return;
   e.preventDefault();
-  for (const f of pics) f.type.startsWith("video/") ? useVideo(f) : addCast(f);
+  for (const f of pics) f.type.startsWith("video/") ? useVideo(f) : remixing() ? addCast(f) : addStar(f);
 });

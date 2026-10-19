@@ -22,7 +22,7 @@ export interface CutItem {
   sound?: boolean;
   join?: "cut" | "dissolve";
   text?: string;
-  style?: "center" | "lower" | "pop" | "karaoke";
+  style?: "center" | "lower" | "pop" | "karaoke" | "top";
   grade?: string;
 }
 export interface CutTrack { id: string; kind: "video" | "audio" | "title"; main?: boolean; mute?: boolean; role?: "voice" | "music" | "effects"; items: CutItem[] }
@@ -171,12 +171,14 @@ export function planCut(body: CutBody, source: (item: CutItem) => Source | null,
       const alpha = `if(lt(t\\,${f3(s + fade)})\\,(t-${f3(s)})/${f3(fade)}\\,if(gt(t\\,${f3(e - fade)})\\,(${f3(e)}-t)/${f3(fade)}\\,1))`;
       const style = it.style ?? "center";
       // captions on a music video: a bold pop (dark capitals on a yellow box) or karaoke (yellow, outlined)
-      const size = style === "pop" ? Math.round(short / 11) : style === "karaoke" ? Math.round(short / 14) : Math.round(H / (style === "lower" ? 20 : 12));
+      const size = style === "pop" ? Math.round(short / 11) : style === "karaoke" || style === "top" ? Math.round(short / 14) : Math.round(H / (style === "lower" ? 20 : 12));
       const pad = style === "pop" ? Math.round(short / 40) : 0;
       const look = style === "pop"
         ? `fontcolor=0x211927:box=1:boxcolor=0xF2FF59:boxborderw=${pad}`
         : style === "karaoke"
         ? `fontcolor=0xF2FF59:borderw=${Math.max(2, Math.round(short / 240))}:bordercolor=0x211927`
+        : style === "top"
+        ? `fontcolor=white:borderw=${Math.max(2, Math.round(short / 220))}:bordercolor=0x111111`
         : "fontcolor=white:shadowcolor=black@0.55:shadowx=2:shadowy=2";
       const words = (style === "pop" ? it.text.toUpperCase() : it.text).trim().split(/\s+/);
       // as many letters a line as the frame holds (a letter is about 0.56 of the size wide)
@@ -189,11 +191,11 @@ export function planCut(body: CutBody, source: (item: CutItem) => Source | null,
       }
       const shown = lines.slice(0, 3);
       const step = Math.round(size * 1.25 + pad * 2);
-      const base = style === "pop" ? H * 0.66 : style === "karaoke" ? H * 0.78 : style === "lower" ? H * 0.8 : H / 2 - size / 2;
-      // a pop or centred block sits on its middle; the lower ones grow upwards from their base
+      const base = style === "pop" ? H * 0.66 : style === "karaoke" ? H * 0.78 : style === "lower" ? H * 0.8 : style === "top" ? H * 0.1 : H / 2 - size / 2;
+      // a pop or centred block sits on its middle, a top caption hangs down from its line, the lower ones grow upwards
       const centred = style === "pop" || style === "center";
       shown.forEach((line, k) => {
-        const y = Math.round(centred ? base + (k - (shown.length - 1) / 2) * step : base - (shown.length - 1 - k) * step);
+        const y = Math.round(centred ? base + (k - (shown.length - 1) / 2) * step : style === "top" ? base + k * step : base - (shown.length - 1 - k) * step);
         const out = `t${texts.length}`;
         vf.push(`[${acc}]drawtext=fontfile='${o.font}':textfile='${o.titleFile(texts.length)}':fontsize=${size}:${look}:x=(w-text_w)/2:y=${y}:alpha='${alpha}':enable='between(t\\,${f3(s)}\\,${f3(e)})'[${out}]`);
         texts.push(line.slice(0, 200));

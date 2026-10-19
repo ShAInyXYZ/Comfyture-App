@@ -12,6 +12,9 @@ const DEFAULT_NAMES = { person: "hero", product: "product", outfit: "outfit", ot
 const SAVED = "comfyture.mixer.open";
 
 export const mixer = { list: [], mix: null, busy: new Set(), ready: null, selected: 0, splitting: false };
+/** Who hears of a mix opened when the screen first loads (the trend shelf, to pick its trend). */
+let onOpen = null;
+export const whenOpened = (fn) => (onOpen = fn);
 const update = () => changed("mixer");
 
 const call = async (path, init) => {
@@ -34,8 +37,13 @@ export function loadMixes() {
       try {
         last = localStorage.getItem(SAVED);
       } catch {}
-      const id = mixer.list.find((m) => m.id === last)?.id ?? mixer.list[0]?.id;
-      if (id) await openMix(id);
+      // the screen opens on the trends: the last mix comes back with them when it was one of theirs
+      const id = mixer.list.find((m) => m.id === last)?.id;
+      if (id) {
+        await openMix(id);
+        if (mixer.mix?.body?.kind !== "trend") mixer.mix = null;
+        else onOpen?.(mixer.mix);
+      }
     } catch (e) {
       console.warn("mixer:", e.message);
     }
