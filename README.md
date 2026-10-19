@@ -269,6 +269,7 @@ browser ──► Comfyture server (Node) ──► Comfy SDK ──► Comfy Cl
   - `shot-i2v.json`: LTX-2.5 image-to-video with sound, as a two-pass render. Used for a start frame alone.
   - `shot-guided.json`: one LTX-2.5 pass with any number of guide frames. It covers text-to-video, start, end and keyframes, and reference sheets (on the dev model, 30 steps, as the Ingredients LoRA is trained).
   - `shot-motion.json`: LTX-2.5 with the union-control IC-LoRA, two passes, for copying a clip's motion. Extending a clip uses `shot-guided.json` with the clip's last frames as the first guide.
+  - `shot-swap.json`: who is in a clip swapped, how it moves kept: Lightricks' LTX-2.5 union-control example (two stages, the 2.5 upscaler) with a first frame pinned in both stages and a vocal track frozen in, for lip sync. How it was chosen, and how a trend's preview is made with it: [docs/VIDEO-TO-VIDEO.md](docs/VIDEO-TO-VIDEO.md).
   - `frame-edit.json`: the Qwen Image 2.1 edit that paints end frames and edits any input.
   - `image-generate.json`: Qwen Image 2.1 text-to-image, for Story's first frames and the assistant.
   - `image/`: the Image window's models, one graph per official template, their catalogue (`models.json`), the shared enhancer graph and the enhancers' briefs.

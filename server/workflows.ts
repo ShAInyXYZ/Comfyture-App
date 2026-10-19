@@ -255,6 +255,41 @@ export function buildMotion(graph: Graph, clip: unknown, photo: unknown | null, 
   return graph;
 }
 
+/**
+ * Who is in a clip swapped, how it moves kept: Lightricks' LTX-2.5 union-control example (distilled, two
+ * stages, the 2.5 latent upscaler) with a first frame pinned in both stages, and a track frozen in both,
+ * as in their audio-to-video example, so the mouths follow its voice. The clip's pose drives the motion
+ * (body and hands, the face too unless face is false); with control "frames" the clip itself is the
+ * guide, for an edit IC-LoRA. The first frame says who is in it. width and height are the first stage's,
+ * multiples of 64; frames is 8n + 1.
+ */
+export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audio: unknown; from: number; prompt: string; frames: number; width: number; height: number; seed: number; face?: boolean; control?: "pose" | "frames"; lora?: string }) {
+  set(graph, "video_in", "file", v.clip);
+  set(graph, "photo", "image", v.photo);
+  set(graph, "audio_in", "audio", v.audio);
+  set(graph, "prompt", "value", v.prompt);
+  set(graph, "video_frames", "length", v.frames);
+  for (const node of ["latent"]) {
+    set(graph, node, "width", v.width);
+    set(graph, node, "height", v.height);
+    set(graph, node, "length", v.frames);
+  }
+  set(graph, "guide_fit", "resize_type.width", v.width);
+  set(graph, "guide_fit", "resize_type.height", v.height);
+  // the track covers every frame: one shorter and the model makes up the mouths of the last
+  set(graph, "audio_cut", "start_index", v.from);
+  set(graph, "audio_cut", "duration", v.frames / 24);
+  set(graph, "noise", "noise_seed", v.seed);
+  set(graph, "noise_refine", "noise_seed", v.seed + 1);
+  if (v.face === false) set(graph, "control", "detect_face", "disable");
+  if (v.lora) set(graph, "ic_lora", "lora_name", v.lora);
+  if (v.control === "frames") {
+    delete graph.control;
+    graph.guide.inputs.image = ["guide_fit", 0];
+  }
+  return graph;
+}
+
 /** The Director: an LLM inside ComfyUI turns an idea into a shot list (JSON text). */
 export function buildPlan(graph: Graph, prompt: string, seed: number, photo?: unknown): Graph {
   set(graph, "plan", "prompt", prompt);
