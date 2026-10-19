@@ -54,8 +54,8 @@
 .mx-preview { display: grid; gap: .75rem; min-width: 0; }
 .mx-screen { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 9 / 16; overflow: hidden; border-radius: calc(.875rem * var(--corner-k, 1)); background: var(--sunk); }
 .mx-screen > video, .mx-screen > img { width: 100%; height: 100%; object-fit: cover; }
-.mx-recipe > .mx-preview { align-self: stretch; }
-.mx-recipe .mx-screen.is-cover { height: 100%; min-height: min(35.5rem, 160vw); max-height: 44rem; aspect-ratio: auto; }
+/* the trend's cover keeps its own 9:16; its column is as wide as lets it stand as tall as the recipe beside it */
+.mx-recipe { grid-template-columns: minmax(15rem, 24rem) minmax(0, 1fr); }
 .mx-screen.is-cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(10, 9, 12, .7), transparent 30%); pointer-events: none; }
 .mx-cover-note, .mx-making { position: absolute; left: 50%; bottom: 1rem; z-index: 1; transform: translateX(-50%); display: inline-flex; align-items: center; gap: .5rem; padding: .4375rem .75rem; border-radius: 999px; background: rgba(14, 14, 16, .78); color: var(--muted); font: 500 var(--fs-small)/1 var(--font-sans); white-space: nowrap; backdrop-filter: blur(6px); }
 .mx-making { color: var(--warn); }
