@@ -81,15 +81,10 @@
 
 /* under the music: who stars in it (left) beside how it is made (right) */
 .mx-recipe-body { container-type: inline-size; }
-/* a landscape source plays in a portrait crop of it: 7:10, the share of the frame that holds the duo whole in its wide shot */
-.mx-recipe.is-landscape { grid-template-columns: minmax(15rem, 27rem) minmax(0, 1fr); }
-.mx-recipe.is-landscape .mx-stage .mx-screen { aspect-ratio: 7 / 10; }
-.mx-recipe.is-landscape .mx-stage .mx-screen > video { object-position: 47% 50%; }
-.mx-screen-tag { position: absolute; top: .625rem; left: .625rem; z-index: 1; padding: .3125rem .5625rem; border-radius: .5rem; background: rgba(14, 14, 16, .72); color: var(--text); font: 600 var(--fs-small)/1 var(--font-sans); backdrop-filter: blur(6px); }
-/* a trend with a preview plays it on hover, over its cover */
-.mx-card-video { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; opacity: 0; pointer-events: none; transition: opacity var(--t-fast); }
-.mx-card.has-preview:hover .mx-card-video { opacity: 1; }
-.mx-card-len, .mx-card-heat, .mx-card-foot { z-index: 2; }
+/* our crew's version of the trend, on its cover: it plays in its own shape */
+.mx-watch { position: absolute; left: 50%; top: 50%; z-index: 1; display: grid; place-items: center; width: 4.5rem; height: 4.5rem; padding: 0; border: 0; border-radius: 50%; background: rgba(14, 14, 16, .62); color: var(--text); transform: translate(-50%, -50%); cursor: pointer; backdrop-filter: blur(8px); transition: background var(--t-fast), transform var(--t-fast); }
+.mx-watch:hover { background: var(--accent); color: var(--accent-ink); transform: translate(-50%, -50%) scale(1.06); }
+.mx-watch svg { width: 1.75rem; height: 1.75rem; margin-left: .2rem; }
 .mx-lower { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); align-items: start; gap: 1.5rem; }
 .mx-cast-col, .mx-made { display: grid; align-content: start; gap: .625rem; min-width: 0; }
 .mx-section-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .875rem; min-height: 1.5rem; }
@@ -241,7 +236,7 @@
 .mx-remix-drop em { color: var(--dim); font: 400 var(--fs-small)/1 var(--font-sans); font-style: normal; }
 
 @supports (corner-shape: squircle) {
-  .mx-panel, .mx-work, .mx-kinds button, .mx-card, .mx-card-len, .mx-card-heat, .mx-screen, .mx-screen-tag, .mx-music, .mx-chip, .mx-role, .mx-role-drop, .mx-role-swap, .mx-model, .mx-model-icon, .mx-steps, .mx-go, .mx-transport, .mx-shot, .mx-thumb, .mx-slot-pic, .mx-slot.is-empty, .mx-star-pic, .mx-star.is-add, .mx-mix-open, .mx-mix-x, .mx-remix-drop, .mx-fix .key { corner-shape: squircle; }
+  .mx-panel, .mx-work, .mx-kinds button, .mx-card, .mx-card-len, .mx-card-heat, .mx-screen, .mx-music, .mx-chip, .mx-role, .mx-role-drop, .mx-role-swap, .mx-model, .mx-model-icon, .mx-steps, .mx-go, .mx-transport, .mx-shot, .mx-thumb, .mx-slot-pic, .mx-slot.is-empty, .mx-star-pic, .mx-star.is-add, .mx-mix-open, .mx-mix-x, .mx-remix-drop, .mx-fix .key { corner-shape: squircle; }
 }
 
 @media (max-width: 1280px) {

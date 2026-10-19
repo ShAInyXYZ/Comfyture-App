@@ -73,13 +73,8 @@ function feed() {
 function card(t) {
   const lit = t.heat >= 5 ? 3 : t.heat >= 4 ? 2 : 1;
   const on = t.id === pick.trend && !remixing();
-  const clip = t.preview ? h("video.mx-card-video", { src: t.preview, poster: t.poster, muted: true, loop: true, playsInline: true, preload: "none", draggable: false, disablePictureInPicture: true }) : null;
-  return h(`button.mx-card${on ? ".is-on" : ""}${clip ? ".has-preview" : ""}`, {
-    type: "button", title: `${t.name}\n${KIND_NAME[t.kind]} · ${t.seconds} s`,
-    on: { click: () => selectTrend(t.id), pointerenter: () => clip?.play().catch(() => {}), pointerleave: () => clip && (clip.pause(), (clip.currentTime = 0)) },
-  },
+  return h(`button.mx-card${on ? ".is-on" : ""}`, { type: "button", title: `${t.name}\n${KIND_NAME[t.kind]} · ${t.seconds} s`, on: { click: () => selectTrend(t.id) } },
     h("img", { src: trendArt(t), alt: "", draggable: false, loading: "lazy" }),
-    clip,
     h("span.mx-card-len", {}, `0:${pad2(Math.round(t.seconds))}`),
     h("span.mx-card-heat", { title: lit === 3 ? "Very hot right now" : lit === 2 ? "Hot right now" : "Warm" }, sprite("trend-heat"), ...[0, 1, 2].map((k) => h(`i${k < lit ? ".is-lit" : ""}`))),
     h("span.mx-card-foot", {},
@@ -120,22 +115,19 @@ function recipe(t) {
       h("button.mx-go", { type: "button", disabled: busy, title: "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
         sprite("product-mixer"), h("span", {}, busy ? "Making it" : m?.body.film ? "Make it again" : "Make it"), cost && !busy ? h("em", {}, `≈ ${cost} cr`) : null),
   ];
-  // a trend from a landscape source plays in a portrait crop of it (7:10, the duo whole in its wide shot)
-  const landscape = t.aspect && t.aspect !== "9:16";
-  return h(`section.mx-work.mx-recipe${landscape ? ".is-landscape" : ""}`, {}, preview(t, m), h("div.mx-recipe-body", {}, ...head, ...rest));
+  return h("section.mx-work.mx-recipe", {}, preview(t, m), h("div.mx-recipe-body", {}, ...head, ...rest));
 }
 
 function preview(t, m) {
   const film = m?.body.film;
   if (film) return h("div.mx-preview", {}, player(m));
-  // our own version of the trend, until yours is made
-  if (t.preview && !making())
-    return h("div.mx-preview", {}, player({ name: t.name, body: { film: { url: t.preview, poster: t.poster, seconds: t.seconds }, shots: t.beats } }, { tag: "Preview", own: false }));
   const first = m?.body.shots?.[0]?.look?.url;
   return h("div.mx-preview", {},
     h("div.mx-screen.is-cover", {},
       h("img", { src: first ?? trendArt(t), alt: "", draggable: false }),
       h("span.mx-card-len", {}, `0:${pad2(Math.round(t.seconds))}`),
+      // our own version of the trend, in the shape it was made in
+      t.preview && !first && !making() ? h("button.mx-watch", { type: "button", title: "Watch our crew's version", "aria-label": "Watch our crew's version", on: { click: () => view(t.preview, "video") } }, icon("play")) : null,
       making() ? h("span.mx-making", {}, h("span.lamp", { dataset: { tone: "busy" } }), "Making your version") : h("span.mx-cover-note", {}, "Your version plays here")));
 }
 
@@ -233,7 +225,7 @@ function goKey(m) {
     cost !== null && !busy && state.info?.target === "comfy-cloud" ? h("em", {}, `≈ ${cost} cr`) : null);
 }
 
-function player(m, { tag = null, own = true } = {}) {
+function player(m) {
   const film = m.body.film;
   const video = keep(`film:${film.url}`, () => {
     const v = h("video", { src: film.url, poster: film.poster, playsInline: true, preload: "metadata", loop: true, draggable: false, disablePictureInPicture: true });
@@ -245,13 +237,13 @@ function player(m, { tag = null, own = true } = {}) {
   const bar = h("div.mx-bar", { on: { pointerdown: (e) => seek(e, video, bar) } }, h("i.mx-bar-fill"), ...marks.map((f) => h("b", { style: { left: `${f * 100}%` } })));
   const name = (m.name || "mix").toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const el = h("div.mx-stage", {},
-    h("div.mx-screen", {}, video, tag ? h("span.mx-screen-tag", {}, tag) : null),
+    h("div.mx-screen", {}, video),
     h("div.mx-transport", {},
       h("button.key.is-icon.mx-toggle", { type: "button", title: "Play or pause", on: { click: () => (video.paused ? video.play() : video.pause()) } }, icon(video.paused ? "play" : "pause")),
       h("span.mx-time", {}, h("b", {}, "0:00.0"), h("em", {}, ` / ${time(total)}`)),
       bar,
-      own ? h("a.key.is-icon", { href: `${film.url}?download=${name}.mp4`, download: `${name}.mp4`, title: "Download the mix" }, icon("download")) : null,
-      own && m.body.cut ? h("button.key.is-icon", { type: "button", title: "Open in Kitchen's Cut\nFine-tune the edit: trims, titles, sound", on: { click: () => openInCut(m.body.cut) } }, icon("scissors")) : null));
+      h("a.key.is-icon", { href: `${film.url}?download=${name}.mp4`, download: `${name}.mp4`, title: "Download the mix" }, icon("download")),
+      m.body.cut ? h("button.key.is-icon", { type: "button", title: "Open in Kitchen's Cut\nFine-tune the edit: trims, titles, sound", on: { click: () => openInCut(m.body.cut) } }, icon("scissors")) : null));
   queueMicrotask(() => tick(video));
   return el;
 }
