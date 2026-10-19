@@ -16,22 +16,21 @@ export const mixer = { list: [], mix: null, busy: new Set(), ready: null, select
 let onOpen = null;
 export const whenOpened = (fn) => (onOpen = fn);
 
-// the style LoRA every take of a mix is rolled in, kept per browser: Pixar Toon, like the crew, unless
-// another one (or none) is picked
-const STYLE = "comfyture.mixer.style";
-export function mixStyle() {
+// the LoRAs every take of a mix is rolled with, kept per browser: Pixar Toon, like the crew, until
+// the stack is changed
+const LORAS = "comfyture.mixer.loras";
+export function mixLoras() {
   try {
-    const kept = localStorage.getItem(STYLE);
-    if (kept) return kept === "none" ? null : JSON.parse(kept);
+    const kept = JSON.parse(localStorage.getItem(LORAS) ?? "null");
+    if (Array.isArray(kept)) return kept;
   } catch {}
-  return { id: "pixar-toon", strength: 1.2 };
+  return [{ id: "pixar-toon", strength: 1.2 }];
 }
-export function setMixStyle(v) {
+export function setMixLoras(list) {
   try {
-    localStorage.setItem(STYLE, v ? JSON.stringify(v) : "none");
+    localStorage.setItem(LORAS, JSON.stringify(list));
   } catch {}
 }
-export const mixLoras = () => (mixStyle() ? [mixStyle()] : undefined);
 const update = () => changed("mixer");
 
 const call = async (path, init) => {

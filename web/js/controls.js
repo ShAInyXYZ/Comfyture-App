@@ -117,7 +117,7 @@ export function toggle(el, { value, onChange, label }) {
  * as asked (or centred on it), never past the window's edge. It is pinned by its top, and a panel
  * taller than its room scrolls.
  */
-function float(panel, box, width, centre = false) {
+export function float(panel, box, width, centre = false) {
   width = Math.min(innerWidth - 16, width);
   const left = centre ? box.left + (box.width - width) / 2 : box.left;
   Object.assign(panel.style, { left: `${Math.max(8, Math.min(left, innerWidth - width - 8))}px`, width: `${width}px` });
@@ -135,7 +135,7 @@ function float(panel, box, width, centre = false) {
  * Keeps a floating panel by its trigger while the page under it scrolls, and closes it once the
  * trigger is out of sight. Returns what stops it.
  */
-function stick(panel, trigger, close) {
+export function stick(panel, trigger, close) {
   const from = trigger.getBoundingClientRect();
   let frame = 0;
   const follow = (e) => {

@@ -381,10 +381,9 @@ export function setStyle(text) {
   jam.jam.body.looks = {};
   save();
 }
-/** The style LoRA the shots are rolled in ({ id, strength } or null); a shot rolled in another is rolled again. */
-export const setLora = (v) => ((jam.jam.body.lora = v), (jam.jam.body.film = null), touched());
-export const setLoraStrength = (v) => ((jam.jam.body.lora.strength = v), (jam.jam.body.film = null), save());
-const lorasOf = (b) => (b.lora ? [b.lora] : undefined);
+/** The LoRAs every shot is rolled with ([{ id, strength }]); a shot rolled with others is rolled again. */
+export const setLoras = (list) => ((jam.jam.body.loras = list), (jam.jam.body.film = null), touched());
+const lorasOf = (b) => (b.loras?.length ? b.loras : undefined);
 const sameLoras = (a, b) => JSON.stringify((a ?? []).map((l) => [l.id, l.strength])) === JSON.stringify((b ?? []).map((l) => [l.id, l.strength]));
 /** Whether a shot's take is done, in the style the video is rolled in now. */
 const rolled = (b, s) => take(s)?.status === "done" && sameLoras(take(s).request?.loras, lorasOf(b));

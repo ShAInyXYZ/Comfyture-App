@@ -157,7 +157,7 @@ function promptView() {
   }
   const text = finalPrompt(d.script, { lipsync: !!d.audio?.lipsync, references: refInfo() });
   // the LoRAs' words open it (a style's trigger word first)
-  const lead = text && !(d.model && d.model !== "ltx-2.5") ? loraWords([d.style, d.move]) : "";
+  const lead = text && !(d.model && d.model !== "ltx-2.5") ? loraWords(d.loras ?? []) : "";
   return h("div", {},
     h("p.prompt-view", {}, lead ? h("b.prompt-lora", { title: "The LoRAs' own words" }, lead) : null, lead ? " " : null, text || "Write the shot in Script to see the prompt."),
     h("div.prompt-note", {},

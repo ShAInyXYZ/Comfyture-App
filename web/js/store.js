@@ -37,9 +37,8 @@ function freshDraft() {
     review: true,
     startMode: "photo",
     video: null,
-    // LoRAs on LTX-2.5: a style (or a finish) and a move, each { id, strength }
-    style: null,
-    move: null,
+    // LoRAs on LTX-2.5, stacked: [{ id, strength }], up to three
+    loras: [],
   };
 }
 
@@ -562,7 +561,7 @@ export async function request(d = state.draft, tab = state.tab) {
 }
 /** The LoRAs a draft rolls with: only LTX-2.5 takes them. */
 export const shotLoras = (d) => {
-  const list = d.model && d.model !== "ltx-2.5" ? [] : [d.style, d.move].filter(Boolean);
+  const list = d.model && d.model !== "ltx-2.5" ? [] : d.loras ?? [];
   return list.length ? list : undefined;
 };
 
