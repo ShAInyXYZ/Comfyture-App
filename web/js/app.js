@@ -18,6 +18,7 @@ import { renderHome } from "./panels/home.js";
 import { renderWelcome } from "./panels/welcome.js";
 import { renderMixer } from "./panels/mixer.js";
 import { renderUtensils } from "./panels/utensils.js";
+import { renderMacaron } from "./panels/macaron.js";
 import { renderAssistant } from "./panels/assistant.js";
 import { renderImage } from "./panels/image.js";
 import { renderStage, mountStage } from "./panels/stage.js";
@@ -50,7 +51,7 @@ const panels = {
   home: [$("page-kitchen"), renderHome, "kitchen"],
   mixer: [$("page-mixer"), renderMixer, "mixer"],
   jam: [$("page-jam"), renderProduct, "jam"],
-  macaron: [$("page-macaron"), renderProduct, "macaron"],
+  macaron: [$("page-macaron"), renderMacaron, "macaron"],
   utensils: [$("page-utensils"), renderUtensils, "utensils"],
 };
 

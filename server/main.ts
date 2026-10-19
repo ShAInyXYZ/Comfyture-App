@@ -1076,8 +1076,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     await (seeding ??= seedStages().catch((e) => console.warn("stages: the examples were not added:", e.message)));
     return json(res, 200, { projects: await listFilms() });
   }
-  // Kitchen's stories and edits, Mixer's mixes
-  for (const kind of ["stories", "cuts", "mixes"]) {
+  // Kitchen's stories and edits, Mixer's mixes, Macaron's brands
+  for (const kind of ["stories", "cuts", "mixes", "brands"]) {
     if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {
       const answered = await projectRoute(kind, path, method, req, res);
       if (answered !== false) return answered;
