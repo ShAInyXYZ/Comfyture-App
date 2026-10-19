@@ -67,10 +67,14 @@ Our trend presets are previewed by our own characters doing the trend, instead o
 
 1. **The clip,** cropped to the output shape (3:2 for Hotel Lobby), uploaded (`POST /api/videos`) and split at its cuts (`POST /api/mixer/split`). Each shot comes back with its first frame and its own clip, the shot's last frame held eight more.
 2. **The vocals:** the clip's sound as a track (`POST /api/audio` with the video), then `POST /api/jam/listen`.
-3. **First frames,** one per shot: GPT Image (Codex) with the shot's first frame, the characters' identity sheets and the trend's approved artwork. Run one session per frame in parallel. The brief: same framing, the characters exactly where the people stand and at their size, paws where the hands are, the same backdrop and props, no text; check the set side by side once, then stop.
-4. **Takes,** one per shot, in parallel: `node --env-file=.env scripts/try-swap.ts spec.json` with the shot's clip, first frame, vocals and start time, `8n + 1` frames covering the shot plus its held frames, and a prompt in Lightricks' style: one paragraph, present tense, the action first, each character by name and look, who raps, then the sound.
-5. **The cut:** each take trimmed to its shot's frames, joined, the clip's own sound muxed in.
-6. **Review** side by side with the source. Review copies use Opus audio: VS Code's player has no AAC decoder and plays AAC videos silent.
+3. **The skeleton, rebuilt for the characters:**
+   - Run `workflows/pose-keypoints.json` on each shot's clip (DWPose's keypoints as JSON text).
+   - Then run `node scripts/retarget-pose.ts keypoints.json pose.mp4 pose-first.png`. It keeps every move but gives each person the characters' build (`KITTEN` in `server/pose.ts`), leaves out the hands and face points, and draws it the way DWPose does.
+   - Without this, a person's skeleton turns small characters into tall ones with fingers.
+4. **First frames,** one per shot: GPT Image (Codex) with the shot's first frame, the characters' identity sheets and the trend's approved artwork. Run one session per frame in parallel. The brief: the same framing, backdrop and props; the characters posed on the rebuilt skeleton (`pose-first.png`, and the same over the frame), at its size and proportions; paws, never fingers; no text. Check the set side by side once, then stop.
+5. **Takes,** one per shot, in parallel: `node --env-file=.env scripts/try-swap.ts spec.json` with the rebuilt pose video as the clip and `"control": "ready"`, the first frame, the vocals and the start time, `8n + 1` frames covering the shot plus its held frames, and a prompt in Lightricks' style: one paragraph, present tense, the action first, each character by name and look, who raps, then the sound.
+6. **The cut:** each take trimmed to its shot's frames, joined, the clip's own sound muxed in.
+7. **Review** side by side with the source. Review copies use Opus audio: VS Code's player has no AAC decoder and plays AAC videos silent.
 
 The source clips stay in `docs/brand/mixer-crew/` and are never committed; the previews replace them in the app.
 

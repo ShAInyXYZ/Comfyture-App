@@ -231,7 +231,23 @@ Ablation: union strength 1.0 against 0.7 (the documented softer guide, for styli
 
 **Cost.** One 4.7 s take at 1920×1280 took 3.5–5.5 minutes on Comfy Cloud, against about 1 minute for v2.
 
-### 6.5 Engineering issues found on the way
+### 6.5 v4: the skeleton rebuilt for kittens
+
+v3 copied the moves faithfully but its cats were humanoid: tall, long-armed, with hands for paws. The pose it followed was a human's: 18 body points with human bone lengths, 21 points per hand (fingers), and 70 face points.
+
+v4 rebuilds the skeleton before the model sees it (`server/pose.ts`):
+
+1. **Keypoints.** DWPose's keypoints come back as data: `POSE_KEYPOINT` through `PreviewAny` to `SaveText` (`workflows/pose-keypoints.json`).
+2. **Rebuild.** Each person is tracked to a character, and every bone keeps its angle frame by frame but takes a kitten's length: neck 0.75, face 1.4 (a wide head sitting on the shoulders), shoulders 0.7, arms 0.55, body 0.6, legs 0.5 of the person's.
+3. **Placing.** Where the feet show (the wide shot), the kitten stands on the same floor and comes out small. Elsewhere its nose stays on the person's nose, so the face is where the mouth and the microphone are.
+4. **Dropped points.** Hands and face points are left out. Paws stay paws, and the voice, through the audio-to-video guidance, moves the mouths.
+5. **Drawing.** The result is drawn exactly as DWPose draws (17 limbs, its colours, 4 px), checked against its own render, and fed to the dev graph as a ready-made control (`control: "ready"`) at strength 0.8.
+
+The first frames were redrawn to that skeleton: five GPT Image sessions in parallel, each given the shot's frame, the kitten skeleton over it, and the characters' sheets.
+
+**Result.** Small, chibi kittens with round paws and toe beans, doing the source's moves: the paw thrusts, the turn-around, the paw to the mouth, the salute. Same detail as v3. Cost 240 credits for the 18 s (5 takes plus upscales), the same as v3.
+
+### 6.6 Engineering issues found on the way
 
 - **Cut detection.** ffmpeg's scene score for real cuts on a plain backdrop was about 0.2, so a fixed 0.3 threshold found none. The threshold now adapts: six times the clip's 90th-percentile score, clamped to 0.1–0.3.
 - **Off-by-one clips.** Shot clips started a frame late and ended a frame into the next shot (millisecond-rounded seeks). Fixed by seeking half a frame early and trimming by frame count.
@@ -250,11 +266,15 @@ Ablation: union strength 1.0 against 0.7 (the documented softer guide, for styli
 
 ## 8. Recommended recipe and future work
 
-The recipe is v3 (`workflows/shot-swap-dev.json`, built by `buildSwap()`), with the inputs and steps of [VIDEO-TO-VIDEO.md](VIDEO-TO-VIDEO.md).
+The recipe is v4:
+
+- `workflows/shot-swap-dev.json`, built by `buildSwap()`, fed the skeleton rebuilt by `server/pose.ts` for the characters' build.
+- First frames drawn to that skeleton.
+- The inputs and steps are in [VIDEO-TO-VIDEO.md](VIDEO-TO-VIDEO.md).
 
 Future work:
 
-1. Retarget the pose skeleton to the characters' proportions before rendering it.
+1. Builds for other characters (dogs, children, tall creatures) beside the kitten's.
 2. Test Ingredients beside union control for identity.
 3. Train a LoRA on Praline and Sesame on the dev model.
 4. Adopt Lightricks' Motion Transfer IC-LoRA when it is released.

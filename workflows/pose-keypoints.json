@@ -1,0 +1,68 @@
+{
+ "video_in": {
+  "class_type": "LoadVideo",
+  "inputs": {
+   "file": ""
+  },
+  "_meta": {
+   "title": "Clip"
+  }
+ },
+ "frames": {
+  "class_type": "GetVideoComponents",
+  "inputs": {
+   "video": [
+    "video_in",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Frames"
+  }
+ },
+ "pose": {
+  "class_type": "DWPreprocessor",
+  "inputs": {
+   "image": [
+    "frames",
+    0
+   ],
+   "detect_hand": "enable",
+   "detect_body": "enable",
+   "detect_face": "enable",
+   "resolution": 1024,
+   "bbox_detector": "yolox_l.onnx",
+   "pose_estimator": "dw-ll_ucoco_384_bs5.torchscript.pt",
+   "scale_stick_for_xinsr_cn": "disable"
+  },
+  "_meta": {
+   "title": "DWPose"
+  }
+ },
+ "kps_text": {
+  "class_type": "PreviewAny",
+  "inputs": {
+   "source": [
+    "pose",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "Keypoints as JSON"
+  }
+ },
+ "out": {
+  "class_type": "SaveText",
+  "inputs": {
+   "text": [
+    "kps_text",
+    0
+   ],
+   "filename_prefix": "comfyture/pose-kps",
+   "format": "txt"
+  },
+  "_meta": {
+   "title": "Save"
+  }
+ }
+}
