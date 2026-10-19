@@ -11,42 +11,64 @@ type Sound = { file: string; url: string; seconds: number };
 export type MixShot = { from: number; to: number; frame: Frame; clip: { file: string; url: string; frames: number } };
 export type Split = { seconds: number; width: number; height: number; sound: Sound | null; shots: MixShot[] };
 
-// a cut is a frame unlike the one before by at least this much (ffmpeg's scene score, 0 to 1)
+// a cut is a frame unlike the one before by at least this much (ffmpeg's scene score, 0 to 1), or by
+// SCENE_OVER times what the edit's busiest frames score, whichever is lower, but never below SCENE_LEAST:
+// on a plain backdrop a real cut can score as little as 0.2
 const SCENE = 0.3;
+const SCENE_OVER = 6;
+const SCENE_LEAST = 0.1;
 // a shot shorter than this joins the one before it: too short to roll, and usually a flash
 const SHORTEST = 0.5;
 // a shot longer than this is rolled in parts, so no single take runs long
 const LONGEST = 6;
 const MOST = 16;
 
-/** Where the edit cuts, in seconds, from ffmpeg's scene detection. */
+/** Where the edit cuts, in seconds, from ffmpeg's scene score of every frame. */
 export async function cutsOf(exec: Exec, path: string): Promise<number[]> {
-  const { stderr } = await exec("ffmpeg", ["-hide_banner", "-nostats", "-i", path, "-an", "-filter:v", `select='gt(scene,${SCENE})',showinfo`, "-f", "null", "-"], { maxBuffer: 1 << 24 });
-  return [...stderr.matchAll(/pts_time:([\d.]+)/g)].map((m) => Number(m[1])).filter((t) => Number.isFinite(t) && t > 0);
+  const { stderr } = await exec("ffmpeg", ["-hide_banner", "-nostats", "-i", path, "-an", "-filter:v", "select='gte(scene,0)',metadata=print:key=lavfi.scene_score", "-f", "null", "-"], { maxBuffer: 1 << 26 });
+  const frames: { at: number; score: number }[] = [];
+  let at = NaN;
+  for (const line of stderr.split("\n")) {
+    const time = /pts_time:([\d.]+)/.exec(line);
+    if (time) at = Number(time[1]);
+    const score = /lavfi\.scene_score=([\d.]+)/.exec(line);
+    if (score && Number.isFinite(at)) frames.push({ at, score: Number(score[1]) });
+  }
+  const sorted = frames.map((f) => f.score).sort((a, b) => a - b);
+  const busy = sorted[Math.floor(sorted.length * 0.9)] ?? 0;
+  const least = Math.max(SCENE_LEAST, Math.min(SCENE, busy * SCENE_OVER));
+  return frames.filter((f) => f.at > 0 && f.score > least).map((f) => f.at);
 }
 
-/** The shots between the cuts: the short ones folded into the one before, the long ones split. */
-export function shotsBetween(cuts: number[], seconds: number): { from: number; to: number }[] {
-  const marks = [0, ...cuts.filter((t) => t > SHORTEST && t < seconds - SHORTEST).sort((a, b) => a - b), seconds];
-  const spans: { from: number; to: number }[] = [];
+/**
+ * The shots between the cuts: the short ones folded into the one before (which holds its last real
+ * frame through them, until being where its own footage ends), the long ones split.
+ */
+export function shotsBetween(cuts: number[], seconds: number): { from: number; to: number; until?: number }[] {
+  const marks = [0, ...cuts.filter((t) => t > SHORTEST && t < seconds).sort((a, b) => a - b), seconds];
+  const spans: { from: number; to: number; until?: number }[] = [];
   for (let i = 0; i < marks.length - 1; i++) {
     const from = marks[i];
     const to = marks[i + 1];
-    if (to - from < SHORTEST && spans.length) spans[spans.length - 1].to = to;
-    else spans.push({ from, to });
+    const last = spans[spans.length - 1];
+    if (to - from < SHORTEST && last) {
+      last.until ??= last.to;
+      last.to = to;
+    } else spans.push({ from, to });
   }
-  const out = spans.flatMap(({ from, to }) => {
+  const out = spans.flatMap(({ from, to, until }) => {
     const parts = Math.ceil((to - from) / LONGEST);
-    return Array.from({ length: parts }, (_, k) => ({ from: from + ((to - from) * k) / parts, to: from + ((to - from) * (k + 1)) / parts }));
+    return Array.from({ length: parts }, (_, k) => ({ from: from + ((to - from) * k) / parts, to: from + ((to - from) * (k + 1)) / parts, ...(until && k === parts - 1 ? { until } : {}) }));
   });
   // too many shots: the shortest neighbours are joined until they fit
   while (out.length > MOST) {
     let best = 0;
     for (let i = 1; i < out.length - 1; i++) if (out[i].to - out[i].from < out[best].to - out[best].from) best = i;
     const j = best === out.length - 1 ? best - 1 : best;
-    out.splice(j, 2, { from: out[j].from, to: out[j + 1].to });
+    out.splice(j, 2, { from: out[j].from, to: out[j + 1].to, ...(out[j + 1].until ? { until: out[j + 1].until } : {}) });
   }
-  return out.map((s) => ({ from: Math.round(s.from * 1000) / 1000, to: Math.round(s.to * 1000) / 1000 }));
+  const ms = (t: number) => Math.round(t * 1000) / 1000;
+  return out.map((s) => ({ from: ms(s.from), to: ms(s.to), ...(s.until ? { until: ms(s.until) } : {}) }));
 }
 
 /**
@@ -80,11 +102,15 @@ export async function splitEdit(o: {
       const png = join(work, `${i}.png`);
       await o.exec("ffmpeg", ["-v", "error", "-y", "-ss", at.toFixed(3), "-i", path, "-frames:v", "1", png]);
       const frame = await o.store(await readFile(png), `${o.name} · shot ${i + 1}`);
-      // the shot's own clip, for its motion: at least nine frames, the fewest LTX-2.5 reads
+      // the shot's own clip, for its motion: at least nine frames, the fewest LTX-2.5 reads, and its last
+      // frame held for eight more, since LTX-2.5 reads 8n + 1 and its take must cover the whole shot
       const clipFile = `${base}-${String(i + 1).padStart(2, "0")}.mp4`;
       const clipPath = join(o.data, "videos", clipFile);
-      const t = Math.max(len, 0.45);
-      await o.exec("ffmpeg", ["-v", "error", "-y", "-ss", s.from.toFixed(3), "-i", path, "-t", t.toFixed(3), "-an", "-vf", "fps=24,format=yuv420p", "-c:v", "libx264", "-crf", "17", "-preset", "fast", "-movflags", "+faststart", clipPath]);
+      const own = (s.until ?? s.to) - s.from;
+      const n = Math.max(Math.round(own * 24), 11);
+      const hold = 8 + Math.round((s.to - (s.until ?? s.to)) * 24);
+      // read from half a frame early, so the cut's own frame (times are rounded) opens the clip
+      await o.exec("ffmpeg", ["-v", "error", "-y", "-ss", Math.max(0, s.from - 0.02).toFixed(3), "-t", (own + 0.5).toFixed(3), "-i", path, "-an", "-vf", `fps=24,trim=end_frame=${n},setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop=${hold},format=yuv420p`, "-vsync", "passthrough", "-c:v", "libx264", "-crf", "17", "-preset", "fast", "-movflags", "+faststart", clipPath]);
       const clip = await o.probe(clipPath);
       shots.push({ from: s.from, to: s.to, frame, clip: { file: clipFile, url: `/media/videos/${clipFile}`, frames: clip.frames } });
     }
