@@ -1,0 +1,8 @@
+{
+  "photo": { "class_type": "LoadImage", "inputs": { "image": "" } },
+  "fit": { "class_type": "ImageScaleBy", "inputs": { "image": ["photo", 0], "upscale_method": "lanczos", "scale_by": 1 } },
+  "model": { "class_type": "UpscaleModelLoader", "inputs": { "model_name": "4x-UltraSharp.pth" } },
+  "up": { "class_type": "ImageUpscaleWithModel", "inputs": { "upscale_model": ["model", 0], "image": ["fit", 0] } },
+  "size": { "class_type": "ImageScaleBy", "inputs": { "image": ["up", 0], "upscale_method": "lanczos", "scale_by": 1 } },
+  "frame": { "class_type": "SaveImage", "inputs": { "filename_prefix": "comfyture/upscale", "images": ["size", 0] } }
+}

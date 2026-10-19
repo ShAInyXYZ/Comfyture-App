@@ -19,6 +19,7 @@ import { readStory, storyBrief, storyPrompt, STORY_ASSIST_BRIEF, storyAssistProm
 import { isRouterImage, routerImages, routerDraw } from "./router-images.ts";
 import { isRouterVideo, routerVideos } from "./router-videos.ts";
 import { planCut, CUT_BRIEF, cutPrompt, readCutAnswer, type CutBody, type CutItem, type Source } from "./cut.ts";
+import { splitEdit } from "./mixer.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -1075,10 +1076,87 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     await (seeding ??= seedStages().catch((e) => console.warn("stages: the examples were not added:", e.message)));
     return json(res, 200, { projects: await listFilms() });
   }
-  for (const kind of ["stories", "cuts"]) {
+  // Kitchen's stories and edits, Mixer's mixes
+  for (const kind of ["stories", "cuts", "mixes"]) {
     if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {
       const answered = await projectRoute(kind, path, method, req, res);
       if (answered !== false) return answered;
+    }
+  }
+  // Utensils: one tool, one job; what they made is listed in one file, newest first
+  if (path === "/api/utensils/results" && method === "GET") {
+    try {
+      return json(res, 200, JSON.parse(await readFile(join(data, "utensils.json"), "utf8")));
+    } catch {
+      return json(res, 200, []);
+    }
+  }
+  if (path === "/api/utensils/results" && method === "PUT") {
+    const list = await jsonBody(req, 2 * 1024 * 1024);
+    if (!Array.isArray(list)) throw bad("Send the list of results.");
+    await writeFile(join(data, "utensils.json"), JSON.stringify(list.slice(0, 200)));
+    return json(res, 200, { ok: true });
+  }
+  if (path === "/api/utensils/upscale" && method === "POST") {
+    const input = await jsonBody(req);
+    const source = await photo(input.source);
+    if (!source) throw bad("Add a picture to upscale.");
+    return json(res, 202, await engine.upscale(source, input.scale === 2 ? 2 : 4));
+  }
+  if (path === "/api/utensils/cutout" && method === "POST") {
+    const source = await photo((await jsonBody(req)).source);
+    if (!source) throw bad("Add a picture to cut out.");
+    return json(res, 202, engine.clearCutout(source));
+  }
+  if ((path === "/api/utensils/upscale-video" || path === "/api/utensils/sound") && method === "POST") {
+    if (!ffmpeg) throw bad("Video tools need ffmpeg on the server.", 501);
+    const input = await jsonBody(req);
+    const file = typeof input.video === "string" ? input.video : "";
+    const where = inside(join(data, "videos"), file);
+    if (!where || !(await exists(where))) throw bad("The video is missing. Add it again.");
+    const info = await probeVideo(where);
+    // the workflow's video kept as it came (an upscaled one is past the size uploads are cut to)
+    const keep = async (bytes: Buffer) => {
+      const name = `${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}.mp4`;
+      const out = join(data, "videos", name);
+      if (!(await exists(out))) await writeFile(out, bytes);
+      const v = await probeVideo(out);
+      return { file: name, url: `/media/videos/${name}`, width: v.width, height: v.height, duration: v.duration };
+    };
+    const seed = randomBytes(4).readUInt32BE(0);
+    if (path.endsWith("upscale-video")) {
+      if (info.duration > 12) throw bad("Upscale clips of up to 12 seconds.");
+      const height = [720, 1080, 1440].includes(input.height) ? input.height : 1080;
+      return json(res, 202, engine.videoJob("upscale", file, { height, frames: info.frames, seed }, keep));
+    }
+    const prompt = text(input.prompt, 600);
+    if (!prompt) throw bad("Say what the sound is.");
+    // LTX-2.5 reads 8n + 1 frames: the clip is cut to the most it holds, ten seconds at most
+    const frames = Math.floor((Math.min(info.frames, 10 * 24 + 1) - 1) / 8) * 8 + 1;
+    if (frames < 17) throw bad("That video is too short to score.");
+    const cut = `${file.replace(/\.\w+$/, "")}-${frames}f.mp4`;
+    const cutPath = join(data, "videos", cut);
+    // and its sides to multiples of 32, as LTX-2.5 needs (a few pixels cropped at most)
+    if (!(await exists(cutPath))) await exec("ffmpeg", ["-v", "error", "-y", "-i", where, "-frames:v", String(frames), "-an", "-vf", "crop=trunc(iw/32)*32:trunc(ih/32)*32,format=yuv420p", "-c:v", "libx264", "-crf", "17", "-preset", "fast", cutPath]);
+    return json(res, 202, engine.videoJob("sound", cut, { prompt, frames, seed }, keep));
+  }
+  if (path === "/api/mixer/split" && method === "POST") {
+    // an edit to remix, at its cuts: each shot's first frame and clip, and the edit's sound
+    if (!ffmpeg) throw bad("Mixer needs ffmpeg on the server.", 501);
+    const input = await jsonBody(req);
+    const file = typeof input.video === "string" ? input.video : "";
+    const where = inside(join(data, "videos"), file);
+    if (!where || !/^[\w-]+\.mp4$/.test(file) || !(await exists(where))) throw bad("The edit is missing. Add it again.");
+    try {
+      return json(res, 200, await splitEdit({
+        exec, data, file, name: text(input.name, 50) || "Mix",
+        probe: probeVideo,
+        hasSound: async (p) => (await probeMedia(p)).hasAudio,
+        store: (bytes, name) => engine.storeImage(bytes, name),
+        keep: (bytes, name) => keepAudio(bytes, ".mp3", { name, kind: "music" }),
+      }));
+    } catch (e) {
+      throw bad((e as Error).message.slice(0, 200));
     }
   }
   if (path === "/api/director" && method === "POST") {

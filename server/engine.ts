@@ -97,16 +97,18 @@ export interface Paint {
   photo?: { file: string; url: string; width: number; height: number };
   /** a sound a workflow made: music or an effect, kept in the audio library */
   audio?: { file: string; url: string; seconds: number; name: string; kind: string };
+  /** a video a workflow made (upscaled, or with new sound), kept with the uploaded videos */
+  video?: { file: string; url: string; width: number; height: number; duration: number };
   error?: string;
 }
 
 const TERMINAL = new Set(["succeeded", "failed", "canceled", "expired"]);
 
-type Kind = "paint" | "cutout" | "generate" | "plan" | "i2v" | "guided" | "references" | "production" | "sound" | "motion" | "music" | "sfx";
+type Kind = "paint" | "cutout" | "generate" | "plan" | "i2v" | "guided" | "references" | "production" | "sound" | "motion" | "music" | "sfx" | "upscale" | "restore";
 /** First guesses before any job has finished: seconds per job for paint, per unit otherwise. */
-const DEFAULT_RATE: Record<Kind, number> = { paint: 25, cutout: 8, generate: 25, plan: 30, i2v: 10, guided: 14, references: 140, production: 30, sound: 7, motion: 12, music: 40, sfx: 15 };
+const DEFAULT_RATE: Record<Kind, number> = { paint: 25, cutout: 8, generate: 25, plan: 30, i2v: 10, guided: 14, references: 140, production: 30, sound: 7, motion: 12, music: 40, sfx: 15, upscale: 10, restore: 20 };
 /** Kinds timed per job rather than per second of video. */
-const PER_JOB = new Set<Kind>(["paint", "cutout", "generate", "plan"]);
+const PER_JOB = new Set<Kind>(["paint", "cutout", "generate", "plan", "upscale"]);
 
 /** The Director's reply, read leniently: the first JSON object in it, every field checked. */
 function parsePlan(reply: string, count: number, seconds: number): Plan {
@@ -637,6 +639,62 @@ export class Engine extends EventEmitter {
     return this.photoJob("cutout", source, `${this.imageNames[source] ?? "subject"} cutout`, async (photo) => buildCutout(await loadGraph(this.dirs.workflows, "cutout.json"), photo));
   }
 
+  /** The subject alone, on a clear background (a PNG with its alpha), for Utensils. */
+  clearCutout(source: string): Paint {
+    return this.photoJob("cutout", source, `${this.imageNames[source] ?? "subject"} cut out`, async (photo) => {
+      const graph = await loadGraph(this.dirs.workflows, "cutout-alpha.json");
+      graph.photo.inputs.image = photo;
+      return graph;
+    });
+  }
+
+  /** A picture two or four times larger (4x-UltraSharp), its long side kept within 4096 pixels. */
+  async upscale(source: string, scale: 2 | 4): Promise<Paint> {
+    const size = imageSize(await readFile(this.photoPath(source)));
+    if (!size) throw new Error("That picture can't be read.");
+    // a big picture is made smaller first, so the result stays within 4096 pixels
+    const before = Math.min(1, 4096 / (Math.max(size.width, size.height) * scale));
+    return this.photoJob("upscale", source, `${this.imageNames[source] ?? "picture"} ${scale}x`, async (photo) => {
+      const graph = await loadGraph(this.dirs.workflows, "upscale.json");
+      graph.photo.inputs.image = photo;
+      graph.fit.inputs.scale_by = Math.round(before * 1000) / 1000;
+      graph.size.inputs.scale_by = scale / 4;
+      return graph;
+    });
+  }
+
+  /**
+   * A video a workflow makes from another one, kept with the uploads: SeedVR2 restoring it larger,
+   * or LTX-2.5 writing its sound. keep(bytes) stores the result.
+   */
+  videoJob(kind: "upscale" | "sound", source: string, v: { height?: number; prompt?: string; frames?: number; seed: number }, keep: (bytes: Buffer) => Promise<NonNullable<Paint["video"]>>): Paint {
+    const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
+    this.paints.set(job.id, job);
+    const emit = () => this.emit("paint", job);
+    (async () => {
+      try {
+        if (!(await exists(this.videoPath(source)))) throw new Error("That video is no longer on disk.");
+        const asset = this.assetFor(this.videoPath(source));
+        let graph: Graph;
+        if (kind === "upscale") {
+          graph = await loadGraph(this.dirs.workflows, "upscale-video.json");
+          graph.video_in.inputs.file = asset;
+          Object.assign(graph.up.inputs, { seed: v.seed, resolution: v.height ?? 1080, max_resolution: Math.round(((v.height ?? 1080) * 16) / 9 / 2) * 2 });
+        } else graph = buildSound(await loadGraph(this.dirs.workflows, "sound.json"), asset, v.prompt ?? "", v.frames ?? 121, v.seed);
+        const result = await this.execute(graph, new AbortController().signal, { kind: kind === "upscale" ? "restore" : "sound", stage: "shot", units: (v.frames ?? 121) / FPS, onProgress: (p) => ((job.progress = p), emit()) });
+        const [out] = result.getOutputs("video");
+        if (!out) throw new Error("The workflow returned no video.");
+        job.video = await keep(Buffer.from(await out.toBytes()));
+        job.status = "done";
+      } catch (error) {
+        job.status = "failed";
+        job.error = describe(error);
+      }
+      emit();
+    })();
+    return job;
+  }
+
   /** A new image from a description, for any input slot. */
   generate(prompt: string, aspect: string, seed = random32()): Paint {
     return this.photoJob("generate", null, prompt, async () => buildGenerate(await loadGraph(this.dirs.workflows, "image-generate.json"), prompt, aspect, seed));
@@ -731,7 +789,7 @@ export class Engine extends EventEmitter {
   }
 
   /** A workflow that makes a photo (from another one, or from nothing), tracked like a paint job. */
-  private photoJob(kind: "paint" | "cutout" | "generate", source: string | null, name: string, build: (photo: unknown) => Promise<Graph>): Paint {
+  private photoJob(kind: "paint" | "cutout" | "generate" | "upscale", source: string | null, name: string, build: (photo: unknown) => Promise<Graph>): Paint {
     const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
     this.paints.set(job.id, job);
     const emit = () => this.emit("paint", job);

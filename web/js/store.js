@@ -168,7 +168,9 @@ export const activeTab = () => state.tabs.find((t) => t.id === state.tab);
 
 /** Promises waiting on a job or a take to finish, fed by the live events. */
 const waiting = { job: new Map(), run: new Map() };
-function waitFor(kind, id) {
+/** Who follows a job's progress as it goes (a Utensils tool), by the job's id. */
+export const jobWatchers = new Map();
+export function waitFor(kind, id) {
   return new Promise((ok, no) => waiting[kind].set(id, (x) => {
     if (!["done", "failed", "canceled"].includes(x.status)) return;
     waiting[kind].delete(id);
@@ -259,6 +261,7 @@ export async function load() {
       changed("preview");
     },
     paint(job) {
+      jobWatchers.get(job.id)?.(job);
       waiting.job.get(job.id)?.(job);
       imageJob(job);
       const slot = Object.keys(state.jobs).find((k) => state.jobs[k].id === job.id);
