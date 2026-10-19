@@ -349,7 +349,7 @@ export function useLyrics(text) {
 export async function setArtist(file) {
   const j = await ensure();
   try {
-    const p = await api.upload(file, file.name);
+    const p = file.file ? file : await api.upload(file, file.name);
     j.body.artist = { file: p.file, url: p.url, width: p.width, height: p.height };
     j.body.looks = {};
     for (const s of j.body.shots) Object.assign(s, { run: null });

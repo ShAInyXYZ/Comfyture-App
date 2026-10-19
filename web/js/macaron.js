@@ -124,7 +124,7 @@ export async function exampleBrand() {
 export async function setLogo(file) {
   const b = await ensure();
   try {
-    const p = await api.upload(file, file.name);
+    const p = file.file ? file : await api.upload(file, file.name);
     b.body.logo = { file: p.file, url: p.url, width: p.width, height: p.height };
     touched();
   } catch (e) {
@@ -144,8 +144,8 @@ export const productNow = (b = macaron.brand) => b?.body.products.find((p) => p.
 export async function addProduct(file) {
   const b = await ensure();
   try {
-    const p = await api.upload(file, file.name);
-    const product = { id: uid(), name: (file.name ?? "").replace(/\.\w+$/, "").replace(/[-_]+/g, " ").slice(0, 40) || "Product", photo: { file: p.file, url: p.url, width: p.width, height: p.height }, cutout: null, features: [] };
+    const p = file.file ? file : await api.upload(file, file.name);
+    const product = { id: uid(), name: (file.file ? file.name ?? "" : (file.name ?? "").replace(/\.\w+$/, "").replace(/[-_]+/g, " ")).slice(0, 40) || "Product", photo: { file: p.file, url: p.url, width: p.width, height: p.height }, cutout: null, features: [] };
     b.body.products.push(product);
     b.body.product = product.id;
     touched();

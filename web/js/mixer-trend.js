@@ -7,6 +7,7 @@ import { state, changed, toast, waitFor, drawPicture, artistFor } from "./store.
 import { api } from "./api.js";
 import { mixer, save, newMix, whenOpened } from "./mixer.js";
 import { TRENDS, CREW, trendById, crewById, trendArt, crewPicture } from "./mixer-trends.js";
+import { onServer } from "./picker.js";
 
 const update = () => changed("mixer");
 const call = async (path, init) => {
@@ -73,8 +74,8 @@ const keepStars = () => send("api/mixer/stars", "PUT", stars.list).then((list) =
 /** A photo added as a star; dropped on a role, it plays that role too. */
 export async function addStar(file, role = pick.role) {
   try {
-    const p = await api.upload(file, file.name);
-    const star = { file: p.file, url: p.url, name: (file.name ?? "").replace(/\.\w+$/, "").replace(/[-_]+/g, " ").slice(0, 24) || "My star" };
+    const p = file.file ? file : await api.upload(file, file.name);
+    const star = { file: p.file, url: p.url, name: (file.file ? file.name : (file.name ?? "").replace(/\.\w+$/, "").replace(/[-_]+/g, " ")).slice(0, 24) || "My star" };
     stars.list = [star, ...stars.list.filter((s) => s.file !== star.file)];
     await keepStars();
     if (role) setRole(role, { star });
@@ -91,12 +92,7 @@ export async function removeStar(file) {
 
 // ---------------------------------------------------------------- making it
 
-const kept = new Map();
-/** One of our pictures (a trend cover, a crew cat) as a picture on the server, once. */
-async function onServer(url, name) {
-  if (!kept.has(url)) kept.set(url, (async () => api.upload(await (await fetch(url)).blob(), name))().catch((e) => (kept.delete(url), Promise.reject(e))));
-  return kept.get(url);
-}
+// one of our pictures (a trend cover, a crew cat) goes to the server once, through the picker's own cache
 
 /** The trend's beats in takes of at most ten seconds: as many beats in each as fit. */
 export function takesOf(t) {

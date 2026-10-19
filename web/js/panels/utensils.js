@@ -6,7 +6,14 @@ import { currentPage } from "../router.js";
 import { dropdown } from "../controls.js";
 import { artistItems } from "../writer-menu.js";
 import { view } from "../viewer.js";
-import { TOOLS, toolById, utensils, inputOf, pickTool, setInput, setQuietly, give, clearInput, runTool, ready, forget, show, useResult, estimate } from "../utensils.js";
+import { TOOLS, toolById, utensils, inputOf, pickTool, setInput, setQuietly, give, clearInput, useImage, runTool, ready, forget, show, useResult, estimate } from "../utensils.js";
+import { openPicker, pictureOf } from "../picker.js";
+
+/** Where a tool's input comes from: a picture from the picker; a video or a sound from the computer. */
+function fetchInput(kind, anchor) {
+  if (kind !== "image") return pick(ACCEPT[kind], give);
+  openPicker(anchor, { title: "A picture to work on", onPick: async (choice) => { try { useImage(await pictureOf(choice)); } catch (e) { toast(e.message, { tone: "crit" }); } } });
+}
 
 const ACCEPT = { image: "image/*", video: "video/*", audio: "audio/*,video/*" };
 const NOUN = { image: "a picture", video: "a video", audio: "a voice track" };
@@ -110,7 +117,7 @@ function workArea(t, i) {
   else if (shown?.kind === "audio") body = waveform(shown.url);
   else if (i.image && t.takes.includes("image")) body = h("img.ut-still", { src: i.image.url, alt: "", draggable: false });
   else if (i.video && t.takes.includes("video")) body = keep(`video:${i.video.url}`, () => h("video.ut-video", { src: i.video.url, controls: true, loop: true, playsInline: true, preload: "metadata" }));
-  else body = h("button.ut-drop", { type: "button", disabled: !t.takes.length, on: { click: () => t.takes[0] && pick(ACCEPT[t.takes[0]], give) } },
+  else body = h("button.ut-drop", { type: "button", disabled: !t.takes.length, on: { click: (e) => t.takes[0] && fetchInput(t.takes[0], e.currentTarget) } },
     sprite(t.icon), h("b", {}, t.takes.length ? `Drop ${t.takes.map((k) => NOUN[k]).join(" and ")}` : t.name), h("span", {}, t.takes.length ? "or paste it, or click to pick" : "Say what you want below"));
   return h("div.ut-work", {}, body,
     busy ? h("div.ut-busy", {}, h("span.lamp", { dataset: { tone: "busy" } }), h("span", {}, utensils.progress > 0.01 ? `${Math.round(utensils.progress * 100)}%` : "Working"), h("i", { style: { width: `${Math.round(utensils.progress * 100)}%` } })) : null);
@@ -122,10 +129,10 @@ function inputs(t, i) {
     const v = i[k];
     const label = v ? (k === "audio" ? v.name ?? "Voice track" : k === "video" ? `Video · ${time(v.duration)}` : `${v.width} × ${v.height}`) : `Drop ${NOUN[k]}`;
     return h("div.ut-input", {},
-      h("button.ut-input-pic", { type: "button", title: v ? "Replace it" : `Add ${NOUN[k]}`, on: { click: () => pick(ACCEPT[k], give) } },
+      h("button.ut-input-pic", { type: "button", title: v ? "Replace it" : `Add ${NOUN[k]}`, on: { click: (e) => fetchInput(k, e.currentTarget) } },
         v && k === "image" ? h("img", { src: v.url, alt: "", draggable: false }) : v && k === "video" ? h("video", { src: v.url, muted: true, preload: "metadata" }) : icon(k === "audio" ? "sound" : k === "video" ? "video" : "image")),
       h("span.ut-input-text", {}, h("b", {}, label), h("em", {}, v ? "click to replace" : "or paste")),
-      v ? h("button.key.is-icon.is-quiet", { type: "button", title: "Take it out", on: { click: () => clearInput(k) } }, icon("close")) : h("button.key.is-icon.is-quiet", { type: "button", title: "Pick a file", on: { click: () => pick(ACCEPT[k], give) } }, icon("upload")));
+      v ? h("button.key.is-icon.is-quiet", { type: "button", title: "Take it out", on: { click: () => clearInput(k) } }, icon("close")) : h("button.key.is-icon.is-quiet", { type: "button", title: k === "image" ? "Pick a picture" : "Pick a file", on: { click: (e) => fetchInput(k, e.currentTarget) } }, icon("upload")));
   });
 }
 

@@ -115,6 +115,8 @@ export async function give(file) {
   }
 }
 export const clearInput = (k) => setInput({ [k]: null });
+/** A picture already on the server (from the picker) given to the picture tools. */
+export const useImage = (p) => setInput({ image: { file: p.file, url: p.url, width: p.width, height: p.height } });
 
 const post = async (path, body) => {
   const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });

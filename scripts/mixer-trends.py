@@ -21,6 +21,7 @@ RESEARCH = ROOT / "docs/research/trends-2026-10-19/trend-recipes.json"
 OUT_ART = ROOT / "web/brand/mixer/trends"
 OUT_CREW = ROOT / "web/brand/mixer/crew"
 OUT_JS = ROOT / "web/js/mixer-trends.js"
+OUT_CAST = ROOT / "web/brand/cast"
 
 # the shelf, in the order it shows: our name for each trend and its kind
 SHELF = {
@@ -63,6 +64,15 @@ CREW = {
 }
 # each cat's face on the lineup, as fractions of its width and height
 FACES = {"praline": (0.035, 0.19, 0.245, 0.56), "sesame": (0.27, 0.19, 0.47, 0.56), "mochi": (0.5, 0.24, 0.71, 0.58), "meringue": (0.73, 0.21, 0.95, 0.58)}
+# the rest of the cast, any of whom can be picked to play a role: (name, sheet, the front view on it)
+CAST = {
+    "ketkout": ("Ketkout", ROOT / "docs/brand/mascot/ketkout-character-sheet-v1.png", (0.02, 0.1, 0.255, 0.585)),
+    "bagel": ("Bagel", ROOT / "docs/brand/cast/bagel-sheet.png", (0.01, 0.11, 0.25, 0.515)),
+    "truffle": ("Truffle", ROOT / "docs/brand/cast/truffle-sheet.png", (0.01, 0.11, 0.25, 0.515)),
+    "tofu": ("Tofu", ROOT / "docs/brand/cast/tofu-sheet.png", (0.01, 0.11, 0.25, 0.515)),
+    "pickle": ("Pickle", ROOT / "docs/brand/cast/pickle-sheet.png", (0.01, 0.11, 0.25, 0.515)),
+    "brioche": ("Brioche", ROOT / "docs/brand/cast/brioche-sheet.png", (0.01, 0.11, 0.25, 0.515)),
+}
 ROLES = ["Lead", "Partner", "Third"]
 SPECIES = r"\b(cats?|kittens?|raccoons?|bunny|bunnies|frogs?|capybaras?|corgis?|pupp(?:y|ies)|dogs?|chicks?)\b"
 
@@ -152,6 +162,16 @@ def main():
         front = s.crop((int(sw * 0.01), int(sh * 0.135), int(sw * 0.25), int(sh * 0.515)))
         front.save(OUT_CREW / f"{key}.png", optimize=True)
         crew.append({"id": key, "name": name, "role": role, "look": desc})
+
+    # the rest of the cast: a clean front view for the models and a round face for the pickers
+    for key, (name, sheet, (x0, y0, x1, y1)) in CAST.items():
+        s = Image.open(sheet).convert("RGB")
+        sw, sh = s.size
+        ref = s.crop((int(sw * x0), int(sh * y0), int(sw * x1), int(sh * y1)))
+        ref.save(OUT_CAST / f"{key}-ref.png", optimize=True)
+        side = int(ref.width * 0.8)
+        face = ref.crop(((ref.width - side) // 2, 0, (ref.width - side) // 2 + side, side)).resize((256, 256), Image.LANCZOS)
+        face.save(OUT_CAST / f"{key}-face.webp", quality=88, method=6)
 
     OUT_JS.write_text(
         "// Mixer's trend shelf and its crew, written by scripts/mixer-trends.py from the crew's artwork and the\n"

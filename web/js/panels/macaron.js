@@ -1,11 +1,16 @@
 // Macaron's screen: the brand kit and its products on the left, the templates in the middle, the
 // shoot (its settings, the brand guard and what came out) on the right.
 import { h, icon, sprite } from "../dom.js";
-import { changed, artist, setArtist, artists } from "../store.js";
+import { changed, toast, artist, setArtist, artists } from "../store.js";
 import { currentPage } from "../router.js";
 import { dropdown } from "../controls.js";
 import { artistItems } from "../writer-menu.js";
 import { view } from "../viewer.js";
+import { openPicker, pictureOf } from "../picker.js";
+
+/** A product or the logo, from the Library or the computer (no characters: they are no products). */
+const fromPicker = (anchor, title, use, multiple = false) =>
+  openPicker(anchor, { title, characters: false, multiple, onPick: async (choice) => { try { await use(await pictureOf(choice)); } catch (e) { toast(e.message, { tone: "crit" }); } } });
 import { TEMPLATES, CATEGORIES, templateById, previewOf } from "../macaron-templates.js";
 import {
   macaron, loadBrands, openBrand, newBrand, exampleBrand, removeBrand, rename, setBrand, setLogo, setColour, addColour, setWords,
@@ -32,7 +37,7 @@ function kit(b) {
         dropdown({ label: "Brand", value: b.id, items: [...macaron.list.map((x) => ({ value: x.id, label: x.name })), { value: "__new", label: "New brand", glyph: () => icon("plus") }], onChange: (id) => (id === "__new" ? newBrand() : openBrand(id)), width: "fit" }),
         h(`button.key.is-icon.is-quiet${armed === `brand:${b.id}` ? ".is-armed" : ""}`, { type: "button", title: armed === `brand:${b.id}` ? "Click again to delete the brand" : "Delete this brand", on: { click: () => arm(`brand:${b.id}`, () => removeBrand(b.id)) } }, icon("trash")))),
     h("input.mc-name", { value: b.name, "aria-label": "The brand's name", dataset: { focus: `name:${b.id}` }, on: { input: (e) => rename(e.target.value) } }),
-    h("button.mc-logo", { type: "button", title: body.logo ? "Replace the logo" : "Add the logo\nA PNG with a clear background works best", on: { click: () => pick(setLogo) } },
+    h("button.mc-logo", { type: "button", title: body.logo ? "Replace the logo" : "Add the logo\nA PNG with a clear background works best", on: { click: (e) => fromPicker(e.currentTarget, "The logo", setLogo) } },
       body.logo ? h("img", { src: body.logo.url, alt: "", draggable: false }) : h("span", {}, icon("upload"), "Add the logo")),
     h("span.label", {}, "Colours"),
     h("div.mc-swatches", {}, ...body.colours.map((c, i) =>
@@ -52,8 +57,8 @@ function kit(b) {
       h("label", {}, h("span", {}, "Do"), h("input", { value: body.dos, placeholder: "stay sunny", dataset: { focus: "dos" }, on: { change: (e) => setBrand({ dos: e.target.value.slice(0, 80) }) } })),
       h("label", {}, h("span", {}, "Don't"), h("input", { value: body.donts, placeholder: "hard sell", dataset: { focus: "donts" }, on: { change: (e) => setBrand({ donts: e.target.value.slice(0, 80) }) } }))),
     h("div.mc-head.is-gap", {}, h("span.card-label", {}, "Products"),
-      h("div.card-tools", {}, h("button.key.is-icon.is-quiet", { type: "button", title: "Add a product\nA photo of it: on any background", on: { click: () => pick(addProduct, true) } }, icon("plus")))),
-    body.products.length ? null : h("button.mc-drop", { type: "button", on: { click: () => pick(addProduct, true) } }, icon("upload"), h("span", {}, "Drop a product photo")),
+      h("div.card-tools", {}, h("button.key.is-icon.is-quiet", { type: "button", title: "Add a product\nA photo of it: on any background", on: { click: (e) => fromPicker(e.currentTarget, "Add products", addProduct, true) } }, icon("plus")))),
+    body.products.length ? null : h("button.mc-drop", { type: "button", on: { click: (e) => fromPicker(e.currentTarget, "Add products", addProduct, true) } }, icon("upload"), h("span", {}, "Add a product photo")),
     h("div.mc-products", {}, ...body.products.map((x) =>
       h(`div.mc-product${x.id === p?.id ? ".is-on" : ""}`, { on: { click: (e) => !e.target.closest("input, button") && pickProduct(x.id) } },
         h("input.mc-product-name", { value: x.name, "aria-label": "The product's name", dataset: { focus: `product:${x.id}` }, on: { input: (e) => setProduct(x.id, { name: e.target.value.slice(0, 40) }) } }),

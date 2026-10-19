@@ -3,6 +3,7 @@
 // dance and the look on the right, with the videos kept.
 import { h, icon, sprite, pad2, ago } from "../dom.js";
 import { state, changed, toast } from "../store.js";
+import { openPicker, pictureOf } from "../picker.js";
 import { currentPage, go } from "../router.js";
 import {
   jam, loadJams, openJam, newJam, removeJam, rename, useTrack, makeTrack, setLength, setStart, LENGTHS, setLine, useLyrics,
@@ -250,7 +251,7 @@ function artistPanel(j) {
   return h("section.jm-panel.jm-right", {},
     h("div.jm-head", {}, h("span.card-label", {}, "The artist")),
     h("span.label", {}, "Avatar"),
-    h("button.jm-avatar", { type: "button", title: b?.artist ? "Another photo of the artist" : "A photo of the artist: you, a character, a mascot", on: { click: () => pick("image/*", setArtist) } },
+    h("button.jm-avatar", { type: "button", title: b?.artist ? "Another artist" : "The artist: one of our characters, a picture from the Library, or a photo of you", on: { click: (e) => openPicker(e.currentTarget, { title: "The artist", onPick: async (choice) => { try { await setArtist(await pictureOf(choice)); } catch (err) { toast(err.message, { tone: "crit" }); } } }) } },
       b?.artist ? h("img", { src: b.artist.url, alt: "", draggable: false }) : h("span", {}, icon("upload"), "Add the artist")),
     h("span.label", {}, "Dance reference"),
     b?.dance

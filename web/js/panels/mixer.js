@@ -13,6 +13,20 @@ import {
 } from "../mixer.js";
 import { TRENDS, CREW, KINDS, trendById, crewById, trendArt, crewFace } from "../mixer-trends.js";
 import { pick, castOf, selectTrend, setKind, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, makeTrend, making, takesOf, estimate as trendCost } from "../mixer-trend.js";
+import { openPicker, pictureOf } from "../picker.js";
+
+/** Whoever is picked for a role: one of the crew plays it as themselves, anyone else as a star. */
+async function castChoice(role, choice) {
+  try {
+    if (choice.kind === "character" && choice.character.group === "crew") return setRole(role, { crew: choice.character.id });
+    const photo = await pictureOf(choice);
+    // a picture of your own joins your stars; one of our cast plays without
+    if (choice.kind === "character") return setRole(role, { star: { file: photo.file, url: photo.url, name: choice.character.name } });
+    await addStar(photo, role);
+  } catch (e) {
+    toast(e.message, { tone: "crit" });
+  }
+}
 
 const KIND_LABEL = { person: "Person", product: "Product", outfit: "Outfit", other: "Other" };
 const STEP_TONE = { done: "ok", rolling: "busy", drawing: "busy", failed: "crit", drawn: "accent", waiting: null };
@@ -112,7 +126,7 @@ function role(c) {
     h("button.mx-role-face", { type: "button", title: on ? "Pick someone at the side, or drop a photo here" : `Pick who plays the ${c.role.toLowerCase()}`, on: { click: () => pickRole(c.role) } }, h("img", { src: faceOf(c.who), alt: "", draggable: false })),
     h("span.mx-role-text", {}, h("b", {}, nameOf(c.who)), h("em", {}, c.who.crew ? crewById(c.who.crew).role : "Your star")),
     h("button.key.is-icon.is-quiet", { type: "button", title: "Another of the crew", on: { click: () => swapRole(c.role) } }, sprite("cast-swap")),
-    h("button.mx-role-drop", { type: "button", title: "A photo of your own plays this role: your pet, you, a friend", on: { click: () => pickFile("image/*", false, ([f]) => f && addStar(f, c.role)), dragover: (e) => e.preventDefault(), drop: (e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith("image/")) addStar(f, c.role); } } }, icon("plus"), h("span", {}, "Your photo")));
+    h("button.mx-role-drop", { type: "button", title: "Someone else plays this role: one of our characters, a star of yours, a picture from the Library or your computer", on: { click: (e) => openPicker(e.currentTarget, { title: `Who plays the ${c.role.toLowerCase()}`, stars: stars.list, onPick: (choice) => castChoice(c.role, choice) }), dragover: (e) => e.preventDefault(), drop: (e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith("image/")) addStar(f, c.role); } } }, icon("plus"), h("span", {}, "Pick")));
 }
 
 /** How far making the open trend has come: its first frame, its takes, its track, the cut. */
@@ -159,7 +173,7 @@ function lookPicker() {
 function castSlot(m, i) {
   const c = m?.body.cast[i];
   if (!c)
-    return h("button.mx-slot.is-empty", { type: "button", title: "A photo of who or what the edit is about\nDrop, paste or pick: a face, a pet, a product, an outfit", on: { click: () => pickFile("image/*", true, (files) => files.forEach((f) => addCast(f))) } }, icon("plus"));
+    return h("button.mx-slot.is-empty", { type: "button", title: "Who or what the edit is about\nOne of our characters, a star, a picture from the Library or your computer", on: { click: (e) => openPicker(e.currentTarget, { title: "Who the edit is about", stars: stars.list, multiple: true, onPick: async (choice) => { try { await addCast(await pictureOf(choice)); } catch (err) { toast(err.message, { tone: "crit" }); } } }) } }, icon("plus"));
   return h("div.mx-slot", {},
     h("button.mx-slot-pic", { type: "button", title: `@${c.name}\nClick to see it`, on: { click: () => view(c.url) } }, h("img", { src: c.url, alt: "", draggable: false })),
     h("button.mx-slot-x", { type: "button", title: "Take it out", "aria-label": "Take it out", on: { click: () => removeCast(i) } }, icon("close")),
@@ -280,7 +294,7 @@ function aside() {
           h("button.mx-star-pic", { type: "button", title: `${s.name}\n${pick.role ? `Plays the ${pick.role.toLowerCase()}` : "Click to cast"}`, on: { click: () => !remixing() && setRole(firstRole(), { star: s }) } }, h("img", { src: s.url, alt: "", draggable: false })),
           h("span", {}, s.name),
           h("button.mx-star-x", { type: "button", title: "Take it off", "aria-label": "Take it off", on: { click: () => removeStar(s.file) } }, icon("close")))),
-        h("button.mx-star.is-add", { type: "button", title: "A photo of your own to cast: your pet, you, a friend", on: { click: () => pickFile("image/*", true, (fs) => fs.forEach((f) => addStar(f, null))) } }, icon("plus"), h("span", {}, "Add a photo")))),
+        h("button.mx-star.is-add", { type: "button", title: "Stars to cast: from the Library, our characters or your computer", on: { click: (e) => openPicker(e.currentTarget, { title: "Add your stars", multiple: true, onPick: async (choice) => { try { await addStar(await pictureOf(choice), null); } catch (err) { toast(err.message, { tone: "crit" }); } } }) } }, icon("plus"), h("span", {}, "Add")))),
     h("section.mx-panel", {},
       h("div.mx-head", {}, h("span.card-label", {}, "My mixes"), h("span.mx-count", {}, mixer.list.length ? String(mixer.list.length) : "")),
       mixer.list.length
