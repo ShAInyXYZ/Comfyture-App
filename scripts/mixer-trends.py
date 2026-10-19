@@ -155,8 +155,8 @@ def main():
                 "seconds": round(recipe["seconds"]),
                 "beats": recipe.get("beats") or trends[-1]["beats"],
                 "aspect": recipe["aspect"],
-                "preview": f"brand/mixer/trends/{slug}/{(recipe.get('portrait') or recipe)['preview']}",
-                "poster": f"brand/mixer/trends/{slug}/{(recipe.get('portrait') or recipe)['poster']}",
+                "preview": f"brand/mixer/trends/{slug}/{recipe['preview']}",
+                "poster": f"brand/mixer/trends/{slug}/{recipe['poster']}",
                 "recipe": f"brand/mixer/trends/{slug}/recipe.json",
             })
 
