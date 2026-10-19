@@ -118,16 +118,25 @@ function recipe(t) {
   return h("section.mx-work.mx-recipe", {}, preview(t, m), h("div.mx-recipe-body", {}, ...head, ...rest));
 }
 
+// the trend whose preview plays in its cover's frame, and whether it has just been started
+let watching = null;
+let starting = false;
+
 function preview(t, m) {
   const film = m?.body.film;
   if (film) return h("div.mx-preview", {}, player(m));
+  // our crew's version, in the cover's frame at the shape it was made in, until yours exists;
+  // another trend picked, and this one is back to its cover
+  if (watching !== t.id) watching = null;
+  if (watching && t.preview && !making())
+    return h("div.mx-preview", {}, player({ name: t.name, body: { film: { url: t.preview, seconds: t.seconds }, shots: t.beats } }, { inFrame: true }));
   const first = m?.body.shots?.[0]?.look?.url;
   return h("div.mx-preview", {},
     h("div.mx-screen.is-cover", {},
       h("img", { src: first ?? trendArt(t), alt: "", draggable: false }),
       h("span.mx-card-len", {}, `0:${pad2(Math.round(t.seconds))}`),
       // our own version of the trend, in the shape it was made in
-      t.preview && !first && !making() ? h("button.mx-watch", { type: "button", title: "Watch our crew's version", "aria-label": "Watch our crew's version", on: { click: () => view(t.preview, "video") } }, icon("play")) : null,
+      t.preview && !first && !making() ? h("button.mx-watch", { type: "button", title: "Watch our crew's version", "aria-label": "Watch our crew's version", on: { click: () => ((watching = t.id), (starting = true), changedMixer()) } }, icon("play")) : null,
       making() ? h("span.mx-making", {}, h("span.lamp", { dataset: { tone: "busy" } }), "Making your version") : h("span.mx-cover-note", {}, "Your version plays here")));
 }
 
@@ -225,7 +234,7 @@ function goKey(m) {
     cost !== null && !busy && state.info?.target === "comfy-cloud" ? h("em", {}, `≈ ${cost} cr`) : null);
 }
 
-function player(m) {
+function player(m, { inFrame = false } = {}) {
   const film = m.body.film;
   const video = keep(`film:${film.url}`, () => {
     const v = h("video", { src: film.url, poster: film.poster, playsInline: true, preload: "metadata", loop: true, draggable: false, disablePictureInPicture: true });
@@ -236,15 +245,21 @@ function player(m) {
   const marks = (m.body.shots ?? []).slice(1).map((s) => s.from / total);
   const bar = h("div.mx-bar", { on: { pointerdown: (e) => seek(e, video, bar) } }, h("i.mx-bar-fill"), ...marks.map((f) => h("b", { style: { left: `${f * 100}%` } })));
   const name = (m.name || "mix").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-  const el = h("div.mx-stage", {},
+  const el = h(`div.mx-stage${inFrame ? ".is-in-frame" : ""}`, {},
     h("div.mx-screen", {}, video),
+    inFrame ? h("button.mx-watch-x", { type: "button", title: "Back to the cover", "aria-label": "Back to the cover", on: { click: () => (video.pause(), (watching = null), changedMixer()) } }, icon("close")) : null,
     h("div.mx-transport", {},
       h("button.key.is-icon.mx-toggle", { type: "button", title: "Play or pause", on: { click: () => (video.paused ? video.play() : video.pause()) } }, icon(video.paused ? "play" : "pause")),
       h("span.mx-time", {}, h("b", {}, "0:00.0"), h("em", {}, ` / ${time(total)}`)),
       bar,
-      h("a.key.is-icon", { href: `${film.url}?download=${name}.mp4`, download: `${name}.mp4`, title: "Download the mix" }, icon("download")),
-      m.body.cut ? h("button.key.is-icon", { type: "button", title: "Open in Kitchen's Cut\nFine-tune the edit: trims, titles, sound", on: { click: () => openInCut(m.body.cut) } }, icon("scissors")) : null));
+      inFrame ? null : h("a.key.is-icon", { href: `${film.url}?download=${name}.mp4`, download: `${name}.mp4`, title: "Download the mix" }, icon("download")),
+      !inFrame && m.body.cut ? h("button.key.is-icon", { type: "button", title: "Open in Kitchen's Cut\nFine-tune the edit: trims, titles, sound", on: { click: () => openInCut(m.body.cut) } }, icon("scissors")) : null));
   queueMicrotask(() => tick(video));
+  // the preview starts with sound when its Play is pressed, once (a redraw leaves it as it is)
+  if (inFrame && starting) {
+    starting = false;
+    queueMicrotask(() => video.play().catch(() => {}));
+  }
   return el;
 }
 function tick(v) {

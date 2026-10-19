@@ -155,6 +155,8 @@ function showPage() {
   document.body.dataset.product = productOf(page) ?? "";
   document.title = PAGES[page] ? `${PAGES[page]} · Comfyture` : productOf(page) ? `${PRODUCTS[page][0]} · Comfyture` : "Comfyture";
   if (page !== "shot") document.querySelectorAll("#page-shot video").forEach((v) => v.pause());
+  // nothing on a page put away keeps sounding (its muted loops play on)
+  for (const v of document.querySelectorAll(".page[hidden] video")) if (!v.muted) v.pause();
   for (const [name, [, , owner]] of Object.entries(panels)) {
     if (owner === page && (stale.has(name) || !panels[name][0].childElementCount)) pending.add(name);
     if (owner === page) stale.delete(name);

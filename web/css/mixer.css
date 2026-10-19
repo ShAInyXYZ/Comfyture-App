@@ -81,6 +81,14 @@
 
 /* under the music: who stars in it (left) beside how it is made (right) */
 .mx-recipe-body { container-type: inline-size; }
+/* our crew's version in the cover's frame: whole, at the shape it was made in, its transport inside the frame */
+.mx-stage.is-in-frame { position: relative; aspect-ratio: 9 / 16; overflow: hidden; border-radius: calc(.875rem * var(--corner-k, 1)); background: var(--sunk); }
+.mx-stage.is-in-frame .mx-screen { position: absolute; inset: 0; aspect-ratio: auto; border-radius: 0; background: transparent; }
+.mx-stage.is-in-frame .mx-screen > video { object-fit: contain; }
+.mx-stage.is-in-frame .mx-transport { position: absolute; left: .625rem; right: .625rem; bottom: .625rem; }
+.mx-watch-x { position: absolute; top: .625rem; right: .625rem; z-index: 1; display: grid; place-items: center; width: 2.25rem; height: 2.25rem; padding: 0; border: 0; border-radius: 50%; background: rgba(240, 239, 237, .1); color: var(--text); cursor: pointer; }
+.mx-watch-x:hover { background: rgba(240, 239, 237, .2); }
+.mx-watch-x svg { width: 1rem; height: 1rem; }
 /* our crew's version of the trend, on its cover: it plays in its own shape */
 .mx-watch { position: absolute; left: 50%; top: 50%; z-index: 1; display: grid; place-items: center; width: 4.5rem; height: 4.5rem; padding: 0; border: 0; border-radius: 50%; background: rgba(14, 14, 16, .62); color: var(--text); transform: translate(-50%, -50%); cursor: pointer; backdrop-filter: blur(8px); transition: background var(--t-fast), transform var(--t-fast); }
 .mx-watch:hover { background: var(--accent); color: var(--accent-ink); transform: translate(-50%, -50%) scale(1.06); }
@@ -236,7 +244,7 @@
 .mx-remix-drop em { color: var(--dim); font: 400 var(--fs-small)/1 var(--font-sans); font-style: normal; }
 
 @supports (corner-shape: squircle) {
-  .mx-panel, .mx-work, .mx-kinds button, .mx-card, .mx-card-len, .mx-card-heat, .mx-screen, .mx-music, .mx-chip, .mx-role, .mx-role-drop, .mx-role-swap, .mx-model, .mx-model-icon, .mx-steps, .mx-go, .mx-transport, .mx-shot, .mx-thumb, .mx-slot-pic, .mx-slot.is-empty, .mx-star-pic, .mx-star.is-add, .mx-mix-open, .mx-mix-x, .mx-remix-drop, .mx-fix .key { corner-shape: squircle; }
+  .mx-panel, .mx-work, .mx-kinds button, .mx-card, .mx-card-len, .mx-card-heat, .mx-screen, .mx-stage.is-in-frame, .mx-music, .mx-chip, .mx-role, .mx-role-drop, .mx-role-swap, .mx-model, .mx-model-icon, .mx-steps, .mx-go, .mx-transport, .mx-shot, .mx-thumb, .mx-slot-pic, .mx-slot.is-empty, .mx-star-pic, .mx-star.is-add, .mx-mix-open, .mx-mix-x, .mx-remix-drop, .mx-fix .key { corner-shape: squircle; }
 }
 
 @media (max-width: 1280px) {
