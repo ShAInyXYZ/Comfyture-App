@@ -58,9 +58,10 @@ function serialize(node) {
 /**
  * A prompt field with pills. It answers like a textarea (value, selectionStart,
  * setSelectionRange, focus, addEventListener…), so the composers keep their code; .el is the
- * element to put on the page. lookup(name) says what a name is, or nothing.
+ * element to put on the page. lookup(name) says what a name is, or nothing; peek: false leaves out
+ * the card a hovered pill shows.
  */
-export function pillField({ placeholder = "", label = "", lookup = () => null, className = "" } = {}) {
+export function pillField({ placeholder = "", label = "", lookup = () => null, className = "", peek = true } = {}) {
   const el = h(`div.pill-field${className ? `.${className.split(" ").join(".")}` : ""}`, {
     contentEditable: "true", role: "textbox", "aria-multiline": "true", "aria-label": label, spellcheck: true, dataset: { placeholder },
   });
@@ -132,7 +133,8 @@ export function pillField({ placeholder = "", label = "", lookup = () => null, c
   });
   // a pill typed out whole becomes one when the caret leaves it
   el.addEventListener("blur", () => draw(serialize(el), -1));
-  peekPills(el, lookup);
+  // (a field whose pills point at pictures already on screen goes without the hover card)
+  if (peek) peekPills(el, lookup);
   const api = {
     el,
     get value() {

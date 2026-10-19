@@ -3,6 +3,7 @@ import { changed, toast, newTab, openTake, writer, writers, artists, artistFor, 
 import { writerPicker, artistPicker } from "../writer-menu.js";
 import { tilePicker } from "../controls.js";
 import { mentionAt, putMention } from "../mentions.js";
+import { pillField } from "../pills.js";
 import { go, currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
 import { view } from "../viewer.js";
@@ -35,6 +36,23 @@ const LENGTHS = [[10, "10 s"], [20, "20 s"], [30, "30 s"], [60, "1 min"], [120, 
 const GENRES = [["Drama", "drama"], ["Comedy", "comedy"], ["Thriller", "thriller"], ["Horror", "horror"], ["Sci-fi", "scifi"], ["Fantasy", "fantasy"], ["Romance", "romance"], ["Adventure", "adventure"], ["Animation", "animation"], ["Documentary", "documentary"], ["Commercial", "commercial"], ["Music video", "music-video"]].map(([value, file]) => ({ value, label: value, image: `img/genres/${file}.webp` }));
 const ASPECTS = [["16:9", "16:9", "ratio-16-9", "Wide"], ["9:16", "9:16", "ratio-9-16", "Tall, for phones"], ["1:1", "1:1", "ratio-1-1", "Square"]];
 const COUNTS = [[1, "1", "variants-1"], [2, "2", "variants-2"], [4, "4", "variants-4"]];
+
+// the prompt being written, its references and its settings, kept per browser so a reload loses nothing
+const DRAFT = "comfyture.home.draft";
+try {
+  const d = JSON.parse(localStorage.getItem(DRAFT) ?? "null") ?? {};
+  if (typeof d.brief === "string") home.brief = d.brief.slice(0, 4000);
+  if (Array.isArray(d.refs)) home.refs = d.refs.filter((r) => r && typeof r.name === "string" && (r.kind === "video" ? r.file && r.url : r.file && r.url)).slice(0, 4);
+  if (LENGTHS.some(([v]) => v === d.length)) home.length = d.length;
+  if (ASPECTS.some(([v]) => v === d.aspect)) home.aspect = d.aspect;
+  if (GENRES.some((g) => g.value === d.genre)) home.genre = d.genre;
+  if (COUNTS.some(([v]) => v === d.count)) home.count = d.count;
+} catch {}
+const keepDraft = () => {
+  try {
+    localStorage.setItem(DRAFT, JSON.stringify({ brief: home.brief, refs: home.refs, length: home.length, aspect: home.aspect, genre: home.genre, count: home.count }));
+  } catch {}
+};
 /** A key that shows its value and steps through the values on each click, from the value as it is then. */
 function stepper(label, list, get, set, glyph, hint) {
   const key = h("button.home-step", { type: "button" });
@@ -120,7 +138,7 @@ const START = [
 /** The prompt as one, two or four variants: each a brief, then its moodboard drawn. */
 async function imagine() {
   const brief = home.brief.trim() || (home.refs.length ? "A short film built around the attached references." : "");
-  if (!brief) return document.querySelector(".home-brief")?.focus();
+  if (!brief) return home.field?.focus();
   if (home.adding) return toast("A moment: an attachment is still coming in.");
   if (home.ideas?.writing) return;
   const run = { brief, length: home.length, aspect: home.aspect, genre: home.genre, refs: home.refs.slice(0, 4), count: home.count, takes: [], writing: true };
@@ -198,6 +216,7 @@ async function startTake(run, t) {
     home.brief = "";
     home.refs = [];
     keepIdeas();
+    keepDraft();
     go("story");
     writeTake(t);
   } catch (e) {
@@ -323,14 +342,27 @@ function attach(anchor) {
 function refs() {
   const named = mentioned();
   return h("div.home-refs", { hidden: !home.refs.length && !home.adding },
-    ...home.refs.map((r, i) => h("div.home-ref", { className: named.has(r.name) ? "is-mentioned" : "", title: `Name @${r.name} in the prompt\n${r.kind === "video" ? "A reference video" : "A reference picture"}`, on: { click: () => putMention(document.querySelector(".home-brief"), r.name) } },
+    ...home.refs.map((r, i) => h("div.home-ref", {
+      className: named.has(r.name) ? "is-mentioned" : "", dataset: { name: r.name }, title: `Name @${r.name} in the prompt\n${r.kind === "video" ? "A reference video" : "A reference picture"}`,
+      on: { click: () => home.field && putMention(home.field, r.name), pointerenter: () => peekRef(r.name, true), pointerleave: () => peekRef(r.name, false) },
+    },
       h("img", { src: refPicture(r), alt: "", draggable: false }),
       r.kind === "video" ? h("span.home-ref-video", {}, icon("play"), r.seconds ? `${Number(r.seconds).toFixed(1)} s` : "") : null,
       h("button.home-ref-name", { type: "button", title: "Rename it", "aria-label": `Rename @${r.name}`, on: { click: (e) => (e.stopPropagation(), rename(r, e.currentTarget)) } }, `@${r.name}`),
       h("button.home-ref-x", { type: "button", title: "Take it off", "aria-label": `Take @${r.name} off`, on: { click: (e) => (e.stopPropagation(), home.refs.splice(i, 1), refreshRefs(), updateMentions()) } }, icon("close")))),
     home.adding ? h("div.home-ref.is-adding", {}, h("span.typing", {}, h("i"), h("i"), h("i"))) : null);
 }
-const refreshRefs = () => document.querySelector(".home-refs")?.replaceWith(refs());
+const refreshRefs = () => {
+  document.querySelector(".home-refs")?.replaceWith(refs());
+  // what the pills stand for has changed with them
+  home.field?.refresh();
+  keepDraft();
+};
+/** A pill and its picture point at each other: the picture grows a little while its pill is under the pointer, and the other way round. */
+function peekRef(name, on) {
+  document.querySelector(`.home-ref[data-name="${CSS.escape(name)}"]`)?.classList.toggle("is-peeked", on);
+  home.field?.el.querySelectorAll(`.pill[data-name="${CSS.escape(name)}"]`).forEach((p) => p.classList.toggle("is-lit", on));
+}
 const refPicture = (r) => (r.kind === "video" ? r.still?.url ?? "" : r.url);
 /** The references the prompt names. */
 const mentioned = () => new Set([...home.brief.matchAll(/@([a-z0-9][a-z0-9-]*)/gi)].map((m) => m[1].toLowerCase()));
@@ -346,10 +378,9 @@ function rename(r, button) {
     if (keep && base !== r.name) {
       let name = base;
       for (let i = 2; home.refs.some((x) => x !== r && x.name === name); i++) name = `${base}-${i}`;
-      const brief = document.querySelector(".home-brief");
       home.brief = home.brief.replace(new RegExp(`@${r.name}(?![a-z0-9-])`, "gi"), `@${name}`);
-      if (brief) brief.value = home.brief;
       r.name = name;
+      if (home.field) home.field.value = home.brief;
     }
     refreshRefs();
   };
@@ -366,13 +397,13 @@ function rename(r, button) {
 
 /** Under the prompt while an @ is typed: the references whose names start with what follows it. */
 function updateMentions() {
-  const input = document.querySelector(".home-brief");
+  const input = home.field;
   const picker = document.querySelector(".home-mentions");
   // (the chips' titles become tooltips, so they are found by their class)
   const named = mentioned();
   document.querySelectorAll(".home-ref:not(.is-adding)").forEach((chip, i) => chip.classList.toggle("is-mentioned", named.has(home.refs[i]?.name)));
   if (!input || !picker) return;
-  const at = document.activeElement === input ? mentionAt(input) : null;
+  const at = document.activeElement === input.el ? mentionAt(input) : null;
   const list = at ? home.refs.filter((r) => r.name.startsWith(at.query)) : [];
   // a name typed out in full needs no picker
   const exact = list.length === 1 && list[0].name === at?.query;
@@ -397,7 +428,7 @@ function mentionKeys(e) {
   }
   if (e.key === "Tab" || e.key === "Enter") {
     e.preventDefault();
-    putMention(e.currentTarget, list[home.pick].name);
+    putMention(home.field, list[home.pick].name);
     return true;
   }
   if (e.key === "Escape") {
@@ -413,30 +444,41 @@ function mentionKeys(e) {
 
 /** The heart of the screen: what the film is about, and the story written from it. */
 function hero() {
-  const field = h("textarea.home-brief#home-brief", {
-    rows: 2, value: home.brief, placeholder: "an old lighthouse keeper and a girl carry a glowing jellyfish back to the sea", "aria-label": "What the film is about",
-    on: {
-      keydown: (e) => mentionKeys(e) || (e.key === "Enter" && !e.shiftKey && !e.isComposing && (e.preventDefault(), imagine())),
-      input: (e) => ((home.brief = e.target.value), updateMentions()),
-      click: updateMentions,
-      keyup: (e) => e.key.startsWith("Arrow") && !home.mentioning?.length && updateMentions(),
-      // a redraw blurs it for a moment; the picker only goes when the focus really left
-      blur: () => setTimeout(() => document.activeElement?.classList.contains("home-brief") || updateMentions(), 120),
-    },
+  // the prompt: its @names of references are pills, each pointing at its picture under it
+  const lookup = (name) => {
+    const r = home.refs.find((x) => x.name === name);
+    return r ? { url: refPicture(r) } : null;
+  };
+  const field = pillField({ placeholder: "an old lighthouse keeper and a girl carry a glowing jellyfish back to the sea", label: "What the film is about", lookup, className: "home-brief", peek: false });
+  field.value = home.brief;
+  home.field = field;
+  field.addEventListener("keydown", (e) => mentionKeys(e) || (e.key === "Enter" && !e.shiftKey && !e.isComposing && (e.preventDefault(), imagine())));
+  field.addEventListener("input", () => ((home.brief = field.value), updateMentions(), keepDraft()));
+  field.addEventListener("click", updateMentions);
+  field.addEventListener("keyup", (e) => e.key.startsWith("Arrow") && !home.mentioning?.length && updateMentions());
+  // a redraw blurs it for a moment; the picker only goes when the focus really left
+  field.addEventListener("blur", () => setTimeout(() => document.activeElement === home.field?.el || updateMentions(), 120));
+  field.el.addEventListener("pointerover", (e) => {
+    const p = e.target.closest?.(".pill");
+    if (p) peekRef(p.dataset.name, true);
+  });
+  field.el.addEventListener("pointerout", (e) => {
+    const p = e.target.closest?.(".pill");
+    if (p && !p.contains(e.relatedTarget)) peekRef(p.dataset.name, false);
   });
   const lit = home.films.find((f) => f.story?.thumb) ?? home.films.find((f) => f.cover?.pic);
   const last = home.films.find((f) => f.story);
   return h("section.home-hero", { style: lit ? { "--hero": `url("${lit.story?.thumb ?? lit.cover.pic}")` } : {} },
-    h("h1.home-ask", {}, h("label", { for: "home-brief" }, "What's your film about?")),
+    h("h1.home-ask", {}, h("label", { on: { click: () => home.field?.focus() } }, "What's your film about?")),
     h("div.home-prompt", {},
-      field,
+      field.el,
       refs(),
       h("div.mention-picker.home-mentions", { hidden: true, role: "listbox", "aria-label": "References" }),
       h("div.home-prompt-foot", {},
-        stepper("Length", LENGTHS, () => home.length, (v) => (home.length = v), "duration"),
-        stepper("Variants", COUNTS, () => home.count, (v) => (home.count = v), null, () => "each a brief with its moodboard, to start the one you like"),
-        stepper("Frame", ASPECTS, () => home.aspect, (v) => (home.aspect = v), null, (a) => a[3]),
-        h("span.home-pick.is-genre", { className: home.genre ? "is-set" : "", title: "Genre\nThe idea is written in it" }, tilePicker({ label: "Genre", none: "Any genre", value: home.genre, items: GENRES, onChange: (v) => ((home.genre = v), redraw()) })),
+        stepper("Length", LENGTHS, () => home.length, (v) => ((home.length = v), keepDraft()), "duration"),
+        stepper("Variants", COUNTS, () => home.count, (v) => ((home.count = v), keepDraft()), null, () => "each a brief with its moodboard, to start the one you like"),
+        stepper("Frame", ASPECTS, () => home.aspect, (v) => ((home.aspect = v), keepDraft()), null, (a) => a[3]),
+        h("span.home-pick.is-genre", { className: home.genre ? "is-set" : "", title: "Genre\nThe idea is written in it" }, tilePicker({ label: "Genre", none: "Any genre", value: home.genre, items: GENRES, onChange: (v) => ((home.genre = v), keepDraft(), redraw()) })),
         h("span.spacer"),
         writers().length > 1 ? h("span.home-pick.is-model", { title: "Writer\nThe model that writes the story" }, writerPicker("writer")) : h("span.home-model.is-one", { title: "The story is written by Gemma 4, inside ComfyUI" }, sprite("prompt-enhance"), writers()[0]?.name ?? "Gemma 4"),
         artists().length ? h("span.home-pick.is-model.is-artist", { title: "Artist\nThe model that draws the moodboards and the story's pictures" }, artistPicker()) : null,
