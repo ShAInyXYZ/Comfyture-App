@@ -99,14 +99,16 @@ export interface Paint {
   audio?: { file: string; url: string; seconds: number; name: string; kind: string };
   /** a video a workflow made (upscaled, or with new sound), kept with the uploaded videos */
   video?: { file: string; url: string; width: number; height: number; duration: number };
+  /** what a song was heard to hold: its words as SRT, its tempo and beats as the nodes wrote them, its vocals */
+  listen?: { srt: string; bpm: string; beats: string; vocals?: Paint["audio"] };
   error?: string;
 }
 
 const TERMINAL = new Set(["succeeded", "failed", "canceled", "expired"]);
 
-type Kind = "paint" | "cutout" | "generate" | "plan" | "i2v" | "guided" | "references" | "production" | "sound" | "motion" | "music" | "sfx" | "upscale" | "restore";
+type Kind = "paint" | "cutout" | "generate" | "plan" | "i2v" | "guided" | "references" | "production" | "sound" | "motion" | "music" | "sfx" | "upscale" | "restore" | "listen";
 /** First guesses before any job has finished: seconds per job for paint, per unit otherwise. */
-const DEFAULT_RATE: Record<Kind, number> = { paint: 25, cutout: 8, generate: 25, plan: 30, i2v: 10, guided: 14, references: 140, production: 30, sound: 7, motion: 12, music: 40, sfx: 15, upscale: 10, restore: 20 };
+const DEFAULT_RATE: Record<Kind, number> = { paint: 25, cutout: 8, generate: 25, plan: 30, i2v: 10, guided: 14, references: 140, production: 30, sound: 7, motion: 12, music: 40, sfx: 15, upscale: 10, restore: 20, listen: 2 };
 /** Kinds timed per job rather than per second of video. */
 const PER_JOB = new Set<Kind>(["paint", "cutout", "generate", "plan", "upscale"]);
 
@@ -756,6 +758,37 @@ export class Engine extends EventEmitter {
         const [out] = result.getOutputs("out");
         if (!out) throw new Error(`The ${kind === "music" ? "music" : "sound"} workflow returned nothing.`);
         job.audio = await keep(Buffer.from(await out.toBytes()));
+        job.status = "done";
+      } catch (error) {
+        job.status = "failed";
+        job.error = describe(error);
+      }
+      emit();
+    })();
+    return job;
+  }
+
+  /**
+   * A song listened to: its vocals separated (Demucs), their words written with their times
+   * (Whisper, as SRT) and its tempo and beats read. keep(bytes) stores the vocals.
+   */
+  listenJob(file: string, seconds: number, keep: (bytes: Buffer) => Promise<Paint["audio"]>): Paint {
+    const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
+    this.paints.set(job.id, job);
+    const emit = () => this.emit("paint", job);
+    (async () => {
+      try {
+        if (!(await exists(this.audioPath(file)))) throw new Error("That track is no longer on disk.");
+        const graph = await loadGraph(this.dirs.workflows, "jam-analyze.json");
+        graph.track.inputs.audio = this.assetFor(this.audioPath(file));
+        const result = await this.execute(graph, new AbortController().signal, { kind: "listen", stage: "frame", units: seconds, onProgress: (p) => ((job.progress = p), emit()) });
+        const read = async (id: string) => {
+          const [out] = result.getOutputs(id);
+          return out ? Buffer.from(await out.toBytes()).toString("utf8") : "";
+        };
+        const [srt, bpm, beats] = await Promise.all([read("srt"), read("bpm"), read("beats")]);
+        const [vocals] = result.getOutputs("vocals");
+        job.listen = { srt, bpm, beats, vocals: vocals ? await keep(Buffer.from(await vocals.toBytes())) : undefined };
         job.status = "done";
       } catch (error) {
         job.status = "failed";

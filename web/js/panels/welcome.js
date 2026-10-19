@@ -7,12 +7,11 @@ import { openFilm } from "./home.js";
 
 const ABOUT = {
   kitchen: { who: "For directors", line: "The full studio: a story and its cast, every shot staged and rolled, the cut.", does: ["Story", "Stage", "Shot", "Cut", "Library"] },
-  mixer: { who: "For trend followers", line: "Pick a trend, add your face or your clips, get the video.", does: ["Trends", "Face swap", "One-command edit"] },
-  jam: { who: "For musicians and dancers", line: "A music video from a track: captions, a dance to copy, covers.", does: ["Lyrics", "Dance", "Covers"] },
+  mixer: { who: "For trend followers", line: "An edit you like, made yours: drop it in, add your cast, get your version.", does: ["Remix an edit", "Your cast", "Recipes"] },
+  jam: { who: "For musicians and dancers", line: "A music video from a track: the singing performed, a dance copied, the words on it.", does: ["Lip-sync", "Dance", "Captions"] },
   macaron: { who: "For brands", line: "Turn any product into ready-to-post content, on brand.", does: ["Product shots", "UGC ads", "Brand kit"] },
   utensils: { who: "For one small job", line: "Upscale, cut out, vary, lip-sync: one small tool at a time.", does: ["Upscale", "Cutout", "Variations", "Lip-sync"] },
 };
-const READY = new Set(["kitchen"]);
 const ids = Object.keys(PRODUCTS);
 const cover = (id) => `brand/products/covers/${id}.webp`;
 
@@ -37,10 +36,10 @@ function hero() {
       return h(`div.welcome-slide${n === at ? ".is-on" : ""}`, { "aria-hidden": n === at ? undefined : "true" },
         h("img.welcome-slide-art", { src: cover(id), alt: "", draggable: false, loading: n ? "lazy" : "eager" }),
         h("div.welcome-slide-text", {},
-          h("span.welcome-eyebrow", {}, mark(id), ABOUT[id].who, READY.has(id) ? null : h("i", {}, "Soon")),
+          h("span.welcome-eyebrow", {}, mark(id), ABOUT[id].who),
           h("h1", {}, h("span", {}, name), h("em", {}, tagline)),
           h("p", {}, ABOUT[id].line),
-          h(`a.welcome-go${READY.has(id) ? "" : ".is-quiet"}`, { href: `#/${id}` }, READY.has(id) ? `Open ${name}` : `Have a look`, icon("arrow"))));
+          h("a.welcome-go", { href: `#/${id}` }, `Open ${name}`, icon("arrow"))));
     }),
     h("div.welcome-dots", {}, ...ids.map((id, n) =>
       h("button.welcome-dot", { type: "button", "aria-label": PRODUCTS[id][0], "aria-current": n === at ? "true" : "false", on: { click: () => show(n) } }))));
@@ -51,7 +50,6 @@ function card(id) {
   const [name, tagline] = PRODUCTS[id];
   return h(`a.welcome-card.is-${id}`, { href: `#/${id}` },
     h("img.welcome-card-art", { src: cover(id), alt: "", draggable: false, loading: "lazy" }),
-    READY.has(id) ? null : h("span.welcome-soon", {}, "Soon"),
     h("div.welcome-card-foot", {},
       h("span.welcome-card-mark", {}, mark(id)),
       h("div.welcome-card-text", {},

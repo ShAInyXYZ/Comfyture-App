@@ -1,0 +1,174 @@
+/* Jam: the track | the video and its edit | the artist. One screen, every corner a squircle. */
+
+.jam {
+  display: grid;
+  grid-template-columns: minmax(17rem, 21rem) minmax(0, 1fr) minmax(17rem, 21rem);
+  align-items: start;
+  gap: 1rem;
+  max-width: 112.5rem;
+  margin: 0 auto;
+  padding: 1rem .875rem 2.5rem;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.jam img, .jam video { -webkit-user-drag: none; }
+.jm-panel { display: grid; align-content: start; gap: .75rem; min-width: 0; padding: .875rem .9375rem 1rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); }
+.jm-head { display: flex; align-items: center; gap: .625rem; min-height: 1.75rem; }
+.jm-head.is-gap { margin-top: .375rem; padding-top: .875rem; border-top: 1px solid var(--line); }
+.jm-panel > .label { margin-top: .25rem; }
+.jm-busy { display: flex; align-items: center; gap: .5rem; margin: 0; color: var(--warn); font: 500 var(--fs-small)/1.3 var(--font-sans); }
+.key.is-armed { background: var(--err) !important; color: var(--text) !important; }
+.hidden-player { display: none; }
+
+/* ---- the track ------------------------------------------------------------------------------ */
+.jm-track { display: grid; gap: .625rem; padding: .75rem; border-radius: .875rem; background: var(--s1); }
+.jm-track-top { display: flex; align-items: center; gap: .75rem; }
+.jm-track-icon { display: grid; place-items: center; flex: none; width: 2.75rem; height: 2.75rem; border-radius: .75rem; background: var(--plum, #49378B); color: var(--text); }
+.jm-track-icon svg.icon { width: 1.375rem; height: 1.375rem; }
+.jm-track-text { display: grid; gap: .3125rem; min-width: 0; }
+.jm-track-text b { overflow: hidden; font: 700 var(--fs-heading)/1.2 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.jm-track-text span { font: 500 var(--fs-small)/1 var(--font-mono); color: var(--muted); }
+.jm-wave { padding: .5rem; border-radius: .625rem; background: var(--sunk); }
+.jm-wave-canvas { display: block; width: 100%; height: 4rem; cursor: pointer; }
+.jm-wave-times { display: flex; align-items: center; justify-content: space-between; gap: .5rem; font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--muted); }
+.jm-wave-times em { font: 400 var(--fs-micro)/1 var(--font-sans); font-style: normal; color: var(--dim); }
+.jm-lengths, .jm-cuts { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: .25rem; padding: .25rem; border-radius: .75rem; background: var(--sunk); }
+.jm-lengths button, .jm-cuts button { min-height: 2rem; border: 0; border-radius: .5rem; background: transparent; color: var(--muted); font: 600 var(--fs-small)/1 var(--font-sans); cursor: pointer; }
+.jm-lengths button:hover:not(:disabled), .jm-cuts button:hover:not(:disabled) { color: var(--text); }
+.jm-lengths button[aria-pressed="true"], .jm-cuts button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.jm-lengths button:disabled, .jm-cuts button:disabled { opacity: .35; cursor: default; }
+.jm-keys { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.jm-keys .key { min-height: 2.5rem; border-radius: .75rem; }
+.jm-make { display: grid; gap: .5rem; padding: .625rem; border-radius: .875rem; background: var(--s1); }
+.jm-make textarea { resize: vertical; font: 400 var(--fs-small)/1.45 var(--font-mono); }
+.jm-make-row { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: .5rem; }
+.jm-make-row label { display: grid; gap: .375rem; }
+.jm-make-row .key { min-height: 2.25rem; }
+
+/* the lyrics: a line each, its time before it, the line sung now lit */
+.jm-lines { display: grid; gap: .125rem; max-height: 17rem; overflow-y: auto; padding: .25rem; border-radius: .875rem; background: var(--sunk); scrollbar-width: thin; }
+.jm-line { display: grid; grid-template-columns: 3.25rem minmax(0, 1fr); align-items: center; gap: .25rem; border-radius: .5rem; }
+.jm-line.is-now { background: var(--accent-soft); }
+.jm-line.is-now input { color: var(--accent); }
+.jm-line-at { padding: .4375rem .25rem; border: 0; background: transparent; color: var(--dim); font: 500 var(--fs-small)/1 var(--font-mono); text-align: left; cursor: pointer; }
+.jm-line-at:hover { color: var(--text); }
+.jm-line input { min-width: 0; padding: .375rem .375rem; border: 0; border-radius: .375rem; background: transparent; color: var(--text); font: 500 var(--fs-body)/1.2 var(--font-sans); }
+.jm-line input:focus { outline: none; background: var(--s2); }
+.jm-lyrics-edit { resize: vertical; font: 400 var(--fs-small)/1.45 var(--font-mono); }
+
+/* the captions' styles, each shown as it reads */
+.jm-styles { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.jm-style { display: grid; gap: .5rem; padding: .625rem; border: 2px solid transparent; border-radius: .875rem; background: var(--s1); color: var(--muted); text-align: left; cursor: pointer; }
+.jm-style:hover { border-color: var(--line2); }
+.jm-style.is-on { border-color: var(--accent); }
+.jm-style-sample { display: grid; place-items: center; min-height: 3.25rem; padding: .375rem; border-radius: .5rem; background: #1b1325; overflow: hidden; text-align: center; }
+.jm-style.is-pop .jm-style-sample { font: 800 .8125rem/1 var(--font-sans); }
+.jm-style-sample mark { padding: .1875rem .375rem; background: var(--accent); color: #211927; }
+.jm-style.is-karaoke .jm-style-sample { color: var(--accent); font: 800 .9375rem/1 var(--font-sans); -webkit-text-stroke: 1px #211927; }
+.jm-style.is-lower .jm-style-sample { align-items: end; color: #fff; font: 600 .75rem/1 var(--font-sans); text-shadow: 0 1px 2px #000; }
+.jm-style.is-none .jm-style-sample { color: var(--dim); }
+.jm-style-name { display: flex; align-items: center; gap: .4375rem; font: 600 var(--fs-small)/1 var(--font-sans); }
+.jm-style-name i { width: .875rem; height: .875rem; border: 2px solid var(--line2); border-radius: 50%; }
+.jm-style.is-on .jm-style-name { color: var(--text); }
+.jm-style.is-on .jm-style-name i { border: 4px solid var(--accent); }
+
+/* ---- the video ------------------------------------------------------------------------------ */
+.jm-name { flex: 1 1 auto; min-width: 0; max-width: 24rem; padding: .25rem .5rem; border: 1px solid transparent; border-radius: .5rem; background: transparent; color: var(--muted); font: 500 var(--fs-body)/1.2 var(--font-sans); }
+.jm-name:hover { background: var(--sunk); }
+.jm-name:focus { outline: none; background: var(--sunk); color: var(--text); box-shadow: inset 0 0 0 1px var(--accent-line); }
+.jm-format { margin-left: auto; padding: .3125rem .5rem; border-radius: .375rem; background: var(--sunk); font: 600 var(--fs-small)/1 var(--font-mono); color: var(--muted); }
+.jm-screen { position: relative; display: flex; justify-content: center; align-items: stretch; height: clamp(22rem, 52vh, 36rem); overflow: hidden; border-radius: calc(1rem * var(--corner-k, 1)); background: var(--sunk); }
+.jm-screen > video, .jm-screen > img { flex: none; width: auto; height: 100%; max-width: 100%; aspect-ratio: 9 / 16; object-fit: cover; }
+.jm-screen-empty { align-self: center; }
+.jm-screen-empty { display: grid; justify-items: center; gap: .75rem; color: var(--dim); font: 500 var(--fs-body)/1 var(--font-sans); }
+.jm-screen-empty svg.icon { width: 3.5rem; height: 3.5rem; color: var(--line2); }
+/* the caption over the preview, as the render will draw it */
+.jm-caption { position: absolute; left: 50%; transform: translateX(-50%); max-width: min(90%, 22rem); text-align: center; pointer-events: none; }
+.jm-caption:empty { display: none; }
+.jm-caption.is-pop { top: 66%; padding: .25rem .625rem; background: var(--accent); color: #211927; font: 800 1.5rem/1.1 var(--font-sans); text-transform: uppercase; }
+.jm-caption.is-karaoke { top: 76%; color: var(--accent); font: 800 1.5rem/1.1 var(--font-sans); -webkit-text-stroke: 1.5px #211927; paint-order: stroke fill; }
+.jm-caption.is-lower { top: 80%; color: #fff; font: 600 1.0625rem/1.2 var(--font-sans); text-shadow: 0 2px 3px rgba(0, 0, 0, .6); }
+.jm-caption.is-none { display: none; }
+.jm-transport { display: flex; align-items: center; gap: .625rem; padding: .375rem; border-radius: .875rem; background: var(--sunk); }
+.jm-time { font: 500 var(--fs-body)/1 var(--font-mono); color: var(--text); }
+.jm-time b { font-weight: 500; }
+.jm-time em { font-style: normal; color: var(--dim); font-size: var(--fs-small); }
+.jm-timeline-empty { display: grid; place-items: center; min-height: 10rem; padding: 1rem; border: 1px dashed var(--line2); border-radius: .875rem; color: var(--dim); font: 400 var(--fs-small)/1.4 var(--font-sans); text-align: center; }
+
+/* the edit: the beat, what is sung, the shots, the captions and the sound, on one time */
+.jm-timeline { display: grid; gap: .375rem; padding: .625rem .75rem .75rem; border-radius: .875rem; background: var(--s1); }
+.jm-row { display: grid; grid-template-columns: 6.25rem minmax(0, 1fr); align-items: center; gap: .625rem; }
+.jm-row-name { display: flex; align-items: center; gap: .4375rem; font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.jm-row-name svg { width: .875rem; height: .875rem; flex: none; }
+.jm-lane { position: relative; height: 1.75rem; border-radius: .5rem; background: var(--sunk); }
+.jm-row.is-ruler .jm-lane { height: 1.5rem; background: transparent; border-bottom: 1px solid var(--line); border-radius: 0; }
+.jm-row.is-shots .jm-lane { height: 4.5rem; }
+.jm-row.is-audio .jm-lane { height: 3rem; overflow: hidden; }
+.jm-bar { position: absolute; bottom: 0; width: 1px; height: .375rem; background: var(--line2); }
+.jm-bar.is-strong { height: .75rem; background: var(--muted); }
+.jm-tick { position: absolute; top: 0; transform: translateX(-50%); font: 500 .625rem/1 var(--font-mono); color: var(--dim); }
+.jm-tick:first-of-type { transform: none; }
+.jm-playhead { position: absolute; top: -.25rem; bottom: -.25rem; left: 0; z-index: 3; width: 2px; margin-left: -1px; background: var(--accent); pointer-events: none; }
+.jm-sung { position: absolute; top: .375rem; bottom: .375rem; border-radius: .3125rem; background: color-mix(in srgb, var(--plum, #49378B) 80%, transparent); }
+.jm-shot { position: absolute; top: .25rem; bottom: .25rem; display: block; padding: 0; overflow: hidden; border: 1px solid var(--line2); border-radius: .5rem; background: var(--s2); cursor: pointer; }
+.jm-shot img { width: 100%; height: 100%; object-fit: cover; opacity: .9; }
+.jm-shot.is-done { border-color: color-mix(in srgb, var(--ok) 60%, transparent); }
+.jm-shot.is-failed { border-color: var(--err); }
+.jm-shot.is-rolling { border-color: var(--warn); }
+.jm-shot:hover { border-color: var(--accent); }
+.jm-shot-tag { position: absolute; left: .25rem; bottom: .25rem; display: inline-flex; align-items: center; gap: .25rem; padding: .1875rem .3125rem; border-radius: .3125rem; background: rgba(14, 14, 16, .78); color: var(--text); font: 600 .625rem/1 var(--font-mono); }
+.jm-shot-tag svg.icon { width: .75rem; height: .75rem; color: var(--accent); }
+.jm-shot-progress { position: absolute; left: 0; top: 0; height: 3px; background: var(--warn); }
+.jm-cap { position: absolute; top: .25rem; bottom: .25rem; display: flex; align-items: center; padding: 0 .375rem; overflow: hidden; border-radius: .3125rem; background: var(--s3); color: var(--text); font: 500 .6875rem/1 var(--font-sans); white-space: nowrap; text-overflow: ellipsis; }
+.jm-part-wave { display: block; width: 100%; height: 100%; cursor: pointer; }
+
+/* ---- the artist ----------------------------------------------------------------------------- */
+.jm-avatar { display: grid; place-items: center; width: 100%; aspect-ratio: 1; max-height: 16rem; padding: 0; overflow: hidden; border: 0; border-radius: .875rem; background: var(--sunk); color: var(--muted); cursor: pointer; }
+.jm-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.jm-avatar span, .jm-dance.is-empty { display: grid; justify-items: center; gap: .5rem; font: 500 var(--fs-small)/1 var(--font-sans); }
+.jm-avatar svg, .jm-dance.is-empty svg { width: 1.25rem; height: 1.25rem; color: var(--accent); }
+.jm-dance { position: relative; display: grid; place-items: center; height: 12rem; overflow: hidden; border-radius: .875rem; background: var(--sunk); }
+.jm-dance video { height: 100%; max-width: 100%; object-fit: contain; }
+.jm-dance.is-empty { align-content: center; border: 1px dashed var(--line2); background: transparent; color: var(--muted); cursor: pointer; }
+.jm-dance.is-empty:hover { border-color: var(--accent-line); color: var(--text); }
+.jm-dance-tag { position: absolute; right: .5rem; bottom: .5rem; padding: .25rem .4375rem; border-radius: .375rem; background: rgba(14, 14, 16, .78); color: var(--text); font: 500 var(--fs-micro)/1 var(--font-mono); }
+.jm-dance-x { position: absolute; top: .5rem; right: .5rem; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; padding: 0; border: 0; border-radius: 50%; background: rgba(14, 14, 16, .78); color: var(--text); cursor: pointer; }
+.jm-dance-x svg { width: .625rem; height: .625rem; }
+.jm-style-field { resize: none; font-size: var(--fs-small); }
+.jm-readout { display: flex; align-items: center; gap: .625rem; min-height: 2.75rem; padding: 0 .75rem; border-radius: .75rem; background: var(--sunk); color: var(--text); font-size: var(--fs-small); }
+.jm-readout svg { width: 1.125rem; height: 1.125rem; color: var(--dim); }
+.jm-readout em { margin-left: auto; font: 500 var(--fs-micro)/1 var(--font-mono); font-style: normal; color: var(--dim); }
+.jm-go { display: flex; align-items: center; gap: .75rem; width: 100%; height: 3.5rem; padding: 0 1.25rem; border: 0; border-radius: calc(1rem * var(--corner-k, 1)); background: var(--accent); color: var(--accent-ink); font: 700 1.125rem/1 var(--font-sans); cursor: pointer; transition: filter var(--t-fast), transform var(--t-fast); }
+.jm-go svg { width: 1.25rem; height: 1.25rem; }
+.jm-go em { margin-left: auto; font: 600 var(--fs-small)/1 var(--font-mono); font-style: normal; }
+.jm-go:hover:not(:disabled) { filter: brightness(1.06); }
+.jm-go:active:not(:disabled) { transform: translateY(1px); }
+.jm-go:disabled { opacity: .45; cursor: default; }
+.jm-summary { display: grid; gap: .4375rem; padding: .625rem .75rem; border-radius: .75rem; background: var(--sunk); }
+.jm-summary span:not(.label) { display: flex; align-items: center; gap: .5rem; font: 500 var(--fs-small)/1 var(--font-sans); color: var(--muted); }
+.jm-summary svg.icon { width: 1rem; height: 1rem; color: var(--accent); }
+.jm-list { display: grid; gap: .375rem; max-height: 14rem; overflow-y: auto; scrollbar-width: thin; }
+.jm-row-item { display: flex; align-items: center; gap: .25rem; border-radius: .75rem; }
+.jm-row-item.is-on { background: var(--s2); }
+.jm-item { display: flex; flex: 1 1 auto; align-items: center; gap: .75rem; min-width: 0; padding: .375rem; border: 0; border-radius: .75rem; background: transparent; color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+.jm-item:hover { background: var(--s2); }
+.jm-item-pic { display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; overflow: hidden; border-radius: .5rem; background: var(--sunk); color: var(--dim); }
+.jm-item-pic img { width: 100%; height: 100%; object-fit: cover; }
+.jm-item-pic svg.icon { width: 1.25rem; height: 1.25rem; }
+.jm-item-text { display: grid; gap: .3125rem; min-width: 0; }
+.jm-item-text b { overflow: hidden; font: 600 var(--fs-body)/1.2 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.jm-item-text em { font: 400 var(--fs-small)/1 var(--font-sans); font-style: normal; color: var(--dim); }
+
+@supports (corner-shape: squircle) {
+  .jm-panel, .jm-track, .jm-track-icon, .jm-wave, .jm-lengths, .jm-cuts, .jm-lengths button, .jm-cuts button, .jm-keys .key, .jm-make, .jm-lines, .jm-style, .jm-style-sample, .jm-screen, .jm-transport, .jm-timeline, .jm-lane, .jm-shot, .jm-avatar, .jm-dance, .jm-readout, .jm-go, .jm-summary, .jm-item, .jm-item-pic { corner-shape: squircle; }
+}
+
+@media (max-width: 1280px) {
+  .jam { grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr); }
+  .jm-right { grid-column: 1 / -1; }
+}
+@media (max-width: 820px) {
+  .jam { grid-template-columns: minmax(0, 1fr); padding: .75rem .625rem 2rem; }
+  .jm-row { grid-template-columns: 4.5rem minmax(0, 1fr); }
+  .jm-screen { height: 28rem; }
+}

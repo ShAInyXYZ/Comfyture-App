@@ -15,7 +15,6 @@
 .welcome-slide-text { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 1.25rem; padding: 0 0 2.5rem clamp(1.5rem, 4vw, 4.5rem); }
 .welcome-eyebrow { display: inline-flex; align-items: center; gap: .625rem; color: var(--accent); font: 600 var(--fs-small)/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
 .welcome-eyebrow svg.icon { width: 2rem; height: 2rem; }
-.welcome-eyebrow i { padding: .3125rem .5rem; border-radius: 999px; background: var(--s3); color: var(--text); font-style: normal; }
 .welcome-slide h1 { display: grid; margin: 0; font: 800 clamp(2.75rem, 5.2vw, 5.75rem)/.92 var(--font-sans); letter-spacing: -.035em; text-transform: uppercase; }
 .welcome-slide h1 span { color: var(--text); }
 .welcome-slide h1 em { font-style: normal; color: var(--accent); }
@@ -23,7 +22,6 @@
 .welcome-go { display: inline-flex; align-items: center; gap: .75rem; height: 3.25rem; padding: 0 1.5rem; border-radius: calc(1rem * var(--corner-k, 1)); background: var(--accent); color: var(--accent-ink); font: 700 var(--fs-title)/1 var(--font-sans); text-decoration: none; transition: filter var(--t-fast), transform var(--t-fast); }
 .welcome-go:hover { filter: brightness(1.06); }
 .welcome-go:active { transform: translateY(1px); }
-.welcome-go.is-quiet { background: var(--s3); color: var(--text); }
 .welcome-go svg { width: 1.125rem; height: 1.125rem; }
 .welcome-dots { position: absolute; z-index: 2; left: clamp(1.5rem, 4vw, 4.5rem); bottom: 1.75rem; display: flex; gap: .5rem; }
 .welcome-dot { width: .625rem; height: .625rem; padding: 0; border: 0; border-radius: 999px; background: rgba(240, 239, 237, .3); cursor: pointer; transition: width .3s var(--ease-out), background var(--t-fast); }
@@ -38,7 +36,6 @@
 .welcome-card::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgba(10, 9, 12, .92), rgba(10, 9, 12, .55) 38%, transparent 68%); }
 .welcome-card:hover .welcome-card-art { transform: scale(1.04); }
 .welcome-card:focus-visible { outline: var(--focus-w, 2px) solid var(--accent); outline-offset: 3px; }
-.welcome-soon { position: absolute; top: 1rem; right: 1rem; padding: .4375rem .75rem; border-radius: 999px; background: rgba(14, 14, 16, .72); color: var(--text); font: 600 var(--fs-small)/1 var(--font-sans); backdrop-filter: blur(6px); }
 .welcome-card-foot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-end; gap: 1rem; padding: 1.5rem; }
 .welcome-card-mark { flex: none; color: var(--accent); }
 .welcome-card-mark svg.icon { display: block; width: 3rem; height: 3rem; }

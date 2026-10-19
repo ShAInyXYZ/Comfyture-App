@@ -611,10 +611,9 @@ async function renderCut(project: { id: string; name: string; body: any }) {
   const work = join(data, "reels", `${id}.work`);
   await mkdir(work, { recursive: true });
   try {
-    // each title's words in a file of its own, so no text is ever escaped into the graph
-    const titleTexts = body.tracks.filter((t) => t.kind === "title" && !t.mute).flatMap((t) => t.items).filter((it) => it.text?.trim());
-    await Promise.all(titleTexts.map((it, i) => writeFile(join(work, `title-${i}.txt`), String(it.text).slice(0, 200))));
     const plan = planCut(body, (it) => sources.get(it.id) ?? null, { width, height, font: await findFont(), titleFile: (i) => join(work, `title-${i}.txt`) });
+    // each title line's words in a file of its own, so no text is ever escaped into the graph
+    await Promise.all(plan.texts.map((line, i) => writeFile(join(work, `title-${i}.txt`), line)));
     const inputs = plan.inputs.flat();
     // the sound reads the same inputs in the same places, but a still is opened once, not looped:
     // looped, an input nothing in the sound reads spun ffmpeg forever
@@ -1076,8 +1075,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     await (seeding ??= seedStages().catch((e) => console.warn("stages: the examples were not added:", e.message)));
     return json(res, 200, { projects: await listFilms() });
   }
-  // Kitchen's stories and edits, Mixer's mixes, Macaron's brands
-  for (const kind of ["stories", "cuts", "mixes", "brands"]) {
+  // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos
+  for (const kind of ["stories", "cuts", "mixes", "brands", "jams"]) {
     if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {
       const answered = await projectRoute(kind, path, method, req, res);
       if (answered !== false) return answered;
@@ -1139,6 +1138,47 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     // and its sides to multiples of 32, as LTX-2.5 needs (a few pixels cropped at most)
     if (!(await exists(cutPath))) await exec("ffmpeg", ["-v", "error", "-y", "-i", where, "-frames:v", String(frames), "-an", "-vf", "crop=trunc(iw/32)*32:trunc(ih/32)*32,format=yuv420p", "-c:v", "libx264", "-crf", "17", "-preset", "fast", cutPath]);
     return json(res, 202, engine.videoJob("sound", cut, { prompt, frames, seed }, keep));
+  }
+  // Jam: a song heard (its vocals, its words and their times, its beat), sliced for its shots
+  if ((path === "/api/jam/listen" || path === "/api/jam/slice") && method === "POST") {
+    if (!ffmpeg) throw bad("Jam needs ffmpeg on the server.", 501);
+    const input = await jsonBody(req);
+    const file = typeof input.audio === "string" ? input.audio : "";
+    const where = inside(join(data, "audio"), file);
+    if (!where || !(await exists(where))) throw bad("The track is missing. Add it again.");
+    const length = (await probeMedia(where)).duration;
+    const from = num(input.from, 0, Math.max(0, length - 1), 0);
+    const to = num(input.to, from + 0.5, length, length);
+    // the part of the track asked for, kept as a sound of its own
+    const tmp = join(data, "audio", `${randomBytes(6).toString("hex")}.part.mp3`);
+    try {
+      await exec("ffmpeg", ["-v", "error", "-y", "-ss", from.toFixed(3), "-i", where, "-t", (to - from).toFixed(3), "-vn", "-ac", "2", "-ar", "48000", "-b:a", "256k", tmp]);
+      const part = await keepAudio(await readFile(tmp), ".mp3", { name: text(input.name, 60) || "Track part", kind: text(input.kind, 20) || "music" });
+      if (path.endsWith("slice")) return json(res, 200, part);
+      const job = engine.listenJob(part.file, part.seconds, async (bytes) => {
+        const v = await keepAudio(bytes, ".mp3", { name: `${part.name} vocals`, kind: "voice" });
+        return { file: v.file, url: v.url, seconds: v.seconds, name: v.name, kind: v.kind };
+      });
+      return json(res, 202, { job, track: part });
+    } finally {
+      await rm(tmp, { force: true });
+    }
+  }
+  if (path === "/api/jam/clip" && method === "POST") {
+    // a stretch of a video (a dance to copy), as a clip of its own
+    if (!ffmpeg) throw bad("Jam needs ffmpeg on the server.", 501);
+    const input = await jsonBody(req);
+    const file = typeof input.video === "string" ? input.video : "";
+    const where = inside(join(data, "videos"), file);
+    if (!where || !(await exists(where))) throw bad("The video is missing. Add it again.");
+    const info = await probeVideo(where);
+    const from = num(input.from, 0, Math.max(0, info.duration - 0.5), 0);
+    const len = num(input.seconds, 0.5, 10, 4);
+    const out = `${file.replace(/\.\w+$/, "")}-${Math.round(from * 1000)}-${Math.round(len * 1000)}.mp4`;
+    const outPath = join(data, "videos", out);
+    if (!(await exists(outPath))) await exec("ffmpeg", ["-v", "error", "-y", "-ss", from.toFixed(3), "-i", where, "-t", len.toFixed(3), "-an", "-vf", "fps=24,format=yuv420p", "-c:v", "libx264", "-crf", "17", "-preset", "fast", "-movflags", "+faststart", outPath]);
+    const v = await probeVideo(outPath);
+    return json(res, 200, { file: out, url: `/media/videos/${out}`, ...v });
   }
   if (path === "/api/mixer/split" && method === "POST") {
     // an edit to remix, at its cuts: each shot's first frame and clip, and the edit's sound

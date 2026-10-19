@@ -14,16 +14,6 @@ export function renderProducts(el) {
       sprite(`product-${id}`), h("span", {}, name))));
 }
 
-/** A product still to be built: its home, empty but for its name. */
-export function renderProduct(el) {
-  const [name, line] = PRODUCTS[el.dataset.page];
-  el.replaceChildren(h("div.product-home", {},
-    h("span.product-home-mark", {}, sprite(`product-${el.dataset.page}`)),
-    h("h1", {}, name),
-    h("p", {}, line),
-    h("span.product-home-soon", {}, h("span.lamp", { dataset: { tone: "idle" } }), "On the stove")));
-}
-
 /** Kitchen's rooms (nothing in the other products). Story shows how far a film has got; Cut shows how many clips wait in it. */
 export function renderNav(el) {
   const page = currentPage();

@@ -11,7 +11,7 @@ import { renderTakes } from "./panels/takes.js";
 import { renderTabs, renderActions } from "./panels/tabs.js";
 import { renderStory } from "./panels/story.js";
 import { renderStatus } from "./panels/status.js";
-import { renderNav, renderProducts, renderProduct } from "./panels/nav.js";
+import { renderNav, renderProducts } from "./panels/nav.js";
 import { renderLibrary } from "./panels/library.js";
 import { renderCut } from "./panels/cut.js";
 import { renderHome } from "./panels/home.js";
@@ -19,6 +19,7 @@ import { renderWelcome } from "./panels/welcome.js";
 import { renderMixer } from "./panels/mixer.js";
 import { renderUtensils } from "./panels/utensils.js";
 import { renderMacaron } from "./panels/macaron.js";
+import { renderJam } from "./panels/jam.js";
 import { renderAssistant } from "./panels/assistant.js";
 import { renderImage } from "./panels/image.js";
 import { renderStage, mountStage } from "./panels/stage.js";
@@ -50,7 +51,7 @@ const panels = {
   welcome: [$("page-home"), renderWelcome, "home"],
   home: [$("page-kitchen"), renderHome, "kitchen"],
   mixer: [$("page-mixer"), renderMixer, "mixer"],
-  jam: [$("page-jam"), renderProduct, "jam"],
+  jam: [$("page-jam"), renderJam, "jam"],
   macaron: [$("page-macaron"), renderMacaron, "macaron"],
   utensils: [$("page-utensils"), renderUtensils, "utensils"],
 };

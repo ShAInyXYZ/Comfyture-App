@@ -22,7 +22,7 @@ export interface CutItem {
   sound?: boolean;
   join?: "cut" | "dissolve";
   text?: string;
-  style?: "center" | "lower";
+  style?: "center" | "lower" | "pop" | "karaoke";
   grade?: string;
 }
 export interface CutTrack { id: string; kind: "video" | "audio" | "title"; main?: boolean; mute?: boolean; role?: "voice" | "music" | "effects"; items: CutItem[] }
@@ -157,8 +157,10 @@ export function planCut(body: CutBody, source: (item: CutItem) => Source | null,
     });
   }
 
-  // titles, drawn over everything
-  let titles = 0;
+  // titles, drawn over everything; a long one wraps, each line drawn and centred on its own
+  // (ffmpeg 4 draws a block of lines left-aligned), its words written to a file the caller keeps
+  const texts: string[] = [];
+  const short = Math.min(W, H);
   for (const t of body.tracks.filter((x) => x.kind === "title" && !x.mute)) {
     for (const it of t.items) {
       if (!it.text?.trim() || !o.font) continue;
@@ -167,12 +169,36 @@ export function planCut(body: CutBody, source: (item: CutItem) => Source | null,
       const e = Math.min(T, s + len);
       const fade = Math.min(0.4, len / 4);
       const alpha = `if(lt(t\\,${f3(s + fade)})\\,(t-${f3(s)})/${f3(fade)}\\,if(gt(t\\,${f3(e - fade)})\\,(${f3(e)}-t)/${f3(fade)}\\,1))`;
-      const lower = it.style === "lower";
-      const size = Math.round(H / (lower ? 20 : 12));
-      const out = `t${titles}`;
-      vf.push(`[${acc}]drawtext=fontfile='${o.font}':textfile='${o.titleFile(titles)}':fontsize=${size}:fontcolor=white:shadowcolor=black@0.55:shadowx=2:shadowy=2:x=(w-text_w)/2:y=${lower ? "h*0.8" : "(h-text_h)/2"}:alpha='${alpha}':enable='between(t\\,${f3(s)}\\,${f3(e)})'[${out}]`);
-      acc = out;
-      titles++;
+      const style = it.style ?? "center";
+      // captions on a music video: a bold pop (dark capitals on a yellow box) or karaoke (yellow, outlined)
+      const size = style === "pop" ? Math.round(short / 11) : style === "karaoke" ? Math.round(short / 14) : Math.round(H / (style === "lower" ? 20 : 12));
+      const pad = style === "pop" ? Math.round(short / 40) : 0;
+      const look = style === "pop"
+        ? `fontcolor=0x211927:box=1:boxcolor=0xF2FF59:boxborderw=${pad}`
+        : style === "karaoke"
+        ? `fontcolor=0xF2FF59:borderw=${Math.max(2, Math.round(short / 240))}:bordercolor=0x211927`
+        : "fontcolor=white:shadowcolor=black@0.55:shadowx=2:shadowy=2";
+      const words = (style === "pop" ? it.text.toUpperCase() : it.text).trim().split(/\s+/);
+      // as many letters a line as the frame holds (a letter is about 0.56 of the size wide)
+      const most = Math.max(8, Math.floor((W * 0.88) / (size * 0.56)));
+      const lines: string[] = [];
+      for (const w of words) {
+        const last = lines.at(-1);
+        if (last !== undefined && `${last} ${w}`.length <= most) lines[lines.length - 1] = `${last} ${w}`;
+        else lines.push(w);
+      }
+      const shown = lines.slice(0, 3);
+      const step = Math.round(size * 1.25 + pad * 2);
+      const base = style === "pop" ? H * 0.66 : style === "karaoke" ? H * 0.78 : style === "lower" ? H * 0.8 : H / 2 - size / 2;
+      // a pop or centred block sits on its middle; the lower ones grow upwards from their base
+      const centred = style === "pop" || style === "center";
+      shown.forEach((line, k) => {
+        const y = Math.round(centred ? base + (k - (shown.length - 1) / 2) * step : base - (shown.length - 1 - k) * step);
+        const out = `t${texts.length}`;
+        vf.push(`[${acc}]drawtext=fontfile='${o.font}':textfile='${o.titleFile(texts.length)}':fontsize=${size}:${look}:x=(w-text_w)/2:y=${y}:alpha='${alpha}':enable='between(t\\,${f3(s)}\\,${f3(e)})'[${out}]`);
+        texts.push(line.slice(0, 200));
+        acc = out;
+      });
     }
   }
   vf.push(`[${acc}]trim=duration=${f3(T)},setpts=PTS-STARTPTS[v]`);
@@ -211,7 +237,7 @@ export function planCut(body: CutBody, source: (item: CutItem) => Source | null,
     if (rest.length) parts.push(mix(rest, "rmix"));
     af.push(`${parts.map((p) => `[${p}]`).join("")}amix=inputs=${parts.length}:normalize=0:duration=longest,alimiter=limit=0.95,atrim=duration=${f3(T)},asetpts=PTS-STARTPTS[a]`);
   }
-  return { inputs, video: vf.join(";"), audio: af.join(";"), seconds: T, titles };
+  return { inputs, video: vf.join(";"), audio: af.join(";"), seconds: T, titles: texts.length, texts };
 }
 
 // ------------------------------------------------------------------ the editor's assistant
