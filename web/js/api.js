@@ -37,6 +37,7 @@ export const api = {
   generate: (body) => post("api/generate", body),
   imageModels: () => request("api/image/models"),
   videoModels: () => request("api/video/models"),
+  videoLoras: () => request("api/video/loras"),
   image: (body) => post("api/image", body),
   enhanceImage: (body) => post("api/image/enhance", body),
   director: (body) => post("api/director", body),

@@ -381,6 +381,13 @@ export function setStyle(text) {
   jam.jam.body.looks = {};
   save();
 }
+/** The style LoRA the shots are rolled in ({ id, strength } or null); a shot rolled in another is rolled again. */
+export const setLora = (v) => ((jam.jam.body.lora = v), (jam.jam.body.film = null), touched());
+export const setLoraStrength = (v) => ((jam.jam.body.lora.strength = v), (jam.jam.body.film = null), save());
+const lorasOf = (b) => (b.lora ? [b.lora] : undefined);
+const sameLoras = (a, b) => JSON.stringify((a ?? []).map((l) => [l.id, l.strength])) === JSON.stringify((b ?? []).map((l) => [l.id, l.strength]));
+/** Whether a shot's take is done, in the style the video is rolled in now. */
+const rolled = (b, s) => take(s)?.status === "done" && sameLoras(take(s).request?.loras, lorasOf(b));
 export const setCaptions = (style) => ((jam.jam.body.captions = style), (jam.jam.body.film = null), touched());
 export const setEvery = (n) => ((jam.jam.body.every = n), plan(jam.jam), touched());
 
@@ -481,7 +488,7 @@ async function roll(j, i, danceAt) {
   update();
   try {
     const start = await look(j, s.kind);
-    const body = { name: `${j.name} · ${String(i + 1).padStart(2, "0")}`, start: start.file, seconds, aspect: "9:16", review: false, takes: 1, quality: "standard" };
+    const body = { name: `${j.name} · ${String(i + 1).padStart(2, "0")}`, start: start.file, seconds, aspect: "9:16", review: false, takes: 1, quality: "standard", loras: lorasOf(b) };
     if (s.kind === "performance") {
       // the vocals of this shot, for the lips to follow
       const voice = await send("api/jam/slice", "POST", { audio: (b.vocals ?? b.part).file, from: s.from, to: Math.min(b.part.seconds, s.from + seconds), name: `${j.name} · ${i + 1} vocals`, kind: "voice" });
@@ -524,7 +531,7 @@ export async function makeVideo() {
   try {
     // the looks first, one at a time, so every shot of a kind starts from the same one
     for (const kind of new Set(b.shots.map((s) => s.kind))) await look(j, kind);
-    const todo = b.shots.map((_, i) => i).filter((i) => take(b.shots[i])?.status !== "done");
+    const todo = b.shots.map((_, i) => i).filter((i) => !rolled(b, b.shots[i]));
     // the dance video is walked through in order, a new stretch for each dance shot
     let danceAt = 0;
     const at = {};
@@ -541,7 +548,7 @@ export async function makeVideo() {
       }
     };
     await Promise.all([worker(), worker(), worker()]);
-    if (b.shots.every((s) => take(s)?.status === "done")) await assemble(j);
+    if (b.shots.every((s) => rolled(b, s))) await assemble(j);
     else toast("Some shots didn't come out: roll them again, then make the video.");
   } finally {
     jam.busy.delete("make-video");
@@ -557,7 +564,7 @@ export async function rerollShot(i) {
   try {
     j.body.shots[i].run = null;
     await roll(j, i, j.body.shots.slice(0, i).filter((s) => s.kind === "dance").reduce((t, s) => t + s.to - s.from, 0));
-    if (j.body.shots.every((s) => take(s)?.status === "done")) await assemble(j);
+    if (j.body.shots.every((s) => rolled(j.body, s))) await assemble(j);
   } catch (e) {
     toast(e.message, { tone: "crit" });
   } finally {
@@ -608,7 +615,7 @@ export function estimate() {
   const m = (state.image.catalogue?.models ?? []).find((x) => x.id === artistFor("edit"));
   const pic = m?.router ? m.credits ?? 8 : (m?.seconds ?? 10) * 0.266;
   const looks = new Set(b.shots.map((s) => s.kind)).size - Object.keys(b.looks).length;
-  const seconds = b.shots.filter((s) => take(s)?.status !== "done").reduce((t, s) => t + Math.min(10, Math.max(2, Math.ceil(s.to - s.from))), 0);
+  const seconds = b.shots.filter((s) => !rolled(b, s)).reduce((t, s) => t + Math.min(10, Math.max(2, Math.ceil(s.to - s.from))), 0);
   return Math.max(1, Math.round(Math.max(0, looks) * pic + seconds * 18 * 0.266));
 }
 

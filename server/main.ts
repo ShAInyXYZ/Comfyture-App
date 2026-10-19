@@ -5,7 +5,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { join, normalize, resolve, sep } from "node:path";
 import { Comfy } from "@comfyorg/sdk";
-import { Engine, type ShotRequest, type Shot } from "./engine.ts";
+import { Engine, type ShotRequest, type Shot, type VideoLora } from "./engine.ts";
 import { assistantPrompt, fillTransitions, fillUses, readAnswer, wantsNext, wantsRoll, type ChatFile, type ShotState, type Turn } from "./assistant.ts";
 import { manual } from "./manual.ts";
 import { LIMITS } from "./limits.ts";
@@ -38,6 +38,18 @@ const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 const repository: string | undefined = typeof pkg.repository === "string" ? pkg.repository : pkg.repository?.url;
 
 let presets = new Map<string, Preset>();
+// the LoRAs a take can be rolled with (workflows/video-loras.json)
+const videoLoras: (VideoLora & { name: string; about: string; source: string })[] = JSON.parse(await readFile(join(root, "workflows", "video-loras.json"), "utf8")).loras;
+/** The LoRAs a request asks for, by id, each at a strength within reason; three at most. */
+function parseLoras(v: unknown): VideoLora[] {
+  if (!Array.isArray(v)) return [];
+  const out: VideoLora[] = [];
+  for (const x of v.slice(0, 3)) {
+    const l = videoLoras.find((k) => k.id === (typeof x === "string" ? x : x?.id));
+    if (l && !out.some((o) => o.id === l.id)) out.push({ id: l.id, kind: l.kind, file: l.file, words: l.words, strength: num(typeof x === "string" ? undefined : x?.strength, 0, 2, l.strength) });
+  }
+  return out;
+}
 async function reloadPresets() {
   presets = new Map((await loadPresets(join(root, "presets"))).map((p) => [p.id, p]));
 }
@@ -239,6 +251,7 @@ async function parseShot(input: Record<string, any>): Promise<{ request: ShotReq
     strengths: { start: num(input.strengths?.start, 0, 1, 1), end: num(input.strengths?.end, 0, 1, 0.85) },
     project: projectId(input.project),
     model: typeof input.model === "string" && isRouterVideo(input.model) ? input.model : undefined,
+    loras: parseLoras(input.loras),
   };
   const takes = Math.round(num(input.takes, 1, 4, 1));
   const seed = Number.isSafeInteger(input.seed) && input.seed >= 0 ? input.seed : undefined;
@@ -920,6 +933,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     return json(res, 202, engine.generate(prompt, aspect, Number.isSafeInteger(input.seed) ? input.seed : undefined));
   }
   // the video models that roll the shots: LTX-2.5 in ComfyUI, then the partners' on Comfy Router
+  if (path === "/api/video/loras" && method === "GET") return json(res, 200, { loras: videoLoras.map(({ id, kind, name, about, words, strength, source }) => ({ id, kind, name, about, words, strength, source })) });
   if (path === "/api/video/models" && method === "GET") {
     return json(res, 200, { default: "ltx-2.5", models: [{ id: "ltx-2.5", name: "LTX-2.5", short: "LTX-2.5", about: "Open weights: picture and sound in one pass", maker: "open", router: false, seconds: LTX_SHOT_SECONDS, sound: true }, ...routerVideos()] });
   }
@@ -1142,7 +1156,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const cutPath = join(data, "videos", cut);
     // and its sides to multiples of 32, as LTX-2.5 needs (a few pixels cropped at most)
     if (!(await exists(cutPath))) await exec("ffmpeg", ["-v", "error", "-y", "-i", where, "-frames:v", String(frames), "-an", "-vf", "crop=trunc(iw/32)*32:trunc(ih/32)*32,format=yuv420p", "-c:v", "libx264", "-crf", "17", "-preset", "fast", cutPath]);
-    return json(res, 202, engine.videoJob("sound", cut, { prompt, frames, seed }, keep));
+    // real sounds only: the Foley LoRA keeps music and score out
+    return json(res, 202, engine.videoJob("sound", cut, { prompt, frames, seed, loras: input.real === true ? parseLoras(["foley"]) : undefined }, keep));
   }
   // Jam: a song heard (its vocals, its words and their times, its beat), sliced for its shots
   if ((path === "/api/jam/listen" || path === "/api/jam/slice") && method === "POST") {

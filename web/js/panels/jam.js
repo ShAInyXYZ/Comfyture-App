@@ -8,7 +8,9 @@ import { currentPage, go } from "../router.js";
 import {
   jam, loadJams, openJam, newJam, removeJam, rename, useTrack, makeTrack, setLength, setStart, LENGTHS, setLine, useLyrics,
   setArtist, setDance, clearDance, setStyle, setCaptions, setEvery, bars, cycleKind, take, shotState, making, makeVideo, rerollShot, estimate, KINDS,
+  setLora, setLoraStrength,
 } from "../jam.js";
+import { loraControl } from "../loras.js";
 
 const KIND_ICON = { performance: "audio-voice", dance: "channel-pose", broll: "film-make" };
 const STYLES = [["pop", "Bold pop"], ["karaoke", "Karaoke"], ["lower", "Lower third"], ["none", "No captions"]];
@@ -259,11 +261,13 @@ function artistPanel(j) {
         h("span.jm-dance-tag", {}, `${clock(b.dance.duration)} · copied`),
         h("button.jm-dance-x", { type: "button", title: "No dance: the parts without singing become b-roll", on: { click: () => clearDance() } }, icon("close")))
       : h("button.jm-dance.is-empty", { type: "button", disabled: jam.busy.has("dance"), title: "A dance video: its moves are copied in the parts without singing", on: { click: () => pick("video/*", setDance) } }, icon("upload"), h("span", {}, jam.busy.has("dance") ? "Adding" : "Add a dance")),
-    h("span.label", {}, "Style"),
+    h("span.label", {}, "Stage"),
     h("textarea.field.jm-style-field", { rows: 2, value: b?.style ?? "", placeholder: "purple stage, a giant jam-jar lid, concert lights", dataset: { focus: "style" }, on: { change: (e) => setStyle(e.target.value) } }),
     h("span.label", {}, "Cuts"),
     h("div.jm-cuts", {}, ...[[1, "Every bar"], [2, "Every 2 bars"], [4, "Every 4 bars"]].map(([n, label]) =>
       h("button", { type: "button", "aria-pressed": String((b?.every ?? 2) === n), disabled: !b?.part, on: { click: () => setEvery(n) } }, label))),
+    h("span.label", {}, "Style"),
+    loraControl({ kinds: ["style", "finish"], value: b?.lora ?? null, label: "Style", none: "As filmed", note: "A LoRA on LTX-2.5: every shot of the video in this style", onPick: (v) => b && setLora(v), onStrength: (v) => b && setLoraStrength(v) }),
     h("span.jm-readout", { title: "LTX-2.5 rolls every shot: lip-sync, motion copy and scenes" }, sprite("section-shot"), h("b", {}, "Video: LTX-2.5"), h("em", {}, state.info?.target === "comfy-cloud" ? "≈ 4.8 cr/s" : "your GPU")),
     h("button.jm-go", { type: "button", disabled: busy || !b?.shots.length || !b?.artist, title: !b?.part ? "Add a track first" : !b?.artist ? "Add the artist's photo first" : "Every shot rolled, then cut on the track with its captions", on: { click: () => makeVideo() } },
       icon("play"), h("span", {}, busy ? (jam.busy.has("render") ? "Cutting" : "Making") : done ? "Make it again" : "Make the video"), cost && !busy ? h("em", {}, `≈ ${cost} cr`) : null),

@@ -37,6 +37,9 @@ function freshDraft() {
     review: true,
     startMode: "photo",
     video: null,
+    // LoRAs on LTX-2.5: a style (or a finish) and a move, each { id, strength }
+    style: null,
+    move: null,
   };
 }
 
@@ -554,8 +557,14 @@ export async function request(d = state.draft, tab = state.tab) {
     project: state.tabs.find((t) => t.id === tab)?.project,
     // a partner's video model, when the shot was given one (LTX-2.5 otherwise)
     model: d.model && d.model !== "ltx-2.5" ? d.model : undefined,
+    loras: shotLoras(d),
   };
 }
+/** The LoRAs a draft rolls with: only LTX-2.5 takes them. */
+export const shotLoras = (d) => {
+  const list = d.model && d.model !== "ltx-2.5" ? [] : [d.style, d.move].filter(Boolean);
+  return list.length ? list : undefined;
+};
 
 export const roll = () =>
   attempt(async () => {
@@ -1708,6 +1717,12 @@ export function videoModel() {
     kept = localStorage.getItem(VIDEO);
   } catch {}
   return (state.videoModels?.models ?? []).some((m) => m.id === kept) ? kept : "ltx-2.5";
+}
+// the LoRAs a take can be rolled with (styles, finishes, moves, real sounds), the server's list
+let lorasLoading = null;
+export function videoLoras() {
+  if (!state.videoLoras) lorasLoading ??= api.videoLoras().then((c) => ((state.videoLoras = c.loras ?? []), changed("settings", "script", "mixer", "jam", "utensils"))).catch(() => (lorasLoading = null));
+  return state.videoLoras ?? [];
 }
 export function setVideoModel(id) {
   try {

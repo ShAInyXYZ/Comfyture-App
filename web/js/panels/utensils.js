@@ -169,6 +169,7 @@ function settings(t, i) {
   if (t.id === "upscale") extra.push(seg([[2, "2×"], [4, "4×"]], i.scale ?? 4, (v) => setInput({ scale: v }), "How much larger"), h("span.ut-readout", { title: "The upscaler: sharp detail, no new content" }, h("span.label", {}, "Model"), h("b", {}, "4x-UltraSharp")));
   if (t.id === "upscale-video") extra.push(seg([[720, "720p"], [1080, "1080p"], [1440, "1440p"]], i.height ?? 1080, (v) => setInput({ height: v }), "The short side, in pixels"), h("span.ut-readout", {}, h("span.label", {}, "Model"), h("b", {}, "SeedVR2 3B")));
   if (t.id === "variations" || t.id === "edit") extra.push(lookPicker());
+  if (t.id === "sound") extra.push(seg([[false, "Any sound"], [true, "Foley"]], i.real === true, (v) => setInput({ real: v }), "Foley: only real sounds (steps, objects, the room), never music. A LoRA on LTX-2.5"));
   if (t.id === "extend") extra.push(stepper(i.seconds ?? 5, 2, 10, 1, " s", (v) => setInput({ seconds: v }), "How much longer"));
   if (t.id === "music") extra.push(stepper(i.seconds ?? 30, 10, 240, 10, " s", (v) => setInput({ seconds: v }), "How long"), stepper(i.bpm ?? 100, 60, 180, 4, " bpm", (v) => setInput({ bpm: v }), "Tempo"));
   if (t.id === "sfx") extra.push(stepper(i.seconds ?? 6, 1, 30, 1, " s", (v) => setInput({ seconds: v }), "How long"));

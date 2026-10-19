@@ -5,7 +5,7 @@
 // and the shots are cut together on it, the trend's caption on top.
 import { state, changed, toast, waitFor, drawPicture, artistFor } from "./store.js";
 import { api } from "./api.js";
-import { mixer, save, newMix, whenOpened } from "./mixer.js";
+import { mixer, save, newMix, whenOpened, mixLoras } from "./mixer.js";
 import { TRENDS, CREW, trendById, crewById, trendArt, crewPicture } from "./mixer-trends.js";
 import { onServer } from "./picker.js";
 
@@ -175,7 +175,7 @@ export async function makeTrend() {
       while (next < m.body.shots.length) {
         const i = next++;
         const s = m.body.shots[i];
-        const body = { name: `${m.name} · ${i + 1}`, start: frame.file, seconds: Math.min(10, Math.max(2, Math.ceil(s.to - s.from))), aspect: "9:16", review: false, takes: 1, quality: "standard", script: { shots: [{ action: actionOf(t, cast, s), camera: "", sound: "", framing: "" }], raw: "" } };
+        const body = { name: `${m.name} · ${i + 1}`, start: frame.file, seconds: Math.min(10, Math.max(2, Math.ceil(s.to - s.from))), aspect: "9:16", review: false, takes: 1, quality: "standard", script: { shots: [{ action: actionOf(t, cast, s), camera: "", sound: "", framing: "" }], raw: "" }, loras: mixLoras() };
         for (let attempt = 0; attempt < 2 && take(s)?.status !== "done"; attempt++) {
           const [run] = await api.shoot(body);
           s.run = run.id;

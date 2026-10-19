@@ -9,8 +9,9 @@ import { artistItems } from "../writer-menu.js";
 import { view } from "../viewer.js";
 import {
   mixer, loadMixes, openMix, removeMix, save, useVideo, addCast, setCast, removeCast, castKinds, CAST_MAX,
-  shotLength, shotState, setShot, select, redo, mixIt, mixing, estimate, take,
+  shotLength, shotState, setShot, select, redo, mixIt, mixing, estimate, take, mixStyle, setMixStyle,
 } from "../mixer.js";
+import { loraControl } from "../loras.js";
 import { TRENDS, CREW, KINDS, trendById, crewById, trendArt, crewFace } from "../mixer-trends.js";
 import { pick, castOf, selectTrend, setKind, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, makeTrend, making, takesOf, estimate as trendCost } from "../mixer-trend.js";
 import { openPicker, pictureOf } from "../picker.js";
@@ -103,6 +104,7 @@ function recipe(t) {
         h("span.mx-chip.is-own", { title: "A new track made for your mix in the trend's feel: never the trend's own song" }, "Our own track")),
       h("div.mx-cast-head", {}, h("span.label", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "The crew by default. Swap them, or drop a photo of your own")),
       h("div.mx-roles", {}, ...cast.map((c) => role(c))),
+      h("div.mx-pickers", {}, styleControl(), ltxReadout()),
       m ? progress(m) : null,
       h("button.mx-go", { type: "button", disabled: busy, title: "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
         sprite("product-mixer"), h("span", {}, busy ? "Making it" : m?.body.film ? "Make it again" : "Make it"), cost && !busy ? h("em", {}, `≈ ${cost} cr`) : null)));
@@ -158,9 +160,17 @@ function remix(m) {
       shotFix(m),
       h("div.mx-cast-head", {}, h("span.label", {}, "Your cast"), h("em", {}, `${m?.body.cast.length ?? 0} / ${CAST_MAX}: who the edit is about`)),
       h("div.mx-cast", {}, ...Array.from({ length: CAST_MAX }, (_, i) => castSlot(m, i))),
-      h("div.mx-pickers", {}, lookPicker(), h("span.mx-readout", { title: "LTX-2.5 rolls every shot, copying its motion" }, sprite("section-shot"), h("span", {}, h("b", {}, "LTX-2.5"), h("em", {}, state.info?.target === "comfy-cloud" ? "≈ 4.8 cr/s" : "your GPU")))),
+      h("div.mx-pickers.is-three", {}, lookPicker(), styleControl(), ltxReadout()),
       goKey(m)));
 }
+
+const ltxReadout = () => h("span.mx-readout", { title: "LTX-2.5 rolls every shot" }, sprite("section-shot"), h("span", {}, h("b", {}, "LTX-2.5"), h("em", {}, state.info?.target === "comfy-cloud" ? "≈ 4.8 cr/s" : "your GPU")));
+
+/** The style LoRA every take is rolled in: Pixar Toon by default, like the crew. */
+const styleControl = () => loraControl({
+  kinds: ["style", "finish"], value: mixStyle(), label: "Style", none: "No style", note: "A LoRA on LTX-2.5: every take of the mix in this style",
+  onPick: (v) => (setMixStyle(v), changed("mixer")), onStrength: (v) => setMixStyle({ ...mixStyle(), strength: v }),
+});
 
 /** The image model that redraws the frames: only those that draw from references. */
 function lookPicker() {

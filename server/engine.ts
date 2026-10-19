@@ -53,6 +53,33 @@ export interface ShotRequest {
   project?: string;
   /** The video model that rolls it, when not LTX-2.5: a partner's on Comfy Router. */
   model?: string;
+  /** LoRAs on LTX-2.5's transformer (those made for LTX-2.3 work too): a look, a move, real sounds. */
+  loras?: VideoLora[];
+}
+export type VideoLora = { id: string; kind: string; file: string; strength: number; words: string };
+/** What opens a prompt rolled with these LoRAs: a look's trigger first (some must be the first word), then how a move is told. */
+export const loraWords = (loras: VideoLora[] = []) =>
+  loras.filter((l) => l.kind !== "sound" && l.words).sort((a, b) => Number(a.kind === "motion") - Number(b.kind === "motion")).map((l) => l.words).join(" ");
+
+/**
+ * The LoRAs put between LTX's transformer and everything that reads it, one after another. A sound
+ * LoRA (Foley) goes on the sound pass only, the others on the picture's.
+ */
+export function withLoras(graph: Graph, loras: VideoLora[], sound: boolean) {
+  const mine = loras.filter((l) => (l.kind === "sound") === sound);
+  if (!mine.length) return;
+  for (const [id, node] of Object.entries(graph)) {
+    if (node.class_type !== "UNETLoader" || !String(node.inputs.unet_name ?? "").startsWith("ltx-2") || graph[`${id}_lora_1`]) continue;
+    let last: [string, number] = [id, 0];
+    mine.forEach((l, i) => {
+      graph[`${id}_lora_${i + 1}`] = { class_type: "LoraLoaderModelOnly", inputs: { model: last, lora_name: l.file, strength_model: l.strength } };
+      last = [`${id}_lora_${i + 1}`, 0];
+    });
+    for (const [other, n] of Object.entries(graph)) {
+      if (other.startsWith(`${id}_lora_`)) continue;
+      for (const [k, value] of Object.entries(n.inputs ?? {})) if (Array.isArray(value) && value[0] === id && value[1] === 0) n.inputs[k] = last;
+    }
+  }
 }
 
 export type RunStatus = "queued" | "frame" | "review" | "shot" | "done" | "failed" | "canceled";
@@ -408,8 +435,11 @@ export class Engine extends EventEmitter {
     }
     if (request.audio && !(await exists(this.audioPath(request.audio.file)))) throw new Error("The audio track is no longer on disk. Add it again.");
     if (request.video && !(await exists(this.videoPath(request.video.file)))) throw new Error("The video is no longer on disk. Add it again.");
-    const prompt = finalPrompt(request.script, { lipsync: request.audio?.lipsync, references: request.references && { panels: request.references.panels, texts: request.references.texts ?? {} } });
-    if (!prompt) throw new Error("Write what happens in the shot first.");
+    const written = finalPrompt(request.script, { lipsync: request.audio?.lipsync, references: request.references && { panels: request.references.panels, texts: request.references.texts ?? {} } });
+    if (!written) throw new Error("Write what happens in the shot first.");
+    // a LoRA's words (its trigger, or how its move is told) open the prompt
+    const words = loraWords(request.loras);
+    const prompt = words ? `${words} ${written}` : written;
     const guided = request.end || request.keyframes.length || !request.start || request.quality === "draft" || request.video;
     const quality: Quality = guided && request.quality === "production" ? "standard" : request.quality;
     const size = request.references
@@ -669,7 +699,7 @@ export class Engine extends EventEmitter {
    * A video a workflow makes from another one, kept with the uploads: SeedVR2 restoring it larger,
    * or LTX-2.5 writing its sound. keep(bytes) stores the result.
    */
-  videoJob(kind: "upscale" | "sound", source: string, v: { height?: number; prompt?: string; frames?: number; seed: number }, keep: (bytes: Buffer) => Promise<NonNullable<Paint["video"]>>): Paint {
+  videoJob(kind: "upscale" | "sound", source: string, v: { height?: number; prompt?: string; frames?: number; seed: number; loras?: VideoLora[] }, keep: (bytes: Buffer) => Promise<NonNullable<Paint["video"]>>): Paint {
     const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
     this.paints.set(job.id, job);
     const emit = () => this.emit("paint", job);
@@ -683,7 +713,7 @@ export class Engine extends EventEmitter {
           graph.video_in.inputs.file = asset;
           Object.assign(graph.up.inputs, { seed: v.seed, resolution: v.height ?? 1080, max_resolution: Math.round(((v.height ?? 1080) * 16) / 9 / 2) * 2 });
         } else graph = buildSound(await loadGraph(this.dirs.workflows, "sound.json"), asset, v.prompt ?? "", v.frames ?? 121, v.seed);
-        const result = await this.execute(graph, new AbortController().signal, { kind: kind === "upscale" ? "restore" : "sound", stage: "shot", units: (v.frames ?? 121) / FPS, onProgress: (p) => ((job.progress = p), emit()) });
+        const result = await this.execute(graph, new AbortController().signal, { kind: kind === "upscale" ? "restore" : "sound", stage: "shot", units: (v.frames ?? 121) / FPS, loras: v.loras, onProgress: (p) => ((job.progress = p), emit()) });
         const [out] = result.getOutputs("video");
         if (!out) throw new Error("The workflow returned no video.");
         job.video = await keep(Buffer.from(await out.toBytes()));
@@ -989,6 +1019,12 @@ export class Engine extends EventEmitter {
           r.references ? asset(r.references.sheet) : undefined,
         );
     if (r.audio) applyAudio(graph, this.assetFor(this.audioPath(r.audio.file)), r.seconds);
+    // the enhancer rewrites the prompt in its own words: a LoRA's trigger opens its answer again
+    const words = loraWords(r.loras);
+    if (words && graph.enhancer) {
+      for (const n of Object.values(graph)) if (Array.isArray(n.inputs.text) && n.inputs.text[0] === "enhancer") n.inputs.text = ["lora_words", 0];
+      graph.lora_words = { class_type: "StringConcatenate", inputs: { string_a: words, string_b: ["enhancer", 0], delimiter: " " } };
+    }
     const job = await this.execute(graph, signal, { run, stage: "shot", span: [start, 1], kind, units });
     const [video] = job.getOutputs("video");
     if (!video) throw new Error("The shot workflow returned no video.");
@@ -1085,9 +1121,13 @@ export class Engine extends EventEmitter {
       onProgress?: (p: number) => void;
       /** false: run now, beside whatever renders (small text jobs, so a chat answer doesn't wait for a shot) */
       queue?: boolean;
+      /** LoRAs for a job without a take (a new sound for any clip) */
+      loras?: VideoLora[];
     },
   ) {
     if (signal.aborted) throw new Canceled();
+    const loras = track.loras ?? track.run?.request.loras;
+    if (loras?.length) withLoras(graph, loras, track.kind === "sound");
     if (track.run) await this.saveWorkflow(track.run, `${track.stage ?? "shot"}.workflow.json`, graph);
     if (track.queue === false) return this.runJob(graph, signal, track);
     await this.acquire(track.run, signal);

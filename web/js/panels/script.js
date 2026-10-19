@@ -2,6 +2,7 @@ import { h, icon, sprite } from "../dom.js";
 import { state, edit, currentShot, refInfo } from "../store.js";
 import { toggle } from "../controls.js";
 import { CAMERA_LABELS, TRANSITION_LABELS, compose, finalPrompt, emptyShot, wordBudget, wordCount } from "../script.js";
+import { loraWords } from "../loras.js";
 
 const LANGUAGES = ["English", "French", "Spanish", "German", "Italian", "Portuguese", "Polish", "Arabic", "Hindi", "Japanese", "Korean", "Chinese"];
 let root;
@@ -155,8 +156,10 @@ function promptView() {
     );
   }
   const text = finalPrompt(d.script, { lipsync: !!d.audio?.lipsync, references: refInfo() });
+  // the LoRAs' words open it (a style's trigger word first)
+  const lead = text && !(d.model && d.model !== "ltx-2.5") ? loraWords([d.style, d.move]) : "";
   return h("div", {},
-    h("p.prompt-view", {}, text || "Write the shot in Script to see the prompt."),
+    h("p.prompt-view", {}, lead ? h("b.prompt-lora", { title: "The LoRAs' own words" }, lead) : null, lead ? " " : null, text || "Write the shot in Script to see the prompt."),
     h("div.prompt-note", {},
       h("span.hint", {}, "This is the exact paragraph sent to LTX-2.5."),
       h("button.key", { type: "button", disabled: !text, on: { click: () => edit((x) => (x.script.raw = compose(x.script)), "script") } }, "Edit as text"),

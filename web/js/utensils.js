@@ -192,7 +192,7 @@ export async function runTool() {
       const run = await roll({ name: "Lip-sync", start: i.image.file, audio: { file: i.audio.file, lipsync: true }, seconds, script: { shots: [{ action: words || "They say the words to the camera, their lips in sync with the voice, natural small movements.", camera: "", sound: "", framing: "" }], raw: "" } });
       keep({ kind: "video", url: run.video, run: run.id, seconds: run.length ?? seconds, note: `${run.size.width} × ${run.size.height}` });
     } else if (t.id === "sound" || t.id === "upscale-video") {
-      const j = await job(await post(`api/utensils/${t.id}`, t.id === "sound" ? { video: i.video.file, prompt: words } : { video: i.video.file, height: i.height ?? 1080 }));
+      const j = await job(await post(`api/utensils/${t.id}`, t.id === "sound" ? { video: i.video.file, prompt: words, real: i.real === true } : { video: i.video.file, height: i.height ?? 1080 }));
       keep({ kind: "video", ...j.video, seconds: j.video.duration, note: `${j.video.width} × ${j.video.height}` });
     } else if (t.id === "music" || t.id === "sfx") {
       const music = t.id === "music";

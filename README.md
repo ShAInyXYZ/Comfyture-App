@@ -115,6 +115,16 @@ A clip can start the shot instead of a photo. Uploads are normalized to 24 fps, 
 - **Extend this clip.** The clip's last 17 frames guide the start of the new shot, so it picks up exactly where the clip ends and carries on with your script. The result is the clip and its continuation as one file. End frames and keyframes still work.
 - **Copy its motion.** Lightricks' union-control IC-LoRA follows the clip's pose (body, hands, face, from DWPose) or its edges (Canny) while your start photo gives the look. Without a photo the script sets the look. A voice track can drive it too. A clip that already is a control pass, like a depth, pose or line video from the Stage, guides the shot as it is.
 
+## Video LoRAs
+
+LoRAs trained for LTX-2.3 load on LTX-2.5 too (the 22B transformer is the same shape), a little stronger than their cards say: about 1.2. `workflows/video-loras.json` lists the ones on Comfy Cloud, each with its trigger words from its model card:
+
+- **Style**: Pixar Toon, Claymation, Cozy Felt, 90s Animation, Paper Cut-Out, Puppet, Fantasy Anime, Painterly, Fantasy Realism, Cyberpunk, Wild West, Post-Apocalyptic and CRT Terminal, and two finishes, Soft and Crisp Enhance.
+- **Move**: Cinemagraph, FPV Flight, Transition, Product Ad and Googly Eyes.
+- **Real sounds**: Add sound with Foley on keeps music out of the new soundtrack.
+
+Shot settings take a style and a move, each with its strength. Mixer rolls every take in Pixar Toon, like its crew, unless you pick another style, and Jam takes one for the whole video. The LoRAs load between LTX-2.5's transformer and everything that reads it, in every pass, and their words open the prompt (after the prompt enhancer's rewrite too).
+
 ## Stage
 
 The Stage is a blocking table for making your own control references, for images and for video: you pose mannequins, set dress the scene with blockout assets, frame it with a real lens, and render it as the passes control models read.
@@ -241,6 +251,7 @@ Local runs need these files in your ComfyUI `models` folder. On Comfy Cloud noth
 | `ltx-2.3-22b-ic-lora-union-control-ref0.5.safetensors` | `loras` | copying a video's motion |
 | `ltx-2.5-22b-distilled-transformer-bf16.safetensors` | `diffusion_models` | copying a video's motion, as in Lightricks' example |
 | `ltx-2.3-spatial-upscaler-x2-1.1.safetensors` | `latent_upscale_models` | copying a video's motion: the detail pass |
+| the files in `workflows/video-loras.json` | `loras` | styles, moves and real sounds (optional) |
 
 The Image window's other models (Qwen Image 2.1 Turbo, FLUX 3 Klein, Krea 2 Turbo, Z-Image Turbo) and their prompt enhancers are on Comfy Cloud; to run them locally, `workflows/image/models.json` and the graphs beside it name each file.
 

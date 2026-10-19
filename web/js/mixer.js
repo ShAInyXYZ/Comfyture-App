@@ -15,6 +15,23 @@ export const mixer = { list: [], mix: null, busy: new Set(), ready: null, select
 /** Who hears of a mix opened when the screen first loads (the trend shelf, to pick its trend). */
 let onOpen = null;
 export const whenOpened = (fn) => (onOpen = fn);
+
+// the style LoRA every take of a mix is rolled in, kept per browser: Pixar Toon, like the crew, unless
+// another one (or none) is picked
+const STYLE = "comfyture.mixer.style";
+export function mixStyle() {
+  try {
+    const kept = localStorage.getItem(STYLE);
+    if (kept) return kept === "none" ? null : JSON.parse(kept);
+  } catch {}
+  return { id: "pixar-toon", strength: 1.2 };
+}
+export function setMixStyle(v) {
+  try {
+    localStorage.setItem(STYLE, v ? JSON.stringify(v) : "none");
+  } catch {}
+}
+export const mixLoras = () => (mixStyle() ? [mixStyle()] : undefined);
 const update = () => changed("mixer");
 
 const call = async (path, init) => {
@@ -295,6 +312,7 @@ async function rollShot(m, i) {
       quality: "standard",
       preset: preset?.id,
       script: preset ? structuredClone(preset.script) : { shots: [{ action: s.note || "The moment plays out exactly like the reference: the same movement, the same energy.", camera: "", sound: "", framing: "" }], raw: "" },
+      loras: mixLoras(),
     };
     if (s.clip && s.motion !== "free") body.video = { file: s.clip.file, mode: "motion", control: s.motion === "edges" ? "edges" : "pose" };
     const [run] = await api.shoot(body);

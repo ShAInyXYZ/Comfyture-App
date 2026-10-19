@@ -2,6 +2,7 @@ import { h, icon } from "../dom.js";
 import { state, edit, roll } from "../store.js";
 import { knob } from "../controls.js";
 import { compose } from "../script.js";
+import { loraControl } from "../loras.js";
 
 function segment(options, value, onPick, disabled = () => false) {
   return h("div.segment", { role: "group" },
@@ -80,6 +81,13 @@ export function renderSettings(el) {
       ...row("Quality",
         segment([["draft", "Draft", "Fast, lower resolution"], ["standard", "Standard", "Full resolution"], ["production", "Production", "Keyframes first, a detail pass and 48 fps (start frame only)"]],
           d.quality, (v) => edit((x) => (x.quality = v), "settings"), (v) => (v === "production" && guided) || refs)),
+      // LoRAs: only LTX-2.5 takes them
+      ...(d.model && d.model !== "ltx-2.5" ? [] : [
+        ...row("Style", loraControl({ kinds: ["style", "finish"], value: d.style, label: "Style", note: "A LoRA on LTX-2.5: the whole take in this style",
+          onPick: (v) => edit((x) => (x.style = v), "settings", "script"), onStrength: (v) => edit((x) => (x.style.strength = v)) })),
+        ...row("Move", loraControl({ kinds: ["motion"], value: d.move, label: "Move", note: "A LoRA on LTX-2.5: a kind of shot it was trained to make",
+          onPick: (v) => edit((x) => (x.move = v), "settings", "script"), onStrength: (v) => edit((x) => (x.move.strength = v)) })),
+      ]),
       ...row("Takes",
         segment([[1, "1"], [2, "2"], [3, "3"], [4, "4"]], d.takes, (v) => edit((x) => (x.takes = v), "settings"))),
       ...row("Seed",
