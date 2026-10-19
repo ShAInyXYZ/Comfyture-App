@@ -133,13 +133,8 @@ async function openPart(kind, id) {
 /** A project opens on what it grew from: its story, or the stage or edit it is; a finished film made on its own plays. The app goes into it. */
 const openFilm = (f) => (setProject(f.id), f.story ? openPart("story", f.story.id) : f.stages[0] ? openPart("stage", f.stages[0].id) : f.cuts[0] ? openPart("cut", f.cuts[0].id) : f.reels[0] ? view(f.reels[0].url, "video") : null);
 
-// each starts outside any film (a new story is a film of its own)
-const START = [
-  ["section-story", "A new story, from an empty page", async () => (await loadStories(), await newStory(), go("story"))],
-  ["section-stage", "A new, empty stage to block a scene on", async () => (setProject(null), go("stage"), await (await stageReady).projects.newProject())],
-  ["section-shot", "A new shot on the desk", () => (setProject(null), newTab(), go("shot"))],
-  ["edit-scissors", "A new, empty edit in Cut", async () => (setProject(null), await loadCuts(), await newCut("New edit"), go("cut"))],
-];
+/** A new, empty project: a story of its own, which is the film (its stages, shots and edits are made inside it). */
+const newProject = async () => (await loadStories(), await newStory(), go("story"));
 
 /** A whole story from one sentence: a new story with the brief, and the writer writing it while Story shows it. */
 /** The prompt as one, two or four variants: each a brief, then its moodboard drawn. */
@@ -531,8 +526,6 @@ function hero() {
             on: { click: () => ((home.full = !home.full), keepDraft(), redraw()) },
           }, sprite("film-make"))))),
     takes(),
-    h("div.home-new", { role: "group", "aria-label": "Start something empty" },
-      ...START.map(([glyph, tip, run]) => h("button.home-new-key", { type: "button", title: tip, "aria-label": tip, on: { click: () => Promise.resolve(run()).catch(fail) } }, sprite(glyph)))),
     last ? h("button.home-continue", { type: "button", title: "Open its story", on: { click: () => openFilm(last) } },
       last.story?.thumb ? h("img", { src: last.story.thumb, alt: "", draggable: false }) : null,
       h("span", {}, "Continue"), h("b", {}, last.name), icon("arrow"), h("span.home-continue-facts", {}, counts(last))) : null);
@@ -712,6 +705,7 @@ function projects() {
     h("div.home-head", {},
       h("span.card-label", {}, "Projects"),
       h("span.spacer"),
+      h("button.home-newproject", { type: "button", title: "A new, empty project\nStart from a blank story, then build the film inside it", on: { click: () => newProject().catch(fail) } }, icon("plus"), "New project"),
       h("a.home-library", { href: "#/library", title: "Library\nEvery take, film and picture" }, sprite("batch")),
       h("label.home-search", {}, icon("search"), h("input", { type: "search", value: home.query, placeholder: "Search projects", "aria-label": "Search the projects", on: { input: (e) => ((home.query = e.target.value), refreshResults()) } }))),
     results());
