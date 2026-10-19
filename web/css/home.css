@@ -181,8 +181,9 @@ body[data-page="home"] #nav { visibility: hidden; }
 
 /* the cover: the film, the take, the render or the frame it has made last */
 .film-cover { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: calc(.5625rem * var(--corner-k)); background: #111114; }
-.film-key { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease-out, ease); }
-.film-card:hover .film-key { transform: scale(1.025); }
+/* the cover's picture or clip (scoped: the Shot bar has a key of the same name) */
+.film-cover > .film-key { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease-out, ease); }
+.film-card:hover .film-cover > .film-key { transform: scale(1.025); }
 .film-cover-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--faint); }
 .film-cover-empty svg { width: 2.5rem; height: 2.5rem; }
 .film-badge { position: absolute; top: .625rem; left: .625rem; display: inline-flex; align-items: center; gap: .4375rem; height: 1.875rem; padding: 0 .6875rem; border-radius: calc(.4375rem * var(--corner-k)); background: rgba(10, 10, 12, .78); color: var(--text); font: 600 var(--fs-small)/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; backdrop-filter: blur(4px); }
