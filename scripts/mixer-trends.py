@@ -188,7 +188,8 @@ def main():
             # what making it again takes: seconds of takes, and first frames to redraw for another cast
             shots = recipe.get("shots") or []
             chain = recipe.get("take", {}).get("chain", False)
-            firsts = len({s.get("look") or recipe.get("look") for i, s in enumerate(shots) if not (i and s.get("chain", chain))})
+            # the pictures a recast redraws: each first frame, and each drawn last frame a shot lands on
+            firsts = len({s.get("look") or recipe.get("look") for i, s in enumerate(shots) if not (i and s.get("chain", chain))} | {s["end"] for s in shots if s.get("end")})
             trends[-1]["made"] = {"seconds": round(sum(s["frames"] for s in shots) / 24, 2), "firsts": firsts}
             # the cover is our version's poster: the card, the cover and the film show the same cast
             cover = Image.open(OUT_ART / slug / recipe["poster"]).convert("RGB")

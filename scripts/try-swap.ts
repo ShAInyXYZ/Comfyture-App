@@ -1,11 +1,13 @@
 // One swap take on Comfy Cloud from local files, to try the workflow before it runs in the app:
 //   node --env-file=.env scripts/try-swap.ts spec.json
-// spec: { graph?, clip, photo, audio, from, frames, width, height, prompt, seed, face?, control?, lora?, strength?, loras?, end?, endStrength?, out }
+// spec: { graph?, clip, photo, audio, from, frames, width, height, prompt, seed, face?, control?, lora?, strength?, loras?, end?, endStrength?, retries?, out }
 // (end: a drawn last frame the take lands on, so a shot meets the next one at a cut)
 // (graph: shot-swap.json, the default, or shot-swap-dev.json; width and height are the first stage's)
 // (paths relative to where it runs; loras: [{ file, strength }] chained before the IC-LoRA)
 // A take that comes back "succeeded" but black (Comfy Cloud now and then returns NaN frames for one exact
 // mix of words, length and inputs) is rolled again, at most twice, with another seed and the words nudged.
+// retries: 0 for anything not rendered before (a new length, a new input such as an end frame): a black that comes
+// from the setup itself comes back every time, and each roll is paid for.
 import { Comfy } from "@comfyorg/sdk";
 import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
@@ -60,7 +62,7 @@ async function take(seed: number, prompt: string) {
 }
 
 // the words nudged for a re-roll: a short closing sentence, different each time
-const nudges = ["", " The light stays soft and even.", " Every detail stays sharp."];
+const nudges = ["", " The light stays soft and even.", " Every detail stays sharp."].slice(0, 1 + Math.max(0, Math.min(2, spec.retries ?? 2)));
 for (let attempt = 0; attempt < nudges.length; attempt++) {
   await take(spec.seed + attempt * 1000, spec.prompt + nudges[attempt]);
   const level = await brightness(resolve(spec.out));

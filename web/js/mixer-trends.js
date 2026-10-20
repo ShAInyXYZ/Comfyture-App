@@ -202,7 +202,7 @@ export const TRENDS = [
     "recipe": "brand/mixer/trends/hotel-lobby/recipe.json",
     "made": {
       "seconds": 19.58,
-      "firsts": 5
+      "firsts": 6
     }
   },
   {

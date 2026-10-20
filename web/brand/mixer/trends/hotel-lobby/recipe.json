@@ -1,6 +1,6 @@
 {
  "id": "hotel-lobby",
- "about": "Hotel Lobby as our crew performs it: Dre and his younger brother Theo, move for move with the original. Each shot's first frame is the original's own first frame, edited in place (the two performers redrawn as Dre and Theo) and extended up and down to 9:16. Each shot's motion is the original's: DWPose's body, face and hands (shot-N.kps.json), placed on the 9:16 frame exactly as the original's picture is (its scale and x, y), then moved and sized once per person onto the drawn figure, nothing laid out again, drawn as shot-N.pose.mp4. Shot 2 is two takes chained (one 113-frame take came back black on Comfy Cloud): its second half starts on the first half's frame 57. The takes run shot-swap-dev.json with the pose as a ready-made control and the vocals frozen in; {Lead} is that role's name and look, {LeadName} the name, {Pair} the two.",
+ "about": "Hotel Lobby as our crew performs it: Dre and his younger brother Theo, move for move with the original. Each shot's first frame is the original's own first frame, edited in place (the two performers redrawn as Dre and Theo) and extended up and down to 9:16. Each shot's motion is the original's: DWPose's body, face and hands (shot-N.kps.json), placed on the 9:16 frame exactly as the original's picture is (its scale and x, y), then moved and sized once per person onto the drawn figure, nothing laid out again, drawn as shot-N.pose.mp4. Shot 2 is two takes chained (one 113-frame take came back black on Comfy Cloud): its second half starts on the first half's frame 57 and lands on a drawn last frame (shot-2b.end.webp, the brothers as they look in the rest of the film), so they meet shot 3 at the cut as themselves. Its pose holds its last frame before the cut from there on. The takes run shot-swap-dev.json with the pose as a ready-made control and the vocals frozen in; {Lead} is that role's name and look, {LeadName} the name, {Pair} the two.",
  "seconds": 18.019,
  "aspect": "9:16",
  "size": {
@@ -85,7 +85,8 @@
     "scale": 1.0,
     "x": -177,
     "y": 170
-   }
+   },
+   "end": "shot-2b.end.webp"
   },
   {
    "from": 7.042,
