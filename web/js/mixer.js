@@ -92,13 +92,13 @@ export async function newMix() {
   return project;
 }
 
-let saving = null;
-/** The open mix written back, a moment after its last change. */
-export function save() {
-  const m = mixer.mix;
+const saving = new Map();
+/** A mix written back a moment after its last change: the open one by default, or one still being made after another is opened. */
+export function save(m = mixer.mix) {
   if (!m) return;
-  clearTimeout(saving);
-  saving = setTimeout(() => {
+  clearTimeout(saving.get(m.id));
+  saving.set(m.id, setTimeout(() => {
+    saving.delete(m.id);
     const thumb = m.body.film?.poster ?? m.body.shots.find((s) => s.look)?.look.url ?? m.body.cast[0]?.url;
     send(`api/mixes/${m.id}`, "PUT", { name: m.name, body: m.body, ...(thumb ? { thumb } : {}) })
       .then(() => {
@@ -106,7 +106,7 @@ export function save() {
         if (row) Object.assign(row, { name: m.name, thumb, updatedAt: new Date().toISOString() });
       })
       .catch((e) => toast(e.message, { tone: "crit" }));
-  }, 400);
+  }, 400));
 }
 const touched = () => (save(), update());
 

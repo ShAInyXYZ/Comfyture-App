@@ -44,9 +44,10 @@ export interface ShotRequest {
   /**
    * A clip to start from: extended where it ends, or its motion copied onto the start photo. "swap" is a
    * trend's take from its recipe: the clip is a control (a skeleton or a depth pass), the audio is the
-   * trend's vocals from `from` seconds, and `strength` is the control's.
+   * trend's vocals from `from` seconds, `strength` is the control's, `length` the take's frames and
+   * `build` who plays it ("human" for people).
    */
-  video?: { file: string; mode: "extend" | "motion" | "swap"; control: "pose" | "edges" | "ready"; frames: number; width: number; height: number; from?: number; strength?: number };
+  video?: { file: string; mode: "extend" | "motion" | "swap"; control: "pose" | "edges" | "ready"; frames: number; width: number; height: number; from?: number; strength?: number; length?: number; build?: string };
   seconds: number;
   aspect: Aspect;
   quality: Quality;
@@ -572,8 +573,8 @@ export class Engine extends EventEmitter {
     const r = run.request;
     const clip = r.video!;
     await this.update(run, { status: "shot", stage: attempt ? "Black picture: rolling again" : "Rolling the take", phase: "roll", progress: 0, error: undefined });
-    // as many of the control's frames as the take is long, on LTX's 8n + 1 grid
-    const frames = Math.floor((Math.min(Math.round(r.seconds * FPS), clip.frames) - 1) / 8) * 8 + 1;
+    // the recipe's length, or as many of the control's frames as the take is long, on LTX's 8n + 1 grid
+    const frames = Math.floor((Math.min(clip.length ?? Math.round(r.seconds * FPS), clip.frames) - 1) / 8) * 8 + 1;
     const graph = buildSwap(await loadGraph(this.dirs.workflows, "shot-swap-dev.json"), {
       clip: this.assetFor(this.videoPath(clip.file)),
       photo: this.assetFor(this.photoPath(r.start!)),
@@ -586,6 +587,7 @@ export class Engine extends EventEmitter {
       seed: run.seed,
       control: "ready",
       strength: clip.strength,
+      build: clip.build,
     });
     const units = (frames / FPS) * ((run.size.width * run.size.height) / 1e6);
     const job = await this.execute(graph, signal, { run, stage: "shot", span: [0, 1], kind: "swap", units });

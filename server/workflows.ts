@@ -263,7 +263,7 @@ export function buildMotion(graph: Graph, clip: unknown, photo: unknown | null, 
  * guide, for an edit IC-LoRA. The first frame says who is in it. width and height are the first stage's,
  * multiples of 64; frames is 8n + 1.
  */
-export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audio: unknown; from: number; prompt: string; frames: number; width: number; height: number; seed: number; face?: boolean; control?: "pose" | "frames" | "ready"; lora?: string; strength?: number }) {
+export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audio: unknown; from: number; prompt: string; frames: number; width: number; height: number; seed: number; face?: boolean; control?: "pose" | "frames" | "ready"; lora?: string; strength?: number; build?: string }) {
   set(graph, "video_in", "file", v.clip);
   set(graph, "photo", "image", v.photo);
   set(graph, "audio_in", "audio", v.audio);
@@ -288,6 +288,9 @@ export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audi
   set(graph, "noise_refine", "noise_seed", v.seed + 1);
   if (v.face === false) set(graph, "control", "detect_face", "disable");
   if (v.lora) set(graph, "ic_lora", "lora_name", v.lora);
+  // the negative prompt keeps people out of animal characters: people playing people keep their hands
+  if (v.build === "human" && graph.negative)
+    graph.negative.inputs.text = String(graph.negative.inputs.text).replace(", human body, human hands, human face, clothes", "").replace("disfigured paws", "deformed hands, extra fingers, fused fingers");
   // "frames": the clip itself is the guide (an edit IC-LoRA); "ready": the clip already is a pose
   // video (a skeleton reshaped for the characters, see pose.ts), so DWPose doesn't read it again
   if (v.control === "frames" || v.control === "ready") {

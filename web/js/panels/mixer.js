@@ -57,14 +57,18 @@ const nameOf = (who) => (who?.crew ? crewById(who.crew)?.name : who?.star?.name 
 
 // ---------------------------------------------------------------- what's trending
 
+// Mixer's own trends: comedy and reactions (the dance-led ones live in Jam)
+const OURS = TRENDS.filter((t) => t.home === "mixer");
+const OUR_KINDS = KINDS.filter(([id]) => id === "all" || OURS.some((t) => t.kind === id));
+
 function feed() {
-  const list = TRENDS.filter((t) => pick.kind === "all" || t.kind === pick.kind);
+  const list = OURS.filter((t) => pick.kind === "all" || t.kind === pick.kind);
   const cards = h("div.mx-cards", { dataset: { scrollKey: "mx-cards" } }, ...list.map(card));
   const nudge = (d) => cards.scrollBy({ left: d * cards.clientWidth * 0.8, behavior: "smooth" });
   return h("section.mx-feed", {},
     h("div.mx-feed-head", {},
       h("h1", {}, "Trending now"), h("p", {}, "Viral trends, made yours."),
-      h("div.mx-kinds", {}, ...KINDS.map(([id, label]) => h("button", { type: "button", "aria-pressed": String(pick.kind === id), on: { click: () => setKind(id) } }, label))),
+      h("div.mx-kinds", {}, ...OUR_KINDS.map(([id, label]) => h("button", { type: "button", "aria-pressed": String(pick.kind === id), on: { click: () => setKind(id) } }, label))),
       h("div.mx-nudge", {},
         h("button.key.is-icon", { type: "button", "aria-label": "Back", on: { click: () => nudge(-1) } }, icon("chevron")),
         h("button.key.is-icon", { type: "button", "aria-label": "More", on: { click: () => nudge(1) } }, icon("chevron")))),
@@ -374,7 +378,7 @@ async function openOne(id) {
 export function renderMixer(el) {
   loadMixes();
   loadStars();
-  const t = trendById(pick.trend) ?? TRENDS[0];
+  const t = trendById(pick.trend) ?? OURS[0];
   // a note being typed keeps its place when the takes' progress redraws the screen
   const active = document.activeElement;
   const focus = el.contains(active) ? active.dataset.focus : null;

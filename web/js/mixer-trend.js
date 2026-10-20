@@ -21,7 +21,7 @@ const call = async (path, init) => {
 const send = (path, method, body) => call(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
 
 /** What is picked on the shelf: the trend, the filter, and who plays each of its roles. */
-export const pick = { trend: TRENDS[0].id, kind: "all", cast: null, role: null };
+export const pick = { trend: (TRENDS.find((t) => t.home === "mixer") ?? TRENDS[0]).id, kind: "all", cast: null, role: null };
 export const stars = { list: [], ready: null };
 // a trend's mix opened again brings back its trend and who played in it
 whenOpened((m) => {
@@ -207,7 +207,7 @@ async function fromRecipe(t, cast, m) {
   const firsts = new Map();
   const first = (path) => (firsts.has(path) ? firsts : firsts.set(path, firstFrame(t, cast, dir + path))).get(path);
   m.body.shots = recipe.shots.map((s) => ({ from: s.from, to: s.to, look: null, run: null, join: s.join ?? "cut", beats: (recipe.beats ?? []).filter((b) => b.from < s.to && b.to > s.from) }));
-  save();
+  save(m);
   update();
   const roll = async (i, start) => {
     const s = recipe.shots[i];
@@ -216,13 +216,13 @@ async function fromRecipe(t, cast, m) {
     const body = {
       name: `${m.name} · ${i + 1}`, start: start.file, seconds: Math.ceil(s.frames / 24), aspect: "9:16", review: false, takes: 1, quality: "standard",
       script: { shots: [], raw: fill(s.prompt) }, audio: { file: voice.file },
-      video: { file: files.controls[s.pose ?? s.guide].file, mode: "swap", from: s.from, strength: s.strength ?? recipe.take.strength },
+      video: { file: files.controls[s.pose ?? s.guide].file, mode: "swap", from: s.from, strength: s.strength ?? recipe.take.strength, length: s.frames, build: recipe.take.build },
       ...(ours && s.seed ? { seed: s.seed } : {}),
     };
-    for (let attempt = 0; attempt < 2 && take(shot)?.status !== "done"; attempt++) {
+    for (let attempt = 0; attempt < 2 && take(shot)?.status !== "done" && !stopped; attempt++) {
       const [run] = await api.shoot(body);
       shot.run = run.id;
-      save();
+      save(m);
       update();
       await waitFor("run", run.id).catch(() => null);
     }
@@ -233,19 +233,28 @@ async function fromRecipe(t, cast, m) {
   const chained = (i) => i > 0 && (recipe.shots[i].chain ?? !!recipe.take.chain);
   const runs = [];
   recipe.shots.forEach((_, i) => (chained(i) ? runs.at(-1).push(i) : runs.push([i])));
+  // a lane that fails stops the other from starting more takes; both settle before it is told
   let next = 0;
+  let stopped = false;
   const lane = async () => {
-    while (next < runs.length) {
-      for (const i of runs[next++]) {
-        const s = recipe.shots[i];
-        const join = () => send(`api/runs/${m.body.shots[i - 1].run}/frame`, "POST", { frame: Math.round((s.from - recipe.shots[i - 1].from) * 24) });
-        await roll(i, chained(i) ? await join() : await first(s.look ?? recipe.look));
+    try {
+      while (next < runs.length && !stopped) {
+        for (const i of runs[next++]) {
+          const s = recipe.shots[i];
+          const join = () => send(`api/runs/${m.body.shots[i - 1].run}/frame`, "POST", { frame: Math.round((s.from - recipe.shots[i - 1].from) * 24) });
+          await roll(i, chained(i) ? await join() : await first(s.look ?? recipe.look));
+        }
       }
+    } catch (e) {
+      stopped = true;
+      throw e;
     }
   };
-  await Promise.all([lane(), lane()]);
+  const failed = (await Promise.allSettled([lane(), lane()])).find((x) => x.status === "rejected");
+  save(m);
+  if (failed) throw failed.reason;
   m.body.music = files.mix ?? voice;
-  save();
+  save(m);
   return recipe;
 }
 
@@ -260,7 +269,7 @@ export async function makeTrend() {
     const m = await newMix();
     m.name = `${t.name} · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
     Object.assign(m.body, { kind: "trend", trend: { id: t.id, cast: structuredClone(pick.cast.roles) }, aspect: "9:16", shots: [], film: null, music: null });
-    save();
+    save(m);
     update();
     if (t.recipe) {
       const recipe = await fromRecipe(t, cast, m);
@@ -270,7 +279,7 @@ export async function makeTrend() {
     const tune = music(t).catch((e) => (toast(`The track: ${e.message}`, { tone: "crit" }), null));
     const frame = await firstFrame(t, cast);
     m.body.shots = takesOf(t).map((tk) => ({ from: tk.from, to: tk.to, look: frame, run: null, beats: tk.beats }));
-    save();
+    save(m);
     update();
     let next = 0;
     const roll = async () => {
@@ -281,7 +290,7 @@ export async function makeTrend() {
         for (let attempt = 0; attempt < 2 && take(s)?.status !== "done"; attempt++) {
           const [run] = await api.shoot(body);
           s.run = run.id;
-          save();
+          save(m);
           update();
           await waitFor("run", run.id).catch(() => null);
         }
@@ -289,7 +298,7 @@ export async function makeTrend() {
     };
     await Promise.all([roll(), roll()]);
     m.body.music = await tune;
-    save();
+    save(m);
     if (!m.body.shots.every((s) => take(s)?.status === "done")) throw new Error("A take didn't come out: open the mix and roll it again.");
     await cutTogether(m, t);
   } catch (e) {
@@ -319,7 +328,7 @@ async function cutTogether(m, t, seconds = t.seconds) {
   const film = await send(`api/cuts/${id}/render`, "POST", {});
   m.body.film = { url: film.url, seconds: film.seconds, id: film.id, poster: m.body.shots[0]?.look?.url };
   state.films = [film, ...(state.films ?? []).filter((f) => f.id !== film.id)];
-  save();
+  save(m);
 }
 
 /** Roughly what making the trend costs, in Comfy credits. */
