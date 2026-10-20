@@ -317,7 +317,7 @@ export const TRENDS = [
     "poster": "brand/mixer/trends/black-cat-clapping/poster.webp",
     "recipe": "brand/mixer/trends/black-cat-clapping/recipe.json",
     "made": {
-      "seconds": 6.71,
+      "seconds": 8.42,
       "firsts": 1
     }
   },
@@ -387,7 +387,7 @@ export const TRENDS = [
     "poster": "brand/mixer/trends/ramalama/poster.webp",
     "recipe": "brand/mixer/trends/ramalama/recipe.json",
     "made": {
-      "seconds": 16.17,
+      "seconds": 16.21,
       "firsts": 2
     }
   },

@@ -1,6 +1,6 @@
 {
  "id": "black-cat-clapping",
- "about": "Black Cat Clapping as our crew performs it: one shot from one first frame (the meme's own opening, edited in place: Sesame on the bleachers, Theo's knee in front). The motion is the clip's depth (Depth Anything V2 of the meme, its caption blurred first), which carries the clap cycle and the hush better than an animal skeleton; the clip's own claps are frozen in so the paws meet on them. The take runs shot-swap-dev.json with the depth as a ready-made control; {Lead} is that role's name and look. The last 1.4 s are a second take chained at 5.0 s on a looser depth (strength 0.45), so the kitten keeps its short forelegs where the original cat's leg stretches.",
+ "about": "Black Cat Clapping as our crew performs it: one shot from one first frame (the meme's own opening, edited in place: Sesame on the bleachers, Theo's knee in front). The motion is the clip's depth (Depth Anything V2 of the meme, its caption blurred first), which carries the clap cycle and the hush better than an animal skeleton; the clip's own claps are frozen in so the paws meet on them. The take runs shot-swap-dev.json with the depth as a ready-made control; {Lead} is that role's name and look. The last 1.4 s are a second take chained at 5.0 s on the clip's depth with the cat's hanging foreleg taken out of it (take-2.depth.mp4), so the kitten keeps its short forelegs where the original cat's leg stretches, and stays on its step as the camera tilts down.",
  "seconds": 6.375,
  "aspect": "9:16",
  "size": {
@@ -19,7 +19,7 @@
    "role": "Lead",
    "crew": "sesame",
    "plays": "the clapping cat",
-   "look": "a cute small plush black kitten with a big round head, vivid emerald-green eyes and a tiny cream chest tuft"
+   "look": "a cute small plush black kitten with a big round head, vivid emerald-green eyes, a tiny cream chest tuft and short round kitten forelegs"
   }
  ],
  "take": {
@@ -64,9 +64,9 @@
    "frames": 41,
    "guide": "take-2.depth.mp4",
    "chain": true,
-   "strength": 0.45,
-   "seed": 6302,
-   "prompt": "Vertical phone video in a polished 3D animated feature-film style: {Lead}, stands upright on a yellow wooden bleacher step in front of a blue wall, its short round kitten forelegs held close to its chest, and leans in toward the camera, curious. Its legs stay short and round the whole time. The knee of the person filming, in black joggers, is in the lower right foreground. Soft warm light. Quiet."
+   "strength": 0.6,
+   "seed": 6405,
+   "prompt": "Vertical phone video in a polished 3D animated feature-film style: {Lead}, stands upright on a yellow wooden bleacher step in front of a blue wall, one little paw raised to its chest, and stays standing there on its step, looking at the camera, while the camera slowly tilts down to the knee of the person filming, in black joggers, so {LeadName} slides up out of the top of the frame. Soft warm light. Quiet."
   }
  ]
 }

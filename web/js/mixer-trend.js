@@ -23,12 +23,13 @@ const send = (path, method, body) => call(path, { method, headers: { "Content-Ty
 /** What is picked on the shelf: the trend, the filter, and who plays each of its roles. */
 export const pick = { trend: (TRENDS.find((t) => t.home === "mixer") ?? TRENDS[0]).id, kind: "all", cast: null, role: null };
 export const stars = { list: [], ready: null };
-// a trend's mix opened again brings back its trend and who played in it, unless a trend was picked
-// before Mixer first opened (Jam's "Make it with your cast"): that one wins over the last mix
+// a trend's mix opened again brings back its trend and who played in it, unless something was
+// picked before it came back (a trend from Jam's "Make it with your cast", a role given to someone):
+// that choice wins over the last mix
 let picked = false;
 whenOpened((m) => {
   if (!m.body.trend) return;
-  if (picked && m.body.trend.id !== pick.trend) return void (mixer.mix = null);
+  if (picked) return void (m.body.trend.id !== pick.trend && (mixer.mix = null));
   pick.trend = m.body.trend.id;
   pick.cast = { trend: m.body.trend.id, roles: structuredClone(m.body.trend.cast) };
 });
@@ -53,6 +54,7 @@ export const pickRole = (role) => ((pick.role = pick.role === role ? null : role
 
 /** A role given to someone: one of the crew ({ crew }) or a star ({ star }). */
 export function setRole(role, who) {
+  picked = true;
   castOf();
   pick.cast.roles[role] = who;
   pick.role = null;
