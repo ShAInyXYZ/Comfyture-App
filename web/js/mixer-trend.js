@@ -172,7 +172,7 @@ export const take = (s) => (s?.run ? state.runs.find((r) => r.id === s.run) : nu
  * Who plays a recipe's roles, as its prompts name them: {Lead} is that role's name and look, {LeadName}
  * the name, and {Pair} the two together (the recipe's own words for our cast).
  */
-function roleWords(recipe, cast) {
+export function roleWords(recipe, cast) {
   const words = {};
   const names = [];
   let ours = true;
