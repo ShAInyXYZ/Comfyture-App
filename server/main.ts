@@ -1,9 +1,9 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { mkdir, readdir, readFile, writeFile, access, rm, stat, open } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile, access, rm, stat, open, copyFile } from "node:fs/promises";
 import { createHash, randomBytes } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { join, normalize, resolve, sep } from "node:path";
+import { basename, join, normalize, resolve, sep } from "node:path";
 import { Comfy } from "@comfyorg/sdk";
 import { Engine, type ShotRequest, type Shot, type VideoLora } from "./engine.ts";
 import { assistantPrompt, fillTransitions, fillUses, readAnswer, wantsNext, wantsRoll, type ChatFile, type ShotState, type Turn } from "./assistant.ts";
@@ -12,14 +12,15 @@ import { LIMITS } from "./limits.ts";
 import { CloudLibrary } from "./cloud.ts";
 import { ASPECTS, ImageModels } from "./images.ts";
 import { askClaude, blenderStatus, command, CONTROL_BRIEF, controlConnected, controlEvents, controlPrompt, fromBlender, readControlAnswer, reply, toBlender, type ControlTurn } from "./control.ts";
-import { llms, defaultLlm, pickLlm, onRouter, llmName, routerAsk, imageBlock } from "./llm.ts";
+import { llms, defaultLlm, pickLlm, onRouter, llmName, routerAsk, imageBlock, takesTools } from "./llm.ts";
 import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
 import { readStory, storyBrief, storyPrompt, STORY_ASSIST_BRIEF, storyAssistPrompt, readStoryAssist, IDEAS_BRIEF, ideasPrompt, readIdeas, type StoryStep } from "./story.ts";
 import { isRouterImage, routerImages, routerDraw } from "./router-images.ts";
 import { isRouterVideo, routerVideos } from "./router-videos.ts";
-import { planCut, CUT_BRIEF, cutPrompt, readCutAnswer, type CutBody, type CutItem, type Source } from "./cut.ts";
+import { planCut, ffmpegArgs, frameSize, cutBrief, cutPrompt, readCutAnswer, type CutBody, type CutItem, type Source } from "./cut.ts";
 import { splitEdit } from "./mixer.ts";
+import { MACARON_BRIEF, MACARON_TOOL, macaronPrompt, readMacaronAnswer, keepExport, keepFrame, encodeFrames, dropFrames, frameJob, validJob, sweepFrames } from "./macaron.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -391,6 +392,11 @@ function summary(kind: string, body: any) {
     // an edit another product made for its own video (a Mixer remix, a Jam music video) says which
     return { clips: main.length, titles: tracks.find((t) => t?.kind === "title")?.items?.length ?? 0, sounds: tracks.filter((t) => t?.kind === "audio").reduce((n, t) => n + (t.items?.length ?? 0), 0), product: typeof body?.product === "string" ? body.product : undefined };
   }
+  if (kind === "brands") {
+    // Macaron's brand: its designs by status, its motion pieces and what it has exported
+    const designs: any[] = Array.isArray(body?.designs) ? body.designs.filter((d: any) => !d?.variant) : [];
+    return { designs: designs.length, approved: designs.filter((d) => d?.status === "approved").length, motion: Array.isArray(body?.motion) ? body.motion.length : 0, exports: Array.isArray(body?.exports) ? body.exports.length : 0 };
+  }
   return {};
 }
 /** How long a script or a storyboard may run: a five-minute film needs room for fifteen scenes and their shots. */
@@ -585,15 +591,30 @@ async function keepAudio(bytes: Buffer, ext: string, meta: { name: string; kind:
 
 // ------------------------------------------------------------------ a cut, rendered
 
-/** The first font on this machine drawtext can use, for titles. */
-const TITLE_FONTS = ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf", "/System/Library/Fonts/Supplemental/Arial Bold.ttf", "/Library/Fonts/Arial Bold.ttf", "C:/Windows/Fonts/arialbd.ttf"];
+/** The lyric face: bundled, so the subtitles read the same on every machine (libass looks in a folder of fonts for it). */
+const LYRIC_FONT_FILE = join(root, "web", "fonts", "comfyture-lyric.ttf");
+/** The first font on this machine drawtext can use, for titles (the lyric face when none of the usual ones is there). */
+const TITLE_FONTS = ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf", "/System/Library/Fonts/Supplemental/Arial Bold.ttf", "/Library/Fonts/Arial Bold.ttf", "C:/Windows/Fonts/arialbd.ttf", LYRIC_FONT_FILE];
 let titleFont: Promise<string | null> | null = null;
 const findFont = () => (titleFont ??= (async () => {
   for (const f of TITLE_FONTS) if (await exists(f)) return f;
   return null;
 })());
+/** Whether this ffmpeg can draw subtitles (libass), so lyrics are drawn word by word. */
+let subtitles: Promise<boolean> | null = null;
+const canSubtitle = () => (subtitles ??= exec("ffmpeg", ["-hide_banner", "-filters"]).then(({ stdout }) => /\bass\b/.test(stdout), () => false));
 
-/** Where a timeline item's file is: a take, a film, an uploaded video, a picture or a sound. */
+/** The stickers Jam ships: their ids, for the assistant to name them by. */
+async function stickerIds(): Promise<string[]> {
+  try {
+    const list = JSON.parse(await readFile(join(root, "web", "brand", "jam", "stickers", "stickers.json"), "utf8"));
+    return (Array.isArray(list.stickers) ? list.stickers : []).map((x: any) => String(x.id)).filter((id: string) => /^[\w-]+$/.test(id));
+  } catch {
+    return [];
+  }
+}
+
+/** Where a timeline item's file is: a take, a film, an uploaded video, a picture, a sound, or a sticker of ours. */
 function itemPath(src: CutItem["src"]) {
   const id = String(src?.id ?? src?.file ?? "");
   if (!/^[\w.-]+$/.test(id)) return null;
@@ -602,6 +623,7 @@ function itemPath(src: CutItem["src"]) {
   if (src?.kind === "video") return join(data, "videos", id);
   if (src?.kind === "photo") return engine.photoPath(id);
   if (src?.kind === "audio") return join(data, "audio", id);
+  if (src?.kind === "sticker") return join(root, "web", "brand", "jam", "stickers", `${id}.png`);
   return null;
 }
 
@@ -612,42 +634,47 @@ async function renderCut(project: { id: string; name: string; body: any }) {
   const sources = new Map<string, Source>();
   for (const t of body.tracks) {
     for (const it of t.items ?? []) {
-      if (t.kind === "title") continue;
+      if (t.kind === "title" || t.kind === "fx") continue;
+      // a plain colour stands in for a picture that is not made yet
+      if (it.src?.kind === "color") {
+        const hex = /^#?([0-9a-f]{6})$/i.exec(String(it.src.id ?? ""));
+        if (hex) sources.set(it.id, { path: "", still: true, hasAudio: false, duration: 3600, color: `#${hex[1]}` });
+        continue;
+      }
       const path = itemPath(it.src);
       if (!path || !(await exists(path))) continue;
-      const still = it.src?.kind === "photo";
+      const still = it.src?.kind === "photo" || it.src?.kind === "sticker";
       const m = still ? { duration: 3600, hasAudio: false } : await probeMedia(path);
       sources.set(it.id, { path, still, hasAudio: m.hasAudio, duration: m.duration });
     }
   }
-  // the film's frame: its first video clip's, else 1280 wide in the cut's shape
+  // the film's frame is its aspect's shape, as large as the first clip (kept as it is when it is that shape already)
   const main = body.tracks.find((t) => t.kind === "video" && t.main) ?? body.tracks.find((t) => t.kind === "video");
-  const firstVideo = main?.items.map((it) => sources.get(it.id)).find((x) => x && !x.still);
-  const probe = firstVideo ? await probeMedia(firstVideo.path) : null;
-  const ratio = { "16:9": 16 / 9, "9:16": 9 / 16, "1:1": 1, "4:3": 4 / 3, "21:9": 21 / 9 }[(project.body as any).aspect as string] ?? 16 / 9;
-  const width = probe?.width || (ratio >= 1 ? 1280 : Math.round((1280 * ratio) / 2) * 2);
-  const height = probe?.height || (ratio >= 1 ? Math.round(1280 / ratio / 2) * 2 : 1280);
+  const firstVideo = main?.items.map((it) => sources.get(it.id)).find((x) => x && !x.still && x.path);
+  const native = firstVideo ? await probeMedia(firstVideo.path) : null;
+  const { width, height } = frameSize(body.aspect, native);
   const id = `${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${randomBytes(3).toString("hex")}`;
   await mkdir(join(data, "reels"), { recursive: true });
   const work = join(data, "reels", `${id}.work`);
   await mkdir(work, { recursive: true });
   try {
-    const plan = planCut(body, (it) => sources.get(it.id) ?? null, { width, height, font: await findFont(), titleFile: (i) => join(work, `title-${i}.txt`) });
+    const plan = planCut(body, (it) => sources.get(it.id) ?? null, { width, height, font: await findFont(), titleFile: (i) => join(work, `title-${i}.txt`), ass: await canSubtitle() });
     // each title line's words in a file of its own, so no text is ever escaped into the graph
     await Promise.all(plan.texts.map((line, i) => writeFile(join(work, `title-${i}.txt`), line)));
-    const inputs = plan.inputs.flat();
-    // the sound reads the same inputs in the same places, but a still is opened once, not looped:
-    // looped, an input nothing in the sound reads spun ffmpeg forever
-    const once = plan.inputs.flatMap((a) => a.filter((x, i) => !["-loop", "-framerate"].includes(x) && !["-loop", "-framerate"].includes(a[i - 1])));
+    // the lyrics' subtitles, and the face they are drawn in, where ffmpeg runs
+    if (plan.ass) {
+      await mkdir(join(work, "fonts"), { recursive: true });
+      await writeFile(join(work, "lyrics.ass"), plan.ass);
+      await copyFile(LYRIC_FONT_FILE, join(work, "fonts", "comfyture-lyric.ttf"));
+    }
     const picture = join(work, "picture.mp4");
     const sound = join(work, "sound.m4a");
     const out = join(data, "reels", `${id}.mp4`);
+    const args = ffmpegArgs(plan, { picture, sound, script: join(work, "graph.txt") });
+    if (args.long) await writeFile(join(work, "graph.txt"), plan.video);
     // a render that hangs is stopped, not waited on forever
-    const limit = { maxBuffer: 1 << 22, timeout: 20 * 60 * 1000 };
-    await Promise.all([
-      exec("ffmpeg", ["-v", "error", "-y", ...inputs, "-filter_complex", plan.video, "-map", "[v]", "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p", "-r", "24", picture], limit),
-      exec("ffmpeg", ["-v", "error", "-y", ...once, "-filter_complex", plan.audio, "-map", "[a]", "-c:a", "aac", "-b:a", "192k", sound], limit),
-    ]).catch((e) => {
+    const limit = { maxBuffer: 1 << 22, timeout: 20 * 60 * 1000, cwd: work };
+    await Promise.all([exec("ffmpeg", args.picture, limit), exec("ffmpeg", args.sound, limit)]).catch((e) => {
       throw new Error(`The film didn't render: ${String(e.stderr ?? e.message).split("\n").filter(Boolean).slice(-2).join(" ")}`);
     });
     await exec("ffmpeg", ["-v", "error", "-y", "-i", picture, "-i", sound, "-c", "copy", "-movflags", "+faststart", out], { maxBuffer: 1 << 20 });
@@ -728,6 +755,72 @@ async function seedStages() {
       console.warn(`stages: ${file} was not added:`, (e as Error).message);
     }
   }
+}
+
+// the brands that come with the app (brands/*.brand.json, Comfyture's own among them) are there to open the
+// first time Macaron lists them; one that is deleted stays deleted, so the ids already seeded are kept
+let seedingBrands: Promise<void> | null = null;
+async function seedBrands() {
+  const dir = join(root, "brands");
+  const kept = join(projectsDir("brands"), ".seeded");
+  const seeded: string[] = await readFile(kept, "utf8").then((t) => JSON.parse(t), () => []);
+  let added = false;
+  for (const file of (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith(".brand.json")).sort()) {
+    try {
+      const brand: Project = JSON.parse(await readFile(join(dir, file), "utf8"));
+      if (!/^[\w-]+$/.test(brand.id) || seeded.includes(brand.id)) continue;
+      seeded.push(brand.id);
+      added = true;
+      // the newest one is the one that opens
+      if (!(await readProject("brands", brand.id))) await writeProject("brands", { ...brand, updatedAt: new Date().toISOString() });
+    } catch (e) {
+      console.warn(`brands: ${file} was not added:`, (e as Error).message);
+    }
+  }
+  if (added) await writeFile(kept, JSON.stringify(seeded));
+}
+
+/**
+ * The showcase projects Jam ships (web/brand/jam/projects/<id>/project.json with its media) are
+ * copied in the first time they are missing: their media into the library, their video into
+ * data/jams and its edit into data/cuts. One a person deletes stays deleted (data/jams/.seeded
+ * lists what was copied in), and a showcase added in a later version still comes.
+ * project.json: { name, thumb?, jam: the Jam body, cut: { id, name, body }, media: [{ file, to, name?, kind? }] },
+ * where `to` is where the file goes in data (audio/…, videos/…, photos/…).
+ */
+async function seedJams() {
+  const dir = join(root, "web", "brand", "jam", "projects");
+  const ids = (await readdir(dir, { withFileTypes: true }).catch(() => [])).filter((d) => d.isDirectory() && /^[\w-]+$/.test(d.name)).map((d) => d.name).sort();
+  if (!ids.length) return;
+  const seededPath = join(projectsDir("jams"), ".seeded");
+  const seeded = new Set<string>(await readFile(seededPath, "utf8").then((t) => t.split("\n").filter(Boolean), () => [] as string[]));
+  for (const id of ids) {
+    if (seeded.has(id) || (await readProject("jams", id))) continue;
+    try {
+      const m = JSON.parse(await readFile(join(dir, id, "project.json"), "utf8"));
+      for (const f of Array.isArray(m.media) ? m.media : []) {
+        const to = /^(audio|videos|photos)\/[\w.-]+$/.exec(String(f?.to ?? ""));
+        const from = String(f?.file ?? "");
+        if (!to || !/^[\w./-]+$/.test(from) || from.includes("..")) continue;
+        const target = join(data, to[0]);
+        await mkdir(join(data, to[1]), { recursive: true });
+        // a file of the project's own folder, or one the app already ships (web/brand/...: a trend's sound and dance, a crew picture)
+        if (!(await exists(target))) await copyFile(/^web\/brand\//.test(from) ? join(root, from) : join(dir, id, from), target);
+        if (to[1] === "audio") {
+          const name = basename(to[0]);
+          await noteAudio({ file: name, url: `/media/audio/${name}`, name: text(f.name, 60) || name, kind: text(f.kind, 20) || "music", seconds: Math.round((await probeMedia(target)).duration * 100) / 100, createdAt: new Date().toISOString() });
+        }
+      }
+      const now = new Date().toISOString();
+      if (m.cut?.id && /^[\w-]+$/.test(m.cut.id) && !(await readProject("cuts", m.cut.id))) await writeProject("cuts", { id: m.cut.id, name: text(m.cut.name, 60) || text(m.name, 60), createdAt: now, updatedAt: now, body: m.cut.body ?? {} });
+      await writeProject("jams", { id, name: text(m.name, 60) || id, createdAt: now, updatedAt: now, thumb: typeof m.thumb === "string" ? m.thumb.slice(0, 400) : undefined, body: m.jam ?? {} });
+      seeded.add(id);
+    } catch (e) {
+      console.warn(`jam: the showcase ${id} was not added:`, (e as Error).message);
+    }
+  }
+  await mkdir(projectsDir("jams"), { recursive: true });
+  await writeFile(seededPath, [...seeded].join("\n"));
 }
 
 // ------------------------------------------------------------------ events
@@ -882,7 +975,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const input = await jsonBody(req, 2 * 1024 * 1024);
     const turns = (Array.isArray(input.messages) ? input.messages : []).map((m: any) => ({ role: m?.role === "assistant" ? "assistant" : "user", text: text(m?.text, 1200) })).filter((m: any) => m.text);
     if (!turns.length) throw bad("Say what to change.");
-    const reply = await write(pickLlm(input.model), CUT_BRIEF, cutPrompt(input.cut, turns), { maxLength: 1200, temperature: 0.4 });
+    const reply = await write(pickLlm(input.model), cutBrief(await stickerIds()), cutPrompt(input.cut, turns), { maxLength: 1600, temperature: 0.4 });
     return json(res, 200, readCutAnswer(reply));
   }
   const cutRender = /^\/api\/cuts\/([\w-]+)\/render$/.exec(path);
@@ -1096,6 +1189,80 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/projects" && method === "GET") {
     await (seeding ??= seedStages().catch((e) => console.warn("stages: the examples were not added:", e.message)));
     return json(res, 200, { projects: await listFilms() });
+  }
+  // Macaron: the brands that come with the app, Brioche, new pictures, and what a design leaves as
+  if (path === "/api/brands" && method === "GET") await (seedingBrands ??= seedBrands().catch((e) => console.warn("brands: the examples were not added:", e.message)));
+  if (path === "/api/macaron/assist" && method === "POST") {
+    // Brioche reads the brand and the design open and answers with the changes to make
+    const input = await jsonBody(req, 2 * 1024 * 1024);
+    const turns = (Array.isArray(input.messages) ? input.messages : []).map((m: any) => ({ role: m?.role === "assistant" ? "assistant" : "user", text: text(m?.text, 1200) })).filter((m: any) => m.text);
+    if (!turns.length) throw bad("Say what to change.");
+    const model = pickLlm(input.model);
+    const prompt = macaronPrompt(input.brand ?? {}, turns);
+    const tool = onRouter(model) && takesTools(model);
+    const brief = tool ? MACARON_BRIEF : `${MACARON_BRIEF}\n\nAnswer with JSON only, no other words: {"reply": "...", "actions": [{"op": "...", ...}]}`;
+    const reply = onRouter(model) ? await routerAsk(model, brief, prompt, { maxTokens: 4000, temperature: 0.5, ...(tool ? { tool: MACARON_TOOL } : {}) }) : await engine.write(brief, prompt, { maxLength: 2400, temperature: 0.4 });
+    if (process.env.COMFYTURE_DEBUG) console.log(`brioche answered\n${reply}`);
+    return json(res, 200, readMacaronAnswer(reply));
+  }
+  if (path === "/api/macaron/image" && method === "POST") {
+    // a picture for a design (a ground, a product scene), from an image model on Comfy Router, at the post's own size
+    const input = await jsonBody(req, 64 * 1024);
+    const model = text(input.model, 60) || "gpt-image-2.5-flare";
+    if (!isRouterImage(model)) throw bad("That picture model is not here: pictures on Comfy Router need a Comfy key.");
+    const prompt = text(input.prompt, 4000);
+    if (!prompt) throw bad("Say what the picture shows.");
+    const aspect = ["4:5", "1:1", "9:16"].includes(input.aspect) ? input.aspect : "1:1";
+    const refs: { mime: string; data: string }[] = [];
+    const names: string[] = [];
+    for (const r of (Array.isArray(input.refs) ? input.refs : []).slice(0, 8)) {
+      // a library picture, a picture that ships with the app (under web/), or one kept under /media/
+      const url = text(typeof r === "string" ? r : r?.url, 300);
+      const file = text(typeof r === "string" ? "" : r?.file, 120);
+      const from = file ? (await photo(file), engine.photoPath(file)) : url.startsWith("/media/") ? inside(data, url.slice(7)) : url && !url.startsWith("/") ? inside(join(root, "web"), url) : null;
+      if (!from || !(await exists(from))) throw bad("A picture named for this one is missing.");
+      const pic = await imageBlock(from);
+      refs.push({ mime: pic.type, data: pic.data });
+      names.push(text(r?.name, 40).toLowerCase());
+    }
+    const gpt = model.startsWith("gpt-image");
+    const size = { "4:5": "1088x1360", "1:1": "1280x1280", "9:16": "1152x2048" }[aspect as "4:5"];
+    const seed = Number.isSafeInteger(input.seed) && input.seed >= 0 ? input.seed : randomBytes(4).readUInt32BE(0);
+    const job = engine.externalPhotoJob(text(input.name, 80) || prompt.slice(0, 60), async () => {
+      const made = await routerDraw(model, { prompt, aspect, refs, names, seed, ...(gpt ? { size, quality: ["low", "medium", "high"].includes(input.quality) ? input.quality : "medium" } : {}), ...(model === "flux-3-image" && input.resolution === "2k" ? { resolution: "2k" } : {}) });
+      // what it cost is kept, so a project's pictures add up
+      await mkdir(join(data, "macaron"), { recursive: true });
+      await writeFile(join(data, "macaron", "ledger.jsonl"), `${JSON.stringify({ at: new Date().toISOString(), model, aspect, refs: refs.length, credits: made.credits, prompt: prompt.slice(0, 120) })}\n`, { flag: "a" });
+      return made.bytes;
+    });
+    return json(res, 202, [job]);
+  }
+  if (path === "/api/macaron/exports" && method === "POST") {
+    // a design exported as a PNG, kept under a name that says what it is
+    if ((req.headers["content-type"] ?? "").split(";")[0].trim() !== "image/png") throw bad("Send the design as a PNG.", 415);
+    const bytes = await body(req, 40 * 1024 * 1024);
+    const size = imageSize(bytes);
+    if (!size) throw bad("That picture can't be read.", 415);
+    return json(res, 201, { ...(await keepExport(data, bytes, url.searchParams.get("name") ?? "design", "png")), width: size.width, height: size.height });
+  }
+  if (path === "/api/macaron/frames" && (method === "POST" || method === "DELETE")) {
+    // a motion render's frames, one at a time (a PNG each), until the video is asked for
+    if (!ffmpeg) throw bad("Videos need ffmpeg on the server.", 501);
+    const job = url.searchParams.get("job") || frameJob();
+    if (!validJob(job)) throw bad("That render is not one of ours.");
+    if (method === "DELETE") return (await dropFrames(data, job), json(res, 200, { ok: true }));
+    const n = Number(url.searchParams.get("n"));
+    if (!Number.isInteger(n) || n < 0 || n > 899) throw bad("A render has up to 900 frames.");
+    await keepFrame(data, job, n, await body(req, 24 * 1024 * 1024));
+    return json(res, 200, { job });
+  }
+  if (path === "/api/macaron/motion" && method === "POST") {
+    // the frames of a render, encoded as an H.264 video at the size they are, with a soft sound when asked
+    if (!ffmpeg) throw bad("Videos need ffmpeg on the server.", 501);
+    const input = await jsonBody(req);
+    if (!validJob(input.job)) throw bad("Send the frames first.");
+    const pops = (Array.isArray(input.sound?.pops) ? input.sound.pops : []).map(Number).filter((n: number) => Number.isFinite(n) && n >= 0 && n < 30);
+    return json(res, 201, await encodeFrames(data, input.job, { fps: Math.round(num(input.fps, 12, 60, 30)), name: text(input.name, 60) || "motion", sound: input.sound ? { pops, pad: input.sound.pad === true } : undefined }));
   }
   // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos
   for (const kind of ["stories", "cuts", "mixes", "brands", "jams"]) {
@@ -1697,8 +1864,10 @@ async function route(req: IncomingMessage, res: ServerResponse) {
 
 await mkdir(join(data, "photos"), { recursive: true });
 await mkdir(join(data, "audio"), { recursive: true });
+await sweepFrames(data).catch(() => {});
 await reloadPresets();
 await engine.init();
+await seedJams().catch((e) => console.warn("jam: the showcase projects were not added:", e.message));
 // samples added before images had names get theirs ("chef", "dog")
 for (const f of (await readdir(join(root, "samples")).catch(() => [] as string[])).filter((f) => /\.(jpe?g|png|webp)$/i.test(f))) {
   const bytes = await readFile(join(root, "samples", f));

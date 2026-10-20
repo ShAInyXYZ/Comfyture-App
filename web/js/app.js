@@ -132,13 +132,14 @@ onChange((scopes) => {
 });
 
 /** Shows the section the address names, and draws what changed while it was hidden. */
-/** The assistant's bar floats over the Shot's desk and docks under the Stage's viewport. */
+/** The assistant's bar floats over the Shot's desk and docks under the Stage's viewport, the Cut's timeline, Jam's page. */
 function dockAssistant(page = currentPage()) {
   const bar = $("assistant");
-  const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : page === "cut" ? $("cut-chat") : $("page-shot");
-  bar.hidden = !slot || !["shot", "stage", "story", "cut"].includes(page);
+  if (dockMacaron(bar, page)) return;
+  const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : page === "cut" ? $("cut-chat") : page === "jam" ? $("jam-chat") : $("page-shot");
+  bar.hidden = !slot || !["shot", "stage", "story", "cut", "jam"].includes(page);
   if (slot && bar.parentElement !== slot) slot.append(bar);
-  bar.classList.toggle("is-docked", page === "stage" || page === "story" || page === "cut");
+  bar.classList.toggle("is-docked", page === "stage" || page === "story" || page === "cut" || page === "jam");
   pending.add("assistant");
   flush();
 }
@@ -146,6 +147,20 @@ document.addEventListener("stage:ready", () => dockAssistant());
 // Story draws its page (and the bar's slot) when its first story has come
 document.addEventListener("story:drawn", () => currentPage() === "story" && $("assistant").parentElement?.id !== "story-chat" && dockAssistant());
 document.addEventListener("cut:drawn", () => currentPage() === "cut" && $("assistant").parentElement?.id !== "cut-chat" && dockAssistant());
+// Jam draws its page (and the bar's slot) after the page is shown
+document.addEventListener("jam:drawn", () => currentPage() === "jam" && $("assistant").parentElement?.id !== "jam-chat" && dockAssistant());
+// Macaron: Brioche's bar docks at the foot of its page (the slot is drawn with the page)
+function dockMacaron(bar, page) {
+  if (page !== "macaron") return false;
+  const slot = $("macaron-chat");
+  bar.hidden = !slot;
+  if (slot && bar.parentElement !== slot) slot.append(bar);
+  bar.classList.toggle("is-docked", !!slot);
+  pending.add("assistant");
+  flush();
+  return true;
+}
+document.addEventListener("macaron:drawn", () => currentPage() === "macaron" && $("assistant").parentElement?.id !== "macaron-chat" && dockAssistant());
 
 function showPage() {
   const page = currentPage();

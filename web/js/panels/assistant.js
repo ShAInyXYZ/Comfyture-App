@@ -13,13 +13,18 @@ import { writerPicker } from "../writer-menu.js";
 import { view } from "../viewer.js";
 import { currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
+import { macaron } from "../macaron.js";
+import { askMacaron, undoMacaron, clearMacaronChat } from "../macaron-assist.js";
 
+// on Macaron the bar is Brioche's: she reads the brand and the design open and changes it
+const onMacaron = () => currentPage() === "macaron";
 // on the Stage the bar stages a scene; on the Shot it sets up the shot: one bar, two conversations
 const onStage = () => currentPage() === "stage";
 // on Story the bar changes the step that is open: "add a scene where she finds the jellyfish"
 const onStory = () => currentPage() === "story";
-// on Cut the bar asks the editor: "trim the first shot to 3 s and put rain under scene 2"
-const onCut = () => currentPage() === "cut";
+// on Cut the bar asks the editor: "trim the first shot to 3 s and put rain under scene 2"; on Jam it asks the same editor
+// about the music video's edit: "a zoom on every bar, make the words bounce"
+const onCut = () => currentPage() === "cut" || currentPage() === "jam";
 // the Stage, once it has mounted: who its @names are
 let stageApi = null;
 stageReady.then((a) => (stageApi = a));
@@ -50,7 +55,7 @@ function stageMentionables() {
   const pictures = state.stageChat.inputs.pictures.map((p) => ({ name: p.name, title: p.title, url: p.url, about: "picture" }));
   return [...cast, ...pictures, ...maps];
 }
-const PLACEHOLDER = { shot: "Describe the shot · @ for a file", stage: "Stage a scene — two people arguing by a wall, low angle", story: "Ask the story assistant — add a scene where Mara finds the jellyfish", cut: "Ask the editor — trim the first shot to 3 s and put rain under scene 2" };
+const PLACEHOLDER = { shot: "Describe the shot · @ for a file", stage: "Stage a scene — two people arguing by a wall, low angle", story: "Ask the story assistant — add a scene where Mara finds the jellyfish", cut: "Ask the editor — trim the first shot to 3 s and put rain under scene 2", jam: "Ask the editor — a zoom on every bar, shake on the drop, make the words bounce" };
 
 const KIND_ICON = { video: "video", audio: "sound" };
 
@@ -161,6 +166,12 @@ function makeComposer() {
   const grow = () => {};
   const send = () => {
     const text = input.value;
+    if (onMacaron()) {
+      if (!text.trim() || macaron.chat.busy) return;
+      input.value = "";
+      open = true;
+      return askMacaron(text);
+    }
     if (onStory()) {
       if (!text.trim() || story.busy.has("assist")) return;
       input.value = "";
@@ -350,6 +361,13 @@ function renderTile(id) {
 
 function message(m, last) {
   const files = (m.files ?? []).map((n) => state.chat.files.find((f) => f.name === n)).filter(Boolean);
+  if (m.macaron && m.role === "assistant") {
+    // Brioche's answer: what she changed, as chips, with one step back
+    return h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
+      h("p", {}, m.text),
+      m.did?.length ? h("div.msg-chips", {}, ...m.did.map((d) => h("span.chip", {}, icon(d === "Undone" ? "remix" : "check"), d))) : null,
+      last && m.undo ? h("button.key.is-sm.is-quiet.undo", { type: "button", title: "Put the design back as it was", on: { click: () => undoMacaron(m) } }, icon("remix"), "Undo") : null);
+  }
   if (m.stage && m.role === "assistant") {
     return h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
       h("p", {}, m.text),
@@ -386,20 +404,20 @@ export function renderAssistant(el) {
   const storyPage = onStory();
   const writing = [...story.busy].find((k) => !k.includes(":"));
   const cutPage = onCut();
-  const { messages, busy } = storyPage ? { messages: story.chat.messages, busy: story.busy.has("assist") ? "Editing" : writing ? "Writing" : null } : cutPage ? cut.chat : stage ? state.stageChat : state.chat;
+  const { messages, busy } = onMacaron() ? macaron.chat : storyPage ? { messages: story.chat.messages, busy: story.busy.has("assist") ? "Editing" : writing ? "Writing" : null } : cutPage ? cut.chat : stage ? state.stageChat : state.chat;
   const { files, attaching } = state.chat;
   const c = composer ?? makeComposer();
   c.key.disabled = !!busy;
   c.render.disabled = !!busy;
   // the model that answers here, on every page: the writer on Story and Cut, the assistant on Shot and the Stage
-  const role = storyPage || cutPage ? "writer" : "assistant";
+  const role = storyPage || cutPage || onMacaron() ? "writer" : "assistant";
   const llm = writers().length > 1 ? [writerPicker(role)] : [];
   if (stage) {
     const models = stageModels();
     const value = state.stageModel && models.some((m) => m.id === state.stageModel) ? state.stageModel : state.image.catalogue?.default ?? models[0]?.id;
     c.modelSlot.replaceChildren(...llm, ...(models.length > 1 ? [dropdown({ label: "Image model", value, items: models.map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setStageModel(id) })] : []));
   } else c.modelSlot.replaceChildren(...llm);
-  c.input.placeholder = PLACEHOLDER[storyPage ? "story" : cutPage ? "cut" : stage ? "stage" : "shot"];
+  c.input.placeholder = PLACEHOLDER[storyPage ? "story" : cutPage ? (currentPage() === "jam" ? "jam" : "cut") : stage ? "stage" : "shot"];
   const inputs = state.stageChat.inputs;
   c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : files.map(fileChip)), ...(!stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
   // on Story, what the assistant will edit: the block (or the card) that is picked
@@ -410,6 +428,13 @@ export function renderAssistant(el) {
   c.tray.hidden = storyPage ? !selectionLabel() : cutPage || (stage ? !inputs.maps.length && !inputs.pictures.length : !files.length && !attaching);
   c.el.classList.toggle("is-story", storyPage);
   c.el.classList.toggle("is-cut", cutPage);
+  // Brioche's: her own words in the bar, no files in its tray, her face beside it
+  c.el.classList.toggle("is-macaron", onMacaron());
+  el.classList.toggle("is-macaron", onMacaron());
+  if (onMacaron()) {
+    c.input.placeholder = "Ask Brioche: a yellow variation, a shorter headline, a story layout";
+    c.tray.hidden = true;
+  }
   c.input.refresh();
   c.el.classList.toggle("is-stage", stage);
   markMentioned();
@@ -434,7 +459,7 @@ export function renderAssistant(el) {
   );
   const panel = h("div.chat-panel", { hidden: !open },
     h("div.panel-keys", {},
-      h("button.key.is-sm.is-icon.is-quiet", { type: "button", disabled: !!busy, title: "Clear — the conversation and its files", "aria-label": "Clear the conversation", on: { click: clearChat } }, icon("trash")),
+      h("button.key.is-sm.is-icon.is-quiet", { type: "button", disabled: !!busy, title: "Clear — the conversation and its files", "aria-label": "Clear the conversation", on: { click: onMacaron() ? clearMacaronChat : clearChat } }, icon("trash")),
       h("button.key.is-sm.is-icon.is-quiet", { type: "button", title: "Fold — Esc", "aria-label": "Fold the conversation", on: { click: () => ((open = false), renderAssistant(el)) } }, icon("chevron"))),
     thread,
   );
