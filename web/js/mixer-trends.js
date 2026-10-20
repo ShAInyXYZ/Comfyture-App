@@ -1117,6 +1117,7 @@ export const TRENDS = [
     },
     "caption": null,
     "aspect": "9:16",
+    "preview": "brand/mixer/trends/face-dance/preview.mp4",
     "poster": "brand/mixer/trends/face-dance/poster.webp",
     "recipe": "brand/mixer/trends/face-dance/recipe.json",
     "made": {
