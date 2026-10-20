@@ -109,7 +109,7 @@
    "pose": "shot-4.pose.mp4",
    "keypoints": "shot-4.kps.json",
    "look": "shot-4.look.webp",
-   "seed": 5405,
+   "seed": 5505,
    "prompt": "Vertical full shot of {Pair} performing a rap song in a recording studio with a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them at their head height. On the left, {Lead}, faces the camera and raps with both hands in front of the chest, counting on the fingers, mouth moving with every word. On the right, {Partner}, hides the face behind a forearm, then turns around with the back to the camera and an arm raised, bobbing to the beat, then turns partly back. Polished 3D animated feature-film style. Clear male rap vocals, close to the microphone.",
    "place": {
     "scale": 0.98,
