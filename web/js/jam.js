@@ -7,7 +7,8 @@
 // works on it in place (beats, effects, stickers, the words' timing); Jam never writes over what was added.
 import { state, changed, onChange, toast, waitFor, artistFor } from "./store.js";
 import { api } from "./api.js";
-import { cut, openCut, commit, layout, lengthOf, renderFilm, setLyricStyle, setLineText } from "./cut.js";
+import { cut, openCut, commit, layout, lengthOf, renderFilm, setLyricStyle, setLineText, flushCuts } from "./cut.js";
+import { keyedSaver } from "./saving.js";
 import { normalizeBody, lyricItems } from "./edit.js";
 import { gridBeats, detectBeats } from "./beats.js";
 import { splitWords } from "./lyrics.js";
@@ -48,6 +49,8 @@ export function loadJams() {
   })());
 }
 export async function openJam(id) {
+  // what the one open has not yet had kept is kept before another is read (it might be this one, as the server has it)
+  await flushJams();
   const { project } = await call(`api/jams/${id}`);
   jam.jam = { ...project, body: { ...blank(), ...project.body } };
   try {
@@ -67,27 +70,29 @@ export async function newJam(name = "New music video") {
   update();
   return jam.jam;
 }
-let saving = null;
-export function save() {
-  const j = jam.jam;
-  if (!j) return;
-  clearTimeout(saving);
-  saving = setTimeout(() => {
-    const thumb = j.body.looks.performance?.url ?? j.body.artist?.url;
-    send(`api/jams/${j.id}`, "PUT", { name: j.name, body: j.body, ...(thumb ? { thumb } : {}) })
-      .then(() => {
-        const row = jam.list.find((x) => x.id === j.id);
-        const first = row && thumb && row.thumb !== thumb;
-        if (row) Object.assign(row, { name: j.name, thumb, updatedAt: new Date().toISOString() });
-        // the set list shows the video's picture as soon as it has one
-        if (first) update();
-      })
-      .catch((e) => toast(e.message, { tone: "crit" }));
-  }, 400);
+/** What keeps a video on the server: one save a moment after its last change, for each video, so renaming A and then B keeps both. */
+const keep = async (id, j) => {
+  const thumb = j.body.looks.performance?.url ?? j.body.artist?.url;
+  await send(`api/jams/${id}`, "PUT", { name: j.name, body: j.body, ...(thumb ? { thumb } : {}) })
+    .then(() => {
+      const row = jam.list.find((x) => x.id === id);
+      const first = row && thumb && row.thumb !== thumb;
+      if (row) Object.assign(row, { name: j.name, thumb, updatedAt: new Date().toISOString() });
+      // the set list shows the video's picture as soon as it has one
+      if (first) update();
+    })
+    .catch((e) => toast(e.message, { tone: "crit" }));
+};
+const saver = keyedSaver(400, keep);
+export const flushJams = () => saver.flush();
+export function save(j = jam.jam) {
+  if (j) saver.save(j.id, j);
 }
 const touched = () => (save(), update());
 export const rename = (name) => ((jam.jam.name = name.slice(0, 60)), save());
 export async function removeJam(id) {
+  // a video that is gone is not kept again by a save still to come
+  saver.drop(id);
   const { jams } = await call(`api/jams/${id}`, { method: "DELETE" });
   jam.list = jams ?? [];
   if (jam.jam?.id === id) {
@@ -206,6 +211,7 @@ function setTrack(j, track) {
   const len = j.body.span ? j.body.span.to - j.body.span.from : 30;
   Object.assign(j.body, { track, span: { from: 0, to: Math.min(track.seconds, len || track.seconds) }, part: null, vocals: null, sung: [], lines: [], bpm: null, beats: [], down: 0, shots: [], film: null });
   delete j.body.sure;
+  delete j.body.musicIn;
   // a new track: what the old one made in the edit goes, what was added stays
   if (cut.project?.id === j.body.cut) {
     const body = cut.project.body;
@@ -793,14 +799,20 @@ export async function syncEdit(j = jam.jam, { shots = true, lines = false, beats
   const main = body.tracks.find((t) => t.main);
   const music = body.tracks.find((t) => t.role === "music");
   const titles = body.tracks.find((t) => t.kind === "title");
-  Object.assign(body, { aspect: "9:16", duck: false, product: "jam" });
-  body.fit ??= "cover";
-  // the music: the part of the track used
-  // (the same part keeps what the editor did to it: its start, its trim, its level)
-  const song = { src: { kind: "audio", id: b.part.file }, start: 0, from: 0, to: b.part.seconds };
+  // a new edit gets Jam's shape (a phone's, no ducking, the picture filling it); one that has it is as it was shaped, in Kitchen's Cut too
+  if (body.product !== "jam") {
+    Object.assign(body, { aspect: "9:16", duck: false, product: "jam" });
+    body.fit ??= "cover";
+  }
+  // the music: the part of the track used, put in once and with its length (so the preview plays all of it)
+  // (the same part keeps what the editor did to it: its start, its trim, its level; music taken away stays away)
+  const song = { src: { kind: "audio", id: b.part.file, duration: b.part.seconds, name: b.track?.name }, start: 0, from: 0, to: b.part.seconds };
   const had = music.items.find((it) => it.id === "track");
-  if (!had) music.items.unshift({ id: "track", ...song });
-  else if (had.src?.id !== song.src.id) Object.assign(had, song);
+  if (!had) {
+    if (b.musicIn !== b.part.file) music.items.unshift({ id: "track", ...song });
+  } else if (had.src?.id !== song.src.id) Object.assign(had, song);
+  else if (!(Number(had.src.duration) > 0)) had.src.duration = b.part.seconds;
+  b.musicIn = b.part.file;
   if (shots && b.shots.length) {
     const pristine = !main.items.length || (main.items.length === b.shots.length && main.items.every((it, i) => it.id === `j${i + 1}`));
     // a clip that came since its stand-in: it fills the slot the stand-in had, slowed when it is shorter

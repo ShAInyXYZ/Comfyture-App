@@ -44,9 +44,9 @@ try {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   const body = () => page.evaluate(async () => JSON.parse(JSON.stringify((await import("/js/cut.js")).cut.project.body)));
-  const until = async (fn, tries = 120) => {
+  const until = async (fn, tries = 120, arg) => {
     for (let i = 0; i < tries; i++) {
-      if (await page.evaluate(fn)) return true;
+      if (await page.evaluate(fn, arg)) return true;
       await page.waitForTimeout(500);
     }
     return false;
@@ -262,6 +262,103 @@ try {
   ok(started.name === "Toc Toc" && started.kind === "trend" && started.artist === "josie" && started.synced === true, `it has the trend's sound, Josie as the artist and the dance in step (${JSON.stringify(started)})`);
   // (the catalogue says 128 for the new track made in its feel; the trend's own sound is heard at its own tempo: the dancer's hops are at about 166, and every other one at about 83)
   ok(started.beats > 8 && (Math.abs(started.bpm - 83) < 4 || Math.abs(started.bpm - 166) < 8) && started.kinds.join() === "dance", `its beats were heard here (${started.beats} at ${started.bpm} BPM) and every shot is a dance shot`);
+
+  // ---- keeping the edit right
+  await page.evaluate(() => (location.hash = "#/jam"));
+  await page.waitForSelector(".jam .cut-screen", { timeout: 20000 });
+  const openJam = (id) => page.evaluate((id) => import("/js/jam.js").then((m) => m.openJam(id)), id);
+  const musicOf = () => page.evaluate(async () => {
+    const c = await import("/js/cut.js");
+    const it = c.cut.project.body.tracks.find((t) => t.role === "music").items[0];
+    return it ? { src: it.src.duration, duration: c.sourceOf(it.src).duration, length: c.lengthOf(it) } : null;
+  });
+
+  // the music runs as long as the sound does, in the preview and for the beat finder (a sound named without its length was given five seconds)
+  await openJam("jam-hotel-lobby");
+  await page.waitForTimeout(1500);
+  const showcaseMusic = await musicOf();
+  ok(showcaseMusic.duration > 17.9 && showcaseMusic.length > 17.9, `a showcase's music runs its whole length (${showcaseMusic.length} s)`);
+  const bare = await api("api/cuts", "POST", { name: "Bare music", body: { aspect: "9:16", tracks: [{ id: "a2", kind: "audio", role: "music", name: "Music", items: [{ id: "m", src: { kind: "audio", id: "trend-hotel-lobby-sound.m4a" }, start: 0, from: 0, to: null }] }] } });
+  await page.evaluate((id) => import("/js/cut.js").then((m) => m.openCut(id)), bare.project.id);
+  const bareMusic = await musicOf();
+  ok(bareMusic.src > 17.9 && bareMusic.length > 17.9, `an edit that names its sound without its length is told it when opened (${bareMusic.src} s)`);
+  await page.evaluate(() => import("/js/cut.js").then((m) => m.detectBeatsNow()));
+  const heardAll = await page.evaluate(async () => (await import("/js/cut.js")).cut.project.body.beats?.times.at(-1) ?? 0);
+  ok(heardAll > 16, `the beats are heard in all of the music, to ${heardAll} s (not to 5 s)`);
+
+  // the beats heard for one edit are not given to another opened while they were being heard
+  await page.evaluate(async () => {
+    const real = window.fetch;
+    window.__realFetch = real;
+    window.fetch = (url, ...rest) => (String(url).includes("/media/audio/") ? new Promise((done) => setTimeout(done, 1500)).then(() => real(url, ...rest)) : real(url, ...rest));
+    const c = await import("/js/cut.js");
+    delete c.cut.project.body.beats;
+    c.commit();
+    window.__heard = c.detectBeatsNow();
+  });
+  const other = await api("api/cuts", "POST", { name: "Another edit", body: { aspect: "9:16", tracks: [] } });
+  await page.evaluate((id) => import("/js/cut.js").then((m) => m.openCut(id)), other.project.id);
+  await page.evaluate(() => window.__heard);
+  await page.evaluate(() => (window.fetch = window.__realFetch));
+  const otherBeats = await page.evaluate(async () => (await import("/js/cut.js")).cut.project.body.beats);
+  ok(otherBeats === undefined, "beats heard for the first edit were not written into the one opened meanwhile");
+
+  // Export sets up nothing that was already set up: music taken away stays away, the shape chosen in Kitchen's Cut stays
+  await openJam("jam-toc-toc");
+  await page.waitForTimeout(1200);
+  const before = await page.evaluate(async () => {
+    const c = await import("/js/cut.js");
+    const j = await import("/js/jam.js");
+    const b = c.cut.project.body;
+    c.removeItem(b.tracks.find((t) => t.role === "music").items[0].id);
+    b.aspect = "1:1";
+    b.duck = true;
+    c.commit();
+    return j.jam.jam.body.film?.id ?? null;
+  });
+  await page.locator('.jm-transport button:has-text("Export")').click();
+  ok(await until((was) => import("/js/jam.js").then((m) => m.jam.jam.body.film?.id !== was && !m.jam.busy.has("render")).catch(() => false), 240, before), "it is exported again");
+  const shaped = await body();
+  ok(shaped.tracks.find((t) => t.role === "music").items.length === 0 && shaped.aspect === "1:1" && shaped.duck === true, `Export left the music away and the aspect (${shaped.aspect}) and ducking (${shaped.duck}) as they were set`);
+
+  // a line's words as written: a word edited by hand is in the line's text, and timing the line again keeps it
+  const lineId = (await body()).tracks.find((t) => t.kind === "title").items.find((i) => i.lyric).id;
+  await page.evaluate(async (id) => {
+    const c = await import("/js/cut.js");
+    c.setWord(id, 1, { text: "WOW" });
+    c.splitLine(id, "letters");
+  }, lineId);
+  const edited = (await body()).tracks.find((t) => t.kind === "title").items.find((i) => i.id === lineId);
+  ok(edited.text === "HOP WOW" && edited.words[1].text === "WOW" && edited.words[0].text === "HOP", `the line says "${edited.text}" and the word edited is still there after the line is timed again`);
+
+  // saves are not forgotten: renaming one video and then another at once keeps both; an edit left for Kitchen's Cut at once is kept
+  await page.evaluate(async () => {
+    const j = await import("/js/jam.js");
+    await j.openJam("jam-toc-toc");
+    j.rename("Alpha save");
+    await j.openJam("jam-ramalama");
+    j.rename("Beta save");
+  });
+  await page.waitForTimeout(1500);
+  const names = [(await api("api/jams/jam-toc-toc")).project.name, (await api("api/jams/jam-ramalama")).project.name];
+  ok(names.join() === "Alpha save,Beta save", `both renames were kept (${names.join(", ")})`);
+  const fxBefore = (await api("api/cuts/cut-jam-hotel-lobby")).project.body.tracks.find((t) => t.kind === "fx").items.length;
+  // (and then Kitchen's own edit is changed before Jam's moment is up: the second change does not cancel the first)
+  const kitchenId = await page.evaluate(async () => {
+    const j = await import("/js/jam.js");
+    await j.openJam("jam-hotel-lobby");
+    const c = await import("/js/cut.js");
+    c.addFx("shake", { at: 1, length: 2 });
+    location.hash = "#/cut";
+    for (let i = 0; i < 60 && (c.cut.quiet || c.cut.project?.id === "cut-jam-hotel-lobby"); i++) await new Promise((r) => setTimeout(r, 50));
+    c.addTitle("Kept too", 0);
+    return c.cut.project.id;
+  });
+  await page.waitForTimeout(2500);
+  const fxAfter = (await api("api/cuts/cut-jam-hotel-lobby")).project.body.tracks.find((t) => t.kind === "fx").items.length;
+  ok(fxAfter === fxBefore + 1, `an edit changed in Jam and left for Kitchen's Cut at once was kept (${fxBefore} effects, then ${fxAfter})`);
+  const kitchenTitles = (await api(`api/cuts/${kitchenId}`)).project.body.tracks.find((t) => t.kind === "title").items.map((i) => i.text);
+  ok(kitchenId !== "cut-jam-hotel-lobby" && kitchenTitles.includes("Kept too"), `and Kitchen's own change, made before that save was due, was kept as well (${kitchenId})`);
   ok(errors.length === 0, `no page errors${errors.length ? `: ${errors.slice(0, 3).join(" | ")}` : ""}`);
 } finally {
   await browser.close();

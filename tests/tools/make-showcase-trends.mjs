@@ -21,10 +21,15 @@ const exec = promisify(execFile);
 const root = resolve(import.meta.dirname, "..", "..");
 const trends = join(root, "web", "brand", "mixer", "trends");
 const r3 = (v) => Math.round(v * 1000) / 1000;
+// Raised when the projects are made again for good (a sound replaced, a placement changed): the seeding then replaces an older copy
+// nobody has touched, and leaves one that was edited.
+const VERSION = 2;
 const MOVES = {
   none: null,
   push: { from: { scale: 1, x: 0, y: 0 }, to: { scale: 1.15, x: 0, y: 0 } },
   pull: { from: { scale: 1.15, x: 0, y: 0 }, to: { scale: 1, x: 0, y: 0 } },
+  // for a dancer seen head to foot, with the planted foot at the frame's edge: a breath, not a crop
+  ease: { from: { scale: 1, x: 0, y: 0 }, to: { scale: 1.05, x: 0, y: 0 } },
 };
 
 // ---------------------------------------------------------------- what each project is
@@ -42,12 +47,12 @@ const SPECS = {
     thumb: 1.55,
     shots: [
       { to: "bar1", kind: "dance", move: "none" },
-      { to: "bar2", kind: "dance", move: "push" },
-      { to: "bar3", kind: "dance", move: "pull" },
-      { to: "end", kind: "dance", move: "push" },
+      { to: "bar2", kind: "dance", move: "ease" },
+      { to: "bar3", kind: "dance", move: "none" },
+      { to: "end", kind: "dance", move: "ease" },
     ],
     fx: [
-      ["zoom", 0, 99, { every: 1, intensity: 0.45, dur: 0.2 }],
+      ["zoom", 0, 99, { every: 1, intensity: 0.35, dur: 0.2 }],
       ["flash", 1.5, 99, { every: 4, intensity: 0.45, dur: 0.14 }],
       // a shake where the dancer knocks: the first knock, the knock at the head on the way, the last one
       ["shake", 1.3, 2.0, { every: 1, intensity: 0.7, dur: 0.3 }],
@@ -98,8 +103,9 @@ const SPECS = {
     stickers: [
       ["live", 0, 18, 0.2, 0.07, 0.22, 0],
       ["crown", 2.7, 4.6, 0.3, 0.115, 0.17, -10],
-      ["mic", 7.2, 9.6, 0.82, 0.22, 0.17, 12],
-      ["fire", 15.0, 17.8, 0.82, 0.2, 0.2, 8],
+      // over the performers' heads, where the frame is empty
+      ["mic", 7.2, 9.6, 0.86, 0.065, 0.14, 12],
+      ["fire", 15.0, 17.8, 0.86, 0.075, 0.17, 8],
     ],
     lines: [
       [0.25, 1.25, "DRE", "pop", { x: 0.3, y: 0.12, size: 0.1 }],
@@ -138,9 +144,10 @@ const SPECS = {
     ],
     lines: [
       [7.8, 9.0, "RAMA LAMA", "pop", { y: 0.1, size: 0.11 }],
+      // each name while that one is in frame: Margot in the middle at the reveal, Josie on the left waving, Ivy when she walks in
       [9.2, 10.3, "MARGOT", "pop", { x: 0.5, y: 0.82, size: 0.1 }],
-      [10.4, 11.3, "JOSIE", "pop", { x: 0.2, y: 0.82, size: 0.1 }],
-      [11.4, 12.4, "IVY", "pop", { x: 0.8, y: 0.82, size: 0.1 }],
+      [11.0, 12.2, "JOSIE", "pop", { x: 0.22, y: 0.82, size: 0.1 }],
+      [12.9, 14.1, "IVY", "pop", { x: 0.55, y: 0.9, size: 0.1 }],
       [13.2, 14.9, "WAVE", "bounce", { y: 0.1, size: 0.12 }],
     ],
   },
@@ -203,7 +210,7 @@ async function make(id) {
     join: "cut",
     ...(MOVES[spec.shots[i].move] ? { motion: structuredClone(MOVES[spec.shots[i].move]) } : {}),
   }));
-  body.tracks.find((t) => t.role === "music").items = [{ id: "track", src: { kind: "audio", id: files.sound }, start: 0, from: 0, to: trackSeconds }];
+  body.tracks.find((t) => t.role === "music").items = [{ id: "track", src: { kind: "audio", id: files.sound, duration: trackSeconds, name: spec.name }, start: 0, from: 0, to: trackSeconds }];
   body.tracks.find((t) => t.id === "fx").items = spec.fx.map(([kind, from, to, extra]) => newFx(kind, from, Math.min(to, seconds) - from, extra));
   body.tracks.find((t) => t.id === "v2").items = spec.stickers.map(([sticker, from, to, x, y, w, rot], i) => ({ id: `st${i + 1}`, src: { kind: "sticker", id: sticker }, start: from, length: r3(to - from), x, y, w, rot, z: i + 1 }));
   const lines = spec.lines.map(([from, to, text]) => ({ from, to, text }));
@@ -229,10 +236,12 @@ async function make(id) {
     looks: {},
     film: null,
     cut: `cut-jam-${id}`,
+    musicIn: files.sound,
     trend: { id, name: spec.name },
   };
   const project = {
     name: spec.name,
+    version: VERSION,
     thumb: `brand/jam/projects/jam-${id}/thumb.jpg`,
     jam,
     cut: { id: `cut-jam-${id}`, name: spec.name, body },

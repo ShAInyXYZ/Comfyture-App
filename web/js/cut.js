@@ -5,7 +5,8 @@
 
 import { api } from "./api.js";
 import { state, changed, toast, rollAsTab, writer } from "./store.js";
-import { normalizeBody, snapCuts, lyricItems, resplit, shiftLine, retext, draft, uid } from "./edit.js";
+import { normalizeBody, snapCuts, lyricItems, resplit, shiftLine, retext, editWord, draft, uid } from "./edit.js";
+import { keyedSaver } from "./saving.js";
 import { beatTimes, newFx, FX_DEFAULTS, FX_KINDS } from "./fx.js";
 import { detectBeats, parseBeats, gridBeats, beatsFromTimes, halveBeats, doubleBeats, nearestBeat } from "./beats.js";
 import { splitWords, wordsOf, ANIMATED } from "./lyrics.js";
@@ -77,7 +78,8 @@ export function sourceOf(src) {
   }
   if (src.kind === "video") return { url: `/media/videos/${src.id}`, duration: src.duration ?? 5, name: src.name };
   if (src.kind === "photo") return { url: src.url ?? `/media/photos/${src.id}`, duration: 3600, name: src.name, still: true, width: src.width, height: src.height };
-  if (src.kind === "audio") return { url: src.url ?? `/media/audio/${src.id}`, duration: src.duration ?? 5, name: src.name };
+  // (a sound named without its length, as Jam's and Mixer's are, runs as long as the library says it does)
+  if (src.kind === "audio") return { url: src.url ?? `/media/audio/${src.id}`, duration: src.duration ?? cut.audio?.find((a) => a.file === src.id)?.seconds ?? 5, name: src.name };
   // a sticker of ours (a picture with its own shape), and a plain colour standing in for a picture not made yet
   if (src.kind === "sticker") return { url: `brand/jam/stickers/${src.id}.png`, duration: 3600, name: src.name ?? STICKERS.list.find((x) => x.id === src.id)?.name ?? "Sticker", still: true };
   if (src.kind === "color") return { url: null, color: `#${String(src.id).replace("#", "")}`, duration: 3600, name: src.name ?? "Colour", still: true };
@@ -134,7 +136,20 @@ export const filmLength = (b = body()) => (layout(b).at(-1)?.end ?? 0);
 
 // ---------------------------------------------------------------- projects
 
-let saveTimer = 0;
+/** What keeps an edit on the server: one save a moment after its last change, for each edit, so an edit left for another is still kept. */
+const keep = async (id, p) => {
+  const first = mainTrack(p.body)?.items[0];
+  const s = first ? sourceOf(first.src) : null;
+  const thumb = first?.src?.kind === "photo" ? s?.url : first?.src?.kind === "take" ? state.runs.find((r) => r.id === first.src.id)?.request?.start && `/media/photos/${state.runs.find((r) => r.id === first.src.id).request.start}` : undefined;
+  await send(`api/cuts/${p.id}`, "PUT", { name: p.name, body: p.body, ...(thumb ? { thumb } : {}) }).catch((e) => toast(e.message, { tone: "crit" }));
+  const known = cut.list.find((x) => x.id === p.id);
+  if (known) Object.assign(known, { name: p.name, ...(thumb ? { thumb } : {}) });
+};
+const saver = keyedSaver(800, keep);
+/** Every edit changed and not yet kept is kept now (before another is opened, the page left). */
+export const flushCuts = () => saver.flush();
+/** An edit that is gone is not kept again by a save still to come. */
+const forgetCut = (id) => saver.drop(id);
 /** A change: noted for undo, drawn, and kept a moment later. */
 export function commit({ history = true } = {}) {
   const b = body();
@@ -149,20 +164,10 @@ export function commit({ history = true } = {}) {
   touch();
 }
 export function touch({ now = false } = {}) {
-  clearTimeout(saveTimer);
   update();
   if (!cut.project) return;
-  const p = cut.project;
-  const keep = async () => {
-    const first = mainTrack(p.body)?.items[0];
-    const s = first ? sourceOf(first.src) : null;
-    const thumb = first?.src?.kind === "photo" ? s?.url : first?.src?.kind === "take" ? state.runs.find((r) => r.id === first.src.id)?.request?.start && `/media/photos/${state.runs.find((r) => r.id === first.src.id).request.start}` : undefined;
-    await send(`api/cuts/${p.id}`, "PUT", { name: p.name, body: p.body, ...(thumb ? { thumb } : {}) }).catch((e) => toast(e.message, { tone: "crit" }));
-    const known = cut.list.find((x) => x.id === p.id);
-    if (known) Object.assign(known, { name: p.name, ...(thumb ? { thumb } : {}) });
-  };
-  if (now) return keep();
-  saveTimer = setTimeout(keep, 800);
+  saver.save(cut.project.id, cut.project);
+  if (now) return saver.flush(cut.project.id);
 }
 export function undo() {
   const prev = cut.history.pop();
@@ -212,9 +217,10 @@ export async function loadCuts() {
  * worked on in place, without a tab of its own in Kitchen's Cut, and Kitchen's Cut puts its own back.
  */
 export async function openCut(id, { quiet = false } = {}) {
-  if (cut.project && saveTimer) await touch({ now: true });
+  await flushCuts();
   const { project } = await call(`api/cuts/${id}`);
   project.body = normalize(project.body);
+  await knowSounds(project.body);
   cut.project = project;
   cut.selected = null;
   cut.beat = null;
@@ -231,9 +237,25 @@ export async function openCut(id, { quiet = false } = {}) {
   update();
 }
 
+/**
+ * Sounds an edit names without saying how long they run (Jam's and Mixer's name a file) are given their length from
+ * the library, so the preview plays and the beat finder hears all of them, not the first five seconds.
+ */
+async function knowSounds(b) {
+  const missing = b.tracks.flatMap((t) => t.items).filter((it) => it.src?.kind === "audio" && !(Number(it.src.duration) > 0));
+  if (!missing.length) return;
+  const list = cut.audio?.length ? cut.audio : await call("api/audio").catch(() => []);
+  for (const it of missing) {
+    const a = list.find((x) => x.file === it.src.id);
+    if (a?.seconds > 0) it.src.duration = a.seconds;
+  }
+}
+
 /** Kitchen's Cut after an edit held for another product: its own last edit open again. */
 export async function reclaim() {
   if (!cut.quiet) return;
+  // what the other product's edit has not yet had kept is kept before it is put away
+  await flushCuts();
   cut.quiet = null;
   const last = read(LAST);
   const id = cut.tabs.includes(last) ? last : cut.tabs[0] ?? cut.list[0]?.id;
@@ -267,6 +289,7 @@ export function closeCut(id) {
 }
 export async function deleteCut(id = cut.project?.id) {
   if (!id) return;
+  forgetCut(id);
   const { cuts } = await call(`api/cuts/${id}`, { method: "DELETE" });
   cut.list = cuts;
   return closeCut(id);
@@ -518,10 +541,13 @@ const round3 = (v) => Math.round(v * 1000) / 1000;
 /** Listens to the music and sets the beats. */
 export async function detectBeatsNow(hint = 0) {
   if (!body() || cut.busy.has("beats")) return;
+  const p = cut.project;
   cut.busy.add("beats");
   update();
   try {
     const found = await findBeats(hint);
+    // heard for the edit that was open when it was asked: another opened since is not given them
+    if (cut.project !== p) return;
     setBeats(found);
     toast(`${Math.round(found.bpm * 10) / 10} BPM, ${found.times.length} beats found.${found.sure < 0.25 ? " The beat is not clear in this music: look along the ruler, and nudge or retype the tempo where it is off." : ""}`);
   } catch (e) {
@@ -685,13 +711,7 @@ export function setLyricStyle(style, id = null) {
 /** One word of a line changed: its text, or where it starts and ends (from the line's start). */
 export function setWord(id, i, patch, { history = true } = {}) {
   const f = findItem(id);
-  if (!f) return;
-  const words = wordsToEdit(f.item);
-  if (!words[i]) return;
-  Object.assign(words[i], patch);
-  const len = Number(f.item.length) || 3;
-  words[i].from = round3(clamp(Number(words[i].from) || 0, 0, len));
-  words[i].to = round3(clamp(Number(words[i].to) || 0, words[i].from + 0.02, len + 2));
+  if (!f || !editWord(f.item, i, patch)) return;
   settle(history);
 }
 /** A line's words timed again over its length: by syllables, by letters, or all alike. */
@@ -738,12 +758,16 @@ export function setLineText(n, text, { history = true } = {}) {
 export async function draftEdit() {
   const b = body();
   if (!b || cut.busy.has("draft")) return;
+  const p = cut.project;
   cut.busy.add("draft");
   update();
   try {
     if (!b.beats?.times?.length) {
       try {
-        b.beats = normalizeBeatsOf(await findBeats());
+        const found = await findBeats();
+        // (the edit it was asked for is the one it is drawn on)
+        if (cut.project !== p) return;
+        b.beats = normalizeBeatsOf(found);
       } catch (e) {
         toast(e.message, { tone: "crit" });
       }

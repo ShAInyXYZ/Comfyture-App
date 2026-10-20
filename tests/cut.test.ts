@@ -173,6 +173,48 @@ test("a whip joins a clip by sweeping the clip before up into it, in the last fi
   }
 });
 
+test("a whip does not stall ffmpeg when a clip's length does not fall on a whole frame (4.917 s of a 5.375 s take)", { timeout: 120000 }, async (t) => {
+  const dir = await tmp(t);
+  const [W, H] = [180, 320];
+  await makeClip(join(dir, "a.mp4"), W, H, 5.375, "bars");
+  await makeClip(join(dir, "b.mp4"), W, H, 5.375, "square", "0x2040c0");
+  const files = Object.fromEntries(["a", "b"].map((id) => [id, { path: join(dir, `${id}.mp4`), still: false, hasAudio: false, duration: 5.375 }]));
+  const frames = async (path: string) => Number((await exec("ffprobe", ["-v", "error", "-count_frames", "-select_streams", "v:0", "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", path])).stdout.trim());
+  // these lengths counted one frame more than the planner's estimate (119 against 118, 75 against 74, 63 against 62), and ffmpeg 4's graph stopped answering
+  for (const use of [4.917, 3.1, 2.6, 3.083, 4.9]) {
+    const film = (how: string) => ({ aspect: "9:16", tracks: [{ id: "v1", kind: "video", main: true, items: [
+      { id: "a", src: { kind: "video", id: "a" }, from: 0, to: use },
+      { id: "b", src: { kind: "video", id: "b" }, from: 0, to: use, join: how },
+    ] }] });
+    const whip = await render(film("whip") as any, files, join(dir, `w${use}`), { size: { width: W, height: H }, timeout: 20000 });
+    const cut = await render(film("cut") as any, files, join(dir, `c${use}`), { size: { width: W, height: H }, timeout: 20000 });
+    const [w, c] = [await frames(whip.picture), await frames(cut.picture)];
+    // the same length as a cut would be, give or take the frame resampling counts differently
+    assert.ok(Math.abs(w - c) <= 2, `${use} s: ${w} frames with a whip, ${c} with a cut`);
+  }
+});
+
+test("a whip between two full-size takes (1152x2048, 129 frames, 4.917 s of each) renders in a minute, as long as a cut", { timeout: 300000 }, async (t) => {
+  const dir = await tmp(t);
+  const [W, H] = [1152, 2048];
+  await makeClip(join(dir, "a.mp4"), W, H, 5.375, "square", "0xc02020");
+  await makeClip(join(dir, "b.mp4"), W, H, 5.375, "square", "0x2040c0");
+  const files = { t1: { path: join(dir, "a.mp4"), still: false, hasAudio: false, duration: 5.375 }, t2: { path: join(dir, "b.mp4"), still: false, hasAudio: false, duration: 5.375 } };
+  const film = (how: string) => ({ aspect: "9:16", product: "mixer", tracks: [{ id: "video", kind: "video", main: true, items: [
+    { id: "t1", src: { kind: "video", id: "a" }, from: 0, to: 4.917, sound: false, join: "cut" },
+    { id: "t2", src: { kind: "video", id: "b" }, from: 0, to: 4.917, sound: false, join: how },
+  ] }] });
+  const t0 = Date.now();
+  const whip = await render(film("whip") as any, files, join(dir, "whip"), { size: { width: W, height: H }, timeout: 90000 });
+  const took = (Date.now() - t0) / 1000;
+  const cut = await render(film("cut") as any, files, join(dir, "cut"), { size: { width: W, height: H }, timeout: 90000 });
+  const probe = async (path: string) => (await exec("ffprobe", ["-v", "error", "-count_frames", "-select_streams", "v:0", "-show_entries", "stream=width,height,nb_read_frames", "-of", "csv=p=0", path])).stdout.trim();
+  const [w, c] = [await probe(whip.picture), await probe(cut.picture)];
+  assert.match(w, /^1152,2048,\d+$/, w);
+  assert.ok(Math.abs(Number(w.split(",")[2]) - Number(c.split(",")[2])) <= 1, `${w} with a whip, ${c} with a cut`);
+  assert.ok(took < 90, `the whip took ${took} s`);
+});
+
 test("a clip too short to give its last frames is cut into, a whip or not; the sound is the same either way", async (t) => {
   const dir = await tmp(t);
   const [W, H] = [90, 160];

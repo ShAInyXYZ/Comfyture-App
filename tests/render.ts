@@ -19,7 +19,7 @@ export async function makeClip(path: string, w: number, h: number, seconds: numb
 }
 
 /** What a render of a body made: the picture's file, and the plan. */
-export async function render(body: CutBody, files: Record<string, Source>, dir: string, { size, ass = true }: { size?: { width: number; height: number }; ass?: boolean } = {}) {
+export async function render(body: CutBody, files: Record<string, Source>, dir: string, { size, ass = true, timeout = 0 }: { size?: { width: number; height: number }; ass?: boolean; timeout?: number } = {}) {
   await mkdir(join(dir, "fonts"), { recursive: true });
   await copyFile(FONT, join(dir, "fonts", "comfyture-lyric.ttf"));
   const { width, height } = size ?? frameSize(body.aspect, null);
@@ -29,8 +29,9 @@ export async function render(body: CutBody, files: Record<string, Source>, dir: 
   const out = { picture: join(dir, "picture.mp4"), sound: join(dir, "sound.m4a"), script: join(dir, "graph.txt") };
   const args = ffmpegArgs(plan, out);
   if (args.long) await writeFile(out.script, plan.video);
-  const run = (a: string[]) => exec("ffmpeg", a, { cwd: dir, maxBuffer: 1 << 24 }).catch((e) => {
-    throw new Error(`ffmpeg failed: ${String(e.stderr ?? e.message).split("\n").filter(Boolean).slice(-4).join(" | ")}`);
+  // a render that hangs is stopped (when a time limit is asked for) and said so, not waited on
+  const run = (a: string[]) => exec("ffmpeg", a, { cwd: dir, maxBuffer: 1 << 24, ...(timeout ? { timeout, killSignal: "SIGKILL" as const } : {}) }).catch((e) => {
+    throw new Error(e.killed ? `ffmpeg did not finish in ${timeout / 1000} s` : `ffmpeg failed: ${String(e.stderr ?? e.message).split("\n").filter(Boolean).slice(-4).join(" | ")}`);
   });
   await run(args.picture);
   await run(args.sound);

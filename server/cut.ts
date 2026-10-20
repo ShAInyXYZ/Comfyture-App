@@ -229,19 +229,18 @@ export function planCut(body: CutBody, source: (item: CutItem) => Source | null,
    * five frames take the place of the clip before's last five; answers their label.
    */
   const whipInto = (tail: string, first: string, i: number) => {
-    const ks = Array.from({ length: WHIP.frames }, (_, k) => k);
-    const lab = (what: string, k: number) => `wh${i}${what}${k}`;
+    const n5 = WHIP.frames;
+    const ks = Array.from({ length: n5 }, (_, k) => k);
     // this clip's first frame held for the five, and exactly five of the clip before (one more is cloned if resampling left it a frame short)
-    vf.push(`[${first}]trim=end_frame=1,setpts=PTS-STARTPTS,loop=loop=${WHIP.frames - 1}:size=1:start=0,setpts=N/(24*TB),split=${WHIP.frames}${ks.map((k) => `[${lab("b", k)}]`).join("")}`);
-    vf.push(`[${tail}]tpad=stop_mode=clone:stop=1,trim=end_frame=${WHIP.frames},setpts=N/(24*TB),split=${WHIP.frames}${ks.map((k) => `[${lab("t", k)}]`).join("")}`);
-    for (const k of ks) vf.push(`[${lab("b", k)}][${lab("t", k)}]vstack=inputs=2,crop=${W}:${H}:0:${2 * Math.round((WHIP.tops[k] * H) / 2)},avgblur=sizeX=1:sizeY=${whipBlur(k, H)}[${lab("w", k)}]`);
-    // each window on its own frame: the last over all five, the others over it on theirs
-    let out = lab("w", WHIP.frames - 1);
-    for (let k = WHIP.frames - 2; k >= 0; k--) {
-      vf.push(`[${out}][${lab("w", k)}]overlay=enable='between(t\\,${f3((k - 0.25) / 24)}\\,${f3((k + 0.25) / 24)})':eof_action=pass[${lab("o", k)}]`);
-      out = lab("o", k);
-    }
-    return out;
+    vf.push(`[${first}]trim=end_frame=1,setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop=${n5 - 1},setpts=N/(24*TB)[wh${i}b]`);
+    vf.push(`[${tail}]tpad=stop_mode=clone:stop=1,trim=end_frame=${n5},setpts=N/(24*TB)[wh${i}t]`);
+    // the pair stacked, the window moved up it a step a frame, each frame blurred along the way it moves: one straight line of filters,
+    // each step working on its own frame (ffmpeg 4's graph stalls on several streams joined by overlays when the clips are not the lengths it counted on)
+    const tops = ks.map((k) => 2 * Math.round((WHIP.tops[k] * H) / 2));
+    const top = tops.reduceRight((rest, y, k) => (rest ? `if(eq(n\\,${k})\\,${y}\\,${rest})` : String(y)), "");
+    const blur = ks.map((k) => `avgblur=sizeX=1:sizeY=${whipBlur(k, H)}:enable='eq(n\\,${k})'`);
+    vf.push(`[wh${i}b][wh${i}t]vstack=inputs=2,crop=${W}:${H}:0:'${top}',${blur.join(",")}[wh${i}]`);
+    return `wh${i}`;
   };
 
   // the main track, end to end
@@ -439,13 +438,17 @@ const SCRIPT_OVER = 24000;
  * script file (`long`: the caller writes plan.video to out.script first). Run them from the folder
  * the lyrics file and the fonts are in.
  */
+/** How many threads the picture's encoder may use (about a gigabyte at 1152x2048, where x264's own choice on a many-core machine is twice that or more). */
+export const ENCODER_THREADS = 4;
+
 export function ffmpegArgs(plan: { inputs: string[][]; video: string; audio: string }, out: { picture: string; sound: string; script: string }) {
   const inputs = plan.inputs.flat();
   const once = plan.inputs.flatMap((a) => a.filter((x, i) => !["-loop", "-framerate"].includes(x) && !["-loop", "-framerate"].includes(a[i - 1])));
   const long = plan.video.length > SCRIPT_OVER;
   return {
     long,
-    picture: ["-v", "error", "-y", ...inputs, ...(long ? ["-filter_complex_script", out.script] : ["-filter_complex", plan.video]), "-map", "[v]", "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p", "-r", "24", out.picture],
+    // the encoder's threads are few: x264 starts a frame thread for every core and more, each holding frames, and at a phone's full size (1152x2048) that is gigabytes
+    picture: ["-v", "error", "-y", ...inputs, ...(long ? ["-filter_complex_script", out.script] : ["-filter_complex", plan.video]), "-map", "[v]", "-c:v", "libx264", "-threads", String(ENCODER_THREADS), "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p", "-r", "24", out.picture],
     sound: ["-v", "error", "-y", ...once, "-filter_complex", plan.audio, "-map", "[a]", "-c:a", "aac", "-b:a", "192k", out.sound],
   };
 }

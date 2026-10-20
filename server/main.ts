@@ -628,6 +628,15 @@ function itemPath(src: CutItem["src"]) {
 }
 
 /** Renders a cut's timeline into a film in the Library: picture and sound apart, then joined. */
+/** What ffmpeg's failure says, in a few words: its last lines, else that it took too long, else how it ended (never the whole command, never nothing). */
+function whyFfmpegFailed(e: any): string {
+  const said = String(e?.stderr ?? "").split("\n").map((l) => l.trim()).filter(Boolean).slice(-2).join(" ").slice(0, 300);
+  if (said) return said;
+  if (e?.killed || e?.signal) return e?.killed ? "it did not finish in time and was stopped" : `it was stopped (${e.signal})`;
+  if (e?.code !== undefined) return `ffmpeg ended with code ${e.code}`;
+  return String(e?.message ?? "ffmpeg ended without saying why").split("\n")[0].slice(0, 200);
+}
+
 async function renderCut(project: { id: string; name: string; body: any }) {
   const body = project.body as CutBody;
   if (!Array.isArray(body?.tracks)) throw bad("This cut has no timeline.");
@@ -672,11 +681,13 @@ async function renderCut(project: { id: string; name: string; body: any }) {
     const out = join(data, "reels", `${id}.mp4`);
     const args = ffmpegArgs(plan, { picture, sound, script: join(work, "graph.txt") });
     if (args.long) await writeFile(join(work, "graph.txt"), plan.video);
-    // a render that hangs is stopped, not waited on forever
-    const limit = { maxBuffer: 1 << 22, timeout: 20 * 60 * 1000, cwd: work };
-    await Promise.all([exec("ffmpeg", args.picture, limit), exec("ffmpeg", args.sound, limit)]).catch((e) => {
-      throw new Error(`The film didn't render: ${String(e.stderr ?? e.message).split("\n").filter(Boolean).slice(-2).join(" ")}`);
-    });
+    // a render that hangs is stopped, not waited on forever; when one of the two (the picture, the sound) fails the other is stopped too,
+    // and both are done with before the work folder goes (a sibling left running would write into a folder that is not there, for good)
+    const stop = new AbortController();
+    const limit = { maxBuffer: 1 << 22, timeout: 20 * 60 * 1000, cwd: work, killSignal: "SIGKILL" as const, signal: stop.signal };
+    const settled = await Promise.allSettled([args.picture, args.sound].map((a) => exec("ffmpeg", a, limit).catch((e) => (stop.abort(), Promise.reject(e)))));
+    const failed = settled.find((r): r is PromiseRejectedResult => r.status === "rejected" && r.reason?.name !== "AbortError") ?? settled.find((r): r is PromiseRejectedResult => r.status === "rejected");
+    if (failed) throw new Error(`The film didn't render: ${whyFfmpegFailed(failed.reason)}`);
     await exec("ffmpeg", ["-v", "error", "-y", "-i", picture, "-i", sound, "-c", "copy", "-movflags", "+faststart", out], { maxBuffer: 1 << 20 });
     const takes = body.tracks.flatMap((t) => t.items).filter((it) => it.src?.kind === "take").map((it) => String(it.src!.id));
     const film = { id, url: `/media/reels/${id}.mp4`, name: text(project.name, 60) || "Film", takes: [...new Set(takes)], cut: project.id, seconds: Math.round(plan.seconds * 10) / 10, createdAt: new Date().toISOString() };
@@ -793,34 +804,50 @@ async function seedJams() {
   const ids = (await readdir(dir, { withFileTypes: true }).catch(() => [])).filter((d) => d.isDirectory() && /^[\w-]+$/.test(d.name)).map((d) => d.name).sort();
   if (!ids.length) return;
   const seededPath = join(projectsDir("jams"), ".seeded");
-  const seeded = new Set<string>(await readFile(seededPath, "utf8").then((t) => t.split("\n").filter(Boolean), () => [] as string[]));
+  // the showcases already put in, each with the version it had then ("id", or "id@2")
+  const seeded = new Map<string, number>();
+  for (const line of (await readFile(seededPath, "utf8").catch(() => "")).split("\n").filter(Boolean)) {
+    const [id, v] = line.split("@");
+    seeded.set(id, Number(v) > 1 ? Number(v) : 1);
+  }
   for (const id of ids) {
-    if (seeded.has(id) || (await readProject("jams", id))) continue;
     try {
       const m = JSON.parse(await readFile(join(dir, id, "project.json"), "utf8"));
+      const version = Number.isInteger(m.version) && m.version > 1 ? m.version : 1;
+      const had = seeded.get(id) ?? 0;
+      if (had >= version) continue;
+      const jamNow = await readProject("jams", id);
+      const cutNow = m.cut?.id && /^[\w-]+$/.test(m.cut.id) ? await readProject("cuts", m.cut.id) : null;
+      // a video of that name that did not come from here is the user's; one that did, of an older version, is replaced while nobody has touched it
+      const untouched = (p: Project | null) => !p || p.updatedAt === p.createdAt;
+      if (jamNow && (!had || !untouched(jamNow) || !untouched(cutNow))) {
+        if (had) seeded.set(id, version);
+        continue;
+      }
       for (const f of Array.isArray(m.media) ? m.media : []) {
         const to = /^(audio|videos|photos)\/[\w.-]+$/.exec(String(f?.to ?? ""));
         const from = String(f?.file ?? "");
         if (!to || !/^[\w./-]+$/.test(from) || from.includes("..")) continue;
         const target = join(data, to[0]);
         await mkdir(join(data, to[1]), { recursive: true });
-        // a file of the project's own folder, or one the app already ships (web/brand/...: a trend's sound and dance, a crew picture)
-        if (!(await exists(target))) await copyFile(/^web\/brand\//.test(from) ? join(root, from) : join(dir, id, from), target);
+        // a file of the project's own folder, or one the app already ships (web/brand/...: a trend's sound and dance, a crew picture);
+        // an older version's copy is made again (a sound replaced there is the sound here)
+        if (had || !(await exists(target))) await copyFile(/^web\/brand\//.test(from) ? join(root, from) : join(dir, id, from), target);
         if (to[1] === "audio") {
           const name = basename(to[0]);
           await noteAudio({ file: name, url: `/media/audio/${name}`, name: text(f.name, 60) || name, kind: text(f.kind, 20) || "music", seconds: Math.round((await probeMedia(target)).duration * 100) / 100, createdAt: new Date().toISOString() });
         }
       }
       const now = new Date().toISOString();
-      if (m.cut?.id && /^[\w-]+$/.test(m.cut.id) && !(await readProject("cuts", m.cut.id))) await writeProject("cuts", { id: m.cut.id, name: text(m.cut.name, 60) || text(m.name, 60), createdAt: now, updatedAt: now, body: m.cut.body ?? {} });
+      if (m.cut?.id && /^[\w-]+$/.test(m.cut.id) && (had || !cutNow)) await writeProject("cuts", { id: m.cut.id, name: text(m.cut.name, 60) || text(m.name, 60), createdAt: now, updatedAt: now, body: m.cut.body ?? {} });
       await writeProject("jams", { id, name: text(m.name, 60) || id, createdAt: now, updatedAt: now, thumb: typeof m.thumb === "string" ? m.thumb.slice(0, 400) : undefined, body: m.jam ?? {} });
-      seeded.add(id);
+      seeded.set(id, version);
     } catch (e) {
       console.warn(`jam: the showcase ${id} was not added:`, (e as Error).message);
     }
   }
   await mkdir(projectsDir("jams"), { recursive: true });
-  await writeFile(seededPath, [...seeded].join("\n"));
+  await writeFile(seededPath, [...seeded].map(([id, v]) => (v > 1 ? `${id}@${v}` : id)).join("\n"));
 }
 
 // ------------------------------------------------------------------ events

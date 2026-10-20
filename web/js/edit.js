@@ -144,10 +144,32 @@ export function lyricItems(body) {
     .sort((a, b) => (Number(a.start) || 0) - (Number(b.start) || 0));
 }
 
-/** A lyric line's words, split afresh from its text over its length. */
+/** A line's text as its words say it (a word edited by hand is in it), one space between. */
+export const textOf = (item) => wordsOf(item).map((w) => w.text).join(" ");
+
+/** A lyric line's words, split afresh over its length from what they say now (so a word edited by hand stays as it was written). */
 export function resplit(item, by = "syllables") {
+  item.text = textOf(item);
   item.words = splitWords(item.text, Number(item.length) || 3, by);
   return item;
+}
+
+/**
+ * One word of a line changed (its text, its start, its end): kept in range, and the line's text made to say it, so the
+ * line is what its words are. Answers whether there was such a word.
+ */
+export function editWord(item, i, patch) {
+  if (!item.words?.length) item.words = wordsOf(item).map((w) => ({ ...w }));
+  const w = item.words[i];
+  if (!w) return false;
+  const len = Number(item.length) || 3;
+  const was = w.text;
+  Object.assign(w, patch);
+  if (patch.text !== undefined) w.text = String(patch.text).trim() || was;
+  w.from = ms(clamp(Number(w.from) || 0, 0, len));
+  w.to = ms(clamp(Number(w.to) || 0, w.from + 0.02, len + 2));
+  if (patch.text !== undefined) item.text = item.words.map((x) => x.text).join(" ");
+  return true;
 }
 
 /** A lyric line moved in time, its words with it (they are timed from its start, so only the start moves). */

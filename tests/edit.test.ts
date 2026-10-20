@@ -2,7 +2,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeBody, snapCuts, barTimes, draft, lyricItems, retext, resplit, TRACKS } from "../web/js/edit.js";
+import { normalizeBody, snapCuts, barTimes, draft, lyricItems, retext, resplit, editWord, textOf, TRACKS } from "../web/js/edit.js";
 import { beatTimes } from "../web/js/fx.js";
 
 const beats120 = (n = 40, extra = {}) => ({ bpm: 120, offset: 0, times: Array.from({ length: n }, (_, i) => i * 0.5), down: 0, source: "test", ...extra });
@@ -122,4 +122,30 @@ test("a line's text changed keeps the times of its words when their number holds
   retext(it, "just two");
   assert.equal(it.words, undefined);
   assert.equal(beatTimes({ beats: { times: [1], offset: 0.5 } })[0], 1.5);
+});
+
+test("a word edited by hand is in the line's text, and splitting the line again keeps it", () => {
+  const item: any = { id: "c1", lyric: true, text: "Sun in the jar", start: 1, length: 2, style: "karaoke" };
+  assert.equal(editWord(item, 1, { text: "on" }), true);
+  assert.equal(item.text, "Sun on the jar", "the line says what its words say");
+  assert.deepEqual(item.words.map((w: any) => w.text), ["Sun", "on", "the", "jar"]);
+  // split again, by letters: the words are timed again, the edited one is not written over
+  resplit(item, "letters");
+  assert.deepEqual(item.words.map((w: any) => w.text), ["Sun", "on", "the", "jar"]);
+  assert.equal(item.text, "Sun on the jar");
+  // a word left empty keeps what it was; a word that is not there is not edited
+  editWord(item, 0, { text: "   " });
+  assert.equal(item.words[0].text, "Sun");
+  assert.equal(editWord(item, 9, { text: "x" }), false);
+});
+
+test("a line whose text is stale (its words were edited before the text followed them) is split from its words", () => {
+  const item: any = { id: "c2", lyric: true, text: "Sun in the jar", start: 0, length: 2, words: [{ text: "Sun", from: 0, to: 0.5 }, { text: "ON", from: 0.5, to: 1 }, { text: "the", from: 1, to: 1.5 }, { text: "jar", from: 1.5, to: 2 }] };
+  assert.equal(textOf(item), "Sun ON the jar");
+  resplit(item, "even");
+  assert.deepEqual(item.words.map((w: any) => w.text), ["Sun", "ON", "the", "jar"]);
+  assert.equal(item.text, "Sun ON the jar");
+  // a word's times are kept in range
+  editWord(item, 2, { from: 5, to: 9 });
+  assert.ok(item.words[2].from <= 2 && item.words[2].to <= 4 && item.words[2].to > item.words[2].from);
 });
