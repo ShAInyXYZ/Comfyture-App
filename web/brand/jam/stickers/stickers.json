@@ -1,0 +1,170 @@
+{
+  "stickers": [
+    {
+      "id": "star",
+      "name": "Star",
+      "file": "star.png",
+      "tags": [
+        "shine",
+        "favourite",
+        "rating"
+      ]
+    },
+    {
+      "id": "heart",
+      "name": "Heart",
+      "file": "heart.png",
+      "tags": [
+        "love",
+        "like"
+      ]
+    },
+    {
+      "id": "sparkle",
+      "name": "Sparkle",
+      "file": "sparkle.png",
+      "tags": [
+        "shine",
+        "magic"
+      ]
+    },
+    {
+      "id": "sparkles",
+      "name": "Sparkles",
+      "file": "sparkles.png",
+      "tags": [
+        "shine",
+        "magic",
+        "glitter"
+      ]
+    },
+    {
+      "id": "new",
+      "name": "NEW",
+      "file": "new.png",
+      "tags": [
+        "badge",
+        "label",
+        "sale"
+      ]
+    },
+    {
+      "id": "wow",
+      "name": "WOW",
+      "file": "wow.png",
+      "tags": [
+        "badge",
+        "burst",
+        "reaction"
+      ]
+    },
+    {
+      "id": "live",
+      "name": "LIVE",
+      "file": "live.png",
+      "tags": [
+        "badge",
+        "stream"
+      ]
+    },
+    {
+      "id": "note",
+      "name": "Music note",
+      "file": "note.png",
+      "tags": [
+        "music",
+        "song",
+        "note"
+      ]
+    },
+    {
+      "id": "notes",
+      "name": "Music notes",
+      "file": "notes.png",
+      "tags": [
+        "music",
+        "song",
+        "notes"
+      ]
+    },
+    {
+      "id": "bolt",
+      "name": "Lightning",
+      "file": "bolt.png",
+      "tags": [
+        "energy",
+        "power",
+        "shock"
+      ]
+    },
+    {
+      "id": "fire",
+      "name": "Fire",
+      "file": "fire.png",
+      "tags": [
+        "hot",
+        "trend",
+        "flame"
+      ]
+    },
+    {
+      "id": "crown",
+      "name": "Crown",
+      "file": "crown.png",
+      "tags": [
+        "king",
+        "queen",
+        "winner"
+      ]
+    },
+    {
+      "id": "smile",
+      "name": "Smile",
+      "file": "smile.png",
+      "tags": [
+        "happy",
+        "emoji",
+        "face"
+      ]
+    },
+    {
+      "id": "mic",
+      "name": "Microphone",
+      "file": "mic.png",
+      "tags": [
+        "sing",
+        "voice",
+        "mic"
+      ]
+    },
+    {
+      "id": "vinyl",
+      "name": "Record",
+      "file": "vinyl.png",
+      "tags": [
+        "music",
+        "disc",
+        "vinyl"
+      ]
+    },
+    {
+      "id": "headphones",
+      "name": "Headphones",
+      "file": "headphones.png",
+      "tags": [
+        "music",
+        "listen"
+      ]
+    },
+    {
+      "id": "arrow",
+      "name": "Arrow",
+      "file": "arrow.png",
+      "tags": [
+        "point",
+        "look",
+        "here"
+      ]
+    }
+  ]
+}

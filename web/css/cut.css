@@ -1,6 +1,9 @@
 /* Cut: the editing room. The edits' tabs; the media bin, the program monitor and the inspector;
    under them the timeline: titles, overlays, the main video track and the sound tracks. */
 
+/* the face the lyrics are drawn in, in the preview and in the film (the film reads the same file) */
+@font-face { font-family: "Comfyture Lyric"; src: url("../fonts/comfyture-lyric.ttf") format("truetype"); font-display: block; }
+
 #page-cut { position: relative; display: flex; flex-direction: column; width: 100%; height: calc(100dvh - var(--head)); margin: 0; overflow: hidden; user-select: none; -webkit-user-select: none; }
 #page-cut[hidden] { display: none; }
 #page-cut img, #page-cut video { -webkit-user-drag: none; }
@@ -40,18 +43,43 @@ body[data-page="cut"] { padding-bottom: 0; overflow: hidden; }
 /* the program monitor */
 .cut-monitor { display: flex; flex-direction: column; gap: .5rem; padding: .625rem; }
 .cut-stage { display: grid; place-items: center; flex: 1 1 0; min-height: 0; }
-.cut-screen { position: relative; height: 100%; max-width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: calc(.5rem * var(--corner-k)); background: #000; }
+.cut-screen { position: relative; height: 100%; max-width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: calc(.5rem * var(--corner-k)); background: #000; container-type: inline-size; }
 .cut-layers, .cut-titles { position: absolute; inset: 0; }
 .cut-layer { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transform-origin: 50% 50%; }
 .cut-layer.is-fill { object-fit: cover; }
+.cut-layer.is-color { background: #14101f; }
+/* the beat effects: the layers swell, shake and change colour together; a flash is a white sheet over them */
+.cut-layers { will-change: transform; }
+.cut-flash { position: absolute; inset: 0; z-index: 150; background: #fff; opacity: 0; pointer-events: none; }
+/* a sticker: where it was put, as wide as it was made, its width a part of the frame */
+.cut-sticker { position: absolute; max-width: none; height: auto; cursor: move; user-select: none; -webkit-user-drag: none; }
 .cut-titles { z-index: 200; pointer-events: none; }
 .cut-title { position: absolute; left: 6%; right: 6%; top: 50%; transform: translateY(-50%); color: #fff; text-align: center; font: 700 clamp(1rem, 4.2vw, 3.4rem)/1.15 var(--font-sans); letter-spacing: .02em; text-shadow: 0 2px 10px rgba(0, 0, 0, .55); white-space: pre-wrap; }
 .cut-title.is-lower { top: auto; bottom: 12%; transform: none; font-size: clamp(.8rem, 2.4vw, 1.8rem); }
+.cut-plain { position: absolute; inset: 0; }
+/* a line of lyrics, each word in its own place as the film has it: its outline, its colour, the lit part over them */
+.cut-lyric { position: absolute; inset: 0; }
+.cut-word { position: absolute; display: block; overflow: visible; text-align: center; white-space: nowrap; font-family: "Comfyture Lyric", "Manrope", sans-serif; font-weight: 400; cursor: move; pointer-events: auto; user-select: none; -webkit-user-select: none; }
+.cut-word b { position: absolute; inset: 0; font: inherit; paint-order: stroke fill; }
+/* the frame says where the picked sticker or line of lyrics is, with handles to move, size and turn it */
+.cut-gizmo { position: absolute; z-index: 300; pointer-events: none; }
+.cut-gizmo .gz-box { position: absolute; inset: 0; border: 2px solid var(--accent); border-radius: 4px; pointer-events: auto; cursor: move; }
+.cut-gizmo .gz-scale, .cut-gizmo .gz-turn { position: absolute; width: .875rem; height: .875rem; border-radius: 50%; pointer-events: auto; }
+.cut-gizmo .gz-scale { right: -.4375rem; bottom: -.4375rem; background: var(--accent); border: 2px solid #111; cursor: nwse-resize; }
+.cut-gizmo .gz-turn { left: 50%; top: -1.75rem; margin-left: -.4375rem; background: #fff; border: 2px solid var(--accent); cursor: grab; }
+.cut-gizmo .gz-turn::after { content: ""; position: absolute; left: 50%; top: 100%; width: 2px; height: .75rem; margin-left: -1px; background: var(--accent); }
+.cut-gizmo.is-lyric .gz-turn { display: none; }
+.cut-beat-dot { position: absolute; right: .5rem; top: .5rem; z-index: 310; width: .625rem; height: .625rem; border-radius: 50%; background: rgba(255, 255, 255, .2); pointer-events: none; transition: background .08s, box-shadow .08s; }
+.cut-beat-dot.is-on { background: var(--accent); box-shadow: 0 0 .625rem var(--accent); }
+.cut-screen-empty[hidden] { display: none; }
 .cut-screen-empty { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--faint); font: 400 var(--fs-small)/1.3 var(--font-sans); }
 .cut-transport { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .5rem; flex: none; }
+.cut-times { display: flex; align-items: baseline; gap: .5rem; }
 .cut-timecode { font: 500 var(--fs-heading)/1 var(--font-mono); letter-spacing: .02em; }
+.cut-timecode-total { font: 500 var(--fs-small)/1 var(--font-mono); color: var(--dim); }
+.cut-transport-end { justify-self: end; display: flex; align-items: center; gap: .25rem; }
+.cut-transport-extras { display: contents; }
 .cut-transport-keys { display: flex; align-items: center; gap: .25rem; }
-.cut-transport > .ctl-tool { justify-self: end; }
 .cut-play { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border: 0; border-radius: 50%; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
 .cut-play svg { width: 1.125rem; height: 1.125rem; }
 .ctl-tool.is-flip svg { transform: scaleX(-1); }
@@ -82,14 +110,58 @@ body[data-page="cut"] { padding-bottom: 0; overflow: hidden; }
 .cut-ai .key { justify-content: center; padding: 0 .5rem; }
 .cut-ai .key svg { width: 1rem; height: 1rem; }
 .cut-title-text { width: 100%; padding: .5rem; color: var(--text); font: 600 var(--fs-body)/1.4 var(--font-sans); resize: vertical; }
-.cut-render { display: inline-flex; align-items: center; justify-content: center; gap: .625rem; flex: none; margin-top: auto; }
+.cut-render { display: inline-flex; align-items: center; justify-content: center; gap: .625rem; flex: none; }
 .cut-render svg { width: 1.125rem; height: 1.125rem; }
+
+.cut-draft { display: grid; gap: .375rem; padding-bottom: .5rem; border-bottom: 1px solid var(--line); }
+.cut-draft .key { justify-content: center; min-height: 2.25rem; }
+.cut-keys { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .375rem; }
+.cut-beat-status b { font: 600 var(--fs-small)/1.3 var(--font-mono); color: var(--text); }
+.cut-beat-import { display: flex; gap: .25rem; margin-top: .375rem; }
+.cut-beat-import[hidden] { display: none; }
+.cut-beat-import .field { flex: 1 1 0; min-width: 0; }
+.cut-nudge { display: grid; gap: .25rem; font: 400 var(--fs-micro)/1 var(--font-sans); color: var(--dim); }
+.cut-nudge > div { display: flex; gap: .25rem; }
+.cut-beat-pick { display: grid; gap: .25rem; margin-top: .375rem; padding: .5rem; border: 1px solid var(--accent-line); border-radius: .5rem; background: var(--sunk); }
+.cut-beat-pick b { font: 600 var(--fs-small)/1.2 var(--font-mono); color: var(--accent); }
+.cut-fx-top { display: grid; gap: .375rem; }
+.cut-num.is-wide { grid-template-columns: minmax(0, 1fr); margin-bottom: .375rem; }
+.cut-sticker-head { display: flex; align-items: center; gap: .625rem; }
+.cut-sticker-head img { width: 2.75rem; height: 2.75rem; object-fit: contain; border-radius: .375rem; background: var(--sunk); }
+.cut-sticker-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.75rem, 1fr)); gap: .25rem; max-height: 9.5rem; overflow: auto; }
+.cut-sticker-pick button { padding: .125rem; border: 1px solid var(--line2); border-radius: .4375rem; background: var(--s2); cursor: pointer; }
+.cut-sticker-pick button[aria-pressed="true"] { border-color: var(--accent); }
+.cut-sticker-pick img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; }
+.cut-swatches { display: flex; gap: 1rem; margin-top: .375rem; }
+.cut-swatch { display: inline-flex; align-items: center; gap: .4375rem; font: 400 var(--fs-small)/1 var(--font-sans); color: var(--muted); }
+.cut-swatch input { width: 2rem; height: 1.5rem; padding: 0; border: 1px solid var(--line2); border-radius: .3125rem; background: none; cursor: pointer; }
+.cut-wordbar { position: relative; height: 1.875rem; margin-bottom: .5rem; border-radius: .4375rem; background: var(--sunk); }
+.wb-chip { position: absolute; top: 3px; bottom: 3px; display: flex; align-items: center; overflow: visible; padding: 0 .3125rem; border-radius: .3125rem; background: var(--s3); }
+.wb-chip em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 .625rem/1 var(--font-sans); font-style: normal; color: var(--text); }
+.wb-edge { position: absolute; left: -4px; top: -3px; bottom: -3px; width: 8px; cursor: col-resize; z-index: 2; }
+.wb-edge::after { content: ""; position: absolute; left: 3px; top: 3px; bottom: 3px; width: 2px; border-radius: 1px; background: var(--accent); opacity: .7; }
+.cut-word-head, .cut-word-row { display: grid; grid-template-columns: minmax(0, 1fr) 4.25rem 4.25rem; gap: .25rem; }
+.cut-word-head { margin-bottom: .1875rem; font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+.cut-word-row { margin-bottom: .1875rem; }
+.cut-word-row .field { min-width: 0; min-height: 1.75rem; padding: 0 .375rem; font: 500 var(--fs-small)/1 var(--font-mono); }
+.cut-words { max-height: 14rem; overflow-y: auto; }
 
 /* the timeline */
 .cut-timeline { display: flex; flex-direction: column; overflow: hidden; }
-.cut-tools { display: flex; align-items: center; gap: .375rem; flex: none; padding: .375rem .625rem; border-bottom: 1px solid var(--line); }
+.cut-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .375rem; flex: none; padding: .375rem .625rem; border-bottom: 1px solid var(--line); }
 .cut-tool-group { display: flex; gap: .125rem; padding: .125rem; border-radius: .5rem; background: var(--sunk); }
 .cut-t { font: 700 var(--fs-body)/1 var(--font-sans); }
+.cut-fx-group .ctl-tool { color: var(--text); }
+.cut-hue-dot { display: block; width: .875rem; height: .875rem; border-radius: 50%; background: conic-gradient(#ff5470, #ffd23f, #5bff8f, #3fd2ff, #b59cff, #ff5470); }
+.cut-beats-key { display: inline-flex; flex-direction: row; gap: .3125rem; width: auto; padding: 0 .625rem; font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+.cut-beats-key svg { width: .95rem; height: .95rem; }
+.cut-draft { margin-left: .25rem; }
+.cut-tray { display: flex; align-items: center; gap: .5rem; flex: none; padding: .375rem .625rem; border-bottom: 1px solid var(--line); background: var(--sunk); }
+.cut-tray[hidden] { display: none; }
+.cut-tray-list { display: flex; gap: .25rem; flex: 1 1 0; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+.cut-tray-item { flex: none; width: 3.25rem; height: 3.25rem; padding: .125rem; border: 1px solid var(--line2); border-radius: .5rem; background: var(--s2); cursor: pointer; }
+.cut-tray-item:hover { border-color: var(--accent-line); background: var(--s3); }
+.cut-tray-item img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .cut-zoom { display: inline-flex; align-items: center; gap: .375rem; margin-left: .5rem; color: var(--dim); }
 .cut-zoom input { width: 8rem; }
 .cut-total { font: 500 var(--fs-small)/1 var(--font-mono); color: var(--muted); }
@@ -104,12 +176,28 @@ body[data-page="cut"] { padding-bottom: 0; overflow: hidden; }
 .cut-ruler { position: relative; height: 1.75rem; border-bottom: 1px solid var(--line); cursor: col-resize; }
 .cut-ruler span { position: absolute; top: 0; bottom: 0; padding: .375rem 0 0 .25rem; border-left: 1px solid var(--line); font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--dim); white-space: nowrap; }
 .cut-lane, .cut-head { height: 2.75rem; }
-.cut-head-ruler + .cut-head, .cut-lane.is-title { height: 2rem; }
 .cut-lane { position: relative; border-bottom: 1px solid var(--line); }
-.cut-lane.is-title, .cut-heads > :nth-child(2) { height: 2rem; }
-.cut-lane.is-main, .cut-heads > :nth-child(4) { height: 3.5rem; }
+.cut-lane.is-title, .cut-head.is-title, .cut-lane.is-fx, .cut-head.is-fx { height: 2rem; }
+.cut-lane.is-main, .cut-head.is-main { height: 3.5rem; }
+.cut-head-beats { display: flex; align-items: center; gap: .375rem; height: 1.125rem; padding: 0 .5rem; border-bottom: 1px solid var(--line); font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--dim); }
+.cut-head-beats b { color: var(--accent); font-weight: 500; }
+.cut-beatlane { position: relative; height: 1.125rem; border-bottom: 1px solid var(--line); cursor: pointer; }
+.cut-beat { position: absolute; bottom: 0; width: 2px; height: 45%; margin-left: -1px; background: var(--dim); cursor: ew-resize; }
+.cut-beat::before { content: ""; position: absolute; inset: -2px -4px; }
+.cut-beat.is-bar { height: 85%; background: var(--muted); }
+.cut-beat.is-selected { height: 100%; background: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .cut-lane.is-main { background: rgba(255, 255, 255, .015); }
 .cut-item { position: absolute; top: 3px; bottom: 3px; overflow: hidden; border: 1px solid var(--line2); border-radius: calc(.375rem * var(--corner-k)); background: var(--s3); cursor: grab; }
+/* beat effects: a colour each, with a mark where every hit falls */
+.cut-item.is-fx { --fxc: #f2ff59; background: color-mix(in srgb, var(--fxc) 18%, var(--s2)); border-color: color-mix(in srgb, var(--fxc) 55%, transparent); }
+.cut-item.fx-shake { --fxc: #ff7ab8; } .cut-item.fx-flash { --fxc: #ffffff; } .cut-item.fx-hue { --fxc: #b59cff; }
+.cut-item.is-fx.is-off { opacity: .45; border-style: dashed; }
+.cut-hit { position: absolute; bottom: 0; width: 2px; height: 40%; margin-left: -1px; background: var(--fxc); pointer-events: none; }
+.cut-item.is-lyric { background: color-mix(in srgb, #49378B 45%, var(--s2)); }
+.cut-word-mark { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255, 255, 255, .3); pointer-events: none; }
+.cut-sticker-thumb { position: absolute; left: .25rem; top: 2px; height: calc(100% - 4px); width: auto; max-width: 2rem; object-fit: contain; pointer-events: none; }
+.cut-item.is-sticker .cut-item-name { left: 2.5rem; }
+.cut-colour { position: absolute; inset: 0; opacity: .9; pointer-events: none; }
 .cut-lane.is-audio .cut-item { background: color-mix(in srgb, var(--info) 18%, var(--s2)); }
 .cut-lane[data-track="a2"] .cut-item { background: color-mix(in srgb, var(--accent) 10%, var(--s2)); }
 .cut-lane[data-track="a3"] .cut-item { background: color-mix(in srgb, var(--warn) 16%, var(--s2)); }
@@ -127,6 +215,7 @@ body[data-page="cut"] { padding-bottom: 0; overflow: hidden; }
 .cut-dissolve { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(to right, rgba(0, 0, 0, .55), transparent); pointer-events: none; }
 .cut-join { position: absolute; top: 50%; z-index: 4; width: .75rem; height: .75rem; padding: 0; border: 1px solid var(--line2); border-radius: 2px; background: var(--s1); transform: translate(-50%, -50%) rotate(45deg); cursor: pointer; }
 .cut-join.is-dissolve { border-color: var(--accent); background: var(--accent); }
+.cut-join.is-whip { border-color: var(--accent); background: linear-gradient(135deg, var(--accent) 50%, var(--s1) 50%); }
 .cut-playhead { position: absolute; top: 0; bottom: 0; left: 0; z-index: 5; width: 2px; margin-left: -1px; background: var(--accent); pointer-events: none; }
 .cut-playhead::before { content: ""; position: absolute; top: 0; left: -5px; border: 6px solid transparent; border-top: 8px solid var(--accent); }
 .cut-marker { position: absolute; top: 1.75rem; bottom: 0; left: 0; z-index: 5; width: 2px; background: #fff; pointer-events: none; }

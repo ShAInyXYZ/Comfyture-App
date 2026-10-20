@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 640" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#150f1d"/><stop offset=".55" stop-color="#241638"/><stop offset="1" stop-color="#3a2362"/></linearGradient>
+    <linearGradient id="b1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F2FF59" stop-opacity=".55"/><stop offset="1" stop-color="#F2FF59" stop-opacity="0"/></linearGradient>
+    <linearGradient id="b2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9b7cff" stop-opacity=".6"/><stop offset="1" stop-color="#9b7cff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="b3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7ab8" stop-opacity=".45"/><stop offset="1" stop-color="#ff7ab8" stop-opacity="0"/></linearGradient>
+    <radialGradient id="fl" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#F2FF59" stop-opacity=".5"/><stop offset="1" stop-color="#F2FF59" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="360" height="640" fill="url(#bg)"/>
+  <g fill="#fff"><circle cx="40" cy="90" r="1.4" opacity=".6"/><circle cx="300" cy="60" r="1.2" opacity=".5"/><circle cx="250" cy="150" r="1" opacity=".4"/><circle cx="90" cy="200" r="1.2" opacity=".5"/><circle cx="320" cy="230" r="1.4" opacity=".6"/></g>
+  <rect x="20" y="20" width="320" height="10" rx="5" fill="#2e2440"/>
+  <g fill="#F2FF59"><circle cx="70" cy="42" r="9"/><circle cx="180" cy="42" r="9"/><circle cx="290" cy="42" r="9"/></g>
+  <polygon points="70,42 -10,560 150,560" fill="url(#b1)"/>
+  <polygon points="180,42 120,560 240,560" fill="url(#b2)"/>
+  <polygon points="290,42 210,560 370,560" fill="url(#b3)"/>
+  <ellipse cx="180" cy="548" rx="150" ry="34" fill="url(#fl)"/>
+  <ellipse cx="180" cy="560" rx="132" ry="24" fill="#49378B"/>
+  <ellipse cx="180" cy="552" rx="132" ry="24" fill="#5c46a6"/>
+  <ellipse cx="180" cy="552" rx="132" ry="24" fill="none" stroke="#F2FF59" stroke-width="3" opacity=".8"/>
+  <g stroke="#cfc8dc" stroke-width="4" stroke-linecap="round" fill="none"><path d="M180 540V330"/><path d="M180 330c0-18 20-22 30-10"/></g>
+  <g transform="translate(212 322) rotate(28)"><rect x="-8" y="-4" width="16" height="30" rx="8" fill="#2c2438" stroke="#cfc8dc" stroke-width="3"/><path d="M-6 6h12M-6 12h12" stroke="#cfc8dc" stroke-width="2"/></g>
+  <g transform="translate(180 584)" fill="#211927" opacity=".5"><ellipse rx="40" ry="6"/></g>
+</svg>

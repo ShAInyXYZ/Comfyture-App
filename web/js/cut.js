@@ -5,12 +5,16 @@
 
 import { api } from "./api.js";
 import { state, changed, toast, rollAsTab, writer } from "./store.js";
+import { normalizeBody, snapCuts, lyricItems, resplit, shiftLine, retext, draft, uid } from "./edit.js";
+import { beatTimes, newFx, FX_DEFAULTS, FX_KINDS } from "./fx.js";
+import { detectBeats, parseBeats, gridBeats, beatsFromTimes, halveBeats, doubleBeats, nearestBeat } from "./beats.js";
+import { splitWords, wordsOf, ANIMATED } from "./lyrics.js";
 
 const TABS = "comfyture.cut.tabs";
 const LAST = "comfyture.cut.last";
 export const FPS = 24;
 
-export const cut = { list: [], tabs: [], project: null, selected: null, playhead: 0, zoom: 48, tool: "select", snap: true, busy: new Set(), history: [], future: [], audio: null, ready: null, error: null, chat: { messages: [], busy: null } };
+export const cut = { list: [], tabs: [], project: null, selected: null, beat: null, playhead: 0, zoom: 48, tool: "select", snap: true, busy: new Set(), history: [], future: [], audio: null, ready: null, error: null, quiet: null, chat: { messages: [], busy: null } };
 
 /** The moves a clip can make over its length: a push in, a pull out, a pan. */
 export const MOTIONS = [
@@ -21,6 +25,8 @@ export const MOTIONS = [
   ["right", "Pan right", { from: { scale: 1.12, x: -0.8, y: 0 }, to: { scale: 1.12, x: 0.8, y: 0 } }],
   ["up", "Tilt up", { from: { scale: 1.12, x: 0, y: 0.8 }, to: { scale: 1.12, x: 0, y: -0.8 } }],
 ];
+/** The colour looks, as the preview draws them (the render's own filters are in the planner). */
+export const GRADES = [["natural", "Natural", ""], ["warm", "Warm", "sepia(.18) saturate(1.1)"], ["cool", "Cool", "hue-rotate(-10deg) saturate(.95) brightness(1.02)"], ["film", "Film", "contrast(1.1) saturate(.9)"], ["mono", "Mono", "grayscale(1) contrast(1.08)"]];
 const body = () => cut.project?.body;
 const read = (k) => {
   try {
@@ -41,24 +47,11 @@ const call = async (path, init) => {
   return out;
 };
 const send = (path, method, data) => call(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-const uid = () => Math.random().toString(36).slice(2, 9);
 const update = (...more) => changed("cut", ...more);
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const round = (v) => Math.round(v * 100) / 100;
 
-/** The tracks every edit has, top to bottom. */
-const TRACKS = () => [
-  { id: "t1", kind: "title", name: "Titles", items: [] },
-  { id: "v2", kind: "video", name: "Overlays", items: [] },
-  { id: "v1", kind: "video", name: "Video", main: true, items: [] },
-  { id: "a1", kind: "audio", role: "voice", name: "Voice", items: [] },
-  { id: "a2", kind: "audio", role: "music", name: "Music", items: [] },
-  { id: "a3", kind: "audio", role: "effects", name: "Effects", items: [] },
-];
-function normalize(b = {}) {
-  const tracks = TRACKS().map((t) => ({ ...t, ...(b.tracks ?? []).find((x) => x.id === t.id), items: ((b.tracks ?? []).find((x) => x.id === t.id)?.items ?? []).map((it) => ({ id: it.id ?? uid(), ...it })) }));
-  return { aspect: b.aspect ?? "16:9", duck: b.duck !== false, tracks, markers: b.markers ?? [] };
-}
+const normalize = normalizeBody;
 export const track = (id, b = body()) => b?.tracks.find((t) => t.id === id);
 export const mainTrack = (b = body()) => b?.tracks.find((t) => t.main);
 export function findItem(id, b = body()) {
@@ -85,8 +78,13 @@ export function sourceOf(src) {
   if (src.kind === "video") return { url: `/media/videos/${src.id}`, duration: src.duration ?? 5, name: src.name };
   if (src.kind === "photo") return { url: src.url ?? `/media/photos/${src.id}`, duration: 3600, name: src.name, still: true, width: src.width, height: src.height };
   if (src.kind === "audio") return { url: src.url ?? `/media/audio/${src.id}`, duration: src.duration ?? 5, name: src.name };
+  // a sticker of ours (a picture with its own shape), and a plain colour standing in for a picture not made yet
+  if (src.kind === "sticker") return { url: `brand/jam/stickers/${src.id}.png`, duration: 3600, name: src.name ?? STICKERS.list.find((x) => x.id === src.id)?.name ?? "Sticker", still: true };
+  if (src.kind === "color") return { url: null, color: `#${String(src.id).replace("#", "")}`, duration: 3600, name: src.name ?? "Colour", still: true };
   return null;
 }
+/** A picture placed on the frame (a sticker): its own middle, width and turn, not laid over all of it. */
+export const isPlaced = (it) => !!it?.src && (it.src.kind === "sticker" || it.w !== undefined || it.x !== undefined);
 
 /** An item's length on the timeline, in seconds. */
 export function lengthOf(it) {
@@ -128,7 +126,8 @@ export function startOf(it, b = body()) {
 export function totalLength(b = body()) {
   const l = layout(b);
   const main = l.length ? l.at(-1).end : 0;
-  const others = (b?.tracks ?? []).filter((t) => !t.main).flatMap((t) => t.items.map((it) => (Number(it.start) || 0) + lengthOf(it)));
+  // the effects play over the film, they do not lengthen it
+  const others = (b?.tracks ?? []).filter((t) => !t.main && t.kind !== "fx").flatMap((t) => t.items.map((it) => (Number(it.start) || 0) + lengthOf(it)));
   return Math.max(main, ...others, 0);
 }
 export const filmLength = (b = body()) => (layout(b).at(-1)?.end ?? 0);
@@ -140,6 +139,7 @@ let saveTimer = 0;
 export function commit({ history = true } = {}) {
   const b = body();
   if (!b) return;
+  extendBeats(b);
   if (history) {
     cut.history.push(cut.last);
     if (cut.history.length > 80) cut.history.shift();
@@ -207,20 +207,39 @@ export async function loadCuts() {
   return cut.ready;
 }
 
-export async function openCut(id) {
+/**
+ * Opens an edit. `quiet` is for a product that keeps its edit to itself (Jam's): it is opened to be
+ * worked on in place, without a tab of its own in Kitchen's Cut, and Kitchen's Cut puts its own back.
+ */
+export async function openCut(id, { quiet = false } = {}) {
   if (cut.project && saveTimer) await touch({ now: true });
   const { project } = await call(`api/cuts/${id}`);
   project.body = normalize(project.body);
   cut.project = project;
   cut.selected = null;
+  cut.beat = null;
   cut.playhead = 0;
   cut.history = [];
   cut.future = [];
   cut.last = JSON.stringify(project.body);
-  if (!cut.tabs.includes(id)) cut.tabs.push(id);
-  write(TABS, JSON.stringify(cut.tabs));
-  write(LAST, id);
+  cut.quiet = quiet ? id : null;
+  if (!quiet) {
+    if (!cut.tabs.includes(id)) cut.tabs.push(id);
+    write(TABS, JSON.stringify(cut.tabs));
+    write(LAST, id);
+  }
   update();
+}
+
+/** Kitchen's Cut after an edit held for another product: its own last edit open again. */
+export async function reclaim() {
+  if (!cut.quiet) return;
+  cut.quiet = null;
+  const last = read(LAST);
+  const id = cut.tabs.includes(last) ? last : cut.tabs[0] ?? cut.list[0]?.id;
+  cut.project = null;
+  if (id) await openCut(id);
+  else await newCut();
 }
 
 /** A new edit, with clips to start from (each { src, from, to, join }). */
@@ -332,7 +351,7 @@ export function setItem(id, patch, { history = true } = {}) {
   const f = findItem(id);
   if (!f) return;
   Object.assign(f.item, patch);
-  commit({ history });
+  settle(history);
 }
 export function removeItem(id = cut.selected) {
   const f = findItem(id);
@@ -418,9 +437,330 @@ export const toggleTrack = (id, key) => {
   commit();
 };
 
-/** The join into a main-track clip: a cut or a one-second dissolve. */
+/** The join into a main-track clip: a cut, a one-second dissolve, or a whip-tilt up into it. */
 export function setJoin(id, join) {
   setItem(id, { join });
+}
+
+// ---------------------------------------------------------------- the beat
+
+/** The stickers Jam ships (brand/jam/stickers/stickers.json): { id, name, tags }. */
+export const STICKERS = { list: [], ready: null };
+export function loadStickers() {
+  return (STICKERS.ready ??= fetch("brand/jam/stickers/stickers.json")
+    .then((r) => r.json())
+    .then((j) => {
+      STICKERS.list = Array.isArray(j.stickers) ? j.stickers : [];
+      update();
+    })
+    .catch(() => {}));
+}
+
+const infoOf = (it) => {
+  const s = sourceOf(it.src);
+  return { still: !!s?.still, duration: s?.duration ?? 5 };
+};
+
+/** A steady grid carries on as long as the film does, so effects keep firing to its end. */
+function extendBeats(b) {
+  const t = b.beats?.times;
+  // a list typed or pasted is what was asked for: it is not carried on
+  if (!t || t.length < 4 || b.beats.source === "import") return;
+  const gaps = t.slice(1).map((x, i) => x - t[i]).sort((x, y) => x - y);
+  const step = gaps[Math.floor(gaps.length / 2)];
+  // only a grid kept steady: every gap within a few percent of the middle one
+  if (!(step > 0.15) || gaps[0] < step * 0.96 || gaps.at(-1) > step * 1.04) return;
+  const end = Math.max(filmLength(b), totalLength(b)) + 1;
+  let last = t.at(-1);
+  while (last + (b.beats.offset ?? 0) < end && t.length < 4000) t.push(Math.round((last += step) * 1000) / 1000);
+}
+
+/** The sound the beats are heard in: the music selected, else the first on the Music track, else any sound. */
+function musicItem(b = body()) {
+  const sel = cut.selected && findItem(cut.selected, b);
+  if (sel?.track.kind === "audio") return sel.item;
+  const audio = b.tracks.filter((t) => t.kind === "audio");
+  const sounds = [...audio.filter((t) => t.role === "music"), ...audio.filter((t) => t.role !== "music")].flatMap((t) => t.items);
+  return sounds.find((it) => sourceOf(it.src)?.url) ?? null;
+}
+
+/**
+ * The beats heard in the edit's music (nothing is changed): { bpm, offset, times, down, source }.
+ * A tempo already on the edit (heard by Comfy, or typed in) steers the listening: the tempo is kept, the beats found in the sound.
+ */
+export async function findBeats(hint = 0) {
+  const it = musicItem();
+  const s = it && sourceOf(it.src);
+  if (!s?.url) throw new Error("Put music on the Music track first: the beats are heard in it.");
+  const found = await detectBeats(s.url, { from: Number(it.from) || 0, length: lengthOf(it), at: Number(it.start) || 0, hint: hint || (["comfy", "grid", "ai"].includes(body().beats?.source) ? body().beats.bpm : 0) });
+  if (found.times.length < 4) throw new Error("No beat was heard in that music.");
+  return { bpm: found.bpm, offset: 0, times: found.times, down: found.down, source: "web", sure: found.confidence };
+}
+
+/** A change that is done (an undo step), or one still going (typing, a slider: drawn and kept, its undo step to come at the end). */
+const settle = (done) => (done ? commit() : touch());
+
+/** The beats kept on the edit, in order and in range; one undo step. */
+export function setBeats(beats) {
+  const b = body();
+  if (!b) return;
+  b.beats = beats ? normalizeBeatsOf(beats) : undefined;
+  if (!beats) delete b.beats;
+  cut.beat = null;
+  commit();
+}
+function normalizeBeatsOf(x) {
+  const times = [...new Set((x.times ?? []).map(Number).filter(Number.isFinite).map((t) => Math.round(t * 1000) / 1000))].sort((a, z) => a - z);
+  return { bpm: clamp(Number(x.bpm) || 120, 30, 300), offset: round3(clamp(Number(x.offset) || 0, -30, 30)), times, down: clamp(Math.round(Number(x.down) || 0), 0, 7), source: String(x.source ?? "import").slice(0, 20), ...(x.sure !== undefined && x.sure !== null && Number.isFinite(Number(x.sure)) ? { sure: Math.round(clamp(Number(x.sure), 0, 1) * 100) / 100 } : {}) };
+}
+const round3 = (v) => Math.round(v * 1000) / 1000;
+
+/** Listens to the music and sets the beats. */
+export async function detectBeatsNow(hint = 0) {
+  if (!body() || cut.busy.has("beats")) return;
+  cut.busy.add("beats");
+  update();
+  try {
+    const found = await findBeats(hint);
+    setBeats(found);
+    toast(`${Math.round(found.bpm * 10) / 10} BPM, ${found.times.length} beats found.${found.sure < 0.25 ? " The beat is not clear in this music: look along the ruler, and nudge or retype the tempo where it is off." : ""}`);
+  } catch (e) {
+    toast(e.message, { tone: "crit" });
+  } finally {
+    cut.busy.delete("beats");
+    update();
+  }
+}
+
+/** Beats typed or pasted: a tempo (and where the first beat is), or a list of times. */
+export function importBeats(text) {
+  const got = parseBeats(text);
+  if (!got) return toast("Type a tempo (128), a tempo and an offset (128 @ 0.35), or a list of times in seconds.", { tone: "crit" }), false;
+  const length = Math.max(filmLength(), totalLength(), 10);
+  if (got.times) {
+    const beats = beatsFromTimes(got.times, "import");
+    if (got.bpm) beats.bpm = got.bpm;
+    setBeats(beats);
+  } else setBeats(gridBeats(got.bpm, got.offset, length, "grid"));
+  return true;
+}
+
+/** Every beat moved by the same time (the offset), in seconds: pass history: false while dragging a slider. */
+export function setBeatOffset(v, { history = true } = {}) {
+  const b = body();
+  if (!b?.beats) return;
+  b.beats.offset = round3(clamp(Number(v) || 0, -5, 5));
+  settle(history);
+}
+/** One beat moved: the selected one, by a time. */
+export function nudgeBeat(i, dt, { history = true } = {}) {
+  const b = body();
+  const times = b?.beats?.times;
+  if (!times?.[i] && times?.[i] !== 0) return;
+  times[i] = round3(Math.max(0, times[i] + dt));
+  // a beat carried past its neighbour changes places with it
+  const moved = times[i];
+  times.sort((a, z) => a - z);
+  cut.beat = nearestBeat(times, moved);
+  settle(history);
+}
+export function addBeatAt(t) {
+  const b = body();
+  if (!b?.beats) return;
+  b.beats.times.push(round3(Math.max(0, t - (b.beats.offset ?? 0))));
+  b.beats.times.sort((a, z) => a - z);
+  cut.beat = nearestBeat(b.beats.times, t - (b.beats.offset ?? 0));
+  commit();
+}
+export function removeBeat(i = cut.beat) {
+  const b = body();
+  if (!b?.beats?.times?.[i] && b?.beats?.times?.[i] !== 0) return;
+  b.beats.times.splice(i, 1);
+  cut.beat = null;
+  commit();
+}
+/** The first beat of a bar: the selected beat becomes the one the bars count from (every fourth after it). */
+export function setBarLine(i = cut.beat) {
+  const b = body();
+  if (!b?.beats || i === null) return;
+  b.beats.down = ((i % 4) + 4) % 4;
+  commit();
+}
+/** A tempo heard at half or twice the real one, put right. */
+export function tempoOctave(how) {
+  const b = body();
+  if (!b?.beats?.times?.length) return;
+  b.beats = normalizeBeatsOf(how === "halve" ? halveBeats(b.beats) : doubleBeats(b.beats));
+  commit();
+}
+/** The cuts between the clips moved onto the nearest beat (or bar): one undo step; answers how many moved. */
+export function snapToBeats(to = "beat") {
+  const b = body();
+  if (!b?.beats?.times?.length) return toast("Find the beats first: Detect, or type a tempo."), 0;
+  const moved = snapCuts(b, infoOf, { to });
+  if (moved) commit();
+  else toast(`The cuts are on the ${to} already, or there is only one clip.`);
+  return moved;
+}
+
+// ---------------------------------------------------------------- beat effects
+
+/** An effect on the Beat FX track from the playhead: its kind's own look, to the end of the film unless told. */
+export function addFx(kind = "zoom", { at = cut.playhead, length } = {}) {
+  const t = track("fx");
+  if (!t || !FX_DEFAULTS[kind]) return null;
+  const end = Math.max(filmLength(), totalLength());
+  const item = newFx(kind, at, length ?? Math.max(2, end - at));
+  t.items.push(item);
+  cut.selected = item.id;
+  commit();
+  return item;
+}
+
+// ---------------------------------------------------------------- stickers
+
+/** The next z for a sticker: above the ones there are. */
+const nextZ = (t) => Math.max(0, ...t.items.filter(isPlaced).map((x) => Number(x.z) || 0)) + 1;
+
+/** A sticker on the frame from the library (by its id), at a time, where it is put. */
+export function addSticker(id, { at = cut.playhead, length = 3, x = 0.5, y = 0.35, w = 0.3, rot = 0 } = {}) {
+  const t = track("v2");
+  if (!t) return null;
+  const item = { id: uid(), src: { kind: "sticker", id }, start: round(Math.max(0, at)), length, x, y, w, rot, z: nextZ(t) };
+  t.items.push(item);
+  cut.selected = item.id;
+  commit();
+  return item;
+}
+/** A picture of the user's own (a PNG with its own shape) as a sticker. */
+export function addPictureSticker(photo, opts = {}) {
+  const t = track("v2");
+  if (!t) return null;
+  const item = { id: uid(), src: { kind: "photo", id: photo.file, url: photo.url, width: photo.width, height: photo.height, name: photo.name }, start: round(Math.max(0, opts.at ?? cut.playhead)), length: 3, x: 0.5, y: 0.35, w: 0.3, rot: 0, z: nextZ(t) };
+  t.items.push(item);
+  cut.selected = item.id;
+  commit();
+  return item;
+}
+/** The sticker's picture changed for another of the library's. */
+export function replaceSticker(itemId, id) {
+  setItem(itemId, { src: { kind: "sticker", id } });
+}
+/** A sticker one step forward (dir 1) or back (-1) among the placed ones. */
+export function stepSticker(itemId, dir) {
+  const f = findItem(itemId);
+  if (!f) return;
+  const placed = f.track.items.filter(isPlaced).sort((a, z) => (Number(a.z) || 0) - (Number(z.z) || 0) || f.track.items.indexOf(a) - f.track.items.indexOf(z));
+  placed.forEach((x, i) => (x.z = i + 1));
+  const at = placed.indexOf(f.item);
+  const other = placed[at + dir];
+  if (!other) return;
+  [f.item.z, other.z] = [other.z, f.item.z];
+  commit();
+}
+/** A sticker by name: its id, its name, or a word from its tags. */
+export function stickerNamed(name) {
+  const q = String(name ?? "").toLowerCase().trim();
+  const list = STICKERS.list;
+  return list.find((x) => x.id === q) ?? list.find((x) => x.name.toLowerCase() === q) ?? list.find((x) => x.tags?.includes(q)) ?? list.find((x) => q && (x.id.includes(q) || q.includes(x.id) || x.name.toLowerCase().includes(q))) ?? null;
+}
+
+// ---------------------------------------------------------------- lyrics
+
+/** The lines of lyrics, in time order. */
+export const lyrics = (b = body()) => (b ? lyricItems(b) : []);
+
+/** A line's words as items to edit: the ones kept, else the line split (kept from then on). */
+export function wordsToEdit(item) {
+  if (!item.words?.length) item.words = wordsOf(item).map((w) => ({ ...w }));
+  return item.words;
+}
+/** How the words are drawn, for every line (or one): karaoke, pop, bounce, lower, none. */
+export function setLyricStyle(style, id = null) {
+  const items = id ? [findItem(id)?.item].filter(Boolean) : lyrics();
+  if (!items.length) return;
+  for (const it of items) it.style = style;
+  commit();
+}
+/** One word of a line changed: its text, or where it starts and ends (from the line's start). */
+export function setWord(id, i, patch, { history = true } = {}) {
+  const f = findItem(id);
+  if (!f) return;
+  const words = wordsToEdit(f.item);
+  if (!words[i]) return;
+  Object.assign(words[i], patch);
+  const len = Number(f.item.length) || 3;
+  words[i].from = round3(clamp(Number(words[i].from) || 0, 0, len));
+  words[i].to = round3(clamp(Number(words[i].to) || 0, words[i].from + 0.02, len + 2));
+  settle(history);
+}
+/** A line's words timed again over its length: by syllables, by letters, or all alike. */
+export function splitLine(id, by = "syllables") {
+  const f = findItem(id);
+  if (!f) return;
+  resplit(f.item, by);
+  commit();
+}
+/** A line moved in time with its words (they are timed from its start). */
+export function moveLine(id, dt) {
+  const f = findItem(id);
+  if (!f) return;
+  shiftLine(f.item, dt);
+  commit();
+}
+/** A new line of words at a time, in the style the others have. */
+export function addLyric(text, { at = cut.playhead, length = 3 } = {}) {
+  const t = track("t1");
+  if (!t) return null;
+  const style = lyrics().find((x) => ANIMATED.has(x.style))?.style ?? "karaoke";
+  const item = { id: uid(), lyric: true, text, start: round(Math.max(0, at)), length, style };
+  item.words = splitWords(text, length);
+  t.items.push(item);
+  cut.selected = item.id;
+  commit();
+  return item;
+}
+/** A line's words changed in the edit (the words list on Jam's side): the text of the nth line. */
+export function setLineText(n, text, { history = true } = {}) {
+  const it = lyrics()[n];
+  if (!it) return;
+  retext(it, text.slice(0, 160));
+  settle(history);
+}
+
+// ---------------------------------------------------------------- a first edit
+
+/**
+ * A first edit by the beat, no words needed: the beats heard (when there are none), the cuts on
+ * them, a zoom pulse on every bar, a flash every four, the lyrics as karaoke. One undo step; what
+ * it adds is ordinary items, yours to change or take away. Drawn again, it replaces its own.
+ */
+export async function draftEdit() {
+  const b = body();
+  if (!b || cut.busy.has("draft")) return;
+  cut.busy.add("draft");
+  update();
+  try {
+    if (!b.beats?.times?.length) {
+      try {
+        b.beats = normalizeBeatsOf(await findBeats());
+      } catch (e) {
+        toast(e.message, { tone: "crit" });
+      }
+    }
+    const did = [];
+    if (b.beats?.times?.length) {
+      const moved = snapCuts(b, infoOf, { to: "beat" });
+      if (moved) did.push(`${moved} cut${moved > 1 ? "s" : ""} on the beat`);
+    }
+    did.push(...draft(b, Math.max(filmLength(b), totalLength(b))));
+    commit();
+    toast(did.length ? `Draft edit: ${did.join(", ")}.` : "Nothing to draft: add music and clips first.");
+    return did;
+  } finally {
+    cut.busy.delete("draft");
+    update();
+  }
 }
 
 // ---------------------------------------------------------------- rendering the film
@@ -428,7 +768,7 @@ export function setJoin(id, join) {
 export async function renderFilm() {
   const p = cut.project;
   if (!p || cut.busy.has("render")) return;
-  if (!mainTrack()?.items.length) return toast("Put clips on the Video track first.");
+  if (!mainTrack()?.items.length && !totalLength()) return toast("Put clips on the Video track first.");
   const missing = mainTrack().items.filter((it) => it.src?.kind === "take" && sourceOf(it.src)?.status !== "done");
   if (missing.length) return toast(`${missing.length} clip${missing.length > 1 ? "s are" : " is"} still rendering or missing.`);
   cut.busy.add("render");
@@ -620,16 +960,22 @@ export async function extendClip(id, seconds = 4, action = "") {
 
 // ---------------------------------------------------------------- the editor's assistant
 
-/** The edit as the assistant reads it: clips by number, sounds and titles with their times. */
+/** The edit as the assistant reads it: clips by number, sounds and titles with their times, the beats, effects, stickers and lyrics. */
 function summary(b = body()) {
   const r1 = (v) => Math.round(v * 10) / 10;
   const motionName = (m) => MOTIONS.find(([, , x]) => JSON.stringify(x) === JSON.stringify(m ?? null))?.[1] ?? (m ? "a move" : "");
+  const beats = beatTimes(b);
+  const lines = lyricItems(b);
   return {
     length: r1(filmLength(b)),
     aspect: b.aspect,
     clips: layout(b).map((m, i) => ({ n: i + 1, name: sourceOf(m.item.src)?.name ?? m.item.name ?? "clip", start: r1(m.start), length: r1(m.len), join: m.item.join ?? "cut", motion: m.item.motion ? motionName(m.item.motion) : "", grade: m.item.grade ?? "", speed: m.item.speed ?? 1 })),
     sounds: b.tracks.filter((t) => t.kind === "audio").flatMap((t) => t.items.map((it) => ({ track: t.name.toLowerCase(), name: sourceOf(it.src)?.name ?? it.name ?? "sound", start: r1(Number(it.start) || 0), length: r1(lengthOf(it)) }))),
-    titles: track("t1", b).items.map((it) => ({ text: it.text, start: r1(Number(it.start) || 0), length: r1(Number(it.length) || 3) })),
+    titles: track("t1", b).items.filter((it) => !it.lyric).map((it) => ({ text: it.text, start: r1(Number(it.start) || 0), length: r1(Number(it.length) || 3) })),
+    beats: b.beats && beats.length ? { bpm: r1(b.beats.bpm), count: beats.length, first: round3(beats[0]), offset: b.beats.offset ?? 0, down: b.beats.down ?? 0, source: b.beats.source } : null,
+    effects: b.tracks.filter((t) => t.kind === "fx").flatMap((t) => t.items.map((it) => ({ kind: it.kind, on: it.on !== false && !t.mute, every: it.every ?? FX_DEFAULTS[it.kind]?.every, intensity: it.intensity ?? FX_DEFAULTS[it.kind]?.intensity, start: r1(Number(it.start) || 0), length: r1(Number(it.length) || 0) }))),
+    stickers: (track("v2", b)?.items ?? []).filter(isPlaced).map((it) => ({ name: it.src?.id ?? "picture", start: r1(Number(it.start) || 0), length: r1(Number(it.length) || 3) })),
+    lyrics: lines.map((it, i) => ({ n: i + 1, text: it.text, start: r1(Number(it.start) || 0), length: r1(Number(it.length) || 0), style: it.style ?? "karaoke" })),
   };
 }
 
@@ -640,6 +986,7 @@ function applyActions(actions) {
   const later = [];
   const clip = (n) => mainTrack(b).items[Math.round(Number(n)) - 1];
   const clipStart = (n) => layout(b)[Math.round(Number(n)) - 1]?.start ?? 0;
+  const end = () => Math.max(filmLength(b), totalLength(b));
   for (const a of actions ?? []) {
     const it = a.clip !== undefined && a.clip !== "all" ? clip(a.clip) : null;
     if (a.op === "trim" && it) {
@@ -657,8 +1004,8 @@ function applyActions(actions) {
       mainTrack(b).items = mainTrack(b).items.filter((x) => x !== it);
       did.push(`Clip ${a.clip} out`);
     } else if (a.op === "join" && it) {
-      it.join = a.join === "dissolve" ? "dissolve" : "cut";
-      did.push(`${it.join === "dissolve" ? "Dissolve" : "Cut"} into clip ${a.clip}`);
+      it.join = a.join === "dissolve" || a.join === "whip" ? a.join : "cut";
+      did.push(`${it.join === "dissolve" ? "Dissolve" : it.join === "whip" ? "Whip" : "Cut"} into clip ${a.clip}`);
     } else if (a.op === "motion" && it) {
       const m = MOTIONS.find(([id]) => id === a.move) ?? MOTIONS[0];
       it.motion = m[2] && structuredClone(m[2]);
@@ -694,6 +1041,61 @@ function applyActions(actions) {
     } else if (a.op === "render") {
       later.push(() => renderFilm());
       did.push("Rendering the film");
+    } else if (a.op === "beats") {
+      if (a.action === "detect") {
+        // heard after the rest is done; the effects count on the beats when they come, so the order does not matter
+        later.push(() => detectBeatsNow(Number(a.bpm) || 0));
+        did.push("Listening for the beats");
+      } else if ((a.action === "halve" || a.action === "double") && b.beats?.times?.length) {
+        b.beats = normalizeBeatsOf(a.action === "halve" ? halveBeats(b.beats) : doubleBeats(b.beats));
+        did.push(a.action === "halve" ? "Half the tempo" : "Twice the tempo");
+      } else if (a.bpm) {
+        b.beats = gridBeats(a.bpm, a.offset ?? 0, Math.max(end(), 10) + 2, "ai");
+        did.push(`${Math.round(a.bpm)} BPM beats`);
+      } else if (a.shift !== undefined && b.beats) {
+        b.beats.offset = round3(clamp((b.beats.offset ?? 0) + Number(a.shift), -5, 5));
+        did.push(`Beats ${a.shift > 0 ? "later" : "earlier"} by ${Math.abs(a.shift)} s`);
+      } else if (a.offset !== undefined && b.beats) {
+        b.beats.offset = round3(clamp(Number(a.offset), -5, 5));
+        did.push("Beat offset");
+      }
+    } else if (a.op === "snap") {
+      const n = snapCuts(b, infoOf, { to: a.to === "bar" ? "bar" : "beat" });
+      did.push(n ? `${n} cut${n > 1 ? "s" : ""} on the ${a.to === "bar" ? "bar" : "beat"}` : "The cuts were on the beat already");
+    } else if (a.op === "effect" && FX_DEFAULTS[a.kind]) {
+      const from = clamp(Number(a.from) || 0, 0, 36000);
+      const once = Number(a.every) === 0;
+      const to = Number(a.to) > from ? Number(a.to) : Number(a.length) > 0 ? from + Number(a.length) : once ? from + 0.5 : Math.max(end(), from + 2);
+      const extra = {};
+      for (const k of ["every", "intensity", "dur"]) if (a[k] !== undefined) extra[k] = Number(a[k]);
+      track("fx", b).items.push(newFx(a.kind, from, to - from, extra));
+      did.push(`${FX_KINDS.find(([k]) => k === a.kind)?.[1] ?? a.kind}${once ? "" : " on the beat"}`);
+    } else if (a.op === "sticker" && a.name) {
+      const st = stickerNamed(a.name);
+      if (!st) did.push(`No sticker called ${a.name}`);
+      else {
+        const t = track("v2", b);
+        t.items.push({ id: uid(), src: { kind: "sticker", id: st.id }, start: round(Math.max(0, Number(a.at) || 0)), length: clamp(Number(a.length) || 3, 0.3, 120), x: Number(a.x ?? 0.5), y: Number(a.y ?? 0.35), w: Number(a.w ?? 0.3), rot: Number(a.rot) || 0, z: nextZ(t) });
+        did.push(`${st.name} sticker`);
+      }
+    } else if (a.op === "lyrics") {
+      const all = lyricItems(b);
+      const one = a.line !== undefined ? all[Math.round(Number(a.line)) - 1] : null;
+      const targets = a.line !== undefined ? (one ? [one] : []) : all;
+      if (a.style) for (const x of targets) x.style = a.style;
+      if (a.shift !== undefined && one) shiftLine(one, Number(a.shift));
+      if (a.split) for (const x of targets) resplit(x, a.split);
+      if (a.text && one) retext(one, String(a.text));
+      if (targets.length) did.push(a.style ? `Lyrics as ${a.style}` : a.shift !== undefined ? `Line ${a.line} moved` : a.split ? "Words timed again" : "Lyrics changed");
+    } else if (a.op === "draft") {
+      if (b.beats?.times?.length) {
+        const n = snapCuts(b, infoOf, { to: "beat" });
+        if (n) did.push(`${n} cut${n > 1 ? "s" : ""} on the beat`);
+        did.push(...draft(b, end()));
+      } else {
+        later.push(() => draftEdit());
+        did.push("Drawing a first edit");
+      }
     }
   }
   if (did.length) commit();
@@ -709,6 +1111,7 @@ export async function askCut(text) {
   cut.chat.busy = "Editing";
   update("assistant");
   try {
+    await loadStickers();
     const out = await send("api/cut/assist", "POST", { model: writer(), messages: cut.chat.messages.slice(-8), cut: summary() });
     const did = applyActions(out.actions);
     cut.chat.messages.push({ role: "assistant", text: out.reply || (did.length ? "Done." : "Nothing to change."), did });
