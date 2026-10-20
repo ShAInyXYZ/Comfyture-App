@@ -1,0 +1,68 @@
+{
+ "id": "documentary",
+ "about": "The documentary trend as our crew plays it: Margot, seated for her big interview, in one fixed shot like the original. Her motion is the original's: DWPose's body, face and hands (take-1.kps.json), kept as a person and fitted to her in the first frame (the original's own frame redrawn with her), drawn as take-1.pose.mp4. The take runs shot-swap-dev.json with the pose as a ready-made control and the track frozen in; the caption goes on top, as the trend's joke. {Lead} is that role's name and look.",
+ "seconds": 7.833,
+ "aspect": "9:16",
+ "size": {
+  "width": 1152,
+  "height": 2048
+ },
+ "fps": 24,
+ "preview": "preview.mp4",
+ "poster": "poster.webp",
+ "caption": "documentary on how I survived that one toxic theatre company",
+ "sound": {
+  "mix": "sound.m4a",
+  "note": "The original's own track (a slow, dramatic instrumental, no speech). It is a commercial recording, so it is replaced or removed before the repository is published."
+ },
+ "source": {
+  "from": 2.5,
+  "note": "one person, a fixed medium shot, one uncut take; its own caption covered the top third and is not in our frames"
+ },
+ "roles": [
+  {
+   "role": "Lead",
+   "crew": "margot",
+   "plays": "the one being interviewed",
+   "look": "a glamorous former stage actress with a sleek platinum-white bob, sky-blue eyes, coral lipstick, an elegant white blouse, cream trousers and a coral-pink silk scarf"
+  }
+ ],
+ "take": {
+  "graph": "shot-swap-dev.json",
+  "control": "ready",
+  "strength": 0.8,
+  "width": 576,
+  "height": 1024,
+  "build": "human"
+ },
+ "look": "look.webp",
+ "beats": [
+  {
+   "from": 0,
+   "to": 2.0,
+   "text": "Margot clips a microphone onto her collar"
+  },
+  {
+   "from": 2.0,
+   "to": 4.5,
+   "text": "She folds her hands, grave, as if interviewed"
+  },
+  {
+   "from": 4.5,
+   "to": 7.83,
+   "text": "A sly, knowing glance aside, then back to the camera"
+  }
+ ],
+ "shots": [
+  {
+   "from": 0,
+   "to": 7.833,
+   "frames": 201,
+   "pose": "take-1.pose.mp4",
+   "keypoints": "take-1.kps.json",
+   "starts": "look",
+   "seed": 7101,
+   "prompt": "Vertical phone video in a polished 3D animated feature-film style, a fixed shot: {Lead}, sits on a chair in a cosy hallway with coats hanging by a white door, warm lamp light. Clips a small black microphone onto the collar, folds both hands, faces the camera with a grave, serious look as if being interviewed for a documentary, then glances aside with a sly, knowing smirk, and speaks to the camera again. A slow, dramatic instrumental track."
+  }
+ ]
+}

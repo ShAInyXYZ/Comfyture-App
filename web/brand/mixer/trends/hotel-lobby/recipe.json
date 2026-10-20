@@ -1,6 +1,6 @@
 {
  "id": "hotel-lobby",
- "about": "Hotel Lobby as our crew performs it: everything a version with other characters is made from. Each shot has the performers' motion (body keypoints, and the skeleton rebuilt for the build below and laid out for the 9:16 frame), its first frame with the crew, and its prompt with each role's slot ({Lead} is that role's name and look, {Pair} who the two are, {PartnerName} the partner's name). The takes run shot-swap-dev.json with the pose as a ready-made control and the vocals frozen in.",
+ "about": "Hotel Lobby as our crew performs it: Dre and his younger brother Theo, move for move with the original. Each shot's first frame is the original's own first frame, edited in place (the two performers redrawn as Dre and Theo) and extended up and down to 9:16. Each shot's motion is the original's: DWPose's body, face and hands (shot-N.kps.json), placed on the 9:16 frame exactly as the original's picture is (its scale and x, y), then moved and sized once per person onto the drawn figure, nothing laid out again, drawn as shot-N.pose.mp4. Shot 2 is two takes chained (one 113-frame take came back black on Comfy Cloud): its second half starts on the first half's frame 57. The takes run shot-swap-dev.json with the pose as a ready-made control and the vocals frozen in; {Lead} is that role's name and look, {LeadName} the name, {Pair} the two.",
  "seconds": 18.019,
  "aspect": "9:16",
  "size": {
@@ -18,24 +18,27 @@
  "roles": [
   {
    "role": "Lead",
-   "crew": "praline",
+   "crew": "dre",
    "side": "left",
-   "look": "a cute small fluffy caramel-orange and cream kitten with a big round head, big amber eyes, a pink nose, a yellow collar with a small gold bell and short little arms with round paws"
+   "plays": "the rapper at the mic",
+   "look": "a young man with deep brown skin, a short boxed beard, a burgundy bucket hat, a cream varsity jacket with burgundy sleeves over a white tee and light-wash jeans"
   },
   {
    "role": "Partner",
-   "crew": "sesame",
+   "crew": "theo",
    "side": "right",
-   "look": "a cute small plush black kitten with a big round head, vivid green eyes, a small cream chest tuft and short little arms with round paws"
+   "plays": "the hype man",
+   "look": "his younger brother, with deep brown skin, short black twists, an oversized black tee, emerald-green headphones around his neck and black joggers"
   }
  ],
+ "pair": "two brothers",
  "take": {
   "graph": "shot-swap-dev.json",
   "control": "ready",
   "strength": 0.8,
   "width": 576,
   "height": 1024,
-  "build": "kitten"
+  "build": "human"
  },
  "shots": [
   {
@@ -45,18 +48,44 @@
    "pose": "shot-1.pose.mp4",
    "keypoints": "shot-1.kps.json",
    "look": "shot-1.look.webp",
-   "seed": 1235,
-   "prompt": "Vertical wide shot of {Pair} standing upright on an orange stage, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging down between them at their head height. A yellow floor runs along the bottom. On the left, {Lead}, looks down at the front paws and rubs them together. On the right, {Partner}, raps with a paw at the mouth. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
+   "seed": 5401,
+   "prompt": "Vertical full shot of {Pair} standing in a recording studio with a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them at their head height. A yellow floor runs along the bottom. On the left, {Lead}, stands turned toward {PartnerName} and looks down at a wrist, fiddling with a sleeve. On the right, {Partner}, faces {LeadName} with a hand at the mouth, bobbing a little to the beat. Polished 3D animated feature-film style. Clear male rap vocals, close to the microphone.",
+   "place": {
+    "scale": 1.2,
+    "x": -372,
+    "y": 600
+   }
   },
   {
    "from": 2.583,
-   "to": 7.042,
-   "frames": 113,
-   "pose": "shot-2.pose.mp4",
+   "to": 4.958,
+   "frames": 65,
+   "pose": "shot-2a.pose.mp4",
    "keypoints": "shot-2.kps.json",
    "look": "shot-2.look.webp",
-   "seed": 1236,
-   "prompt": "Vertical full shot of {Pair} performing a rap song, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging down between them at their head height. On the left, {Lead}, raps into the microphone with small confident paw gestures, mouth moving with every word. On the right, {Partner}, throws a paw forward toward the camera again and again in time with the beat, then lets it drop. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
+   "seed": 5402,
+   "prompt": "Vertical full shot of {Pair} performing a rap song in a recording studio with a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them at their head height. On the left, {Lead}, looks up at the microphone above and raps, mouth moving with every word, hands low in front, then lifts a hand. On the right, {Partner}, stretches an arm straight out toward the camera again and again in time with the beat, pointing with a fist, then opens both hands palms up at the waist. Polished 3D animated feature-film style. Clear male rap vocals, close to the microphone.",
+   "place": {
+    "scale": 1.0,
+    "x": -177,
+    "y": 170
+   }
+  },
+  {
+   "from": 4.958,
+   "to": 7.042,
+   "frames": 65,
+   "pose": "shot-2b.pose.mp4",
+   "keypoints": "shot-2.kps.json",
+   "skip": 57,
+   "chain": true,
+   "seed": 5403,
+   "prompt": "Vertical full shot of {Pair} performing a rap song in a recording studio with a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them at their head height. On the left, {Lead}, looks up at the microphone above and raps, mouth moving with every word, hands low in front, then lifts a hand. On the right, {Partner}, stretches an arm straight out toward the camera again and again in time with the beat, pointing with a fist, then opens both hands palms up at the waist. Polished 3D animated feature-film style. Clear male rap vocals, close to the microphone.",
+   "place": {
+    "scale": 1.0,
+    "x": -177,
+    "y": 170
+   }
   },
   {
    "from": 7.042,
@@ -65,8 +94,13 @@
    "pose": "shot-3.pose.mp4",
    "keypoints": "shot-3.kps.json",
    "look": "shot-3.look.webp",
-   "seed": 1237,
-   "prompt": "Vertical full shot of {Pair} performing a rap song, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging down between them at their head height. On the left, {Lead}, raps into the microphone, turned toward {PartnerName}, mouth moving with every word. On the right, {Partner}, faces the camera and gestures with both front paws at chest height, then brings the paws together. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
+   "seed": 5404,
+   "prompt": "Vertical full shot of {Pair} performing a rap song in a recording studio with a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them at their head height. On the left, {Lead}, seen from the side, faces {PartnerName} and the microphone and raps, mouth moving with every word. On the right, {Partner}, faces the camera and talks with both hands at chest height, palms open, then rubs both hands together. Polished 3D animated feature-film style. Clear male rap vocals, close to the microphone.",
+   "place": {
+    "scale": 0.92,
+    "x": -103,
+    "y": 170
+   }
   },
   {
    "from": 10.375,
@@ -75,8 +109,13 @@
    "pose": "shot-4.pose.mp4",
    "keypoints": "shot-4.kps.json",
    "look": "shot-4.look.webp",
-   "seed": 1238,
-   "prompt": "Vertical full shot of {Pair} performing a rap song, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them at their head height. On the left, {Lead}, raps into the microphone with small paw gestures, mouth moving with every word. On the right, {Partner}, swings a paw over the head and turns around, back to the camera, bobbing to the beat, then turns partly back. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
+   "seed": 5405,
+   "prompt": "Vertical full shot of {Pair} performing a rap song in a recording studio with a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them at their head height. On the left, {Lead}, faces the camera and raps with both hands in front of the chest, counting on the fingers, mouth moving with every word. On the right, {Partner}, hides the face behind a forearm, then turns around with the back to the camera and an arm raised, bobbing to the beat, then turns partly back. Polished 3D animated feature-film style. Clear male rap vocals, close to the microphone.",
+   "place": {
+    "scale": 0.98,
+    "x": -169,
+    "y": 170
+   }
   },
   {
    "from": 14.208,
@@ -86,36 +125,44 @@
    "pose": "shot-5.pose.mp4",
    "keypoints": "shot-5.kps.json",
    "look": "shot-5.look.webp",
-   "seed": 1239,
-   "prompt": "Vertical full shot of {Pair} performing a rap song, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging down between them at their head height. On the right, {Partner}, raises a paw to the mouth, then shades the eyes with a paw like a salute. On the left, {Lead}, raises both front paws, rapping, mouth moving with every word. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
+   "seed": 5406,
+   "prompt": "Vertical full shot of {Pair} performing a rap song in a recording studio with a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them at their head height. On the left, {Lead}, seen from the side, faces {PartnerName} and raps, then both of them put a finger to their lips; then {LeadName} raises both open hands at the shoulders. On the right, {Partner}, faces {LeadName} with a finger to the lips, then turns to the camera and raises a hand to the forehead to shade the eyes like a salute. Polished 3D animated feature-film style. Clear male rap vocals, close to the microphone.",
+   "place": {
+    "scale": 1.0,
+    "x": -170,
+    "y": 170
+   }
   }
  ],
- "pair": "two 3D animated kittens",
  "beats": [
   {
    "from": 0,
    "to": 2.6,
-   "text": "Praline rubs both paws while Sesame raps into a paw"
+   "text": "Dre checks his wrist while Theo raps into a hand"
   },
   {
    "from": 2.6,
    "to": 7.0,
-   "text": "Praline raps at the mic; Sesame throws a paw at the camera"
+   "text": "Dre raps up at the mic; Theo points at the camera on the beat"
   },
   {
    "from": 7.0,
    "to": 10.4,
-   "text": "Praline raps to Sesame; Sesame answers with both paws"
+   "text": "Dre raps to Theo; Theo answers with open hands"
   },
   {
    "from": 10.4,
    "to": 14.2,
-   "text": "Sesame spins around while Praline keeps the verse going"
+   "text": "Theo hides his face and spins around, back to the camera"
   },
   {
    "from": 14.2,
    "to": 18.0,
-   "text": "Sesame salutes; Praline throws both paws up"
+   "text": "A finger to the lips each, then Theo's salute"
   }
- ]
+ ],
+ "source": {
+  "from": 0,
+  "note": "the original's 18 s on a seamless orange set: a wide shot, then four medium two-shots at the hanging microphone"
+ }
 }

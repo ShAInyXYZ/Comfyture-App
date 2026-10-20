@@ -59,6 +59,14 @@ export const CREW = [
     "pet": "meringue"
   },
   {
+    "id": "ivy",
+    "name": "Ivy",
+    "role": "Pickle's owner",
+    "look": "the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers",
+    "kind": "person",
+    "pet": "pickle"
+  },
+  {
     "id": "dre",
     "name": "Dre",
     "role": "Bagel's owner, Theo's brother",
@@ -78,38 +86,38 @@ export const TRENDS = [
     "cast": [
       {
         "role": "Lead",
-        "crew": "praline"
+        "crew": "dre"
       },
       {
         "role": "Partner",
-        "crew": "sesame"
+        "crew": "theo"
       }
     ],
     "beats": [
       {
         "from": 0,
         "to": 2.6,
-        "text": "Praline rubs both paws while Sesame raps into a paw"
+        "text": "Dre checks his wrist while Theo raps into a hand"
       },
       {
         "from": 2.6,
         "to": 7.0,
-        "text": "Praline raps at the mic; Sesame throws a paw at the camera"
+        "text": "Dre raps up at the mic; Theo points at the camera on the beat"
       },
       {
         "from": 7.0,
         "to": 10.4,
-        "text": "Praline raps to Sesame; Sesame answers with both paws"
+        "text": "Dre raps to Theo; Theo answers with open hands"
       },
       {
         "from": 10.4,
         "to": 14.2,
-        "text": "Sesame spins around while Praline keeps the verse going"
+        "text": "Theo hides his face and spins around, back to the camera"
       },
       {
         "from": 14.2,
         "to": 18.0,
-        "text": "Sesame salutes; Praline throws both paws up"
+        "text": "A finger to the lips each, then Theo's salute"
       }
     ],
     "music": {
@@ -127,7 +135,11 @@ export const TRENDS = [
     "aspect": "9:16",
     "preview": "brand/mixer/trends/hotel-lobby/preview.mp4",
     "poster": "brand/mixer/trends/hotel-lobby/poster.webp",
-    "recipe": "brand/mixer/trends/hotel-lobby/recipe.json"
+    "recipe": "brand/mixer/trends/hotel-lobby/recipe.json",
+    "made": {
+      "seconds": 19.58,
+      "firsts": 5
+    }
   },
   {
     "id": "smalltown-boy",
@@ -192,7 +204,11 @@ export const TRENDS = [
     "aspect": "9:16",
     "preview": "brand/mixer/trends/smalltown-boy/preview.mp4",
     "poster": "brand/mixer/trends/smalltown-boy/poster.webp",
-    "recipe": "brand/mixer/trends/smalltown-boy/recipe.json"
+    "recipe": "brand/mixer/trends/smalltown-boy/recipe.json",
+    "made": {
+      "seconds": 24.25,
+      "firsts": 6
+    }
   },
   {
     "id": "state-property",
@@ -246,7 +262,11 @@ export const TRENDS = [
     "aspect": "9:16",
     "preview": "brand/mixer/trends/state-property/preview.mp4",
     "poster": "brand/mixer/trends/state-property/poster.webp",
-    "recipe": "brand/mixer/trends/state-property/recipe.json"
+    "recipe": "brand/mixer/trends/state-property/recipe.json",
+    "made": {
+      "seconds": 18.83,
+      "firsts": 1
+    }
   },
   {
     "id": "black-cat-clapping",
@@ -291,7 +311,11 @@ export const TRENDS = [
     "aspect": "9:16",
     "preview": "brand/mixer/trends/black-cat-clapping/preview.mp4",
     "poster": "brand/mixer/trends/black-cat-clapping/poster.webp",
-    "recipe": "brand/mixer/trends/black-cat-clapping/recipe.json"
+    "recipe": "brand/mixer/trends/black-cat-clapping/recipe.json",
+    "made": {
+      "seconds": 6.71,
+      "firsts": 1
+    }
   },
   {
     "id": "ramalama",
@@ -514,38 +538,34 @@ export const TRENDS = [
     "id": "toc-toc",
     "name": "Toc Toc",
     "kind": "dance",
-    "seconds": 12,
+    "seconds": 10,
     "heat": 5,
     "cast": [
       {
         "role": "Lead",
-        "crew": "meringue"
-      },
-      {
-        "role": "Partner",
-        "crew": "praline"
+        "crew": "josie"
       }
     ],
     "beats": [
       {
-        "from": 0.0,
-        "to": 1.0,
-        "text": "Meringue hops once and knocks on an imaginary door"
+        "from": 0,
+        "to": 2.4,
+        "text": "Josie hops on one foot, knee up, flicking a foot"
       },
       {
-        "from": 1.0,
-        "to": 5.0,
-        "text": "Repeat a simple hop/knock motif"
+        "from": 2.4,
+        "to": 4.9,
+        "text": "She knocks on an invisible door beside her head"
       },
       {
-        "from": 5.0,
-        "to": 9.0,
-        "text": "Two side skips"
+        "from": 4.9,
+        "to": 7.6,
+        "text": "Side-on hops and heel kicks, a quick turn"
       },
       {
-        "from": 9.0,
-        "to": 12.0,
-        "text": "Exaggerated listening pose and reset"
+        "from": 7.6,
+        "to": 9.83,
+        "text": "One more knock, then arms flung wide, a knee up"
       }
     ],
     "music": {
@@ -559,7 +579,15 @@ export const TRENDS = [
         "woodblock knock"
       ]
     },
-    "caption": "Who ordered extra carrots?"
+    "caption": null,
+    "aspect": "9:16",
+    "preview": "brand/mixer/trends/toc-toc/preview.mp4",
+    "poster": "brand/mixer/trends/toc-toc/poster.webp",
+    "recipe": "brand/mixer/trends/toc-toc/recipe.json",
+    "made": {
+      "seconds": 10.75,
+      "firsts": 1
+    }
   },
   {
     "id": "tiptoe",
@@ -1056,24 +1084,29 @@ export const TRENDS = [
     "id": "documentary",
     "name": "Documentary",
     "kind": "reactions",
-    "seconds": 12,
+    "seconds": 8,
     "heat": 4,
     "cast": [
       {
         "role": "Lead",
-        "crew": "praline"
+        "crew": "margot"
       }
     ],
     "beats": [
       {
-        "from": 0.0,
-        "to": 5.0,
-        "text": "Empty interview chair beneath a dramatic caption"
+        "from": 0,
+        "to": 2.0,
+        "text": "Margot clips a microphone onto her collar"
       },
       {
-        "from": 5.0,
-        "to": 12.0,
-        "text": "Praline looks toward an offscreen interviewer, pauses, then delivers a new line: It started with one crumb"
+        "from": 2.0,
+        "to": 4.5,
+        "text": "She folds her hands, grave, as if interviewed"
+      },
+      {
+        "from": 4.5,
+        "to": 7.83,
+        "text": "A sly, knowing glance aside, then back to the camera"
       }
     ],
     "music": {
@@ -1087,7 +1120,15 @@ export const TRENDS = [
         "new piano fragment"
       ]
     },
-    "caption": "The day the treats disappeared"
+    "caption": "documentary on how I survived that one toxic theatre company",
+    "aspect": "9:16",
+    "preview": "brand/mixer/trends/documentary/preview.mp4",
+    "poster": "brand/mixer/trends/documentary/poster.webp",
+    "recipe": "brand/mixer/trends/documentary/recipe.json",
+    "made": {
+      "seconds": 8.38,
+      "firsts": 1
+    }
   }
 ];
 
