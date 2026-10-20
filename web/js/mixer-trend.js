@@ -23,9 +23,12 @@ const send = (path, method, body) => call(path, { method, headers: { "Content-Ty
 /** What is picked on the shelf: the trend, the filter, and who plays each of its roles. */
 export const pick = { trend: (TRENDS.find((t) => t.home === "mixer") ?? TRENDS[0]).id, kind: "all", cast: null, role: null };
 export const stars = { list: [], ready: null };
-// a trend's mix opened again brings back its trend and who played in it
+// a trend's mix opened again brings back its trend and who played in it, unless a trend was picked
+// before Mixer first opened (Jam's "Make it with your cast"): that one wins over the last mix
+let picked = false;
 whenOpened((m) => {
   if (!m.body.trend) return;
+  if (picked && m.body.trend.id !== pick.trend) return void (mixer.mix = null);
   pick.trend = m.body.trend.id;
   pick.cast = { trend: m.body.trend.id, roles: structuredClone(m.body.trend.cast) };
 });
@@ -38,6 +41,7 @@ export function castOf(t = trendById(pick.trend)) {
 }
 export function selectTrend(id) {
   if (!trendById(id)) return;
+  picked = true;
   pick.trend = id;
   pick.role = null;
   // a mix already open for another trend stays in My mixes; this one starts afresh

@@ -179,7 +179,7 @@ async function clip(v: Record<string, any> | undefined): Promise<ShotRequest["vi
     width: info.width,
     height: info.height,
     // a trend's take: where in the trend's vocals it starts, and how firmly the control holds
-    ...(v.mode === "swap" ? { from: num(v.from, 0, 600, 0), strength: num(v.strength, 0.1, 1, 0.8), length: Math.round(num(v.length, 9, 257, info.frames)), ...(v.build === "human" ? { build: "human" } : {}) } : {}),
+    ...(v.mode === "swap" ? { from: num(v.from, 0, 600, 0), strength: num(v.strength, 0.1, 1, 0.8), ...(typeof v.length === "number" ? { length: Math.round(num(v.length, 9, 257, 257)) } : {}), ...(v.build === "human" ? { build: "human" } : {}) } : {}),
   };
 }
 
