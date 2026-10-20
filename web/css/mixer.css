@@ -264,3 +264,21 @@
 .mx-card.is-soon { cursor: default; filter: saturate(.5) brightness(.7); }
 .mx-card.is-soon:hover > img { transform: none; }
 .mx-card-soon { position: absolute; left: 50%; top: 50%; translate: -50% -50%; padding: .35rem .8rem; border-radius: 999px; background: rgb(17 17 20 / .82); border: 1px solid var(--line2); color: var(--accent, #f2ff59); font: 700 .8125rem/1 var(--mono, ui-monospace, monospace); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+
+/* making a trend, seen on the card where the version will play: a glow, a sheen, the first frame or the take rolled so far, and a progress line */
+.mx-screen.is-making { box-shadow: 0 0 0 2px var(--accent), 0 0 2.5rem -.5rem var(--accent); animation: mx-glow 2.4s ease-in-out infinite; }
+.mx-screen.is-making > img, .mx-screen.is-making > video { animation: mx-breathe 3.2s ease-in-out infinite; }
+.mx-screen.is-making::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / .16) 50%, transparent 62%); background-size: 260% 100%; animation: mx-sheen 2.2s linear infinite; }
+.mx-hud { position: absolute; left: .75rem; right: .75rem; bottom: .75rem; z-index: 2; display: grid; gap: .5rem; padding: .625rem .75rem; border-radius: .875rem; background: rgb(14 14 16 / .8); backdrop-filter: blur(6px); }
+.mx-hud-bar { height: 4px; border-radius: 2px; background: rgb(255 255 255 / .14); overflow: hidden; }
+.mx-hud-bar i { display: block; height: 100%; border-radius: 2px; background: var(--accent); transition: width .6s ease; }
+.mx-hud-line { display: flex; align-items: center; gap: .5rem; color: var(--text); font: 600 var(--fs-small)/1 var(--font-sans); }
+.mx-hud-line em { margin-left: auto; font-style: normal; color: var(--accent); font-variant-numeric: tabular-nums; }
+.mx-card.is-making { box-shadow: 0 0 0 2px var(--accent), 0 0 1.75rem -.25rem var(--accent); animation: mx-glow 2.4s ease-in-out infinite; }
+.mx-card-making { position: absolute; right: .5rem; bottom: 3.6rem; z-index: 2; display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .55rem; border-radius: 999px; background: rgb(14 14 16 / .82); color: var(--accent); font: 700 var(--fs-small)/1 var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
+.mx-go.is-making { background: linear-gradient(90deg, var(--accent) calc(var(--p, 0) * 100%), color-mix(in srgb, var(--accent) 28%, var(--s2)) 0); color: var(--accent-ink); transition: background-size .6s; }
+@keyframes mx-glow { 50% { box-shadow: 0 0 0 2px var(--accent), 0 0 3rem 0 var(--accent); } }
+@keyframes mx-breathe { 50% { transform: scale(1.025); filter: saturate(1.15); } }
+@keyframes mx-sheen { from { background-position: 160% 0; } to { background-position: -60% 0; } }
+@media (prefers-reduced-motion: reduce) { .mx-screen.is-making, .mx-card.is-making, .mx-screen.is-making > img, .mx-screen.is-making > video, .mx-screen.is-making::before { animation: none; } }
+.mx-recipe-meta .mx-chip { margin-left: .625rem; vertical-align: middle; }

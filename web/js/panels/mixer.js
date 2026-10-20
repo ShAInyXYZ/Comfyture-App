@@ -77,11 +77,13 @@ function feed() {
 function card(t) {
   const lit = t.heat >= 5 ? 3 : t.heat >= 4 ? 2 : 1;
   const on = t.id === pick.trend && !remixing();
+  const mk = making() && mixer.mix?.body?.trend?.id === t.id ? makeFeel(mixer.mix, t) : null;
   // a trend not made yet is shown at the end of the shelf and opens nothing
-  return h(`button.mx-card${on ? ".is-on" : ""}${t.soon ? ".is-soon" : ""}`, { type: "button", disabled: !!t.soon, title: t.soon ? `${t.name}\nComing soon` : `${t.name}\n${KIND_NAME[t.kind]} · ${t.seconds} s`, on: { click: () => selectTrend(t.id) } },
+  return h(`button.mx-card${on ? ".is-on" : ""}${t.soon ? ".is-soon" : ""}${mk ? ".is-making" : ""}`, { type: "button", disabled: !!t.soon, title: t.soon ? `${t.name}\nComing soon` : `${t.name}\n${KIND_NAME[t.kind]} · ${t.seconds} s`, on: { click: () => selectTrend(t.id) } },
     h("img", { src: trendArt(t), alt: "", draggable: false, loading: "lazy" }),
     h("span.mx-card-len", {}, t.soon ? "Soon" : `0:${pad2(Math.round(t.seconds))}`),
     t.soon ? h("span.mx-card-soon", {}, "Coming soon") : null,
+    mk ? h("span.mx-card-making", {}, h("span.lamp", { dataset: { tone: "busy" } }), `${Math.round(mk.pct * 100)}%`) : null,
     h("span.mx-card-heat", { title: lit === 3 ? "Very hot right now" : lit === 2 ? "Hot right now" : "Warm" }, sprite("trend-heat"), ...[0, 1, 2].map((k) => h(`i${k < lit ? ".is-lit" : ""}`))),
     h("span.mx-card-foot", {},
       h("b", {}, t.name),
@@ -100,9 +102,9 @@ function recipe(t) {
   const busy = making();
   const cost = trendCost(t);
   const head = [
-    h("div.mx-recipe-title", {}, h("span.label", {}, "Trend recipe"), h("h2", {}, t.name), h("span.mx-recipe-meta", {}, `${t.seconds} s · ${KIND_NAME[t.kind]}${t.caption ? ` · “${t.caption}”` : ""}`)),
+    h("div.mx-recipe-title", {}, h("span.label", {}, "Trend recipe"), h("h2", {}, t.name), h("span.mx-recipe-meta", {}, `${t.seconds} s · ${KIND_NAME[t.kind]}${t.caption ? ` · “${t.caption}”` : ""}`, t.recipe ? h("span.mx-chip.is-own", { title: "The trend's own sound plays under your version" }, "Original sound") : null)),
     h("div.mx-beats", {}, ...t.beats.map((b) => h("div.mx-beat", { style: { flexGrow: String(Math.max(0.6, b.to - b.from)) } }, h("i"), h("b", {}, span(b.from, b.to)), h("span", {}, b.text)))),
-    h("div.mx-music", {},
+    t.recipe ? null : h("div.mx-music", {},
       m?.body.music ? keep(`music:${m.body.music.url}`, () => h("audio", { src: m.body.music.url, controls: true, preload: "none" })) : h("span.mx-music-icon", {}, sprite("audio-music")),
       ...[t.music?.bpm ? `${t.music.bpm} BPM` : null, t.music?.genre, t.music?.mood].filter(Boolean).map((x) => h("span.mx-chip", {}, x)),
       // a trend we have made ourselves keeps its own sound: the mouths follow its vocals
@@ -118,9 +120,8 @@ function recipe(t) {
           h("div.mx-roles", {}, ...cast.map((c) => role(c)))),
         // a trend we have made keeps its own sound: no music is made for it
         madeWith({ music: !t.recipe })),
-      m ? progress(m) : null,
-      h("button.mx-go", { type: "button", disabled: busy, title: t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
-        sprite("product-mixer"), h("span", {}, busy ? "Making it" : m?.body.film ? "Make it again" : "Make it"), cost && !busy ? h("em", {}, `≈ ${cost} cr`) : null),
+      h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
+        sprite("product-mixer"), h("span", {}, busy ? (m ? makeFeel(m, t).word : "Making it") : m?.body.film ? "Make it again" : "Make it"), cost && !busy ? h("em", {}, `≈ ${cost} cr`) : null),
   ];
   return h("section.mx-work.mx-recipe", {}, preview(t, m), h("div.mx-recipe-body", {}, ...head, ...rest));
 }
@@ -138,14 +139,35 @@ function preview(t, m) {
   if (watching && t.preview && !making())
     return h("div.mx-preview", {}, player({ name: t.name, body: { film: { url: t.preview, seconds: t.seconds }, shots: t.beats } }, { inFrame: true }));
   const first = m?.body.shots?.[0]?.look?.url;
+  const feel = making() && m ? makeFeel(m, t) : null;
+  // the latest take that is done plays in the card while the rest is rolled
+  const rolledTake = feel ? [...(m.body.shots ?? [])].reverse().map((s) => take(s)).find((r) => r?.status === "done" && r.video) : null;
   return h("div.mx-preview", {},
-    h("div.mx-screen.is-cover", {},
-      h("img", { src: first ?? trendArt(t), alt: "", draggable: false }),
+    h(`div.mx-screen.is-cover${feel ? ".is-making" : ""}`, {},
+      rolledTake ? loopVideo(`rolled:${rolledTake.id}`, rolledTake.video) : h("img", { src: first ?? trendArt(t), alt: "", draggable: false }),
       h("span.mx-card-len", {}, `0:${pad2(Math.round(t.seconds))}`),
       // our own version of the trend, in the shape it was made in
       t.preview && !first && !making() ? h("button.mx-watch", { type: "button", title: "Watch our crew's version", "aria-label": "Watch our crew's version", on: { click: () => ((watching = t.id), (starting = true), changedMixer()) } }, icon("play")) : null,
-      making() ? h("span.mx-making", {}, h("span.lamp", { dataset: { tone: "busy" } }), "Making your version") : h("span.mx-cover-note", {}, "Your version plays here")));
+      feel ? makingHud(feel) : making() ? h("span.mx-making", {}, h("span.lamp", { dataset: { tone: "busy" } }), "Making your version") : h("span.mx-cover-note", {}, "Your version plays here")));
 }
+
+/**
+ * How far making a trend has got, as one share and one phrase: the first frame, each take by its own progress, the cut.
+ * It is shown on the card itself (and the shelf's card and the key), where the version will play.
+ */
+function makeFeel(m, t) {
+  const shots = m.body.shots ?? [];
+  const n = shots.length || takesOf(t).length || 1;
+  const first = shots[0]?.look ? 1 : 0;
+  const rolledShare = shots.reduce((sum, s, i) => { const st = shotState(s, i); return sum + (st.step === "done" ? 1 : st.step === "rolling" ? st.progress ?? 0 : 0); }, 0);
+  const cut = m.body.film ? 1 : 0;
+  const pct = Math.min(1, first * 0.08 + (rolledShare / n) * 0.84 + cut * 0.08);
+  const word = !first ? "Drawing the first frame" : cut ? "Done" : rolledShare >= n ? "Cutting it together" : n > 1 ? `Rolling take ${Math.min(n, Math.floor(rolledShare) + 1)} of ${n}` : "Rolling the take";
+  return { pct, word };
+}
+const makingHud = (f) => h("div.mx-hud", { role: "status" },
+  h("div.mx-hud-bar", {}, h("i", { style: { width: `${Math.round(f.pct * 100)}%` } })),
+  h("div.mx-hud-line", {}, h("span.lamp", { dataset: { tone: "busy" } }), h("b", {}, f.word), h("em", {}, `${Math.round(f.pct * 100)}%`)));
 
 function role(c) {
   const on = pick.role === c.role;
@@ -157,18 +179,6 @@ function role(c) {
 }
 
 /** How far making the open trend has come: its first frame, its takes, its track, the cut. */
-function progress(m) {
-  const shots = m.body.shots ?? [];
-  const done = shots.filter((s) => take(s)?.status === "done").length;
-  const steps = [
-    ["First frame", shots[0]?.look ? "ok" : making() ? "busy" : null],
-    [`Takes ${done}/${shots.length || takesOf(trendById(m.body.trend.id)).length}`, shots.length && done === shots.length ? "ok" : shots.some((s) => s.run) ? "busy" : null],
-    ["Track", m.body.music ? "ok" : making() ? "busy" : null],
-    ["Cut", m.body.film ? "ok" : making() && done === shots.length && shots.length ? "busy" : null],
-  ];
-  return h("div.mx-steps", {}, ...steps.map(([label, tone]) => h("span", {}, h("span.lamp", { dataset: tone ? { tone } : {} }), label)));
-}
-
 // ---------------------------------------------------------------- an edit someone dropped in, remixed
 
 function remix(m) {
