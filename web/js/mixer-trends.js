@@ -1099,9 +1099,9 @@ export const TRENDS = [
     ],
     "beats": [
       {
-        "from": 0.0,
-        "to": 8.0,
-        "text": "Meringue raises one brow to an accent"
+        "from": 0,
+        "to": 8,
+        "text": "Her face keeps the beat: a brow, the cheeks, the eyes, the mouth"
       }
     ],
     "music": {
@@ -1115,7 +1115,14 @@ export const TRENDS = [
         "new syllabic vocal or synth accents"
       ]
     },
-    "caption": null
+    "caption": null,
+    "aspect": "9:16",
+    "poster": "brand/mixer/trends/face-dance/poster.webp",
+    "recipe": "brand/mixer/trends/face-dance/recipe.json",
+    "made": {
+      "seconds": 8.42,
+      "firsts": 1
+    }
   },
   {
     "id": "documentary",

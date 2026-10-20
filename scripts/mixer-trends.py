@@ -178,7 +178,7 @@ def main():
                 "seconds": round(recipe["seconds"]),
                 "beats": recipe.get("beats") or trends[-1]["beats"],
                 "aspect": recipe["aspect"],
-                "preview": f"brand/mixer/trends/{slug}/{recipe['preview']}",
+                **({"preview": f"brand/mixer/trends/{slug}/{recipe['preview']}"} if recipe.get("preview") else {}),  # a recipe not rendered yet has none
                 "poster": f"brand/mixer/trends/{slug}/{recipe['poster']}",
                 "recipe": f"brand/mixer/trends/{slug}/recipe.json",
             })

@@ -1,0 +1,62 @@
+{
+ "id": "face-dance",
+ "about": "Face Dance as Meringue does it: a tight, locked close-up where the face keeps a short pop beat with its brows, cheeks, eyes and mouth. The motion is a face-dance video's (DWPose's face landmarks, face-dance.pose, squeezed to a kitten's short muzzle so the mouth lands on hers: the lower face at 0.43 of a person's), placed on the 9:16 frame; the take is two chained takes, the second starting on the first's frame 96. {Lead} is that role's name and look. No style is needed beyond the sheet's.",
+ "seconds": 8.04,
+ "aspect": "9:16",
+ "size": {
+  "width": 1152,
+  "height": 2048
+ },
+ "fps": 24,
+ "poster": "poster.webp",
+ "sound": {
+  "mix": "sound.m4a",
+  "note": "The trend's own sound, under the cut. It is a licensed song, so it is replaced or removed before the repository is published."
+ },
+ "roles": [
+  {
+   "role": "Lead",
+   "crew": "meringue",
+   "plays": "the face dancer",
+   "look": "a snowy-white longhaired kitten with big sky-blue eyes, a tiny pink nose, fluffy white fur and a coral-pink ribbon at her neck"
+  }
+ ],
+ "take": {
+  "graph": "shot-swap-dev.json",
+  "control": "ready",
+  "strength": 0.8,
+  "width": 576,
+  "height": 1024,
+  "chain": true
+ },
+ "look": "look.webp",
+ "beats": [
+  {
+   "from": 0,
+   "to": 8,
+   "text": "Her face keeps the beat: a brow, the cheeks, the eyes, the mouth"
+  }
+ ],
+ "shots": [
+  {
+   "from": 0.0,
+   "to": 4.0,
+   "frames": 105,
+   "pose": "take-1.pose.mp4",
+   "keypoints": "take-1.kps.json",
+   "starts": "look",
+   "seed": 6101,
+   "prompt": "Tight vertical close-up of {Lead}'s face and chest against a plain soft lilac-grey wall in soft even light, the camera locked. {Lead} stays silent and does a rhythmic face dance in time with a short pop beat: one brow lifts on an accent, then the cheeks puff, the eyes widen, the mouth rounds and the brows reset, each on its own beat, the head tilting a little with the rhythm, all of it with an exact, playful expressiveness. Polished 3D animated feature-film style, a soft shallow depth of field."
+  },
+  {
+   "from": 4.0,
+   "to": 8.042,
+   "frames": 97,
+   "pose": "take-2.pose.mp4",
+   "keypoints": "take-2.kps.json",
+   "chain": true,
+   "seed": 6102,
+   "prompt": "Tight vertical close-up of {Lead}'s face and chest against a plain soft lilac-grey wall in soft even light, the camera locked. {Lead} stays silent and does a rhythmic face dance in time with a short pop beat: one brow lifts on an accent, then the cheeks puff, the eyes widen, the mouth rounds and the brows reset, each on its own beat, the head tilting a little with the rhythm, all of it with an exact, playful expressiveness. Polished 3D animated feature-film style, a soft shallow depth of field."
+  }
+ ]
+}

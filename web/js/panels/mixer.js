@@ -116,9 +116,10 @@ function recipe(t) {
         h("div.mx-cast-col", {},
           h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "The crew by default. Swap them, or pick your own.")),
           h("div.mx-roles", {}, ...cast.map((c) => role(c)))),
-        madeWith({ music: true })),
+        // a trend we have made keeps its own sound: no music is made for it
+        madeWith({ music: !t.recipe })),
       m ? progress(m) : null,
-      h("button.mx-go", { type: "button", disabled: busy, title: "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
+      h("button.mx-go", { type: "button", disabled: busy, title: t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
         sprite("product-mixer"), h("span", {}, busy ? "Making it" : m?.body.film ? "Make it again" : "Make it"), cost && !busy ? h("em", {}, `≈ ${cost} cr`) : null),
   ];
   return h("section.mx-work.mx-recipe", {}, preview(t, m), h("div.mx-recipe-body", {}, ...head, ...rest));
