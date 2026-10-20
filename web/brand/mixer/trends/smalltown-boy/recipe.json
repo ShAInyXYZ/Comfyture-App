@@ -1,0 +1,139 @@
+{
+ "id": "smalltown-boy",
+ "about": "Smalltown Boy as our crew performs it: everything a version with other characters is made from. The source is two cats standing up, mirrored and started half a second in, so its first shot is the cover. Each shot has the cats' motion (their keypoints from AnimalPose, and the skeleton rebuilt with the cat build), its first frame with the crew (the cover for the first shot, drawn from it for the others) and its prompt with each role's slot ({Lead} is that role's name and look, {LeadName} and {PartnerName} the names). The takes run shot-swap-dev.json with the pose as a ready-made control and the vocals frozen in; only the first two shots are sung.",
+ "seconds": 21.234,
+ "aspect": "9:16",
+ "size": {
+  "width": 1152,
+  "height": 2048
+ },
+ "fps": 24,
+ "preview": "preview.mp4",
+ "poster": "poster.webp",
+ "sound": {
+  "mix": "sound.m4a",
+  "vocals": "vocals.m4a",
+  "note": "The trend's own song: the vocals drive the mouths, the mix goes under the cut. It is the original recording, so it is replaced or removed before the repository is published."
+ },
+ "source": {
+  "mirrored": true,
+  "from": 0.5
+ },
+ "roles": [
+  {
+   "role": "Lead",
+   "crew": "praline",
+   "plays": "the white-and-black cat: up close in the first shot, on the right side by side",
+   "look": "a cute small fluffy caramel-orange and cream kitten with a big round head, big amber eyes, a pink nose and a yellow collar with a small gold bell"
+  },
+  {
+   "role": "Partner",
+   "crew": "meringue",
+   "plays": "the black cat: up close in the second shot, on the left side by side",
+   "look": "a cute small snowy-white longhaired kitten with a big round head, sky-blue eyes and a coral-pink bow"
+  }
+ ],
+ "take": {
+  "graph": "shot-swap-dev.json",
+  "control": "ready",
+  "strength": 0.8,
+  "width": 576,
+  "height": 1024,
+  "build": "cat"
+ },
+ "pair": "two 3D animated kittens",
+ "beats": [
+  {
+   "from": 0,
+   "to": 6.5,
+   "text": "Praline sings up close, paws at the cheeks; Meringue dances behind"
+  },
+  {
+   "from": 6.5,
+   "to": 13.8,
+   "text": "Meringue gasps up close, paws on the head; Praline dances behind"
+  },
+  {
+   "from": 13.8,
+   "to": 15.9,
+   "text": "Side by side, paws up, they dance"
+  },
+  {
+   "from": 15.9,
+   "to": 17.7,
+   "text": "From the floor: side steps, paws high"
+  },
+  {
+   "from": 17.7,
+   "to": 19.2,
+   "text": "They stand tall and bounce"
+  },
+  {
+   "from": 19.2,
+   "to": 21.2,
+   "text": "Both lunge at the lens, paws swiping"
+  }
+ ],
+ "shots": [
+  {
+   "from": 0,
+   "to": 6.458,
+   "frames": 169,
+   "pose": "shot-1.pose.mp4",
+   "keypoints": "shot-1.kps.json",
+   "look": "shot-1.look.webp",
+   "seed": 3101,
+   "prompt": "Close shot in a sunny cozy kitchen with sage-teal cabinets, hanging plants and warm morning light. {Lead}, stands right in front of the camera with both front paws raised beside the cheeks and sings a long high note, mouth wide open, swaying to the beat, then reaches both front paws toward the camera. Behind on the rug, {Partner}, stands on the hind legs and dances, bouncing and waving the front paws. Polished 3D animated feature-film style. An upbeat 1980s synth-pop song with a high falsetto voice. {LeadName} sings."
+  },
+  {
+   "from": 6.458,
+   "to": 13.833,
+   "frames": 185,
+   "pose": "shot-2.pose.mp4",
+   "keypoints": "shot-2.kps.json",
+   "look": "shot-2.look.webp",
+   "seed": 3102,
+   "prompt": "Close shot in a sunny cozy kitchen with sage-teal cabinets, hanging plants and warm morning light. {Partner}, stands right in front of the camera, bows the head, then puts both front paws on top of the head and sings with the mouth wide open, dramatic and gasping. Behind at the left, small, {Lead}, stands on the hind legs and dances. Polished 3D animated feature-film style. An upbeat 1980s synth-pop song with a high falsetto voice. {PartnerName} sings."
+  },
+  {
+   "from": 13.833,
+   "to": 15.917,
+   "frames": 65,
+   "pose": "shot-3.pose.mp4",
+   "keypoints": "shot-3.kps.json",
+   "look": "shot-3.look.webp",
+   "seed": 3103,
+   "prompt": "Full shot in a sunny cozy kitchen with sage-teal cabinets, hanging plants and warm morning light, on a woven rug. On the left, {Partner}, and on the right, {Lead}, stand side by side on their hind legs and dance in sync to the beat, raising their front paws over their heads and swaying, mouths closed in happy smiles. Polished 3D animated feature-film style. An upbeat 1980s synth-pop instrumental with synth bass and a drum machine."
+  },
+  {
+   "from": 15.917,
+   "to": 17.667,
+   "frames": 57,
+   "pose": "shot-4.pose.mp4",
+   "keypoints": "shot-4.kps.json",
+   "look": "shot-4.look.webp",
+   "seed": 3104,
+   "prompt": "Low-angle shot from the floor of a sunny cozy kitchen with sage-teal cabinets, hanging plants and warm morning light, the ceiling, hanging plants and bright window light above. On the left, {Partner}, and on the right, {Lead}, stand tall side by side and side-step to the beat with their front paws raised, mouths closed in happy smiles. Polished 3D animated feature-film style. An upbeat 1980s synth-pop instrumental with synth bass and a drum machine."
+  },
+  {
+   "from": 17.667,
+   "to": 19.25,
+   "frames": 49,
+   "pose": "shot-5.pose.mp4",
+   "keypoints": "shot-5.kps.json",
+   "look": "shot-5.look.webp",
+   "seed": 3105,
+   "prompt": "Full shot in a sunny cozy kitchen with sage-teal cabinets, hanging plants and warm morning light, on a woven rug. On the left, {Partner}, and on the right, {Lead}, stand side by side upright on their hind legs, front paws down, bouncing gently to the beat, mouths closed in happy smiles. Polished 3D animated feature-film style. An upbeat 1980s synth-pop instrumental with synth bass and a drum machine."
+  },
+  {
+   "from": 19.25,
+   "to": 21.234,
+   "frames": 57,
+   "pose": "shot-6.pose.mp4",
+   "keypoints": "shot-6.kps.json",
+   "look": "shot-6.look.webp",
+   "seed": 3106,
+   "prompt": "Extreme close-up in a sunny cozy kitchen with sage-teal cabinets, hanging plants and warm morning light. On the left, {Partner}, and on the right, {Lead}, lunge right up to the camera, their faces filling the frame, front paws swiping at the lens, noses almost touching it. Polished 3D animated feature-film style. An upbeat 1980s synth-pop instrumental with synth bass and a drum machine."
+  }
+ ]
+}

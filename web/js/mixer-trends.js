@@ -93,7 +93,7 @@ export const TRENDS = [
     "id": "smalltown-boy",
     "name": "Smalltown Boy",
     "kind": "reactions",
-    "seconds": 20,
+    "seconds": 21,
     "heat": 5,
     "cast": [
       {
@@ -107,19 +107,34 @@ export const TRENDS = [
     ],
     "beats": [
       {
-        "from": 0.0,
-        "to": 5.0,
-        "text": "Praline fills foreground with paws beside cheeks; Meringue bounces behind"
+        "from": 0,
+        "to": 6.5,
+        "text": "Praline sings up close, paws at the cheeks; Meringue dances behind"
       },
       {
-        "from": 5.0,
-        "to": 10.0,
-        "text": "Meringue gasps near lens while Praline dances behind; maintain distinct silhouettes"
+        "from": 6.5,
+        "to": 13.8,
+        "text": "Meringue gasps up close, paws on the head; Praline dances behind"
       },
       {
-        "from": 10.0,
-        "to": 20.0,
-        "text": "Side-by-side original side steps until 16s; both take two broad steps toward lens, ending in comic nose close-up"
+        "from": 13.8,
+        "to": 15.9,
+        "text": "Side by side, paws up, they dance"
+      },
+      {
+        "from": 15.9,
+        "to": 17.7,
+        "text": "From the floor: side steps, paws high"
+      },
+      {
+        "from": 17.7,
+        "to": 19.2,
+        "text": "They stand tall and bounce"
+      },
+      {
+        "from": 19.2,
+        "to": 21.2,
+        "text": "Both lunge at the lens, paws swiping"
       }
     ],
     "music": {
@@ -133,7 +148,11 @@ export const TRENDS = [
         "new wordless falsetto-like instrument"
       ]
     },
-    "caption": "When the snack bag opens"
+    "caption": "When the snack bag opens",
+    "aspect": "9:16",
+    "preview": "brand/mixer/trends/smalltown-boy/preview.mp4",
+    "poster": "brand/mixer/trends/smalltown-boy/poster.webp",
+    "recipe": "brand/mixer/trends/smalltown-boy/recipe.json"
   },
   {
     "id": "state-property",

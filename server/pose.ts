@@ -26,6 +26,33 @@ export function parsePoses(text: string, least = 0.3): PoseFrame[] {
   }));
 }
 
+// AP-10K's animal points (eyes, nose, neck, tail root, front and back legs) in the body's order, ears aside
+const FROM_AP10K = [2, 3, 8, 9, 10, 5, 6, 7, 14, 15, 16, 11, 12, 13, 1, 0];
+
+/**
+ * The frames AnimalPose (AP-10K, on ComfyUI) gives, for animals standing up like people, as the same 18
+ * body points: front legs as arms, back legs as legs, ears set out from the eyes (AP-10K has none). An
+ * animal close to the lens (eyes `close` of the frame's width apart, or more) keeps only its head: up
+ * close, its legs are read wrong.
+ */
+export function parseAnimalPoses(text: string, least = 0.45, close = 0.1): PoseFrame[] {
+  const frames = JSON.parse(text) as { canvas_width: number; canvas_height: number; animals?: number[][][] }[];
+  const out = (a: Point, b: Point): Point => (a && b ? [a[0] + (a[0] - b[0]) * 0.45, a[1] + (a[1] - b[1]) * 0.45] : null);
+  return frames.map((f) => ({
+    width: f.canvas_width,
+    height: f.canvas_height,
+    people: (f.animals ?? []).map((a) => {
+      const body: Body = FROM_AP10K.map((i) => (a[i][2] >= least ? [a[i][0], a[i][1]] as [number, number] : null));
+      const r = body[R_EYE], l = body[L_EYE], nose = body[NOSE];
+      body.push(out(r, l), out(l, r));
+      // every bone hangs from the neck: one not read sits below the nose, on from the eyes
+      if (!body[NECK] && nose && r && l) body[NECK] = [nose[0] + (nose[0] - (r[0] + l[0]) / 2) * 1.5, nose[1] + (nose[1] - (r[1] + l[1]) / 2) * 1.5];
+      const near = r && l && Math.hypot(r[0] - l[0], r[1] - l[1]) >= close * f.canvas_width;
+      return near ? body.map((p, i) => ([NOSE, NECK, R_EYE, L_EYE, R_EAR, L_EAR].includes(i) ? p : null)) : body;
+    }),
+  }));
+}
+
 /** The people in the same order in every frame (by where they stand, left first), so each stays the same character. */
 export function trackPeople(frames: PoseFrame[], count: number): PoseFrame[] {
   const centre = (b: Body) => b[NECK] ?? b[NOSE] ?? b.find(Boolean) ?? null;
@@ -57,6 +84,30 @@ export type Build = { neck: number; face: number; shoulder: number; upperArm: nu
  * speak of), short arms and legs, a short body.
  */
 export const KITTEN: Build = { neck: 0.75, face: 1.4, shoulder: 0.7, upperArm: 0.55, forearm: 0.55, torso: 0.6, thigh: 0.5, shin: 0.5 };
+/**
+ * Upright cats (AP-10K's, as above) as our kittens: a head half again as big on a body three quarters
+ * as long, legs a little shorter, so a round kitten stands about as tall as the cat did.
+ */
+export const CAT: Build = { neck: 1.3, face: 1.5, shoulder: 1.45, upperArm: 1.1, forearm: 1.1, torso: 0.73, thigh: 0.87, shin: 0.87 };
+
+/** A point missed for a few frames (the detector blinking) held where it last was; the people tracked first. */
+export function hold(frames: PoseFrame[], most = 3): PoseFrame[] {
+  const last: { at: [number, number]; age: number }[][] = [];
+  return frames.map((f) => ({
+    ...f,
+    people: f.people.map((b, who) => b.map((p, k) => {
+      const seen = (last[who] ??= [])[k];
+      if (p) return ((last[who][k] = { at: p, age: 0 }), p);
+      if (seen && seen.age < most) return (seen.age++, seen.at);
+      return null;
+    })),
+  }));
+}
+
+const quantile = (a: number[], p: number) => {
+  const s = [...a].sort((x, y) => x - y);
+  return s[Math.round(p * (s.length - 1))];
+};
 
 // every bone from its parent, out from the neck, with the part of the build that sets its length
 const BONES: [number, number, keyof Build][] = [
@@ -69,15 +120,17 @@ const BONES: [number, number, keyof Build][] = [
 
 /**
  * One person's body rebuilt with a character's build: each bone keeps its direction, takes the build's
- * share of its length, and hangs from where its parent now is. The neck stays put.
+ * share of its length, and hangs from where its parent now is. The neck stays put. A bone longer than
+ * `most` (bone by bone, in the person's own lengths) is cut to it.
  */
-export function rebuild(body: Body, build: Build): Body {
+export function rebuild(body: Body, build: Build, most: number[] = []): Body {
   const out: Body = Array(18).fill(null);
   out[NECK] = body[NECK];
-  for (const [from, to, part] of BONES) {
+  for (const [i, [from, to, part]] of BONES.entries()) {
     const a = body[from], b = body[to], at = out[from];
     if (!a || !b || !at) continue;
-    out[to] = [at[0] + (b[0] - a[0]) * build[part], at[1] + (b[1] - a[1]) * build[part]];
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1]), cut = most[i] && length > most[i] ? most[i] / length : 1;
+    out[to] = [at[0] + (b[0] - a[0]) * build[part] * cut, at[1] + (b[1] - a[1]) * build[part] * cut];
   }
   return out;
 }
@@ -86,15 +139,20 @@ export function rebuild(body: Body, build: Build): Body {
  * The clip's people rebuilt as the characters. Where the people's feet show (a wide shot), each
  * character stands where its person stands, feet on the same floor, so it comes out its own size;
  * otherwise its face stays where the person's face is (nose on nose), for the mouth and the mic.
- * A light average over neighbouring frames takes out DWPose's jitter.
+ * A light average over neighbouring frames takes out DWPose's jitter, and a bone read far longer than
+ * it usually is in the clip (a joint read in the wrong place) is held to half again its usual length.
  */
 export function retarget(frames: PoseFrame[], build: Build = KITTEN, count = 2): PoseFrame[] {
   const tracked = trackPeople(frames, count);
   const feet = (b: Body) => [b[R_ANKLE], b[L_ANKLE]].filter(Boolean) as [number, number][];
+  const usual = Array.from({ length: count }, (_, who) => BONES.map(([from, to]) => {
+    const lengths = tracked.map((f) => f.people[who]).filter((b) => b?.[from] && b[to]).map((b) => Math.hypot(b[to]![0] - b[from]![0], b[to]![1] - b[from]![1]));
+    return lengths.length ? 1.5 * quantile(lengths, 0.5) : 0;
+  }));
   return smooth(tracked.map((f) => ({
     ...f,
-    people: f.people.map((body) => {
-      const next = rebuild(body, build);
+    people: f.people.map((body, who) => {
+      const next = rebuild(body, build, usual[who]);
       const was = feet(body), now = feet(next);
       if (was.length && now.length) {
         // feet on the floor: the whole character drops by however much shorter its legs and body are
@@ -109,10 +167,6 @@ export function retarget(frames: PoseFrame[], build: Build = KITTEN, count = 2):
   })));
 }
 
-const quantile = (a: number[], p: number) => {
-  const s = [...a].sort((x, y) => x - y);
-  return s[Math.round(p * (s.length - 1))];
-};
 const middle = (b: Body, i: number, j: number): Point => (b[i] && b[j] ? [(b[i]![0] + b[j]![0]) / 2, (b[i]![1] + b[j]![1]) / 2] : b[i] ?? b[j]);
 
 /** The characters laid out for another frame, and the spot between the first two at eye height (where a shared microphone hangs). */

@@ -264,7 +264,25 @@ Takes ran at 576×1024 (1152×2048 out), with v4's seeds and settings.
 
 **Result.** The same kittens and moves at the phone's shape, the microphone at their heads in every shot. The five takes cost 217 credits.
 
-### 6.7 Engineering issues found on the way
+### 6.7 Smalltown Boy: animals as the performers
+
+The second trend's source is two real cats standing up, filmed for a phone (9:16). DWPose, built for people, finds nothing in it. AnimalPose (AP-10K, 17 animal points) finds both cats in most frames, with reliable eyes and noses but unreliable legs up close.
+
+`parseAnimalPoses()` maps those points onto the body points the union IC-LoRA was trained on:
+
+- The front legs become arms and the back legs become legs.
+- The ears are set out from the eyes, and a missing neck is placed below the nose.
+- A cat close to the lens keeps only its head.
+
+The `CAT` build turns a real cat's proportions (a small head, a long body) into our kittens' (a head half again as big, a shorter body). Two fixes clean up the detector:
+- `hold()` keeps a point the detector misses for a frame or two;
+- a bone read longer than 1.5 times its usual length in the clip is cut back.
+
+The trend's cover is the source's opening, mirrored and half a second in. So the source was mirrored and started there, and shot 1's two skeletons were scaled and moved to the cover's kittens (eyes and nose on theirs). The cover is shot 1's first frame, and the preview starts on it. The other five first frames were drawn from the cover: its kitchen, light and kittens, at each source frame's camera and placing.
+
+Six dev takes, one per real shot (the longest 185 frames, 7.7 s), cost 287 credits. Only the first two shots are sung; the frozen vocals keep the mouths still in the instrumental rest.
+
+### 6.8 Engineering issues found on the way
 
 - **Cut detection.** ffmpeg's scene score for real cuts on a plain backdrop was about 0.2, so a fixed 0.3 threshold found none. The threshold now adapts: six times the clip's 90th-percentile score, clamped to 0.1–0.3.
 - **Off-by-one clips.** Shot clips started a frame late and ended a frame into the next shot (millisecond-rounded seeks). Fixed by seeking half a frame early and trimming by frame count.
