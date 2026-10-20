@@ -41,7 +41,7 @@ export function castOf(t = trendById(pick.trend)) {
   return t.cast.map((c) => ({ role: c.role, original: c.crew, who: pick.cast.roles[c.role] }));
 }
 export function selectTrend(id) {
-  if (!trendById(id)) return;
+  if (!trendById(id) || trendById(id).soon) return;
   picked = true;
   pick.trend = id;
   pick.role = null;

@@ -263,7 +263,7 @@ export function buildMotion(graph: Graph, clip: unknown, photo: unknown | null, 
  * guide, for an edit IC-LoRA. The first frame says who is in it. width and height are the first stage's,
  * multiples of 64; frames is 8n + 1.
  */
-export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audio: unknown; from: number; prompt: string; frames: number; width: number; height: number; seed: number; face?: boolean; control?: "pose" | "frames" | "ready"; lora?: string; strength?: number; build?: string; end?: unknown; endStrength?: number }) {
+export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audio: unknown; from: number; prompt: string; frames: number; width: number; height: number; seed: number; face?: boolean; control?: "pose" | "frames" | "ready"; lora?: string; strength?: number; build?: string; end?: unknown; endStrength?: number; stage1Only?: boolean }) {
   set(graph, "video_in", "file", v.clip);
   set(graph, "photo", "image", v.photo);
   set(graph, "audio_in", "audio", v.audio);
@@ -309,6 +309,44 @@ export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audi
   if (v.control === "frames" || v.control === "ready") {
     delete graph.control;
     for (const node of Object.values(graph)) for (const [k, value] of Object.entries(node.inputs)) if (Array.isArray(value) && value[0] === "control") node.inputs[k] = ["guide_fit", 0];
+  }
+  // the first pass alone, decoded where it is (no upscale, no refine), at the size it was made: a low-resolution
+  // preview, or, at the full size, a native single pass. Its guide and first frame are read at that size, not at the
+  // double the refine pass would have wanted.
+  if (v.stage1Only && graph.crop && graph.decode && graph.audio_cut) {
+    set(graph, "guide_fit", "resize_type.width", v.width);
+    set(graph, "guide_fit", "resize_type.height", v.height);
+    set(graph, "photo_fit", "resize_type.longer_size", Math.max(v.width, v.height));
+    graph.decode_s1 = { class_type: "VAEDecodeTiled", inputs: { ...graph.decode.inputs, samples: ["crop", 2] } };
+    graph.create_s1 = { class_type: "CreateVideo", inputs: { images: ["decode_s1", 0], fps: FPS, audio: ["audio_cut", 0] } };
+    delete graph.video;
+    graph.video = { class_type: "SaveVideo", inputs: { video: ["create_s1", 0], filename_prefix: "comfyture/swap-preview", format: "auto", codec: "auto" } };
+  }
+  return graph;
+}
+
+/**
+ * A take made at its source's own shape, reframed for another (a wide performance for a 9:16 post):
+ * the take is scaled to a band as wide as the frame, laid `top` pixels down it, and LTX-2.5's
+ * in/outpainting IC-LoRA paints the rest of every frame, in two passes; the band keeps its own pixels
+ * (a Laplacian blend at its edges) and the take keeps its sound. `start` is the frame the reframed take
+ * before ends on, so a shot rolled in chained takes is reframed as one.
+ */
+export function buildOutpaint(graph: Graph, v: { video: unknown; prompt: string; seed: number; width: number; height: number; band: { height: number; top: number }; start?: unknown; avoid?: string }) {
+  set(graph, "video_in", "file", v.video);
+  set(graph, "prompt", "value", v.prompt);
+  // what the painted part must not become (shorts on someone who wears joggers, say), added to the negative prompt
+  if (v.avoid && graph.negative) graph.negative.inputs.text = `${v.avoid}, ${graph.negative.inputs.text}`;
+  set(graph, "fit", "resize_type.width", v.width);
+  set(graph, "fit", "resize_type.height", v.band.height);
+  set(graph, "pad", "top", v.band.top);
+  set(graph, "pad", "bottom", Math.max(0, v.height - v.band.height - v.band.top));
+  set(graph, "noise", "noise_seed", v.seed);
+  set(graph, "noise_refine", "noise_seed", v.seed + 1);
+  if (v.start) {
+    graph.start = { class_type: "LoadImage", inputs: { image: v.start } };
+    set(graph, "first", "bypass", false);
+    set(graph, "first_refine", "bypass", false);
   }
   return graph;
 }

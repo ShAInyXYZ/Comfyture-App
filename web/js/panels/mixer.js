@@ -77,9 +77,11 @@ function feed() {
 function card(t) {
   const lit = t.heat >= 5 ? 3 : t.heat >= 4 ? 2 : 1;
   const on = t.id === pick.trend && !remixing();
-  return h(`button.mx-card${on ? ".is-on" : ""}`, { type: "button", title: `${t.name}\n${KIND_NAME[t.kind]} · ${t.seconds} s`, on: { click: () => selectTrend(t.id) } },
+  // a trend not made yet is shown at the end of the shelf and opens nothing
+  return h(`button.mx-card${on ? ".is-on" : ""}${t.soon ? ".is-soon" : ""}`, { type: "button", disabled: !!t.soon, title: t.soon ? `${t.name}\nComing soon` : `${t.name}\n${KIND_NAME[t.kind]} · ${t.seconds} s`, on: { click: () => selectTrend(t.id) } },
     h("img", { src: trendArt(t), alt: "", draggable: false, loading: "lazy" }),
-    h("span.mx-card-len", {}, `0:${pad2(Math.round(t.seconds))}`),
+    h("span.mx-card-len", {}, t.soon ? "Soon" : `0:${pad2(Math.round(t.seconds))}`),
+    t.soon ? h("span.mx-card-soon", {}, "Coming soon") : null,
     h("span.mx-card-heat", { title: lit === 3 ? "Very hot right now" : lit === 2 ? "Hot right now" : "Warm" }, sprite("trend-heat"), ...[0, 1, 2].map((k) => h(`i${k < lit ? ".is-lit" : ""}`))),
     h("span.mx-card-foot", {},
       h("b", {}, t.name),
@@ -198,7 +200,7 @@ const modelRow = (glyph, part, model, cost, ...more) =>
 
 /**
  * How a mix is made, at a glance: the picture model that redraws its first frames with the cast,
- * LTX-2.5 with the LoRAs it rolls with (Pixar Toon by default, like the crew), and the music model.
+ * LTX-2.5 with the LoRAs it rolls with (none until picked), and the music model.
  */
 function madeWith({ music }) {
   return h("div.mx-made", {},

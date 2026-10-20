@@ -1,6 +1,7 @@
 // One swap take on Comfy Cloud from local files, to try the workflow before it runs in the app:
 //   node --env-file=.env scripts/try-swap.ts spec.json
-// spec: { graph?, clip, photo, audio, from, frames, width, height, prompt, seed, face?, control?, lora?, strength?, loras?, end?, endStrength?, retries?, out }
+// spec: { graph?, clip, photo, audio, from, frames, width, height, prompt, seed, face?, control?, lora?, strength?, loras?, end?, endStrength?, retries?, stage1Only?, out }
+// (stage1Only: stop after the first pass: a low-resolution preview, at the size it is made)
 // (end: a drawn last frame the take lands on, so a shot meets the next one at a cut)
 // (graph: shot-swap.json, the default, or shot-swap-dev.json; width and height are the first stage's)
 // (paths relative to where it runs; loras: [{ file, strength }] chained before the IC-LoRA)

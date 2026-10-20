@@ -259,3 +259,8 @@
   .mx-beats { flex-direction: column; }
   .mx-feed-head h1 { font-size: 1.625rem; }
 }
+
+/* a trend not made yet: dimmed, at the end of the shelf, with its ribbon */
+.mx-card.is-soon { cursor: default; filter: saturate(.5) brightness(.7); }
+.mx-card.is-soon:hover > img { transform: none; }
+.mx-card-soon { position: absolute; left: 50%; top: 50%; translate: -50% -50%; padding: .35rem .8rem; border-radius: 999px; background: rgb(17 17 20 / .82); border: 1px solid var(--line2); color: var(--accent, #f2ff59); font: 700 .8125rem/1 var(--mono, ui-monospace, monospace); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }

@@ -81,6 +81,7 @@ export const TRENDS = [
     "id": "state-property",
     "name": "State Property",
     "kind": "reactions",
+    "soon": false,
     "home": "mixer",
     "also": [],
     "seconds": 17,
@@ -141,6 +142,7 @@ export const TRENDS = [
     "id": "hotel-lobby",
     "name": "Hotel Lobby",
     "kind": "duo",
+    "soon": false,
     "home": "jam",
     "also": [
       "mixer"
@@ -209,6 +211,7 @@ export const TRENDS = [
     "id": "smalltown-boy",
     "name": "Smalltown Boy",
     "kind": "reactions",
+    "soon": false,
     "home": "mixer",
     "also": [],
     "seconds": 21,
@@ -280,6 +283,7 @@ export const TRENDS = [
     "id": "black-cat-clapping",
     "name": "Black Cat Clapping",
     "kind": "reactions",
+    "soon": false,
     "home": "none",
     "also": [],
     "seconds": 6,
@@ -331,6 +335,7 @@ export const TRENDS = [
     "id": "ramalama",
     "name": "Ramalama",
     "kind": "walks",
+    "soon": false,
     "home": "none",
     "also": [],
     "seconds": 15,
@@ -402,6 +407,7 @@ export const TRENDS = [
     "id": "la-calabaza",
     "name": "La Calabaza",
     "kind": "dance",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 14,
@@ -459,6 +465,7 @@ export const TRENDS = [
     "id": "three-kittens",
     "name": "Three Kittens",
     "kind": "dance",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 12,
@@ -516,6 +523,7 @@ export const TRENDS = [
     "id": "bulin-47",
     "name": "Bulin 47",
     "kind": "dance",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 15,
@@ -573,6 +581,7 @@ export const TRENDS = [
     "id": "toc-toc",
     "name": "Toc Toc",
     "kind": "dance",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 10,
@@ -630,6 +639,7 @@ export const TRENDS = [
     "id": "tiptoe",
     "name": "Tiptoe",
     "kind": "walks",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 11,
@@ -669,6 +679,7 @@ export const TRENDS = [
     "id": "alors-on-danse",
     "name": "Alors on Danse",
     "kind": "duo",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 14,
@@ -722,6 +733,7 @@ export const TRENDS = [
     "id": "sway",
     "name": "Sway",
     "kind": "dance",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 12,
@@ -756,6 +768,7 @@ export const TRENDS = [
     "id": "scuba",
     "name": "Scuba",
     "kind": "dance",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 10,
@@ -790,6 +803,7 @@ export const TRENDS = [
     "id": "lights-off",
     "name": "Lights Off",
     "kind": "dance",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 10,
@@ -829,6 +843,7 @@ export const TRENDS = [
     "id": "closer",
     "name": "Closer",
     "kind": "duo",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 15,
@@ -877,6 +892,7 @@ export const TRENDS = [
     "id": "dance-with-me",
     "name": "Dance With Me",
     "kind": "duo",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 10,
@@ -925,6 +941,7 @@ export const TRENDS = [
     "id": "dance-audition",
     "name": "Dance Audition",
     "kind": "dance",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 16,
@@ -982,6 +999,7 @@ export const TRENDS = [
     "id": "job-dance",
     "name": "Job Dance",
     "kind": "dance",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 12,
@@ -1025,6 +1043,7 @@ export const TRENDS = [
     "id": "sea-lion",
     "name": "Sea Lion",
     "kind": "dance",
+    "soon": false,
     "home": "jam",
     "also": [],
     "seconds": 10,
@@ -1067,6 +1086,7 @@ export const TRENDS = [
     "id": "face-dance",
     "name": "Face Dance",
     "kind": "reactions",
+    "soon": false,
     "home": "mixer",
     "also": [],
     "seconds": 8,
@@ -1098,53 +1118,10 @@ export const TRENDS = [
     "caption": null
   },
   {
-    "id": "grand-entrance",
-    "name": "Grand Entrance",
-    "kind": "glowups",
-    "home": "mixer",
-    "also": [],
-    "seconds": 10,
-    "heat": 3,
-    "cast": [
-      {
-        "role": "Lead",
-        "crew": "meringue"
-      }
-    ],
-    "beats": [
-      {
-        "from": 0.0,
-        "to": 1.0,
-        "text": "Meringue enters with outsized confidence"
-      },
-      {
-        "from": 1.0,
-        "to": 7.0,
-        "text": "Three original intro poses and a tiny shuffle"
-      },
-      {
-        "from": 7.0,
-        "to": 10.0,
-        "text": "Awkward pause and proud nod"
-      }
-    ],
-    "music": {
-      "bpm": 100,
-      "genre": "minimal bouncy hip-hop intro",
-      "mood": "awkward confidence",
-      "instruments": [
-        "kick",
-        "snare",
-        "bass",
-        "short original synth cue"
-      ]
-    },
-    "caption": null
-  },
-  {
     "id": "documentary",
     "name": "Documentary",
     "kind": "reactions",
+    "soon": false,
     "home": "mixer",
     "also": [],
     "seconds": 8,
@@ -1192,6 +1169,51 @@ export const TRENDS = [
       "seconds": 8.38,
       "firsts": 1
     }
+  },
+  {
+    "id": "grand-entrance",
+    "name": "Grand Entrance",
+    "kind": "glowups",
+    "soon": true,
+    "home": "mixer",
+    "also": [],
+    "seconds": 10,
+    "heat": 3,
+    "cast": [
+      {
+        "role": "Lead",
+        "crew": "meringue"
+      }
+    ],
+    "beats": [
+      {
+        "from": 0.0,
+        "to": 1.0,
+        "text": "Meringue enters with outsized confidence"
+      },
+      {
+        "from": 1.0,
+        "to": 7.0,
+        "text": "Three original intro poses and a tiny shuffle"
+      },
+      {
+        "from": 7.0,
+        "to": 10.0,
+        "text": "Awkward pause and proud nod"
+      }
+    ],
+    "music": {
+      "bpm": 100,
+      "genre": "minimal bouncy hip-hop intro",
+      "mood": "awkward confidence",
+      "instruments": [
+        "kick",
+        "snare",
+        "bass",
+        "short original synth cue"
+      ]
+    },
+    "caption": null
   }
 ];
 

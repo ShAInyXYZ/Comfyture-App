@@ -58,6 +58,8 @@ ALSO = {"hotel-lobby": ["mixer"]}
 # trends kept (recipe, files, links) but on no shelf: Black Cat Clapping is for the website later, and
 # Ramalama waits for proper costume sheets of its three before it is made again
 OFF_SHELF = {"black-cat-clapping", "ramalama"}
+# trends shown at the end of the shelf, not made yet: a card that says "Coming soon" and opens nothing
+SOON = {"grand-entrance"}
 # the revisions matched against the trends' own frames replace the first concepts
 REVISED = {
     "02-hotel-lobby": "hotel-lobby-v2.2",
@@ -156,6 +158,7 @@ def main():
             "id": slug,
             "name": name,
             "kind": kind,
+            "soon": slug in SOON,
             "home": "none" if re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") in OFF_SHELF else HOME[kind],
             "also": ALSO.get(re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-"), []),
             "seconds": t.get("length_s", 10),
@@ -243,7 +246,7 @@ def main():
         "// trend research (docs/research/trends-2026-10-19). Each trend: its length, how hot it is now (1 to 5),\n"
         "// who stars in it, its beats over time, and the feel of the music made for it (never the original track).\n"
         f"export const CREW = {json.dumps(crew, ensure_ascii=False, indent=2)};\n\n"
-        f"export const TRENDS = {json.dumps(trends, ensure_ascii=False, indent=2)};\n\n"
+        f"export const TRENDS = {json.dumps(sorted(trends, key=lambda t: t['soon']), ensure_ascii=False, indent=2)};\n\n"
         'export const KINDS = [["all", "All"], ["dance", "Dance"], ["duo", "Duo"], ["reactions", "Reactions"], ["walks", "Walks"], ["glowups", "Glow-ups"]];\n'
         "export const trendById = (id) => TRENDS.find((t) => t.id === id) ?? null;\n"
         "export const crewById = (id) => CREW.find((c) => c.id === id) ?? null;\n"

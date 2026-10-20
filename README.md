@@ -125,7 +125,7 @@ LoRAs trained for LTX-2.3 load on LTX-2.5 too (the 22B transformer is the same s
 - **Move**: Cinemagraph, FPV Flight, Transition, Product Ad and Googly Eyes.
 - **Real sounds**: Add sound with Foley on keeps music out of the new soundtrack.
 
-They stack up to three, like the Image window's, each with its strength (stacked ones add up, so they may want a little less each): in Shot settings for a take, in Mixer for every take of a mix (Pixar Toon, like its crew, until you change it), and in Jam for the whole video. The LoRAs load between LTX-2.5's transformer and everything that reads it, in every pass, and their words open the prompt (after the prompt enhancer's rewrite too).
+They stack up to three, like the Image window's, each with its strength (stacked ones add up, so they may want a little less each): in Shot settings for a take, in Mixer for every take of a mix (none until you pick some), and in Jam for the whole video. The LoRAs load between LTX-2.5's transformer and everything that reads it, in every pass, and their words open the prompt (after the prompt enhancer's rewrite too).
 
 ## Stage
 
