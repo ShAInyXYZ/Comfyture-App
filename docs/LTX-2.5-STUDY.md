@@ -247,12 +247,30 @@ The first frames were redrawn to that skeleton: five GPT Image sessions in paral
 
 **Result.** Small, chibi kittens with round paws and toe beans, doing the source's moves: the paw thrusts, the turn-around, the paw to the mouth, the salute. Same detail as v3. Cost 240 credits for the 18 s (5 takes plus upscales), the same as v3.
 
-### 6.6 Engineering issues found on the way
+### 6.6 v5: a portrait take from a landscape clip
+
+The trend's preview is watched on a phone, in 9:16. The clip is 3:2 and its two performers stand apart, so a 9:16 crop cuts both in half in every medium shot.
+
+v5 lays the characters out again for the new frame (`reframe()` in `server/pose.ts`, `--size` in `scripts/retarget-pose.ts`):
+
+1. **Per shot, once.** One transform for all of a shot's frames, so every move and every turn of the camera stays.
+2. **Closer together.** Each character keeps room around its skeleton for the head, body and tail drawn over it. The gap between them closes to a quarter of a body: room for the microphone.
+3. **Across the frame.** The row spans the frame's width. A wide shot, where everyone's feet show, spans half of it, so it still reads as the camera pulled back.
+4. **One floor.** Feet sit at 0.8 of the height: where the ankles are, else where the build's short legs put them under the hips.
+
+The first frames were drawn for the new frame: there is no source frame to draw over, so each GPT Image session got the new stage instead: the backdrop, the skeleton, and the source's own microphone hung between the two at eye height. Kept where the people had it, as in v4's wide shot, it hung far above the kittens.
+
+Takes ran at 576×1024 (1152×2048 out), with v4's seeds and settings.
+
+**Result.** The same kittens and moves at the phone's shape, the microphone at their heads in every shot. The five takes cost 217 credits.
+
+### 6.7 Engineering issues found on the way
 
 - **Cut detection.** ffmpeg's scene score for real cuts on a plain backdrop was about 0.2, so a fixed 0.3 threshold found none. The threshold now adapts: six times the clip's 90th-percentile score, clamped to 0.1–0.3.
 - **Off-by-one clips.** Shot clips started a frame late and ended a frame into the next shot (millisecond-rounded seeks). Fixed by seeking half a frame early and trimming by frame count.
 - **`8n + 1` rounding** cut up to 0.3 s off every take. Fixed by holding each clip's last frame for eight more.
 - **No sound in VS Code.** Its media player has no AAC decoder, so review copies use Opus.
+- **Black takes that "succeeded".** One shot's prompt gave all-black frames every time, with two seeds, another shot's first frame or another shot's pose; the same prompt with one word less came out right, and a longer prompt worked too (prompts are padded to 1024 tokens), so it is that wording, not its length. It cost two full takes and 83 credits of 17-frame tests to find. Every take is checked for black frames before the cut.
 
 ## 7. Discussion
 
@@ -266,9 +284,9 @@ The first frames were redrawn to that skeleton: five GPT Image sessions in paral
 
 ## 8. Recommended recipe and future work
 
-The recipe is v4:
+The recipe is v4, laid out for the frame's shape as in v5:
 
-- `workflows/shot-swap-dev.json`, built by `buildSwap()`, fed the skeleton rebuilt by `server/pose.ts` for the characters' build.
+- `workflows/shot-swap-dev.json`, built by `buildSwap()`, fed the skeleton rebuilt by `server/pose.ts` for the characters' build and laid out for the frame.
 - First frames drawn to that skeleton.
 - The inputs and steps are in [VIDEO-TO-VIDEO.md](VIDEO-TO-VIDEO.md).
 

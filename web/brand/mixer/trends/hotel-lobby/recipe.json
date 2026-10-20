@@ -1,11 +1,11 @@
 {
  "id": "hotel-lobby",
- "about": "Hotel Lobby as our crew performs it: everything a version with other characters is made from. Each shot has the performers' motion (body keypoints, and the skeleton rebuilt for the build below), its first frame with the crew, and its prompt with each role's slot ({Lead} is that role's name and look, {Pair} who the two are, {PartnerName} the partner's name). The takes run shot-swap-dev.json with the pose as a ready-made control and the vocals frozen in.",
+ "about": "Hotel Lobby as our crew performs it: everything a version with other characters is made from. Each shot has the performers' motion (body keypoints, and the skeleton rebuilt for the build below and laid out for the 9:16 frame), its first frame with the crew, and its prompt with each role's slot ({Lead} is that role's name and look, {Pair} who the two are, {PartnerName} the partner's name). The takes run shot-swap-dev.json with the pose as a ready-made control and the vocals frozen in.",
  "seconds": 18.019,
- "aspect": "3:2",
+ "aspect": "9:16",
  "size": {
-  "width": 1536,
-  "height": 1024
+  "width": 1152,
+  "height": 2048
  },
  "fps": 24,
  "preview": "preview.mp4",
@@ -33,8 +33,8 @@
   "graph": "shot-swap-dev.json",
   "control": "ready",
   "strength": 0.8,
-  "width": 960,
-  "height": 640,
+  "width": 576,
+  "height": 1024,
   "build": "kitten"
  },
  "shots": [
@@ -46,7 +46,7 @@
    "keypoints": "shot-1.kps.json",
    "look": "shot-1.look.webp",
    "seed": 1235,
-   "prompt": "Wide shot of {Pair} standing upright on an orange stage, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them. A yellow floor line runs along the bottom. On the left, {Lead}, looks down at the front paws and rubs them together. On the right, {Partner}, raps with a paw at the mouth. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
+   "prompt": "Vertical wide shot of {Pair} standing upright on an orange stage, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging down between them at their head height. A yellow floor runs along the bottom. On the left, {Lead}, looks down at the front paws and rubs them together. On the right, {Partner}, raps with a paw at the mouth. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
   },
   {
    "from": 2.583,
@@ -56,7 +56,7 @@
    "keypoints": "shot-2.kps.json",
    "look": "shot-2.look.webp",
    "seed": 1236,
-   "prompt": "Medium shot of {Pair} performing a rap song, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them. On the left, {Lead}, raps into the microphone with small confident paw gestures, mouth moving with every word. On the right, {Partner}, throws a paw forward toward the camera again and again in time with the beat, then lets it drop. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
+   "prompt": "Vertical full shot of {Pair} performing a rap song, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging down between them at their head height. On the left, {Lead}, raps into the microphone with small confident paw gestures, mouth moving with every word. On the right, {Partner}, throws a paw forward toward the camera again and again in time with the beat, then lets it drop. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
   },
   {
    "from": 7.042,
@@ -66,7 +66,7 @@
    "keypoints": "shot-3.kps.json",
    "look": "shot-3.look.webp",
    "seed": 1237,
-   "prompt": "Medium shot of {Pair} performing a rap song, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them. On the left, {Lead}, raps into the microphone, turned toward {PartnerName}, mouth moving with every word. On the right, {Partner}, faces the camera and gestures with both front paws at chest height, then brings the paws together. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
+   "prompt": "Vertical full shot of {Pair} performing a rap song, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging down between them at their head height. On the left, {Lead}, raps into the microphone, turned toward {PartnerName}, mouth moving with every word. On the right, {Partner}, faces the camera and gestures with both front paws at chest height, then brings the paws together. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
   },
   {
    "from": 10.375,
@@ -76,7 +76,7 @@
    "keypoints": "shot-4.kps.json",
    "look": "shot-4.look.webp",
    "seed": 1238,
-   "prompt": "Medium shot of {Pair} performing a rap song, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them. On the left, {Lead}, raps into the microphone with small paw gestures, mouth moving with every word. On the right, {Partner}, swings a paw over the head and turns around, back to the camera, bobbing to the beat, then turns partly back. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
+   "prompt": "Vertical full shot of {Pair} performing a rap song, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them at their head height. On the left, {Lead}, raps into the microphone with small paw gestures, mouth moving with every word. On the right, {Partner}, swings a paw over the head and turns around, back to the camera, bobbing to the beat, then turns partly back. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
   },
   {
    "from": 14.208,
@@ -87,7 +87,7 @@
    "keypoints": "shot-5.kps.json",
    "look": "shot-5.look.webp",
    "seed": 1239,
-   "prompt": "Medium shot of {Pair} performing a rap song, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging between them. On the right, {Partner}, raises a paw to the mouth, then shades the eyes with a paw like a salute. On the left, {Lead}, raises both front paws, rapping, mouth moving with every word. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
+   "prompt": "Vertical full shot of {Pair} performing a rap song, in front of a seamless orange backdrop in soft even studio light, a slim silver studio microphone hanging down between them at their head height. On the right, {Partner}, raises a paw to the mouth, then shades the eyes with a paw like a salute. On the left, {Lead}, raises both front paws, rapping, mouth moving with every word. Both stand upright and groove to a laid-back trap beat, in a polished 3D animated feature-film style. Clear male rap vocals, close to the microphone."
   }
  ],
  "pair": "two 3D animated kittens",

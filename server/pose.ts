@@ -109,6 +109,67 @@ export function retarget(frames: PoseFrame[], build: Build = KITTEN, count = 2):
   })));
 }
 
+const quantile = (a: number[], p: number) => {
+  const s = [...a].sort((x, y) => x - y);
+  return s[Math.round(p * (s.length - 1))];
+};
+const middle = (b: Body, i: number, j: number): Point => (b[i] && b[j] ? [(b[i]![0] + b[j]![0]) / 2, (b[i]![1] + b[j]![1]) / 2] : b[i] ?? b[j]);
+
+/** The characters laid out for another frame, and the spot between the first two at eye height (where a shared microphone hangs). */
+export type Layout = { frames: PoseFrame[]; between: [number, number] | null };
+
+/**
+ * The characters laid out again for a frame of another shape (a phone's 9:16, from a wide clip): side
+ * by side as they stand, closer together, the row across the frame (`span` of its width; a wide shot,
+ * where every character's feet show, keeps air around them), feet on a floor at `floor` of its height.
+ * A shot is laid out once for all its frames, so every move stays. Each character keeps room around
+ * its skeleton for the head, body and tail drawn over it; a reach past that leaves the frame now and then.
+ */
+export function reframe(frames: PoseFrame[], width: number, height: number, { span, floor = 0.8, gap = 0.25 }: { span?: number; floor?: number; gap?: number } = {}): Layout {
+  const people = (frames[0]?.people ?? []).map((_, who) => {
+    const xs: number[] = [], ys: number[] = [], torso: number[] = [], hips: number[] = [], feet: number[] = [], eyes: number[] = [];
+    for (const f of frames) {
+      const b = f.people[who];
+      for (const p of b) if (p) (xs.push(p[0]), ys.push(p[1]));
+      const hip = middle(b, R_HIP, L_HIP), eye = middle(b, R_EYE, L_EYE) ?? b[NOSE];
+      if (b[NECK] && hip) (torso.push(Math.hypot(hip[0] - b[NECK]![0], hip[1] - b[NECK]![1])), hips.push(hip[1]));
+      const ankles = [b[R_ANKLE], b[L_ANKLE]].filter(Boolean).map((p) => p![1]);
+      if (ankles.length) feet.push(Math.max(...ankles));
+      if (eye) eyes.push(eye[1]);
+    }
+    if (!xs.length) return null;
+    const from = quantile(xs, 0.03), to = quantile(xs, 0.97);
+    // a character's size is its body (neck to hips), else its width
+    const size = torso.length ? quantile(torso, 0.5) : (to - from) / 2;
+    return { who, from, to, size, top: quantile(ys, 0.03) - 0.35 * size, eyes: eyes.length ? quantile(eyes, 0.5) : null, hips: hips.length ? quantile(hips, 0.5) : null, feet: feet.length > frames.length / 2 ? quantile(feet, 0.5) : null };
+  }).filter((p) => p !== null);
+  if (!people.length) return { frames: frames.map((f) => ({ ...f, width, height, people: f.people.map((b) => b.map(() => null)) })), between: null };
+
+  // room for the head and the tail outside, a little inside; then the gaps closed up to `gap` of a body
+  const boxes = people.map((p, i) => ({ ...p, left: p.from - p.size * (i === 0 ? 0.35 : 0.12), right: p.to + p.size * (i === people.length - 1 ? 0.35 : 0.12), shift: 0 }));
+  const air = gap * quantile(people.map((p) => p.size), 0.5);
+  let pull = 0;
+  for (let i = 1; i < boxes.length; i++) {
+    const open = boxes[i].left - boxes[i - 1].right;
+    if (open > air) pull += open - air;
+    boxes[i].shift = -pull;
+  }
+  const left = boxes[0].left + boxes[0].shift, right = boxes[boxes.length - 1].right + boxes[boxes.length - 1].shift;
+  const wide = people.every((p) => p.feet !== null);
+  // feet on the floor: where they show, else where short legs under the hips put them
+  const ground = quantile(people.map((p) => p.feet ?? (p.hips !== null ? p.hips + 0.7 * p.size : p.to)), 0.5);
+  // across the frame, as long as the heads stay in it
+  const top = Math.min(...people.map((p) => p.top));
+  const scale = Math.min(((span ?? (wide ? 0.5 : 1)) * width) / (right - left), (0.95 * floor * height) / (ground - top));
+  const shiftOf = new Map(boxes.map((b) => [b.who, b.shift]));
+  const at = (x: number, y: number, who: number): [number, number] => [(x + (shiftOf.get(who) ?? 0) - (left + right) / 2) * scale + width / 2, (y - ground) * scale + floor * height];
+  const eyes = people.map((p) => p.eyes).filter((y) => y !== null);
+  const between = boxes.length > 1 && eyes.length
+    ? ([((boxes[0].right + boxes[0].shift + boxes[1].left + boxes[1].shift) / 2 - (left + right) / 2) * scale + width / 2, (quantile(eyes, 0.5) - ground) * scale + floor * height] as [number, number])
+    : null;
+  return { frames: frames.map((f) => ({ width, height, people: f.people.map((b, who) => b.map((p) => (p ? at(p[0], p[1], who) : null))) })), between };
+}
+
 function smooth(frames: PoseFrame[]): PoseFrame[] {
   return frames.map((f, t) => ({
     ...f,
