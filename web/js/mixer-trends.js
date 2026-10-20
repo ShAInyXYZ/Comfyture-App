@@ -252,7 +252,7 @@ export const TRENDS = [
     "id": "black-cat-clapping",
     "name": "Black Cat Clapping",
     "kind": "reactions",
-    "seconds": 8,
+    "seconds": 6,
     "heat": 5,
     "cast": [
       {
@@ -263,18 +263,18 @@ export const TRENDS = [
     "beats": [
       {
         "from": 0.0,
-        "to": 1.0,
-        "text": "Sesame already wears an absurdly pleased grin"
+        "to": 2.9,
+        "text": "Sesame claps three times, right on the beat"
       },
       {
-        "from": 1.0,
-        "to": 6.0,
-        "text": "Three broad paw claps, with pauses"
+        "from": 2.9,
+        "to": 5.0,
+        "text": "Sesame shushes, paw to mouth"
       },
       {
-        "from": 6.0,
-        "to": 8.0,
-        "text": "Slow approving nod"
+        "from": 5.0,
+        "to": 6.4,
+        "text": "Sesame leans in at the lens"
       }
     ],
     "music": {
@@ -287,7 +287,11 @@ export const TRENDS = [
         "woodblock"
       ]
     },
-    "caption": null
+    "caption": null,
+    "aspect": "9:16",
+    "preview": "brand/mixer/trends/black-cat-clapping/preview.mp4",
+    "poster": "brand/mixer/trends/black-cat-clapping/poster.webp",
+    "recipe": "brand/mixer/trends/black-cat-clapping/recipe.json"
   },
   {
     "id": "ramalama",

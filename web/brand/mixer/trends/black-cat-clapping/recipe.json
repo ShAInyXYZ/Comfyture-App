@@ -1,0 +1,62 @@
+{
+ "id": "black-cat-clapping",
+ "about": "Black Cat Clapping as our crew performs it: one shot from one first frame (the meme's own opening, edited in place: Sesame on the bleachers, Theo's knee in front). The motion is the clip's depth (Depth Anything V2 of the meme, its caption blurred first), which carries the clap cycle and the hush better than an animal skeleton; the clip's own claps are frozen in so the paws meet on them. The take runs shot-swap-dev.json with the depth as a ready-made control; {Lead} is that role's name and look.",
+ "seconds": 6.375,
+ "aspect": "9:16",
+ "size": {
+  "width": 1152,
+  "height": 2048
+ },
+ "fps": 24,
+ "preview": "preview.mp4",
+ "poster": "poster.webp",
+ "sound": {
+  "mix": "sound.m4a",
+  "note": "The meme's own sound (three claps, then quiet): it times the paws and plays under the cut. It is the original recording, so it is replaced or removed before the repository is published."
+ },
+ "roles": [
+  {
+   "role": "Lead",
+   "crew": "sesame",
+   "plays": "the clapping cat",
+   "look": "a cute small plush black kitten with a big round head, vivid emerald-green eyes and a tiny cream chest tuft"
+  }
+ ],
+ "take": {
+  "graph": "shot-swap-dev.json",
+  "control": "ready",
+  "guide": "depth",
+  "strength": 0.6,
+  "width": 576,
+  "height": 1024
+ },
+ "look": "look.webp",
+ "beats": [
+  {
+   "from": 0.0,
+   "to": 2.9,
+   "text": "Sesame claps three times, right on the beat"
+  },
+  {
+   "from": 2.9,
+   "to": 5.0,
+   "text": "Sesame shushes, paw to mouth"
+  },
+  {
+   "from": 5.0,
+   "to": 6.4,
+   "text": "Sesame leans in at the lens"
+  }
+ ],
+ "shots": [
+  {
+   "from": 0,
+   "to": 6.375,
+   "frames": 161,
+   "guide": "take-1.depth.mp4",
+   "starts": "look",
+   "seed": 6201,
+   "prompt": "Vertical phone video in a polished 3D animated feature-film style: {Lead}, stands upright on a yellow wooden bleacher step in front of a blue wall and claps its front paws together three times, then puts a paw to its mouth to shush, then leans toward the camera. The knee of the person filming, in black joggers, is in the lower right foreground. Soft warm light. Three crisp claps, then silence."
+  }
+ ]
+}
