@@ -172,11 +172,13 @@ async function clip(v: Record<string, any> | undefined): Promise<ShotRequest["vi
   if (!(info.frames > 8)) throw bad("That video is too short.");
   return {
     file: v.file,
-    mode: v.mode === "motion" ? "motion" : "extend",
-    control: v.control === "edges" ? "edges" : v.control === "ready" ? "ready" : "pose",
+    mode: v.mode === "motion" ? "motion" : v.mode === "swap" ? "swap" : "extend",
+    control: v.mode === "swap" || v.control === "ready" ? "ready" : v.control === "edges" ? "edges" : "pose",
     frames: info.frames,
     width: info.width,
     height: info.height,
+    // a trend's take: where in the trend's vocals it starts, and how firmly the control holds
+    ...(v.mode === "swap" ? { from: num(v.from, 0, 600, 0), strength: num(v.strength, 0.1, 1, 0.8) } : {}),
   };
 }
 
@@ -222,6 +224,7 @@ async function parseShot(input: Record<string, any>): Promise<{ request: ShotReq
   const video = await clip(input.video);
   // an extended clip starts on its own last frames, not on a photo
   const start = video?.mode === "extend" ? undefined : await photo(input.start);
+  if (video?.mode === "swap" && (!start || !audio)) throw bad("A trend's take needs its first frame and its sound.");
   const endFile = await photo(input.end?.file);
   const paint = text(input.end?.paint, 600);
   if (paint && !endFile && !start) throw bad("Painting a last frame needs a start frame.");
@@ -1216,6 +1219,34 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     await writeFile(join(data, "mixer-stars.json"), JSON.stringify(stars));
     return json(res, 200, stars);
   }
+  const trendFiles = /^\/api\/mixer\/trends\/([\w-]+)\/files$/.exec(path);
+  if (trendFiles && method === "POST") {
+    // a trend we have made ourselves, to make again: its recipe's controls and sound into the library
+    if (!ffmpeg) throw bad("Mixer needs ffmpeg on the server.", 501);
+    const dir = join(root, "web", "brand", "mixer", "trends", trendFiles[1]);
+    const recipe = await readFile(join(dir, "recipe.json"), "utf8").then(JSON.parse).catch(() => null);
+    if (!recipe) throw bad("That trend has no recipe.", 404);
+    const controls: Record<string, unknown> = {};
+    for (const s of Array.isArray(recipe.shots) ? recipe.shots : []) {
+      const name = s?.pose ?? s?.guide;
+      const where = typeof name === "string" ? inside(dir, name) : null;
+      if (!where || name in controls || !(await exists(where))) continue;
+      // kept as made (no upload re-encode): the control's own size sets the take's
+      const bytes = await readFile(where);
+      const file = `${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}-control.mp4`;
+      const out = join(data, "videos", file);
+      await mkdir(join(data, "videos"), { recursive: true });
+      if (!(await exists(out))) await writeFile(out, bytes);
+      controls[name] = { file, url: `/media/videos/${file}`, ...(await probeVideo(out)) };
+    }
+    const sound = async (name: unknown, label: string) => {
+      const where = typeof name === "string" ? inside(dir, name) : null;
+      if (!where || !(await exists(where))) return null;
+      const { stdout } = await exec("ffmpeg", ["-nostdin", "-v", "error", "-i", where, "-vn", "-ac", "2", "-ar", "48000", "-b:a", "192k", "-f", "mp3", "-"], { encoding: "buffer", maxBuffer: 64 << 20 });
+      return keepAudio(stdout as unknown as Buffer, ".mp3", { name: `${text(recipe.id, 40)} ${label}`, kind: label === "vocals" ? "voice" : "music" });
+    };
+    return json(res, 200, { controls, vocals: await sound(recipe.sound?.vocals, "vocals"), mix: await sound(recipe.sound?.mix, "sound") });
+  }
   if (path === "/api/mixer/split" && method === "POST") {
     // an edit to remix, at its cuts: each shot's first frame and clip, and the edit's sound
     if (!ffmpeg) throw bad("Mixer needs ffmpeg on the server.", 501);
@@ -1257,6 +1288,18 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     return json(res, 201, await engine.roll(request, takes, seed));
   }
   if (path === "/api/runs" && method === "GET") return json(res, 200, engine.list());
+  const runFrame = /^\/api\/runs\/([\w-]+)\/frame$/.exec(path);
+  if (runFrame && method === "POST") {
+    // one frame of a finished take as a photo: where the next of a trend's chained takes starts
+    if (!ffmpeg) throw bad("Taking a frame needs ffmpeg on the server.", 501);
+    const run = engine.get(runFrame[1]);
+    if (!run || run.status !== "done") throw bad("That take isn't finished.");
+    const n = Math.round(num((await jsonBody(req)).frame, 0, 100000, 0));
+    const { stdout } = await exec("ffmpeg", ["-nostdin", "-v", "error", "-i", join(data, "runs", run.id, "shot.mp4"), "-vf", `select=eq(n\\,${n})`, "-frames:v", "1", "-f", "image2pipe", "-c:v", "png", "-"], { encoding: "buffer", maxBuffer: 64 << 20 });
+    const bytes = stdout as unknown as Buffer;
+    if (!bytes.length) throw bad("That take is shorter than that.");
+    return json(res, 200, await engine.storeImage(bytes, `${run.request.name} · frame ${n}`));
+  }
   if (path === "/api/reels" && method === "POST") {
     if (!ffmpeg) throw bad("Films need ffmpeg on the server.", 501);
     const input = await jsonBody(req);

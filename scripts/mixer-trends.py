@@ -71,6 +71,7 @@ OWNERS = {
     "josie": ("Josie", "Praline's owner", "praline", "the upbeat young creator with caramel-blonde curls in a messy bun, freckles, a butter-yellow cropped hoodie, light jeans and small gold hoop earrings"),
     "theo": ("Theo", "Sesame's owner", "sesame", "the laid-back young producer with short black twists, an oversized black tee, black joggers and emerald-green headphones around his neck"),
     "margot": ("Margot", "Meringue's owner", "meringue", "the glamorous former stage actress with a sleek platinum-white bob, sky-blue eyes, a white blouse, cream trousers and a coral silk scarf"),
+    "ivy": ("Ivy", "Pickle's owner", "pickle", "the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers"),
     "dre": ("Dre", "Bagel's owner, Theo's brother", "bagel", "Theo's big-hearted older brother with a short boxed beard, a burgundy bucket hat, a cream varsity jacket with burgundy sleeves and light jeans"),
 }
 # each cat's face on the lineup, as fractions of its width and height
@@ -168,9 +169,21 @@ def main():
                 "poster": f"brand/mixer/trends/{slug}/{recipe['poster']}",
                 "recipe": f"brand/mixer/trends/{slug}/recipe.json",
             })
+            # its caption, when ours differs from the trend's (none at all, or our own words)
+            if "caption" in recipe:
+                trends[-1]["caption"] = recipe["caption"]
             # who is in our version, when the recipe says
             if recipe.get("roles"):
                 trends[-1]["cast"] = [{"role": r["role"], "crew": r["crew"]} for r in recipe["roles"]]
+            # what making it again takes: seconds of takes, and first frames to redraw for another cast
+            shots = recipe.get("shots") or []
+            chain = recipe.get("take", {}).get("chain", False)
+            firsts = len({s.get("look") or recipe.get("look") for i, s in enumerate(shots) if not (i and s.get("chain", chain))})
+            trends[-1]["made"] = {"seconds": round(sum(s["frames"] for s in shots) / 24, 2), "firsts": firsts}
+            # the cover is our version's poster: the card, the cover and the film show the same cast
+            cover = Image.open(OUT_ART / slug / recipe["poster"]).convert("RGB")
+            cover.thumbnail((720, 1280))
+            cover.save(OUT_ART / f"{slug}.webp", quality=84, method=6)
 
     # the crew: a round avatar from the lineup, and a clean front view from each sheet for the models
     lineup = Image.open(CREW_DIR / "crew-lineup-v1.png").convert("RGB")

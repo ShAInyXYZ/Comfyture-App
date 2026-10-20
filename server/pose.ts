@@ -196,6 +196,15 @@ const middle = (b: Body, i: number, j: number): Point => (b[i] && b[j] ? [(b[i]!
 export type Layout = { frames: PoseFrame[]; between: [number, number] | null };
 
 /**
+ * The clip's own framing kept on a frame of another shape: every point scaled by `scale` and moved by
+ * (x, y), the same for all frames, as the clip's picture is placed on that frame (a portrait take whose
+ * first frame is the clip's own, extended). What leaves the frame is drawn off it; nothing is laid out again.
+ */
+export function place(frames: PoseFrame[], width: number, height: number, scale: number, x: number, y: number): PoseFrame[] {
+  return frames.map((f) => ({ width, height, people: f.people.map((body) => body.map((p) => (p ? [p[0] * scale + x, p[1] * scale + y] : null))) }));
+}
+
+/**
  * The characters laid out again for a frame of another shape (a phone's 9:16, from a wide clip): side
  * by side as they stand, closer together, the row across the frame (`span` of its width; a wide shot,
  * where every character's feet show, keeps air around them), feet on a floor at `floor` of its height.

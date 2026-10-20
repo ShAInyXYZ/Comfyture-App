@@ -2,7 +2,9 @@
 // can go to another of the crew or to a star of your own (a photo: your pet, yourself), and the
 // trend's cover is then redrawn with them. The trend's beats are rolled from that frame with
 // LTX-2.5, a few seconds at a time; an original track in the trend's feel is made with ACE-Step;
-// and the shots are cut together on it, the trend's caption on top.
+// and the shots are cut together on it, the trend's caption on top. A trend we have made ourselves
+// is made again from its recipe instead: our version's motion, its first frames redrawn with your
+// cast, and the trend's own sound, the mouths following its vocals.
 import { state, changed, toast, waitFor, drawPicture, artistFor } from "./store.js";
 import { api } from "./api.js";
 import { mixer, save, newMix, whenOpened, mixLoras } from "./mixer.js";
@@ -114,16 +116,18 @@ const looks = (t, cast) => Object.fromEntries(t.cast.map((c, i) => {
   const name = crewById(c.crew)?.name ?? c.crew;
   return [name, who.crew ? crewById(who.crew).look : `the ${cast[i].role.toLowerCase()} from the photo`];
 }));
+// any of the crew named in a beat
+const NAMES = new RegExp(`\\b(${CREW.map((c) => c.name).join("|")})\\b`, "g");
 /** What happens in a take, its beats told with who is in the frame. */
 function actionOf(t, cast, take) {
   const who = looks(t, cast);
-  const said = take.beats.map((b) => b.text.replace(/\b(Praline|Sesame|Mochi|Meringue)\b/g, (n) => who[n] ?? n)).join(", then ");
+  const said = take.beats.map((b) => b.text.replace(NAMES, (n) => who[n] ?? n)).join(", then ");
   return `${said}. The same characters, place and light as the first frame, playful and smooth, made for a short vertical video.`;
 }
 
-/** The first frame: the trend's cover, redrawn with whoever replaced the crew in it. */
-async function firstFrame(t, cast) {
-  const cover = await onServer(trendArt(t), `${t.name} cover`);
+/** The first frame: the trend's cover (or one of a recipe's first frames), redrawn with whoever replaced the crew in it. */
+async function firstFrame(t, cast, picture = trendArt(t)) {
+  const cover = await onServer(picture, `${t.name} first frame`);
   const changes = cast.filter((c) => !(c.who.crew && c.who.crew === c.original));
   if (!changes.length) return { file: cover.file, url: cover.url };
   const refs = [{ file: cover.file, name: "scene" }];
@@ -152,6 +156,87 @@ async function music(t) {
 export const making = () => mixer.busy.has("trend");
 export const take = (s) => (s?.run ? state.runs.find((r) => r.id === s.run) : null);
 
+/**
+ * Who plays a recipe's roles, as its prompts name them: {Lead} is that role's name and look, {LeadName}
+ * the name, and {Pair} the two together (the recipe's own words for our cast).
+ */
+function roleWords(recipe, cast) {
+  const words = {};
+  const names = [];
+  let ours = true;
+  for (const r of recipe.roles ?? []) {
+    const who = cast.find((c) => c.role === r.role)?.who ?? { crew: r.crew };
+    const crew = who.crew ? crewById(who.crew) : null;
+    const name = crew?.name ?? who.star?.name ?? r.role;
+    if (who.crew !== r.crew) ours = false;
+    words[r.role] = `${name}, ${who.crew === r.crew ? r.look : crew ? crew.look : "as in the first frame"}`;
+    words[`${r.role}Name`] = name;
+    names.push(name);
+  }
+  words.Pair = ours && recipe.pair ? recipe.pair : names.join(" and ");
+  return words;
+}
+
+/**
+ * A trend we have made, made again from its recipe: each take copies our version's motion (its
+ * skeleton or depth), starts on its first frame redrawn with your cast, and keeps the trend's sound
+ * for the mouths.
+ */
+async function fromRecipe(t, cast, m) {
+  const recipe = await call(t.recipe);
+  const files = await send(`api/mixer/trends/${t.id}/files`, "POST");
+  const voice = files.vocals ?? files.mix;
+  if (!voice) throw new Error("The trend's sound is missing.");
+  const words = roleWords(recipe, cast);
+  const fill = (text) => text.replace(/\{(\w+)\}/g, (all, k) => words[k] ?? all);
+  // our cast rolls our seeds: the same takes again
+  const ours = cast.every((c) => c.who.crew && c.who.crew === c.original);
+  const dir = t.recipe.replace(/recipe\.json$/, "");
+  const firsts = new Map();
+  const first = (path) => (firsts.has(path) ? firsts : firsts.set(path, firstFrame(t, cast, dir + path))).get(path);
+  m.body.shots = recipe.shots.map((s) => ({ from: s.from, to: s.to, look: null, run: null, beats: (recipe.beats ?? []).filter((b) => b.from < s.to && b.to > s.from) }));
+  save();
+  update();
+  const roll = async (i, start) => {
+    const s = recipe.shots[i];
+    const shot = m.body.shots[i];
+    shot.look = start;
+    const body = {
+      name: `${m.name} · ${i + 1}`, start: start.file, seconds: Math.ceil(s.frames / 24), aspect: "9:16", review: false, takes: 1, quality: "standard",
+      script: { shots: [], raw: fill(s.prompt) }, audio: { file: voice.file },
+      video: { file: files.controls[s.pose ?? s.guide].file, mode: "swap", from: s.from, strength: recipe.take.strength },
+      ...(ours && s.seed ? { seed: s.seed } : {}),
+    };
+    for (let attempt = 0; attempt < 2 && take(shot)?.status !== "done"; attempt++) {
+      const [run] = await api.shoot(body);
+      shot.run = run.id;
+      save();
+      update();
+      await waitFor("run", run.id).catch(() => null);
+    }
+    if (take(shot)?.status !== "done") throw new Error(`Take ${i + 1} didn't come out: open the mix and roll it again.`);
+  };
+  // the shots in runs: one with a first frame of its own starts a run, a chained one starts on the
+  // frame where the take before reaches it; runs roll two at a time
+  const chained = (i) => i > 0 && (recipe.shots[i].chain ?? !!recipe.take.chain);
+  const runs = [];
+  recipe.shots.forEach((_, i) => (chained(i) ? runs.at(-1).push(i) : runs.push([i])));
+  let next = 0;
+  const lane = async () => {
+    while (next < runs.length) {
+      for (const i of runs[next++]) {
+        const s = recipe.shots[i];
+        const join = () => send(`api/runs/${m.body.shots[i - 1].run}/frame`, "POST", { frame: Math.round((s.from - recipe.shots[i - 1].from) * 24) });
+        await roll(i, chained(i) ? await join() : await first(s.look ?? recipe.look));
+      }
+    }
+  };
+  await Promise.all([lane(), lane()]);
+  m.body.music = files.mix ?? voice;
+  save();
+  return recipe;
+}
+
 /** The trend, made: its first frame, its takes rolled two at a time, its own track, cut together. */
 export async function makeTrend() {
   const t = trendById(pick.trend);
@@ -165,6 +250,11 @@ export async function makeTrend() {
     Object.assign(m.body, { kind: "trend", trend: { id: t.id, cast: structuredClone(pick.cast.roles) }, aspect: "9:16", shots: [], film: null, music: null });
     save();
     update();
+    if (t.recipe) {
+      const recipe = await fromRecipe(t, cast, m);
+      await cutTogether(m, t, recipe.seconds);
+      return;
+    }
     const tune = music(t).catch((e) => (toast(`The track: ${e.message}`, { tone: "crit" }), null));
     const frame = await firstFrame(t, cast);
     m.body.shots = takesOf(t).map((tk) => ({ from: tk.from, to: tk.to, look: frame, run: null, beats: tk.beats }));
@@ -199,7 +289,7 @@ export async function makeTrend() {
 }
 
 /** The takes on the trend's own track, its caption on top: a Cut of its own, rendered. */
-async function cutTogether(m, t) {
+async function cutTogether(m, t, seconds = t.seconds) {
   const items = m.body.shots.map((s, i) => {
     const r = take(s);
     const need = s.to - s.from;
@@ -208,8 +298,8 @@ async function cutTogether(m, t) {
     return { id: `t${i + 1}`, src: { kind: "take", id: r.id }, from: 0, to: Math.min(have, need * speed), speed, sound: !m.body.music, join: "cut" };
   });
   const tracks = [{ id: "video", kind: "video", main: true, items }];
-  if (m.body.music) tracks.push({ id: "music", kind: "audio", role: "music", items: [{ id: "track", src: { kind: "audio", id: m.body.music.file }, start: 0, from: 0, to: t.seconds }] });
-  if (t.caption) tracks.push({ id: "caption", kind: "title", items: [{ id: "c1", text: t.caption, start: 0, length: t.seconds, style: "top" }] });
+  if (m.body.music) tracks.push({ id: "music", kind: "audio", role: "music", items: [{ id: "track", src: { kind: "audio", id: m.body.music.file }, start: 0, from: 0, to: seconds }] });
+  if (t.caption) tracks.push({ id: "caption", kind: "title", items: [{ id: "c1", text: t.caption, start: 0, length: seconds, style: "top" }] });
   const body = { aspect: "9:16", tracks, product: "mixer" };
   const id = m.body.cut ?? (await send("api/cuts", "POST", { name: m.name, body })).project.id;
   if (m.body.cut) await send(`api/cuts/${id}`, "PUT", { name: m.name, body });
@@ -227,6 +317,8 @@ export function estimate(t = trendById(pick.trend)) {
   const redraw = cast.some((c) => !(c.who.crew && c.who.crew === c.original));
   const m = (state.image.catalogue?.models ?? []).find((x) => x.id === artistFor("edit"));
   const pic = m?.router ? m.credits ?? 8 : (m?.seconds ?? 10) * 0.266;
+  // a recipe's takes: LTX-2.5 dev at full size, about 45 GPU seconds a second, and a redraw per first frame
+  if (t.made) return Math.round((redraw ? pic * t.made.firsts : 0) + t.made.seconds * 45 * 0.266);
   const seconds = takesOf(t).reduce((s, tk) => s + Math.min(10, Math.max(2, Math.ceil(tk.to - tk.from))), 0);
   return Math.round((redraw ? pic : 0) + seconds * 18 * 0.266 + t.seconds * 1.3 * 0.266);
 }

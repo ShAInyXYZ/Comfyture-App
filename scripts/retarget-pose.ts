@@ -7,12 +7,16 @@
 // prints the spot between the first two at eye height, where a shared microphone hangs. --frames holds
 // the last pose until the take's length:
 // --eyes puts the eye line at that share of the height when laying out (people in a medium shot).
+// --place scale,x,y keeps the clip's own framing instead: the points scaled and moved as the clip's
+// picture is placed on the --size frame (its first frame drawn from the clip's own, extended).
+// --align kps.json[:n] moves and sizes each person, once, onto that person in the drawn first frame,
+// and changes nothing else (--fit also gives them the drawn figure's bone lengths).
 // --fit kps.json[:n] fits each person, once, onto that person in the take's first frame (DWPose's read
 // of it, frame n of the file), and gives each the drawn figure's bone lengths, so the take starts where
 // the picture has them, built as drawn:
 //   node scripts/retarget-pose.ts keypoints.json out.mp4 [first.png] [--human | --animal] [--size 1152x2048] [--span 0.5] [--eyes 0.32] [--frames 57]
 import { readFile } from "node:fs/promises";
-import { CAT, KITTEN, conform, fit, hold, parseAnimalPoses, parsePoses, reframe, retarget, steady, trackPeople, writePoseVideo } from "../server/pose.ts";
+import { CAT, KITTEN, conform, fit, hold, parseAnimalPoses, parsePoses, place, reframe, retarget, steady, trackPeople, writePoseVideo } from "../server/pose.ts";
 
 const args = process.argv.slice(2);
 const option = (name: string) => {
@@ -30,19 +34,23 @@ const animal = flag("--animal");
 const human = flag("--human");
 const eyes = option("--eyes");
 const onto = option("--fit");
+const at = option("--place")?.split(",").map(Number);
+const align = option("--align");
 const [keypoints, out, still] = args;
-if (!keypoints || !out) throw new Error("usage: retarget-pose.ts keypoints.json out.mp4 [first.png] [--human | --animal] [--size WxH] [--span 0.5] [--eyes 0.32] [--frames N]");
+if (!keypoints || !out) throw new Error("usage: retarget-pose.ts keypoints.json out.mp4 [first.png] [--human | --animal] [--size WxH] [--span 0.5] [--eyes 0.32] [--place s,x,y] [--fit | --align kps.json[:n]] [--frames N]");
 const text = await readFile(keypoints, "utf8");
 let frames = human ? steady(parsePoses(text, 0.3, true)) : animal ? retarget(hold(trackPeople(parseAnimalPoses(text), 2)), CAT) : retarget(parsePoses(text), KITTEN);
-if (size) {
+if (size && at) frames = place(frames, size[0], size[1], at[0], at[1], at[2]);
+else if (size) {
   const laid = reframe(frames, size[0], size[1], { span: span ? Number(span) : undefined, eyes: eyes ? Number(eyes) : undefined });
   frames = laid.frames;
   if (laid.between) console.log(`between: ${laid.between.map(Math.round).join(",")}`);
 }
-if (onto) {
-  const [file, n] = onto.split(":");
+if (onto ?? align) {
+  const [file, n] = (onto ?? align)!.split(":");
   const target = parsePoses(await readFile(file, "utf8"), 0.3, true)[Number(n ?? 0)];
-  frames = conform(fit(frames, target.people), target.people);
+  frames = fit(frames, target.people);
+  if (onto) frames = conform(frames, target.people);
 }
 while (frames.length < length) frames.push(frames[frames.length - 1]);
 await writePoseVideo(frames, out);

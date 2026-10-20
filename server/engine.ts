@@ -9,7 +9,7 @@ import { compose, finalPrompt } from "../web/js/script.js";
 import { imageSize } from "./media.ts";
 import {
   EXTEND_OVERLAP, FPS, REFERENCE_SIZE, addClipGuide, applyAudio, buildCutout, buildGenerate, buildGuided, buildI2V, buildMotion, buildPaint, buildPlan,
-  buildProduction, buildSound, loadGraph, outputSize, type Aspect, type Graph, type Guide, type Quality,
+  buildProduction, buildSound, buildSwap, loadGraph, outputSize, type Aspect, type Graph, type Guide, type Quality,
 } from "./workflows.ts";
 import { CAMERA } from "../web/js/script.js";
 import { untagRefs, type ImageModels } from "./images.ts";
@@ -41,8 +41,12 @@ export interface ShotRequest {
   references?: { sheet: string; panels: string[]; texts?: Record<string, string>; cast?: string; prop?: string; location?: string };
   /** A new sound for another take's picture. */
   sound?: { from: string; text: string };
-  /** A clip to start from: extended where it ends, or its motion copied onto the start photo. */
-  video?: { file: string; mode: "extend" | "motion"; control: "pose" | "edges" | "ready"; frames: number; width: number; height: number };
+  /**
+   * A clip to start from: extended where it ends, or its motion copied onto the start photo. "swap" is a
+   * trend's take from its recipe: the clip is a control (a skeleton or a depth pass), the audio is the
+   * trend's vocals from `from` seconds, and `strength` is the control's.
+   */
+  video?: { file: string; mode: "extend" | "motion" | "swap"; control: "pose" | "edges" | "ready"; frames: number; width: number; height: number; from?: number; strength?: number };
   seconds: number;
   aspect: Aspect;
   quality: Quality;
@@ -133,9 +137,9 @@ export interface Paint {
 
 const TERMINAL = new Set(["succeeded", "failed", "canceled", "expired"]);
 
-type Kind = "paint" | "cutout" | "generate" | "plan" | "i2v" | "guided" | "references" | "production" | "sound" | "motion" | "music" | "sfx" | "upscale" | "restore" | "listen";
+type Kind = "paint" | "cutout" | "generate" | "plan" | "i2v" | "guided" | "references" | "production" | "sound" | "motion" | "swap" | "music" | "sfx" | "upscale" | "restore" | "listen";
 /** First guesses before any job has finished: seconds per job for paint, per unit otherwise. */
-const DEFAULT_RATE: Record<Kind, number> = { paint: 25, cutout: 8, generate: 25, plan: 30, i2v: 10, guided: 14, references: 140, production: 30, sound: 7, motion: 12, music: 40, sfx: 15, upscale: 10, restore: 20, listen: 2 };
+const DEFAULT_RATE: Record<Kind, number> = { paint: 25, cutout: 8, generate: 25, plan: 30, i2v: 10, guided: 14, references: 140, production: 30, sound: 7, motion: 12, swap: 19, music: 40, sfx: 15, upscale: 10, restore: 20, listen: 2 };
 /** Kinds timed per job rather than per second of video. */
 const PER_JOB = new Set<Kind>(["paint", "cutout", "generate", "plan", "upscale"]);
 
@@ -171,6 +175,15 @@ const random32 = () => Math.floor(Math.random() * 2 ** 32);
 class Canceled extends Error {}
 
 /** The motion graph sizes itself from the clip: its shorter side at 544 on a 32 grid, then doubled. */
+/** A trend's take is made at its control's size: the first stage at half of it, on multiples of 64. */
+function swapSize(clip: { width: number; height: number }) {
+  const half = (v: number) => Math.max(256, Math.round(v / 2 / 64) * 64);
+  return { width: half(clip.width) * 2, height: half(clip.height) * 2 };
+}
+
+// a black take's words nudged for each roll: a short closing sentence, different each time
+const SWAP_NUDGES = ["", " The light stays soft and even.", " Every detail stays sharp."];
+
 function motionSize(clip: { width: number; height: number }) {
   const scale = 544 / Math.min(clip.width, clip.height);
   const snap = (v: number) => Math.max(256, Math.round((v * scale) / 32) * 32 * 2);
@@ -446,6 +459,8 @@ export class Engine extends EventEmitter {
       ? { ...REFERENCE_SIZE }
       : request.video?.mode === "motion"
       ? motionSize(request.video)
+      : request.video?.mode === "swap"
+      ? swapSize(request.video)
       : outputSize(request.video ?? (await this.frameSize(request.start ?? request.end?.file)), request.video ? "auto" : request.aspect, quality);
     const batch = randomBytes(3).toString("hex");
     const now = Date.now();
@@ -542,6 +557,49 @@ export class Engine extends EventEmitter {
     await video.toFile(join(this.runDir(run.id), "shot.mp4"));
     run.seconds.shot = Math.round((Date.now() - started) / 1000);
     run.length = Math.round(((frames - 1) / FPS) * 10) / 10;
+    await this.update(run, { status: "done", stage: "", progress: 1, video: `/media/runs/${run.id}/shot.mp4` });
+  }
+
+  /**
+   * A trend's take from its recipe (shot-swap-dev.json): the recipe's control (a skeleton laid out for
+   * the cast, or a depth pass) drives the motion, the start frame says who is in it, and the trend's
+   * vocals are frozen in from where the take starts, so the mouths follow them. Comfy Cloud now and
+   * then returns a black take for one exact mix of words, length and inputs: it is rolled again with
+   * another seed and its words nudged, twice at most.
+   */
+  private async swapShot(run: Run, signal: AbortSignal, attempt = 0) {
+    const started = Date.now();
+    const r = run.request;
+    const clip = r.video!;
+    await this.update(run, { status: "shot", stage: attempt ? "Black picture: rolling again" : "Rolling the take", phase: "roll", progress: 0, error: undefined });
+    // as many of the control's frames as the take is long, on LTX's 8n + 1 grid
+    const frames = Math.floor((Math.min(Math.round(r.seconds * FPS), clip.frames) - 1) / 8) * 8 + 1;
+    const graph = buildSwap(await loadGraph(this.dirs.workflows, "shot-swap-dev.json"), {
+      clip: this.assetFor(this.videoPath(clip.file)),
+      photo: this.assetFor(this.photoPath(r.start!)),
+      audio: this.assetFor(this.audioPath(r.audio!.file)),
+      from: clip.from ?? 0,
+      prompt: run.prompt + SWAP_NUDGES[attempt],
+      frames,
+      width: run.size.width / 2,
+      height: run.size.height / 2,
+      seed: run.seed,
+      control: "ready",
+      strength: clip.strength,
+    });
+    const units = (frames / FPS) * ((run.size.width * run.size.height) / 1e6);
+    const job = await this.execute(graph, signal, { run, stage: "shot", span: [0, 1], kind: "swap", units });
+    const [video] = job.getOutputs("video");
+    if (!video) throw new Error("The take's workflow returned no video.");
+    const file = join(this.runDir(run.id), "shot.mp4");
+    await video.toFile(file);
+    if (this.checks.ffmpeg && (await looksBlack(file, frames / FPS, true))) {
+      if (attempt + 1 >= SWAP_NUDGES.length) throw new Error("LTX-2.5 returned a black picture three times. Roll the take again.");
+      run.seed += 1000;
+      return this.swapShot(run, signal, attempt + 1);
+    }
+    run.seconds.shot = Math.round((Date.now() - started) / 1000);
+    run.length = Math.round((frames / FPS) * 1000) / 1000;
     await this.update(run, { status: "done", stage: "", progress: 1, video: `/media/runs/${run.id}/shot.mp4` });
   }
 
@@ -948,6 +1006,7 @@ export class Engine extends EventEmitter {
       }
       if (run.request.sound) await this.soundShot(run, abort.signal);
       else if (run.request.video?.mode === "motion") await this.motionShot(run, abort.signal);
+      else if (run.request.video?.mode === "swap") await this.swapShot(run, abort.signal);
       else await this.shoot(run, abort.signal);
     } catch (error) {
       const canceled = abort.signal.aborted || error instanceof Canceled;
