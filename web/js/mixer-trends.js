@@ -1089,7 +1089,7 @@ export const TRENDS = [
     "soon": false,
     "home": "mixer",
     "also": [],
-    "seconds": 8,
+    "seconds": 10,
     "heat": 3,
     "cast": [
       {
@@ -1100,8 +1100,8 @@ export const TRENDS = [
     "beats": [
       {
         "from": 0,
-        "to": 8,
-        "text": "Her face keeps the beat: a brow, the cheeks, the eyes, the mouth"
+        "to": 10.458,
+        "text": "Her face keeps the beat: a brow, the cheeks, the eyes, the mouth, and a wide-eyed puff at the end"
       }
     ],
     "music": {
@@ -1120,7 +1120,7 @@ export const TRENDS = [
     "poster": "brand/mixer/trends/face-dance/poster.webp",
     "recipe": "brand/mixer/trends/face-dance/recipe.json",
     "made": {
-      "seconds": 8.42,
+      "seconds": 11.12,
       "firsts": 1
     }
   },
