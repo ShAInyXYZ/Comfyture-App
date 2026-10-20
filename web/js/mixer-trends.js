@@ -78,6 +78,66 @@ export const CREW = [
 
 export const TRENDS = [
   {
+    "id": "state-property",
+    "name": "State Property",
+    "kind": "reactions",
+    "home": "mixer",
+    "also": [],
+    "seconds": 17,
+    "heat": 5,
+    "cast": [
+      {
+        "role": "Lead",
+        "crew": "earl"
+      },
+      {
+        "role": "Partner",
+        "crew": "mochi"
+      }
+    ],
+    "beats": [
+      {
+        "from": 0.0,
+        "to": 5.0,
+        "text": "Earl turns to the camera, an arm on the sill, and starts complaining"
+      },
+      {
+        "from": 5.0,
+        "to": 7.8,
+        "text": "Earl leans on the sill, grimacing"
+      },
+      {
+        "from": 7.8,
+        "to": 12.0,
+        "text": "Earl sits back and points away down the lane"
+      },
+      {
+        "from": 12.0,
+        "to": 17.0,
+        "text": "Earl points again, then holds up a card"
+      }
+    ],
+    "music": {
+      "bpm": 92,
+      "genre": "Spoken comedy; optional sparse country-funk punctuation",
+      "mood": "indignant then absurd",
+      "instruments": [
+        "new actor voice",
+        "muted guitar",
+        "woodblock"
+      ]
+    },
+    "caption": null,
+    "aspect": "9:16",
+    "preview": "brand/mixer/trends/state-property/preview.mp4",
+    "poster": "brand/mixer/trends/state-property/poster.webp",
+    "recipe": "brand/mixer/trends/state-property/recipe.json",
+    "made": {
+      "seconds": 18.83,
+      "firsts": 1
+    }
+  },
+  {
     "id": "hotel-lobby",
     "name": "Hotel Lobby",
     "kind": "duo",
@@ -217,70 +277,10 @@ export const TRENDS = [
     }
   },
   {
-    "id": "state-property",
-    "name": "State Property",
-    "kind": "reactions",
-    "home": "mixer",
-    "also": [],
-    "seconds": 17,
-    "heat": 5,
-    "cast": [
-      {
-        "role": "Lead",
-        "crew": "earl"
-      },
-      {
-        "role": "Partner",
-        "crew": "mochi"
-      }
-    ],
-    "beats": [
-      {
-        "from": 0.0,
-        "to": 5.0,
-        "text": "Earl turns to the camera, an arm on the sill, and starts complaining"
-      },
-      {
-        "from": 5.0,
-        "to": 7.8,
-        "text": "Earl leans on the sill, grimacing"
-      },
-      {
-        "from": 7.8,
-        "to": 12.0,
-        "text": "Earl sits back and points away down the lane"
-      },
-      {
-        "from": 12.0,
-        "to": 17.0,
-        "text": "Earl points again, then holds up a card"
-      }
-    ],
-    "music": {
-      "bpm": 92,
-      "genre": "Spoken comedy; optional sparse country-funk punctuation",
-      "mood": "indignant then absurd",
-      "instruments": [
-        "new actor voice",
-        "muted guitar",
-        "woodblock"
-      ]
-    },
-    "caption": null,
-    "aspect": "9:16",
-    "preview": "brand/mixer/trends/state-property/preview.mp4",
-    "poster": "brand/mixer/trends/state-property/poster.webp",
-    "recipe": "brand/mixer/trends/state-property/recipe.json",
-    "made": {
-      "seconds": 18.83,
-      "firsts": 1
-    }
-  },
-  {
     "id": "black-cat-clapping",
     "name": "Black Cat Clapping",
     "kind": "reactions",
-    "home": "mixer",
+    "home": "none",
     "also": [],
     "seconds": 6,
     "heat": 5,
@@ -331,7 +331,7 @@ export const TRENDS = [
     "id": "ramalama",
     "name": "Ramalama",
     "kind": "walks",
-    "home": "jam",
+    "home": "none",
     "also": [],
     "seconds": 15,
     "heat": 4,

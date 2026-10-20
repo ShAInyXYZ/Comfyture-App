@@ -27,9 +27,9 @@ OUT_CAST = ROOT / "web/brand/cast"
 
 # the shelf, in the order it shows: our name for each trend and its kind
 SHELF = {
+    "01-private-property": ("State Property", "reactions"),
     "02-hotel-lobby": ("Hotel Lobby", "duo"),
     "03-smalltown-boy": ("Smalltown Boy", "reactions"),
-    "01-private-property": ("State Property", "reactions"),
     "12-clapping-cat": ("Black Cat Clapping", "reactions"),
     "24-ramalama": ("Ramalama", "walks"),
     "04-la-calabaza": ("La Calabaza", "dance"),
@@ -55,6 +55,9 @@ SHELF = {
 HOME = {"dance": "jam", "duo": "jam", "walks": "jam", "reactions": "mixer", "glowups": "mixer"}
 # trends shown on another shelf as well as their own
 ALSO = {"hotel-lobby": ["mixer"]}
+# trends kept (recipe, files, links) but on no shelf: Black Cat Clapping is for the website later, and
+# Ramalama waits for proper costume sheets of its three before it is made again
+OFF_SHELF = {"black-cat-clapping", "ramalama"}
 # the revisions matched against the trends' own frames replace the first concepts
 REVISED = {
     "02-hotel-lobby": "hotel-lobby-v2.2",
@@ -153,7 +156,7 @@ def main():
             "id": slug,
             "name": name,
             "kind": kind,
-            "home": HOME[kind],
+            "home": "none" if re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") in OFF_SHELF else HOME[kind],
             "also": ALSO.get(re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-"), []),
             "seconds": t.get("length_s", 10),
             "heat": t.get("virality", 3),
