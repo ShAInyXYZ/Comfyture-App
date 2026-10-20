@@ -81,6 +81,7 @@ export const TRENDS = [
     "id": "hotel-lobby",
     "name": "Hotel Lobby",
     "kind": "duo",
+    "home": "jam",
     "seconds": 18,
     "heat": 5,
     "cast": [
@@ -145,6 +146,7 @@ export const TRENDS = [
     "id": "smalltown-boy",
     "name": "Smalltown Boy",
     "kind": "reactions",
+    "home": "mixer",
     "seconds": 21,
     "heat": 5,
     "cast": [
@@ -214,6 +216,7 @@ export const TRENDS = [
     "id": "state-property",
     "name": "State Property",
     "kind": "reactions",
+    "home": "mixer",
     "seconds": 17,
     "heat": 5,
     "cast": [
@@ -272,6 +275,7 @@ export const TRENDS = [
     "id": "black-cat-clapping",
     "name": "Black Cat Clapping",
     "kind": "reactions",
+    "home": "mixer",
     "seconds": 6,
     "heat": 5,
     "cast": [
@@ -321,38 +325,48 @@ export const TRENDS = [
     "id": "ramalama",
     "name": "Ramalama",
     "kind": "walks",
-    "seconds": 10,
+    "home": "jam",
+    "seconds": 15,
     "heat": 4,
     "cast": [
       {
         "role": "Lead",
-        "crew": "praline"
+        "crew": "margot"
       },
       {
         "role": "Partner",
-        "crew": "meringue"
+        "crew": "josie"
+      },
+      {
+        "role": "Third",
+        "crew": "ivy"
       }
     ],
     "beats": [
       {
-        "from": 0.0,
-        "to": 1.0,
-        "text": "Tiny oversized boots enter frame"
+        "from": 0,
+        "to": 3.7,
+        "text": "Velvet hems and buckled shoes stride at the lens"
       },
       {
-        "from": 1.0,
-        "to": 5.0,
-        "text": "Slow deliberate steps"
+        "from": 3.7,
+        "to": 7.3,
+        "text": "A broom swings past, the hems keep the beat"
       },
       {
-        "from": 5.0,
-        "to": 7.0,
-        "text": "Reveal Praline in an original pumpkin cape"
+        "from": 7.3,
+        "to": 7.6,
+        "text": "The camera whips up to their faces"
       },
       {
-        "from": 7.0,
-        "to": 10.0,
-        "text": "Proud stare and ear twitch"
+        "from": 7.6,
+        "to": 11.3,
+        "text": "Margot sweeps an arm and points, mouthing the lyric"
+      },
+      {
+        "from": 11.3,
+        "to": 15.0,
+        "text": "A raised finger, three fingers up, then a wave from all three"
       }
     ],
     "music": {
@@ -367,12 +381,21 @@ export const TRENDS = [
         "new synth accents"
       ]
     },
-    "caption": null
+    "caption": null,
+    "aspect": "9:16",
+    "preview": "brand/mixer/trends/ramalama/preview.mp4",
+    "poster": "brand/mixer/trends/ramalama/poster.webp",
+    "recipe": "brand/mixer/trends/ramalama/recipe.json",
+    "made": {
+      "seconds": 16.17,
+      "firsts": 2
+    }
   },
   {
     "id": "la-calabaza",
     "name": "La Calabaza",
     "kind": "dance",
+    "home": "jam",
     "seconds": 14,
     "heat": 5,
     "cast": [
@@ -428,6 +451,7 @@ export const TRENDS = [
     "id": "three-kittens",
     "name": "Three Kittens",
     "kind": "dance",
+    "home": "jam",
     "seconds": 12,
     "heat": 4,
     "cast": [
@@ -483,6 +507,7 @@ export const TRENDS = [
     "id": "bulin-47",
     "name": "Bulin 47",
     "kind": "dance",
+    "home": "jam",
     "seconds": 15,
     "heat": 5,
     "cast": [
@@ -538,6 +563,7 @@ export const TRENDS = [
     "id": "toc-toc",
     "name": "Toc Toc",
     "kind": "dance",
+    "home": "jam",
     "seconds": 10,
     "heat": 5,
     "cast": [
@@ -593,6 +619,7 @@ export const TRENDS = [
     "id": "tiptoe",
     "name": "Tiptoe",
     "kind": "walks",
+    "home": "jam",
     "seconds": 11,
     "heat": 5,
     "cast": [
@@ -630,6 +657,7 @@ export const TRENDS = [
     "id": "alors-on-danse",
     "name": "Alors on Danse",
     "kind": "duo",
+    "home": "jam",
     "seconds": 14,
     "heat": 4,
     "cast": [
@@ -681,6 +709,7 @@ export const TRENDS = [
     "id": "sway",
     "name": "Sway",
     "kind": "dance",
+    "home": "jam",
     "seconds": 12,
     "heat": 4,
     "cast": [
@@ -713,6 +742,7 @@ export const TRENDS = [
     "id": "scuba",
     "name": "Scuba",
     "kind": "dance",
+    "home": "jam",
     "seconds": 10,
     "heat": 4,
     "cast": [
@@ -745,6 +775,7 @@ export const TRENDS = [
     "id": "lights-off",
     "name": "Lights Off",
     "kind": "dance",
+    "home": "jam",
     "seconds": 10,
     "heat": 4,
     "cast": [
@@ -782,6 +813,7 @@ export const TRENDS = [
     "id": "closer",
     "name": "Closer",
     "kind": "duo",
+    "home": "jam",
     "seconds": 15,
     "heat": 4,
     "cast": [
@@ -828,6 +860,7 @@ export const TRENDS = [
     "id": "dance-with-me",
     "name": "Dance With Me",
     "kind": "duo",
+    "home": "jam",
     "seconds": 10,
     "heat": 4,
     "cast": [
@@ -874,6 +907,7 @@ export const TRENDS = [
     "id": "dance-audition",
     "name": "Dance Audition",
     "kind": "dance",
+    "home": "jam",
     "seconds": 16,
     "heat": 4,
     "cast": [
@@ -929,6 +963,7 @@ export const TRENDS = [
     "id": "job-dance",
     "name": "Job Dance",
     "kind": "dance",
+    "home": "jam",
     "seconds": 12,
     "heat": 3,
     "cast": [
@@ -970,6 +1005,7 @@ export const TRENDS = [
     "id": "sea-lion",
     "name": "Sea Lion",
     "kind": "dance",
+    "home": "jam",
     "seconds": 10,
     "heat": 4,
     "cast": [
@@ -1010,6 +1046,7 @@ export const TRENDS = [
     "id": "face-dance",
     "name": "Face Dance",
     "kind": "reactions",
+    "home": "mixer",
     "seconds": 8,
     "heat": 3,
     "cast": [
@@ -1042,6 +1079,7 @@ export const TRENDS = [
     "id": "grand-entrance",
     "name": "Grand Entrance",
     "kind": "glowups",
+    "home": "mixer",
     "seconds": 10,
     "heat": 3,
     "cast": [
@@ -1084,6 +1122,7 @@ export const TRENDS = [
     "id": "documentary",
     "name": "Documentary",
     "kind": "reactions",
+    "home": "mixer",
     "seconds": 8,
     "heat": 4,
     "cast": [
@@ -1120,7 +1159,7 @@ export const TRENDS = [
         "new piano fragment"
       ]
     },
-    "caption": "documentary on how I survived that one toxic theatre company",
+    "caption": "documentary on how I survived my cat's first audition",
     "aspect": "9:16",
     "preview": "brand/mixer/trends/documentary/preview.mp4",
     "poster": "brand/mixer/trends/documentary/poster.webp",

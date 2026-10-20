@@ -1697,6 +1697,14 @@ export function artist() {
   const list = state.image.catalogue?.models ?? [];
   return list.some((m) => m.id === kept) ? kept : state.image.catalogue?.default ?? kept ?? "qwen-2.1";
 }
+/** The picture model picked in a picker, or null while none has been. */
+export function chosenArtist() {
+  try {
+    return localStorage.getItem(ARTIST);
+  } catch {
+    return null;
+  }
+}
 export function setArtist(id) {
   try {
     localStorage.setItem(ARTIST, id);

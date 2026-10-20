@@ -87,6 +87,28 @@ Our trend presets are previewed by our own characters doing the trend, instead o
 
 The source clips stay in `docs/brand/mixer-crew/` and are never committed; the previews replace them in the app.
 
+### People as the performers
+
+The crew's owners (Earl, Josie, Theo, Margot, Dre, Ivy) are people, so a trend played by them keeps the original's people as they are:
+
+- **The skeleton:** `retarget-pose.ts --human` keeps DWPose's body, face and hands (`--people 3` for a trio). Each point the detector drops for a frame or two is held.
+- **The first frame is the original's own frame,** edited in place with GPT Image (`scripts/draw-frame.ts`, GPT Image 2.5 Flare on Comfy Router, about 25 s and 20 credits). The prompt is "This is an edit of image 1. Keep the camera, the framing and every shape where they are", then who becomes whom, with the owners' sheets as the next images. GPT Image is an edit model: a mask isn't needed, and over small areas it paints them black.
+- **Another shape:** the original's frame is pasted on a blank canvas of the take's shape (a 3:2 frame on 9:16, say), at the scale and place that holds its people, and the edit fills the blank areas (the wall above, their legs below). The keypoints are placed the same way (`--place scale,x,y`). Then each person is moved and sized once onto the drawn figure (`--align`, DWPose of the drawn frame), changing no bone.
+- **Never draw a version's first frames from another version.** Hotel Lobby's first human take was drawn from the kitten version's frames, and its skeletons were laid out again for the kittens. Every take started from the kittens' poses and only loosely followed the original. Redrawn from the original's own frames, every gesture lands where the performers' did.
+- **One long shot in several takes:** a take longer than about 5 s risks a black take on Comfy Cloud (below). Roll it in chained takes instead. Each starts on the frame where the one before reaches it (`select=eq(n\,89)` of the take before, as its first frame), with the control and the vocals cut from the same frame.
+- **Animals clapping** (Black Cat Clapping): a depth pass of the clip (Depth Anything V2) beats AnimalPose, whose paws vanish when they meet. Blur any burned-in caption first, or the depth draws it. Run it at strength 0.6.
+
+### Making it again with another cast
+
+Each trend we have made has a `recipe.json` beside its preview (`web/brand/mixer/trends/<id>/`): its roles (who plays them, and their look), each shot's control (`pose` or `guide`), first frame (`look`), seed, start time and prompt, written with role slots (`{Lead}` is that role's name and look, `{LeadName}` the name, `{Pair}` the two). A shot with `chain` (or every shot after the first, with `take.chain`) starts on the take before it.
+
+Mixer's Make it runs the recipe (`fromRecipe()` in `web/js/mixer-trend.js`):
+
+- `POST /api/mixer/trends/<id>/files` brings the controls (kept at their own size) and the sound into the library.
+- Each first frame is redrawn with the new cast; with ours, it is used as it is.
+- The takes are the "swap" video mode (`swapShot()` in `server/engine.ts`): `shot-swap-dev.json`, the control ready-made, the vocals frozen in from the take's start. A black take is rolled again with its words nudged.
+- Chained takes start on `POST /api/runs/<id>/frame`. The cut lays the takes on the trend's own sound, its caption on top.
+
 ## Traps we hit
 
 - **Cuts on a plain backdrop** score about 0.2 on ffmpeg's scene score; a fixed 0.3 found none of Hotel Lobby's. The splitter now takes six times the clip's busy frames, between 0.1 and 0.3.
@@ -94,7 +116,7 @@ The source clips stay in `docs/brand/mixer-crew/` and are never committed; the p
 - **Takes shorter than their shots:** `8n + 1` rounding cut up to 0.3 s off every take. Hold the clip's last frame eight more.
 - **Our first motion workflow** ran the 2.3 upscaler and schedule, gave the model no audio and laid the song on afterwards: smeared paws, warped faces, mouths out of time. That is what `shot-swap.json` replaces.
 - **Comfy Cloud** now and then loses a job ("RIP to the server your workflow was running on", or `cannot unpack non-iterable MTPHead object` from its model prefetch). Roll it again.
-- **A black take that "succeeded":** one exact prompt gave all-black frames every time, with any seed, first frame or pose; the same prompt with one word less came out right. It is not the length (prompts are padded to 1024 tokens, and a longer one worked). Look at every take before cutting, and change a word, not the seed.
+- **A black take that "succeeded":** one exact prompt gave all-black frames every time, with any seed, first frame or pose; the same prompt with one word less came out right. It is not the prompt's length (prompts are padded to 1024 tokens, and a longer one worked). Look at every take before cutting, and change a word, not the seed. The take's length can do it too: Hotel Lobby's 113-frame shot 2 came back black five times, with two seeds and three wordings, and the same shot as two chained 65-frame takes came out right. `try-swap.ts` and the app's swap takes check a take's brightness and roll it again, with another seed and a nudged closing sentence, twice at most.
 
 ## Sources
 

@@ -10,7 +10,8 @@
 // --place scale,x,y keeps the clip's own framing instead: the points scaled and moved as the clip's
 // picture is placed on the --size frame (its first frame drawn from the clip's own, extended).
 // --align kps.json[:n] moves and sizes each person, once, onto that person in the drawn first frame,
-// and changes nothing else (--fit also gives them the drawn figure's bone lengths).
+// and changes nothing else (--fit also gives them the drawn figure's bone lengths). --people is how many
+// are followed (two by default).
 // --fit kps.json[:n] fits each person, once, onto that person in the take's first frame (DWPose's read
 // of it, frame n of the file), and gives each the drawn figure's bone lengths, so the take starts where
 // the picture has them, built as drawn:
@@ -36,10 +37,11 @@ const eyes = option("--eyes");
 const onto = option("--fit");
 const at = option("--place")?.split(",").map(Number);
 const align = option("--align");
+const people = Number(option("--people") ?? 2);
 const [keypoints, out, still] = args;
 if (!keypoints || !out) throw new Error("usage: retarget-pose.ts keypoints.json out.mp4 [first.png] [--human | --animal] [--size WxH] [--span 0.5] [--eyes 0.32] [--place s,x,y] [--fit | --align kps.json[:n]] [--frames N]");
 const text = await readFile(keypoints, "utf8");
-let frames = human ? steady(parsePoses(text, 0.3, true)) : animal ? retarget(hold(trackPeople(parseAnimalPoses(text), 2)), CAT) : retarget(parsePoses(text), KITTEN);
+let frames = human ? steady(parsePoses(text, 0.3, true), people) : animal ? retarget(hold(trackPeople(parseAnimalPoses(text), 2)), CAT) : retarget(parsePoses(text), KITTEN);
 if (size && at) frames = place(frames, size[0], size[1], at[0], at[1], at[2]);
 else if (size) {
   const laid = reframe(frames, size[0], size[1], { span: span ? Number(span) : undefined, eyes: eyes ? Number(eyes) : undefined });

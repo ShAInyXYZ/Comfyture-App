@@ -2,7 +2,7 @@
 // and who stars in it) in the middle, or the edit someone dropped in to remix; the crew, your own
 // stars and the mixes made at the side.
 import { h, icon, sprite, pad2, ago } from "../dom.js";
-import { state, toast, changed, artist, setArtist, artists } from "../store.js";
+import { state, toast, changed, setArtist, artists } from "../store.js";
 import { currentPage, go } from "../router.js";
 import { dropdown } from "../controls.js";
 import { artistItems } from "../writer-menu.js";
@@ -13,7 +13,7 @@ import {
 } from "../mixer.js";
 import { loraStack } from "../loras.js";
 import { TRENDS, CREW, KINDS, trendById, crewById, trendArt, crewFace } from "../mixer-trends.js";
-import { pick, castOf, selectTrend, setKind, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, makeTrend, making, takesOf, estimate as trendCost } from "../mixer-trend.js";
+import { pick, castOf, selectTrend, setKind, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, makeTrend, making, takesOf, castArtist, estimate as trendCost } from "../mixer-trend.js";
 import { openPicker, pictureOf } from "../picker.js";
 
 /** Whoever is picked for a role: one of the crew plays it as themselves, anyone else as a star. */
@@ -208,7 +208,7 @@ function madeWith({ music }) {
 /** The picture model that redraws the first frames with your cast: only those that draw from references. */
 function pictureRow() {
   const items = artistItems().filter((it) => artists().find((x) => x.id === it.value)?.templates.some((t) => t.id === "edit")).map(({ short, ...it }) => it);
-  const value = items.some((it) => it.value === artist()) ? artist() : items[0]?.value;
+  const value = items.some((it) => it.value === castArtist()) ? castArtist() : items[0]?.value;
   const picker = value
     ? dropdown({ label: "Picture model", value, items, onChange: (id) => (setArtist(id), changedMixer()), width: "fit", note: "Redraws the first frame with your cast" })
     : h("b", {}, "Loading");

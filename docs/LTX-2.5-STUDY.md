@@ -290,6 +290,20 @@ Six dev takes, one per real shot (the longest 185 frames, 7.7 s), cost 287 credi
 - **No sound in VS Code.** Its media player has no AAC decoder, so review copies use Opus.
 - **Black takes that "succeeded".** One shot's prompt gave all-black frames every time, with two seeds, another shot's first frame or another shot's pose; the same prompt with one word less came out right, and a longer prompt worked too (prompts are padded to 1024 tokens), so it is that wording, not its length. It cost two full takes and 83 credits of 17-frame tests to find. Every take is checked for black frames before the cut.
 
+### 6.9 People: the owners, from the originals' own frames
+
+The crew's owners play the trends' people as people: DWPose's body, face and hands, kept as they are (`--human`).
+
+- **State Property** (17 s, one shot; Earl at the wheel, Mochi riding shotgun): four chained dev takes, joined at frames 119, 187 and 289, each starting on the frame where the one before reaches it. The first frame is the meme's own opening, redrawn in place. The joins don't show.
+- **Hotel Lobby v1 (rejected):** its first frames came from the kitten version and its skeletons were laid out again for kittens. The takes started from the kittens' poses and drifted from the original's moves.
+- **Hotel Lobby v2:** each first frame is the original's own (3:2), pasted on a 9:16 canvas at a scale that holds both performers, and edited in place: the performers become Dre and Theo, and the blank wall above and the legs below are painted in. The keypoints are placed as the picture is, then moved and sized once per person onto the drawn figures (Theo, the younger brother, is drawn a little shorter: 0.91–0.97, and 35–76 px lower). Every gesture lands at the original's time and place: the wrist check, the point at the camera, the open hands, the face behind the forearm, the spin, the finger to the lips, the salute.
+- **Toc Toc** (Josie, 9.8 s, one shot): two chained takes. **Documentary** (Margot, 7.8 s): one 201-frame take.
+- **Cost:** a dev take at 1152×2048 costs about 45 GPU seconds per second of video (12 credits a second). A first frame costs about 20 credits.
+
+### 6.10 Black takes by length
+
+Hotel Lobby's 113-frame shot 2 came back black five times: two seeds, then three wordings. Its first 17 frames rendered fine. The same shot as two chained 65-frame takes (the second starting on the first's frame 57) came out right. So a black take can come from the length and inputs as well as the wording. Takes are now checked for black, and rolled again with a nudged wording, and long shots are rolled as chained takes.
+
 ## 7. Discussion
 
 **Proportions.** A human skeleton drives where limbs and heads go. Upright kittens whose heads are a third of their height cannot follow it without stretching. Lowering the control strength trades fidelity for shape. Retargeting the skeleton is the principled fix.
@@ -302,11 +316,13 @@ Six dev takes, one per real shot (the longest 185 frames, 7.7 s), cost 287 credi
 
 ## 8. Recommended recipe and future work
 
-The recipe is v4, laid out for the frame's shape as in v5:
+The recipe:
 
-- `workflows/shot-swap-dev.json`, built by `buildSwap()`, fed the skeleton rebuilt by `server/pose.ts` for the characters' build and laid out for the frame.
-- First frames drawn to that skeleton.
-- The inputs and steps are in [VIDEO-TO-VIDEO.md](VIDEO-TO-VIDEO.md).
+- `workflows/shot-swap-dev.json`, built by `buildSwap()`, with a ready-made control.
+- **For people:** the original's own skeleton (body, face and hands), placed as the original's picture is. For characters built differently (kittens), the skeleton is rebuilt for their build and laid out for the frame. For animals clapping, the clip's depth.
+- **First frames:** the original's own, edited in place and extended to the take's shape.
+- **Takes:** long shots in chained takes, every take checked for black.
+- The inputs and steps are in [VIDEO-TO-VIDEO.md](VIDEO-TO-VIDEO.md). Each trend's `recipe.json` holds all of it, and Mixer's Make it runs it with any cast.
 
 Future work:
 

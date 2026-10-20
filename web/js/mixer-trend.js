@@ -5,7 +5,7 @@
 // and the shots are cut together on it, the trend's caption on top. A trend we have made ourselves
 // is made again from its recipe instead: our version's motion, its first frames redrawn with your
 // cast, and the trend's own sound, the mouths following its vocals.
-import { state, changed, toast, waitFor, drawPicture, artistFor } from "./store.js";
+import { state, changed, toast, waitFor, drawPicture, artistFor, chosenArtist } from "./store.js";
 import { api } from "./api.js";
 import { mixer, save, newMix, whenOpened, mixLoras } from "./mixer.js";
 import { TRENDS, CREW, trendById, crewById, trendArt, crewPicture } from "./mixer-trends.js";
@@ -125,6 +125,16 @@ function actionOf(t, cast, take) {
   return `${said}. The same characters, place and light as the first frame, playful and smooth, made for a short vertical video.`;
 }
 
+/**
+ * The picture model that redraws a first frame with your cast: yours once you have picked one, else
+ * GPT Image Flare, which swaps a whole person (Qwen keeps the old hair and clothes).
+ */
+export function castArtist() {
+  const models = state.image.catalogue?.models ?? [];
+  if (models.some((m) => m.id === chosenArtist())) return artistFor("edit");
+  return models.some((m) => m.id === "gpt-image-2.5-flare") ? "gpt-image-2.5-flare" : artistFor("edit");
+}
+
 /** The first frame: the trend's cover (or one of a recipe's first frames), redrawn with whoever replaced the crew in it. */
 async function firstFrame(t, cast, picture = trendArt(t)) {
   const cover = await onServer(picture, `${t.name} first frame`);
@@ -137,10 +147,12 @@ async function firstFrame(t, cast, picture = trendArt(t)) {
     const was = crewById(c.original);
     const pic = c.who.crew ? await onServer(crewPicture(c.who.crew), crewById(c.who.crew).name) : c.who.star;
     refs.push({ file: pic.file, name: tag });
-    lines.push(`Replace ${was.name}, ${was.look}, with @${tag}: exactly @${tag}'s look (face or features, colours, markings and build), in the same pose, place and size.`);
+    const crew = c.who.crew ? crewById(c.who.crew) : null;
+    const what = crew?.kind === "person" ? "the face, hair, clothes and colours" : crew ? "the fur, markings, colours and build" : "the face, hair and clothes, or the fur and markings";
+    lines.push(`Replace ${was.name}, ${was.look}, with @${tag}: exactly @${tag}'s look, ${what}, in the same pose, place and size. Nothing of ${was.name}'s hair, clothes or colours stays.`);
   }
   const prompt = `${lines.join(" ")} Keep everything else from @scene exactly: the framing, camera, poses, gestures, expressions, lighting, colours, set and style. No text, no captions, no watermark.`;
-  const photo = await drawPicture({ model: artistFor("edit"), template: "edit", prompt, refs, aspect: "9:16", name: `${t.name} · cast` });
+  const photo = await drawPicture({ model: castArtist(), template: "edit", prompt, refs, aspect: "9:16", name: `${t.name} · cast` });
   return { file: photo.file, url: photo.url };
 }
 
@@ -194,7 +206,7 @@ async function fromRecipe(t, cast, m) {
   const dir = t.recipe.replace(/recipe\.json$/, "");
   const firsts = new Map();
   const first = (path) => (firsts.has(path) ? firsts : firsts.set(path, firstFrame(t, cast, dir + path))).get(path);
-  m.body.shots = recipe.shots.map((s) => ({ from: s.from, to: s.to, look: null, run: null, beats: (recipe.beats ?? []).filter((b) => b.from < s.to && b.to > s.from) }));
+  m.body.shots = recipe.shots.map((s) => ({ from: s.from, to: s.to, look: null, run: null, join: s.join ?? "cut", beats: (recipe.beats ?? []).filter((b) => b.from < s.to && b.to > s.from) }));
   save();
   update();
   const roll = async (i, start) => {
@@ -204,7 +216,7 @@ async function fromRecipe(t, cast, m) {
     const body = {
       name: `${m.name} · ${i + 1}`, start: start.file, seconds: Math.ceil(s.frames / 24), aspect: "9:16", review: false, takes: 1, quality: "standard",
       script: { shots: [], raw: fill(s.prompt) }, audio: { file: voice.file },
-      video: { file: files.controls[s.pose ?? s.guide].file, mode: "swap", from: s.from, strength: recipe.take.strength },
+      video: { file: files.controls[s.pose ?? s.guide].file, mode: "swap", from: s.from, strength: s.strength ?? recipe.take.strength },
       ...(ours && s.seed ? { seed: s.seed } : {}),
     };
     for (let attempt = 0; attempt < 2 && take(shot)?.status !== "done"; attempt++) {
@@ -295,7 +307,7 @@ async function cutTogether(m, t, seconds = t.seconds) {
     const need = s.to - s.from;
     const have = r.length ?? r.request.seconds;
     const speed = have < need ? Math.max(0.25, have / need) : 1;
-    return { id: `t${i + 1}`, src: { kind: "take", id: r.id }, from: 0, to: Math.min(have, need * speed), speed, sound: !m.body.music, join: "cut" };
+    return { id: `t${i + 1}`, src: { kind: "take", id: r.id }, from: 0, to: Math.min(have, need * speed), speed, sound: !m.body.music, join: s.join ?? "cut" };
   });
   const tracks = [{ id: "video", kind: "video", main: true, items }];
   if (m.body.music) tracks.push({ id: "music", kind: "audio", role: "music", items: [{ id: "track", src: { kind: "audio", id: m.body.music.file }, start: 0, from: 0, to: seconds }] });
@@ -315,7 +327,7 @@ export function estimate(t = trendById(pick.trend)) {
   if (state.info?.target !== "comfy-cloud" || !t) return null;
   const cast = castOf(t);
   const redraw = cast.some((c) => !(c.who.crew && c.who.crew === c.original));
-  const m = (state.image.catalogue?.models ?? []).find((x) => x.id === artistFor("edit"));
+  const m = (state.image.catalogue?.models ?? []).find((x) => x.id === castArtist());
   const pic = m?.router ? m.credits ?? 8 : (m?.seconds ?? 10) * 0.266;
   // a recipe's takes: LTX-2.5 dev at full size, about 45 GPU seconds a second, and a redraw per first frame
   if (t.made) return Math.round((redraw ? pic * t.made.firsts : 0) + t.made.seconds * 45 * 0.266);
