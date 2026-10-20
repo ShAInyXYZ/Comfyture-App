@@ -57,8 +57,8 @@ const nameOf = (who) => (who?.crew ? crewById(who.crew)?.name : who?.star?.name 
 
 // ---------------------------------------------------------------- what's trending
 
-// Mixer's own trends: comedy and reactions (the dance-led ones live in Jam)
-const OURS = TRENDS.filter((t) => t.home === "mixer");
+// Mixer's own trends: comedy and reactions, and the few shown here as well as on Jam's shelf
+const OURS = TRENDS.filter((t) => t.home === "mixer" || t.also?.includes("mixer"));
 const OUR_KINDS = KINDS.filter(([id]) => id === "all" || OURS.some((t) => t.kind === id));
 
 function feed() {

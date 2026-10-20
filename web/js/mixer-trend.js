@@ -21,7 +21,7 @@ const call = async (path, init) => {
 const send = (path, method, body) => call(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
 
 /** What is picked on the shelf: the trend, the filter, and who plays each of its roles. */
-export const pick = { trend: (TRENDS.find((t) => t.home === "mixer") ?? TRENDS[0]).id, kind: "all", cast: null, role: null };
+export const pick = { trend: (TRENDS.find((t) => t.home === "mixer" || t.also?.includes("mixer")) ?? TRENDS[0]).id, kind: "all", cast: null, role: null };
 export const stars = { list: [], ready: null };
 // a trend's mix opened again brings back its trend and who played in it, unless something was
 // picked before it came back (a trend from Jam's "Make it with your cast", a role given to someone):

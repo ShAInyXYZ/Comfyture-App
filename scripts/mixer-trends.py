@@ -53,6 +53,8 @@ SHELF = {
 # where a trend lives: the dance-led ones (dances, duos, struts to a song) in Jam, where a music video is
 # made around a dance; comedy and reactions in Mixer
 HOME = {"dance": "jam", "duo": "jam", "walks": "jam", "reactions": "mixer", "glowups": "mixer"}
+# trends shown on another shelf as well as their own
+ALSO = {"hotel-lobby": ["mixer"]}
 # the revisions matched against the trends' own frames replace the first concepts
 REVISED = {
     "02-hotel-lobby": "hotel-lobby-v2.2",
@@ -152,6 +154,7 @@ def main():
             "name": name,
             "kind": kind,
             "home": HOME[kind],
+            "also": ALSO.get(re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-"), []),
             "seconds": t.get("length_s", 10),
             "heat": t.get("virality", 3),
             "cast": [{"role": ROLES[i] if i < len(ROLES) else f"Star {i + 1}", "crew": c} for i, c in enumerate(cast)],

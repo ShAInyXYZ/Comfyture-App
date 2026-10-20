@@ -82,6 +82,9 @@ export const TRENDS = [
     "name": "Hotel Lobby",
     "kind": "duo",
     "home": "jam",
+    "also": [
+      "mixer"
+    ],
     "seconds": 18,
     "heat": 5,
     "cast": [
@@ -147,6 +150,7 @@ export const TRENDS = [
     "name": "Smalltown Boy",
     "kind": "reactions",
     "home": "mixer",
+    "also": [],
     "seconds": 21,
     "heat": 5,
     "cast": [
@@ -217,6 +221,7 @@ export const TRENDS = [
     "name": "State Property",
     "kind": "reactions",
     "home": "mixer",
+    "also": [],
     "seconds": 17,
     "heat": 5,
     "cast": [
@@ -276,6 +281,7 @@ export const TRENDS = [
     "name": "Black Cat Clapping",
     "kind": "reactions",
     "home": "mixer",
+    "also": [],
     "seconds": 6,
     "heat": 5,
     "cast": [
@@ -326,6 +332,7 @@ export const TRENDS = [
     "name": "Ramalama",
     "kind": "walks",
     "home": "jam",
+    "also": [],
     "seconds": 15,
     "heat": 4,
     "cast": [
@@ -396,6 +403,7 @@ export const TRENDS = [
     "name": "La Calabaza",
     "kind": "dance",
     "home": "jam",
+    "also": [],
     "seconds": 14,
     "heat": 5,
     "cast": [
@@ -452,6 +460,7 @@ export const TRENDS = [
     "name": "Three Kittens",
     "kind": "dance",
     "home": "jam",
+    "also": [],
     "seconds": 12,
     "heat": 4,
     "cast": [
@@ -508,6 +517,7 @@ export const TRENDS = [
     "name": "Bulin 47",
     "kind": "dance",
     "home": "jam",
+    "also": [],
     "seconds": 15,
     "heat": 5,
     "cast": [
@@ -564,6 +574,7 @@ export const TRENDS = [
     "name": "Toc Toc",
     "kind": "dance",
     "home": "jam",
+    "also": [],
     "seconds": 10,
     "heat": 5,
     "cast": [
@@ -620,6 +631,7 @@ export const TRENDS = [
     "name": "Tiptoe",
     "kind": "walks",
     "home": "jam",
+    "also": [],
     "seconds": 11,
     "heat": 5,
     "cast": [
@@ -658,6 +670,7 @@ export const TRENDS = [
     "name": "Alors on Danse",
     "kind": "duo",
     "home": "jam",
+    "also": [],
     "seconds": 14,
     "heat": 4,
     "cast": [
@@ -710,6 +723,7 @@ export const TRENDS = [
     "name": "Sway",
     "kind": "dance",
     "home": "jam",
+    "also": [],
     "seconds": 12,
     "heat": 4,
     "cast": [
@@ -743,6 +757,7 @@ export const TRENDS = [
     "name": "Scuba",
     "kind": "dance",
     "home": "jam",
+    "also": [],
     "seconds": 10,
     "heat": 4,
     "cast": [
@@ -776,6 +791,7 @@ export const TRENDS = [
     "name": "Lights Off",
     "kind": "dance",
     "home": "jam",
+    "also": [],
     "seconds": 10,
     "heat": 4,
     "cast": [
@@ -814,6 +830,7 @@ export const TRENDS = [
     "name": "Closer",
     "kind": "duo",
     "home": "jam",
+    "also": [],
     "seconds": 15,
     "heat": 4,
     "cast": [
@@ -861,6 +878,7 @@ export const TRENDS = [
     "name": "Dance With Me",
     "kind": "duo",
     "home": "jam",
+    "also": [],
     "seconds": 10,
     "heat": 4,
     "cast": [
@@ -908,6 +926,7 @@ export const TRENDS = [
     "name": "Dance Audition",
     "kind": "dance",
     "home": "jam",
+    "also": [],
     "seconds": 16,
     "heat": 4,
     "cast": [
@@ -964,6 +983,7 @@ export const TRENDS = [
     "name": "Job Dance",
     "kind": "dance",
     "home": "jam",
+    "also": [],
     "seconds": 12,
     "heat": 3,
     "cast": [
@@ -1006,6 +1026,7 @@ export const TRENDS = [
     "name": "Sea Lion",
     "kind": "dance",
     "home": "jam",
+    "also": [],
     "seconds": 10,
     "heat": 4,
     "cast": [
@@ -1047,6 +1068,7 @@ export const TRENDS = [
     "name": "Face Dance",
     "kind": "reactions",
     "home": "mixer",
+    "also": [],
     "seconds": 8,
     "heat": 3,
     "cast": [
@@ -1080,6 +1102,7 @@ export const TRENDS = [
     "name": "Grand Entrance",
     "kind": "glowups",
     "home": "mixer",
+    "also": [],
     "seconds": 10,
     "heat": 3,
     "cast": [
@@ -1123,6 +1146,7 @@ export const TRENDS = [
     "name": "Documentary",
     "kind": "reactions",
     "home": "mixer",
+    "also": [],
     "seconds": 8,
     "heat": 4,
     "cast": [

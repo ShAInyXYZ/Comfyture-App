@@ -8,7 +8,7 @@ import { currentPage, go } from "../router.js";
 import {
   jam, loadJams, openJam, newJam, removeJam, rename, useTrack, makeTrack, setLength, setStart, LENGTHS, setLine, useLyrics,
   setArtist, setDance, clearDance, setStyle, setCaptions, setEvery, take, making, makeVideo, estimate, KINDS, exportVideo, edit,
-  setLoras, save, cycleKind, rerollShot, shotState, startFromTrend,
+  setLoras, save, cycleKind, rerollShot, shotState, startFromTrend, listen,
 } from "../jam.js";
 import { cut } from "../cut.js";
 import { lyricItems } from "../edit.js";
@@ -184,7 +184,9 @@ function recordPanel(j) {
   } else parts.push(h("p.jm-hint", {}, "An MP3, a WAV or a video with sound. Or make one from a few words."));
   parts.push(h("div.jm-keys", {},
     h("button.key", { type: "button", disabled: busy, title: "A song of your own: an MP3, a WAV, or a video with sound", on: { click: () => pick("audio/*,video/*", useTrack) } }, icon(b.track ? "loop" : "upload"), b.track ? "Replace" : "Add a track"),
-    h("button.key", { type: "button", disabled: busy, "aria-pressed": String(!!making_), title: "A track made from a few words and lyrics (ACE-Step 1.5)", on: { click: () => ((making_ = making_ ? null : { prompt: "", lyrics: "", seconds: 30, bpm: 100 }), changed("jam")) } }, icon("sparkle"), "Make a track")));
+    h("button.key", { type: "button", disabled: busy, "aria-pressed": String(!!making_), title: "A track made from a few words and lyrics (ACE-Step 1.5, costs credits)", on: { click: () => ((making_ = making_ ? null : { prompt: b.feel?.prompt ?? "", lyrics: "", seconds: b.feel?.seconds ?? 30, bpm: b.feel?.bpm ?? 100 }), changed("jam")) } }, icon("sparkle"), "Make a track"),
+    // what Comfy hears (the vocals, the words): asked for, never started by itself
+    b.part ? h("button.key", { type: "button", disabled: busy || jam.busy.has("listen"), title: b.vocals ? "Comfy has heard this part: its vocals and words are in" : "Comfy separates the vocals and writes down the words and their times (costs credits)", on: { click: () => listen() } }, icon("audio-music"), b.vocals ? "Words heard" : "Hear the words") : null));
   if (making_) {
     parts.push(h("div.jm-make", {},
       h("input.field", { value: making_.prompt, placeholder: "The music: upbeat indie pop, bright vocals, handclaps", dataset: { focus: "make:prompt" }, on: { input: (e) => (making_.prompt = e.target.value) } }),
@@ -196,6 +198,7 @@ function recordPanel(j) {
   }
   if (jam.starting) parts.push(h("p.jm-busy", {}, h("span.lamp", { dataset: { tone: "busy" } }), "Getting the trend: its sound and its moves"));
   if (jam.busy.has("make")) parts.push(h("p.jm-busy", {}, h("span.lamp", { dataset: { tone: "busy" } }), "Making the track"));
+  if (jam.busy.has("part")) parts.push(h("p.jm-busy", {}, h("span.lamp", { dataset: { tone: "busy" } }), "Cutting the part, finding the beats"));
   if (jam.busy.has("listen")) parts.push(h("p.jm-busy", {}, h("span.lamp", { dataset: { tone: "busy" } }), "Listening: the vocals, the words, the beat"));
 
   if (b.track) {

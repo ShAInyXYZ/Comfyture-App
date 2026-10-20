@@ -124,7 +124,7 @@ export async function useTrack(file) {
     setTrack(j, { file: a.file, url: a.url, seconds, name, kind: "upload" });
     if (j.name === "New music video") j.name = name;
     touched();
-    await listen();
+    await cutPart(j);
   } catch (e) {
     toast(e.message, { tone: "crit" });
   } finally {
@@ -145,7 +145,7 @@ export async function makeTrack({ prompt, lyrics, seconds, bpm, name }) {
     setTrack(j, { ...done.audio, kind: "made", prompt, lyrics, bpm });
     if (j.name === "New music video") j.name = done.audio.name;
     touched();
-    await listen();
+    await cutPart(j);
   } catch (e) {
     toast(e.message, { tone: "crit" });
   } finally {
@@ -194,9 +194,14 @@ export async function startFromTrend(t) {
     if (jam.jam === j) touched();
     else await send(`api/jams/${j.id}`, "PUT", { name: j.name, body: b });
     if (jam.jam !== j) return;
-    // the sound is heard (its beats, its singing) as any track is; one made in the trend's feel is made first
-    if (t.recipe) await listen();
-    else await makeTrack({ prompt: feelOf(t), lyrics: "", seconds: Math.max(10, Math.ceil(t.seconds) + 1), bpm: t.music?.bpm ?? 110, name: `${t.name} track` });
+    // nothing that costs credits starts by itself: the trend's own sound is cut and its beats heard here;
+    // a trend without a sound of ours waits for one, with "Make a track" ready in its feel
+    if (t.recipe) await cutPart(j);
+    else {
+      b.feel = { prompt: feelOf(t), seconds: Math.max(10, Math.ceil(t.seconds) + 1), bpm: t.music?.bpm ?? 110, name: `${t.name} track` };
+      touched();
+      toast("Add a track, or make one in the trend's feel.");
+    }
   } catch (e) {
     toast(e.message, { tone: "crit" });
     // nothing to start from: the empty project is not kept
@@ -227,9 +232,9 @@ export function setLength(seconds) {
   const from = j.body.span?.from ?? 0;
   const to = seconds ? Math.min(j.body.track.seconds, from + seconds) : j.body.track.seconds;
   j.body.span = { from: Math.max(0, Math.min(from, to - 5)), to };
-  Object.assign(j.body, { shots: [], film: null });
+  Object.assign(j.body, { shots: [], film: null, vocals: null, sung: [], lines: [] });
   touched();
-  listen();
+  cutPart(j);
 }
 export function setStart(from) {
   const j = jam.jam;
@@ -238,13 +243,42 @@ export function setStart(from) {
   const start = Math.max(0, Math.min(from, j.body.track.seconds - Math.min(len, j.body.track.seconds)));
   j.body.span = { from: Math.round(start * 10) / 10, to: Math.min(j.body.track.seconds, Math.round((start + len) * 10) / 10) };
   Object.assign(j.body, { shots: [], film: null });
+  Object.assign(j.body, { vocals: null, sung: [], lines: [] });
   touched();
   clearTimeout(setStart.t);
-  setStart.t = setTimeout(listen, 900);
+  setStart.t = setTimeout(() => cutPart(j), 900);
 }
 
 /** The part of the track used, heard: its vocals, their words and times, its tempo and beats. */
 let again = false;
+/**
+ * The track's part cut and its beats heard here, in the browser: free and quick. What Comfy hears
+ * (the vocals, the words) is asked for with listen(), which costs credits.
+ */
+export async function cutPart(j = jam.jam) {
+  const b = j?.body;
+  if (!b?.track) return;
+  const asked = { ...b.span };
+  jam.busy.add("part");
+  update();
+  try {
+    const part = await send("api/jam/slice", "POST", { audio: b.track.file, from: asked.from, to: asked.to, name: b.track.name });
+    if (b.span.from !== asked.from || b.span.to !== asked.to) return;
+    b.part = { file: part.file, url: part.url, seconds: part.seconds };
+    b.bpm = b.track.bpm ?? b.bpm ?? null;
+    await hearBeats(b);
+    plan(j);
+    touched();
+    if (jam.jam === j) await syncEdit(j, { fresh: true }).catch((e) => console.warn("jam edit:", e.message));
+  } catch (e) {
+    toast(`The part: ${e.message}`, { tone: "crit" });
+  } finally {
+    jam.busy.delete("part");
+    update();
+  }
+}
+
+/** What Comfy hears in the part: the vocals, the words and the beat (a job on Comfy, so it is asked for, never started by itself). */
 export async function listen() {
   const j = jam.jam;
   const b = j?.body;
@@ -276,17 +310,7 @@ export async function listen() {
   } catch (e) {
     toast(`Listening: ${e.message}`, { tone: "crit" });
     // the part is cut all the same: the edit can be made without what Comfy hears (the beats found in the editor, the words typed)
-    if (!b.part && jam.jam === j) {
-      try {
-        const part = await send("api/jam/slice", "POST", { audio: b.track.file, from: asked.from, to: asked.to, name: b.track.name });
-        b.part = { file: part.file, url: part.url, seconds: part.seconds };
-        b.bpm = b.track.bpm ?? null;
-        await hearBeats(b);
-        plan(j);
-        touched();
-        await syncEdit(j, { fresh: true });
-      } catch {}
-    }
+    if (!b.part && jam.jam === j) await cutPart(j);
   } finally {
     jam.busy.delete("listen");
     update();
