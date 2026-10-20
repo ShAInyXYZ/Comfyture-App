@@ -1094,7 +1094,7 @@ export const TRENDS = [
     "cast": [
       {
         "role": "Lead",
-        "crew": "meringue"
+        "crew": "josie"
       }
     ],
     "beats": [
