@@ -132,7 +132,10 @@ let starting = false;
 
 function preview(t, m) {
   const film = m?.body.film;
-  if (film) return h("div.mx-preview", {}, player(m));
+  // a version of yours and ours: a switch on the card goes between them
+  if (film && t.preview && watching === t.id && !making())
+    return h("div.mx-preview", {}, player({ name: t.name, body: { film: { url: t.preview, seconds: t.seconds }, shots: t.beats } }, { inFrame: true }), versionSwitch(t, "ours"));
+  if (film) return h("div.mx-preview", {}, player(m), t.preview ? versionSwitch(t, "yours") : null);
   // our crew's version, in the cover's frame at the shape it was made in, until yours exists;
   // another trend picked, and this one is back to its cover
   if (watching !== t.id) watching = null;
@@ -149,6 +152,18 @@ function preview(t, m) {
       // our own version of the trend, in the shape it was made in
       t.preview && !first && !making() ? h("button.mx-watch", { type: "button", title: "Watch our crew's version", "aria-label": "Watch our crew's version", on: { click: () => ((watching = t.id), (starting = true), changedMixer()) } }, icon("play")) : null,
       feel ? makingHud(feel) : making() ? h("span.mx-making", {}, h("span.lamp", { dataset: { tone: "busy" } }), "Making your version") : h("span.mx-cover-note", {}, "Your version plays here")));
+}
+
+/** Yours | Ours: between the version made for you and the trend's own (our crew's). */
+function versionSwitch(t, on) {
+  const go = (ours) => () => {
+    watching = ours ? t.id : null;
+    starting = ours;
+    changedMixer();
+  };
+  return h("div.mx-versions", { role: "group", "aria-label": "Version" },
+    h("button", { type: "button", "aria-pressed": String(on === "yours"), on: { click: go(false) } }, "Yours"),
+    h("button", { type: "button", "aria-pressed": String(on === "ours"), on: { click: go(true) } }, "Ours"));
 }
 
 /**
