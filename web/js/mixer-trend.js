@@ -219,9 +219,11 @@ async function fromRecipe(t, cast, m) {
     const s = recipe.shots[i];
     const shot = m.body.shots[i];
     shot.look = start;
+    // a shot that has a drawn last frame lands on it (redrawn with your cast like its first), so it meets the next shot at the cut
+    const end = s.end ? await first(s.end) : null;
     const body = {
       name: `${m.name} · ${i + 1}`, start: start.file, seconds: Math.ceil(s.frames / 24), aspect: "9:16", review: false, takes: 1, quality: "standard",
-      script: { shots: [], raw: fill(s.prompt) }, audio: { file: voice.file },
+      script: { shots: [], raw: fill(s.prompt) }, audio: { file: voice.file }, ...(end ? { end: { file: end.file } } : {}),
       video: { file: files.controls[s.pose ?? s.guide].file, mode: "swap", from: s.from, strength: s.strength ?? recipe.take.strength, length: s.frames, build: recipe.take.build },
       ...(ours && s.seed ? { seed: s.seed } : {}),
     };

@@ -1,6 +1,7 @@
 // One swap take on Comfy Cloud from local files, to try the workflow before it runs in the app:
 //   node --env-file=.env scripts/try-swap.ts spec.json
-// spec: { graph?, clip, photo, audio, from, frames, width, height, prompt, seed, face?, control?, lora?, strength?, loras?, out }
+// spec: { graph?, clip, photo, audio, from, frames, width, height, prompt, seed, face?, control?, lora?, strength?, loras?, end?, endStrength?, out }
+// (end: a drawn last frame the take lands on, so a shot meets the next one at a cut)
 // (graph: shot-swap.json, the default, or shot-swap-dev.json; width and height are the first stage's)
 // (paths relative to where it runs; loras: [{ file, strength }] chained before the IC-LoRA)
 // A take that comes back "succeeded" but black (Comfy Cloud now and then returns NaN frames for one exact
@@ -34,6 +35,7 @@ async function take(seed: number, prompt: string) {
     clip: asset(spec.clip),
     photo: asset(spec.photo),
     audio: asset(spec.audio),
+    ...(spec.end ? { end: asset(spec.end) } : {}),
   });
   if (spec.loras?.length) withLoras(graph, spec.loras.map((l: { file: string; strength: number }) => ({ id: l.file, kind: "style", file: l.file, strength: l.strength, words: "" })), false);
   await library.resolve(graph);

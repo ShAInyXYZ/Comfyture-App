@@ -588,6 +588,8 @@ export class Engine extends EventEmitter {
       control: "ready",
       strength: clip.strength,
       build: clip.build,
+      // a drawn last frame, when the take must land where the next shot starts
+      ...(r.end?.file ? { end: this.assetFor(this.photoPath(r.end.file)) } : {}),
     });
     const units = (frames / FPS) * ((run.size.width * run.size.height) / 1e6);
     const job = await this.execute(graph, signal, { run, stage: "shot", span: [0, 1], kind: "swap", units });

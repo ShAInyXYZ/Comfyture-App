@@ -263,7 +263,7 @@ export function buildMotion(graph: Graph, clip: unknown, photo: unknown | null, 
  * guide, for an edit IC-LoRA. The first frame says who is in it. width and height are the first stage's,
  * multiples of 64; frames is 8n + 1.
  */
-export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audio: unknown; from: number; prompt: string; frames: number; width: number; height: number; seed: number; face?: boolean; control?: "pose" | "frames" | "ready"; lora?: string; strength?: number; build?: string }) {
+export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audio: unknown; from: number; prompt: string; frames: number; width: number; height: number; seed: number; face?: boolean; control?: "pose" | "frames" | "ready"; lora?: string; strength?: number; build?: string; end?: unknown; endStrength?: number }) {
   set(graph, "video_in", "file", v.clip);
   set(graph, "photo", "image", v.photo);
   set(graph, "audio_in", "audio", v.audio);
@@ -288,6 +288,19 @@ export function buildSwap(graph: Graph, v: { clip: unknown; photo: unknown; audi
   set(graph, "noise_refine", "noise_seed", v.seed + 1);
   if (v.face === false) set(graph, "control", "detect_face", "disable");
   if (v.lora) set(graph, "ic_lora", "lora_name", v.lora);
+  // an end frame too: the take lands on a drawn last frame (a shot that must meet the next one at a cut),
+  // a keyframe guide at the last frame in both stages, cropped off with the other guides after sampling
+  if (v.end && graph.first && graph.first_refine && graph.guide && graph.guide_refine && graph.photo_fit) {
+    const at = v.frames - 1;
+    const strength = v.endStrength ?? 1;
+    graph.end_photo = { class_type: "LoadImage", inputs: { image: v.end } };
+    graph.end_fit = { class_type: "ResizeImageMaskNode", inputs: { ...graph.photo_fit.inputs, input: ["end_photo", 0] } };
+    graph.end_prep = { class_type: "LTXVPreprocess", inputs: { image: ["end_fit", 0], img_compression: 18 } };
+    graph.end_guide = { class_type: "LTXVAddGuide", inputs: { positive: graph.guide.inputs.positive, negative: graph.guide.inputs.negative, vae: ["vae", 0], latent: ["first", 0], image: ["end_prep", 0], frame_idx: at, strength } };
+    Object.assign(graph.guide.inputs, { positive: ["end_guide", 0], negative: ["end_guide", 1], latent: ["end_guide", 2] });
+    graph.end_guide_refine = { class_type: "LTXVAddGuide", inputs: { positive: graph.guide_refine.inputs.positive, negative: graph.guide_refine.inputs.negative, vae: ["vae", 0], latent: ["first_refine", 0], image: ["end_prep", 0], frame_idx: at, strength } };
+    Object.assign(graph.guide_refine.inputs, { positive: ["end_guide_refine", 0], negative: ["end_guide_refine", 1], latent: ["end_guide_refine", 2] });
+  }
   // the negative prompt keeps people out of animal characters: people playing people keep their hands
   if (v.build === "human" && graph.negative)
     graph.negative.inputs.text = String(graph.negative.inputs.text).replace(", human body, human hands, human face, clothes", "").replace("disfigured paws", "deformed hands, extra fingers, fused fingers");

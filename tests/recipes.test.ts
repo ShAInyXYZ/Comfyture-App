@@ -21,7 +21,7 @@ const recipes = await Promise.all(ids.map(async (id) => ({ id, recipe: JSON.pars
 
 for (const { id, recipe } of recipes) {
   test(`${id}: the files it names are there`, async () => {
-    const files = [recipe.preview, recipe.poster, recipe.look, recipe.sound?.mix, recipe.sound?.vocals, ...recipe.shots.flatMap((s: any) => [s.pose, s.guide, s.look, s.keypoints])];
+    const files = [recipe.preview, recipe.poster, recipe.look, recipe.sound?.mix, recipe.sound?.vocals, ...recipe.shots.flatMap((s: any) => [s.pose, s.guide, s.look, s.end, s.keypoints])];
     for (const f of files.filter(Boolean)) await access(join(root, id, f));
   });
 
