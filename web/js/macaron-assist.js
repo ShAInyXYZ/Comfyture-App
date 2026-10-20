@@ -147,6 +147,7 @@ function run(a, later) {
 
 /** A new picture for the design, behind it or as a layer, from the image model she chose. */
 async function makeBackground(a) {
+  const brand = macaron.brand;
   const d = designNow();
   const format = macaron.format;
   const flux = a.model === "flux";
@@ -157,6 +158,8 @@ async function makeBackground(a) {
     name: a.prompt.slice(0, 50),
     refs: [],
   });
+  // another brand may be open by now: the picture stays in the library of the brand it was made for
+  if (macaron.brand !== brand) return;
   edit(() => {
     if (a.use === "image") {
       const f = frameOf(format);
@@ -174,12 +177,15 @@ async function makeBackground(a) {
 export async function askMacaron(text) {
   const words = text.trim();
   const chat = macaron.chat;
-  if (!words || chat.busy || !macaron.brand) return;
+  const brand = macaron.brand;
+  if (!words || chat.busy || !brand) return;
   chat.messages.push({ role: "user", text: words });
   chat.busy = "Thinking";
   changed("assistant");
   try {
     const out = await postJson("api/macaron/assist", "POST", { model: writer(), messages: chat.messages.slice(-8), brand: summary() });
+    // her answer is for the brand it was asked in: if another is open now, it is not made there
+    if (macaron.brand !== brand) return;
     const later = [];
     const did = [];
     await batch(() => {

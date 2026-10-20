@@ -2,7 +2,7 @@
  "id": "brand-comfyture",
  "name": "Comfyture",
  "createdAt": "2026-10-16T22:00:00.000Z",
- "updatedAt": "2026-10-20T07:06:26.237Z",
+ "updatedAt": "2026-10-20T09:56:07.797Z",
  "thumb": "brand/macaron/comfyture/thumb.webp",
  "body": {
   "logo": {
@@ -317,7 +317,7 @@
    "audience": "Indie filmmakers, motion designers and trend-minded creators who like to own their tools; people who already run ComfyUI or want to.",
    "message": "Direct a shot, or a whole film, from one photo or one sentence. Open source, on your own GPU or in Comfy Cloud, with a real desk: Story, Stage, Shot, Cut, Library.",
    "tone": "Warm, plain, concrete, a little playful. One jam pun at most. Show real takes, never promise studio results.",
-   "deliverables": "A brand board. Social layouts in 4:5, 1:1 and 9:16: launch, showcase, the assistant, the five rooms. A product hero. A seven second logo and product intro. Saved variations to test.",
+   "deliverables": "A brand board. Social layouts in 4:5, 1:1 and 9:16: launch, showcase, the assistant, the five rooms. A product hero. An eight second logo and product intro. Saved variations to test.",
    "constraints": "Open source (MIT). Real screens and real takes only. Logos only from the supplied files; generated pictures never carry the logo or a headline. Type clear of the story's top 13% and bottom 18%. Never name or compare other products.",
    "channels": "Instagram feed and stories, TikTok, X."
   },
@@ -392,7 +392,7 @@
     "kind": "app",
     "src": "brand/macaron/comfyture/app/home.webp",
     "note": "The real screen, as it ships.",
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
     "id": "ref-cut",
@@ -400,7 +400,7 @@
     "kind": "app",
     "src": "brand/macaron/comfyture/app/cut.webp",
     "note": "The bar Brioche's explainer quotes.",
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    }
   ],
   "assets": [
@@ -876,14 +876,14 @@
     "id": "h-motion",
     "at": "2026-10-20T06:30:00.000Z",
     "kind": "motion",
-    "title": "Logo and product intro, 7 s",
-    "note": "The wordmark wipes in with its lid lifted; the lid lands with a ripple and a soft pop; the wordmark settles into the launch layout; Brioche pops in; a yellow end card.",
+    "title": "Logo and product intro, 8 s",
+    "note": "The wordmark wipes in with its lid lifted; the lid lands with a ripple and a soft pop; the wordmark settles into the launch layout; Brioche pops in; a yellow end card that holds, with the address, for the last second and a half.",
     "src": "brand/macaron/comfyture/history/intro-poster.webp",
     "designId": "intro"
    },
    {
     "id": "h-launch-4x5-png",
-    "at": "2026-10-20T07:06:26.237Z",
+    "at": "2026-10-20T09:56:07.797Z",
     "kind": "export",
     "title": "Launch · Direct a shot exported",
     "note": "PNG 1080×1350",
@@ -892,7 +892,7 @@
    },
    {
     "id": "h-showcase-4x5-png",
-    "at": "2026-10-20T07:06:26.237Z",
+    "at": "2026-10-20T09:56:07.797Z",
     "kind": "export",
     "title": "Showcase · Made with Comfyture exported",
     "note": "PNG 1080×1350",
@@ -901,7 +901,7 @@
    },
    {
     "id": "h-brioche-4x5-png",
-    "at": "2026-10-20T07:06:26.237Z",
+    "at": "2026-10-20T09:56:07.797Z",
     "kind": "export",
     "title": "Feature · Meet Brioche exported",
     "note": "PNG 1080×1350",
@@ -910,7 +910,7 @@
    },
    {
     "id": "h-rooms-4x5-png",
-    "at": "2026-10-20T07:06:26.237Z",
+    "at": "2026-10-20T09:56:07.797Z",
     "kind": "export",
     "title": "Feature · Five rooms exported",
     "note": "PNG 1080×1350",
@@ -919,7 +919,7 @@
    },
    {
     "id": "h-hero-4x5-png",
-    "at": "2026-10-20T07:06:26.237Z",
+    "at": "2026-10-20T09:56:07.797Z",
     "kind": "export",
     "title": "Product hero · Shots worth keeping exported",
     "note": "PNG 1080×1350",
@@ -928,7 +928,7 @@
    },
    {
     "id": "h-board-4x5-png",
-    "at": "2026-10-20T07:06:26.237Z",
+    "at": "2026-10-20T09:56:07.797Z",
     "kind": "export",
     "title": "Brand board · Comfyture exported",
     "note": "PNG 1080×1350",
@@ -937,10 +937,10 @@
    },
    {
     "id": "h-intro-9x16-mp4",
-    "at": "2026-10-20T07:06:26.237Z",
+    "at": "2026-10-20T09:56:07.797Z",
     "kind": "export",
     "title": "Logo and product intro exported",
-    "note": "MP4 1080×1920, 7 s",
+    "note": "MP4 1080×1920, 8 s",
     "src": "brand/macaron/comfyture/exports/intro-poster-9x16.png",
     "designId": "intro"
    }
@@ -1190,7 +1190,7 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T07:06:26.237Z",
+    "updatedAt": "2026-10-20T09:56:07.797Z",
     "history": [
      {
       "at": "2026-10-20T05:25:00.000Z",
@@ -1198,7 +1198,7 @@
       "note": "Started from the brand kit"
      },
      {
-      "at": "2026-10-20T07:06:26.237Z",
+      "at": "2026-10-20T09:56:07.797Z",
       "who": "you",
       "note": "Laid out for 3 formats"
      }
@@ -1597,7 +1597,7 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T07:06:26.237Z",
+    "updatedAt": "2026-10-20T09:56:07.797Z",
     "history": [
      {
       "at": "2026-10-20T05:25:00.000Z",
@@ -1605,7 +1605,7 @@
       "note": "Started from the brand kit"
      },
      {
-      "at": "2026-10-20T07:06:26.237Z",
+      "at": "2026-10-20T09:56:07.797Z",
       "who": "you",
       "note": "Laid out for 3 formats"
      }
@@ -2153,7 +2153,7 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T07:06:26.237Z",
+    "updatedAt": "2026-10-20T09:56:07.797Z",
     "history": [
      {
       "at": "2026-10-20T05:25:00.000Z",
@@ -2161,7 +2161,7 @@
       "note": "Started from the brand kit"
      },
      {
-      "at": "2026-10-20T07:06:26.237Z",
+      "at": "2026-10-20T09:56:07.797Z",
       "who": "you",
       "note": "Laid out for 3 formats"
      }
@@ -2941,7 +2941,7 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T07:06:26.237Z",
+    "updatedAt": "2026-10-20T09:56:07.797Z",
     "history": [
      {
       "at": "2026-10-20T05:25:00.000Z",
@@ -2949,7 +2949,7 @@
       "note": "Started from the brand kit"
      },
      {
-      "at": "2026-10-20T07:06:26.237Z",
+      "at": "2026-10-20T09:56:07.797Z",
       "who": "you",
       "note": "Laid out for 3 formats"
      }
@@ -3165,7 +3165,7 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T07:06:26.237Z",
+    "updatedAt": "2026-10-20T09:56:07.797Z",
     "history": [
      {
       "at": "2026-10-20T05:25:00.000Z",
@@ -3173,7 +3173,7 @@
       "note": "Started from the brand kit"
      },
      {
-      "at": "2026-10-20T07:06:26.237Z",
+      "at": "2026-10-20T09:56:07.797Z",
       "who": "you",
       "note": "Laid out for 3 formats"
      }
@@ -3783,7 +3783,7 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T07:06:26.237Z",
+    "updatedAt": "2026-10-20T09:56:07.797Z",
     "history": [
      {
       "at": "2026-10-20T05:25:00.000Z",
@@ -3791,7 +3791,7 @@
       "note": "Started from the brand kit"
      },
      {
-      "at": "2026-10-20T07:06:26.237Z",
+      "at": "2026-10-20T09:56:07.797Z",
       "who": "you",
       "note": "Laid out for 2 formats"
      }
@@ -3814,7 +3814,7 @@
     "poster": 4.95,
     "checkAt": [
      4.95,
-     6.9
+     7.4
     ],
     "intent": "Motion: the lid lifts and lands on the wordmark, which settles into the launch layout, then the end card.",
     "bg": {
@@ -4092,7 +4092,7 @@
       "logo": "wordmark-ink",
       "role": "logo",
       "anim": {
-       "t0": 6,
+       "t0": 5.85,
        "in": {
         "fx": "fade",
         "dur": 0.5,
@@ -4121,7 +4121,7 @@
       "accent": "plum",
       "role": "sub",
       "anim": {
-       "t0": 6.25,
+       "t0": 6.1,
        "in": {
         "fx": "rise",
         "dur": 0.5,
@@ -4150,7 +4150,7 @@
       "accent": "yellow",
       "role": "cta",
       "anim": {
-       "t0": 6.5,
+       "t0": 6.3,
        "in": {
         "fx": "rise",
         "dur": 0.4,
@@ -4179,7 +4179,7 @@
       "radius": 0,
       "role": "deco",
       "anim": {
-       "t0": 6.3,
+       "t0": 6.1,
        "in": {
         "fx": "pop",
         "dur": 0.55,
@@ -4554,7 +4554,7 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T07:06:26.237Z",
+    "updatedAt": "2026-10-20T09:56:07.797Z",
     "history": [
      {
       "at": "2026-10-20T05:25:00.000Z",
@@ -4562,7 +4562,7 @@
       "note": "Started from the brand kit"
      },
      {
-      "at": "2026-10-20T07:06:26.237Z",
+      "at": "2026-10-20T09:56:07.797Z",
       "who": "you",
       "note": "Laid out for 3 formats"
      }
@@ -4817,10 +4817,10 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T07:06:26.237Z",
+    "updatedAt": "2026-10-20T09:56:07.797Z",
     "history": [
      {
-      "at": "2026-10-20T07:06:26.240Z",
+      "at": "2026-10-20T09:56:07.799Z",
       "who": "you",
       "note": "Made from Launch · Direct a shot"
      }
@@ -5076,10 +5076,10 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T07:06:26.237Z",
+    "updatedAt": "2026-10-20T09:56:07.797Z",
     "history": [
      {
-      "at": "2026-10-20T07:06:26.240Z",
+      "at": "2026-10-20T09:56:07.799Z",
       "who": "you",
       "note": "Made from Launch · Direct a shot"
      }
@@ -5302,10 +5302,10 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T07:06:26.237Z",
+    "updatedAt": "2026-10-20T09:56:07.797Z",
     "history": [
      {
-      "at": "2026-10-20T07:06:26.240Z",
+      "at": "2026-10-20T09:56:07.799Z",
       "who": "you",
       "note": "Made from Launch · Direct a shot"
      }
@@ -5501,7 +5501,7 @@
     },
     "history": [
      {
-      "at": "2026-10-20T07:06:26.240Z",
+      "at": "2026-10-20T09:56:07.799Z",
       "who": "you",
       "note": "Made from Feature · Meet Brioche"
      }
@@ -5757,10 +5757,10 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T07:06:26.237Z",
+    "updatedAt": "2026-10-20T09:56:07.797Z",
     "history": [
      {
-      "at": "2026-10-20T07:06:26.241Z",
+      "at": "2026-10-20T09:56:07.799Z",
       "who": "you",
       "note": "Made from Launch · Direct a shot"
      }
@@ -5927,10 +5927,10 @@
     ],
     "formats": {},
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T07:06:26.237Z",
+    "updatedAt": "2026-10-20T09:56:07.797Z",
     "history": [
      {
-      "at": "2026-10-20T07:06:26.241Z",
+      "at": "2026-10-20T09:56:07.799Z",
       "who": "you",
       "note": "Made from Launch · Direct a shot"
      }
@@ -5949,7 +5949,7 @@
     "name": "Logo and product intro",
     "design": "intro",
     "format": "9:16",
-    "duration": 7,
+    "duration": 8,
     "fps": 30,
     "sound": {
      "pad": true,
@@ -5962,18 +5962,18 @@
      "file": "intro-9x16.mp4",
      "width": 1080,
      "height": 1920,
-     "duration": 7,
-     "bytes": 881483,
+     "duration": 8,
+     "bytes": 968985,
      "format": "9:16",
      "sound": true,
      "poster": "brand/macaron/comfyture/exports/intro-poster-9x16.png",
-     "at": "2026-10-20T07:06:26.237Z"
+     "at": "2026-10-20T09:56:07.797Z"
     }
    }
   ],
   "exports": [
    {
-    "id": "x9en3cyx9",
+    "id": "xct92y2wc",
     "design": "launch",
     "designName": "Launch · Direct a shot",
     "format": "4:5",
@@ -5983,10 +5983,10 @@
     "width": 1080,
     "height": 1350,
     "bytes": 481986,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
-    "id": "x9es23sgc",
+    "id": "xctdozrdk",
     "design": "launch",
     "designName": "Launch · Direct a shot",
     "format": "1:1",
@@ -5996,10 +5996,10 @@
     "width": 1080,
     "height": 1080,
     "bytes": 423237,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
-    "id": "x9ew1uvvs",
+    "id": "xctgf43rc",
     "design": "launch",
     "designName": "Launch · Direct a shot",
     "format": "9:16",
@@ -6009,10 +6009,10 @@
     "width": 1080,
     "height": 1920,
     "bytes": 592870,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
-    "id": "x9f0kj50e",
+    "id": "xctknvol6",
     "design": "showcase",
     "designName": "Showcase · Made with Comfyture",
     "format": "4:5",
@@ -6022,10 +6022,10 @@
     "width": 1080,
     "height": 1350,
     "bytes": 1062831,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
-    "id": "x9f562j08",
+    "id": "xctp5mmli",
     "design": "showcase",
     "designName": "Showcase · Made with Comfyture",
     "format": "9:16",
@@ -6035,10 +6035,10 @@
     "width": 1080,
     "height": 1920,
     "bytes": 1087332,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
-    "id": "x9fan5eob",
+    "id": "xctu16b7b",
     "design": "brioche",
     "designName": "Feature · Meet Brioche",
     "format": "4:5",
@@ -6048,10 +6048,10 @@
     "width": 1080,
     "height": 1350,
     "bytes": 405791,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
-    "id": "x9fegrqc6",
+    "id": "xctxkje3c",
     "design": "brioche",
     "designName": "Feature · Meet Brioche",
     "format": "1:1",
@@ -6061,10 +6061,10 @@
     "width": 1080,
     "height": 1080,
     "bytes": 382868,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
-    "id": "x9fi3uoqd",
+    "id": "xcu17y7g8",
     "design": "rooms",
     "designName": "Feature · Five rooms",
     "format": "4:5",
@@ -6074,10 +6074,10 @@
     "width": 1080,
     "height": 1350,
     "bytes": 131648,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
-    "id": "x9flo2a96",
+    "id": "xcu4turxf",
     "design": "rooms",
     "designName": "Feature · Five rooms",
     "format": "9:16",
@@ -6087,10 +6087,10 @@
     "width": 1080,
     "height": 1920,
     "bytes": 155768,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
-    "id": "x9fpcx5i2",
+    "id": "xcu8g215r",
     "design": "hero",
     "designName": "Product hero · Shots worth keeping",
     "format": "4:5",
@@ -6100,10 +6100,10 @@
     "width": 1080,
     "height": 1350,
     "bytes": 755733,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
-    "id": "x9ftasuo3",
+    "id": "xcude6znw",
     "design": "hero",
     "designName": "Product hero · Shots worth keeping",
     "format": "1:1",
@@ -6113,10 +6113,10 @@
     "width": 1080,
     "height": 1080,
     "bytes": 431938,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
-    "id": "x9fy1l3bx",
+    "id": "xcufy6j65",
     "design": "board",
     "designName": "Brand board · Comfyture",
     "format": "4:5",
@@ -6126,10 +6126,10 @@
     "width": 1080,
     "height": 1350,
     "bytes": 290639,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
-    "id": "x9g1ky1ge",
+    "id": "xcuj8b4it",
     "design": "board",
     "designName": "Brand board · Comfyture",
     "format": "1:1",
@@ -6139,7 +6139,7 @@
     "width": 1080,
     "height": 1080,
     "bytes": 238557,
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    },
    {
     "id": "x-intro-mp4",
@@ -6151,10 +6151,10 @@
     "file": "intro-9x16.mp4",
     "width": 1080,
     "height": 1920,
-    "bytes": 881483,
-    "duration": 7,
+    "bytes": 968985,
+    "duration": 8,
     "poster": "brand/macaron/comfyture/exports/intro-poster-9x16.png",
-    "at": "2026-10-20T07:06:26.237Z"
+    "at": "2026-10-20T09:56:07.797Z"
    }
   ]
  }

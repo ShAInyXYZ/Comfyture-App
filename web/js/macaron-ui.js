@@ -1,7 +1,7 @@
 // The small parts Macaron's sections are built from: an icon, a card with its head, a segmented
 // choice, a slider with its reading, a colour choice, a text field that keeps its own edit history.
 import { h, icon, sprite } from "./dom.js";
-import { begin, live, end } from "./macaron.js";
+import { begin, live, end, settle } from "./macaron.js";
 import { colorOf } from "./design.js";
 
 const PATHS = {
@@ -82,6 +82,9 @@ export function slider({ value, min = 0, max = 1, step = 0.001, set, note, read 
       live(() => set(v));
     },
     change: () => end(note),
+    // pressed or focused and let go without a change: nothing was begun
+    pointerup: () => settle(),
+    blur: () => settle(),
   } });
   return h("div.mc-slider", {}, input, out);
 }
@@ -96,6 +99,7 @@ export function numberField({ value, min, max, step = 0.1, set, note, suffix = "
         if (Number.isFinite(v)) live(() => set(v / scale));
       },
       change: () => end(note),
+      blur: () => settle(),
       keydown: (e) => e.key === "Enter" && e.target.blur(),
     } }),
     suffix ? h("em", {}, suffix) : null);
@@ -108,6 +112,8 @@ export function textField({ value, set, note, rows = 0, placeholder = "", label,
     focus: () => begin(),
     input: (e) => live(() => set(e.target.value)),
     change: () => end(note),
+    // focused and left without a change: there is nothing to go back to
+    blur: () => settle(),
     keydown: (e) => {
       e.stopPropagation();
       if (e.key === "Escape") e.target.blur();

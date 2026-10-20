@@ -377,7 +377,7 @@ export const intro = () => {
   const base = (id: string) => structuredClone(L.layers.find((l: any) => l.id === id)!);
   const lay = (id: string, extra: Patch) => ({ ...base(id), ...(L.formats["9:16"].layers[id] ?? {}), ...extra });
   return {
-    id: "intro", name: "Motion · Logo and product intro", purpose: "Motion", status: "approved", format: "9:16", campaign: "Launch week", layout: "custom", motion: true, poster: 4.95, checkAt: [4.95, 6.9],
+    id: "intro", name: "Motion · Logo and product intro", purpose: "Motion", status: "approved", format: "9:16", campaign: "Launch week", layout: "custom", motion: true, poster: 4.95, checkAt: [4.95, 7.4],
     intent: "Motion: the lid lifts and lands on the wordmark, which settles into the launch layout, then the end card.",
     bg: { color: "ink" },
     layers: [
@@ -389,10 +389,10 @@ export const intro = () => {
       lay("brioche", { anim: { t0: 4.25, in: { fx: "pop", dur: 0.6, ease: "back" } } }),
       lay("window", { anim: { t0: 3.45, in: { fx: "rise", dur: 0.9, ease: "out" } } }),
       shape("end-bg", "rect", { name: "End card ground", role: "deco", colorRole: "yellow", x: 0, y: 0, w: 1, h: 1, anim: { t0: 5.5, in: { fx: "wipe-u", dur: 0.6, ease: "inout" } } }),
-      logo("end-wordmark", "wordmark-ink", { name: "End card wordmark", x: 0.12, y: 0.34, w: 0.76, anim: { t0: 6.0, in: { fx: "fade", dur: 0.5, ease: "out" } } }),
-      text("end-tag", "Shots worth *keeping.*", { name: "End card line", role: "sub", fontRole: "display", size: 0.062, tracking: -0.02, align: "center", x: 0.06, y: 0.52, w: 0.84, colorRole: "ink", accent: "plum", anim: { t0: 6.25, in: { fx: "rise", dur: 0.5, ease: "out" } } }),
-      text("end-url", "github.com/ShAInyXYZ/Comfyture", { name: "End card link", role: "cta", fontRole: "mono", size: 0.0245, tracking: 0.04, align: "center", x: 0.06, y: 0.585, w: 0.84, colorRole: "ink", anim: { t0: 6.5, in: { fx: "rise", dur: 0.4, ease: "out" } } }),
-      image("end-brioche", "brioche-cheer.webp", { name: "Brioche, cheering", role: "deco", fit: "contain", x: 0.56, y: 0.63, w: 0.32, h: tall(0.32, 727 / 745, 1920), anim: { t0: 6.3, in: { fx: "pop", dur: 0.55, ease: "back" } } }),
+      logo("end-wordmark", "wordmark-ink", { name: "End card wordmark", x: 0.12, y: 0.34, w: 0.76, anim: { t0: 5.85, in: { fx: "fade", dur: 0.5, ease: "out" } } }),
+      text("end-tag", "Shots worth *keeping.*", { name: "End card line", role: "sub", fontRole: "display", size: 0.062, tracking: -0.02, align: "center", x: 0.06, y: 0.52, w: 0.84, colorRole: "ink", accent: "plum", anim: { t0: 6.1, in: { fx: "rise", dur: 0.5, ease: "out" } } }),
+      text("end-url", "github.com/ShAInyXYZ/Comfyture", { name: "End card link", role: "cta", fontRole: "mono", size: 0.0245, tracking: 0.04, align: "center", x: 0.06, y: 0.585, w: 0.84, colorRole: "ink", anim: { t0: 6.3, in: { fx: "rise", dur: 0.4, ease: "out" } } }),
+      image("end-brioche", "brioche-cheer.webp", { name: "Brioche, cheering", role: "deco", fit: "contain", x: 0.56, y: 0.63, w: 0.32, h: tall(0.32, 727 / 745, 1920), anim: { t0: 6.1, in: { fx: "pop", dur: 0.55, ease: "back" } } }),
     ],
     formats: {
       "4:5": { layers: {

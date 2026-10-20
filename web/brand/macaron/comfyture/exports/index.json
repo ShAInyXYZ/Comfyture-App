@@ -1,8 +1,8 @@
 {
- "at": "2026-10-20T07:05:15.541Z",
+ "at": "2026-10-20T09:55:52.144Z",
  "exports": [
   {
-   "id": "x9en3cyx9",
+   "id": "xct92y2wc",
    "design": "launch",
    "designName": "Launch · Direct a shot",
    "format": "4:5",
@@ -12,10 +12,10 @@
    "width": 1080,
    "height": 1350,
    "bytes": 481986,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
-   "id": "x9es23sgc",
+   "id": "xctdozrdk",
    "design": "launch",
    "designName": "Launch · Direct a shot",
    "format": "1:1",
@@ -25,10 +25,10 @@
    "width": 1080,
    "height": 1080,
    "bytes": 423237,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
-   "id": "x9ew1uvvs",
+   "id": "xctgf43rc",
    "design": "launch",
    "designName": "Launch · Direct a shot",
    "format": "9:16",
@@ -38,10 +38,10 @@
    "width": 1080,
    "height": 1920,
    "bytes": 592870,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
-   "id": "x9f0kj50e",
+   "id": "xctknvol6",
    "design": "showcase",
    "designName": "Showcase · Made with Comfyture",
    "format": "4:5",
@@ -51,10 +51,10 @@
    "width": 1080,
    "height": 1350,
    "bytes": 1062831,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
-   "id": "x9f562j08",
+   "id": "xctp5mmli",
    "design": "showcase",
    "designName": "Showcase · Made with Comfyture",
    "format": "9:16",
@@ -64,10 +64,10 @@
    "width": 1080,
    "height": 1920,
    "bytes": 1087332,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
-   "id": "x9fan5eob",
+   "id": "xctu16b7b",
    "design": "brioche",
    "designName": "Feature · Meet Brioche",
    "format": "4:5",
@@ -77,10 +77,10 @@
    "width": 1080,
    "height": 1350,
    "bytes": 405791,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
-   "id": "x9fegrqc6",
+   "id": "xctxkje3c",
    "design": "brioche",
    "designName": "Feature · Meet Brioche",
    "format": "1:1",
@@ -90,10 +90,10 @@
    "width": 1080,
    "height": 1080,
    "bytes": 382868,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
-   "id": "x9fi3uoqd",
+   "id": "xcu17y7g8",
    "design": "rooms",
    "designName": "Feature · Five rooms",
    "format": "4:5",
@@ -103,10 +103,10 @@
    "width": 1080,
    "height": 1350,
    "bytes": 131648,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
-   "id": "x9flo2a96",
+   "id": "xcu4turxf",
    "design": "rooms",
    "designName": "Feature · Five rooms",
    "format": "9:16",
@@ -116,10 +116,10 @@
    "width": 1080,
    "height": 1920,
    "bytes": 155768,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
-   "id": "x9fpcx5i2",
+   "id": "xcu8g215r",
    "design": "hero",
    "designName": "Product hero · Shots worth keeping",
    "format": "4:5",
@@ -129,10 +129,10 @@
    "width": 1080,
    "height": 1350,
    "bytes": 755733,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
-   "id": "x9ftasuo3",
+   "id": "xcude6znw",
    "design": "hero",
    "designName": "Product hero · Shots worth keeping",
    "format": "1:1",
@@ -142,10 +142,10 @@
    "width": 1080,
    "height": 1080,
    "bytes": 431938,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
-   "id": "x9fy1l3bx",
+   "id": "xcufy6j65",
    "design": "board",
    "designName": "Brand board · Comfyture",
    "format": "4:5",
@@ -155,10 +155,10 @@
    "width": 1080,
    "height": 1350,
    "bytes": 290639,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
-   "id": "x9g1ky1ge",
+   "id": "xcuj8b4it",
    "design": "board",
    "designName": "Brand board · Comfyture",
    "format": "1:1",
@@ -168,7 +168,7 @@
    "width": 1080,
    "height": 1080,
    "bytes": 238557,
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   },
   {
    "id": "x-intro-mp4",
@@ -180,10 +180,10 @@
    "file": "intro-9x16.mp4",
    "width": 1080,
    "height": 1920,
-   "bytes": 881483,
-   "duration": 7,
+   "bytes": 968985,
+   "duration": 8,
    "poster": "brand/macaron/comfyture/exports/intro-poster-9x16.png",
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   }
  ],
  "render": {
@@ -192,12 +192,12 @@
    "file": "intro-9x16.mp4",
    "width": 1080,
    "height": 1920,
-   "duration": 7,
-   "bytes": 881483,
+   "duration": 8,
+   "bytes": 968985,
    "format": "9:16",
    "sound": true,
    "poster": "brand/macaron/comfyture/exports/intro-poster-9x16.png",
-   "at": "2026-10-20T07:05:15.541Z"
+   "at": "2026-10-20T09:55:52.144Z"
   }
  },
  "thumbs": {

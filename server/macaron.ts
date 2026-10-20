@@ -3,7 +3,7 @@
 // encoded from its frames.
 import { createHash, randomBytes } from "node:crypto";
 import { execFile } from "node:child_process";
-import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, open, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
@@ -146,6 +146,10 @@ export function readMacaronAnswer(reply: string) {
   return { reply: String(raw.reply ?? "").slice(0, 500), actions: (Array.isArray(raw.actions) ? raw.actions : []).map((a: any) => cleanAction(a)).filter(Boolean).slice(0, 16) };
 }
 
+/** One line of the picture ledger: when, the job that made the picture, the model, the size of the ask, and what Router charged. */
+export const ledgerLine = (v: { job: string; model: string; aspect: string; refs: number; credits: number | null; prompt: string }) =>
+  `${JSON.stringify({ at: new Date().toISOString(), job: v.job, model: v.model, aspect: v.aspect, refs: v.refs, credits: v.credits, prompt: v.prompt.slice(0, 120) })}\n`;
+
 // ------------------------------------------------------------------ the files a design leaves as
 
 export const exportsDir = (data: string) => join(data, "macaron", "exports");
@@ -181,25 +185,72 @@ function soundExpr(pops: number[], pad: boolean) {
   return [...pops.slice(0, 4).map(pop), ...(pad ? [drone] : [])].join("+") || "0";
 }
 
-/** Frames sent one by one, encoded as one H.264 video at the size they are, with a soft sound under it when asked. */
+const refuse = (message: string, status = 400) => Object.assign(new Error(message), { status });
+
+/** The size a PNG says it has, read from its first bytes; null when it is not a PNG. */
+async function pngSize(path: string) {
+  const file = await open(path, "r");
+  try {
+    const { buffer, bytesRead } = await file.read(Buffer.alloc(24), 0, 24, 0);
+    const ok = bytesRead === 24 && buffer.readUInt32BE(0) === 0x89504e47 && buffer.readUInt32BE(4) === 0x0d0a1a0a && buffer.toString("ascii", 12, 16) === "IHDR";
+    return ok ? { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) } : null;
+  } finally {
+    await file.close();
+  }
+}
+
+/**
+ * The frames of a job, all of them: numbered from 0 with none missing (ffmpeg reads them in order and stops at the
+ * first gap, calling the rest done), each a picture, all the same size. Answers how many there are.
+ */
+async function wholeFrames(dir: string) {
+  const names = (await readdir(dir).catch(() => [] as string[])).filter((f) => /^\d{5}\.png$/.test(f)).sort();
+  if (names.length < 8) throw refuse("A video needs at least 8 frames.");
+  let first: { width: number; height: number } | null = null;
+  for (let i = 0; i < names.length; i++) {
+    const want = `${String(i).padStart(5, "0")}.png`;
+    if (names[i] !== want) throw refuse(`Frame ${i} is missing: a video needs every frame, in order.`);
+    const size = await pngSize(join(dir, want));
+    if (!size) throw refuse(`Frame ${i} is not a picture.`);
+    first ??= size;
+    if (size.width !== first.width || size.height !== first.height) throw refuse(`Frame ${i} is another size (${size.width}×${size.height}; the first is ${first.width}×${first.height}).`);
+  }
+  return names.length;
+}
+
+/**
+ * Frames sent one by one, encoded as one H.264 video at the size they are, with a soft sound under it when asked.
+ * What comes out is probed before it is reported: the frames and seconds it holds, and its sound, are the ones asked for.
+ */
 export async function encodeFrames(data: string, job: string, v: { fps: number; name: string; sound?: { pops?: number[]; pad?: boolean } }) {
   const dir = framesDir(data, job);
-  const frames = (await readdir(dir)).filter((f) => f.endsWith(".png")).length;
-  if (frames < 8) throw Object.assign(new Error("A video needs at least 8 frames."), { status: 400 });
-  const out = join(dir, "video.mp4");
-  const seconds = frames / v.fps;
-  const sound = v.sound && (v.sound.pops?.length || v.sound.pad);
-  const args = ["-v", "error", "-y", "-framerate", String(v.fps), "-i", join(dir, "%05d.png")];
-  if (sound) args.push("-f", "lavfi", "-i", `aevalsrc='${soundExpr((v.sound!.pops ?? []).filter(Number.isFinite), !!v.sound!.pad)}':d=${seconds.toFixed(3)}:s=48000:c=stereo`);
-  args.push("-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p", "-c:v", "libx264", "-crf", "17", "-preset", "slow", "-movflags", "+faststart");
-  if (sound) args.push("-af", `afade=t=in:st=0:d=0.4,afade=t=out:st=${Math.max(0, seconds - 0.8).toFixed(3)}:d=0.8,alimiter=limit=0.8`, "-c:a", "aac", "-b:a", "160k");
-  args.push("-t", seconds.toFixed(3), out);
-  await exec("ffmpeg", args, { maxBuffer: 1 << 20 });
-  const bytes = await readFile(out);
-  const probe = JSON.parse((await exec("ffprobe", ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "json", out])).stdout).streams?.[0] ?? {};
-  const kept = await keepExport(data, bytes, v.name, "mp4");
-  await dropFrames(data, job);
-  return { ...kept, width: Number(probe.width), height: Number(probe.height), duration: Math.round(seconds * 100) / 100, frames, sound: !!sound };
+  try {
+    const frames = await wholeFrames(dir);
+    const out = join(dir, "video.mp4");
+    const seconds = frames / v.fps;
+    const sound = v.sound && (v.sound.pops?.length || v.sound.pad);
+    const args = ["-v", "error", "-y", "-framerate", String(v.fps), "-start_number", "0", "-i", join(dir, "%05d.png")];
+    if (sound) args.push("-f", "lavfi", "-i", `aevalsrc='${soundExpr((v.sound!.pops ?? []).filter(Number.isFinite), !!v.sound!.pad)}':d=${seconds.toFixed(3)}:s=48000:c=stereo`);
+    args.push("-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p", "-c:v", "libx264", "-crf", "17", "-preset", "slow", "-movflags", "+faststart");
+    if (sound) args.push("-af", `afade=t=in:st=0:d=0.4,afade=t=out:st=${Math.max(0, seconds - 0.8).toFixed(3)}:d=0.8,alimiter=limit=0.8`, "-c:a", "aac", "-b:a", "160k");
+    args.push("-t", seconds.toFixed(3), out);
+    await exec("ffmpeg", args, { maxBuffer: 1 << 20 });
+    const probed = JSON.parse((await exec("ffprobe", ["-v", "error", "-show_entries", "stream=codec_type,width,height,nb_frames,duration:format=duration", "-of", "json", out])).stdout);
+    const video = (probed.streams ?? []).find((s: any) => s.codec_type === "video");
+    const audio = (probed.streams ?? []).find((s: any) => s.codec_type === "audio");
+    // the container says how many frames it holds; a build that does not is asked to count them
+    let got = Number(video?.nb_frames);
+    if (video && !Number.isFinite(got)) got = Number(JSON.parse((await exec("ffprobe", ["-v", "error", "-count_frames", "-select_streams", "v:0", "-show_entries", "stream=nb_read_frames", "-of", "json", out])).stdout).streams?.[0]?.nb_read_frames);
+    const length = Number(video?.duration) || Number(probed.format?.duration);
+    if (!video || got !== frames || !(Math.abs(length - seconds) < 0.06) || (sound && !audio)) {
+      throw refuse(`The video came out with ${Number.isFinite(got) ? got : "no"} frames in ${Number.isFinite(length) ? length.toFixed(2) : "no"} s, not the ${frames} in ${seconds.toFixed(2)} s that were sent${sound && !audio ? ", and without its sound" : ""}.`, 500);
+    }
+    const kept = await keepExport(data, await readFile(out), v.name, "mp4");
+    return { ...kept, width: Number(video.width), height: Number(video.height), duration: Math.round(length * 100) / 100, frames: got, sound: !!audio };
+  } finally {
+    // the frames of a job are for one video: made or refused, they are not kept
+    await dropFrames(data, job);
+  }
 }
 
 /** The pictures of an old job are cleared at start, so a render that was cut off leaves nothing behind. */

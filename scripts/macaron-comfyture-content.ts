@@ -50,7 +50,7 @@ const brief = {
   audience: "Indie filmmakers, motion designers and trend-minded creators who like to own their tools; people who already run ComfyUI or want to.",
   message: "Direct a shot, or a whole film, from one photo or one sentence. Open source, on your own GPU or in Comfy Cloud, with a real desk: Story, Stage, Shot, Cut, Library.",
   tone: "Warm, plain, concrete, a little playful. One jam pun at most. Show real takes, never promise studio results.",
-  deliverables: "A brand board. Social layouts in 4:5, 1:1 and 9:16: launch, showcase, the assistant, the five rooms. A product hero. A seven second logo and product intro. Saved variations to test.",
+  deliverables: "A brand board. Social layouts in 4:5, 1:1 and 9:16: launch, showcase, the assistant, the five rooms. A product hero. An eight second logo and product intro. Saved variations to test.",
   constraints: "Open source (MIT). Real screens and real takes only. Logos only from the supplied files; generated pictures never carry the logo or a headline. Type clear of the story's top 13% and bottom 18%. Never name or compare other products.",
   channels: "Instagram feed and stories, TikTok, X.",
 };
@@ -99,12 +99,12 @@ const history = (designs: any[]): Step[] => {
   );
   steps.push(
     { id: "h-variants", at: "2026-10-20T06:25:00.000Z", kind: "variant", title: "Five variations of the launch layout", note: "Copy (the sentence first), colour (yellow ground), composition (a poster over the plum macro), intent (run it yourself) and format (the story first). Compared side by side.", designId: d("launch") },
-    { id: "h-motion", at: "2026-10-20T06:30:00.000Z", kind: "motion", title: "Logo and product intro, 7 s", note: "The wordmark wipes in with its lid lifted; the lid lands with a ripple and a soft pop; the wordmark settles into the launch layout; Brioche pops in; a yellow end card.", src: here("history/intro-poster.webp"), designId: d("intro") },
+    { id: "h-motion", at: "2026-10-20T06:30:00.000Z", kind: "motion", title: "Logo and product intro, 8 s", note: "The wordmark wipes in with its lid lifted; the lid lands with a ripple and a soft pop; the wordmark settles into the launch layout; Brioche pops in; a yellow end card that holds, with the address, for the last second and a half.", src: here("history/intro-poster.webp"), designId: d("intro") },
   );
   return steps;
 };
 
-const motion = [{ id: "m-intro", name: "Logo and product intro", design: "intro", format: "9:16", duration: 7, fps: 30, sound: { pad: true, pops: [1.82] } }];
+const motion = [{ id: "m-intro", name: "Logo and product intro", design: "intro", format: "9:16", duration: 8, fps: 30, sound: { pad: true, pops: [1.82] } }];
 
 // ---------------------------------------------------------------- the variations of the launch layout
 

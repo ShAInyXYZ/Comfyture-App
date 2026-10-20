@@ -2,7 +2,7 @@
 // that keeps to the safe zones, never a plain scale), the layouts Brioche can suggest, applying the
 // brand kit to a design, and the brand guard that reads one. Pure: a measurer is handed in (the page
 // measures text with a canvas; tests and the server use the estimate below).
-import { frameOf, FORMAT_KEYS, clamp, round, uid, colorOf, contrast, luminance, newLayer, layoutOf } from "./design.js";
+import { frameOf, FORMAT_KEYS, LAYOUT_PROPS, clamp, round, uid, colorOf, contrast, luminance, newLayer, layoutOf } from "./design.js";
 
 export const safeRect = (format) => {
   const s = frameOf(format).safe;
@@ -530,6 +530,43 @@ export function firstTiming(design, duration = 6, kit = null, measure = estimate
     for (const r of s.riders) anims[r.id] = r.type === "shape" ? { t0, in: fx(s.own) } : { t0: Math.round((t0 + 0.12) * 100) / 100, in: r.role === "headline" || r.role === "sub" ? fx(r) : { fx: "fade", dur: 0.5, ease: "out" } };
   });
   return anims;
+}
+
+// ---------------------------------------------------------------- one layer, changed
+
+/**
+ * A change to one layer, written where it belongs. What a format holds of a layer (its place, size, type size, crop,
+ * and whether it shows) is the format's layout; the rest belongs to the layer. The first format's layout is the layer
+ * itself, except for whether it shows: that is kept per format, so hiding a layer in one format leaves every other
+ * format as it was. A format with no layout of its own is laid out first (what it was reflowed to is kept).
+ */
+export function patchLayerIn(design, layerId, patch, format, reflowFn) {
+  const base = design.layers.find((l) => l.id === layerId);
+  if (!base) return;
+  const first = format === design.format;
+  if (!first) {
+    design.formats ??= {};
+    design.formats[format] ??= { layers: reflowFn(design, format) };
+  }
+  for (const [k, v] of Object.entries(patch)) {
+    if (k === "hidden" && first) showIn(design, format, base, !!v);
+    else if (first || !LAYOUT_PROPS.includes(k)) base[k] = v;
+    else (design.formats[format].layers[layerId] ??= {})[k] = v;
+  }
+}
+/** Whether a layer is hidden in the design's first format, kept in that format's layout (nothing is kept when it is as the layer is). */
+function showIn(design, format, layer, hidden) {
+  const formats = (design.formats ??= {});
+  if (hidden === !!layer.hidden) {
+    const layers = formats[format]?.layers;
+    if (layers?.[layer.id]) {
+      delete layers[layer.id].hidden;
+      if (!Object.keys(layers[layer.id]).length) delete layers[layer.id];
+    }
+    if (formats[format] && !Object.keys(formats[format].layers ?? {}).length && !formats[format].bg) delete formats[format];
+    return;
+  }
+  ((formats[format] ??= { layers: {} }).layers[layer.id] ??= {}).hidden = hidden;
 }
 
 /** The text layers of a design in reading order: the ones a copy variation rewrites. */

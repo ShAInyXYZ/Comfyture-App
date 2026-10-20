@@ -20,7 +20,7 @@ import { isRouterImage, routerImages, routerDraw } from "./router-images.ts";
 import { isRouterVideo, routerVideos } from "./router-videos.ts";
 import { planCut, ffmpegArgs, frameSize, cutBrief, cutPrompt, readCutAnswer, type CutBody, type CutItem, type Source } from "./cut.ts";
 import { splitEdit } from "./mixer.ts";
-import { MACARON_BRIEF, MACARON_TOOL, macaronPrompt, readMacaronAnswer, keepExport, keepFrame, encodeFrames, dropFrames, frameJob, validJob, sweepFrames } from "./macaron.ts";
+import { MACARON_BRIEF, MACARON_TOOL, macaronPrompt, readMacaronAnswer, keepExport, keepFrame, encodeFrames, dropFrames, frameJob, validJob, sweepFrames, ledgerLine } from "./macaron.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -1230,9 +1230,11 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const seed = Number.isSafeInteger(input.seed) && input.seed >= 0 ? input.seed : randomBytes(4).readUInt32BE(0);
     const job = engine.externalPhotoJob(text(input.name, 80) || prompt.slice(0, 60), async () => {
       const made = await routerDraw(model, { prompt, aspect, refs, names, seed, ...(gpt ? { size, quality: ["low", "medium", "high"].includes(input.quality) ? input.quality : "medium" } : {}), ...(model === "flux-3-image" && input.resolution === "2k" ? { resolution: "2k" } : {}) });
-      // what it cost is kept, so a project's pictures add up
+      // what it cost goes with the job (the finished job carries it to the page, which keeps it on the asset)
+      // and into the ledger under the job's id, so a project's pictures add up and each can be found
+      Object.assign(job, { credits: made.credits, model });
       await mkdir(join(data, "macaron"), { recursive: true });
-      await writeFile(join(data, "macaron", "ledger.jsonl"), `${JSON.stringify({ at: new Date().toISOString(), model, aspect, refs: refs.length, credits: made.credits, prompt: prompt.slice(0, 120) })}\n`, { flag: "a" });
+      await writeFile(join(data, "macaron", "ledger.jsonl"), ledgerLine({ job: job.id, model, aspect, refs: refs.length, credits: made.credits, prompt }), { flag: "a" });
       return made.bytes;
     });
     return json(res, 202, [job]);

@@ -6,8 +6,8 @@
 import { state, changed, onChange, toast, waitFor, artistFor, presetById } from "./store.js";
 import { api } from "./api.js";
 import { TEMPLATES, templateById } from "./macaron-templates.js";
-import { FORMATS, FORMAT_KEYS, kitOf, prepare, renderDesign, measurer, drawDesign, uid, clamp, newLayer, frameOf, layoutOf, LAYOUT_PROPS, ownFormats, colorOf, contrast, logoColour, lacksLid } from "./design.js";
-import { reflow, withPreset, applyKit, cloneDesign, guard, LAYOUTS, safeRect, firstTiming, soundPops } from "./macaron-layout.js";
+import { FORMATS, FORMAT_KEYS, kitOf, prepare, renderDesign, measurer, drawDesign, uid, clamp, newLayer, frameOf, layoutOf, ownFormats, colorOf, contrast, logoColour, lacksLid } from "./design.js";
+import { reflow, withPreset, applyKit, cloneDesign, guard, LAYOUTS, safeRect, firstTiming, soundPops, patchLayerIn } from "./macaron-layout.js";
 
 const OPEN = "comfyture.macaron.open";
 export const macaron = {
@@ -69,8 +69,11 @@ export function loadBrands() {
 }
 
 export async function openBrand(id) {
+  // what the brand being left has waiting to be saved goes first: opening it again must find it as it was left
+  await settleSaves(macaron.brand);
   const { project } = await call(`api/brands/${id}`);
   macaron.brand = { ...project, body: normalize(project.body) };
+  macaron.mark = null;
   macaron.past = [];
   macaron.future = [];
   macaron.chat = { messages: [], busy: null };
@@ -89,7 +92,7 @@ export async function openBrand(id) {
 function toneLogos() {
   const b = macaron.brand;
   for (const l of b?.body.kit.logos ?? []) {
-    if (!l.tone) logoColour(l.url).then((hex) => hex && macaron.brand === b && !l.tone && ((l.tone = hex), save()));
+    if (!l.tone) logoColour(l.url).then((hex) => hex && !l.tone && ((l.tone = hex), save(b)));
   }
 }
 
@@ -112,9 +115,11 @@ function rememberView() {
 }
 
 export async function newBrand(name = "New brand", body = blank()) {
+  await settleSaves(macaron.brand);
   const { project } = await send("api/brands", "POST", { name, body });
   macaron.list = [{ id: project.id, name: project.name, updatedAt: project.updatedAt }, ...macaron.list];
   macaron.brand = { ...project, body: normalize(project.body) };
+  macaron.mark = null;
   macaron.past = [];
   macaron.future = [];
   macaron.chat = { messages: [], busy: null };
@@ -128,30 +133,51 @@ export async function newBrand(name = "New brand", body = blank()) {
   return macaron.brand;
 }
 
-let saving = null;
-export function save() {
-  const b = macaron.brand;
-  if (!b) return;
-  clearTimeout(saving);
-  saving = setTimeout(() => {
-    const thumb = b.body.designs.find((d) => d.thumb?.url && !d.variant && d.status === "approved")?.thumb.url ?? b.body.logo?.url ?? productNow()?.photo?.url;
-    send(`api/brands/${b.id}`, "PUT", { name: b.name, body: b.body, ...(thumb ? { thumb } : {}) })
-      .then(() => {
-        const row = macaron.list.find((x) => x.id === b.id);
-        if (row) Object.assign(row, { name: b.name, thumb, updatedAt: new Date().toISOString() });
-      })
-      .catch((e) => toast(e.message, { tone: "crit" }));
-  }, 400);
+// A brand's save waits a moment for more edits. Each brand has a wait of its own, so an edit in one brand never
+// cancels what another has waiting, and a brand's writes go one after another, so an older body never lands last.
+const waiting = new Map();
+const writing = new Map();
+function write(b) {
+  waiting.delete(b.id);
+  const thumb = b.body.designs.find((d) => d.thumb?.url && !d.variant && d.status === "approved")?.thumb.url ?? b.body.logo?.url ?? productNow(b)?.photo?.url;
+  const done = (writing.get(b.id) ?? Promise.resolve())
+    .catch(() => {})
+    .then(() => send(`api/brands/${b.id}`, "PUT", { name: b.name, body: b.body, ...(thumb ? { thumb } : {}) }))
+    .then(() => {
+      const row = macaron.list.find((x) => x.id === b.id);
+      if (row) Object.assign(row, { name: b.name, thumb, updatedAt: new Date().toISOString() });
+    });
+  writing.set(b.id, done);
+  done.catch((e) => toast(e.message, { tone: "crit" }));
+  return done;
 }
-const touched = () => (save(), update());
+export function save(b = macaron.brand) {
+  if (!b) return;
+  clearTimeout(waiting.get(b.id));
+  waiting.set(b.id, setTimeout(() => write(b), 400));
+}
+/** A brand's save that is waiting is made now, and what is being written is let finish. */
+async function settleSaves(b) {
+  if (!b) return;
+  if (waiting.has(b.id)) {
+    clearTimeout(waiting.get(b.id));
+    write(b);
+  }
+  await writing.get(b.id)?.catch(() => {});
+}
+const touched = (b = macaron.brand) => (save(b), update());
 export const setBrand = (patch) => (Object.assign(macaron.brand.body, patch), touched());
 export const rename = (name) => ((macaron.brand.name = name.slice(0, 60)), save());
 
 export async function removeBrand(id) {
+  clearTimeout(waiting.get(id));
+  waiting.delete(id);
+  await writing.get(id)?.catch(() => {});
   const { brands } = await call(`api/brands/${id}`, { method: "DELETE" });
   macaron.list = brands ?? [];
   if (macaron.brand?.id === id) {
     macaron.brand = null;
+    macaron.mark = null;
     if (macaron.list[0]) await openBrand(macaron.list[0].id);
   }
   update();
@@ -200,13 +226,21 @@ export const reflowFor = (d, f) => reflow(d, f, measure());
 export const layoutNow = (d = designNow(), format = macaron.format) => layoutOf(d, format, { reflow: reflowFor });
 
 const snap = () => JSON.stringify({ designs: macaron.brand.body.designs, motion: macaron.brand.body.motion });
+/** Where a gesture began is kept with the brand it began in: another brand never reads it. */
+const marked = () => (macaron.mark?.brand === macaron.brand?.id ? macaron.mark : null);
 const hooks = new Set();
 /** Called as a design changes between a gesture's start and end (a drag, typing): redraw what shows it. */
 export const onLive = (fn) => (hooks.add(fn), () => hooks.delete(fn));
 
 /** A gesture starts: where to go back to. */
 export function begin() {
-  macaron.mark ??= snap();
+  if (!macaron.brand) return;
+  if (!marked()) macaron.mark = { brand: macaron.brand.id, json: snap() };
+}
+/** A gesture that began and changed nothing (a field focused, then left): there is nothing to go back to. */
+export function settle() {
+  if (macaron.batch) return;
+  if (!marked() || macaron.mark.json === snap()) macaron.mark = null;
 }
 /** In the middle of a gesture: the change is made and drawn, and saved soon, but the page is not rebuilt. */
 export function live(fn) {
@@ -220,7 +254,7 @@ export function live(fn) {
 export function end(note) {
   // inside a batch (Brioche's changes, one step back for them all) the batch ends it
   if (macaron.batch) return;
-  const was = macaron.mark;
+  const was = marked()?.json;
   macaron.mark = null;
   if (was && was !== snap()) {
     macaron.past.push(was);
@@ -272,8 +306,8 @@ export function redo() {
 }
 
 /** What happened, for the timeline: kept with the brand, newest last. */
-export function remember(entry) {
-  const b = macaron.brand.body;
+export function remember(entry, brand = macaron.brand) {
+  const b = brand.body;
   b.history.push({ id: uid("h"), at: new Date().toISOString(), who: "you", ...entry });
   if (b.history.length > 300) b.history.splice(0, b.history.length - 300);
 }
@@ -285,7 +319,7 @@ export async function setLogo(file) {
   try {
     const p = file.file ? file : await api.upload(file, file.name);
     b.body.logo = { file: p.file, url: p.url, width: p.width, height: p.height };
-    touched();
+    touched(b);
   } catch (e) {
     toast(e.message, { tone: "crit" });
   }
@@ -337,7 +371,7 @@ export async function addLogoFile(file, kind = "wordmark", tone = "") {
     tone ||= (await logoColour(p.url)) ?? "";
     b.body.kit.logos.push({ id: `logo-${uid()}`, name: (file.name ?? "Logo").replace(/\.\w+$/, "").slice(0, 40), kind, tone, url: p.url, ground: "", note: "" });
     if (!b.body.logo) b.body.logo = { file: p.file, url: p.url, width: p.width, height: p.height };
-    touched();
+    touched(b);
   } catch (e) {
     toast(e.message, { tone: "crit" });
   }
@@ -388,7 +422,7 @@ export async function addAsset(file, kind = "upload") {
   const p = file.file ? file : await api.upload(file, file.name);
   const asset = { id: uid("a"), name: (file.name ?? p.name ?? "Picture").replace(/\.\w+$/, "").replace(/[-_]+/g, " ").slice(0, 40), kind, url: p.url, file: p.file, width: p.width, height: p.height, source: "upload" };
   b.body.assets.unshift(asset);
-  touched();
+  touched(b);
   return asset;
 }
 export function setAsset(id, patch) {
@@ -405,8 +439,8 @@ export async function addRef(file) {
   const b = await ensure();
   const p = file.file ? file : await api.upload(file, file.name);
   b.body.refs.unshift({ id: uid("f"), title: (file.name ?? "Reference").replace(/\.\w+$/, "").slice(0, 60), kind: "inspiration", src: p.url, note: "", at: new Date().toISOString() });
-  remember({ kind: "reference", title: "Reference added", src: p.url });
-  touched();
+  remember({ kind: "reference", title: "Reference added", src: p.url }, b);
+  touched(b);
 }
 export function setRef(id, patch) {
   Object.assign(macaron.brand.body.refs.find((r) => r.id === id) ?? {}, patch);
@@ -430,10 +464,11 @@ export async function makePicture({ prompt, model = "gpt-image-2.5-flare", aspec
   try {
     const jobs = await send("api/macaron/image", "POST", { model, prompt, aspect, refs, quality, name: name ?? prompt.slice(0, 60) });
     const done = await waitFor("job", jobs[0].id);
-    const asset = { id: uid("a"), name: (name ?? prompt).slice(0, 40), kind: "render", url: done.photo.url, file: done.photo.file, width: done.photo.width, height: done.photo.height, source: "generated", model, prompt: prompt.slice(0, 400), at: new Date().toISOString() };
+    // what Router charged and the job that made the picture come back with it, and stay with the asset (and in the ledger)
+    const asset = { id: uid("a"), name: (name ?? prompt).slice(0, 40), kind: "render", url: done.photo.url, file: done.photo.file, width: done.photo.width, height: done.photo.height, source: "generated", model, aspect, ...(model.startsWith("gpt-image") ? { quality } : {}), prompt: prompt.slice(0, 400), job: done.id, credits: done.credits ?? null, at: new Date().toISOString() };
     b.body.assets.unshift(asset);
-    remember({ kind: "design", title: "Picture generated", note: `${model === "flux-3-image" ? "FLUX 3" : "GPT Image 2.5 Flare"}: ${prompt.slice(0, 120)}`, src: asset.url });
-    touched();
+    remember({ kind: "design", title: "Picture generated", note: `${model === "flux-3-image" ? "FLUX 3" : "GPT Image 2.5 Flare"}${done.credits ? `, ${done.credits} credits` : ""}: ${prompt.slice(0, 120)}`, src: asset.url }, b);
+    touched(b);
     return asset;
   } finally {
     macaron.busy.delete(key);
@@ -537,17 +572,7 @@ export function setDesignLive(patch) {
 
 /** The pixel size a layer has in the open design, for a change made by its width and height. */
 export function patchLayer(layerId, patch, { design = designNow(), format = macaron.format } = {}) {
-  const base = design.layers.find((l) => l.id === layerId);
-  if (!base) return;
-  if (format === design.format) return void Object.assign(base, patch);
-  // another format: its layout is its own from now on (what it was reflowed to is kept), the rest belongs to the layer
-  design.formats ??= {};
-  design.formats[format] ??= { layers: reflowFor(design, format) };
-  const own = design.formats[format].layers;
-  for (const [k, v] of Object.entries(patch)) {
-    if (LAYOUT_PROPS.includes(k)) (own[layerId] ??= {})[k] = v;
-    else base[k] = v;
-  }
+  patchLayerIn(design, layerId, patch, format, reflowFor);
 }
 export const patchLayerLive = (layerId, patch) => live(() => patchLayer(layerId, patch));
 export function setBg(patch) {
@@ -802,36 +827,42 @@ export function refreshThumbs() {
 onLive(refreshThumbs);
 
 /** A design drawn out to a PNG blob, at its format's own size. */
-export async function renderPng(design, format, { scale = 1, t = null } = {}) {
-  const kit = kitNow();
+export async function renderPng(design, format, { scale = 1, t = null, kit = kitNow() } = {}) {
   const problems = await prepare(design, kit);
   if (problems.length) throw new Error(problems[0]);
-  const canvas = renderDesign(design, { format, kit, scale, t, reflow: reflowFor });
+  const measure = measurer(kit);
+  const canvas = renderDesign(design, { format, kit, scale, t, reflow: (d, f) => reflow(d, f, measure) });
   return new Promise((ok, no) => canvas.toBlob((b) => (b ? ok(b) : no(new Error("The picture could not be made."))), "image/png"));
 }
 
 // ---------------------------------------------------------------- export
 
 /** When a motion design is a picture: the poster time it names, else most of the way through its piece. */
-const posterTime = (d) => (d.motion ? d.poster ?? macaron.brand.body.motion.find((m) => m.design === d.id)?.duration * 0.85 ?? null : null);
-const nameOf = (d, format, ext) => `${macaron.brand.name}-${d.name}-${format.replace(":", "x")}.${ext}`.toLowerCase().replace(/[^a-z0-9.]+/g, "-");
+const posterTime = (d, b = macaron.brand) => {
+  if (!d.motion) return null;
+  const m = b.body.motion.find((x) => x.design === d.id);
+  return d.poster ?? (m ? m.duration * 0.85 : null);
+};
+const nameOf = (d, format, ext, b = macaron.brand) => `${b.name}-${d.name}-${format.replace(":", "x")}.${ext}`.toLowerCase().replace(/[^a-z0-9.]+/g, "-");
 /** A design as a PNG, kept on the server and recorded with the brand, then downloaded. */
 export async function exportPng(id = macaron.design, format = macaron.format, { download = true } = {}) {
-  const d = designById(id);
+  // the brand it was asked in is the brand it is kept with, whatever is open when it is done
+  const b = macaron.brand;
+  const d = designById(id, b);
   if (!d) return null;
   const key = `export:${d.id}:${format}`;
   macaron.busy.add(key);
   update();
   try {
-    const blob = await renderPng(d, format, { t: posterTime(d) });
-    const kept = await call(`api/macaron/exports?name=${encodeURIComponent(`${macaron.brand.name} ${d.name} ${format}`)}`, { method: "POST", headers: { "Content-Type": "image/png" }, body: blob });
+    const blob = await renderPng(d, format, { t: posterTime(d, b), kit: kitOf(b.body) });
+    const kept = await call(`api/macaron/exports?name=${encodeURIComponent(`${b.name} ${d.name} ${format}`)}`, { method: "POST", headers: { "Content-Type": "image/png" }, body: blob });
     const rec = { id: uid("x"), design: d.id, designName: d.name, format, kind: "png", url: kept.url, file: kept.file, width: kept.width, height: kept.height, bytes: kept.bytes, at: new Date().toISOString() };
-    macaron.brand.body.exports.unshift(rec);
-    macaron.brand.body.exports.splice(200);
+    b.body.exports.unshift(rec);
+    b.body.exports.splice(200);
     d.thumb = { file: kept.file, url: kept.url, format };
-    remember({ kind: "export", title: `${d.name} exported`, note: `${FORMATS[format].name} ${kept.width}×${kept.height} PNG`, src: kept.url, designId: d.id });
-    touched();
-    if (download) saveAs(`${kept.url}?download=${nameOf(d, format, "png")}`);
+    remember({ kind: "export", title: `${d.name} exported`, note: `${FORMATS[format].name} ${kept.width}×${kept.height} PNG`, src: kept.url, designId: d.id }, b);
+    touched(b);
+    if (download) saveAs(`${kept.url}?download=${nameOf(d, format, "png", b)}`);
     return rec;
   } catch (e) {
     toast(e.message, { tone: "crit" });
@@ -883,8 +914,9 @@ export function setMotion(id, patch) {
   if (m) edit(() => Object.assign(m, patch));
 }
 /** A layer's timing in a motion piece: when it comes in, when it goes, and how. */
-export function setAnim(layerId, patch, design = designNow()) {
-  const l = design.layers.find((x) => x.id === layerId);
+export function setAnim(design, layerId, patch) {
+  // the design is the one the motion piece plays, which is not always the one open in the studio
+  const l = design?.layers.find((x) => x.id === layerId);
   if (!l) return;
   edit(() => {
     l.anim = { ...(l.anim ?? { t0: 0 }), ...patch };
@@ -906,10 +938,13 @@ export function removeMotion(id) {
  * encoded there as an H.264 video. The poster frame is exported as a picture too.
  */
 export async function renderMotion(id = macaron.motion) {
-  const m = macaron.brand.body.motion.find((x) => x.id === id);
-  const d = m && designById(m.design);
+  const b = macaron.brand;
+  const m = b?.body.motion.find((x) => x.id === id);
+  const d = m && designById(m.design, b);
   if (!m || !d || macaron.progress) return null;
-  const kit = kitNow();
+  const kit = kitOf(b.body);
+  const measure = measurer(kit);
+  const reflowIn = (x, f) => reflow(x, f, measure);
   const f = frameOf(m.format);
   const total = Math.round(m.duration * m.fps);
   macaron.progress = { id, kind: "motion", done: 0, total };
@@ -924,7 +959,7 @@ export async function renderMotion(id = macaron.motion) {
     const ctx = canvas.getContext("2d");
     const pending = new Set();
     for (let i = 0; i < total; i++) {
-      drawDesign(ctx, d, { w: f.w, h: f.h, format: m.format, kit, t: i / m.fps, reflow: reflowFor });
+      drawDesign(ctx, d, { w: f.w, h: f.h, format: m.format, kit, t: i / m.fps, reflow: reflowIn });
       const blob = await new Promise((ok) => canvas.toBlob(ok, "image/png"));
       const p = call(`api/macaron/frames?job=${job}&n=${i}`, { method: "POST", headers: { "Content-Type": "image/png" }, body: blob }).then(() => {
         pending.delete(p);
@@ -937,14 +972,14 @@ export async function renderMotion(id = macaron.motion) {
     await Promise.all(pending);
     macaron.progress.done = total;
     update();
-    const video = await send("api/macaron/motion", "POST", { job, fps: m.fps, name: `${macaron.brand.name} ${m.name} ${m.format}`, sound: m.sound });
+    const video = await send("api/macaron/motion", "POST", { job, fps: m.fps, name: `${b.name} ${m.name} ${m.format}`, sound: m.sound });
     // the poster is a picture of the piece when it is whole
     const posterT = d.poster ?? m.duration * 0.85;
-    drawDesign(ctx, d, { w: f.w, h: f.h, format: m.format, kit, t: posterT, reflow: reflowFor });
+    drawDesign(ctx, d, { w: f.w, h: f.h, format: m.format, kit, t: posterT, reflow: reflowIn });
     const poster = await call(`api/macaron/exports?name=${encodeURIComponent(`${m.name} poster`)}`, { method: "POST", headers: { "Content-Type": "image/png" }, body: await new Promise((ok) => canvas.toBlob(ok, "image/png")) });
     m.render = { url: video.url, file: video.file, width: video.width, height: video.height, duration: video.duration, bytes: video.bytes, format: m.format, sound: video.sound, poster: poster.url, at: new Date().toISOString() };
-    macaron.brand.body.exports.unshift({ id: uid("x"), design: d.id, designName: m.name, format: m.format, kind: "mp4", url: video.url, file: video.file, width: video.width, height: video.height, bytes: video.bytes, duration: video.duration, poster: poster.url, at: m.render.at });
-    remember({ kind: "export", title: `${m.name} rendered`, note: `${video.width}×${video.height} · ${video.duration} s`, src: poster.url, designId: d.id });
+    b.body.exports.unshift({ id: uid("x"), design: d.id, designName: m.name, format: m.format, kind: "mp4", url: video.url, file: video.file, width: video.width, height: video.height, bytes: video.bytes, duration: video.duration, poster: poster.url, at: m.render.at });
+    remember({ kind: "export", title: `${m.name} rendered`, note: `${video.width}×${video.height} · ${video.duration} s`, src: poster.url, designId: d.id }, b);
     return m.render;
   } catch (e) {
     call(`api/macaron/frames?job=${job}`, { method: "DELETE" }).catch(() => {});
@@ -952,7 +987,7 @@ export async function renderMotion(id = macaron.motion) {
     return null;
   } finally {
     macaron.progress = null;
-    touched();
+    touched(b);
   }
 }
 
@@ -966,19 +1001,19 @@ export async function addProduct(file) {
     const product = { id: uid(), name: (file.file ? file.name ?? "" : (file.name ?? "").replace(/\.\w+$/, "").replace(/[-_]+/g, " ")).slice(0, 40) || "Product", photo: { file: p.file, url: p.url, width: p.width, height: p.height }, cutout: null, features: [] };
     b.body.products.push(product);
     b.body.product = product.id;
-    touched();
-    cutOut(product);
+    touched(b);
+    cutOut(b, product);
   } catch (e) {
     toast(e.message, { tone: "crit" });
   }
 }
 /** A product's clear cut-out, for its card (the shoot draws from its photo). */
-async function cutOut(product) {
+async function cutOut(b, product) {
   try {
     const job = await send("api/utensils/cutout", "POST", { source: product.photo.file });
     const done = await waitFor("job", job.id);
     product.cutout = { file: done.photo.file, url: done.photo.url };
-    touched();
+    touched(b);
   } catch {}
 }
 export const pickProduct = (id) => ((macaron.brand.body.product = id), touched());
@@ -1048,19 +1083,19 @@ export async function shoot() {
       b.body.outputs.unshift(o);
       return { o, job };
     });
-    touched();
+    touched(b);
     await Promise.all(outs.map(async ({ o, job }) => {
       try {
         const done = await waitFor("job", job.id);
         o.photo = { file: done.photo.file, url: done.photo.url, width: done.photo.width, height: done.photo.height };
         o.status = t.media === "video" ? "rolling" : "done";
         o.palette = await paletteMatch(o.photo.url, b.body.colours);
-        touched();
+        touched(b);
         if (t.media === "video") await roll(b, t, p, o);
       } catch (e) {
         o.status = "failed";
         o.error = e.message;
-        touched();
+        touched(b);
       }
     }));
   } catch (e) {
@@ -1082,7 +1117,7 @@ async function roll(b, t, p, o) {
     : { shots: [{ action: v.action, camera: v.camera ?? "", sound: "Natural room sound.", framing: "", dialogue: line ? [{ speaker: "", language: "English", line }] : [] }], raw: "" };
   const [run] = await api.shoot({ name: `${b.name} · ${t.name}`, start: o.photo.file, seconds: preset?.seconds ?? 5, aspect, review: false, takes: 1, quality: "standard", preset: preset?.id, script });
   o.run = run.id;
-  touched();
+  touched(b);
   try {
     const done = await waitFor("run", run.id);
     o.video = done.video;
@@ -1091,7 +1126,7 @@ async function roll(b, t, p, o) {
     o.status = "failed";
     o.error = e.message;
   }
-  touched();
+  touched(b);
 }
 
 export function removeOutput(id) {

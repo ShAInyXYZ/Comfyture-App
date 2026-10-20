@@ -4,7 +4,11 @@
 // pictures, the layers, the variations and the content list; Brioche's answer applied as one undo step
 // (the model's answer is stood in for, so it needs no key); a new brand with its colours and a logo as
 // SVG and as PNG; a brand saved by an earlier Macaron; the intro rendered to a video, and a first timing
-// for a new motion piece. Not part of `node --test` (it needs a browser and ffmpeg). From the repo root:
+// for a new motion piece; then what must hold between brands and pieces: one brand's unfinished edit is
+// never undone into another, a save is not lost when the brand is switched, the motion controls change the
+// piece they show, a layer hidden in one format shows in the others, and a new picture keeps its cost and
+// its job (Comfy Router is stood in for by tests/macaron-fake-router.mjs: no credits are spent).
+// Not part of `node --test` (it needs a browser and ffmpeg). From the repo root:
 //   NODE_PATH=<a node_modules that has playwright> CHROME=<chrome or chromium binary> node tests/macaron-ui.browser.mjs
 // OUT=<folder> keeps screenshots of the sections and the exported files, to be looked at.
 import { spawn } from "node:child_process";
@@ -12,6 +16,7 @@ import { mkdtemp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 
 const { chromium } = createRequire(import.meta.url)("playwright");
@@ -32,7 +37,9 @@ const port = await new Promise((done) => {
     s.close(() => done(port));
   });
 });
-const server = spawn(process.execPath, ["server/main.ts"], { cwd: root, env: { ...process.env, PORT: String(port), COMFYTURE_DATA: dataDir, COMFY_API_KEY: "", COMFY_BASE_URL: "http://127.0.0.1:9" }, stdio: "ignore" });
+// (a key that opens nothing, and Router's picture models stood in for)
+const fakeRouter = pathToFileURL(join(root, "tests/macaron-fake-router.mjs")).href;
+const server = spawn(process.execPath, ["server/main.ts"], { cwd: root, env: { ...process.env, PORT: String(port), COMFYTURE_DATA: dataDir, COMFY_API_KEY: "test-key", COMFY_BASE_URL: "http://127.0.0.1:9", NODE_OPTIONS: `--import=${fakeRouter}` }, stdio: "ignore" });
 const base = `http://127.0.0.1:${port}`;
 for (let i = 0; i < 100; i++) {
   if (await fetch(`${base}/api/brands`).then((r) => r.ok, () => false)) break;
@@ -52,9 +59,11 @@ try {
     const m = await import("/js/macaron.js");
     const b = m.macaron.brand.body;
     const d = b.designs.find((x) => x.id === m.macaron.design);
+    const shown = m.layoutNow().layers;
     return {
       design: d.id, format: m.macaron.format, layer: m.macaron.layer, past: m.macaron.past.length, count: b.designs.length, status: d.status, bg: d.bg.color, entry: m.macaron.entry, rules: b.kit.rules.length, palette: b.kit.palette.map((p) => p.hex.toUpperCase()),
-      layers: d.layers.map((l) => ({ id: l.id, type: l.type, text: l.text, src: l.src, x: l.x, y: l.y, w: l.w, size: l.size, hidden: l.hidden, colorRole: l.colorRole, logo: l.logo })), formats: JSON.parse(JSON.stringify(d.formats)),
+      // whether a layer is hidden is the open format's: it is read from the layout, not from the layer
+      layers: d.layers.map((l) => ({ id: l.id, type: l.type, text: l.text, src: l.src, x: l.x, y: l.y, w: l.w, size: l.size, hidden: shown.find((x) => x.id === l.id)?.hidden, colorRole: l.colorRole, logo: l.logo })), formats: JSON.parse(JSON.stringify(d.formats)),
     };
   });
   const go = async (id) => { await page.evaluate((i) => document.getElementById(i).scrollIntoView({ block: "start" }), id); await page.waitForTimeout(500); };
@@ -317,7 +326,7 @@ try {
   await page.evaluate(async () => { const m = await import("/js/macaron.js"); await m.openBrand("brand-comfyture"); });
   await page.waitForTimeout(2000);
   const render = await page.evaluate(async () => (await import("/js/macaron.js")).renderMotion("m-intro"));
-  ok(render && render.width === 1080 && render.height === 1920 && render.duration === 7 && render.sound && render.bytes > 200000, "the intro renders to a 7 s video, 1080×1920, with sound", render && `${render.width}×${render.height} ${render.duration} s ${Math.round(render.bytes / 1024)} KB`);
+  ok(render && render.width === 1080 && render.height === 1920 && render.duration === 8 && render.sound && render.bytes > 200000, "the intro renders to an 8 s video, 1080×1920, with sound", render && `${render.width}×${render.height} ${render.duration} s ${Math.round(render.bytes / 1024)} KB`);
   if (render) {
     const head = await page.evaluate(async (u) => { const r = await fetch(u); const b = new Uint8Array(await r.arrayBuffer()); return { type: r.headers.get("content-type"), box: String.fromCharCode(...b.subarray(4, 8)) }; }, render.url);
     ok(head.box === "ftyp" && /video\/mp4/.test(head.type), "it is an MP4", JSON.stringify(head));
@@ -331,6 +340,107 @@ try {
     return { piece: piece.duration, moving: moving.length, of: d.layers.length, lid: !!moving.find((l) => l.type === "logo")?.anim.lid, first: moving.find((l) => l.type === "logo")?.anim.in.fx, pops: piece.sound.pops.length, out: moving.some((l) => l.anim.t1 !== undefined) };
   });
   ok(fresh.moving === fresh.of && fresh.lid && fresh.first === "wipe-r" && fresh.pops === 1 && !fresh.out, "a new motion piece starts with a timing: the logo and its lid, then the rest in", JSON.stringify(fresh));
+
+
+  // ---- brands do not lend each other their history: a field focused and left in one, another brand opened and edited
+  const names = await page.evaluate(async () => (await import("/js/macaron.js")).macaron.list.map((b) => ({ id: b.id, name: b.name })));
+  const other = names.find((b) => b.name === "Earlier brand").id;
+  const crossUndo = (leave) => page.evaluate(async ({ other, leave }) => {
+    const m = await import("/js/macaron.js");
+    const field = document.querySelector(".mc-inspector textarea.mc-text");
+    document.activeElement?.blur?.();
+    field.focus();
+    if (leave) field.blur();
+    const ids = m.macaron.brand.body.designs.map((d) => d.id);
+    await m.openBrand(other);
+    const before = m.macaron.brand.body.designs.map((d) => d.id);
+    m.addDesign({ name: "Only in the other brand", format: "4:5" });
+    const during = m.macaron.brand.body.designs.length;
+    m.undo();
+    const after = m.macaron.brand.body.designs.map((d) => d.id);
+    await m.openBrand("brand-comfyture");
+    return { before, after, during, leaked: after.filter((id) => ids.includes(id)), past: m.macaron.past.length };
+  }, { other, leave });
+  await page.evaluate(async () => { const m = await import("/js/macaron.js"); await m.openBrand("brand-comfyture"); m.openDesign("launch"); m.pickLayer(null); });
+  await go("mc-studio");
+  let cross = await crossUndo(false);
+  ok(cross.during === cross.before.length + 1 && cross.leaked.length === 0 && cross.after.join() === cross.before.join(), "a field focused in one brand, then another brand edited and undone: nothing of the first comes back", `${cross.before.length} -> ${cross.during} -> ${cross.after.length}`);
+  cross = await crossUndo(true);
+  ok(cross.leaked.length === 0 && cross.after.join() === cross.before.join(), "the same when the field was left (blurred) without a change");
+  ok(cross.past === 0, "and a brand that is opened starts with no steps back");
+
+  // ---- a save waiting for its 400 ms is not lost to the next brand's edit
+  const saved2 = await page.evaluate(async ({ other }) => {
+    const m = await import("/js/macaron.js");
+    await m.openBrand("brand-comfyture");
+    m.setDesign("launch", { intent: "Awareness, saved just before the switch" }, "Intent");
+    await m.openBrand(other);
+    m.setBrief({ goal: "A goal in the other brand" });
+    await new Promise((r) => setTimeout(r, 1800));
+    const a = (await (await fetch("api/brands/brand-comfyture")).json()).project.body.designs.find((d) => d.id === "launch").intent;
+    const b = (await (await fetch(`api/brands/${other}`)).json()).project.body.brief.goal;
+    await m.openBrand("brand-comfyture");
+    return { a, b };
+  }, { other });
+  ok(saved2.a === "Awareness, saved just before the switch" && saved2.b === "A goal in the other brand", "both brands are saved when one is edited right after the switch from the other", JSON.stringify(saved2));
+
+  // ---- the motion controls change the piece they show, not the design that happens to be open in the studio
+  await page.evaluate(async () => { const m = await import("/js/macaron.js"); m.openDesign("launch"); m.pickMotion("m-intro"); });
+  await go("mc-motion");
+  const wm = async () => page.evaluate(async () => { const m = await import("/js/macaron.js"); const get = (id) => m.designById(id).layers.find((l) => l.id === "wordmark").anim; return { intro: get("intro"), launch: get("launch") ?? null }; });
+  const wm0 = await wm();
+  await page.getByLabel("Comes in: Wordmark", { exact: true }).selectOption("fade");
+  await page.waitForTimeout(500);
+  let wm1 = await wm();
+  ok(wm1.intro.in.fx === "fade" && wm0.intro.in.fx !== "fade" && JSON.stringify(wm1.launch) === JSON.stringify(wm0.launch), "the Comes in choice of the selected piece changes that piece's design, not the studio's", `${wm0.intro.in.fx} -> ${wm1.intro.in.fx}, studio design ${wm1.launch ? "has" : "has no"} timing`);
+  await page.getByRole("button", { name: "Stays on" }).first().click();
+  await page.waitForTimeout(500);
+  wm1 = await wm();
+  ok(wm1.intro.lid === undefined && wm0.intro.lid !== undefined && JSON.stringify(wm1.launch) === JSON.stringify(wm0.launch), "and so does the lid", `lid ${JSON.stringify(wm1.intro.lid)}`);
+  await page.evaluate(async () => { const m = await import("/js/macaron.js"); m.undo(); m.undo(); });
+
+  // ---- a layer hidden in one format shows in the others
+  await page.evaluate(async () => { const m = await import("/js/macaron.js"); document.activeElement?.blur?.(); m.openDesign("launch", "4:5"); });
+  await go("mc-studio");
+  const shows = () => page.evaluate(async () => { const m = await import("/js/macaron.js"); const d = m.designNow(); return Object.fromEntries(["4:5", "1:1", "9:16"].map((f) => [f, !m.layoutNow(d, f).layers.find((l) => l.id === "sub").hidden])); });
+  await page.locator(".mc-layer", { hasText: "Subhead" }).first().locator('button[aria-label="Hide in this format"]').click();
+  await page.waitForTimeout(400);
+  let vis = await shows();
+  ok(!vis["4:5"] && vis["1:1"] && vis["9:16"], "Hide in this format hides the layer in this format only", JSON.stringify(vis));
+  await page.locator(".mc-layer", { hasText: "Subhead" }).first().locator('button[aria-label="Show in this format"]').click();
+  await page.waitForTimeout(400);
+  vis = await shows();
+  ok(vis["4:5"] && vis["1:1"] && vis["9:16"], "and Show brings it back");
+
+  // ---- a new picture keeps what it cost and the job that made it (Router stood in for: nothing is spent)
+  const made2 = await page.evaluate(async () => {
+    const m = await import("/js/macaron.js");
+    const asset = await m.makePicture({ prompt: "A test picture, no words", model: "gpt-image-2.5-flare", aspect: "4:5", refs: [], quality: "medium", name: "Test picture" });
+    await new Promise((r) => setTimeout(r, 1500));
+    const kept = (await (await fetch("api/brands/brand-comfyture")).json()).project.body.assets.find((a) => a.id === asset.id);
+    return { asset, kept: kept && { credits: kept.credits, job: kept.job } };
+  });
+  const ledger = (await readFile(join(dataDir, "macaron", "ledger.jsonl"), "utf8")).trim().split("\n").map((l) => JSON.parse(l));
+  ok(made2.asset.credits === 3.66 && /^[a-f0-9]{8}$/.test(made2.asset.job) && made2.asset.model === "gpt-image-2.5-flare", "a new picture keeps its cost, its job and its model on the asset", JSON.stringify({ credits: made2.asset.credits, job: made2.asset.job }));
+  ok(made2.kept?.credits === 3.66 && made2.kept?.job === made2.asset.job, "and they are saved with the brand");
+  ok(ledger.at(-1)?.job === made2.asset.job && ledger.at(-1)?.credits === 3.66, "the ledger line names the same job", JSON.stringify(ledger.at(-1)));
+
+
+  // ---- what finishes after another brand was opened belongs to the brand it was asked in
+  const late = await page.evaluate(async ({ other }) => {
+    const m = await import("/js/macaron.js");
+    await m.openBrand("brand-comfyture");
+    const had = { assets: m.macaron.brand.body.assets.length, exports: m.macaron.brand.body.exports.length };
+    const picture = m.makePicture({ prompt: "A picture that finishes late", model: "gpt-image-2.5-flare", aspect: "4:5", refs: [], name: "Late picture" });
+    const exported = m.exportPng("launch", "4:5", { download: false });
+    await m.openBrand(other);
+    const [asset, rec] = await Promise.all([picture, exported]);
+    await new Promise((r) => setTimeout(r, 1500));
+    const get = async (id) => (await (await fetch(`api/brands/${id}`)).json()).project.body;
+    const [a, b] = [await get("brand-comfyture"), await get(other)];
+    return { had, a: { assets: a.assets.length, hasAsset: a.assets.some((x) => x.id === asset.id), exports: a.exports.length, hasExport: a.exports.some((x) => x.id === rec.id) }, b: { hasAsset: b.assets.some((x) => x.id === asset.id), hasExport: b.exports.some((x) => x.id === rec.id) }, open: m.macaron.brand.id === other };
+  }, { other });
+  ok(late.open && late.a.hasAsset && late.a.hasExport && !late.b.hasAsset && !late.b.hasExport && late.a.assets === late.had.assets + 1 && late.a.exports === late.had.exports + 1, "a picture and an export that finish after another brand was opened are kept, saved, with the brand they were asked in", JSON.stringify(late));
 
   ok(errors.length === 0, "no errors in the page", errors.slice(0, 3).join(" | "));
 } finally {

@@ -2,10 +2,14 @@
 //   node --test tests/macaron-layout.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { mkdir, mkdtemp, readdir, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { kitOf, layoutOf, contrast, colorOf, newLayer, textRuns, layoutText, FORMATS } from "../web/js/design.js";
-import { reflow, layoutPreset, withPreset, applyKit, guard, cloneDesign, safeRect, estimate, onScreen, firstTiming, soundPops } from "../web/js/macaron-layout.js";
-import { readMacaronAnswer, macaronPrompt } from "../server/macaron.ts";
+import { reflow, layoutPreset, applyKit, guard, cloneDesign, safeRect, estimate, onScreen, firstTiming, soundPops, patchLayerIn } from "../web/js/macaron-layout.js";
+import { readMacaronAnswer, macaronPrompt, keepFrame, encodeFrames, ledgerLine } from "../server/macaron.ts";
 
 const project = JSON.parse(readFileSync(new URL("../brands/comfyture.brand.json", import.meta.url), "utf8"));
 const kit = kitOf(project.body);
@@ -182,4 +186,82 @@ test("what Brioche is told names the layers and the palette ids", () => {
   assert.match(text, /- headline · text · headline/);
   assert.match(text, /yellow #F2FF59/);
   assert.match(text, /User: Make it yellow/);
+});
+
+test("whether a layer shows is each format's own: hiding it in one leaves the others alone", () => {
+  const design = structuredClone(launch);
+  const shows = (d, format) => !layoutOf(d, format, { reflow: (x, f) => reflow(x, f) }).layers.find((l) => l.id === "sub").hidden;
+  patchLayerIn(design, "sub", { hidden: true }, "4:5", reflow);
+  assert.deepEqual(["4:5", "1:1", "9:16"].map((f) => shows(design, f)), [false, true, true], "hidden in the first format only");
+  assert.equal(design.layers.find((l) => l.id === "sub").hidden, undefined, "the layer itself is not marked: the other layouts would inherit it");
+  patchLayerIn(design, "sub", { hidden: false }, "4:5", reflow);
+  assert.deepEqual(["4:5", "1:1", "9:16"].map((f) => shows(design, f)), [true, true, true], "shown again");
+  assert.equal(design.formats["4:5"], undefined, "and nothing is left behind for the first format");
+  patchLayerIn(design, "sub", { hidden: true }, "1:1", reflow);
+  assert.deepEqual(["4:5", "1:1", "9:16"].map((f) => shows(design, f)), [true, false, true], "a layout of its own keeps its own");
+  // a format with no layout of its own is laid out first, then the layer is hidden there
+  const bare = { ...structuredClone(launch), formats: {} };
+  patchLayerIn(bare, "sub", { hidden: true }, "9:16", reflow);
+  assert.deepEqual(["4:5", "1:1", "9:16"].map((f) => shows(bare, f)), [true, true, false]);
+  assert.ok(bare.formats["9:16"].layers.headline, "what it was reflowed to is kept");
+  // what is not a layout's (the colour) belongs to the layer, in whatever format it is changed
+  patchLayerIn(bare, "headline", { colorRole: "yellow", y: 0.3 }, "9:16", reflow);
+  assert.equal(bare.layers.find((l) => l.id === "headline").colorRole, "yellow");
+  assert.equal(bare.formats["9:16"].layers.headline.y, 0.3);
+  assert.notEqual(bare.layers.find((l) => l.id === "headline").y, 0.3);
+});
+
+// a few frames drawn by ffmpeg, to stand in for the ones the browser sends
+async function frames(dir, n, size = "64x64") {
+  execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", `testsrc=s=${size}:r=10`, "-frames:v", String(n), "-start_number", "0", join(dir, "%05d.png")]);
+  return Promise.all((await readdir(dir)).filter((f) => f.endsWith(".png")).sort().map((f) => readFile(join(dir, f))));
+}
+const hasFfmpeg = (() => {
+  try {
+    execFileSync("ffmpeg", ["-version"], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+test("a video is only made from frames that are all there, and what comes out is checked", { skip: !hasFfmpeg && "needs ffmpeg" }, async () => {
+  const data = await mkdtemp(join(tmpdir(), "macaron-frames-"));
+  const src = await mkdtemp(join(tmpdir(), "macaron-src-"));
+  try {
+    const pics = await frames(src, 12);
+    const send = async (job, which, list = pics) => { for (const n of which) await keepFrame(data, job, n, list[n % list.length]); };
+    const all = [...Array(12).keys()];
+    const refused = (job, re) => assert.rejects(encodeFrames(data, job, { fps: 10, name: "t" }), (e) => e.status === 400 && re.test(e.message));
+    // whole: made, and it says what it holds, as measured on the file
+    await send("aaaaaa01", all);
+    const made = await encodeFrames(data, "aaaaaa01", { fps: 10, name: "whole", sound: { pad: true, pops: [0.4] } });
+    assert.deepEqual([made.frames, made.duration, made.width, made.height, made.sound], [12, 1.2, 64, 64, true]);
+    // one in the middle missing: ffmpeg would stop there and call the rest done
+    await send("aaaaaa02", all.filter((n) => n !== 8));
+    await refused("aaaaaa02", /frame 8/i);
+    // the first missing
+    await send("aaaaaa03", all.filter((n) => n !== 0));
+    await refused("aaaaaa03", /frame 0/i);
+    // one that is not a picture, one of another size, too few
+    await send("aaaaaa04", all);
+    await keepFrame(data, "aaaaaa04", 5, Buffer.from("not a picture at all, not even close to one"));
+    await refused("aaaaaa04", /frame 5/i);
+    await send("aaaaaa05", all);
+    await mkdir(join(src, "small"));
+    await keepFrame(data, "aaaaaa05", 6, (await frames(join(src, "small"), 1, "32x32"))[0]);
+    await refused("aaaaaa05", /frame 6.*size|size.*frame 6/i);
+    await send("aaaaaa06", [0, 1, 2, 3, 4, 5]);
+    await refused("aaaaaa06", /at least 8 frames/i);
+  } finally {
+    await rm(data, { recursive: true, force: true });
+    await rm(src, { recursive: true, force: true });
+  }
+});
+
+test("a new picture's ledger line names its job and what it cost", () => {
+  const line = JSON.parse(ledgerLine({ job: "ab12cd34", model: "gpt-image-2.5-flare", aspect: "4:5", refs: 1, credits: 5.84, prompt: "x".repeat(300) }));
+  assert.deepEqual([line.job, line.model, line.aspect, line.refs, line.credits], ["ab12cd34", "gpt-image-2.5-flare", "4:5", 1, 5.84]);
+  assert.equal(line.prompt.length, 120);
+  assert.ok(Date.parse(line.at) > 0);
 });
