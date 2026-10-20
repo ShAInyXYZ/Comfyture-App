@@ -254,21 +254,26 @@ function goKey(m) {
 function player(m, { inFrame = false } = {}) {
   const film = m.body.film;
   const video = keep(`film:${film.url}`, () => {
-    const v = h("video", { src: film.url, poster: film.poster, playsInline: true, preload: "metadata", loop: true, draggable: false, disablePictureInPicture: true });
-    for (const ev of ["timeupdate", "play", "pause"]) v.addEventListener(ev, () => tick(v));
+    // a version of yours opens playing, muted (a browser lets nothing else start by itself); its sound key is in the card
+    const v = h("video", { src: film.url, poster: film.poster, playsInline: true, preload: "auto", loop: true, draggable: false, disablePictureInPicture: true, ...(inFrame ? {} : { muted: true, autoplay: true }) });
+    for (const ev of ["timeupdate", "play", "pause", "volumechange"]) v.addEventListener(ev, () => tick(v));
     return v;
   });
   const total = film.seconds || 1;
   const marks = (m.body.shots ?? []).slice(1).map((s) => s.from / total);
   const bar = h("div.mx-bar", { on: { pointerdown: (e) => seek(e, video, bar) } }, h("i.mx-bar-fill"), ...marks.map((f) => h("b", { style: { left: `${f * 100}%` } })));
   const name = (m.name || "mix").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-  const el = h(`div.mx-stage${inFrame ? ".is-in-frame" : ""}`, {},
-    h("div.mx-screen", {}, video),
+  const toggle = () => (video.paused ? video.play() : video.pause());
+  // the controls sit inside the card (a 9:16 card is as tall as the screen: below it they would be under the chat bar)
+  const el = h(`div.mx-stage.is-in-frame${inFrame ? "" : ".is-made"}`, {},
+    h("div.mx-screen", { on: { click: toggle } }, video),
+    h("button.mx-watch.mx-big", { type: "button", title: "Play", "aria-label": "Play", hidden: !video.paused, on: { click: toggle } }, icon("play")),
     inFrame ? h("button.mx-watch-x", { type: "button", title: "Back to the cover", "aria-label": "Back to the cover", on: { click: () => (video.pause(), (watching = null), changedMixer()) } }, icon("close")) : null,
     h("div.mx-transport", {},
       h("button.key.is-icon.mx-toggle", { type: "button", title: "Play or pause", on: { click: () => (video.paused ? video.play() : video.pause()) } }, icon(video.paused ? "play" : "pause")),
       h("span.mx-time", {}, h("b", {}, "0:00.0"), h("em", {}, ` / ${time(total)}`)),
       bar,
+      inFrame ? null : h("button.key.is-icon.mx-sound", { type: "button", title: video.muted ? "Sound on" : "Sound off", "aria-label": "Sound", on: { click: () => (video.muted = !video.muted) } }, icon(video.muted ? "mute" : "sound")),
       inFrame ? null : h("a.key.is-icon", { href: `${film.url}?download=${name}.mp4`, download: `${name}.mp4`, title: "Download the mix" }, icon("download")),
       !inFrame && m.body.cut ? h("button.key.is-icon", { type: "button", title: "Open in Kitchen's Cut\nFine-tune the edit: trims, titles, sound", on: { click: () => openInCut(m.body.cut) } }, icon("scissors")) : null));
   queueMicrotask(() => tick(video));
@@ -283,6 +288,10 @@ function tick(v) {
   const stage = v.closest(".mx-stage");
   if (!stage) return;
   const t = v.currentTime || 0;
+  const big = stage.querySelector(".mx-big");
+  if (big) big.hidden = !v.paused;
+  const snd = stage.querySelector(".mx-sound");
+  if (snd) snd.replaceChildren(icon(v.muted ? "mute" : "sound"));
   const b = stage.querySelector(".mx-time b");
   if (b) b.textContent = `${Math.floor(t / 60)}:${pad2(Math.floor(t % 60))}.${Math.floor((t % 1) * 10)}`;
   const fill = stage.querySelector(".mx-bar-fill");
@@ -384,6 +393,8 @@ async function openOne(id) {
     pick.cast = { trend: t.id, roles: structuredClone(t.cast) };
   }
   changedMixer();
+  // the list of mixes is far below the version: bring it into view
+  requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector(".mx-work")?.scrollIntoView({ block: "start", behavior: "smooth" })));
 }
 
 // ---------------------------------------------------------------- the screen

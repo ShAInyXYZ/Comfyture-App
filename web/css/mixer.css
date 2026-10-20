@@ -282,3 +282,10 @@
 @keyframes mx-sheen { from { background-position: 160% 0; } to { background-position: -60% 0; } }
 @media (prefers-reduced-motion: reduce) { .mx-screen.is-making, .mx-card.is-making, .mx-screen.is-making > img, .mx-screen.is-making > video, .mx-screen.is-making::before { animation: none; } }
 .mx-recipe-meta .mx-chip { margin-left: .625rem; vertical-align: middle; }
+
+/* a version of yours: its controls are in the card, and the card (9:16) fits the screen above the chat bar */
+.mx-preview { max-width: min(100%, calc((100dvh - 13rem) * 9 / 16)); }
+.mx-stage.is-made .mx-screen { cursor: pointer; }
+.mx-stage .mx-big { z-index: 2; }
+.mx-stage .mx-big[hidden] { display: none; }
+.mx-stage.is-made .mx-transport { background: rgb(14 14 16 / .78); backdrop-filter: blur(6px); }
