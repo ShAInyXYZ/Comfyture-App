@@ -66,6 +66,8 @@ function side(j) {
 // ---------------------------------------------------------------- the page: built once, redrawn in parts
 
 let page = null;
+// Jam's screen is being rebuilt from the song up: for now it is an empty page, and the studio below is kept to draw from
+const EMPTY = true;
 function buildPage(el) {
   const parts = editorParts();
   const sideSlot = h("div.jm-side-slot");
@@ -78,6 +80,11 @@ function buildPage(el) {
 }
 
 export function renderJam(el) {
+  if (EMPTY) {
+    page = null;
+    el.replaceChildren(h("div.jam-empty"));
+    return;
+  }
   loadJams();
   const j = jam.jam;
   const b = j?.body;
@@ -150,7 +157,7 @@ window.addEventListener("hashchange", () => {
   drawWindow();
 });
 // the beat tools asked for by the editor's own key open its window
-document.addEventListener("editor:inspect", () => currentPage() === "jam" && (setWorkspace("edit"), import("../jam.js").then((m) => m.openWindow("editor"))));
+document.addEventListener("editor:inspect", () => currentPage() === "jam" && page && (setWorkspace("edit"), import("../jam.js").then((m) => m.openWindow("editor"))));
 // the record turns and the stage's lights move while the film plays
 document.addEventListener("editor:play", () => page?.root.classList.add("is-playing"));
 document.addEventListener("editor:stop", () => page?.root.classList.remove("is-playing"));
@@ -163,7 +170,7 @@ document.addEventListener("keydown", (e) => e.key === "Escape" && menu && curren
 // a sound or a video dropped on Jam is the track; on the artist, a photo is the artist and on the moves a video is the dance
 document.addEventListener("dragover", (e) => currentPage() === "jam" && e.dataTransfer?.types?.includes("Files") && e.preventDefault());
 document.addEventListener("drop", (e) => {
-  if (currentPage() !== "jam" || !e.dataTransfer?.files?.length) return;
+  if (EMPTY || currentPage() !== "jam" || !e.dataTransfer?.files?.length) return;
   e.preventDefault();
   const f = e.dataTransfer.files[0];
   const moves = e.target.closest?.(".jm-b-moves");

@@ -571,3 +571,4 @@ button.jm-way:disabled { opacity: .55; cursor: progress; }
 @media (prefers-reduced-motion: reduce) {
   .jam.is-playing .jm-vinyl svg, .jam.is-playing .jm-beam, .jm-layer, .jm-win, .jm-trend-open > img { animation: none !important; transition: none !important; }
 }
+.jam-empty { min-height: calc(100dvh - 6rem); }
