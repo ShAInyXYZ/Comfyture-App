@@ -41,11 +41,14 @@ const assets: Asset[] = [
 ];
 
 const products = [
-  { id: "jar", name: "The Comfyture jar", photo: { url: `${A}/jar.webp`, width: 1200, height: 1200 }, cutout: { url: `${A}/jar-cutout.webp` }, features: ["Blank label for the real logo", "Lid beside it", "Plum, yellow and ink"] },
+  { id: "jar", name: "The Comfyture jar", scene: `${A}/v2/counter.webp`, photo: { url: `${A}/jar.webp`, width: 1200, height: 1200 }, cutout: { url: `${A}/jar-cutout.webp` }, features: ["Blank label for the real logo", "Lid beside it", "Plum, yellow and ink"] },
   { id: "desk", name: "The Comfyture desk", photo: { url: `${A}/app/home.webp`, width: 1600, height: 900 }, cutout: null, features: ["Story, Stage, Shot, Cut, Library", "Sound with every shot", "Open source"] },
 ];
 
 const brief = {
+  pitch: "A warm, playful home for making films. A familiar kitchen spirit, with the tools to turn an idea into a shot.",
+  goals: ["Feel welcoming", "Make it simple", "Stay playful"],
+  image: `${A}/v2/brief-notebook.webp`,
   goal: "Introduce Comfyture, the open-source creation desk for cinematic shots with sound, to makers: a launch week of posts, and a set the following weeks can reuse.",
   audience: "Indie filmmakers, motion designers and trend-minded creators who like to own their tools; people who already run ComfyUI or want to.",
   message: "Direct a shot, or a whole film, from one photo or one sentence. Open source, on your own GPU or in Comfy Cloud, with a real desk: Story, Stage, Shot, Cut, Library.",
@@ -56,6 +59,13 @@ const brief = {
 };
 
 const refs = (now: string) => [
+  // the moodboard: what the work looks to (pictures made for it, no words in them)
+  { id: "mood-jar", title: "Jam on the counter", kind: "inspiration", src: `${A}/v2/mood-1.webp`, note: "Plum jam, wax paper and twine, blueberries, a window behind: the product's home.", at: "2026-10-20T04:10:00.000Z" },
+  { id: "mood-film", title: "Brioche on film", kind: "inspiration", src: `${A}/v2/mood-2.webp`, note: "Three frames of the bunny with a macaron: the whole world is a roll of film.", at: "2026-10-20T04:12:00.000Z" },
+  { id: "mood-macarons", title: "A stack of macarons", kind: "inspiration", src: `${A}/v2/mood-3.webp`, note: "Yellow, plum and pink on a plate in warm side light.", at: "2026-10-20T04:14:00.000Z" },
+  { id: "mood-ink", title: "Plum ink on cream", kind: "inspiration", src: `${A}/v2/mood-4.webp`, note: "The wordmark's hand: loops of plum ink on handmade paper.", at: "2026-10-20T04:16:00.000Z" },
+  { id: "mood-board", title: "The corkboard", kind: "inspiration", src: `${A}/v2/mood-5.webp`, note: "Pinned polaroids and doodles: where ideas turn into shots.", at: "2026-10-20T04:18:00.000Z" },
+  { id: "mood-shelf", title: "The shelf", kind: "inspiration", src: `${A}/v2/mood-6.webp`, note: "Lemon and plum jars with warm lights behind them.", at: "2026-10-20T04:20:00.000Z" },
   { id: "ref-identity", title: "The approved identity board", kind: "identity", src: `${A}/refs/identity-board.webp`, note: "Lid on C: the wordmark, the mark, the yellow, ink and plum. Letterforms and lid geometry are kept exactly.", at: "2026-10-16T22:00:00.000Z" },
   { id: "ref-c07", title: "Concept 07 · Lid on C", kind: "concept", src: "brand/story/07_fitted_lid.jpg", note: "The script with a lid fitted to the first letter. Approved.", at: "2026-10-16T22:00:00.000Z" },
   { id: "ref-c03", title: "Concept 03 · Ribbon wordmark", kind: "concept", src: "brand/story/03_ribbon_wordmark.jpg", note: "The flowing script in a label oval. The lettering that stayed.", at: "2026-10-16T20:30:00.000Z" },
@@ -68,17 +78,18 @@ const refs = (now: string) => [
   { id: "ref-cut", title: "The app: Cut and its editor's bar", kind: "app", src: `${A}/app/cut.webp`, note: "The bar Brioche's explainer quotes.", at: now },
 ];
 
-type Step = { id: string; at: string; kind: string; title: string; note?: string; src?: string; designId?: string; who?: string };
+type Step = { id: string; at: string; kind: string; beat?: string; title: string; note?: string; src?: string; designId?: string; who?: string };
 const history = (designs: any[]): Step[] => {
   const d = (id: string) => designs.find((x) => x.id === id)?.id;
   const steps: Step[] = [
-    { id: "h-c01", at: "2026-10-16T18:30:00.000Z", kind: "concept", title: "Concept 01 · Preserve seal", note: "A scalloped jam label with the C as a fruit. Too literal: it sold jam, not software.", src: "brand/story/01_preserve_seal.jpg" },
+    { id: "h-c01", at: "2026-10-16T18:30:00.000Z", kind: "concept", beat: "The spark", title: "Concept 01 · Preserve seal", note: "A pun to start from: confiture, comfyture. A jam label with the C as a fruit: too literal, but the jar stayed.", src: "brand/story/01_preserve_seal.jpg" },
     { id: "h-c02", at: "2026-10-16T19:30:00.000Z", kind: "concept", title: "Concept 02 · Jar monogram", note: "A C that is a jar. A strong shape, but heavy and cold next to the product.", src: "brand/story/02_jar_monogram.jpg" },
     { id: "h-c03", at: "2026-10-16T20:30:00.000Z", kind: "concept", title: "Concept 03 · Ribbon wordmark", note: "The flowing script in a label oval. The lettering that stayed.", src: "brand/story/03_ribbon_wordmark.jpg" },
-    { id: "h-c07", at: "2026-10-16T22:00:00.000Z", kind: "decision", title: "Concept 07 · Lid on C: approved", note: "The script with a lid fitted to the first letter. “Second variation is nice, we'll use it.” Yellow #F2FF59, ink #211927, plum #49378B, warm white #F0EFED.", src: "brand/story/07_fitted_lid.jpg" },
+    { id: "h-palette", at: "2026-10-16T21:40:00.000Z", kind: "decision", beat: "The palette", title: "Yellow, ink, plum, warm white", note: "A world of jam and kitchen light: yellow as the signal, ink and plum as grounds, warm white for text.", src: `${A}/v2/mood-3.webp` },
+    { id: "h-c07", at: "2026-10-16T22:00:00.000Z", kind: "decision", beat: "The mark", title: "Concept 07 · Lid on C: approved", note: "The script with a lid fitted to the first letter: Comfyture comes to life in one stroke. “Second variation is nice, we'll use it.”", src: "brand/story/07_fitted_lid.jpg" },
     { id: "h-files", at: "2026-10-18T16:40:00.000Z", kind: "design", title: "Brand files built from the approved lettering", note: "Wordmark, mark and app icon as SVG in four colourways, plus PNGs, favicon and manifest: scripts/brand-build.py traced them from the board, so the lid is never lost.", src: `${A}/refs/identity-board.webp` },
     { id: "h-jar", at: "2026-10-19T01:54:00.000Z", kind: "reference", title: "The jar, as a prop", note: "The wordmark on a yellow label, the mark on a plum lid. The pun in one picture: confiture, comfyture.", src: `${A}/jar.webp` },
-    { id: "h-brioche", at: "2026-10-19T11:36:00.000Z", kind: "reference", title: "Brioche joins the cast", note: "A baby lop-eared bunny with cream and apricot fur: the assistant in every room.", src: `${A}/refs/brioche-sheet.webp` },
+    { id: "h-brioche", at: "2026-10-19T11:36:00.000Z", kind: "reference", beat: "The room", title: "Brioche joins the cast", note: "A baby lop-eared bunny with cream and apricot fur: the assistant in every room.", src: `${A}/refs/brioche-sheet.webp` },
     { id: "h-brief", at: "2026-10-20T05:00:00.000Z", kind: "note", title: "The brief for launch week", note: brief.goal },
     { id: "h-kit", at: "2026-10-20T05:05:00.000Z", kind: "decision", title: "The kit, filled from the identity", note: "Eleven logo files on the grounds they are for, four colours with what each is for, Manrope and IBM Plex Mono, a voice and nine rules. Designs read the kit and the brand guard checks them against it." },
     { id: "h-pictures", at: "2026-10-20T05:20:00.000Z", kind: "design", title: "Pictures made: Brioche, the jar of shots, the plum macro", note: "GPT Image 2.5 Flare through Comfy Router, 18.7 credits for three. The jar's label and lid were left blank so the real wordmark goes on as a layer; the subjects were cut out with the app's own tool.", src: `${A}/jar-of-shots.webp` },
@@ -104,6 +115,13 @@ const history = (designs: any[]): Step[] => {
   return steps;
 };
 
+/** The ways the mark and the look could go; Warm and bold is the one the identity took. Each is a picture with a calm middle and the real wordmark file on it. */
+const directions = [
+  { id: "dir-warm", name: "Warm and bold", note: "Confident, expressive and full of flavour.", bg: `${A}/v2/dir-warm.webp`, logo: "wordmark-yellow", picked: true },
+  { id: "dir-craft", name: "Quiet craft", note: "Honest, tactile and kitchen-made.", bg: `${A}/v2/dir-craft.webp`, logo: "wordmark-plum", picked: false },
+  { id: "dir-night", name: "After hours", note: "A richer, more cinematic take on the same spirit.", bg: `${A}/v2/dir-night.webp`, logo: "wordmark-white", picked: false },
+];
+
 const motion = [{ id: "m-intro", name: "Logo and product intro", design: "intro", format: "9:16", duration: 8, fps: 30, sound: { pad: true, pops: [1.82] } }];
 
 // ---------------------------------------------------------------- the variations of the launch layout
@@ -119,8 +137,14 @@ const set = (d: any, id: string, patch: Record<string, any>) => Object.assign(d.
 
 const designs = (made: any, now: string) => {
   const launch = made.launch();
-  const base = [launch, made.showcase(), made.brioche(), made.rooms(), made.hero(), made.board(), made.intro()];
+  const base = [launch, made.brioche(), made.showcase(), made.hero(), made.rooms(), made.board(), made.intro()];
   for (const d of base) Object.assign(d, { createdAt: "2026-10-20T05:25:00.000Z", updatedAt: now, history: [{ at: "2026-10-20T05:25:00.000Z", who: "you", note: "Started from the brand kit" }, { at: now, who: "you", note: `Laid out for ${Object.keys(d.formats ?? {}).length + 1} formats` }] });
+  // the week: Monday's post, Wednesday's story, Friday's reel, Sunday's feature
+  const [, brioche, , , , , intro] = base;
+  launch.plan = { day: "mon" };
+  brioche.plan = { day: "sun" };
+  intro.plan = { day: "fri" };
+  intro.status = "scheduled";
   // copy: the sentence first
   const copy = variant(launch, "launch-copy", "Launch · One sentence in", "copy", "The sentence first, for people who write before they shoot", "draft");
   set(copy, "headline", { text: "One sentence in.\nA *short film* out." });
@@ -170,6 +194,7 @@ const designs = (made: any, now: string) => {
   set(run, "window", { src: `${A}/app/shot.webp` });
   // format: the story first
   const story = variant(launch, "launch-story", "Launch · Story first", "format", "Starts from the story layout", "approved");
+  story.plan = { day: "wed" };
   const lay = (id: string) => ({ ...launch.layers.find((l: any) => l.id === id), ...launch.formats["9:16"].layers[id] });
   story.layers = launch.layers.map((l: any) => lay(l.id));
   story.format = "9:16";
@@ -177,4 +202,4 @@ const designs = (made: any, now: string) => {
   return [...base, copy, yellow, poster, photo, run, story];
 };
 
-export const content = { designs, products, brief, refs, assets, history, motion };
+export const content = { designs, products, brief, refs, assets, history, motion, directions };

@@ -1,7 +1,8 @@
-// The assistant: a chat that sets up the shot. Gemma 4 answers inside ComfyUI with a reply and a
-// list of actions; the browser applies them to the open tab. This module writes its prompt (the
-// open tab's whole state, recent takes, the conversation) and reads its answer, checking every
-// action against what the app can actually do.
+// The Shot room's assistant: a chat that sets up the shot (Kitchen's pet, Ketkout, fronts it, like the
+// other rooms' assistants). Gemma 4 answers inside ComfyUI with a reply and a list of actions; the
+// browser applies them to the open tab. This module writes its prompt (the open tab's whole state, recent
+// takes, the conversation) and reads its answer, checking every action against what the app can actually
+// do. It knows the Shot and nothing of the other products: its manual (manual.ts) is the Shot's part only.
 
 import { CAMERA, TRANSITIONS } from "../web/js/script.js";
 import { LIMITS } from "./limits.ts";

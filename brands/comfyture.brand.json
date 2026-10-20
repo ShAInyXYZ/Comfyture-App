@@ -2,9 +2,10 @@
  "id": "brand-comfyture",
  "name": "Comfyture",
  "createdAt": "2026-10-16T22:00:00.000Z",
- "updatedAt": "2026-10-20T09:56:07.797Z",
+ "updatedAt": "2026-10-20T13:24:59.483Z",
  "thumb": "brand/macaron/comfyture/thumb.webp",
  "body": {
+  "seedRev": 2,
   "logo": {
    "url": "brand/wordmark-2400.png",
    "width": 2400,
@@ -34,6 +35,7 @@
    {
     "id": "jar",
     "name": "The Comfyture jar",
+    "scene": "brand/macaron/comfyture/v2/counter.webp",
     "photo": {
      "url": "brand/macaron/comfyture/jar.webp",
      "width": 1200,
@@ -98,7 +100,7 @@
      "kind": "wordmark",
      "tone": "white",
      "url": "brand/wordmark-white.svg",
-     "ground": "ink, plum",
+     "ground": "plum, ink",
      "note": "One-colour print on dark."
     },
     {
@@ -134,7 +136,7 @@
      "kind": "mark",
      "tone": "white",
      "url": "brand/mark-white.svg",
-     "ground": "ink, plum",
+     "ground": "plum, ink",
      "note": "One-colour mark on dark."
     },
     {
@@ -264,6 +266,10 @@
      }
     ]
    },
+   "sizes": {
+    "mark": 24,
+    "wordmark": 96
+   },
    "rules": [
     {
      "id": "r1",
@@ -313,6 +319,13 @@
    ]
   },
   "brief": {
+   "pitch": "A warm, playful home for making films. A familiar kitchen spirit, with the tools to turn an idea into a shot.",
+   "goals": [
+    "Feel welcoming",
+    "Make it simple",
+    "Stay playful"
+   ],
+   "image": "brand/macaron/comfyture/v2/brief-notebook.webp",
    "goal": "Introduce Comfyture, the open-source creation desk for cinematic shots with sound, to makers: a launch week of posts, and a set the following weeks can reuse.",
    "audience": "Indie filmmakers, motion designers and trend-minded creators who like to own their tools; people who already run ComfyUI or want to.",
    "message": "Direct a shot, or a whole film, from one photo or one sentence. Open source, on your own GPU or in Comfy Cloud, with a real desk: Story, Stage, Shot, Cut, Library.",
@@ -321,7 +334,81 @@
    "constraints": "Open source (MIT). Real screens and real takes only. Logos only from the supplied files; generated pictures never carry the logo or a headline. Type clear of the story's top 13% and bottom 18%. Never name or compare other products.",
    "channels": "Instagram feed and stories, TikTok, X."
   },
+  "directions": [
+   {
+    "id": "dir-warm",
+    "name": "Warm and bold",
+    "note": "Confident, expressive and full of flavour.",
+    "bg": "brand/macaron/comfyture/v2/dir-warm.webp",
+    "logo": "wordmark-yellow",
+    "picked": true
+   },
+   {
+    "id": "dir-craft",
+    "name": "Quiet craft",
+    "note": "Honest, tactile and kitchen-made.",
+    "bg": "brand/macaron/comfyture/v2/dir-craft.webp",
+    "logo": "wordmark-plum",
+    "picked": false
+   },
+   {
+    "id": "dir-night",
+    "name": "After hours",
+    "note": "A richer, more cinematic take on the same spirit.",
+    "bg": "brand/macaron/comfyture/v2/dir-night.webp",
+    "logo": "wordmark-white",
+    "picked": false
+   }
+  ],
   "refs": [
+   {
+    "id": "mood-jar",
+    "title": "Jam on the counter",
+    "kind": "inspiration",
+    "src": "brand/macaron/comfyture/v2/mood-1.webp",
+    "note": "Plum jam, wax paper and twine, blueberries, a window behind: the product's home.",
+    "at": "2026-10-20T04:10:00.000Z"
+   },
+   {
+    "id": "mood-film",
+    "title": "Brioche on film",
+    "kind": "inspiration",
+    "src": "brand/macaron/comfyture/v2/mood-2.webp",
+    "note": "Three frames of the bunny with a macaron: the whole world is a roll of film.",
+    "at": "2026-10-20T04:12:00.000Z"
+   },
+   {
+    "id": "mood-macarons",
+    "title": "A stack of macarons",
+    "kind": "inspiration",
+    "src": "brand/macaron/comfyture/v2/mood-3.webp",
+    "note": "Yellow, plum and pink on a plate in warm side light.",
+    "at": "2026-10-20T04:14:00.000Z"
+   },
+   {
+    "id": "mood-ink",
+    "title": "Plum ink on cream",
+    "kind": "inspiration",
+    "src": "brand/macaron/comfyture/v2/mood-4.webp",
+    "note": "The wordmark's hand: loops of plum ink on handmade paper.",
+    "at": "2026-10-20T04:16:00.000Z"
+   },
+   {
+    "id": "mood-board",
+    "title": "The corkboard",
+    "kind": "inspiration",
+    "src": "brand/macaron/comfyture/v2/mood-5.webp",
+    "note": "Pinned polaroids and doodles: where ideas turn into shots.",
+    "at": "2026-10-20T04:18:00.000Z"
+   },
+   {
+    "id": "mood-shelf",
+    "title": "The shelf",
+    "kind": "inspiration",
+    "src": "brand/macaron/comfyture/v2/mood-6.webp",
+    "note": "Lemon and plum jars with warm lights behind them.",
+    "at": "2026-10-20T04:20:00.000Z"
+   },
    {
     "id": "ref-identity",
     "title": "The approved identity board",
@@ -392,7 +479,7 @@
     "kind": "app",
     "src": "brand/macaron/comfyture/app/home.webp",
     "note": "The real screen, as it ships.",
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "ref-cut",
@@ -400,7 +487,7 @@
     "kind": "app",
     "src": "brand/macaron/comfyture/app/cut.webp",
     "note": "The bar Brioche's explainer quotes.",
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    }
   ],
   "assets": [
@@ -719,8 +806,9 @@
     "id": "h-c01",
     "at": "2026-10-16T18:30:00.000Z",
     "kind": "concept",
+    "beat": "The spark",
     "title": "Concept 01 · Preserve seal",
-    "note": "A scalloped jam label with the C as a fruit. Too literal: it sold jam, not software.",
+    "note": "A pun to start from: confiture, comfyture. A jam label with the C as a fruit: too literal, but the jar stayed.",
     "src": "brand/story/01_preserve_seal.jpg"
    },
    {
@@ -740,11 +828,21 @@
     "src": "brand/story/03_ribbon_wordmark.jpg"
    },
    {
+    "id": "h-palette",
+    "at": "2026-10-16T21:40:00.000Z",
+    "kind": "decision",
+    "beat": "The palette",
+    "title": "Yellow, ink, plum, warm white",
+    "note": "A world of jam and kitchen light: yellow as the signal, ink and plum as grounds, warm white for text.",
+    "src": "brand/macaron/comfyture/v2/mood-3.webp"
+   },
+   {
     "id": "h-c07",
     "at": "2026-10-16T22:00:00.000Z",
     "kind": "decision",
+    "beat": "The mark",
     "title": "Concept 07 · Lid on C: approved",
-    "note": "The script with a lid fitted to the first letter. “Second variation is nice, we'll use it.” Yellow #F2FF59, ink #211927, plum #49378B, warm white #F0EFED.",
+    "note": "The script with a lid fitted to the first letter: Comfyture comes to life in one stroke. “Second variation is nice, we'll use it.”",
     "src": "brand/story/07_fitted_lid.jpg"
    },
    {
@@ -767,6 +865,7 @@
     "id": "h-brioche",
     "at": "2026-10-19T11:36:00.000Z",
     "kind": "reference",
+    "beat": "The room",
     "title": "Brioche joins the cast",
     "note": "A baby lop-eared bunny with cream and apricot fur: the assistant in every room.",
     "src": "brand/macaron/comfyture/refs/brioche-sheet.webp"
@@ -883,7 +982,7 @@
    },
    {
     "id": "h-launch-4x5-png",
-    "at": "2026-10-20T09:56:07.797Z",
+    "at": "2026-10-20T13:24:59.483Z",
     "kind": "export",
     "title": "Launch · Direct a shot exported",
     "note": "PNG 1080×1350",
@@ -892,7 +991,7 @@
    },
    {
     "id": "h-showcase-4x5-png",
-    "at": "2026-10-20T09:56:07.797Z",
+    "at": "2026-10-20T13:24:59.483Z",
     "kind": "export",
     "title": "Showcase · Made with Comfyture exported",
     "note": "PNG 1080×1350",
@@ -901,7 +1000,7 @@
    },
    {
     "id": "h-brioche-4x5-png",
-    "at": "2026-10-20T09:56:07.797Z",
+    "at": "2026-10-20T13:24:59.483Z",
     "kind": "export",
     "title": "Feature · Meet Brioche exported",
     "note": "PNG 1080×1350",
@@ -910,7 +1009,7 @@
    },
    {
     "id": "h-rooms-4x5-png",
-    "at": "2026-10-20T09:56:07.797Z",
+    "at": "2026-10-20T13:24:59.483Z",
     "kind": "export",
     "title": "Feature · Five rooms exported",
     "note": "PNG 1080×1350",
@@ -919,7 +1018,7 @@
    },
    {
     "id": "h-hero-4x5-png",
-    "at": "2026-10-20T09:56:07.797Z",
+    "at": "2026-10-20T13:24:59.483Z",
     "kind": "export",
     "title": "Product hero · Shots worth keeping exported",
     "note": "PNG 1080×1350",
@@ -928,7 +1027,7 @@
    },
    {
     "id": "h-board-4x5-png",
-    "at": "2026-10-20T09:56:07.797Z",
+    "at": "2026-10-20T13:24:59.483Z",
     "kind": "export",
     "title": "Brand board · Comfyture exported",
     "note": "PNG 1080×1350",
@@ -937,7 +1036,7 @@
    },
    {
     "id": "h-intro-9x16-mp4",
-    "at": "2026-10-20T09:56:07.797Z",
+    "at": "2026-10-20T13:24:59.483Z",
     "kind": "export",
     "title": "Logo and product intro exported",
     "note": "MP4 1080×1920, 8 s",
@@ -1190,7 +1289,7 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T09:56:07.797Z",
+    "updatedAt": "2026-10-20T13:24:59.483Z",
     "history": [
      {
       "at": "2026-10-20T05:25:00.000Z",
@@ -1198,421 +1297,17 @@
       "note": "Started from the brand kit"
      },
      {
-      "at": "2026-10-20T09:56:07.797Z",
+      "at": "2026-10-20T13:24:59.483Z",
       "who": "you",
       "note": "Laid out for 3 formats"
      }
     ],
+    "plan": {
+     "day": "mon"
+    },
     "thumb": {
      "file": "launch-4x5.png",
      "url": "brand/macaron/comfyture/exports/launch-4x5.png",
-     "format": "4:5"
-    }
-   },
-   {
-    "id": "showcase",
-    "name": "Showcase · Made with Comfyture",
-    "purpose": "Showcase",
-    "status": "scheduled",
-    "format": "4:5",
-    "campaign": "Launch week",
-    "layout": "custom",
-    "intent": "Social proof: real trends, made with Mixer, in one look.",
-    "bg": {
-     "color": "ink"
-    },
-    "layers": [
-     {
-      "id": "eyebrow",
-      "type": "text",
-      "name": "Eyebrow",
-      "x": 0.07,
-      "y": 0.07,
-      "w": 0.6,
-      "h": 0,
-      "rot": 0,
-      "opacity": 1,
-      "text": "Made with Comfyture",
-      "fontRole": "mono",
-      "size": 0.026,
-      "lineHeight": 1.15,
-      "tracking": 0.12,
-      "align": "left",
-      "valign": "top",
-      "colorRole": "yellow",
-      "accent": "yellow",
-      "role": "eyebrow",
-      "caps": true
-     },
-     {
-      "id": "headline",
-      "type": "text",
-      "name": "Headline",
-      "x": 0.07,
-      "y": 0.105,
-      "w": 0.86,
-      "h": 0,
-      "rot": 0,
-      "opacity": 1,
-      "text": "Trends, in\n*one command.*",
-      "fontRole": "display",
-      "size": 0.092,
-      "lineHeight": 1.02,
-      "tracking": -0.02,
-      "align": "left",
-      "valign": "top",
-      "colorRole": "white",
-      "accent": "yellow",
-      "role": "headline"
-     },
-     {
-      "id": "sub",
-      "type": "text",
-      "name": "Subhead",
-      "x": 0.07,
-      "y": 0.285,
-      "w": 0.86,
-      "h": 0,
-      "rot": 0,
-      "opacity": 0.78,
-      "text": "Pick a trend. Cast your pets. Get the video.",
-      "fontRole": "text",
-      "size": 0.031,
-      "lineHeight": 1.3,
-      "tracking": 0,
-      "align": "left",
-      "valign": "top",
-      "colorRole": "white",
-      "accent": "yellow",
-      "role": "sub"
-     },
-     {
-      "id": "tile1",
-      "type": "image",
-      "name": "State Property",
-      "x": 0.07,
-      "y": 0.35,
-      "w": 0.26,
-      "h": 0.3698,
-      "rot": 0,
-      "opacity": 1,
-      "src": "brand/macaron/comfyture/made/state-property.webp",
-      "crop": {
-       "x": 0,
-       "y": 0,
-       "w": 1,
-       "h": 1
-      },
-      "fit": "cover",
-      "radius": 0.022,
-      "role": "hero",
-      "shadow": {
-       "blur": 0.035,
-       "dy": 0.012,
-       "alpha": 0.5
-      }
-     },
-     {
-      "id": "tile2",
-      "type": "image",
-      "name": "Lights Off",
-      "x": 0.37,
-      "y": 0.38,
-      "w": 0.26,
-      "h": 0.3698,
-      "rot": 0,
-      "opacity": 1,
-      "src": "brand/macaron/comfyture/made/lights-off.webp",
-      "crop": {
-       "x": 0,
-       "y": 0,
-       "w": 1,
-       "h": 1
-      },
-      "fit": "cover",
-      "radius": 0.022,
-      "role": "hero",
-      "shadow": {
-       "blur": 0.035,
-       "dy": 0.012,
-       "alpha": 0.5
-      }
-     },
-     {
-      "id": "tile3",
-      "type": "image",
-      "name": "Three Kittens",
-      "x": 0.67,
-      "y": 0.35,
-      "w": 0.26,
-      "h": 0.3698,
-      "rot": 0,
-      "opacity": 1,
-      "src": "brand/macaron/comfyture/made/three-kittens.webp",
-      "crop": {
-       "x": 0,
-       "y": 0,
-       "w": 1,
-       "h": 1
-      },
-      "fit": "cover",
-      "radius": 0.022,
-      "role": "hero",
-      "shadow": {
-       "blur": 0.035,
-       "dy": 0.012,
-       "alpha": 0.5
-      }
-     },
-     {
-      "id": "cap1",
-      "type": "text",
-      "name": "Caption 1",
-      "x": 0.07,
-      "y": 0.74,
-      "w": 0.26,
-      "h": 0,
-      "rot": 0,
-      "opacity": 0.8,
-      "text": "State Property",
-      "fontRole": "mono",
-      "size": 0.0245,
-      "lineHeight": 1.15,
-      "tracking": 0.08,
-      "align": "left",
-      "valign": "top",
-      "colorRole": "white",
-      "accent": "yellow",
-      "role": "label",
-      "caps": true
-     },
-     {
-      "id": "cap2",
-      "type": "text",
-      "name": "Caption 2",
-      "x": 0.37,
-      "y": 0.77,
-      "w": 0.26,
-      "h": 0,
-      "rot": 0,
-      "opacity": 0.8,
-      "text": "Lights Off",
-      "fontRole": "mono",
-      "size": 0.0245,
-      "lineHeight": 1.15,
-      "tracking": 0.08,
-      "align": "left",
-      "valign": "top",
-      "colorRole": "white",
-      "accent": "yellow",
-      "role": "label",
-      "caps": true
-     },
-     {
-      "id": "cap3",
-      "type": "text",
-      "name": "Caption 3",
-      "x": 0.67,
-      "y": 0.74,
-      "w": 0.26,
-      "h": 0,
-      "rot": 0,
-      "opacity": 0.8,
-      "text": "Three Kittens",
-      "fontRole": "mono",
-      "size": 0.0245,
-      "lineHeight": 1.15,
-      "tracking": 0.08,
-      "align": "left",
-      "valign": "top",
-      "colorRole": "white",
-      "accent": "yellow",
-      "role": "label",
-      "caps": true
-     },
-     {
-      "id": "wordmark",
-      "type": "logo",
-      "name": "Wordmark",
-      "x": 0.07,
-      "y": 0.86,
-      "w": 0.24,
-      "h": 0.1,
-      "rot": 0,
-      "opacity": 1,
-      "logo": "wordmark-yellow",
-      "role": "logo"
-     },
-     {
-      "id": "url",
-      "type": "text",
-      "name": "Link",
-      "x": 0.5,
-      "y": 0.8885,
-      "w": 0.43,
-      "h": 0,
-      "rot": 0,
-      "opacity": 0.8,
-      "text": "Open source · MIT",
-      "fontRole": "mono",
-      "size": 0.0245,
-      "lineHeight": 1.15,
-      "tracking": 0.08,
-      "align": "right",
-      "valign": "top",
-      "colorRole": "white",
-      "accent": "yellow",
-      "role": "cta",
-      "caps": true
-     }
-    ],
-    "formats": {
-     "1:1": {
-      "layers": {
-       "eyebrow": {
-        "x": 0.07,
-        "y": 0.07
-       },
-       "headline": {
-        "x": 0.07,
-        "y": 0.1,
-        "size": 0.08
-       },
-       "sub": {
-        "hidden": true
-       },
-       "tile1": {
-        "x": 0.07,
-        "y": 0.3,
-        "w": 0.26,
-        "h": 0.4622
-       },
-       "cap1": {
-        "x": 0.07,
-        "y": 0.775,
-        "w": 0.26,
-        "size": 0.0245
-       },
-       "tile2": {
-        "x": 0.37,
-        "y": 0.325,
-        "w": 0.26,
-        "h": 0.4622
-       },
-       "cap2": {
-        "x": 0.37,
-        "y": 0.8,
-        "w": 0.26,
-        "size": 0.0245
-       },
-       "tile3": {
-        "x": 0.67,
-        "y": 0.3,
-        "w": 0.26,
-        "h": 0.4622
-       },
-       "cap3": {
-        "x": 0.67,
-        "y": 0.775,
-        "w": 0.26,
-        "size": 0.0245
-       },
-       "wordmark": {
-        "x": 0.07,
-        "y": 0.855,
-        "w": 0.2
-       },
-       "url": {
-        "x": 0.5,
-        "y": 0.8785,
-        "w": 0.43
-       }
-      }
-     },
-     "9:16": {
-      "layers": {
-       "eyebrow": {
-        "x": 0.06,
-        "y": 0.14
-       },
-       "headline": {
-        "x": 0.06,
-        "y": 0.175,
-        "w": 0.84,
-        "size": 0.1
-       },
-       "sub": {
-        "x": 0.06,
-        "y": 0.305,
-        "w": 0.82,
-        "size": 0.034
-       },
-       "tile1": {
-        "x": 0.06,
-        "y": 0.38,
-        "w": 0.26,
-        "h": 0.26
-       },
-       "cap1": {
-        "x": 0.06,
-        "y": 0.672,
-        "w": 0.26,
-        "size": 0.0245
-       },
-       "tile2": {
-        "x": 0.34,
-        "y": 0.41,
-        "w": 0.26,
-        "h": 0.26
-       },
-       "cap2": {
-        "x": 0.34,
-        "y": 0.702,
-        "w": 0.26,
-        "size": 0.0245
-       },
-       "tile3": {
-        "x": 0.62,
-        "y": 0.38,
-        "w": 0.26,
-        "h": 0.26
-       },
-       "cap3": {
-        "x": 0.62,
-        "y": 0.672,
-        "w": 0.26,
-        "size": 0.0245
-       },
-       "wordmark": {
-        "x": 0.06,
-        "y": 0.745,
-        "w": 0.3
-       },
-       "url": {
-        "x": 0.4,
-        "y": 0.7685,
-        "w": 0.48
-       }
-      }
-     }
-    },
-    "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T09:56:07.797Z",
-    "history": [
-     {
-      "at": "2026-10-20T05:25:00.000Z",
-      "who": "you",
-      "note": "Started from the brand kit"
-     },
-     {
-      "at": "2026-10-20T09:56:07.797Z",
-      "who": "you",
-      "note": "Laid out for 3 formats"
-     }
-    ],
-    "thumb": {
-     "file": "showcase-4x5.png",
-     "url": "brand/macaron/comfyture/exports/showcase-4x5.png",
      "format": "4:5"
     }
    },
@@ -2153,7 +1848,7 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T09:56:07.797Z",
+    "updatedAt": "2026-10-20T13:24:59.483Z",
     "history": [
      {
       "at": "2026-10-20T05:25:00.000Z",
@@ -2161,14 +1856,648 @@
       "note": "Started from the brand kit"
      },
      {
-      "at": "2026-10-20T09:56:07.797Z",
+      "at": "2026-10-20T13:24:59.483Z",
+      "who": "you",
+      "note": "Laid out for 3 formats"
+     }
+    ],
+    "plan": {
+     "day": "sun"
+    },
+    "thumb": {
+     "file": "brioche-4x5.png",
+     "url": "brand/macaron/comfyture/exports/brioche-4x5.png",
+     "format": "4:5"
+    }
+   },
+   {
+    "id": "showcase",
+    "name": "Showcase · Made with Comfyture",
+    "purpose": "Showcase",
+    "status": "scheduled",
+    "format": "4:5",
+    "campaign": "Launch week",
+    "layout": "custom",
+    "intent": "Social proof: real trends, made with Mixer, in one look.",
+    "bg": {
+     "color": "ink"
+    },
+    "layers": [
+     {
+      "id": "eyebrow",
+      "type": "text",
+      "name": "Eyebrow",
+      "x": 0.07,
+      "y": 0.07,
+      "w": 0.6,
+      "h": 0,
+      "rot": 0,
+      "opacity": 1,
+      "text": "Made with Comfyture",
+      "fontRole": "mono",
+      "size": 0.026,
+      "lineHeight": 1.15,
+      "tracking": 0.12,
+      "align": "left",
+      "valign": "top",
+      "colorRole": "yellow",
+      "accent": "yellow",
+      "role": "eyebrow",
+      "caps": true
+     },
+     {
+      "id": "headline",
+      "type": "text",
+      "name": "Headline",
+      "x": 0.07,
+      "y": 0.105,
+      "w": 0.86,
+      "h": 0,
+      "rot": 0,
+      "opacity": 1,
+      "text": "Trends, in\n*one command.*",
+      "fontRole": "display",
+      "size": 0.092,
+      "lineHeight": 1.02,
+      "tracking": -0.02,
+      "align": "left",
+      "valign": "top",
+      "colorRole": "white",
+      "accent": "yellow",
+      "role": "headline"
+     },
+     {
+      "id": "sub",
+      "type": "text",
+      "name": "Subhead",
+      "x": 0.07,
+      "y": 0.285,
+      "w": 0.86,
+      "h": 0,
+      "rot": 0,
+      "opacity": 0.78,
+      "text": "Pick a trend. Cast your pets. Get the video.",
+      "fontRole": "text",
+      "size": 0.031,
+      "lineHeight": 1.3,
+      "tracking": 0,
+      "align": "left",
+      "valign": "top",
+      "colorRole": "white",
+      "accent": "yellow",
+      "role": "sub"
+     },
+     {
+      "id": "tile1",
+      "type": "image",
+      "name": "State Property",
+      "x": 0.07,
+      "y": 0.35,
+      "w": 0.26,
+      "h": 0.3698,
+      "rot": 0,
+      "opacity": 1,
+      "src": "brand/macaron/comfyture/made/state-property.webp",
+      "crop": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "fit": "cover",
+      "radius": 0.022,
+      "role": "hero",
+      "shadow": {
+       "blur": 0.035,
+       "dy": 0.012,
+       "alpha": 0.5
+      }
+     },
+     {
+      "id": "tile2",
+      "type": "image",
+      "name": "Lights Off",
+      "x": 0.37,
+      "y": 0.38,
+      "w": 0.26,
+      "h": 0.3698,
+      "rot": 0,
+      "opacity": 1,
+      "src": "brand/macaron/comfyture/made/lights-off.webp",
+      "crop": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "fit": "cover",
+      "radius": 0.022,
+      "role": "hero",
+      "shadow": {
+       "blur": 0.035,
+       "dy": 0.012,
+       "alpha": 0.5
+      }
+     },
+     {
+      "id": "tile3",
+      "type": "image",
+      "name": "Three Kittens",
+      "x": 0.67,
+      "y": 0.35,
+      "w": 0.26,
+      "h": 0.3698,
+      "rot": 0,
+      "opacity": 1,
+      "src": "brand/macaron/comfyture/made/three-kittens.webp",
+      "crop": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "fit": "cover",
+      "radius": 0.022,
+      "role": "hero",
+      "shadow": {
+       "blur": 0.035,
+       "dy": 0.012,
+       "alpha": 0.5
+      }
+     },
+     {
+      "id": "cap1",
+      "type": "text",
+      "name": "Caption 1",
+      "x": 0.07,
+      "y": 0.74,
+      "w": 0.26,
+      "h": 0,
+      "rot": 0,
+      "opacity": 0.8,
+      "text": "State Property",
+      "fontRole": "mono",
+      "size": 0.0245,
+      "lineHeight": 1.15,
+      "tracking": 0.08,
+      "align": "left",
+      "valign": "top",
+      "colorRole": "white",
+      "accent": "yellow",
+      "role": "label",
+      "caps": true
+     },
+     {
+      "id": "cap2",
+      "type": "text",
+      "name": "Caption 2",
+      "x": 0.37,
+      "y": 0.77,
+      "w": 0.26,
+      "h": 0,
+      "rot": 0,
+      "opacity": 0.8,
+      "text": "Lights Off",
+      "fontRole": "mono",
+      "size": 0.0245,
+      "lineHeight": 1.15,
+      "tracking": 0.08,
+      "align": "left",
+      "valign": "top",
+      "colorRole": "white",
+      "accent": "yellow",
+      "role": "label",
+      "caps": true
+     },
+     {
+      "id": "cap3",
+      "type": "text",
+      "name": "Caption 3",
+      "x": 0.67,
+      "y": 0.74,
+      "w": 0.26,
+      "h": 0,
+      "rot": 0,
+      "opacity": 0.8,
+      "text": "Three Kittens",
+      "fontRole": "mono",
+      "size": 0.0245,
+      "lineHeight": 1.15,
+      "tracking": 0.08,
+      "align": "left",
+      "valign": "top",
+      "colorRole": "white",
+      "accent": "yellow",
+      "role": "label",
+      "caps": true
+     },
+     {
+      "id": "wordmark",
+      "type": "logo",
+      "name": "Wordmark",
+      "x": 0.07,
+      "y": 0.86,
+      "w": 0.24,
+      "h": 0.1,
+      "rot": 0,
+      "opacity": 1,
+      "logo": "wordmark-yellow",
+      "role": "logo"
+     },
+     {
+      "id": "url",
+      "type": "text",
+      "name": "Link",
+      "x": 0.5,
+      "y": 0.8885,
+      "w": 0.43,
+      "h": 0,
+      "rot": 0,
+      "opacity": 0.8,
+      "text": "Open source · MIT",
+      "fontRole": "mono",
+      "size": 0.0245,
+      "lineHeight": 1.15,
+      "tracking": 0.08,
+      "align": "right",
+      "valign": "top",
+      "colorRole": "white",
+      "accent": "yellow",
+      "role": "cta",
+      "caps": true
+     }
+    ],
+    "formats": {
+     "1:1": {
+      "layers": {
+       "eyebrow": {
+        "x": 0.07,
+        "y": 0.07
+       },
+       "headline": {
+        "x": 0.07,
+        "y": 0.1,
+        "size": 0.08
+       },
+       "sub": {
+        "hidden": true
+       },
+       "tile1": {
+        "x": 0.07,
+        "y": 0.3,
+        "w": 0.26,
+        "h": 0.4622
+       },
+       "cap1": {
+        "x": 0.07,
+        "y": 0.775,
+        "w": 0.26,
+        "size": 0.0245
+       },
+       "tile2": {
+        "x": 0.37,
+        "y": 0.325,
+        "w": 0.26,
+        "h": 0.4622
+       },
+       "cap2": {
+        "x": 0.37,
+        "y": 0.8,
+        "w": 0.26,
+        "size": 0.0245
+       },
+       "tile3": {
+        "x": 0.67,
+        "y": 0.3,
+        "w": 0.26,
+        "h": 0.4622
+       },
+       "cap3": {
+        "x": 0.67,
+        "y": 0.775,
+        "w": 0.26,
+        "size": 0.0245
+       },
+       "wordmark": {
+        "x": 0.07,
+        "y": 0.855,
+        "w": 0.2
+       },
+       "url": {
+        "x": 0.5,
+        "y": 0.8785,
+        "w": 0.43
+       }
+      }
+     },
+     "9:16": {
+      "layers": {
+       "eyebrow": {
+        "x": 0.06,
+        "y": 0.14
+       },
+       "headline": {
+        "x": 0.06,
+        "y": 0.175,
+        "w": 0.84,
+        "size": 0.1
+       },
+       "sub": {
+        "x": 0.06,
+        "y": 0.305,
+        "w": 0.82,
+        "size": 0.034
+       },
+       "tile1": {
+        "x": 0.06,
+        "y": 0.38,
+        "w": 0.26,
+        "h": 0.26
+       },
+       "cap1": {
+        "x": 0.06,
+        "y": 0.672,
+        "w": 0.26,
+        "size": 0.0245
+       },
+       "tile2": {
+        "x": 0.34,
+        "y": 0.41,
+        "w": 0.26,
+        "h": 0.26
+       },
+       "cap2": {
+        "x": 0.34,
+        "y": 0.702,
+        "w": 0.26,
+        "size": 0.0245
+       },
+       "tile3": {
+        "x": 0.62,
+        "y": 0.38,
+        "w": 0.26,
+        "h": 0.26
+       },
+       "cap3": {
+        "x": 0.62,
+        "y": 0.672,
+        "w": 0.26,
+        "size": 0.0245
+       },
+       "wordmark": {
+        "x": 0.06,
+        "y": 0.745,
+        "w": 0.3
+       },
+       "url": {
+        "x": 0.4,
+        "y": 0.7685,
+        "w": 0.48
+       }
+      }
+     }
+    },
+    "createdAt": "2026-10-20T05:25:00.000Z",
+    "updatedAt": "2026-10-20T13:24:59.483Z",
+    "history": [
+     {
+      "at": "2026-10-20T05:25:00.000Z",
+      "who": "you",
+      "note": "Started from the brand kit"
+     },
+     {
+      "at": "2026-10-20T13:24:59.483Z",
       "who": "you",
       "note": "Laid out for 3 formats"
      }
     ],
     "thumb": {
-     "file": "brioche-4x5.png",
-     "url": "brand/macaron/comfyture/exports/brioche-4x5.png",
+     "file": "showcase-4x5.png",
+     "url": "brand/macaron/comfyture/exports/showcase-4x5.png",
+     "format": "4:5"
+    }
+   },
+   {
+    "id": "hero",
+    "name": "Product hero · Shots worth keeping",
+    "purpose": "Launch",
+    "status": "approved",
+    "format": "4:5",
+    "campaign": "Launch week",
+    "layout": "custom",
+    "intent": "Brand: the jar as the product, with the real wordmark on its label.",
+    "bg": {
+     "color": "plum"
+    },
+    "layers": [
+     {
+      "id": "ring",
+      "type": "shape",
+      "name": "Lid ring",
+      "x": 0.11,
+      "y": 0.298,
+      "w": 0.78,
+      "h": 0.594,
+      "rot": 0,
+      "opacity": 0.35,
+      "shape": "ring",
+      "colorRole": "yellow",
+      "radius": 0.03,
+      "role": "deco",
+      "stroke": 0.004
+     },
+     {
+      "id": "eyebrow",
+      "type": "text",
+      "name": "Eyebrow",
+      "x": 0.07,
+      "y": 0.07,
+      "w": 0.6,
+      "h": 0,
+      "rot": 0,
+      "opacity": 1,
+      "text": "Put up in a jar",
+      "fontRole": "mono",
+      "size": 0.026,
+      "lineHeight": 1.15,
+      "tracking": 0.12,
+      "align": "left",
+      "valign": "top",
+      "colorRole": "yellow",
+      "accent": "yellow",
+      "role": "eyebrow",
+      "caps": true
+     },
+     {
+      "id": "headline",
+      "type": "text",
+      "name": "Headline",
+      "x": 0.07,
+      "y": 0.105,
+      "w": 0.86,
+      "h": 0,
+      "rot": 0,
+      "opacity": 1,
+      "text": "Shots worth\n*keeping.*",
+      "fontRole": "display",
+      "size": 0.115,
+      "lineHeight": 1.02,
+      "tracking": -0.02,
+      "align": "left",
+      "valign": "top",
+      "colorRole": "white",
+      "accent": "yellow",
+      "role": "headline"
+     },
+     {
+      "id": "jar",
+      "type": "image",
+      "name": "Jar of shots",
+      "x": 0.1,
+      "y": 0.29,
+      "w": 0.8,
+      "h": 0.5825,
+      "rot": 0,
+      "opacity": 1,
+      "src": "brand/macaron/comfyture/jar-of-shots.webp",
+      "crop": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "fit": "contain",
+      "radius": 0,
+      "role": "hero"
+     },
+     {
+      "id": "wordmark",
+      "type": "logo",
+      "name": "Wordmark on the label",
+      "x": 0.1938,
+      "y": 0.5664,
+      "w": 0.3771,
+      "h": 0.1,
+      "rot": 0,
+      "opacity": 1,
+      "logo": "wordmark-ink",
+      "role": "logo"
+     },
+     {
+      "id": "sub",
+      "type": "text",
+      "name": "Subhead",
+      "x": 0.07,
+      "y": 0.9,
+      "w": 0.8,
+      "h": 0,
+      "rot": 0,
+      "opacity": 0.82,
+      "text": "A desk for making shots, with sound. Open source.",
+      "fontRole": "text",
+      "size": 0.028,
+      "lineHeight": 1.3,
+      "tracking": 0,
+      "align": "left",
+      "valign": "top",
+      "colorRole": "white",
+      "accent": "yellow",
+      "role": "sub"
+     }
+    ],
+    "formats": {
+     "1:1": {
+      "layers": {
+       "ring": {
+        "x": 0.43,
+        "y": 0.08,
+        "w": 0.56,
+        "h": 0.56
+       },
+       "eyebrow": {
+        "x": 0.07,
+        "y": 0.07
+       },
+       "headline": {
+        "x": 0.07,
+        "y": 0.105,
+        "w": 0.4,
+        "size": 0.08
+       },
+       "jar": {
+        "x": 0.44,
+        "y": 0.12,
+        "w": 0.54,
+        "h": 0.4915
+       },
+       "wordmark": {
+        "x": 0.5033,
+        "y": 0.3532,
+        "w": 0.2545
+       },
+       "sub": {
+        "x": 0.07,
+        "y": 0.62,
+        "w": 0.36,
+        "size": 0.03
+       }
+      }
+     },
+     "9:16": {
+      "layers": {
+       "ring": {
+        "x": 0.08,
+        "y": 0.328,
+        "w": 0.84,
+        "h": 0.428
+       },
+       "eyebrow": {
+        "x": 0.06,
+        "y": 0.14
+       },
+       "headline": {
+        "x": 0.06,
+        "y": 0.175,
+        "w": 0.84,
+        "size": 0.12
+       },
+       "jar": {
+        "x": 0.07,
+        "y": 0.3,
+        "w": 0.86,
+        "h": 0.4403
+       },
+       "wordmark": {
+        "x": 0.1709,
+        "y": 0.5089,
+        "w": 0.4054
+       },
+       "sub": {
+        "x": 0.06,
+        "y": 0.775,
+        "w": 0.84,
+        "size": 0.034
+       }
+      }
+     }
+    },
+    "createdAt": "2026-10-20T05:25:00.000Z",
+    "updatedAt": "2026-10-20T13:24:59.483Z",
+    "history": [
+     {
+      "at": "2026-10-20T05:25:00.000Z",
+      "who": "you",
+      "note": "Started from the brand kit"
+     },
+     {
+      "at": "2026-10-20T13:24:59.483Z",
+      "who": "you",
+      "note": "Laid out for 3 formats"
+     }
+    ],
+    "thumb": {
+     "file": "hero-4x5.png",
+     "url": "brand/macaron/comfyture/exports/hero-4x5.png",
      "format": "4:5"
     }
    },
@@ -2941,7 +3270,7 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T09:56:07.797Z",
+    "updatedAt": "2026-10-20T13:24:59.483Z",
     "history": [
      {
       "at": "2026-10-20T05:25:00.000Z",
@@ -2949,7 +3278,7 @@
       "note": "Started from the brand kit"
      },
      {
-      "at": "2026-10-20T09:56:07.797Z",
+      "at": "2026-10-20T13:24:59.483Z",
       "who": "you",
       "note": "Laid out for 3 formats"
      }
@@ -2957,230 +3286,6 @@
     "thumb": {
      "file": "rooms-4x5.png",
      "url": "brand/macaron/comfyture/exports/rooms-4x5.png",
-     "format": "4:5"
-    }
-   },
-   {
-    "id": "hero",
-    "name": "Product hero · Shots worth keeping",
-    "purpose": "Launch",
-    "status": "approved",
-    "format": "4:5",
-    "campaign": "Launch week",
-    "layout": "custom",
-    "intent": "Brand: the jar as the product, with the real wordmark on its label.",
-    "bg": {
-     "color": "plum"
-    },
-    "layers": [
-     {
-      "id": "ring",
-      "type": "shape",
-      "name": "Lid ring",
-      "x": 0.11,
-      "y": 0.298,
-      "w": 0.78,
-      "h": 0.594,
-      "rot": 0,
-      "opacity": 0.35,
-      "shape": "ring",
-      "colorRole": "yellow",
-      "radius": 0.03,
-      "role": "deco",
-      "stroke": 0.004
-     },
-     {
-      "id": "eyebrow",
-      "type": "text",
-      "name": "Eyebrow",
-      "x": 0.07,
-      "y": 0.07,
-      "w": 0.6,
-      "h": 0,
-      "rot": 0,
-      "opacity": 1,
-      "text": "Put up in a jar",
-      "fontRole": "mono",
-      "size": 0.026,
-      "lineHeight": 1.15,
-      "tracking": 0.12,
-      "align": "left",
-      "valign": "top",
-      "colorRole": "yellow",
-      "accent": "yellow",
-      "role": "eyebrow",
-      "caps": true
-     },
-     {
-      "id": "headline",
-      "type": "text",
-      "name": "Headline",
-      "x": 0.07,
-      "y": 0.105,
-      "w": 0.86,
-      "h": 0,
-      "rot": 0,
-      "opacity": 1,
-      "text": "Shots worth\n*keeping.*",
-      "fontRole": "display",
-      "size": 0.115,
-      "lineHeight": 1.02,
-      "tracking": -0.02,
-      "align": "left",
-      "valign": "top",
-      "colorRole": "white",
-      "accent": "yellow",
-      "role": "headline"
-     },
-     {
-      "id": "jar",
-      "type": "image",
-      "name": "Jar of shots",
-      "x": 0.1,
-      "y": 0.29,
-      "w": 0.8,
-      "h": 0.5825,
-      "rot": 0,
-      "opacity": 1,
-      "src": "brand/macaron/comfyture/jar-of-shots.webp",
-      "crop": {
-       "x": 0,
-       "y": 0,
-       "w": 1,
-       "h": 1
-      },
-      "fit": "contain",
-      "radius": 0,
-      "role": "hero"
-     },
-     {
-      "id": "wordmark",
-      "type": "logo",
-      "name": "Wordmark on the label",
-      "x": 0.1938,
-      "y": 0.5664,
-      "w": 0.3771,
-      "h": 0.1,
-      "rot": 0,
-      "opacity": 1,
-      "logo": "wordmark-ink",
-      "role": "logo"
-     },
-     {
-      "id": "sub",
-      "type": "text",
-      "name": "Subhead",
-      "x": 0.07,
-      "y": 0.9,
-      "w": 0.8,
-      "h": 0,
-      "rot": 0,
-      "opacity": 0.82,
-      "text": "A desk for making shots, with sound. Open source.",
-      "fontRole": "text",
-      "size": 0.028,
-      "lineHeight": 1.3,
-      "tracking": 0,
-      "align": "left",
-      "valign": "top",
-      "colorRole": "white",
-      "accent": "yellow",
-      "role": "sub"
-     }
-    ],
-    "formats": {
-     "1:1": {
-      "layers": {
-       "ring": {
-        "x": 0.43,
-        "y": 0.08,
-        "w": 0.56,
-        "h": 0.56
-       },
-       "eyebrow": {
-        "x": 0.07,
-        "y": 0.07
-       },
-       "headline": {
-        "x": 0.07,
-        "y": 0.105,
-        "w": 0.4,
-        "size": 0.08
-       },
-       "jar": {
-        "x": 0.44,
-        "y": 0.12,
-        "w": 0.54,
-        "h": 0.4915
-       },
-       "wordmark": {
-        "x": 0.5033,
-        "y": 0.3532,
-        "w": 0.2545
-       },
-       "sub": {
-        "x": 0.07,
-        "y": 0.62,
-        "w": 0.36,
-        "size": 0.03
-       }
-      }
-     },
-     "9:16": {
-      "layers": {
-       "ring": {
-        "x": 0.08,
-        "y": 0.328,
-        "w": 0.84,
-        "h": 0.428
-       },
-       "eyebrow": {
-        "x": 0.06,
-        "y": 0.14
-       },
-       "headline": {
-        "x": 0.06,
-        "y": 0.175,
-        "w": 0.84,
-        "size": 0.12
-       },
-       "jar": {
-        "x": 0.07,
-        "y": 0.3,
-        "w": 0.86,
-        "h": 0.4403
-       },
-       "wordmark": {
-        "x": 0.1709,
-        "y": 0.5089,
-        "w": 0.4054
-       },
-       "sub": {
-        "x": 0.06,
-        "y": 0.775,
-        "w": 0.84,
-        "size": 0.034
-       }
-      }
-     }
-    },
-    "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T09:56:07.797Z",
-    "history": [
-     {
-      "at": "2026-10-20T05:25:00.000Z",
-      "who": "you",
-      "note": "Started from the brand kit"
-     },
-     {
-      "at": "2026-10-20T09:56:07.797Z",
-      "who": "you",
-      "note": "Laid out for 3 formats"
-     }
-    ],
-    "thumb": {
-     "file": "hero-4x5.png",
-     "url": "brand/macaron/comfyture/exports/hero-4x5.png",
      "format": "4:5"
     }
    },
@@ -3783,7 +3888,7 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T09:56:07.797Z",
+    "updatedAt": "2026-10-20T13:24:59.483Z",
     "history": [
      {
       "at": "2026-10-20T05:25:00.000Z",
@@ -3791,7 +3896,7 @@
       "note": "Started from the brand kit"
      },
      {
-      "at": "2026-10-20T09:56:07.797Z",
+      "at": "2026-10-20T13:24:59.483Z",
       "who": "you",
       "note": "Laid out for 2 formats"
      }
@@ -3806,7 +3911,7 @@
     "id": "intro",
     "name": "Motion · Logo and product intro",
     "purpose": "Motion",
-    "status": "approved",
+    "status": "scheduled",
     "format": "9:16",
     "campaign": "Launch week",
     "layout": "custom",
@@ -4554,7 +4659,7 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T09:56:07.797Z",
+    "updatedAt": "2026-10-20T13:24:59.483Z",
     "history": [
      {
       "at": "2026-10-20T05:25:00.000Z",
@@ -4562,11 +4667,14 @@
       "note": "Started from the brand kit"
      },
      {
-      "at": "2026-10-20T09:56:07.797Z",
+      "at": "2026-10-20T13:24:59.483Z",
       "who": "you",
       "note": "Laid out for 3 formats"
      }
     ],
+    "plan": {
+     "day": "fri"
+    },
     "thumb": {
      "file": "intro-poster-9x16.png",
      "url": "brand/macaron/comfyture/exports/intro-poster-9x16.png",
@@ -4817,10 +4925,10 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T09:56:07.797Z",
+    "updatedAt": "2026-10-20T13:24:59.483Z",
     "history": [
      {
-      "at": "2026-10-20T09:56:07.799Z",
+      "at": "2026-10-20T13:24:59.485Z",
       "who": "you",
       "note": "Made from Launch · Direct a shot"
      }
@@ -5076,10 +5184,10 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T09:56:07.797Z",
+    "updatedAt": "2026-10-20T13:24:59.483Z",
     "history": [
      {
-      "at": "2026-10-20T09:56:07.799Z",
+      "at": "2026-10-20T13:24:59.485Z",
       "who": "you",
       "note": "Made from Launch · Direct a shot"
      }
@@ -5302,10 +5410,10 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T09:56:07.797Z",
+    "updatedAt": "2026-10-20T13:24:59.483Z",
     "history": [
      {
-      "at": "2026-10-20T09:56:07.799Z",
+      "at": "2026-10-20T13:24:59.485Z",
       "who": "you",
       "note": "Made from Launch · Direct a shot"
      }
@@ -5501,7 +5609,7 @@
     },
     "history": [
      {
-      "at": "2026-10-20T09:56:07.799Z",
+      "at": "2026-10-20T13:24:59.486Z",
       "who": "you",
       "note": "Made from Feature · Meet Brioche"
      }
@@ -5757,10 +5865,10 @@
      }
     },
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T09:56:07.797Z",
+    "updatedAt": "2026-10-20T13:24:59.483Z",
     "history": [
      {
-      "at": "2026-10-20T09:56:07.799Z",
+      "at": "2026-10-20T13:24:59.486Z",
       "who": "you",
       "note": "Made from Launch · Direct a shot"
      }
@@ -5927,10 +6035,10 @@
     ],
     "formats": {},
     "createdAt": "2026-10-20T05:25:00.000Z",
-    "updatedAt": "2026-10-20T09:56:07.797Z",
+    "updatedAt": "2026-10-20T13:24:59.483Z",
     "history": [
      {
-      "at": "2026-10-20T09:56:07.799Z",
+      "at": "2026-10-20T13:24:59.486Z",
       "who": "you",
       "note": "Made from Launch · Direct a shot"
      }
@@ -5940,6 +6048,9 @@
      "from": "launch",
      "kind": "format",
      "note": "Starts from the story layout"
+    },
+    "plan": {
+     "day": "wed"
     }
    }
   ],
@@ -5967,7 +6078,7 @@
      "format": "9:16",
      "sound": true,
      "poster": "brand/macaron/comfyture/exports/intro-poster-9x16.png",
-     "at": "2026-10-20T09:56:07.797Z"
+     "at": "2026-10-20T13:24:59.483Z"
     }
    }
   ],
@@ -5983,7 +6094,7 @@
     "width": 1080,
     "height": 1350,
     "bytes": 481986,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "xctdozrdk",
@@ -5996,7 +6107,7 @@
     "width": 1080,
     "height": 1080,
     "bytes": 423237,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "xctgf43rc",
@@ -6009,7 +6120,7 @@
     "width": 1080,
     "height": 1920,
     "bytes": 592870,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "xctknvol6",
@@ -6022,7 +6133,7 @@
     "width": 1080,
     "height": 1350,
     "bytes": 1062831,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "xctp5mmli",
@@ -6035,7 +6146,7 @@
     "width": 1080,
     "height": 1920,
     "bytes": 1087332,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "xctu16b7b",
@@ -6048,7 +6159,7 @@
     "width": 1080,
     "height": 1350,
     "bytes": 405791,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "xctxkje3c",
@@ -6061,7 +6172,7 @@
     "width": 1080,
     "height": 1080,
     "bytes": 382868,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "xcu17y7g8",
@@ -6074,7 +6185,7 @@
     "width": 1080,
     "height": 1350,
     "bytes": 131648,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "xcu4turxf",
@@ -6087,7 +6198,7 @@
     "width": 1080,
     "height": 1920,
     "bytes": 155768,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "xcu8g215r",
@@ -6100,7 +6211,7 @@
     "width": 1080,
     "height": 1350,
     "bytes": 755733,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "xcude6znw",
@@ -6113,7 +6224,7 @@
     "width": 1080,
     "height": 1080,
     "bytes": 431938,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "xcufy6j65",
@@ -6126,7 +6237,7 @@
     "width": 1080,
     "height": 1350,
     "bytes": 290639,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "xcuj8b4it",
@@ -6139,7 +6250,7 @@
     "width": 1080,
     "height": 1080,
     "bytes": 238557,
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    },
    {
     "id": "x-intro-mp4",
@@ -6154,7 +6265,7 @@
     "bytes": 968985,
     "duration": 8,
     "poster": "brand/macaron/comfyture/exports/intro-poster-9x16.png",
-    "at": "2026-10-20T09:56:07.797Z"
+    "at": "2026-10-20T13:24:59.483Z"
    }
   ]
  }

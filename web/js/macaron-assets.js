@@ -1,8 +1,8 @@
-// Products and assets: the pictures a brand makes content from (its app's screens, product shots,
-// renders, work made through Comfyture), a way to make a new picture with an image model, and the
-// template shoot that puts a product in a setup, in every format asked for.
+// The product's window: its products, the pictures a brand makes content from (its app's screens, product
+// shots, renders, work made through Comfyture), a way to make a new picture with an image model, and the
+// template shoot that puts a product in a setup, in every format asked for. Each is a tab of the window.
 import { h, icon, sprite } from "./dom.js";
-import { toast, artist, setArtist, artists } from "./store.js";
+import { toast, artist, setArtist, artists, changed } from "./store.js";
 import { dropdown } from "./controls.js";
 import { artistItems } from "./writer-menu.js";
 import { view } from "./viewer.js";
@@ -13,7 +13,7 @@ import {
   macaron, designNow, addAsset, removeAsset, addLayer, makePicture, productNow, addProduct, pickProduct, setProduct, removeProduct, pickTemplate, setFilter, formatsOf, toggleFormat,
   setCount, shoot, shooting, removeOutput, estimate,
 } from "./macaron.js";
-import { card, key, seg, chip, arming, isArmed, armedNow, chooseFiles } from "./macaron-ui.js";
+import { card, key, seg, chip, arming, isArmed, armedNow, chooseFiles, fill } from "./macaron-ui.js";
 
 const KINDS = [["all", "All"], ["app", "App"], ["product", "Product"], ["mascot", "Mascot"], ["made", "Made with it"], ["render", "Renders"], ["brand", "Brand"], ["upload", "Uploads"]];
 const SOURCE = { screenshot: "Screenshot", generated: "Generated", made: "Made with Comfyture", brand: "Brand file", upload: "Upload" };
@@ -22,9 +22,10 @@ const make = { model: "gpt-image-2.5-flare", prompt: "", refs: [], aspect: "4:5"
 const words = (s) => s.split(",").map((w) => w.trim()).filter(Boolean).slice(0, 6);
 const pick = (fn, multiple = false) => chooseFiles(fn, multiple);
 
-export function assetsSection() {
-  const el = h("div.mc-bento.is-assets");
-  const rerender = () => update();
+export function productParts() {
+  // what the forms hold is not in the project: a count says when they have to be drawn again
+  let rev = 0;
+  const rerender = () => (rev++, changed("macaron"));
 
   function library(b) {
     const all = b.body.assets;
@@ -125,13 +126,28 @@ export function assetsSection() {
       })) : null);
   }
 
-  function update() {
-    const b = macaron.brand;
-    if (!b) return;
-    const typing = el.contains(document.activeElement) && document.activeElement.matches("input, textarea");
-    if (typing) return false;
-    el.replaceChildren(library(b), picture(b), shootCard(b));
+  /** The products: a card each, to name, describe and pick, and one to add. */
+  function productCard(b) {
+    const cur = productNow(b);
+    const add = (e) => openPicker(e.currentTarget, { title: "Add products", characters: false, multiple: true, onPick: async (c) => { try { await addProduct(await pictureOf(c)); } catch (err) { toast(err.message, { tone: "crit" }); } } });
+    return card("is-prod", "Products", [key(icon("plus"), "Add a product photo, on any background", add)],
+      b.body.products.length ? h("div.mc-pcards", {}, ...b.body.products.map((x) => h(`article.mc-pcardx${x.id === cur?.id ? ".is-on" : ""}`, {},
+        h("button.mc-pcardx-pic", { type: "button", title: "Use this product", on: { click: () => pickProduct(x.id) } }, h(`img${x.cutout ? ".is-clear" : ""}`, { src: x.cutout?.url ?? x.photo.url, alt: "", draggable: false })),
+        h("input.field.mc-product-name", { value: x.name, "aria-label": "The product's name", on: { input: (e) => setProduct(x.id, { name: e.target.value.slice(0, 40) }) } }),
+        h("input.field.mc-words", { value: (x.features ?? []).join(", "), placeholder: "What makes it good: real plums, small batch", "aria-label": "Features", on: { change: (e) => setProduct(x.id, { features: words(e.target.value) }) } }),
+        key(icon("trash"), isArmed(`product:${x.id}`) ? "Click again to take it out" : "Take it out", () => arming(`product:${x.id}`, rerender, () => removeProduct(x.id)), { on: isArmed(`product:${x.id}`), cls: "mc-product-x" })))) : h("button.mc-drop", { type: "button", on: { click: add } }, icon("upload"), h("span", {}, "Add a photo of the product")));
   }
-  const sig = () => { const b = macaron.brand?.body; return JSON.stringify([b?.assets, b?.outputs, b?.products, b?.product, b?.shoot, macaron.template, macaron.media, macaron.category, macaron.assetKind, [...macaron.busy], armedNow(), b?.colours, b?.logo, designNow()?.id]); };
-  return { el, update, sig };
+
+  const typingIn = (el) => el.contains(document.activeElement) && document.activeElement.matches("input, textarea");
+  const part = (build, sig) => {
+    const el = h("div.mc-wpart");
+    return { el, update() { const b = macaron.brand; if (!b) return; if (typingIn(el)) return false; fill(el, build(b)); }, sig };
+  };
+  const sigOf = (fn) => () => JSON.stringify([rev, fn(macaron.brand?.body ?? {})]);
+  return {
+    product: part(productCard, sigOf((b) => [b.products, b.product, armedNow()])),
+    pictures: part(library, sigOf((b) => [b.assets, macaron.assetKind, armedNow(), designNow()?.id])),
+    make: part(picture, sigOf((b) => [b.assets, [...macaron.busy]])),
+    shoot: part(shootCard, sigOf((b) => [b.outputs, b.products, b.product, b.shoot, macaron.template, macaron.media, macaron.category, [...macaron.busy], armedNow(), b.colours, b.logo])),
+  };
 }

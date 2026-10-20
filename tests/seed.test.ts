@@ -39,12 +39,12 @@ test("a newer version of a showcase replaces an older copy nobody has touched, a
   // the first start puts them in: the trend ones at their version
   await started(data, async (get) => {
     const ids = (await get("api/jams")).jams.map((j: any) => j.id).sort();
-    assert.deepEqual(ids, ["jam-hotel-lobby", "jam-ramalama", "jam-test-showcase", "jam-toc-toc"]);
+    assert.deepEqual(ids, ["jam-hotel-lobby", "jam-test-showcase", "jam-toc-toc"], "Hotel Lobby and Toc Toc ship; Ramalama is not one of them");
   });
   const marker = (await readFile(join(data, "jams", ".seeded"), "utf8")).split("\n").sort();
-  assert.deepEqual(marker, ["jam-hotel-lobby@2", "jam-ramalama@2", "jam-test-showcase", "jam-toc-toc@2"]);
+  assert.deepEqual(marker, ["jam-hotel-lobby@2", "jam-test-showcase", "jam-toc-toc@2"]);
   // they were put in at an older version (as a data folder from before is): one is untouched, one was edited since
-  await writeFile(join(data, "jams", ".seeded"), ["jam-hotel-lobby", "jam-ramalama", "jam-test-showcase", "jam-toc-toc"].join("\n"));
+  await writeFile(join(data, "jams", ".seeded"), ["jam-hotel-lobby", "jam-test-showcase", "jam-toc-toc"].join("\n"));
   const edit = async (kind: string, id: string, change: (p: any) => void) => {
     const path = join(data, kind, `${id}.json`);
     const p = JSON.parse(await readFile(path, "utf8"));
@@ -52,12 +52,12 @@ test("a newer version of a showcase replaces an older copy nobody has touched, a
     await writeFile(path, JSON.stringify(p));
   };
   await edit("jams", "jam-hotel-lobby", (p) => (p.name = "Old Hotel"));
-  await edit("jams", "jam-ramalama", (p) => ((p.name = "My Ramalama"), (p.updatedAt = "2030-01-01T00:00:00.000Z")));
+  await edit("jams", "jam-toc-toc", (p) => ((p.name = "My Toc Toc"), (p.updatedAt = "2030-01-01T00:00:00.000Z")));
   await started(data, async (get) => {
     const names = Object.fromEntries((await get("api/jams")).jams.map((j: any) => [j.id, j.name]));
     assert.equal(names["jam-hotel-lobby"], "Hotel Lobby", "an untouched older copy is replaced");
-    assert.equal(names["jam-ramalama"], "My Ramalama", "one that was edited is left as it is");
+    assert.equal(names["jam-toc-toc"], "My Toc Toc", "one that was edited is left as it is");
     assert.equal(names["jam-test-showcase"], "Sun in the jar (test)", "one at its version is not touched");
   });
-  assert.deepEqual((await readFile(join(data, "jams", ".seeded"), "utf8")).split("\n").sort(), ["jam-hotel-lobby@2", "jam-ramalama@2", "jam-test-showcase", "jam-toc-toc@2"]);
+  assert.deepEqual((await readFile(join(data, "jams", ".seeded"), "utf8")).split("\n").sort(), ["jam-hotel-lobby@2", "jam-test-showcase", "jam-toc-toc@2"]);
 });

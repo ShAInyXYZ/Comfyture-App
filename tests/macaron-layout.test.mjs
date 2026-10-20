@@ -9,7 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { kitOf, layoutOf, contrast, colorOf, newLayer, textRuns, layoutText, FORMATS } from "../web/js/design.js";
 import { reflow, layoutPreset, applyKit, guard, cloneDesign, safeRect, estimate, onScreen, firstTiming, soundPops, patchLayerIn } from "../web/js/macaron-layout.js";
-import { readMacaronAnswer, macaronPrompt, keepFrame, encodeFrames, ledgerLine } from "../server/macaron.ts";
+import { readMacaronAnswer, macaronPrompt, macaronTool, macaronBrief, spaceOf, SPACES, topUpBrand, keepFrame, encodeFrames, ledgerLine } from "../server/macaron.ts";
+import { BRIOCHE, WORKSPACES, PRESETS, PLACEHOLDER } from "../web/js/macaron-harness.js";
 
 const project = JSON.parse(readFileSync(new URL("../brands/comfyture.brand.json", import.meta.url), "utf8"));
 const kit = kitOf(project.body);
@@ -237,6 +238,15 @@ test("a video is only made from frames that are all there, and what comes out is
     await send("aaaaaa01", all);
     const made = await encodeFrames(data, "aaaaaa01", { fps: 10, name: "whole", sound: { pad: true, pops: [0.4] } });
     assert.deepEqual([made.frames, made.duration, made.width, made.height, made.sound], [12, 1.2, 64, 64, true]);
+    // the same frames as WebM (VP9 with Opus): a file of its own kind, measured the same way
+    await send("aaaaaa07", all);
+    const web = await encodeFrames(data, "aaaaaa07", { fps: 10, name: "whole-webm", sound: { pad: true, pops: [0.4] }, container: "webm" });
+    assert.deepEqual([web.frames, web.width, web.height, web.sound], [12, 64, 64, true]);
+    assert.ok(Math.abs(web.duration - 1.2) < 0.06, `its length is the frames' (${web.duration} s)`);
+    assert.match(web.file, /\.webm$/);
+    assert.match(web.url, /\.webm$/);
+    const head = readFileSync(join(data, "macaron", "exports", web.file)).subarray(0, 4);
+    assert.deepEqual([...head], [0x1a, 0x45, 0xdf, 0xa3], "an EBML header: it is a WebM file");
     // one in the middle missing: ffmpeg would stop there and call the rest done
     await send("aaaaaa02", all.filter((n) => n !== 8));
     await refused("aaaaaa02", /frame 8/i);
@@ -264,4 +274,146 @@ test("a new picture's ledger line names its job and what it cost", () => {
   assert.deepEqual([line.job, line.model, line.aspect, line.refs, line.credits], ["ab12cd34", "gpt-image-2.5-flare", "4:5", 1, 5.84]);
   assert.equal(line.prompt.length, 120);
   assert.ok(Date.parse(line.at) > 0);
+});
+
+// ---------------------------------------------------------------- Brioche works in the workspace that is open
+
+const opsOf = (space) => macaronTool(space).input_schema.properties.actions.items.properties.op.enum;
+
+test("each workspace gives Brioche its own tool: only its actions, and a way to open another", () => {
+  assert.deepEqual([...SPACES], ["idea", "kit", "content"]);
+  assert.equal(spaceOf("nonsense"), "content", "a workspace she does not know is Content, where she always worked");
+  const [idea, kit, content] = SPACES.map(opsOf);
+  assert.deepEqual(idea.filter((o) => !["write_brief", "add_direction", "pick_direction", "add_note", "open_space"].includes(o)), []);
+  assert.deepEqual(kit.filter((o) => !["set_colour", "add_colour", "add_colourway", "set_voice", "add_rule", "set_type", "open_space"].includes(o)), []);
+  for (const o of ["edit_text", "set_layer", "make_variation", "generate_background", "add_design", "add_motion", "plan_design", "open_space"]) assert.ok(content.includes(o), `Content has ${o}`);
+  for (const [name, ops] of [["idea", idea], ["kit", kit], ["content", content]]) assert.ok(ops.includes("open_space"), `${name} can open another workspace`);
+  assert.ok(!content.includes("write_brief") && !content.includes("set_colour") && !idea.includes("set_layer") && !kit.includes("edit_text"), "nothing of another workspace is in a tool");
+});
+
+test("her brief is the open workspace's: its things and its actions, nothing of the others'", () => {
+  const [idea, kit, content] = SPACES.map(macaronBrief);
+  assert.match(idea, /write_brief/); assert.doesNotMatch(idea, /edit_text|set_layer|set_colour/);
+  assert.match(kit, /add_colourway/); assert.doesNotMatch(kit, /edit_text|write_brief|make_variation/);
+  assert.match(content, /edit_text/); assert.doesNotMatch(content, /write_brief|add_colourway|add_direction/);
+  for (const text of [idea, kit, content]) assert.match(text, /macaron_answer/);
+  assert.ok(content.length > kit.length && kit.length > 0 && idea.length > 0, "the content brief is the big one: the others stay small");
+});
+
+test("what her answer may do is checked against the workspace it was asked in", () => {
+  const answer = (space, actions) => readMacaronAnswer(JSON.stringify({ reply: "Done.", actions }), space).actions;
+  // Brand kit: colours are #RRGGBB, words and lists are cut, a content action is dropped
+  const k = answer("kit", [{ op: "set_colour", id: "yellow", hex: "#f4ff70", name: "x".repeat(300) }, { op: "set_colour", id: "yellow", hex: "red" }, { op: "set_layer", layer: "sub", props: { size: 0.04 } }, { op: "set_voice", words: ["a", "b", "c", "d", "e", "f", "g", "h", "i"], dos: ["one"] }, { op: "add_rule", kind: "dont", text: "No glows" }, { op: "add_rule", kind: "evil", text: "x" }]);
+  assert.deepEqual(k.map((a) => a.op), ["set_colour", "set_colour", "set_voice", "add_rule", "add_rule"]);
+  assert.equal(k[0].hex, "#F4FF70"); assert.equal(k[0].name.length, 120); assert.equal(k[1].hex, undefined, "a colour that is not #RRGGBB is not a colour");
+  assert.equal(k[2].words.length, 8);
+  // Design idea: the brief's fields are the brief's, the rest is dropped
+  const i = answer("idea", [{ op: "write_brief", fields: { pitch: "A warm home.", tone: "Plain", evil: "x", goal: 3 }, goals: ["Feel welcoming", "Make it simple"] }, { op: "add_direction", name: "Quiet craft", note: "Honest.", logo: "wordmark-plum" }, { op: "edit_text", layer: "headline", text: "x" }, { op: "pick_direction", id: "dir-warm" }]);
+  assert.deepEqual(i.map((a) => a.op), ["write_brief", "add_direction", "pick_direction"]);
+  assert.deepEqual(i[0].fields, { pitch: "A warm home.", tone: "Plain" }); assert.deepEqual(i[0].goals, ["Feel welcoming", "Make it simple"]);
+  // Content: the planning and the new posts are its own, and a day is one of seven
+  const c = answer("content", [{ op: "plan_design", design: "launch", day: "mon" }, { op: "add_design", name: "A post", purpose: "Launch", format: "1:1" }, { op: "add_motion", design: "launch" }, { op: "write_brief", fields: { pitch: "x" } }]);
+  assert.deepEqual(c.map((a) => a.op), ["plan_design", "add_design", "add_motion"]);
+  assert.equal(answer("content", [{ op: "plan_design", design: "launch", day: "mon" }])[0].day, "mon");
+  // open_space is every workspace's
+  for (const space of SPACES) assert.equal(answer(space, [{ op: "open_space", space: "kit" }])[0].space, "kit");
+});
+
+test("what she is told is the open workspace's things, and the tool picked", () => {
+  const base = { name: "Comfyture", kit: { about: "A creation desk.", palette: kit.palette, logos: kit.logos, type: kit.type, voice: kit.voice } };
+  const idea = macaronPrompt({ ...base, space: "idea", brief: { pitch: "A warm home.", goals: ["Feel welcoming"] }, directions: [{ id: "dir-warm", name: "Warm and bold", note: "Confident.", picked: true }], refs: [{ title: "Jam", kind: "inspiration" }], story: [{ title: "The mark", kind: "decision" }] }, []);
+  assert.match(idea, /WORKSPACE OPEN: Design idea/); assert.match(idea, /dir-warm "Warm and bold" \(picked\)/); assert.match(idea, /A warm home\./); assert.match(idea, /The mark/);
+  assert.doesNotMatch(idea, /THE DESIGN OPEN|Palette \(ids\)|Layers, bottom to top/);
+  const kitText = macaronPrompt({ ...base, space: "kit", rules: [{ id: "r1", kind: "do", text: "Keep the lid on" }], colourways: [{ name: "Ink on yellow", ground: "yellow", logo: "wordmark-ink" }], lowContrast: [{ a: "yellow", b: "white", ratio: 1.1 }], products: [{ name: "The jar", features: ["Real plums"] }], design: { id: "launch", name: "Launch", layers: launch.layers } }, []);
+  assert.match(kitText, /WORKSPACE OPEN: Brand kit/); assert.match(kitText, /Palette \(ids\).*yellow #F2FF59/); assert.match(kitText, /yellow on white 1\.1/); assert.match(kitText, /Keep the lid on/);
+  assert.doesNotMatch(kitText, /THE DESIGN OPEN|Layers, bottom to top|THE BRIEF/, "the kit does not carry the design that is open");
+  const content = macaronPrompt({ ...base, space: "content", design: { id: "launch", name: "Launch", purpose: "Launch", status: "approved", day: "mon", format: "4:5", openFormat: "4:5", layers: launch.layers }, designs: [{ id: "launch", name: "Launch", purpose: "Launch", format: "4:5", status: "approved", day: "mon" }], assets: [], brief: { pitch: "A warm home.", audience: "Makers" }, directions: [{ id: "dir-warm", name: "Warm and bold" }] }, []);
+  assert.match(content, /WORKSPACE OPEN: Content/); assert.match(content, /planned mon/); assert.match(content, /- headline · text · headline/);
+  assert.doesNotMatch(content, /DIRECTIONS \(ids\)|Colourways saved|Rules:/);
+  // a tool picked adds what it asks; a tool of another workspace asks nothing
+  assert.match(macaronPrompt({ ...base, space: "kit", preset: "colourway" }, []), /picked the tool Make a colourway/);
+  assert.match(macaronPrompt({ ...base, space: "idea", preset: "direction" }, []), /picked the tool New direction/);
+  assert.match(macaronPrompt({ ...base, space: "content", preset: "animate", design: { id: "launch", name: "L", layers: [] } }, []), /picked the tool Animate it/);
+  assert.doesNotMatch(macaronPrompt({ ...base, space: "kit", preset: "direction" }, []), /picked the tool/);
+  assert.doesNotMatch(macaronPrompt({ ...base, space: "content", preset: "nonsense" }, []), /picked the tool/);
+});
+
+test("a copy of a post is not on the plan: the day belongs to the post it was made from", () => {
+  const planned = { ...structuredClone(launch), plan: { day: "mon" } };
+  assert.equal(cloneDesign(planned, { kind: "copy" }).plan, undefined);
+  assert.deepEqual(planned.plan, { day: "mon" });
+});
+
+test("the flagship's brief, directions and week are the workspaces' own", () => {
+  const body = project.body;
+  assert.ok(body.brief.pitch && body.brief.goals.length === 3 && body.brief.image, "a pitch, three goals and a picture");
+  assert.equal(body.directions.length, 3);
+  assert.equal(body.directions.filter((d) => d.picked).length, 1, "one direction is picked");
+  for (const d of body.directions) assert.ok(body.kit.logos.some((l) => l.id === d.logo), `${d.name} shows a logo file of the kit`);
+  const week = body.designs.filter((d) => d.plan?.day);
+  assert.equal(week.length, 4);
+  assert.deepEqual(week.map((d) => d.plan.day).sort(), ["fri", "mon", "sun", "wed"]);
+  assert.ok(body.designs.filter((d) => d.variant && d.plan).length <= 1, "only one variation is on the plan");
+  assert.ok(body.history.filter((h) => h.beat).length === 4, "the story names four chapters");
+  assert.ok(body.refs.filter((r) => r.kind === "inspiration").length === 6, "a moodboard of six");
+  assert.equal(body.kit.sizes.mark, 24);
+});
+
+test("Brioche's harness data and the server say the same: the workspaces, and what each tool asks of her", () => {
+  assert.deepEqual(WORKSPACES.map((w) => w.id), [...SPACES], "the panel and the server have the same workspaces in the same order");
+  assert.equal(BRIOCHE.name, "Brioche");
+  for (const w of WORKSPACES) {
+    assert.equal(PRESETS[w.id].length, 3, `${w.name} has three tools`);
+    assert.match(PLACEHOLDER[w.id], /^Ask Brioche/, `the bar speaks for her in ${w.name}`);
+    for (const t of PRESETS[w.id]) {
+      assert.ok(t.id && t.icon && t.label, `${t.label ?? t.id} names itself`);
+      assert.ok(Boolean(t.ask) !== Boolean(t.page), `${t.label} is words for her or something the page does, not both`);
+      // words for her come with instructions of the server's, under the tool's id, in the workspace it belongs to
+      if (t.ask) assert.match(macaronPrompt({ name: "x", space: w.id, preset: t.id, kit: {} }, []), /picked the tool/, `the server knows the tool ${t.id} of ${w.name}`);
+    }
+  }
+  const asks = WORKSPACES.flatMap((w) => PRESETS[w.id].filter((t) => t.ask).map((t) => t.ask));
+  assert.equal(new Set(asks).size, asks.length, "no two tools send the same words: the bar tells one from the other by them");
+});
+
+test("a flagship that version 1 put in gains the new example once, and nothing a person made is touched", () => {
+  const seed = project.body;
+  // what version 1 shipped: no idea, no directions, no moodboard, no chapters, no plan, no scene, no sizes, white files on ink
+  const v1 = structuredClone(seed);
+  delete v1.seedRev;
+  v1.brief = { ...v1.brief, pitch: "", goals: [], image: "" };
+  v1.directions = [];
+  v1.refs = v1.refs.filter((r) => r.kind !== "inspiration");
+  v1.history = v1.history.filter((h) => h.id !== "h-palette").map(({ beat, ...h }) => h);
+  for (const d of v1.designs) delete d.plan;
+  for (const p of v1.products) delete p.scene;
+  delete v1.kit.sizes;
+  for (const l of v1.kit.logos) if (/^(wordmark|mark)-white$/.test(l.id)) l.ground = "ink, plum";
+  const up = topUpBrand(v1, seed);
+  assert.equal(up.brief.pitch, seed.brief.pitch);
+  assert.deepEqual(up.brief.goals, seed.brief.goals);
+  assert.equal(up.directions.length, 3);
+  assert.deepEqual(up.refs.slice(0, 6).map((r) => r.kind), Array(6).fill("inspiration"), "the moodboard's pictures come first");
+  assert.equal(up.refs.length, seed.refs.length);
+  assert.deepEqual(up.history.filter((h) => h.beat).map((h) => h.beat).sort(), ["The mark", "The palette", "The room", "The spark"]);
+  assert.deepEqual(up.designs.filter((d) => d.plan).map((d) => d.plan.day).sort(), ["fri", "mon", "sun", "wed"]);
+  assert.ok(up.products[0].scene && up.kit.sizes.mark === 24);
+  assert.equal(up.kit.logos.find((l) => l.id === "wordmark-white").ground, "plum, ink");
+  assert.equal(up.seedRev, 2);
+  assert.equal(v1.brief.pitch, "", "the body it was given is not changed");
+  // once: a second time there is nothing to do
+  assert.equal(topUpBrand(up, seed), null);
+  // what a person wrote stays: their idea, their directions, their week, their own picture of the jar
+  const mine = structuredClone(v1);
+  mine.brief.pitch = "My own words.";
+  mine.directions = [{ id: "d1", name: "Mine", note: "", bg: "", logo: "", picked: true }];
+  mine.designs.find((d) => d.id === "board").plan = { day: "thu" };
+  mine.products[0].scene = "mine.webp";
+  const kept = topUpBrand(mine, seed);
+  assert.equal(kept.brief.pitch, "My own words.");
+  assert.deepEqual(kept.directions.map((d) => d.name), ["Mine"]);
+  assert.deepEqual(kept.designs.filter((d) => d.plan).map((d) => d.id), ["board"], "a week they planned is not planned again for them");
+  assert.equal(kept.products[0].scene, "mine.webp");
+  // a seed with no revision tops nothing up
+  assert.equal(topUpBrand(v1, { ...seed, seedRev: undefined }), null);
 });

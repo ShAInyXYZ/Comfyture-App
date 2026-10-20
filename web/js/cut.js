@@ -11,6 +11,11 @@ import { beatTimes, newFx, FX_DEFAULTS, FX_KINDS } from "./fx.js";
 import { detectBeats, parseBeats, gridBeats, beatsFromTimes, halveBeats, doubleBeats, nearestBeat } from "./beats.js";
 import { splitWords, wordsOf, ANIMATED } from "./lyrics.js";
 
+/** What a product that borrows the editor's assistant adds: Jam says what it holds (`context`, null on any other page), carries out its own actions (`apply`) and exports the video its own way (`export`). */
+export const hooks = { context: null, apply: null, export: null };
+/** Jam's own actions (Pickle's: the part, the words, the captions, the band), done by Jam, and only when it is Jam's page that asked. */
+const jamActions = (actions) => (hooks.apply && hooks.context?.() ? hooks.apply(actions ?? []) : []);
+
 const TABS = "comfyture.cut.tabs";
 const LAST = "comfyture.cut.last";
 export const FPS = 24;
@@ -701,6 +706,24 @@ export function wordsToEdit(item) {
   if (!item.words?.length) item.words = wordsOf(item).map((w) => ({ ...w }));
   return item.words;
 }
+/** How big the words are, for every line (or one): a share of the frame's short side (0.09 is usual). */
+export function setLyricSize(size, id = null) {
+  const items = id ? [findItem(id)?.item].filter(Boolean) : lyrics();
+  if (!items.length) return;
+  for (const it of items) it.size = Math.round(clamp(Number(size) || 0.09, 0.04, 0.2) * 1000) / 1000;
+  commit();
+}
+/** The words' colours, for every line (or one): the colour they are written in and the one the sung word lights up in. */
+export function setLyricColours({ color, hi }, id = null) {
+  const items = id ? [findItem(id)?.item].filter(Boolean) : lyrics();
+  const hex = (v) => (/^#[0-9a-f]{6}$/i.test(String(v ?? "")) ? String(v).toUpperCase() : undefined);
+  if (!items.length || (!hex(color) && !hex(hi))) return;
+  for (const it of items) {
+    if (hex(color)) it.color = hex(color);
+    if (hex(hi)) it.hi = hex(hi);
+  }
+  commit();
+}
 /** How the words are drawn, for every line (or one): karaoke, pop, bounce, lower, none. */
 export function setLyricStyle(style, id = null) {
   const items = id ? [findItem(id)?.item].filter(Boolean) : lyrics();
@@ -1006,6 +1029,7 @@ function summary(b = body()) {
 /** The assistant's actions on the edit: the changes as one undo step, then what takes its time (music, sounds, voices, the film). */
 function applyActions(actions) {
   const b = body();
+  if (!b) return jamActions(actions);
   const did = [];
   const later = [];
   const clip = (n) => mainTrack(b).items[Math.round(Number(n)) - 1];
@@ -1063,7 +1087,7 @@ function applyActions(actions) {
       later.push(() => makeVoice({ who: String(a.who ?? ""), line: String(a.line), at: a.clip !== undefined ? clipStart(a.clip) : Number(a.at) || 0 }));
       did.push("Making a voice line");
     } else if (a.op === "render") {
-      later.push(() => renderFilm());
+      later.push(() => (hooks.context?.() && hooks.export ? hooks.export() : renderFilm()));
       did.push("Rendering the film");
     } else if (a.op === "beats") {
       if (a.action === "detect") {
@@ -1124,25 +1148,33 @@ function applyActions(actions) {
   }
   if (did.length) commit();
   for (const run of later) run();
+  // what Jam carries out itself (the part, the words, the artist...): after the edit's, which is one undo step
+  did.push(...jamActions(actions));
   return did;
 }
 
-/** The bar's words, on Cut: the editor changes the edit. */
-export async function askCut(text) {
+/**
+ * The bar's words, on Cut: the editor changes the edit. `chat` is the conversation they are kept in: Cut's own, or another page's
+ * that asks the same editor (Pickle's, on Jam).
+ */
+export async function askCut(text, chat = cut.chat) {
   const words = text.trim();
-  if (!words || cut.chat.busy || !cut.project) return;
-  cut.chat.messages.push({ role: "user", text: words });
-  cut.chat.busy = "Editing";
+  // asked from Jam, it is Pickle's, with what the jam holds (and he can answer before there is an edit)
+  const jam = hooks.context?.() ?? null;
+  if (!words || chat.busy || (!cut.project && !jam)) return;
+  chat.messages.push({ role: "user", text: words });
+  chat.busy = "Editing";
   update("assistant");
   try {
     await loadStickers();
-    const out = await send("api/cut/assist", "POST", { model: writer(), messages: cut.chat.messages.slice(-8), cut: summary() });
-    const did = applyActions(out.actions);
-    cut.chat.messages.push({ role: "assistant", text: out.reply || (did.length ? "Done." : "Nothing to change."), did });
+    const out = await send("api/cut/assist", "POST", { model: writer(), messages: chat.messages.slice(-8), cut: { ...(cut.project ? summary() : {}), ...(jam ? { jam } : {}) }, ...(jam ? { product: "jam" } : {}) });
+    // (Pickle never makes what costs credits: if one came in his answer all the same, it is not done)
+    const did = applyActions(jam ? (out.actions ?? []).filter((a) => !["music", "sound", "voice"].includes(a.op)) : out.actions);
+    chat.messages.push({ role: "assistant", text: out.reply || (did.length ? "Done." : "Nothing to change."), did });
   } catch (e) {
-    cut.chat.messages.push({ role: "assistant", text: e.message, error: true });
+    chat.messages.push({ role: "assistant", text: e.message, error: true });
   } finally {
-    cut.chat.busy = null;
+    chat.busy = null;
     update("assistant");
   }
 }

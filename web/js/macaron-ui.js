@@ -39,6 +39,27 @@ const PATHS = {
   content: '<path d="M5 6h14M5 12h14M5 18h9"/>',
   sparkle: '<path d="M12 4.5 13.6 9l4.4 1.6-4.4 1.6L12 16.7l-1.6-4.5L6 10.6 10.4 9z"/>',
   stamp: '<path d="m5 12.5 4 4L19 6.5"/>',
+  expand: '<path d="M14 5h5v5M10 19H5v-5M19 5l-6 6M5 19l6-6"/>',
+  chev: '<path d="m9 6 6 6-6 6"/>',
+  chevLeft: '<path d="m15 6-6 6 6 6"/>',
+  palette: '<path d="M12 4a8 8 0 1 0 0 16c1.2 0 1.8-.8 1.8-1.7 0-1.2-1-1.5-1-2.6 0-.9.7-1.6 1.7-1.6H17a3 3 0 0 0 3-3C20 7 16.5 4 12 4z"/><circle cx="8" cy="11" r="1.1"/><circle cx="11" cy="8" r="1.1"/><circle cx="15" cy="8.5" r="1.1"/>',
+  contrast: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>',
+  export: '<path d="M12 15V4m-4 4 4-4 4 4M5 14v4a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 18v-4"/>',
+  pencil: '<path d="m5 19 1-4L16.5 4.5a2 2 0 0 1 3 3L9 18z"/><path d="m14.5 6.5 3 3"/>',
+  picture: '<rect x="4" y="5" width="16" height="14" rx="2.5"/><path d="m4.5 16 4.5-4 3.5 3 3-2.5 4 3.5"/><circle cx="9" cy="9.5" r="1.4"/>',
+  doc: '<path d="M7 4.5h7l4 4V19a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5.5a1 1 0 0 1 1-1z"/><path d="M14 4.5V9h4M9 13h6M9 16h4"/>',
+  clapper: '<path d="M4.5 10.5h15V19a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1z"/><path d="m4.5 10.5-.6-3.6 14-2.4.6 3.6M8 7.6l2 2.6M12.2 6.9l2 2.6"/>',
+  play: '<path d="m8.5 6.5 9 5.5-9 5.5z" fill="currentColor"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  swap: '<path d="M5 8h13l-3-3M19 16H6l3 3"/>',
+  calendar: '<rect x="4" y="5.5" width="16" height="14" rx="2.5"/><path d="M4 10h16M8.5 4v3M15.5 4v3"/>',
+  download: '<path d="M12 4v11m-4-4 4 4 4-4M5 19h14"/>',
+  bulb: '<path d="M9.5 17.5h5M10 20h4M12 4a5.5 5.5 0 0 0-3.2 10c.5.4.7.9.7 1.5h5c0-.6.2-1.1.7-1.5A5.5 5.5 0 0 0 12 4z"/>',
+  heart: '<path d="M12 19s-6.5-3.9-6.5-8.5A3.6 3.6 0 0 1 12 8.6a3.6 3.6 0 0 1 6.5 1.9C18.5 15.1 12 19 12 19z"/>',
+  smile: '<circle cx="12" cy="12" r="8"/><path d="M8.8 14c.8 1.2 1.9 1.8 3.2 1.8s2.4-.6 3.2-1.8M9.4 10h.01M14.6 10h.01"/>',
+  spark: '<path d="M12 4.5 13.6 9l4.4 1.6-4.4 1.6L12 16.7l-1.6-4.5L6 10.6 10.4 9zM18.5 4v3M17 5.5h3"/>',
+  flip: '<path d="M4 12h16M7 8l-3 4 3 4M17 8l3 4-3 4"/>',
+  trash: '<path d="M5 7h14M10 7V5h4v2M7 7l.7 11.5a1 1 0 0 0 1 .9h6.6a1 1 0 0 0 1-.9L17 7"/>',
 };
 /** An icon of Macaron's own, in the app's icon style. */
 export function mcicon(name) {
@@ -50,6 +71,58 @@ export { h, icon, sprite };
 
 /** An element's children replaced, what is null or false left out (replaceChildren would write "null"). */
 export const fill = (el, ...kids) => el.replaceChildren(...kids.flat().filter((k) => k !== null && k !== undefined && k !== false));
+
+/**
+ * A bento: a card of a workspace with its label and a small expand key; it opens its window when it is clicked
+ * anywhere that is not a key, a field or something with an action of its own.
+ */
+export function bento(cls, title, open, ...body) {
+  return h(`section.mc-bento${cls ? `.${cls}` : ""}`, { role: "group", "aria-label": title, dataset: { open: open ? "1" : "" }, on: { click: (e) => open && !e.target.closest("a, button, input, textarea, select, [data-keep]") && open() } },
+    h("div.mc-b-head", {}, h("span.mc-b-label", {}, title), open ? h("button.mc-expand", { type: "button", title: `Open ${title.toLowerCase()}`, "aria-label": `Open ${title.toLowerCase()}`, on: { click: (e) => (e.stopPropagation(), open()) } }, mcicon("expand")) : null),
+    ...body);
+}
+
+const spots = new Map();
+/**
+ * An endless, slow scroll of a track of tiles (the track holds them twice, so it never ends). It stops while it is
+ * pointed at and when reduced motion is asked for, and keeps its place when it is built again. Answers step(1) and
+ * step(-1), which move it a tile on, and start(), which runs it again once it is on the page.
+ */
+export function marquee(id, view, track, { speed = 24 } = {}) {
+  const calm = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const self = { pos: spots.get(id) ?? 0, to: null, hold: false, last: 0, running: false };
+  const put = () => (track.style.transform = `translate3d(${-self.pos}px, 0, 0)`);
+  const tick = (now) => {
+    if (!view.isConnected) return void ((self.running = false), (self.last = 0));
+    requestAnimationFrame(tick);
+    const dt = self.last ? Math.min(0.05, (now - self.last) / 1000) : 0;
+    self.last = now;
+    if (self.to !== null) {
+      self.pos += (self.to - self.pos) * Math.min(1, dt * 9);
+      if (Math.abs(self.to - self.pos) < 0.5) self.to = null;
+    } else if (!self.hold && !calm) self.pos += speed * dt;
+    const w = track.scrollWidth / 2;
+    if (w > 0) {
+      if (self.pos >= w) ((self.pos -= w), self.to !== null && (self.to -= w));
+      if (self.pos < 0) ((self.pos += w), self.to !== null && (self.to += w));
+    }
+    spots.set(id, self.pos);
+    put();
+  };
+  view.addEventListener("pointerenter", () => (self.hold = true));
+  view.addEventListener("pointerleave", () => (self.hold = false));
+  view.addEventListener("focusin", () => (self.hold = true));
+  view.addEventListener("focusout", () => (self.hold = false));
+  put();
+  return {
+    start() {
+      if (self.running) return;
+      self.running = true;
+      requestAnimationFrame(tick);
+    },
+    step: (dir) => (self.to = (self.to ?? self.pos) + dir * 220),
+  };
+}
 
 /** A card of a section: its label and tools, then what it holds. */
 export function card(cls, title, tools, ...body) {

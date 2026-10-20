@@ -8,10 +8,26 @@ import { api } from "./api.js";
 import { TEMPLATES, templateById } from "./macaron-templates.js";
 import { FORMATS, FORMAT_KEYS, kitOf, prepare, renderDesign, measurer, drawDesign, uid, clamp, newLayer, frameOf, layoutOf, ownFormats, colorOf, contrast, logoColour, lacksLid } from "./design.js";
 import { reflow, withPreset, applyKit, cloneDesign, guard, LAYOUTS, safeRect, firstTiming, soundPops, patchLayerIn } from "./macaron-layout.js";
+import { WORKSPACES } from "./macaron-harness.js";
 
 const OPEN = "comfyture.macaron.open";
+const SPACE = "comfyture.macaron.space";
+/** The three workspaces: where a brand's work is done, in the order it goes (macaron-harness.js names them). */
+export const SPACES = WORKSPACES.map((w) => w.id);
+/** What can leave as a file: the id, the label and the icon of the app's sprite. */
+export const EXPORT_KINDS = [["png", "PNG", "image-library"], ["jpg", "JPG", "image-library"], ["mp4", "MP4", "film-make"], ["webm", "WEBM", "film-make"]];
+const savedSpace = (() => {
+  try {
+    const v = localStorage.getItem(SPACE);
+    return SPACES.includes(v) ? v : "kit";
+  } catch {
+    return "kit";
+  }
+})();
 export const macaron = {
   list: [], brand: null, ready: null, busy: new Set(),
+  // the workspace open, the window open over it (and the ones under it), which windows show their finer controls
+  space: savedSpace, win: null, winStack: [], adv: {}, colourway: null, productTab: "product", exportKinds: { png: true, jpg: false, mp4: true, webm: false }, exportScope: "approved", bulk: null,
   // the shoot's
   template: TEMPLATES[0].id, media: "all", category: "all",
   // the studio's: the design open, the format it is open in, the layer picked
@@ -32,7 +48,7 @@ const call = async (path, init) => {
 const send = (path, method, body) => call(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
 export { uid, send as postJson };
 
-const BRIEF = { goal: "", audience: "", message: "", tone: "", deliverables: "", constraints: "", channels: "" };
+const BRIEF = { pitch: "", goals: [], image: "", goal: "", audience: "", message: "", tone: "", deliverables: "", constraints: "", channels: "" };
 const blank = () => ({ logo: null, colours: [], fonts: [], voice: [], dos: "", donts: "", headline: "", tagline: "", products: [], product: null, outputs: [], shoot: { formats: {}, count: 2 } });
 
 /** A brand's body with everything the workspace needs, whatever it was saved with: older brands gain empty parts, nothing is changed. */
@@ -46,6 +62,7 @@ function normalize(saved = {}) {
   body.kit.rules ??= [];
   for (const k of ["designs", "motion", "exports", "refs", "history", "assets"]) body[k] ??= [];
   body.brief = { ...BRIEF, ...(saved.brief ?? {}) };
+  body.directions = Array.isArray(saved.directions) ? saved.directions : [];
   return body;
 }
 
@@ -74,6 +91,9 @@ export async function openBrand(id) {
   const { project } = await call(`api/brands/${id}`);
   macaron.brand = { ...project, body: normalize(project.body) };
   macaron.mark = null;
+  macaron.win = null;
+  macaron.winStack = [];
+  macaron.colourway = null;
   macaron.past = [];
   macaron.future = [];
   macaron.chat = { messages: [], busy: null };
@@ -120,6 +140,9 @@ export async function newBrand(name = "New brand", body = blank()) {
   macaron.list = [{ id: project.id, name: project.name, updatedAt: project.updatedAt }, ...macaron.list];
   macaron.brand = { ...project, body: normalize(project.body) };
   macaron.mark = null;
+  macaron.win = null;
+  macaron.winStack = [];
+  macaron.colourway = null;
   macaron.past = [];
   macaron.future = [];
   macaron.chat = { messages: [], busy: null };
@@ -225,7 +248,12 @@ export const reflowFor = (d, f) => reflow(d, f, measure());
 /** A design as it sits in a format: its layers there (its own layout, or a reflowed one), and its ground. */
 export const layoutNow = (d = designNow(), format = macaron.format) => layoutOf(d, format, { reflow: reflowFor });
 
-const snap = () => JSON.stringify({ designs: macaron.brand.body.designs, motion: macaron.brand.body.motion });
+/** What a step back holds: the designs and the motion; a batch (Brioche's changes) holds the kit, the brief and the directions too. */
+const snap = (all = false) => {
+  const b = macaron.brand.body;
+  // (the flat lists beside the kit are what the shoot reads: they are kept the same as the kit's)
+  return JSON.stringify(all ? { designs: b.designs, motion: b.motion, kit: b.kit, brief: b.brief, directions: b.directions ?? [], colours: b.colours, voice: b.voice, fonts: b.fonts, dos: b.dos, donts: b.donts, history: b.history } : { designs: b.designs, motion: b.motion });
+};
 /** Where a gesture began is kept with the brand it began in: another brand never reads it. */
 const marked = () => (macaron.mark?.brand === macaron.brand?.id ? macaron.mark : null);
 const hooks = new Set();
@@ -233,14 +261,14 @@ const hooks = new Set();
 export const onLive = (fn) => (hooks.add(fn), () => hooks.delete(fn));
 
 /** A gesture starts: where to go back to. */
-export function begin() {
+export function begin(all = false) {
   if (!macaron.brand) return;
-  if (!marked()) macaron.mark = { brand: macaron.brand.id, json: snap() };
+  if (!marked()) macaron.mark = { brand: macaron.brand.id, json: snap(all), all };
 }
 /** A gesture that began and changed nothing (a field focused, then left): there is nothing to go back to. */
 export function settle() {
   if (macaron.batch) return;
-  if (!marked() || macaron.mark.json === snap()) macaron.mark = null;
+  if (!marked() || macaron.mark.json === snap(macaron.mark.all)) macaron.mark = null;
 }
 /** In the middle of a gesture: the change is made and drawn, and saved soon, but the page is not rebuilt. */
 export function live(fn) {
@@ -254,9 +282,10 @@ export function live(fn) {
 export function end(note) {
   // inside a batch (Brioche's changes, one step back for them all) the batch ends it
   if (macaron.batch) return;
-  const was = marked()?.json;
+  const mark = marked();
+  const was = mark?.json;
   macaron.mark = null;
-  if (was && was !== snap()) {
+  if (was && was !== snap(mark.all)) {
     macaron.past.push(was);
     if (macaron.past.length > 60) macaron.past.shift();
     macaron.future = [];
@@ -269,7 +298,7 @@ export function end(note) {
 }
 /** Changes made together, as one step back: whatever edits run inside count as one. */
 export async function batch(fn, note) {
-  begin();
+  begin(true);
   macaron.batch = (macaron.batch ?? 0) + 1;
   try {
     return await fn();
@@ -284,9 +313,12 @@ export function edit(fn, note) {
   fn();
   end(note);
 }
+const wholeStep = (json) => JSON.parse(json).kit !== undefined;
 function restore(json) {
-  const { designs, motion } = JSON.parse(json);
+  const { designs, motion, kit, brief, directions, colours, voice, fonts, dos, donts, history } = JSON.parse(json);
   Object.assign(macaron.brand.body, { designs, motion });
+  // a step that held the whole brand puts back the kit, the brief and the story too: what was undone did not happen
+  if (kit) Object.assign(macaron.brand.body, { kit, brief, directions, colours, voice, fonts, dos, donts, ...(history ? { history } : {}) });
   if (!designNow()) macaron.design = designs[0]?.id ?? null;
   if (!layerNow()) macaron.layer = null;
   const d = designNow();
@@ -296,13 +328,15 @@ function restore(json) {
 }
 export function undo() {
   if (!macaron.past.length) return;
-  macaron.future.push(snap());
-  restore(macaron.past.pop());
+  const was = macaron.past.pop();
+  macaron.future.push(snap(wholeStep(was)));
+  restore(was);
 }
 export function redo() {
   if (!macaron.future.length) return;
-  macaron.past.push(snap());
-  restore(macaron.future.pop());
+  const was = macaron.future.pop();
+  macaron.past.push(snap(wholeStep(was)));
+  restore(was);
 }
 
 /** What happened, for the timeline: kept with the brand, newest last. */
@@ -826,13 +860,13 @@ export function refreshThumbs() {
 }
 onLive(refreshThumbs);
 
-/** A design drawn out to a PNG blob, at its format's own size. */
-export async function renderPng(design, format, { scale = 1, t = null, kit = kitNow() } = {}) {
+/** A design drawn out to a picture (a PNG, or a JPG when asked), at its format's own size. */
+export async function renderPng(design, format, { scale = 1, t = null, kit = kitNow(), type = "image/png" } = {}) {
   const problems = await prepare(design, kit);
   if (problems.length) throw new Error(problems[0]);
   const measure = measurer(kit);
   const canvas = renderDesign(design, { format, kit, scale, t, reflow: (d, f) => reflow(d, f, measure) });
-  return new Promise((ok, no) => canvas.toBlob((b) => (b ? ok(b) : no(new Error("The picture could not be made."))), "image/png"));
+  return new Promise((ok, no) => canvas.toBlob((b) => (b ? ok(b) : no(new Error("The picture could not be made."))), type, type === "image/jpeg" ? 0.92 : undefined));
 }
 
 // ---------------------------------------------------------------- export
@@ -844,25 +878,26 @@ const posterTime = (d, b = macaron.brand) => {
   return d.poster ?? (m ? m.duration * 0.85 : null);
 };
 const nameOf = (d, format, ext, b = macaron.brand) => `${b.name}-${d.name}-${format.replace(":", "x")}.${ext}`.toLowerCase().replace(/[^a-z0-9.]+/g, "-");
-/** A design as a PNG, kept on the server and recorded with the brand, then downloaded. */
-export async function exportPng(id = macaron.design, format = macaron.format, { download = true } = {}) {
+/** A design as a picture (a PNG; a JPG when asked), kept on the server and recorded with the brand, then downloaded. */
+export async function exportPng(id = macaron.design, format = macaron.format, { download = true, kind = "png" } = {}) {
   // the brand it was asked in is the brand it is kept with, whatever is open when it is done
   const b = macaron.brand;
   const d = designById(id, b);
   if (!d) return null;
   const key = `export:${d.id}:${format}`;
+  const jpg = kind === "jpg";
   macaron.busy.add(key);
   update();
   try {
-    const blob = await renderPng(d, format, { t: posterTime(d, b), kit: kitOf(b.body) });
-    const kept = await call(`api/macaron/exports?name=${encodeURIComponent(`${b.name} ${d.name} ${format}`)}`, { method: "POST", headers: { "Content-Type": "image/png" }, body: blob });
-    const rec = { id: uid("x"), design: d.id, designName: d.name, format, kind: "png", url: kept.url, file: kept.file, width: kept.width, height: kept.height, bytes: kept.bytes, at: new Date().toISOString() };
+    const blob = await renderPng(d, format, { t: posterTime(d, b), kit: kitOf(b.body), type: jpg ? "image/jpeg" : "image/png" });
+    const kept = await call(`api/macaron/exports?name=${encodeURIComponent(`${b.name} ${d.name} ${format}`)}`, { method: "POST", headers: { "Content-Type": jpg ? "image/jpeg" : "image/png" }, body: blob });
+    const rec = { id: uid("x"), design: d.id, designName: d.name, format, kind: jpg ? "jpg" : "png", url: kept.url, file: kept.file, width: kept.width, height: kept.height, bytes: kept.bytes, at: new Date().toISOString() };
     b.body.exports.unshift(rec);
     b.body.exports.splice(200);
-    d.thumb = { file: kept.file, url: kept.url, format };
-    remember({ kind: "export", title: `${d.name} exported`, note: `${FORMATS[format].name} ${kept.width}×${kept.height} PNG`, src: kept.url, designId: d.id }, b);
+    if (!jpg) d.thumb = { file: kept.file, url: kept.url, format };
+    remember({ kind: "export", title: `${d.name} exported`, note: `${FORMATS[format].name} ${kept.width}×${kept.height} ${jpg ? "JPG" : "PNG"}`, src: kept.url, designId: d.id }, b);
     touched(b);
-    if (download) saveAs(`${kept.url}?download=${nameOf(d, format, "png", b)}`);
+    if (download) saveAs(`${kept.url}?download=${nameOf(d, format, jpg ? "jpg" : "png", b)}`);
     return rec;
   } catch (e) {
     toast(e.message, { tone: "crit" });
@@ -937,7 +972,7 @@ export function removeMotion(id) {
  * Renders a motion piece: every frame drawn by drawDesign() at its time, sent to the server one by one, and
  * encoded there as an H.264 video. The poster frame is exported as a picture too.
  */
-export async function renderMotion(id = macaron.motion) {
+export async function renderMotion(id = macaron.motion, { container = "mp4", download = false } = {}) {
   const b = macaron.brand;
   const m = b?.body.motion.find((x) => x.id === id);
   const d = m && designById(m.design, b);
@@ -972,14 +1007,15 @@ export async function renderMotion(id = macaron.motion) {
     await Promise.all(pending);
     macaron.progress.done = total;
     update();
-    const video = await send("api/macaron/motion", "POST", { job, fps: m.fps, name: `${b.name} ${m.name} ${m.format}`, sound: m.sound });
+    const video = await send("api/macaron/motion", "POST", { job, fps: m.fps, name: `${b.name} ${m.name} ${m.format}`, sound: m.sound, container });
     // the poster is a picture of the piece when it is whole
     const posterT = d.poster ?? m.duration * 0.85;
     drawDesign(ctx, d, { w: f.w, h: f.h, format: m.format, kit, t: posterT, reflow: reflowIn });
     const poster = await call(`api/macaron/exports?name=${encodeURIComponent(`${m.name} poster`)}`, { method: "POST", headers: { "Content-Type": "image/png" }, body: await new Promise((ok) => canvas.toBlob(ok, "image/png")) });
-    m.render = { url: video.url, file: video.file, width: video.width, height: video.height, duration: video.duration, bytes: video.bytes, format: m.format, sound: video.sound, poster: poster.url, at: new Date().toISOString() };
-    b.body.exports.unshift({ id: uid("x"), design: d.id, designName: m.name, format: m.format, kind: "mp4", url: video.url, file: video.file, width: video.width, height: video.height, bytes: video.bytes, duration: video.duration, poster: poster.url, at: m.render.at });
-    remember({ kind: "export", title: `${m.name} rendered`, note: `${video.width}×${video.height} · ${video.duration} s`, src: poster.url, designId: d.id }, b);
+    m.render = { url: video.url, file: video.file, width: video.width, height: video.height, duration: video.duration, bytes: video.bytes, format: m.format, sound: video.sound, container, poster: poster.url, at: new Date().toISOString() };
+    b.body.exports.unshift({ id: uid("x"), design: d.id, designName: m.name, format: m.format, kind: container, url: video.url, file: video.file, width: video.width, height: video.height, bytes: video.bytes, duration: video.duration, poster: poster.url, at: m.render.at });
+    remember({ kind: "export", title: `${m.name} rendered`, note: `${video.width}×${video.height} · ${video.duration} s${container === "webm" ? " · WEBM" : ""}`, src: poster.url, designId: d.id }, b);
+    if (download) saveAs(`${video.url}?download=${nameOf(d, m.format, container, b)}`);
     return m.render;
   } catch (e) {
     call(`api/macaron/frames?job=${job}`, { method: "DELETE" }).catch(() => {});
@@ -988,6 +1024,93 @@ export async function renderMotion(id = macaron.motion) {
   } finally {
     macaron.progress = null;
     touched(b);
+  }
+}
+
+// ---------------------------------------------------------------- the workspaces
+
+export function setSpace(id) {
+  if (!SPACES.includes(id) || macaron.space === id) return;
+  macaron.space = id;
+  try {
+    localStorage.setItem(SPACE, id);
+  } catch {}
+  update();
+}
+/** The colour the logos' big tiles are shown in (the marquee's tiles pick it). */
+export const setColourway = (tone) => ((macaron.colourway = tone), update());
+/** The logo files of the kit, as they are to be downloaded. */
+export const kitFiles = () => kitNow().logos.map((l) => ({ url: l.url, name: l.url.split("/").pop() }));
+
+/** The directions tried for the mark and the look: one of them is picked. */
+export function addDirection({ name = "A new direction", note = "", bg = "", logo } = {}) {
+  const b = macaron.brand;
+  const kit = kitNow();
+  const d = { id: uid("dir"), name: String(name).slice(0, 40), note: String(note).slice(0, 140), bg, logo: logo ?? kit.logos.find((l) => l.kind === "wordmark")?.id ?? "", picked: false };
+  (b.body.directions ??= []).push(d);
+  remember({ kind: "concept", title: `Direction: ${d.name}`, note: d.note }, b);
+  touched(b);
+  return d;
+}
+export function setDirection(id, patch) {
+  Object.assign((macaron.brand.body.directions ?? []).find((x) => x.id === id) ?? {}, patch);
+  save();
+}
+export function pickDirection(id) {
+  const list = macaron.brand.body.directions ?? [];
+  const d = list.find((x) => x.id === id);
+  if (!d) return;
+  for (const x of list) x.picked = x.id === id;
+  remember({ kind: "decision", title: `${d.name} picked`, note: d.note });
+  touched();
+}
+export function removeDirection(id) {
+  macaron.brand.body.directions = (macaron.brand.body.directions ?? []).filter((x) => x.id !== id);
+  touched();
+}
+/** A line of one's own in the story. */
+export function addNote(title, note = "") {
+  remember({ kind: "note", title, note });
+  touched();
+}
+/** The day of the week a post goes out (none to take it off the plan). */
+export function planDesign(id, day) {
+  const d = designById(id);
+  if (!d) return;
+  edit(() => {
+    if (day) d.plan = { day };
+    else delete d.plan;
+  }, day ? `Planned for ${day}` : "Taken off the plan");
+}
+
+/** Every post of a scope, in every format it has of its own, as the kinds chosen: pictures and video, each downloaded. */
+export async function exportMany() {
+  const b = macaron.brand;
+  if (!b || macaron.bulk || macaron.progress) return;
+  const kinds = macaron.exportKinds;
+  const pics = ["png", "jpg"].filter((k) => kinds[k]);
+  const clips = ["mp4", "webm"].filter((k) => kinds[k]);
+  const scope = macaron.exportScope;
+  const pool = b.body.designs.filter((d) => !d.variant && (scope === "all" || (scope === "week" ? d.plan?.day : ["approved", "scheduled"].includes(d.status))));
+  const jobs = [];
+  for (const d of pool) {
+    const m = b.body.motion.find((x) => x.design === d.id);
+    if (d.motion) for (const k of clips) m && jobs.push(() => renderMotion(m.id, { container: k, download: true }));
+    for (const f of d.motion ? [d.format] : ownFormats(d)) for (const k of pics) jobs.push(() => exportPng(d.id, f, { download: true, kind: k }));
+  }
+  if (!jobs.length) return void toast("Nothing to export for these choices.");
+  macaron.bulk = { done: 0, total: jobs.length };
+  update();
+  try {
+    for (const run of jobs) {
+      await run();
+      macaron.bulk.done++;
+      update();
+    }
+    toast(`${jobs.length} ${jobs.length === 1 ? "file" : "files"} made and downloaded.`);
+  } finally {
+    macaron.bulk = null;
+    update();
   }
 }
 

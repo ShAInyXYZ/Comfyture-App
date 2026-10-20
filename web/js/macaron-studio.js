@@ -14,6 +14,7 @@ import {
 } from "./macaron.js";
 import { mcicon, key, seg, row, slider, numberField, textField, swatches, chooseFiles, chip, arming, isArmed, fill } from "./macaron-ui.js";
 import { askMacaron } from "./macaron-assist.js";
+import { openWin } from "./macaron-win.js";
 
 const TYPE_ICON = { text: "text", image: "assets", logo: "logo", shape: "shape" };
 const r4 = (v) => Math.round(v * 10000) / 10000;
@@ -30,7 +31,7 @@ export function pickAsset(anchor, onPick, { title = "A picture" } = {}) {
     document.removeEventListener("keydown", esc, true);
   };
   const outside = (e) => !pop.contains(e.target) && !anchor.contains(e.target) && close();
-  const esc = (e) => e.key === "Escape" && close();
+  const esc = (e) => e.key === "Escape" && (e.stopPropagation(), close());
   const choose = async (fn) => {
     close();
     try {
@@ -247,11 +248,12 @@ export function studioSection() {
   // ---- keys: the arrows nudge, Delete removes, undo and redo
   document.addEventListener("keydown", (e) => {
     if (location.hash.replace(/^#\/?/, "").split("?")[0] !== "macaron" || e.target.closest?.("input, textarea, select, [contenteditable], .mc-pop")) return;
-    const d = designNow();
-    if (!d) return;
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.key.toLowerCase() === "z") return (e.preventDefault(), e.shiftKey ? redo() : undo());
     if (mod && e.key.toLowerCase() === "y") return (e.preventDefault(), redo());
+    // the layers' keys are the editor's: only while its window is open
+    const d = designNow();
+    if (!d || macaron.win !== "editor") return;
     const l = layoutNow().layers.find((x) => x.id === macaron.layer);
     if (!l) return;
     if (mod && e.key.toLowerCase() === "d") return (e.preventDefault(), duplicateLayer(l.id));
@@ -308,7 +310,7 @@ export function studioSection() {
         h("button.key.is-sm", { type: "button", title: "Brioche sets type roles, colours and the logo from the kit and keeps everything inside the safe zones", on: { click: () => { const did = applyKitNow(); toast(did.length ? `Kit applied: ${did.join(", ").toLowerCase()}.` : "Already on brand."); } } }, mcicon("kit"), "Apply the kit"),
         dropdown({ label: "Layout", value: d.layout ?? "", items: [{ value: "", label: "Layout…", short: "Layout" }, ...Object.entries(LAYOUTS).map(([k, v]) => ({ value: k, label: v }))], onChange: (v) => v && applyLayout(v), width: "fit", note: "Brioche lays the layers out by what they are for" }),
         h("button.key.is-sm", { type: "button", title: "Brioche writes another take on this design, and saves it as a variation", on: { click: () => askMacaron("Make a variation of this design with different copy: keep the voice, shorter headline.") } }, sprite("variations"), "Vary"),
-        h("button.key.is-sm", { type: "button", title: "A picture behind the design, from an image model", on: { click: () => document.getElementById("mc-assets")?.scrollIntoView({ behavior: "smooth" }) } }, sprite("image-generate"), "Picture")),
+        h("button.key.is-sm", { type: "button", title: "A picture behind the design, from an image model", on: { click: () => ((macaron.productTab = "make"), openWin("product")) } }, sprite("image-generate"), "Picture")),
       h("span.spacer"),
       h(`button.key.is-accent${busy ? ".is-busy" : ""}`, { type: "button", disabled: busy, title: `Export ${FORMATS[macaron.format].name} as a PNG, ${frameOf(macaron.format).w}×${frameOf(macaron.format).h}`, on: { click: () => exportPng() } }, sprite("export"), busy ? "Exporting" : `PNG ${macaron.format}`),
       others.length ? h("button.key", { type: "button", title: "Export every format as PNGs", on: { click: async () => { for (const f of [d.format, ...FORMAT_KEYS.filter((x) => x !== d.format)]) await exportPng(d.id, f); } } }, sprite("export"), "All") : null);
@@ -478,6 +480,8 @@ export function studioSection() {
   }
 
   onLive(() => {
+    // (nothing to draw while no design is open: a brand with none, or one whose last design was just undone)
+    if (!designNow()) return;
     draw();
     syncInspector();
   });

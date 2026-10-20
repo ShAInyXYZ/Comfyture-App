@@ -15,13 +15,16 @@ import sys
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "web/brand/macaron/comfyture")
+PRODUCT = os.path.join(ROOT, "web/brand/macaron")
+OUT = os.path.join(PRODUCT, "comfyture")
 GEN = os.environ.get("GEN_DIR", os.path.join(ROOT, "docs-private/goals/overnight/macaron-gen"))
+# the pictures made for Macaron v2 with Codex's image generation (the workspace tiles, Brioche's portrait, the moodboard, ...)
+GEN2 = os.environ.get("GEN_V2", os.path.join(ROOT, "docs-private/goals/overnight/macaron-v2-gen"))
 
 
-def save(im, name, quality=84, width=None):
+def save(im, name, quality=84, width=None, root=None):
     """A picture as WebP (kept clear where it has alpha), at most `width` wide."""
-    path = os.path.join(OUT, name)
+    path = os.path.join(root or OUT, name)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if width and im.width > width:
         im = im.resize((width, round(im.height * width / im.width)), Image.LANCZOS)
@@ -92,7 +95,55 @@ def generated():
         save(Image.open(p).convert("RGB"), "plum-macro.webp", 84, 1080)
 
 
-STEPS = {"app": app, "jar": jar, "brioche": brioche, "made": made, "refs": refs, "trends": trends, "generated": generated}
+def svg(name, width):
+    """A brand file (SVG) as a clear PNG of a width, so it can be laid on a picture exactly as it is supplied."""
+    import io
+    import cairosvg
+
+    data = cairosvg.svg2png(url=os.path.join(ROOT, "web/brand", name), output_width=width)
+    return Image.open(io.BytesIO(data)).convert("RGBA")
+
+
+def laid(paper, mark, centre, angle, ink, strength=0.9):
+    """A brand file pressed into a photograph of paper: its colour multiplied in, so the grain shows through."""
+    from PIL import ImageChops, ImageFilter
+
+    mark = mark.rotate(angle, expand=True, resample=Image.BICUBIC)
+    alpha = Image.new("L", paper.size, 0)
+    alpha.paste(mark.getchannel("A").point(lambda a: round(a * strength)), (round(centre[0] - mark.width / 2), round(centre[1] - mark.height / 2)))
+    alpha = alpha.filter(ImageFilter.GaussianBlur(0.8))
+    colour = Image.composite(Image.new("RGB", paper.size, ink), Image.new("RGB", paper.size, (255, 255, 255)), alpha)
+    return ImageChops.multiply(paper, colour)
+
+
+def v2():
+    """The pictures of Macaron v2. The product's own (web/brand/macaron/): the three workspace tiles and Brioche's portrait.
+    Comfyture's (comfyture/v2/): the moodboard, the three directions, the brief's notebook with the real wordmark laid on its
+    page, and the counter the product stands on. Each is an image that Codex made once; they are kept as small WebP files."""
+    g = lambda n: os.path.join(GEN2, n)
+    for name in ["idea", "kit", "content"]:
+        if os.path.exists(g(f"tile-{name}.png")):
+            save(trimmed(Image.open(g(f"tile-{name}.png")).convert("RGBA"), 0.03), f"tile-{name}.webp", 90, 360, root=PRODUCT)
+    if os.path.exists(g("portrait.png")):
+        save(Image.open(g("portrait.png")).convert("RGB"), "brioche-portrait.webp", 88, 384, root=PRODUCT)
+    for i in range(1, 7):
+        if os.path.exists(g(f"mb-{i}.png")):
+            save(Image.open(g(f"mb-{i}.png")).convert("RGB"), f"v2/mood-{i}.webp", 82, 900)
+    for name in ["warm", "craft", "night"]:
+        if os.path.exists(g(f"dir-{name}.png")):
+            save(Image.open(g(f"dir-{name}.png")).convert("RGB"), f"v2/dir-{name}.webp", 84, 960)
+    if os.path.exists(g("product-counter.png")):
+        save(Image.open(g("product-counter.png")).convert("RGB"), "v2/counter.webp", 82, 1100)
+    if os.path.exists(g("brief-notebook.png")):
+        paper = Image.open(g("brief-notebook.png")).convert("RGB")
+        ink = (0x49, 0x37, 0x8B)
+        # the left page: the mark above the wordmark, turned to the page's own tilt
+        paper = laid(paper, svg("mark-plum.svg", 118), (684, 462), 7, ink)
+        paper = laid(paper, svg("wordmark-plum.svg", 400), (700, 590), 7, ink)
+        save(paper, "v2/brief-notebook.webp", 84, 1100)
+
+
+STEPS = {"app": app, "jar": jar, "brioche": brioche, "made": made, "refs": refs, "trends": trends, "generated": generated, "v2": v2}
 if __name__ == "__main__":
     for step in sys.argv[1:] or STEPS:
         STEPS[step]()

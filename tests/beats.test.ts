@@ -2,7 +2,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { analyseBeats, parseBeats, gridBeats, gridTimes, beatsFromTimes, halveBeats, doubleBeats, nearestBeat } from "../web/js/beats.js";
+import { analyseBeats, parseBeats, gridBeats, gridTimes, beatsFromTimes, halveBeats, doubleBeats, nearestBeat, findDrop, findLoud } from "../web/js/beats.js";
 import { song } from "./synth.ts";
 
 /** How far each found beat is from the real one nearest it, and which real beat the first bar line is. */
@@ -76,4 +76,31 @@ test("a grid, a list of times, and the octave fixes", () => {
   assert.equal(nearestBeat([0, 1, 2, 3], 1.4), 1);
   assert.equal(nearestBeat([0, 1, 2, 3], 1.6), 2);
   assert.equal(nearestBeat([], 1), -1);
+});
+
+/** A sound of `parts`: [seconds, loudness] each, as a noise burst train (so the loudness is what it is, whatever the tempo). */
+function levels(parts: [number, number][], rate = 8000) {
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff) * 2 - 1;
+  const out: number[] = [];
+  for (const [seconds, level] of parts) for (let i = 0; i < seconds * rate; i++) out.push(rnd() * level);
+  return new Float32Array(out);
+}
+
+test("the drop is where the loudness lifts, and a sound that stays level has none", () => {
+  const rate = 8000;
+  const x = levels([[10, 0.05], [12, 0.6]], rate);
+  const drop = findDrop(x, rate);
+  assert.ok(drop !== null && Math.abs(drop - 10) <= 0.75, `the drop is at ${drop} s (10 s made)`);
+  assert.equal(findDrop(levels([[24, 0.3]], rate), rate), null, "even music has no drop");
+  assert.equal(findDrop(levels([[3, 0.1], [3, 0.8]], rate), rate), null, "a few seconds are too short to have one");
+});
+
+test("the loudest stretch is where the loudness is greatest over the length asked", () => {
+  const rate = 8000;
+  // quiet, loud for 6 s, quiet, louder for 6 s (16 to 22 s): the 8 s asked for hold all of the louder part, so begin between 14 and 16 s
+  const x = levels([[4, 0.05], [6, 0.4], [6, 0.05], [6, 0.7], [8, 0.05]], rate);
+  const at = findLoud(x, rate, 8)!;
+  assert.ok(at >= 14 && at <= 16.1, `the loudest 8 s begin at ${at} s (the loudest part runs from 16 to 22 s)`);
+  assert.equal(findLoud(levels([[5, 0.4]], rate), rate, 15), null, "a sound shorter than the stretch has none");
 });

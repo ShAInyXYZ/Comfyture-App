@@ -527,26 +527,36 @@ function thumbOf(s, from) {
 function renderTools() {
   const sh = ed.shell;
   const z = cut.zoom;
+  // on Jam the effects and the stickers are bentos of their own, and the first edit is made with the part: the toolbar is the cut's
+  const jam = ed.mode === "jam";
   const fxKey = (kind, label) => h("button.ctl-tool.cut-fx-key", { type: "button", title: `${label} on the beat, from the playhead`, "aria-label": label, on: { click: () => addFx(kind) } }, FX_ICON[kind]());
   sh.tools.replaceChildren(
+    ...(jam ? [
+      h("button.ctl-tool", { type: "button", title: "Undo — Ctrl+Z", "aria-label": "Undo", disabled: !cut.history.length, on: { click: () => undo() } }, sprite("edit-undo")),
+      h("button.ctl-tool", { type: "button", title: "Redo — Ctrl+Shift+Z", "aria-label": "Redo", disabled: !cut.future.length, on: { click: () => redo() } }, sprite("edit-redo")),
+      h("i.cut-tool-sep"),
+    ] : []),
     h("div.cut-tool-group", { role: "group", "aria-label": "Tool" },
       h("button.ctl-tool", { type: "button", "aria-pressed": String(cut.tool === "select"), title: "Select and move — V", "aria-label": "Select", on: { click: () => ((cut.tool = "select"), renderTimeline()) } }, sprite("web-cursor")),
       h("button.ctl-tool", { type: "button", "aria-pressed": String(cut.tool === "blade"), title: "Blade: click a clip to cut it there — B", "aria-label": "Blade", on: { click: () => ((cut.tool = "blade"), renderTimeline()) } }, sprite("edit-scissors"))),
     h("button.ctl-tool", { type: "button", title: "Cut at the playhead — S", "aria-label": "Cut at the playhead", on: { click: () => splitAt(cut.playhead) } }, sprite("edit-playhead")),
+    ...(jam ? [h("button.ctl-tool", { type: "button", title: "Take away what is picked — Delete", "aria-label": "Take away", disabled: !cut.selected, on: { click: () => removeItem() } }, icon("trash"))] : []),
     h("button.ctl-tool", { type: "button", title: "A title at the playhead", "aria-label": "Add a title", on: { click: () => addTitle("Title") } }, h("b.cut-t", {}, "T")),
     h("button.ctl-tool", { type: "button", "aria-pressed": String(cut.snap), title: "Snap to the playhead and to clip edges", "aria-label": "Snap", on: { click: () => ((cut.snap = !cut.snap), renderTimeline()) } }, sprite("frame-first")),
-    h("div.cut-tool-group.cut-fx-group", { role: "group", "aria-label": "Beat effects", title: "Effects that fire on the beats" },
-      ...FX_KINDS.map(([kind, label]) => fxKey(kind, label))),
-    h("button.ctl-tool", { type: "button", "aria-pressed": String(ed.tray), title: "Stickers", "aria-label": "Stickers", on: { click: () => ((ed.tray = !ed.tray), loadStickers(), renderTimeline()) } }, icon("image")),
+    ...(jam ? [] : [
+      h("div.cut-tool-group.cut-fx-group", { role: "group", "aria-label": "Beat effects", title: "Effects that fire on the beats" },
+        ...FX_KINDS.map(([kind, label]) => fxKey(kind, label))),
+      h("button.ctl-tool", { type: "button", "aria-pressed": String(ed.tray), title: "Stickers", "aria-label": "Stickers", on: { click: () => ((ed.tray = !ed.tray), loadStickers(), renderTimeline()) } }, icon("image")),
+    ]),
     h("button.ctl-tool", { type: "button", title: "A line of lyrics at the playhead", "aria-label": "Add a line of lyrics", on: { click: () => addLyric("New line") } }, icon("pencil")),
     h("button.ctl-tool.cut-beats-key", { type: "button", title: "The beats: find them, move them, cut on them", "aria-label": "Beats", on: { click: () => (select(null), (cut.beat = null), document.dispatchEvent(new Event("editor:inspect"))) } }, sprite("audio-music"), h("span", {}, "Beats")),
-    h("button.key.is-sm.cut-draft", { type: "button", disabled: cut.busy.has("draft"), title: "A first edit by the beat, no words needed: cuts on the beat, a zoom on every bar, karaoke lyrics", on: { click: () => draftEdit() } }, sprite("prompt-enhance"), cut.busy.has("draft") ? "Drafting…" : "Draft edit"),
+    ...(jam ? [] : [h("button.key.is-sm.cut-draft", { type: "button", disabled: cut.busy.has("draft"), title: "A first edit by the beat, no words needed: cuts on the beat, a zoom on every bar, karaoke lyrics", on: { click: () => draftEdit() } }, sprite("prompt-enhance"), cut.busy.has("draft") ? "Drafting…" : "Draft edit")]),
     h("label.cut-zoom", { title: "Zoom" }, icon("search"), h("input", { type: "range", min: 8, max: 200, step: 1, value: z, "aria-label": "Zoom", on: { input: (e) => ((cut.zoom = Number(e.target.value)), renderTimeline()) } })),
     h("button.ctl-tool", { type: "button", title: "Fit the film in the timeline", "aria-label": "Fit", on: { click: () => fit() } }, icon("expand")),
     h("span.spacer"),
     h("span.cut-total", {}, tc(filmLength())));
-  sh.tray.hidden = !ed.tray;
-  if (ed.tray) renderTray();
+  sh.tray.hidden = jam || !ed.tray;
+  if (!jam && ed.tray) renderTray();
 }
 
 /** The stickers to put on the frame: the library's, and a picture of your own. */
@@ -706,7 +716,7 @@ function lane(t, width) {
     if (t.main && i > 0) {
       const join = it.join === "dissolve" || it.join === "whip" ? it.join : "cut";
       const next = { cut: "dissolve", dissolve: "whip", whip: "cut" }[join];
-      el.append(h("button.cut-join", { type: "button", className: join === "cut" ? "" : `is-${join}`, style: { left: `${start * z}px` }, title: `${{ cut: "Cut", dissolve: "Dissolve", whip: "Whip up" }[join]} — click for ${{ cut: "a cut", dissolve: "a dissolve", whip: "a whip up" }[next]}`, "aria-label": "Join", on: { click: (e) => (e.stopPropagation(), setJoin(it.id, next)) } }));
+      el.append(h("button.cut-join", { type: "button", className: join === "cut" ? "" : `is-${join}`, dataset: { join }, style: { left: `${start * z}px` }, title: `${{ cut: "Cut", dissolve: "Dissolve", whip: "Whip up" }[join]} — click for ${{ cut: "a cut", dissolve: "a dissolve", whip: "a whip up" }[next]}`, "aria-label": "Join", on: { click: (e) => (e.stopPropagation(), setJoin(it.id, next)) } }));
     }
   });
   // dropped from the bin: at the time it's dropped on
@@ -917,7 +927,7 @@ export function drawEditor(mode = "cut") {
 // keys on the page: Space plays, S cuts, V and B pick a tool, Delete removes
 document.addEventListener("keydown", (e) => {
   const page = document.body.dataset.page;
-  if ((page !== "cut" && page !== "jam") || !cut.project || document.body.classList.contains("has-window") || !ed.shell) return;
+  if ((page !== "cut" && page !== "jam") || !cut.project || document.body.classList.contains("has-window") || document.body.classList.contains("has-jam-window") || !ed.shell) return;
   if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
   const k = e.key.toLowerCase();
   if ((e.ctrlKey || e.metaKey) && k === "z") return e.preventDefault(), e.shiftKey ? redo() : undo();

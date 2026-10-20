@@ -132,12 +132,15 @@ onChange((scopes) => {
 });
 
 /** Shows the section the address names, and draws what changed while it was hidden. */
-/** The assistant's bar floats over the Shot's desk and docks under the Stage's viewport, the Cut's timeline, Jam's page. */
+/**
+ * The assistant's bar floats over the Shot's desk and docks under the Stage's viewport, the Cut's timeline, Jam's page.
+ * Mixer's and Utensils' pages redraw all they hold, so their bar floats from the body, like the Shot's.
+ */
 function dockAssistant(page = currentPage()) {
   const bar = $("assistant");
   if (dockMacaron(bar, page)) return;
-  const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : page === "cut" ? $("cut-chat") : page === "jam" ? $("jam-chat") : $("page-shot");
-  bar.hidden = !slot || !["shot", "stage", "story", "cut", "jam"].includes(page);
+  const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : page === "cut" ? $("cut-chat") : page === "jam" ? $("jam-chat") : page === "mixer" || page === "utensils" ? document.body : $("page-shot");
+  bar.hidden = !slot || !["shot", "stage", "story", "cut", "jam", "mixer", "utensils"].includes(page);
   if (slot && bar.parentElement !== slot) slot.append(bar);
   bar.classList.toggle("is-docked", page === "stage" || page === "story" || page === "cut" || page === "jam");
   pending.add("assistant");

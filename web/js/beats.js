@@ -310,6 +310,76 @@ export async function detectBeats(url, { from = 0, length = 0, at = 0, hint = 0 
   return { ...found, times: found.times.map((t) => ms(t + at)) };
 }
 
+// ---------------------------------------------------------------- the drop and the loudest stretch
+
+/** A sound's loudness, a quarter of a second at a time (the root of the mean square). */
+function loudness(samples, rate) {
+  const hop = Math.max(1, Math.round(rate / 4));
+  const n = Math.floor(samples.length / hop);
+  const e = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    let sum = 0;
+    for (let k = i * hop; k < (i + 1) * hop; k++) sum += samples[k] * samples[k];
+    e[i] = Math.sqrt(sum / hop);
+  }
+  return e;
+}
+
+/**
+ * The drop of a sound: where its loudness lifts most, the next four seconds against the four before. Answers
+ * a time in seconds (to a quarter), or null when the sound has no such lift (under a few seconds, or even).
+ */
+export function findDrop(samples, rate) {
+  const e = loudness(samples, rate);
+  const W = 16;
+  if (e.length < W * 2 + 2) return null;
+  const sum = new Float64Array(e.length + 1);
+  e.forEach((v, i) => (sum[i + 1] = sum[i] + v));
+  const mean = (a, b) => (sum[b] - sum[a]) / (b - a);
+  let best = -1;
+  let top = 0;
+  for (let i = W; i + W <= e.length; i++) {
+    const before = mean(i - W, i);
+    const after = mean(i, i + W);
+    const lift = (after - before) / (after + before + 1e-9);
+    if (lift > top) (top = lift), (best = i);
+  }
+  if (best < 0 || top < 0.15) return null;
+  // the attack itself: the biggest single step up within a second of it
+  let at = best;
+  let step = -Infinity;
+  for (let i = Math.max(1, best - 4); i <= Math.min(e.length - 1, best + 4); i++) if (e[i] - e[i - 1] > step) (step = e[i] - e[i - 1]), (at = i);
+  return at / 4;
+}
+
+/** Where the loudest stretch of `seconds` begins (its mean loudness the greatest), in seconds; null for a sound shorter than it. */
+export function findLoud(samples, rate, seconds = 15) {
+  const e = loudness(samples, rate);
+  const W = Math.round(seconds * 4);
+  if (e.length < W + 4) return null;
+  let sum = 0;
+  for (let i = 0; i < W; i++) sum += e[i];
+  let best = 0;
+  let top = sum;
+  for (let i = W; i < e.length; i++) {
+    sum += e[i] - e[i - W];
+    if (sum > top) (top = sum), (best = i - W + 1);
+  }
+  return best / 4;
+}
+
+/** A track's drop and its loudest stretch of `seconds`, heard in the browser: { drop, loud } (each a time or null). */
+export async function hearLoudness(url, seconds = 15) {
+  const bytes = await (await fetch(url)).arrayBuffer();
+  const Ctx = window.OfflineAudioContext ?? window.webkitOfflineAudioContext;
+  const audio = await new Ctx(1, 1, 8000).decodeAudioData(bytes);
+  const left = audio.getChannelData(0);
+  const right = audio.numberOfChannels > 1 ? audio.getChannelData(1) : null;
+  const mono = new Float32Array(left.length);
+  for (let i = 0; i < mono.length; i++) mono[i] = right ? (left[i] + right[i]) / 2 : left[i];
+  return { drop: findDrop(mono, audio.sampleRate), loud: findLoud(mono, audio.sampleRate, seconds) };
+}
+
 // ---------------------------------------------------------------- fixing a tempo that was heard wrong
 
 /** Half the tempo: every other beat, from the first beat of a bar. */

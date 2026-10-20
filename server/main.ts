@@ -18,9 +18,11 @@ import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
 import { readStory, storyBrief, storyPrompt, STORY_ASSIST_BRIEF, storyAssistPrompt, readStoryAssist, IDEAS_BRIEF, ideasPrompt, readIdeas, type StoryStep } from "./story.ts";
 import { isRouterImage, routerImages, routerDraw } from "./router-images.ts";
 import { isRouterVideo, routerVideos } from "./router-videos.ts";
-import { planCut, ffmpegArgs, frameSize, cutBrief, cutPrompt, readCutAnswer, type CutBody, type CutItem, type Source } from "./cut.ts";
+import { planCut, ffmpegArgs, frameSize, cutBrief, jamBrief, cutPrompt, readCutAnswer, type CutBody, type CutItem, type Source } from "./cut.ts";
 import { splitEdit } from "./mixer.ts";
-import { MACARON_BRIEF, MACARON_TOOL, macaronPrompt, readMacaronAnswer, keepExport, keepFrame, encodeFrames, dropFrames, frameJob, validJob, sweepFrames, ledgerLine } from "./macaron.ts";
+import { macaronBrief, macaronTool, spaceOf, macaronPrompt, readMacaronAnswer, topUpBrand, keepExport, keepFrame, encodeFrames, dropFrames, frameJob, validJob, sweepFrames, ledgerLine } from "./macaron.ts";
+import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
+import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer } from "./utensils-assist.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -409,6 +411,23 @@ async function write(model: string, brief: string, prompt: string, opts: { maxLe
   return routerAsk(model, brief, prompt, { maxTokens: Math.max(1024, opts.maxLength ?? 3000), temperature: opts.temperature ?? 0.7, image });
 }
 
+/** A pet's answer (Praline's, Truffle's): through its tool on Claude, so it is data; as JSON in plain text on the others. */
+async function petAnswer(model: string, brief: string, tool: { name: string; description: string; input_schema: unknown }, prompt: string) {
+  const forced = onRouter(model) && takesTools(model);
+  const system = forced ? brief : `${brief}\n\nAnswer with JSON only, no other words: {"reply": "...", "actions": [{"op": "...", ...}]}`;
+  return onRouter(model)
+    ? routerAsk(model, system, prompt, { maxTokens: 3000, temperature: 0.3, ...(forced ? { tool } : {}) })
+    : engine.write(system, prompt, { maxLength: 1200, temperature: 0.3 });
+}
+/** What a pet's page said to it: the last turns as they were, each with what the app did for it. */
+function petTurns(messages: unknown) {
+  return (Array.isArray(messages) ? messages : []).slice(-12).map((m: any) => ({
+    role: m?.role === "assistant" ? "assistant" : "user",
+    text: text(m?.text, 1200),
+    did: Array.isArray(m?.did) ? m.did.slice(0, 8).map((d: unknown) => text(d, 80)).filter(Boolean) : undefined,
+  })).filter((m) => m.text);
+}
+
 /** The films rendered in Cut, newest first. */
 async function listReels() {
   const dir = join(data, "reels");
@@ -779,7 +798,14 @@ async function seedBrands() {
   for (const file of (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith(".brand.json")).sort()) {
     try {
       const brand: Project = JSON.parse(await readFile(join(dir, file), "utf8"));
-      if (!/^[\w-]+$/.test(brand.id) || seeded.includes(brand.id)) continue;
+      if (!/^[\w-]+$/.test(brand.id)) continue;
+      if (seeded.includes(brand.id)) {
+        // one an earlier version put in gains what the newer one has, once (never what a person wrote, changed or took out)
+        const have = await readProject("brands", brand.id);
+        const body = have && topUpBrand(have.body, brand.body);
+        if (have && body) await writeProject("brands", { ...have, body, updatedAt: new Date().toISOString() });
+        continue;
+      }
       seeded.push(brand.id);
       added = true;
       // the newest one is the one that opens
@@ -1002,8 +1028,10 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const input = await jsonBody(req, 2 * 1024 * 1024);
     const turns = (Array.isArray(input.messages) ? input.messages : []).map((m: any) => ({ role: m?.role === "assistant" ? "assistant" : "user", text: text(m?.text, 1200) })).filter((m: any) => m.text);
     if (!turns.length) throw bad("Say what to change.");
-    const reply = await write(pickLlm(input.model), cutBrief(await stickerIds()), cutPrompt(input.cut, turns), { maxLength: 1600, temperature: 0.4 });
-    return json(res, 200, readCutAnswer(reply));
+    // asked from Jam, it is Pickle's: Jam's work only, and what costs credits is left to the keys
+    const brief = input.product === "jam" ? jamBrief(await stickerIds()) : cutBrief();
+    const reply = await write(pickLlm(input.model), brief, cutPrompt(input.cut, turns), { maxLength: 1600, temperature: 0.4 });
+    return json(res, 200, readCutAnswer(reply, input.product === "jam" ? "jam" : undefined));
   }
   const cutRender = /^\/api\/cuts\/([\w-]+)\/render$/.exec(path);
   if (cutRender && method === "POST") {
@@ -1220,17 +1248,18 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   // Macaron: the brands that come with the app, Brioche, new pictures, and what a design leaves as
   if (path === "/api/brands" && method === "GET") await (seedingBrands ??= seedBrands().catch((e) => console.warn("brands: the examples were not added:", e.message)));
   if (path === "/api/macaron/assist" && method === "POST") {
-    // Brioche reads the brand and the design open and answers with the changes to make
+    // Brioche reads the workspace that is open (its things only) and answers with the changes to make there
     const input = await jsonBody(req, 2 * 1024 * 1024);
+    const space = spaceOf(input.space);
     const turns = (Array.isArray(input.messages) ? input.messages : []).map((m: any) => ({ role: m?.role === "assistant" ? "assistant" : "user", text: text(m?.text, 1200) })).filter((m: any) => m.text);
     if (!turns.length) throw bad("Say what to change.");
     const model = pickLlm(input.model);
-    const prompt = macaronPrompt(input.brand ?? {}, turns);
+    const prompt = macaronPrompt({ ...(input.brand ?? {}), space, preset: text(input.preset, 24) }, turns);
     const tool = onRouter(model) && takesTools(model);
-    const brief = tool ? MACARON_BRIEF : `${MACARON_BRIEF}\n\nAnswer with JSON only, no other words: {"reply": "...", "actions": [{"op": "...", ...}]}`;
-    const reply = onRouter(model) ? await routerAsk(model, brief, prompt, { maxTokens: 4000, temperature: 0.5, ...(tool ? { tool: MACARON_TOOL } : {}) }) : await engine.write(brief, prompt, { maxLength: 2400, temperature: 0.4 });
+    const brief = tool ? macaronBrief(space) : `${macaronBrief(space)}\n\nAnswer with JSON only, no other words: {"reply": "...", "actions": [{"op": "...", ...}]}`;
+    const reply = onRouter(model) ? await routerAsk(model, brief, prompt, { maxTokens: 4000, temperature: 0.5, ...(tool ? { tool: macaronTool(space) } : {}) }) : await engine.write(brief, prompt, { maxLength: 2400, temperature: 0.4 });
     if (process.env.COMFYTURE_DEBUG) console.log(`brioche answered\n${reply}`);
-    return json(res, 200, readMacaronAnswer(reply));
+    return json(res, 200, readMacaronAnswer(reply, space));
   }
   if (path === "/api/macaron/image" && method === "POST") {
     // a picture for a design (a ground, a product scene), from an image model on Comfy Router, at the post's own size
@@ -1267,12 +1296,13 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     return json(res, 202, [job]);
   }
   if (path === "/api/macaron/exports" && method === "POST") {
-    // a design exported as a PNG, kept under a name that says what it is
-    if ((req.headers["content-type"] ?? "").split(";")[0].trim() !== "image/png") throw bad("Send the design as a PNG.", 415);
+    // a design exported as a PNG or a JPG, kept under a name that says what it is
+    const type = (req.headers["content-type"] ?? "").split(";")[0].trim();
+    if (type !== "image/png" && type !== "image/jpeg") throw bad("Send the design as a PNG or a JPG.", 415);
     const bytes = await body(req, 40 * 1024 * 1024);
     const size = imageSize(bytes);
     if (!size) throw bad("That picture can't be read.", 415);
-    return json(res, 201, { ...(await keepExport(data, bytes, url.searchParams.get("name") ?? "design", "png")), width: size.width, height: size.height });
+    return json(res, 201, { ...(await keepExport(data, bytes, url.searchParams.get("name") ?? "design", type === "image/jpeg" ? "jpg" : "png")), width: size.width, height: size.height });
   }
   if (path === "/api/macaron/frames" && (method === "POST" || method === "DELETE")) {
     // a motion render's frames, one at a time (a PNG each), until the video is asked for
@@ -1286,12 +1316,12 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     return json(res, 200, { job });
   }
   if (path === "/api/macaron/motion" && method === "POST") {
-    // the frames of a render, encoded as an H.264 video at the size they are, with a soft sound when asked
+    // the frames of a render, encoded as an H.264 video (or a VP9 one, as WebM) at the size they are, with a soft sound when asked
     if (!ffmpeg) throw bad("Videos need ffmpeg on the server.", 501);
     const input = await jsonBody(req);
     if (!validJob(input.job)) throw bad("Send the frames first.");
     const pops = (Array.isArray(input.sound?.pops) ? input.sound.pops : []).map(Number).filter((n: number) => Number.isFinite(n) && n >= 0 && n < 30);
-    return json(res, 201, await encodeFrames(data, input.job, { fps: Math.round(num(input.fps, 12, 60, 30)), name: text(input.name, 60) || "motion", sound: input.sound ? { pops, pad: input.sound.pad === true } : undefined }));
+    return json(res, 201, await encodeFrames(data, input.job, { fps: Math.round(num(input.fps, 12, 60, 30)), name: text(input.name, 60) || "motion", sound: input.sound ? { pops, pad: input.sound.pad === true } : undefined, container: input.container === "webm" ? "webm" : "mp4" }));
   }
   // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos
   for (const kind of ["stories", "cuts", "mixes", "brands", "jams"]) {
@@ -1299,6 +1329,16 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       const answered = await projectRoute(kind, path, method, req, res);
       if (answered !== false) return answered;
     }
+  }
+  if (path === "/api/utensils/assist" && method === "POST") {
+    // Truffle reads the shelf, the tool open and the library's newest files, and answers with what to set up; nothing runs here
+    const input = await jsonBody(req, 256 * 1024);
+    const turns = petTurns(input.messages);
+    if (!turns.length) throw bad("Say what to do.");
+    const summary = input.utensils && typeof input.utensils === "object" ? input.utensils : {};
+    const reply = await petAnswer(pickLlm(input.model, "assistant"), UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt(summary, turns));
+    if (process.env.COMFYTURE_DEBUG) console.log(`truffle answered\n${reply}`);
+    return json(res, 200, readUtensilsAnswer(reply, summary));
   }
   // Utensils: one tool, one job; what they made is listed in one file, newest first
   if (path === "/api/utensils/results" && method === "GET") {
@@ -1398,6 +1438,16 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (!(await exists(outPath))) await exec("ffmpeg", ["-v", "error", "-y", "-ss", from.toFixed(3), "-i", where, "-t", len.toFixed(3), "-an", "-vf", "fps=24,format=yuv420p", "-c:v", "libx264", "-crf", "17", "-preset", "fast", "-movflags", "+faststart", outPath]);
     const v = await probeVideo(outPath);
     return json(res, 200, { file: out, url: `/media/videos/${out}`, ...v });
+  }
+  if (path === "/api/mixer/assist" && method === "POST") {
+    // Praline reads the shelf, the trend open and its cast, and answers with the picks to make; nothing is made here
+    const input = await jsonBody(req, 256 * 1024);
+    const turns = petTurns(input.messages);
+    if (!turns.length) throw bad("Say what to pick.");
+    const summary = input.mixer && typeof input.mixer === "object" ? input.mixer : {};
+    const reply = await petAnswer(pickLlm(input.model, "assistant"), MIXER_BRIEF, MIXER_TOOL, mixerPrompt(summary, turns));
+    if (process.env.COMFYTURE_DEBUG) console.log(`praline answered\n${reply}`);
+    return json(res, 200, readMixerAnswer(reply, summary));
   }
   // Mixer's stars: the photos people cast into trends (their pet, themselves), newest first
   if (path === "/api/mixer/stars" && method === "GET") {

@@ -16,7 +16,7 @@ import { soundPops } from "./macaron-layout.js";
 const EASE_NAMES = { out: "Ease out", inout: "Ease in and out", back: "Overshoot", expo: "Snap", lin: "Linear", in: "Ease in" };
 
 export function motionSection() {
-  const el = h("div.mc-bento.is-motion");
+  const el = h("div.mc-w.is-motion");
   const canvas = h("canvas.mc-stage-canvas");
   const frame = h("div.mc-frame.is-motion", {}, canvas);
   const play = key(icon("play"), "Play", () => toggle(), { quiet: false });
@@ -114,7 +114,7 @@ export function motionSection() {
     const list = macaron.brand.body.motion;
     return h("div.mc-pieces", {},
       list.length ? dropdown({ label: "Motion piece", value: m?.id, items: list.map((x) => ({ value: x.id, label: x.name, desc: `${x.format} · ${x.duration} s` })), onChange: (id) => pickMotion(id), width: "fit" }) : null,
-      h("button.key.is-sm", { type: "button", title: "A motion piece from the design open in the studio", on: { click: () => (designNow() ? addMotion() : toast("Open a design first.")) } }, icon("plus"), "From the open design"),
+      h("button.key.is-sm", { type: "button", title: "A motion piece from the post open in the editor", on: { click: () => (designNow() ? addMotion() : toast("Open a post first.")) } }, icon("plus"), "From the open design"),
       m ? key(icon("trash"), isArmed(`motion:${m.id}`) ? "Click again to delete" : "Delete this piece", () => arming(`motion:${m.id}`, rerender, () => removeMotion(m.id)), { on: isArmed(`motion:${m.id}`) }) : null);
   }
 
@@ -128,12 +128,13 @@ export function motionSection() {
         seg([[24, "24 fps"], [30, "30 fps"]], m.fps, (v) => setMotion(m.id, { fps: v }), { cls: "is-small", label: "Frame rate" }),
         seg([[true, "Soft sound"], [false, "Silent"]], !!m.sound?.pad, (v) => setMotion(m.id, { sound: { ...(m.sound ?? {}), pad: v, pops: v ? soundPops(d) : [] } }), { cls: "is-small", label: "Sound" }),
         h("button.key.is-sm", { type: "button", title: "Use the frame on the playhead as the poster for pictures of this piece", on: { click: () => (edit(() => (d.poster = Math.round(state.t * 100) / 100), "Poster set"), toast(`Poster at ${seconds(state.t)}.`)) } }, sprite("keyframe"), "Poster here"),
-        h(`button.mc-go.is-inline${prog ? ".is-busy" : ""}`, { type: "button", disabled: !!macaron.progress, on: { click: () => renderMotion(m.id) } }, sprite("film-make"), h("span", {}, prog ? `Frame ${Math.min(prog.total, prog.done)} of ${prog.total}` : "Render the MP4"))),
+        seg([["mp4", "MP4"], ["webm", "WEBM"]], macaron.renderKind ?? "mp4", (v) => ((macaron.renderKind = v), rerender()), { cls: "is-small", label: "The kind of video" }),
+        h(`button.mc-go.is-inline${prog ? ".is-busy" : ""}`, { type: "button", disabled: !!macaron.progress, on: { click: () => renderMotion(m.id, { container: macaron.renderKind ?? "mp4" }) } }, sprite("film-make"), h("span", {}, prog ? `Frame ${Math.min(prog.total, prog.done)} of ${prog.total}` : `Render the ${(macaron.renderKind ?? "mp4").toUpperCase()}`))),
       prog ? h("div.mc-progress", {}, h("i", { style: { width: `${(prog.done / prog.total) * 100}%` } })) : null,
       r ? h("div.mc-result", {},
         h("button.mc-result-pic", { type: "button", title: "Play it", on: { click: () => view(r.url, "video") } }, h("img", { src: r.poster ?? "", alt: "", draggable: false }), h("span.mc-play", {}, icon("play"))),
         h("div.mc-result-text", {}, h("b", {}, m.name), h("em", {}, `${r.width}×${r.height} · ${seconds(r.duration)} · ${kb(r.bytes ?? 0)} · ${r.sound ? "with sound" : "silent"}`),
-          h("div.mc-result-keys", {}, h("button.key", { type: "button", on: { click: () => saveAs(`${r.url}?download=${`${macaron.brand.name}-${m.name}-${r.format.replace(":", "x")}`.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.mp4`) } }, icon("download"), "Download MP4"), h("button.key", { type: "button", on: { click: () => view(r.url, "video") } }, icon("play"), "Play"))))
+          h("div.mc-result-keys", {}, h("button.key", { type: "button", on: { click: () => saveAs(`${r.url}?download=${`${macaron.brand.name}-${m.name}-${r.format.replace(":", "x")}`.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.${r.container ?? "mp4"}`) } }, icon("download"), `Download ${(r.container ?? "mp4").toUpperCase()}`), h("button.key", { type: "button", on: { click: () => view(r.url, "video") } }, icon("play"), "Play"))))
         : h("p.mc-hint", {}, "Not rendered yet. The frames are drawn here and encoded on the server; a piece takes a little longer to make than it lasts."));
   }
   function update() {

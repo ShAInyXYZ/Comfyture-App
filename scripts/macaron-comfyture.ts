@@ -23,6 +23,8 @@ if (baked) {
   for (const d of designs.filter((x: any) => x.variant)) delete d.thumb;
 }
 const body = {
+  // the revision of what this project holds: a copy a person already has gains what is new once (server/macaron.ts, topUpBrand)
+  seedRev: 2,
   // the shoot sends this to the image model as the logo: a picture it can read, not the SVG
   logo: { url: "brand/wordmark-2400.png", width: 2400, height: 793 },
   colours: kit.palette.map((p) => p.hex),
@@ -38,6 +40,7 @@ const body = {
   shoot: { formats: {}, count: 2 },
   kit: { ...kit, palette: kit.palette.map((p, i) => ({ ...p, share: [8, 56, 14, 22][i] })) },
   brief: content.brief,
+  directions: content.directions,
   refs: content.refs(now),
   assets: content.assets,
   history: [...content.history(designs), ...(baked?.exports ?? []).filter((x: any, i: number, all: any[]) => all.findIndex((y) => y.design === x.design) === i).map((x: any) => ({ id: `h-${x.design}-${x.format.replace(":", "x")}-${x.kind}`, at: x.at, kind: "export", title: `${x.designName} exported`, note: `${x.kind === "mp4" ? `MP4 ${x.width}×${x.height}, ${x.duration} s` : `PNG ${x.width}×${x.height}`}`, src: x.poster ?? x.url, designId: x.design }))],

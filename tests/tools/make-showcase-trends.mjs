@@ -115,42 +115,6 @@ const SPECS = {
       [16.9, 17.95, "SALUTE", "pop", { y: 0.9, size: 0.1 }],
     ],
   },
-  ramalama: {
-    name: "Ramalama",
-    crew: "margot",
-    hint: 0,
-    offset: 0,
-    thumb: 9.0,
-    // our version is one handheld take whose whip up to the faces is in the picture: it is kept in the clips, not made again
-    shots: [
-      { to: 3.708, kind: "broll", move: "none" },
-      { to: 7.583, kind: "broll", move: "none" },
-      { to: 11.292, kind: "performance", move: "none" },
-      { to: "end", kind: "dance", move: "none" },
-    ],
-    fx: [
-      ["zoom", 0, 7.4, { every: 2, intensity: 0.3, dur: 0.22 }],
-      // the reveal: a flash and a swell as the camera lands on the faces, then colour on the beats
-      ["flash", 7.55, 8.4, { every: 0, intensity: 0.8, dur: 0.22 }],
-      ["zoom", 7.55, 8.4, { every: 0, intensity: 1.0, dur: 0.35 }],
-      ["zoom", 8.4, 99, { every: 2, intensity: 0.45, dur: 0.22 }],
-      ["hue", 7.6, 11.3, { every: 2, intensity: 0.45, dur: 0.4 }],
-      ["shake", 3.0, 7.3, { every: 2, intensity: 0.25, dur: 0.3 }],
-    ],
-    stickers: [
-      ["sparkles", 7.7, 10.4, 0.2, 0.18, 0.3, -8],
-      ["crown", 8.0, 10.6, 0.5, 0.15, 0.2, 0],
-      ["star", 12.0, 14.6, 0.84, 0.2, 0.18, 14],
-    ],
-    lines: [
-      [7.8, 9.0, "RAMA LAMA", "pop", { y: 0.1, size: 0.11 }],
-      // each name while that one is in frame: Margot in the middle at the reveal, Josie on the left waving, Ivy when she walks in
-      [9.2, 10.3, "MARGOT", "pop", { x: 0.5, y: 0.82, size: 0.1 }],
-      [11.0, 12.2, "JOSIE", "pop", { x: 0.22, y: 0.82, size: 0.1 }],
-      [12.9, 14.1, "IVY", "pop", { x: 0.55, y: 0.9, size: 0.1 }],
-      [13.2, 14.9, "WAVE", "bounce", { y: 0.1, size: 0.12 }],
-    ],
-  },
 };
 
 // ---------------------------------------------------------------- making one

@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { mkdtemp, rm } from "node:fs/promises";
-import { frameSize, planCut, readCutAnswer, cutPrompt, cutBrief } from "../server/cut.ts";
+import { frameSize, planCut, readCutAnswer, cutPrompt, cutBrief, jamBrief } from "../server/cut.ts";
 import { WHIP, whipBlur } from "../web/js/fx.js";
 import { makeClip, render, rgbFrame } from "./render.ts";
 
@@ -241,6 +241,7 @@ test("a clip too short to give its last frames is cut into, a whip or not; the s
 });
 
 test("the assistant's actions are checked: known ones only, fields in range", () => {
+  // (the beats, effects, stickers and lyrics are the music video's: Pickle's answer carries them)
   const r = readCutAnswer(JSON.stringify({ reply: "ok", actions: [
     { op: "effect", kind: "zoom", every: 4, intensity: 9, dur: 0.01, from: 0, to: 30 },
     { op: "effect", kind: "explode" },
@@ -254,7 +255,7 @@ test("the assistant's actions are checked: known ones only, fields in range", ()
     { op: "format-disk" },
     { op: "join", clip: 3, join: "whip" },
     { op: "join", clip: 2, join: "spin" },
-  ] }));
+  ] }), "jam");
   assert.equal(r.actions.length, 10);
   const [zoom, detect, bpm, sticker, lyrics, bad, snap, , whip, spin] = r.actions as any[];
   assert.deepEqual([whip.clip, whip.join], [3, "whip"]);
@@ -269,5 +270,85 @@ test("the assistant's actions are checked: known ones only, fields in range", ()
   assert.equal(bad.style, undefined);
   assert.equal(snap.to, "bar");
   assert.match(cutPrompt({ length: 12, aspect: "9:16", clips: [], sounds: [], titles: [], beats: { bpm: 120, count: 24, first: 0.1, offset: 0, source: "web", down: 0 }, effects: [{ kind: "zoom", every: 4, intensity: 0.6, start: 0, length: 12 }], stickers: [], lyrics: [{ n: 1, text: "hi", start: 1, length: 2, style: "karaoke" }] }, [{ role: "user", text: "more pulse" }]), /120 bpm, 24 beats/);
-  assert.match(cutBrief(["star", "heart"]), /names: star, heart/);
+  assert.match(jamBrief(["star", "heart"]), /names: star, heart/);
+});
+
+test("Kitchen's Cut room is told its own actions only: not the beats, the effects, the stickers or the lyrics, and not Jam's", () => {
+  const brief = cutBrief();
+  for (const op of ["trim", "move", "remove", "join", "motion", "fade", "grade", "speed", "title", "music", "sound", "voice", "volume", "render"]) assert.ok(brief.includes(`{"op": "${op}"`), `it has ${op}`);
+  for (const op of ["beats", "snap", "effect", "sticker", "lyrics", "draft", "part", "words", "captions", "artist", "vibe", "shots", "open"]) assert.ok(!brief.includes(`{"op": "${op}"`), `it has no ${op}`);
+  assert.doesNotMatch(brief, /Pickle|Jam|music video/);
+  // and what comes back for it is read the same way: an action it was not told of is not done
+  const r = readCutAnswer(JSON.stringify({ reply: "ok", actions: [{ op: "trim", clip: 1, seconds: 2 }, { op: "effect", kind: "zoom" }, { op: "beats", action: "detect" }, { op: "captions", style: "pop" }, { op: "open", workspace: "edit" }, { op: "music", prompt: "piano" }] }));
+  assert.deepEqual(r.actions.map((a: any) => a.op), ["trim", "music"]);
+  // the beats, effects, stickers and lyrics are in its picture of the edit only when the edit has some
+  const plain = cutPrompt({ length: 5, aspect: "16:9", clips: [{ n: 1, name: "a", start: 0, length: 5 }], sounds: [], titles: [] }, [{ role: "user", text: "hi" }]);
+  assert.doesNotMatch(plain, /Beats:|Effects:|Stickers:|Lyrics:/);
+  assert.match(cutPrompt({ length: 5, aspect: "16:9", clips: [], effects: [{ kind: "zoom", every: 4, intensity: 0.6, start: 0, length: 5 }] }, [{ role: "user", text: "hi" }]), /Effects:\n- zoom/);
+});
+
+test("Pickle's brief is Jam's only: its four workspaces and its own actions, no other product, and nothing that spends credits", () => {
+  const brief = jamBrief(["star", "heart"]);
+  assert.match(brief, /You are Pickle/);
+  assert.match(brief, /band leader/);
+  for (const w of ["the track", "the words", "the band", "the edit"]) assert.ok(brief.includes(w), `it knows ${w}`);
+  for (const op of ["part", "words", "captions", "artist", "vibe", "shots", "open"]) assert.ok(brief.includes(`{"op": "${op}"`), `it has the ${op} action`);
+  assert.match(brief, /names: star, heart/);
+  assert.doesNotMatch(brief, /Kitchen|Mixer|Macaron|Utensils|Brioche|Ketkout|Truffle/, "nothing of the rest of the app");
+  assert.doesNotMatch(brief, /\{"op": "(music|sound|voice)"/, "it is not offered what makes a track, a sound or a voice");
+  assert.match(brief, /never start anything that costs credits/i);
+  // Kitchen's Cut keeps its own brief, with the actions that make sounds
+  assert.match(cutBrief(), /\{"op": "music"/);
+  assert.doesNotMatch(cutBrief(), /You are Pickle/);
+});
+
+test("Pickle is told which workspace is open and what the jam holds, before the edit's own state", () => {
+  const jam = { workspace: "words", track: { name: "Toc Toc", seconds: 9.833, bpm: 124.2, from: 0, to: 9.8, drop: 2.4, loud: 4 }, words: { count: 5, heard: false, style: "pop" }, artist: "Josie", dance: 9.8, vibe: "pastel room", shots: [{ kind: "dance", from: 0, to: 2.1 }, { kind: "broll", from: 2.1, to: 4 }], costs: { track: "≈ 8 cr for 30 s", words: "≈ 2 cr", video: "nothing more to make" } };
+  const text = cutPrompt({ jam }, [{ role: "user", text: "bigger captions" }]);
+  assert.match(text, /^JAM NOW$/m);
+  assert.match(text, /workspace open: words/);
+  assert.match(text, /track: "Toc Toc", 9.8 s, 124.2 bpm; the part used runs 0 to 9.8 s; the drop is at 2.4 s; the loudest stretch starts at 4 s/);
+  assert.match(text, /words: 5 lines, typed; captions pop/);
+  assert.match(text, /artist: Josie/);
+  assert.match(text, /dance to copy: 9.8 s/);
+  assert.match(text, /shots: 1\. dance 0-2.1 s; 2\. broll 2.1-4 s/);
+  assert.match(text, /keys that cost credits: make a track ≈ 8 cr for 30 s, hear the words ≈ 2 cr, make the video nothing more to make/);
+  // before there is an edit, it says so (he can answer all the same)
+  assert.match(text, /THE EDIT NOW\n\(no edit yet/);
+  assert.match(text, /User: bigger captions/);
+  // a workspace he was not told of is the track; a jam with no song yet says so
+  assert.match(cutPrompt({ jam: { workspace: "kitchen" } }, [{ role: "user", text: "hi" }]), /workspace open: track\ntrack: \(none yet\)/);
+  // Kitchen's Cut is told nothing of Jam
+  assert.doesNotMatch(cutPrompt({ length: 5, aspect: "16:9", clips: [] }, [{ role: "user", text: "hi" }]), /JAM NOW/);
+});
+
+test("Pickle's actions are checked: Jam's own, fields in range, a workspace or a window only if it exists, nothing that spends", () => {
+  const raw = [
+    { op: "part", seconds: 0 }, { op: "part", seconds: 9000, from: -4 }, { op: "part", drop: true }, { op: "part", chorus: "yes" },
+    { op: "words", text: "one\ntwo" }, { op: "words", text: "   " },
+    { op: "captions", style: "bounce", size: 9 }, { op: "captions", style: "disco", size: 0.001 },
+    { op: "artist", name: " Josie " }, { op: "artist" },
+    { op: "vibe", text: "pastel room" },
+    { op: "shots", every: 4 }, { op: "shots", every: 3 }, { op: "shots", shot: 2, kind: "dance" }, { op: "shots", kind: "karaoke" },
+    { op: "open", workspace: "edit", window: "make" }, { op: "open", workspace: "stage" }, { op: "open", window: "the-vault" },
+    { op: "music", prompt: "a hit" }, { op: "sound", prompt: "a bang" }, { op: "voice", line: "hello" },
+    { op: "effect", kind: "zoom", every: 4 },
+  ];
+  const r = readCutAnswer(JSON.stringify({ reply: "ok", actions: raw }), "jam");
+  const ops = r.actions.map((a: any) => a.op);
+  assert.ok(!ops.some((o: string) => ["music", "sound", "voice"].includes(o)), "what spends credits is not carried");
+  assert.equal(ops.at(-1), "effect", "the editor's own actions still are");
+  const by = (op: string) => r.actions.filter((a: any) => a.op === op) as any[];
+  const [zero, far, drop, chorus] = by("part");
+  assert.deepEqual([zero.seconds, far.seconds, far.from, drop.drop, chorus.chorus], [0, 600, 0, true, undefined]);
+  assert.deepEqual(by("words").map((a) => a.text), ["one\ntwo"], "empty words are not an action");
+  const [bounce, disco] = by("captions");
+  assert.deepEqual([bounce.style, bounce.size, disco.style, disco.size], ["bounce", 0.2, undefined, 0.04]);
+  assert.deepEqual(by("artist").map((a) => a.name), ["Josie"]);
+  assert.deepEqual(by("vibe").map((a) => a.text), ["pastel room"]);
+  assert.deepEqual(by("shots").map((a) => [a.every, a.shot, a.kind]), [[4, undefined, undefined], [undefined, 2, "dance"]], "every 1, 2 or 4 bars; a shot's kind among the three");
+  assert.deepEqual(by("open").map((a) => [a.workspace, a.window]), [["edit", "make"]], "a workspace or a window that does not exist is not opened");
+  // the same answer for Kitchen's Cut (no product) still carries the sound ones
+  const kitchen = readCutAnswer(JSON.stringify({ reply: "ok", actions: raw }));
+  assert.ok(kitchen.actions.some((a: any) => a.op === "music"));
 });

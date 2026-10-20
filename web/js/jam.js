@@ -7,16 +7,43 @@
 // works on it in place (beats, effects, stickers, the words' timing); Jam never writes over what was added.
 import { state, changed, onChange, toast, waitFor, artistFor } from "./store.js";
 import { api } from "./api.js";
-import { cut, openCut, commit, layout, lengthOf, renderFilm, setLyricStyle, setLineText, flushCuts } from "./cut.js";
+import { cut, openCut, commit, layout, lengthOf, renderFilm, setLyricStyle, setLyricSize, setLineText, flushCuts, hooks } from "./cut.js";
+import { currentPage } from "./router.js";
+import { WORKSPACES } from "./jam-harness.js";
 import { keyedSaver } from "./saving.js";
 import { normalizeBody, lyricItems } from "./edit.js";
-import { gridBeats, detectBeats } from "./beats.js";
+import { gridBeats, detectBeats, hearLoudness } from "./beats.js";
 import { splitWords } from "./lyrics.js";
 import { onServer } from "./picker.js";
-import { crewById, crewPicture } from "./mixer-trends.js";
+import { CREW, crewById, crewPicture } from "./mixer-trends.js";
 
 const OPEN = "comfyture.jam.open";
-export const jam = { list: [], jam: null, ready: null, busy: new Set(), playing: false, starting: null };
+
+/**
+ * What is being done, and for which video: each mark (what it is: "track", "listen", "roll:2"...) is kept with the video it was asked
+ * for. The screens ask `has` of the open video, so another video's screen is not told it is busy, and a job that ends after its
+ * video was left puts away its own mark. A mark without a video is the open one's.
+ */
+class Busy {
+  #marks = new Set();
+  #key = (kind, j) => `${j?.id ?? ""}\u0000${kind}`;
+  add(kind, j = jam.jam) {
+    this.#marks.add(this.#key(kind, j));
+    return this;
+  }
+  delete(kind, j = jam.jam) {
+    return this.#marks.delete(this.#key(kind, j));
+  }
+  has(kind, j = jam.jam) {
+    return this.#marks.has(this.#key(kind, j));
+  }
+  /** Any mark of this video that starts with one of these. */
+  starts(prefixes, j = jam.jam) {
+    const own = `${j?.id ?? ""}\u0000`;
+    return [...this.#marks].some((k) => k.startsWith(own) && prefixes.some((p) => k.startsWith(own + p)));
+  }
+}
+export const jam = { list: [], jam: null, ready: null, busy: new Busy(), playing: false, starting: null, workspace: "track", win: null };
 const update = () => changed("jam");
 
 const call = async (path, init) => {
@@ -59,6 +86,15 @@ export async function openJam(id) {
   update();
   await edit(jam.jam).catch((e) => console.warn("jam edit:", e.message));
   update();
+  // work that finished while it was not the open one (a part cut, the words heard, the shots made) is put in its edit now
+  if (jam.jam?.id === id && jam.jam.body.stale) {
+    delete jam.jam.body.stale;
+    await syncEdit(jam.jam, { fresh: true }).catch((e) => console.warn("jam edit:", e.message));
+    save(jam.jam);
+    update();
+  }
+  // the drop and the loudest stretch of its track, for Pickle to start a part at (heard here, free; a track already heard keeps what it has)
+  if (jam.jam?.id === id) hearLoud(jam.jam);
 }
 export async function newJam(name = "New music video") {
   const { project } = await send("api/jams", "POST", { name, body: blank() });
@@ -88,7 +124,8 @@ export const flushJams = () => saver.flush();
 export function save(j = jam.jam) {
   if (j) saver.save(j.id, j);
 }
-const touched = () => (save(), update());
+/** A video changed and is kept (the open one, or the one a long job was asked for, which may no longer be open); the page follows. */
+const touched = (j = jam.jam) => (save(j), update());
 export const rename = (name) => ((jam.jam.name = name.slice(0, 60)), save());
 export async function removeJam(id) {
   // a video that is gone is not kept again by a save still to come
@@ -110,7 +147,7 @@ export const LENGTHS = [15, 30, 60, 0];
 
 export async function useTrack(file) {
   const j = await ensure();
-  jam.busy.add("track");
+  jam.busy.add("track", j);
   update();
   try {
     const a = await api.uploadAudio(file);
@@ -123,12 +160,12 @@ export async function useTrack(file) {
     const name = (file.name ?? "").replace(/\.\w+$/, "").slice(0, 50) || "My track";
     setTrack(j, { file: a.file, url: a.url, seconds, name, kind: "upload" });
     if (j.name === "New music video") j.name = name;
-    touched();
+    touched(j);
     await cutPart(j);
   } catch (e) {
     toast(e.message, { tone: "crit" });
   } finally {
-    jam.busy.delete("track");
+    jam.busy.delete("track", j);
     update();
   }
 }
@@ -137,19 +174,21 @@ export async function useTrack(file) {
 export async function makeTrack({ prompt, lyrics, seconds, bpm, name }) {
   const j = await ensure();
   if (!prompt?.trim()) return toast("Say what the music is like.");
-  jam.busy.add("make");
+  jam.busy.add("make", j);
   update();
   try {
     const job = await send("api/audio/music", "POST", { prompt, lyrics, seconds, bpm, name: name || "Jam track" });
     const done = await waitFor("job", job.id);
     setTrack(j, { ...done.audio, kind: "made", prompt, lyrics, bpm });
     if (j.name === "New music video") j.name = done.audio.name;
-    touched();
+    touched(j);
     await cutPart(j);
+    // (made while another video was open: it is in its own, and says so)
+    if (jam.jam !== j) toast(`${j.name}: the track is made. Open it to go on.`);
   } catch (e) {
     toast(e.message, { tone: "crit" });
   } finally {
-    jam.busy.delete("make");
+    jam.busy.delete("make", j);
     update();
   }
 }
@@ -249,8 +288,8 @@ export function setStart(from) {
   setStart.t = setTimeout(() => cutPart(j), 900);
 }
 
-/** The part of the track used, heard: its vocals, their words and times, its tempo and beats. */
-let again = false;
+/** The video whose part was asked to be heard again while it was being heard: it is, once that hearing ends (and only if it is still the open one). */
+let again = null;
 /**
  * The track's part cut and its beats heard here, in the browser: free and quick. What Comfy hears
  * (the vocals, the words) is asked for with listen(), which costs credits.
@@ -259,7 +298,7 @@ export async function cutPart(j = jam.jam) {
   const b = j?.body;
   if (!b?.track) return;
   const asked = { ...b.span };
-  jam.busy.add("part");
+  jam.busy.add("part", j);
   update();
   try {
     const part = await send("api/jam/slice", "POST", { audio: b.track.file, from: asked.from, to: asked.to, name: b.track.name });
@@ -267,14 +306,35 @@ export async function cutPart(j = jam.jam) {
     b.part = { file: part.file, url: part.url, seconds: part.seconds };
     b.bpm = b.track.bpm ?? b.bpm ?? null;
     await hearBeats(b);
+    // the words typed for the track go on the new part (the singing heard belonged to the one before)
+    if (b.track.lyrics?.trim() && !b.lines.length) b.lines = spreadLyrics(b.track.lyrics, b.part.seconds, b.bpm);
     plan(j);
-    touched();
+    // (a video that is not the open one has its edit made when it is opened: the editor holds the open one's)
+    if (jam.jam !== j) b.stale = true;
+    touched(j);
     if (jam.jam === j) await syncEdit(j, { fresh: true }).catch((e) => console.warn("jam edit:", e.message));
+    hearLoud(j);
   } catch (e) {
     toast(`The part: ${e.message}`, { tone: "crit" });
   } finally {
-    jam.busy.delete("part");
+    jam.busy.delete("part", j);
     update();
+  }
+}
+
+/** The track's drop and its loudest stretch, heard here (free): what Pickle starts a part at. Once for a track. */
+async function hearLoud(j) {
+  const t = j?.body.track;
+  if (!t || t.loud !== undefined) return;
+  try {
+    const { drop, loud } = await hearLoudness(t.url, 15);
+    if (j.body.track !== t) return;
+    t.drop = drop;
+    t.loud = loud;
+    save(j);
+  } catch (e) {
+    t.drop = null;
+    t.loud = null;
   }
 }
 
@@ -284,41 +344,51 @@ export async function listen() {
   const b = j?.body;
   if (!b?.track) return;
   // a part asked for while another is being heard is heard after it
-  if (jam.busy.has("listen")) return void (again = true);
+  if (jam.busy.has("listen")) return void (again = j.id);
   const asked = { ...b.span };
-  jam.busy.add("listen");
+  jam.busy.add("listen", j);
   update();
   try {
     const { job, track } = await send("api/jam/listen", "POST", { audio: b.track.file, from: asked.from, to: asked.to, name: b.track.name });
     const done = await waitFor("job", job.id);
-    // what was heard is for the part asked for: a part changed since waits for its own hearing
-    if (jam.jam !== j || b.span.from !== asked.from || b.span.to !== asked.to) return;
-    const heard = done.listen ?? {};
-    b.part = { file: track.file, url: track.url, seconds: track.seconds };
-    b.vocals = heard.vocals ? { file: heard.vocals.file, url: heard.vocals.url } : null;
-    b.sung = b.vocals ? await singing(b.vocals.url) : [];
-    b.lines = readSrt(heard.srt ?? "");
-    b.bpm = Number((heard.bpm ?? "").match(/([\d.]+)/)?.[1]) || b.track.bpm || null;
-    b.beats = readBeats(heard.beats ?? "");
-    (b.down = 0), delete b.sure;
-    // the words written for a made track are the words: put them on the times heard
-    if (b.track.lyrics?.trim()) b.lines = alignLyrics(b.track.lyrics, b.lines, b.sung);
-    await hearBeats(b);
-    plan(j);
-    touched();
-    await syncEdit(j, { fresh: true }).catch((e) => console.warn("jam edit:", e.message));
+    if (await putHeard(j, asked, track, done.listen ?? {}) && jam.jam !== j) toast(`${j.name}: the words are heard. Open it to see them.`);
   } catch (e) {
     toast(`Listening: ${e.message}`, { tone: "crit" });
     // the part is cut all the same: the edit can be made without what Comfy hears (the beats found in the editor, the words typed)
     if (!b.part && jam.jam === j) await cutPart(j);
   } finally {
-    jam.busy.delete("listen");
+    jam.busy.delete("listen", j);
     update();
-    if (again) {
-      again = false;
-      listen();
+    if (again === j.id) {
+      again = null;
+      if (jam.jam === j) listen();
     }
   }
+}
+
+/**
+ * What Comfy heard, put on the video it was asked for. The credits are spent, so it is kept whether that video is still the
+ * open one or not (the editor holds the open one's edit: another's is made when it is opened). False when the part
+ * was changed since: what was heard was for the one asked for.
+ */
+export async function putHeard(j, asked, track, heard) {
+  const b = j.body;
+  if (b.span.from !== asked.from || b.span.to !== asked.to) return false;
+  b.part = { file: track.file, url: track.url, seconds: track.seconds };
+  b.vocals = heard.vocals ? { file: heard.vocals.file, url: heard.vocals.url } : null;
+  b.sung = b.vocals ? await singing(b.vocals.url) : [];
+  b.lines = readSrt(heard.srt ?? "");
+  b.bpm = Number((heard.bpm ?? "").match(/([\d.]+)/)?.[1]) || b.track.bpm || null;
+  b.beats = readBeats(heard.beats ?? "");
+  (b.down = 0), delete b.sure;
+  // the words written for a made track are the words: put them on the times heard
+  if (b.track.lyrics?.trim()) b.lines = alignLyrics(b.track.lyrics, b.lines, b.sung);
+  await hearBeats(b);
+  plan(j);
+  if (jam.jam !== j) b.stale = true;
+  touched(j);
+  if (jam.jam === j) await syncEdit(j, { fresh: true }).catch((e) => console.warn("jam edit:", e.message));
+  return true;
 }
 
 /**
@@ -515,7 +585,7 @@ export async function setArtist(file) {
 }
 export async function setDance(file) {
   const j = await ensure();
-  jam.busy.add("dance");
+  jam.busy.add("dance", j);
   update();
   try {
     const v = await api.uploadVideo(file);
@@ -526,7 +596,7 @@ export async function setDance(file) {
   } catch (e) {
     toast(e.message, { tone: "crit" });
   } finally {
-    jam.busy.delete("dance");
+    jam.busy.delete("dance", j);
     update();
   }
 }
@@ -636,7 +706,7 @@ export function shotState(s, i) {
   if (t) return { step: "failed", note: t.error };
   return { step: "waiting" };
 }
-export const making = () => jam.busy.has("make-video") || [...jam.busy].some((k) => k.startsWith("roll:") || k.startsWith("look:"));
+export const making = (j = jam.jam) => jam.busy.starts(["make-video", "roll:", "look:"], j);
 
 const LOOK = {
   performance: (style) => `A vertical music video frame: @artist, exactly this person or character (face, features, hair, colours, build), waist-up, singing passionately into a microphone, ${style || "on a stage under coloured concert lights"}, cinematic lighting, shallow depth of field. No text.`,
@@ -646,7 +716,7 @@ const LOOK = {
 async function look(j, kind) {
   if (j.body.looks[kind]) return j.body.looks[kind];
   if (!j.body.artist) throw new Error("Add the artist's photo first.");
-  jam.busy.add(`look:${kind}`);
+  jam.busy.add(`look:${kind}`, j);
   update();
   try {
     const photo = await (async () => {
@@ -654,10 +724,10 @@ async function look(j, kind) {
       return (await waitFor("job", started.id)).photo;
     })();
     j.body.looks[kind] = { file: photo.file, url: photo.url };
-    touched();
+    touched(j);
     return j.body.looks[kind];
   } finally {
-    jam.busy.delete(`look:${kind}`);
+    jam.busy.delete(`look:${kind}`, j);
     update();
   }
 }
@@ -670,7 +740,7 @@ async function roll(j, i, danceAt) {
   const s = b.shots[i];
   const len = s.to - s.from;
   const seconds = Math.min(10, Math.max(2, Math.ceil(len)));
-  jam.busy.add(`roll:${i}`);
+  jam.busy.add(`roll:${i}`, j);
   update();
   try {
     const start = await look(j, s.kind);
@@ -691,17 +761,17 @@ async function roll(j, i, danceAt) {
     }
     const [run] = await api.shoot(body);
     s.run = run.id;
-    touched();
+    touched(j);
     const done = await waitFor("run", run.id).catch(() => null);
     // ComfyUI fails a take now and then: it is rolled once more
     if (!done) {
       const [again] = await api.shoot(body);
       s.run = again.id;
-      touched();
+      touched(j);
       await waitFor("run", again.id).catch(() => null);
     }
   } finally {
-    jam.busy.delete(`roll:${i}`);
+    jam.busy.delete(`roll:${i}`, j);
     update();
   }
 }
@@ -713,7 +783,7 @@ export async function makeVideo() {
   if (!b?.part || !b.shots.length) return toast("Add a track first: its shots are cut on its beat.");
   if (!b.artist && b.shots.some((s) => !rolled(b, s))) return toast("Add the artist's photo first.");
   if (making()) return;
-  jam.busy.add("make-video");
+  jam.busy.add("make-video", j);
   b.film = null;
   update();
   try {
@@ -736,10 +806,12 @@ export async function makeVideo() {
       }
     };
     await Promise.all([worker(), worker(), worker()]);
-    if (b.shots.every((s) => rolled(b, s))) await assemble(j);
-    else toast("Some shots didn't come out: roll them again, then make the video.");
+    if (b.shots.every((s) => rolled(b, s))) {
+      await assemble(j);
+      if (jam.jam !== j) toast(`${j.name}: its shots are made. Open it to make the video.`);
+    } else toast("Some shots didn't come out: roll them again, then make the video.");
   } finally {
-    jam.busy.delete("make-video");
+    jam.busy.delete("make-video", j);
     update();
   }
 }
@@ -747,7 +819,7 @@ export async function makeVideo() {
 export async function rerollShot(i) {
   const j = jam.jam;
   if (!j || making()) return;
-  jam.busy.add("make-video");
+  jam.busy.add("make-video", j);
   update();
   try {
     j.body.shots[i].run = null;
@@ -756,7 +828,7 @@ export async function rerollShot(i) {
   } catch (e) {
     toast(e.message, { tone: "crit" });
   } finally {
-    jam.busy.delete("make-video");
+    jam.busy.delete("make-video", j);
     update();
   }
 }
@@ -897,6 +969,8 @@ export function syncFromCut(j = jam.jam) {
   const b = j?.body;
   const body = cut.project?.body;
   if (!b?.cut || cut.project?.id !== b.cut || !body) return false;
+  // what was made for the video while it was away is not yet in its edit: the edit does not give back its old shots and lines over it
+  if (b.stale) return false;
   let moved = false;
   for (const m of layout(body)) {
     const s = b.shots[m.item.shot];
@@ -916,7 +990,14 @@ export function syncFromCut(j = jam.jam) {
 /** The shots on the track, the words over them: the edit brought up to date, then rendered. */
 async function assemble(j) {
   const b = j.body;
-  jam.busy.add("render");
+  // a video that is not the open one is not rendered from the editor (which holds the open one's edit): its shots are made and kept,
+  // and its edit is brought up to date when it is opened
+  if (jam.jam !== j) {
+    b.stale = true;
+    save(j);
+    return;
+  }
+  jam.busy.add("render", j);
   update();
   try {
     await syncEdit(j, { lines: false, beats: false });
@@ -924,12 +1005,12 @@ async function assemble(j) {
     if (film) {
       b.film = { url: film.url, seconds: film.seconds, id: film.id };
       state.films = [film, ...(state.films ?? []).filter((f) => f.id !== film.id)];
-      touched();
+      touched(j);
     }
   } catch (e) {
     toast(e.message, { tone: "crit" });
   } finally {
-    jam.busy.delete("render");
+    jam.busy.delete("render", j);
     update();
   }
 }
@@ -963,3 +1044,148 @@ onChange((scopes) => {
   }
   if (scopes.has("cut") && j && syncFromCut(j)) changed("jam");
 });
+
+// ---------------------------------------------------------------- the workspaces, what the keys cost, what Pickle is told and does
+
+const WORKSPACE = "comfyture.jam.workspace";
+try {
+  const w = localStorage.getItem(WORKSPACE);
+  if (WORKSPACES.some((x) => x.id === w)) jam.workspace = w;
+} catch {}
+
+/** Another workspace (the track, the words, the band, the edit); a window that was open on the one before is put away. */
+export function setWorkspace(id) {
+  if (!WORKSPACES.some((w) => w.id === id)) return;
+  jam.workspace = id;
+  jam.win = null;
+  try {
+    localStorage.setItem(WORKSPACE, id);
+  } catch {}
+  update();
+}
+/** A bento's window open (or put away with null). */
+export function openWindow(id) {
+  jam.win = id;
+  update();
+}
+
+const cloud = () => state.info?.target === "comfy-cloud";
+// Comfy Cloud bills a GPU second at 0.266 credits: ACE-Step takes about 1.3 of them a second of music; what hears the words
+// (the vocals separated, the singing written down with its times) about a fifth of a credit a second of the part
+const MUSIC_CR = 1.3 * 0.266;
+const HEAR_CR = 0.2;
+/** What the keys that cost credits show, roughly (nothing on your own GPU: null). */
+export const costOfTrack = (seconds) => (cloud() ? Math.max(1, Math.round(seconds * MUSIC_CR)) : null);
+export const costOfWords = (seconds) => (cloud() ? Math.max(2, Math.round(seconds * HEAR_CR)) : null);
+export const costOfVideo = () => estimate();
+
+/** The jam's lines of words: the edit's own once it is open, else the ones heard or typed. */
+export const linesOf = (b) => (cut.project?.id === b?.cut ? lyricItems(cut.project.body).map((it) => ({ id: it.id, from: Number(it.start) || 0, text: it.text, words: it.words })) : (b?.lines ?? []));
+
+/** What each workspace's tile says: a few words in mono. */
+export function statusOf(j = jam.jam) {
+  const b = j?.body;
+  if (!b) return { track: "No song yet", words: "No song yet", band: "Pick who", edit: "Empty" };
+  const busy = (k) => jam.busy.has(k, j);
+  const lines = linesOf(b);
+  return {
+    track: !b.track ? "No song yet" : busy("part") || jam.starting ? "Cutting…" : b.bpm ? `${Math.round(b.bpm)} BPM` : "Ready",
+    words: !b.track ? "No song yet" : busy("listen") ? "Hearing…" : !lines.length ? "No words" : b.vocals ? "Word synced" : "Typed",
+    band: b.artist ? (crewById(b.artist.crew)?.name ?? "Your photo") : "Pick who",
+    edit: !b.part ? "Empty" : busy("make-video") || busy("render") ? "Making…" : b.film ? "Exported" : "Draft",
+  };
+}
+
+/** One of the crew as the artist (their picture goes up once; free). */
+export async function useCrew(id) {
+  const c = crewById(id);
+  if (!c) return false;
+  try {
+    const p = await onServer(crewPicture(c.id), c.name);
+    await setArtist({ ...p, name: c.name });
+    if (jam.jam?.body.artist) {
+      jam.jam.body.artist.crew = c.id;
+      save();
+    }
+    return true;
+  } catch (e) {
+    toast(e.message, { tone: "crit" });
+    return false;
+  }
+}
+
+/** A shot's kind: a performance (lip-synced), a dance (copying the dance) or b-roll; what was rolled for it is rolled again. */
+export function setKind(i, kind) {
+  const s = jam.jam?.body.shots[i];
+  if (!s || !KINDS[kind] || s.kind === kind) return;
+  s.kind = kind;
+  s.run = null;
+  delete s.clip;
+  jam.jam.body.film = null;
+  touched();
+  syncEdit(jam.jam, { lines: false, beats: false });
+}
+
+/** What Pickle is told of the jam each time he is asked (the workspace open and what is in it), or null on any other page. */
+function context() {
+  if (currentPage() !== "jam") return null;
+  const j = jam.jam;
+  const b = j?.body;
+  const lines = b ? linesOf(b) : [];
+  const crew = crewById(b?.artist?.crew);
+  const part = b?.span ?? {};
+  const length = (part.to ?? 0) - (part.from ?? 0) || 30;
+  return {
+    workspace: jam.workspace,
+    track: b?.track ? { name: b.track.name, seconds: b.track.seconds, bpm: b.bpm, from: part.from ?? 0, to: part.to ?? b.track.seconds, drop: b.track.drop ?? null, loud: b.track.loud ?? null } : null,
+    words: b?.track ? { count: lines.length, heard: !!b.vocals, style: b.captions ?? "karaoke" } : null,
+    artist: crew?.name ?? (b?.artist ? "a photo" : null),
+    dance: b?.dance?.duration ?? null,
+    vibe: b?.style || null,
+    shots: (b?.shots ?? []).map((s) => ({ kind: s.kind, from: s.from, to: s.to })),
+    costs: { track: costOfTrack(30) === null ? "your GPU" : `≈ ${costOfTrack(30)} cr for 30 s`, words: costOfWords(length) === null ? "your GPU" : `≈ ${costOfWords(length)} cr`, video: costOfVideo() === null ? "nothing more to make" : `≈ ${costOfVideo()} cr` },
+  };
+}
+
+/** Pickle's own actions (the part, the words, the captions, the artist, the vibe, the shots, a window): what he did, in short. Nothing here costs credits. */
+function pickle(actions) {
+  const j = jam.jam;
+  const b = j?.body;
+  const did = [];
+  for (const a of actions) {
+    if (a.op === "open") {
+      if (a.workspace) setWorkspace(a.workspace);
+      if (a.window) openWindow(a.window);
+      did.push(`Opened ${a.window ? `the ${a.window} window` : `the ${a.workspace} workspace`}`);
+    } else if (!b) {
+      continue;
+    } else if (a.op === "part" && b.track) {
+      const at = a.drop ? b.track.drop : a.chorus ? b.track.loud : a.from;
+      if (a.drop || a.chorus) {
+        if (at === null || at === undefined) did.push(`No ${a.drop ? "drop" : "loud stretch"} found in this track`);
+        else (setStart(at), did.push(`The part starts at ${Math.round(at * 10) / 10} s`));
+      } else if (at !== undefined) (setStart(at), did.push(`The part starts at ${Math.round(at * 10) / 10} s`));
+      if (a.seconds !== undefined) (setLength(a.seconds), did.push(a.seconds ? `The video runs ${a.seconds} s` : "The video runs the whole track"));
+    } else if (a.op === "words" && b.track) {
+      useLyrics(a.text);
+      did.push("The lyrics are on the track");
+    } else if (a.op === "captions") {
+      if (a.style) (setCaptions(a.style), did.push(`Captions: ${a.style}`));
+      if (a.size !== undefined && cut.project?.id === b.cut) (setLyricSize(a.size), did.push("Bigger captions"));
+    } else if (a.op === "artist") {
+      const c = CREW.find((x) => x.name.toLowerCase() === a.name.toLowerCase());
+      if (c) (useCrew(c.id), did.push(`${c.name} performs`));
+    } else if (a.op === "vibe") {
+      setStyle(a.text);
+      did.push("A new vibe");
+    } else if (a.op === "shots") {
+      if (a.every) (setEvery(a.every), did.push(`A shot every ${a.every} bar${a.every > 1 ? "s" : ""}`));
+      if (a.kind && a.shot) (setKind(a.shot - 1, a.kind), did.push(`Shot ${a.shot}: ${KINDS[a.kind]}`));
+    }
+  }
+  if (did.length) update();
+  return did;
+}
+hooks.context = context;
+hooks.export = exportVideo;
+hooks.apply = (actions) => pickle(actions.filter((a) => ["part", "words", "captions", "artist", "vibe", "shots", "open"].includes(a.op)));

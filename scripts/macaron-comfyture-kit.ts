@@ -11,11 +11,11 @@ export const kit = {
   logos: [
     logo("wordmark-yellow", "Wordmark · yellow", "wordmark", "yellow", "brand/wordmark.svg", "ink, plum", "The signature. Headers, covers, end cards."),
     logo("wordmark-ink", "Wordmark · ink", "wordmark", "ink", "brand/wordmark-ink.svg", "yellow, warm white", "For yellow and light grounds."),
-    logo("wordmark-white", "Wordmark · warm white", "wordmark", "white", "brand/wordmark-white.svg", "ink, plum", "One-colour print on dark."),
+    logo("wordmark-white", "Wordmark · warm white", "wordmark", "white", "brand/wordmark-white.svg", "plum, ink", "One-colour print on dark."),
     logo("wordmark-plum", "Wordmark · plum", "wordmark", "plum", "brand/wordmark-plum.svg", "warm white", "A quiet version on light grounds."),
     logo("mark-yellow", "Mark · yellow", "mark", "yellow", "brand/mark.svg", "ink, plum", "The C with its lid, for square and small places."),
     logo("mark-ink", "Mark · ink", "mark", "ink", "brand/mark-ink.svg", "yellow, warm white", "Ink mark on yellow."),
-    logo("mark-white", "Mark · warm white", "mark", "white", "brand/mark-white.svg", "ink, plum", "One-colour mark on dark."),
+    logo("mark-white", "Mark · warm white", "mark", "white", "brand/mark-white.svg", "plum, ink", "One-colour mark on dark."),
     logo("mark-plum", "Mark · plum", "mark", "plum", "brand/mark-plum.svg", "warm white", "A quiet mark on light grounds."),
     logo("icon-yellow", "App icon · yellow tile", "icon", "yellow", "brand/icon.svg", "ink, plum, warm white", "Ink mark on a yellow tile: favicon, dock, store."),
     logo("icon-ink", "App icon · ink tile", "icon", "ink", "brand/icon-ink.svg", "yellow, warm white", "Yellow mark on an ink tile."),
@@ -54,6 +54,7 @@ export const kit = {
       { say: "Keep the good take.", not: "Generate unlimited content at scale" },
     ],
   },
+  sizes: { mark: 24, wordmark: 96 },
   rules: [
     { id: "r1", kind: "do", text: "Keep the lid on: use the supplied logo files; never redraw, retrace or recolour the logo." },
     { id: "r2", kind: "do", text: "Yellow on ink or plum. Ink on yellow or warm white." },

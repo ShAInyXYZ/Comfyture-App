@@ -8,6 +8,7 @@ import {
   macaron, designById, designNow, kitNow, measure, openDesign, makeVariant, useVariant, removeDesign, edit, patchLayer, thumb, VARIANT_KINDS, INTENTS, reflowFor,
 } from "./macaron.js";
 import { card, key, seg, chip, swatches, textField, arming, isArmed, armedNow, fill } from "./macaron-ui.js";
+import { openWin } from "./macaron-win.js";
 
 const KIND_HINT = {
   copy: "The same design with other words",
@@ -18,7 +19,7 @@ const KIND_HINT = {
 };
 
 export function variationsSection() {
-  const el = h("div.mc-bento.is-variations");
+  const el = h("div.mc-w.is-variations");
   const rerender = () => update();
 
   /** The root of the family the open design belongs to. */
@@ -49,14 +50,14 @@ export function variationsSection() {
     const armedKey = `variant:${d.id}`;
     const pinned = (macaron.compare ?? []).includes(d.id);
     return h(`article.mc-var${d.id === macaron.design ? ".is-on" : ""}${isRoot ? ".is-root" : ""}`, { dataset: { kind: d.variant?.kind ?? "base" } },
-      h("button.mc-var-pic", { type: "button", title: "Open it in the studio", on: { click: () => (openDesign(d.id, fmt), document.getElementById("mc-studio")?.scrollIntoView({ behavior: "smooth" })) } }, thumb(d, { format: fmt, width: 280 })),
+      h("button.mc-var-pic", { type: "button", title: "Open it in the editor", on: { click: () => (openDesign(d.id, fmt), openWin("editor")) } }, thumb(d, { format: fmt, width: 280 })),
       h("div.mc-var-body", {},
         h("div.mc-var-head", {}, h("span.mc-kind", { dataset: { kind: d.variant?.kind ?? "base" } }, isRoot ? "Original" : VARIANT_KINDS[d.variant.kind] ?? "Variation"), chip(d.status)),
         textField({ value: d.name, set: (v) => (d.name = v.slice(0, 60)), note: "Renamed", label: "The variation's name", cls: "mc-var-name" }),
         isRoot ? h("p.mc-hint", {}, d.intent || "The design the variations come from.") : textField({ value: d.variant.note ?? "", set: (v) => (d.variant.note = v.slice(0, 120)), note: "Noted", placeholder: "What is different", label: "What is different", cls: "mc-var-note" }),
         isRoot ? null : revise(d),
         h("div.mc-var-keys", {},
-          key(sprite("scene-render"), "Open in the studio", () => (openDesign(d.id, fmt), document.getElementById("mc-studio")?.scrollIntoView({ behavior: "smooth" }))),
+          key(sprite("scene-render"), "Open in the editor", () => (openDesign(d.id, fmt), openWin("editor"))),
           key(sprite("image-compare"), pinned ? "Take it out of the comparison" : "Compare with another", () => ((macaron.compare = pinned ? macaron.compare.filter((x) => x !== d.id) : [...(macaron.compare ?? []), d.id].slice(-2)), rerender()), { on: pinned }),
           isRoot ? null : h("button.key.is-sm", { type: "button", title: "Take this variation's layers, ground and layouts as the original's", on: { click: () => useVariant(d.id) } }, icon("check"), "Use"),
           isRoot ? null : key(icon("trash"), isArmed(armedKey) ? "Click again to delete the variation" : "Delete the variation", () => arming(armedKey, rerender, () => removeDesign(d.id)), { on: isArmed(armedKey) }))));
@@ -79,7 +80,7 @@ export function variationsSection() {
     const typing = el.contains(document.activeElement) && document.activeElement.matches("input, textarea");
     if (typing) return false;
     const d = designNow();
-    if (!d) return void fill(el, card("is-vars", "Variations", [], h("p.mc-hint", {}, "Open a design in the studio, then save alternatives of it here.")));
+    if (!d) return void fill(el, card("is-vars", "Variations", [], h("p.mc-hint", {}, "Open a post in the editor, then save alternatives of it here.")));
     const root = rootOf(d);
     const fmt = macaron.varFormat ?? d.format;
     const fam = family(root);

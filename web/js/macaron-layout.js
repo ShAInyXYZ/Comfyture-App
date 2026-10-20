@@ -466,6 +466,8 @@ export function cloneDesign(design, { name, kind, note } = {}) {
   copy.createdAt = copy.updatedAt = new Date().toISOString();
   copy.history = [{ at: copy.createdAt, who: "you", note: `Made from ${design.name}` }];
   copy.status = "draft";
+  // a copy is not on the plan: the day belongs to the post it was made from
+  delete copy.plan;
   delete copy.thumb;
   if (kind) copy.variant = { of: design.variant?.of ?? design.id, from: design.id, kind, note: note ?? "" };
   else delete copy.variant;

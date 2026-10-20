@@ -1,6 +1,6 @@
 import { h, icon, sprite } from "../dom.js";
 import {
-  state, ask, askStage, renderStageImage, useStageRender, improveStageLook, setStageModel, stageModels, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt, toast, writers,
+  state, changed, onChange, ask, askStage, renderStageImage, useStageRender, improveStageLook, setStageModel, stageModels, undoAssistant, undoStage, clearChat, attach, detach, mentions, mentionables, adopt, toast, writers,
   attachPhoto, attachStageMap, setStageMap, addStagePicture, removeStagePicture, attachStagePictures,
 } from "../store.js";
 import { pillField, pillText } from "../pills.js";
@@ -15,9 +15,14 @@ import { currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
 import { macaron } from "../macaron.js";
 import { askMacaron, undoMacaron, clearMacaronChat } from "../macaron-assist.js";
+import { harnessOf, barOf, introOf, onRoom, setTeller } from "../harnesses.js";
+import { chat as mixerChat, askMixer, clearMixerChat, confirmMixer, declineMixer } from "../mixer-assist.js";
+import { chat as utensilsChat, roomOfTool, askUtensils, clearUtensilsChat, confirmUtensils, declineUtensils } from "../utensils-assist.js";
 
-// on Macaron the bar is Brioche's: she reads the brand and the design open and changes it
-const onMacaron = () => currentPage() === "macaron";
+// One bar, and a pet in it for every product (web/js/harnesses.js): Ketkout in Kitchen's rooms, Praline in Mixer,
+// Pickle in Jam, Brioche in Macaron, Truffle in Utensils. The page the bar is on says whose bar it is, and each
+// product keeps its own conversation, so what is said to one is never in front of another.
+
 // on the Stage the bar stages a scene; on the Shot it sets up the shot: one bar, two conversations
 const onStage = () => currentPage() === "stage";
 // on Story the bar changes the step that is open: "add a scene where she finds the jellyfish"
@@ -25,6 +30,56 @@ const onStory = () => currentPage() === "story";
 // on Cut the bar asks the editor: "trim the first shot to 3 s and put rain under scene 2"; on Jam it asks the same editor
 // about the music video's edit: "a zoom on every bar, make the words bounce"
 const onCut = () => currentPage() === "cut" || currentPage() === "jam";
+// only the Shot's and the Stage's bars take files and @names: on any other page they would end up in the Shot's conversation, out of sight
+const takesFiles = () => onStage() || currentPage() === "shot";
+
+// Jam's editor is Cut's editor, asked with a conversation of its own (Kitchen's Cut keeps the one in `cut`). The two share one
+// edit, so one answers at a time.
+const jamChat = { messages: [], busy: null };
+const askJam = (text) => askCut(text, jamChat);
+const editorBusy = () => jamChat.busy || cut.chat.busy;
+
+/**
+ * The page the bar is on, as the bar needs it: whose bar it is (the product, so the pet), the room that sets what it
+ * asks and offers, the conversation, how to say something into it, and which model answers (the writer, or the quick assistant).
+ */
+function surface() {
+  switch (currentPage()) {
+    case "macaron":
+      return { product: "macaron", chat: macaron.chat, ask: askMacaron, clear: clearMacaronChat, role: "writer" };
+    case "jam":
+      return { product: "jam", chat: jamChat, ask: askJam, blocked: editorBusy, clear: () => ((jamChat.messages = []), changed("assistant")), role: "writer" };
+    case "mixer":
+      return { product: "mixer", chat: mixerChat, ask: askMixer, clear: clearMixerChat, confirm: confirmMixer, decline: declineMixer, role: "assistant" };
+    case "utensils":
+      return { product: "utensils", room: roomOfTool(), chat: utensilsChat, ask: askUtensils, clear: clearUtensilsChat, confirm: confirmUtensils, decline: declineUtensils, role: "assistant" };
+    case "story": {
+      const writing = [...story.busy].find((k) => !k.includes(":"));
+      return { product: "kitchen", room: "story", chat: { messages: story.chat.messages, busy: story.busy.has("assist") ? "Editing" : writing ? "Writing" : null }, ask: askStory, blocked: () => story.busy.has("assist"), clear: () => ((story.chat.messages = []), changed("assistant")), role: "writer" };
+    }
+    case "cut":
+      return { product: "kitchen", room: "cut", chat: cut.chat, ask: askCut, blocked: editorBusy, clear: () => ((cut.chat.messages = []), changed("assistant")), role: "writer" };
+    case "stage":
+      return { product: "kitchen", room: "stage", chat: state.stageChat, ask: askStage, clear: clearChat, role: "assistant" };
+    default:
+      return { product: "kitchen", room: "shot", chat: state.chat, ask, clear: clearChat, role: "assistant" };
+  }
+}
+const blocked = (s) => (s.blocked ? s.blocked() : s.chat.busy);
+
+/** Says something to the pet of the page as if typed in its bar: a preset chip here, or in a product's left panel. */
+function tell(text) {
+  const s = surface();
+  if (!text?.trim() || blocked(s)) return;
+  open = true;
+  s.ask(text);
+}
+setTeller(tell);
+// a product's panel says which of its workspaces is open: the bar asks and offers what fits it
+onRoom(() => changed("assistant"));
+// on Utensils the room is the group of the tool open (picture, video, sound): the bar follows the shelf
+let shownRoom = null;
+onChange((scopes) => scopes.has("utensils") && currentPage() === "utensils" && roomOfTool() !== shownRoom && changed("assistant"));
 // the Stage, once it has mounted: who its @names are
 let stageApi = null;
 stageReady.then((a) => (stageApi = a));
@@ -55,8 +110,6 @@ function stageMentionables() {
   const pictures = state.stageChat.inputs.pictures.map((p) => ({ name: p.name, title: p.title, url: p.url, about: "picture" }));
   return [...cast, ...pictures, ...maps];
 }
-const PLACEHOLDER = { shot: "Describe the shot · @ for a file", stage: "Stage a scene — two people arguing by a wall, low angle", story: "Ask the story assistant — add a scene where Mara finds the jellyfish", cut: "Ask the editor — trim the first shot to 3 s and put rain under scene 2", jam: "Ask the editor — a zoom on every bar, shake on the drop, make the words bounce" };
-
 const KIND_ICON = { video: "video", audio: "sound" };
 
 // the composer is made once and kept, so what you type, the caret and the focus survive every redraw
@@ -64,7 +117,6 @@ let composer = null;
 let seen = 0;
 // the conversation panel above the bar: open while you talk, folded away when you don't need it
 let open = false;
-let asked = 0;
 
 /** A file's face: its picture, or an icon for what it is. */
 function thumb(f) {
@@ -98,6 +150,7 @@ function insertMention(input, name) {
 /** The picker over the composer: the files whose names start with what follows the @. */
 function updatePicker() {
   const c = composer;
+  if (!takesFiles()) return void (c.picker.hidden = true);
   if (onStage()) return updateStagePicker();
   const at = mentionAt(c.input);
   // the conversation's files first, then the Library: takes, films, images, presets
@@ -164,36 +217,19 @@ function makeComposer() {
   const fileInput = h("input", { type: "file", multiple: true, hidden: true, accept: "image/*,video/mp4,video/webm,video/quicktime,audio/*,text/plain,text/markdown,.md,.txt,.json,.csv" });
   // the field grows with its words, up to its CSS height
   const grow = () => {};
+  // the quick actions give way while you write, and come back when the field is empty
+  const typing = () => composer.chips.classList.toggle("is-typing", !!input.value.trim());
   const send = () => {
     const text = input.value;
-    if (onMacaron()) {
-      if (!text.trim() || macaron.chat.busy) return;
-      input.value = "";
-      open = true;
-      return askMacaron(text);
-    }
-    if (onStory()) {
-      if (!text.trim() || story.busy.has("assist")) return;
-      input.value = "";
-      open = true;
-      return askStory(text);
-    }
-    if (onCut()) {
-      if (!text.trim() || cut.chat.busy) return;
-      input.value = "";
-      open = true;
-      return askCut(text);
-    }
-    if (!text.trim() || (onStage() ? state.stageChat.busy : state.chat.busy)) return;
+    if (!text.trim() || blocked(surface())) return;
     input.value = "";
     grow();
     composer.picker.hidden = true;
     markMentioned();
-    open = true;
-    if (onStage()) askStage(text);
-    else ask(text);
+    typing();
+    tell(text);
   };
-  input.addEventListener("input", () => (grow(), updatePicker(), markMentioned()));
+  input.addEventListener("input", () => (grow(), updatePicker(), markMentioned(), typing()));
   input.addEventListener("click", updatePicker);
   // a redraw blurs it for a moment; the picker only goes when the focus really left
   input.addEventListener("blur", () => setTimeout(() => document.activeElement !== input.el && (composer.picker.hidden = true), 120));
@@ -222,7 +258,7 @@ function makeComposer() {
   // paste a picture or a file straight into the message
   input.addEventListener("paste", (e) => {
     const files = [...(e.clipboardData?.files ?? [])];
-    if (files.length) {
+    if (files.length && takesFiles()) {
       e.preventDefault();
       if (onStage()) attachStagePictures(files);
       else attach(files);
@@ -260,6 +296,7 @@ function makeComposer() {
       const raw = composer.improved && words.trim().length > 0;
       input.value = "";
       grow();
+      typing();
       forget();
       open = true;
       renderStageImage(words, { raw });
@@ -282,6 +319,7 @@ function makeComposer() {
         composer.improved = true;
         input.value = better;
         grow();
+        typing();
         undo.hidden = false;
       } catch (error) {
         toast(error.message ?? String(error), { tone: "crit" });
@@ -291,7 +329,7 @@ function makeComposer() {
       }
     } },
   }, sprite("prompt-enhance"));
-  const undo = h("button.composer-key.stage-only", { type: "button", hidden: true, title: "Put my words back", "aria-label": "Put my words back", on: { click: () => ((input.value = composer.before ?? ""), grow(), forget()) } }, icon("remix"));
+  const undo = h("button.composer-key.stage-only", { type: "button", hidden: true, title: "Put my words back", "aria-label": "Put my words back", on: { click: () => ((input.value = composer.before ?? ""), grow(), typing(), forget()) } }, icon("remix"));
   const forget = () => {
     composer.improved = false;
     composer.before = null;
@@ -301,11 +339,14 @@ function makeComposer() {
   const picker = h("div.mention-picker", { hidden: true, role: "listbox", "aria-label": "Files" });
   const toggle = h("button.composer-key.thread-key", { type: "button", "aria-label": "Conversation", on: { click: () => ((open = !open), renderAssistant(document.getElementById("assistant"))) } });
   const status = h("span.bar-status");
-  const bar = h("div.chat-bar", {}, tray, input.el, h("div.bar-row", {}, clip, render, modelSlot, improve, undo, h("span.spacer"), status, toggle, key));
-  const el = h("div.composer", {}, picker, bar, fileInput);
-  // the page keeps room for the bar at its real height, files and all
-  new ResizeObserver(() => document.documentElement.style.setProperty("--chat-h", `${Math.ceil(bar.getBoundingClientRect().height)}px`)).observe(bar);
-  composer = { el, input, key, render, modelSlot, improve, tray, picker, toggle, status, pick: 0, list: [], filter: "image", improved: false, before: null };
+  // the pet's face at the left of the composer, its quick actions above it
+  const face = h("span.pet-face", {}, h("img", { alt: "", draggable: false }));
+  const chips = h("div.pet-chips", { hidden: true, role: "group", "aria-label": "Quick actions" });
+  const bar = h("div.chat-bar", {}, face, h("div.bar-main", {}, tray, input.el, h("div.bar-row", {}, clip, render, modelSlot, improve, undo, h("span.spacer"), status, toggle, key)));
+  const el = h("div.composer", {}, picker, chips, bar, fileInput);
+  // the page keeps room for the bar at its real height, quick actions and files and all
+  new ResizeObserver(() => document.documentElement.style.setProperty("--chat-h", `${Math.ceil(el.getBoundingClientRect().height)}px`)).observe(el);
+  composer = { el, input, key, render, modelSlot, improve, tray, picker, toggle, status, face, chips, pick: 0, list: [], filter: "image", improved: false, before: null };
   return composer;
 }
 
@@ -359,37 +400,39 @@ function renderTile(id) {
     h("button.msg-render-use", { type: "button", title: "Start a shot from it", "aria-label": "Start a shot from it", on: { click: () => useStageRender(r.photo) } }, icon("video")));
 }
 
-function message(m, last) {
+/** A paid action waits on its answer for one yes, with its price; then it runs, or the user says not now. */
+function confirmRow(m, s) {
+  const c = m.confirm;
+  if (c.state === "asking") {
+    return h("div.msg-confirm", {},
+      h("button.key.is-primary", { type: "button", on: { click: () => s.confirm(m) } }, c.label, h("em", {}, c.cost)),
+      h("button.key.is-quiet", { type: "button", on: { click: () => s.decline(m) } }, "Not now"));
+  }
+  const note = { running: c.running, done: c.done, failed: c.failed, declined: "Not now", stale: "That changed since. Ask me again." }[c.state];
+  return h("div.msg-confirm.is-settled", {}, c.state === "running" ? h("span.typing", {}, h("i"), h("i"), h("i")) : c.state === "done" ? icon("check") : c.state === "failed" ? icon("close") : null, note);
+}
+
+function message(m, last, s, harness) {
   const files = (m.files ?? []).map((n) => state.chat.files.find((f) => f.name === n)).filter(Boolean);
-  if (m.macaron && m.role === "assistant") {
-    // Brioche's answer: what she changed, as chips, with one step back
-    return h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
-      h("p", {}, m.text),
-      m.did?.length ? h("div.msg-chips", {}, ...m.did.map((d) => h("span.chip", {}, icon(d === "Undone" ? "remix" : "check"), d))) : null,
-      last && m.undo ? h("button.key.is-sm.is-quiet.undo", { type: "button", title: "Put the design back as it was", on: { click: () => undoMacaron(m) } }, icon("remix"), "Undo") : null);
-  }
-  if (m.stage && m.role === "assistant") {
-    return h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
-      h("p", {}, m.text),
-      m.renders?.length ? h("div.msg-renders", {}, m.renders.map(renderTile)) : null,
-      m.did?.length || m.failed?.length
-        ? h("div.msg-chips", {},
-          ...(m.did ?? []).map((d) => h("span.chip", {}, icon(d === "Undone" ? "remix" : "check"), d)),
-          ...(m.failed ?? []).map((f) => h("span.chip.is-failed", { title: f }, icon("close"), f.split(":")[0].replace(/_/g, " "))))
-        : null,
-      last && m.undo ? h("button.key.is-sm.is-quiet.undo", { type: "button", title: "Put the stage back as it was", on: { click: () => undoStage(m) } }, icon("remix"), "Undo") : null);
-  }
   if (m.role === "user") {
     return h("div.msg.is-user", {},
       m.about ? h("span.msg-about", {}, m.about) : null,
       pillText("p", m.text, lookup),
       files.length ? h("div.msg-files", {}, files.map((f) => h("span.msg-file", { title: `@${f.name}` }, thumb(f)))) : null);
   }
+  // a pet's answer: its face, its words, what it did (and could not), a yes or no for what costs credits, one step back
+  const [undo, back] = m.macaron ? [undoMacaron, "Put the design back as it was"] : m.stage ? [undoStage, "Put the stage back as it was"] : [undoAssistant, "Put the shot back as it was"];
   return h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
+    h("img.msg-face", { src: harness.face, alt: "", draggable: false }),
     h("p", {}, m.text),
-    m.did?.length ? h("div.msg-chips", {}, m.did.map((d) => h("span.chip", {}, icon(d === "Undone" ? "remix" : "check"), d))) : null,
-    last && m.undo ? h("button.key.is-sm.is-quiet.undo", { type: "button", title: "Put the shot back as it was", on: { click: () => undoAssistant(m) } }, icon("remix"), "Undo") : null,
-  );
+    m.renders?.length ? h("div.msg-renders", {}, m.renders.map(renderTile)) : null,
+    m.did?.length || m.failed?.length
+      ? h("div.msg-chips", {},
+        ...(m.did ?? []).map((d) => h("span.chip", {}, icon(d === "Undone" ? "remix" : "check"), d)),
+        ...(m.failed ?? []).map((f) => h("span.chip.is-failed", { title: f }, icon("close"), m.stage ? f.split(":")[0].replace(/_/g, " ") : f)))
+      : null,
+    m.confirm ? confirmRow(m, s) : null,
+    last && m.undo ? h("button.key.is-sm.is-quiet.undo", { type: "button", title: back, on: { click: () => undo(m) } }, icon("remix"), "Undo") : null);
 }
 
 // a picture shown over the Stage's frame asks for room
@@ -399,49 +442,61 @@ document.addEventListener("assistant:fold", () => {
   renderAssistant(document.getElementById("assistant"));
 });
 
+// how many answers each conversation had when the bar last drew it: a new one opens the thread
+const known = new Map();
+
 export function renderAssistant(el) {
+  const s = surface();
+  const harness = harnessOf(s.product);
   const stage = onStage();
   const storyPage = onStory();
-  const writing = [...story.busy].find((k) => !k.includes(":"));
   const cutPage = onCut();
-  const { messages, busy } = onMacaron() ? macaron.chat : storyPage ? { messages: story.chat.messages, busy: story.busy.has("assist") ? "Editing" : writing ? "Writing" : null } : cutPage ? cut.chat : stage ? state.stageChat : state.chat;
+  const filesOn = takesFiles();
+  const { messages, busy } = s.chat;
   const { files, attaching } = state.chat;
   const c = composer ?? makeComposer();
-  c.key.disabled = !!busy;
+  c.key.disabled = !!busy || !!blocked(s);
   c.render.disabled = !!busy;
-  // the model that answers here, on every page: the writer on Story and Cut, the assistant on Shot and the Stage
-  const role = storyPage || cutPage || onMacaron() ? "writer" : "assistant";
-  const llm = writers().length > 1 ? [writerPicker(role)] : [];
+  // the model that answers here, on every page: the writer on Story, Cut, Jam and Macaron, the quick assistant on Shot, the Stage, Mixer and Utensils
+  const llm = writers().length > 1 ? [writerPicker(s.role)] : [];
   if (stage) {
     const models = stageModels();
     const value = state.stageModel && models.some((m) => m.id === state.stageModel) ? state.stageModel : state.image.catalogue?.default ?? models[0]?.id;
     c.modelSlot.replaceChildren(...llm, ...(models.length > 1 ? [dropdown({ label: "Image model", value, items: models.map((m) => ({ value: m.id, label: m.name, desc: m.about })), onChange: (id) => setStageModel(id) })] : []));
   } else c.modelSlot.replaceChildren(...llm);
-  c.input.placeholder = PLACEHOLDER[storyPage ? "story" : cutPage ? (currentPage() === "jam" ? "jam" : "cut") : stage ? "stage" : "shot"];
+  // whose bar it is: the pet's face at its left, what it asks in this room, and its quick actions above the bar
+  // (a product with a left panel of its own shows them there instead)
+  const look = barOf(s.product, s.room);
+  const face = c.face.firstChild;
+  if (face.getAttribute("src") !== harness.face) face.setAttribute("src", harness.face);
+  c.face.dataset.tooltip = introOf(s.product);
+  el.dataset.pet = harness.pet;
+  c.input.placeholder = look.placeholder;
+  const offered = harness.tools === "bar" ? look.presets : [];
+  c.chips.hidden = !offered.length;
+  c.chips.replaceChildren(...offered.map((p) => h("button.pet-chip", { type: "button", title: p.text, disabled: !!blocked(s), on: { click: () => tell(p.text) } }, p.label)));
+  shownRoom = s.room;
   const inputs = state.stageChat.inputs;
-  c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : files.map(fileChip)), ...(!stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
+  c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : filesOn ? files.map(fileChip) : []), ...(filesOn && !stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
   // on Story, what the assistant will edit: the block (or the card) that is picked
   if (storyPage) {
     const label = selectionLabel();
     c.tray.replaceChildren(...(label ? [h("div.file-chip.is-context", { title: "The assistant edits what is picked; it knows the whole story" }, h("span.chip-thumb.is-glyph", {}, sprite("prompt-enhance")), h("span.chip-name", {}, `Editing: ${label}`), h("button.chip-x", { type: "button", "aria-label": "Edit the whole story", title: "The whole story", on: { click: () => selectInStory(null) } }, icon("close")))] : []));
   }
-  c.tray.hidden = storyPage ? !selectionLabel() : cutPage || (stage ? !inputs.maps.length && !inputs.pictures.length : !files.length && !attaching);
+  c.tray.hidden = storyPage ? !selectionLabel() : !filesOn || (stage ? !inputs.maps.length && !inputs.pictures.length : !files.length && !attaching);
   c.el.classList.toggle("is-story", storyPage);
   c.el.classList.toggle("is-cut", cutPage);
-  // Brioche's: her own words in the bar, no files in its tray, her face beside it
-  c.el.classList.toggle("is-macaron", onMacaron());
-  el.classList.toggle("is-macaron", onMacaron());
-  if (onMacaron()) {
-    c.input.placeholder = "Ask Brioche: a yellow variation, a shorter headline, a story layout";
-    c.tray.hidden = true;
-  }
+  c.el.classList.toggle("no-clip", !filesOn);
+  // a product with a left panel of its own (Jam, Macaron) has its bar on one row; the others keep the card
+  c.el.classList.toggle("is-compact", harness.tools === "panel");
   c.input.refresh();
   c.el.classList.toggle("is-stage", stage);
   markMentioned();
   // a new answer opens the conversation, so its changes and its Undo are in view
+  const where = `${s.product}:${s.room ?? ""}`;
   const answers = messages.filter((m) => m.role === "assistant").length;
-  if (answers > asked && asked !== 0) open = true;
-  asked = answers || -1;
+  if (answers > (known.get(where) ?? answers)) open = true;
+  known.set(where, answers);
   // on the bar: whether it is working, and how long the conversation is
   c.status.replaceChildren(...(busy ? [h("span.typing", {}, h("i"), h("i"), h("i"))] : []));
   c.status.dataset.tooltip = busy || "";
@@ -454,12 +509,13 @@ export function renderAssistant(el) {
 
   const lastAi = messages.findLastIndex((m) => m.role === "assistant");
   const thread = h("div.chat-thread", {},
-    messages.map((m, i) => message(m, i === lastAi)),
-    busy ? h("div.msg.is-ai.is-busy", {}, h("span.typing", {}, h("i"), h("i"), h("i")), busy) : null,
+    messages.map((m, i) => message(m, i === lastAi, s, harness)),
+    busy ? h("div.msg.is-ai.is-busy", {}, h("img.msg-face", { src: harness.face, alt: "", draggable: false }), h("span.typing", {}, h("i"), h("i"), h("i")), busy) : null,
   );
   const panel = h("div.chat-panel", { hidden: !open },
+    h("div.panel-pet", {}, h("img", { src: harness.face, alt: "", draggable: false }), h("b", {}, harness.name), h("span", {}, harness.tag)),
     h("div.panel-keys", {},
-      h("button.key.is-sm.is-icon.is-quiet", { type: "button", disabled: !!busy, title: "Clear — the conversation and its files", "aria-label": "Clear the conversation", on: { click: onMacaron() ? clearMacaronChat : clearChat } }, icon("trash")),
+      h("button.key.is-sm.is-icon.is-quiet", { type: "button", disabled: !!busy, title: filesOn ? "Clear — the conversation and its files" : "Clear the conversation", "aria-label": "Clear the conversation", on: { click: () => s.clear() } }, icon("trash")),
       h("button.key.is-sm.is-icon.is-quiet", { type: "button", title: "Fold — Esc", "aria-label": "Fold the conversation", on: { click: () => ((open = false), renderAssistant(el)) } }, icon("chevron"))),
     thread,
   );
@@ -472,15 +528,15 @@ export function renderAssistant(el) {
     c.input.focus({ preventScroll: true });
     c.input.setSelectionRange(...caret);
   }
-  // drop files anywhere on the assistant
+  // drop files anywhere on the assistant, where it takes files
   el.ondragover = (e) => {
-    if (![...e.dataTransfer.types].includes("Files")) return;
+    if (!takesFiles() || ![...e.dataTransfer.types].includes("Files")) return;
     e.preventDefault();
     el.classList.add("is-drop");
   };
   el.ondragleave = (e) => !el.contains(e.relatedTarget) && el.classList.remove("is-drop");
   el.ondrop = (e) => {
-    if (!e.dataTransfer.files.length) return;
+    if (!takesFiles() || !e.dataTransfer.files.length) return;
     e.preventDefault();
     el.classList.remove("is-drop");
     if (onStage()) attachStagePictures([...e.dataTransfer.files]);
