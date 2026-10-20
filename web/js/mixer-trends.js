@@ -25,6 +25,46 @@ export const CREW = [
     "name": "Meringue",
     "role": "Performer",
     "look": "the snowy-white longhaired kitten with sky-blue eyes and a coral-pink ribbon"
+  },
+  {
+    "id": "earl",
+    "name": "Earl",
+    "role": "Mochi's owner",
+    "look": "the grumpy old Texan rancher with a cream straw cowboy hat, bushy silver eyebrows, a silver handlebar mustache, a faded blue denim shirt and a plum bandana",
+    "kind": "person",
+    "pet": "mochi"
+  },
+  {
+    "id": "josie",
+    "name": "Josie",
+    "role": "Praline's owner",
+    "look": "the upbeat young creator with caramel-blonde curls in a messy bun, freckles, a butter-yellow cropped hoodie, light jeans and small gold hoop earrings",
+    "kind": "person",
+    "pet": "praline"
+  },
+  {
+    "id": "theo",
+    "name": "Theo",
+    "role": "Sesame's owner",
+    "look": "the laid-back young producer with short black twists, an oversized black tee, black joggers and emerald-green headphones around his neck",
+    "kind": "person",
+    "pet": "sesame"
+  },
+  {
+    "id": "margot",
+    "name": "Margot",
+    "role": "Meringue's owner",
+    "look": "the glamorous former stage actress with a sleek platinum-white bob, sky-blue eyes, a white blouse, cream trousers and a coral silk scarf",
+    "kind": "person",
+    "pet": "meringue"
+  },
+  {
+    "id": "dre",
+    "name": "Dre",
+    "role": "Bagel's owner, Theo's brother",
+    "look": "Theo's big-hearted older brother with a short boxed beard, a burgundy bucket hat, a cream varsity jacket with burgundy sleeves and light jeans",
+    "kind": "person",
+    "pet": "bagel"
   }
 ];
 
@@ -158,12 +198,12 @@ export const TRENDS = [
     "id": "state-property",
     "name": "State Property",
     "kind": "reactions",
-    "seconds": 12,
+    "seconds": 17,
     "heat": 5,
     "cast": [
       {
         "role": "Lead",
-        "crew": "praline"
+        "crew": "earl"
       },
       {
         "role": "Partner",
@@ -173,23 +213,23 @@ export const TRENDS = [
     "beats": [
       {
         "from": 0.0,
-        "to": 1.0,
-        "text": "Praline abruptly turns toward lens"
+        "to": 5.0,
+        "text": "Earl turns to the camera, an arm on the sill, and starts complaining"
       },
       {
-        "from": 1.0,
-        "to": 3.0,
-        "text": "Offscreen visitor asks about a picnic spot"
+        "from": 5.0,
+        "to": 7.8,
+        "text": "Earl leans on the sill, grimacing"
       },
       {
-        "from": 3.0,
-        "to": 8.0,
-        "text": "Driver reacts, points at its lunchbox and delivers newly written territorial dialogue"
-      },
-      {
-        "from": 8.0,
+        "from": 7.8,
         "to": 12.0,
-        "text": "Deadpan stare and window rises"
+        "text": "Earl sits back and points away down the lane"
+      },
+      {
+        "from": 12.0,
+        "to": 17.0,
+        "text": "Earl points again, then holds up a card"
       }
     ],
     "music": {
@@ -202,7 +242,11 @@ export const TRENDS = [
         "woodblock"
       ]
     },
-    "caption": null
+    "caption": null,
+    "aspect": "9:16",
+    "preview": "brand/mixer/trends/state-property/preview.mp4",
+    "poster": "brand/mixer/trends/state-property/poster.webp",
+    "recipe": "brand/mixer/trends/state-property/recipe.json"
   },
   {
     "id": "black-cat-clapping",

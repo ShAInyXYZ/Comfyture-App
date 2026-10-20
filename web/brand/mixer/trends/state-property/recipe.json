@@ -1,0 +1,106 @@
+{
+ "id": "state-property",
+ "about": "State Property as our crew performs it: one shot from one first frame (the meme's own opening, redrawn with Earl at the wheel and Mochi on the passenger seat). The driver's motion is the meme's own: DWPose's body, face and hands (take-N.kps.json, drawn as take-N.pose.mp4), kept as a person since Earl is one. Four takes run one after another, each starting on the frame where the one before it reaches their join, so the shot never jumps. The takes run shot-swap-dev.json with the pose as a ready-made control and the speech frozen in for the mouth; {Lead} and {Partner} are those roles' names and looks.",
+ "seconds": 17.0,
+ "aspect": "9:16",
+ "size": {
+  "width": 1152,
+  "height": 2048
+ },
+ "fps": 24,
+ "preview": "preview.mp4",
+ "poster": "poster.webp",
+ "sound": {
+  "mix": "sound.m4a",
+  "vocals": "vocals.m4a",
+  "note": "The meme's own recording: the speech drives the mouth and plays under the cut. It is the original recording of a private person, so it is replaced or removed before the repository is published."
+ },
+ "roles": [
+  {
+   "role": "Lead",
+   "crew": "earl",
+   "plays": "the driver",
+   "look": "a grumpy old Texan rancher with a cream straw cowboy hat, bushy silver eyebrows, a thick silver handlebar mustache, a faded blue denim shirt and a plum bandana"
+  },
+  {
+   "role": "Partner",
+   "crew": "mochi",
+   "plays": "the passenger, unbothered",
+   "look": "a round grey-lilac cat with a cream face and a plum bow tie"
+  }
+ ],
+ "take": {
+  "graph": "shot-swap-dev.json",
+  "control": "ready",
+  "strength": 0.8,
+  "width": 576,
+  "height": 1024,
+  "build": "human",
+  "chain": true
+ },
+ "look": "look.webp",
+ "beats": [
+  {
+   "from": 0.0,
+   "to": 5.0,
+   "text": "Earl turns to the camera, an arm on the sill, and starts complaining"
+  },
+  {
+   "from": 5.0,
+   "to": 7.8,
+   "text": "Earl leans on the sill, grimacing"
+  },
+  {
+   "from": 7.8,
+   "to": 12.0,
+   "text": "Earl sits back and points away down the lane"
+  },
+  {
+   "from": 12.0,
+   "to": 17.0,
+   "text": "Earl points again, then holds up a card"
+  }
+ ],
+ "shots": [
+  {
+   "from": 0.0,
+   "to": 4.958,
+   "frames": 129,
+   "pose": "take-1.pose.mp4",
+   "keypoints": "take-1.kps.json",
+   "starts": "look",
+   "seed": 4201,
+   "prompt": "Medium close-up through the open driver's window of a cream-yellow vintage pickup parked on an autumn lane, warm golden afternoon light. {Lead} sits in the driver's seat and scolds the person filming from outside, looking straight at the camera, talking the whole time, his mouth and mustache moving with every word. On the passenger seat beside him sits {Partner}, unbothered, staring at the camera. Earl turns to the camera with his forearm resting along the window sill and his other hand on the steering wheel, then leans toward the window, complaining. Polished 3D animated feature-film style. A gruff old man's voice speaks indignantly, close to the camera."
+  },
+  {
+   "from": 4.958,
+   "to": 7.792,
+   "frames": 81,
+   "pose": "take-2.pose.mp4",
+   "keypoints": "take-2.kps.json",
+   "starts": "the take before, at the join",
+   "seed": 4202,
+   "prompt": "Medium close-up through the open driver's window of a cream-yellow vintage pickup parked on an autumn lane, warm golden afternoon light. {Lead} sits in the driver's seat and scolds the person filming from outside, looking straight at the camera, talking the whole time, his mouth and mustache moving with every word. On the passenger seat beside him sits {Partner}, unbothered, glancing at Earl, then back at the camera. Earl leans on the window sill with a wry, disapproving grimace, still talking. Polished 3D animated feature-film style. A gruff old man's voice speaks indignantly, close to the camera."
+  },
+  {
+   "from": 7.792,
+   "to": 12.042,
+   "frames": 113,
+   "pose": "take-3.pose.mp4",
+   "keypoints": "take-3.kps.json",
+   "starts": "the take before, at the join",
+   "seed": 4203,
+   "prompt": "Medium close-up through the open driver's window of a cream-yellow vintage pickup parked on an autumn lane, warm golden afternoon light. {Lead} sits in the driver's seat and scolds the person filming from outside, looking straight at the camera, talking the whole time, his mouth and mustache moving with every word. On the passenger seat beside him sits {Partner}, unbothered, following Earl's pointing arm with a slow look. Earl sits back and stretches his arm out through the window, pointing away down the lane, stern, still talking. Polished 3D animated feature-film style. A gruff old man's voice speaks indignantly, close to the camera."
+  },
+  {
+   "from": 12.042,
+   "to": 17.0,
+   "frames": 129,
+   "pose": "take-4.pose.mp4",
+   "keypoints": "take-4.kps.json",
+   "starts": "the take before, at the join",
+   "seed": 4304,
+   "prompt": "Medium close-up through the open driver's window of a cream-yellow vintage pickup parked on an autumn lane, warm golden afternoon light. {Lead} sits in the driver's seat and scolds the person filming from outside, looking straight at the camera, talking the whole time, his mouth and mustache moving with every word. The camera stays put. On the passenger seat beside him, in view at the left the whole time, sits {Partner}, unbothered, yawning, then staring at the camera. Earl points out of the window again, indignant, mouth wide open, then looks down and holds up a small white card to the camera. The same soft, even golden afternoon light throughout, no sun glare. Polished 3D animated feature-film style. A gruff old man's voice speaks indignantly, close to the camera."
+  }
+ ]
+}

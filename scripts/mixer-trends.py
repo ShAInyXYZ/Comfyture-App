@@ -64,6 +64,15 @@ CREW = {
     "mochi": ("Mochi", "Scene-stealer", CREW_DIR / "characters/mochi-sheet-v1.png", "the round grey-lilac cat with pale blue eyes and a plum bow tie"),
     "meringue": ("Meringue", "Performer", CREW_DIR / "characters/meringue-sheet-v1.png", "the snowy-white longhaired kitten with sky-blue eyes and a coral-pink ribbon"),
 }
+# the crew's people: the cats' owners (and Bagel's), who play the parts people play. Each has a sheet in
+# characters/owners/ laid out like the cats': four views on top, three expressions and one with the pet below
+OWNERS = {
+    "earl": ("Earl", "Mochi's owner", "mochi", "the grumpy old Texan rancher with a cream straw cowboy hat, bushy silver eyebrows, a silver handlebar mustache, a faded blue denim shirt and a plum bandana"),
+    "josie": ("Josie", "Praline's owner", "praline", "the upbeat young creator with caramel-blonde curls in a messy bun, freckles, a butter-yellow cropped hoodie, light jeans and small gold hoop earrings"),
+    "theo": ("Theo", "Sesame's owner", "sesame", "the laid-back young producer with short black twists, an oversized black tee, black joggers and emerald-green headphones around his neck"),
+    "margot": ("Margot", "Meringue's owner", "meringue", "the glamorous former stage actress with a sleek platinum-white bob, sky-blue eyes, a white blouse, cream trousers and a coral silk scarf"),
+    "dre": ("Dre", "Bagel's owner, Theo's brother", "bagel", "Theo's big-hearted older brother with a short boxed beard, a burgundy bucket hat, a cream varsity jacket with burgundy sleeves and light jeans"),
+}
 # each cat's face on the lineup, as fractions of its width and height
 FACES = {"praline": (0.035, 0.19, 0.245, 0.56), "sesame": (0.27, 0.19, 0.47, 0.56), "mochi": (0.5, 0.24, 0.71, 0.58), "meringue": (0.73, 0.21, 0.95, 0.58)}
 # the rest of the cast, any of whom can be picked to play a role: (name, sheet, the front view on it)
@@ -159,6 +168,9 @@ def main():
                 "poster": f"brand/mixer/trends/{slug}/{recipe['poster']}",
                 "recipe": f"brand/mixer/trends/{slug}/recipe.json",
             })
+            # who is in our version, when the recipe says
+            if recipe.get("roles"):
+                trends[-1]["cast"] = [{"role": r["role"], "crew": r["crew"]} for r in recipe["roles"]]
 
     # the crew: a round avatar from the lineup, and a clean front view from each sheet for the models
     lineup = Image.open(CREW_DIR / "crew-lineup-v1.png").convert("RGB")
@@ -176,6 +188,21 @@ def main():
         front = s.crop((int(sw * 0.01), int(sh * 0.135), int(sw * 0.25), int(sh * 0.515)))
         front.save(OUT_CREW / f"{key}.png", optimize=True)
         crew.append({"id": key, "name": name, "role": role, "look": desc})
+
+    # the owners: the first expression study as the round face, the front view (no heading, no label) for the models
+    for key, (name, role, pet, desc) in OWNERS.items():
+        sheet = CREW_DIR / f"characters/owners/{key}-sheet-v1.png"
+        if not sheet.exists():
+            continue
+        s = Image.open(sheet).convert("RGB")
+        sw, sh = s.size
+        study = s.crop((int(sw * 0.02), int(sh * 0.605), int(sw * 0.235), int(sh * 0.9)))
+        side = min(study.size)
+        face = study.crop(((study.width - side) // 2, 0, (study.width - side) // 2 + side, side)).resize((256, 256), Image.LANCZOS)
+        face.save(OUT_CREW / f"{key}-face.webp", quality=88, method=6)
+        front = s.crop((int(sw * 0.03), int(sh * 0.097), int(sw * 0.25), int(sh * 0.552)))
+        front.save(OUT_CREW / f"{key}.png", optimize=True)
+        crew.append({"id": key, "name": name, "role": role, "look": desc, "kind": "person", "pet": pet})
 
     # the rest of the cast: a clean front view for the models and a round face for the pickers
     for key, (name, sheet, (x0, y0, x1, y1)) in CAST.items():

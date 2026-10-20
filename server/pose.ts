@@ -7,22 +7,34 @@
 import { spawn } from "node:child_process";
 
 export type Point = [number, number] | null;
-export type Body = Point[]; // 18 OpenPose body points: nose, neck, shoulders, elbows, wrists, hips, knees, ankles, eyes, ears
+// 18 OpenPose body points (nose, neck, shoulders, elbows, wrists, hips, knees, ankles, eyes, ears), and for
+// people kept as people, after them the 70 face points and the 21 of each hand (left, then right)
+export type Body = Point[];
 export type PoseFrame = { width: number; height: number; people: Body[] };
+const FACE = 18, LEFT_HAND = 88, RIGHT_HAND = 109;
 
 const NOSE = 0, NECK = 1, R_SHOULDER = 2, R_ELBOW = 3, R_WRIST = 4, L_SHOULDER = 5, L_ELBOW = 6, L_WRIST = 7;
 const R_HIP = 8, R_KNEE = 9, R_ANKLE = 10, L_HIP = 11, L_KNEE = 12, L_ANKLE = 13, R_EYE = 14, L_EYE = 15, R_EAR = 16, L_EAR = 17;
 
-/** The frames DWPose's POSE_KEYPOINT gives (as JSON text), each person's body points only. */
-export function parsePoses(text: string, least = 0.3): PoseFrame[] {
-  const frames = JSON.parse(text) as { canvas_width: number; canvas_height: number; people: { pose_keypoints_2d: number[] }[] }[];
+type Person = { pose_keypoints_2d: number[]; face_keypoints_2d?: number[]; hand_left_keypoints_2d?: number[]; hand_right_keypoints_2d?: number[] };
+
+/**
+ * The frames DWPose's POSE_KEYPOINT gives (as JSON text): each person's body points, and with `parts`
+ * their face and hands too (for people played by people: the face and fingers carry the performance).
+ */
+export function parsePoses(text: string, least = 0.3, parts = false): PoseFrame[] {
+  const frames = JSON.parse(text) as { canvas_width: number; canvas_height: number; people: Person[] }[];
+  const points = (flat: number[] | undefined, n: number): Point[] => Array.from({ length: n }, (_, i) => {
+    const [x, y, c] = (flat ?? []).slice(i * 3, i * 3 + 3);
+    return c >= least && x > 0 && y > 0 ? [x, y] as [number, number] : null;
+  });
   return frames.map((f) => ({
     width: f.canvas_width,
     height: f.canvas_height,
-    people: (f.people ?? []).map((p) => Array.from({ length: 18 }, (_, i) => {
-      const [x, y, c] = p.pose_keypoints_2d.slice(i * 3, i * 3 + 3);
-      return c >= least && x > 0 && y > 0 ? [x, y] as [number, number] : null;
-    })),
+    people: (f.people ?? []).map((p) => [
+      ...points(p.pose_keypoints_2d, 18),
+      ...(parts ? [...points(p.face_keypoints_2d, 70), ...points(p.hand_left_keypoints_2d, 21), ...points(p.hand_right_keypoints_2d, 21)] : []),
+    ]),
   }));
 }
 
@@ -109,6 +121,11 @@ const quantile = (a: number[], p: number) => {
   return s[Math.round(p * (s.length - 1))];
 };
 
+/** People played by people: tracked, the detector's blinks held, its jitter smoothed, their shape kept. */
+export function steady(frames: PoseFrame[], count = 2): PoseFrame[] {
+  return smooth(hold(trackPeople(frames, count)));
+}
+
 // every bone from its parent, out from the neck, with the part of the build that sets its length
 const BONES: [number, number, keyof Build][] = [
   [NECK, NOSE, "neck"], [NOSE, R_EYE, "face"], [NOSE, L_EYE, "face"], [R_EYE, R_EAR, "face"], [L_EYE, L_EAR, "face"],
@@ -131,6 +148,12 @@ export function rebuild(body: Body, build: Build, most: number[] = []): Body {
     if (!a || !b || !at) continue;
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]), cut = most[i] && length > most[i] ? most[i] / length : 1;
     out[to] = [at[0] + (b[0] - a[0]) * build[part] * cut, at[1] + (b[1] - a[1]) * build[part] * cut];
+  }
+  // a person's face and hands go where the nose and the wrists went, their own shape kept
+  if (body.length > 18) {
+    const moved = (k: number) => (body[k] && out[k] ? [out[k]![0] - body[k]![0], out[k]![1] - body[k]![1]] : null);
+    const shifts: [number, number, number[] | null][] = [[FACE, 70, moved(NOSE)], [LEFT_HAND, 21, moved(L_WRIST)], [RIGHT_HAND, 21, moved(R_WRIST)]];
+    for (const [start, n, d] of shifts) for (let k = start; k < start + n; k++) out[k] = body[k] && d ? [body[k]![0] + d[0], body[k]![1] + d[1]] : null;
   }
   return out;
 }
@@ -178,8 +201,10 @@ export type Layout = { frames: PoseFrame[]; between: [number, number] | null };
  * where every character's feet show, keeps air around them), feet on a floor at `floor` of its height.
  * A shot is laid out once for all its frames, so every move stays. Each character keeps room around
  * its skeleton for the head, body and tail drawn over it; a reach past that leaves the frame now and then.
+ * With `eyes`, the eye line sits at that share of the height instead (people in a medium shot, whose
+ * legs leave the frame, have no floor to stand on).
  */
-export function reframe(frames: PoseFrame[], width: number, height: number, { span, floor = 0.8, gap = 0.25 }: { span?: number; floor?: number; gap?: number } = {}): Layout {
+export function reframe(frames: PoseFrame[], width: number, height: number, { span, floor = 0.8, gap = 0.25, eyes: eyeLine }: { span?: number; floor?: number; gap?: number; eyes?: number } = {}): Layout {
   const people = (frames[0]?.people ?? []).map((_, who) => {
     const xs: number[] = [], ys: number[] = [], torso: number[] = [], hips: number[] = [], feet: number[] = [], eyes: number[] = [];
     for (const f of frames) {
@@ -214,14 +239,76 @@ export function reframe(frames: PoseFrame[], width: number, height: number, { sp
   const ground = quantile(people.map((p) => p.feet ?? (p.hips !== null ? p.hips + 0.7 * p.size : p.to)), 0.5);
   // across the frame, as long as the heads stay in it
   const top = Math.min(...people.map((p) => p.top));
-  const scale = Math.min(((span ?? (wide ? 0.5 : 1)) * width) / (right - left), (0.95 * floor * height) / (ground - top));
-  const shiftOf = new Map(boxes.map((b) => [b.who, b.shift]));
-  const at = (x: number, y: number, who: number): [number, number] => [(x + (shiftOf.get(who) ?? 0) - (left + right) / 2) * scale + width / 2, (y - ground) * scale + floor * height];
   const eyes = people.map((p) => p.eyes).filter((y) => y !== null);
+  const level = eyeLine !== undefined && eyes.length ? quantile(eyes, 0.5) : ground;
+  const at0 = eyeLine !== undefined && eyes.length ? eyeLine * height : floor * height;
+  const scale = Math.min(((span ?? (wide ? 0.5 : 1)) * width) / (right - left), (0.95 * at0) / (level - top));
+  const shiftOf = new Map(boxes.map((b) => [b.who, b.shift]));
+  const at = (x: number, y: number, who: number): [number, number] => [(x + (shiftOf.get(who) ?? 0) - (left + right) / 2) * scale + width / 2, (y - level) * scale + at0];
   const between = boxes.length > 1 && eyes.length
-    ? ([((boxes[0].right + boxes[0].shift + boxes[1].left + boxes[1].shift) / 2 - (left + right) / 2) * scale + width / 2, (quantile(eyes, 0.5) - ground) * scale + floor * height] as [number, number])
+    ? ([((boxes[0].right + boxes[0].shift + boxes[1].left + boxes[1].shift) / 2 - (left + right) / 2) * scale + width / 2, (quantile(eyes, 0.5) - level) * scale + at0] as [number, number])
     : null;
   return { frames: frames.map((f) => ({ width, height, people: f.people.map((b, who) => b.map((p) => (p ? at(p[0], p[1], who) : null))) })), between };
+}
+
+/**
+ * Each person's skeleton scaled and moved, once for the whole clip, so its first frame lands on that
+ * person in a picture: `target` is DWPose's read of the first frame drawn for the take. People are matched
+ * left to right, and the fit is made on the head, neck and shoulders, so every move keeps its shape.
+ */
+export function fit(frames: PoseFrame[], target: Body[]): PoseFrame[] {
+  const keys = [NOSE, NECK, R_SHOULDER, L_SHOULDER, R_EYE, L_EYE, R_EAR, L_EAR];
+  const x = (b: Body) => (b[NECK] ?? b[NOSE] ?? b.find(Boolean) ?? [0, 0])[0];
+  const sorted = [...target].sort((a, b) => x(a) - x(b));
+  const mean = (ps: [number, number][]) => [ps.reduce((s, p) => s + p[0], 0) / ps.length, ps.reduce((s, p) => s + p[1], 0) / ps.length];
+  const spread = (ps: [number, number][], m: number[]) => Math.sqrt(ps.reduce((s, p) => s + (p[0] - m[0]) ** 2 + (p[1] - m[1]) ** 2, 0));
+  const fits = (frames[0]?.people ?? []).map((b, who) => {
+    const t = sorted[who];
+    const pairs = t ? keys.filter((k) => b[k] && t[k]).map((k) => [b[k]!, t[k]!] as [[number, number], [number, number]]) : [];
+    if (pairs.length < 3) return null;
+    const cs = mean(pairs.map((p) => p[0])), ct = mean(pairs.map((p) => p[1]));
+    return { s: spread(pairs.map((p) => p[1]), ct) / spread(pairs.map((p) => p[0]), cs), cs, ct };
+  });
+  return frames.map((f) => ({
+    ...f,
+    people: f.people.map((b, who) => {
+      const m = fits[who];
+      return m ? b.map((p) => (p ? [(p[0] - m.cs[0]) * m.s + m.ct[0], (p[1] - m.cs[1]) * m.s + m.ct[1]] as [number, number] : null)) : b;
+    }),
+  }));
+}
+
+/**
+ * Each person rebuilt with the bone lengths of the figure drawn in the take's first frame (DWPose's read of
+ * it, `target`, after `fit`): stylized people have bigger heads and shorter limbs than the people filmed,
+ * and a skeleton longer than its drawing would stretch it. Each part's share is the drawing's length over
+ * the skeleton's in the first frame, kept between 0.6 and 1.4; the head stays as fitted.
+ */
+export function conform(frames: PoseFrame[], target: Body[]): PoseFrame[] {
+  const x = (b: Body) => (b[NECK] ?? b[NOSE] ?? b.find(Boolean) ?? [0, 0])[0];
+  const sorted = [...target].sort((a, b) => x(a) - x(b));
+  const len = (b: Body, i: number, j: number) => (b[i] && b[j] ? Math.hypot(b[i]![0] - b[j]![0], b[i]![1] - b[j]![1]) : null);
+  const part = (b: Body, t: Body, bones: [number, number][]) => {
+    const ratios = bones.map(([i, j]) => {
+      const a = len(b, i, j), c = len(t, i, j);
+      return a && c ? c / a : null;
+    }).filter((r) => r !== null) as number[];
+    return ratios.length ? Math.max(0.6, Math.min(1.4, ratios.reduce((s, r) => s + r, 0) / ratios.length)) : 1;
+  };
+  const builds = (frames[0]?.people ?? []).map((b, who) => {
+    const t = sorted[who];
+    if (!t) return null;
+    return {
+      neck: 1, face: 1,
+      shoulder: part(b, t, [[NECK, R_SHOULDER], [NECK, L_SHOULDER]]),
+      upperArm: part(b, t, [[R_SHOULDER, R_ELBOW], [L_SHOULDER, L_ELBOW]]),
+      forearm: part(b, t, [[R_ELBOW, R_WRIST], [L_ELBOW, L_WRIST]]),
+      torso: part(b, t, [[NECK, R_HIP], [NECK, L_HIP]]),
+      thigh: part(b, t, [[R_HIP, R_KNEE], [L_HIP, L_KNEE]]),
+      shin: part(b, t, [[R_KNEE, R_ANKLE], [L_KNEE, L_ANKLE]]),
+    } as Build;
+  });
+  return frames.map((f) => ({ ...f, people: f.people.map((b, who) => (builds[who] ? rebuild(b, builds[who]!) : b)) }));
 }
 
 function smooth(frames: PoseFrame[]): PoseFrame[] {
@@ -274,7 +361,20 @@ const ellipse = (cx: number, cy: number, a: number, b: number, degrees: number):
   });
 };
 
-/** One frame's skeletons, drawn as DWPose draws them. */
+// its hands (draw_handpose): 20 bones 2 px thick, coloured round the hue circle, the joints as 4 px blue
+// discs; its face (draw_facepose): the 70 points as 3 px white discs
+const HAND: [number, number][] = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [0, 9], [9, 10], [10, 11], [11, 12], [0, 13], [13, 14], [14, 15], [15, 16], [0, 17], [17, 18], [18, 19], [19, 20]];
+const hue = (h: number): [number, number, number] => {
+  const k = (n: number) => (n + h * 6) % 6;
+  const c = (n: number) => Math.round(255 * (1 - Math.max(0, Math.min(k(n), 4 - k(n), 1))));
+  return [c(5), c(3), c(1)];
+};
+const segment = (p: [number, number], q: [number, number], half: number): [number, number][] => {
+  const dx = q[0] - p[0], dy = q[1] - p[1], len = Math.hypot(dx, dy) || 1, nx = (-dy / len) * half, ny = (dx / len) * half;
+  return [[p[0] + nx, p[1] + ny], [q[0] + nx, q[1] + ny], [q[0] - nx, q[1] - ny], [p[0] - nx, p[1] - ny]];
+};
+
+/** One frame's skeletons, drawn as DWPose draws them (with hands and face for people kept as people). */
 export function drawPose(f: PoseFrame, stick = 4): Buffer {
   const rgb = Buffer.alloc(f.width * f.height * 3);
   for (const [i, [a, b]] of LIMBS.entries()) {
@@ -288,6 +388,17 @@ export function drawPose(f: PoseFrame, stick = 4): Buffer {
   }
   for (let o = 0; o < rgb.length; o++) rgb[o] = Math.floor(rgb[o] * 0.6);
   for (let k = 0; k < 18; k++) for (const body of f.people) if (body[k]) fill(rgb, f.width, f.height, ellipse(body[k]![0], body[k]![1], 4, 4, 0), COLOURS[k]);
+  for (const body of f.people) {
+    if (body.length <= 18) continue;
+    for (const start of [LEFT_HAND, RIGHT_HAND]) {
+      for (const [i, [a, b]] of HAND.entries()) {
+        const p = body[start + a], q = body[start + b];
+        if (p && q) fill(rgb, f.width, f.height, segment(p, q, 1), hue(i / HAND.length));
+      }
+      for (let k = 0; k < 21; k++) if (body[start + k]) fill(rgb, f.width, f.height, ellipse(body[start + k]![0], body[start + k]![1], 4, 4, 0), [0, 0, 255]);
+    }
+    for (let k = 0; k < 70; k++) if (body[FACE + k]) fill(rgb, f.width, f.height, ellipse(body[FACE + k]![0], body[FACE + k]![1], 3, 3, 0), [255, 255, 255]);
+  }
   return rgb;
 }
 
