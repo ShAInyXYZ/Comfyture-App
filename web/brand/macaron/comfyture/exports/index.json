@@ -1,0 +1,240 @@
+{
+ "at": "2026-10-20T07:05:15.541Z",
+ "exports": [
+  {
+   "id": "x9en3cyx9",
+   "design": "launch",
+   "designName": "Launch · Direct a shot",
+   "format": "4:5",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/launch-4x5.png",
+   "file": "launch-4x5.png",
+   "width": 1080,
+   "height": 1350,
+   "bytes": 481986,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x9es23sgc",
+   "design": "launch",
+   "designName": "Launch · Direct a shot",
+   "format": "1:1",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/launch-1x1.png",
+   "file": "launch-1x1.png",
+   "width": 1080,
+   "height": 1080,
+   "bytes": 423237,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x9ew1uvvs",
+   "design": "launch",
+   "designName": "Launch · Direct a shot",
+   "format": "9:16",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/launch-9x16.png",
+   "file": "launch-9x16.png",
+   "width": 1080,
+   "height": 1920,
+   "bytes": 592870,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x9f0kj50e",
+   "design": "showcase",
+   "designName": "Showcase · Made with Comfyture",
+   "format": "4:5",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/showcase-4x5.png",
+   "file": "showcase-4x5.png",
+   "width": 1080,
+   "height": 1350,
+   "bytes": 1062831,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x9f562j08",
+   "design": "showcase",
+   "designName": "Showcase · Made with Comfyture",
+   "format": "9:16",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/showcase-9x16.png",
+   "file": "showcase-9x16.png",
+   "width": 1080,
+   "height": 1920,
+   "bytes": 1087332,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x9fan5eob",
+   "design": "brioche",
+   "designName": "Feature · Meet Brioche",
+   "format": "4:5",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/brioche-4x5.png",
+   "file": "brioche-4x5.png",
+   "width": 1080,
+   "height": 1350,
+   "bytes": 405791,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x9fegrqc6",
+   "design": "brioche",
+   "designName": "Feature · Meet Brioche",
+   "format": "1:1",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/brioche-1x1.png",
+   "file": "brioche-1x1.png",
+   "width": 1080,
+   "height": 1080,
+   "bytes": 382868,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x9fi3uoqd",
+   "design": "rooms",
+   "designName": "Feature · Five rooms",
+   "format": "4:5",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/rooms-4x5.png",
+   "file": "rooms-4x5.png",
+   "width": 1080,
+   "height": 1350,
+   "bytes": 131648,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x9flo2a96",
+   "design": "rooms",
+   "designName": "Feature · Five rooms",
+   "format": "9:16",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/rooms-9x16.png",
+   "file": "rooms-9x16.png",
+   "width": 1080,
+   "height": 1920,
+   "bytes": 155768,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x9fpcx5i2",
+   "design": "hero",
+   "designName": "Product hero · Shots worth keeping",
+   "format": "4:5",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/hero-4x5.png",
+   "file": "hero-4x5.png",
+   "width": 1080,
+   "height": 1350,
+   "bytes": 755733,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x9ftasuo3",
+   "design": "hero",
+   "designName": "Product hero · Shots worth keeping",
+   "format": "1:1",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/hero-1x1.png",
+   "file": "hero-1x1.png",
+   "width": 1080,
+   "height": 1080,
+   "bytes": 431938,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x9fy1l3bx",
+   "design": "board",
+   "designName": "Brand board · Comfyture",
+   "format": "4:5",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/board-4x5.png",
+   "file": "board-4x5.png",
+   "width": 1080,
+   "height": 1350,
+   "bytes": 290639,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x9g1ky1ge",
+   "design": "board",
+   "designName": "Brand board · Comfyture",
+   "format": "1:1",
+   "kind": "png",
+   "url": "brand/macaron/comfyture/exports/board-1x1.png",
+   "file": "board-1x1.png",
+   "width": 1080,
+   "height": 1080,
+   "bytes": 238557,
+   "at": "2026-10-20T07:05:15.541Z"
+  },
+  {
+   "id": "x-intro-mp4",
+   "design": "intro",
+   "designName": "Logo and product intro",
+   "format": "9:16",
+   "kind": "mp4",
+   "url": "brand/macaron/comfyture/exports/intro-9x16.mp4",
+   "file": "intro-9x16.mp4",
+   "width": 1080,
+   "height": 1920,
+   "bytes": 881483,
+   "duration": 7,
+   "poster": "brand/macaron/comfyture/exports/intro-poster-9x16.png",
+   "at": "2026-10-20T07:05:15.541Z"
+  }
+ ],
+ "render": {
+  "m-intro": {
+   "url": "brand/macaron/comfyture/exports/intro-9x16.mp4",
+   "file": "intro-9x16.mp4",
+   "width": 1080,
+   "height": 1920,
+   "duration": 7,
+   "bytes": 881483,
+   "format": "9:16",
+   "sound": true,
+   "poster": "brand/macaron/comfyture/exports/intro-poster-9x16.png",
+   "at": "2026-10-20T07:05:15.541Z"
+  }
+ },
+ "thumbs": {
+  "launch": {
+   "file": "launch-4x5.png",
+   "url": "brand/macaron/comfyture/exports/launch-4x5.png",
+   "format": "4:5"
+  },
+  "showcase": {
+   "file": "showcase-4x5.png",
+   "url": "brand/macaron/comfyture/exports/showcase-4x5.png",
+   "format": "4:5"
+  },
+  "brioche": {
+   "file": "brioche-4x5.png",
+   "url": "brand/macaron/comfyture/exports/brioche-4x5.png",
+   "format": "4:5"
+  },
+  "rooms": {
+   "file": "rooms-4x5.png",
+   "url": "brand/macaron/comfyture/exports/rooms-4x5.png",
+   "format": "4:5"
+  },
+  "hero": {
+   "file": "hero-4x5.png",
+   "url": "brand/macaron/comfyture/exports/hero-4x5.png",
+   "format": "4:5"
+  },
+  "board": {
+   "file": "board-4x5.png",
+   "url": "brand/macaron/comfyture/exports/board-4x5.png",
+   "format": "4:5"
+  },
+  "intro": {
+   "file": "intro-poster-9x16.png",
+   "url": "brand/macaron/comfyture/exports/intro-poster-9x16.png",
+   "format": "9:16"
+  }
+ }
+}

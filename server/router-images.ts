@@ -10,7 +10,8 @@ import { ASPECTS, tagRefs } from "./images.ts";
 
 /** A reference picture as the makers take it: its type and its bytes in base64. */
 export type RouterRef = { mime: string; data: string };
-type Ask = { prompt: string; aspect: string; refs: RouterRef[]; seed: number };
+// size, quality and resolution are for a caller that knows better than the aspect's 1 MP (Macaron asks for a post's own pixels)
+type Ask = { prompt: string; aspect: string; refs: RouterRef[]; seed: number; size?: string; quality?: string; resolution?: string };
 type Picture = { base64: string } | { url: string } | null;
 type Model = {
   id: string;
@@ -49,7 +50,7 @@ const seed31 = (s: number) => Math.abs(s) % 2147483647;
 
 const openai = (id: string, name: string, short: string, about: string, quality: string, credits: number): Model => ({
   id, path: `openai/${id}`, name, short, about, maker: "openai", credits, refs: 16, tag: "image {n}",
-  body: (a) => ({ prompt: a.prompt, ...(a.refs.length ? { image: a.refs.map(dataUri) } : {}), size: pixels(a.aspect).join("x"), quality, n: 1, output_format: "jpeg" }),
+  body: (a) => ({ prompt: a.prompt, ...(a.refs.length ? { image: a.refs.map(dataUri) } : {}), size: a.size ?? pixels(a.aspect).join("x"), quality: a.quality ?? quality, n: 1, output_format: a.size ? "png" : "jpeg" }),
   picture: dataList,
 });
 const VERTEX = shapes(["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"]);
@@ -90,7 +91,7 @@ const MODELS: Model[] = [
   },
   {
     id: "flux-3-image", path: "bfl/flux-3-image", name: "FLUX 3", short: "FLUX 3", about: "Black Forest Labs' newest, early access", maker: "bfl", credits: 14, refs: 10, tag: "image {n}",
-    body: (a) => ({ prompt: a.prompt, aspect_ratio: nearest(a.aspect, FLUX3), resolution: "1k", grounding: false, ...(a.refs.length ? { images: a.refs.map((r) => r.data) } : {}) }),
+    body: (a) => ({ prompt: a.prompt, aspect_ratio: nearest(a.aspect, FLUX3), resolution: a.resolution ?? "1k", grounding: false, ...(a.refs.length ? { images: a.refs.map((r) => r.data) } : {}) }),
     picture: (out) => (out?.result?.sample ? { url: out.result.sample } : null),
   },
   ...(["seedream-5-0-pro-260628", "seedream-5-0-flash-260915"] as const).map((id, i): Model => ({
@@ -146,7 +147,7 @@ export const routerImages = () =>
  * model calls it), the frame's shape, the references. Answers with the picture's bytes and what
  * Comfy says it cost.
  */
-export async function routerDraw(id: string, v: { prompt: string; aspect: string; refs: RouterRef[]; names: string[]; seed: number }) {
+export async function routerDraw(id: string, v: { prompt: string; aspect: string; refs: RouterRef[]; names: string[]; seed: number; size?: string; quality?: string; resolution?: string }) {
   const m = find(id);
   if (!m) throw new Error(`${id} is not on Comfy Router.`);
   const refs = v.refs.slice(0, m.refs);
@@ -154,7 +155,7 @@ export async function routerDraw(id: string, v: { prompt: string; aspect: string
   const res = await fetch(`https://api.comfy.org/v2/models/${m.path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-API-Key": process.env.COMFY_API_KEY!.trim(), "Idempotency-Key": randomUUID() },
-    body: JSON.stringify(m.body({ prompt, aspect: v.aspect, refs, seed: v.seed })),
+    body: JSON.stringify(m.body({ prompt, aspect: v.aspect, refs, seed: v.seed, size: v.size, quality: v.quality, resolution: v.resolution })),
   });
   const out: any = await res.json().catch(() => ({}));
   const why = res.headers.get("x-comfy-error-type");
