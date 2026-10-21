@@ -25,6 +25,9 @@ import { SONG_BRIEF, songPrompt, readSong } from "./song.ts";
 import { KEYS, LANGUAGES, SIGNATURES, MAX_SECONDS, DEFAULT_SONG } from "../web/js/song.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
 import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer } from "./utensils-assist.ts";
+import { createEdit } from "./utensils-edit.ts";
+import { createFx } from "./utensils-fx.ts";
+import { createTemplates, realCloud, fakeRun } from "./comfy-templates.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -62,6 +65,18 @@ async function reloadPresets() {
 const exec = promisify(execFile);
 /** Reels are cut with ffmpeg when it is installed; without it the feature stays hidden. */
 const ffmpeg = await exec("ffmpeg", ["-version"]).then(() => true, () => false);
+/** Utensils' free edit tools (trim, reframe, speed, captions...): ffmpeg on this machine, jobs with progress. */
+const edit = createEdit({ data, root });
+/** Utensils' free effects (green screen, stabilise, slow motion, weather, particles, a spot removed, clean and master a sound, a mix): ffmpeg here. */
+const fx = createFx({ data, root, keepAudio: (bytes, ext, meta) => keepAudio(bytes, ext, meta) });
+/** Utensils' Templates: the official ComfyUI workflows, browsed and run on Comfy Cloud (COMFYTURE_FAKE_TEMPLATES=1 swaps the paid calls for a stand-in). */
+const cloudKey = process.env.COMFY_API_KEY?.trim();
+const templates = createTemplates({
+  data,
+  root,
+  cloud: cloudKey ? (process.env.COMFYTURE_FAKE_TEMPLATES ? fakeRun(realCloud(cloudKey)) : realCloud(cloudKey)) : null,
+  keepAudio: (bytes, ext, meta) => keepAudio(bytes, ext, meta),
+});
 
 const library = target.kind === "comfy-cloud" && process.env.COMFY_API_KEY?.trim() ? new CloudLibrary(process.env.COMFY_API_KEY.trim()) : null;
 const engine = new Engine(
@@ -1390,6 +1405,26 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (!Array.isArray(list)) throw bad("Send the list of results.");
     await writeFile(join(data, "utensils.json"), JSON.stringify(list.slice(0, 200)));
     return json(res, 200, { ok: true });
+  }
+  if (path === "/api/utensils/templates" || path.startsWith("/api/utensils/templates/")) {
+    const answer = await templates.handle(method, path.slice("/api/utensils/templates".length), url.searchParams, method === "POST" ? await jsonBody(req, 1024 * 1024) : {});
+    if (answer.raw) {
+      res.writeHead(answer.status, { "Content-Type": answer.type ?? "application/octet-stream", "Cache-Control": answer.cache ?? "no-store" });
+      return void res.end(answer.raw);
+    }
+    return json(res, answer.status, answer.body);
+  }
+  if (path.startsWith("/api/utensils/edit/")) {
+    if (!ffmpeg) throw bad("The edit tools need ffmpeg on the server.", 501);
+    const rest = path.slice("/api/utensils/edit/".length);
+    if (rest === "lut" && method === "POST") return json(res, 200, await edit.keepLut(await body(req, 4 * 1024 * 1024)));
+    const done = await edit.handle(method, rest, method === "POST" ? await jsonBody(req, 2 * 1024 * 1024) : {});
+    return json(res, done.status, done.body);
+  }
+  if (path.startsWith("/api/utensils/fx/")) {
+    if (!ffmpeg) throw bad("The effects need ffmpeg on the server.", 501);
+    const done = await fx.handle(method, path.slice("/api/utensils/fx/".length), method === "POST" ? await jsonBody(req, 8 * 1024 * 1024) : {});
+    return json(res, done.status, done.body);
   }
   if (path === "/api/utensils/upscale" && method === "POST") {
     const input = await jsonBody(req);
