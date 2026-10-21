@@ -21,6 +21,20 @@
 //   4. Subgraph slot defaults in get_template_schema are shifted against the slot names (image_qwen_image_edit_2509 shows the
 //      prompt text as the default of 'image'): they are not used; defaults come from the instance node's widgets_values when
 //      their count matches the subgraph's widget inputs, else the field is left empty and the template's own value runs.
+//   5. The widgets a subgraph instance PROMOTES onto its face (the schema marks them route "input_overrides": the prompt of the
+//      object-removal template, for one) are written as input_overrides keyed by the instance's id, the route the schema's own note
+//      names. Documented, not yet seen to work on a run.
+//
+// THE MINI APPS (appsOf, splitSlots): a template shown simply. ComfyUI's own apps (isApp: the author's short form is
+// extra.linearData = { inputs: [[node, widget]], outputs }) and a hand-picked set of the easy, popular templates; each has a plain
+// promise written for the card, what it asks for, and its form split into the one to three slots that are its own (pictures, clips and
+// sounds first, then the words, then a choice) and More settings. An app whose form cannot take the files its author's form asks for
+// (a clip through a loader of a custom node) is left out: it would run on its sample. The forms, prices and pictures of every app are
+// read in the background a moment after the server starts (free calls), so the cards open fast.
+//
+// THE CLOUD CLIENT: every MCP call has its own JSON-RPC id and the answer's id is checked. With one id for all of them, calls made at
+// once on a session were answered with each other's results (a form of another template, another's price); the caches written then are
+// not read (credits-2.json, forms-2/).
 
 import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
@@ -34,6 +48,10 @@ const exec = promisify(execFile);
 export const CLOUD = "https://cloud.comfy.org";
 const INDEX_URLS = [`${CLOUD}/templates/index.json`, "https://cdn.jsdelivr.net/gh/Comfy-Org/workflow_templates@v0.11.93/templates/index.json"];
 const DAY = 24 * 3600 * 1000;
+// (the second version of the price and form caches: the first were written while calls made at once could be answered with each
+// other's results, so a price or a form kept then may belong to another template)
+const CREDITS_FILE = "credits-2.json";
+const FORMS_DIR = "forms-2";
 const NAME = /^[A-Za-z0-9._-]+$/;
 
 // ------------------------------------------------------------------ the catalog
@@ -61,6 +79,8 @@ export interface Item {
   usage: number;
   size: number;
   needsImport: boolean;
+  /** one of ComfyUI's own apps: a template with a simplified form of its author's (extra.linearData) */
+  isApp: boolean;
 }
 
 /** The categories the app leaves out: text generation and the node tutorials make no picture, clip or sound. */
@@ -103,6 +123,7 @@ export function flatten(index: any[]): Item[] {
         usage: Number(t.usage) || 0,
         size: Number(t.size) || 0,
         needsImport: false,
+        isApp: t.isApp === true,
       });
     }
   }
@@ -161,6 +182,8 @@ export interface Slot {
   kind: SlotKind;
   required: boolean;
   advanced: boolean;
+  /** in a mini app: one of the one to three things the person has to give (the others are under More settings) */
+  primary?: boolean;
   multiline?: boolean;
   default?: unknown;
   min?: number;
@@ -270,17 +293,23 @@ export function buildForm(schema: any, wf?: any): Form {
     const subgraphs = new Map<string, any>((wf?.definitions?.subgraphs ?? []).map((s: any) => [s.id, s]));
     const links = new Map<number, any[]>((wf?.links ?? []).map((l: any) => [l[0], l]));
     const defaults = subgraphDefaults(schema.slots, instances, subgraphs);
+    // the inputs a subgraph instance declares go in slot_overrides; the widgets it merely promotes onto its face (route: input_overrides)
+    // go in input_overrides keyed by the instance's id: the route the schema's own note names. A name the instance declares is not listed twice.
+    const declared = new Set<string>(schema.slots.filter((x: any) => x.source === "subgraph_input").map((x: any) => `${x.node_id}:${x.input_name}`));
     for (const s of schema.slots) {
-      if (s.source !== "subgraph_input") continue;
+      const promoted = s.source === "promoted_widget" && s.route === "input_overrides" && !declared.has(`${s.node_id}:${s.input_name}`) && String(s.type) !== "*";
+      if (s.source !== "subgraph_input" && !promoted) continue;
       const node = instances.get(String(s.node_id));
       const input = subgraphs.get(node?.type)?.inputs?.find((i: any) => i.name === s.input_name);
       const rawLabel = String(input?.label ?? input?.name ?? s.input_name);
       const label = norm(rawLabel);
       const optional = /\(optional\)/i.test(rawLabel);
       const type = String(s.type ?? input?.type ?? "").split(",")[0];
-      const dflt = defaults.get(String(s.node_id))?.get(s.input_name);
+      const dflt = promoted ? s.default : defaults.get(String(s.node_id))?.get(s.input_name);
+      // where a value for this slot is written
+      const at: Target = promoted ? { via: "input", node: String(s.node_id), input: String(s.input_name) } : { via: "slot", address: s.address };
 
-      if (type === "IMAGE" || type === "VIDEO" || type === "AUDIO") {
+      if (!promoted && (type === "IMAGE" || type === "VIDEO" || type === "AUDIO")) {
         const kind = type.toLowerCase() as "image" | "video" | "audio";
         let target: Target | null = null;
         // the loader that feeds this input: through the instance's link, else the one the schema names
@@ -294,28 +323,28 @@ export function buildForm(schema: any, wf?: any): Form {
       }
       if (type === "COMBO") {
         if (MODEL_COMBO.test(label) || !FRIENDLY_COMBO.test(label)) {
-          if (dflt) models.push(String(dflt));
+          if (dflt && (!promoted || MODEL_COMBO.test(label))) models.push(String(dflt));
           continue;
         }
-        slots.push({ id: unique(label), label: nice(rawLabel), kind: "combo", required: false, advanced: false, default: dflt, target: { via: "slot", address: s.address } });
+        slots.push({ id: unique(label), label: nice(rawLabel), kind: "combo", required: false, advanced: false, default: dflt, target: at });
         continue;
       }
       if (/seed/.test(label)) {
-        slots.push({ id: unique("seed"), label: "Seed", kind: "seed", required: false, advanced: false, default: typeof dflt === "number" ? dflt : undefined, target: { via: "slot", address: s.address } });
+        slots.push({ id: unique("seed"), label: "Seed", kind: "seed", required: false, advanced: false, default: typeof dflt === "number" ? dflt : undefined, target: at });
         continue;
       }
       if (type === "STRING") {
         const negative = NEGATIVE.test(label);
         const primary = PROMPT.test(label);
-        slots.push({ id: unique(negative ? "negative" : primary ? "prompt" : label.replace(/\W+/g, "_")), label: negative ? "Negative prompt" : primary ? "Prompt" : nice(rawLabel), kind: "text", required: false, advanced: negative || !primary, multiline: true, default: typeof dflt === "string" ? dflt : undefined, target: { via: "slot", address: s.address } });
+        slots.push({ id: unique(negative ? "negative" : primary ? "prompt" : label.replace(/\W+/g, "_")), label: negative ? "Negative prompt" : primary ? "Prompt" : nice(rawLabel), kind: "text", required: false, advanced: negative || !primary, multiline: true, default: typeof dflt === "string" ? dflt : undefined, target: at });
         continue;
       }
       if (type === "BOOLEAN") {
-        slots.push({ id: unique(label.replace(/\W+/g, "_")), label: nice(rawLabel), kind: "boolean", required: false, advanced: true, default: typeof dflt === "boolean" ? dflt : undefined, target: { via: "slot", address: s.address } });
+        slots.push({ id: unique(label.replace(/\W+/g, "_")), label: nice(rawLabel), kind: "boolean", required: false, advanced: true, default: typeof dflt === "boolean" ? dflt : undefined, target: at });
         continue;
       }
       if (type === "INT" || type === "FLOAT") {
-        slots.push(numberSlot(unique(label.replace(/\W+/g, "_")), nice(rawLabel), label, dflt, { via: "slot", address: s.address }));
+        slots.push(numberSlot(unique(label.replace(/\W+/g, "_")), nice(rawLabel), label, dflt, at));
       }
     }
     if (!slots.length) notes.push("This template shows no inputs of its own: it runs as it is.");
@@ -374,6 +403,216 @@ function order(slots: Slot[]) {
 
 /** A slot as the page sees it (where it writes to stays on the server). */
 export const publicSlot = ({ target: _t, also: _a, ...rest }: Slot) => rest;
+
+// ------------------------------------------------------------------ the mini apps
+
+/**
+ * A mini app is a template shown simplified: a big picture, the one to three things the person has to give, one key. They are the
+ * apps ComfyUI itself publishes (`isApp`: their author's own short form is extra.linearData, [[node, widget]] for each input worth
+ * showing) and a hand-picked set of the easy, popular templates. The page and Truffle know an app by its short `id`.
+ */
+export type Need = "image" | "video" | "audio" | "words";
+export interface AppDef {
+  id: string;
+  name: string;
+  title: string;
+  promise: string;
+  /** what it asks for (the catalog's inputs say so too: this is for the ones it cannot say) */
+  needs?: Need[];
+  /** never shown (a step of a chain, an app the form cannot drive) */
+  hide?: boolean;
+}
+
+/** The hand-picked apps, in the order the cards show them. */
+export const CURATED_APPS: AppDef[] = [
+  { id: "bg-remove", name: "utility_birefnet_remove_background", title: "Remove background", promise: "Cuts the subject out and leaves it on a clear background.", needs: ["image"] },
+  { id: "upscale-pic", name: "utility_seedvr2_7b_int8_upscale_image", title: "Upscale a picture", promise: "Makes a picture larger and sharper, restoring its fine detail.", needs: ["image"] },
+  { id: "pic-words", name: "image_z_image_turbo", title: "Picture from words", promise: "Describe it, get a picture in seconds.", needs: ["words"] },
+  { id: "flux-pic", name: "image_flux2", title: "Picture with FLUX.2", promise: "Photorealistic pictures from words, and from reference pictures if you have them.", needs: ["words"] },
+  { id: "edit-words", name: "image_qwen_image_edit_2509", title: "Edit with words", promise: "Say what to change in a picture; everything else stays.", needs: ["image", "words"] },
+  { id: "restyle-pic", name: "flux_kontext_dev_basic", title: "Restyle a picture", promise: "Changes the style or the scene of a picture and keeps its subject.", needs: ["image", "words"] },
+  { id: "nano-edit", name: "api_nano_banana_2_1_image_edit", title: "Edit with Nano Banana", promise: "A partner model edits your picture from one sentence.", needs: ["image", "words"] },
+  { id: "relight-pic", name: "image_qwen_image_edit_2509_relight", title: "Relight a picture", promise: "Changes the light and the mood of a picture.", needs: ["image", "words"] },
+  { id: "angles", name: "templates-1_click_multiple_character_angles-v1.0", title: "Character angles", promise: "One character picture, seen from many sides.", needs: ["image"] },
+  { id: "pic-video", name: "video_ltx2_3_i2v", title: "Picture to video", promise: "Brings a picture to life as a short clip, with its sound.", needs: ["image", "words"] },
+  { id: "words-video", name: "video_ltx2_3_t2v", title: "Video from words", promise: "Describe a shot and get a short clip, with its sound.", needs: ["words"] },
+  { id: "wan-video", name: "video_wan2_2_14B_i2v", title: "Animate a picture", promise: "A calm, cinematic move out of a single picture.", needs: ["image", "words"] },
+  { id: "sing", name: "video_ltx2_3_ia2v", title: "Make a picture sing", promise: "A picture speaks or sings the sound you give it.", needs: ["image", "audio"] },
+  { id: "slow-mo", name: "utility_video_frame_interpolation", title: "Smooth slow motion", promise: "Adds the frames in between so a clip slows down smoothly.", needs: ["video"] },
+  { id: "upscale-clip", name: "utility_seedvr2_3b_int8_upscale_video", title: "Upscale a clip", promise: "Restores a clip larger and sharper, frame by frame.", needs: ["video"] },
+  { id: "remove-object", name: "template_ltx2_3_obscura_remova_lora_remove_object_from_video", title: "Remove an object from a clip", promise: "Say what to take out of the clip and it is painted out.", needs: ["video", "words"] },
+  { id: "restyle-clip", name: "video_wan_vace_14B_v2v", title: "Restyle a clip", promise: "Turns a clip into another look: anime, clay, noir.", needs: ["video", "words"] },
+  { id: "green-screen", name: "api_bria_video_green_screen", title: "Green screen", promise: "A partner service takes the background out of a clip.", needs: ["video"] },
+  { id: "music", name: "audio_ace_step1_5_xl_turbo", title: "Music from words", promise: "A track from a few words, with lyrics or without.", needs: ["words"] },
+  { id: "sounds", name: "audio_stable_audio_3_medium", title: "Sounds from words", promise: "Sound effects, ambience or music from a sentence.", needs: ["words"] },
+  { id: "voice", name: "audio-chatterbox_tts", title: "Voice from text", promise: "Says a text in a natural voice, or in a voice you give it.", needs: ["words"] },
+  { id: "split-track", name: "audio_melbandroformer_audio_separation", title: "Split a track", promise: "Separates the voice from the music.", needs: ["audio"] },
+  { id: "sfx-partner", name: "api_elevenlabs_text_to_sound_effects", title: "Sound effects, partner", promise: "A partner model makes a clean sound effect from a sentence.", needs: ["words"] },
+  { id: "to-3d", name: "3d_hunyuan3d-v2.1", title: "Picture to 3D", promise: "Turns a picture into a 3D model.", needs: ["image"] },
+  { id: "to-splat", name: "3d_triposplat_image_to_gaussian_splat", title: "Picture to a 3D scene", promise: "A picture becomes a 3D scene you can orbit.", needs: ["image"] },
+];
+
+/** ComfyUI's own apps, named for the cards (the catalog's titles are long and technical). */
+export const OFFICIAL_APPS: AppDef[] = [
+  { id: "make-real", name: "templates_rob_image_to_real.app", title: "Make it real", promise: "Turns an illustration or a render into a realistic photo." },
+  { id: "illustration", name: "template_qwen_image_illustration_lora", title: "Illustration style", promise: "Pictures from words in a soft, illustrated style." },
+  { id: "variations", name: "templates_rob_realistic_2k_images_quick_variations.app", title: "Quick variations", promise: "Several realistic takes on one picture." },
+  { id: "many-styles", name: "templates-1_input-multiple_styles_prompt.app", title: "Many styles at once", promise: "One picture, many different styles." },
+  { id: "gummy", name: "template_sugar_coated_gummy_style_qwen", title: "Gummy style", promise: "Pictures from words as glossy, sugar-coated gummies." },
+  { id: "new-angle", name: "template_qwen_multiangle.app", title: "Change the angle", promise: "See the same picture from another camera angle." },
+  { id: "upscale-2k", name: "utility_z_image_turbo_2k_upscaler.app", title: "2K upscaler", promise: "Enlarges a picture to 2K with crisp detail." },
+  { id: "product-ad", name: "template_sferro21_product_ad.app", title: "Product ad", promise: "Puts your product into an ad picture with a person." },
+  { id: "product-swap", name: "templates-subject_product_swap.app", title: "Swap the product", promise: "Replaces the product in a picture with yours." },
+  { id: "holding-product", name: "templates-subject_holding_product.app", title: "Holding your product", promise: "A person holds your product in a natural photo." },
+  { id: "contact-sheet", name: "template_contact_sheet-step_1.app", title: "Contact sheet", promise: "A character, shown in a contact sheet of poses.", hide: true },
+  { id: "contact-sheet-2", name: "template_contact_sheet-step_2.app", title: "Contact sheet, step 2", promise: "The second step of a chain.", hide: true },
+  { id: "contact-sheet-3", name: "template_contact_sheet-step_3.app", title: "Contact sheet, step 3", promise: "The third step of a chain.", hide: true },
+  { id: "fashion-shoot", name: "templates_rob_fashion_shoot_vton-4in1.app", title: "Fashion shoot", promise: "A try-on shoot from a person and a garment." },
+  { id: "portrait-light", name: "templates_rob_portrait_light_migration.app", title: "Portrait light", promise: "Moves the light of one picture onto a portrait." },
+  { id: "live-portrait", name: "templates_liveportrait.app", title: "Live portrait", promise: "A portrait takes on the expression of a clip." },
+  { id: "game-style", name: "templates_3d_match_game_art_style.app", title: "Match an art style", promise: "Redraws a picture in the style of another." },
+  { id: "sky-360", name: "templates_text_prompt_to_360hdr.app", title: "A 360° sky from words", promise: "A 360 degree environment from one sentence." },
+];
+
+export interface App {
+  id: string;
+  name: string;
+  title: string;
+  promise: string;
+  group: Group;
+  medium: Medium;
+  thumb: string;
+  thumbKind: "image" | "audio";
+  /** the picture it dissolves to (a before/after), when the template has one */
+  after: string | null;
+  needs: Need[];
+  outputs: string[];
+  partner: boolean;
+  credits: number | null;
+  curated: boolean;
+  isApp: boolean;
+  models: string[];
+  /** the slots that matter and the ones under More settings, once the form has been read (else null) */
+  primary: string[] | null;
+  advanced: string[] | null;
+}
+
+const slug = (name: string) => name.replace(/\.app$/, "").replace(/^(templates?|utility|image|video|audio)[_-]/, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 22) || "app";
+/** The first sentence of a long description, as a promise when nobody wrote one. */
+const firstSentence = (text: string) => {
+  const one = text.replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s/)[0] ?? "";
+  return one.length > 90 ? `${one.slice(0, 88).trim()}…` : one;
+};
+
+/**
+ * The apps of a catalog: the hand-picked ones that are in it (the others are skipped), then ComfyUI's own, in the order of
+ * their definitions, then any app the catalog has gained since (named and promised from its own title and description).
+ */
+export function appsOf(items: Item[], curated: AppDef[] = CURATED_APPS, official: AppDef[] = OFFICIAL_APPS): App[] {
+  const by = new Map(items.map((i) => [i.name, i]));
+  const out: App[] = [];
+  const seen = new Set<string>();
+  const make = (def: AppDef | null, i: Item, isCurated: boolean) => {
+    const needs: Need[] = def?.needs ?? [...(["image", "video", "audio"] as const).filter((k) => i.inputs.includes(k)), ...(i.inputs.includes("text") ? (["words"] as const) : [])];
+    out.push({
+      id: def?.id ?? slug(i.name),
+      name: i.name,
+      title: def?.title ?? i.title,
+      promise: def?.promise ?? firstSentence(i.description),
+      group: i.group,
+      medium: i.medium,
+      thumb: i.thumb,
+      thumbKind: i.thumbKind,
+      after: i.variant && i.thumbKind === "image" ? `${i.thumb}?n=2` : null,
+      needs,
+      outputs: i.outputs,
+      partner: i.partner,
+      credits: i.credits,
+      curated: isCurated,
+      isApp: i.isApp,
+      models: i.models,
+      primary: null,
+      advanced: null,
+    });
+    seen.add(i.name);
+  };
+  for (const def of curated) {
+    const i = by.get(def.name);
+    if (i && !def.hide && !seen.has(def.name)) make(def, i, true);
+  }
+  for (const def of official) {
+    const i = by.get(def.name);
+    if (i && !def.hide && !seen.has(def.name)) make(def, i, false);
+  }
+  const known = new Set([...curated, ...official].map((d) => d.name));
+  for (const i of items) if (i.isApp && !known.has(i.name) && !seen.has(i.name)) make(null, i, false);
+  // two apps never share an id
+  const ids = new Set<string>();
+  for (const a of out) {
+    let id = a.id;
+    for (let n = 2; ids.has(id); n++) id = `${a.id}-${n}`;
+    ids.add((a.id = id));
+  }
+  return out;
+}
+
+const MEDIA_KINDS = ["image", "video", "audio"];
+/** A widget of an app's own form that is a file the person gives (the loader nodes' names: image, video, "choose video to upload"...). */
+const MEDIA_WIDGET = /^(images?|video|audio|choose (video|audio|file|image)|upload|file)\b/i;
+const PROMPT_WIDGET = /^(prompt|text|positive[ _]?prompt|description|instructions?|caption|input[ _]?text)$/i;
+
+/**
+ * Which slots of a form are the app's own and which are More settings. Three at most, the pictures, clips and sounds first, then
+ * the words, then a choice (an aspect, a resolution) the author put in the app's own form:
+ *  - an app with `linearData` (ComfyUI's author-made short form): its inputs say what matters: as many files as it has loaders, the
+ *    prompt if it lists one, a choice it names. `partial` is true when the app asks for more files than this form can take (a loader of a
+ *    custom node): such an app would run on its sample, so it is not shown;
+ *  - any other template: the files it needs (the first one when none is required), then its main prompt, and nothing else.
+ * The slots come back in that order with `primary` and `advanced` set; `needs` is what the primary ones ask for.
+ */
+export function splitSlots(form: Form, linear?: { inputs?: unknown[] } | null): { slots: Slot[]; primary: string[]; advanced: string[]; needs: Need[]; partial: boolean; files: number } {
+  const media = form.slots.filter((s) => MEDIA_KINDS.includes(s.kind));
+  const tail = (s: Slot) => (s.target.via === "slot" ? s.target.address.split(".").pop() ?? "" : s.target.input).toLowerCase();
+  const widgets = (Array.isArray(linear?.inputs) ? linear!.inputs! : []).map((e) => String(Array.isArray(e) ? e[1] : "").toLowerCase().trim()).filter(Boolean);
+  // the slot an author's widget is: by the name it writes to, else by the slot's own name or label
+  const slotFor = (w: string) => form.slots.find((x) => tail(x) === w || x.id === w.replace(/\s+/g, "_") || x.label.toLowerCase() === w);
+  const texts = form.slots.filter((s) => s.kind === "text" && !/negative/.test(s.id));
+  const named = widgets.map(slotFor).find((x) => x?.kind === "text");
+  const prompt = named ?? texts.find((s) => s.id === "prompt") ?? texts[0];
+  let chosen: Slot[] = [];
+  let partial = false;
+  let files = 0;
+  if (widgets.length) {
+    files = widgets.filter((w) => MEDIA_WIDGET.test(w) && !/preview/.test(w)).length;
+    const wantsPrompt = !!prompt && (!!named || widgets.some((w) => PROMPT_WIDGET.test(w)));
+    chosen = [...media.slice(0, Math.min(files, media.length, wantsPrompt ? 2 : 3))];
+    if (wantsPrompt) chosen.push(prompt!);
+    for (const w of widgets) {
+      const c = slotFor(w);
+      if (c?.kind === "combo" && !chosen.includes(c) && chosen.length < 3) chosen.push(c);
+    }
+    // it asks for more files than the form can take, or for nothing the form can take at all: it would run on its sample
+    partial = files > media.length || !chosen.length;
+  } else {
+    // the first file of each kind that must be given (a picture and a sound), else the first file there is, then the main prompt
+    const must = MEDIA_KINDS.map((k) => media.find((s) => s.kind === k && s.required)).filter((s): s is Slot => !!s);
+    chosen = [...(must.length ? must : media.slice(0, 1))];
+    files = chosen.length;
+    if (prompt) chosen.push(prompt);
+  }
+  chosen = chosen.slice(0, 3);
+  const mark = (s: Slot, primary: boolean): Slot => ({
+    ...s,
+    primary,
+    advanced: !primary,
+    // a prompt the subgraph calls "value" is just "Prompt" to the person
+    ...(primary && s.kind === "text" && /^(value|text|string|string a|user input|input)$/i.test(s.label) ? { label: "Prompt" } : {}),
+  });
+  const rest = form.slots.filter((s) => !chosen.includes(s));
+  const slots = [...chosen.map((s) => mark(s, true)), ...rest.map((s) => mark(s, false))];
+  const needs: Need[] = [...(MEDIA_KINDS.filter((k) => chosen.some((s) => s.kind === k)) as Need[]), ...(chosen.some((s) => s.kind === "text") ? (["words"] as Need[]) : [])];
+  return { slots, primary: chosen.map((s) => s.id), advanced: rest.map((s) => s.id), needs, partial, files };
+}
 
 // ------------------------------------------------------------------ the request
 
@@ -515,6 +754,10 @@ export function jobOutputs(detail: any): Output[] {
   return out.length ? out : temp;
 }
 
+/** The words of Cloud's job status that end a job well, and the ones that end it badly or by a cancel; any other word is a job on its way. */
+export const isDone = (s: string) => /^(success|completed|succeeded)$/.test(s);
+export const isOver = (s: string) => /^(error|errored|failed|failure|cancelled|canceled|timeout|timed_out|expired|rejected)$/.test(s);
+
 /** The error a failed job carries, from its execution messages. */
 export function jobError(detail: any): string {
   const msgs: any[] = detail?.execution_status?.messages ?? [];
@@ -540,6 +783,8 @@ export interface Cloud {
 
 export function realCloud(key: string, f: typeof fetch = fetch): Cloud {
   let session = "";
+  /** Every call has its own id: with one id for all of them, calls made at once on a session could be answered with each other's results. */
+  let seq = 1;
   const url = `${CLOUD}/mcp`;
   const headers = (extra: Record<string, string> = {}) => ({ "Content-Type": "application/json", Accept: "application/json, text/event-stream", "X-API-Key": key, "MCP-Protocol-Version": "2025-06-18", ...(session ? { "mcp-session-id": session } : {}), ...extra });
   const parse = (body: string) => {
@@ -548,14 +793,15 @@ export function realCloud(key: string, f: typeof fetch = fetch): Cloud {
   };
   async function init() {
     session = "";
-    const res = await f(url, { method: "POST", headers: headers(), body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "comfyture", version: "0.1" } } }) });
+    const res = await f(url, { method: "POST", headers: headers(), signal: AbortSignal.timeout(30_000), body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "comfyture", version: "0.1" } } }) });
     if (!res.ok) throw new Error(`Comfy Cloud's tools answered ${res.status}.`);
     session = res.headers.get("mcp-session-id") ?? "";
     await f(url, { method: "POST", headers: headers(), body: JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) }).catch(() => {});
   }
   async function call(tool: string, args: Record<string, unknown>, retry = true): Promise<string> {
     if (!session) await init();
-    const res = await f(url, { method: "POST", headers: headers(), body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: tool, arguments: args } }) });
+    const id = ++seq;
+    const res = await f(url, { method: "POST", headers: headers(), signal: AbortSignal.timeout(60_000), body: JSON.stringify({ jsonrpc: "2.0", id, method: "tools/call", params: { name: tool, arguments: args } }) });
     if ((res.status === 400 || res.status === 404 || res.status === 401) && retry) {
       session = "";
       return call(tool, args, false);
@@ -563,12 +809,17 @@ export function realCloud(key: string, f: typeof fetch = fetch): Cloud {
     const text = await res.text();
     if (!res.ok) throw new Error(`Comfy Cloud's tools answered ${res.status}: ${text.slice(0, 200)}`);
     const msg = parse(text);
+    // an answer that is not to this call is never taken for it
+    if (msg.id !== undefined && msg.id !== id) {
+      if (retry) return call(tool, args, false);
+      throw new Error("Comfy Cloud's tools answered out of turn. Try again.");
+    }
     if (msg.error) throw new Error(String(msg.error.message ?? "Comfy Cloud's tools failed."));
     const out = mcpText(msg.result);
     if (msg.result?.isError) throw new Error(out || "Comfy Cloud's tools failed.");
     return out;
   }
-  const api = (path: string, init: RequestInit = {}) => f(`${CLOUD}/api${path}`, { ...init, headers: { "X-API-Key": key, ...(init.headers as Record<string, string> | undefined) } });
+  const api = (path: string, init: RequestInit = {}) => f(`${CLOUD}/api${path}`, { signal: AbortSignal.timeout(init.method === "POST" ? 120_000 : 30_000), ...init, headers: { "X-API-Key": key, ...(init.headers as Record<string, string> | undefined) } });
   return {
     mcp: (tool, args) => call(tool, args),
     mcpRun: (tool, args) => call(tool, args),
@@ -624,7 +875,8 @@ export function fakeRun(base: Cloud, seconds = 4): Cloud {
       if (!id) return base.rest(path);
       const started = jobs.get(id) ?? 0;
       const done = Date.now() - started > seconds * 1000;
-      if (path.startsWith("/job/")) return { id, status: done ? "success" : Date.now() - started > 500 ? "in_progress" : "pending" };
+      // (the words are Cloud's own: a job just sent is queued_waiting, then in_progress, and a finished one answers success)
+      if (path.startsWith("/job/")) return { id, status: done ? "success" : Date.now() - started > 500 ? "in_progress" : "queued_waiting" };
       return { id, status: done ? "completed" : "in_progress", outputs: done ? { 9: { images: [{ filename: `${id}.png`, subfolder: "fake", type: "output", metadata: { width: 256, height: 256 } }] } } : {} };
     },
     view: async () => ({ bytes: png(256, 256), type: "image/png" }),
@@ -678,6 +930,8 @@ export interface Deps {
   cloud: Cloud | null;
   /** plain GETs (the catalog, workflows, thumbnails: no key) */
   fetch?: typeof fetch;
+  /** read the apps' forms, prices and pictures in the background once the catalog is in (off in tests) */
+  warm?: boolean;
   /** a sound into the app's audio library (main.ts's keepAudio) */
   keepAudio?: (bytes: Buffer, ext: string, meta: { name: string; kind: string; prompt?: string }) => Promise<{ file: string; url: string; seconds: number }>;
 }
@@ -706,7 +960,9 @@ export function createTemplates(deps: Deps) {
   let loaded = 0;
   let loading: Promise<void> | null = null;
   const credits = new Map<string, { credits: number | null; perUnit: string | null; note: string }>();
-  const forms = new Map<string, { form: Form; at: number }>();
+  const forms = new Map<string, { form: Form; linear: any; at: number }>();
+  /** what reading an app's form found: its slots split into its own and More settings, and whether the form can drive it */
+  const appInfo = new Map<string, { primary: string[]; advanced: string[]; needs: Need[]; partial: boolean; files: number }>();
   const jobs = new Map<string, Job & { stop?: () => void }>();
   let featured: string[] = [];
   let timings: Record<string, number> = {};
@@ -740,7 +996,7 @@ export function createTemplates(deps: Deps) {
         featured = [];
       }
       try {
-        const c = JSON.parse(await readFile(join(dir, "credits.json"), "utf8"));
+        const c = JSON.parse(await readFile(join(dir, CREDITS_FILE), "utf8"));
         for (const [k, v] of Object.entries<any>(c)) credits.set(k, v);
       } catch {}
       try {
@@ -757,14 +1013,17 @@ export function createTemplates(deps: Deps) {
     return i;
   };
 
-  async function schemaOf(name: string): Promise<Form> {
+  /** A template's form, and the short form its author made for it when it is an app (extra.linearData), read once a day. */
+  async function formOf(name: string): Promise<{ form: Form; linear: any }> {
+    const isApp = items.find((x) => x.name === name)?.isApp === true;
+    const usable = (e: any) => e && Date.now() - e.at < DAY && (e.linear !== undefined || !isApp);
     const hit = forms.get(name);
-    if (hit && Date.now() - hit.at < DAY) return hit.form;
-    const file = join(dir, "forms", `${name}.json`);
+    if (usable(hit)) return { form: hit!.form, linear: hit!.linear ?? null };
+    const file = join(dir, FORMS_DIR, `${name}.json`);
     const cached = await readFile(file, "utf8").then((t) => JSON.parse(t), () => null);
-    if (cached && Date.now() - cached.at < DAY) {
+    if (usable(cached)) {
       forms.set(name, cached);
-      return cached.form;
+      return { form: cached.form, linear: cached.linear ?? null };
     }
     if (!deps.cloud) throw fail("Connect Comfy Cloud to see what this template asks for.", 501);
     const text = await deps.cloud.mcp("get_template_schema", { template_id: name });
@@ -775,14 +1034,27 @@ export function createTemplates(deps: Deps) {
       throw fail(`Comfy Cloud could not describe this template: ${text.slice(0, 160)}`, 502);
     }
     // the template's own workflow gives its labels and loaders; without it the form is made from the schema alone
-    const wf = await f(`${CLOUD}/templates/${name}.json`).then((r) => (r.ok ? r.json() : null), () => null);
+    const wf = await f(`${CLOUD}/templates/${name}.json`, { signal: AbortSignal.timeout(20_000) }).then((r) => (r.ok ? r.json() : null), () => null);
     const form = buildForm(schema, wf);
-    const entry = { form, at: Date.now() };
+    const entry = { form, linear: wf?.extra?.linearData ?? null, at: Date.now() };
     forms.set(name, entry);
-    await mkdir(join(dir, "forms"), { recursive: true });
+    await mkdir(join(dir, FORMS_DIR), { recursive: true });
     await writeFile(file, JSON.stringify(entry)).catch(() => {});
-    return form;
+    return { form, linear: entry.linear };
   }
+  const schemaOf = async (name: string): Promise<Form> => (await formOf(name)).form;
+
+  const appDefs = () => appsOf(items);
+  const appNamed = (name: string) => appDefs().find((a) => a.name === name) ?? null;
+  /** An app's form with its slots split (and remembered): the same form the page draws, its own inputs first. */
+  async function appFormOf(name: string) {
+    const { form, linear } = await formOf(name);
+    const split = splitSlots(form, linear);
+    appInfo.set(name, { primary: split.primary, advanced: split.advanced, needs: split.needs, partial: split.partial, files: split.files });
+    return { form, split };
+  }
+  /** An app that cannot be shown simply: its form cannot take all the files it asks for, or it asks for more than a few. */
+  const unusable = (info?: { partial: boolean; files: number }) => !!info && (info.partial || info.files > 3);
 
   async function estimate(name: string) {
     await find(name);
@@ -793,7 +1065,7 @@ export function createTemplates(deps: Deps) {
     const out = parseCredits(text);
     credits.set(name, out);
     await mkdir(dir, { recursive: true });
-    await writeFile(join(dir, "credits.json"), JSON.stringify(Object.fromEntries(credits))).catch(() => {});
+    await writeFile(join(dir, CREDITS_FILE), JSON.stringify(Object.fromEntries(credits))).catch(() => {});
     return out;
   }
 
@@ -803,8 +1075,8 @@ export function createTemplates(deps: Deps) {
     const file = join(dir, "thumbs", `${name}-${n}.${ext}`);
     const type = ext === "mp3" ? "audio/mpeg" : "image/webp";
     if (await exists(file)) return { status: 200, raw: await readFile(file), type, cache: "public, max-age=86400" };
-    const res = await f(`${CLOUD}/templates/${name}-${n}.${ext}`);
-    if (!res.ok) return { status: 404, body: { error: "No picture for that one." } };
+    const res = await f(`${CLOUD}/templates/${name}-${n}.${ext}`, { signal: AbortSignal.timeout(20_000) }).catch(() => null);
+    if (!res?.ok) return { status: 404, body: { error: "No picture for that one." } };
     const bytes = Buffer.from(await res.arrayBuffer());
     await mkdir(join(dir, "thumbs"), { recursive: true });
     await writeFile(file, bytes).catch(() => {});
@@ -907,6 +1179,8 @@ export function createTemplates(deps: Deps) {
     jobs.set(job.id, job);
     const ended = () => ((job as any).ended = Date.now());
     void follow(job, item).catch((e) => {
+      // (what a run could not do is told in the server's log as well as to the person: a job that finished on Cloud and still failed here is read from it)
+      console.warn(`template ${name} (${promptId}) failed here:`, e instanceof Error ? e.stack ?? e.message : e);
       job.status = "failed";
       const x = explainError(e.message);
       job.error = x.message;
@@ -929,21 +1203,21 @@ export function createTemplates(deps: Deps) {
       await sleep(i === 0 ? 400 : 2000);
       const st: any = await cloud.rest(`/job/${job.promptId}/status`).catch(() => null);
       const s = String(st?.status ?? "");
-      if (!s || ["waiting_to_dispatch", "pending", "queued", "submitted"].includes(s)) {
-        job.progress = Math.max(job.progress, 0.03);
-        continue;
+      if (process.env.COMFYTURE_DEBUG) console.log(`template ${item.name} (${job.promptId}) poll ${i}: ${s || "(no answer)"}`);
+      if (isDone(s)) break;
+      if (isOver(s)) {
+        const detail = await cloud.rest(`/jobs/${job.promptId}`).catch(() => null);
+        const e = explainError(jobError(detail ?? { error: s }));
+        job.status = /^cancel/.test(s) ? "canceled" : "failed";
+        job.error = job.status === "canceled" ? "Canceled." : e.message;
+        job.needsImport = e.needsImport;
+        return;
       }
-      if (["in_progress", "running", "executing"].includes(s)) {
-        job.progress = Math.max(job.progress, Math.min(0.95, 0.05 + ((Date.now() - began) / 1000 / expected) * 0.9));
-        continue;
-      }
-      if (["success", "completed", "succeeded"].includes(s)) break;
-      const detail = await cloud.rest(`/jobs/${job.promptId}`).catch(() => null);
-      const e = explainError(jobError(detail ?? { error: s }));
-      job.status = s === "cancelled" || s === "canceled" ? "canceled" : "failed";
-      job.error = job.status === "canceled" ? "Canceled." : e.message;
-      job.needsImport = e.needsImport;
-      return;
+      // anything else is a job still on its way (Cloud says waiting_to_dispatch, queued_waiting, pending, in_progress...): only a word that
+      // ends a job ends the wait, so a new word of Cloud's is waited through, never taken for a failure (a job taken for one had run on)
+      if (/progress|running|execut/.test(s)) job.progress = Math.max(job.progress, Math.min(0.95, 0.05 + ((Date.now() - began) / 1000 / expected) * 0.9));
+      else job.progress = Math.max(job.progress, 0.03);
+      continue;
     }
     if (canceled) {
       job.status = "canceled";
@@ -988,6 +1262,48 @@ export function createTemplates(deps: Deps) {
     return { nodes: [...counts].sort((a, b) => b[1] - a[1]).map(([type, count]) => ({ type, count })), models: [...models], subgraphs: (wf.definitions?.subgraphs ?? []).length };
   }
 
+  /** The apps, with what is known of them (price, own inputs), filtered by a search and a group; the ones that cannot be driven are left out. */
+  async function appsView(query: { q?: string; group?: string; limit?: number; offset?: number }) {
+    await ready();
+    if (deps.warm !== false) void warmApps();
+    const words = (query.q ?? "").toLowerCase().split(/[\s,]+/).filter(Boolean);
+    let list = appDefs().map((a): App => {
+      const info = appInfo.get(a.name);
+      return { ...a, credits: credits.get(a.name)?.credits ?? null, ...(info ? { primary: info.primary, advanced: info.advanced, needs: info.needs.length || !a.needs.length ? info.needs : a.needs } : {}) };
+    }).filter((a) => !unusable(appInfo.get(a.name)));
+    const total = list.length;
+    const groups = new Map<string, number>();
+    for (const a of list) groups.set(a.medium, (groups.get(a.medium) ?? 0) + 1);
+    if (words.length) list = list.filter((a) => { const hay = `${a.title} ${a.promise} ${a.name} ${a.models.join(" ")} ${a.needs.join(" ")}`.toLowerCase(); return words.every((w) => hay.includes(w)); });
+    if (query.group && query.group !== "all") list = list.filter((a) => a.medium === query.group || a.group === query.group);
+    const offset = Math.max(0, Math.floor(query.offset ?? 0));
+    const limit = Math.min(200, Math.max(1, Math.floor(query.limit ?? 100)));
+    return { count: list.length, total, categories: [{ id: "all", name: "All", count: total }, ...(["image", "video", "audio", "3d"] as const).map((g) => ({ id: g, name: GROUP_NAME[g], count: groups.get(g) ?? 0 }))], items: list.slice(offset, offset + limit) };
+  }
+
+  let warming: Promise<void> | null = null;
+  /**
+   * Reads every app's form, price and pictures in the background (free calls), a few at a time, so the cards open fast, show their
+   * price, and the apps that cannot be driven drop out. Nothing here costs credits; a failure of one app leaves it as it was.
+   */
+  function warmApps() {
+    if (!deps.cloud) return Promise.resolve();
+    return (warming ??= (async () => {
+      const list = appDefs();
+      let at = 0;
+      const lane = async () => {
+        while (at < list.length) {
+          const a = list[at++];
+          await thumb(a.name, 1).catch(() => {});
+          if (a.after) await thumb(a.name, 2).catch(() => {});
+          await appFormOf(a.name).catch(() => {});
+          await estimate(a.name).catch(() => {});
+        }
+      };
+      await Promise.all([lane(), lane(), lane()]);
+    })().catch(() => {}));
+  }
+
   /** Estimates the partner templates of a page of the catalog in the background (free calls), so their cards can show a price. */
   function warm(list: Item[]) {
     if (!deps.cloud) return;
@@ -999,16 +1315,21 @@ export function createTemplates(deps: Deps) {
     void Promise.all([lane(), lane()]);
   }
 
+  // the apps' forms, prices and pictures are read a moment after the server starts, out of the way of everything else
+  if (deps.cloud && deps.warm !== false) setTimeout(() => void ready().then(() => warmApps()).catch(() => {}), 2500).unref?.();
+
   return {
     /** The routes under api/utensils/templates; `rest` is what follows that prefix. */
     async handle(method: string, rest: string, query: URLSearchParams, body: any): Promise<Answer> {
       const parts = rest.split("/").filter(Boolean);
+      if (!parts.length && method === "GET" && query.get("apps") === "1") return { status: 200, body: await appsView({ q: query.get("q") ?? "", group: query.get("group") ?? "", limit: Number(query.get("limit")) || undefined, offset: Number(query.get("offset")) || undefined }) };
       if (!parts.length && method === "GET") {
         await ready();
         const out = listing(items, { q: query.get("q") ?? "", group: query.get("group") ?? query.get("category") ?? "", tag: query.get("tag") ?? "", featured: query.get("featured") === "1", limit: Number(query.get("limit") ?? 48), offset: Number(query.get("offset") ?? 0) }, featured);
         if (query.get("featured") === "1") warm(out.items);
         return { status: 200, body: { ...out, items: out.items.map(withCredits) } };
       }
+      if (parts[0] === "apps" && !parts[1] && method === "GET") return { status: 200, body: await appsView({ q: query.get("q") ?? "", group: query.get("group") ?? "", limit: Number(query.get("limit")) || undefined, offset: Number(query.get("offset")) || undefined }) };
       if (parts[0] === "thumb" && parts[1] && method === "GET") return thumb(parts[1], query.get("n") === "2" ? 2 : 1);
       if (parts[0] === "job" && parts[1]) {
         const j = jobs.get(parts[1]);
@@ -1023,6 +1344,12 @@ export function createTemplates(deps: Deps) {
       if (!name) return { status: 404, body: { error: "Not found." } };
       if (!parts[1] && method === "GET") {
         const item = withCredits(await find(name));
+        const app = appNamed(name);
+        // an app comes with its slots split: its own first, the rest under More settings
+        if (app) {
+          const { form, split } = await appFormOf(name);
+          return { status: 200, body: { ...item, app: { id: app.id, title: app.title, promise: app.promise, needs: split.needs, partial: split.partial, usable: !unusable(split) }, schema: { slots: split.slots.map(publicSlot), models: form.models, notes: form.notes } } };
+        }
         const form = await schemaOf(name);
         return { status: 200, body: { ...item, schema: { slots: form.slots.map(publicSlot), models: form.models, notes: form.notes } } };
       }
@@ -1034,6 +1361,10 @@ export function createTemplates(deps: Deps) {
     /** For tests and the page-free callers. */
     flatten,
     schemaOf,
+    formOf,
+    appsView,
+    warmApps,
+    appFormOf,
     estimate,
     run,
     jobs,

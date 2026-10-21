@@ -58,6 +58,8 @@ Actions (op and its fields):
 - set_input {image, video, audio, words, options, lyrics, scale, height, seconds, bpm, real}: give the tool that is open what it works on (an id from the library, and only the kinds that tool takes), its words and its settings. Send only what changes. Words say what to vary, change, make or hear. Settings are the ones listed with the tool, each within its values: send them in options by name (scale, height, seconds, bpm, lyrics and real may be sent as they are).
 - run_tool {}: run the tool that is open on what it holds. It costs credits or takes a minute or more. The app asks the user to confirm the price first, with a key under your answer, so say it is ready to run, never that it has started; if they say yes in words, point them to that key.
 
+Mini apps: ComfyUI's own workflows shown simply, each asking for one to three things (a picture, a clip, a sound, a few words) and run on Comfy Cloud. They are listed apart below with ids that start with app-: open one with pick_tool when no built-in tool does the job, or when the user names it ("the background remover", "make my picture sing"), then give it what it takes with set_input and its words, and ask for run_tool as for any tool. A built-in tool is the first choice when it does the same job (upscale, cut out, extend, add sound...).
+
 Rules: use only the ids shown below. "My latest picture" or "my last clip" is the first one listed. Open the tool that fits the job, give it what it needs, and ask for run_tool only when the user says to run, make or do it, or names the job outright ("upscale my latest picture"). When something is missing (a picture, a clip, the words), ask for it in one short question and ask for no run_tool. When the job belongs to another workspace, open its tool: you may set it up in the same answer. When the user only asks a question, answer it and take no action. Never promise what you did not do.`;
 
 /** A setting a tool declares: a choice of values, a number in a range, a flag or a text. */
@@ -68,6 +70,8 @@ interface Summary {
   workspaces?: { id: string; name?: string; tools?: number }[];
   tools?: Tool[];
   others?: Tool[];
+  /** the mini apps: workflows shown simply, opened by their app- ids */
+  apps?: Tool[];
   open?: { tool: string; has?: { image?: string | null; video?: string | null; audio?: string | null }; words?: string; options?: Record<string, unknown>; ready?: boolean; cost?: number | null } | null;
   queue?: { tool: string; label?: string; progress?: number; status?: string }[];
   results?: { tool: string; kind?: string; note?: string; ago?: string }[];
@@ -97,6 +101,11 @@ export function utensilsPrompt(s: Summary, turns: Turn[]) {
   if (others.length) {
     lines.push("", "THE TOOLS OF THE OTHER WORKSPACES (id · workspace · name · what it takes · words), to open when the job is theirs:");
     for (const t of others) lines.push(`- ${cut(t.id, 30)} · ${cut(t.workspace ?? t.group, 12)} · ${cut(t.name, 40)} · ${t.takes?.length ? t.takes.map((k) => NOUN[k] ?? k).join(" and ") : "words only"} · ${t.words ?? "none"}`);
+  }
+  const apps = things<Tool>(s.apps, 60);
+  if (apps.length) {
+    lines.push("", "THE MINI APPS (ready-made workflows run on Comfy Cloud; id · name · what it takes · words), opened with pick_tool like any tool:");
+    for (const t of apps) lines.push(`- ${cut(t.id, 30)} · ${cut(t.name, 40)} · ${t.takes?.length ? t.takes.map((k) => NOUN[k] ?? k).join(" and ") : "words only"} · ${t.words ?? "none"}`);
   }
   lines.push("");
   const o = s.open;
@@ -173,7 +182,7 @@ export function readUtensilsAnswer(reply: string, s: Summary = {}) {
     return { reply: reply.replace(/[{}"]/g, "").trim().slice(0, 400) || "I didn't catch that. Say it again?", actions: [] as any[] };
   }
   // the tools she may open or set up: the open workspace's, and the others' by id
-  const tools = new Map([...things<Tool>(s.others, 60), ...things<Tool>(s.tools, 24)].map((t) => [t.id, t]));
+  const tools = new Map([...things<Tool>(s.others, 60), ...things<Tool>(s.apps, 60), ...things<Tool>(s.tools, 24)].map((t) => [t.id, t]));
   const lib = s.library ?? {};
   const known = {
     image: new Set(things<{ id: string }>(lib.images, 12).map((x) => x.id)),

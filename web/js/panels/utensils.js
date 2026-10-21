@@ -4,7 +4,7 @@
 import { h, icon, sprite, ago } from "../dom.js";
 import { changed } from "../store.js";
 import { currentPage } from "../router.js";
-import { utensils, TOOLS, setWorkspace, toolsOf, toolById, creditsToday, openResult, cancelJob, give } from "../utensils.js";
+import { utensils, shelfTools, setWorkspace, toolsOf, toolById, creditsToday, openResult, cancelJob, give } from "../utensils.js";
 import { TRUFFLE, WORKSPACES } from "../utensils-harness.js";
 import { setRoom } from "../harnesses.js";
 import { shelfSpace, templatesTotal } from "../utensils-space-shelf.js";
@@ -61,7 +61,7 @@ function fillBlock(name, sig, make) {
 function countOf(w, spaces) {
   const own = spaces[w.id].count?.();
   if (own !== undefined && own !== null) return own;
-  if (w.id === "shelf") return TOOLS.length;
+  if (w.id === "shelf") return shelfTools().length;
   // the templates are a catalog on the server, not tools of the shelf
   if (w.id === "templates") return templatesTotal() ?? toolsOf(w.id).length;
   return toolsOf(w.id).length;

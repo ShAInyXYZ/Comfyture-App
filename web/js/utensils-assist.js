@@ -8,7 +8,7 @@
 // and what she may set (server/utensils-assist.ts reads her answer against exactly that); a tool with run() can be run by her key.
 import { state, changed, toast, writer } from "./store.js";
 import { api } from "./api.js";
-import { TOOLS, toolById, utensils, inputOf, pickTool, setInput, setWorkspace, runTool, ready, estimate } from "./utensils.js";
+import { TOOLS, toolById, utensils, inputOf, pickTool, setInput, setWorkspace, runTool, ready, estimate, shelfTools, toolsOf } from "./utensils.js";
 import { WORKSPACES } from "./utensils-harness.js";
 import { ago } from "./dom.js";
 
@@ -83,9 +83,11 @@ export function summary(lib) {
   const ownsTool = TOOLS.some((x) => x.workspace === here);
   return {
     workspace: here,
-    workspaces: WORKSPACES.map((w) => ({ id: w.id, name: w.name, tools: w.id === "shelf" ? TOOLS.length : TOOLS.filter((x) => x.workspace === w.id).length })),
-    tools: TOOLS.filter((x) => x.workspace === here).map(full),
-    others: TOOLS.filter((x) => x.workspace !== here).map(brief),
+    workspaces: WORKSPACES.map((w) => ({ id: w.id, name: w.name, tools: w.id === "shelf" ? shelfTools().length : toolsOf(w.id).length })),
+    tools: TOOLS.filter((x) => x.workspace === here && !x.app).map(full),
+    others: TOOLS.filter((x) => x.workspace !== here && !x.app).map(brief),
+    // the mini apps are listed apart, in a line each: opened with pick_tool by their app- ids
+    apps: TOOLS.filter((x) => x.app).map(brief),
     open: ownsTool && t.workspace !== here ? null : { tool: t.id, has: { image: labelOf(i.image, "image"), video: labelOf(i.video, "video"), audio: labelOf(i.audio, "audio") }, words: i.prompt ?? "", options: optionsOf(t, i), ready: ready(t, i), cost: estimate(t, i) },
     queue: utensils.jobs.slice(0, 4).map((j) => ({ tool: j.tool, label: j.label, progress: j.progress, status: j.status })),
     results: utensils.results.slice(0, 5).map((r) => ({ tool: r.tool, kind: r.kind, note: r.note, ago: ago(r.at) })),

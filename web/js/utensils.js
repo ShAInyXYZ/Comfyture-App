@@ -38,7 +38,8 @@ export const toolById = (id) => TOOLS.find((t) => t.id === id) ?? TOOLS[0];
  * A workspace's own tool, added to the shelf: the Shelf's grid lists it, Truffle can open it, the queue can name it. `def` is
  * { id, workspace, name, icon, hint, takes?, words?, verb?, options?, ready?(inputs), cost?(inputs), run?(inputs, setProgress) }
  * (options: the settings Truffle may set, [{ key, type: choice|range|flag|text, values?, min?, max? }], kept in the tool's inputs by key); a tool
- * with a run() can be run from anywhere (Truffle's key) and its run is tracked as a job. Registering twice keeps the first.
+ * with a run() can be run from anywhere (Truffle's key) and its run is tracked as a job. Registering twice keeps the first. `app: true` marks
+ * a mini app (utensils-templates-api.js): a tool Truffle can open, kept out of the Shelf's grid and counts, which are of the tools.
  */
 export function registerTool(def) {
   if (!def?.id || TOOLS.some((t) => t.id === def.id)) return TOOLS.find((t) => t.id === def?.id);
@@ -108,8 +109,10 @@ export function pickTool(id) {
   utensils.shown = null;
   update();
 }
-/** The tools of a workspace. */
-export const toolsOf = (workspace) => TOOLS.filter((t) => t.workspace === workspace);
+/** The tools of a workspace (the mini apps, which are workflows shown simply, are the Templates workspace's own and are not counted among the tools). */
+export const toolsOf = (workspace) => TOOLS.filter((t) => t.workspace === workspace && !t.app);
+/** The tools of the shelf: all but the mini apps (registered as tools so Truffle can open them, they have their own place). */
+export const shelfTools = () => TOOLS.filter((t) => !t.app);
 
 // what the tools work on is shared (a picture upscaled, then cut out); their words and settings are each their own
 const MEDIA = ["image", "video", "audio"];
@@ -278,7 +281,7 @@ export function handOn(r, toolId) {
   pickTool(t.id);
 }
 /** The tools that take a result, to offer it to: the ones whose input is of its kind. */
-export const takersOf = (r) => TOOLS.filter((t) => t.takes.includes(r.kind) && (r.kind !== "video" || r.file));
+export const takersOf = (r) => TOOLS.filter((t) => !t.app && t.takes.includes(r.kind) && (r.kind !== "video" || r.file));
 /** A result handed to the tool open (an upscaled picture to cut out, say). */
 export const useResult = (r) => handOn(r, utensils.tool);
 
@@ -371,7 +374,7 @@ export async function runTool(id = utensils.tool) {
   const words = (i.prompt ?? "").trim();
   const make = t.run ?? MAKE[t.id];
   if (!make) return void toast(`${t.name} runs from its own workspace.`);
-  return trackJob({ tool: t.id, label: t.name, credits: estimate(t, i) }, (set) => make(i, t.run ? set : words, t.run ? undefined : set));
+  return trackJob({ tool: t.id, label: t.name, credits: estimate(t, i) }, (set, job) => make(i, t.run ? set : words, t.run ? job : set));
 }
 
 /** Roughly what the tool costs, in Comfy credits. */

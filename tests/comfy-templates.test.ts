@@ -7,7 +7,7 @@ import { mkdtemp, readFile, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  flatten, listing, search, buildForm, buildRunRequest, parseCredits, explainError, jobOutputs, jobError, loaderName, publicSlot, createTemplates, fakeRun, png, type Cloud,
+  flatten, listing, search, buildForm, buildRunRequest, parseCredits, explainError, isDone, isOver, jobOutputs, jobError, loaderName, publicSlot, createTemplates, fakeRun, png, type Cloud,
 } from "../server/comfy-templates.ts";
 
 const fx = (name: string) => readFile(join(import.meta.dirname, "fixtures", "comfy-templates", name), "utf8").then(JSON.parse);
@@ -218,7 +218,7 @@ async function service(dir: string) {
     }
     return new Response("nope", { status: 404 });
   }) as unknown as typeof fetch;
-  const svc = createTemplates({ data: dir, root: join(import.meta.dirname, ".."), cloud, fetch: fetchStub });
+  const svc = createTemplates({ data: dir, root: join(import.meta.dirname, ".."), cloud, fetch: fetchStub, warm: false });
   return { svc, calls, uploads };
 }
 
@@ -272,7 +272,7 @@ test("the price is read once and kept", async () => {
   const { svc } = await service(dir);
   const a: any = (await svc.handle("POST", "/video_ltx2_3_i2v/estimate", new URLSearchParams(), {})).body;
   assert.equal(a.credits, 0);
-  const saved = JSON.parse(await readFile(join(dir, "templates", "credits.json"), "utf8"));
+  const saved = JSON.parse(await readFile(join(dir, "templates", "credits-2.json"), "utf8"));
   assert.equal(saved.video_ltx2_3_i2v.credits, 0);
 });
 
@@ -312,4 +312,14 @@ test("a running job can be canceled, and says so", async () => {
   assert.equal(job.status, "canceled");
   assert.ok(calls.some((c) => c.tool === "cancel_job"), "Cloud was asked to stop the job");
   assert.equal(job.outputs.length, 0);
+});
+
+test("the words of a job's status: a finished job ends the wait well, a failed or canceled one badly, and any other word is a job still on its way", () => {
+  // queued_waiting is what Cloud answers just after a run is sent: taking it for a failure ended the wait on a job that went on and was billed
+  for (const w of ["queued_waiting", "waiting_to_dispatch", "pending", "in_progress", "running", "assigned", "a_word_not_seen_before", ""]) {
+    assert.equal(isDone(w), false, w);
+    assert.equal(isOver(w), false, w);
+  }
+  for (const w of ["success", "completed", "succeeded"]) assert.equal(isDone(w), true, w);
+  for (const w of ["error", "failed", "cancelled", "canceled", "timeout"]) assert.equal(isOver(w), true, w);
 });

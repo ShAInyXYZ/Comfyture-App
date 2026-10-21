@@ -7,13 +7,16 @@
 //   estimateTemplate(name)                                     -> { credits, perUnit, note }   (free, read-only)
 //   runTemplate(name, inputs, { tool, label, confirmed })      -> the results kept (a list); needs confirmed: true, the person's yes to the price
 //   graphOf(name)                                              -> { nodes: [{ type, count }], models, subgraphs } for 'View graph'
+//   loadApps() / apps / appOfTool(toolId)                      the mini apps (simplified templates: a promise, one to three inputs, one key),
+//                                                              and the tools they are registered as for Truffle (id app-<id>, app: true)
 //   uploadForSlot(kind, file) / pickForSlot(kind, anchor)      -> { file, url, ... } a library item for a picture / clip / sound slot
 //
 // inputs are keyed by the slot ids of the schema: text, numbers, a seed, a combo or a boolean as themselves; a picture, clip or sound
 // as the library item ({ file, ... }) or its file name.
 import { api } from "./api.js";
 import { openPicker, pictureOf } from "./picker.js";
-import { trackJob, cancelJob, registerTool } from "./utensils.js";
+import { trackJob, cancelJob, registerTool, setWorkspace } from "./utensils.js";
+import { changed } from "./store.js";
 import { h } from "./dom.js";
 
 const BASE = "api/utensils/templates";
@@ -56,29 +59,42 @@ const errors = new Map();
 export const lastError = (name) => errors.get(name) ?? "";
 
 /**
- * Runs a template as a job of the queue and keeps what it makes (pictures, clips, sounds, 3D files) as results of `tool`. `confirmed`
- * is the person's yes to the price: nothing is sent without it. Answers the results kept (a list, empty when it failed or was canceled).
+ * Runs a template and waits for it: the job on the server followed to its end. `setProgress` is told how far it is; `queued`, when a
+ * job of the queue is running it, learns how to stop it. Answers the outputs (as results, not yet kept) or throws what went wrong.
+ * `confirmed` is the person's yes to the price: nothing is sent without it. A job of the queue is made by the callers (runTemplate,
+ * or a tool's own run) so that it is never made twice.
  */
-export function runTemplate(name, inputs = {}, { tool = "template", label, credits = null, confirmed = false } = {}) {
-  if (confirmed !== true) return Promise.reject(new Error("Confirm the price first."));
+export async function execTemplate(name, inputs = {}, { setProgress = () => {}, queued = null, label, from = null, confirmed = false } = {}) {
+  if (confirmed !== true) throw new Error("Confirm the price first.");
   errors.delete(name);
-  return trackJob({ tool, label: label ?? name, credits }, async (setProgress, queued) => {
-    const signal = { stopped: false };
-    try {
-      const started = await post(`${BASE}/${encodeURIComponent(name)}/run`, { inputs, confirm: true });
+  const signal = { stopped: false };
+  try {
+    const started = await post(`${BASE}/${encodeURIComponent(name)}/run`, { inputs, confirm: true });
+    if (queued) {
       queued.onCancel = () => {
         signal.stopped = true;
         fetch(`${BASE}/job/${started.id}`, { method: "DELETE" }).catch(() => {});
       };
-      const done = await follow(started, setProgress, signal);
-      if (signal.stopped) return [];
-      if (done.status !== "done") throw new Error(done.error ?? "That didn't work.");
-      return done.outputs.map((o) => ({ ...o, note: label ?? name, template: name }));
-    } catch (e) {
-      errors.set(name, e.message);
-      throw e;
     }
-  });
+    const done = await follow(started, setProgress, signal);
+    if (signal.stopped) return [];
+    if (done.status !== "done") throw new Error(done.error ?? "That didn't work.");
+    return done.outputs.map((o) => ({ ...o, note: label ?? name, template: name, ...(from && o.kind === "image" ? { from } : {}) }));
+  } catch (e) {
+    errors.set(name, e.message);
+    throw e;
+  }
+}
+
+/**
+ * Runs a template as a job of the queue and keeps what it makes (pictures, clips, sounds, 3D files) as results of `tool`. `confirmed`
+ * is the person's yes to the price: nothing is sent without it. `from` is the picture it was given, kept with a picture it makes (so it
+ * can be shown against it). Answers the results kept (a list, empty when it failed or was canceled).
+ */
+export function runTemplate(name, inputs = {}, { tool = "template", label, credits = null, confirmed = false, from = null } = {}) {
+  if (confirmed !== true) return Promise.reject(new Error("Confirm the price first."));
+  errors.delete(name);
+  return trackJob({ tool, label: label ?? name, credits }, (setProgress, queued) => execTemplate(name, inputs, { setProgress, queued, label, from, confirmed }));
 }
 export { cancelJob };
 
@@ -114,4 +130,103 @@ export function priceLabel(est) {
   if (!est || est.credits === null || est.credits === undefined) return "";
   if (est.credits === 0) return "GPU time";
   return `≈ ${est.credits} cr${est.perUnit ? ` / ${est.perUnit}` : ""}`;
+}
+
+// ---------------------------------------------------------------- the mini apps
+// An app is a template shown simply (server/comfy-templates.ts: apps): its own promise, the one to three inputs that matter and one
+// key. The list is read once (and again while the server is still reading the forms, so the apps that cannot be driven drop out and the
+// prices come in); each app is registered as a tool of the Templates workspace (id app-<id>, app: true) so Truffle can open one by its
+// name, give it what it needs and ask to run it. The page confirms the price before anything runs, as for every tool.
+
+const APP_ICON = { image: "image-library", video: "film-make", audio: "audio-music", "3d": "tool-templates" };
+// what a run costs when the template bills no partner credits: GPU time, about, by what it makes (like the built-in tools' formulas)
+const GPU_GUESS = { image: 6, video: 24, audio: 10, "3d": 12 };
+const randomSeed = () => Math.floor(Math.random() * 4294967295);
+
+export const toolIdOfApp = (a) => `app-${a.id}`;
+/** The state of the apps: idle | loading | ready | none (no Cloud, or the server does not answer). */
+export const apps = { state: "idle", list: [], total: 0, settled: false };
+let loading = null;
+let settling = 0;
+
+export function listApps(params = {}) {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null && v !== "") q.set(k, String(v));
+  return call(`${BASE}/apps?${q}`);
+}
+export const appOfTool = (toolId) => apps.list.find((a) => toolIdOfApp(a) === toolId) ?? null;
+export const appByName = (name) => apps.list.find((a) => a.name === name) ?? null;
+/** The price an app shows: its partner credits, else a guess of the GPU time it takes. */
+export const appCost = (a) => (a.credits > 0 ? a.credits : GPU_GUESS[a.medium] ?? 8);
+
+/** Opens an app in the Templates workspace (the panel draws it). */
+export function openApp(a) {
+  setWorkspace("templates");
+  document.dispatchEvent(new CustomEvent("utensils:app", { detail: { name: a.name } }));
+}
+
+/** What a run of an app from a tool's own key (Truffle's) sends: the shared picture, clip and sound, and the words, to its own slots. */
+async function runApp(a, i, set, job) {
+  const d = await getTemplate(a.name);
+  if (d.app?.usable === false) throw new Error(`${a.title} can't be run from here.`);
+  const inputs = {};
+  const used = new Set();
+  for (const s of d.schema.slots.filter((x) => x.primary)) {
+    if (["image", "video", "audio"].includes(s.kind)) {
+      // the shared inputs hold one of each kind: an app that asks for two pictures is finished in its own panel
+      if (used.has(s.kind)) {
+        openApp(a);
+        throw new Error(`${a.title} needs more than one ${s.kind === "image" ? "picture" : s.kind === "video" ? "clip" : "sound"}: add them in its panel.`);
+      }
+      used.add(s.kind);
+      if (!i[s.kind]) throw new Error(`${a.title} needs ${s.kind === "image" ? "a picture" : s.kind === "video" ? "a clip" : "a sound"}.`);
+      inputs[s.id] = { file: i[s.kind].file };
+    } else if (s.kind === "text") inputs[s.id] = i.prompt ?? "";
+  }
+  for (const s of d.schema.slots) if (s.kind === "seed") inputs[s.id] = randomSeed();
+  return execTemplate(a.name, inputs, { setProgress: set, queued: job, label: a.title, from: i.image?.url ?? null, confirmed: true });
+}
+
+function toolOf(a) {
+  const takes = [...new Set(a.needs.filter((k) => k !== "words"))];
+  return {
+    id: toolIdOfApp(a), app: true, appName: a.name, workspace: "templates", group: "Apps", name: a.title, icon: APP_ICON[a.medium] ?? "tool-templates", hint: a.promise,
+    takes, verb: "Run", words: a.needs.includes("words") ? "needed" : undefined,
+    cost: () => appCost(a),
+    run: (i, set, job) => runApp(a, i, set, job),
+  };
+}
+function registerApps(list) {
+  for (const a of list) {
+    const def = toolOf(a);
+    // registerTool keeps the first of an id: a second reading of the list (its needs known better now) updates the tool in place
+    Object.assign(registerTool(def), def);
+  }
+}
+
+/**
+ * Reads the apps (once; a second time with `again`). The server reads every app's form in the background after it starts, so the first
+ * answer may still hold apps that cannot be driven and lack their prices: it is read again a few times until each app has been read.
+ */
+export function loadApps(again = false) {
+  if (loading && !again) return loading;
+  if (apps.state === "idle") apps.state = "loading";
+  loading = listApps().then((out) => {
+    apps.list = out.items;
+    apps.total = out.total;
+    apps.state = "ready";
+    apps.settled = out.items.every((a) => a.primary);
+    registerApps(out.items);
+    changed("utensils");
+    if (!apps.settled && settling < 6) {
+      settling += 1;
+      setTimeout(() => loadApps(true), 7000);
+    }
+    return out;
+  }).catch(() => {
+    if (apps.state === "loading") apps.state = "none";
+    loading = null;
+    return { items: [] };
+  });
+  return loading;
 }

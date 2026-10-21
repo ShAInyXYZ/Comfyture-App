@@ -1,25 +1,30 @@
 // The Utensils "templates" workspace: the official ComfyUI workflow templates, run on Comfy Cloud. On the left a browser (a search,
 // the groups, a grid of cards with their pictures that load as they are scrolled to); on the right the one picked: its picture,
 // what it asks for as a plain form, what it uses and what it costs, and a yellow key that asks to confirm the price before anything
-// is sent. What it makes goes to the queue and Recent like every tool's, and shows under the form. The API is in
+// is sent. What it makes goes to the queue and Recent like every tool's, and shows under the form.
+// The first group, Apps, is the templates shown simply: bigger, calmer cards, and a panel that is a mini app (a big picture, only the
+// one to three things to give, one key, the rest under More settings, and what it makes right there). The API is in
 // utensils-templates-api.js (and server/comfy-templates.ts); a workspace is { el, update, sig, count }.
-import { h, icon } from "./dom.js";
+import { h, icon, sprite } from "./dom.js";
 import { toast, changed } from "./store.js";
-import { utensils, openResult, forget } from "./utensils.js";
+import { utensils, openResult, forget, inputOf, setInput, setQuietly, takersOf, handOn } from "./utensils.js";
 import { compare, waveform } from "./utensils-bench.js";
-import { listTemplates, getTemplate, estimateTemplate, runTemplate, graphOf, pickForSlot, uploadForSlot, priceLabel, lastError } from "./utensils-templates-api.js";
+import { listTemplates, listApps, loadApps, apps, appByName, toolIdOfApp, appCost, getTemplate, estimateTemplate, runTemplate, graphOf, pickForSlot, uploadForSlot, priceLabel, lastError } from "./utensils-templates-api.js";
+import { needPills, priceOf, appPicture, modelViewer } from "./utensils-apps-ui.js";
 
 const PAGE = 36;
-const GROUPS = [["all", "All"], ["image", "Image"], ["video", "Video"], ["audio", "Audio"], ["3d", "3D"], ["utility", "Utility"], ["partner", "Partner"]];
+const GROUPS = [["apps", "Apps"], ["all", "All"], ["image", "Image"], ["video", "Video"], ["audio", "Audio"], ["3d", "3D"], ["utility", "Utility"], ["partner", "Partner"]];
 const KIND_ICON = { image: "image", video: "video", audio: "sound" };
 const two = (n) => String(n).padStart(2, "0");
 const bits = (name) => [...name].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7);
 const randomSeed = () => Math.floor(Math.random() * 4294967295);
 
 const st = {
-  q: "", group: "all", items: [], total: 0, count: 0, categories: [], loading: false, done: false, failed: "",
+  q: "", group: "apps", items: [], total: 0, count: 0, categories: [], loading: false, done: false, failed: "",
   picked: null, detail: null, loadingDetail: false, detailError: "", values: {}, est: null, armed: false, adv: false,
   made: {}, graph: null, graphOpen: false, running: new Set(),
+  // an app panel shows what it made (result) or its example; the app open comes from Truffle's tool or a card
+  show: {}, toolSeen: null,
 };
 let loadToken = 0;
 let armTimer = 0;
@@ -41,7 +46,22 @@ export function templatesSpace() {
   // ------------------------------------------------------------ the browser
   function drawChips() {
     const counts = Object.fromEntries(st.categories.map((c) => [c.id, c.count]));
-    chips.replaceChildren(...GROUPS.map(([id, name]) => h("button.ut-tpl-chip", { type: "button", "aria-pressed": String(st.group === id), disabled: id !== "all" && counts[id] === 0, "aria-label": counts[id] !== undefined ? `${name}, ${counts[id]} templates` : name, on: { click: () => ((st.group = id), reload()) } }, name)));
+    counts.apps = apps.total || undefined;
+    chips.replaceChildren(...GROUPS.map(([id, name]) => h("button.ut-tpl-chip", { type: "button", "aria-pressed": String(st.group === id), disabled: id !== "all" && id !== "apps" && counts[id] === 0, "aria-label": counts[id] !== undefined ? `${name}, ${counts[id]} ${id === "apps" ? "apps" : "templates"}` : name, on: { click: () => ((st.group = id), reload()) } }, name)));
+  }
+
+  /** An app's card: bigger and calmer than a template's: its picture, its title, one line of promise, what it asks for and what it costs. */
+  function appCard(a) {
+    const audio = a.thumbKind === "audio";
+    const media = audio
+      ? h("span.ut-tpl-audio", { style: { "--seed": String(bits(a.name) % 97) } }, ...Array.from({ length: 30 }, (_, k) => h("i", { style: { height: `${Math.round(18 + 62 * Math.abs(Math.sin((k + 1) * 0.55 + (bits(a.name) % 13)) * Math.cos(k * 0.21 + (bits(a.name) % 7))))}%` } })),
+        h("button.ut-tpl-play", { type: "button", title: "Hear the example", "aria-label": "Hear the example", on: { click: (e) => (e.stopPropagation(), hear(e.currentTarget, a)) } }, icon("play")))
+      : appPicture(a);
+    return h(`button.ut-app-card${st.picked === a.name ? ".is-on" : ""}`, { type: "button", dataset: { name: a.name, app: a.id }, "aria-pressed": String(st.picked === a.name), title: a.title, on: { click: () => select(a.name) } },
+      h("span.ut-app-thumb", {}, media, a.partner ? h("span.ut-tpl-partner", { title: "A partner service runs this one: your content goes to it and it bills credits" }, "Partner") : null),
+      h("b.ut-app-title", {}, a.title),
+      h("span.ut-app-line", {}, a.promise),
+      h("span.ut-app-meta", {}, ...needPills(a), h("span.spacer"), priceOf(a) ? h("span.ut-tpl-cost", { title: a.credits > 0 ? "What the partner service bills for one run" : "This one runs on Cloud GPU time" }, priceOf(a)) : null));
   }
 
   function card(t, i) {
@@ -83,8 +103,19 @@ export function templatesSpace() {
     if (st.loading || st.done) return;
     st.loading = true;
     const token = loadToken;
-    note.textContent = first ? "Loading the templates…" : "";
+    note.textContent = first ? (st.group === "apps" ? "Loading the apps…" : "Loading the templates…") : "";
     try {
+      if (st.group === "apps") {
+        const out = st.q ? await listApps({ q: st.q }) : (await loadApps(), { items: apps.list, count: apps.list.length, total: apps.total });
+        if (token !== loadToken) return;
+        st.items = out.items;
+        st.total = out.total;
+        st.count = out.count;
+        st.done = true;
+        drawAppGrid();
+        if (first) changed("utensils");
+        return;
+      }
       const out = await listTemplates({ q: st.q, group: st.group === "all" ? "" : st.group, featured: !st.q && st.group === "all", limit: PAGE, offset: st.items.length });
       if (token !== loadToken) return;
       const at = st.items.length;
@@ -110,12 +141,21 @@ export function templatesSpace() {
       watch();
     }
   }
+  /** The apps' cards (the list may be read again as the server learns more of the apps: the card open stays open). */
+  function drawAppGrid() {
+    grid.classList.add("is-apps");
+    grid.replaceChildren(...st.items.map(appCard));
+    note.textContent = !st.items.length ? (st.q ? `No app matches “${st.q}”.` : apps.state === "none" ? "The apps need Comfy Cloud: add a COMFY_API_KEY to .env." : "No apps yet.") : `${st.count} ${st.count === 1 ? "app" : "apps"}`;
+    drawChips();
+  }
   function reload() {
     loadToken++;
     st.items = [];
     st.done = false;
     st.loading = false;
     st.failed = "";
+    grid.classList.toggle("is-apps", st.group === "apps");
+    syncMode();
     grid.replaceChildren();
     drawChips();
     load(true);
@@ -151,6 +191,7 @@ export function templatesSpace() {
       st.detail = d;
       st.values = {};
       for (const s of d.schema.slots) st.values[s.id] = s.kind === "seed" ? randomSeed() : s.kind === "boolean" ? s.default === true : s.default ?? (s.kind === "text" ? "" : null);
+      if (d.app) openAsTool(d);
     } catch (e) {
       if (st.picked !== name) return;
       st.detailError = e.status === 501 ? "Connect Comfy Cloud (a COMFY_API_KEY in .env) to see what this template asks for and to run it." : e.message;
@@ -162,6 +203,39 @@ export function templatesSpace() {
       }
     }
   }
+  /**
+   * An app that is open is the tool that is open, and what it is given is what the tools share: the picture, clip or sound already given
+   * to another tool is here (and what is dropped here is there), and the words are its own. So Truffle and the panel work on one thing.
+   */
+  function openAsTool(d) {
+    const tool = `app-${d.app.id}`;
+    st.toolSeen = tool;
+    if (utensils.tool !== tool) utensils.tool = tool;
+    const i = inputOf(tool);
+    const kinds = new Set();
+    let wordsDone = false;
+    for (const s of d.schema.slots.filter((x) => x.primary)) {
+      if (["image", "video", "audio"].includes(s.kind) && !kinds.has(s.kind)) {
+        kinds.add(s.kind);
+        if (i[s.kind]) st.values[s.id] = i[s.kind];
+      } else if (s.kind === "text" && !wordsDone) {
+        wordsDone = true;
+        // the words are the person's own: the template's sample is only shown as an example
+        st.values[s.id] = i.prompt ?? "";
+      }
+    }
+  }
+  /** What a slot of an app writes back to the shared inputs: its picture, clip or sound (the first of its kind), and the main words. */
+  function shareOut(s, value) {
+    const d = st.detail;
+    if (!d?.app) return;
+    const tool = `app-${d.app.id}`;
+    const primary = d.schema.slots.filter((x) => x.primary);
+    if (["image", "video", "audio"].includes(s.kind)) {
+      if (primary.find((x) => x.kind === s.kind)?.id === s.id) setInput({ [s.kind]: value }, tool);
+    } else if (s.kind === "text" && primary.find((x) => x.kind === "text")?.id === s.id) setQuietly({ prompt: value }, tool);
+  }
+
   async function refreshPrice(name) {
     try {
       const est = await estimateTemplate(name);
@@ -172,15 +246,17 @@ export function templatesSpace() {
   }
 
   const slotById = (id) => st.detail?.schema.slots.find((s) => s.id === id);
-  const ready = () => !!st.detail && st.detail.schema.slots.every((s) => !s.required || st.values[s.id]);
-  const lacking = () => st.detail?.schema.slots.find((s) => s.required && !st.values[s.id]);
-  const tool = (kind) => (kind === "image" ? "a picture" : kind === "video" ? "a clip" : "a sound");
+  // an app is run with its own words: the template's sample words would make a different thing than was asked
+  const wordsOf = () => (st.detail?.app ? st.detail.schema.slots.find((s) => s.primary && s.kind === "text") : null);
+  const ready = () => !!st.detail && st.detail.schema.slots.every((s) => !s.required || st.values[s.id]) && (!wordsOf() || !!String(st.values[wordsOf().id] ?? "").trim());
+  const lacking = () => st.detail?.schema.slots.find((s) => s.required && !st.values[s.id]) ?? (wordsOf() && !String(st.values[wordsOf().id] ?? "").trim() ? { label: "Words", kind: "words" } : null);
+  const tool = (kind) => (kind === "image" ? "a picture" : kind === "video" ? "a clip" : kind === "words" ? "a few words" : "a sound");
 
   // a picture, clip or sound slot: a well that opens the picker or takes a drop
-  function mediaField(s) {
+  function mediaField(s, big = false) {
     const v = st.values[s.id];
-    const well = h("div.ut-tpl-well", { tabindex: "0", role: "button", title: v ? "Replace it" : `Add ${tool(s.kind)}`, dataset: { slot: s.id } });
-    const set = (item) => ((st.values[s.id] = item), drawRun(), fieldChanged(s.id));
+    const well = h(`div.ut-tpl-well${big ? ".is-big" : ""}`, { tabindex: "0", role: "button", title: v ? "Replace it" : `Add ${tool(s.kind)}`, dataset: { slot: s.id } });
+    const set = (item) => ((st.values[s.id] = item), shareOut(s, item), drawRun(), fieldChanged(s.id));
     const pick = async () => { try { const item = await pickForSlot(s.kind, well); item && set(item); } catch (e) { toast(e.message, { tone: "crit" }); } };
     const body = !v ? [icon(s.kind === "audio" ? "sound" : s.kind === "video" ? "video" : "upload"), h("span", {}, s.kind === "image" ? "Drop a picture or click" : s.kind === "video" ? "Drop a clip or click" : "Drop a sound or click")]
       : [s.kind === "image" ? h("img", { src: v.url, alt: "", draggable: false }) : s.kind === "video" ? h("video", { src: v.url, muted: true, preload: "metadata", playsInline: true }) : h("span.ut-tpl-chipwave", {}, icon("sound")),
@@ -208,13 +284,16 @@ export function templatesSpace() {
   }
 
   function field(s) {
-    if (["image", "video", "audio"].includes(s.kind)) return mediaField(s);
+    if (["image", "video", "audio"].includes(s.kind)) return mediaField(s, !!st.detail?.app);
     const label = (extra) => h("span.ut-label", {}, s.label, extra);
     if (s.kind === "text") {
       const max = s.id === "lyrics" ? 4000 : 1200;
       const counter = h("em.ut-tpl-count", {}, `${String(st.values[s.id] ?? "").length}/${max}`);
-      const area = h("textarea.ut-words.ut-tpl-words", { rows: s.id === "lyrics" ? 6 : 3, maxlength: max, value: st.values[s.id] ?? "", placeholder: "The template's own words run if this is left empty", "aria-label": s.label, dataset: { slot: s.id },
-        on: { input: (e) => { st.values[s.id] = e.target.value; counter.textContent = `${e.target.value.length}/${max}`; } } });
+      const app = !!st.detail?.app && s.primary;
+      // an app's words are its own: the template's sample is only what it looks like ("e.g.")
+      const sample = String(s.default ?? "").replace(/\s+/g, " ").trim();
+      const area = h("textarea.ut-words.ut-tpl-words", { rows: app ? 3 : s.id === "lyrics" ? 6 : 3, maxlength: max, value: app && st.values[s.id] === s.default ? "" : st.values[s.id] ?? "", placeholder: app ? (sample ? `e.g. ${sample.slice(0, 140)}` : "Say it in a few words") : "The template's own words run if this is left empty", "aria-label": s.label, dataset: { slot: s.id },
+        on: { input: (e) => { st.values[s.id] = e.target.value; shareOut(s, e.target.value); counter.textContent = `${e.target.value.length}/${max}`; if (st.detail?.app) drawRun(); } } });
       return h("div.ut-tpl-field", {}, label(counter), area);
     }
     if (s.kind === "seed") {
@@ -260,12 +339,15 @@ export function templatesSpace() {
   }
 
   const labelOf = (idx, d) => `${idx >= 0 ? `${two(idx + 1)} ` : ""}${(d?.title ?? st.items[idx]?.title ?? st.picked).toUpperCase()}`;
+  const syncMode = () => el.classList.toggle("is-apps", st.group === "apps" || !!st.detail?.app);
   function drawDetail(keepScroll) {
+    syncMode();
     const scroll = detail.querySelector(".ut-tpl-dscroll");
     const at = keepScroll && scroll ? scroll.scrollTop : 0;
     const focus = detail.contains(document.activeElement) ? document.activeElement.dataset?.slot : null;
     if (!st.picked) {
-      detail.replaceChildren(h("div.ut-b-head", {}, h("span.ut-b-label", {}, "Template")), h("div.ut-empty", {}, icon("sparkle"), h("span", {}, "Pick a template to see what it asks for"), h("em.ut-hint", {}, "Official ComfyUI workflows, run on Comfy Cloud")));
+      const apps = st.group === "apps";
+      detail.replaceChildren(h("div.ut-b-head", {}, h("span.ut-b-label", {}, apps ? "App" : "Template")), h("div.ut-empty", {}, icon("sparkle"), h("span", {}, apps ? "Pick an app: you give it a picture or a few words, it does the rest" : "Pick a template to see what it asks for"), h("em.ut-hint", {}, "Official ComfyUI workflows, run on Comfy Cloud")));
       return;
     }
     const idx = st.items.findIndex((t) => t.name === st.picked);
@@ -280,6 +362,7 @@ export function templatesSpace() {
       detail.replaceChildren(head, h("div.ut-empty", {}, icon("sparkle"), h("span", {}, st.detailError || "That template did not load.")));
       return;
     }
+    if (d.app) return drawApp(head, d, keepScroll, at, focus);
     const main = d.schema.slots.filter((s) => !s.advanced);
     const adv = d.schema.slots.filter((s) => s.advanced);
     const err = lastError(st.picked);
@@ -292,6 +375,58 @@ export function templatesSpace() {
       d.schema.models?.length ? h("p.ut-hint.ut-tpl-models", { title: d.schema.models.join("\n") }, `Uses ${d.schema.models.length} model files on Comfy Cloud`) : null,
       err ? h("p.ut-tpl-error", { role: "alert" }, /missing a model/.test(err) ? icon("download") : icon("close"), h("span", {}, err)) : null,
       madeBlock());
+    const run = h("div.ut-tpl-run");
+    detail.replaceChildren(head, body, run);
+    if (keepScroll) body.scrollTop = at;
+    drawRun();
+    if (focus) detail.querySelector(`[data-slot="${CSS.escape(focus)}"]`)?.focus({ preventScroll: true });
+  }
+
+  // ------------------------------------------------------------ an app picked: the mini app
+  /** What an app made, big: a picture against the one it was given, a clip, a sound, or a 3D file to turn. */
+  function resultStage(r) {
+    const stage = h("div.ut-tpl-stage.ut-app-stage", { dataset: { result: r.id } });
+    if (r.kind === "image") stage.append(r.from ? compare({ url: r.from }, r) : h("img", { src: r.url, alt: "", draggable: false }));
+    else if (r.kind === "video") stage.append(h("video", { src: r.url, controls: true, loop: true, playsInline: true, preload: "metadata" }));
+    else if (r.kind === "audio") (stage.classList.add("is-audio"), stage.append(waveform(r.url)));
+    else stage.append(modelViewer(r.url, r.file));
+    return stage;
+  }
+  /** What can be done with what was made: it is kept (Recent has it), handed on to a tool, downloaded, put away, or the example is shown again. */
+  function resultKeys(r, name) {
+    const takers = takersOf(r).slice(0, 3);
+    return h("div.ut-app-keys", {},
+      h("span.ut-pill.is-kept", { title: "It is kept: Recent shows it, with everything the tools make" }, icon("check"), "Kept"),
+      h("span.spacer"),
+      takers.length ? h("span.ut-label", {}, "Use in") : null,
+      ...takers.map((t) => h("button.ut-iconkey", { type: "button", title: `Use it in ${t.name}`, "aria-label": `Use it in ${t.name}`, on: { click: () => handOn(r, t.id) } }, sprite(t.icon))),
+      h("a.ut-iconkey", { href: r.url, download: r.file, title: "Download", "aria-label": "Download" }, icon("download")),
+      h("button.ut-iconkey.is-quiet", { type: "button", title: "Show the example again", "aria-label": "Show the example again", on: { click: () => ((st.show[name] = { mode: "example" }), drawDetail(true)) } }, icon("image")),
+      h("button.ut-iconkey.is-quiet", { type: "button", title: "Take it off the list\nThe file stays in the Library", "aria-label": "Take it off the list", on: { click: () => (forget(r.id), (st.made[name] = (st.made[name] ?? []).filter((x) => x.id !== r.id)), delete st.show[name], drawDetail(true)) } }, icon("trash")));
+  }
+  function madeStrip(list, current, name) {
+    return h("div.ut-app-strip", {}, ...list.map((r) => h(`button.ut-app-mini${r === current ? ".is-on" : ""}`, { type: "button", title: "Show it", "aria-label": "Show it", on: { click: () => ((st.show[name] = { mode: "result", id: r.id }), drawDetail(true)) } },
+      r.kind === "image" ? h("img", { src: r.url, alt: "", draggable: false }) : r.kind === "video" ? h("video", { src: r.url, muted: true, preload: "metadata", playsInline: true }) : h("span.ut-app-mini-i", {}, r.kind === "audio" ? icon("sound") : sprite("tool-templates")))));
+  }
+  function drawApp(head, d, keepScroll, at, focus) {
+    const a = d.app;
+    const name = st.picked;
+    const prim = d.schema.slots.filter((s) => s.primary);
+    const more = d.schema.slots.filter((s) => !s.primary);
+    const list = (st.made[name] ?? []).slice(0, 6);
+    const view = st.show[name];
+    const shown = view?.mode === "example" ? null : list.find((r) => r.id === view?.id) ?? list[0] ?? null;
+    head.querySelector(".ut-b-label").textContent = `APP · ${a.title.toUpperCase()}`;
+    const err = lastError(name);
+    const body = h("div.ut-tpl-dscroll.ut-app-body", { dataset: { scrollKey: "ut-app-detail" } },
+      shown ? resultStage(shown) : preview(d),
+      shown ? resultKeys(shown, name) : null,
+      list.length > 1 ? madeStrip(list, shown, name) : null,
+      h("p.ut-app-promise", {}, a.promise),
+      prim.length ? h("div.ut-tpl-form.ut-app-form", {}, ...prim.map(field).filter(Boolean)) : h("p.ut-hint", {}, "This one needs nothing from you: just run it."),
+      more.length ? h("details.ut-tpl-adv", { open: st.adv, on: { toggle: (e) => (st.adv = e.currentTarget.open) } }, h("summary", {}, icon("chevron"), "More settings"), h("div.ut-tpl-form", {}, ...more.map(field).filter(Boolean))) : null,
+      d.schema.models?.length ? h("p.ut-hint.ut-tpl-models", { title: d.schema.models.join("\n") }, `Uses ${d.schema.models.length} model files on Comfy Cloud`) : null,
+      err ? h("p.ut-tpl-error", { role: "alert" }, /missing a model/.test(err) ? icon("download") : icon("close"), h("span", {}, err)) : null);
     const run = h("div.ut-tpl-run");
     detail.replaceChildren(head, body, run);
     if (keepScroll) body.scrollTop = at;
@@ -320,7 +455,7 @@ export function templatesSpace() {
         h("button.ut-iconkey", { type: "button", title: "View graph: the nodes and models inside", "aria-label": "View graph", on: { click: () => toggleGraph() } }, icon("flow")),
         h(`button.ut-primary.ut-tpl-go${st.armed ? ".is-armed" : ""}`, { type: "button", disabled: !ok, title: why || (st.armed ? `Click again to send it: ${priceText()}` : "Run it on Comfy Cloud"), on: { click: () => go() } },
           icon("play"),
-          busy ? "Running…" : st.armed ? "Confirm" : "Run on Comfy Cloud",
+          busy ? "Running…" : st.armed ? "Confirm" : st.detail?.app ? "Run it" : "Run on Comfy Cloud",
           st.armed && !busy && st.est && st.est.credits !== null ? h("em.ut-cost", {}, st.est.credits ? `≈ ${st.est.credits} cr` : "GPU time") : null)),
       st.graphOpen ? graphLayer() : null].filter(Boolean));
   }
@@ -372,8 +507,17 @@ export function templatesSpace() {
     st.running.add(name);
     drawRun();
     try {
-      const made = await runTemplate(name, inputs, { tool: "template", label: d.title, credits: st.est?.credits ?? null, confirmed: true });
-      if (made.length) (st.made[name] = [...made, ...(st.made[name] ?? [])].slice(0, 12));
+      // an app's results are its own tool's (Recent shows them under its name) and keep the picture it was given, to show against it
+      const app = d.app ? appByName(name) ?? { medium: d.medium ?? "image" } : null;
+      const tool = d.app ? `app-${d.app.id}` : "template";
+      const first = d.schema.slots.find((x) => x.primary && x.kind === "image");
+      const from = d.app && first ? st.values[first.id]?.url ?? null : null;
+      const credits = d.app ? (st.est?.credits > 0 ? st.est.credits : appCost(app)) : st.est?.credits ?? null;
+      const made = await runTemplate(name, inputs, { tool, label: d.app?.title ?? d.title, credits, confirmed: true, from });
+      if (made.length) {
+        st.made[name] = [...made, ...(st.made[name] ?? [])].slice(0, 12);
+        delete st.show[name];
+      }
       // the next run is a new draw, unless the seed was chosen on purpose
       for (const s of d.schema.slots) if (s.kind === "seed") st.values[s.id] = randomSeed();
     } finally {
@@ -382,21 +526,59 @@ export function templatesSpace() {
     }
   }
 
-  // the shelf's carousel opens a template here
+  // the shelf's carousel opens a template here, and an app (or all the apps)
   document.addEventListener("utensils:template", (e) => {
     if (e.detail?.id) select(e.detail.id);
   });
+  function showApps() {
+    if (st.group === "apps") return;
+    st.group = "apps";
+    st.q = "";
+    search.value = "";
+    reload();
+  }
+  document.addEventListener("utensils:apps", showApps);
+  document.addEventListener("utensils:app", (e) => {
+    if (!e.detail?.name) return;
+    showApps();
+    select(e.detail.name);
+  });
+  const appsKey = () => apps.list.map((a) => `${a.id}:${a.credits}:${a.primary?.length ?? "-"}`).join(",");
   drawDetail();
   drawChips();
 
   return {
     el,
-    count: () => (st.total || null),
+    // the Templates tile of the panel counts the whole catalog (the Shelf asks for it), not the few apps
+    count: () => (st.group === "apps" ? null : st.total || null),
     update() {
-      if (started) return;
-      started = true;
-      load(true);
+      if (!started) {
+        started = true;
+        loadApps();
+        load(true);
+        st.appsKey = appsKey();
+        return;
+      }
+      // the server went on reading the apps (the ones that cannot be driven drop out, the prices come in): the cards are drawn again
+      if (st.group === "apps" && !st.q && appsKey() !== st.appsKey && apps.list.length) {
+        st.appsKey = appsKey();
+        st.items = apps.list;
+        st.total = apps.total;
+        st.count = apps.list.length;
+        drawAppGrid();
+        if (st.picked) for (const c of grid.children) c.classList.toggle("is-on", c.dataset.name === st.picked);
+      }
+      // Truffle (or a key elsewhere) opened an app as the tool that is open
+      const t = utensils.tool;
+      if (utensils.workspace === "templates" && t.startsWith("app-") && t !== st.toolSeen) {
+        const a = apps.list.find((x) => toolIdOfApp(x) === t);
+        st.toolSeen = t;
+        if (a) {
+          showApps();
+          select(a.name);
+        }
+      }
     },
-    sig: () => JSON.stringify([started, utensils.workspace === "templates"]),
+    sig: () => JSON.stringify([started, utensils.workspace === "templates", utensils.tool, appsKey()]),
   };
 }

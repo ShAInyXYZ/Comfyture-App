@@ -1,31 +1,28 @@
 // The Utensils "shelf": the home, every tool at a glance. A featured tool with its before/after, the quick tools (a grid of every
-// tool that is on the shelf: the workspaces add theirs with registerTool and the grid grows), the official ComfyUI templates
-// (a carousel of the featured ones, from api/utensils/templates?featured=1 once the Templates workspace serves it), the latest
-// results and what today cost. A workspace is { el, update, sig, count }: the shell (panels/utensils.js) draws it again when sig() changes.
+// tool that is on the shelf: the workspaces add theirs with registerTool and the grid grows), the mini apps (ComfyUI's own workflows,
+// shown simply: a carousel of the first twelve, each opens in the Templates workspace), the latest results and what today cost. A workspace is { el, update, sig, count }: the shell (panels/utensils.js) draws it again when sig() changes.
 import { h, icon, sprite, ago } from "./dom.js";
 import { state, changed } from "./store.js";
-import { utensils, TOOLS, pickTool, setWorkspace, openResult, toolById, creditsToday } from "./utensils.js";
+import { utensils, shelfTools, pickTool, setWorkspace, openResult, toolById, creditsToday } from "./utensils.js";
+import { loadApps, apps, openApp } from "./utensils-templates-api.js";
+import { needPills, priceOf, appPicture } from "./utensils-apps-ui.js";
 
 /** The tool the shelf shows off. Its art is a before/after (docs/brand/products/utensils-v2/art). */
 const FEATURED = { tool: "remove-object", workspace: "vfx", title: "Remove an object from a video", line: "Clean shots in seconds with AI.", chips: ["VFX", "Comfy Cloud"], art: "brand/utensils/featured-remove.webp" };
 const QUICK = 12;
 const time = (s) => `${Math.floor((s ?? 0) / 60)}:${String(Math.floor((s ?? 0) % 60)).padStart(2, "0")}`;
 
-// the featured templates: asked once, shaped as they come (the Templates workspace owns the endpoint)
-let templates = { state: "idle", total: null, list: [] };
-function loadTemplates(done) {
-  if (templates.state !== "idle") return;
-  templates.state = "loading";
-  fetch("api/utensils/templates?featured=1")
+// how many templates the catalog holds (asked once: the Templates tile of the panel shows it)
+let catalog = { state: "idle", total: null };
+function loadTotal(done) {
+  if (catalog.state !== "idle") return;
+  catalog.state = "loading";
+  fetch("api/utensils/templates?limit=1")
     .then((r) => (r.ok ? r.json() : Promise.reject(new Error("none"))))
-    .then((out) => {
-      const list = Array.isArray(out) ? out : out.templates ?? out.items ?? [];
-      templates = { state: "ready", total: out.total ?? out.count ?? list.length, list: list.slice(0, 12) };
-    })
-    .catch(() => (templates = { state: "none", total: null, list: [] }))
+    .then((out) => (catalog = { state: "ready", total: out.total ?? out.count ?? null }))
+    .catch(() => (catalog = { state: "none", total: null }))
     .finally(() => (done(), changed("utensils")));
 }
-const kindsOf = (t) => [].concat(t.inputs ?? t.takes ?? t.mediaType ?? []).slice(0, 2);
 /** The day's credits as a line (an svg: h() makes html elements). */
 function spark(points) {
   const wrap = document.createElement("span");
@@ -34,8 +31,8 @@ function spark(points) {
   return wrap;
 }
 
-/** How many templates the catalog holds, once the featured ones are in (null until then): the Templates tile of the panel shows it. */
-export const templatesTotal = () => templates.total;
+/** How many templates the catalog holds (null until it has been asked): the Templates tile of the panel shows it. */
+export const templatesTotal = () => catalog.total;
 
 export function shelfSpace() {
   const el = h("div.ut-grid.is-shelf");
@@ -61,7 +58,7 @@ export function shelfSpace() {
   }
 
   function quick() {
-    const all = TOOLS;
+    const all = shelfTools();
     const list = showAll ? all : all.slice(0, QUICK);
     return h(`section.ut-bento.is-quick${showAll ? ".is-all" : ""}`, { "aria-label": "Quick tools" },
       h("div.ut-b-head", {}, h("span.ut-b-label", {}, "Quick tools"),
@@ -70,21 +67,19 @@ export function shelfSpace() {
         h("button.ut-quick-tool", { type: "button", title: t.hint, dataset: { tool: t.id }, on: { click: () => pickTool(t.id) } }, h("span.ut-quick-icon", {}, sprite(t.icon)), h("span", {}, t.name)))));
   }
 
-  function templatesBento() {
-    const total = templates.total;
-    const body = templates.state === "ready" && templates.list.length
-      ? h("div.ut-carousel", { dataset: { scrollKey: "ut-shelf-templates" } }, ...templates.list.map((t) => {
-        const title = t.title ?? t.name ?? t.id;
-        const thumb = t.thumbnail ?? t.thumb ?? t.thumbnails?.[0];
-        return h("button.ut-tcard", { type: "button", title, on: { click: () => (setWorkspace("templates"), document.dispatchEvent(new CustomEvent("utensils:template", { detail: { id: t.id ?? t.name } }))) } },
-          h("span.ut-tcard-pic", {}, thumb ? h("img", { src: thumb, alt: "", draggable: false, loading: "lazy" }) : icon("sparkle")),
-          h("b", {}, title),
-          t.description ? h("span", {}, t.description) : null,
-          h("span.ut-chips", {}, ...[...(t.models ?? []).slice(0, 1), ...kindsOf(t)].map((c) => h("span.ut-pill", {}, String(c)))));
-      }))
-      : h("div.ut-empty", {}, icon("sparkle"), h("span", {}, templates.state === "loading" ? "Loading the templates" : "Templates are being added"));
-    return h("section.ut-bento.is-templates", { "aria-label": "Comfy templates" },
-      h("div.ut-b-head", {}, h("span.ut-b-label", {}, "Comfy templates"), h("button.ut-ghost", { type: "button", on: { click: () => setWorkspace("templates") } }, total ? `Browse ${total} templates` : "Browse templates", icon("next"))),
+  function appsBento() {
+    const list = apps.list.slice(0, 12);
+    const body = apps.state === "ready" && list.length
+      ? h("div.ut-carousel", { dataset: { scrollKey: "ut-shelf-apps" } }, ...list.map((a) =>
+        h("button.ut-tcard.is-app", { type: "button", title: a.promise, dataset: { app: a.id }, on: { click: () => openApp(a) } },
+          h("span.ut-tcard-pic", {}, appPicture(a, { after: false })),
+          h("b", {}, a.title),
+          h("span", {}, a.promise),
+          h("span.ut-chips", {}, ...needPills(a), priceOf(a) ? h("span.ut-tcard-price", {}, priceOf(a)) : null))))
+      : h("div.ut-empty", {}, icon("sparkle"), h("span", {}, apps.state === "none" ? "Mini apps need Comfy Cloud" : "Loading the mini apps"));
+    const more = apps.total && apps.total > list.length ? `Browse all ${apps.total} apps` : "Browse the apps";
+    return h("section.ut-bento.is-apps", { "aria-label": "Mini apps" },
+      h("div.ut-b-head", {}, h("span.ut-b-label", {}, "Mini apps"), h("button.ut-ghost", { type: "button", on: { click: () => (setWorkspace("templates"), document.dispatchEvent(new CustomEvent("utensils:apps"))) } }, more, icon("next"))),
       body);
   }
 
@@ -116,10 +111,11 @@ export function shelfSpace() {
   }
 
   function update() {
-    loadTemplates(() => refresh());
-    el.replaceChildren(featured(), quick(), templatesBento(), recentBento(), credits());
+    loadTotal(() => refresh());
+    loadApps();
+    el.replaceChildren(featured(), quick(), appsBento(), recentBento(), credits());
   }
   refresh = () => update();
-  const sig = () => JSON.stringify([TOOLS.map((t) => t.id), showAll, templates.state, templates.list.length, utensils.results.slice(0, 8).map((r) => r.id), creditsToday().total, state.info?.target]);
-  return { el, update, sig, count: () => TOOLS.length };
+  const sig = () => JSON.stringify([shelfTools().map((t) => t.id), showAll, apps.state, apps.list.map((a) => [a.id, a.credits]).slice(0, 12), utensils.results.slice(0, 8).map((r) => r.id), creditsToday().total, state.info?.target]);
+  return { el, update, sig, count: () => shelfTools().length };
 }

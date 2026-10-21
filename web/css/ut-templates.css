@@ -134,3 +134,63 @@
   .ut-tpl-detail { min-height: 28rem; }
 }
 @media (prefers-reduced-motion: reduce) { .ut-tpl-pic img { transition: none; } }
+
+
+/* ---- the apps: templates shown simply ---------------------------------------------------------
+   Bigger, calmer cards and a panel that is a mini app: the picture, the one to three things to give, one key. */
+.ut-grid.is-templates.is-apps { grid-template-columns: minmax(0, 1fr) clamp(25rem, 34vw, 40rem); }
+.ut-tpl-grid.is-apps { grid-template-columns: repeat(auto-fill, minmax(min(100%, 14.75rem), 1fr)); gap: 1.125rem; }
+.ut-app-card { display: grid; align-content: start; gap: .625rem; min-width: 0; padding: .625rem .625rem .875rem; border: 2px solid transparent; border-radius: 1.375rem; background: var(--s2); color: var(--text); text-align: left; cursor: pointer; transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast); }
+.ut-app-card:hover { background: var(--s3); border-color: var(--line2); }
+.ut-app-card.is-on { border-color: var(--accent); background: var(--s3); }
+.ut-app-card:active { transform: translateY(1px); }
+.ut-app-thumb { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 1rem; background: var(--sunk); }
+.ut-app-pic { position: absolute; inset: 0; display: block; }
+.ut-app-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity .35s var(--ease-out), transform .5s var(--ease-out); }
+.ut-app-pic img.is-after { opacity: 0; }
+.ut-app-card:hover .ut-app-pic img.is-after { opacity: 1; }
+.ut-app-card:hover .ut-app-pic img:first-child:last-child { transform: scale(1.04); }
+.ut-app-thumb .ut-tpl-partner { z-index: 1; }
+.ut-app-title { padding: 0 .5rem; overflow: hidden; font: 700 1.125rem/1.25 var(--font-sans); letter-spacing: -.012em; text-overflow: ellipsis; white-space: nowrap; }
+.ut-app-line { display: -webkit-box; min-height: 2.5em; padding: 0 .5rem; overflow: hidden; font: 400 .875rem/1.4 var(--font-sans); color: var(--muted); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.ut-app-meta { display: flex; align-items: center; gap: .375rem; min-width: 0; padding: 0 .5rem; }
+.ut-app-meta .ut-pill, .ut-tcard .ut-pill.is-kind { min-height: 1.625rem; padding: 0 .5625rem; font-size: .6875rem; }
+.ut-app-meta .ut-pill svg { width: .8125rem; height: .8125rem; }
+.ut-app-meta .ut-pill b { font: 700 .6875rem/1 var(--font-sans); }
+.ut-tcard .ut-pill b { font: 700 .6875rem/1 var(--font-sans); }
+.ut-app-ph { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(90% 90% at 50% 40%, #33294d, var(--sunk)); color: var(--accent); }
+.ut-app-ph svg { width: 2.5rem; height: 2.5rem; opacity: .85; }
+
+/* the mini app's panel */
+.ut-tpl-detail:has(.ut-app-body) { gap: 1rem; }
+.ut-app-body { gap: 1.25rem; }
+.ut-app-stage { aspect-ratio: 16 / 10; max-height: clamp(11rem, 36dvh, 27rem); }
+.ut-app-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.ut-app-stage > img { object-fit: contain; }
+.ut-app-stage .ut-compare img { object-fit: contain; }
+.ut-app-promise { margin: 0; font: 500 1.0625rem/1.4 var(--font-sans); letter-spacing: -.005em; color: var(--text); }
+.ut-app-form { gap: 1.375rem; }
+.ut-tpl-well.is-big { min-height: 6.25rem; padding: .625rem 1rem .625rem .625rem; border-radius: 1.125rem; gap: 1rem; }
+.ut-tpl-well.is-big > img, .ut-tpl-well.is-big > video { width: 5rem; height: 5rem; border-radius: .875rem; }
+.ut-tpl-well.is-big .ut-tpl-chipwave { width: 5rem; height: 5rem; }
+.ut-tpl-well.is-big > svg { width: 1.75rem; height: 1.75rem; margin-left: 1rem; }
+.ut-tpl-well.is-big .ut-tpl-welltext b { font-size: 1rem; }
+.ut-app-form .ut-tpl-words { min-height: 5rem; font-size: 1rem; }
+.ut-app-keys { display: flex; align-items: center; flex-wrap: wrap; gap: .375rem; min-width: 0; }
+.ut-app-keys .ut-label { margin-right: .125rem; }
+.ut-pill.is-kept { gap: .375rem; color: var(--ok); border-color: color-mix(in srgb, var(--ok) 35%, transparent); }
+.ut-pill.is-kept svg { width: .875rem; height: .875rem; }
+.ut-app-keys .ut-iconkey { width: 2.25rem; height: 2.25rem; border-radius: .75rem; }
+.ut-app-strip { display: flex; gap: .5rem; }
+.ut-app-mini { position: relative; display: grid; place-items: center; flex: none; width: 3.25rem; height: 3.25rem; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: .75rem; background: var(--sunk); color: var(--accent); cursor: pointer; }
+.ut-app-mini.is-on { border-color: var(--accent); }
+.ut-app-mini img, .ut-app-mini video { width: 100%; height: 100%; object-fit: cover; }
+.ut-app-mini-i svg { width: 1.25rem; height: 1.25rem; }
+.ut-app-model { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(80% 80% at 50% 40%, #2a2540, var(--sunk)); }
+.ut-app-model canvas { cursor: grab; }
+.ut-app-file { display: grid; justify-items: center; gap: .5rem; color: var(--muted); }
+.ut-app-file svg { width: 2.25rem; height: 2.25rem; color: var(--accent); }
+
+@supports (corner-shape: squircle) { .ut-app-card, .ut-app-thumb, .ut-tpl-well.is-big { corner-shape: squircle; } }
+@media (max-width: 1280px) { .ut-grid.is-templates.is-apps { grid-template-columns: minmax(0, 1fr) 24rem; } }
+@media (max-width: 980px) { .ut-grid.is-templates.is-apps { grid-template-columns: minmax(0, 1fr); } }

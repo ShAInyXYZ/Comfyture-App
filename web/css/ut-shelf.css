@@ -2,7 +2,7 @@
    Featured and Quick tools on top, the templates carousel in the middle, recent results and credits at the foot: the rows share the whole height. */
 .is-shelf .is-featured { grid-column: span 7; }
 .is-shelf .is-quick { grid-column: span 5; }
-.is-shelf .is-templates { grid-column: span 12; }
+.is-shelf .is-apps { grid-column: span 12; }
 .is-shelf .is-results { grid-column: span 9; }
 .is-shelf .is-credits { grid-column: span 3; }
 @media (min-width: 1281px) { .is-shelf { grid-template-rows: minmax(0, 1.55fr) minmax(0, 1.05fr) minmax(0, .8fr); } }
@@ -81,3 +81,14 @@
   .ut-strip8 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .ut-quick { grid-auto-rows: 5.5rem; }
 }
+
+/* the mini apps' cards on the shelf: the picture first, the promise, what it asks for and what it costs */
+.ut-tcard-pic .ut-app-pic { position: absolute; inset: 0; display: block; }
+.ut-tcard-pic { position: relative; }
+.ut-tcard-pic .ut-app-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ut-tcard-price { margin-left: auto; font: 600 .75rem/1 var(--font-mono); color: var(--text); white-space: nowrap; }
+.ut-tcard.is-app .ut-chips { flex-wrap: nowrap; align-items: center; }
+.ut-tcard.is-app .ut-pill { min-height: 1.5rem; padding: 0 .5rem; font-size: .6875rem; }
+.ut-tcard.is-app .ut-pill svg { width: .75rem; height: .75rem; }
+.ut-app-ph { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(90% 90% at 50% 40%, #33294d, var(--sunk)); color: var(--accent); }
+.ut-app-ph svg { width: 2.25rem; height: 2.25rem; opacity: .85; }
