@@ -22,7 +22,7 @@ import { planCut, ffmpegArgs, frameSize, cutBrief, jamBrief, cutPrompt, readCutA
 import { splitEdit } from "./mixer.ts";
 import { macaronBrief, macaronTool, spaceOf, macaronPrompt, readMacaronAnswer, topUpBrand, keepExport, keepFrame, encodeFrames, dropFrames, frameJob, validJob, sweepFrames, ledgerLine } from "./macaron.ts";
 import { SONG_BRIEF, songPrompt, readSong } from "./song.ts";
-import { KEYS, LANGUAGES, SIGNATURES, MAX_SECONDS } from "../web/js/song.js";
+import { KEYS, LANGUAGES, SIGNATURES, MAX_SECONDS, DEFAULT_SONG } from "../web/js/song.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
 import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer } from "./utensils-assist.ts";
 
@@ -1009,14 +1009,14 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const input = await jsonBody(req);
     const tags = text(input.tags, 800);
     if (!tags) throw bad("Say what the song is like.");
-    const seconds = num(input.seconds, 10, MAX_SECONDS, 30);
+    const seconds = num(input.seconds, 10, MAX_SECONDS, DEFAULT_SONG.seconds);
     const name = text(input.name, 60) || tags.slice(0, 40);
     const job = engine.audioJob("song", {
       prompt: tags,
       seconds,
       lyrics: text(input.lyrics, 3000),
-      bpm: num(input.bpm, 40, 220, 120),
-      key: KEYS.includes(input.key) ? input.key : "C major",
+      bpm: num(input.bpm, 40, 220, DEFAULT_SONG.bpm),
+      key: KEYS.includes(input.key) ? input.key : DEFAULT_SONG.key,
       language: LANGUAGES.some((l) => l.value === input.language) ? input.language : "en",
       timesignature: SIGNATURES.some((s) => s.value === String(input.timesignature)) ? String(input.timesignature) : "4",
       seed: randomBytes(4).readUInt32BE(0),
@@ -1029,7 +1029,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/audio/song/write" && method === "POST") {
     // Pickle sets a song up from an idea (and what is there already): a short writer answer, no song is made
     const input = await jsonBody(req);
-    const seconds = num(input.seconds, 10, MAX_SECONDS, 30);
+    const seconds = num(input.seconds, 10, MAX_SECONDS, DEFAULT_SONG.seconds);
     const language = LANGUAGES.some((l) => l.value === input.language) ? input.language : "en";
     const reply = await write(pickLlm(input.model), SONG_BRIEF, songPrompt({ ...input, seconds, language }), { maxLength: 2200, temperature: 0.8 });
     return json(res, 200, readSong(reply, seconds, language));

@@ -5,12 +5,12 @@ import { h } from "../dom.js";
 import { state, toast, waitFor, writer } from "../store.js";
 import { api } from "../api.js";
 import { dropdown } from "../controls.js";
-import { KEYS, LANGUAGES, SIGNATURES, LENGTHS, lengthLabel, SECTIONS, STRUCTURES, skeleton, costOfSong } from "../song.js";
+import { KEYS, LANGUAGES, SIGNATURES, LENGTHS, DEFAULT_SONG, lengthLabel, SECTIONS, STRUCTURES, skeleton, costOfSong } from "../song.js";
 import { jicon, pickFile, cr } from "./jam-ui.js";
 
 const STORE = "comfyture.jam.song";
 const MINE = ["idea", "structure", "tags", "lyrics", "seconds", "language", "key", "bpm", "signature", "name"];
-const song = { idea: "", structure: "short", tags: "", lyrics: "", seconds: 30, language: "en", key: "A minor", bpm: 120, signature: "4", name: "", writing: false, making: false, made: [], loaded: false };
+const song = { idea: "", tags: "", lyrics: "", name: "", ...DEFAULT_SONG, writing: false, making: false, made: [], loaded: false };
 try {
   Object.assign(song, JSON.parse(localStorage.getItem(STORE) ?? "{}"));
 } catch {}

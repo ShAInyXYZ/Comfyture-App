@@ -1,7 +1,7 @@
 // The song designer's writer: Pickle, who asked for a song idea, answers with the whole setting for ACE-Step 1.5 XL
 // (the style as tags, the lyrics laid out in sections, the tempo, key, language and time signature). What he answers is
 // checked against the choices the model takes (web/js/song.js) before the page sees it.
-import { KEYS, LANGUAGES, SIGNATURES, STRUCTURES, MAX_SECONDS } from "../web/js/song.js";
+import { KEYS, LANGUAGES, SIGNATURES, STRUCTURES, MAX_SECONDS, DEFAULT_SONG } from "../web/js/song.js";
 import { loose } from "./story.ts";
 
 const text = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
@@ -19,7 +19,7 @@ TAGS: one line of comma-separated descriptors, English whatever the language of 
  - the voice: gender and delivery ("clear natural female lead vocal", "rapid-fire male rap", "breathy whisper", "gang vocal chant hooks"); add "no autotune, raw human voice" when it should sound human
  - one production word at most ("dry and close", "wide and glossy"). Never artist names, never lyrics, never a bpm or a key (they are set apart).
 LYRICS: sections, each tag on its own line in square brackets with a blank line between sections. The tags: [Intro], [Verse 1], [Pre-Chorus - building], [Chorus - chant hook], [Verse 2], [Bridge - stripped beat], [Final Chorus - peak energy], [Outro], [Instrumental]. After the dash a short hint of the delivery ("rapid rap", "whispered", "gang vocal chant") is welcome, never more than four words.
- - Each line is short, six to ten syllables, sung or rapped in one breath; one line is about three seconds of song (a rap line about two). Count: about (seconds minus 6) divided by 3 lines in all, never more. A 30 s song is an intro of a line or two, a verse of four lines and a chorus of four.
+ - Each line is short, six to ten syllables, sung or rapped in one breath. Count: about one line for every four seconds of song (one every three for a rap), the rest being the music between, never more. A 200 s song is about 40 lines: an intro of two, verses of eight, a pre-chorus of three, a chorus of four said again each time, a bridge of four, a last chorus and an outro. A short song is a verse and a chorus.
  - A chorus repeats word for word each time it comes. Rhyme the ends of lines in pairs. Say one concrete thing in a line, not an abstraction.
  - Write the words in the language asked for; only the tags stay in English. For a song without words, the lyrics are exactly "[Instrumental]".
  - Never write a line that names a real person or quotes a real song.
@@ -27,11 +27,11 @@ SETTINGS: bpm 60 to 200 to suit the genre (hip-hop 85 to 100 or 130 to 150 doubl
 When a CURRENT song is given and the user asks for a change, change only what they asked and keep the rest as it is. When the user gave their own lyrics, keep their words, only laying them out in sections.`;
 
 export function songPrompt(v: { idea?: string; seconds?: number; language?: string; structure?: string; current?: { tags?: string; lyrics?: string; bpm?: number; key?: string } }) {
-  const lines = [`THE IDEA: ${text(v.idea, 600) || "a catchy song for a short music video"}`, `LENGTH: ${clamp(v.seconds, 10, MAX_SECONDS, 30)} seconds`, `LANGUAGE: ${LANGUAGES.find((l) => l.value === v.language)?.value ?? "en"}`];
+  const lines = [`THE IDEA: ${text(v.idea, 600) || "a catchy song for a short music video"}`, `LENGTH: ${clamp(v.seconds, 10, MAX_SECONDS, DEFAULT_SONG.seconds)} seconds`, `LANGUAGE: ${LANGUAGES.find((l) => l.value === v.language)?.value ?? "en"}`];
   const shape = STRUCTURES.find((s) => s.id === v.structure);
   if (shape) lines.push(`STRUCTURE: ${shape.label}: ${shape.sections.length ? shape.sections.map((s) => `[${s}]`).join(" ") : "no words, music only"}`);
   const c = v.current;
-  if (c?.tags || c?.lyrics) lines.push("", "CURRENT SONG:", `tags: ${text(c.tags, 500)}`, `bpm: ${clamp(c.bpm, 10, 300, 120)}, key: ${text(c.key, 20)}`, `lyrics:\n${String(c.lyrics ?? "").slice(0, 2500)}`);
+  if (c?.tags || c?.lyrics) lines.push("", "CURRENT SONG:", `tags: ${text(c.tags, 500)}`, `bpm: ${clamp(c.bpm, 10, 300, DEFAULT_SONG.bpm)}, key: ${text(c.key, 20)}`, `lyrics:\n${String(c.lyrics ?? "").slice(0, 2500)}`);
   return lines.join("\n");
 }
 
@@ -46,12 +46,12 @@ export function readSong(reply: string, seconds: number, language: string) {
   const tags = text(raw?.tags, 600);
   if (!tags) throw new Error("Pickle wrote no style for it. Try again?");
   const lyrics = String(raw?.lyrics ?? "").replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, 3000);
-  const key = KEYS.find((k) => k.toLowerCase() === text(raw?.key, 12).toLowerCase()) ?? "C major";
+  const key = KEYS.find((k) => k.toLowerCase() === text(raw?.key, 12).toLowerCase()) ?? DEFAULT_SONG.key;
   return {
     name: text(raw?.name, 40) || "New song",
     tags,
     lyrics: lyrics || "[Instrumental]",
-    bpm: clamp(raw?.bpm, 40, 220, 120),
+    bpm: clamp(raw?.bpm, 40, 220, DEFAULT_SONG.bpm),
     key,
     language: LANGUAGES.find((l) => l.value === raw?.language)?.value ?? language,
     timesignature: SIGNATURES.find((s) => s.value === String(raw?.timesignature))?.value ?? "4",

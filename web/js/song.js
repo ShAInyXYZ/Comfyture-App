@@ -21,7 +21,9 @@ export const SIGNATURES = [
 ];
 
 /** How long the song runs, in seconds: it sets the length of the latent and the duration the text node is told. */
-export const LENGTHS = [15, 30, 60, 90, 120, 180, 240];
+/** (A short song with a short prompt comes out poorly: a full one is made, 200 s as the Superior workflow's own latent, and the best part is cut from it later.) */
+export const LENGTHS = [30, 60, 120, 200, 240];
+export const DEFAULT_SONG = { seconds: 200, bpm: 140, key: "A minor", signature: "4", language: "en", structure: "pop" };
 export const MAX_SECONDS = 240;
 export const lengthLabel = (s) => (s < 60 ? `${s} s` : s % 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : `${s / 60} min`);
 

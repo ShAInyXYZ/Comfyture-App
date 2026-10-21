@@ -839,7 +839,7 @@ export class Engine extends EventEmitter {
         const graph = await loadGraph(this.dirs.workflows, kind === "music" ? "audio/music.json" : kind === "song" ? "audio/song.json" : "audio/sfx.json");
         if (kind === "song") {
           // ACE-Step 1.5 XL in three passes: the first from nothing, the two after light refinements of it
-          Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 120), keyscale: v.key ?? "C major", language: v.language ?? "en", timesignature: v.timesignature ?? "4" });
+          Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 140), keyscale: v.key ?? "A minor", language: v.language ?? "en", timesignature: v.timesignature ?? "4" });
           graph.latent.inputs.seconds = v.seconds;
           graph.first.inputs.seed = v.seed;
           graph.second.inputs.seed = v.seed + 1;
