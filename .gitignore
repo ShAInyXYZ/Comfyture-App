@@ -9,3 +9,10 @@ docs-private/
 
 # website tooling
 www/.taste-skill/
+
+# other creators' media (downloaded references) and heavy test renders: kept on disk, never published (CLAUDE.md)
+docs/brand/mixer-crew/reference-match-v2/references/
+docs/brand/mixer-crew/**/*.mp4
+# local copies of other sites' documentation, read by the agents, not published
+prompting_api.md
+prompting_os.md
