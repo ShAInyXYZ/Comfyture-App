@@ -63,11 +63,11 @@ try {
   await page.click('.hm-poster[data-app="bg-remove"]');
   await page.waitForSelector(".ut-app-body", { timeout: 30000 });
   ok(/REMOVE BACKGROUND/.test(await page.locator(".ut-tpl-detail .ut-b-label").innerText()), "a poster of Home opens its app in the Library");
-  ok((await page.locator(".lb-toggle.is-apps[aria-pressed=true]").count()) === 1, "on the Mini apps filter");
+  ok(((await page.locator(".lbp-trigger").first().textContent()) ?? "").includes("Mini apps"), "on the Mini apps filter");
 
   // the Mini apps filter: only their books on the shelves, no page scroll
   await page.waitForSelector(".lb-book[data-app]", { timeout: 30000 });
-  const m = await page.evaluate(() => ({ books: document.querySelectorAll(".lb-book").length, apps: document.querySelectorAll(".lb-book[data-app]").length, v: document.documentElement.scrollHeight - innerHeight, h: document.documentElement.scrollWidth - innerWidth }));
+  const m = await page.evaluate(() => ({ books: document.querySelectorAll(".lb-book").length, apps: document.querySelectorAll(".lb-book[data-app]").length, v: (() => { const f = document.querySelector(".lbx-frame"); return f ? f.scrollHeight - f.clientHeight : document.documentElement.scrollHeight - innerHeight; })(), h: document.documentElement.scrollWidth - innerWidth }));
   ok(m.apps >= 30 && m.books === m.apps, "the Mini apps filter shelves the apps alone", `${m.apps} apps of ${m.books} books`);
   ok(m.v <= 1 && m.h <= 1, "the workspace fills the screen without scroll", `v ${m.v} h ${m.h}`);
   await shot("2-apps");
@@ -102,7 +102,7 @@ try {
   ok(runs.length === 1 && runs[0].includes("image_qwen_image_edit_2509"), "the second press sends the run", runs.join(","));
   ok(await page.locator(".ut-app-stage .ut-compare").count() > 0, "what it made shows against the picture it was given");
   ok(await page.locator(".ut-pill.is-kept").count() > 0, "and is kept");
-  ok((await page.locator(".ut-recent-item").count()) >= 1, "Recent shows it");
+  ok(await page.evaluate(async () => (await import("/js/utensils.js")).utensils.results.some((r) => String(r.tool).startsWith("app-"))), "Recent keeps it");
   await shot("5-result");
 
   // the apps are tools for Truffle
@@ -121,16 +121,17 @@ try {
 
   // the server went on reading the apps' forms: the list is read again, and the app whose form cannot take what it asks for (a clip through a
   // loader of a custom node) is gone, while the others know their own inputs
-  if (!(await page.locator(".lb-toggle.is-apps[aria-pressed=true]").count())) await page.click(".lb-toggle.is-apps");
+  if (!((await page.locator(".lbp-trigger").first().textContent()) ?? "").includes("Mini apps")) (await page.locator(".lbp-trigger").first().click(), await page.locator(".lbp-row", { hasText: "Mini apps" }).click());
   const gone = await page.waitForFunction(() => !document.querySelector('.lb-book[data-app="live-portrait"]') && document.querySelectorAll(".lb-book[data-app]").length > 20, null, { timeout: 90000 }).then(() => true, () => false);
   ok(gone, "the list refreshes itself: the app that cannot be driven drops out", `${await page.locator(".lb-book[data-app]").count()} books`);
 
   // the whole Library: every workflow a book, its card says what it is and how it works, a book opens its form
   await page.click(".ut-tpl-detail .ut-expand").catch(() => {});
-  await page.click(".lb-chip.is-all");
+  await page.locator(".lbp-trigger").first().click();
+  await page.locator(".lbp-row", { hasText: "All workflows" }).click();
   await page.waitForTimeout(600);
-  const lib = await page.evaluate(() => ({ books: document.querySelectorAll(".lb-book").length, total: document.querySelector('.ut-space[data-space="templates"] .ut-space-count')?.textContent, v: document.documentElement.scrollHeight - innerHeight, h: document.documentElement.scrollWidth - innerWidth }));
-  ok(lib.books > 600 && String(lib.books) === lib.total, "every workflow is a book, and the Library's tile counts them", `${lib.books} books, tile ${lib.total}`);
+  const lib = await page.evaluate(() => ({ books: document.querySelectorAll(".lb-book").length, total: String(parseInt(document.querySelector(".lb-title-count")?.textContent ?? "", 10)), v: (() => { const f = document.querySelector(".lbx-frame"); return f ? f.scrollHeight - f.clientHeight : document.documentElement.scrollHeight - innerHeight; })(), h: document.documentElement.scrollWidth - innerWidth }));
+  ok(lib.books > 600 && String(lib.books) === lib.total, "every workflow is a book, and the Library's title counts them", `${lib.books} books, tile ${lib.total}`);
   ok(lib.v <= 1 && lib.h <= 1, "the hall walks sideways: the page does not scroll", `v ${lib.v} h ${lib.h}`);
   await page.locator('.lb-book[data-workflow="image_z_image_turbo"]').hover();
   await page.waitForTimeout(500);

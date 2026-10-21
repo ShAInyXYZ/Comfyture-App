@@ -1,8 +1,9 @@
-// Utensils' screen. On the left Truffle's panel: who she is, the eight workspaces the shelf is organised in, the queue of what is
-// running and the latest results. Beside it the open workspace, a grid of bentos filling the page (each workspace is a module,
-// web/js/utensils-space-<id>.js, made once and kept: { el, update, sig, count? }). Her bar docks at the foot of the page.
-// HOME is the exception: it is a page of its own, the whole width and scrolling, with no panel (its header carries what the panel
-// carries: Truffle, the way into every workspace, the queue and the credits). The panel comes back with every other workspace.
+// Utensils' screen. Across the top TRUFFLE'S LEDGE (no panel on the side, so every workspace has the whole width): Truffle and what she
+// says in the room open at its left, the workspaces standing on a ledge as tabs in their colours (the Library apart: it opens in front),
+// and at its right what is running (a ring) and the latest results, which open a tray with the queue and the results. Under it the open
+// workspace, a grid of bentos filling the page (each workspace is a module, web/js/utensils-space-<id>.js, made once and kept:
+// { el, update, sig, count? }). Her bar docks at the foot of the page. HOME is the exception: a page of its own, the whole width and
+// scrolling, with no ledge (its header carries what the ledge carries). Mockup: web/labs/panels.html (T2).
 // The LIBRARY is not one of the workspaces of the list: its key under them opens it as a frame in front of everything, over the workspace
 // that is open (utensils-library-frame.js); its workspace part lives in that frame.
 import { h, icon, sprite, ago } from "../dom.js";
@@ -10,7 +11,7 @@ import { changed } from "../store.js";
 import { currentPage } from "../router.js";
 import { utensils, shelfTools, setWorkspace, toolsOf, toolById, creditsToday, openResult, cancelJob, give, arrive, openLibrary, closeLibrary, LIBRARY } from "../utensils.js";
 import { libraryFrame } from "../utensils-library-frame.js";
-import { TRUFFLE, WORKSPACES } from "../utensils-harness.js";
+import { TRUFFLE, WORKSPACES, SAY } from "../utensils-harness.js";
 import { setRoom } from "../harnesses.js";
 import { shelfSpace, templatesTotal, loadTemplatesTotal } from "../utensils-space-shelf.js";
 import { homeSpace } from "../utensils-space-home.js";
@@ -35,15 +36,15 @@ const made = () => (parts ??= Object.fromEntries(WORKSPACES.map((w) => [w.id, MA
 function build(el) {
   const spaces = made();
   const slot = shell?.slot ?? h("div.ut-chat", { id: "utensils-chat" });
+  const say = h("div.ut-say");
   const tiles = h("div.ut-slot");
+  const status = h("div.ut-slot");
   const queue = h("div.ut-slot");
   const recent = h("div.ut-slot");
-  const side = h("aside.ut-side", { "aria-label": "Truffle's panel" },
-    h("div.ut-pet", {},
-      h("span.ut-pet-pic", {}, h("img", { src: TRUFFLE.portrait, alt: "", draggable: false })),
-      h("b.ut-pet-name", {}, TRUFFLE.name),
-      h("span.ut-pet-tag", {}, TRUFFLE.tag)),
-    tiles, queue, recent);
+  const tray = h("div.ut-tray", { role: "dialog", "aria-label": "What is running and what was made", hidden: true }, queue, recent);
+  const ledge = h("header.ut-ledge", { "aria-label": "Truffle's ledge" },
+    h("div.ut-ledge-pet", {}, h("img", { src: TRUFFLE.portrait, alt: "", draggable: false }), say),
+    tiles, status, tray);
   const main = h("div.ut-main");
   for (const [id, part] of Object.entries(spaces)) {
     part.el.dataset.space = id;
@@ -52,13 +53,21 @@ function build(el) {
   main.append(slot);
   // the Library's part goes in its frame (made once, kept in the body: it opens over any workspace)
   frame ??= libraryFrame({ space: spaces[LIBRARY], slot, home: main });
-  const root = h("div.utensils", {}, side, main);
+  const root = h("div.utensils", {}, ledge, main);
   // the app does not draw a page while a field in it is in use: what waited is drawn as soon as the field is left
   root.addEventListener("focusout", (e) => !root.contains(e.relatedTarget) && setTimeout(() => changed("utensils"), 0));
   el.replaceChildren(root);
-  shell = { el, root, slot, tiles, queue, recent, last: {}, sig: {} };
+  shell = { el, root, slot, say, tiles, status, queue, recent, tray, last: {}, sig: {} };
   document.dispatchEvent(new Event("utensils:drawn"));
 }
+
+/** The tray under the ring (the queue and the results) opens and closes; a press elsewhere or Escape closes it. */
+function toggleTray(open = shell.tray.hidden) {
+  shell.tray.hidden = !open;
+  shell.status.querySelector(".ut-status")?.setAttribute("aria-expanded", String(open));
+}
+document.addEventListener("pointerdown", (e) => shell && !shell.tray.hidden && !e.target.closest?.(".ut-tray, .ut-status") && toggleTray(false), true);
+document.addEventListener("keydown", (e) => e.key === "Escape" && shell && !shell.tray.hidden && (toggleTray(false), shell.status.querySelector(".ut-status")?.focus()));
 
 /** A block of the panel is made again only when what it shows has changed. */
 function fillBlock(name, sig, make) {
@@ -80,19 +89,40 @@ function countOf(w, spaces) {
 }
 const two = (n) => (typeof n === "number" ? (n ? String(n).padStart(2, "0") : "–") : String(n));
 
+/** The workspaces standing on the ledge: Home and Shelf, the five of the media, the Library apart (it opens in front of them). */
 function tilesBlock(spaces) {
-  const lib = WORKSPACES.find((w) => w.id === LIBRARY);
-  return h("div.ut-spaces-wrap", {}, h("nav.ut-spaces", { "aria-label": "Workspaces" }, ...WORKSPACES.filter((w) => w.id !== LIBRARY).map((w) =>
-    h(`button.ut-space${w.id === utensils.workspace ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(w.id === utensils.workspace), dataset: { space: w.id }, on: { click: () => setWorkspace(w.id) } },
-      h("span.ut-space-icon", {}, sprite(w.icon)),
-      // (a workspace's colour: the cloth of its books on the Shelf)
-      h("span.ut-space-name", {}, w.name, w.color ? h("i.ut-space-dot", { style: { "--dot": w.color }, "aria-hidden": "true" }) : null),
-      h("span.ut-space-count", {}, w.id === "home" ? "" : two(countOf(w, spaces)))))),
-    // the Library: a key of its own under the workspaces, that opens it in front of everything (and closes it)
-    h(`button.ut-space.ut-libkey${utensils.library ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(!!utensils.library), title: utensils.library ? "Close the Library" : "Open the Library: every ComfyUI workflow, in front of the workspace", on: { click: () => (utensils.library ? closeLibrary() : openLibrary()) } },
-      h("span.ut-space-icon", {}, sprite(lib?.icon ?? "tool-templates")),
-      h("span.ut-space-name", {}, lib?.name ?? "Library", h("span.ut-space-count.is-inline", {}, ` ${two(countOf(lib ?? { id: LIBRARY }, spaces))}`)),
-      h("span.ut-libkey-open", { title: "Opens in front of the workspace" }, icon("open"))));
+  const tab = (w, sub, extra = "") => {
+    const on = w.id === LIBRARY ? !!utensils.library : w.id === utensils.workspace && !utensils.library;
+    return h(`button.ut-tab${extra}${on ? ".is-on" : ""}`, {
+      type: "button",
+      "aria-pressed": String(on),
+      dataset: { space: w.id },
+      title: w.id === LIBRARY ? (utensils.library ? "Close the Library" : "Open the Library: every ComfyUI workflow, in front of the workspace") : w.name,
+      style: { "--c": w.color ?? "var(--ut-tab-plain)" },
+      on: { click: () => (w.id === LIBRARY ? (utensils.library ? closeLibrary() : openLibrary()) : setWorkspace(w.id)) },
+    }, sprite(w.icon), h("b", {}, w.name), h("em", {}, sub));
+  };
+  const count = (w) => countOf(w, spaces);
+  const by = (id) => WORKSPACES.find((w) => w.id === id);
+  const media = WORKSPACES.filter((w) => w.color && w.id !== LIBRARY);
+  return h("nav.ut-tabs", { "aria-label": "Workspaces" },
+    tab(by("home"), "start"),
+    tab(by("shelf"), `${count(by("shelf"))} tools`),
+    h("i.ut-tabs-sep", { "aria-hidden": "true" }),
+    ...media.map((w) => tab(w, two(count(w)))),
+    h("i.ut-tabs-sep", { "aria-hidden": "true" }),
+    tab(by(LIBRARY), h("span", {}, h("span.ut-tab-count", {}, String(count(by(LIBRARY)))), " workflows"), ".is-library"));
+}
+
+/** What is running, as a ring (the running jobs' progress) and two words, and the latest results; it opens the tray. */
+function statusBlock() {
+  const running = utensils.jobs.filter((j) => j.status === "running");
+  const pct = running.length ? Math.round((running.reduce((t, j) => t + j.progress, 0) / running.length) * 100) : 0;
+  const latest = utensils.results.slice(0, 3);
+  return h("button.ut-status", { type: "button", "aria-expanded": String(!shell.tray.hidden), "aria-haspopup": "dialog", title: "What is running and what was made", on: { click: () => toggleTray() } },
+    h("span.ut-ring", { style: { "--q": `${pct}%` } }, h("b", {}, running.length ? `${pct}%` : "idle")),
+    h("span.ut-status-text", {}, h("b", {}, running.length ? `${running.length} running` : "Nothing running"), h("em", {}, `${creditsToday().total} cr today`)),
+    latest.length ? h("span.ut-film", { "aria-hidden": "true" }, ...latest.map((r) => (r.kind === "image" ? h("img", { src: r.url, alt: "", draggable: false, loading: "lazy" }) : r.kind === "video" ? h("video", { src: r.url, muted: true, preload: "metadata", playsInline: true }) : h("span.ut-film-audio", {}, icon("sound"))))) : null);
 }
 
 // ---------------------------------------------------------------- the queue and the recent results
@@ -117,7 +147,7 @@ function queueBlock() {
 }
 
 function recentBlock() {
-  const list = utensils.results.slice(0, 3);
+  const list = utensils.results.slice(0, 6);
   return h("section.ut-recent", { "aria-label": "Recent results" },
     h("div.ut-block-head", {}, h("span.ut-block-label", {}, "Recent"), h("span.ut-block-note", {}, list.length ? `${list.length} of ${utensils.results.length}` : "nothing yet")),
     list.length ? h("div.ut-recent-row", {}, ...list.map((r) => {
@@ -131,8 +161,15 @@ function recentBlock() {
     })) : h("p.ut-hint", {}, "What every tool makes is kept here, newest first."));
 }
 
-/** A job's bar moves in place: the rows are not made again at every tick (a redraw would flicker the icons). */
+/** A job's bar moves in place: the rows are not made again at every tick (a redraw would flicker the icons); so does the ledge's ring. */
 function syncProgress() {
+  const running = utensils.jobs.filter((j) => j.status === "running");
+  const ring = shell.status.querySelector(".ut-ring");
+  if (ring && running.length) {
+    const pct = Math.round((running.reduce((t, j) => t + j.progress, 0) / running.length) * 100);
+    ring.style.setProperty("--q", `${pct}%`);
+    ring.firstChild.textContent = `${pct}%`;
+  }
   for (const j of utensils.jobs.slice(0, 4)) {
     const row = shell.queue.querySelector(`[data-job="${j.id}"]`);
     if (!row) continue;
@@ -157,13 +194,16 @@ export function renderUtensils(el) {
   shell.root.classList.toggle("is-home-page", space === "home");
   // the bar asks what fits the workspace that is open (the Library's, while its frame is open)
   setRoom("utensils", utensils.library ? LIBRARY : space);
-  // (the panel is not on screen on Home: its blocks are drawn when a workspace opens)
+  // (the ledge is not on screen on Home: its blocks are drawn when a workspace opens)
   if (space !== "home") {
     const counts = WORKSPACES.map((w) => countOf(w, spaces));
+    const room = utensils.library ? LIBRARY : space;
+    if (shell.said !== room) ((shell.said = room), shell.say.replaceChildren(h("span", {}, `${TRUFFLE.name} · ${TRUFFLE.tag}`), h("b", {}, SAY[room] ?? SAY.shelf)));
     fillBlock("tiles", JSON.stringify([space, counts, !!utensils.library]), () => tilesBlock(spaces));
+    fillBlock("status", JSON.stringify([utensils.jobs.map((j) => [j.id, j.status]), creditsToday().total, utensils.results.slice(0, 3).map((r) => r.id)]), statusBlock);
     fillBlock("queue", JSON.stringify([utensils.jobs.map((j) => [j.id, j.status]), creditsToday().total]), queueBlock);
     syncProgress();
-    fillBlock("recent", JSON.stringify(utensils.results.slice(0, 3).map((r) => [r.id, r.url])), recentBlock);
+    fillBlock("recent", JSON.stringify(utensils.results.slice(0, 6).map((r) => [r.id, r.url])), recentBlock);
   }
   frame.update();
   for (const w of WORKSPACES) {

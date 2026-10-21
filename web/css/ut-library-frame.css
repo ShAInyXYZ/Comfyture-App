@@ -101,14 +101,6 @@ body.has-library .toast { z-index: 39; }
 .lbx-strip-go svg { width: .875rem; height: .875rem; transform: rotate(180deg); }
 .lbx-strip:hover { border-color: var(--accent); }
 
-/* ---- the Library's key, under the workspaces of the panel: a key of the panel's own kind (.ut-space), set a little apart --------- */
-.ut-spaces-wrap { display: grid; flex: none; gap: .375rem; }
-.ut-libkey { margin-top: .5rem; }
-.ut-libkey .ut-space-icon svg { color: var(--text); }
-.ut-libkey-open { display: grid; place-items: center; color: var(--dim); }
-.ut-libkey-open svg { width: .9375rem; height: .9375rem; }
-.ut-libkey.is-on .ut-libkey-open { color: var(--accent); }
-
 @supports (corner-shape: squircle) { .lbx-frame, .lbx-table, .lbx-card, .lbx-total, .lbx-open, .lbx-start { corner-shape: squircle; } }
 @media (max-width: 1280px) {
   .lbx-total { width: 10.5rem; }
@@ -123,4 +115,3 @@ body.has-library .toast { z-index: 39; }
   .lbx-total { width: auto; flex-direction: row; }
 }
 @media (prefers-reduced-motion: reduce) { .lbx-back, .lbx-frame, .lbx-table { animation: none; } .lbx-cover { transition: none; } }
-.ut-libkey .ut-space-count.is-inline { margin-left: .375rem; font-size: .8125rem; }

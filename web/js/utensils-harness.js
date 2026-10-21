@@ -31,6 +31,18 @@ export const WORKSPACES = [
   { id: "templates", name: "Library", icon: "tool-templates", color: "#3a5bb5" },
 ];
 
+/** What Truffle says at the left of her ledge in each workspace (a line, not a preset: her bar is where she is asked). */
+export const SAY = {
+  home: "What shall we make or fix?",
+  shelf: "Which book do you need today?",
+  picture: "Bring me a picture: I'll make it better.",
+  video: "Give me a clip and say what it needs.",
+  audio: "Music, a voice, a sound: what shall we hear?",
+  vfx: "Which shot needs a trick?",
+  edit: "Trim, crop, caption: free, on this machine.",
+  templates: "Which workflow are you after?",
+};
+
 /** What the chat bar says in each workspace (no canned presets: Truffle's bar is her words). */
 export const PLACEHOLDER = {
   home: "Ask Truffle — what do you want to make or fix?",
