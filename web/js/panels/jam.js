@@ -30,7 +30,7 @@ let armed = null; // a jam asked to be deleted: the second press does it
 function jamMenu(j) {
   const close = () => ((menu = false), changed("jam"));
   return h("div.jm-menu", { role: "menu", "aria-label": "Your jams" },
-    j ? h("input.jm-menu-name", { value: j.name, "aria-label": "This jam's name", dataset: { focus: `name:${j.id}` }, on: { input: (e) => rename(e.target.value), keydown: (e) => { e.stopPropagation(); if (e.key === "Enter") close(); } } }) : null,
+    j ? h("input.jm-menu-name", { value: j.name, "aria-label": "This jam's name", dataset: { focus: `name:${j.id}` }, on: { input: (e) => rename(e.target.value), keydown: (e) => { e.stopPropagation(); if (e.key === "Enter" || e.key === "Escape") { e.target.blur(); close(); } } } }) : null,
     h("div.jm-menu-list", { dataset: { scrollKey: "jm-menu" } },
       ...jam.list.map((row) =>
         h(`div.jm-menu-row${row.id === j?.id ? ".is-on" : ""}`, { role: "none" },
