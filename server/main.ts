@@ -25,7 +25,8 @@ import { SONG_BRIEF, songPrompt, readSong } from "./song.ts";
 import { KEYS, LANGUAGES, SIGNATURES, MAX_SECONDS, DEFAULT_SONG } from "../web/js/song.js";
 import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
-import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer } from "./utensils-assist.ts";
+import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer, utensilsCandidates } from "./utensils-assist.ts";
+import { searchKnowledge, knowledgeById } from "./utensils-knowledge.ts";
 import { createEdit } from "./utensils-edit.ts";
 import { createFx } from "./utensils-fx.ts";
 import { createTemplates, realCloud, fakeRun } from "./comfy-templates.ts";
@@ -1409,9 +1410,21 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const turns = petTurns(input.messages);
     if (!turns.length) throw bad("Say what to do.");
     const summary = input.utensils && typeof input.utensils === "object" ? input.utensils : {};
-    const reply = await petAnswer(pickLlm(input.model, "assistant"), UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt(summary, turns));
+    // the knowledge base's best matches for the job: told to her, and the only ids her guide may name
+    const candidates = utensilsCandidates(turns);
+    const reply = await petAnswer(pickLlm(input.model, "assistant"), UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt(summary, turns, candidates));
     if (process.env.COMFYTURE_DEBUG) console.log(`truffle answered\n${reply}`);
-    return json(res, 200, readUtensilsAnswer(reply, summary));
+    return json(res, 200, readUtensilsAnswer(reply, summary, candidates));
+  }
+  // Utensils' knowledge: what every tool and Library workflow is and how it works, searched (?q=&k=&kind=) or read by id
+  if (path === "/api/utensils/knowledge" && method === "GET") {
+    const kind = url.searchParams.get("kind");
+    const hits = searchKnowledge(url.searchParams.get("q") ?? "", { k: Number(url.searchParams.get("k")) || 12, kinds: kind ? [kind] : undefined });
+    return json(res, 200, { items: hits.map(({ entry, score }) => ({ ...entry, score })) });
+  }
+  if (path.startsWith("/api/utensils/knowledge/") && method === "GET") {
+    const entry = knowledgeById(decodeURIComponent(path.slice("/api/utensils/knowledge/".length)));
+    return entry ? json(res, 200, entry) : json(res, 404, { error: "No such tool or workflow." });
   }
   // Utensils: one tool, one job; what they made is listed in one file, newest first
   if (path === "/api/utensils/results" && method === "GET") {

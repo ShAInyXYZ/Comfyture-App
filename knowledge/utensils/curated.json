@@ -1,0 +1,2635 @@
+{
+ "wf:3d_hunyuan3d-v2.1": {
+  "what": "Turns one picture of an object into a 3D model (a GLB mesh).",
+  "how": "Hunyuan3D 2.1 (Tencent, open model) runs on Comfy Cloud: an image encoder reads your picture, the diffusion model builds the object's shape as a 3D volume step by step, and the volume is turned into a mesh and saved as GLB. One clear object on a plain background works best.",
+  "goodFor": [
+   "a 3d model from a picture",
+   "a game asset from a product photo",
+   "turn a drawing into 3d",
+   "a printable 3d shape"
+  ],
+  "limits": [
+   "one object at a time; busy scenes give messy shapes",
+   "the back side is guessed"
+  ]
+ },
+ "wf:3d_pixal3d_multi_views": {
+  "what": "Builds a textured 3D model from several views of the same object (front, back, sides) or one turnaround sheet.",
+  "how": "Pixal3D Multi-View runs on Comfy Cloud: it lines up the four views, reconstructs the shape from all of them at once, then paints and bakes the textures onto a cleaned, decimated mesh. More views mean less guessing than a single-picture model.",
+  "goodFor": [
+   "a 3d model from a turnaround sheet",
+   "a character model from front and side views",
+   "a cleaner 3d asset than from one photo"
+  ],
+  "limits": [
+   "the views must show the same object at the same scale"
+  ]
+ },
+ "wf:3d_pixal3d_trellis2_image_to_model": {
+  "what": "Turns one picture into a high-detail 3D model with PBR textures, with Pixal3D or TRELLIS.2.",
+  "how": "One switch picks the pipeline on Comfy Cloud: both encode your picture with DINOv3 and decode a shape and a texture; Pixal3D also estimates the camera (MoGe) so the geometry lines up with the picture's pixels. The background is removed first, then the mesh is cleaned, textured and saved.",
+  "goodFor": [
+   "a 3d model with textures from one image",
+   "a product in 3d",
+   "a game-ready asset",
+   "a 3d character from art"
+  ],
+  "limits": [
+   "hidden sides are invented",
+   "a large model: the first run is slower"
+  ]
+ },
+ "wf:3d_triposplat_image_to_gaussian_splat": {
+  "what": "Turns one picture into a 3D Gaussian splat you can orbit, plus a preview video and a mesh.",
+  "how": "TripoSplat runs on Comfy Cloud: the subject is cut out (BiRefNet), the model predicts a cloud of coloured 3D Gaussians from the picture, and the splat is rendered as a turntable preview and can be converted to a mesh. Density and budget set how heavy the splat is.",
+  "goodFor": [
+   "a 3d scene from a photo",
+   "a gaussian splat",
+   "an orbitable 3d preview",
+   "3d for the web"
+  ],
+  "limits": [
+   "the unseen sides are estimated"
+  ]
+ },
+ "wf:api_bfl_flux3_image_bboxes": {
+  "what": "Places objects and text exactly where you draw boxes on the canvas, each box with its own description.",
+  "how": "You draw bounding boxes and caption each one; the boxes are written into the prompt and sent to Black Forest Labs' FLUX 3 Image (partner), which renders each element in its box. Set the output to the same aspect ratio as the canvas.",
+  "goodFor": [
+   "a layout with things in exact places",
+   "a poster with text in a given spot",
+   "control composition precisely"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bfl_flux3_image_edit": {
+  "what": "Edits a picture, or combines up to ten reference pictures, from one instruction with FLUX 3 Image.",
+  "how": "Your pictures and instruction go to Black Forest Labs' FLUX 3 Image (partner); you refer to them as image 1, image 2 in the prompt, and it returns one picture at up to 4K in any of sixteen aspect ratios, with web search grounding on.",
+  "goodFor": [
+   "edit a photo with a sentence",
+   "combine a character with a product",
+   "consistent character edits",
+   "change clothes or scene"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bfl_flux3_t2i": {
+  "what": "Makes a picture from a text prompt with FLUX 3 Image, up to 4K, strong with typography.",
+  "how": "Black Forest Labs' FLUX 3 Image (partner) expands your prompt and renders one picture in any of sixteen aspect ratios up to 4K, with web and image search grounding on by default.",
+  "goodFor": [
+   "a poster with text",
+   "a high resolution picture from words",
+   "a typography-led design"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bfl_flux_1_kontext_max_image": {
+  "what": "Edits a picture from an instruction with Flux.1 Kontext Max, the top tier of Kontext.",
+  "how": "Your picture and instruction go to Black Forest Labs' Flux.1 Kontext Max (partner), an in-context editing model that keeps what you do not mention; it is strongest on typography and complex edits.",
+  "goodFor": [
+   "change one thing in a photo",
+   "style transfer",
+   "edit text in an image"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bfl_flux_1_kontext_multiple_images_input": {
+  "what": "Combines several pictures into one edit with Flux.1 Kontext Pro (a person, a product, a place).",
+  "how": "The input pictures are stitched as context and sent with your instruction to Black Forest Labs' Flux.1 Kontext Pro (partner), which composes them into one picture.",
+  "goodFor": [
+   "put my product in someone's hand",
+   "combine two pictures",
+   "a character in a new place"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bfl_flux_1_kontext_pro_image": {
+  "what": "Edits a picture from an instruction with Flux.1 Kontext Pro.",
+  "how": "Your picture and instruction go to Black Forest Labs' Flux.1 Kontext Pro (partner): it changes what you ask (a colour, the time of day, a style) and keeps the rest.",
+  "goodFor": [
+   "edit a photo with words",
+   "change the style of a picture",
+   "make it daytime"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bfl_flux_pro_t2i": {
+  "what": "Makes a picture from words with FLUX.1 Pro Ultra, optionally guided by an image.",
+  "how": "Black Forest Labs' FLUX.1 Pro Ultra (partner) renders your prompt; an optional image prompt pulls the result toward it (its strength sets how much), and Raw mode gives a more natural photographic look.",
+  "goodFor": [
+   "a photorealistic picture from words",
+   "a high resolution render"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bria_video_green_screen": {
+  "what": "Takes the background out of a clip and gives back a green-screen or transparent version.",
+  "how": "Bria's video background removal (partner) separates the people from the background in every frame and returns the clip on green, on a solid colour or with transparency.",
+  "goodFor": [
+   "a green screen version of my video",
+   "remove the background of a video",
+   "a transparent video of a person"
+  ],
+  "limits": [
+   "partner credits, priced at the run",
+   "works best with people"
+  ]
+ },
+ "wf:api_bytedance_image_to_video": {
+  "what": "Animates a picture into a short video with ByteDance's Seedance 1.0 Pro.",
+  "how": "Your picture and words go to ByteDance's Seedance 1.0 Pro (partner), which reads the picture's structure and generates natural motion in the same look.",
+  "goodFor": [
+   "animate a photo",
+   "a product shot that moves",
+   "image to video"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bytedance_seed_audio1_0_ta2a": {
+  "what": "Clones up to three voices from reference clips and makes a new scene with dialogue, music and effects.",
+  "how": "Your reference audio and a text prompt go to ByteDance's Seed Audio 1.0 (partner): it copies the voices and generates new speech, background music and sound effects in one track.",
+  "goodFor": [
+   "a dialogue in a cloned voice",
+   "a radio ad with voices and music",
+   "audio drama"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bytedance_seedream4": {
+  "what": "Makes or edits pictures from words with ByteDance's Seedream 4.0, at 2K in seconds.",
+  "how": "Your words (and pictures, for an edit) go to ByteDance's Seedream 4.0 (partner), a multi-modal model for both generation and editing.",
+  "goodFor": [
+   "edit a picture with words",
+   "a 2k picture from words"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bytedance_seedream_5_0_flash_image_edit": {
+  "what": "Edits one picture into a refined version with Seedream 5.0 Flash, with clean text rendering.",
+  "how": "Your picture and instruction go to ByteDance's Seedream 5.0 Flash (partner), a fast model that re-renders the picture with your change up to 2K.",
+  "goodFor": [
+   "a quick picture edit",
+   "add text to a product shot",
+   "cinematic relight of a photo"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bytedance_seedream_5_0_flash_t2i": {
+  "what": "Makes a picture from words with Seedream 5.0 Flash, fast, up to 2K.",
+  "how": "ByteDance's Seedream 5.0 Flash (partner) turns your prompt into one picture at 1K, 1.5K or 2K, with good text rendering.",
+  "goodFor": [
+   "a fast picture from words",
+   "a poster draft"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bytedance_seedream_5_0_lite_image_edit": {
+  "what": "Edits a picture from a prompt with Seedream 5.0 Lite.",
+  "how": "Your picture and instruction go to ByteDance's Seedream 5.0 Lite (partner), which returns the modified picture.",
+  "goodFor": [
+   "edit a picture with words",
+   "a cheap quick edit"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bytedance_seedream_5_0_pro_image_edit": {
+  "what": "Edits precise regions of a picture with Seedream 5.0 Pro, keeping light, depth and texture.",
+  "how": "You can paint the region to change; the picture, the region and your instruction go to ByteDance's Seedream 5.0 Pro (partner), which edits only there and keeps the rest consistent.",
+  "goodFor": [
+   "edit one part of a product photo",
+   "portrait touch-ups",
+   "a precise local edit"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_bytedance_seedream_5_0_pro_t2i": {
+  "what": "Makes a high quality picture from words with Seedream 5.0 Pro.",
+  "how": "ByteDance's Seedream 5.0 Pro (partner) renders one picture from your prompt; good for concept art and marketing mockups.",
+  "goodFor": [
+   "concept art",
+   "a marketing visual from words",
+   "a mood picture"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_elevenlabs_text_to_sound_effects": {
+  "what": "Makes a sound effect or ambience from a sentence with ElevenLabs.",
+  "how": "Your sentence goes to ElevenLabs' sound effects model (partner), which returns a clean audio clip.",
+  "goodFor": [
+   "a sound effect from words",
+   "ambience",
+   "a foley sound"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_elevenlabs_text_to_speech": {
+  "what": "Speaks a text in a realistic voice, or in a voice cloned from a sample, with ElevenLabs.",
+  "how": "Pick an ElevenLabs voice or give a recording to clone instantly; your text goes to ElevenLabs text to speech (partner) and comes back as audio.",
+  "goodFor": [
+   "a voice over",
+   "narration",
+   "speak in my voice"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_elevenlabs_v4_text_to_speech": {
+  "what": "Performs a script in an expressive voice with ElevenLabs v4, directed by tags like [whispers].",
+  "how": "ElevenLabs v4 (partner) reads your script as a performance: tags in square brackets set the delivery, and a voice sample can be cloned to narrate it.",
+  "goodFor": [
+   "an expressive voice over",
+   "a character's lines",
+   "an audiobook voice"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_fishaudio_voice_clone_tts": {
+  "what": "Clones a voice from short recordings and speaks any script in it with Fish Audio.",
+  "how": "Two or three clips of 15-20 seconds go to Fish Audio's instant voice clone (partner); the cloned voice reads your script, with emotion tags to steer it.",
+  "goodFor": [
+   "speak a script in my own voice",
+   "voice clone",
+   "a narrator voice"
+  ],
+  "limits": [
+   "partner credits, priced at the run",
+   "needs 15-20 s clean clips"
+  ]
+ },
+ "wf:api_google_gemini_omni_flash_1_1_edit": {
+  "what": "Edits a clip of up to 10 seconds by describing the change, with Gemini Omni 1.1 Flash.",
+  "how": "Your clip and instruction go to Google's Gemini Omni 1.1 Flash (partner): it swaps backgrounds, restyles or adds and removes elements and keeps what you did not mention.",
+  "goodFor": [
+   "change the background of a video",
+   "edit a video with words",
+   "remove something from a clip"
+  ],
+  "limits": [
+   "partner credits, priced at the run",
+   "clips of 10 seconds or less"
+  ]
+ },
+ "wf:api_google_nano_banana2_image_edit": {
+  "what": "Edits a picture from a sentence with Google's Nano Banana 2, keeping the subject consistent.",
+  "how": "Your picture and instruction go to Google's Nano Banana 2 (Gemini image, partner), which returns the changed picture.",
+  "goodFor": [
+   "edit a picture with words",
+   "consistent character edit"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_google_nano_banana2_text_to_image": {
+  "what": "Makes a picture from words with Google's Nano Banana 2.",
+  "how": "Your prompt goes to Google's Nano Banana 2 (partner), which returns one picture.",
+  "goodFor": [
+   "a picture from words",
+   "concept art",
+   "quick prototypes"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_grok_image_edit": {
+  "what": "Edits a picture with xAI's Grok image model, with an expressive, cinematic look.",
+  "how": "Your picture and instruction go to xAI's Grok image editing (partner) and come back as the edited picture.",
+  "goodFor": [
+   "edit a photo with words",
+   "a cinematic restyle"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_grok_imagine_image_2_image_edit": {
+  "what": "Precise picture edits and crisp short text with Grok Imagine Image 2.0, from up to three references.",
+  "how": "xAI's Grok Imagine Image 2.0 (Aurora engine, partner) edits specific elements, swaps backgrounds or restyles from your instruction, at 1K or 2K.",
+  "goodFor": [
+   "swap the background of a photo",
+   "add short text to a picture",
+   "a precise edit"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_grok_imagine_video_1_5_lite_i2v": {
+  "what": "Turns one picture into a video of up to 15 seconds with Grok Imagine Video 1.5 Lite, fast and cheap.",
+  "how": "Your picture and words go to xAI's Grok Imagine Video 1.5 Lite (partner), which animates it up to 1080p.",
+  "goodFor": [
+   "a quick social video from a picture",
+   "storyboard previews",
+   "animate a photo cheaply"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_grok_text_to_image": {
+  "what": "Makes a picture from words quickly with xAI's Grok.",
+  "how": "Your prompt goes to xAI's Grok image model (partner), which returns the picture.",
+  "goodFor": [
+   "a fast picture from words"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_grok_video": {
+  "what": "Makes a video of up to 15 seconds with sound from words or a first frame, with xAI's Grok.",
+  "how": "Your prompt (and optional first picture) go to xAI's Grok video model (partner), which generates the clip with synchronized audio.",
+  "goodFor": [
+   "a video with sound from words",
+   "animate a picture with audio"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_heygen_video_1_i2v": {
+  "what": "Gives a portrait a 5-15 second clip with a spoken line and sound, starting on that exact frame, with HeyGen Video 1.0.",
+  "how": "Your picture and prompt go to HeyGen Video 1.0 (partner): the prompt sets both the action and the line the person says; it keeps the picture's aspect ratio at 480p or 768p.",
+  "goodFor": [
+   "make a portrait talk",
+   "a talking photo with a line",
+   "a spokesperson clip"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_ideogram_v4_5_image_edit": {
+  "what": "Edits or combines pictures with Ideogram 4.5: image 1 is edited, images 2-5 are references for design, material or colour.",
+  "how": "You can draw boxes with captions like 'remove it' on the picture; everything goes to Ideogram 4.5 (partner), which returns one edited picture.",
+  "goodFor": [
+   "product edits with references",
+   "change a material or colour",
+   "design edits with text"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_ideogram_v4_5_precise_image_edit": {
+  "what": "Changes only what the prompt asks with Ideogram 4.5 Precise Edit: untouched pixels stay identical.",
+  "how": "Your picture, optional references and instruction go to Ideogram 4.5 Precise Edit (partner); the output keeps the size of image 1.",
+  "goodFor": [
+   "a pixel-precise edit",
+   "change one detail and keep the rest exactly"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_ideogram_v4_5_t2i": {
+  "what": "Makes a picture from words with Ideogram 4.5, strong on typography and layout.",
+  "how": "Ideogram 4.5 (partner) renders your prompt, optionally rewriting it, with controls for canvas size and quality.",
+  "goodFor": [
+   "a poster with text",
+   "a logo-like design",
+   "a typography layout"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_kling_motion_control3": {
+  "what": "Makes your character perform the motion of a reference video, with Kling 3.0 Motion Control.",
+  "how": "A character picture and a motion clip go to Kling 3.0 (partner): it transfers the actions onto your character, with optional element binding to keep the face consistent.",
+  "goodFor": [
+   "make my character dance like this video",
+   "copy a motion onto a character",
+   "a dance trend with my mascot"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_kling_v3_flf2v": {
+  "what": "Makes a continuous video between a first and a last frame with Kling 3.0.",
+  "how": "Both frames and your prompt go to Kling 3.0 (partner), which generates the motion that joins them, with multi-shot support.",
+  "goodFor": [
+   "a transition between two pictures",
+   "a clip from a start and an end frame"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_kling_v3_video": {
+  "what": "Makes 15-second videos from words or a picture with Kling 3.0, with camera moves and multi-shot.",
+  "how": "Your prompt or picture goes to Kling 3.0 (partner), which generates the clip with complex camera movement and consistent subjects.",
+  "goodFor": [
+   "a cinematic video from words",
+   "animate a picture with camera moves",
+   "a multi-shot clip"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_krea3_image_edit": {
+  "what": "Changes only the areas you name in a picture with Krea 3.",
+  "how": "Your picture and instruction go to Krea 3 (partner), which edits those regions and leaves the rest untouched.",
+  "goodFor": [
+   "restage a product",
+   "relight a portrait",
+   "sketch to render"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_krea3_t2i": {
+  "what": "Makes a finished picture from words with Krea 3.",
+  "how": "Krea 3 (partner) renders one picture per run from your prompt.",
+  "goodFor": [
+   "product staging",
+   "fashion and portrait images",
+   "architectural renders"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_minimax_h3_max_r2v": {
+  "what": "Animates a still frame into a video that keeps its composition and identity, with MiniMax H3 Max.",
+  "how": "Your picture and prompt go to MiniMax H3 Max (partner) reference-to-video; two optional stages (off by default) can refine or regenerate.",
+  "goodFor": [
+   "bring character art to life",
+   "animate a picture faithfully"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_nano_banana_2_1_image_edit": {
+  "what": "Edits a picture with words or with a painted mask, with Nano Banana 2.1, showing before and after.",
+  "how": "Your picture, optional mask and instruction go to Google's Nano Banana 2.1 (partner); it returns the edit with a comparison view.",
+  "goodFor": [
+   "edit a product shot",
+   "retouch in several rounds",
+   "change text on a poster"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_nano_banana_2_1_t2i": {
+  "what": "Makes a picture from words with Nano Banana 2.1, Google's fast Gemini image model.",
+  "how": "Your prompt goes to Google's Nano Banana 2.1 (partner), which returns one finished picture.",
+  "goodFor": [
+   "brand posters",
+   "product visuals",
+   "a character series"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_nano_banana_pro": {
+  "what": "Makes and edits pictures at studio quality up to 4K with Nano Banana Pro (Gemini 3 Pro Image).",
+  "how": "Your prompt and optional pictures go to Google's Gemini 3 Pro Image (partner), strong on text rendering and character consistency.",
+  "goodFor": [
+   "a 4k picture",
+   "a poster with accurate text",
+   "consistent characters across pictures"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_openai_gpt_image_25_flare_image_edit": {
+  "what": "Reworks part of a picture (outfit, hair, details) and keeps the scene, with GPT Image 2.5 Flare, fast.",
+  "how": "Your picture and instruction go to OpenAI's GPT Image 2.5 Flare (partner), which keeps pose, light and composition and changes only what you ask.",
+  "goodFor": [
+   "change the outfit",
+   "a new hairstyle",
+   "fast iterations on a picture"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_openai_gpt_image_25_flare_t2i": {
+  "what": "Makes a picture from words with GPT Image 2.5 Flare, fast, for drafts and mockups.",
+  "how": "Your prompt goes to OpenAI's GPT Image 2.5 Flare (partner), tuned for quick previews.",
+  "goodFor": [
+   "a poster draft",
+   "a mood board",
+   "a quick concept"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_openai_gpt_image_25_sunburst_image_edit": {
+  "what": "High-fidelity picture edits that keep pose, scene and light, with GPT Image 2.5 Sunburst.",
+  "how": "Your picture and instruction go to OpenAI's GPT Image 2.5 Sunburst (partner), which modifies only the named elements with strong subject consistency.",
+  "goodFor": [
+   "edit a character consistently",
+   "change the camera angle of a picture",
+   "sequential frames"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_openai_gpt_image_25_sunburst_t2i": {
+  "what": "Makes polished, detailed pictures from words with GPT Image 2.5 Sunburst.",
+  "how": "Your prompt goes to OpenAI's GPT Image 2.5 Sunburst (partner), which keeps materials, light and subjects consistent.",
+  "goodFor": [
+   "a product visual",
+   "a detailed concept",
+   "a character scene"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_openai_gpt_image_2_image_edit": {
+  "what": "Makes campaign posters, product shots and multilingual signs from a reference picture, with GPT Image 2.",
+  "how": "Your picture and prompt go to OpenAI's GPT Image 2 (partner), which renders clean text and photorealistic results.",
+  "goodFor": [
+   "a poster from a product photo",
+   "signage with text",
+   "an ad visual"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_openai_image_1_i2i": {
+  "what": "Makes a new picture from your picture and a prompt with OpenAI's GPT-Image-1.",
+  "how": "Your picture and prompt go to OpenAI's GPT-Image-1 (partner), which uses the picture as a reference for the new one.",
+  "goodFor": [
+   "a new version of a picture",
+   "restyle a photo"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_openai_image_1_inpaint": {
+  "what": "Re-draws only the masked part of a picture from a prompt, with GPT-Image-1.",
+  "how": "Your picture, a mask of the area to change and your prompt go to OpenAI's GPT-Image-1 (partner), which fills the masked area and keeps the rest.",
+  "goodFor": [
+   "replace one object in a photo",
+   "fill a masked area"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_openai_image_1_multi_inputs": {
+  "what": "Combines several pictures into one with GPT-Image-1, guided by a prompt.",
+  "how": "Your pictures and prompt go to OpenAI's GPT-Image-1 (partner), which composes a new picture from them.",
+  "goodFor": [
+   "combine a product and a scene",
+   "a collage from references"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_openai_image_1_t2i": {
+  "what": "Makes a picture from words with OpenAI's GPT-Image-1.",
+  "how": "Your prompt goes to OpenAI's GPT-Image-1 (partner), which returns the picture.",
+  "goodFor": [
+   "a picture from words"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_pruna_p_video_i2v": {
+  "what": "Animates a picture with subtle, natural motion and strong identity with Pruna P-Video 2 (1-20 s, up to 1080p).",
+  "how": "Your picture and prompt go to Pruna's P-Video 2 (partner); a Draft mode gives fast previews before the final render.",
+  "goodFor": [
+   "animate a product subtly",
+   "a moving poster",
+   "keep the face the same in a video"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_seedance2_0_flf2v": {
+  "what": "Makes a video between a first and a last frame with Seedance 2.0.",
+  "how": "Both frames and your prompt go to ByteDance's Seedance 2.0 (partner), which generates the motion between them.",
+  "goodFor": [
+   "a transition between two pictures",
+   "a before and after animation"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_seedance2_0_r2v": {
+  "what": "Makes cinematic videos with sound from reference pictures with Seedance 2.0, keeping identity.",
+  "how": "Your references and prompt go to ByteDance's Seedance 2.0 (partner): it keeps the subject and composition and adds motion and synchronized audio; the prompt steers camera and light.",
+  "goodFor": [
+   "a video of my character from pictures",
+   "a cinematic clip with sound"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_seedance2_5_draft_i2v": {
+  "what": "Tests a video idea cheaply: a fast 480p draft from a picture, then the 1080p final from the same draft, with Seedance 2.5.",
+  "how": "Stage one sends your first frame and prompt to ByteDance's Seedance 2.5 (partner) for a low-cost 480p preview and a draft ID; stage two renders the 1080p final from that ID.",
+  "goodFor": [
+   "try a motion idea before paying for 1080p",
+   "preview camera moves"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_seedance2_5_draft_r2v": {
+  "what": "A cheap 480p draft from reference pictures, then the 1080p final, with Seedance 2.5.",
+  "how": "Stage one sends your references and prompt to ByteDance's Seedance 2.5 (partner) for a fast preview and a draft ID; stage two renders the final from it.",
+  "goodFor": [
+   "lock a character before the final render",
+   "storyboard previews"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_seedance2_5_i2v_1080p": {
+  "what": "Animates a picture into a 1080p clip of up to 30 seconds with sound, music and dialogue, with Seedance 2.5.",
+  "how": "Your picture and prompt go to ByteDance's Seedance 2.5 (partner), which generates the motion and the audio together in any aspect ratio.",
+  "goodFor": [
+   "a product shot that moves with sound",
+   "concept art into motion",
+   "a 30 second clip from a picture"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_seedance2_5_r2v": {
+  "what": "Makes a 4-30 second video from up to 20 pictures, 6 clips and 6 sounds as references, with lip-synced dialogue, with Seedance 2.5.",
+  "how": "All your references and prompt go to ByteDance's Seedance 2.5 (partner): pictures set the characters and style, clips the motion, sounds the rhythm and voices.",
+  "goodFor": [
+   "a product showcase video",
+   "a consistent character video",
+   "a music video from references"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_seedance2_5_t2v": {
+  "what": "Makes 30-second cinematic videos with sound and music from words, with Seedance 2.5.",
+  "how": "Your prompt goes to ByteDance's Seedance 2.5 (partner), which generates the footage and its audio with camera control and multi-shot storytelling.",
+  "goodFor": [
+   "a brand film from words",
+   "a video ad with music",
+   "a short story video"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_seedance2_5_video_editing": {
+  "what": "Edits a clip from a description (remove an object, swap the background, restyle) with Seedance 2.5, keeping its motion.",
+  "how": "Your clip and instruction go to ByteDance's Seedance 2.5 (partner) in editing mode; it keeps the duration, aspect and motion and changes what you describe.",
+  "goodFor": [
+   "remove something from a video",
+   "change the background of a clip",
+   "restyle a video"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_topaz_starlight_precise25": {
+  "what": "Upscales a video to a sharper 4K with Topaz Starlight Precise 2.5.",
+  "how": "Your clip goes to Topaz Labs' Starlight Precise 2.5 (partner), a video enhancement model that restores detail with fewer artefacts.",
+  "goodFor": [
+   "4k from a small video",
+   "restore an old clip",
+   "upscale a generated video"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_wan3_0_i2v": {
+  "what": "Makes up to 30 seconds of realistic video from one picture with Wan 3.0.",
+  "how": "Your picture and prompt (text, audio or documents too) go to Alibaba's Wan 3.0 (partner), which generates the clip in one pass.",
+  "goodFor": [
+   "a long realistic clip from a picture",
+   "cinematic storytelling"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:api_wan3_0_r2v": {
+  "what": "Makes a video from two reference pictures with consistent characters, with Wan 3.0.",
+  "how": "Your references and prompt go to Alibaba's Wan 3.0 reference-to-video (partner), up to 30 seconds with sound.",
+  "goodFor": [
+   "my character with my product in a video",
+   "a consistent character animation"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:audio-chatterbox_tts": {
+  "what": "Speaks a text in a voice cloned from a 5-10 second clip, with the open Chatterbox model.",
+  "how": "Chatterbox (open model) runs on Comfy Cloud: it listens to your short voice clip, then speaks your text with that voice's timbre; an exaggeration control makes it calmer or more expressive.",
+  "goodFor": [
+   "a voice over in my voice",
+   "text to speech",
+   "a character's voice"
+  ],
+  "limits": [
+   "English works best",
+   "the clip should be clean"
+  ]
+ },
+ "wf:audio_ace_step1_5_xl_turbo": {
+  "what": "Makes a full music track from words in 8 steps with ACE-Step 1.5 XL Turbo.",
+  "how": "ACE-Step 1.5 XL Turbo, a distilled 4B music model, runs on Comfy Cloud: it reads your style tags and lyrics and generates the song in 8 steps without guidance.",
+  "goodFor": [
+   "a song from words",
+   "background music",
+   "a jingle with lyrics"
+  ],
+  "limits": [
+   "lyrics in sections sing best"
+  ]
+ },
+ "wf:audio_ace_step_1_m2m_editing": {
+  "what": "Changes the style or the lyrics of an existing song with ACE-Step v1.",
+  "how": "ACE-Step v1 runs on Comfy Cloud: your song is encoded, then re-generated toward your new tags and lyrics while keeping its structure.",
+  "goodFor": [
+   "remix a song in another style",
+   "change the lyrics of a track"
+  ],
+  "limits": [
+   "older model: ACE-Step 1.5 sounds better"
+  ]
+ },
+ "wf:audio_ace_step_1_t2a_instrumentals": {
+  "what": "Makes instrumental music from words with ACE-Step v1.",
+  "how": "ACE-Step v1 runs on Comfy Cloud and generates an instrumental track from your style words.",
+  "goodFor": [
+   "instrumental background music"
+  ],
+  "limits": [
+   "older model: ACE-Step 1.5 sounds better"
+  ]
+ },
+ "wf:audio_ace_step_1_t2a_song": {
+  "what": "Makes a song with vocals from words and lyrics with ACE-Step v1, in many languages.",
+  "how": "ACE-Step v1 runs on Comfy Cloud: it reads your style tags and lyrics and generates the song with singing.",
+  "goodFor": [
+   "a song with vocals",
+   "a multilingual song"
+  ],
+  "limits": [
+   "older model: ACE-Step 1.5 sounds better"
+  ]
+ },
+ "wf:audio_melbandroformer_audio_separation": {
+  "what": "Splits a track into a vocal stem and an instrumental stem.",
+  "how": "MelBandRoFormer, a source separation model, runs on Comfy Cloud: it splits the track's spectrum into vocals and instruments and saves two MP3s.",
+  "goodFor": [
+   "isolate the vocals",
+   "an instrumental version",
+   "karaoke"
+  ],
+  "limits": [
+   "two stems only"
+  ]
+ },
+ "wf:audio_minimax_music_3": {
+  "what": "Makes complete songs up to 5 minutes from a caption of lyrics and style, with MiniMax Music 3.",
+  "how": "MiniMax Music 3 (open model) runs on Comfy Cloud: it reads your structured caption (lyrics, style, mood, arrangement) and generates a finished song with a stable structure.",
+  "goodFor": [
+   "a full length song",
+   "a song with lyrics",
+   "a song prototype"
+  ],
+  "limits": [
+   "long songs take longer"
+  ]
+ },
+ "wf:audio_stable_audio_3_medium": {
+  "what": "Makes stereo music, instruments or sound effects from a short idea with Stable Audio 3 Medium.",
+  "how": "Stable Audio 3 Medium runs on Comfy Cloud; a language model can first expand your short idea into a detailed description, then the audio model generates the sound.",
+  "goodFor": [
+   "a sound effect from words",
+   "a short music loop",
+   "an instrument one-shot"
+  ],
+  "limits": [
+   "not for speech"
+  ]
+ },
+ "wf:audio_stable_audio_example": {
+  "what": "Makes audio from a text prompt with Stable Audio 1.0.",
+  "how": "Stable Audio 1.0 (open model) runs on Comfy Cloud and generates the sound from your prompt.",
+  "goodFor": [
+   "a simple sound from words"
+  ],
+  "limits": [
+   "older model: Stable Audio 3 is better"
+  ]
+ },
+ "wf:flux1_dev_uso_reference_image_gen": {
+  "what": "Uses reference pictures to control both the subject and the style: keep a face, change the art style, or apply a style to a new scene.",
+  "how": "FLUX.1 Dev with USO runs on Comfy Cloud: the subject reference and the style reference are encoded separately and guide the generation together with your words.",
+  "goodFor": [
+   "keep my character's face in another style",
+   "apply an art style to a new scene"
+  ],
+  "limits": []
+ },
+ "wf:flux1_krea_dev": {
+  "what": "Makes highly photorealistic pictures from words with FLUX.1 Krea Dev.",
+  "how": "FLUX.1 Krea Dev, a FLUX fine-tune focused on realism, runs on Comfy Cloud and draws the picture from your words.",
+  "goodFor": [
+   "a photorealistic picture from words",
+   "natural looking photos"
+  ],
+  "limits": []
+ },
+ "wf:flux_canny_model_example": {
+  "what": "Makes a picture that follows the outlines of another picture, with FLUX.1 Canny.",
+  "how": "FLUX.1 Canny runs on Comfy Cloud: the edges of your picture are traced (Canny) and the new picture is drawn along them, styled by your words.",
+  "goodFor": [
+   "keep the composition of a picture",
+   "a sketch to a render",
+   "the same layout in another style"
+  ],
+  "limits": []
+ },
+ "wf:flux_depth_lora_example": {
+  "what": "Makes a picture that follows the depth of another picture, with a FLUX.1 depth LoRA.",
+  "how": "On Comfy Cloud a depth map of your picture is estimated and a FLUX.1 depth LoRA draws a new picture with the same 3D layout.",
+  "goodFor": [
+   "same space, new look",
+   "restyle a room keeping its layout"
+  ],
+  "limits": []
+ },
+ "wf:flux_dev_checkpoint_example": {
+  "what": "Makes pictures from words with FLUX.1 Dev (fp8, a lighter single-file version).",
+  "how": "FLUX.1 Dev fp8 runs on Comfy Cloud and draws the picture from your words; slightly lower quality than the full version.",
+  "goodFor": [
+   "a picture from words"
+  ],
+  "limits": []
+ },
+ "wf:flux_dev_full_text_to_image": {
+  "what": "Makes high quality pictures from words with FLUX.1 Dev (full version).",
+  "how": "FLUX.1 Dev runs on Comfy Cloud with its separate text encoders: strong prompt following and quality.",
+  "goodFor": [
+   "a detailed picture from words"
+  ],
+  "limits": []
+ },
+ "wf:flux_fill_inpaint_example": {
+  "what": "Fills or replaces a painted area of a picture with FLUX.1 Fill.",
+  "how": "FLUX.1 Fill runs on Comfy Cloud: the area you paint is re-drawn from your words and blended into the rest (differential diffusion).",
+  "goodFor": [
+   "remove something from a photo",
+   "replace an object",
+   "fix part of a picture"
+  ],
+  "limits": [
+   "paint the area in the mask editor"
+  ]
+ },
+ "wf:flux_fill_outpaint_example": {
+  "what": "Extends a picture beyond its edges with FLUX.1 Fill.",
+  "how": "On Comfy Cloud the canvas is padded on the sides you choose and FLUX.1 Fill draws the new area to continue the picture.",
+  "goodFor": [
+   "make a picture wider",
+   "turn a square into 16:9",
+   "extend the background"
+  ],
+  "limits": []
+ },
+ "wf:flux_kontext_dev_basic": {
+  "what": "Edits a picture from an instruction and keeps characters and style consistent, with FLUX.1 Kontext Dev.",
+  "how": "FLUX.1 Kontext Dev (open model) runs on Comfy Cloud: your picture is given as context and the model changes only what your instruction asks.",
+  "goodFor": [
+   "edit a photo with words",
+   "change the style of a picture",
+   "keep the same character in a new scene"
+  ],
+  "limits": [
+   "name the change plainly: \"change the car to red\""
+  ]
+ },
+ "wf:flux_redux_model_example": {
+  "what": "Makes new pictures in the style and content of a reference picture, with FLUX.1 Redux.",
+  "how": "FLUX.1 Redux runs on Comfy Cloud: your reference picture is encoded as a prompt (style model) and mixed with your words; several references can be blended.",
+  "goodFor": [
+   "variations of a picture",
+   "mix two pictures",
+   "prompt with an image"
+  ],
+  "limits": []
+ },
+ "wf:flux_schnell": {
+  "what": "Makes pictures from words in 4 steps with FLUX.1 Schnell (fp8).",
+  "how": "FLUX.1 Schnell, a distilled model, runs on Comfy Cloud and draws the picture in only 4 steps.",
+  "goodFor": [
+   "a fast picture from words",
+   "quick drafts"
+  ],
+  "limits": [
+   "less detail than Dev"
+  ]
+ },
+ "wf:flux_schnell_full_text_to_image": {
+  "what": "Makes pictures from words quickly with FLUX.1 Schnell (full, Apache 2.0).",
+  "how": "FLUX.1 Schnell runs on Comfy Cloud in 4 steps with its full text encoders.",
+  "goodFor": [
+   "fast drafts",
+   "a picture from words"
+  ],
+  "limits": []
+ },
+ "wf:hidream_e1_1": {
+  "what": "Edits a picture from an instruction with HiDream E1.1.",
+  "how": "HiDream E1.1 (open model) runs on Comfy Cloud: your picture and instruction guide a re-draw that changes what you ask.",
+  "goodFor": [
+   "edit a photo with words"
+  ],
+  "limits": []
+ },
+ "wf:hidream_e1_full": {
+  "what": "Edits a picture from an instruction with HiDream E1.",
+  "how": "HiDream E1 runs on Comfy Cloud; the picture is scaled to 768x768 and re-drawn following your instruction.",
+  "goodFor": [
+   "edit a picture with words"
+  ],
+  "limits": [
+   "works at 768x768"
+  ]
+ },
+ "wf:hidream_i1_dev": {
+  "what": "Makes pictures from words with HiDream I1 Dev (balanced, 28 steps).",
+  "how": "HiDream I1 Dev runs on Comfy Cloud with four text encoders and draws the picture in 28 steps.",
+  "goodFor": [
+   "a picture from words"
+  ],
+  "limits": []
+ },
+ "wf:hidream_i1_fast": {
+  "what": "Makes pictures from words quickly with HiDream I1 Fast (16 steps).",
+  "how": "HiDream I1 Fast runs on Comfy Cloud and draws the picture in 16 steps for quick previews.",
+  "goodFor": [
+   "a quick picture from words"
+  ],
+  "limits": []
+ },
+ "wf:hidream_i1_full": {
+  "what": "Makes the highest quality HiDream pictures from words (50 steps).",
+  "how": "HiDream I1 Full runs on Comfy Cloud and draws the picture in 50 steps.",
+  "goodFor": [
+   "a detailed picture from words"
+  ],
+  "limits": [
+   "slower than Dev and Fast"
+  ]
+ },
+ "wf:hunyuan_video_text_to_video": {
+  "what": "Makes a video from words with Hunyuan Video.",
+  "how": "Tencent's Hunyuan Video (open model) runs on Comfy Cloud and generates the frames from your words, decoded in tiles.",
+  "goodFor": [
+   "a video from words"
+  ],
+  "limits": [
+   "a few seconds per clip; longer clips cost more GPU time"
+  ]
+ },
+ "wf:image_anima_base_v1": {
+  "what": "Makes anime and illustration pictures from words with Anima Base v1.",
+  "how": "Anima (2B, open) runs on Comfy Cloud and draws non-photorealistic anime art from your words.",
+  "goodFor": [
+   "an anime picture",
+   "an illustration of a character"
+  ],
+  "limits": [
+   "not for realistic photos"
+  ]
+ },
+ "wf:image_anima_preview": {
+  "what": "Makes anime-style pictures from words with the Anima preview model.",
+  "how": "Anima (2B, open) runs on Comfy Cloud and draws anime illustrations; realism and small text are weak on purpose.",
+  "goodFor": [
+   "anime art",
+   "a manga style character"
+  ],
+  "limits": [
+   "not for realistic photos"
+  ]
+ },
+ "wf:image_ernie_image": {
+  "what": "Makes detailed, structured pictures from words with ERNIE-Image.",
+  "how": "Baidu's ERNIE-Image runs on Comfy Cloud; a language model can expand your prompt first, then the image model draws it.",
+  "goodFor": [
+   "a picture from words",
+   "a structured layout"
+  ],
+  "limits": []
+ },
+ "wf:image_ernie_image_turbo": {
+  "what": "Makes pictures with precise text and layouts from words, fast, with ERNIE-Image Turbo.",
+  "how": "ERNIE-Image Turbo runs on Comfy Cloud in few steps; good at text rendering and structured layouts.",
+  "goodFor": [
+   "a poster with text",
+   "a fast picture from words"
+  ],
+  "limits": []
+ },
+ "wf:image_firered_image_edit1_1": {
+  "what": "Edits a picture with strong identity consistency, multi-element fusion or photo restoration, with FireRed Image Edit 1.1.",
+  "how": "FireRed Image Edit 1.1 (open model) runs on Comfy Cloud and re-draws your picture following your instruction.",
+  "goodFor": [
+   "restore an old photo",
+   "edit a portrait keeping the face",
+   "combine elements"
+  ],
+  "limits": []
+ },
+ "wf:image_flux.1_fill_dev_OneReward": {
+  "what": "Inpaints, outpaints or removes objects with FLUX.1 Fill tuned by OneReward.",
+  "how": "FLUX.1 Fill with ByteDance's OneReward tuning runs on Comfy Cloud: you paint the area in the mask editor and it is re-drawn or extended.",
+  "goodFor": [
+   "remove an object from a photo",
+   "extend a picture",
+   "fill a hole"
+  ],
+  "limits": [
+   "paint the mask first"
+  ]
+ },
+ "wf:image_flux2": {
+  "what": "Makes photorealistic pictures from words and up to several reference pictures, with strong text rendering, with FLUX.2 Dev.",
+  "how": "FLUX.2 Dev (open model) runs on Comfy Cloud: your reference pictures are encoded as context and the model draws the picture following your words, keeping the references consistent.",
+  "goodFor": [
+   "a photorealistic picture",
+   "a product in a new scene from its photo",
+   "a poster with readable text",
+   "consistent characters"
+  ],
+  "limits": [
+   "a large model: slower than turbo models"
+  ]
+ },
+ "wf:image_flux2_fp8": {
+  "what": "Puts a design or pattern onto packaging, mugs and other products, with FLUX.2 Dev (fp8).",
+  "how": "FLUX.2 Dev fp8 runs on Comfy Cloud: your design and product pictures are given as references and the model draws the product wearing the design, consistent with both.",
+  "goodFor": [
+   "a product mockup",
+   "my logo on a mug",
+   "packaging with my pattern"
+  ],
+  "limits": []
+ },
+ "wf:image_flux2_klein_image_edit_4b_base": {
+  "what": "Edits a picture from an instruction with FLUX.2 Klein 4B, a small model with good quality for its size.",
+  "how": "FLUX.2 Klein 4B (open, undistilled) runs on Comfy Cloud: your picture is given as a reference and re-drawn following your instruction.",
+  "goodFor": [
+   "edit a photo with words",
+   "a light picture edit"
+  ],
+  "limits": [
+   "the base model needs more steps than the distilled one"
+  ]
+ },
+ "wf:image_flux2_klein_image_edit_4b_distilled": {
+  "what": "Edits a picture from an instruction in a few steps with FLUX.2 Klein 4B Distilled, the fastest Klein.",
+  "how": "FLUX.2 Klein 4B Distilled runs on Comfy Cloud in a few steps: your picture is the reference and your instruction says what to change.",
+  "goodFor": [
+   "a fast picture edit",
+   "quick previews of an edit"
+  ],
+  "limits": []
+ },
+ "wf:image_flux2_klein_image_edit_9b_base": {
+  "what": "Edits a picture from an instruction with FLUX.2 Klein 9B, the larger undistilled Klein.",
+  "how": "FLUX.2 Klein 9B base runs on Comfy Cloud: your picture is given as a reference and re-drawn following your instruction, with full control of the sampler.",
+  "goodFor": [
+   "edit a photo with words",
+   "a careful picture edit"
+  ],
+  "limits": [
+   "slower than the distilled 9B"
+  ]
+ },
+ "wf:image_flux2_klein_image_edit_9b_distilled": {
+  "what": "Edits a picture from an instruction quickly and well with FLUX.2 Klein 9B Distilled.",
+  "how": "FLUX.2 Klein 9B Distilled runs on Comfy Cloud in a few steps with your picture as the reference.",
+  "goodFor": [
+   "a fast, good picture edit"
+  ],
+  "limits": []
+ },
+ "wf:image_flux2_klein_text_to_image": {
+  "what": "Makes pictures from words in about a second with FLUX.2 Klein 4B.",
+  "how": "FLUX.2 Klein 4B, a distilled model, runs on Comfy Cloud and draws the picture in a few steps.",
+  "goodFor": [
+   "a fast picture from words",
+   "many quick drafts"
+  ],
+  "limits": []
+ },
+ "wf:image_flux2_text_to_image": {
+  "what": "Makes pictures from words with realistic lighting, materials and details, with FLUX.2 Dev.",
+  "how": "FLUX.2 Dev runs on Comfy Cloud with its Mistral text encoder and draws the picture from your words.",
+  "goodFor": [
+   "a photorealistic picture from words",
+   "a product shot from words"
+  ],
+  "limits": [
+   "a large model: slower than Klein or turbo models"
+  ]
+ },
+ "wf:image_flux2_text_to_image_9b": {
+  "what": "Makes pictures from words quickly with FLUX.2 Klein 9B.",
+  "how": "FLUX.2 Klein 9B, a distilled model, runs on Comfy Cloud and draws the picture in a few steps.",
+  "goodFor": [
+   "a fast picture from words with good quality"
+  ],
+  "limits": []
+ },
+ "wf:image_flux3_klein_distilled_image_edit": {
+  "what": "Edits a picture from one instruction with FLUX 3 Klein Distilled and shows the before and after side by side.",
+  "how": "FLUX 3 Klein Distilled (open model) runs on Comfy Cloud in a few steps: your picture is the reference and only what your instruction names changes.",
+  "goodFor": [
+   "retouch a photo",
+   "restyle a picture",
+   "swap a detail"
+  ],
+  "limits": []
+ },
+ "wf:image_flux3_klein_image_edit": {
+  "what": "Edits a picture with FLUX 3 Klein from an instruction (plus an optional second prompt) and shows the before and after.",
+  "how": "FLUX 3 Klein (open model) runs on Comfy Cloud: your picture is the reference, the composition is kept and only the details you describe change.",
+  "goodFor": [
+   "retouch a photo",
+   "style adjustments",
+   "fix details"
+  ],
+  "limits": []
+ },
+ "wf:image_flux3_klein_t2i": {
+  "what": "Makes a picture from words with FLUX 3 Klein; boxes can place things where you want.",
+  "how": "FLUX 3 Klein (open model) runs on Comfy Cloud and draws the picture from your words; a layout prompt can add boxes for where each element goes.",
+  "goodFor": [
+   "a picture from words",
+   "concept art",
+   "a marketing visual"
+  ],
+  "limits": []
+ },
+ "wf:image_hidream_o1": {
+  "what": "Makes or edits pictures up to 2048x2048 from words and optional reference pictures, with HiDream O1 Full.",
+  "how": "HiDream O1 (open model) runs on Comfy Cloud: with no reference it draws from words; with references it edits them or keeps their subject in a new picture.",
+  "goodFor": [
+   "a large picture from words",
+   "my subject in a new scene",
+   "edit a picture"
+  ],
+  "limits": [
+   "trained at fixed sizes: pick one from the note"
+  ]
+ },
+ "wf:image_hidream_o1_dev": {
+  "what": "Makes or edits pictures up to 2048x2048 from words and optional references, with the faster HiDream O1 Dev.",
+  "how": "HiDream O1 Dev runs on Comfy Cloud: text to image, editing and subject-driven pictures in one model.",
+  "goodFor": [
+   "a large picture from words",
+   "edit a picture"
+  ],
+  "limits": []
+ },
+ "wf:image_krea2_turbo_int8_image_style_reference": {
+  "what": "Makes a picture in the style of one or two reference pictures with Krea 2 Turbo.",
+  "how": "Krea 2 Turbo (int8, open) runs on Comfy Cloud: your style references are given as context and your words say what to draw; an optional LoRA adds a style.",
+  "goodFor": [
+   "a picture in the style of my references",
+   "match a visual style"
+  ],
+  "limits": []
+ },
+ "wf:image_krea2_turbo_t2i": {
+  "what": "Makes artistic, expressive pictures from words with Krea 2 Turbo.",
+  "how": "Krea 2 Turbo, a fast distilled model built for aesthetics, runs on Comfy Cloud; a language model can expand your prompt first.",
+  "goodFor": [
+   "concept art",
+   "a stylised picture from words",
+   "visual brainstorming"
+  ],
+  "limits": []
+ },
+ "wf:image_krea2_turbo_t2i_int8": {
+  "what": "Makes pictures from words with Krea 2 Turbo in int8, faster and better than fp8.",
+  "how": "Krea 2 Turbo int8 runs on Comfy Cloud and draws the picture in a few steps; an optional style LoRA can be added.",
+  "goodFor": [
+   "a fast picture from words",
+   "concept art"
+  ],
+  "limits": []
+ },
+ "wf:image_lens_t2i": {
+  "what": "Makes good pictures from words with Microsoft's efficient Lens model.",
+  "how": "Lens (open model) runs on Comfy Cloud with a GPT-OSS text encoder and draws the picture at the size you pick.",
+  "goodFor": [
+   "a picture from words"
+  ],
+  "limits": []
+ },
+ "wf:image_lens_turbo_t2i": {
+  "what": "Makes pictures from words in 4 steps with Lens Turbo.",
+  "how": "Lens Turbo, the distilled Lens, runs on Comfy Cloud in 4 steps.",
+  "goodFor": [
+   "a fast picture from words"
+  ],
+  "limits": []
+ },
+ "wf:image_lotus_depth_v1_1": {
+  "what": "Makes a detailed depth map of a picture with Lotus.",
+  "how": "Lotus (open model) runs on Comfy Cloud and estimates the depth of each pixel in one pass; the result is a grey picture, near is light.",
+  "goodFor": [
+   "a depth map for ControlNet",
+   "depth of a photo"
+  ],
+  "limits": [
+   "the result is a map, not a picture to post"
+  ]
+ },
+ "wf:image_netayume_lumina_t2i": {
+  "what": "Makes anime pictures with detailed characters from words, with NetaYume Lumina.",
+  "how": "NetaYume Lumina, a Neta Lumina fine-tune on anime art, runs on Comfy Cloud and draws the picture from your words.",
+  "goodFor": [
+   "an anime character",
+   "anime art"
+  ],
+  "limits": [
+   "best at 1024x1024"
+  ]
+ },
+ "wf:image_newbieimage_exp0_1-t2i": {
+  "what": "Makes detailed anime pictures, including scenes with several characters, with NewBie Exp0.1.",
+  "how": "NewBie Exp0.1 runs on Comfy Cloud; prompts can be written as XML to describe each character separately.",
+  "goodFor": [
+   "anime art with several characters"
+  ],
+  "limits": [
+   "experimental model"
+  ]
+ },
+ "wf:image_omnigen2_image_edit": {
+  "what": "Edits a picture from an instruction with OmniGen2, including text in the picture.",
+  "how": "OmniGen2 (7B, open) runs on Comfy Cloud: your picture is a reference and the model re-draws it following your words; a second picture can be enabled.",
+  "goodFor": [
+   "edit a picture with words",
+   "change text in a picture"
+  ],
+  "limits": []
+ },
+ "wf:image_omnigen2_t2i": {
+  "what": "Makes pictures from words with OmniGen2.",
+  "how": "OmniGen2, a unified 7B model, runs on Comfy Cloud and draws the picture from your words.",
+  "goodFor": [
+   "a picture from words"
+  ],
+  "limits": []
+ },
+ "wf:image_ovis_text_to_image": {
+  "what": "Makes pictures with accurate text in them, with Ovis-Image.",
+  "how": "Ovis-Image (7B, open) runs on Comfy Cloud and is tuned to render written text well.",
+  "goodFor": [
+   "a poster with text",
+   "a sign or label with words"
+  ],
+  "limits": []
+ },
+ "wf:image_qwen_Image_2512": {
+  "what": "Makes realistic pictures from words, with lifelike people, fine natural detail and good text, with Qwen-Image 2512.",
+  "how": "Qwen-Image 2512 runs on Comfy Cloud and draws the picture from your words at the size you pick.",
+  "goodFor": [
+   "a realistic photo from words",
+   "a picture with text"
+  ],
+  "limits": []
+ },
+ "wf:image_qwen_Image_2512_controlnet": {
+  "what": "Makes a picture that follows the edges, depth, pose or sketch of another picture, with Qwen-Image 2512.",
+  "how": "On Comfy Cloud your picture is turned into a control map (Canny, HED, depth, pose, lines, scribble or greyscale) and Qwen-Image 2512 draws a new picture along it.",
+  "goodFor": [
+   "keep the pose of a person",
+   "a sketch to a picture",
+   "same layout, new look"
+  ],
+  "limits": []
+ },
+ "wf:image_qwen_image": {
+  "what": "Makes pictures from words, very good at text in many languages, with Qwen-Image.",
+  "how": "Qwen-Image (20B, open) runs on Comfy Cloud and draws the picture from your words.",
+  "goodFor": [
+   "a poster with text",
+   "a picture from words"
+  ],
+  "limits": [
+   "newer: Qwen-Image 2.1"
+  ]
+ },
+ "wf:image_qwen_image_2512_with_2steps_lora": {
+  "what": "Makes pictures from words in 2 steps with Qwen-Image 2512 Turbo.",
+  "how": "Qwen-Image 2512 runs on Comfy Cloud with a 2-step LoRA: very fast, a little less quality.",
+  "goodFor": [
+   "a very fast picture from words",
+   "quick drafts"
+  ],
+  "limits": [
+   "some quality lost for speed"
+  ]
+ },
+ "wf:image_qwen_image_2_1_image_edit": {
+  "what": "Edits a picture from an instruction with Qwen-Image 2.1, using up to two references, and compares with the original.",
+  "how": "Qwen-Image 2.1 (open model) runs on Comfy Cloud: generation and editing share one model with native 2K output; your references keep characters and products consistent and it can keep real transparency.",
+  "goodFor": [
+   "edit a photo with words",
+   "put my product into a scene",
+   "keep a character the same",
+   "change the style of a picture"
+  ],
+  "limits": []
+ },
+ "wf:image_qwen_image_2_1_t2i": {
+  "what": "Makes pictures from words with Qwen-Image 2.1: native 2K, sharp typography, transparency.",
+  "how": "Qwen-Image 2.1 runs on Comfy Cloud and draws the picture in 25 steps; it can also give a transparent background.",
+  "goodFor": [
+   "a poster with text",
+   "a picture from words",
+   "a picture with a transparent background"
+  ],
+  "limits": []
+ },
+ "wf:image_qwen_image_2_1_turbo_image_edit": {
+  "what": "Edits a picture from an instruction quickly with Qwen-Image 2.1 Turbo.",
+  "how": "Qwen-Image 2.1 Turbo runs on Comfy Cloud in a few steps with up to two references.",
+  "goodFor": [
+   "a fast picture edit",
+   "put my product into a scene quickly"
+  ],
+  "limits": []
+ },
+ "wf:image_qwen_image_2_1_turbo_t2i": {
+  "what": "Makes pictures from words in 8 steps with Qwen-Image 2.1 Turbo.",
+  "how": "Qwen-Image 2.1 Turbo runs on Comfy Cloud in 8 steps; a Qwen 3.5 prompt enhancer can expand your words first.",
+  "goodFor": [
+   "a fast picture from words",
+   "a poster with text"
+  ],
+  "limits": []
+ },
+ "wf:image_qwen_image_controlnet_patch": {
+  "what": "Makes a picture guided by the edges or depth of another picture, or inpaints, with Qwen-Image ControlNet.",
+  "how": "On Comfy Cloud a control map is made from your picture and patched into Qwen-Image, which draws along it.",
+  "goodFor": [
+   "keep the layout of a picture",
+   "inpaint with control"
+  ],
+  "limits": []
+ },
+ "wf:image_qwen_image_edit": {
+  "what": "Edits a picture from an instruction, including text in it, with Qwen-Image-Edit.",
+  "how": "Qwen-Image-Edit (20B, open) runs on Comfy Cloud and re-draws your picture following your words; it can change both meaning and appearance.",
+  "goodFor": [
+   "edit text in a picture",
+   "edit a photo with words"
+  ],
+  "limits": [
+   "newer: Qwen-Image 2.1"
+  ]
+ },
+ "wf:image_qwen_image_edit_2509": {
+  "what": "Edits pictures from an instruction with several references and better consistency, with Qwen-Image-Edit 2509.",
+  "how": "Qwen-Image-Edit 2509 runs on Comfy Cloud: up to three pictures are given as references and the model re-draws following your words; a 4-step LoRA speeds it up.",
+  "goodFor": [
+   "combine people or products in one picture",
+   "edit a photo with words"
+  ],
+  "limits": [
+   "newer: Qwen-Image 2.1"
+  ]
+ },
+ "wf:image_qwen_image_edit_2509_relight": {
+  "what": "Changes the lighting of a picture from a description, with Qwen-Image-Edit and a relight LoRA.",
+  "how": "Qwen-Image-Edit 2509 runs on Comfy Cloud with a relighting LoRA: your picture is re-drawn with the light you describe.",
+  "goodFor": [
+   "relight a photo",
+   "sunset light on a product",
+   "change the mood of a picture"
+  ],
+  "limits": []
+ },
+ "wf:image_qwen_image_edit_2511": {
+  "what": "Replaces the material of an object (fabric, wood, metal) using a reference, with Qwen-Image-Edit 2511.",
+  "how": "Qwen-Image-Edit 2511 runs on Comfy Cloud: your object and a material reference are given together and the object is re-drawn in that material.",
+  "goodFor": [
+   "change the fabric of a sofa",
+   "try a material on a product"
+  ],
+  "limits": []
+ },
+ "wf:image_qwen_image_edit_2511_int8": {
+  "what": "Edits a picture from an instruction with Qwen-Image-Edit 2511 int8, fast and consistent.",
+  "how": "Qwen-Image-Edit 2511 int8 runs on Comfy Cloud and re-draws your picture following your words; it keeps faces well and can merge people.",
+  "goodFor": [
+   "edit a portrait keeping the face",
+   "merge people into a group photo",
+   "modify a product design"
+  ],
+  "limits": []
+ },
+ "wf:image_qwen_image_instantx_controlnet": {
+  "what": "Makes a picture that follows the edges, depth or pose of another picture, with Qwen-Image InstantX ControlNet.",
+  "how": "On Comfy Cloud a control map is made from your picture and the InstantX union ControlNet guides Qwen-Image along it.",
+  "goodFor": [
+   "keep the pose of a person",
+   "same layout, new look"
+  ],
+  "limits": []
+ },
+ "wf:image_qwen_image_instantx_inpainting_controlnet": {
+  "what": "Replaces objects, changes text, swaps backgrounds or extends a picture in a masked area, with Qwen-Image InstantX.",
+  "how": "Qwen-Image runs on Comfy Cloud with the InstantX inpainting ControlNet: you paint the area in the mask editor and it is re-drawn from your words and blended in.",
+  "goodFor": [
+   "replace an object in a photo",
+   "change text in a picture",
+   "change the background",
+   "extend a picture"
+  ],
+  "limits": [
+   "paint the mask first"
+  ]
+ },
+ "wf:image_qwen_image_layered": {
+  "what": "Splits a picture into separate transparent layers you can move, recolour or replace.",
+  "how": "Qwen-Image-Layered runs on Comfy Cloud and decomposes the picture into RGBA layers (background, objects, text).",
+  "goodFor": [
+   "layers from a flat picture",
+   "move an object in a picture",
+   "recolour one element"
+  ],
+  "limits": [
+   "slow"
+  ]
+ },
+ "wf:image_qwen_image_layered_control": {
+  "what": "Splits a picture into layers for the elements you name.",
+  "how": "Qwen-Image-Layered runs on Comfy Cloud: you describe the elements and it decomposes the picture into those transparent layers.",
+  "goodFor": [
+   "separate named elements into layers"
+  ],
+  "limits": [
+   "slow: 640px input recommended"
+  ]
+ },
+ "wf:image_qwen_image_union_control_lora": {
+  "what": "Makes a picture that follows the structure of another (edges, depth, lines, pose, normals) with a Qwen-Image union control LoRA.",
+  "how": "On Comfy Cloud a control map is made from your picture and a union control LoRA makes Qwen-Image follow it.",
+  "goodFor": [
+   "keep the pose",
+   "a line drawing to a picture"
+  ],
+  "limits": []
+ },
+ "wf:image_sdxl_simple": {
+  "what": "Makes pictures from words with SDXL 1.0, the classic simple workflow.",
+  "how": "SDXL 1.0 runs on Comfy Cloud and draws the picture from your words.",
+  "goodFor": [
+   "a quick picture from words",
+   "a classic SD look"
+  ],
+  "limits": [
+   "older model: newer ones follow prompts better"
+  ]
+ },
+ "wf:image_to_video_wan": {
+  "what": "Animates a picture into a short clip with Wan 2.1.",
+  "how": "Wan 2.1 (open model) runs on Comfy Cloud: your picture is the first frame and your words describe the motion.",
+  "goodFor": [
+   "animate a picture"
+  ],
+  "limits": [
+   "older model: Wan 2.2 or LTX are better"
+  ]
+ },
+ "wf:image_z_image": {
+  "what": "Makes diverse, photorealistic pictures from words with Z-Image, good with negative prompts.",
+  "how": "Z-Image (open model) runs on Comfy Cloud and draws the picture from your words.",
+  "goodFor": [
+   "a photorealistic picture from words",
+   "many different variations"
+  ],
+  "limits": []
+ },
+ "wf:image_z_image_turbo": {
+  "what": "Makes photorealistic pictures from words in 8 steps with Z-Image Turbo, in English or Chinese.",
+  "how": "Z-Image Turbo (6B, open) runs on Comfy Cloud and draws the picture in a few steps.",
+  "goodFor": [
+   "a fast photorealistic picture",
+   "a picture from words",
+   "quick drafts"
+  ],
+  "limits": []
+ },
+ "wf:image_z_image_turbo_fun_union_controlnet": {
+  "what": "Makes a picture that follows the edges, depth or pose of another picture, with Z-Image Turbo.",
+  "how": "On Comfy Cloud a control map (Canny in this example; HED, depth, pose or lines too) is made from your picture and guides Z-Image Turbo.",
+  "goodFor": [
+   "keep the pose",
+   "a sketch to a photo",
+   "same layout, new look"
+  ],
+  "limits": []
+ },
+ "wf:image_z_image_turbo_int8": {
+  "what": "Makes photorealistic pictures from words in 8 steps with Z-Image Turbo int8, faster.",
+  "how": "Z-Image Turbo int8 runs on Comfy Cloud in 8 steps.",
+  "goodFor": [
+   "a fast photorealistic picture"
+  ],
+  "limits": []
+ },
+ "wf:llm_gemma4_text_gen": {
+  "what": "Writes text from a prompt and optionally a picture, sound or video with Gemma 4: descriptions, answers, code, translations.",
+  "how": "Gemma 4 (open model) runs on Comfy Cloud; a thinking mode can reason step by step before it answers.",
+  "goodFor": [
+   "describe a picture",
+   "write a prompt",
+   "translate text",
+   "caption a video"
+  ],
+  "limits": [
+   "the result is words, not media"
+  ]
+ },
+ "wf:llm_qwen3_5_text_gen": {
+  "what": "Describes a picture in words or writes a prompt that would recreate it, with Qwen 3.5.",
+  "how": "Qwen 3.5 (open model) runs on Comfy Cloud: it looks at your picture and writes a caption or a reverse-engineered prompt.",
+  "goodFor": [
+   "a prompt from a picture",
+   "describe a picture",
+   "caption an image"
+  ],
+  "limits": [
+   "the result is words, not media"
+  ]
+ },
+ "wf:llm_qwen3_text_gen": {
+  "what": "Writes detailed, reasoned answers from a prompt with Qwen3 4B Thinking.",
+  "how": "Qwen3 4B Thinking runs on Comfy Cloud and reasons step by step before it answers.",
+  "goodFor": [
+   "write or improve a prompt",
+   "a reasoned answer"
+  ],
+  "limits": [
+   "the result is words, not media"
+  ]
+ },
+ "wf:ltxv_image_to_video": {
+  "what": "Animates a picture into a short clip with LTX Video 0.9.5.",
+  "how": "LTX Video 0.9.5 runs on Comfy Cloud: your picture is the first frame and your long description drives the motion.",
+  "goodFor": [
+   "animate a picture quickly"
+  ],
+  "limits": [
+   "needs long prompts",
+   "older model: LTX 2.3 is better"
+  ]
+ },
+ "wf:ltxv_text_to_video": {
+  "what": "Makes a short video from words with LTX Video 0.9.5.",
+  "how": "LTX Video 0.9.5 runs on Comfy Cloud and generates the clip from a long, descriptive prompt.",
+  "goodFor": [
+   "a fast video from words"
+  ],
+  "limits": [
+   "needs long prompts",
+   "older model: LTX 2.3 is better"
+  ]
+ },
+ "wf:sd3.5_large_blur": {
+  "what": "Makes a sharp new picture guided by a blurred version of another, with SD 3.5 Large.",
+  "how": "SD 3.5 Large runs on Comfy Cloud with a blur ControlNet: the rough shapes and colours of your picture guide the new one.",
+  "goodFor": [
+   "keep colours and layout, new detail",
+   "a tile upscale base"
+  ],
+  "limits": []
+ },
+ "wf:sd3.5_large_canny_controlnet_example": {
+  "what": "Makes a picture that follows the edges of another picture, with SD 3.5 Large.",
+  "how": "SD 3.5 Large runs on Comfy Cloud: Canny edges of your picture guide a ControlNet.",
+  "goodFor": [
+   "keep the outlines of a picture"
+  ],
+  "limits": []
+ },
+ "wf:sd3.5_large_depth": {
+  "what": "Makes a picture that follows the depth of another picture, with SD 3.5 Large.",
+  "how": "On Comfy Cloud a depth map of your picture is estimated (Lotus) and an SD 3.5 Large ControlNet draws along it.",
+  "goodFor": [
+   "same 3D layout, new look"
+  ],
+  "limits": []
+ },
+ "wf:sd3.5_simple_example": {
+  "what": "Makes pictures from words with Stable Diffusion 3.5.",
+  "how": "SD 3.5 runs on Comfy Cloud and draws the picture from your words.",
+  "goodFor": [
+   "a picture from words"
+  ],
+  "limits": []
+ },
+ "wf:sdxl_refiner_prompt_example": {
+  "what": "Makes pictures from words with SDXL and a refiner pass for finer detail.",
+  "how": "SDXL base draws the picture on Comfy Cloud, then the SDXL refiner finishes the last steps for detail.",
+  "goodFor": [
+   "a classic SDXL picture with detail"
+  ],
+  "limits": [
+   "older model"
+  ]
+ },
+ "wf:sdxl_revision_text_prompts": {
+  "what": "Makes pictures that carry the concepts of a reference picture mixed with words, with SDXL Revision.",
+  "how": "SDXL runs on Comfy Cloud: your reference is read by CLIP Vision (unCLIP) and mixed with your prompt.",
+  "goodFor": [
+   "variations of a picture's idea"
+  ],
+  "limits": [
+   "older model"
+  ]
+ },
+ "wf:sdxl_simple_example": {
+  "what": "Makes pictures from words with SDXL.",
+  "how": "SDXL runs on Comfy Cloud and draws the picture from your words at a trained size.",
+  "goodFor": [
+   "a picture from words"
+  ],
+  "limits": [
+   "older model"
+  ]
+ },
+ "wf:sdxlturbo_example": {
+  "what": "Makes a picture from words in one step with SDXL Turbo.",
+  "how": "SDXL Turbo runs on Comfy Cloud and draws the picture in a single step at 512px.",
+  "goodFor": [
+   "an instant draft"
+  ],
+  "limits": [
+   "small and simple pictures"
+  ]
+ },
+ "wf:template_contact_sheet-step_1.app": {
+  "what": "Step 1 of 3: puts your character, a scene and your product into one fashion editorial photo.",
+  "how": "Your three pictures and prompt go to Google's Nano Banana Pro (partner), which composes the editorial photo.",
+  "goodFor": [
+   "a fashion editorial from my pictures",
+   "my character with my product"
+  ],
+  "limits": [
+   "partner credits, priced at the run",
+   "then step 2 makes 8 angles"
+  ]
+ },
+ "wf:template_contact_sheet-step_2.app": {
+  "what": "Step 2 of 3: makes 8 different angles of the editorial photo with the product kept consistent.",
+  "how": "Your editorial and product pictures go to Google's Nano Banana Pro (partner) twice; each pass gives a contact sheet of four angles.",
+  "goodFor": [
+   "8 camera angles of a scene",
+   "a contact sheet"
+  ],
+  "limits": [
+   "partner credits, priced at the run",
+   "then step 3 animates them"
+  ]
+ },
+ "wf:template_contact_sheet-step_3.app": {
+  "what": "Step 3 of 3: turns 8 keyframes into 7 video transitions with Kling 3.0.",
+  "how": "Gemini writes the motion between each pair of pictures, then Kling 3.0 first-last-frame (partner) makes the 7 clips.",
+  "goodFor": [
+   "a video from a contact sheet",
+   "transitions between angles"
+  ],
+  "limits": [
+   "partner credits, priced at the run",
+   "the 8 pictures must be in order"
+  ]
+ },
+ "wf:template_ltx2_3_obscura_remova_lora_remove_object_from_video": {
+  "what": "Removes an object from a video from a description, with LTX 2.3 and the Obscura Remova LoRA.",
+  "how": "LTX 2.3 runs on Comfy Cloud with an in-context LoRA: your clip is the guide and the named object is re-drawn away across every frame; the sound is kept.",
+  "goodFor": [
+   "remove a person from a video",
+   "remove an object from a clip",
+   "clean a shot"
+  ],
+  "limits": [
+   "foreground objects work best"
+  ]
+ },
+ "wf:template_purz_wan22_animate_auto_character_replace": {
+  "what": "Replaces the person in a video with your character, keeping their motion and expressions, with Wan 2.2 Animate.",
+  "how": "On Comfy Cloud the person is found and masked (SAM2), their pose and face are tracked, and Wan 2.2 Animate re-draws them as your character.",
+  "goodFor": [
+   "put my character in a video",
+   "replace an actor",
+   "swap a person in a clip"
+  ],
+  "limits": [
+   "one person at a time works best"
+  ]
+ },
+ "wf:template_qwen_image_illustration_lora": {
+  "what": "Makes illustrations from words in many book styles (anime, bande dessinee, risograph, watercolour, shoujo, graphic novel) with Qwen-Image.",
+  "how": "Qwen-Image runs on Comfy Cloud with the Alvdansen Illustration LoRA; name the style in your prompt.",
+  "goodFor": [
+   "a storybook illustration",
+   "a comic style picture",
+   "a watercolour illustration"
+  ],
+  "limits": []
+ },
+ "wf:template_qwen_multiangle.app": {
+  "what": "Shows your subject from another camera angle, chosen with a 3D camera control.",
+  "how": "Qwen-Image-Edit 2511 runs on Comfy Cloud with a multi-angle LoRA: you turn the virtual camera and the subject is re-drawn from that view.",
+  "goodFor": [
+   "another angle of my product",
+   "a side view of a character",
+   "turnaround views"
+  ],
+  "limits": []
+ },
+ "wf:template_sferro21_product_ad.app": {
+  "what": "Makes a sequence of cinematic ad pictures of your product in the style of a reference.",
+  "how": "Your product and style pictures go to Google's Nano Banana Pro (partner), which makes the shots with consistent composition and light.",
+  "goodFor": [
+   "product ad frames",
+   "a cinematic product campaign"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:template_sugar_coated_gummy_style_qwen": {
+  "what": "Turns any animal or subject into a sour gummy candy character, with a Qwen-Image LoRA.",
+  "how": "Qwen-Image runs on Comfy Cloud with a gummy candy LoRA; just name the subject.",
+  "goodFor": [
+   "a candy style mascot",
+   "a cute gummy animal"
+  ],
+  "limits": []
+ },
+ "wf:templates-1_click_multiple_character_angles-v1.0": {
+  "what": "Gives several views of your character from different angles in one click.",
+  "how": "Qwen-Image-Edit runs on Comfy Cloud with a multi-angle LoRA and re-draws your character from each preset view.",
+  "goodFor": [
+   "a character turnaround",
+   "a character sheet",
+   "front, side and back views"
+  ],
+  "limits": []
+ },
+ "wf:templates-1_input-multiple_styles_prompt.app": {
+  "what": "Makes 12 styled versions of one picture in about 15 seconds.",
+  "how": "Your picture goes to xAI's Grok image edit (partner) with 12 style prompts at once.",
+  "goodFor": [
+   "try many styles on a picture",
+   "style exploration"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:templates-subject_holding_product.app": {
+  "what": "Puts your product in your character's hand for a UGC-style photo.",
+  "how": "Your character and product pictures go to Google's Nano Banana Pro (partner), which draws the character holding the product.",
+  "goodFor": [
+   "a UGC photo with my product",
+   "my mascot holding my product"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:templates-subject_product_swap.app": {
+  "what": "Swaps the product in someone's hand for your brand's product.",
+  "how": "The photo and your product go to Google's Nano Banana Pro (partner), which replaces the held product and keeps the rest.",
+  "goodFor": [
+   "replace a product in a photo",
+   "UGC with my product"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:templates-wan2_1_infinitetalk_music": {
+  "what": "Makes a character sing or talk from a picture and an audio file, with lips matched to the sound.",
+  "how": "On Comfy Cloud the vocals are separated from the music, read by Wav2Vec, and Wan 2.1 InfiniteTalk animates the face to them.",
+  "goodFor": [
+   "make my character sing",
+   "make my photo talk",
+   "a lip-sync music video"
+  ],
+  "limits": [
+   "long audio takes long"
+  ]
+ },
+ "wf:templates_3d_match_game_art_style.app": {
+  "what": "Makes a 2D game sprite from an outline in the style of a reference, with the background removed.",
+  "how": "Your outline and style pictures go to Google's Nano Banana Pro (partner); Recraft then removes the background.",
+  "goodFor": [
+   "a game sprite in my art style",
+   "set dressing for a 2D game"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:templates_doc_workbox_klein_9b_image_extend": {
+  "what": "Extends a picture beyond its edges seamlessly with FLUX.2 Klein 9B.",
+  "how": "On Comfy Cloud the canvas is padded, FLUX.2 Klein 9B draws the new area with your picture as reference, and colours are matched.",
+  "goodFor": [
+   "make a picture wider",
+   "change the aspect ratio",
+   "extend the background"
+  ],
+  "limits": []
+ },
+ "wf:templates_liveportrait.app": {
+  "what": "Copies the facial expressions of a video onto a portrait.",
+  "how": "LivePortrait runs on Comfy Cloud: the face in your reference video is tracked and its expressions drive your portrait.",
+  "goodFor": [
+   "animate a portrait with my expressions",
+   "a talking face without audio"
+  ],
+  "limits": [
+   "faces looking at the camera work best"
+  ]
+ },
+ "wf:templates_rob_fashion_shoot_vton-4in1.app": {
+  "what": "Dresses your character in a flat-lay outfit, four pictures in one go.",
+  "how": "Your character and outfit pictures go to Google's Nano Banana Pro (partner) in one prompt that returns four try-on shots.",
+  "goodFor": [
+   "virtual try-on",
+   "my character in this outfit",
+   "a fashion shoot"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:templates_rob_image_to_real.app": {
+  "what": "Turns an illustration into a realistic photo.",
+  "how": "Qwen-Image-Edit 2509 runs on Comfy Cloud with the Anything2Real LoRA and re-draws the drawing as a photo.",
+  "goodFor": [
+   "a drawing to a photo",
+   "make my character realistic"
+  ],
+  "limits": []
+ },
+ "wf:templates_rob_portrait_light_migration.app": {
+  "what": "Relights a portrait with the lighting of a reference picture.",
+  "how": "Qwen-Image-Edit runs on Comfy Cloud with a light-migration LoRA: the light of your reference is applied to your portrait.",
+  "goodFor": [
+   "relight a portrait",
+   "match the light of another photo"
+  ],
+  "limits": []
+ },
+ "wf:templates_rob_realistic_2k_images_quick_variations.app": {
+  "what": "Makes realistic variations of a picture, captioned and re-drawn by Grok, then upscaled 2x.",
+  "how": "Your picture is captioned, xAI's Grok (partner) draws variations from the caption, and a fast upscaler doubles the size.",
+  "goodFor": [
+   "realistic variations of a photo"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:templates_text_prompt_to_360hdr.app": {
+  "what": "Makes a 360 HDR skybox (equirectangular) from words, for games and 3D lighting.",
+  "how": "Qwen-Image runs on Comfy Cloud with a 360 LoRA to draw the panorama, then SeedVR2 upscales it.",
+  "goodFor": [
+   "a 360 skybox",
+   "an HDR environment for 3D",
+   "a panorama"
+  ],
+  "limits": []
+ },
+ "wf:text_to_video_wan": {
+  "what": "Makes a short video from words with Wan 2.1.",
+  "how": "Wan 2.1 (open model) runs on Comfy Cloud and generates the clip from your words.",
+  "goodFor": [
+   "a video from words"
+  ],
+  "limits": [
+   "older model: Wan 2.2 or LTX are better"
+  ]
+ },
+ "wf:txt_to_image_to_video": {
+  "what": "Makes a picture from words, then animates it with Stable Video Diffusion.",
+  "how": "On Comfy Cloud a picture is drawn from your words, then SVD animates it into a short clip.",
+  "goodFor": [
+   "a quick animated picture from words"
+  ],
+  "limits": [
+   "older models",
+   "short clips with little motion"
+  ]
+ },
+ "wf:utility-depthAnything-v2-relative-video": {
+  "what": "Turns a video into a steady depth map video with Depth Anything v2.",
+  "how": "Depth Anything v2 runs on Comfy Cloud frame by frame; near is light, far is dark.",
+  "goodFor": [
+   "a depth map of a video for ControlNet"
+  ],
+  "limits": [
+   "the result is a map, not footage"
+  ]
+ },
+ "wf:utility-frame_interpolation-film": {
+  "what": "Makes a choppy video smoother by adding frames in between, with FILM.",
+  "how": "FILM runs on Comfy Cloud and creates new frames between each pair of frames.",
+  "goodFor": [
+   "smoother video",
+   "more frames per second",
+   "slow motion"
+  ],
+  "limits": []
+ },
+ "wf:utility-gan_upscaler": {
+  "what": "Upscales a video quickly 2x or 4x with Real-ESRGAN.",
+  "how": "Real-ESRGAN runs on Comfy Cloud frame by frame; it sharpens but cannot invent new detail like diffusion.",
+  "goodFor": [
+   "a fast video upscale",
+   "upscale a video"
+  ],
+  "limits": [
+   "no new detail"
+  ]
+ },
+ "wf:utility-lineart-video": {
+  "what": "Turns a video into line art for control.",
+  "how": "A line art preprocessor runs on Comfy Cloud on every frame.",
+  "goodFor": [
+   "line art of a video for ControlNet"
+  ],
+  "limits": [
+   "the result is a map, not footage"
+  ]
+ },
+ "wf:utility-normal_crafter-video": {
+  "what": "Turns a video into a steady normal map video with NormalCrafter.",
+  "how": "NormalCrafter runs on Comfy Cloud and estimates surface directions across the frames.",
+  "goodFor": [
+   "a normal map of a video for relighting or control"
+  ],
+  "limits": [
+   "the result is a map, not footage"
+  ]
+ },
+ "wf:utility-openpose-video": {
+  "what": "Turns a video into a steady pose skeleton video with DWPose.",
+  "how": "DWPose runs on Comfy Cloud on every frame and draws the body, hand and face skeletons.",
+  "goodFor": [
+   "a pose map of a video",
+   "copy a dance to another character"
+  ],
+  "limits": [
+   "the result is a map, not footage"
+  ]
+ },
+ "wf:utility_birefnet_remove_background": {
+  "what": "Removes the background of a picture with BiRefNet and gives the mask too.",
+  "how": "BiRefNet, a segmentation model, runs on Comfy Cloud and cuts the subject out with a precise mask.",
+  "goodFor": [
+   "remove the background",
+   "a transparent cutout",
+   "a mask of the subject"
+  ],
+  "limits": []
+ },
+ "wf:utility_face_detection_mediapipe": {
+  "what": "Finds faces in a picture and marks them, up to 6 per face points, very fast.",
+  "how": "MediaPipe runs on Comfy Cloud and draws face boxes, a face mask and the face mesh.",
+  "goodFor": [
+   "a face mask",
+   "find faces in a picture"
+  ],
+  "limits": []
+ },
+ "wf:utility_image_segment_sam3": {
+  "what": "Cuts out the object you name from a picture as a mask, with SAM3.",
+  "how": "SAM3 runs on Comfy Cloud: you name the object and it returns its mask.",
+  "goodFor": [
+   "a mask of an object",
+   "select one thing in a picture"
+  ],
+  "limits": []
+ },
+ "wf:utility_image_upscale_supir": {
+  "what": "Restores and enlarges a picture with SUPIR, guided by words.",
+  "how": "SUPIR runs on Comfy Cloud with an SDXL model: a caption guides a generative restoration that adds detail.",
+  "goodFor": [
+   "restore an old photo",
+   "upscale with new detail"
+  ],
+  "limits": [
+   "slow"
+  ]
+ },
+ "wf:utility_interpolation_image_upscale": {
+  "what": "Enlarges a picture with a classic resize method (bicubic, lanczos...), with no AI changes.",
+  "how": "A plain resize runs on Comfy Cloud: fast, no detail invented.",
+  "goodFor": [
+   "resize a picture",
+   "a quick enlargement"
+  ],
+  "limits": [
+   "no new detail"
+  ]
+ },
+ "wf:utility_moge_depth_estimation": {
+  "what": "Estimates the depth of a photo with MoGe and shows a coloured and a raw depth map.",
+  "how": "MoGe runs on Comfy Cloud and gives a geometry-aware depth map.",
+  "goodFor": [
+   "a depth map of a photo"
+  ],
+  "limits": [
+   "the result is a map, not a picture to post"
+  ]
+ },
+ "wf:utility_nvidia_rtx_video_enhance": {
+  "what": "Upscales a video, adds frames and converts it to HDR in one pass with Nvidia RTX video nodes.",
+  "how": "Nvidia's RTX Video super resolution, frame generation and TrueHDR run one after another on an RTX GPU.",
+  "goodFor": [
+   "upscale a video",
+   "smoother video",
+   "HDR video"
+  ],
+  "limits": []
+ },
+ "wf:utility_seedvr2_3b_int8_upscale_video": {
+  "what": "Upscales and restores a video with SeedVR2 3B int8, steady across frames.",
+  "how": "SeedVR2, a one-step diffusion restorer, runs on Comfy Cloud and re-draws each frame at a larger size with consistent detail.",
+  "goodFor": [
+   "upscale a video",
+   "restore an old clip",
+   "4k from a small video"
+  ],
+  "limits": []
+ },
+ "wf:utility_seedvr2_7b_int8_upscale_image": {
+  "what": "Upscales and restores a picture with SeedVR2 7B int8, with more detail and clarity.",
+  "how": "SeedVR2 7B, a one-step diffusion restorer, runs on Comfy Cloud and re-draws the picture at a larger size.",
+  "goodFor": [
+   "upscale a photo",
+   "restore a low resolution picture",
+   "a picture ready for print"
+  ],
+  "limits": []
+ },
+ "wf:utility_seedvr2_image_upscale": {
+  "what": "Upscales a picture to high definition with SeedVR2 and lets you compare before and after.",
+  "how": "SeedVR2 runs on Comfy Cloud and re-draws the picture at a larger size with fine detail.",
+  "goodFor": [
+   "upscale a picture",
+   "make a photo sharper"
+  ],
+  "limits": []
+ },
+ "wf:utility_seedvr2_video_upscale": {
+  "what": "Upscales a video to high definition with SeedVR2, steady across frames.",
+  "how": "SeedVR2 runs on Comfy Cloud and re-draws every frame at the height you set, consistent from frame to frame.",
+  "goodFor": [
+   "upscale a video",
+   "1080p from a small clip",
+   "restore an old video"
+  ],
+  "limits": [
+   "long clips take long"
+  ]
+ },
+ "wf:utility_sirolim_image_controlled_upscale": {
+  "what": "Upscales a picture in two controlled stages with Wan 2.2, from a prompt written by Gemini.",
+  "how": "Gemini (partner) describes your picture, then Wan 2.2 re-draws it larger in two passes guided by that description.",
+  "goodFor": [
+   "upscale with new detail",
+   "enhance a picture"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ]
+ },
+ "wf:utility_video_frame_interpolation": {
+  "what": "Makes a video smoother with more frames, using RIFE or FILM.",
+  "how": "RIFE (fast) or FILM (cleaner on big motion) runs on Comfy Cloud and adds frames between each pair.",
+  "goodFor": [
+   "smoother video",
+   "60 fps from 24 fps",
+   "slow motion"
+  ],
+  "limits": []
+ },
+ "wf:utility_video_segment_sam3": {
+  "what": "Cuts out the object you name across a whole video as a mask, with SAM3.",
+  "how": "SAM3 runs on Comfy Cloud and tracks the named object through the frames; separate several objects with commas.",
+  "goodFor": [
+   "a mask of a person in a video",
+   "isolate an object in a clip"
+  ],
+  "limits": [
+   "short prompts only (32 tokens)"
+  ]
+ },
+ "wf:utility_video_upscale": {
+  "what": "Upscales a video with Wan 2.2, re-drawing it with new detail.",
+  "how": "Wan 2.2 runs on Comfy Cloud: your clip is encoded, re-drawn at a larger size from your prompt with a light denoise, and decoded.",
+  "goodFor": [
+   "upscale a video with detail",
+   "enhance a generated clip"
+  ],
+  "limits": [
+   "can change small details"
+  ]
+ },
+ "wf:utility_void_video_inpainting": {
+  "what": "Removes an object from a video together with its effects (shadows, reflections, physical contact), with VOID.",
+  "how": "Netflix's VOID runs on Comfy Cloud: the object is found (SAM3), motion is followed with optical flow, and the area is filled so the scene looks like it never had it.",
+  "goodFor": [
+   "remove a person from a video",
+   "remove an object and its shadow",
+   "clean a shot"
+  ],
+  "limits": [
+   "slow on long clips"
+  ]
+ },
+ "wf:utility_z_image_turbo_2k_upscaler.app": {
+  "what": "Upscales a picture to 2K with Z-Image Turbo, adding detail.",
+  "how": "On Comfy Cloud the picture is enlarged with an upscale model, then Z-Image Turbo re-draws it with a low denoise for crisp detail.",
+  "goodFor": [
+   "upscale a picture to 2k",
+   "add detail to a picture"
+  ],
+  "limits": [
+   "a high denoise can change the picture"
+  ]
+ },
+ "wf:video_bernini_r_video_editing": {
+  "what": "Relights or edits a video consistently with Bernini-R, from a reference picture and words.",
+  "how": "ByteDance's Bernini-R (open model) runs on Comfy Cloud: your clip, a reference and your words guide a consistent edit across all frames.",
+  "goodFor": [
+   "relight a video",
+   "relight a product clip",
+   "consistent light across shots"
+  ],
+  "limits": []
+ },
+ "wf:video_fastvideo_fasth3_i2v": {
+  "what": "Animates a picture with voice, sound effects and music in 8 steps, with FastVideo's FastH3 (MiniMax H3).",
+  "how": "FastH3, a distilled 8-step MiniMax H3 (open model), runs on Comfy Cloud and generates the video and its audio together.",
+  "goodFor": [
+   "animate a portrait with sound",
+   "bring a product shot to life",
+   "a quick social clip"
+  ],
+  "limits": [
+   "a bit less detail than full H3"
+  ]
+ },
+ "wf:video_fastvideo_fasth3_t2v": {
+  "what": "Makes a video with sound from words in 8 steps with FastH3.",
+  "how": "FastH3, a distilled MiniMax H3 (open model), runs on Comfy Cloud and generates picture and audio together.",
+  "goodFor": [
+   "a fast video with sound from words",
+   "prototype a clip"
+  ],
+  "limits": [
+   "a bit less detail than full H3"
+  ]
+ },
+ "wf:video_ltx2_3_i2v": {
+  "what": "Animates a picture into a clip with sound with LTX 2.3: steady motion, fine detail, good in portrait formats.",
+  "how": "LTX 2.3 (Lightricks, open model) runs on Comfy Cloud: your picture is the first frame, your words describe motion and sound, the video and audio are made together, then upscaled in a second pass.",
+  "goodFor": [
+   "animate a picture",
+   "a vertical video from a photo",
+   "a clip with sound from a picture"
+  ],
+  "limits": []
+ },
+ "wf:video_ltx2_3_ia2v": {
+  "what": "Makes a character speak or sing a given audio file, from a picture, with lips in sync, with LTX 2.3.",
+  "how": "LTX 2.3 runs on Comfy Cloud: your audio is encoded and drives the video made from your picture, so the mouth follows the sound.",
+  "goodFor": [
+   "make my photo talk",
+   "make my character sing",
+   "lip sync to my audio"
+  ],
+  "limits": [
+   "clear speech syncs best"
+  ]
+ },
+ "wf:video_ltx2_3_t2v": {
+  "what": "Makes a video with sound from words with LTX 2.3, optionally with a picture as reference.",
+  "how": "LTX 2.3 runs on Comfy Cloud and generates video and audio together, then upscales it in a second pass.",
+  "goodFor": [
+   "a video from words",
+   "a clip with sound"
+  ],
+  "limits": []
+ },
+ "wf:video_ltx2_5_flf2v": {
+  "what": "Makes a video between a first and a last frame with LTX 2.5, for transitions and morphs.",
+  "how": "LTX 2.5 (open model) runs on Comfy Cloud: both pictures are set as guides at the start and end and the motion between them is generated, with sound.",
+  "goodFor": [
+   "a transition between two pictures",
+   "morph one subject into another",
+   "connect two shots"
+  ],
+  "limits": []
+ },
+ "wf:video_ltx2_5_i2v": {
+  "what": "Animates a picture into a high-quality clip with LTX 2.5, able to hold character and light across several shots.",
+  "how": "LTX 2.5 (open model) runs on Comfy Cloud: your picture is the first frame, the video and audio are generated together, with an optional upscale pass.",
+  "goodFor": [
+   "animate a picture",
+   "a cinematic shot from a picture",
+   "multi-shot scenes"
+  ],
+  "limits": []
+ },
+ "wf:video_ltx2_5_t2v": {
+  "what": "Makes cinematic video with sound from words with LTX 2.5.",
+  "how": "LTX 2.5 (open model) runs on Comfy Cloud and generates the clip and its audio, with an optional spatial upscale.",
+  "goodFor": [
+   "a video from words",
+   "storyboard shots",
+   "previs"
+  ],
+  "limits": []
+ },
+ "wf:video_minimax_h3_i2v": {
+  "what": "Animates a picture into a short, high-quality clip with sound made in the same pass, with MiniMax H3.",
+  "how": "MiniMax H3 (open model) runs on Comfy Cloud: your picture is the start, optional words or references steer motion, style and sound; picture and audio are generated together.",
+  "goodFor": [
+   "animate a picture with sound",
+   "a product clip",
+   "a talking portrait"
+  ],
+  "limits": []
+ },
+ "wf:video_minimax_h3_i2v_continuation": {
+  "what": "Animates a picture with MiniMax H3 where you write the motion, shots and sound yourself.",
+  "how": "MiniMax H3 (open model) runs on Comfy Cloud with an empty prompt for you to fill: shots, camera and audio are all described by you.",
+  "goodFor": [
+   "animate a picture with full control",
+   "a product clip with sound"
+  ],
+  "limits": []
+ },
+ "wf:video_minimax_h3_multiframe_reference": {
+  "what": "Makes a video that passes through up to four pictures placed anywhere on the timeline, with MiniMax H3.",
+  "how": "MiniMax H3 (open model) runs on Comfy Cloud: each picture is anchored at a moment of the clip and the motion and sound are generated around them.",
+  "goodFor": [
+   "force story beats at set moments",
+   "continue an existing clip",
+   "a video through several keyframes"
+  ],
+  "limits": []
+ },
+ "wf:video_minimax_h3_r2v": {
+  "what": "Makes a video from references (up to 9 pictures, 3 clips, 3 sounds) that keep identity, motion, voice or style, with MiniMax H3.",
+  "how": "MiniMax H3 (open model) runs on Comfy Cloud: your references and prompt guide one pass that makes the video with stereo audio.",
+  "goodFor": [
+   "a video of my character from pictures",
+   "match a voice or a motion",
+   "a consistent character video"
+  ],
+  "limits": []
+ },
+ "wf:video_minimax_h3_t2v": {
+  "what": "Makes a video with voice, effects and music from words, up to 2K and about 15 seconds, with MiniMax H3.",
+  "how": "MiniMax H3 (open model) runs on Comfy Cloud and generates picture and stereo sound together.",
+  "goodFor": [
+   "a video with sound from words",
+   "a short ad from words"
+  ],
+  "limits": []
+ },
+ "wf:video_wan2.1_fun_camera_v1.1_1.3B": {
+  "what": "Animates a picture with a chosen camera move (pan, zoom, orbit) with the small Wan 2.1 Fun Camera.",
+  "how": "Wan 2.1 Fun Camera 1.3B runs on Comfy Cloud: your picture is the start and a camera path drives the motion.",
+  "goodFor": [
+   "a camera move on a picture",
+   "a quick pan or zoom"
+  ],
+  "limits": [
+   "older model: Wan 2.2, LTX 2.5 or MiniMax H3 are better"
+  ]
+ },
+ "wf:video_wan2.1_fun_camera_v1.1_14B": {
+  "what": "Animates a picture with a chosen camera move with the full Wan 2.1 Fun Camera 14B.",
+  "how": "Wan 2.1 Fun Camera 14B runs on Comfy Cloud: your picture is the start and a camera path drives the motion.",
+  "goodFor": [
+   "a camera move on a picture"
+  ],
+  "limits": [
+   "older model: Wan 2.2, LTX 2.5 or MiniMax H3 are better"
+  ]
+ },
+ "wf:video_wan21_scail2_character_replacement": {
+  "what": "Animates your character with the motion of a video, or replaces the person in it, with SCAIL-2.",
+  "how": "SCAIL-2 runs on Comfy Cloud: the person in the driving video is tracked (SAM3) and your character is drawn with their motion, colours matched.",
+  "goodFor": [
+   "put my character in a video",
+   "copy a dance onto my character",
+   "replace an actor"
+  ],
+  "limits": []
+ },
+ "wf:video_wan21_scail2_character_replacement_int8": {
+  "what": "Same as SCAIL-2 character replacement, faster and better in int8.",
+  "how": "SCAIL-2 int8 runs on Comfy Cloud: the driving video's person is tracked and replaced by your character with the same motion.",
+  "goodFor": [
+   "put my character in a video",
+   "motion transfer"
+  ],
+  "limits": []
+ },
+ "wf:video_wan2_2_14B_animate": {
+  "what": "Animates your character with the motion and expressions of a video, or replaces the person in the video, with Wan 2.2 Animate.",
+  "how": "On Comfy Cloud the pose and face are tracked (DWPose) and the person is masked (SAM2); Wan 2.2 Animate draws your character with that motion.",
+  "goodFor": [
+   "animate my character from a video",
+   "replace a person in a video"
+  ],
+  "limits": [
+   "you point at the person to replace"
+  ]
+ },
+ "wf:video_wan2_2_14B_flf2v": {
+  "what": "Makes a smooth video between a first and a last frame with Wan 2.2.",
+  "how": "Wan 2.2 14B runs on Comfy Cloud and generates the motion between your two pictures.",
+  "goodFor": [
+   "a transition between two pictures",
+   "a before and after animation"
+  ],
+  "limits": [
+   "set small by default: raise the size for quality"
+  ]
+ },
+ "wf:video_wan2_2_14B_fun_camera": {
+  "what": "Animates a picture with camera moves (pan, zoom, rotate) with Wan 2.2 Fun Camera.",
+  "how": "Wan 2.2 Fun Camera runs on Comfy Cloud: a camera path drives the motion from your picture.",
+  "goodFor": [
+   "a camera move on a picture",
+   "a slow push in"
+  ],
+  "limits": []
+ },
+ "wf:video_wan2_2_14B_fun_control": {
+  "what": "Makes a video that follows the pose, depth or edges of another video, with Wan 2.2 Fun Control.",
+  "how": "On Comfy Cloud a control video is made from your clip (Canny here, pose or depth too) and Wan 2.2 Fun Control draws a new video along it, styled by your picture and words.",
+  "goodFor": [
+   "restyle a video keeping its motion",
+   "copy a motion onto a new character"
+  ],
+  "limits": []
+ },
+ "wf:video_wan2_2_14B_fun_inpaint": {
+  "what": "Makes a video between a start and an end frame with Wan 2.2 Fun Inpaint.",
+  "how": "Wan 2.2 Fun Inpaint runs on Comfy Cloud and fills the frames between your two pictures.",
+  "goodFor": [
+   "a transition between two pictures"
+  ],
+  "limits": []
+ },
+ "wf:video_wan2_2_14B_i2v": {
+  "what": "Animates a picture into a clip with precise motion and its style kept, with Wan 2.2 14B.",
+  "how": "Wan 2.2 14B runs on Comfy Cloud with its high-noise and low-noise experts: your picture is the first frame and your words describe the motion.",
+  "goodFor": [
+   "animate a picture",
+   "bring a photo to life"
+  ],
+  "limits": [
+   "no sound",
+   "slow without the 4-step LoRA"
+  ]
+ },
+ "wf:video_wan2_2_14B_s2v": {
+  "what": "Makes a person in a picture talk or sing to an audio file, for up to minutes, with Wan 2.2 S2V.",
+  "how": "Wan 2.2 S2V runs on Comfy Cloud: the audio is encoded and drives the video from your picture, extended in chunks for long sound.",
+  "goodFor": [
+   "make my photo talk",
+   "a singing portrait",
+   "a long lip-sync video"
+  ],
+  "limits": []
+ },
+ "wf:video_wan2_2_14B_t2v": {
+  "what": "Makes cinematic video from words with Wan 2.2 14B.",
+  "how": "Wan 2.2 14B runs on Comfy Cloud with its two experts and generates the clip from your words.",
+  "goodFor": [
+   "a video from words",
+   "a cinematic clip"
+  ],
+  "limits": [
+   "no sound"
+  ]
+ },
+ "wf:video_wan2_2_5B_ti2v": {
+  "what": "Makes a video quickly from words or a picture with the small Wan 2.2 5B.",
+  "how": "Wan 2.2 5B runs on Comfy Cloud: from words alone or from a picture as the first frame.",
+  "goodFor": [
+   "a quick video draft",
+   "animate a picture fast"
+  ],
+  "limits": [
+   "less detail than 14B"
+  ]
+ },
+ "wf:video_wan_animate2": {
+  "what": "Animates a still character with the motion of a video, with no pose skeleton, and a new background from your words, with Wan Animate 2.",
+  "how": "Wan Animate 2 runs on Comfy Cloud: motion is taken straight from the video frames, your character keeps its identity and your words set the background and camera.",
+  "goodFor": [
+   "copy a dance onto my character",
+   "animate my mascot from a video",
+   "motion transfer"
+  ],
+  "limits": [
+   "long clips are made in windows"
+  ]
+ },
+ "wf:video_wan_animate2_distilled": {
+  "what": "Wan Animate 2 motion transfer in fewer steps (distilled), faster.",
+  "how": "Wan Animate 2 Distilled runs on Comfy Cloud: motion from your video, identity from your picture, background from your words.",
+  "goodFor": [
+   "a fast motion transfer",
+   "animate my character from a video"
+  ],
+  "limits": []
+ },
+ "wf:video_wan_ati": {
+  "what": "Animates a picture along paths you draw (trajectories), with Wan 2.1 ATI.",
+  "how": "Wan 2.1 ATI runs on Comfy Cloud: the points you trace on the picture tell what moves where.",
+  "goodFor": [
+   "move an object along a path",
+   "control motion precisely"
+  ],
+  "limits": [
+   "older model: Wan 2.2, LTX 2.5 or MiniMax H3 are better"
+  ]
+ },
+ "wf:video_wan_vace_14B_ref2v": {
+  "what": "Makes a video in the style and content of a reference picture, with Wan 2.1 VACE.",
+  "how": "Wan 2.1 VACE 14B runs on Comfy Cloud: your reference picture guides the generation from your words.",
+  "goodFor": [
+   "a video in the style of a picture"
+  ],
+  "limits": [
+   "older model: Wan 2.2, LTX 2.5 or MiniMax H3 are better"
+  ]
+ },
+ "wf:video_wan_vace_14B_t2v": {
+  "what": "Makes a video from words at 480p or 720p with Wan 2.1 VACE.",
+  "how": "Wan 2.1 VACE 14B runs on Comfy Cloud and generates the clip from your words.",
+  "goodFor": [
+   "a video from words"
+  ],
+  "limits": [
+   "older model: Wan 2.2, LTX 2.5 or MiniMax H3 are better"
+  ]
+ },
+ "wf:video_wan_vace_14B_v2v": {
+  "what": "Makes a new video that follows the motion of your video and the look of a reference picture, with Wan 2.1 VACE.",
+  "how": "On Comfy Cloud edges (Canny) are traced from your video and Wan 2.1 VACE draws a new clip along them in the style of your reference.",
+  "goodFor": [
+   "restyle a video",
+   "keep the motion, change the look"
+  ],
+  "limits": [
+   "older model: Wan 2.2, LTX 2.5 or MiniMax H3 are better"
+  ]
+ },
+ "wf:video_wan_vace_flf2v": {
+  "what": "Makes a video between a first and last frame, or through several keyframes, with Wan 2.1 VACE.",
+  "how": "Wan 2.1 VACE runs on Comfy Cloud and fills the frames between your keyframes.",
+  "goodFor": [
+   "a transition between pictures",
+   "a video through keyframes"
+  ],
+  "limits": [
+   "older model: Wan 2.2, LTX 2.5 or MiniMax H3 are better"
+  ]
+ },
+ "wf:video_wan_vace_inpainting": {
+  "what": "Removes or replaces something in a region of a video and keeps the rest, with Wan 2.1 VACE.",
+  "how": "On Comfy Cloud the region is found (SAM3) or masked, and Wan 2.1 VACE re-draws it across the frames from your words.",
+  "goodFor": [
+   "remove an object from a video",
+   "replace something in a clip"
+  ],
+  "limits": []
+ },
+ "wf:video_wan_vace_outpainting": {
+  "what": "Extends a video beyond its edges (a wider or taller frame), with Wan 2.1 VACE.",
+  "how": "On Comfy Cloud each frame is padded and Wan 2.1 VACE draws the new area across the clip.",
+  "goodFor": [
+   "make a video wider",
+   "a vertical video into 16:9",
+   "change a video's aspect ratio"
+  ],
+  "limits": []
+ },
+ "wf:wan2.1_flf2v_720_f16": {
+  "what": "Makes a 720p video between a first and a last frame with Wan 2.1 FLF2V.",
+  "how": "Wan 2.1 FLF2V runs on Comfy Cloud and generates the motion between your two pictures.",
+  "goodFor": [
+   "a transition between two pictures"
+  ],
+  "limits": [
+   "older model: Wan 2.2, LTX 2.5 or MiniMax H3 are better"
+  ]
+ },
+ "wf:wan2.1_fun_control": {
+  "what": "Makes a video that follows the pose, depth or edges of another video, with Wan 2.1 Fun Control.",
+  "how": "On Comfy Cloud a control video is traced from your clip and Wan 2.1 Fun Control draws along it.",
+  "goodFor": [
+   "restyle a video keeping its motion"
+  ],
+  "limits": [
+   "older model: Wan 2.2, LTX 2.5 or MiniMax H3 are better"
+  ]
+ },
+ "wf:wan2.1_fun_inp": {
+  "what": "Makes a video between a start and an end frame with Wan 2.1 Fun InP.",
+  "how": "Wan 2.1 Fun InP runs on Comfy Cloud and fills the frames between your two pictures.",
+  "goodFor": [
+   "a transition between two pictures"
+  ],
+  "limits": [
+   "older model: Wan 2.2, LTX 2.5 or MiniMax H3 are better"
+  ]
+ }
+}

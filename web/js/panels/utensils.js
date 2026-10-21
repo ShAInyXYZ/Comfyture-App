@@ -17,6 +17,8 @@ import { audioSpace } from "../utensils-space-audio.js";
 import { vfxSpace } from "../utensils-space-vfx.js";
 import { editSpace } from "../utensils-space-edit.js";
 import { templatesSpace } from "../utensils-space-templates.js";
+// Truffle's recipe (its panel, the lit books, the coach) keeps itself in step with the page once loaded
+import "../utensils-guide.js";
 
 const MAKERS = { home: homeSpace, shelf: shelfSpace, picture: pictureSpace, video: videoSpace, audio: audioSpace, vfx: vfxSpace, edit: editSpace, templates: templatesSpace };
 const time = (s) => `${Math.floor((s ?? 0) / 60)}:${String(Math.floor((s ?? 0) % 60)).padStart(2, "0")}`;

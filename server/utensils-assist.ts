@@ -7,8 +7,14 @@
 // EXTENDING IT: a workspace adds a tool with registerTool() on the page (web/js/utensils.js), declaring its `takes`, its `words`
 // and its `options` (settings: a choice of values, a range, a flag or a text). The page puts them in the summary below and this
 // reader keeps exactly what a tool declares: no new op is needed. A tool with run() can be run from her key.
+//
+// GUIDES: each ask, the knowledge base (server/utensils-knowledge.ts) is searched with what the user asked and its best matches are
+// put before her as CANDIDATES; for a job she answers with a guide (a recipe of 1-5 steps, tools and Library workflows, in order),
+// which the page shows as a panel and lit books. Her guide may name only those candidates.
+import { searchKnowledge, type Entry, knowledgeById } from "./utensils-knowledge.ts";
+import { CURATED_APPS, OFFICIAL_APPS } from "./comfy-templates.ts";
 
-export const UTENSILS_OPS = ["pick_workspace", "pick_tool", "set_input", "run_tool"] as const;
+export const UTENSILS_OPS = ["pick_workspace", "pick_tool", "set_input", "run_tool", "guide"] as const;
 export const UTENSILS_WORKSPACES = ["home", "shelf", "picture", "video", "audio", "vfx", "edit", "templates"] as const;
 
 /** How Truffle answers: the tool she is made to call, so her answer is data and never prose to be guessed at. */
@@ -39,6 +45,20 @@ export const UTENSILS_TOOL = {
             seconds: { type: "number" },
             bpm: { type: "number" },
             real: { type: "boolean" },
+            title: { type: "string", description: "For guide: the recipe's name, a few words (\"Product photo to ad video\")." },
+            steps: {
+              type: "array",
+              description: "For guide: 1 to 5 steps in order, each a candidate's id, why it is there and how to use it.",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string", description: "A candidate's id, from CANDIDATES FOR THIS JOB." },
+                  why: { type: "string", description: "What this step does for the job, a few words." },
+                  how: { type: "string", description: "How to use it, one short line: what to give it, what to pick." },
+                },
+                required: ["id", "why", "how"],
+              },
+            },
           },
           required: ["op"],
         },
@@ -48,21 +68,22 @@ export const UTENSILS_TOOL = {
   },
 };
 
-export const UTENSILS_BRIEF = `You are Truffle, the round grey raccoon with a dark eye mask who keeps Comfyture's Utensils: a shelf of small tools, each one job, in eight workspaces: home (where it opens: a dashboard of what the others offer), shelf (the plain catalogue of every tool), picture, video, audio, vfx (effects that change a clip), edit (free tools that run on this machine) and templates (the official ComfyUI workflows, run on Comfy Cloud). You are practical, a little sly; you speak in one or two short sentences, in the user's language. You answer through the utensils_answer tool: a reply and the actions to take.
+export const UTENSILS_BRIEF = `You are Truffle, the round grey raccoon with a dark eye mask who keeps Comfyture's Utensils: a shelf of small tools, each one job, in eight workspaces: home (where it opens: a dashboard), shelf (every tool as a book), picture, video, audio, vfx, edit (free, on this machine) and templates (the Library: every official ComfyUI workflow, run on Comfy Cloud). You are practical, a little sly; you speak in one or two short sentences, in the user's language. You answer through the utensils_answer tool: a reply and the actions to take.
 
-A tool takes what it works on (a picture, a clip or a sound), sometimes words or settings, and makes a result kept in Recent. Several jobs can run at once; the queue below says what runs. Files come from the library below: you give a tool one by its id and never invent a file.
+A tool takes what it works on (a picture, a clip or a sound), sometimes words or settings, and makes a result kept in Recent. Several jobs can run at once (the queue below). Files come from the library below: you give a tool one by its id and never invent a file.
 
 Actions (op and its fields):
 - pick_workspace {workspace}: open a workspace.
-- pick_tool {tool}: open a tool by its id; its workspace opens with it. Its workspace's tools are listed in full, the others by id.
-- set_input {image, video, audio, words, options, lyrics, scale, height, seconds, bpm, real}: give the tool that is open what it works on (an id from the library, and only the kinds that tool takes), its words and its settings. Send only what changes. Words say what to change, make or hear. Settings are the ones listed with the tool, each within its values: send them in options by name (scale, height, seconds, bpm, lyrics and real may be sent as they are).
-- run_tool {}: run the tool that is open on what it holds. It costs credits or takes a minute or more. The app asks the user to confirm the price first, with a key under your answer, so say it is ready, never that it has started; if they say yes in words, point them to that key.
+- pick_tool {tool}: open a tool by its id; its workspace opens with it.
+- set_input {image, video, audio, words, options, lyrics, scale, height, seconds, bpm, real}: give the tool that is open what it works on (a library id, only the kinds it takes), its words and its settings; send only what changes. Settings are the tool's own, within their values, in options by name.
+- run_tool {}: run the tool that is open on what it holds. It costs credits: the app asks the user to confirm the price with a key under your answer, so say it is ready, never that it has started; a yes in words gets pointed to that key.
+- guide {title, steps}: a recipe, 1 to 5 steps in order, each {id, why, how}, ids from CANDIDATES FOR THIS JOB. A job of two tools or more ALWAYS gets a guide at once, files or not. It comes alone, never with run_tool. Each step takes what the person has or what an earlier step gives (a photo needs a step that makes a clip before a clip tool); pieces that belong together (a clip and its music or words) end with the step that joins them (ed-audio, au-mix, ed-captions).
 
-Mini apps: ComfyUI's own workflows run on Comfy Cloud, each asking for one to three things (a picture, a clip, a sound, a few words). They are listed apart below with ids that start with app-: open one with pick_tool when no built-in tool does the job or when the user names it ("the background remover"), then set_input and run_tool as for any tool. A built-in tool is the first choice when it does the same job.
+Mini apps (ids app-..., listed below) are ComfyUI workflows on Comfy Cloud: open one with pick_tool when no built-in tool does the job or the user names it, then set_input and run_tool as for any tool.
 
 On home nothing is open: name the workspace that fits what the person wants and open it, or open the tool outright when they name the job; never list the tools back.
 
-Rules: use only the ids shown below. "My latest picture" or "my last clip" is the first one listed. Open the tool that fits the job, give it what it needs, and ask for run_tool only when the user says to run, make or do it, or names the job outright ("upscale my latest picture"). When something is missing (a picture, a clip, the words), ask for it in one short question and no run_tool. When the job belongs to another workspace, open its tool and set it up in the same answer. When the user only asks a question, answer and take no action. Never promise what you did not do.`;
+Rules: use only the ids shown below. "My latest picture" or "my last clip" is the first one listed. Open the tool that fits the job, give it what it needs, and ask for run_tool only when the user says to run, make or do it, or names the job outright ("upscale my latest picture"). A how-to, a which-tool question or a job of several tools gets one short sentence and a guide. When a run lacks a file or words, ask for them in one short question and no run_tool. When the job belongs to another workspace, open its tool and set it up in the same answer. When the user only asks a question, answer and take no action. Never promise what you did not do.`;
 
 /** A setting a tool declares: a choice of values, a number in a range, a flag or a text. */
 interface Option { key: string; type?: string; values?: unknown[]; min?: number; max?: number }
@@ -79,6 +100,8 @@ interface Summary {
   results?: { tool: string; kind?: string; note?: string; ago?: string }[];
   library?: { images?: { id: string; name: string; size?: string }[]; clips?: { id: string; name: string; seconds?: number; kind?: string }[]; sounds?: { id: string; name: string; seconds?: number }[] };
   busy?: boolean;
+  /** the guide on show, if any: its title, its steps' ids, the step open */
+  guide?: { title?: string; steps?: string[]; current?: number | null } | null;
 }
 export interface Turn { role: string; text: string; did?: string[] }
 
@@ -92,8 +115,33 @@ const WORKSPACES = new Set<string>(UTENSILS_WORKSPACES);
 /** A tool's settings, as a line: scale 2|4, seconds 2-10, real yes/no. */
 const optionsLine = (t: Tool) => things<Option>(t.options, 8).map((o) => `${cut(o.key, 16)} ${o.type === "range" ? `${Number(o.min)}-${Number(o.max)}` : o.type === "flag" ? "yes/no" : o.type === "text" ? "text" : list<unknown>(o.values, 12).map((v) => cut(v, 12)).join("|")}`).join(", ");
 
-/** What Truffle is told each time: the workspace open, its tools, the other workspaces' tools, the tool open and what it holds, the queue, the newest results, the library, the talk so far. */
-export function utensilsPrompt(s: Summary, turns: Turn[]) {
+/** What a step costs, in a few words: free, GPU or partner, with the credits when they are known. */
+const costLine = (e: Entry) =>
+  e.cost === "free" ? "free" : `${e.cost === "partner" ? "partner" : "GPU"}${typeof e.credits === "number" && e.credits > 0 ? ` ≈${Math.round(e.credits)} cr` : e.cost === "partner" ? ", priced at the run" : ""}`;
+
+/**
+ * The knowledge base's best matches for what the user asks now: their last words, with the ones before when the last are few
+ * ("yes, and with music"). These are the only ids her guide may name.
+ */
+export function utensilsCandidates(turns: Turn[], k = 12): Entry[] {
+  const asked = turns.filter((t) => t.role === "user").map((t) => cut(t.text, 600)).filter(Boolean);
+  const last = asked[asked.length - 1] ?? "";
+  const query = last.split(/\s+/).filter(Boolean).length < 5 && asked.length > 1 ? `${asked[asked.length - 2]} ${last}` : last;
+  if (!query) return [];
+  const found = searchKnowledge(query, { k }).map((h) => h.entry);
+  // the tools that join pieces (a sound under a clip, sounds mixed, words on a clip) are always offered: a search for the job
+  // ("a video ad with music") finds what makes the pieces, rarely what puts them together
+  const have = new Set(found.map((e) => e.id));
+  for (const id of JOINERS) {
+    const e = knowledgeById(id);
+    if (e && !have.has(id)) found.push(e);
+  }
+  return found;
+}
+const JOINERS = ["ed-audio", "au-mix", "ed-captions"];
+
+/** What Truffle is told each time: the workspace open, its tools, the other workspaces' tools, the tool open and what it holds, the queue, the newest results, the library, the candidates for the job, the talk so far. */
+export function utensilsPrompt(s: Summary, turns: Turn[], candidates: Entry[] = utensilsCandidates(turns)) {
   const lines: string[] = [];
   const spaces = things<{ id: string; name?: string; tools?: number }>(s.workspaces, 10);
   const here = cut(s.workspace, 12);
@@ -128,6 +176,17 @@ export function utensilsPrompt(s: Summary, turns: Turn[]) {
   lines.push(`Pictures: ${things<{ id: string; name: string; size?: string }>(lib.images, 12).map((x) => `${cut(x.id, 12)} · ${cut(x.name, 40)} · ${cut(x.size, 14)}`).join("; ") || "none"}`);
   lines.push(`Clips: ${things<{ id: string; name: string; seconds?: number; kind?: string }>(lib.clips, 10).map((x) => `${cut(x.id, 12)} · ${cut(x.name, 40)} · ${Number(x.seconds) || "?"} s${x.kind ? ` · a ${cut(x.kind, 8)}` : ""}`).join("; ") || "none"}`);
   lines.push(`Sounds: ${things<{ id: string; name: string; seconds?: number }>(lib.sounds, 8).map((x) => `${cut(x.id, 12)} · ${cut(x.name, 40)} · ${Number(x.seconds) || "?"} s`).join("; ") || "none"}`);
+  if (s.guide && typeof s.guide === "object") {
+    const ids = list<unknown>(s.guide.steps, 5).map((x) => cut(x, 60));
+    const at = typeof s.guide.current === "number" ? ` The person is on step ${s.guide.current + 1}.` : "";
+    lines.push("", `THE GUIDE ON SHOW: ${cut(s.guide.title, 80) || "a recipe"}: ${ids.join(" → ") || "no steps"}.${at}`);
+  }
+  if (candidates.length) {
+    lines.push("", "CANDIDATES FOR THIS JOB (from the knowledge base, best match first; id · name · section · takes->gives · cost · what it does · good after it). A guide names only these: the fewest steps that do the job, in order; free and cheap steps first; a built-in tool before a workflow that does the same; each why a few words, each how one short line (what to give it, what to pick); your sentence says the total cost (free, or about N credits; a partner step is priced when it runs). When the user names the job outright on a file and one tool does it, set that tool up instead:");
+    for (const e of candidates) lines.push(`- ${e.id} · ${cut(e.name, 50)} · ${e.section} · ${e.takes.join("+")}->${e.gives.join("+")} · ${costLine(e)} · ${cut(e.what, 120)}${e.after?.length ? ` · after: ${e.after.slice(0, 4).join(", ")}` : ""}`);
+    // (told last, where it is read: a small model otherwise asks for the files first and the person gets no recipe)
+    lines.push("A job that takes two tools or more gets its guide NOW, before any file is given: the files are given in the steps. Ask a question only when the job itself is unclear.");
+  }
   lines.push("", "THE CONVERSATION");
   for (const t of turns.slice(-8)) lines.push(`${t.role === "user" ? "User" : "Truffle"}: ${cut(t.text, 600)}${t.did?.length ? ` [the app did: ${t.did.join(", ")}]` : ""}`);
   return lines.join("\n");
@@ -173,11 +232,12 @@ function optionsOf(t: Tool): Option[] {
 }
 
 /**
- * Truffle's answer, read whole and checked against what the page told her: only her four actions, each with only what the
+ * Truffle's answer, read whole and checked against what the page told her: only her actions, each with only what the
  * tool it is for takes (a file that is in the library, words if it has them, the settings it declares, within range), a workspace
- * that exists, and run_tool once, last. Anything else is dropped.
+ * that exists, and run_tool once, last; a guide of 1-5 steps whose ids are among the candidates she was given (a step that is not
+ * is dropped, and the guide with it when none is left), alone with no run_tool. Anything else is dropped.
  */
-export function readUtensilsAnswer(reply: string, s: Summary = {}) {
+export function readUtensilsAnswer(reply: string, s: Summary = {}, candidates?: Entry[]) {
   const from = reply.indexOf("{");
   const to = reply.lastIndexOf("}");
   let raw: any;
@@ -198,6 +258,17 @@ export function readUtensilsAnswer(reply: string, s: Summary = {}) {
   let tool: string | null = s.open?.tool && tools.has(s.open.tool) ? s.open.tool : null;
   const actions: any[] = [];
   let run = false;
+  let guide: any = null;
+  // the ids a guide may name: the candidates she was given
+  const allowed = new Set((candidates ?? []).map((e) => e.id));
+  // a step may also name anything the knowledge base knows (she sees the tools of the open workspace and the mini apps too):
+  // a mini app's tool id (app-<id>) is its Library workflow
+  const knownStep = (id: string): string | null => {
+    if (allowed.has(id)) return id;
+    const app = id.startsWith("app-") ? [...CURATED_APPS, ...OFFICIAL_APPS].find((x) => `app-${x.id}` === id) : null;
+    const key = app ? `wf:${app.name}` : id;
+    return knowledgeById(key) ? key : null;
+  };
   for (const a of list<any>(raw.actions, 40)) {
     // a few actions at most: what is dropped does not count
     if (actions.length >= 8) break;
@@ -231,8 +302,19 @@ export function readUtensilsAnswer(reply: string, s: Summary = {}) {
       case "run_tool":
         run = true;
         break;
+      case "guide": {
+        if (guide) break;
+        const steps = things<any>(a.steps, 12)
+          .map((x) => ({ x, id: typeof x.id === "string" ? knownStep(x.id) : null }))
+          .filter((y) => y.id)
+          .slice(0, 5)
+          .map(({ x, id }) => ({ id: id as string, why: cut(x.why, 160), how: cut(x.how, 240) }));
+        if (steps.length) actions.push((guide = { op: "guide", title: cut(a.title, 80) || "Your recipe", steps }));
+        break;
+      }
     }
   }
-  if (run && tool) actions.push({ op: "run_tool" });
-  return { reply: cut(raw.reply, 500), actions };
+  if (run && tool && !guide) actions.push({ op: "run_tool" });
+  // a guide only shows the way: it comes alone
+  return { reply: cut(raw.reply, 500), actions: guide ? [guide] : actions };
 }

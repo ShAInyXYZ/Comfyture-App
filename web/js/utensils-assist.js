@@ -6,12 +6,17 @@
 //
 // A workspace's own tools reach her through registerTool (utensils.js): their takes, words and options are what she is told
 // and what she may set (server/utensils-assist.ts reads her answer against exactly that); a tool with run() can be run by her key.
+//
+// For a job she can answer with a GUIDE: a recipe of tools and Library workflows in order, each step with why and how. Its steps are
+// given their knowledge entries and shown by utensils-guide.js (a panel, the books lit); she is told which guide is on show.
 import { state, changed, toast, writer } from "./store.js";
 import { api } from "./api.js";
 import { TOOLS, toolById, utensils, inputOf, pickTool, setInput, setWorkspace, runTool, ready, estimate, shelfTools, toolsOf } from "./utensils.js";
 import { WORKSPACES } from "./utensils-harness.js";
 import { templatesTotal } from "./utensils-space-shelf.js";
 import { ago } from "./dom.js";
+import { showGuide } from "./utensils-guide.js";
+import { knowledgeOf } from "./utensils-knowledge.js";
 
 /** Truffle's conversation: Utensils' own, never mixed with another product's. */
 export const chat = { messages: [], busy: null };
@@ -97,6 +102,8 @@ export function summary(lib) {
     results: utensils.results.slice(0, 5).map((r) => ({ tool: r.tool, kind: r.kind, note: r.note, ago: ago(r.at) })),
     library: lib.view,
     busy: !!utensils.busy,
+    // the guide on show: its title and its steps' ids, and the step the person is on
+    guide: utensils.guide ? { title: utensils.guide.title ?? "", steps: (utensils.guide.steps ?? []).map((x) => x.id), current: utensils.guide.current ?? null } : null,
   };
 }
 
@@ -141,6 +148,11 @@ async function run(a, lib) {
       setInput(patch);
       did.push(typeof a.words === "string" ? `Words: ${a.words.length > 40 ? `${a.words.slice(0, 39)}…` : a.words}` : Object.keys(patch).join(", "));
     }
+  } else if (a.op === "guide") {
+    // the recipe: each step given its knowledge entry (what it is, how to use it, its price), then shown
+    const steps = await Promise.all((a.steps ?? []).map(async (x) => ({ ...x, entry: await knowledgeOf(x.id) })));
+    if (showGuide({ title: a.title, steps })) did.push(`Guide: ${steps.map((x) => x.entry?.name ?? x.id).join(" → ")}`);
+    else failed.push("The guide could not be shown");
   }
   return { did, failed };
 }

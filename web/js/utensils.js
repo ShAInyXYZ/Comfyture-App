@@ -31,7 +31,7 @@ export const TOOLS = [
   { id: "music", workspace: "audio", group: "Sound", name: "Music", icon: "audio-music", hint: "A track from a few words, with lyrics or without", takes: [], verb: "Make the track", words: "needed", options: [{ key: "seconds", type: "range", min: 10, max: 240 }, { key: "bpm", type: "range", min: 60, max: 180 }, { key: "lyrics", type: "text" }] },
   { id: "sfx", workspace: "audio", group: "Sound", name: "Sound effect", icon: "audio-sfx", hint: "A sound from a few words", takes: [], verb: "Make the sound", words: "needed", options: [{ key: "seconds", type: "range", min: 1, max: 30 }] },
 ];
-const GROUP = { picture: "Picture", video: "Video", audio: "Sound", vfx: "VFX", edit: "Edit", templates: "Templates" };
+const GROUP = { picture: "Picture", video: "Video", audio: "Sound", vfx: "VFX", edit: "Edit", templates: "Library" };
 export const toolById = (id) => TOOLS.find((t) => t.id === id) ?? TOOLS[0];
 
 /**
@@ -68,6 +68,8 @@ export const utensils = {
   jobs: [],
   uploading: false,
   shown: null,
+  /** Truffle's recipe on show, if any: { plan, title, steps, current, collapsed, started, coach } (utensils-guide.js). */
+  guide: null,
   /** The tools, as the Shelf lists them (the same list as TOOLS: registerTool adds to it). */
   catalog: TOOLS,
   /** The id of the tool a job is running now (any of them), else null: what old code asks. */

@@ -1,0 +1,3168 @@
+[
+ {
+  "id": "upscale",
+  "kind": "tool",
+  "name": "Upscale",
+  "section": "picture",
+  "category": "Picture",
+  "what": "Makes a picture two or four times larger and sharper, without adding anything that was not there.",
+  "how": "4x-UltraSharp, an ESRGAN upscaling network, runs on Comfy Cloud: it re-draws the picture at four times its size, sharpening edges and fine texture, and the result is scaled back to 2x when you ask for 2x. It restores detail; it does not invent new objects or change the content.",
+  "takes": [
+   "image"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "make a photo bigger",
+   "sharpen a small or blurry picture",
+   "print a picture larger",
+   "a 4K version of an image",
+   "fix a low resolution screenshot"
+  ],
+  "limits": [
+   "very blurry faces stay soft: it sharpens, it does not reconstruct a face",
+   "4x of a large picture makes a very large file"
+  ],
+  "use": [
+   "Drop a picture on the well (or pick one from your library)",
+   "Pick 2x or 4x",
+   "Press Upscale: about 2 cr",
+   "Compare before and after with the slider, then keep or hand it to another tool"
+  ],
+  "models": [
+   "4x-UltraSharp"
+  ],
+  "cost": "gpu",
+  "credits": 2,
+  "before": [
+   "cutout",
+   "edit",
+   "variations",
+   "vfx-retouch"
+  ],
+  "after": [
+   "cutout",
+   "wf:video_ltx2_3_i2v",
+   "vfx-relight"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "picture",
+   "tool": "upscale"
+  },
+  "keywords": [
+   "upscale",
+   "enlarge",
+   "bigger",
+   "sharpen",
+   "super-resolution",
+   "4x",
+   "2x",
+   "resolution",
+   "hd",
+   "4k",
+   "esrgan",
+   "ultrasharp",
+   "image",
+   "photo"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "cutout",
+  "kind": "tool",
+  "name": "Remove background",
+  "section": "picture",
+  "category": "Picture",
+  "what": "Cuts the subject out of a picture and leaves it on a clear (transparent) background.",
+  "how": "BiRefNet, a segmentation model, finds the main subject and draws a precise mask around it (hair and fine edges included); the background is made transparent and the result is saved as a PNG with alpha. It runs on Comfy Cloud in a few seconds.",
+  "takes": [
+   "image"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "product photo on white or clear",
+   "remove the background",
+   "cut out a person",
+   "a sticker from a photo",
+   "lift the product off the table",
+   "a transparent png"
+  ],
+  "limits": [
+   "several subjects may come out together",
+   "glass and smoke edges can be rough"
+  ],
+  "use": [
+   "Drop the picture on the well",
+   "Press Cut out: about 1 cr",
+   "The result is a PNG on a checker: download it or hand it to Upscale, Relight or a video tool"
+  ],
+  "models": [
+   "BiRefNet"
+  ],
+  "cost": "gpu",
+  "credits": 1,
+  "before": [
+   "upscale",
+   "edit"
+  ],
+  "after": [
+   "upscale",
+   "vfx-relight",
+   "wf:video_ltx2_3_i2v",
+   "ed-logo"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "picture",
+   "tool": "cutout"
+  },
+  "keywords": [
+   "remove background",
+   "background",
+   "bg",
+   "cutout",
+   "cut out",
+   "transparent",
+   "alpha",
+   "png",
+   "mask",
+   "segment",
+   "birefnet",
+   "isolate",
+   "sticker",
+   "product"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "variations",
+  "kind": "tool",
+  "name": "Variations",
+  "section": "picture",
+  "category": "Picture",
+  "what": "Makes four new takes of a picture: the same subject and style, in another moment, pose or framing.",
+  "how": "The picture model you picked in the app (Qwen Image 2.1 Edit by default, or a partner model such as GPT Image) is given your picture as a reference with a prompt to keep the subject and look and change the moment; it draws four pictures at about one megapixel.",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "more options of the same picture",
+   "another pose of my character",
+   "a few alternatives for a post",
+   "explore a look"
+  ],
+  "limits": [
+   "identity can drift a little between takes",
+   "text in the picture is not kept exactly"
+  ],
+  "use": [
+   "Drop the picture on the well",
+   "Optionally say what to vary (the light, the pose, the season)",
+   "Press Vary: about 11 cr for four",
+   "Keep the take you like"
+  ],
+  "models": [
+   "Qwen Image 2.1 Edit"
+  ],
+  "cost": "gpu",
+  "credits": 11,
+  "before": [
+   "cutout"
+  ],
+  "after": [
+   "upscale",
+   "edit",
+   "wf:video_ltx2_3_i2v"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "picture",
+   "tool": "variations"
+  },
+  "keywords": [
+   "variations",
+   "variants",
+   "alternatives",
+   "options",
+   "takes",
+   "versions",
+   "another version",
+   "remix",
+   "qwen",
+   "image"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "edit",
+  "kind": "tool",
+  "name": "Edit with words",
+  "section": "picture",
+  "category": "Picture",
+  "what": "Changes what you describe in a picture and keeps the rest as it is.",
+  "how": "An instruction-following image editing model (Qwen Image 2.1 Edit by default, or the partner model picked in the app) reads your picture and your sentence, then re-draws only what the sentence asks to change: an object, the time of day, the clothes, the background.",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "make it night",
+   "change the background of a photo",
+   "add a hat",
+   "remove a person from a photo",
+   "change the colour of the product",
+   "edit a picture with a sentence"
+  ],
+  "limits": [
+   "big changes can alter faces",
+   "exact text and logos are not reliable"
+  ],
+  "use": [
+   "Drop the picture on the well",
+   "Say what to change in one sentence (\"make it night, keep the person\")",
+   "Press Edit: about 3 cr",
+   "Compare, then edit again or keep"
+  ],
+  "models": [
+   "Qwen Image 2.1 Edit"
+  ],
+  "cost": "gpu",
+  "credits": 3,
+  "before": [
+   "cutout",
+   "upscale"
+  ],
+  "after": [
+   "upscale",
+   "cutout",
+   "wf:video_ltx2_3_i2v"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "picture",
+   "tool": "edit"
+  },
+  "keywords": [
+   "edit",
+   "change",
+   "modify",
+   "inpaint",
+   "replace",
+   "add",
+   "remove from photo",
+   "instruction",
+   "prompt edit",
+   "qwen",
+   "kontext",
+   "image edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "extend",
+  "kind": "tool",
+  "name": "Extend",
+  "section": "video",
+  "category": "Video",
+  "what": "Makes a clip go on for a few more seconds, continuing what happens in it.",
+  "how": "LTX-2.5 on Comfy Cloud starts from the last frames of your clip and generates what comes next, guided by your words if you give them; picture and sound are made together, and the new part is joined to the end of the clip.",
+  "takes": [
+   "video",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "make a clip longer",
+   "continue the shot",
+   "what happens next",
+   "a longer ending"
+  ],
+  "limits": [
+   "2 to 10 seconds at a time",
+   "faces and fine details can drift in the new part"
+  ],
+  "use": [
+   "Drop a clip (or pick a take or a result)",
+   "Optionally say what happens next",
+   "Set how many seconds (2-10)",
+   "Press Extend: about 24 cr for 5 s"
+  ],
+  "models": [
+   "LTX-2.5"
+  ],
+  "cost": "gpu",
+  "credits": 24,
+  "before": [
+   "ed-trim",
+   "wf:video_ltx2_3_i2v"
+  ],
+  "after": [
+   "sound",
+   "upscale-video",
+   "ed-merge"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "video",
+   "tool": "extend"
+  },
+  "keywords": [
+   "extend",
+   "longer",
+   "continue",
+   "lengthen",
+   "more seconds",
+   "next",
+   "outpaint time",
+   "ltx",
+   "video"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "lipsync",
+  "kind": "tool",
+  "name": "Lip-sync",
+  "section": "video",
+  "category": "Video",
+  "what": "Makes a photo of a face say or sing a voice track, with its lips moving to the words.",
+  "how": "LTX-2.5 on Comfy Cloud animates your photo as the first frame of a clip and is conditioned on the voice track, so the mouth, head and expression follow the speech or the song; the voice is laid on the clip.",
+  "takes": [
+   "image",
+   "audio"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "make my photo talk",
+   "a talking head from a photo",
+   "a character sings my song",
+   "a spokesperson video",
+   "lip sync a voice"
+  ],
+  "limits": [
+   "up to 10 seconds of voice per clip",
+   "the face should be clear and facing the camera"
+  ],
+  "use": [
+   "Drop a photo of a face",
+   "Drop the voice track (a recording, a song's vocals, or a voice made with Voice from text)",
+   "Optionally say how they say it",
+   "Press Lip-sync: about 24 cr for 5 s"
+  ],
+  "models": [
+   "LTX-2.5"
+  ],
+  "cost": "gpu",
+  "credits": 24,
+  "before": [
+   "au-voice",
+   "au-stems",
+   "au-clone",
+   "cutout"
+  ],
+  "after": [
+   "upscale-video",
+   "ed-captions",
+   "ed-reframe"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "video",
+   "tool": "lipsync"
+  },
+  "keywords": [
+   "lip sync",
+   "lipsync",
+   "talking",
+   "talk",
+   "speak",
+   "sing",
+   "mouth",
+   "avatar",
+   "talking head",
+   "voice",
+   "dub",
+   "ltx",
+   "video"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "sound",
+  "kind": "tool",
+  "name": "Add sound",
+  "section": "video",
+  "category": "Video",
+  "what": "Writes a soundtrack for a silent clip that follows what happens on screen.",
+  "how": "LTX-2.5 keeps your clip's picture frozen and generates only its audio, conditioned on the picture and on your words, so steps, impacts and ambience land in sync with the motion. Foley mode adds a LoRA that keeps it to real sounds (no music).",
+  "takes": [
+   "video",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "sound for a silent clip",
+   "foley",
+   "footsteps and ambience",
+   "make a video less silent",
+   "sync sound to the picture"
+  ],
+  "limits": [
+   "about the first 10 seconds of a clip",
+   "music is better made with Music and laid with Mute or swap audio"
+  ],
+  "use": [
+   "Drop a clip",
+   "Say what we should hear (\"rain on the window, a car passing\")",
+   "Turn on Foley for real sounds only",
+   "Press Add sound: about 9 cr for 5 s"
+  ],
+  "models": [
+   "LTX-2.5",
+   "LTX foley LoRA"
+  ],
+  "cost": "gpu",
+  "credits": 9,
+  "before": [
+   "extend",
+   "ed-trim",
+   "vfx-weather",
+   "vfx-slowmo"
+  ],
+  "after": [
+   "au-master",
+   "ed-audio",
+   "ed-merge"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "video",
+   "tool": "sound"
+  },
+  "keywords": [
+   "sound",
+   "foley",
+   "audio for video",
+   "soundtrack",
+   "ambience",
+   "sfx for clip",
+   "sync",
+   "silent",
+   "ltx"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "upscale-video",
+  "kind": "tool",
+  "name": "Upscale video",
+  "section": "video",
+  "category": "Video",
+  "what": "Restores a clip at a larger size (720p, 1080p or 1440p), sharper, frame by frame.",
+  "how": "SeedVR2 (3B), a video restoration model, runs on Comfy Cloud: it upscales the frames together, so detail is re-drawn consistently from one frame to the next instead of flickering; the sound is kept.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "upscale a video",
+   "make a clip hd",
+   "1080p from a small clip",
+   "sharpen a generated video"
+  ],
+  "limits": [
+   "about 12 seconds per run",
+   "it sharpens; it does not fix bad motion"
+  ],
+  "use": [
+   "Drop a clip",
+   "Pick 720p, 1080p or 1440p",
+   "Press Upscale: about 27 cr for 5 s"
+  ],
+  "models": [
+   "SeedVR2 3B"
+  ],
+  "cost": "gpu",
+  "credits": 27,
+  "before": [
+   "extend",
+   "lipsync",
+   "vfx-restyle",
+   "ed-trim"
+  ],
+  "after": [
+   "ed-reframe",
+   "ed-convert",
+   "ed-captions"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "video",
+   "tool": "upscale-video"
+  },
+  "keywords": [
+   "upscale video",
+   "video upscale",
+   "hd",
+   "1080p",
+   "4k",
+   "sharpen video",
+   "restore",
+   "seedvr",
+   "seedvr2",
+   "resolution",
+   "clip"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "music",
+  "kind": "tool",
+  "name": "Music",
+  "section": "audio",
+  "category": "Audio",
+  "what": "Makes a music track from a few words, with lyrics or as an instrumental.",
+  "how": "ACE-Step 1.5 (turbo) on Comfy Cloud reads your style words (genre, mood, instruments), your lyrics if any, the length and the tempo, and generates the whole track as audio in one go.",
+  "takes": [
+   "words"
+  ],
+  "gives": [
+   "audio"
+  ],
+  "goodFor": [
+   "background music for a video",
+   "an upbeat 10 second jingle",
+   "a song with lyrics",
+   "music for an ad",
+   "a lo-fi loop"
+  ],
+  "limits": [
+   "10 to 240 seconds",
+   "lyrics in sections sing best; for full songs use Jam"
+  ],
+  "use": [
+   "Describe the style in a few words (\"warm acoustic folk, upbeat\")",
+   "Optionally write lyrics; leave empty for an instrumental",
+   "Set the length and the tempo",
+   "Press Make the track: about 10 cr for 30 s"
+  ],
+  "models": [
+   "ACE-Step 1.5"
+  ],
+  "cost": "gpu",
+  "credits": 10,
+  "before": [],
+  "after": [
+   "au-master",
+   "ed-audio",
+   "au-mix",
+   "au-beat"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "audio",
+   "tool": "music"
+  },
+  "keywords": [
+   "music",
+   "song",
+   "track",
+   "jingle",
+   "instrumental",
+   "beat",
+   "soundtrack",
+   "background music",
+   "ace-step",
+   "acestep",
+   "lyrics"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "sfx",
+  "kind": "tool",
+  "name": "Sound effect",
+  "section": "audio",
+  "category": "Audio",
+  "what": "Makes a sound effect or an ambience from a sentence, in four variations.",
+  "how": "Stable Audio 3 (small, sound effects) on Comfy Cloud turns your sentence into audio in a few denoising steps; four variations are made at once so you can pick the best.",
+  "takes": [
+   "words"
+  ],
+  "gives": [
+   "audio"
+  ],
+  "goodFor": [
+   "rain sound",
+   "a door slam",
+   "city ambience",
+   "a whoosh for a transition",
+   "a jar lid popping"
+  ],
+  "limits": [
+   "1 to 30 seconds",
+   "speech and music are not its job"
+  ],
+  "use": [
+   "Describe the sound (\"heavy rain on a tin roof, distant thunder\")",
+   "Set the length",
+   "Press Make the sound: about 4 cr",
+   "Play the variations and keep one, or drop it on the Mixing strip"
+  ],
+  "models": [
+   "Stable Audio 3 small SFX"
+  ],
+  "cost": "gpu",
+  "credits": 4,
+  "before": [],
+  "after": [
+   "au-mix",
+   "ed-audio",
+   "au-master"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "audio",
+   "tool": "sfx"
+  },
+  "keywords": [
+   "sound effect",
+   "sfx",
+   "foley",
+   "ambience",
+   "noise",
+   "whoosh",
+   "rain",
+   "stable audio",
+   "sound"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "au-voice",
+  "kind": "tool",
+  "name": "Voice from text",
+  "section": "audio",
+  "category": "Audio",
+  "what": "Says a text in a natural voice, or in the voice of a short recording you give it.",
+  "how": "Chatterbox TTS (open model) runs the official template on Comfy Cloud: it reads your text and speaks it; given a few seconds of a voice, it copies that voice's timbre. An exaggeration setting makes it calmer or more expressive.",
+  "takes": [
+   "words",
+   "audio"
+  ],
+  "gives": [
+   "audio"
+  ],
+  "goodFor": [
+   "a voice over",
+   "narration for a video",
+   "text to speech",
+   "a character's line",
+   "a voice for lip sync"
+  ],
+  "limits": [
+   "English works best",
+   "long texts are better split into lines"
+  ],
+  "use": [
+   "Type the text",
+   "Optionally give a short clean recording of the voice to copy",
+   "Press Speak it",
+   "Hand it to Lip-sync or the Mixing strip"
+  ],
+  "models": [
+   "Chatterbox"
+  ],
+  "cost": "gpu",
+  "credits": 4,
+  "before": [],
+  "after": [
+   "lipsync",
+   "au-mix",
+   "au-master",
+   "ed-audio"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "audio",
+   "tool": "au-voice"
+  },
+  "keywords": [
+   "voice",
+   "tts",
+   "text to speech",
+   "speech",
+   "narration",
+   "voice over",
+   "voiceover",
+   "speak",
+   "chatterbox"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "au-clone",
+  "kind": "tool",
+  "name": "Voice clone",
+  "section": "audio",
+  "category": "Audio",
+  "what": "Says your recording again in another voice, keeping its words and timing.",
+  "how": "Chatterbox voice conversion (open model, official template on Comfy Cloud) keeps the words, rhythm and intonation of your recording and replaces the voice with the one in the reference clip.",
+  "takes": [
+   "audio"
+  ],
+  "gives": [
+   "audio"
+  ],
+  "goodFor": [
+   "change my voice",
+   "dub a line in a character's voice",
+   "voice conversion"
+  ],
+  "limits": [
+   "needs a clean reference voice of a few seconds",
+   "noise in the recording carries over"
+  ],
+  "use": [
+   "Drop your recording",
+   "Give the voice to speak in (a short clean clip)",
+   "Press Change the voice"
+  ],
+  "models": [
+   "Chatterbox VC"
+  ],
+  "cost": "gpu",
+  "credits": 4,
+  "before": [
+   "au-clean"
+  ],
+  "after": [
+   "lipsync",
+   "au-mix",
+   "au-master"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "audio",
+   "tool": "au-clone"
+  },
+  "keywords": [
+   "voice clone",
+   "voice conversion",
+   "change voice",
+   "dub",
+   "voice changer",
+   "chatterbox"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "au-stems",
+  "kind": "tool",
+  "name": "Split stems",
+  "section": "audio",
+  "category": "Audio",
+  "what": "Pulls a track apart into its vocals and its instruments.",
+  "how": "MelBandRoFormer, a source separation model (official template on Comfy Cloud), splits the track's spectrum into a vocal stem and an instrumental stem you can use on their own.",
+  "takes": [
+   "audio"
+  ],
+  "gives": [
+   "audio"
+  ],
+  "goodFor": [
+   "isolate the vocals",
+   "a karaoke version",
+   "the instrumental of a song",
+   "the voice for lip sync"
+  ],
+  "limits": [
+   "two stems (vocals and the rest)"
+  ],
+  "use": [
+   "Drop a track",
+   "Press Split it",
+   "Each stem comes back as its own sound"
+  ],
+  "models": [
+   "MelBandRoFormer"
+  ],
+  "cost": "gpu",
+  "credits": 4,
+  "before": [
+   "music"
+  ],
+  "after": [
+   "lipsync",
+   "au-mix",
+   "au-beat"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "audio",
+   "tool": "au-stems"
+  },
+  "keywords": [
+   "stems",
+   "split",
+   "separate",
+   "vocals",
+   "instrumental",
+   "karaoke",
+   "isolate voice",
+   "acapella",
+   "roformer"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "au-clean",
+  "kind": "tool",
+  "name": "Clean up and denoise",
+  "section": "audio",
+  "category": "Audio",
+  "what": "Takes hiss, hum and room noise out of a recording.",
+  "how": "FFmpeg runs on this machine: a high-pass filter cuts rumble and hum, then afftdn (FFT noise reduction) learns the noise floor and lowers it by the amount you set. Free and private.",
+  "takes": [
+   "audio"
+  ],
+  "gives": [
+   "audio"
+  ],
+  "goodFor": [
+   "remove background noise",
+   "clean a voice recording",
+   "remove hiss or hum",
+   "denoise a podcast"
+  ],
+  "limits": [
+   "very loud noise cannot be removed without artefacts"
+  ],
+  "use": [
+   "Drop the recording",
+   "Set the amount (start around 14) and a high-pass if there is hum",
+   "Press Clean it: free"
+  ],
+  "models": [
+   "ffmpeg afftdn"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [],
+  "after": [
+   "au-master",
+   "au-clone",
+   "au-mix",
+   "lipsync"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "audio",
+   "tool": "au-clean"
+  },
+  "keywords": [
+   "denoise",
+   "noise",
+   "clean",
+   "hiss",
+   "hum",
+   "noise reduction",
+   "background noise",
+   "afftdn",
+   "ffmpeg"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "au-master",
+  "kind": "tool",
+  "name": "Master and loudness",
+  "section": "audio",
+  "category": "Audio",
+  "what": "Brings a sound to the loudness a platform asks for, without clipping.",
+  "how": "FFmpeg, on this machine, measures the sound with loudnorm (EBU R128) in a first pass, then sets it to the target (Streaming -14 LUFS, Social -16, Broadcast -23 or your own) with a true-peak limit. Free.",
+  "takes": [
+   "audio"
+  ],
+  "gives": [
+   "audio"
+  ],
+  "goodFor": [
+   "make it louder",
+   "loudness for tiktok",
+   "master a track",
+   "even out the volume"
+  ],
+  "limits": [
+   "it sets loudness; it does not mix or EQ"
+  ],
+  "use": [
+   "Drop the sound",
+   "Pick a target (Streaming, Social, Broadcast)",
+   "Press Master it: free"
+  ],
+  "models": [
+   "ffmpeg loudnorm"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "au-clean",
+   "au-mix",
+   "music"
+  ],
+  "after": [
+   "ed-audio"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "audio",
+   "tool": "au-master"
+  },
+  "keywords": [
+   "master",
+   "mastering",
+   "loudness",
+   "lufs",
+   "volume",
+   "louder",
+   "normalize",
+   "loudnorm"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "au-beat",
+  "kind": "tool",
+  "name": "Find the beat",
+  "section": "audio",
+  "category": "Audio",
+  "what": "Reads the tempo (BPM) and the beats of a track.",
+  "how": "The page decodes the track in your browser and detects its onsets and tempo with the app's beat tracker, then shows the BPM and the beat grid on the waveform. Free, nothing is sent anywhere.",
+  "takes": [
+   "audio"
+  ],
+  "gives": [
+   "none"
+  ],
+  "goodFor": [
+   "what bpm is this song",
+   "cut on the beat",
+   "the tempo of a track"
+  ],
+  "limits": [
+   "very free tempo music has no steady grid"
+  ],
+  "use": [
+   "Drop a track",
+   "Press Find it",
+   "Copy the BPM or read the beats"
+  ],
+  "models": [],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "music",
+   "au-stems"
+  ],
+  "after": [
+   "ed-trim",
+   "ed-merge"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "audio",
+   "tool": "au-beat"
+  },
+  "keywords": [
+   "beat",
+   "bpm",
+   "tempo",
+   "rhythm",
+   "beat grid",
+   "detect"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "au-mix",
+  "kind": "tool",
+  "name": "Mixing strip",
+  "section": "audio",
+  "category": "Audio",
+  "what": "Lays up to six sounds on a timeline, sets their levels and renders one mixed sound.",
+  "how": "You place sounds on tracks with offsets and volumes in the page; the server mixes them with ffmpeg (adelay, volume, amix) and can master the result to a loudness target. Free.",
+  "takes": [
+   "audio"
+  ],
+  "gives": [
+   "audio"
+  ],
+  "goodFor": [
+   "mix music and a voice over",
+   "put rain under the music",
+   "combine sound effects",
+   "a soundtrack from several sounds"
+  ],
+  "limits": [
+   "six tracks"
+  ],
+  "use": [
+   "Add sounds from your library to the tracks",
+   "Drag them in time, set each fader",
+   "Press Render the mix: free"
+  ],
+  "models": [
+   "ffmpeg amix"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "sfx",
+   "music",
+   "au-voice"
+  ],
+  "after": [
+   "au-master",
+   "ed-audio"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "audio",
+   "tool": "au-mix"
+  },
+  "keywords": [
+   "mix",
+   "mixer",
+   "mixing",
+   "combine sounds",
+   "layers",
+   "tracks",
+   "amix",
+   "timeline"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "vfx-remove",
+  "kind": "tool",
+  "name": "Remove an object",
+  "section": "vfx",
+  "category": "VFX",
+  "what": "Erases an object or a person from a clip and fills the space as if it was never there.",
+  "how": "On Comfy Cloud, VOID (or Obscura Remova on LTX 2.3, or Wan VACE) finds what you name in every frame and paints it out, shadows included, keeping the background consistent over time. For a still camera, a free mode paints out a spot you brush on (ffmpeg removelogo).",
+  "takes": [
+   "video",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "remove a person from a video",
+   "erase a passer-by",
+   "remove a logo from a clip",
+   "clean plate"
+  ],
+  "limits": [
+   "about 12 seconds per run",
+   "the free mode only works for a still spot on a still camera"
+  ],
+  "use": [
+   "Drop the clip",
+   "Say what to remove (\"the man in the yellow jacket\") or paint the spot for the free mode",
+   "Press Remove it: about 35 cr for 5 s on Cloud, free for a painted spot"
+  ],
+  "models": [
+   "VOID",
+   "LTX 2.3 Obscura LoRA",
+   "Wan VACE"
+  ],
+  "cost": "gpu",
+  "credits": 35,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "upscale-video",
+   "ed-grade",
+   "sound"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "vfx",
+   "tool": "vfx-remove"
+  },
+  "keywords": [
+   "remove object",
+   "erase",
+   "remove person",
+   "object removal",
+   "inpainting",
+   "clean plate",
+   "remove logo",
+   "void",
+   "vace",
+   "obscura",
+   "video"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "vfx-background",
+  "kind": "tool",
+  "name": "Replace the background",
+  "section": "vfx",
+  "category": "VFX",
+  "what": "Puts a new background behind the people in a clip, or takes it out entirely.",
+  "how": "A partner service (Bria) separates the people from the background in every frame on Comfy Cloud and composites them over the picture you give, or leaves the background transparent.",
+  "takes": [
+   "video",
+   "image"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "change the background of a video",
+   "put me on a beach",
+   "a transparent background video",
+   "video background removal"
+  ],
+  "limits": [
+   "partner credits, priced at the run",
+   "best with people as the subject"
+  ],
+  "use": [
+   "Drop the clip",
+   "Pick New background (and give the picture) or No background",
+   "Press Change it and confirm the partner's price"
+  ],
+  "models": [
+   "Bria video background"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "ed-grade",
+   "upscale-video"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "vfx",
+   "tool": "vfx-background"
+  },
+  "keywords": [
+   "replace background",
+   "video background",
+   "background removal video",
+   "bria",
+   "matting",
+   "transparent video",
+   "new background"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "vfx-chroma",
+  "kind": "tool",
+  "name": "Green-screen cutout",
+  "section": "vfx",
+  "category": "VFX",
+  "what": "Takes out a green or blue screen and keeps the subject, with a clear background.",
+  "how": "FFmpeg runs on this machine: chromakey removes the colour you pick (with similarity and blend to soften edges) and despill cleans the green that spills onto the subject; the result is a WebM or MOV with alpha, or over a colour. Free.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "key out a green screen",
+   "chroma key",
+   "remove a blue screen"
+  ],
+  "limits": [
+   "needs an evenly lit screen behind the subject"
+  ],
+  "use": [
+   "Drop the clip",
+   "Pick the screen colour on the picture",
+   "Adjust similarity and blend",
+   "Press Cut it out: free"
+  ],
+  "models": [
+   "ffmpeg chromakey"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "ed-convert",
+   "ed-grade"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "vfx",
+   "tool": "vfx-chroma"
+  },
+  "keywords": [
+   "green screen",
+   "chroma key",
+   "chromakey",
+   "blue screen",
+   "keying",
+   "alpha video",
+   "transparent"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "vfx-relight",
+  "kind": "tool",
+  "name": "Relight",
+  "section": "vfx",
+  "category": "VFX",
+  "what": "Changes the light and the mood of a picture (or of a clip, with a partner).",
+  "how": "For a picture, Qwen Image Edit with a relighting LoRA (official template on Comfy Cloud) re-renders the light you describe (golden side light, neon, overcast) and keeps the subject. For a clip, Beeble SwitchX (partner) relights it to match a reference picture.",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "change the lighting of a photo",
+   "golden hour light",
+   "neon light on a portrait",
+   "match the light of two pictures"
+  ],
+  "limits": [
+   "the clip mode is a partner service, priced at the run"
+  ],
+  "use": [
+   "Drop the picture",
+   "Pick a light or describe it",
+   "Press Relight: about 2 cr"
+  ],
+  "models": [
+   "Qwen Image Edit 2509 relight",
+   "Beeble SwitchX"
+  ],
+  "cost": "gpu",
+  "credits": 2,
+  "before": [
+   "cutout",
+   "upscale"
+  ],
+  "after": [
+   "upscale",
+   "wf:video_ltx2_3_i2v"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "vfx",
+   "tool": "vfx-relight"
+  },
+  "keywords": [
+   "relight",
+   "lighting",
+   "light",
+   "golden hour",
+   "mood",
+   "neon",
+   "relighting",
+   "qwen"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "vfx-restyle",
+  "kind": "tool",
+  "name": "Restyle",
+  "section": "vfx",
+  "category": "VFX",
+  "what": "Turns a clip into another look (anime, clay, film noir, watercolour) while keeping its motion.",
+  "how": "Wan VACE 14B (open model, official template on Comfy Cloud) re-draws every frame in the style you describe while following the original motion and layout; a partner option (Runway Aleph 2) does it from a few words.",
+  "takes": [
+   "video",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "make my video anime",
+   "a claymation version",
+   "a different art style for a clip",
+   "video to video"
+  ],
+  "limits": [
+   "about 5 seconds per run",
+   "faces change with the style"
+  ],
+  "use": [
+   "Drop the clip",
+   "Pick a style or describe one",
+   "Press Restyle: about 32 cr for 5 s"
+  ],
+  "models": [
+   "Wan VACE 14B",
+   "Runway Aleph 2"
+  ],
+  "cost": "gpu",
+  "credits": 32,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "upscale-video",
+   "ed-grade",
+   "sound"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "vfx",
+   "tool": "vfx-restyle"
+  },
+  "keywords": [
+   "restyle",
+   "style transfer",
+   "anime",
+   "claymation",
+   "video to video",
+   "v2v",
+   "vace",
+   "wan",
+   "look"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "vfx-weather",
+  "kind": "tool",
+  "name": "Add rain, snow or fog",
+  "section": "vfx",
+  "category": "VFX",
+  "what": "Lays rain, snow or fog over a clip as an overlay effect.",
+  "how": "FFmpeg, on this machine, draws the weather procedurally (noise, motion blur and geq patterns) at the amount, speed and angle you set, then blends it over your clip in screen mode. It is an overlay: nothing in the scene gets wet. Free.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "add rain to a video",
+   "snowfall",
+   "foggy mood",
+   "make it look stormy"
+  ],
+  "limits": [
+   "an overlay effect, not simulated weather"
+  ],
+  "use": [
+   "Drop the clip",
+   "Pick rain, snow or fog and set amount, speed and angle",
+   "Press Add it: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "sound",
+   "ed-grade"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "vfx",
+   "tool": "vfx-weather"
+  },
+  "keywords": [
+   "rain",
+   "snow",
+   "fog",
+   "weather",
+   "storm",
+   "overlay",
+   "mist"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "vfx-stabilise",
+  "kind": "tool",
+  "name": "Stabilise",
+  "section": "vfx",
+  "category": "VFX",
+  "what": "Takes the shake out of a handheld shot.",
+  "how": "FFmpeg, on this machine, runs vid.stab in two passes: the first tracks the camera's motion, the second smooths it and re-frames each picture, zooming a little to hide the moving edges. Free.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "fix shaky video",
+   "stabilize handheld footage",
+   "smooth camera shake"
+  ],
+  "limits": [
+   "very fast shakes blur in the frame and stay blurred"
+  ],
+  "use": [
+   "Drop the clip",
+   "Set shakiness and smoothness",
+   "Press Stabilise: free"
+  ],
+  "models": [
+   "ffmpeg vid.stab"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [],
+  "after": [
+   "ed-reframe",
+   "upscale-video",
+   "ed-trim"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "vfx",
+   "tool": "vfx-stabilise"
+  },
+  "keywords": [
+   "stabilise",
+   "stabilize",
+   "shaky",
+   "shake",
+   "handheld",
+   "vidstab",
+   "smooth"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "vfx-slowmo",
+  "kind": "tool",
+  "name": "Slow motion",
+  "section": "vfx",
+  "category": "VFX",
+  "what": "Makes smooth slow motion by creating the frames between the frames.",
+  "how": "Free mode: ffmpeg's minterpolate estimates motion between frames and builds the in-between ones. AI mode: FILM frame interpolation (official template on Comfy Cloud) makes cleaner in-betweens on fast motion.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "slow motion",
+   "smoother video",
+   "50 or 60 fps",
+   "slow down a clip without stutter"
+  ],
+  "limits": [
+   "fast motion can smear in the free mode"
+  ],
+  "use": [
+   "Drop the clip",
+   "Pick 2x, 4x... and free or AI",
+   "Press Slow it: free, or about 4 cr with AI"
+  ],
+  "models": [
+   "ffmpeg minterpolate",
+   "FILM"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "sound",
+   "ed-merge"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "vfx",
+   "tool": "vfx-slowmo"
+  },
+  "keywords": [
+   "slow motion",
+   "slowmo",
+   "interpolation",
+   "frame interpolation",
+   "fps",
+   "smooth",
+   "film",
+   "rife"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "vfx-retouch",
+  "kind": "tool",
+  "name": "Face and skin retouch",
+  "section": "vfx",
+  "category": "VFX",
+  "what": "Evens out skin in a portrait and brings back its natural texture.",
+  "how": "A partner model (Magnific skin enhancer, official template on Comfy Cloud) smooths blemishes and uneven tone and restores skin texture so the face does not look plastic.",
+  "takes": [
+   "image"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "retouch a portrait",
+   "clean up skin",
+   "beauty retouch",
+   "make a face look natural"
+  ],
+  "limits": [
+   "partner credits, priced at the run",
+   "pictures only"
+  ],
+  "use": [
+   "Drop the portrait",
+   "Press Retouch and confirm the partner's price"
+  ],
+  "models": [
+   "Magnific"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "upscale"
+  ],
+  "after": [
+   "upscale",
+   "wf:video_ltx2_3_i2v"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "vfx",
+   "tool": "vfx-retouch"
+  },
+  "keywords": [
+   "retouch",
+   "skin",
+   "beauty",
+   "portrait",
+   "face",
+   "blemish",
+   "magnific"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "vfx-grade",
+  "kind": "tool",
+  "name": "Colour grade and LUTs",
+  "section": "vfx",
+  "category": "VFX",
+  "what": "Opens the Edit workspace's colour grade: looks, curves and .cube LUTs.",
+  "how": "This card is a shortcut: the grade itself lives in Edit (ffmpeg eq, curves, colour balance and lut3d on this machine). Free.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "colour grade",
+   "apply a lut",
+   "cinematic look"
+  ],
+  "limits": [],
+  "use": [
+   "Press Open it: it opens Edit's Grade colour"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [],
+  "after": [
+   "ed-grade"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "vfx",
+   "tool": "vfx-grade"
+  },
+  "keywords": [
+   "grade",
+   "lut",
+   "color grade",
+   "colour",
+   "look"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "vfx-sparks",
+  "kind": "tool",
+  "name": "Add particles and sparks",
+  "section": "vfx",
+  "category": "VFX",
+  "what": "Lays sparks, embers or drifting dust over a clip.",
+  "how": "FFmpeg, on this machine, draws particles procedurally (bright points with motion trails and blur) at the amount, speed and direction you set, and blends them over the clip. An overlay. Free.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "add sparks",
+   "embers flying",
+   "magic dust",
+   "a fiery look"
+  ],
+  "limits": [
+   "an overlay effect"
+  ],
+  "use": [
+   "Drop the clip",
+   "Pick sparks, embers or dust and set amount, speed and direction",
+   "Press Add it: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "sound",
+   "ed-grade"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "vfx",
+   "tool": "vfx-sparks"
+  },
+  "keywords": [
+   "sparks",
+   "particles",
+   "embers",
+   "dust",
+   "fire",
+   "magic",
+   "overlay"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "ed-trim",
+  "kind": "tool",
+  "name": "Trim",
+  "section": "edit",
+  "category": "Edit",
+  "what": "Keeps one part of a clip.",
+  "how": "FFmpeg cuts the clip between your in and out points; on keyframes it copies the stream without re-encoding (instant, no loss), otherwise it re-encodes that part.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "cut the first seconds",
+   "trim a clip",
+   "keep the best part",
+   "shorten a video"
+  ],
+  "limits": [],
+  "use": [
+   "Drop the clip",
+   "Drag the in and out handles on the strip",
+   "Press Export: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [],
+  "after": [
+   "upscale-video",
+   "ed-reframe",
+   "ed-captions",
+   "vfx-remove"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "edit",
+   "tool": "ed-trim"
+  },
+  "keywords": [
+   "trim",
+   "cut",
+   "shorten",
+   "clip",
+   "in out",
+   "seconds",
+   "free",
+   "ffmpeg",
+   "edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "ed-reframe",
+  "kind": "tool",
+  "name": "Crop and reframe",
+  "section": "edit",
+  "category": "Edit",
+  "what": "Fits a clip to 9:16, 1:1, 4:5 or 16:9.",
+  "how": "FFmpeg crops a window you place (or centres it), scales it, and fills what is left with a blurred copy, a colour or nothing. There is no subject tracking: you place the window.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "make it vertical",
+   "9:16 for tiktok",
+   "square for instagram",
+   "reframe for reels"
+  ],
+  "limits": [
+   "the window does not follow the subject"
+  ],
+  "use": [
+   "Drop the clip",
+   "Pick the format",
+   "Drag the frame where the subject is",
+   "Press Export: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "ed-trim",
+   "vfx-stabilise"
+  ],
+  "after": [
+   "ed-captions",
+   "ed-convert",
+   "upscale-video"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "edit",
+   "tool": "ed-reframe"
+  },
+  "keywords": [
+   "crop",
+   "reframe",
+   "vertical",
+   "9:16",
+   "aspect ratio",
+   "square",
+   "portrait",
+   "tiktok",
+   "reels",
+   "free",
+   "ffmpeg",
+   "edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "ed-speed",
+  "kind": "tool",
+  "name": "Speed and slow-mo",
+  "section": "edit",
+  "category": "Edit",
+  "what": "Makes a clip faster or slower (0.25x to 4x).",
+  "how": "FFmpeg retimes the picture (setpts) and the sound (atempo, pitch kept); smooth mode builds in-between frames with minterpolate for slow motion.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "speed up a video",
+   "timelapse",
+   "slow it down",
+   "2x speed"
+  ],
+  "limits": [],
+  "use": [
+   "Drop the clip",
+   "Set the speed",
+   "Turn on Smooth for slow motion",
+   "Press Export: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "sound",
+   "ed-merge"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "edit",
+   "tool": "ed-speed"
+  },
+  "keywords": [
+   "speed",
+   "fast",
+   "slow",
+   "timelapse",
+   "2x",
+   "retime",
+   "free",
+   "ffmpeg",
+   "edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "ed-reverse",
+  "kind": "tool",
+  "name": "Reverse",
+  "section": "edit",
+  "category": "Edit",
+  "what": "Plays a clip backwards, sound too.",
+  "how": "FFmpeg reverses the frames and the audio of the clip.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "play backwards",
+   "rewind effect",
+   "reverse a video"
+  ],
+  "limits": [
+   "long clips need memory"
+  ],
+  "use": [
+   "Drop the clip",
+   "Press Export: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [],
+  "after": [
+   "ed-loop",
+   "ed-gif"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "edit",
+   "tool": "ed-reverse"
+  },
+  "keywords": [
+   "reverse",
+   "backwards",
+   "rewind",
+   "free",
+   "ffmpeg",
+   "edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "ed-loop",
+  "kind": "tool",
+  "name": "Loop",
+  "section": "edit",
+  "category": "Edit",
+  "what": "Repeats a clip, or plays it back and forth (ping-pong).",
+  "how": "FFmpeg concatenates the clip N times, or the clip and its reverse for a seamless ping-pong.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "loop a video",
+   "boomerang",
+   "a seamless loop"
+  ],
+  "limits": [],
+  "use": [
+   "Drop the clip",
+   "Set how many times, or Ping-pong",
+   "Press Export: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "ed-gif",
+   "ed-convert"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "edit",
+   "tool": "ed-loop"
+  },
+  "keywords": [
+   "loop",
+   "repeat",
+   "boomerang",
+   "ping-pong",
+   "seamless",
+   "free",
+   "ffmpeg",
+   "edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "ed-merge",
+  "kind": "tool",
+  "name": "Merge clips",
+  "section": "edit",
+  "category": "Edit",
+  "what": "Joins several clips in order, with a crossfade.",
+  "how": "FFmpeg scales the clips to one size and joins them with xfade (picture) and acrossfade (sound), or straight cuts.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "join clips",
+   "combine videos",
+   "put clips together",
+   "a montage"
+  ],
+  "limits": [],
+  "use": [
+   "Add the clips in order",
+   "Set the crossfade",
+   "Press Export: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "ed-trim",
+   "extend"
+  ],
+  "after": [
+   "ed-audio",
+   "ed-captions",
+   "ed-convert"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "edit",
+   "tool": "ed-merge"
+  },
+  "keywords": [
+   "merge",
+   "join",
+   "combine",
+   "concatenate",
+   "montage",
+   "crossfade",
+   "free",
+   "ffmpeg",
+   "edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "ed-captions",
+  "kind": "tool",
+  "name": "Add captions",
+  "section": "edit",
+  "category": "Edit",
+  "what": "Puts words on the picture, typed or from an .srt or .vtt file.",
+  "how": "FFmpeg burns the subtitles into the picture with the app's fonts (the subtitles filter), in the style, size, colour and position you pick.",
+  "takes": [
+   "video",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "add subtitles",
+   "captions for tiktok",
+   "burn subtitles",
+   "text on video"
+  ],
+  "limits": [
+   "captions are burned in, not a separate track"
+  ],
+  "use": [
+   "Drop the clip",
+   "Type the lines with their times, or drop an .srt",
+   "Pick the style and position",
+   "Press Export: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "ed-reframe",
+   "ed-trim",
+   "lipsync"
+  ],
+  "after": [
+   "ed-convert"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "edit",
+   "tool": "ed-captions"
+  },
+  "keywords": [
+   "captions",
+   "subtitles",
+   "srt",
+   "vtt",
+   "text",
+   "titles",
+   "free",
+   "ffmpeg",
+   "edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "ed-grade",
+  "kind": "tool",
+  "name": "Grade colour",
+  "section": "edit",
+  "category": "Edit",
+  "what": "Gives a clip a look: presets, sliders and .cube LUTs.",
+  "how": "FFmpeg applies exposure, contrast and saturation (eq), curves, warmth and tint (colour balance), a vignette, and your LUT (lut3d).",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "colour grade",
+   "cinematic look",
+   "apply a lut",
+   "warmer video",
+   "black and white"
+  ],
+  "limits": [],
+  "use": [
+   "Drop the clip",
+   "Pick a preset or move the sliders, or load a .cube LUT",
+   "Press Export: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "vfx-restyle",
+   "vfx-background",
+   "vfx-weather"
+  ],
+  "after": [
+   "ed-convert"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "edit",
+   "tool": "ed-grade"
+  },
+  "keywords": [
+   "grade",
+   "color grading",
+   "colour",
+   "lut",
+   "cube",
+   "look",
+   "filmic",
+   "free",
+   "ffmpeg",
+   "edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "ed-logo",
+  "kind": "tool",
+  "name": "Add a logo",
+  "section": "edit",
+  "category": "Edit",
+  "what": "Puts a picture (a logo, a watermark) over a clip, in a corner.",
+  "how": "FFmpeg overlays your picture at the corner, size and opacity you pick, with optional fades.",
+  "takes": [
+   "video",
+   "image"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "watermark a video",
+   "add my logo",
+   "brand a clip"
+  ],
+  "limits": [],
+  "use": [
+   "Drop the clip",
+   "Give the logo (a PNG with a clear background is best)",
+   "Pick the corner and size",
+   "Press Export: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "cutout"
+  ],
+  "after": [
+   "ed-convert"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "edit",
+   "tool": "ed-logo"
+  },
+  "keywords": [
+   "logo",
+   "watermark",
+   "overlay",
+   "brand",
+   "free",
+   "ffmpeg",
+   "edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "ed-audio",
+  "kind": "tool",
+  "name": "Mute or swap audio",
+  "section": "edit",
+  "category": "Edit",
+  "what": "Takes a clip's sound out, replaces it or mixes another under it.",
+  "how": "FFmpeg drops the clip's audio, maps a new sound in its place, or mixes the two (amix) with the volumes you set and an optional fade out.",
+  "takes": [
+   "video",
+   "audio"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "put music on a video",
+   "replace the sound",
+   "mute a video",
+   "add a voice over"
+  ],
+  "limits": [],
+  "use": [
+   "Drop the clip",
+   "Pick Mute, Replace or Mix and give the sound",
+   "Press Export: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "music",
+   "au-master",
+   "au-mix",
+   "au-voice"
+  ],
+  "after": [
+   "ed-convert",
+   "ed-captions"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "edit",
+   "tool": "ed-audio"
+  },
+  "keywords": [
+   "audio",
+   "music on video",
+   "mute",
+   "replace sound",
+   "voice over",
+   "soundtrack",
+   "free",
+   "ffmpeg",
+   "edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "ed-convert",
+  "kind": "tool",
+  "name": "Convert format",
+  "section": "edit",
+  "category": "Edit",
+  "what": "Saves a clip as MP4, WebM, MOV or GIF, or keeps only its sound.",
+  "how": "FFmpeg re-encodes the clip with the codec, quality, size and frame rate you pick (H.264, VP9, ProRes, GIF, MP3, WAV, M4A).",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "video",
+   "audio"
+  ],
+  "goodFor": [
+   "convert to mp4",
+   "make it smaller",
+   "extract the audio",
+   "mov to mp4"
+  ],
+  "limits": [],
+  "use": [
+   "Drop the clip",
+   "Pick the format and quality",
+   "Press Export: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "ed-grade",
+   "ed-captions",
+   "ed-logo"
+  ],
+  "after": [],
+  "tutorial": null,
+  "open": {
+   "workspace": "edit",
+   "tool": "ed-convert"
+  },
+  "keywords": [
+   "convert",
+   "format",
+   "mp4",
+   "webm",
+   "mov",
+   "prores",
+   "compress",
+   "extract audio",
+   "mp3",
+   "free",
+   "ffmpeg",
+   "edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "ed-gif",
+  "kind": "tool",
+  "name": "GIF and thumbnails",
+  "section": "edit",
+  "category": "Edit",
+  "what": "Makes a GIF of a range, or saves frames as pictures.",
+  "how": "FFmpeg builds a palette for the range (palettegen) and encodes a clean GIF with it (paletteuse), or exports frames as PNG or JPG at even times or the times you set.",
+  "takes": [
+   "video"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "make a gif",
+   "a thumbnail from a video",
+   "extract frames"
+  ],
+  "limits": [
+   "GIFs get heavy past a few seconds"
+  ],
+  "use": [
+   "Drop the clip",
+   "Pick GIF or Frames and the range",
+   "Press Export: free"
+  ],
+  "models": [
+   "ffmpeg"
+  ],
+  "cost": "free",
+  "credits": 0,
+  "before": [
+   "ed-trim",
+   "ed-loop"
+  ],
+  "after": [],
+  "tutorial": null,
+  "open": {
+   "workspace": "edit",
+   "tool": "ed-gif"
+  },
+  "keywords": [
+   "gif",
+   "thumbnail",
+   "frames",
+   "stills",
+   "screenshot",
+   "free",
+   "ffmpeg",
+   "edit"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ },
+ {
+  "id": "template",
+  "kind": "tool",
+  "name": "Template",
+  "section": "library",
+  "category": "Library",
+  "what": "Runs any of the official ComfyUI workflows on Comfy Cloud, from a form made from its inputs.",
+  "how": "The Library reads Comfy Cloud's own catalogue (about 695 official workflows); a workflow's form comes from its inputs, its price from Cloud's estimate, and Cloud converts and runs it when you confirm. What it makes comes back as a result.",
+  "takes": [
+   "image",
+   "video",
+   "audio",
+   "words"
+  ],
+  "gives": [
+   "image",
+   "video",
+   "audio",
+   "3d"
+  ],
+  "goodFor": [
+   "a job no tool on the shelf does",
+   "try a new model",
+   "an official comfyui workflow"
+  ],
+  "limits": [],
+  "use": [
+   "Find the workflow in the Library (search or browse)",
+   "Fill its inputs",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [],
+  "cost": "gpu",
+  "credits": null,
+  "before": [],
+  "after": [],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "tool": "template"
+  },
+  "keywords": [
+   "template",
+   "workflow",
+   "comfyui",
+   "library",
+   "official",
+   "run"
+  ],
+  "curated": [
+   "name",
+   "section",
+   "category",
+   "what",
+   "how",
+   "takes",
+   "gives",
+   "goodFor",
+   "limits",
+   "use",
+   "models",
+   "cost",
+   "credits",
+   "before",
+   "after",
+   "open",
+   "keywords"
+  ]
+ }
+]
