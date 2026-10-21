@@ -69,7 +69,7 @@
 .mc-pst-pic { position: relative; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; height: clamp(15rem, 27dvh, 22rem); overflow: hidden; border-radius: 1.375rem; background: var(--sunk); box-shadow: 0 0 0 1px rgba(255, 255, 255, .07); cursor: pointer; transition: box-shadow var(--t-fast); }
 .mc-pst-pic:hover { box-shadow: 0 0 0 1px var(--accent-line), 0 14px 28px rgba(0, 0, 0, .4); }
 .mc-pst.is-on .mc-pst-pic { box-shadow: 0 0 0 2px var(--accent); }
-.mc-pst-pic canvas { display: block; height: calc(100% - 1.5rem); width: auto; max-width: calc(100% - 1.5rem); border-radius: .5rem; box-shadow: 0 6px 20px rgba(0, 0, 0, .35); }
+.mc-pst-pic canvas { display: block; height: auto; width: auto; max-height: calc(100% - 1.5rem); max-width: calc(100% - 1.5rem); border-radius: .5rem; box-shadow: 0 6px 20px rgba(0, 0, 0, .35); }
 .mc-pst-keys { position: absolute; right: .875rem; top: .875rem; display: flex; gap: .4375rem; opacity: 0; transform: translateY(-3px); transition: opacity var(--t-fast), transform var(--t-fast); }
 .mc-pst-pic:hover .mc-pst-keys, .mc-pst-pic:focus-within .mc-pst-keys { opacity: 1; transform: none; }
 @media (hover: none) { .mc-pst-keys { opacity: 1; transform: none; } }

@@ -2,7 +2,7 @@
 // that keeps to the safe zones, never a plain scale), the layouts Brioche can suggest, applying the
 // brand kit to a design, and the brand guard that reads one. Pure: a measurer is handed in (the page
 // measures text with a canvas; tests and the server use the estimate below).
-import { frameOf, FORMAT_KEYS, ALL_FORMATS, familyOf, shapeOf, LAYOUT_PROPS, clamp, round, uid, colorOf, contrast, luminance, newLayer, layoutOf } from "./design.js";
+import { frameOf, FORMAT_KEYS, ALL_FORMATS, familyOf, shapeOf, LAYOUT_PROPS, clamp, round, uid, colorOf, contrast, luminance, newLayer, layoutOf, logoNow } from "./design.js";
 
 export const safeRect = (format) => {
   const s = frameOf(format).safe;
@@ -195,13 +195,17 @@ export function layoutPreset(design, format, preset, measure = estimate) {
       put(hero, { x: tallFrame ? 0.12 : 1 - wide + 0.16, y: round(hy), w: wide, h: round(1.04 - hy), fit: "cover", radius: 0.04 });
     }
   } else if (preset === "poster") {
-    put(hero, { x: 0, y: 0, w: 1, h: 1, fit: "cover", radius: 0 });
+    // a photograph fills the frame behind the type; a cut-out (a product on a clear ground, kept whole) is not stretched over it:
+    // it stands in the lower part, and the type keeps the upper
+    const cutOut = !!hero && (hero.clear === true || hero.fit === "contain");
+    if (cutOut) put(hero, { x: 0.14, y: 0.42, w: 0.72, h: 0.54, fit: "contain", radius: 0 });
+    else put(hero, { x: 0, y: 0, w: 1, h: 1, fit: "cover", radius: 0 });
     const w = tallFrame ? 0.84 : 0.82;
     const size = headline ? biggest(headline, w, sizeAt("headline", format) * 1.05, 3) : 0;
     const hh = headline ? tall(headline, { w, size }) : 0;
     const sh = sub ? tall(sub, { w: w * 0.9, size: sizeAt("sub", format) }) : 0;
     const ch = cta ? tall(cta, { w: 0.5, size: sizeAt("cta", format) }) : 0;
-    let at = S.y + S.h - ch - (cta ? g(2.4) : 0) - sh - (sub ? g(1.8) : 0) - hh;
+    let at = cutOut ? S.y + 0.1 : S.y + S.h - ch - (cta ? g(2.4) : 0) - sh - (sub ? g(1.8) : 0) - hh;
     if (logo) put(logo, { x: S.x, y: S.y, w: logoW(logo, 0.3) });
     if (headline) (put(headline, { x: S.x, y: round(at), w, h: 0, size, align: "left" }), (at += hh + g(1.8)));
     if (sub) (put(sub, { x: S.x, y: round(at), w: w * 0.9, h: 0, size: sizeAt("sub", format), align: "left" }), (at += sh + g(2.4)));
@@ -537,8 +541,10 @@ export function guard(design, format, kit, measure = estimate, sizes = {}) {
       if (ox > 8 && oy > Math.min(a.h, b.h) * 0.25) add("warn", "overlap", "Text runs into other text", texts[k]);
     }
   }
-  // the clear space round a logo is the height of its lid, a quarter of the mark
-  for (const l of logos.filter((x) => kit.logos.find((f) => f.id === x.logo)?.kind !== "icon")) {
+  // the clear space round a logo is a quarter of its height
+  // (a logo whose file has not been read yet has no drawn size: its layer's own box is only a guess, taller than the wordmark, so
+  // nothing is said about its clear space until the file is known: a warning that comes and goes with the load order is no help)
+  for (const l of logos.filter((x) => kit.logos.find((f) => f.id === x.logo)?.kind !== "icon" && logoNow(kit.logos.find((f) => f.id === x.logo)?.url))) {
     const b = box[l.id];
     const x = b.h * 0.25;
     for (const o of live.filter((q) => q !== l && (q.type === "text" || q.type === "logo"))) {

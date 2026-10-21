@@ -8,7 +8,7 @@ import { openPicker, pictureOf } from "./picker.js";
 import { FORMATS, FORMAT_KEYS, ALL_FORMATS, FAMILIES, FAMILY_KEYS, ownFormats, familyFormats, familyOf, labelOf, ratioGlyph, nativeSize, PURPOSES, STATUSES, frameOf, prepare, missing, drawDesign, pick } from "./design.js";
 import { safeRect, LAYOUTS } from "./macaron-layout.js";
 import {
-  macaron, designNow, kitNow, layoutNow, reflowFor, measure, onLive, begin, live, end, undo, redo, patchLayer, pickLayer, openDesign, setFormat, setDesignLive, setDesign,
+  macaron, designNow, kitNow, layoutNow, reflowFor, measure, onLive, begin, live, end, undo, redo, patchLayer, setLayerWords, pickLayer, openDesign, setFormat, setDesignLive, setDesign,
   addLayer, removeLayer, duplicateLayer, moveLayer, reorderLayer, distribute, alignLayer, adaptFormat, applyLayout, applyKitNow, guardOf, toggleSafe, exportPng, addDesign, duplicateDesign,
   removeDesign, setBg, addAsset, thumb, addMotion, pickMotion,
 } from "./macaron.js";
@@ -436,7 +436,7 @@ export function studioSection() {
 
   function textRows(l, set, kit) {
     return [
-      row("Words", textField({ value: l.text ?? "", rows: 3, set: (v) => set({ text: v }), note: "Edited the words", label: "The words" })),
+      row("Words", textField({ value: l.text ?? "", rows: 3, set: (v) => (["headline", "sub", "eyebrow", "cta"].includes(l.role) ? setLayerWords(l.id, v) : set({ text: v })), note: "Edited the words", label: "The words" })),
       h("p.mc-hint", {}, "*Asterisks* set a word in the accent colour."),
       row("Type", seg([["display", "Display"], ["text", "Text"], ["mono", "Mono"]], l.fontRole, (v) => patchEdit(l.id, { fontRole: v }, "Type role"), { cls: "is-small", label: "Type role" })),
       row("Size", slider({ value: l.size, min: 0.016, max: 0.22, step: 0.001, read: (v) => `${Math.round(v * 1080)} px`, note: "Type size", set: (v) => set({ size: r4(v) }), prop: "size" })),
@@ -486,7 +486,7 @@ export function studioSection() {
     return [
       row("File", h("div.mc-logos", {}, ...kit.logos.filter((x) => !kind || x.kind === kind).map((x) => h("button.mc-logo-pick", { type: "button", title: `${x.name}\nFor ${x.ground || "any ground"}`, "aria-pressed": String(x.id === l.logo), dataset: { tone: x.tone }, on: { click: () => patchEdit(l.id, { logo: x.id }, "Logo file") } }, h("img", { src: x.url, alt: x.name, draggable: false }))))),
       row("Width", slider({ value: l.w, min: 0.06, max: 0.9, step: 0.005, read: (v) => `${Math.round(v * 1080)} px`, note: "Logo size", set: (v) => set({ w: r4(v) }), prop: "w" })),
-      h("p.mc-hint", {}, "The logo is drawn from the supplied file, never redrawn. Keep a lid's height clear around it."),
+      h("p.mc-hint", {}, "The logo is drawn from the supplied file, never redrawn. Keep a quarter of its height clear around it."),
     ];
   }
   function shapeRows(l, set, kit) {

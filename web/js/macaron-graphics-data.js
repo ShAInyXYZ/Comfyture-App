@@ -2,10 +2,10 @@
 // nudge), the fields each has, and buildGraphic(), which makes one as a design with motion from the brand's kit: its ground, its
 // accent, its type, its wordmark. The result is an ordinary design (layers that carry their timing, d.graphic says what it
 // is) and a motion piece's numbers, so the Motion window, the editor and the renderer treat it like any other.
-import { newLayer, uid, luminance, FORMATS } from "./design.js";
+import { newLayer, uid, luminance, contrast, FORMATS } from "./design.js";
 
 export const GRAPHIC_KINDS = [
-  { id: "sting", band: 0.5, name: "Logo sting", seconds: 3, hint: "The logo lands, its lid drops, a line follows", fields: [["line", "Line under the logo"]] },
+  { id: "sting", band: 0.5, name: "Logo sting", seconds: 3, hint: "The logo lands, a line follows", fields: [["line", "Line under the logo"]] },
   { id: "lower", band: 0.74, name: "Lower third", seconds: 4, hint: "A name and a role, on a bar", fields: [["name", "Name"], ["role", "Role"]] },
   { id: "end", band: 0.4, name: "End card", seconds: 3, hint: "The logo, a closing line, where to go", fields: [["line", "Closing line"], ["url", "Where"]] },
   { id: "title", band: 0.5, name: "Title card", seconds: 4, hint: "A big title and a quiet line under it", fields: [["title", "Title"], ["sub", "Subtitle"]] },
@@ -23,7 +23,7 @@ export function defaultFields(kind, { brandName = "Your brand", tagline = "" } =
   return {
     sting: { line: said },
     lower: { name: brandName, role: "Creative team" },
-    end: { line: said, url: "yourbrand.com" },
+    end: { line: said, url: `${String(brandName).toLowerCase().replace(/[^a-z0-9]+/g, "") || "yourbrand"}.com` },
     title: { title: said, sub: brandName },
     counter: { number: "10K", label: "happy customers" },
     nudge: { line: `Like what you see?`, cta: `Follow ${brandName}` },
@@ -94,11 +94,17 @@ export function buildGraphic({ kind, fields = {}, kit, brandName = "", format = 
     ];
   } else if (kind === "end") {
     bg = R.second;
+    // (text on the second colour is the palette's light or its ground, whichever reads; the accent only where it does)
+    const palette = kit?.palette ?? [];
+    const hexOf = (id) => palette.find((p) => p.id === id)?.hex ?? "#000000";
+    const reads = (id) => contrast(hexOf(id), hexOf(bg));
+    const ink = reads(R.light) >= reads(R.ground) ? R.light : R.ground;
+    const note = reads(R.accent) >= 3 ? R.accent : ink;
     layers = [
       ...logo(logoAt(0.62, 0.36), { t0: T(0.2), in: { fx: "pop", dur: D(0.7), ease: "back" }, lid: lid(0.9) }),
-      text("line", "headline", f.line, { y: 0.47, size: 0.074, font: "display", anim: inn("rise", 0.8, 0.8) }),
-      shape("rule", "round", { name: "Rule", x: 0.44, y: 0.64, w: 0.12, h: 0.006, radius: 0.5, anim: inn("wipe-r", 1.3, 0.5, "out") }),
-      text("url", "label", f.url, { y: 0.67, size: 0.034, font: "mono", color: R.accent, tracking: 0.04, anim: inn("fade", 1.5, 0.6) }),
+      text("line", "headline", f.line, { y: 0.47, size: 0.074, font: "display", color: ink, anim: inn("rise", 0.8, 0.8) }),
+      shape("rule", "round", { name: "Rule", x: 0.44, y: 0.64, w: 0.12, h: 0.006, radius: 0.5, color: note, anim: inn("wipe-r", 1.3, 0.5, "out") }),
+      text("url", "label", f.url, { y: 0.67, size: 0.034, font: "mono", color: ink, tracking: 0.04, anim: inn("fade", 1.5, 0.6) }),
     ];
     pops = [T(0.9) + D(0.5) * 0.55];
   } else if (kind === "title") {

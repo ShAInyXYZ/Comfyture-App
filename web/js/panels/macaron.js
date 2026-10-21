@@ -12,7 +12,7 @@ import { kitSpace } from "../macaron-kit.js";
 import { contentSpace } from "../macaron-content.js";
 import { studioSpace } from "../macaron-studio-space.js";
 import { bookSpace } from "../macaron-book.js";
-import { brandHealth } from "../macaron-health.js";
+import { brandHealth, warmDesigns } from "../macaron-health.js";
 import { windowHost, defineWindow, openWin, closeAll } from "../macaron-win.js";
 import { BRIOCHE, WORKSPACES } from "../macaron-harness.js";
 import { setRoom } from "../harnesses.js";
@@ -22,8 +22,8 @@ const COUNT = {
   idea: (b) => b.body.refs.filter((r) => r.kind !== "concept").length,
   kit: (b) => b.body.kit.logos.length,
   studio: (b) => (b.body.assets ?? []).filter((a) => a.url).length,
-  create: (b) => b.body.designs.filter((d) => !d.variant).length,
-  book: (b) => b.body.designs.filter((d) => !d.variant && d.status === "approved").length,
+  create: (b) => b.body.designs.filter((d) => !d.variant && !d.motion && !d.graphic).length,
+  book: (b) => b.body.designs.filter((d) => !d.variant && !d.motion && !d.graphic && d.status === "approved").length,
 };
 /** The workspaces, as the panel names them: the name, the picture of its tile and its count. */
 const SPACE_INFO = Object.fromEntries(WORKSPACES.map((w) => [w.id, [w.name, w.tile, COUNT[w.id]]]));
@@ -70,6 +70,8 @@ function health(b) {
   if (shell.healthSig !== sig) {
     shell.healthSig = sig;
     shell.health = brandHealth(b);
+    // the guard reads the logos as they are drawn: the designs are got ready once, then the health is worked out again
+    warmDesigns(b).then((fresh) => fresh && shell && shell.healthSig === sig && ((shell.health = brandHealth(b)), (shell.sideSig = ""), changed("macaron")));
   }
   const { score, lines } = shell.health;
   return h("section.mc-health", { "aria-label": "Brand health" },

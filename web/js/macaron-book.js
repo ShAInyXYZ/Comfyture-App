@@ -6,7 +6,7 @@
 // macaron-book-model.js's, the audit macaron-book-audit.js's.
 import { h, icon, sprite } from "./dom.js";
 import { changed, toast } from "./store.js";
-import { kitOf } from "./design.js";
+import { kitOf, cssName } from "./design.js";
 import { macaron, setSpace, save, setKit, thumb, kitFiles } from "./macaron.js";
 import { bento, mcicon, fill, key } from "./macaron-ui.js";
 import { defineWindow, openWin, closeWin, closeAll } from "./macaron-win.js";
@@ -38,7 +38,7 @@ function download(blob, name) {
 }
 
 /** The palette and the type as variables for the web (the same file the kit's export makes). */
-export const kitCss = (kit) => `:root {\n${kit.palette.map((p) => `  --${p.id.replace(/[^a-z0-9]+/gi, "-")}: ${p.hex.toUpperCase()}; /* ${p.name}${p.role ? `, ${p.role}` : ""} */`).join("\n")}\n  --font-display: "${kit.type.display.family}";\n  --font-text: "${kit.type.text.family}";\n  --font-mono: "${kit.type.mono.family}";\n}\n`;
+export const kitCss = (kit) => `:root {\n${kit.palette.map((p) => `  --${cssName(p)}: ${p.hex.toUpperCase()}; /* ${p.name}${p.role ? `, ${p.role}` : ""} */`).join("\n")}\n  --font-display: "${kit.type.display.family}";\n  --font-text: "${kit.type.text.family}";\n  --font-mono: "${kit.type.mono.family}";\n}\n`;
 /** The kit as data: palette, type, voice, rules and the logo list. */
 export const kitJson = (b) => {
   const kit = kitOf(b.body);

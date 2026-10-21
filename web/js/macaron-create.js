@@ -193,7 +193,7 @@ export function createSpace() {
     const [heroSlot, ogSlot, emailSlot] = slots(b, ["hero", "og", "email"], startOf);
     // a browser window holds the hero, the share image and the email header sit under it, to scale
     const small = h("div.mc-fr", {}, ogSlot, emailSlot);
-    const browser = h("div.mc-browser", {}, h("div.mc-browser-bar", {}, h("i"), h("i"), h("i"), h("span", {}, "comfyture.example")), h("div.mc-browser-view", {}, scaled(h("div.mc-fr", {}, heroSlot), { cap: 0 })));
+    const browser = h("div.mc-browser", {}, h("div.mc-browser-bar", {}, h("i"), h("i"), h("i"), h("span", {}, `${(b.name || "brand").toLowerCase().replace(/[^a-z0-9]+/g, "") || "brand"}.example`)), h("div.mc-browser-view", {}, scaled(h("div.mc-fr", {}, heroSlot), { cap: 0 })));
     return count("Web", bases(b).filter((d) => familyOf(d.format) === "web").length, "is-web", "Web", toPosts("web"), h("div.mc-webgrid", {}, browser, scaled(small)));
   }
   function app(b) {

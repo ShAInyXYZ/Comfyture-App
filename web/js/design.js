@@ -104,6 +104,8 @@ export function kitOf(body = {}) {
 }
 
 /** A colour role (a palette id, or a literal #hex) as a hex. */
+/** A palette colour's name as a CSS variable: its name ("Deep teal" is deep-teal), else its role, else its id. */
+export const cssName = (p) => (String(p.name ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || String(p.role ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || String(p.id).replace(/[^a-z0-9]+/gi, "-"));
 export const colorOf = (kit, role, fallback = "#000000") => (typeof role === "string" && role.startsWith("#") ? role : kit.palette.find((p) => p.id === role)?.hex ?? fallback);
 
 const channel = (v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);

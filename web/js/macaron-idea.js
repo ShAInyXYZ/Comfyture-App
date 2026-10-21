@@ -8,6 +8,7 @@ import { openPicker, pictureOf } from "./picker.js";
 import {
   macaron, setBrief, addRef, setRef, removeRef, pickEntry, openDesign, addDirection, setDirection, pickDirection, removeDirection, addNote,
 } from "./macaron.js";
+import { contrast, luminance, kitOf } from "./design.js";
 import { bento, mcicon, key, chip, arming, isArmed, armedNow, longDate, fill, shortDate } from "./macaron-ui.js";
 import { defineWindow, openWin, closeWin } from "./macaron-win.js";
 import { draftKey } from "./macaron-tools.js";
@@ -39,6 +40,21 @@ const typingIn = (el) => el.contains(document.activeElement) && document.activeE
 const moodOf = (b) => b.body.refs.filter((r) => r.kind !== "concept");
 /** The steps of the story worth a card: what was decided, made or tried (not each export). */
 const storyOf = (b) => [...b.body.history].filter((x) => x.kind !== "export").sort((a, c) => String(a.at).localeCompare(String(c.at)));
+
+/**
+ * What a direction shows when it has no picture of its own: a ground of the brand's palette (the darkest, then the lightest,
+ * by turns, so the directions can be looked at on both) and the wordmark file that reads best on it, unless one was chosen.
+ */
+function looksOf(kit, d, i) {
+  const palette = kit.palette ?? [];
+  const byLight = [...palette].sort((a, c) => luminance(a.hex) - luminance(c.hex));
+  const ground = palette.length ? (i % 2 === 0 ? byLight[0] : byLight.at(-1)) : null;
+  const tone = (l) => palette.find((p) => p.id === l.tone)?.hex ?? l.tone;
+  const wordmarks = (kit.logos ?? []).filter((l) => l.kind === "wordmark");
+  const chosen = (kit.logos ?? []).find((l) => l.id === d.logo);
+  const reads = ground ? [...wordmarks].sort((a, c) => contrast(tone(c), ground.hex) - contrast(tone(a), ground.hex))[0] : wordmarks[0];
+  return { ground: ground?.hex ?? null, logo: chosen ?? reads ?? null };
+}
 
 // ---------------------------------------------------------------- the workspace
 
@@ -77,10 +93,10 @@ export function ideaSpace() {
     const list = b.body.directions ?? [];
     const kit = b.body.kit;
     return bento("is-dirs", "Directions", () => openWin("directions"),
-      list.length ? h("div.mc-dirs", {}, ...list.slice(0, 3).map((d) => {
-        const logo = kit.logos.find((l) => l.id === d.logo);
+      list.length ? h("div.mc-dirs", {}, ...list.slice(0, 3).map((d, i) => {
+        const { logo, ground } = looksOf(kitOf(b.body), d, i);
         return h(`button.mc-dir${d.picked ? ".is-picked" : ""}`, { type: "button", title: d.picked ? "The direction picked" : "Pick this direction", on: { click: (e) => (e.stopPropagation(), pickDirection(d.id)) } },
-          h("span.mc-dir-pic", { style: d.bg ? { backgroundImage: `url("${d.bg}")` } : {} }, logo ? h("img", { src: logo.url, alt: "", draggable: false }) : null, d.picked ? h("i.mc-tick", {}, icon("check")) : null),
+          h("span.mc-dir-pic", { style: d.bg ? { backgroundImage: `url("${d.bg}")` } : ground ? { backgroundColor: ground } : {} }, logo ? h("img", { src: logo.url, alt: "", draggable: false }) : null, d.picked ? h("i.mc-tick", {}, icon("check")) : null),
           h("b", {}, d.name), h("span", {}, d.note));
       })) : h("p.mc-hint", {}, "Directions for the mark and the look: ask Brioche for a new one."));
   }
@@ -152,7 +168,7 @@ function briefWin() {
       h("div.mc-brief-top", {},
         h("div.mc-brief-idea", {},
           h("span.label", {}, "The idea in two lines"),
-          h("textarea.field.mc-text.mc-statement", { rows: 3, value: br.pitch ?? "", placeholder: "A warm, playful home for making films. …", "aria-label": "The idea", on: { input: (e) => (grow(e.target), setBrief({ pitch: e.target.value.slice(0, 280) })) } }),
+          h("textarea.field.mc-text.mc-statement", { rows: 3, value: br.pitch ?? "", placeholder: "What the brand is for, in two lines: who it is for and how it feels. …", "aria-label": "The idea", on: { input: (e) => (grow(e.target), setBrief({ pitch: e.target.value.slice(0, 280) })) } }),
           h("div.mc-goals", {}, ...goals.slice(0, 3).map((g, i) => h("label.mc-goal", {}, mcicon(GOAL_ICON[i]), h("input", { value: g, placeholder: ["Feel…", "Make it…", "Stay…"][i], "aria-label": `Goal ${i + 1}`, on: { input: (e) => { const next = [...(b.body.brief.goals ?? [])]; while (next.length < 3) next.push(""); next[i] = e.target.value.slice(0, 32); setBrief({ goals: next.map((x) => x ?? "").slice(0, 3) }); } } }))))),
         h("div.mc-brief-well", { dataset: { empty: br.image ? "" : "1" } },
           br.image
@@ -293,17 +309,17 @@ function directionsWin() {
     const kit = b.body.kit;
     const toneOf = (l) => kit.palette.find((p) => p.id === l?.tone)?.hex ?? "transparent";
     fill(el,
-      h("div.mc-dgrid", {}, ...list.map((d) => {
+      h("div.mc-dgrid", {}, ...list.map((d, i) => {
         const armedKey = `dir:${d.id}`;
-        const logo = kit.logos.find((l) => l.id === d.logo);
+        const { logo, ground } = looksOf(kitOf(b.body), d, i);
         return h(`article.mc-dcard${d.picked ? ".is-picked" : ""}`, {},
-          h("button.mc-dir-pic.is-big", { type: "button", title: d.picked ? "The direction picked" : "Pick this direction", style: d.bg ? { backgroundImage: `url("${d.bg}")` } : {}, on: { click: () => !d.picked && pickDirection(d.id) } },
+          h("button.mc-dir-pic.is-big", { type: "button", title: d.picked ? "The direction picked" : "Pick this direction", style: d.bg ? { backgroundImage: `url("${d.bg}")` } : ground ? { backgroundColor: ground } : {}, on: { click: () => !d.picked && pickDirection(d.id) } },
             logo ? h("img", { src: logo.url, alt: "", draggable: false }) : null, d.picked ? h("i.mc-tick", {}, icon("check")) : null),
           h("input.field.mc-text.mc-dname", { value: d.name, "aria-label": "The direction's name", on: { input: (e) => setDirection(d.id, { name: e.target.value.slice(0, 40) }) } }),
           h("textarea.field.mc-text.mc-dnote", { rows: 2, value: d.note ?? "", "aria-label": "What it is", placeholder: "What it feels like", on: { input: (e) => (grow(e.target), setDirection(d.id, { note: e.target.value.slice(0, 140) })) } }),
           h("div.mc-dlogo", {},
             h("i.mc-dswatch", { style: { background: toneOf(logo) } }),
-            h("select.field.mc-dlogo-sel", { "aria-label": "The logo file on it", title: "The logo file on this direction", on: { change: (e) => setDirection(d.id, { logo: e.target.value }) } }, ...kit.logos.filter((l) => l.kind === "wordmark").map((l) => h("option", { value: l.id, selected: l.id === d.logo }, l.name))),
+            h("select.field.mc-dlogo-sel", { "aria-label": "The logo file on it", title: "The logo file on this direction", on: { change: (e) => setDirection(d.id, { logo: e.target.value }) } }, ...kit.logos.filter((l) => l.kind === "wordmark").map((l) => h("option", { value: l.id, selected: l.id === logo?.id }, l.name))),
             h("button.mc-iconkey", { type: "button", title: "Use a picture for it", "aria-label": "Use a picture for it", on: { click: (e) => pickRef(e, async (p) => setDirection(d.id, { bg: p.url })) } }, icon("image")),
             h(`button.mc-iconkey.is-danger${isArmed(armedKey) ? ".is-armed" : ""}`, { type: "button", title: isArmed(armedKey) ? "Click again to take it out" : "Take it out", "aria-label": "Take it out", on: { click: () => arming(armedKey, rerender, () => removeDirection(d.id)) } }, icon("trash"))),
           h(`button.mc-pick${d.picked ? ".is-picked" : ""}`, { type: "button", disabled: !!d.picked, on: { click: () => pickDirection(d.id) } }, d.picked ? [icon("check"), "Picked"] : "Pick this"));

@@ -159,6 +159,10 @@ function run(a, later) {
       let did = false;
       if (typeof a.summary === "string" && a.summary.trim()) (setKit("voice.summary", a.summary.trim().slice(0, 300)), (did = true));
       if (Array.isArray(a.words) && a.words.length) (setWords("voice", a.words.map(String).slice(0, 6)), (did = true));
+      // example pairs (say / never say): what the window and the brand book show; dos and donts of the same length make pairs too
+      let pairs = (Array.isArray(a.lines) ? a.lines : []).filter((x) => x && String(x.say ?? "").trim()).map((x) => ({ say: String(x.say).slice(0, 120), not: String(x.not ?? "").slice(0, 120) })).slice(0, 8);
+      if (!pairs.length && Array.isArray(a.dos) && Array.isArray(a.donts) && a.dos.length && a.dos.length === a.donts.length) pairs = a.dos.map((x, i) => ({ say: String(x).slice(0, 120), not: String(a.donts[i]).slice(0, 120) })).slice(0, 8);
+      if (pairs.length) (setKit("voice.lines", [...(v?.lines ?? []).filter((x) => x.say), ...pairs].slice(0, 8)), (did = true));
       if (Array.isArray(a.dos) && a.dos.length) (setKit("voice.dos", a.dos.map(String).slice(0, 8)), (macaron.brand.body.dos = String(a.dos[0])), (did = true));
       if (Array.isArray(a.donts) && a.donts.length) (setKit("voice.donts", a.donts.map(String).slice(0, 8)), (macaron.brand.body.donts = String(a.donts[0])), (did = true));
       return did && v ? "Voice" : null;
@@ -182,7 +186,9 @@ function run(a, later) {
     case "add_design": {
       // a format by its id, else the first of a family, else the one that is open
       const format = ALL_FORMATS.includes(a.format) ? a.format : FAMILIES[a.family]?.formats[0] ?? macaron.format;
-      const made = addDesign({ name: String(a.name || "New design").slice(0, 60), purpose: PURPOSES.includes(a.purpose) ? a.purpose : "Launch", format, layout: LAYOUTS[a.layout] ? a.layout : presetFor(format) });
+      // (the words ride with the design: a headline and a subhead in the brand's voice, so the new one is not left on the starter's filler)
+      const texts = { ...(typeof a.headline === "string" && a.headline.trim() ? { headline: a.headline.trim().slice(0, 90) } : {}), ...(typeof a.sub === "string" ? { sub: a.sub.trim().slice(0, 140) } : {}) };
+      const made = addDesign({ name: String(a.name || "New design").slice(0, 60), purpose: PURPOSES.includes(a.purpose) ? a.purpose : "Launch", format, layout: LAYOUTS[a.layout] ? a.layout : presetFor(format), texts });
       return `A new ${FORMATS[format].name.toLowerCase()}: ${made.name}`;
     }
     case "propose_mockup": {

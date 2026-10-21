@@ -25,7 +25,8 @@
 .mc-pp-stage.has-scene { background: var(--sunk); }
 .mc-pp-scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .mc-pp-hero { position: relative; display: block; max-width: 78%; max-height: 86%; object-fit: contain; filter: drop-shadow(0 18px 24px rgba(0, 0, 0, .5)); }
-.mc-pp-stage:not(.is-cut) .mc-pp-hero { max-width: 100%; max-height: 100%; width: 100%; height: 100%; filter: none; }
+.mc-pp-stage.is-cut .mc-pp-hero { position: absolute; left: 11%; top: 7%; width: 78%; height: 86%; max-width: none; max-height: none; }
+.mc-pp-stage:not(.is-cut) .mc-pp-hero { position: absolute; inset: 0; max-width: none; max-height: none; width: 100%; height: 100%; filter: none; }
 .mc-pp-switch { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
 .mc-pp-thumb { display: block; width: 4.25rem; height: 4.25rem; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: 1rem; background: var(--s2); cursor: pointer; transition: border-color var(--t-fast); }
 .mc-pp-thumb:hover { border-color: var(--line2); }
@@ -44,8 +45,12 @@
 .mc-pp-files { display: flex; gap: 1.25rem; }
 .mc-pp-file { display: grid; gap: .625rem; justify-items: start; }
 .mc-pp-file-pic { display: grid; place-items: center; width: 8.5rem; height: 6.5rem; padding: 0; overflow: hidden; border: 0; border-radius: 1rem; background: var(--sunk); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); cursor: zoom-in; }
-.mc-pp-file-pic img { width: 100%; height: 100%; object-fit: contain; }
+.mc-pp-file-pic { position: relative; }
+.mc-pp-file-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .mc-pp-file-pic.is-empty { border: 1px dashed var(--line2); background: transparent; color: var(--dim); font: 500 .875rem/1 var(--font-sans); cursor: default; box-shadow: none; }
+button.mc-pp-file-pic.is-empty { cursor: pointer; color: var(--muted); transition: border-color var(--t-fast), color var(--t-fast); }
+button.mc-pp-file-pic.is-empty:hover { border-color: var(--accent-line); color: var(--accent); }
+.mc-pp-file-pic.is-empty { display: grid; place-content: center; gap: .375rem; justify-items: center; }
 .mc-pp-keys { display: flex; align-items: center; gap: 1rem; padding-top: 1.75rem; border-top: 1px solid var(--line); }
 .mc-iconkey.is-armed { border-color: var(--err); color: var(--err); }
 .mc-drop-big { display: grid; justify-items: center; align-content: center; gap: .625rem; width: 100%; min-height: 22rem; border: 1px dashed var(--line2); border-radius: 1.75rem; background: transparent; color: var(--muted); cursor: pointer; }

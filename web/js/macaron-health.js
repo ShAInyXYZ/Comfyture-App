@@ -3,7 +3,7 @@
 // brand guard flags), each with a lamp, and a score made of them. Each line goes to the place that fixes it. Computed from the
 // brand's own data every time the panel is drawn: nothing here is stored.
 import { macaron, setSpace, openDesign } from "./macaron.js";
-import { kitOf } from "./design.js";
+import { kitOf, prepare } from "./design.js";
 import { openWin, closeAll } from "./macaron-win.js";
 import { auditOf } from "./macaron-book-audit.js";
 
@@ -43,7 +43,7 @@ export function healthLines(b) {
   const product = (body.products ?? [])[0];
   lines.push({ id: "product", text: product ? `Product: ${product.name}` : "No product yet", tone: product ? "ok" : "warn", go: go("studio", "product") });
 
-  const posts = (body.designs ?? []).filter((d) => !d.variant);
+  const posts = (body.designs ?? []).filter((d) => !d.variant && !d.motion && !d.graphic);
   const review = posts.filter((d) => d.status === "review").length;
   if (review) lines.push({ id: "review", text: `${review} ${review === 1 ? "post" : "posts"} to review`, tone: "warn", go: go("create", "posts") });
   else lines.push({ id: "review", text: posts.length ? `${posts.length} ${posts.length === 1 ? "post" : "posts"}, none waiting` : "No posts yet", tone: posts.length ? "ok" : "warn", go: go("create", "posts") });
@@ -64,4 +64,14 @@ export function brandHealth(b) {
   const score = Math.round((all.reduce((n, l) => n + WEIGHT[l.tone], 0) / all.length) * 100);
   const shown = [...all].sort((a, c) => RANK[a.tone] - RANK[c.tone]).slice(0, 5);
   return { score, lines: shown, all };
+}
+
+const warmed = new Set();
+/** Gets the brand's designs ready to be measured (their logos and pictures read), once each: answers whether any was not. */
+export async function warmDesigns(b) {
+  const todo = (b.body.designs ?? []).filter((d) => !d.variant && !warmed.has(`${d.id}:${d.updatedAt}`));
+  if (!todo.length) return false;
+  const kit = kitOf(b.body);
+  await Promise.all(todo.map((d) => prepare(d, kit).then(() => warmed.add(`${d.id}:${d.updatedAt}`), () => {})));
+  return true;
 }

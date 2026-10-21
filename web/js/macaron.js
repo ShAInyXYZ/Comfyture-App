@@ -400,13 +400,31 @@ export function setLogoField(id, patch) {
   Object.assign(macaron.brand.body.kit.logos.find((l) => l.id === id) ?? {}, patch);
   touched();
 }
-export async function addLogoFile(file, kind = "wordmark", tone = "") {
+/** What a logo file is, as its name says it (wordmark, mark, app icon); null when it does not say. */
+const kindFromName = (name = "") => (/icon|app[-_ ]?tile|favicon/i.test(name) ? "icon" : /word|logotype|lockup|type[-_ ]?logo/i.test(name) ? "wordmark" : /mark|symbol|monogram|emblem|badge|glyph/i.test(name) ? "mark" : null);
+/** The palette colour a detected colour is, when it is near one (the file is drawn in that colour), else the detected colour itself. */
+function nearestTone(kit, hex) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex;
+  const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const [r, g, b] = rgb(hex);
+  let best = null;
+  for (const p of kit.palette ?? []) {
+    if (!/^#[0-9a-f]{6}$/i.test(p.hex)) continue;
+    const [pr, pg, pb] = rgb(p.hex);
+    const d = Math.hypot(r - pr, g - pg, b - pb);
+    if (!best || d < best.d) best = { id: p.id, d };
+  }
+  return best && best.d < 70 ? best.id : hex;
+}
+export async function addLogoFile(file, kind, tone = "") {
   const b = await ensure();
   try {
     // the library keeps pictures: an SVG is kept as a large PNG with its clear background
     const isSvg = !file.file && (file.type === "image/svg+xml" || /\.svg$/i.test(file.name ?? ""));
     const p = file.file ? file : await api.upload(isSvg ? await rasteriseSvg(file, 2400) : file, (file.name ?? "logo").replace(/\.svg$/i, "") + (isSvg ? ".png" : ""));
-    tone ||= (await logoColour(p.url)) ?? "";
+    tone ||= nearestTone(b.body.kit, (await logoColour(p.url)) ?? "");
+    // (a key that does not say what it adds ("a logo file") reads it from the file's name)
+    kind ||= kindFromName(file.name) ?? "wordmark";
     b.body.kit.logos.push({ id: `logo-${uid()}`, name: (file.name ?? "Logo").replace(/\.\w+$/, "").slice(0, 40), kind, tone, url: p.url, ground: "", note: "" });
     if (!b.body.logo) b.body.logo = { file: p.file, url: p.url, width: p.width, height: p.height };
     touched(b);
@@ -436,7 +454,11 @@ async function rasteriseSvg(file, width) {
   }
 }
 export function removeLogo(id) {
-  macaron.brand.body.kit.logos = macaron.brand.body.kit.logos.filter((l) => l.id !== id);
+  const body = macaron.brand.body;
+  const gone = body.kit.logos.find((l) => l.id === id);
+  body.kit.logos = body.kit.logos.filter((l) => l.id !== id);
+  // (the brand's first picture of its logo stands in for a kit with no files: it goes with the file it was, or it would come back as a ghost)
+  if (gone && body.logo?.url === gone.url) body.logo = body.kit.logos[0] ? { url: body.kit.logos[0].url } : null;
   touched();
 }
 export function addRule(kind) {
@@ -476,8 +498,10 @@ export const assetByUrl = (url) => macaron.brand.body.assets.find((a) => a.url =
 export async function addRef(file) {
   const b = await ensure();
   const p = file.file ? file : await api.upload(file, file.name);
-  b.body.refs.unshift({ id: uid("f"), title: (file.name ?? "Reference").replace(/\.\w+$/, "").slice(0, 60), kind: "inspiration", src: p.url, note: "", at: new Date().toISOString() });
-  remember({ kind: "reference", title: "Reference added", src: p.url }, b);
+  const name = (file.name ?? "Reference").replace(/\.\w+$/, "").slice(0, 60);
+  b.body.refs.unshift({ id: uid("f"), title: name, kind: "inspiration", src: p.url, note: "", at: new Date().toISOString() });
+  // (the story names the picture, so a row of added references does not read as the same card four times)
+  remember({ kind: "reference", title: `Reference added: ${name.slice(0, 28)}`, src: p.url }, b);
   touched(b);
 }
 export function setRef(id, patch) {
@@ -552,9 +576,10 @@ export function newDesign({ name = "New design", purpose = "Launch", format = "4
     layers: [
       ...(kit.logos.length ? [newLayer("logo", { id: "logo", name: "Logo", logo: kit.logos.find((l) => l.kind === "wordmark")?.id ?? kit.logos[0].id, x: 0.07, y: 0.07, w: 0.3 })] : []),
       newLayer("text", { id: "headline", name: "Headline", role: "headline", fontRole: "display", text: texts.headline || b.body.headline || "Say it in a line.", size: 0.1, lineHeight: 1.02, tracking: -0.02, colorRole: "white", x: 0.07, y: 0.2, w: 0.86 }),
-      newLayer("text", { id: "sub", name: "Subhead", role: "sub", fontRole: "text", text: texts.sub || b.body.tagline || "A few words on why it is worth a look.", size: 0.034, lineHeight: 1.3, colorRole: "white", opacity: 0.86, x: 0.07, y: 0.45, w: 0.6 }),
+      // (a starter that says "" wants no subhead: it is there for the person to fill, but hidden; one that says nothing gets the tagline)
+      newLayer("text", { id: "sub", name: "Subhead", role: "sub", fontRole: "text", hidden: texts.sub === "", text: texts.sub || kit.tagline || b.body.tagline || "A few words on why it is worth a look.", size: 0.034, lineHeight: 1.3, colorRole: "white", opacity: 0.86, x: 0.07, y: 0.45, w: 0.6 }),
       ...(cta ? [newLayer("text", { id: "cta", name: "Call to action", role: "cta", fontRole: "mono", text: cta, size: 0.028, tracking: 0.06, caps: true, colorRole: "yellow", x: 0.07, y: 0.85, w: 0.5 })] : []),
-      ...(p ? [newLayer("image", { id: "hero", name: p.name, role: "hero", src: p.cutout?.url ?? p.photo.url, fit: "contain", x: 0.3, y: 0.55, w: 0.55, h: 0.35 })] : []),
+      ...(p ? [newLayer("image", { id: "hero", name: p.name, role: "hero", src: p.cutout?.url ?? p.photo.url, fit: "contain", clear: !!p.cutout, x: 0.3, y: 0.55, w: 0.55, h: 0.35 })] : []),
     ],
   };
   const laid = withPreset(d, format, layout, measure());
@@ -615,6 +640,36 @@ export function patchLayer(layerId, patch, { design = designNow(), format = maca
   patchLayerIn(design, layerId, patch, format, reflowFor);
 }
 export const patchLayerLive = (layerId, patch) => live(() => patchLayer(layerId, patch));
+
+/**
+ * The words of a text layer changed: what is set below it in the same column is moved down so the lines do not run into each
+ * other (a longer headline wraps to another line and pushes the subhead down, as a person would). Only the vertical places of
+ * the text layers that the edited one now overlaps are touched, by the measure of the real type.
+ */
+export function setLayerWords(layerId, text) {
+  const d = designNow();
+  if (!d) return;
+  const f = macaron.format;
+  patchLayer(layerId, { text });
+  const F = frameOf(f);
+  // a banner or a strip is one line across: nothing sits under anything there, so nothing is pushed
+  if (F.w / F.h > 2.2 || F.h / F.w > 3) return;
+  const lay = layoutNow().layers.filter((l) => l.type === "text" && !l.hidden);
+  const m = measure();
+  const hOf = (l) => m(l, F.w, F.h).h / F.h;
+  const edited = lay.find((l) => l.id === layerId);
+  if (!edited) return;
+  const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w;
+  let bottom = edited.y + hOf(edited);
+  // only the blocks under it in its own column, in reading order, and only as far as the page has room
+  for (const l of lay.filter((x) => x !== edited && x.y >= edited.y && overlaps(edited, x)).sort((a, b) => a.y - b.y)) {
+    if (l.y >= bottom + 0.012) { bottom = l.y + hOf(l); continue; }
+    const y = Math.round((bottom + 0.012) * 1000) / 1000;
+    if (y + hOf(l) > 0.97) break;
+    patchLayer(l.id, { y });
+    bottom = y + hOf({ ...l, y });
+  }
+}
 export function setBg(patch) {
   const d = designNow();
   edit(() => {
@@ -721,6 +776,9 @@ export function applyLayout(preset, id = macaron.design) {
   if (!d) return;
   edit(() => {
     const m = measure();
+    // (a hero that is a product's cut-out is told so, before the layout: a cut-out is kept whole, never stretched over the frame)
+    const cuts = new Set((macaron.brand?.body.products ?? []).map((x) => x.cutout?.url).filter(Boolean));
+    for (const l of d.layers) if (l.role === "hero" && l.type === "image" && cuts.has(l.src)) l.clear = true;
     let next = d;
     for (const f of new Set([d.format, ...Object.keys(d.formats ?? {}), macaron.format])) next = withPreset(next, f, preset, m);
     Object.assign(d, next, { layout: preset });
@@ -1138,14 +1196,28 @@ export async function addProduct(file) {
     toast(e.message, { tone: "crit" });
   }
 }
-/** A product's clear cut-out, for its card (the shoot draws from its photo). */
+/** A product's clear cut-out, for its card (the shoot draws from its photo). It says so while it is made, and why when it is not. */
 async function cutOut(b, product) {
+  const key = `cutout:${product.id}`;
+  macaron.busy.add(key);
+  update();
   try {
     const job = await send("api/utensils/cutout", "POST", { source: product.photo.file });
     const done = await waitFor("job", job.id);
     product.cutout = { file: done.photo.file, url: done.photo.url };
     touched(b);
-  } catch {}
+  } catch (e) {
+    toast(`The cut-out was not made: ${e.message}`, { tone: "crit" });
+  } finally {
+    macaron.busy.delete(key);
+    update();
+  }
+}
+/** Makes (again) the cut-out of a product that has none: about a credit. */
+export function makeCutout(id) {
+  const b = macaron.brand;
+  const product = b?.body.products.find((x) => x.id === id);
+  if (product && !product.cutout && !macaron.busy.has(`cutout:${id}`)) cutOut(b, product);
 }
 export const pickProduct = (id) => ((macaron.brand.body.product = id), touched());
 export function setProduct(id, patch) {

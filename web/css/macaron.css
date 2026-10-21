@@ -68,6 +68,7 @@
 .mc-bento:hover { border-color: var(--line2); }
 .mc-b-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-height: 1.75rem; }
 .mc-b-label { font: 500 .8125rem/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+.mc-b-keys { display: inline-flex; align-items: center; gap: .5rem; }
 .mc-expand { display: grid; place-items: center; width: 1.875rem; height: 1.875rem; padding: 0; border: 1px solid var(--line2); border-radius: .625rem; background: transparent; color: var(--muted); cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast); }
 .mc-expand svg { width: .9375rem; height: .9375rem; }
 .mc-bento:hover .mc-expand, .mc-expand:hover, .mc-expand:focus-visible { border-color: var(--accent-line); color: var(--accent); }

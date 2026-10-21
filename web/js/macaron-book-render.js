@@ -403,7 +403,10 @@ function colours(ctx, c, page, n) {
 }
 
 function type(ctx, c, page, n) {
-  const { kit, t } = c;
+  const { kit, t, body, brand } = c;
+  // (the brand's own words set in its faces: its name, a line of its voice or message, and neutral figures)
+  const pitch = String(body?.brief?.pitch ?? "").split(/(?<=[.!?])\s/)[0].trim();
+  const said = (body?.kit?.voice?.lines ?? [])[0]?.say || String(body?.brief?.message ?? "").split(/(?<=[.!?])\s/)[0].trim();
   furniture(ctx, c, page, n);
   const roles = [["display", "Display", "Headlines and big statements"], ["text", "Text", "Reading and supporting copy"], ["mono", "Mono", "Labels, numbers and ids"]];
   const gap = 40;
@@ -415,7 +418,7 @@ function type(ctx, c, page, n) {
     label(ctx, c, name, x, TOP + 30, t.ink);
     text(ctx, `${f.family} · ${f.weight}`, x + cw, TOP + 30, { font: fontOf(kit, "mono", 13, 500), color: t.muted, tracking: 1, align: "right" });
     text(ctx, "Aa", x - 4, TOP + 220, { font: fontOf(kit, role, 210, f.weight), color: t.ink, tracking: role === "mono" ? 0 : -7 });
-    const sample = f.sample ?? (role === "display" ? "Direct a shot." : role === "text" ? "One photo in, a shot with sound out." : "01 · 16:9 · 24 FPS");
+    const sample = f.sample ?? (role === "display" ? (pitch && pitch.length <= 40 ? pitch : brand) : role === "text" ? (said || "A short line in the brand's voice.").slice(0, 90) : "01 · 24 · 12:30 · 0.5");
     const px = role === "display" ? 40 : role === "text" ? 28 : 24;
     const end = paragraph(ctx, sample, x, TOP + 282, cw, px * 1.25, { font: fontOf(kit, role, px, f.weight), color: t.ink, tracking: role === "display" ? -1 : 0 }, 2);
     const ay = Math.max(end + 20, TOP + 372);

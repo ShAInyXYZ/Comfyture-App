@@ -12,7 +12,7 @@ import { FORMAT_KEYS, FORMATS, frameOf } from "./design.js";
 import { TEMPLATES, CATEGORIES, templateById, previewOf } from "./macaron-templates.js";
 import {
   macaron, designNow, addAsset, removeAsset, addLayer, makePicture, productNow, addProduct, pickProduct, setProduct, removeProduct, pickTemplate, setFilter, formatsOf, toggleFormat,
-  setCount, shoot, shooting, removeOutput, estimate,
+  setCount, shoot, shooting, removeOutput, estimate, makeCutout,
 } from "./macaron.js";
 import { key, arming, isArmed, armedNow, chooseFiles, fill, mcicon } from "./macaron-ui.js";
 
@@ -46,7 +46,9 @@ export function productParts() {
     const armedKey = `product:${cur.id}`;
     const file = (label, pic, clear) => h("div.mc-pp-file", {},
       pic ? h("button.mc-pp-file-pic", { type: "button", title: `${label}: see it full size`, on: { click: () => view(pic.url) } }, h(`img${clear ? ".is-clear" : ""}`, { src: pic.url, alt: "", draggable: false, loading: "lazy" }))
-        : h("span.mc-pp-file-pic.is-empty", { title: "The cut-out is made when a photo is added" }, "None"),
+        : macaron.busy.has(`cutout:${cur.id}`) ? h("span.mc-pp-file-pic.is-empty", { title: "The cut-out is being made" }, h("span.lamp", { dataset: { tone: "busy" } }), "Cutting…")
+        : clear ? h("button.mc-pp-file-pic.is-empty", { type: "button", title: "Make the cut-out: the product alone on a clear background (about 1 credit)", on: { click: () => makeCutout(cur.id) } }, "Make it")
+        : h("span.mc-pp-file-pic.is-empty", {}, "None"),
       h("span.label", {}, label));
     return h("div.mc-pp", {},
       h("div.mc-pp-left", {},
@@ -58,7 +60,7 @@ export function productParts() {
         h("div.mc-sec", {}, h("span.label", {}, "Its name"),
           h("input.field.mc-pp-name", { value: cur.name, "aria-label": "The product's name", on: { input: (e) => setProduct(cur.id, { name: e.target.value.slice(0, 40) }) } })),
         h("div.mc-sec", {}, h("span.label", {}, "What makes it good"),
-          h("input.field", { value: (cur.features ?? []).join(", "), placeholder: "Real plums, small batch, a blank label", "aria-label": "What makes it good", on: { change: (e) => setProduct(cur.id, { features: words(e.target.value) }) } }),
+          h("input.field", { value: (cur.features ?? []).join(", "), placeholder: "Two or three plain words: what it is made of, how it feels", "aria-label": "What makes it good", on: { change: (e) => setProduct(cur.id, { features: words(e.target.value) }) } }),
           (cur.features ?? []).length ? h("ul.mc-pp-feats", {}, ...cur.features.map((f) => h("li", {}, f))) : h("p.mc-hint", {}, "A few plain words: they go into the shoot and the posts.")),
         h("div.mc-sec", {}, h("span.label", {}, "Its pictures"), h("div.mc-pp-files", {}, file("Photo", cur.photo, false), file("Cut-out", cur.cutout, true))),
         h("div.mc-pp-keys", {},
@@ -208,7 +210,7 @@ export function productParts() {
   };
   const sigOf = (fn) => () => JSON.stringify([rev, fn(macaron.brand?.body ?? {})]);
   return {
-    product: part(productPane, sigOf((b) => [b.products, b.product, armedNow()])),
+    product: part(productPane, sigOf((b) => [b.products, b.product, armedNow(), [...macaron.busy].filter((k) => k.startsWith("cutout:"))])),
     pictures: part(pictures, sigOf((b) => [b.assets, macaron.assetKind, armedNow(), designNow()?.id])),
     make: part(picture, sigOf((b) => [b.assets, [...macaron.busy]])),
     shoot: part(shootPane, sigOf((b) => [b.outputs, b.products, b.product, b.shoot, macaron.template, macaron.media, macaron.category, [...macaron.busy], armedNow(), b.colours, b.logo])),

@@ -3,7 +3,7 @@
 // picture of its part of the kit; opened, it is the part's window, with an Advanced switch for the finer controls.
 import { h, icon, sprite } from "./dom.js";
 import { toast } from "./store.js";
-import { contrast, colorOf, kitOf, luminance } from "./design.js";
+import { contrast, colorOf, kitOf, luminance, cssName } from "./design.js";
 import {
   macaron, setColour, addColour, setColourField, setWords, setKit, setType, addLogoFile, removeLogo, setLogoField, addRule, setRule, removeRule, productNow, setColourway, kitFiles,
 } from "./macaron.js";
@@ -20,6 +20,8 @@ const plain = (name) => (/white/i.test(name) ? "White" : name);
 
 /** The palette colour of a logo file's tone: the colour it is drawn in. */
 const toneOf = (kit, l) => kit.palette.find((p) => p.id === l.tone) ?? { id: l.tone, name: String(l.tone ?? "").startsWith("#") ? l.tone : "Colour", hex: colorOf(kit, l.tone, "#888888") };
+/** The file of a kind that reads best on the dark windows (its colour has the most contrast with them), else the first of the kind. */
+const readsOnDark = (kit, kind) => kit.logos.filter((l) => l.kind === kind).sort((a, b) => contrast(toneOf(kit, b).hex, "#1c1c20") - contrast(toneOf(kit, a).hex, "#1c1c20"))[0] ?? null;
 
 /** The ground a logo file is for: the first of the colours its note names, else the one it reads best on. */
 export function groundOf(kit, l) {
@@ -99,11 +101,11 @@ export function kitSpace() {
   }
 
   function rules(kit) {
-    const mark = kit.logos.find((l) => l.kind === "mark" && /yellow|white/.test(l.tone)) ?? kit.logos.find((l) => l.kind === "mark") ?? kit.logos[0];
+    const mark = readsOnDark(kit, "mark") ?? kit.logos[0];
     const sizes = macaron.brand.body.kit.sizes ?? { mark: 24, wordmark: 96 };
     return bento("is-rules", "Rules", () => openWin("rules"),
       h("div.mc-rule-pair", {},
-        h("div.mc-clear", { title: "Clear space on every side equals the height of the lid" },
+        h("div.mc-clear", { title: "Clear space on every side is a quarter of the logo's height" },
           h("i.mc-clear-box"), ...["nw", "ne", "sw", "se"].map((c) => h(`b.mc-clear-c.is-${c}`, {}, "C")), mark ? h("img", { src: mark.url, alt: "", draggable: false }) : null),
         h("div.mc-minsize", {}, h("div.mc-min-mark", {}, mark ? h("img", { src: mark.url, alt: "", draggable: false }) : null, h("i")), h("b", {}, `${sizes.mark} px`), h("span", {}, "Minimum size"))));
   }
@@ -119,11 +121,21 @@ export function kitSpace() {
         : h("button.mc-empty-tile", { type: "button", on: { click: () => openWin("product") } }, icon("plus"), h("span", {}, "Add a product")));
   }
 
+  /** The palette's card also carries the way out of the kit: its export (the colours as code, the kit as data, the logo files). */
+  function withExport(card) {
+    const head = card.querySelector(".mc-b-head");
+    const expand = head?.querySelector(".mc-expand");
+    if (!head || !expand) return card;
+    const out = h("button.mc-expand", { type: "button", title: "Export the kit", "aria-label": "Export the kit", on: { click: (e) => (e.stopPropagation(), openWin("exportkit")) } }, mcicon("export"));
+    head.append(h("span.mc-b-keys", {}, out, expand));
+    return card;
+  }
+
   function update() {
     const b = macaron.brand;
     if (!b) return;
     const kit = kitOf(b.body);
-    fill(el, palette(kit), logos(kit), type(kit), voice(kit), rules(kit));
+    fill(el, withExport(palette(kit)), logos(kit), type(kit), voice(kit), rules(kit));
     marq?.start();
   }
   const sig = () => {
@@ -221,7 +233,7 @@ function paletteWin() {
         field(p.name, (v) => setColourField(i, { name: v.slice(0, 24) }), { label: "The colour's name", cls: "kp-name", focus: `pname:${p.id}` }),
         field(p.role, (v) => setColourField(i, { role: v.slice(0, 30) }), { placeholder: "What it is for", cls: "kp-role", focus: `prole:${p.id}` }),
         adv ? h("div.kp-adv", {},
-          h("label.kp-row", {}, h("span.label", {}, "Hex"), field(p.hex.toUpperCase(), (v) => hex6(v) && setColour(i, hex6(v)), { label: "Hex", placeholder: "#RRGGBB", cls: "kp-hexfield", focus: `phex:${p.id}` })),
+          h("label.kp-row", {}, h("span.label", {}, "Hex"), field(p.hex.toUpperCase(), (v) => { const x = hex6(v); if (!x) return; setColour(i, x); /* (the swatch follows as it is typed: the window is not drawn again under the cursor) */ const card = el.querySelectorAll(".kp-card")[i]; if (card) { card.style.cssText = `--c:${x};--ink:${inkOn(x)}`; card.querySelector(".kp-hex").textContent = x; } }, { label: "Hex", placeholder: "#RRGGBB", cls: "kp-hexfield", focus: `phex:${p.id}` })),
           h("label.kp-row", {}, h("span.label", {}, "Share"), h("div.kp-num", {}, h("input", { type: "number", min: 0, max: 100, step: 1, value: p.share ?? 0, "aria-label": `${p.name} share of a page`, on: { change: (e) => setColourField(i, { share: Math.max(0, Math.min(100, Number(e.target.value) || 0)) }) } }), h("em", {}, "%"))),
           h("label.kp-row.is-note", {}, h("span.label", {}, "Notes"), field(p.note, (v) => setColourField(i, { note: v.slice(0, 160) }), { rows: 2, placeholder: "How and where it is used", cls: "kp-note", focus: `pnote:${p.id}` })),
           kit.palette.length > 1 ? h(`button.mc-iconkey.is-danger.kp-trash${isArmed(armedKey) ? ".is-armed" : ""}`, { type: "button", title: isArmed(armedKey) ? "Click again to take it out" : "Take it out of the palette", "aria-label": "Take it out of the palette", on: { click: () => arming(armedKey, rerender, () => setColour(i, null)) } }, icon("trash")) : null) : null);
@@ -280,8 +292,8 @@ function logosWin() {
         h("div.mc-segs", { role: "group", "aria-label": "Preview on" },
           h("button.mc-seg", { type: "button", "aria-pressed": String(on === "all"), title: "Each file on the ground it is for", on: { click: () => ((on = "all"), rerender()) } }, "All"),
           ...grounds.map((g) => h("button.mc-seg", { type: "button", "aria-pressed": String(on === g.id), title: `Every file on ${g.name}`, on: { click: () => ((on = g.id), rerender()) } }, plain(g.name))))) : null,
-      kit.logos.length ? h("div.kl-library", {}, ...rows) : h("button.mc-add-prompt", { type: "button", on: { click: () => addFile("wordmark") } }, icon("plus"), "Add the logo files: a wordmark, the mark, an app icon"),
-      adv ? h("section.kl-files", {}, h("div.mc-sec-head", {}, h("span.label", {}, "The files"), h("button.mc-iconkey", { type: "button", title: "Add a logo file (SVG or PNG)", "aria-label": "Add a logo file", on: { click: () => addFile("wordmark") } }, icon("plus"))),
+      kit.logos.length ? h("div.kl-library", {}, ...rows) : h("button.mc-add-prompt", { type: "button", on: { click: () => addFile("") } }, icon("plus"), "Add the logo files: a wordmark, the mark, an app icon"),
+      adv ? h("section.kl-files", {}, h("div.mc-sec-head", {}, h("span.label", {}, "The files"), h("button.mc-iconkey", { type: "button", title: "Add a logo file (SVG or PNG)", "aria-label": "Add a logo file", on: { click: () => addFile("") } }, icon("plus"))),
         ...kit.logos.map((l) => {
           const armedKey = `logo:${l.id}`;
           return h("div.kl-file", {},
@@ -310,8 +322,8 @@ function typeWin() {
     const say = (b.body.kit.voice?.lines ?? [])[0]?.say;
     const roles = [
       ["display", "Display", "For big ideas", pitch && pitch.length <= 60 ? pitch : b.name, "Headlines, big statements and key messages."],
-      ["text", "Text", "For everything else", say || "One photo in, a shot with sound out.", "Body copy, UI text and supporting information."],
-      ["mono", "Mono", "For numbers and labels", "01 · 16:9 · 24 FPS", "Numbers, technical details and UI labels."],
+      ["text", "Text", "For everything else", say || String(b.body.brief?.message ?? "").split(/(?<=[.!?])\s/)[0].trim().slice(0, 90) || "A short line in the brand's voice.", "Body copy, UI text and supporting information."],
+      ["mono", "Mono", "For numbers and labels", "01 · 24 · 12:30 · 0.5", "Numbers, technical details and UI labels."],
     ];
     fill(el, ...roles.map(([role, label, tag, sample, use]) => {
       const t = kit.type[role];
@@ -361,6 +373,9 @@ function voiceWin() {
         h("div.kv-pills", {}, ...(v.words ?? []).slice(0, 6).map((w, i) => h(`span.kv-pill${i === 0 ? ".is-on" : ""}`, {}, w[0]?.toUpperCase() + w.slice(1)))),
         h("input.field.kv-words", { value: (v.words ?? []).join(", "), placeholder: "warm, plain, playful", title: "Up to six words, separated by commas", "aria-label": "Voice words", on: { change: (e) => setWords("voice", e.target.value.split(",").map((w) => w.trim()).filter(Boolean).slice(0, 6)) } }),
         field(v.summary, (t) => setKit("voice.summary", t.slice(0, 300)), { rows: 2, placeholder: "How the brand talks, in a sentence", cls: "mc-statement.kv-sum", label: "How the brand talks", focus: "vsum" })),
+      h("section.mc-sec.kv-tag", {},
+        h("span.label", {}, "Its tagline"),
+        field(kit.tagline, (t) => setKit("tagline", t.slice(0, 80)), { placeholder: "A few words that sign it: the cover's line, the foot of a page", label: "The tagline", cls: "kv-tagline", focus: "tagline" })),
       h("section.mc-sec", {},
         h("div.kv-cols", {}, h("span.label", {}, "Say"), h("span.label", {}, "Never say")),
         ...lines.map((l, i) => h("div.kv-pair", {},
@@ -390,16 +405,16 @@ function rulesWin() {
         h("textarea.kr-text", { rows: 1, value: r.text, placeholder: kind === "do" ? "Keep this" : "Never this", "aria-label": "A rule", on: { input: (e) => setRule(r.id, { text: e.target.value.slice(0, 200) }) } }),
         h("button.mc-iconkey.kv-x", { type: "button", title: "Take it out", "aria-label": "Take it out", on: { click: () => removeRule(r.id) } }, icon("close")))),
       h("button.mc-add-prompt", { type: "button", on: { click: () => addRule(kind) } }, icon("plus"), kind === "do" ? "Something to keep" : "Something never to do")));
-    const wordmark = kit.logos.find((l) => l.kind === "wordmark" && /yellow|white/.test(l.tone)) ?? kit.logos.find((l) => l.kind === "wordmark") ?? kit.logos.find((l) => l.kind === "mark") ?? kit.logos[0];
-    const mark = kit.logos.find((l) => l.kind === "mark" && /yellow|white/.test(l.tone)) ?? kit.logos.find((l) => l.kind === "mark") ?? kit.logos[0];
-    const stepper = (k, t) => h("label.kr-size", {}, h("span.label", {}, t), h("div.kp-num", {}, h("input", { type: "number", min: 8, max: 600, step: 1, value: sizes[k], "aria-label": `${t} smallest size in pixels`, on: { change: (e) => setKit("sizes", { ...sizes, [k]: Math.max(8, Number(e.target.value) || sizes[k]) }) } }), h("em", {}, "px")));
+    const wordmark = readsOnDark(kit, "wordmark") ?? readsOnDark(kit, "mark") ?? kit.logos[0];
+    const mark = readsOnDark(kit, "mark") ?? kit.logos[0];
+    const stepper = (k, t) => h("label.kr-size", {}, h("span.label", {}, t), h("div.kp-num", {}, h("input", { type: "number", min: 8, max: 600, step: 1, value: sizes[k], "aria-label": `${t} smallest size in pixels`, on: { change: (e) => setKit("sizes", { ...macaron.brand.body.kit.sizes, [k]: Math.max(8, Number(e.target.value) || macaron.brand.body.kit.sizes[k]) }) } }), h("em", {}, "px")));
     fill(el, h("div.kr-grid", {},
       h("div.kr-lists", {}, col("do", "Keep"), col("dont", "Never")),
       h("div.kr-logo", {},
         h("section.mc-sec", {}, h("span.label", {}, "Logo rules · clear space"),
           h("div.kr-clearrow", {},
-            h("div.kr-clear", { title: "Clear space on every side equals the height of the lid" }, ...["nw", "ne", "sw", "se"].map((c) => h(`b.kr-c.is-${c}`, {}, "C")), wordmark ? h("img", { src: wordmark.url, alt: "", draggable: false }) : null),
-            h("p", {}, "Keep clear space around the logo, equal to the height of the lid."))),
+            h("div.kr-clear", { title: "Clear space on every side is a quarter of the logo's height" }, ...["nw", "ne", "sw", "se"].map((c) => h(`b.kr-c.is-${c}`, {}, "C")), wordmark ? h("img", { src: wordmark.url, alt: "", draggable: false }) : null),
+            h("p", {}, "Keep clear space around the logo: a quarter of its height on every side."))),
         h("section.mc-sec", {}, h("span.label", {}, "Smallest the logo may be"),
           h("div.kr-sizes", {},
             h("div.kr-min", {}, mark ? h("img.is-mark", { src: mark.url, alt: "", draggable: false, style: { height: `${sizes.mark}px` } }) : null, h("i", { style: { width: `${sizes.mark}px` } }), stepper("mark", "Mark")),
@@ -432,7 +447,7 @@ function productWin() {
   const sig = () => JSON.stringify([macaron.productTab, parts[macaron.productTab ?? "product"].sig?.()]);
   return { el, update, sig, bar };
 }
-defineWindow("product", { eyebrow: "Brand kit", title: "Product", sub: () => macaron.brand?.name ?? "", size: "full", advanced: false, make: productWin, tools: (part) => [part.bar] });
+defineWindow("product", { eyebrow: "Studio", title: "Product", sub: () => macaron.brand?.name ?? "", size: "full", advanced: false, make: productWin, tools: (part) => [part.bar] });
 
 /** What leaves with the kit: its palette as code, the kit as data, the logo files. */
 function exportKitWin() {
@@ -455,7 +470,7 @@ function exportKitWin() {
     const b = macaron.brand;
     if (!b) return;
     const kit = kitOf(b.body);
-    const css = `:root {\n${kit.palette.map((p) => `  --${p.id.replace(/[^a-z0-9]+/gi, "-")}: ${p.hex.toUpperCase()}; /* ${p.name}${p.role ? `, ${p.role}` : ""} */`).join("\n")}\n  --font-display: "${kit.type.display.family}";\n  --font-text: "${kit.type.text.family}";\n  --font-mono: "${kit.type.mono.family}";\n}\n`;
+    const css = `:root {\n${kit.palette.map((p) => `  --${cssName(p)}: ${p.hex.toUpperCase()}; /* ${p.name}${p.role ? `, ${p.role}` : ""} */`).join("\n")}\n  --font-display: "${kit.type.display.family}";\n  --font-text: "${kit.type.text.family}";\n  --font-mono: "${kit.type.mono.family}";\n}\n`;
     const data = JSON.stringify({ name: b.name, palette: kit.palette, type: kit.type, voice: b.body.kit.voice, rules: b.body.kit.rules, logos: kit.logos.map(({ id, name, kind, tone, ground, url }) => ({ id, name, kind, tone, ground, url })) }, null, 2);
     const files = kitFiles();
     const code = (shown, text = shown) => h("div.kx-code", {}, h("pre", {}, peek(shown)), h("button.mc-iconkey", { type: "button", title: "Copy it", "aria-label": "Copy it", on: { click: () => copy(text) } }, sprite("copy")));

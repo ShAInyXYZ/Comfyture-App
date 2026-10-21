@@ -56,6 +56,7 @@ const PROPS: Record<Space, Record<string, unknown>> = {
     words: list("The voice in up to six words."),
     dos: list("What the voice does, up to eight short lines."),
     donts: list("What the voice never does, up to eight short lines."),
+    lines: { type: "array", description: "For set_voice: up to eight example pairs of the voice.", items: { type: "object", properties: { say: str("A line in the brand's voice."), not: str("The line it must never be.") } } },
     kind: { type: "string", enum: ["do", "dont"], description: "For add_rule: a rule to keep (do) or never break (dont)." },
     text: str("A rule's words."),
     family: str("A typeface's family."),
@@ -76,6 +77,8 @@ const PROPS: Record<Space, Record<string, unknown>> = {
     family: { type: "string", enum: FAMILY_KEYS, description: "For add_design: the family of formats, when no format is named: the first of its formats is used." },
     scene: { type: "string", enum: SCENE_IDS, description: "For propose_mockup: the real-world scene to place a design in." },
     kind: { type: "string", enum: ["copy", "composition", "colour", "intent", "format"] },
+    headline: str("For add_design: the new design's headline, a short line in the brand's voice (a word wrapped in *asterisks* takes the accent colour)."),
+    sub: str("For add_design: its subhead, one short line, or an empty string for none."),
     name: str(),
     note: str(),
     color: str("A palette id for a background."),
@@ -143,7 +146,7 @@ Actions (op and its fields):
 - set_colour {id, hex, name, role}: change a palette colour (id from the kit; any of hex, name, role).
 - add_colour {name, hex, role}: a new colour (the palette holds up to eight).
 - add_colourway {name, ground, logo}: save a pairing of a logo file on a palette ground (ground is a palette id, logo a logo id); choose one that reads (contrast 4.5 or more) and is not shown yet.
-- set_voice {summary, words, dos, donts}: change how the brand talks; only what you give is changed.
+- set_voice {summary, words, lines, dos, donts}: change how the brand talks; only what you give is changed. lines are the voice's examples, each a pair: say (a line in the brand's voice) and not (the line it must never be), up to eight; they are what the Voice window and the brand book show. dos and donts are plain lists of habits to keep and avoid.
 - add_rule {kind, text}: a rule to keep (kind do) or never break (kind dont), one plain line.
 - set_type {type, family, weight}: change a type role (display, text or mono).
 - open_space {space}.
@@ -164,7 +167,7 @@ Actions (op and its fields):
 - adapt_format {format}: lays the design out for another format (any of the families), keeping it readable and inside its safe zones, and opens that format. "Lay it out as a story" is adapt_format 9:16; "make a banner of it" is adapt_format ad-300x250 (or 728x90, 160x600).
 - make_variation {kind, name, note, actions}: saves a copy of the design as a variation and makes the nested actions on the copy. kinds: copy (other words), composition (another layout), colour (another ground and colours), intent (another goal: awareness, trial, community), format. Always nest at least one action.
 - generate_background {prompt, model, use}: makes a new picture with an image model and puts it behind the design (use: background) or as a layer (use: image). gpt is GPT Image 2.5 Flare (follows references, characters, products), flux is FLUX 3 (photographic scenes). The prompt describes a scene only: never ask for words, a logo or a headline in the picture: those are layers.
-- add_design {name, purpose, family, format, layout}: a new design from the brand kit (type roles, colours, the logo and the product laid out) in a format, or in the first format of a family when only family is named; it opens in the editor. A flyer is family print (a4), a banner ad family ads, a share image family web (og), an app store screenshot family app (store).
+- add_design {name, purpose, family, format, layout, headline, sub}: (always write the headline and the subhead in the brand's voice in the same action, never leave the starter's filler: headline is a short line, with a word wrapped in *asterisks* for the accent, sub one short line or "" for none) a new design from the brand kit (type roles, colours, the logo and the product laid out) in a format, or in the first format of a family when only family is named; it opens in the editor. A flyer is family print (a4), a banner ad family ads, a share image family web (og), an app store screenshot family app (store).
 - propose_mockup {scene, design}: shows a design (the open one when design is left out) in a real-world scene: opens the mockup window with the scene and the design chosen. It spends nothing: the person looks, then asks for the picture and sees its price. Scenes: ${SCENE_IDS.join(", ")}. Use it when the person asks to see a design on a poster, a phone, a bag, a billboard, a label...
 - add_motion {design}: a motion piece from a design (the open one when design is left out), with a first timing.
 - plan_design {design, day}: the day of the week a post goes out (mon to sun).
@@ -250,7 +253,7 @@ const LAYER_PROPS = new Set(["x", "y", "w", "h", "size", "align", "valign", "col
 const finite = (v: unknown) => typeof v === "number" && Number.isFinite(v);
 // a writer that answers the JSON as text sometimes escapes a line break twice: it is meant as a break
 const breaks = (s: string) => s.replace(/\\n/g, "\n");
-const STRINGS: Record<string, number> = { layer: 120, design: 120, text: 600, type: 20, layout: 20, format: 12, kind: 20, name: 120, note: 160, color: 40, asset: 60, prompt: 600, model: 10, use: 12, status: 12, id: 60, role: 40, ground: 40, logo: 60, summary: 300, family: 12, scene: 30, day: 3, purpose: 12, title: 140, space: 8 };
+const STRINGS: Record<string, number> = { headline: 90, sub: 140, layer: 120, design: 120, text: 600, type: 20, layout: 20, format: 12, kind: 20, name: 120, note: 160, color: 40, asset: 60, prompt: 600, model: 10, use: 12, status: 12, id: 60, role: 40, ground: 40, logo: 60, summary: 300, family: 12, scene: 30, day: 3, purpose: 12, title: 140, space: 8 };
 const LISTS = ["words", "dos", "donts", "goals"];
 const BRIEF_FIELDS = ["pitch", "goal", "audience", "message", "tone", "deliverables", "constraints", "channels"];
 
@@ -273,6 +276,9 @@ function cleanAction(a: any, space: Space, nested = false): any | null {
   if (typeof a.hex === "string" && /^#[0-9a-f]{6}$/i.test(a.hex.trim())) out.hex = a.hex.trim().toUpperCase();
   if (finite(a.weight)) out.weight = Math.min(900, Math.max(300, Math.round(a.weight / 100) * 100));
   if (finite(a.dim)) out.dim = Math.min(0.9, Math.max(0, a.dim));
+  if (Array.isArray(a.lines) && space === "kit") {
+    out.lines = a.lines.filter((x: any) => x && typeof x.say === "string" && x.say.trim()).slice(0, 8).map((x: any) => ({ say: x.say.slice(0, 120), not: typeof x.not === "string" ? x.not.slice(0, 120) : "" }));
+  }
   if (a.fields && typeof a.fields === "object") {
     out.fields = {};
     for (const k of BRIEF_FIELDS) if (typeof a.fields[k] === "string") out.fields[k] = a.fields[k].slice(0, 600);
