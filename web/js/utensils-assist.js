@@ -1,17 +1,22 @@
-// Truffle, the raccoon who keeps Utensils' shelf. She is told the tools, the one open and what it holds, and the
-// Library's newest pictures, clips and sounds, and answers with what to set up: a tool opened, its input taken
-// from the Library, its words and settings, and "run it". Setting up costs nothing, so it is done at once.
-// Running a tool costs credits: it waits in her answer for one yes from you, with its price, and nothing runs
-// until you give it.
+// Truffle, the raccoon who keeps Utensils' shelf. She is told the workspace open and its tools in full, the other workspaces'
+// tools by id, the tool open and what it holds, the queue, the newest results and the Library's newest pictures, clips and
+// sounds, and answers with what to set up: a workspace or a tool opened, its input taken from the Library, its words and
+// settings, and "run it". Setting up costs nothing, so it is done at once. Running a tool costs credits: it waits in her
+// answer for one yes from you, with its price, and nothing runs until you give it.
+//
+// A workspace's own tools reach her through registerTool (utensils.js): their takes, words and options are what she is told
+// and what she may set (server/utensils-assist.ts reads her answer against exactly that); a tool with run() can be run by her key.
 import { state, changed, toast, writer } from "./store.js";
 import { api } from "./api.js";
-import { TOOLS, toolById, utensils, inputOf, pickTool, setInput, runTool, ready, estimate } from "./utensils.js";
+import { TOOLS, toolById, utensils, inputOf, pickTool, setInput, setWorkspace, runTool, ready, estimate } from "./utensils.js";
+import { WORKSPACES } from "./utensils-harness.js";
+import { ago } from "./dom.js";
 
 /** Truffle's conversation: Utensils' own, never mixed with another product's. */
 export const chat = { messages: [], busy: null };
 
-/** The room of the bar on Utensils: the shelf's group of the tool open (picture, video or sound). */
-export const roomOfTool = () => toolById(utensils.tool).group.toLowerCase();
+/** The room of the bar on Utensils: the workspace that is open. */
+export const roomOfTool = () => utensils.workspace;
 
 const NOUN = { image: "Picture", video: "Clip", audio: "Sound" };
 
@@ -23,7 +28,7 @@ async function library() {
   const sounds = await fetch("api/audio").then((r) => (r.ok ? r.json() : [])).catch(() => []);
   const items = new Map();
   const add = (id, kind, name, value) => items.set(id, { kind, name, value });
-  const images = state.photos.slice(0, 12).map((p, n) => {
+  const images = state.photos.slice(0, 8).map((p, n) => {
     const name = p.name || p.file.slice(0, 8);
     add(`img${n + 1}`, "image", name, async () => ({ file: p.file, url: p.url, width: p.width, height: p.height }));
     return { id: `img${n + 1}`, name, size: `${p.width}×${p.height}` };
@@ -37,28 +42,21 @@ async function library() {
   const takes = state.runs.filter((r) => r.status === "done" && r.video).map((r) => ({ kind: "take", name: r.request.name, seconds: r.length ?? r.request.seconds, date: r.createdAt, value: () => video({ run: r.id }) }));
   const films = state.films.map((f) => ({ kind: "film", name: f.name, seconds: f.seconds, date: f.createdAt, value: () => video({ film: f.id }) }));
   const count = {};
-  const clips = [...made, ...takes, ...films].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")).slice(0, 10).map((c) => {
+  const clips = [...made, ...takes, ...films].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")).slice(0, 6).map((c) => {
     const id = `${c.kind === "result" ? "res" : c.kind}${(count[c.kind] = (count[c.kind] ?? 0) + 1)}`;
     add(id, "video", c.name, c.value);
     return { id, name: c.name, seconds: Math.round(c.seconds ?? 0), kind: c.kind };
   });
-  const heard = (Array.isArray(sounds) ? sounds : []).slice(0, 8).map((a, n) => {
+  const heard = (Array.isArray(sounds) ? sounds : []).slice(0, 6).map((a, n) => {
     add(`snd${n + 1}`, "audio", a.name, async () => ({ file: a.file, url: a.url, seconds: a.seconds, name: a.name }));
     return { id: `snd${n + 1}`, name: a.name, seconds: Math.round(a.seconds) };
   });
   return { items, view: { images, clips, sounds: heard } };
 }
 
-/** The settings a tool has, as they stand. */
+/** The settings a tool has, as they stand: what it declares, each as the tool keeps it. */
 function optionsOf(t, i) {
-  return {
-    upscale: { scale: i.scale === 2 ? 2 : 4 },
-    "upscale-video": { height: i.height ?? 1080 },
-    extend: { seconds: i.seconds ?? 5 },
-    music: { seconds: i.seconds ?? 30, bpm: i.bpm ?? 100 },
-    sfx: { seconds: i.seconds ?? 6 },
-    sound: { real: i.real === true },
-  }[t.id] ?? {};
+  return Object.fromEntries((t.options ?? []).map((o) => [o.key, i[o.key] ?? (o.key === "scale" ? 4 : o.key === "height" ? 1080 : o.key === "seconds" ? { extend: 5, music: 30, sfx: 6 }[t.id] : o.key === "bpm" ? 100 : o.key === "real" ? false : undefined)]).filter(([, v]) => v !== undefined && v !== ""));
 }
 const labelOf = (v, kind) => (v ? (kind === "audio" ? v.name ?? "a voice track" : kind === "video" ? `a clip, ${Math.round(v.duration ?? 0)} s` : `${v.width}×${v.height}`) : null);
 const costOf = (t, i) => {
@@ -66,20 +64,31 @@ const costOf = (t, i) => {
   return typeof credits === "number" ? `≈ ${credits} cr` : "your GPU";
 };
 // what running would run: the tool, what it holds, its words and its settings
-const signature = (t, i) => JSON.stringify([t.id, i.image?.file, i.video?.file, i.audio?.file, i.prompt, i.lyrics, optionsOf(t, i)]);
+const signature = (t, i) => JSON.stringify([t.id, i.image?.file, i.video?.file, i.audio?.file, i.prompt, optionsOf(t, i)]);
 /** What a tool that is not ready still lacks, in a few words. */
 const lacks = (t, i) => {
   const missing = t.takes.find((k) => !i[k]);
   return missing ? `${t.name} still needs ${{ image: "a picture", video: "a clip", audio: "a voice track" }[missing]}` : `${t.name} still needs words`;
 };
 
-/** What she is told: the tools, the one open and what it holds, and the Library's newest files. */
+const full = ({ id, workspace, group, name, hint, takes, words, options }) => ({ id, workspace, group, name, hint, takes, words, options });
+const brief = ({ id, workspace, name, takes, words }) => ({ id, workspace, name, takes, words });
+
+/** What she is told: the workspace open and its tools in full, the others' by id, the tool open and what it holds, the queue, the newest results and the Library's newest files. */
 export function summary(lib) {
   const t = toolById(utensils.tool);
   const i = inputOf(t.id);
+  const here = utensils.workspace;
+  // the tool open is the workspace's own only when the workspace holds tools: on the shelf or Templates it is the last one used
+  const ownsTool = TOOLS.some((x) => x.workspace === here);
   return {
-    tools: TOOLS.map(({ id, group, name, hint, takes, words }) => ({ id, group, name, hint, takes, words })),
-    open: { tool: t.id, has: { image: labelOf(i.image, "image"), video: labelOf(i.video, "video"), audio: labelOf(i.audio, "audio") }, words: i.prompt ?? "", options: optionsOf(t, i), ready: ready(t, i), cost: estimate(t, i) },
+    workspace: here,
+    workspaces: WORKSPACES.map((w) => ({ id: w.id, name: w.name, tools: w.id === "shelf" ? TOOLS.length : TOOLS.filter((x) => x.workspace === w.id).length })),
+    tools: TOOLS.filter((x) => x.workspace === here).map(full),
+    others: TOOLS.filter((x) => x.workspace !== here).map(brief),
+    open: ownsTool && t.workspace !== here ? null : { tool: t.id, has: { image: labelOf(i.image, "image"), video: labelOf(i.video, "video"), audio: labelOf(i.audio, "audio") }, words: i.prompt ?? "", options: optionsOf(t, i), ready: ready(t, i), cost: estimate(t, i) },
+    queue: utensils.jobs.slice(0, 4).map((j) => ({ tool: j.tool, label: j.label, progress: j.progress, status: j.status })),
+    results: utensils.results.slice(0, 5).map((r) => ({ tool: r.tool, kind: r.kind, note: r.note, ago: ago(r.at) })),
     library: lib.view,
     busy: !!utensils.busy,
   };
@@ -96,7 +105,11 @@ async function post(body) {
 async function run(a, lib) {
   const did = [];
   const failed = [];
-  if (a.op === "pick_tool") {
+  if (a.op === "pick_workspace") {
+    const w = WORKSPACES.find((x) => x.id === a.workspace);
+    if (!w) failed.push("No such workspace");
+    else (setWorkspace(w.id), did.push(`Opened ${w.name}`));
+  } else if (a.op === "pick_tool") {
     const t = TOOLS.find((x) => x.id === a.tool);
     if (!t) failed.push("No such tool");
     else (pickTool(t.id), did.push(`Opened ${t.name}`));
@@ -115,7 +128,9 @@ async function run(a, lib) {
     // words and settings, kept as the tool's own screen keeps them
     const patch = {};
     if (typeof a.words === "string") patch.prompt = a.words;
+    // settings, as the server kept them: flat (the older ones) or in options (what a tool declares)
     for (const k of ["lyrics", "scale", "height", "seconds", "bpm", "real"]) if (a[k] !== undefined) patch[k] = a[k];
+    for (const [k, v] of Object.entries(a.options ?? {})) if (t.options?.some((o) => o.key === k)) patch[k] = v;
     if (Object.keys(patch).length) {
       setInput(patch);
       did.push(typeof a.words === "string" ? `Words: ${a.words.length > 40 ? `${a.words.slice(0, 39)}…` : a.words}` : Object.keys(patch).join(", "));
@@ -152,8 +167,7 @@ export async function askUtensils(text) {
     if (go) {
       const t = toolById(utensils.tool);
       const i = inputOf(t.id);
-      if (utensils.busy) failed.push("A tool is already running");
-      else if (!ready(t, i)) failed.push(lacks(t, i));
+      if (!ready(t, i)) failed.push(lacks(t, i));
       else {
         for (const m of chat.messages) if (m.confirm?.state === "asking") m.confirm.state = "stale";
         message.confirm = { state: "asking", label: t.verb, cost: costOf(t, i), sig: signature(t, i), running: "Working", done: "Done: it is in the results", failed: "It didn't finish" };
@@ -174,17 +188,16 @@ export async function confirmUtensils(message) {
   if (c?.state !== "asking") return;
   const t = toolById(utensils.tool);
   const i = inputOf(t.id);
-  if (utensils.busy || !ready(t, i) || signature(t, i) !== c.sig) {
+  if (!ready(t, i) || signature(t, i) !== c.sig) {
     c.state = "stale";
     toast("The tool or what it holds changed since. Ask me again.");
     return changed("assistant");
   }
   c.state = "running";
   changed("assistant");
-  const before = utensils.results[0]?.id;
   try {
-    await runTool();
-    c.state = utensils.results[0]?.id !== before ? "done" : "failed";
+    const made = await runTool(t.id);
+    c.state = made?.length ? "done" : "failed";
   } catch (e) {
     c.state = "failed";
     toast(e.message, { tone: "crit" });

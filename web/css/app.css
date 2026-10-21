@@ -474,7 +474,7 @@ body[data-product="kitchen"] .rooms { display: block; }
 .pet-chip:hover:not(:disabled) { border-color: var(--accent-line); background: var(--s3); color: var(--text); }
 .pet-chip:disabled { color: var(--faint); cursor: default; }
 .composer.no-clip .clip-key { display: none; }
-/* a product with a left panel of its own (Jam, Macaron) has its bar on one row, as its design shows it: the pet's face, the
+/* a product with a left panel of its own (Jam, Macaron, Utensils) has its bar on one row, as its design shows it: the pet's face, the
    words, the model and the send key inside one composer, 64px tall (a phone keeps the card) */
 @media (min-width: 641px) {
   .composer.is-compact .chat-bar { align-items: center; padding: .6875rem .75rem; }
@@ -1123,15 +1123,14 @@ body.has-window { overflow: hidden; }
 .step-zero:hover > svg:last-child { transform: translateX(2px); opacity: 1; }
 
 /* on Create the toast stands above the chat bar instead of on it */
-body[data-page="shot"]:not(.has-window) .toast, body[data-page="mixer"] .toast, body[data-page="utensils"] .toast { bottom: calc(var(--chat-h, 3.5rem) + 2rem); }
-#page-mixer, #page-utensils { padding-bottom: calc(var(--chat-h, 3.5rem) + 2.5rem); }
+body[data-page="shot"]:not(.has-window) .toast, body[data-page="mixer"] .toast { bottom: calc(var(--chat-h, 3.5rem) + 2rem); }
+#page-mixer { padding-bottom: calc(var(--chat-h, 3.5rem) + 2.5rem); }
 /* Mixer's dashboard scrolls in the room above the bar (the bar, its chips and the gap under it are left out of it), so nothing
    of the recipe is ever under the bar, at any scroll position; a phone's page, whose header is two rows, scrolls as a page */
 @media (min-width: 821px) {
   body[data-page="mixer"] #page-mixer { width: 100%; height: calc(100dvh - var(--head) - var(--chat-h, 3.5rem) - 1.75rem); margin: 0; padding: 1.25rem .875rem 0; overflow-y: auto; scrollbar-width: thin; }
 }
 /* Utensils' work area leaves room for the bar, so the tool's own keys under it stay in view */
-@media (min-width: 821px) { body[data-page="utensils"] .ut-work { height: clamp(18rem, calc(100dvh - 17.25rem - var(--chat-h, 3.5rem)), 42rem); } }
 
 /* ---- the other sections: wide pages with a head ---------------------------- */
 

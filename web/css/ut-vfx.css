@@ -1,0 +1,143 @@
+/* Utensils: the VFX workspace (utensils-space-vfx.js), and the small controls the VFX and Audio workbenches share (.uf-*).
+   Mockup: docs/brand/products/utensils-v2/utensils-v2-vfx.png. A gallery of cards on the left, the workbench of the one picked on the right. */
+
+/* ---- the shared controls ------------------------------------------------------------------------ */
+.uf-line { display: grid; grid-template-columns: 6.25rem minmax(0, 1fr); align-items: center; gap: .625rem .875rem; min-width: 0; }
+.uf-line > .ut-label { padding-top: .125rem; line-height: 1.3; }
+.uf-line > .ut-segs { justify-self: start; max-width: 100%; flex-wrap: wrap; border-radius: 1.125rem; }
+.uf-slider { display: grid; grid-template-columns: minmax(0, 1fr) 3.5rem; align-items: center; gap: .75rem; min-width: 0; }
+.uf-out { font: 500 .8125rem/1 var(--font-mono); color: var(--text); text-align: right; }
+.uf-range { --fill: 50%; width: 100%; height: 1.5rem; margin: 0; background: transparent; cursor: pointer; -webkit-appearance: none; appearance: none; }
+.uf-range::-webkit-slider-runnable-track { height: .25rem; border-radius: var(--r-pill); background: linear-gradient(90deg, var(--accent) var(--fill), var(--line2) var(--fill)); }
+.uf-range::-moz-range-track { height: .25rem; border-radius: var(--r-pill); background: var(--line2); }
+.uf-range::-moz-range-progress { height: .25rem; border-radius: var(--r-pill); background: var(--accent); }
+.uf-range::-webkit-slider-thumb { -webkit-appearance: none; width: 1.125rem; height: 1.125rem; margin-top: -.4375rem; border: 2px solid var(--accent); border-radius: 50%; background: var(--s1); box-shadow: 0 2px 8px rgba(0, 0, 0, .5); }
+.uf-range::-moz-range-thumb { width: .875rem; height: .875rem; border: 2px solid var(--accent); border-radius: 50%; background: var(--s1); }
+.uf-range:focus-visible { outline: none; }
+.uf-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--accent-soft); }
+.uf-switch { display: inline-flex; align-items: center; gap: .75rem; justify-self: start; padding: 0; border: 0; background: transparent; color: var(--text); font: 500 .875rem/1.3 var(--font-sans); text-align: left; cursor: pointer; }
+.uf-switch i { position: relative; flex: none; width: 2.5rem; height: 1.4rem; border-radius: var(--r-pill); background: var(--s3); box-shadow: inset 0 0 0 1px var(--line2); transition: background var(--t-fast); }
+.uf-switch i::after { content: ""; position: absolute; left: .2rem; top: .2rem; width: 1rem; height: 1rem; border-radius: 50%; background: #d8d8dd; transition: transform var(--t-fast) var(--ease-out), background var(--t-fast); }
+.uf-switch[aria-checked="true"] i { background: var(--accent); box-shadow: none; }
+.uf-switch[aria-checked="true"] i::after { transform: translateX(1.1rem); background: var(--accent-ink); }
+.uf-chips { display: flex; flex-wrap: wrap; gap: .5rem; min-width: 0; }
+.uf-chip { cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast); }
+.uf-chip:hover { color: var(--text); border-color: var(--faint); }
+.uf-chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.uf-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.uf-swatch { position: relative; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; padding: 0; border: 2px solid var(--line2); border-radius: 50%; background: var(--c, transparent); color: var(--muted); cursor: pointer; }
+.uf-swatch[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.uf-swatch.is-custom { background: transparent; border-style: dashed; }
+.uf-swatch.is-custom svg { width: .875rem; height: .875rem; }
+.uf-swatch.is-custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.ut-iconkey[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.ut-select { min-height: 2.25rem; padding: 0 .75rem; border: 1px solid var(--line2); border-radius: .75rem; background: var(--sunk); color: var(--text); font: 500 .875rem/1 var(--font-sans); }
+
+/* ---- the workspace ------------------------------------------------------------------------------ */
+/* the grid takes the height it is given (not the height of its content) and the cards and the controls scroll inside it */
+.is-vfx { flex: 1 1 0; min-height: 0; grid-template-columns: minmax(0, 1.4fr) minmax(24rem, 1fr); grid-template-rows: minmax(0, 1fr); }
+.uv-gallery, .uv-benchbox { min-height: 0; }
+.uv-cards { display: grid; flex: 1 1 0; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; gap: .75rem; min-height: 0; padding: .125rem .25rem .25rem 0; overflow-y: auto; scrollbar-width: thin; }
+.uv-card { display: grid; grid-template-rows: auto auto auto; align-content: start; gap: .25rem; min-width: 0; padding: .4375rem .4375rem .625rem; border: 2px solid transparent; border-radius: 1.125rem; background: var(--s2); color: var(--text); text-align: left; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
+.uv-card:hover:not(:disabled) { border-color: var(--line2); background: var(--s3); }
+.uv-card.is-on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 4px rgba(242, 255, 89, .06); }
+.uv-card.is-off { opacity: .45; cursor: default; }
+.uv-card-name { padding: .375rem .25rem 0; font: 700 .9375rem/1.2 var(--font-sans); }
+.uv-card.is-on .uv-card-name { color: var(--accent); }
+.uv-card-hint { display: -webkit-box; padding: 0 .25rem; overflow: hidden; font: 400 .75rem/1.35 var(--font-sans); color: var(--muted); -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+.uv-art { --split: 50%; position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: .75rem; background: radial-gradient(120% 120% at 30% 20%, #2b2536, #17171a 70%); }
+.uv-art img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+.uv-after { clip-path: inset(0 0 0 var(--split)); }
+.uv-card:hover:not(:disabled) .uv-art { --split: 36%; }
+.uv-art-split { position: absolute; top: 0; bottom: 0; left: var(--split); width: 2px; margin-left: -1px; background: rgba(255, 255, 255, .92); box-shadow: 0 0 0 1px rgba(0, 0, 0, .25); pointer-events: none; }
+.uv-art-icon { position: absolute; inset: 0; display: grid; place-items: center; color: rgba(240, 239, 237, .16); z-index: -1; }
+.uv-art-icon svg { width: 2.75rem; height: 2.75rem; }
+.uv-art-tag { position: absolute; bottom: .4375rem; padding: .1875rem .375rem; border-radius: .375rem; background: rgba(14, 14, 16, .72); font: 600 .5625rem/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: #fff; }
+.uv-art-tag.is-before { left: .4375rem; }
+.uv-art-tag.is-after { right: .4375rem; }
+.uv-card-way { position: absolute; left: .4375rem; top: .4375rem; max-width: calc(100% - .875rem); overflow: hidden; padding: .25rem .5rem; text-overflow: ellipsis; white-space: nowrap; border-radius: var(--r-pill); background: rgba(14, 14, 16, .78); backdrop-filter: blur(4px); font: 500 .625rem/1 var(--font-mono); letter-spacing: .02em; color: #d8d8dd; }
+.uv-card-way::before { content: ""; display: inline-block; width: .4375rem; height: .4375rem; margin-right: .375rem; border-radius: 50%; background: var(--ok); vertical-align: 0; }
+.uv-card-way.is-cloud::before, .uv-card-way.is-mixed::before { background: #9f8bff; }
+.uv-card-way.is-link::before { background: var(--accent); }
+
+/* the workbench of the tool picked */
+.uv-benchbox { gap: .75rem; overflow: hidden; }
+.uv-title { display: flex; flex: none; align-items: center; gap: 1rem; }
+.uv-title-icon { display: grid; place-items: center; flex: none; width: 3rem; height: 3rem; border: 1px solid var(--accent-line); border-radius: .875rem; background: var(--accent-soft); color: var(--accent); }
+.uv-title-icon svg { width: 1.5rem; height: 1.5rem; }
+.uv-title h2 { margin: 0 0 .1875rem; font: 800 1.375rem/1.1 var(--font-sans); letter-spacing: -.015em; }
+.uv-title p { margin: 0; font: 400 .8125rem/1.35 var(--font-sans); color: var(--muted); }
+.uv-views { display: flex; flex: none; align-items: center; gap: .5rem; min-height: 2.5rem; }
+.uv-views .ut-seg { min-height: 1.875rem; padding: 0 .875rem; }
+.uv-media { font: 500 .75rem/1 var(--font-mono); color: var(--dim); }
+.uv-views-note { overflow: hidden; font: 500 .75rem/1 var(--font-mono); color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.uv-views .ut-iconkey { width: 2.125rem; height: 2.125rem; border-radius: .625rem; }
+.uv-stagebox-host { display: flex; flex: 1 1 17rem; min-height: 13rem; }
+.uv-host { display: flex; flex: 1 1 0; min-width: 0; min-height: 0; }
+.uv-host > * { flex: 1 1 0; min-width: 0; }
+.uv-compare { position: relative; min-height: 0; overflow: hidden; border-radius: 1rem; background: var(--sunk); }
+.uv-drop { min-height: 0; margin: 0; width: 100%; height: 100%; }
+
+/* the stage */
+.uv-stage { position: relative; display: flex; flex-direction: column; gap: .625rem; min-width: 0; min-height: 0; }
+.uv-stagebox { display: grid; flex: 1 1 0; place-items: center; min-height: 0; container-type: size; }
+.uv-frame { position: relative; width: min(100cqw, calc(100cqh * var(--arn, 1.78))); aspect-ratio: var(--ar, 16 / 9); overflow: hidden; border-radius: 1rem; background: #000; box-shadow: 0 0 0 1px rgba(255, 255, 255, .06); }
+.uv-frame > video, .uv-frame > img, .uv-frame > canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.uv-frame > video, .uv-still { object-fit: contain; }
+.uv-frame > video[hidden], .uv-frame > img[hidden] { display: none; }
+.uv-shot { z-index: 1; object-fit: contain; background: #000; }
+.uv-mask { z-index: 2; pointer-events: none; }
+.uv-stage[data-mode="mask"] .uv-mask { pointer-events: auto; cursor: crosshair; touch-action: none; }
+.uv-stage[data-mode="pick"] .uv-mask { pointer-events: auto; cursor: crosshair; }
+.uv-hint { position: absolute; left: 50%; bottom: .75rem; z-index: 4; transform: translateX(-50%); padding: .4375rem .875rem; border-radius: .75rem; background: rgba(14, 14, 16, .8); backdrop-filter: blur(6px); font: 500 .8125rem/1 var(--font-sans); color: var(--text); pointer-events: none; white-space: nowrap; }
+.uv-hint[hidden] { display: none; }
+.uv-keys { position: absolute; left: .75rem; top: .75rem; z-index: 5; display: flex; gap: .5rem; }
+.uv-keys:empty { display: none; }
+.uv-back { background: rgba(14, 14, 16, .78); backdrop-filter: blur(6px); }
+.uv-bar { display: flex; flex: none; align-items: center; gap: .75rem; }
+.uv-play { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.uv-play:hover { color: var(--accent-ink); border-color: var(--accent); filter: brightness(1.06); }
+.uv-seek { flex: 1 1 auto; width: auto; }
+.uv-time { flex: none; font: 500 .8125rem/1 var(--font-mono); color: var(--muted); }
+.uv-strip { position: relative; display: flex; flex: none; height: 2.75rem; overflow: hidden; border-radius: .75rem; background: var(--sunk); cursor: ew-resize; touch-action: none; }
+.uv-strip img { display: block; height: 100%; object-fit: cover; pointer-events: none; }
+.uv-head { position: absolute; top: 0; bottom: 0; left: 0; z-index: 2; width: 2px; margin-left: -1px; background: var(--accent); box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); pointer-events: none; }
+.uv-stage[data-media="image"] .uv-bar, .uv-stage[data-media="image"] .uv-strip { display: none; }
+
+/* the controls and the keys under the stage */
+.uv-lower { display: flex; flex: 0 1 auto; flex-direction: column; gap: .75rem; max-height: 46%; min-height: 10rem; padding-top: .75rem; border-top: 1px solid var(--line); }
+.uv-controls { display: grid; flex: 0 1 auto; align-content: start; gap: .6875rem; min-height: 0; padding-right: .25rem; overflow-y: auto; scrollbar-width: thin; }
+.uv-note { margin: 0; }
+.uv-why { margin: 0; font: 400 .8125rem/1.4 var(--font-sans); color: var(--muted); }
+.uv-key { display: flex; flex-wrap: wrap; align-items: center; gap: .625rem; }
+.uv-key-swatch { position: relative; display: block; width: 2.125rem; height: 2.125rem; border: 1px solid rgba(255, 255, 255, .18); border-radius: .625rem; background: var(--c); cursor: pointer; }
+.uv-key-swatch input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.uv-key-hex { font: 500 .8125rem/1 var(--font-mono); color: var(--text); }
+.uv-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.uv-words { min-width: 0; }
+.uv-where { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .625rem; font: 400 .8125rem/1.4 var(--font-sans); color: var(--muted); }
+.uv-where em { flex-basis: 100%; font-style: normal; font-size: .75rem; color: var(--dim); }
+.uv-where .uv-warn { color: var(--warn); }
+.uv-more { display: grid; gap: .75rem; }
+.uv-more summary { display: flex; align-items: center; gap: .5rem; cursor: pointer; font: 500 .8125rem/1 var(--font-mono); color: var(--muted); list-style: none; }
+.uv-more summary::-webkit-details-marker { display: none; }
+.uv-more summary svg { width: .8125rem; height: .8125rem; transition: transform var(--t-fast); }
+.uv-more[open] summary svg { transform: rotate(90deg); }
+.uv-keys-row { display: flex; flex: none; align-items: center; gap: .75rem; }
+.uv-meta { display: grid; gap: .25rem; min-width: 0; }
+.uv-meta b { font: 700 .9375rem/1 var(--font-mono); }
+.uv-meta em { font: 400 .6875rem/1 var(--font-mono); font-style: normal; color: var(--dim); white-space: nowrap; }
+.uv-go, .uv-peek { min-height: 3rem; white-space: nowrap; }
+.uv-go { padding: 0 1.25rem; }
+.uv-peek { padding: 0 .875rem; }
+
+@supports (corner-shape: squircle) {
+  .uv-card, .uv-art, .uv-frame, .uv-strip, .uv-compare { corner-shape: squircle; }
+}
+@media (max-width: 1280px) {
+  .is-vfx { flex: 1 0 auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; align-content: start; }
+  .uv-cards { grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); overflow: visible; }
+  .uv-stagebox-host { min-height: 22rem; }
+  .uv-lower { max-height: none; }
+  .uv-controls { overflow: visible; }
+}

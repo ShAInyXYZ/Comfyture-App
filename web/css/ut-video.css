@@ -1,0 +1,3 @@
+/* Utensils: the Video workspace is the Picture workspace's workbench (ut-picture.css) with a clip on its stage. */
+.is-media[data-medium="video"] .ut-stage { background: #000; }
+.is-media[data-medium="video"] .ut-stage .ut-video { border-radius: inherit; }
