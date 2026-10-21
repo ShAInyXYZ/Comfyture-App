@@ -67,7 +67,8 @@ function weekWin() {
       dragend: (e) => e.currentTarget.classList.remove("is-dragging"),
     } },
       h("button.mc-wcard-pic", { type: "button", title: `${d.name}\nOpen it in the editor`, on: { click: () => open(d.id) } }, thumb(d, { width: 360 })),
-      h("div.mc-wcard-foot", {}, h("b", { title: d.name }, kindOf(d)), statusKey(d)),
+      // (the post's own name under its picture, in a frame of one shape: a 160x600 skyscraper and a 728x90 strip are cards like the others)
+      h("div.mc-wcard-foot", {}, h("b", { title: `${d.name}\n${kindOf(d)}` }, d.name), statusKey(d)),
       h("div.mc-wcard-days", { role: "group", "aria-label": `Day for ${d.name}` }, ...DAYS.map(([k, t]) =>
         h("button", { type: "button", title: d.plan?.day === k ? `Take it off ${t}` : `Put it on ${t}`, "aria-pressed": String(d.plan?.day === k), on: { click: () => planDesign(d.id, d.plan?.day === k ? null : k) } }, t[0]))));
   }

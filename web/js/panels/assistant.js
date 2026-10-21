@@ -424,7 +424,7 @@ function message(m, last, s, harness) {
   const [undo, back] = m.macaron ? [undoMacaron, "Put the design back as it was"] : m.stage ? [undoStage, "Put the stage back as it was"] : [undoAssistant, "Put the shot back as it was"];
   return h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
     h("img.msg-face", { src: harness.face, alt: "", draggable: false }),
-    h("p", {}, m.text),
+    h("p", m.detail ? { title: m.detail } : {}, m.text),
     m.renders?.length ? h("div.msg-renders", {}, m.renders.map(renderTile)) : null,
     m.did?.length || m.failed?.length
       ? h("div.msg-chips", {},

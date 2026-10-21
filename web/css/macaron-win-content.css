@@ -34,11 +34,13 @@
 
 .mc-wcard { display: grid; grid-template-columns: minmax(0, 1fr); gap: .625rem; min-width: 0; cursor: grab; transition: opacity var(--t-fast); }
 .mc-wcard.is-dragging { opacity: .35; }
-.mc-wcard-pic { display: block; width: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 1.125rem; background: var(--sunk); box-shadow: 0 0 0 1px rgba(255, 255, 255, .07); cursor: pointer; transition: transform var(--t-fast), box-shadow var(--t-fast); }
+.mc-wcard-pic { display: block; width: 100%; aspect-ratio: 4 / 5; padding: 0; overflow: hidden; border: 0; border-radius: 1.125rem; background: var(--sunk); box-shadow: 0 0 0 1px rgba(255, 255, 255, .07); cursor: pointer; transition: transform var(--t-fast), box-shadow var(--t-fast); }
 .mc-wcard-pic:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px var(--accent-line), 0 12px 24px rgba(0, 0, 0, .4); }
-.mc-wcard-pic canvas { display: block; width: 100%; height: auto; }
+/* every picture sits whole inside a frame of one shape, whatever its own (the frame is the card's height) */
+.mc-wcard-pic canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+.mc-tray .mc-wcard-pic { aspect-ratio: 1 / 1; }
 .mc-wcard-foot { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-width: 0; }
-.mc-wcard-foot b { font: 600 .9375rem/1 var(--font-sans); }
+.mc-wcard-foot b { min-width: 0; overflow: hidden; font: 600 .9375rem/1.2 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
 .mc-wcard-foot .mc-skey { padding-right: 0; }
 /* the day keys: the way to move a post without dragging it */
 .mc-wcard-days { display: flex; gap: .25rem; opacity: 0; transition: opacity var(--t-fast); }

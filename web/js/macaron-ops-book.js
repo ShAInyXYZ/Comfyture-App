@@ -4,7 +4,7 @@
 // server/macaron-book.ts is the server's side (her brief and how her fields are kept); the two list the same ops.
 import { macaron, setKit, save } from "./macaron.js";
 import { changed } from "./store.js";
-import { pageStatus, bookText, TEXT_PAGES, PAGE_IDS, FIXES } from "./macaron-book-model.js";
+import { pageStatus, bookText, imageryOf, TEXT_PAGES, PAGE_IDS, FIXES } from "./macaron-book-model.js";
 import { auditOf } from "./macaron-book-audit.js";
 import { fixPage } from "./macaron-book.js";
 
@@ -18,7 +18,9 @@ export function summary() {
   const dir = (body.directions ?? []).find((d) => d.picked);
   return {
     pages: pageStatus(body).map(({ id, name, ok, reason }) => ({ id, name, ok, reason })),
+    // (the words written for a page are an optional note on it: the page itself is made of the brief and the pictures, so it is whole without them)
     written: Object.fromEntries(TEXT_PAGES.map((id) => [id, bookText(body, id)])),
+    madeOf: { story: "the brief's pitch and goals and the direction picked", imagery: `${imageryOf(body).length} pictures of the moodboard, the product and what was made` },
     audit: auditOf(b).items.slice(0, 8).map((i) => ({ design: i.sub, text: i.title, level: i.level })),
     brief: { pitch: body.brief?.pitch ?? "", goals: body.brief?.goals ?? [], message: body.brief?.message ?? "", tone: body.brief?.tone ?? "" },
     direction: dir ? { name: dir.name, note: dir.note } : null,

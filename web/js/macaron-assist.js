@@ -359,7 +359,9 @@ export async function askMacaron(text, { preset } = {}) {
       }
     }
   } catch (e) {
-    chat.messages.push({ role: "assistant", text: e.message, error: true, macaron: true });
+    // (a call that did not get through is not told as "fetch failed": a plain sentence, the original in its tooltip)
+    const lost = /fetch failed|failed to fetch|networkerror|network request|econn|socket hang up|other side closed|terminated|timed? ?out/i.test(String(e?.message ?? e));
+    chat.messages.push({ role: "assistant", text: lost ? "I could not reach my writer. Try again." : e.message, ...(lost ? { detail: String(e?.message ?? e) } : {}), error: true, macaron: true });
   } finally {
     chat.busy = null;
     changed("assistant", "macaron");

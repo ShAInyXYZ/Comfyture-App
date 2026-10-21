@@ -20,9 +20,14 @@ const motionOf = (design, b = macaron.brand) => b?.body.motion.find((m) => m.des
 /** What the window holds before anything is made: the kind, its words, its length, its easing, its format, and how it will leave. */
 export const gfx = { brand: null, kind: "sting", id: null, fields: {}, seconds: 3, ease: "out", format: "9:16", container: "mp4", playing: true };
 
-/** The draft as { design, motion } (not in the brand): what the preview draws and what saving keeps. */
+/** The brand's address, where its kit has one (it has no field for it yet: a kit that carries a website is read as it is): else blank, never a made-up one. */
+export const brandUrl = (b = macaron.brand) => String(b?.body.kit?.website ?? b?.body.kit?.url ?? "").trim();
+/** What a graphic's fields say when nothing is written: the brand's own words (tagline, how it talks, its address). */
+export const defaultsOf = (kind, b = macaron.brand) => defaultFields(kind, { brandName: b.name, tagline: kitNow().tagline, voice: kitNow().voice?.summary, url: brandUrl(b) });
+
+/** The draft as { design, motion } (not in the brand): what the preview draws and what saving keeps. `g.fields` is only what the person wrote. */
 export function draftDesign(g = gfx, b = macaron.brand) {
-  return buildGraphic({ kind: g.kind, fields: g.fields, kit: kitNow(), brandName: b.name, format: g.format, seconds: g.seconds, ease: g.ease, id: g.id ?? `draft-${g.kind}` });
+  return buildGraphic({ kind: g.kind, fields: g.fields, kit: kitNow(), brandName: b.name, url: brandUrl(b), format: g.format, seconds: g.seconds, ease: g.ease, id: g.id ?? `draft-${g.kind}` });
 }
 
 /** A kind opened in the window: the one the brand has made (its words, length and easing), else the template as it starts. */
@@ -33,18 +38,25 @@ export function pickKind(kind, { id } = {}) {
   gfx.brand = b.id;
   gfx.kind = spec.id;
   gfx.id = saved?.id ?? null;
-  gfx.fields = saved ? { ...saved.graphic.fields } : defaultFields(spec.id, { brandName: b.name, tagline: kitNow().tagline });
+  // (only what was written is kept as fields: the brand's own words are worked out each time, so a tagline written later shows up)
+  gfx.fields = saved ? { ...saved.graphic.fields } : {};
   gfx.seconds = saved?.graphic.seconds ?? spec.seconds;
   gfx.ease = saved?.graphic.ease ?? "out";
   gfx.format = saved?.format ?? "9:16";
   changed("macaron");
 }
-/** The window open on a kind (what a tile of the Studio does; Brioche's add_motion_graphic too, with her fields). */
-export function openGraphic(kind, { id, fields, seconds, ease } = {}) {
-  pickKind(kind, { id });
+/**
+ * The window open on a kind (what a tile of the Studio does; Brioche's add_motion_graphic too, with her fields). With `here`, when the
+ * window is open on that very kind, the graphic stays as it is (what the person has typed is not thrown away) and only her words are put in.
+ */
+export function openGraphic(kind, { id, fields, seconds, ease, here = false } = {}) {
+  const same = here && gfx.brand === macaron.brand.id && gfx.kind === kind;
+  if (!same) pickKind(kind, { id });
   if (fields) gfx.fields = { ...gfx.fields, ...cleanFields(kind, fields) };
   if (Number.isFinite(seconds)) gfx.seconds = Math.min(12, Math.max(2, seconds));
   if (EASINGS.some(([e]) => e === ease)) gfx.ease = ease;
+  // (a window already open on this graphic is drawn again with her words in it: opening it again does nothing by itself)
+  changed("macaron");
   openWin("graphics");
 }
 
@@ -128,7 +140,11 @@ const easeGlyph = (id) => {
   return span.firstChild;
 };
 const CONTAINERS = [["mp4", "MP4", "A video everyone can play"], ["webm", "WebM", "Smaller, for the web"], ["gif", "GIF", "A looping picture, no sound"]];
-const ASK = "Make a motion graphic for the brand: the kind that suits what it needs now, with its words in the brand's voice (short), using add_motion_graphic.";
+/** What Brioche is asked from the graphic that is open: its own words, for that kind (never another kind, never a new graphic). */
+const askWords = () => {
+  const spec = kindOfGraphic(gfx.kind);
+  return `Write the words of the ${spec.name.toLowerCase()} that is open, in the brand's voice, short: ${spec.fields.map(([k, l]) => `${k} (${l.toLowerCase()})`).join(", ")}. Use add_motion_graphic with kind "${gfx.kind}" and copy for exactly those fields. Keep this kind: do not open another.`;
+};
 
 function graphicsWin() {
   const el = h("div.mc-w.gw");
@@ -140,7 +156,7 @@ function graphicsWin() {
   let t = 0;
   let last = 0;
   const go = h("button.mc-primary", { type: "button" });
-  const draft = draftKey("Brioche can write it", "The words, in the brand's voice.", ASK);
+  const draft = draftKey("Brioche can write it", "The words, in the brand's voice.", askWords);
   const containers = h("div.mc-segs.gw-containers", { role: "group", "aria-label": "How it leaves" });
   const foot = [draft, h("span.spacer"), containers, go];
 
@@ -168,7 +184,7 @@ function graphicsWin() {
   function tile(spec) {
     const b = macaron.brand;
     const saved = latestOf(spec.id, b);
-    const d = saved ?? buildGraphic({ kind: spec.id, kit: kitNow(), brandName: b.name }).design;
+    const d = saved ?? buildGraphic({ kind: spec.id, kit: kitNow(), brandName: b.name, url: brandUrl(b) }).design;
     return h(`button.gw-tile${spec.id === gfx.kind ? ".is-on" : ""}`, { type: "button", title: spec.hint, "aria-pressed": String(spec.id === gfx.kind), on: { click: () => pickKind(spec.id) } },
       h("span.gw-tile-pic", { style: { "--py": String(spec.band ?? 0.5) } }, stillOf(d, kitNow(), { width: 200 }), h("span.gw-dur", {}, `${(saved?.graphic.seconds ?? spec.seconds)} s`), saved ? h("span.gw-made", { title: "Made" }, icon("check")) : null),
       h("b", {}, spec.name));
@@ -188,6 +204,7 @@ function graphicsWin() {
     clockEl = h("span.gw-clock", {});
     bar = h("input.gw-scrub", { type: "range", min: 0, max: 1000, value: 0, "aria-label": "Where in the graphic", on: { input: (e) => { t = (Number(e.target.value) / 1000) * gfx.seconds; if (gfx.playing) { gfx.playing = false; changed("macaron"); } } } });
     const busy = !!macaron.progress;
+    const needsTagline = ["sting", "end", "title"].includes(gfx.kind) && !String(kit.tagline ?? "").trim() && !gfx.fields[spec.fields[0][0]];
     const exists = !!gfx.id && graphicsOf(b).some((d) => d.id === gfx.id);
     fill(el,
       h("section.gw-kinds", {}, h("span.label", {}, "Kinds"), h("div.gw-tiles", {}, ...GRAPHIC_KINDS.map(tile))),
@@ -198,7 +215,10 @@ function graphicsWin() {
       h("section.gw-fields", {},
         h("div.mc-sec.gw-sec", {}, h("span.label", {}, spec.name), h("p.mc-hint", {}, spec.hint),
           ...spec.fields.map(([key, label]) => h("label.gw-field", {}, h("span.gw-k", {}, label),
-            h("input.field.mc-text", { value: gfx.fields[key] ?? "", maxlength: 80, "aria-label": label, on: { input: (e) => { gfx.fields[key] = e.target.value.slice(0, 80); rebuild(); } } })))),
+            // (the field shows what the brand would say until the person writes: it is kept only once they have)
+            h("input.field.mc-text", { value: gfx.fields[key] ?? defaultsOf(gfx.kind, b)[key] ?? "", maxlength: 80, "aria-label": label, on: { input: (e) => { gfx.fields[key] = e.target.value.slice(0, 80); rebuild(); } } }))),
+          // (the line a graphic says first is the brand's tagline: a brand with none says so, and where to write it)
+          needsTagline ? h("button.mc-add-prompt.gw-note", { type: "button", title: "The Voice window", on: { click: () => openWin("voice") } }, icon("plus"), "No tagline yet: this line comes from it. Write it in Voice") : null),
         h("div.mc-sec.gw-sec", {}, h("span.label", {}, "How long"),
           h("div.ug-step", {}, h("button", { type: "button", "aria-label": "Shorter", disabled: gfx.seconds <= 2, on: { click: () => ((gfx.seconds -= 1), changed("macaron")) } }, "−"), h("span", {}, `${gfx.seconds} s`), h("button", { type: "button", "aria-label": "Longer", disabled: gfx.seconds >= 12, on: { click: () => ((gfx.seconds += 1), changed("macaron")) } }, "+"))),
         h("div.mc-sec.gw-sec", {}, h("span.label", {}, "How it settles"),
@@ -223,7 +243,7 @@ function graphicsWin() {
     play();
   }
   // (what is typed is kept in gfx at once; the window is drawn again only when a choice changes)
-  const sig = () => JSON.stringify([gfx.brand, gfx.kind, gfx.id, gfx.seconds, gfx.ease, gfx.format, gfx.container, gfx.playing, macaron.progress, graphicsOf(macaron.brand).map((d) => [d.id, d.updatedAt]), macaron.chat.busy, armedNow()]);
+  const sig = () => JSON.stringify([gfx.brand, gfx.kind, gfx.id, gfx.fields, macaron.brand ? [kitNow().tagline, kitNow().voice?.summary, brandUrl()] : null, gfx.seconds, gfx.ease, gfx.format, gfx.container, gfx.playing, macaron.progress, graphicsOf(macaron.brand).map((d) => [d.id, d.updatedAt]), macaron.chat.busy, armedNow()]);
   return { el, update, sig, foot };
 }
 

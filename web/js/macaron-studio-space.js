@@ -9,10 +9,10 @@ import { macaron, kitNow, productNow } from "./macaron.js";
 import { openWin } from "./macaron-win.js";
 import { bento, fill, mcicon } from "./macaron-ui.js";
 import { setupOf, setupLine } from "./macaron-studio-setup.js";
-import { personaOf, beatKind, PERSONAS } from "./macaron-ugc-data.js";
+import { whoOf, beatKind, PERSONAS, CHARACTER_ID } from "./macaron-ugc-data.js";
 import { storiesOf, storyNow, startStory } from "./macaron-ugc.js";
 import { GRAPHIC_KINDS, buildGraphic } from "./macaron-graphics-data.js";
-import { graphicsOf, stillOf, openGraphic } from "./macaron-graphics.js";
+import { graphicsOf, stillOf, openGraphic, brandUrl } from "./macaron-graphics.js";
 import { openShoot } from "./macaron-shoot.js";
 import "./macaron-ugc-win.js";
 
@@ -55,9 +55,10 @@ export function studioSpace() {
     if (!story) {
       return bento("is-ugc", "UGC stories", () => openWin("ugc"),
         h("p.mc-hint", {}, "A creator tells your product in five short vertical shots."),
-        h("div.st-personas", { "data-keep": "" }, ...PERSONAS.map((p) => h("button.st-persona", { type: "button", title: `Start a story with ${p.name}`, on: { click: (e) => (e.stopPropagation(), startStory(p.id), openWin("ugc")) } }, h("img", { src: p.portrait, alt: "", draggable: false }), h("b", {}, p.name), h("em", {}, p.vibe)))));
+        h("div.st-personas", { "data-keep": "" }, ...PERSONAS.map((p) => h("button.st-persona", { type: "button", title: `Start a story with ${p.name}`, on: { click: (e) => (e.stopPropagation(), startStory(p.id), openWin("ugc")) } }, h("img", { src: p.portrait, alt: "", draggable: false }), h("b", {}, p.name), h("em", {}, p.vibe))), h("button.st-persona.is-character", { type: "button", title: "Start a story told by the brand's own character", on: { click: (e) => (e.stopPropagation(), startStory(CHARACTER_ID), openWin("ugc")) } }, icon("plus"), h("b", {}, "Your character"), h("em", {}, "A mascot"))));
     }
-    const who = personaOf(story.persona);
+    // (the brand's own character tells it from its own picture; one without a picture yet shows a creator's)
+    const who = (() => { const w = whoOf(story); return w.portrait ? w : { ...w, portrait: PERSONAS[0].portrait }; })();
     return bento("is-ugc", "UGC stories", () => openWin("ugc"),
       h("div.st-who", {}, h("img", { src: who.portrait, alt: "", draggable: false }), h("div", {}, h("b", {}, who.name), h("em", {}, `${who.vibe} · ${storiesOf(b).length} ${storiesOf(b).length === 1 ? "story" : "stories"}`))),
       h("div.st-beats", {}, ...story.beats.slice(0, 4).map((bt, i) => h("div.st-beat", { title: beatKind(bt.kind).name }, h("span.st-beat-pic", {}, h("img", { src: bt.picture?.url ?? who.portrait, alt: "", draggable: false, loading: "lazy" }), bt.take?.status === "done" ? h("span.st-vid", {}, icon("play")) : null, h("i", {}, clock(bt.seconds))),
@@ -70,7 +71,7 @@ export function studioSpace() {
     const tiles = SHOWN.map((id) => {
       const spec = GRAPHIC_KINDS.find((k) => k.id === id);
       const saved = graphicsOf(b).filter((d) => d.graphic.kind === id).sort((a, c) => String(c.updatedAt).localeCompare(String(a.updatedAt)))[0];
-      const d = saved ?? buildGraphic({ kind: id, kit, brandName: b.name }).design;
+      const d = saved ?? buildGraphic({ kind: id, kit, brandName: b.name, url: brandUrl(b) }).design;
       return h("button.st-gfx", { type: "button", title: `${spec.name}: ${spec.hint}`, "data-keep": "", on: { click: (e) => (e.stopPropagation(), openGraphic(id, { id: saved?.id })) } },
         h("span.st-gfx-pic", { style: { "--py": String(spec.band ?? 0.5) } }, stillOf(d, kit, { width: 300 }), h("i", {}, clock(saved?.graphic.seconds ?? spec.seconds))),
         h("span.st-gfx-name", {}, spec.name.toUpperCase()));

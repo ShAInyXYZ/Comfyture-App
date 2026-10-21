@@ -6,7 +6,7 @@
 import { toast, waitFor } from "./store.js";
 import { api } from "./api.js";
 import { macaron, setBrand, makePicture, productNow, uid } from "./macaron.js";
-import { newStory, beatPrompt, beatTake, storyCost, beatCost, applyStory, personaOf } from "./macaron-ugc-data.js";
+import { newStory, beatPrompt, beatTake, storyCost, beatCost, applyStory, personaOf, whoOf, CHARACTER_ID, cleanCharacter, defaultCharacter, characterPictures, characterNameOf } from "./macaron-ugc-data.js";
 
 /** What the Studio shows of the stories: the one open, and which of its beats. */
 export const ugcUi = { story: null, beat: null };
@@ -20,11 +20,11 @@ export const pickBeat = (id) => ((ugcUi.beat = id), setBrand({}));
 const mine = () => macaron.brand.body.ugc;
 const kept = () => setBrand({ ugc: mine() });
 
-/** A new story told by a creator, with its five beats; it becomes the one open. */
+/** A new story told by a creator (or by the brand's own character, from the likeliest of its pictures), with its five beats; it becomes the one open. */
 export function startStory(persona = "maya") {
   const b = macaron.brand;
   const p = productNow(b);
-  const s = newStory({ persona, productName: p?.name ?? b.name, features: p?.features ?? [] });
+  const s = newStory({ persona, productName: p?.name ?? b.name, features: p?.features ?? [], character: persona === CHARACTER_ID ? defaultCharacter(b.body) : null });
   mine().unshift(s);
   ugcUi.story = s.id;
   ugcUi.beat = s.beats[0].id;
@@ -34,7 +34,12 @@ export function startStory(persona = "maya") {
 export function setStory(id, patch) {
   const s = mine().find((x) => x.id === id);
   if (!s) return;
+  // (the character is taken up from the brand's pictures the first time it tells a story)
+  if (patch.persona === CHARACTER_ID && !s.character) patch = { ...patch, character: defaultCharacter(macaron.brand.body) };
+  const was = whoOf(s).name;
   Object.assign(s, patch);
+  // (a story still called after its old teller is called after the new one: a name the person wrote stays)
+  if ("persona" in patch && s.name === `${was}'s story`) s.name = `${whoOf(s).name}'s story`;
   // the hook is the first beat's line, said once
   if ("hook" in patch) {
     const first = s.beats.find((x) => x.kind === "hook");
@@ -50,6 +55,23 @@ export function setBeat(storyId, beatId, patch) {
   if (bt.kind === "hook" && "line" in patch) s.hook = patch.line;
   kept();
 }
+/** What the brand's character is: its picture, its name, how it looks, how it sounds, whether it is a creature. A story named after it is renamed with it. */
+export function setCharacter(id, patch) {
+  const s = mine().find((x) => x.id === id);
+  if (!s) return;
+  const was = whoOf(s).name;
+  const merged = { ...(s.character ?? defaultCharacter(macaron.brand.body)), ...patch };
+  // (a new picture renames a character whose name was only taken from the picture before: a name the person wrote stays)
+  const fromPicture = !s.character || s.character.name === characterNameOf(s.character.pic?.name) || s.character.name === "Character";
+  if (patch.pic && !("name" in patch) && fromPicture) merged.name = characterNameOf(patch.pic.name);
+  s.character = cleanCharacter(merged);
+  s.persona = CHARACTER_ID;
+  const now = whoOf(s).name;
+  if (s.name === `${was}'s story`) s.name = `${now}'s story`;
+  kept();
+}
+/** The pictures of the brand the character may be drawn from, the likeliest first. */
+export const characterChoices = (b = macaron.brand) => characterPictures(b?.body ?? {});
 export function removeStory(id) {
   macaron.brand.body.ugc = mine().filter((s) => s.id !== id);
   if (ugcUi.story === id) ugcUi.story = null;
@@ -60,7 +82,7 @@ export function removeStory(id) {
 export function applyUgcDraft(draft, { fresh = false } = {}) {
   if (!draft || (!draft.hook && !(draft.beats ?? []).length)) return null;
   const p = productNow();
-  const s = applyStory(mine(), draft, { current: fresh ? null : storyNow(), productName: p?.name ?? macaron.brand.name, features: p?.features ?? [] });
+  const s = applyStory(mine(), draft, { current: fresh ? null : storyNow(), like: storyNow(), productName: p?.name ?? macaron.brand.name, features: p?.features ?? [] });
   ugcUi.story = s.id;
   ugcUi.beat = ugcUi.beat && s.beats.some((x) => x.id === ugcUi.beat) ? ugcUi.beat : s.beats[0].id;
   kept();
@@ -92,6 +114,8 @@ export async function makeBeat(storyId, beatId, { picture = true } = {}) {
   const p = productNow(b);
   if (!beat) return;
   if (!p) return void toast("Add a product to the brand first.");
+  const who = whoOf(story);
+  if (who.character && !who.portrait) return void toast("Pick your character's picture first.");
   const key = `ugc:${storyId}:${beatId}`;
   if (macaron.busy.has(key)) return;
   macaron.busy.add(key);
@@ -104,8 +128,9 @@ export async function makeBeat(storyId, beatId, { picture = true } = {}) {
         prompt: beatPrompt(story, beat, { productName: p.name, brandName: b.name, features: p.features ?? [] }),
         model: "gpt-image-2.5-flare",
         aspect: "9:16",
-        name: `${personaOf(story.persona).name} · ${beat.kind}`,
-        refs: [give({ url: personaOf(story.persona).portrait }, "creator"), give(p.photo, "product")],
+        name: `${who.name} · ${beat.kind}`,
+        // (the creator is the library's portrait, or the picture of the brand's own character: it is what the same one is drawn from in every shot)
+        refs: [give(who.character ? { file: who.file, url: who.portrait } : { url: who.portrait }, "creator"), give(p.photo, "product")],
       });
       beat.picture = { id: asset.id, file: asset.file, url: asset.url, width: asset.width, height: asset.height };
       tick();
@@ -113,14 +138,14 @@ export async function makeBeat(storyId, beatId, { picture = true } = {}) {
     const t = beatTake(story, beat);
     beat.take = { status: "rolling" };
     tick();
-    const script = { shots: [{ action: t.action, camera: t.camera, sound: "Natural room sound, a phone microphone.", framing: "", dialogue: t.line ? [{ speaker: personaOf(story.persona).name, language: "English", line: t.line }] : [] }], raw: "" };
+    const script = { shots: [{ action: t.action, camera: t.camera, sound: "Natural room sound, a phone microphone.", framing: "", dialogue: t.line ? [{ speaker: who.name, language: "English", line: t.line }] : [] }], raw: "" };
     const [run] = await api.shoot({ name: `${b.name} · ${story.name} · ${beat.kind}`, start: beat.picture.file, seconds: Math.min(8, Math.max(3, Number(beat.seconds) || 5)), aspect: "9:16", review: false, takes: 1, quality: "standard", script });
     beat.take = { status: "rolling", run: run.id };
     tick();
     const done = await waitFor("run", run.id);
     beat.take = { status: "done", run: run.id, video: done.video };
     // the clip joins the project's pictures, so the library has it
-    macaron.brand.body.assets.unshift({ id: uid("a"), name: `${personaOf(story.persona).name} · ${beat.kind}`, kind: "made", url: beat.picture.url, video: done.video, width: beat.picture.width, height: beat.picture.height, source: "made" });
+    macaron.brand.body.assets.unshift({ id: uid("a"), name: `${who.name} · ${beat.kind}`, kind: "made", url: beat.picture.url, video: done.video, width: beat.picture.width, height: beat.picture.height, source: "made" });
   } catch (e) {
     beat.error = e.message;
     if (beat.take?.status === "rolling") beat.take = { status: "failed", error: e.message };

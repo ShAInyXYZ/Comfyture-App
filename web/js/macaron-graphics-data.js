@@ -17,14 +17,21 @@ export const kindOfGraphic = (id) => GRAPHIC_KINDS.find((k) => k.id === id) ?? G
 export const GRAPHIC_FORMATS = ["9:16", "1:1", "4:5"];
 export const EASINGS = [["out", "Smooth"], ["back", "Bouncy"], ["inout", "Soft"], ["expo", "Snappy"]];
 
-/** What each field says until it is written: from the brand's own words where it has them. */
-export function defaultFields(kind, { brandName = "Your brand", tagline = "" } = {}) {
-  const said = tagline || "Made with care.";
+/** The first words of how a brand talks (up to a few words of its first clause): a line it could say, when it has no tagline. */
+const firstWords = (text, n = 8) => String(text ?? "").split(/[.;:!?\n]/)[0].trim().split(/\s+/).filter(Boolean).slice(0, n).join(" ").replace(/[,\s]+$/, "");
+
+/**
+ * What each field says until it is written: from the brand's own words, never from a made-up line. The tagline, else the first words
+ * of how the brand talks, else nothing (a blank line is drawn as no line); where to go is the brand's address when the kit has one,
+ * else blank. These are not kept with a graphic: they are worked out each time it is drawn, so a tagline written later shows up.
+ */
+export function defaultFields(kind, { brandName = "Your brand", tagline = "", voice = "", url = "" } = {}) {
+  const said = String(tagline ?? "").replace(/\s+/g, " ").trim().slice(0, 80) || firstWords(voice);
   return {
     sting: { line: said },
     lower: { name: brandName, role: "Creative team" },
-    end: { line: said, url: `${String(brandName).toLowerCase().replace(/[^a-z0-9]+/g, "") || "yourbrand"}.com` },
-    title: { title: said, sub: brandName },
+    end: { line: said || brandName, url: String(url ?? "").trim().slice(0, 60) },
+    title: { title: said || brandName, sub: said ? brandName : "" },
     counter: { number: "10K", label: "happy customers" },
     nudge: { line: `Like what you see?`, cta: `Follow ${brandName}` },
   }[kind] ?? {};
@@ -56,9 +63,10 @@ const clip = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
  * A graphic as a design with motion and the piece's numbers. `seconds` is how long it lasts (a shorter one is played faster:
  * the times are scaled), `ease` how things settle, `format` where it is drawn. Answers { design, motion: { name, duration, format, sound } }.
  */
-export function buildGraphic({ kind, fields = {}, kit, brandName = "", format = "9:16", seconds, ease = "out", id, name }) {
+export function buildGraphic({ kind, fields = {}, kit, brandName = "", url = "", format = "9:16", seconds, ease = "out", id, name }) {
   const spec = kindOfGraphic(kind);
-  const f = { ...defaultFields(kind, { brandName, tagline: kit?.tagline }), ...fields };
+  // (what is written wins over what the brand would say; a field written blank is a blank line)
+  const f = { ...defaultFields(kind, { brandName, tagline: kit?.tagline, voice: kit?.voice?.summary, url }), ...fields };
   const R = rolesOf(kit);
   const dur = Math.max(1.5, Math.min(12, Number(seconds) || spec.seconds));
   const k = Math.min(1, dur / spec.seconds);
@@ -138,9 +146,12 @@ export function buildGraphic({ kind, fields = {}, kit, brandName = "", format = 
     id: id ?? uid("g"), name: name ?? `${spec.name} · ${clip(brandName, 30) || "brand"}`, purpose: "Motion", status: "draft", format, intent: "", createdAt: now, updatedAt: now, layout: "stack",
     bg: { color: bg }, formats: {}, motion: true, poster: Math.round(dur * 0.8 * 100) / 100,
     history: [{ at: now, who: "you", note: `Started from the ${spec.name.toLowerCase()} template` }],
-    graphic: { kind, fields: f, seconds: dur, ease },
+    // (only the words the person wrote are kept: the rest follow the brand each time the graphic is drawn)
+    graphic: { kind, fields: { ...fields }, seconds: dur, ease },
     layers,
   };
+  // a line with no words is no line: its layer is hidden, not drawn empty
+  for (const l of design.layers) if (l.type === "text" && !String(l.text ?? "").trim()) l.hidden = true;
   return { design, motion: { name: design.name, duration: dur, format, fps: 30, sound: { pad: true, pops: pops.map((p) => Math.round(p * 100) / 100) } } };
 }
 

@@ -8,7 +8,8 @@ import { TEMPLATES } from "./macaron-templates.js";
 import { setupOf, LIGHTS, SURFACES } from "./macaron-studio-setup.js";
 import { openShoot, setStudio } from "./macaron-shoot.js";
 import { applyUgcDraft, storiesOf, storyNow } from "./macaron-ugc.js";
-import { graphicsOf, openGraphic } from "./macaron-graphics.js";
+import { CHARACTER_ID, whoOf } from "./macaron-ugc-data.js";
+import { graphicsOf, openGraphic, gfx, defaultsOf } from "./macaron-graphics.js";
 import { GRAPHIC_IDS, kindOfGraphic } from "./macaron-graphics-data.js";
 
 /** The ops she may take in the Studio, besides open_space (which every workspace has). */
@@ -25,8 +26,11 @@ export function summary() {
     studio: (() => { const s = setupOf(body); return { light: s.light, surface: s.surface, background: body.kit.palette.find((p) => p.id === s.background)?.name ?? "" }; })(),
     templates: TEMPLATES.map(({ id, name, category, media }) => ({ id, name, category, media })),
     shoots: (body.outputs ?? []).filter((o) => o.photo).slice(0, 8).map((o) => ({ template: o.template, format: o.format })),
-    ugc: stories.slice(0, 4).map((s) => ({ persona: s.persona, hook: s.hook, beats: s.beats.map((b) => ({ kind: b.kind, line: b.line, made: b.take?.status === "done" })) })),
+    // (a story told by the brand's own character says who it is, how it looks and how it sounds, so her lines fit it)
+    ugc: stories.slice(0, 4).map((s) => ({ persona: s.persona, ...(s.persona === CHARACTER_ID && s.character ? { character: { name: s.character.name, look: s.character.look, voice: s.character.voice, kind: s.character.kind, mode: whoOf(s).mode } } : {}), hook: s.hook, beats: s.beats.map((b) => ({ kind: b.kind, line: b.line, made: b.take?.status === "done" })) })),
     graphics: graphicsOf().slice(0, 8).map((d) => ({ kind: d.graphic.kind, seconds: d.graphic.seconds, fields: d.graphic.fields })),
+    // the graphic that is open in the window now: its kind and the words it says (what is written, else what the brand would say), so she writes for it
+    graphicOpen: macaron.win === "graphics" && gfx.brand === macaron.brand.id ? { kind: gfx.kind, seconds: gfx.seconds, fields: { ...defaultsOf(gfx.kind), ...gfx.fields } } : null,
   };
 }
 
@@ -56,7 +60,8 @@ export function run(a) {
     }
     case "add_motion_graphic": {
       if (!GRAPHIC_IDS.includes(a.kind)) return null;
-      openGraphic(a.kind, { fields: a.copy, seconds: a.seconds, ease: a.ease });
+      // (with the window open on that kind her words go into the graphic that is open: what the person has typed is kept)
+      openGraphic(a.kind, { fields: a.copy, seconds: a.seconds, ease: a.ease, here: macaron.win === "graphics" });
       return `${kindOfGraphic(a.kind).name} ready to make`;
     }
     default:

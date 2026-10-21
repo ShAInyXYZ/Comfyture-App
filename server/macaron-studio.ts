@@ -6,7 +6,7 @@
 // starts from her answer. The ids (lights, surfaces, personas, beats, graphic kinds) are the page's own, read from the same
 // plain modules the page uses, so the two can never drift apart.
 import { LIGHTS, SURFACES } from "../web/js/macaron-studio-setup.js";
-import { PERSONAS, BEAT_IDS, CAMERAS, SETTINGS, cleanStory } from "../web/js/macaron-ugc-data.js";
+import { PERSONAS, CHARACTER_ID, BEAT_IDS, CAMERAS, SETTINGS, cleanStory } from "../web/js/macaron-ugc-data.js";
 import { GRAPHIC_IDS, EASINGS, cleanFields } from "../web/js/macaron-graphics-data.js";
 
 /** The ops of this workspace (open_space is the one every workspace has). */
@@ -19,7 +19,7 @@ export const PROPS: Record<string, unknown> = {
   light: { type: "string", enum: LIGHTS.map((l) => l.id), description: "The studio light." },
   surface: { type: "string", enum: SURFACES.map((s) => s.id), description: "The surface the product stands on." },
   background: str("A palette id from the kit, for a background in that colour; empty for the template's own."),
-  persona: { type: "string", enum: PERSONAS.map((p) => p.id), description: "For write_ugc: who tells the story." },
+  persona: { type: "string", enum: [...PERSONAS.map((p) => p.id), CHARACTER_ID], description: "For write_ugc: who tells the story. 'character' only for a story the brand's own character already tells (the person picks its picture)." },
   hook: str("For write_ugc: the opening line, said in the first two seconds."),
   beats: {
     type: "array",
@@ -47,7 +47,7 @@ export const DESCRIPTION = "Answer the user: one short, warm sentence, and the a
 
 export const BRIEF = `THE OPEN WORKSPACE: Studio. It is where the brand's raw material is made, in four crafts, and what is made here is kept as pictures and clips that Create then uses.
 1. Photography: shoots of the product. A shoot is a shot template (the product in a set: ice-cube hover, linen lid lift, golden dew, a white packshot...) taken in a studio setup: the light (softbox, window, hard flash), the surface (linen, marble, wood, plum paper) and a background in one of the palette's colours. The setup is kept with the brand, so a shoot can be done again the same way.
-2. UGC stories: a creator (Maya, warm and real; Leo, casual and fun; Emma, mum life) tells the product in five vertical shots: hook, show, taste, react, call to action. Each beat has a spoken line, a camera and a setting.
+2. UGC stories: a creator (Maya, warm and real; Leo, casual and fun; Emma, mum life) or the brand's own character (a mascot, a creature, a person the brand has pictured; the person picks its picture and says how it looks and sounds) tells the product in five vertical shots: hook, show, taste, react, call to action. Each beat has a spoken line, a camera and a setting.
 3. Motion graphics: a logo sting, a lower third, an end card, a title card, a counter, a subscribe nudge, built from the kit.
 4. The product: its photo, cut-out and what makes it good.
 
@@ -56,8 +56,10 @@ Actions (op and its fields):
 - set_studio {light, surface, background}: changes the studio setup only (any of the three).
 - write_ugc {persona, hook, beats[{kind, line, camera, setting, seconds}], fresh}: writes the UGC story (changes the open one, or a new one when fresh is true) and opens it. Writes lines only: the pictures and takes are made by the person with Make the story, which shows the price.
 - add_motion_graphic {kind, copy, seconds, ease}: opens that graphic with its words written. It is made, and any credit or file is spent, only when the person presses Make it.
+  When a graphic is open (THE GRAPHIC OPEN NOW below) and you are asked for its words, write them for THAT kind: add_motion_graphic with kind set to the open kind and copy for its own fields, nothing else. Never open another kind then, and never answer with a new graphic: the words go into the one on screen.
 - open_space {space}.
 
+Writing for the brand's own character (when the open story names one): write for IT, in its own name. Keep what it is: a creature stays a creature (it has paws, not hands; it does not hold a phone or wear clothes); keep the look the person wrote. Its lines follow how it sounds: if it talks, short natural lines; if it sings or hums, lines that can be sung, a hummed hook, a sung call to action; if it only mimes or cannot talk, give very short lines of sound or gesture ("*a happy chirp*", "*waves*") that the take can show, never a speech. You never make the character and never choose its picture: the person does, in the creator row.
 Writing a UGC script: the hook is the first two seconds, so open on the product in hand and one real line ("Okay, I finally tried it..."), never a slogan. One idea in each beat. The lines are spoken, so short and natural, in the creator's mouth and the brand's voice, 6 to 14 words. Never claim what the product cannot do, never invent a price, a discount or a result; use only what the product's features say. End on one clear thing to do. Keep the five beats in order unless asked for fewer.
 Writing a shoot: say in one line why this template and this setup suit the product and the brand; a background colour is a palette id, never a hex; do not propose a template that needs a video unless the person asks for video.
 Rules: only the ids shown below; if what is asked belongs to Design idea, the Brand kit, Create or the Brand book, say so and offer to open it.`;
@@ -80,8 +82,9 @@ export function promptLines(s: Record<string, any>, cut: (v: unknown, n: number)
   const ugc = (s.ugc ?? []).slice(0, 4);
   if (ugc.length) {
     lines.push("UGC STORIES (the first is open):");
-    for (const u of ugc) lines.push(`- ${cut(u.persona, 12)}: hook "${cut(u.hook, 120)}" · ${(u.beats ?? []).map((b: any) => `${cut(b.kind, 6)} "${cut(b.line, 80)}"${b.made ? " (made)" : ""}`).join(" · ")}`);
+    for (const u of ugc) lines.push(`- ${u.character ? `the brand's character ${cut(u.character.name, 30)} (${u.character.kind === "person" ? "a person" : "a creature"}${u.character.look ? `, looks: ${cut(u.character.look, 120)}` : ""}${u.character.voice ? `, sounds: ${cut(u.character.voice, 60)}` : ""}${u.character.mode ? `, so it ${u.character.mode === "sing" ? "sings or hums" : u.character.mode === "mime" ? "only mimes" : "talks"}` : ""})` : cut(u.persona, 12)}: hook "${cut(u.hook, 120)}" · ${(u.beats ?? []).map((b: any) => `${cut(b.kind, 6)} "${cut(b.line, 80)}"${b.made ? " (made)" : ""}`).join(" · ")}`);
   } else lines.push("UGC STORIES: none yet.");
+  if (s.graphicOpen?.kind) lines.push(`THE GRAPHIC OPEN NOW: ${cut(s.graphicOpen.kind, 10)} ${num(s.graphicOpen.seconds) ?? ""} s, saying ${Object.entries(s.graphicOpen.fields ?? {}).map(([k, v]) => `${cut(k, 10)} "${cut(v, 60)}"`).join(", ") || "nothing yet"}`);
   const g = (s.graphics ?? []).slice(0, 8);
   lines.push(`MOTION GRAPHICS MADE: ${g.map((x: any) => `${cut(x.kind, 10)} ${num(x.seconds) ?? ""} s ${Object.values(x.fields ?? {}).map((v) => `"${cut(v, 40)}"`).join(", ")}`).join("; ") || "none yet"}`);
   return lines;
@@ -94,7 +97,8 @@ export function clean(a: Record<string, any>): Record<string, unknown> {
   if (typeof a.surface === "string" && !SURFACES.some((x) => x.id === a.surface)) out.surface = undefined;
   if (a.op === "write_ugc") {
     const story = cleanStory(a);
-    if (PERSONAS.some((x) => x.id === a.persona)) out.persona = story.persona;
+    // (the character is let through: the page keeps it only for a story that has one)
+    if (PERSONAS.some((x) => x.id === a.persona) || a.persona === CHARACTER_ID) out.persona = a.persona;
     else out.persona = undefined;
     out.hook = story.hook;
     out.beats = story.beats;

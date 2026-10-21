@@ -218,3 +218,17 @@ test("her answer is read and kept to what is hers: the story and imagery words, 
   assert.deepEqual(odd.actions, []);
   assert.match(odd.reply, /story page/);
 });
+
+test("Brioche is told a whole page is whole without words of its own: the story and imagery pages are made of the brief and the pictures", () => {
+  const prompt = macaron.macaronPrompt({
+    space: "book", name: "B", kit: { palette: [], logos: [] },
+    pages: [{ id: "story", name: "Story", ok: true, reason: "" }, { id: "imagery", name: "Imagery", ok: true, reason: "" }],
+    written: { story: "", imagery: "" },
+    madeOf: { story: "the brief's pitch and goals and the direction picked", imagery: "7 pictures of the moodboard, the product and what was made" },
+  }, [{ role: "user", text: "what is missing?" }]);
+  assert.ok(/story whole; imagery whole/.test(prompt), "the page list says whole");
+  assert.ok(/OPTIONAL NOTES WRITTEN FOR THE BOOK \(a page is whole without one\): story none · imagery none/.test(prompt), "no note is said to be missing words");
+  assert.ok(/story page from the brief's pitch and goals/.test(prompt) && /imagery page from 7 pictures/.test(prompt), "what the pages are made of");
+  assert.ok(!/WORDS WRITTEN FOR THE BOOK: story ""/.test(prompt), "no more empty quotes that read as bare pages");
+  assert.ok(/never say a whole page lacks words/.test(macaron.macaronBrief("book")));
+});

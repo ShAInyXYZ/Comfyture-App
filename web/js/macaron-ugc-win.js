@@ -4,11 +4,12 @@
 import { h, icon } from "./dom.js";
 import { view } from "./viewer.js";
 import { macaron } from "./macaron.js";
-import { defineWindow } from "./macaron-win.js";
+import { defineWindow, openWin } from "./macaron-win.js";
 import { draftKey } from "./macaron-tools.js";
 import { mcicon, fill, arming, isArmed, armedNow } from "./macaron-ui.js";
-import { PERSONAS, BEATS, CAMERAS, SETTINGS, beatKind, personaOf, storyLength } from "./macaron-ugc-data.js";
-import { ugcUi, storiesOf, storyNow, beatNow, pickStory, pickBeat, startStory, setStory, setBeat, removeStory, makeStory, makeBeat, making, toMake, costOf } from "./macaron-ugc.js";
+import { PERSONAS, BEATS, CAMERAS, SETTINGS, CHARACTER_ID, beatKind, personaOf, whoOf, storyLength } from "./macaron-ugc-data.js";
+import { ugcUi, storiesOf, storyNow, beatNow, pickStory, pickBeat, startStory, setStory, setBeat, setCharacter, characterChoices, removeStory, makeStory, makeBeat, making, toMake, costOf } from "./macaron-ugc.js";
+import { addAsset, productNow } from "./macaron.js";
 import { changed } from "./store.js";
 
 const clock = (s) => `0:${String(Math.round(s)).padStart(2, "0")}`;
@@ -29,11 +30,42 @@ function ugcWin() {
     h("span.ug-persona-text", {}, h("b", {}, p.name), h("em", {}, p.vibe)),
     h("span.ug-tick", {}, p.id === story.persona ? icon("check") : null));
 
+  /** The fourth storyteller: the brand's own character (a mascot, a creature, a person it has pictured), told from one of its pictures. */
+  function characterCard(story) {
+    const on = story?.persona === CHARACTER_ID;
+    const w = story ? whoOf(story) : null;
+    const pic = on ? w.portrait : story?.character?.pic?.url ?? null;
+    return h(`button.ug-persona.is-character${on ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(on), dataset: { persona: CHARACTER_ID }, title: "Tell it with the brand's own character: a mascot or any character of the brand, drawn from its picture", on: { click: () => (story ? setStory(story.id, { persona: CHARACTER_ID }) : startStory(CHARACTER_ID)) } },
+      pic ? h("img", { src: pic, alt: "", draggable: false }) : h("span.ug-persona-plus", {}, icon("plus")),
+      h("span.ug-persona-text", {}, h("b", {}, on ? w.name : "Your character"), h("em", {}, on ? (w.creature ? "Your character · a creature" : "Your character · a person") : "A mascot of the brand")),
+      h("span.ug-tick", {}, on ? icon("check") : null));
+  }
+
+  /** What the character is: its picture (from the brand's own pictures, or a new one), its name, how it looks, how it sounds, creature or person. */
+  function characterForm(story) {
+    const c = story.character ?? {};
+    const choices = characterChoices();
+    const here = c.pic?.url;
+    const adding = () => {
+      const input = h("input", { type: "file", accept: "image/*", hidden: true, on: { change: async () => { const f = input.files[0]; input.remove(); if (f) { const a = await addAsset(f, "mascot"); setCharacter(story.id, { pic: { id: a.id, url: a.url, file: a.file, name: a.name } }); } } } });
+      document.body.append(input);
+      input.click();
+    };
+    return h("div.mc-sec.ug-sec.ug-char", {},
+      h("div.ug-title", {}, h("span.label", {}, "Its picture"), h("em", {}, choices.length ? "Drawn the same in every shot" : "Add a picture of it")),
+      h("div.ug-chars", {}, ...choices.slice(0, 9).map((x) => h(`button.ug-char-pic${x.url === here ? ".is-on" : ""}`, { type: "button", title: x.name || "A picture", "aria-pressed": String(x.url === here), on: { click: () => setCharacter(story.id, { pic: { id: x.id, url: x.url, file: x.file, name: x.name } }) } }, h("img", { src: x.url, alt: "", draggable: false, loading: "lazy" }))),
+        h("button.ug-char-add", { type: "button", title: "Add a picture of the character", "aria-label": "Add a picture of the character", on: { click: adding } }, icon("plus"))),
+      h("label.ug-field", {}, h("span.label", {}, "Its name"), h("input.field.mc-text", { value: c.name ?? "", maxlength: 30, "aria-label": "The character's name", dataset: { focus: "char-name" }, on: { input: (e) => setCharacter(story.id, { name: e.target.value.slice(0, 30) }) } })),
+      h("label.ug-field", {}, h("span.label", {}, "How it looks"), h("textarea.field.mc-text", { rows: 2, value: c.look ?? "", maxlength: 200, placeholder: "a baby sea otter, grey fur, a mint flower behind its ear", "aria-label": "How the character looks, in a line", dataset: { focus: "char-look" }, on: { input: (e) => setCharacter(story.id, { look: e.target.value.slice(0, 200) }) } })),
+      h("label.ug-field", {}, h("span.label", {}, "How it sounds"), h("input.field.mc-text", { value: c.voice ?? "", maxlength: 80, placeholder: "soft, curious, sings", "aria-label": "How the character sounds: talks, sings, hums or only mimes", dataset: { focus: "char-voice" }, on: { input: (e) => setCharacter(story.id, { voice: e.target.value.slice(0, 80) }) } })),
+      h("div.mc-fchips", { role: "group", "aria-label": "What it is" }, ...[["creature", "A creature"], ["person", "A person"]].map(([v, t]) => h("button.mc-fchip", { type: "button", "aria-pressed": String((c.kind ?? "creature") === v), title: v === "creature" ? "An animal or a creature: it keeps its own body in every shot" : "A person", on: { click: () => setCharacter(story.id, { kind: v }) } }, t))));
+  }
+
   function beatCard(story, bt, i) {
     const on = bt.id === beatNow(story)?.id;
     const k = beatKind(bt.kind);
     const busy = making(`${story.id}:${bt.id}`) || bt.take?.status === "rolling";
-    const pic = bt.picture?.url ?? personaOf(story.persona).portrait;
+    const pic = bt.picture?.url ?? whoOf(story).portrait ?? personaOf(story.persona).portrait;
     return h(`button.ug-beat${on ? ".is-on" : ""}${busy ? ".is-busy" : ""}${bt.picture ? "" : ".is-draft"}`, { type: "button", "aria-pressed": String(on), title: `${k.name}: ${k.what}`, dataset: { beat: bt.id }, on: { click: () => pickBeat(bt.id) } },
       h("span.ug-beat-head", {}, h("i", {}, String(i + 1)), h("span", {}, k.name.toUpperCase())),
       h("span.ug-beat-pic", {}, h("img", { src: pic, alt: "", draggable: false, loading: "lazy" }),
@@ -54,7 +86,7 @@ function ugcWin() {
       h("div.ug-shot-head", {}, h("span.label", {}, `Shot ${i} / ${k.name.toUpperCase()}`),
         bt.take?.status === "done" ? h("button.mc-iconkey", { type: "button", title: "Play this take", "aria-label": "Play this take", on: { click: () => view(bt.take.video, "video") } }, icon("play")) : null),
       h("button.ug-shot-pic", { type: "button", title: pic ? "See it full size" : "Not made yet", disabled: !pic, on: { click: () => pic && view(pic) } },
-        h("img", { src: pic ?? personaOf(story.persona).portrait, alt: "", draggable: false }),
+        h("img", { src: pic ?? whoOf(story).portrait ?? personaOf(story.persona).portrait, alt: "", draggable: false }),
         pic ? null : h("span.ug-shot-empty", {}, mcicon("picture"), h("em", {}, "Made when you make the story"))),
       h("div.mc-sec.ug-sec", {}, h("span.label", {}, "What is said"),
         h("textarea.field.mc-text.ug-said", { rows: 2, value: bt.line, maxlength: 140, "aria-label": "The line said in this shot", on: { input: (e) => { setBeat(story.id, bt.id, { line: e.target.value.slice(0, 140) }); sync(story, bt, e.target.value); } } })),
@@ -98,7 +130,7 @@ function ugcWin() {
       return fill(el, h("div.ug-empty", {},
         h("b", {}, "A story told by a creator"),
         h("p", {}, "Five short vertical shots: a hook, the product, the moment of trying, the reaction and one thing to do next."),
-        h("div.ug-personas.is-row", {}, ...PERSONAS.map((p) => h("button.ug-persona", { type: "button", on: { click: () => startStory(p.id) } }, h("img", { src: p.portrait, alt: "", draggable: false }), h("span.ug-persona-text", {}, h("b", {}, p.name), h("em", {}, p.vibe)))))));
+        h("div.ug-personas.is-row", {}, ...PERSONAS.map((p) => h("button.ug-persona", { type: "button", on: { click: () => startStory(p.id) } }, h("img", { src: p.portrait, alt: "", draggable: false }), h("span.ug-persona-text", {}, h("b", {}, p.name), h("em", {}, p.vibe)))), characterCard(null))));
     }
     const bt = beatNow(story);
     const all = storiesOf(b);
@@ -106,7 +138,8 @@ function ugcWin() {
     fill(el,
       h("section.ug-creator", {},
         h("div.mc-sec.ug-sec", {}, h("div.ug-title", {}, h("span.label", {}, "The creator"), h("em", {}, "Pick a persona")),
-          h("div.ug-personas", {}, ...PERSONAS.map((p) => persona(story, p)))),
+          h("div.ug-personas", {}, ...PERSONAS.map((p) => persona(story, p)), characterCard(story))),
+        story.persona === CHARACTER_ID ? characterForm(story) : null,
         h("div.mc-sec.ug-sec", {}, h("div.ug-title", {}, h("span.label", {}, "The hook"), h("em", {}, "Edit your opening line")),
           h("textarea.field.mc-statement.ug-hook", { rows: 3, value: story.hook, maxlength: 120, placeholder: "The first thing they say", "aria-label": "The hook, said in the first two seconds", on: { input: (e) => { setStory(story.id, { hook: e.target.value.slice(0, 120) }); const first = story.beats.find((x) => x.kind === "hook"); if (first) sync(story, first, e.target.value); e.target.parentNode.querySelector(".ug-count").textContent = `${e.target.value.length} / 120`; } } }),
           h("span.ug-count", {}, `${story.hook.length} / 120`))),
@@ -114,7 +147,7 @@ function ugcWin() {
         h("div.ug-story-head", {},
           h("div.ug-title", {}, h("span.label", {}, "The story"), h("em", {}, `${story.beats.length} beats for a natural and engaging UGC · ${storyLength(story)} s`)),
           h("div.ug-story-keys", {},
-            all.length > 1 ? h("div.mc-fchips", { role: "group", "aria-label": "Stories" }, ...all.map((s) => h("button.mc-fchip", { type: "button", "aria-pressed": String(s.id === story.id), title: s.name, on: { click: () => pickStory(s.id) } }, personaOf(s.persona).name))) : null,
+            all.length > 1 ? h("div.mc-fchips", { role: "group", "aria-label": "Stories" }, ...all.map((s) => h("button.mc-fchip", { type: "button", "aria-pressed": String(s.id === story.id), title: s.name, on: { click: () => pickStory(s.id) } }, whoOf(s).name))) : null,
             h("button.mc-iconkey", { type: "button", title: "A new story", "aria-label": "A new story", on: { click: () => startStory(story.persona) } }, icon("plus")),
             all.length > 0 && adv() ? h(`button.mc-iconkey.is-danger${isArmed(armedStory) ? ".is-armed" : ""}`, { type: "button", title: isArmed(armedStory) ? "Click again to delete this story" : "Delete this story", "aria-label": "Delete this story", on: { click: () => arming(armedStory, () => changed("macaron"), () => removeStory(story.id)) } }, icon("trash")) : null)),
         h("div.ug-beats", {}, ...story.beats.map((x, i) => beatCard(story, x, i)))),
@@ -127,13 +160,18 @@ function ugcWin() {
     const { left, credits } = toMake(story);
     const busy = making(story.id);
     const key = `ugcmake:${story.id}`;
+    const faceless = story.persona === CHARACTER_ID && !whoOf(story).portrait;
+    // (every shot shows the product in hand: with none, the foot says so and where to add it, instead of a key that only answers with a toast)
+    const noProduct = !productNow(macaron.brand);
     const nothing = !left.length;
-    const state = JSON.stringify([story.id, left.length, credits, busy, isArmed(key), macaron.chat.busy]);
+    const state = JSON.stringify([story.id, left.length, credits, busy, isArmed(key), macaron.chat.busy, faceless, noProduct]);
     if (state === footState) return;
     footState = state;
-    costLine.replaceChildren(h("b", {}, nothing ? `${story.beats.length} shots made` : `${left.length} ${left.length === 1 ? "shot" : "shots"} ≈ ${credits} cr`), h("em", {}, "Using LTX-2.5 via Comfy Cloud"));
-    makeKey.disabled = busy || nothing;
-    makeKey.title = nothing ? "Every shot has its take" : "Make a picture and a take for each shot that has none";
+    costLine.replaceChildren(...(noProduct
+      ? [h("b", {}, "A product comes first"), h("em", {}, "Every shot shows it in hand: ", h("button.ug-link", { type: "button", on: { click: () => openWin("product") } }, "add it in Product"))]
+      : [h("b", {}, nothing ? `${story.beats.length} shots made` : `${left.length} ${left.length === 1 ? "shot" : "shots"} ≈ ${credits} cr`), h("em", {}, "Using LTX-2.5 via Comfy Cloud")]));
+    makeKey.disabled = busy || nothing || faceless || noProduct;
+    makeKey.title = noProduct ? "Add a product first" : faceless ? "Pick the character's picture first" : nothing ? "Every shot has its take" : "Make a picture and a take for each shot that has none";
     makeKey.replaceChildren(icon("play"), busy ? "Making the story" : isArmed(key) ? `Spend ≈ ${credits} cr?` : "Make the story");
     makeKey.classList.toggle("is-armed", isArmed(key));
     makeKey.onclick = () => arming(key, () => changed("macaron"), () => makeStory(story.id));

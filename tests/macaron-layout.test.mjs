@@ -608,3 +608,45 @@ test("a mockup scene is known by the page and by Brioche, and its words keep the
   assert.match(mockupPrompt(SCENES[0], { light: "evening", angle: "close" }), /golden-hour evening light.*close-up/);
   assert.equal(sceneById("nope"), null);
 });
+
+test("the guard says when type sits over the product cut-out, and says nothing of type over a full-bleed picture or clear of the product", () => {
+  const make = (headY, hero = {}) => ({
+    id: "t", name: "t", purpose: "Launch", status: "draft", format: "4:5", formats: {}, bg: { color: "ink" },
+    layers: [
+      newLayer("image", { id: "hero", role: "hero", src: "bottle.png", fit: "contain", clear: true, x: 0.3, y: 0.5, w: 0.4, h: 0.4, ...hero }),
+      newLayer("text", { id: "headline", role: "headline", text: "Taro says goodnight", size: 0.07, x: 0.08, y: headY, w: 0.84, align: "center", colorRole: "white", fontRole: "display" }),
+    ],
+  });
+  const rules = (d, sizes = {}) => guard(d, "4:5", kit, estimate, sizes).map((i) => i.rule);
+  assert.ok(rules(make(0.6)).includes("product"), "type across the cut-out is flagged");
+  assert.deepEqual(guard(make(0.6), "4:5", kit, estimate).filter((i) => i.rule === "product").map((i) => i.layer), ["headline"], "and names the type");
+  assert.ok(!rules(make(0.12)).includes("product"), "type above the product is clear of it");
+  // a full-bleed picture is a ground: type over it is how a poster is made
+  assert.ok(!rules(make(0.6, { x: 0, y: 0, w: 1, h: 1, clear: false, role: "background", fit: "cover" })).includes("product"));
+  // a picture set to fit its box is the product at its own shape: a wide box round a tall bottle is not the bottle
+  const beside = (shape) => { const d = make(0.6, { x: 0.05, w: 0.9 }); Object.assign(d.layers[1], { text: "Hi", x: 0.05, w: 0.25, align: "left" }); return rules(d, { "bottle.png": shape }); };
+  assert.ok(!beside({ w: 100, h: 400 }).includes("product"), "type beside a tall bottle in a wide box is not over it");
+  assert.ok(beside({ w: 400, h: 100 }).includes("product"), "but over a wide product that fills the box it is");
+});
+
+test("in a strip the subhead has room to breathe under the headline, a share of its own type and not a sliver of the strip's height", () => {
+  const strip = (head, sub, format) => {
+    const d = structuredClone(launch);
+    d.format = format; d.formats = {};
+    d.layers.find((l) => l.id === "headline").text = head;
+    d.layers.find((l) => l.id === "sub").text = sub;
+    const over = layoutPreset(d, format, "strip");
+    const [W, H] = [FORMATS[format].w, FORMATS[format].h];
+    const at = (id) => { const l = { ...d.layers.find((x) => x.id === id), ...over[id] }; return { l, m: estimate(l, W, H) }; };
+    return { h: at("headline"), s: at("sub"), H, W };
+  };
+  for (const [head, sub] of [["Taro's moonlit note.", "A short line for the people who read to the end."], ["One cup, then the moon, then a long night of tea.", "Cold-brew oolong in a glass bottle."]]) {
+    const { h, s, H, W } = strip(head, sub, "email");
+    assert.ok(!s.l.hidden, "the email header has room for its subhead");
+    const gap = s.l.y * H - (h.l.y * H + h.m.h);
+    assert.ok(gap >= (s.l.size * W) * 0.3, `the lines are ${gap.toFixed(1)} px apart (the subhead's type is ${(s.l.size * W).toFixed(0)} px)`);
+    assert.ok(s.l.y * H + s.m.h <= H, "and both sit inside the strip");
+  }
+  // a short strip still says the headline only
+  assert.ok(strip("Taro's moonlit note.", "Cold-brew oolong.", "ad-728x90").s.l.hidden);
+});

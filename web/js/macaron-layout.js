@@ -273,7 +273,9 @@ export function layoutPreset(design, format, preset, measure = estimate) {
     if (headline) {
       const lines = short ? 2 : 3;
       const avail = S.h * 0.98;
-      let subH = sub && !short ? tall(sub, { w, size: sizeAt("sub", format) }) + g(1) : 0;
+      // (the breath between the lines is a share of the subhead's own type: a fraction of a strip's height is two pixels and the lines touch)
+      const breath = (sizeAt("sub", format) * W * 0.4) / H;
+      let subH = sub && !short ? tall(sub, { w, size: sizeAt("sub", format) }) + breath : 0;
       // the biggest it sets in, in so many lines, that leaves the strip's height for the rest
       let size = biggest(headline, w, sizeAt("headline", format) * (short ? 0.82 : 1), lines);
       // a subhead that would take most of the height is left out
@@ -282,7 +284,7 @@ export function layoutPreset(design, format, preset, measure = estimate) {
       const hh = tall(headline, { w, size });
       const top = mid - (hh + subH) / 2;
       put(headline, { x: round(x), y: round(top), w: round(w), h: 0, size, align: "left" });
-      if (sub && subH) put(sub, { x: round(x), y: round(top + hh + g(1)), w: round(w), h: 0, size: sizeAt("sub", format), align: "left" });
+      if (sub && subH) put(sub, { x: round(x), y: round(top + hh + breath), w: round(w), h: 0, size: sizeAt("sub", format), align: "left" });
       else if (sub) put(sub, { hidden: true });
     } else if (sub) put(sub, { hidden: true });
     // everything else is left out of a strip: there is no room for a badge, a stamp or a mascot
@@ -539,6 +541,22 @@ export function guard(design, format, kit, measure = estimate, sizes = {}) {
       const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
       const oy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
       if (ox > 8 && oy > Math.min(a.h, b.h) * 0.25) add("warn", "overlap", "Text runs into other text", texts[k]);
+    }
+  }
+  // type across the product: a cut-out is the picture of what is sold (its edges are the product's own), so type drawn over it hides
+  // the thing the post is for. A full-bleed picture is a ground, not the product: type over it is fine.
+  const products = live.filter((l) => l.type === "image" && !covers(l) && (l.clear === true || (l.role === "hero" && l.fit === "contain")));
+  for (const pic of products) {
+    const bx = box[pic.id];
+    // (a picture set to fit its box is drawn at its own shape, in the middle of it: that is the product, not the box round it)
+    const src = sizes[pic.src];
+    const k = src && pic.fit === "contain" ? Math.min(bx.w / src.w, bx.h / src.h) : null;
+    const rect = k ? { w: src.w * k, h: src.h * k, x: bx.x + (bx.w - src.w * k) / 2, y: bx.y + (bx.h - src.h * k) / 2 } : bx;
+    for (const t of texts) {
+      const b = box[t.id];
+      const ox = Math.min(rect.x + rect.w, b.x + b.w) - Math.max(rect.x, b.x);
+      const oy = Math.min(rect.y + rect.h, b.y + b.h) - Math.max(rect.y, b.y);
+      if (ox > 0 && oy > 0 && ox * oy > b.w * b.h * 0.12) add("warn", "product", "Text sits over the product", t);
     }
   }
   // the clear space round a logo is a quarter of its height

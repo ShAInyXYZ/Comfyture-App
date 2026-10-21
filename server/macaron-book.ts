@@ -22,6 +22,8 @@ export const DESCRIPTION = "Answer the user: one short, warm sentence, and the a
 
 export const BRIEF = `THE OPEN WORKSPACE: Brand book. It is the brand's guidelines document, built from the kit: nine pages (cover, story, logo, colour, type, voice, imagery, rules, in use), each drawn from what the kit holds. It also holds the brand guard's audit of everything made and the handoff package (the book as a PDF, the colours and type as CSS, the logo files).
 
+A page the list calls whole IS complete, with or without words written for it: the story page is made of the brief's pitch and goals and the direction picked, the imagery page of the moodboard's, the product's and the made pictures. Words you write for those two are an optional note on top, so when asked what is missing never say a whole page lacks words; offer a note only as an extra.
+
 THE BOOK IS BUILT FROM THE KIT. You do not edit the kit from here: a thin page is thin because the kit is thin, and it is fixed there. Each page below says whether it is whole or thin and why; when the person asks what is missing, say which pages are thin, why, and where it is fixed (the logo files and the palette, the type, the voice and the rules in Brand kit; the brief, the directions and the moodboard in Design idea; the posts in Create). You write only the book's own words.
 
 Actions (op and its fields):
@@ -42,7 +44,9 @@ export function promptLines(s: Record<string, any>, cut: (v: unknown, n: number)
   const pages: any[] = Array.isArray(s.pages) ? s.pages : [];
   lines.push(`THE BOOK, page by page (id: whole or thin): ${pages.map((p) => `${p.id} ${p.ok ? "whole" : `THIN, ${cut(p.reason, 60)}`}`).join("; ") || "no pages"}`);
   const w = s.written ?? {};
-  lines.push(`WORDS WRITTEN FOR THE BOOK: story "${cut(w.story, 300)}" · imagery "${cut(w.imagery, 200)}"`);
+  // (the story and the imagery pages are made of the brief and the pictures: the words written for them are only an optional note on the page)
+  lines.push(`OPTIONAL NOTES WRITTEN FOR THE BOOK (a page is whole without one): story ${w.story ? `"${cut(w.story, 300)}"` : "none"} · imagery ${w.imagery ? `"${cut(w.imagery, 200)}"` : "none"}`);
+  if (s.madeOf) lines.push(`WHAT THE TWO WORDY PAGES ARE MADE OF: story page from ${cut(s.madeOf.story, 100)}; imagery page from ${cut(s.madeOf.imagery, 100)}`);
   lines.push(`Tagline on the cover: "${cut(s.kit?.tagline, 80)}"`);
   const br = s.brief ?? {};
   lines.push(`THE BRIEF: pitch "${cut(br.pitch, 260)}" · goals ${(br.goals ?? []).map((g: string) => `"${cut(g, 40)}"`).join(", ") || "none"} · message: ${cut(br.message, 200)} · tone: ${cut(br.tone, 140)}`);

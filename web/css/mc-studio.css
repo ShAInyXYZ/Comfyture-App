@@ -56,9 +56,11 @@
 .st-beat-line { font: 500 .6875rem/1 var(--font-mono); letter-spacing: .12em; color: var(--dim); }
 .st-beat em { display: -webkit-box; overflow: hidden; font: 400 .75rem/1.3 var(--font-sans); font-style: normal; color: var(--text); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .is-ugc .mc-primary { align-self: flex-start; }
-.st-personas { display: grid; flex: 1 1 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+.st-personas { display: grid; flex: 1 1 0; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
 .st-persona { display: grid; grid-template-rows: minmax(0, 1fr) auto auto; justify-items: center; gap: .1875rem; min-height: 0; padding: .625rem; border: 1px solid var(--line); border-radius: 1rem; background: transparent; color: var(--text); cursor: pointer; transition: border-color var(--t-fast); }
 .st-persona:hover { border-color: var(--accent-line); }
+.st-persona.is-character { border-style: dashed; align-content: center; }
+.st-persona.is-character svg { width: 1.5rem; height: 1.5rem; margin-bottom: .25rem; color: var(--accent); }
 .st-persona img { width: 100%; min-height: 0; max-height: 100%; aspect-ratio: 1; border-radius: 50%; object-fit: cover; }
 .st-persona b { font: 600 .9375rem/1.2 var(--font-sans); }
 .st-persona em { font: 400 .75rem/1.2 var(--font-sans); font-style: normal; color: var(--muted); }
@@ -99,7 +101,7 @@
 .ug-title { display: grid; gap: .3125rem; }
 .ug-title em { font: 400 .875rem/1.3 var(--font-sans); font-style: normal; color: var(--muted); }
 .ug-personas { display: grid; gap: .625rem; }
-.ug-personas.is-row { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 40rem; }
+.ug-personas.is-row { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 52rem; }
 .ug-persona { position: relative; display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) 1.75rem; align-items: center; gap: .875rem; padding: .5rem .75rem .5rem .5rem; border: 1px solid var(--line); border-radius: 1.125rem; background: transparent; color: var(--text); text-align: left; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
 .ug-persona:hover { border-color: var(--line2); background: var(--s2); }
 .ug-persona img { width: 3.5rem; height: 3.5rem; border-radius: 50%; object-fit: cover; }
@@ -114,6 +116,22 @@
 .ug-personas.is-row .ug-persona { grid-template-columns: minmax(0, 1fr); justify-items: center; padding: .875rem; text-align: center; }
 .ug-personas.is-row .ug-persona img { width: 5rem; height: 5rem; }
 .ug-hook { min-height: 5.5rem; }
+/* the brand's own character: its card is dashed until it has a picture; its form reads like the other fields of the window */
+.ug-persona-plus { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border: 1px dashed var(--line2); border-radius: 50%; color: var(--accent); }
+.ug-persona-plus svg { width: 1.25rem; height: 1.25rem; }
+.ug-persona.is-character:not(.is-on) { border-style: dashed; }
+.ug-personas.is-row .ug-persona-plus { width: 5rem; height: 5rem; }
+.ug-char { gap: .875rem; }
+.ug-chars { display: flex; flex-wrap: wrap; gap: .5rem; }
+.ug-char-pic, .ug-char-add { width: 3.25rem; height: 3.25rem; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: .875rem; background: var(--sunk); cursor: pointer; transition: border-color var(--t-fast); }
+.ug-char-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ug-char-pic:hover { border-color: var(--line2); }
+.ug-char-pic.is-on { border-color: var(--accent); }
+.ug-char-add { display: grid; place-items: center; border: 1px dashed var(--line2); background: transparent; color: var(--accent); }
+.ug-char-add:hover { border-color: var(--accent-line); }
+.ug-char-add svg { width: 1.125rem; height: 1.125rem; }
+.ug-field { display: grid; gap: .25rem; }
+.ug-field textarea { resize: none; }
 .ug-count { justify-self: end; font: 500 .75rem/1 var(--font-mono); color: var(--dim); }
 .ug-story { display: grid; gap: 1.25rem; min-width: 0; }
 .ug-story-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
@@ -274,3 +292,7 @@
 @supports (corner-shape: squircle) {
   .st-shot, .st-who, .st-beat-pic, .st-gfx-pic, .st-prod-hero, .st-lib-tile, .ug-persona, .ug-beat, .ug-beat-pic, .ug-shot-pic, .shw-tpl, .shw-pic, .shw-light, .gw-tile, .gw-frame { corner-shape: squircle; }
 }
+
+/* a note that says what a window needs first, with a link to where it is made */
+.ug-link { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; text-decoration: underline; text-underline-offset: .1875rem; cursor: pointer; }
+.gw-note { height: auto; margin-top: .25rem; padding: .625rem 1rem; font-size: .875rem; line-height: 1.4; }

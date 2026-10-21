@@ -35,7 +35,9 @@ export function runTool(tool, e) {
  * is given with it, when the server has some for it.
  */
 export function draftKey(title, sub, ask, id) {
-  return h("button.mc-draft", { type: "button", title: ask, disabled: !!macaron.chat.busy, on: { click: () => (id && armPreset(id, ask), tell(ask)) } },
+  // (`ask` may be a function: the words are worked out when the key is pressed, from what is open then)
+  const say = () => (typeof ask === "function" ? ask() : ask);
+  return h("button.mc-draft", { type: "button", title: typeof ask === "function" ? title : ask, disabled: !!macaron.chat.busy, on: { click: () => { const text = say(); if (id) armPreset(id, text); tell(text); } } },
     h("img", { src: BRIOCHE.face, alt: "", draggable: false }),
     h("span", {}, h("b", {}, title), sub ? h("em", {}, sub) : null));
 }
