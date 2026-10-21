@@ -127,10 +127,12 @@ export function libraryHall({ open, ask }) {
         build();
         changed("utensils");
       })
-      .catch(() => {
+      .catch((e) => {
         st.state = "none";
         empty.hidden = false;
-        empty.replaceChildren(sprite("tool-templates"), h("span", {}, "The Library needs Comfy Cloud's catalogue: it could not be read. Try again in a moment."), h("button.lb-retry", { type: "button", on: { click: () => ((st.state = "idle"), load()) } }, "Try again"));
+        // a 404 is a server older than the page (it has no Library yet): trying again will not help, restarting it will
+        const old = e?.message === "404";
+        empty.replaceChildren(sprite("tool-templates"), h("span", {}, old ? "The app's server is older than this page and has no Library yet: restart it (npm start), then reload." : "The Library needs Comfy Cloud's catalogue: it could not be read. Try again in a moment."), h("button.lb-retry", { type: "button", on: { click: () => ((st.state = "idle"), load()) } }, "Try again"));
       });
   }
 
