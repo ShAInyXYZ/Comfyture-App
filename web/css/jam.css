@@ -572,3 +572,29 @@ button.jm-way:disabled { opacity: .55; cursor: progress; }
   .jam.is-playing .jm-vinyl svg, .jam.is-playing .jm-beam, .jm-layer, .jm-win, .jm-trend-open > img { animation: none !important; transition: none !important; }
 }
 .jam-empty { min-height: calc(100dvh - 6rem); }
+
+/* the song: its idea, lyrics and style, its settings, the key that makes it ------------------------------------ */
+.song { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: .75rem; height: 100%; padding: .875rem .875rem 0; overflow: auto; scrollbar-width: thin; user-select: none; -webkit-user-select: none; }
+.song input, .song textarea { user-select: text; -webkit-user-select: text; }
+.sg-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.sg-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: .875rem; align-items: start; min-height: 0; }
+.sg-col { display: grid; gap: .875rem; min-width: 0; }
+.sg-card { display: grid; gap: .75rem; min-width: 0; padding: .875rem 1rem 1rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); corner-shape: squircle; }
+.sg-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; min-height: 1.875rem; }
+.sg-label { font: 500 var(--fs-small)/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.sg-tags, .sg-chips { display: flex; flex-wrap: wrap; gap: .375rem; }
+.sg-text { width: 100%; resize: vertical; font: 400 .9375rem/1.5 var(--font-sans); }
+.sg-text.is-mono { font: 400 .875rem/1.5 var(--font-mono); }
+.sg-row { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); align-items: center; gap: .5rem .75rem; }
+.sg-field { font: 400 var(--fs-small)/1 var(--font-mono); color: var(--dim); }
+.sg-bpm { width: 5.5rem; }
+.sg-inline { display: flex; align-items: center; }
+.sg-unit { margin-left: .5rem; font: 400 var(--fs-small)/1 var(--font-mono); color: var(--dim); }
+.sg-go { min-height: 3rem; font-size: 1rem; justify-self: stretch; }
+.sg-cr { margin-left: .5rem; font: 500 var(--fs-small)/1 var(--font-mono); opacity: .8; }
+.sg-made { display: grid; gap: .625rem; }
+.sg-track { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .25rem .75rem; align-items: center; }
+.sg-track b { font: 500 .9375rem/1.3 var(--font-sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sg-track em { font: 400 var(--fs-small)/1 var(--font-mono); color: var(--dim); font-style: normal; }
+.sg-track audio { grid-column: 1 / -1; width: 100%; height: 2.25rem; }
+@media (max-width: 56rem) { .sg-grid { grid-template-columns: minmax(0, 1fr); } }

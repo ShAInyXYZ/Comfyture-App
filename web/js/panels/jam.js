@@ -17,6 +17,7 @@ import { trackWorkspace, stopRecord } from "./jam-track.js";
 import { wordsWorkspace } from "./jam-words.js";
 import { bandWorkspace } from "./jam-band.js";
 import { editWorkspace } from "./jam-edit.js";
+import { renderSong } from "./jam-song.js";
 
 const VIEWS = { track: trackWorkspace, words: wordsWorkspace, band: bandWorkspace, edit: editWorkspace };
 const TILE_ICON = { track: "disc", words: "notepad", band: "band", edit: "scissors" };
@@ -66,7 +67,7 @@ function side(j) {
 // ---------------------------------------------------------------- the page: built once, redrawn in parts
 
 let page = null;
-// Jam's screen is being rebuilt from the song up: for now it is an empty page, and the studio below is kept to draw from
+// Jam's screen is being rebuilt from the song up: for now it is the song's page alone, and the studio below is kept to draw from
 const EMPTY = true;
 function buildPage(el) {
   const parts = editorParts();
@@ -82,7 +83,7 @@ function buildPage(el) {
 export function renderJam(el) {
   if (EMPTY) {
     page = null;
-    el.replaceChildren(h("div.jam-empty"));
+    renderSong(el);
     return;
   }
   loadJams();

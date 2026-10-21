@@ -214,7 +214,7 @@ export function storyAssistPrompt(story: any, selected: string | null, turns: { 
 }
 
 /** A reply's JSON, mended where a small writer slips: words around it, a brace too many or too few, a cut-off end. */
-function loose(reply: string) {
+export function loose(reply: string) {
   const from = reply.indexOf("{");
   if (from < 0) throw new Error("no JSON");
   const body = reply.slice(from);

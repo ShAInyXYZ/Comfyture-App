@@ -830,14 +830,21 @@ export class Engine extends EventEmitter {
    * Music (ACE-Step 1.5) or a sound effect (Stable Audio 3 small SFX) from words, tracked like a
    * paint job; keep() stores what it made in the audio library.
    */
-  audioJob(kind: "music" | "sfx", v: { prompt: string; seconds: number; lyrics?: string; bpm?: number; seed: number }, keep: (bytes: Buffer) => Promise<Paint["audio"]>): Paint {
+  audioJob(kind: "music" | "song" | "sfx", v: { prompt: string; seconds: number; lyrics?: string; bpm?: number; seed: number; key?: string; language?: string; timesignature?: string }, keep: (bytes: Buffer) => Promise<Paint["audio"]>): Paint {
     const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
     this.paints.set(job.id, job);
     const emit = () => this.emit("paint", job);
     (async () => {
       try {
-        const graph = await loadGraph(this.dirs.workflows, kind === "music" ? "audio/music.json" : "audio/sfx.json");
-        if (kind === "music") {
+        const graph = await loadGraph(this.dirs.workflows, kind === "music" ? "audio/music.json" : kind === "song" ? "audio/song.json" : "audio/sfx.json");
+        if (kind === "song") {
+          // ACE-Step 1.5 XL in three passes: the first from nothing, the two after light refinements of it
+          Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 120), keyscale: v.key ?? "C major", language: v.language ?? "en", timesignature: v.timesignature ?? "4" });
+          graph.latent.inputs.seconds = v.seconds;
+          graph.first.inputs.seed = v.seed;
+          graph.second.inputs.seed = v.seed + 1;
+          graph.third.inputs.seed = v.seed + 2;
+        } else if (kind === "music") {
           Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 100) });
           Object.assign(graph.latent.inputs, { seconds: v.seconds });
           graph.sample.inputs.seed = v.seed;
@@ -846,9 +853,9 @@ export class Engine extends EventEmitter {
           graph.latent.inputs.seconds = v.seconds;
           graph.sample.inputs.seed = v.seed;
         }
-        const result = await this.execute(graph, new AbortController().signal, { kind, stage: "frame", queue: false, onProgress: (p) => ((job.progress = p), emit()) });
+        const result = await this.execute(graph, new AbortController().signal, { kind: kind === "song" ? "music" : kind, stage: "frame", queue: false, onProgress: (p) => ((job.progress = p), emit()) });
         const [out] = result.getOutputs("out");
-        if (!out) throw new Error(`The ${kind === "music" ? "music" : "sound"} workflow returned nothing.`);
+        if (!out) throw new Error(`The ${kind === "sfx" ? "sound" : "music"} workflow returned nothing.`);
         job.audio = await keep(Buffer.from(await out.toBytes()));
         job.status = "done";
       } catch (error) {
