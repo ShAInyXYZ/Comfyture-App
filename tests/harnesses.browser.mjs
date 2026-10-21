@@ -121,7 +121,7 @@ try {
     if (out) await page.screenshot({ path: join(out, `${p}.png`) });
   }
 
-  // ---- Mixer's dashboard and Utensils' tool end above the bar, on a desktop at either size
+  // ---- Mixer's dashboard and Utensils' workbench end above the bar, on a desktop at either size
   const spaceAbove = (name) => page.evaluate((name) => {
     const top = document.querySelector("#assistant .composer").getBoundingClientRect().top;
     const bottom = (sel) => document.querySelector(sel)?.getBoundingClientRect().bottom;
@@ -140,17 +140,22 @@ try {
     await page.evaluate(() => { const p = document.getElementById("page-mixer"); p.scrollTop = p.scrollHeight; });
     r = await spaceAbove("mixer");
     ok(r.page <= r.top, `${width}x${height}: and at the end of the dashboard`);
+    // Utensils: the Picture workbench's run key is above the bar, and the page itself does not scroll
     await visit("utensils");
+    await js(async () => (await import("/js/utensils.js")).setWorkspace("picture"));
+    await page.waitForSelector(".ut-go");
     await page.waitForFunction(() => Math.abs(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--chat-h")) - document.querySelector("#assistant .composer").getBoundingClientRect().height) <= 1);
     r = await spaceAbove("utensils");
-    ok(r.go <= r.top, `${width}x${height}: Utensils' tool keys end above the bar`, `keys end ${Math.round(r.go)} px, bar ${Math.round(r.top)} px`);
+    ok(r.go <= r.top && r.doc[0] <= r.doc[1], `${width}x${height}: Utensils' run key ends above the bar and the page itself does not scroll`, `key ends ${Math.round(r.go)} px, bar ${Math.round(r.top)} px`);
+    await js(async () => (await import("/js/utensils.js")).setWorkspace("shelf"));
   }
-  // writing hides the quick actions but not their room: the page above the bar does not move as you type
-  const before = (await spaceAbove("utensils")).chatH;
+  // writing hides the quick actions but not their room: the page above the bar does not move as you type (on Mixer, which has them)
+  await visit("mixer");
+  const before = (await spaceAbove("mixer")).chatH;
   await page.locator("#assistant .chat-input").click();
   await page.keyboard.type("x");
   await page.waitForTimeout(300);
-  ok((await spaceAbove("utensils")).chatH === before && (await page.locator("#assistant .pet-chips").evaluate((e) => getComputedStyle(e).visibility)) === "hidden", "the quick actions give way while you type, and the page above the bar stays where it is");
+  ok((await spaceAbove("mixer")).chatH === before && (await page.locator("#assistant .pet-chips").evaluate((e) => getComputedStyle(e).visibility)) === "hidden", "the quick actions give way while you type, and the page above the bar stays where it is");
   await page.keyboard.press("Backspace");
   await page.setViewportSize({ width: 1500, height: 950 });
 
@@ -215,7 +220,7 @@ try {
   });
   ok(tool.tool === "cutout" && tool.image === photo.file, "Truffle's setup is made: the tool is open on the Library's latest picture", JSON.stringify(tool));
   const sent = asked.utensils[0];
-  ok(sent.utensils.tools.length === 10 && sent.utensils.library.images[0].id === "img1" && sent.utensils.open.tool === "upscale" && !JSON.stringify(sent).match(/Mixer|Praline|Macaron|Brioche|Pickle|Ketkout/), "she was told the shelf and the library, and nothing of another product");
+  ok(sent.utensils.workspace === "shelf" && sent.utensils.workspaces.length === 7 && sent.utensils.others.length >= 10 && sent.utensils.library.images[0].id === "img1" && sent.utensils.open.tool === "upscale" && !JSON.stringify(sent).match(/Mixer|Praline|Macaron|Brioche|Pickle|Ketkout/), "she was told the workspace open, the other workspaces' tools by id and the library, and nothing of another product", JSON.stringify([sent.utensils.workspace, sent.utensils.workspaces.length, sent.utensils.others.length, sent.utensils.library.images[0]?.id, sent.utensils.open?.tool, JSON.stringify(sent).match(/Mixer|Praline|Macaron|Brioche|Pickle|Ketkout/)?.[0]]));
   const umsg = page.locator("#assistant .chat-thread .msg.is-ai").last();
   ok((await umsg.locator(".msg-face").getAttribute("src")) === HARNESSES.utensils.face, "her reply has her face");
   const run = umsg.locator(".msg-confirm .key.is-primary");
@@ -230,14 +235,15 @@ try {
   for (let i = 0; i < 20 && paid.length === spent; i++) await page.waitForTimeout(250);
   ok(paid.length === spent + 1 && /\/api\/utensils\/cutout$/.test(paid.at(-1)), "only the yes runs the tool: its own request, refused here", paid.at(-1));
   queue.utensils.push({ reply: "Done.", actions: [] });
-  await page.locator("#assistant .pet-chip", { hasText: "Upscale" }).click();
+  await say("upscale my latest picture");
   await answers(3);
-  ok(asked.utensils.at(-1).messages.at(-1).text === "Upscale my latest picture", "Truffle's preset chip is said as it is written");
-  // her room follows the tool open: a video tool, and her chips are the video ones
-  await js(async () => (await import("/js/utensils.js")).pickTool("extend"));
+  ok(asked.utensils.at(-1).messages.at(-1).text === "upscale my latest picture", "what is typed is said as it is written (she has no chips)");
+  // her room follows the workspace open: the video one, with its words and no chips
+  await js(async () => (await import("/js/utensils.js")).setWorkspace("video"));
   await page.waitForTimeout(400);
   const room = await js(() => ({ chips: [...document.querySelectorAll("#assistant .pet-chip")].map((c) => c.textContent), ask: document.querySelector("#assistant .chat-input").dataset.placeholder }));
-  ok(JSON.stringify(room.chips) === JSON.stringify(HARNESSES.utensils.presets.video.map((p) => p.label)) && room.ask === HARNESSES.utensils.placeholders.video, "the bar follows the tool open: the video tools' words and chips", room.ask);
+  ok(room.chips.length === 0 && room.ask === HARNESSES.utensils.placeholders.video, "the bar follows the workspace open: the video one's words, and no canned chips", room.ask);
+  await js(async () => (await import("/js/utensils.js")).setWorkspace("shelf"));
 
   // ---- each product keeps its own conversation
   const kept = () => js(async () => ({

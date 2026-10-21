@@ -13,6 +13,7 @@
 // the workspaces, the tools), plain data like this module, so the server's tests can read the registry as well as the page.
 import { PICKLE, WORKSPACES, PRESETS as JAM_PRESETS, PLACEHOLDER as JAM_PLACEHOLDER } from "./jam-harness.js";
 import { BRIOCHE, PRESETS as MACARON_PRESETS, PLACEHOLDER as MACARON_PLACEHOLDER } from "./macaron-harness.js";
+import { TRUFFLE, PLACEHOLDER as UTENSILS_PLACEHOLDER } from "./utensils-harness.js";
 
 const p = (label, text) => ({ label, text });
 
@@ -51,7 +52,7 @@ export const HARNESSES = {
     },
   },
 
-  // music videos from a track: Pickle, his four workspaces, their words and their tools are Jam's own data, read as they are
+  // music videos from a song: Pickle, his five workspaces and their words are Jam's own data, read as they are (no canned chips: his panel shows the video's pipeline)
   jam: {
     pet: PICKLE.id,
     name: PICKLE.name,
@@ -71,28 +72,22 @@ export const HARNESSES = {
     tag: BRIOCHE.tag,
     face: BRIOCHE.face,
     tools: "panel",
-    home: "content",
+    home: "create",
     placeholders: MACARON_PLACEHOLDER,
     presets: Object.fromEntries(Object.entries(MACARON_PRESETS).map(([room, list]) => [room, list.filter((t) => t.ask).map((t) => p(t.label, t.ask))])),
   },
 
-  // one-tool jobs: the workspaces are the shelf's three groups
+  // one-tool jobs: Truffle, her seven workspaces and what the bar says in each are Utensils' own data (web/js/utensils-harness.js);
+  // she has no canned tools: her panel shows the queue and the recent results, and her bar is her words
   utensils: {
-    pet: "truffle",
-    name: "Truffle",
-    tag: "toolsmith",
-    face: "brand/cast/truffle-face.webp",
-    tools: "bar",
-    placeholders: {
-      picture: "Ask Truffle — upscale my latest picture, or cut out its subject",
-      video: "Ask Truffle — extend my latest clip, or add sound to it",
-      sound: "Ask Truffle — a warm acoustic track, a glass jar lid popping open",
-    },
-    presets: {
-      picture: [p("Upscale", "Upscale my latest picture"), p("Remove background", "Remove the background of my latest picture"), p("Four variations", "Four variations of my latest picture")],
-      video: [p("Extend", "Extend my latest clip by five seconds"), p("Add sound", "Add sound to my latest clip"), p("Upscale video", "Upscale my latest clip to 1080p")],
-      sound: [p("A track", "Make a track: warm acoustic folk, 30 seconds"), p("A sound effect", "Make a sound effect: a glass jar lid popping open")],
-    },
+    pet: TRUFFLE.id,
+    name: TRUFFLE.name,
+    tag: TRUFFLE.tag,
+    face: TRUFFLE.face,
+    tools: "panel",
+    home: "shelf",
+    placeholders: UTENSILS_PLACEHOLDER,
+    presets: Object.fromEntries(Object.keys(UTENSILS_PLACEHOLDER).map((room) => [room, []])),
   },
 };
 

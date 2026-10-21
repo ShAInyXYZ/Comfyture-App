@@ -13,13 +13,13 @@ import { UTENSILS_BRIEF, UTENSILS_OPS, UTENSILS_TOOL, utensilsPrompt, readUtensi
 import { readAnswer } from "../server/assistant.ts";
 import { readControlAnswer } from "../server/control.ts";
 import { readStoryAssist } from "../server/story.ts";
-import { readCutAnswer, cutBrief, jamBrief } from "../server/cut.ts";
+import { readCutAnswer, cutBrief, jamBrief, JAM_WORKSPACES } from "../server/cut.ts";
 import { manual } from "../server/manual.ts";
 import * as macaron from "../server/macaron.ts";
 
 const web = join(import.meta.dirname, "..", "web");
 const PETS = { kitchen: "Ketkout", mixer: "Praline", jam: "Pickle", macaron: "Brioche", utensils: "Truffle" } as const;
-const TAGS = { kitchen: "head chef", mixer: "trend boss", jam: "band leader", macaron: "brand room", utensils: "toolsmith" } as const;
+const TAGS = { kitchen: "head chef", mixer: "trend boss", jam: "band leader", macaron: "brand room", utensils: "shelf keeper" } as const;
 
 // ---------------------------------------------------------------- the registry
 
@@ -43,18 +43,23 @@ test("Kitchen's pet fronts every room that has an assistant; the products withou
   assert.deepEqual(Object.keys(HARNESSES.kitchen.placeholders).sort(), rooms.sort());
   assert.equal(HARNESSES.kitchen.tools, "bar");
   assert.equal(HARNESSES.mixer.tools, "bar");
-  assert.equal(HARNESSES.utensils.tools, "bar");
   assert.equal(HARNESSES.jam.tools, "panel");
   assert.equal(HARNESSES.macaron.tools, "panel");
+  assert.equal(HARNESSES.utensils.tools, "panel");
 });
 
-test("each room's placeholder names its pet, and each room has a few short presets", () => {
+// Brioche, Pickle and Truffle have no canned tools: Brioche's panel shows the brand's health, Pickle's the video's pipeline,
+// Truffle's the queue and the recent results (the three registry entries keep an empty list per room)
+const NO_PRESETS = new Set(["macaron", "jam", "utensils"]);
+
+test("each room's placeholder names its pet, and each room has a few short presets (but for the three that have none)", () => {
   for (const [product, h] of Object.entries(HARNESSES)) {
     assert.deepEqual(Object.keys(h.presets).sort(), Object.keys(h.placeholders).sort(), `${product}: a placeholder and presets for every room`);
     for (const [room, ask] of Object.entries(h.placeholders)) {
       assert.ok(ask.startsWith(`Ask ${h.name} — `), `${product}/${room}: "${ask}" asks its pet by name`);
       const list = h.presets[room as keyof typeof h.presets] as { label: string; text: string }[];
-      assert.ok(list.length >= 1 && list.length <= 4, `${product}/${room}: one to four presets`);
+      if (NO_PRESETS.has(product)) assert.equal(list.length, 0, `${product}/${room}: no canned presets`);
+      else assert.ok(list.length >= 1 && list.length <= 4, `${product}/${room}: one to four presets`);
       assert.equal(new Set(list.map((p) => p.label)).size, list.length, `${product}/${room}: no label twice`);
       for (const p of list) {
         assert.ok(p.label.length > 0 && p.label.length <= 24, `${product}/${room}: "${p.label}" is a short label`);
@@ -76,8 +81,11 @@ test("the bar asks and offers what fits the room that is open", () => {
   assert.equal(barOf("kitchen", "stage").placeholder, HARNESSES.kitchen.placeholders.stage);
   assert.deepEqual(barOf("kitchen", "cut").presets, HARNESSES.kitchen.presets.cut);
   // a product with workspaces: the one its panel said is open, else its first (or its own home)
-  assert.equal(roomOf("jam"), "track");
-  assert.equal(roomOf("macaron"), "content");
+  assert.equal(roomOf("jam"), Object.keys(HARNESSES.jam.placeholders)[0], "Jam opens on its first workspace");
+  assert.equal(roomOf("macaron"), "create");
+  assert.deepEqual(Object.keys(HARNESSES.macaron.placeholders), ["idea", "kit", "studio", "create", "book"], "Macaron's five workspaces");
+  assert.equal(roomOf("utensils"), "shelf");
+  assert.deepEqual(Object.keys(HARNESSES.utensils.placeholders), ["shelf", "picture", "video", "audio", "vfx", "edit", "templates"], "Utensils' seven workspaces");
   const heard: string[] = [];
   onRoom((product, room) => heard.push(`${product}:${room}`));
   setRoom("jam", "words");
@@ -90,6 +98,7 @@ test("the bar asks and offers what fits the room that is open", () => {
   assert.equal(barOf("jam", "nowhere").placeholder, HARNESSES.jam.placeholders.words, "an unknown room falls back to the open one");
   setRoom("jam", "track");
   assert.equal(roomOf("jam"), "track");
+  setRoom("jam", Object.keys(HARNESSES.jam.placeholders)[0]);
 });
 
 test("a preset is said to the pet through the bar that is on screen", () => {
@@ -231,6 +240,38 @@ test("Truffle is told the tools, the one open and what it holds, and the library
   assert.ok(utensilsPrompt({ ...UTENSILS, open: { ...UTENSILS.open, ready: true, cost: null }, busy: true }, []).includes("own machine"));
 });
 
+test("Truffle knows the seven workspaces: she opens one, opens another's tool by id, and sets what a tool declares", () => {
+  const summary: any = {
+    ...UTENSILS,
+    workspace: "picture",
+    workspaces: [{ id: "shelf", tools: 12 }, { id: "picture", tools: 4 }, { id: "vfx", tools: 3 }],
+    tools: TOOLS.slice(0, 4),
+    others: [{ id: "remove-object", workspace: "vfx", name: "Remove an object", takes: ["video"], words: "needed" }, { id: "trim", workspace: "edit", name: "Trim", takes: ["video"] }],
+    queue: [{ tool: "upscale", status: "running", progress: 0.4 }],
+    results: [{ tool: "cutout", kind: "image", note: "PNG · clear", ago: "2m" }],
+  };
+  const text = utensilsPrompt(summary, []);
+  for (const piece of ["WORKSPACE OPEN: picture.", "picture (4)", "THE TOOLS OF PICTURE", "remove-object · vfx · Remove an object · a clip · needed", "THE QUEUE: upscale running 40%", "NEWEST RESULTS: cutout (image, PNG · clear, 2m)"]) assert.ok(text.includes(piece), `she is told: ${piece}`);
+  assert.ok(!text.includes("THE TOOLS OF VFX"), "the other workspaces' tools are by id only");
+  const out = readUtensilsAnswer(say([
+    { op: "pick_workspace", workspace: "vfx" },
+    { op: "pick_workspace", workspace: "kitchen" },
+    { op: "pick_tool", tool: "remove-object" },
+    { op: "set_input", video: "take1", words: "the passer-by in the yellow coat", seconds: 7 },
+    { op: "run_tool" },
+  ]), summary);
+  assert.deepEqual(out.actions, [
+    { op: "pick_workspace", workspace: "vfx" },
+    { op: "pick_tool", tool: "remove-object" },
+    { op: "set_input", video: "take1", words: "the passer-by in the yellow coat" },
+    { op: "run_tool" },
+  ]);
+  // a tool that declares settings: each kept to its values, in options (the older ones stay flat)
+  const declared = { ...summary, open: null, tools: [{ id: "grade", workspace: "edit", name: "Grade", takes: ["video"], options: [{ key: "warmth", type: "range", min: -10, max: 10 }, { key: "look", type: "choice", values: ["noir", "warm"] }, { key: "keep_audio", type: "flag" }, { key: "seconds", type: "range", min: 1, max: 5 }] }] };
+  const set = readUtensilsAnswer(say([{ op: "pick_tool", tool: "grade" }, { op: "set_input", video: "take1", options: { warmth: 99, look: "sepia", keep_audio: true, nonsense: 1 }, seconds: 9 }]), declared);
+  assert.deepEqual(set.actions[1], { op: "set_input", video: "take1", seconds: 5, options: { warmth: 10, keep_audio: true } });
+});
+
 test("Truffle's answer: a tool opened, its input from the library, its words and settings, run_tool once and last", () => {
   const out = readUtensilsAnswer(say([
     { op: "run_tool" },
@@ -346,18 +387,27 @@ test("Kitchen's editor and Pickle share the clip actions and keep the rest apart
   for (const n of ["Jam", "Pickle", "Mixer", "Macaron", "Utensils"]) assert.ok(!editor.includes(n), `the Cut brief names ${n}`);
 });
 
-test("the bar's Jam entry is Jam's own: Pickle, his four workspaces, their placeholders and the labels of their tools", async () => {
+test("the bar's Jam entry is Jam's own: Pickle, his workspaces, their placeholders and the labels of their tools", async () => {
   const jam = await import("../web/js/jam-harness.js");
   const h = harnessOf("jam")!;
   assert.deepEqual([h.pet, h.name, h.tag, h.face], [jam.PICKLE.id, jam.PICKLE.name, jam.PICKLE.tag, jam.PICKLE.face]);
   assert.deepEqual(Object.keys(h.placeholders), jam.WORKSPACES.map((w: { id: string }) => w.id));
-  assert.deepEqual(h.placeholders, {
-    track: "Ask Pickle — find the drop, trim the track, use the chorus",
-    words: "Ask Pickle — time the words, try a style, make them bigger",
-    band: "Ask Pickle — copy the dance, sync the chorus, swap the artist",
-    edit: "Ask Pickle — cut on the beat, zoom on the drop, add a whip",
-  });
+  assert.deepEqual(h.placeholders, jam.PLACEHOLDER, "the bar says what Jam's data says");
   for (const [room, tools] of Object.entries(jam.PRESETS) as [string, { label: string; ask: string }[]][]) {
     assert.deepEqual((h.presets as Record<string, { label: string; text: string }[]>)[room], tools.map((t) => ({ label: t.label, text: t.ask })), `${room}: his tools are the chips`);
   }
+});
+
+test("Jam has five workspaces in the order a video is made, the page and the server agree on them, and Pickle has no canned tools", async () => {
+  const jam = await import("../web/js/jam-harness.js");
+  const ids = jam.WORKSPACES.map((w: { id: string }) => w.id);
+  assert.deepEqual(ids, ["song", "track", "words", "band", "edit"]);
+  assert.deepEqual([...JAM_WORKSPACES], ids, "Pickle's server list is the page's");
+  for (const w of jam.WORKSPACES as { title: string; tag: string[] }[]) {
+    assert.ok(w.title.length > 0 && Array.isArray(w.tag) && w.tag.length >= 3 && w.tag.length <= 4, `${w.title}: a title and three or four short lines under it`);
+    for (const line of w.tag) assert.ok(line.length <= 28, `"${line}" is short`);
+  }
+  assert.deepEqual(Object.keys(jam.PRESETS), ids, "a list per workspace (the registry wants one)");
+  assert.deepEqual(Object.values(jam.PRESETS).flat(), [], "none of them has a canned key");
+  for (const room of ids) assert.ok(jam.PLACEHOLDER[room].startsWith("Ask Pickle — "), `${room}: the bar asks him by name`);
 });
