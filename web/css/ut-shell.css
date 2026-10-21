@@ -46,6 +46,7 @@
 .ut-space-icon { display: grid; place-items: center; color: var(--muted); }
 .ut-space-icon svg { width: 1.25rem; height: 1.25rem; }
 .ut-space-name { font: 600 1rem/1.2 var(--font-sans); letter-spacing: .01em; }
+.ut-space-dot { display: inline-block; width: .5rem; height: .5rem; margin: 0 0 .0625rem .5625rem; border-radius: 50%; background: var(--dot); box-shadow: 0 0 0 2px color-mix(in oklab, var(--dot) 22%, transparent); vertical-align: middle; }
 .ut-space-count { font: 500 .875rem/1 var(--font-mono); color: var(--dim); }
 .ut-space.is-on { border: 2px solid var(--accent); padding: calc(.25rem - 1px) calc(.875rem - 1px) calc(.25rem - 1px) calc(.75rem - 1px); background: var(--accent-soft); box-shadow: 0 0 0 4px rgba(242, 255, 89, .06); }
 .ut-space.is-on .ut-space-name, .ut-space.is-on .ut-space-count, .ut-space.is-on .ut-space-icon { color: var(--accent); }

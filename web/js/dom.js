@@ -28,6 +28,7 @@ const ICONS = {
   remix: '<path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.7M20 4v4.7h-4.7M20 12a8 8 0 0 1-13.7 5.6L4 15.3M4 20v-4.7h4.7"/>',
   next: '<path d="M5 12h14m-5-5 5 5-5 5"/>',
   close: '<path d="m6 6 12 12M18 6 6 18"/>',
+  shuffle: '<path d="M4 7h3.5c2.5 0 3.7 1.4 5 4.2l.9 1.6c1.3 2.8 2.5 4.2 5 4.2H20M4 17h3.5c1.3 0 2.2-.4 3-1.2M14.5 8.2c.8-.8 1.7-1.2 3-1.2H20M17.5 4.5 20 7l-2.5 2.5M17.5 14.5 20 17l-2.5 2.5"/>',
   dice: '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.1" fill="currentColor"/><circle cx="15" cy="15" r="1.1" fill="currentColor"/><circle cx="15" cy="9" r="1.1" fill="currentColor"/><circle cx="9" cy="15" r="1.1" fill="currentColor"/>',
   play: '<path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none"/>',
   pause: '<path d="M8 5.5v13M16 5.5v13" stroke-width="2.6"/>',

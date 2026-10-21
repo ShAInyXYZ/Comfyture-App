@@ -76,7 +76,8 @@ function tilesBlock(spaces) {
   return h("nav.ut-spaces", { "aria-label": "Workspaces" }, ...WORKSPACES.map((w) =>
     h(`button.ut-space${w.id === utensils.workspace ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(w.id === utensils.workspace), dataset: { space: w.id }, on: { click: () => setWorkspace(w.id) } },
       h("span.ut-space-icon", {}, sprite(w.icon)),
-      h("span.ut-space-name", {}, w.name),
+      // (a workspace's colour: the cloth of its books on the Shelf)
+      h("span.ut-space-name", {}, w.name, w.color ? h("i.ut-space-dot", { style: { "--dot": w.color }, "aria-hidden": "true" }) : null),
       h("span.ut-space-count", {}, w.id === "home" ? "" : two(countOf(w, spaces))))));
 }
 

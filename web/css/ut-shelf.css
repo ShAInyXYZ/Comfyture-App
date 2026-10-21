@@ -1,6 +1,8 @@
-/* Utensils: the shelf, the catalogue of every tool (utensils-space-shelf.js): one card, a search and a filter in its head, the tools in
-   columns grouped by workspace. The page that shows the workspaces off is Home (ut-home.css). */
-/* a tool's mark (where it runs) and the search field: the Shelf's own, the header of Home (ut-home.css) lists with the mark too */
+/* Utensils: the SHELF, a real bookcase (utensils-space-shelf.js, utensils-shelf-case.js, utensils-shelf-demos.js, utensils-shelf-show.js).
+   On top three walnut shelves under a warm light, a book per tool in its workspace's colour (the colours are utensils-harness.js's),
+   a brass plate under each group; under it FROM THE SHELF, four demos picked at random. Mockup: docs/brand/products/utensils-v5. */
+
+/* a tool's mark (where it runs) and the search field of Home's header: they are shared, so they live here as they did */
 .ut-hm-mark { display: inline-flex; align-items: center; min-height: 1.25rem; padding: 0 .4375rem; border: 1px solid currentColor; border-radius: var(--r-pill); font: 600 .625rem/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 .ut-hm-mark.is-free { color: var(--ok); }
 .ut-hm-mark.is-cloud { color: #b9a6ff; }
@@ -9,25 +11,167 @@
 .ut-hm-find::placeholder { color: var(--dim); }
 .ut-hm-find:hover { border-color: var(--faint); }
 .ut-hm-find:focus { outline: none; border-color: var(--accent); }
-.ut-sh-find { padding-left: .875rem; }
-.is-shelf { grid-template-rows: minmax(0, 1fr); }
-.is-shelf > .ut-sh-card { grid-column: 1 / -1; }
-.ut-sh-card { padding-bottom: .75rem; }
-.ut-sh-card .ut-b-head { gap: 1rem; min-height: 2.5rem; }
-.ut-sh-card .ut-b-head .ut-b-note { margin-left: -.25rem; }
-.ut-sh-search { flex: 0 1 18rem; min-width: 10rem; }
-.ut-sh-find { width: 100%; }
-.ut-sh-groups { flex: 1 1 0; min-height: 0; columns: 3 22rem; column-gap: 1.75rem; padding: .25rem .25rem 0 0; overflow-y: auto; scrollbar-width: thin; }
-.ut-sh-group { display: grid; gap: .125rem; align-content: start; margin-bottom: 1.5rem; break-inside: avoid; }
-.ut-sh-head { display: flex; align-items: center; gap: .625rem; padding: 0 0 .625rem; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--muted); font: 500 .8125rem/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; text-align: left; cursor: pointer; }
-.ut-sh-head svg { width: 1.125rem; height: 1.125rem; }
-.ut-sh-head em { margin-left: .125rem; font-style: normal; letter-spacing: 0; color: var(--dim); }
-.ut-sh-head:hover { color: var(--text); }
-.ut-sh-row { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr) auto; align-items: center; gap: .875rem; min-height: 3.5rem; padding: .375rem .625rem .375rem .25rem; border: 0; border-radius: .875rem; background: transparent; color: var(--text); text-align: left; cursor: pointer; transition: background var(--t-fast); }
-.ut-sh-row:hover { background: var(--s2); }
-.ut-sh-icon { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: .75rem; background: var(--sunk); color: var(--accent); }
-.ut-sh-icon svg { width: 1.125rem; height: 1.125rem; }
-.ut-sh-text { display: grid; gap: .1875rem; min-width: 0; }
-.ut-sh-text b { overflow: hidden; font: 600 .9375rem/1.2 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
-.ut-sh-text span { overflow: hidden; font: 400 .8125rem/1.3 var(--font-sans); color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 980px) { .ut-sh-groups { columns: 1; } .ut-sh-search { flex-basis: 100%; } .ut-sh-card .ut-b-head { flex-wrap: wrap; } }
+
+/* ---- the page: the bookcase on top, the demos under it, one screen ------------------------------------------------- */
+.ut-grid.is-shelf { flex: 1 1 0; min-height: 34rem; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1.75fr) minmax(0, 1fr); }
+.ut-grid.is-shelf > * { grid-column: 1 / -1; min-width: 0; min-height: 0; }
+
+/* ---- the bookcase ------------------------------------------------------------------------------------------------------ */
+.sh-case { --wood: #3b2416; position: relative; min-height: 0; padding: clamp(.625rem, 1.3dvh, 1rem) clamp(.75rem, 1.2vw, 1.125rem) clamp(.5rem, 1dvh, .75rem); overflow: hidden; border-radius: 1.5rem;
+  background: linear-gradient(180deg, rgba(255, 196, 128, .12), transparent 26%), url("../brand/utensils/shelf/tex-wood.webp") 0 0 / 22rem, var(--wood); background-blend-mode: normal, soft-light, normal;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, .5), inset 0 0 0 1px rgba(255, 220, 180, .08), inset 0 2px 0 rgba(255, 214, 170, .12); }
+.usb-case { --plank: clamp(.75rem, 1.5dvh, 1.125rem); display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); height: 100%; overflow: hidden; border-radius: 1rem; font-size: var(--bk, 13px); background: #22121a; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .5), inset 0 0 40px rgba(0, 0, 0, .6); }
+.usb-row { container-type: size; position: relative; display: flex; flex-direction: column; min-height: 0;
+  background: radial-gradient(70% 120% at 50% -18%, rgba(255, 178, 102, .26), transparent 62%), linear-gradient(180deg, rgba(0, 0, 0, .45), transparent 22%), linear-gradient(90deg, rgba(0, 0, 0, .35), transparent 8%, transparent 92%, rgba(0, 0, 0, .35)), #2a161d; }
+.usb-inner { position: relative; display: flex; flex: 1 1 0; align-items: flex-end; min-height: 0; padding: .7em 1em 0; }
+.usb-mid { display: flex; flex: 1 1 auto; align-items: flex-end; justify-content: space-evenly; gap: 1.6em; min-width: 0; height: 100%; }
+.usb-plank { position: relative; z-index: 1; flex: none; height: var(--plank);
+  background: linear-gradient(180deg, rgba(255, 214, 170, .32) 0, transparent 2px), linear-gradient(180deg, #6e472b, #4a2d19 45%, #2c1a0e), url("../brand/utensils/shelf/tex-wood.webp") 0 0 / 18rem; background-blend-mode: normal, soft-light, normal;
+  box-shadow: 0 7px 12px rgba(0, 0, 0, .6); }
+
+/* a group: its books on the shelf, its brass plate on the shelf's edge */
+.usb-group { position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; }
+.usb-books { display: flex; align-items: flex-end; gap: .14em; height: 100%; }
+.usb-plate { position: absolute; left: 50%; bottom: calc(var(--plank) * -1 - .05em); z-index: 2; display: inline-flex; align-items: center; gap: .5em; min-height: calc(var(--plank) + .25em); padding: 0 .9em; transform: translateX(-50%); border: 0; border-radius: .22em; background: linear-gradient(180deg, #f0d48c, #c39446 52%, #8d6527); color: #2b1a08; font: 700 .74em/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; white-space: nowrap; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -1px 0 rgba(0, 0, 0, .25), 0 2px 4px rgba(0, 0, 0, .55); transition: filter var(--t-fast); }
+.usb-plate::before, .usb-plate::after { content: ""; width: .32em; height: .32em; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3c4, #7d5a20 70%); box-shadow: 0 0 0 .5px rgba(0, 0, 0, .4); }
+.usb-plate:hover, .usb-plate:focus-visible { filter: brightness(1.12) saturate(1.1); outline: none; }
+
+/* a book: a spine of cloth or leather in its workspace's colour, gold bands, its icon, its name up the spine */
+.usb-book { position: relative; display: flex; flex: none; flex-direction: column; align-items: center; min-width: var(--w); height: calc(var(--h) * (100cqh - var(--plank) - .75em)); padding: 0 .16em; border: 0; border-radius: .2em .2em .1em .1em; color: #f6e5bc; cursor: pointer;
+  background-color: var(--c); background-image: linear-gradient(90deg, rgba(0, 0, 0, .46) 0, rgba(255, 255, 255, .12) 13%, rgba(255, 255, 255, .03) 32%, rgba(0, 0, 0, .06) 64%, rgba(0, 0, 0, .5) 100%), url("../brand/utensils/shelf/tex-cloth.webp"); background-size: 100% 100%, 8em; background-blend-mode: normal, soft-light;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .3), 2px 0 3px rgba(0, 0, 0, .35); transform-origin: 50% 100%; transition: transform .24s var(--ease-out), box-shadow .24s var(--ease-out), filter .24s; }
+.usb-book.is-leather { border-radius: .3em .3em .12em .12em; background-image: linear-gradient(90deg, rgba(0, 0, 0, .5) 0, rgba(255, 255, 255, .2) 11%, rgba(255, 255, 255, .05) 26%, rgba(0, 0, 0, .05) 66%, rgba(0, 0, 0, .55) 100%), url("../brand/utensils/shelf/tex-leather.webp"); background-size: 100% 100%, 6em; }
+.usb-band { position: absolute; left: .14em; right: .14em; height: .42em; border-top: 1.5px solid rgba(236, 200, 122, .9); border-bottom: 1.5px solid rgba(236, 200, 122, .62); pointer-events: none; }
+.usb-band.is-top { top: .38em; }
+.usb-band.is-bottom { bottom: .34em; }
+.usb-ico { display: grid; place-items: center; flex: none; margin-top: 1em; color: #ebc97f; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .6)); }
+.usb-ico svg { width: 1.05em; height: 1.05em; }
+.usb-name { flex: none; height: calc(var(--h) * (100cqh - var(--plank) - .75 * var(--bk, 13px)) - 3.05 * var(--bk, 13px)); margin: .35em 0 0; overflow: hidden; writing-mode: vertical-rl; transform: rotate(180deg); font: 600 calc(var(--fs, .9) * 1em)/1.08 var(--font-sans); letter-spacing: .015em; text-align: center; text-shadow: 0 1px 0 rgba(0, 0, 0, .55); }
+.usb-book:hover, .usb-book:focus-visible, .usb-book.is-out { z-index: 4; outline: none; transform: perspective(28em) translateY(-.6em) translateZ(.9em) rotateY(-16deg); box-shadow: 0 0 0 2px var(--accent), 0 0 1.4em rgba(242, 255, 89, .32), .5em .7em 1.2em rgba(0, 0, 0, .6); filter: brightness(1.08); }
+
+/* the props at the ends of a shelf */
+.usb-prop { flex: none; align-self: flex-end; height: calc(var(--pw) * (100cqh - var(--plank) - 1em)); width: auto; margin: 0 .35em; filter: drop-shadow(0 .5em .6em rgba(0, 0, 0, .5)); pointer-events: none; user-select: none; }
+.usb-prop.is-hang { align-self: flex-start; margin-top: -.25em; }
+.usb-prop[hidden] { display: none; }
+
+/* the preview card a book opens, above it (or below when there is no room above) */
+.usb-card { position: fixed; z-index: 60; left: 0; top: 0; display: grid; width: min(23rem, calc(100vw - 1.5rem)); padding: .5rem; border: 1px solid var(--line2); border-radius: 1.25rem; background: #17171a; box-shadow: 0 26px 60px rgba(0, 0, 0, .62), 0 0 0 1px rgba(0, 0, 0, .3); opacity: 0; pointer-events: none; transform: translateY(.375rem) scale(.98); transition: opacity .16s var(--ease-out), transform .16s var(--ease-out); }
+.usb-card.is-on { opacity: 1; pointer-events: auto; transform: none; }
+.usb-card::after { content: ""; position: absolute; left: var(--arrow, 50%); bottom: -.4375rem; width: .875rem; height: .875rem; margin-left: -.4375rem; border-right: 1px solid var(--line2); border-bottom: 1px solid var(--line2); background: #17171a; transform: rotate(45deg); }
+.usb-card.is-below::after { top: -.4375rem; bottom: auto; transform: rotate(225deg); }
+.usb-card-pic { position: relative; height: 12.5rem; overflow: hidden; border-radius: .875rem; background: var(--sunk); }
+.usb-card-pic > * { width: 100%; height: 100%; }
+.usb-card-text { display: grid; gap: .5rem; padding: .75rem .5rem .375rem; }
+.usb-card-top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.usb-card-top b { font: 700 1.0625rem/1.2 var(--font-sans); }
+.usb-chip { flex: none; padding: .25rem .625rem; border: 1px solid color-mix(in oklab, var(--sec) 60%, transparent); border-radius: var(--r-pill); background: color-mix(in oklab, var(--sec) 22%, transparent); color: color-mix(in oklab, var(--sec), white 42%); font: 600 .6875rem/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.usb-card-text p { margin: 0; font: 400 .875rem/1.4 var(--font-sans); color: var(--muted); }
+.usb-card-keys { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .125rem; }
+.usb-open { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.25rem; padding: 0 1rem; border: 0; border-radius: .75rem; background: var(--accent); color: var(--accent-ink); font: 700 .875rem/1 var(--font-sans); cursor: pointer; }
+.usb-open svg { width: 1rem; height: 1rem; }
+.usb-open:hover { filter: brightness(1.06); }
+
+/* ---- FROM THE SHELF: four demos --------------------------------------------------------------------------------------- */
+.sd { display: flex; flex-direction: column; gap: clamp(.5rem, 1dvh, .875rem); min-height: 0; }
+.sd-head { display: flex; flex: none; align-items: center; gap: .875rem; }
+.sd-label { font: 500 .75rem/1 var(--font-mono); letter-spacing: .26em; text-transform: uppercase; color: var(--dim); }
+.sd-shuffle { display: inline-flex; align-items: center; gap: .5rem; min-height: 2rem; padding: 0 .875rem; border: 1px solid var(--line2); border-radius: var(--r-pill); background: transparent; color: var(--text); font: 600 .8125rem/1 var(--font-sans); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.sd-shuffle svg { width: 1rem; height: 1rem; color: var(--accent); }
+.sd-shuffle:hover { border-color: var(--accent-line); color: var(--accent); }
+.sd-note { font: 400 .8125rem/1 var(--font-sans); color: var(--dim); }
+.sd-cards { display: grid; flex: 1 1 0; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: var(--ut-gap); min-height: 0; transition: opacity .18s var(--ease-out); }
+.sd-cards.is-fading { opacity: 0; }
+.sd-card { container-type: inline-size; display: flex; flex-direction: column; gap: .5rem; min-width: 0; min-height: 0; padding: .5rem; border: 1px solid var(--card-line); border-radius: 1.25rem; background: var(--s1); box-shadow: inset 0 2px 0 color-mix(in oklab, var(--sec) 60%, transparent); }
+.sd-media { position: relative; flex: 1 1 0; min-height: 0; overflow: hidden; border-radius: .875rem; background: var(--sunk); }
+.sd-media > * { width: 100%; height: 100%; }
+.sd-foot { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .75rem; padding: .125rem .25rem .25rem; }
+.sd-glyph { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: .75rem; background: color-mix(in oklab, var(--sec), black 18%); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18); }
+.sd-glyph svg { width: 1.25rem; height: 1.25rem; }
+.sd-text { display: grid; gap: .1875rem; min-width: 0; }
+.sd-chip { justify-self: start; padding: 0; border: 0; background: transparent; color: color-mix(in oklab, var(--sec), white 40%); font: 600 .75rem/1 var(--font-sans); cursor: pointer; }
+.sd-chip:hover { text-decoration: underline; }
+.sd-text b { overflow: hidden; font: 700 .9375rem/1.2 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.sd-text span { overflow: hidden; font: 400 .8125rem/1.3 var(--font-sans); color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.sd-try { display: inline-flex; align-items: center; gap: .375rem; min-height: 2.25rem; padding: 0 .875rem; border: 1px solid var(--accent-line); border-radius: .75rem; background: transparent; color: var(--accent); font: 600 .8125rem/1 var(--font-sans); white-space: nowrap; cursor: pointer; transition: background var(--t-fast); }
+.sd-try svg { width: .9375rem; height: .9375rem; }
+.sd-try:hover { background: var(--accent-soft); }
+@container (max-width: 19rem) {
+  .sd-foot { grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; }
+  .sd-glyph { display: none; }
+  .sd-text b { display: -webkit-box; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .sd-try { padding: 0 .625rem; }
+}
+
+/* ---- the samples (utensils-shelf-show.js): one look in the card and in the demos -------------------------------------- */
+.shs-pair { --x: 50%; position: relative; overflow: hidden; }
+.shs-pair-pic { position: absolute; inset: 0; }
+.shs-pair-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.shs-pair-pic.is-after { clip-path: inset(0 0 0 var(--x)); }
+.shs-pair.is-checker .shs-pair-pic.is-after { background: repeating-conic-gradient(#2c2c31 0 25%, #1d1d21 0 50%) 0 0 / .875rem .875rem; }
+.shs-pair.is-slider { cursor: ew-resize; touch-action: pan-y; }
+.shs-pair.is-slider:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.shs-handle { position: absolute; top: 0; bottom: 0; left: var(--x); width: 2px; margin-left: -1px; background: #fff; pointer-events: none; box-shadow: 0 0 0 1px rgba(0, 0, 0, .25); }
+.shs-handle i { position: absolute; left: 50%; top: 50%; display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; margin: -1.125rem 0 0 -1.125rem; border-radius: 50%; background: #fff; color: #111; box-shadow: 0 4px 14px rgba(0, 0, 0, .4); }
+.shs-handle svg { width: .6875rem; height: .6875rem; }
+.shs-handle svg:first-child { transform: rotate(90deg); }
+.shs-handle svg:last-child { transform: rotate(-90deg); }
+.shs-tag { position: absolute; top: .625rem; padding: .3125rem .5rem; border-radius: .5rem; background: rgba(14, 14, 16, .78); color: #fff; font: 600 .625rem/1 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; pointer-events: none; }
+.shs-tag.is-l { left: .625rem; }
+.shs-tag.is-r { right: .625rem; }
+
+.shs-clip { position: relative; overflow: hidden; background: #000; }
+.shs-clip > img, .shs-screen video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.shs-play { position: absolute; left: 50%; top: 50%; display: grid; place-items: center; width: 3.25rem; height: 3.25rem; margin: -1.625rem 0 0 -1.625rem; padding: 0; border: 2px solid rgba(255, 255, 255, .85); border-radius: 50%; background: rgba(14, 14, 16, .55); backdrop-filter: blur(6px); color: #fff; pointer-events: none; }
+.shs-play svg { width: 1.25rem; height: 1.25rem; margin-left: .125rem; }
+.shs-play.is-key { pointer-events: auto; cursor: pointer; transition: transform var(--t-fast), border-color var(--t-fast); }
+.shs-play.is-key:hover { transform: scale(1.06); border-color: var(--accent); }
+.shs-clip.is-playable { display: flex; flex-direction: column; }
+.shs-screen { position: relative; flex: 1 1 0; min-height: 0; }
+.shs-sound { position: absolute; right: .625rem; bottom: .625rem; display: grid; place-items: center; width: 2.25rem; height: 2.25rem; padding: 0; border: 0; border-radius: .625rem; background: rgba(14, 14, 16, .7); color: #fff; cursor: pointer; }
+.shs-sound svg { width: 1.125rem; height: 1.125rem; }
+.shs-strip { display: flex; flex: none; gap: 2px; height: clamp(1.75rem, 3.2dvh, 2.5rem); padding: .3125rem 0; background: #0b0b0d repeating-linear-gradient(90deg, transparent 0 .5rem, rgba(255, 255, 255, .16) .5rem .875rem) 0 .0625rem / 100% .1875rem no-repeat; }
+.shs-strip img { flex: 1 1 0; min-width: 0; object-fit: cover; opacity: .82; }
+
+.shs-wave { position: relative; background: radial-gradient(90% 90% at 50% 115%, color-mix(in oklab, var(--tone) 26%, transparent), transparent 70%), #0f0f12; }
+.shs-wave-canvas { position: absolute; left: 1rem; right: 1rem; top: 20%; width: calc(100% - 2rem); height: 60%; }
+.shs-wave .shs-play.is-key { left: 1.125rem; margin-left: 0; }
+.shs-wave .shs-play.is-key ~ .shs-wave-canvas, .shs-wave:has(.shs-play) .shs-wave-canvas { left: 5rem; width: calc(100% - 6rem); }
+
+.shs-edit { display: grid; place-items: center; background: radial-gradient(80% 80% at 50% 100%, rgba(127, 138, 53, .2), transparent 70%), #111113; color: var(--muted); }
+.shs-edit .ue-art { position: static; width: 64%; opacity: 1; }
+.shs-edit .ue-art svg { display: block; width: 100%; height: auto; }
+
+.shs-trim { display: flex; flex-direction: column; gap: .625rem; padding: .875rem .875rem .75rem; background: #0f0f12; }
+.shs-trim-lane { position: relative; flex: 1 1 0; min-height: 0; }
+.shs-trim-strip { position: absolute; inset: 0; display: flex; overflow: hidden; border-radius: .5rem; filter: brightness(.45) saturate(.7); }
+.shs-trim-strip img { flex: 1 1 0; min-width: 0; height: 100%; object-fit: cover; border-right: 1px solid #000; }
+.shs-trim-keep { position: absolute; top: 0; bottom: 0; border: 2px solid var(--accent); border-radius: .5rem; backdrop-filter: brightness(2.2) saturate(1.4); pointer-events: none; }
+.shs-trim-h { position: absolute; top: -.25rem; bottom: -.25rem; width: .75rem; margin-left: -.375rem; border-radius: .3125rem; background: var(--accent); cursor: ew-resize; touch-action: none; box-shadow: 0 2px 8px rgba(0, 0, 0, .5); }
+.shs-trim-h::after { content: ""; position: absolute; left: 50%; top: 50%; width: 2px; height: 40%; margin: -20% 0 0 -1px; border-radius: 1px; background: rgba(0, 0, 0, .55); }
+.shs-trim-h:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.shs-trim-foot { display: flex; flex: none; align-items: center; justify-content: space-between; gap: .75rem; color: var(--muted); }
+.shs-trim-foot .ue-art { position: static; width: 4rem; opacity: .9; }
+.shs-trim-foot .ue-art svg { display: block; width: 100%; height: auto; }
+.shs-trim-read { font: 600 .75rem/1 var(--font-mono); color: var(--accent); }
+
+.shs-apps { display: flex; align-items: center; justify-content: center; padding: 0 6%; background: radial-gradient(80% 80% at 50% 110%, rgba(58, 91, 181, .3), transparent 70%), #0f0f14; }
+.shs-app { position: relative; display: block; width: 34%; aspect-ratio: 3 / 4; margin-inline: -2.5%; overflow: hidden; border-radius: .75rem; box-shadow: 0 12px 24px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .08); transform: rotate(calc((var(--i) - 1) * 7deg)) translateY(calc((var(--i) - 1) * (var(--i) - 1) * .5rem)); }
+.shs-app:nth-child(2) { z-index: 2; }
+.shs-app img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.shs-apps.is-empty { color: var(--dim); }
+.shs-apps.is-empty svg { width: 2.5rem; height: 2.5rem; }
+.shs-icon { display: grid; place-items: center; background: color-mix(in oklab, var(--sec, #555) 24%, #111); color: #fff; }
+.shs-icon svg { width: 3rem; height: 3rem; }
+
+@supports (corner-shape: squircle) { .sh-case, .usb-card, .sd-card, .usb-card-pic, .sd-media { corner-shape: squircle; } }
+@media (prefers-reduced-motion: reduce) { .usb-book, .usb-card, .sd-cards { transition: none; } }
+
+/* ---- narrower screens: the demos two by two under the bookcase, and the page scrolls -------------------------------- */
+@media (max-width: 1280px) {
+  .ut-grid.is-shelf { grid-template-rows: minmax(26rem, 1.55fr) minmax(0, 1fr); }
+  .sd-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(15rem, 1fr); }
+}
+@media (max-width: 980px) {
+  .ut-grid.is-shelf { flex: none; grid-template-rows: auto auto; }
+  .sh-case { height: 34rem; }
+}
