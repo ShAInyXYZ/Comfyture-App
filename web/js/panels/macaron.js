@@ -1,6 +1,9 @@
-// Macaron's screen. On the left Brioche's panel: who she is, the brand open, the five workspaces a brand's work goes through
-// (Design idea, Brand kit, Studio, Create, Brand book) and the brand's health. Beside it that workspace, a grid of bentos;
-// a bento opens as a window over the screen (macaron-win.js). Her bar docks at the foot of the page.
+// Macaron's screen. On the left Brioche's panel, the SWATCH BOOK: it wears the brand open (its darkest colour is the panel, its wordmark
+// at the top switches brands), the five workspaces a brand's work goes through (Design idea, Brand kit, Studio, Create, Brand book) are
+// swatch cards in the brand's own colours fanned like a colour book, the open one pulled out toward the page, and the brand's health is a
+// seal at its foot with Brioche in it. Another brand, another panel; a brand with no palette yet has the app's own greys. Beside it the
+// workspace, a grid of bentos; a bento opens as a window over the screen (macaron-win.js). Her bar docks at the foot of the page.
+// Mockup: web/labs/panels.html (B2).
 import { h, icon, sprite } from "../dom.js";
 import { changed } from "../store.js";
 import { currentPage } from "../router.js";
@@ -13,6 +16,7 @@ import { contentSpace } from "../macaron-content.js";
 import { studioSpace } from "../macaron-studio-space.js";
 import { bookSpace } from "../macaron-book.js";
 import { brandHealth, warmDesigns } from "../macaron-health.js";
+import { kitOf, luminance, contrast } from "../design.js";
 import { windowHost, defineWindow, openWin, closeAll } from "../macaron-win.js";
 import { BRIOCHE, WORKSPACES } from "../macaron-harness.js";
 import { setRoom } from "../harnesses.js";
@@ -40,7 +44,7 @@ function build(el) {
   const { idea, kit, studio, create, book, host } = made();
   // Brioche's bar docks into this slot; it is the same element every time the page is built, so the bar goes with it
   slot ??= h("div.mc-chat", { id: "macaron-chat" });
-  const side = h("aside.mc-side", { "aria-label": "Brioche, the brand room" });
+  const side = h("aside.mc-side.mcb", { "aria-label": "Brioche, the brand room" });
   const main = h("div.mc-main");
   // (a workspace is kept between builds: it comes back reachable, whatever window was over it when the room went away)
   for (const [id, part] of Object.entries({ idea, kit, studio, create, book })) {
@@ -61,11 +65,8 @@ function build(el) {
 /** What the health reads from: the brief, the kit, the product and the posts (the lines are worked out again when it changes). */
 const healthSig = (b) => JSON.stringify([b.body.brief, b.body.kit.palette, b.body.kit.logos?.map((l) => l.id), b.body.kit.voice, b.body.products?.map((p) => p.name), b.body.designs.map((d) => [d.id, d.status, d.updatedAt, d.format])]);
 
-function ring(score) {
-  return h("div.mc-ring", { style: { "--p": String(score) }, role: "img", "aria-label": `${score} percent ready` }, h("b", {}, `${score}%`), h("span", {}, "ready"));
-}
-
-function health(b) {
+/** The health worked out again only when what it reads from has changed (the designs are got ready once, then it is worked out again). */
+function healthOf(b) {
   const sig = healthSig(b);
   if (shell.healthSig !== sig) {
     shell.healthSig = sig;
@@ -73,50 +74,105 @@ function health(b) {
     // the guard reads the logos as they are drawn: the designs are got ready once, then the health is worked out again
     warmDesigns(b).then((fresh) => fresh && shell && shell.healthSig === sig && ((shell.health = brandHealth(b)), (shell.sideSig = ""), changed("macaron")));
   }
-  const { score, lines } = shell.health;
-  return h("section.mc-health", { "aria-label": "Brand health" },
-    h("span.mc-health-label", {}, "Brand health"),
-    ring(score),
-    h("p.mc-health-note", {}, lines.some((l) => l.tone !== "ok") ? `${lines.filter((l) => l.tone !== "ok").length} to look at` : "Everything is in place"),
-    h("div.mc-hlines", {}, ...lines.map((l) =>
-      h("button.mc-hline", { type: "button", dataset: { tone: l.tone, line: l.id }, on: { click: () => l.go() } },
-        h("span.lamp", { dataset: { tone: l.tone === "ok" ? "ok" : l.tone === "warn" ? "warn" : "crit" } }),
-        h("span.mc-hline-text", {}, l.text),
-        h("span.mc-hline-go", {}, mcicon("chev"))))));
+  return shell.health;
 }
+
+const hexOf = (c) => (/^#[0-9a-f]{6}$/i.test(String(c ?? "")) ? String(c).toLowerCase() : null);
+/** How lively a colour is (its saturation): the seal's ring takes the liveliest colour of the brand. */
+const chroma = (hex) => {
+  const n = parseInt(hex.slice(1), 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  return Math.max(r, g, b) - Math.min(r, g, b);
+};
+/** A colour a part of the way (t, 0 to 1) to another. */
+const mix = (a, b, t) => {
+  const x = parseInt(a.slice(1), 16);
+  const y = parseInt(b.slice(1), 16);
+  const c = (sh) => Math.round(((x >> sh) & 255) * (1 - t) + ((y >> sh) & 255) * t);
+  return `#${[16, 8, 0].map((sh) => c(sh).toString(16).padStart(2, "0")).join("")}`;
+};
+
+/**
+ * The swatch book's colours, from the brand's palette: the darkest is the panel's ground (deepened when it is not dark enough to be a
+ * panel), the lightest its ink; the cards take the other colours in the palette's order (tints between the ground and the ink when there
+ * are fewer than five), each with whichever of the two reads best on it; the seal's ring is the liveliest colour. Without a palette of
+ * two colours or more, null: the app's own greys and the accent.
+ */
+function bookColours(kit) {
+  const pal = kit.palette.map((p) => ({ ...p, hex: hexOf(p.hex) })).filter((p) => p.hex);
+  if (pal.length < 2) return null;
+  const byLum = [...pal].sort((a, b) => luminance(a.hex) - luminance(b.hex));
+  const darkest = byLum[0];
+  const lightest = byLum.at(-1);
+  const ground = luminance(darkest.hex) > 0.06 ? mix(darkest.hex, "#000000", 0.55) : darkest.hex;
+  const ink = luminance(lightest.hex) > 0.6 ? lightest.hex : "#fbf6ec";
+  const others = pal.filter((p) => p.id !== darkest.id).map((p) => p.hex);
+  const cards = [...others];
+  for (const t of [mix(ground, ink, 0.24), mix(ink, ground, 0.14), mix(ground, ink, 0.42)]) if (cards.length < 5) cards.push(t);
+  const lively = [...others].sort((a, b) => chroma(b) - chroma(a))[0] ?? ink;
+  return { ground, ink, seal: lively, cards: cards.slice(0, 5).map((c) => ({ c, t: contrast(c, ground) >= contrast(c, ink) ? ground : ink })) };
+}
+
+/** The brand's wordmark that reads best on the panel's ground (a logo file's tone is the palette colour it is drawn in), or null. */
+function wordmarkOn(kit, ground) {
+  const hex = (tone) => hexOf(kit.palette.find((p) => p.id === tone)?.hex);
+  return kit.logos.filter((l) => l.kind === "wordmark" && l.url).map((l) => ({ l, r: hex(l.tone) ? contrast(hex(l.tone), ground) : 1 })).sort((a, b) => b.r - a.r).find((x) => x.r >= 3)?.l ?? null;
+}
+
+/** The brand's initials, for the swatch cards' labels ("Little Otter Tea" is LOT). */
+const initials = (name) => String(name ?? "").split(/\s+/).filter(Boolean).map((w) => w[0]).join("").slice(0, 4).toUpperCase() || "MAC";
 
 function drawSide(b) {
   const space = macaron.space;
-  const sig = JSON.stringify([b.id, b.name, macaron.list.map((x) => [x.id, x.name]), space, SPACES.map((s) => SPACE_INFO[s][2](b)), macaron.past.length, macaron.future.length, !!macaron.chat.busy, macaron.design, healthSig(b), armedNow()]);
+  const kit = kitOf(b.body);
+  const sig = JSON.stringify([b.id, b.name, macaron.list.map((x) => [x.id, x.name]), space, SPACES.map((s) => SPACE_INFO[s][2](b)), macaron.past.length, macaron.future.length, !!macaron.chat.busy, macaron.design, healthSig(b), kit.palette, kit.logos.map((l) => [l.id, l.kind, l.tone, l.url]), armedNow()]);
   if (sig === shell.sideSig) return;
   shell.sideSig = sig;
-  fill(shell.side,
-    h("div.mc-pet", {},
-      h("span.mc-pet-pic", {}, h("img", { src: BRIOCHE.portrait, alt: "", draggable: false })),
-      h("b.mc-pet-name", {}, BRIOCHE.name),
-      h("span.mc-pet-tag", {}, BRIOCHE.tag)),
-    h("div.mc-proj", {},
-      dropdown({
-        label: "Brand",
-        value: b.id,
-        items: [
-          ...macaron.list.map((x) => ({ value: x.id, label: x.name })),
-          { value: "__settings", label: "This brand's settings", glyph: () => mcicon("kit") },
-          { value: "__new", label: "A new brand", glyph: () => icon("plus") },
-        ],
-        // (the chip is drawn again: it shows the brand that is open, not the key that was chosen)
-        onChange: (id) => (id === "__new" ? (closeAll(), newBrand()) : id === "__settings" ? ((shell.sideSig = ""), openWin("brand")) : (closeAll(), openBrand(id))),
-        width: "fill",
-      })),
-    h("nav.mc-spaces", { "aria-label": "Workspaces" }, ...SPACES.map((id, i) => {
+  const col = bookColours(kit);
+  const side = shell.side;
+  // the panel wears the brand (its colours as custom properties), or the app's greys
+  side.classList.toggle("is-branded", !!col);
+  for (const [k, v] of Object.entries({ "--bk-ground": col?.ground, "--bk-ink": col?.ink, "--bk-seal": col?.seal })) v ? side.style.setProperty(k, v) : side.style.removeProperty(k);
+  const word = col ? wordmarkOn(kit, col.ground) : null;
+  const { score, lines } = healthOf(b);
+  const tag = initials(b.name);
+  fill(side,
+    h("div.mcb-top", {},
+      h("span.mcb-eyebrow", {}, `Brand room · ${BRIOCHE.name}`),
+      h(`div.mcb-brand${word ? ".has-word" : ""}`, {},
+        dropdown({
+          label: "Brand",
+          value: b.id,
+          items: [
+            // (the brand open shows as its wordmark, when it has one that reads on the panel)
+            ...macaron.list.map((x) => ({ value: x.id, label: x.name, ...(x.id === b.id && word ? { glyph: () => h("img.mcb-word", { src: word.url, alt: "", draggable: false }) } : {}) })),
+            { value: "__settings", label: "This brand's settings", glyph: () => mcicon("kit") },
+            { value: "__new", label: "A new brand", glyph: () => icon("plus") },
+          ],
+          // (the chip is drawn again: it shows the brand that is open, not the key that was chosen)
+          onChange: (id) => (id === "__new" ? (closeAll(), newBrand()) : id === "__settings" ? ((shell.sideSig = ""), openWin("brand")) : (closeAll(), openBrand(id))),
+          width: "fill",
+        }))),
+    h("nav.mcb-fan", { "aria-label": "Workspaces" }, ...SPACES.map((id, i) => {
       const [name, pic, count] = SPACE_INFO[id];
-      return h(`button.mc-space${id === space ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(id === space), dataset: { space: id }, on: { click: () => (closeAll(), setSpace(id)) } },
-        h("span.mc-space-num", {}, String(i + 1)),
-        h("span.mc-space-name", {}, name),
-        h("span.mc-space-pic", {}, h("img", { src: pic, alt: "", draggable: false })),
-        h("span.mc-space-count", {}, two(count(b))));
+      const c = col?.cards[i];
+      return h(`button.mcb-card${id === space ? ".is-on" : ""}`, {
+        type: "button",
+        "aria-pressed": String(id === space),
+        dataset: { space: id },
+        style: { ...(c ? { "--c": c.c, "--t": c.t } : {}), "--r": `${[-2, 1.5, -1, 2, -1.5][i]}deg` },
+        on: { click: () => (closeAll(), setSpace(id)) },
+      },
+      h("span.mcb-face", {}, h("span.mcb-num", {}, two(i + 1)), h("b", {}, name)),
+      h("img.mcb-pic", { src: pic, alt: "", draggable: false }),
+      h("span.mcb-chip", {}, h("span", {}, c ? `${tag} · ${c.c.slice(1).toUpperCase()}` : tag), h("span", {}, two(count(b)))));
     })),
-    health(b),
+    h("section.mcb-health", { "aria-label": "Brand health" },
+      h("div.mcb-seal", { style: { "--v": String(score) }, role: "img", "aria-label": `Brand health: ${score} percent ready` },
+        h("img", { src: BRIOCHE.face, alt: "", draggable: false }),
+        h("b", {}, `${score}%`)),
+      h("div.mcb-lines", {}, ...lines.slice(0, 4).map((l) =>
+        h("button.mcb-line", { type: "button", dataset: { tone: l.tone, line: l.id }, title: l.text, on: { click: () => l.go() } }, h("i"), h("span", {}, l.text))))),
     h("div.mc-side-foot", {},
       key(sprite("edit-undo"), "Undo (Ctrl Z)", () => undo(), { disabled: !macaron.past.length }),
       key(sprite("edit-redo"), "Redo", () => redo(), { disabled: !macaron.future.length }),

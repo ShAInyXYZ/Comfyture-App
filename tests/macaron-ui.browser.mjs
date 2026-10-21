@@ -56,7 +56,7 @@ try {
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => m.type() === "error" && !/GL Driver|favicon|Failed to load resource/.test(m.text()) && errors.push(m.text()));
   await page.goto(`${base}/#/macaron`, { waitUntil: "networkidle" });
-  await page.waitForSelector(".mc-side .mc-space", { timeout: 30000 });
+  await page.waitForSelector(".mc-side .mcb-card", { timeout: 30000 });
   await page.waitForFunction(() => document.querySelector(".mc-grid:not([hidden]) .mc-bento"), null, { timeout: 30000 });
   await page.waitForTimeout(2500);
 
@@ -79,7 +79,7 @@ try {
       await page.waitForTimeout(250);
     }
   };
-  const space = async (id) => { await closeAll(); await page.locator(`.mc-space[data-space="${id}"]`).click(); await page.waitForTimeout(500); };
+  const space = async (id) => { await closeAll(); await page.locator(`.mcb-card[data-space="${id}"]`).click(); await page.waitForTimeout(500); };
   const openBento = async (cls) => { await closeAll(); await page.locator(`.mc-bento.is-${cls} .mc-expand`).click(); await page.locator(".mc-winhost:not([hidden]) .mc-win").waitFor(); await page.waitForTimeout(600); };
   const openEditor = async (nth = 0) => { await space("content"); await page.locator(".mc-post").nth(nth).click(); await page.waitForSelector('.mc-win[data-win="editor"] .mc-frame:not(.is-motion) canvas', { timeout: 15000 }); await page.waitForTimeout(900); };
   const winNow = () => page.evaluate(async () => { const m = await import("/js/macaron.js"); return { win: m.macaron.win, stack: [...m.macaron.winStack], space: m.macaron.space }; });
@@ -90,10 +90,10 @@ try {
 
   // ---- the room: Brioche's panel, and a grid of bentos for each of the three workspaces
   const side = await page.evaluate(() => ({
-    name: document.querySelector(".mc-pet-name")?.textContent, tag: document.querySelector(".mc-pet-tag")?.textContent,
-    pic: (() => { const i = document.querySelector(".mc-pet-pic img"); return !!i && i.complete && i.naturalWidth > 0; })(),
-    round: getComputedStyle(document.querySelector(".mc-pet-pic")).borderRadius, project: document.querySelector(".mc-proj .sel-label")?.textContent,
-    spaces: [...document.querySelectorAll(".mc-space")].map((b) => [b.querySelector(".mc-space-name").textContent, b.querySelector(".mc-space-count").textContent, b.classList.contains("is-on"), b.querySelector("img")?.naturalWidth > 0]),
+    name: document.querySelector(".mcb-eyebrow")?.textContent.split("·").pop().trim(), tag: document.querySelector(".mcb-eyebrow")?.textContent,
+    pic: (() => { const i = document.querySelector(".mcb-seal img"); return !!i && i.complete && i.naturalWidth > 0; })(),
+    round: getComputedStyle(document.querySelector(".mcb-seal img")).borderRadius, project: document.querySelector(".mcb-brand .sel-label")?.textContent,
+    spaces: [...document.querySelectorAll(".mcb-card")].map((b) => [b.querySelector(".mcb-face b").textContent, b.querySelector(".mcb-chip span:last-child").textContent, b.classList.contains("is-on"), b.querySelector("img")?.naturalWidth > 0]),
     label: document.querySelector(".mc-tools-label")?.textContent, tools: [...document.querySelectorAll(".mc-tool .mc-tool-name")].map((t) => t.textContent),
   }));
   ok(side.name === "Brioche" && /brand room/i.test(side.tag) && side.pic && side.round === "50%" && side.project === "Comfyture", "Brioche's panel: her round portrait, her name and room, the brand open", JSON.stringify([side.name, side.tag, side.project]));
@@ -148,7 +148,7 @@ try {
     return {
       shown: !grid.hidden, labels: [...grid.querySelectorAll(":scope > .mc-bento .mc-b-label")].map((x) => x.textContent), pitch: grid.querySelector(".mc-pitch")?.textContent, goals: [...grid.querySelectorAll(".mc-chips.is-goals .mc-chip")].map((x) => x.textContent),
       briefPic: !!grid.querySelector(".mc-brief-pic img")?.complete, tiles: grid.querySelectorAll(".mc-mtile").length, steps: [...grid.querySelectorAll(".mc-step b")].map((x) => x.textContent), dirs: [...grid.querySelectorAll(".mc-dir")].map((d) => [d.querySelector("b").textContent, d.classList.contains("is-picked")]),
-      tools: [...document.querySelectorAll(".mc-tool .mc-tool-name")].map((t) => t.textContent), lit: document.querySelector(".mc-space.is-on .mc-space-name")?.textContent,
+      tools: [...document.querySelectorAll(".mc-tool .mc-tool-name")].map((t) => t.textContent), lit: document.querySelector(".mcb-card.is-on .mcb-face b")?.textContent,
     };
   });
   ok(idea.shown && idea.labels.join() === "The brief,Moodboard,The story,Directions" && /warm, playful/i.test(idea.pitch) && idea.goals.length === 3 && idea.briefPic, "Design idea: the brief (its idea in two lines, three goals, a picture), the moodboard, the story, the directions", idea.labels.join(", "));
@@ -489,7 +489,7 @@ try {
   const saved = await page.evaluate(async () => (await (await fetch("api/brands/brand-comfyture")).json()).project.body.designs.length);
   ok(saved === count0 + 1, "the project is saved on the server", `${saved} designs`);
   await page.reload({ waitUntil: "networkidle" });
-  await page.waitForSelector(".mc-side .mc-space", { timeout: 30000 });
+  await page.waitForSelector(".mc-side .mcb-card", { timeout: 30000 });
   await page.waitForTimeout(2500);
   ok((await S()).count === count0 + 1, "after a reload the work is there");
   wn = await winNow();
@@ -893,7 +893,7 @@ try {
   await page.waitForTimeout(1500);
   ok((await page.locator(".mc-welcome h1").count()) === 1 && (await page.locator(".mc-side").count()) === 0 && (await page.locator(".mc-winhost").count()) === 0, "with no brand left Macaron shows its welcome");
   await page.locator(".mc-welcome .mc-go").click();
-  await page.waitForSelector(".mc-side .mc-space", { timeout: 30000 });
+  await page.waitForSelector(".mc-side .mcb-card", { timeout: 30000 });
   await page.waitForTimeout(1500);
   ok(await page.evaluate(() => { const bar = document.getElementById("assistant"); return !!bar && bar.parentElement?.id === "macaron-chat" && !bar.hidden && document.querySelectorAll(".mc-grid").length === 3; }), "and the example opens the room again, Brioche's bar in its slot at the foot");
 

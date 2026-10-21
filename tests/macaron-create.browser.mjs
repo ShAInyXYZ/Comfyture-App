@@ -48,7 +48,7 @@ try {
   page.on("console", (m) => m.type() === "error" && !/GL Driver|favicon|Failed to load resource/.test(m.text()) && errors.push(m.text()));
   await page.addInitScript(() => localStorage.setItem("comfyture.macaron.space", "create"));
   await page.goto(`${base}/#/macaron`, { waitUntil: "networkidle" });
-  await page.waitForSelector(".mc-side .mc-space", { timeout: 30000 });
+  await page.waitForSelector(".mc-side .mcb-card", { timeout: 30000 });
   await page.waitForSelector(".mc-grid.is-create .mc-bento", { timeout: 30000 });
   await page.waitForTimeout(2000);
   const store = (fn, arg) => page.evaluate(async ({ src, arg }) => { const m = await import("/js/macaron.js"); return new Function("m", "arg", `return (${src})(m, arg)`)(m, arg); }, { src: fn.toString(), arg });
@@ -59,9 +59,9 @@ try {
   const brandBody = () => store((m) => JSON.parse(JSON.stringify(m.macaron.brand.body)));
 
   // ---- the workspace: five workspaces, the one of Create fills the height, and the families lead in turn
-  const ws = await page.locator(".mc-space").evaluateAll((els) => els.map((e) => e.dataset.space));
-  ok(ws.join() === "idea,kit,studio,create,book" && (await page.locator('.mc-space[data-space="create"]').getAttribute("aria-pressed")) === "true", "Create is the fourth of five workspaces and is the one open");
-  ok((await page.locator(".mc-tool").count()) === 0 && (await page.locator(".mc-health .mc-hline").count()) > 0, "no canned tools under the workspaces: the brand's health instead");
+  const ws = await page.locator(".mcb-card").evaluateAll((els) => els.map((e) => e.dataset.space));
+  ok(ws.join() === "idea,kit,studio,create,book" && (await page.locator('.mcb-card[data-space="create"]').getAttribute("aria-pressed")) === "true", "Create is the fourth of five workspaces and is the one open");
+  ok((await page.locator(".mc-tool").count()) === 0 && (await page.locator(".mcb-health .mcb-line").count()) > 0, "no canned tools under the workspaces: the brand's health instead");
   await shot("create-social");
   let m = await page.evaluate(() => { const g = document.querySelector(".mc-grid.is-create").getBoundingClientRect(); const bar = document.getElementById("assistant")?.getBoundingClientRect(); return { doc: document.documentElement.scrollHeight, vh: innerHeight, gridBottom: g.bottom, barTop: bar?.top ?? 0, bentos: [...document.querySelectorAll(".mc-grid.is-create > .mc-bento")].map((b) => b.className.replace(/mc-bento|\s+/g, " ").trim()), cols: [...document.querySelectorAll(".mc-grid.is-create > .mc-bento")].map((b) => Math.round(b.getBoundingClientRect().width)) }; });
   ok(m.doc <= m.vh + 1 && m.gridBottom <= m.barTop + 2, "the grid fills the screen at 1600 x 1000: no scroll, and it ends above Brioche's bar", JSON.stringify([m.doc, m.vh, Math.round(m.gridBottom), Math.round(m.barTop)]));
