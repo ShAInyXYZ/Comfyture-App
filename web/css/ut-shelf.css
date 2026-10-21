@@ -1,5 +1,15 @@
 /* Utensils: the shelf, the catalogue of every tool (utensils-space-shelf.js): one card, a search and a filter in its head, the tools in
-   columns grouped by workspace. The dashboard that shows the workspaces off is Home (ut-home.css). */
+   columns grouped by workspace. The page that shows the workspaces off is Home (ut-home.css). */
+/* a tool's mark (where it runs) and the search field: the Shelf's own, the header of Home (ut-home.css) lists with the mark too */
+.ut-hm-mark { display: inline-flex; align-items: center; min-height: 1.25rem; padding: 0 .4375rem; border: 1px solid currentColor; border-radius: var(--r-pill); font: 600 .625rem/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.ut-hm-mark.is-free { color: var(--ok); }
+.ut-hm-mark.is-cloud { color: #b9a6ff; }
+.ut-hm-mark.is-mixed { color: var(--muted); }
+.ut-hm-find { width: 100%; min-height: 2.25rem; padding: 0 .875rem 0 2.25rem; border: 1px solid var(--line2); border-radius: var(--r-pill); background: var(--sunk); color: var(--text); font: 400 .9375rem/1 var(--font-sans); transition: border-color var(--t-fast); }
+.ut-hm-find::placeholder { color: var(--dim); }
+.ut-hm-find:hover { border-color: var(--faint); }
+.ut-hm-find:focus { outline: none; border-color: var(--accent); }
+.ut-sh-find { padding-left: .875rem; }
 .is-shelf { grid-template-rows: minmax(0, 1fr); }
 .is-shelf > .ut-sh-card { grid-column: 1 / -1; }
 .ut-sh-card { padding-bottom: .75rem; }

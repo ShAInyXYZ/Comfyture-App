@@ -1,7 +1,7 @@
 // Utensils' mini apps in a real browser, end to end, on a server of its own and a folder of its own: the Templates workspace opens on the
 // Apps chip with their cards; an app is a panel with only what it needs (a picture well and the words), the price is asked before anything
 // is sent (the first press arms the key, no request is made; the second sends one), what it made shows against the picture it was given
-// and is kept; the Shelf's Mini apps carousel opens an app; the apps are tools for Truffle (opened by id, listed apart from the shelf's tools).
+// and is kept; a poster on Home's wall of mini apps opens an app; the apps are tools for Truffle (opened by id, listed apart from the shelf's tools).
 // Comfy Cloud's paid calls are stood in for (COMFYTURE_FAKE_TEMPLATES=1): nothing is spent. The reads that name the forms and the prices are
 // free and real, so this needs a COMFY_API_KEY (in .env or the environment); without one it says so and stops.
 // Not part of `node --test` (it needs a browser). From the repo root:
@@ -52,17 +52,17 @@ try {
   page.on("request", (r) => r.method() === "POST" && /\/templates\/[^/]+\/run$/.test(new URL(r.url()).pathname) && runs.push(new URL(r.url()).pathname));
   const shot = (name) => page.screenshot({ path: join(out, `${name}.png`) });
   await page.goto(`${base}/#/utensils`, { waitUntil: "networkidle" });
-  await page.waitForSelector(".ut-space", { timeout: 30000 });
+  await page.waitForSelector(".hp", { timeout: 30000 });
   await page.waitForTimeout(2500);
 
-  // the Shelf: a carousel of mini apps; a card opens that app in the Templates workspace
-  await page.waitForSelector(".is-apps .ut-tcard.is-app", { timeout: 30000 });
-  ok((await page.locator(".is-apps .ut-tcard.is-app").count()) === 12, "the Shelf shows twelve mini apps");
+  // Home: a wall of six mini-app posters (and no panel); a poster opens that app in the Templates workspace
+  await page.waitForSelector(".hm-poster", { timeout: 30000 });
+  ok((await page.locator(".hm-poster").count()) === 6, "Home hangs six mini apps");
   ok((await page.locator('.ut-quick-tool[data-tool^="app-"]').count()) === 0, "the apps are not among the quick tools");
-  await shot("1-shelf");
-  await page.click('.is-apps .ut-tcard.is-app[data-app="bg-remove"]');
+  await shot("1-home");
+  await page.click('.hm-poster[data-app="bg-remove"]');
   await page.waitForSelector(".ut-app-body", { timeout: 30000 });
-  ok(/REMOVE BACKGROUND/.test(await page.locator(".ut-tpl-detail .ut-b-label").innerText()), "a card of the Shelf opens its app in the Templates workspace");
+  ok(/REMOVE BACKGROUND/.test(await page.locator(".ut-tpl-detail .ut-b-label").innerText()), "a poster of Home opens its app in the Templates workspace");
   ok((await page.locator(".ut-tpl-chip[aria-pressed=true]").innerText()) === "Apps", "on the Apps chip");
 
   // the Apps chip: cards, no page scroll

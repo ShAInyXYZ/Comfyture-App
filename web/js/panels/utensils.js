@@ -1,6 +1,8 @@
 // Utensils' screen. On the left Truffle's panel: who she is, the eight workspaces the shelf is organised in, the queue of what is
 // running and the latest results. Beside it the open workspace, a grid of bentos filling the page (each workspace is a module,
 // web/js/utensils-space-<id>.js, made once and kept: { el, update, sig, count? }). Her bar docks at the foot of the page.
+// HOME is the exception: it is a page of its own, the whole width and scrolling, with no panel (its header carries what the panel
+// carries: Truffle, the way into every workspace, the queue and the credits). The panel comes back with every other workspace.
 import { h, icon, sprite, ago } from "../dom.js";
 import { changed } from "../store.js";
 import { currentPage } from "../router.js";
@@ -136,13 +138,18 @@ export function renderUtensils(el) {
   if (!shell || shell.el !== el || !el.contains(shell.root)) build(el);
   const spaces = made();
   const space = utensils.workspace;
+  // the shell takes its Home or its panel shape in this same pass, before anything is painted: no frame shows the one in the other's place
+  shell.root.classList.toggle("is-home-page", space === "home");
   // the bar asks what fits the workspace that is open
   setRoom("utensils", space);
-  const counts = WORKSPACES.map((w) => countOf(w, spaces));
-  fillBlock("tiles", JSON.stringify([space, counts]), () => tilesBlock(spaces));
-  fillBlock("queue", JSON.stringify([utensils.jobs.map((j) => [j.id, j.status]), creditsToday().total]), queueBlock);
-  syncProgress();
-  fillBlock("recent", JSON.stringify(utensils.results.slice(0, 3).map((r) => [r.id, r.url])), recentBlock);
+  // (the panel is not on screen on Home: its blocks are drawn when a workspace opens)
+  if (space !== "home") {
+    const counts = WORKSPACES.map((w) => countOf(w, spaces));
+    fillBlock("tiles", JSON.stringify([space, counts]), () => tilesBlock(spaces));
+    fillBlock("queue", JSON.stringify([utensils.jobs.map((j) => [j.id, j.status]), creditsToday().total]), queueBlock);
+    syncProgress();
+    fillBlock("recent", JSON.stringify(utensils.results.slice(0, 3).map((r) => [r.id, r.url])), recentBlock);
+  }
   for (const w of WORKSPACES) {
     const part = spaces[w.id];
     const on = w.id === space;

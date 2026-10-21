@@ -24,6 +24,13 @@
 .ut-slot { display: contents; }
 .utensils .spacer { flex: 1 1 auto; }
 
+/* Home is a page of its own: no panel, one centred column about 1560px wide, the page scrolls, the bar floats over it (the slot is sticky
+   at the foot, so the page ends above it). Every other workspace keeps the panel and the page that fits the screen. */
+.utensils.is-home-page { display: block; min-height: 0; }
+.utensils.is-home-page > .ut-side { display: none; }
+.utensils.is-home-page > .ut-main { width: min(97.5rem, 100%); margin-inline: auto; padding-inline: clamp(.75rem, 2.2vw, 2.5rem); gap: 0; }
+.utensils.is-home-page .ut-chat { width: min(46rem, 100%); margin-top: 1.25rem; }
+
 /* ---- Truffle's panel -------------------------------------------------------------------------- */
 .ut-side { position: sticky; top: .75rem; align-self: stretch; display: flex; flex-direction: column; gap: clamp(.875rem, .4rem + 1.4dvh, 1.375rem); max-height: calc(100dvh - 1.5rem); padding: clamp(1.125rem, 2dvh, 1.75rem) 1rem 1rem; overflow-y: auto; border: 1px solid var(--card-line); border-radius: 1.625rem; background: linear-gradient(180deg, rgba(255, 255, 255, .02), transparent 38%), var(--s1); scrollbar-width: thin; }
 @media (min-width: 981px) { .ut-side { contain: size; } }
@@ -152,7 +159,7 @@ img.is-clear { background: repeating-conic-gradient(#2c2c31 0 25%, #1d1d21 0 50%
 .ut-wave-play svg { width: 1.5rem; height: 1.5rem; }
 
 @supports (corner-shape: squircle) {
-  .ut-side, .ut-bento, .ut-space, .ut-card, .ut-recent-item, .ut-primary, .ut-stage, .ut-tcard, .ut-quick-tool, .ut-feat { corner-shape: squircle; }
+  .ut-side, .ut-bento, .ut-space, .ut-card, .ut-recent-item, .ut-primary, .ut-stage, .ut-tcard, .ut-quick-tool { corner-shape: squircle; }
 }
 
 /* ---- narrower screens -------------------------------------------------------------------------- */
