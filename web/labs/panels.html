@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assistant panels · lab</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+  /* the app's own tokens (css/material.css) */
+  :root { --bg: #121214; --s1: #19191c; --s2: #212125; --s3: #2a2a2f; --card-line: #25252a; --sunk: #0e0e10; --line: #2a2a2f; --line2: #38383e;
+    --text: #f2f1ee; --muted: #a7a6ac; --dim: #77767e; --faint: #55545b; --accent: #f2ff59; --accent-ink: #141414; --accent-soft: rgba(242, 255, 89, .09); --accent-line: rgba(242, 255, 89, .5);
+    --ok: #4fcf8b; --warn: #f0a63a; --float: 0 18px 48px rgba(0, 0, 0, .55), 0 2px 8px rgba(0, 0, 0, .4); --ease: cubic-bezier(.22, 1, .36, 1);
+    --sans: Manrope, system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace;
+    /* Utensils' sections, Little Otter Tea's palette */
+    --home: #4a4a52; --shelf: #5a5f73; --picture: #d8673f; --video: #b3273f; --audio: #7a4fd6; --vfx: #1f9484; --edit: #7f8a35; --library: #3a5bb5;
+    --ground: #0f3d45; --light: #fff3dc; --signal: #ff8a3d; --second: #9adfc8; }
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body { margin: 0; background: #0b0b0c; color: var(--text); font: 400 15px/1.5 var(--sans); }
+  .page { width: min(1680px, 100%); margin: 0 auto; padding: 40px 28px 120px; }
+  .page > header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 32px; }
+  .eyebrow { font: 500 11px/1 var(--mono); letter-spacing: .26em; text-transform: uppercase; color: var(--dim); }
+  h1 { margin: 8px 0 0; font: 800 34px/1.05 var(--sans); letter-spacing: -.02em; }
+  .lede { max-width: 58rem; margin: 10px 0 0; color: var(--muted); }
+  .picks { display: grid; gap: 6px; font: 500 13px/1.2 var(--mono); color: var(--accent); text-align: right; }
+  .picks span { color: var(--dim); }
+  section.who { margin-top: 56px; }
+  .who-head { display: flex; align-items: center; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .who-head img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--line2); }
+  .who-head h2 { margin: 0; font: 800 24px/1.1 var(--sans); }
+  .who-head p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+  .opt { margin-top: 32px; }
+  .opt-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 12px; }
+  .opt-head .tag { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--s2); font: 700 14px/1 var(--mono); }
+  .opt.is-chosen .opt-head .tag { background: var(--accent); color: var(--accent-ink); }
+  .opt-head h3 { margin: 0; font: 700 19px/1.2 var(--sans); }
+  .opt-head p { flex: 1 1 30rem; margin: 0; color: var(--muted); font-size: 14px; }
+  .choose { min-height: 38px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--accent); color: var(--accent-ink); font: 700 14px/1 var(--sans); cursor: pointer; }
+  .opt.is-chosen .choose { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-line); }
+  /* a stage: the app's screen at 1920 x 1200, scaled to the page */
+  .stage { position: relative; aspect-ratio: 1920 / 1200; overflow: hidden; border-radius: 16px; box-shadow: 0 0 0 1px var(--line2), 0 30px 80px rgba(0, 0, 0, .6); }
+  .canvas { position: absolute; left: 0; top: 0; width: 1920px; height: 1200px; transform-origin: 0 0; transform: scale(var(--k, .5)); background: var(--bg) var(--bgimg) 0 0 / 1920px 1200px no-repeat; }
+  .canvas * { -webkit-user-drag: none; }
+  .ico { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .tip { position: absolute; z-index: 20; display: grid; gap: 3px; min-width: 190px; padding: 10px 12px; border: 1px solid var(--line2); border-radius: 12px; background: #1c1c20; box-shadow: var(--float); opacity: 0; pointer-events: none; transform: translateX(-4px); transition: opacity .14s, transform .14s var(--ease); white-space: nowrap; }
+  .tip b { font: 700 14px/1.2 var(--sans); }
+  .tip span { font: 400 12px/1.3 var(--sans); color: var(--muted); }
+  .tip em { font: 500 11px/1 var(--mono); font-style: normal; color: var(--dim); }
+
+  /* ======================================================================================================================
+     T1 · THE PILE: Truffle's books lying flat, one per workspace, spines out; the open one slides out toward the page
+     ====================================================================================================================== */
+  .t1 { position: absolute; left: 16px; top: 86px; bottom: 16px; width: 132px; display: flex; flex-direction: column; align-items: stretch; gap: 14px; padding: 18px 0 14px; }
+  .t1-pet { position: relative; display: grid; justify-items: center; gap: 8px; }
+  .t1-face { position: relative; width: 84px; height: 84px; border-radius: 50%; padding: 4px; background: conic-gradient(var(--accent) var(--q, 0%), #2a2a30 0); }
+  .t1-face img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #222; box-shadow: 0 0 0 3px var(--bg); }
+  .t1-face i { position: absolute; right: 4px; bottom: 6px; width: 14px; height: 14px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--bg); }
+  .t1-say { padding: 5px 10px; border-radius: 999px; background: var(--s2); font: 500 11px/1 var(--mono); color: var(--muted); white-space: nowrap; }
+  .t1-say b { color: var(--accent); font-weight: 600; }
+  .t1-pile { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+  .t1-book { --c: var(--home); --ink: color-mix(in oklab, var(--c), black 55%); position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 8px; height: var(--hh, 46px); margin-left: var(--off, 0px); margin-right: calc(8px - var(--off, 0px)); padding: 0 10px 0 9px; border: 0; border-radius: 4px 7px 7px 4px; cursor: pointer; text-align: left;
+    color: var(--ink); text-shadow: 0 1px 0 rgba(255, 255, 255, .18); font: 800 14px/1 var(--sans);
+    background: linear-gradient(90deg, transparent 6px, rgba(0, 0, 0, .35) 6px 7px, rgba(255, 255, 255, .15) 7px 8px, transparent 8px calc(100% - 8px), rgba(255, 255, 255, .15) calc(100% - 8px) calc(100% - 7px), rgba(0, 0, 0, .35) calc(100% - 7px) calc(100% - 6px), transparent 0),
+      linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .03) 30%, rgba(0, 0, 0, .06) 70%, rgba(0, 0, 0, .4)), var(--c);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, .35); transition: transform .22s var(--ease), box-shadow .22s var(--ease), filter .2s; }
+  .t1-book svg { width: 18px; height: 18px; stroke: var(--ink); filter: drop-shadow(0 1px 0 rgba(255, 255, 255, .18)); }
+  .t1-book em { font: 700 11px/1 var(--mono); font-style: normal; opacity: .85; }
+  .t1-book:hover { filter: brightness(1.1); transform: translateX(6px); }
+  .t1-book.is-on { z-index: 2; transform: translateX(26px); box-shadow: 0 0 0 2px var(--accent), 0 0 22px rgba(242, 255, 89, .28), 10px 10px 22px rgba(0, 0, 0, .55); filter: brightness(1.12); }
+  .t1-book.is-on::after { content: ""; position: absolute; right: -14px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: var(--accent); }
+  .t1-lib { --c: var(--library); --hh: 62px; margin-top: 18px; border-radius: 5px 9px 9px 5px; }
+  .t1-lib small { display: block; margin-top: 4px; font: 600 9.5px/1 var(--mono); letter-spacing: .14em; opacity: .8; }
+  .t1-foot { margin-top: auto; display: grid; justify-items: center; gap: 10px; }
+  .t1-photos { position: relative; width: 104px; height: 84px; }
+  .t1-photos img { position: absolute; top: 6px; width: 62px; height: 62px; border-radius: 8px; object-fit: cover; border: 3px solid #f0ede6; box-shadow: 0 6px 14px rgba(0, 0, 0, .5); }
+  .t1-photos img:nth-child(1) { left: 0; transform: rotate(-8deg); }
+  .t1-photos img:nth-child(2) { left: 22px; transform: rotate(3deg); z-index: 1; }
+  .t1-photos img:nth-child(3) { left: 42px; transform: rotate(11deg); z-index: 2; }
+  .t1-queue { font: 500 11px/1.3 var(--mono); color: var(--dim); text-align: center; }
+  .t1-queue b { color: var(--text); font-weight: 600; }
+
+  /* ======================================================================================================================
+     T2 · THE LEDGE: one band across the top; Truffle talks at its left, the workspaces stand on a ledge, the queue at its right
+     ====================================================================================================================== */
+  .t2 { position: absolute; left: 16px; right: 16px; top: 82px; height: 128px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 28px; padding: 0 22px; border: 1px solid var(--card-line); border-radius: 26px; background: linear-gradient(180deg, rgba(255, 255, 255, .025), transparent 40%), var(--s1); }
+  .t2-pet { display: flex; align-items: center; gap: 14px; }
+  .t2-pet img { width: 76px; height: 76px; border-radius: 22px; object-fit: cover; background: #222; }
+  .t2-say { position: relative; display: grid; gap: 6px; max-width: 260px; padding: 12px 16px; border-radius: 16px 16px 16px 4px; background: var(--s2); }
+  .t2-say span { font: 500 10.5px/1 var(--mono); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+  .t2-say b { font: 600 15px/1.3 var(--sans); }
+  .t2-ledge { position: relative; display: flex; align-items: flex-end; justify-content: center; gap: 8px; height: 100%; padding-bottom: 14px; }
+  .t2-ledge::after { content: ""; position: absolute; left: 0; right: 0; bottom: 12px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--line2) 8%, var(--line2) 92%, transparent); }
+  .t2-tab { --c: var(--home); position: relative; z-index: 1; display: grid; grid-template-columns: auto auto; align-items: center; justify-items: start; gap: 2px 10px; min-width: 128px; height: 74px; padding: 10px 16px 12px; border: 1px solid var(--line2); border-bottom: 0; border-radius: 16px 16px 4px 4px; background: linear-gradient(180deg, color-mix(in oklab, var(--c) 16%, transparent), transparent 70%), var(--s2); color: var(--text); cursor: pointer; text-align: left; transition: transform .22s var(--ease), background .2s; }
+  .t2-tab::before { content: ""; position: absolute; left: 10px; right: 10px; bottom: 0; height: 4px; border-radius: 4px 4px 0 0; background: var(--c); }
+  .t2-tab svg { grid-row: span 2; width: 24px; height: 24px; color: color-mix(in oklab, var(--c), white 35%); }
+  .t2-tab b { font: 700 15px/1.1 var(--sans); }
+  .t2-tab em { font: 500 11px/1 var(--mono); font-style: normal; color: var(--dim); }
+  .t2-tab:hover { transform: translateY(-3px); }
+  .t2-tab.is-on { transform: translateY(-8px); border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 12px 26px rgba(0, 0, 0, .5); }
+  .t2-tab.is-on em { color: var(--accent); }
+  .t2-sep { width: 1px; height: 46px; margin: 0 6px 14px; background: var(--line2); align-self: flex-end; }
+  .t2-lib { --c: var(--library); min-width: 168px; border-style: dashed; }
+  .t2-status { display: flex; align-items: center; gap: 16px; }
+  .t2-ring { position: relative; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(var(--accent) var(--q, 0%), #2c2c32 0); }
+  .t2-ring::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--s1); }
+  .t2-ring b { position: relative; font: 600 12px/1 var(--mono); }
+  .t2-status .txt { display: grid; gap: 4px; font: 500 11px/1.2 var(--mono); color: var(--dim); }
+  .t2-status .txt b { color: var(--text); font-size: 13px; }
+  .t2-film { display: flex; }
+  .t2-film img { width: 54px; height: 54px; margin-left: -14px; border-radius: 12px; object-fit: cover; border: 2px solid var(--s1); box-shadow: 0 6px 14px rgba(0, 0, 0, .5); }
+  .t2-film img:first-child { margin-left: 0; }
+
+  /* ======================================================================================================================
+     T3 · THE TOOLBELT: a slim floating capsule of icons (the words in tooltips), Truffle at its top, the page left whole
+     ====================================================================================================================== */
+  .t3 { position: absolute; left: 20px; top: 50%; transform: translateY(-46%); width: 76px; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 0 14px; border: 1px solid var(--line2); border-radius: 38px; background: rgba(28, 28, 32, .94); backdrop-filter: blur(10px); box-shadow: var(--float); }
+  .t3-face { position: relative; width: 58px; height: 58px; border-radius: 50%; padding: 3px; background: conic-gradient(var(--accent) var(--q, 0%), #2c2c32 0); margin-bottom: 4px; }
+  .t3-face img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #222; }
+  .t3-btn { --c: var(--home); position: relative; display: grid; place-items: center; width: 54px; height: 54px; border: 0; border-radius: 18px; background: transparent; color: var(--muted); cursor: pointer; transition: background .15s, color .15s; }
+  .t3-btn svg { width: 24px; height: 24px; }
+  .t3-btn::after { content: ""; position: absolute; right: 9px; bottom: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px rgba(28, 28, 32, .94); }
+  .t3-btn.is-plain::after { display: none; }
+  .t3-btn:hover { background: var(--s3); color: var(--text); }
+  .t3-btn.is-on { background: var(--accent); color: var(--accent-ink); }
+  .t3-btn.is-on::after { box-shadow: 0 0 0 2px var(--accent); }
+  .t3-btn .tip, .t3-face .tip { left: calc(100% + 18px); top: 50%; transform: translate(-4px, -50%); }
+  .t3-btn:hover .tip, .t3-face:hover .tip { opacity: 1; transform: translate(0, -50%); }
+  .t3-hr { width: 34px; height: 1px; margin: 4px 0; background: var(--line2); }
+  .t3-recent { display: grid; gap: 6px; }
+  .t3-recent img { width: 44px; height: 44px; border-radius: 12px; object-fit: cover; box-shadow: 0 0 0 1px var(--line2); }
+
+  /* ======================================================================================================================
+     B1 · THE BRAND PASSPORT: the brand itself across the top, its five rooms as a journey, its health as a seal
+     ====================================================================================================================== */
+  .b1 { position: absolute; left: 16px; right: 16px; top: 82px; height: 142px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 30px; padding: 0 22px; border: 1px solid var(--card-line); border-radius: 26px; background: linear-gradient(180deg, rgba(255, 255, 255, .025), transparent 40%), var(--s1); }
+  .b1-brand { display: flex; align-items: center; gap: 16px; }
+  .b1-logo { display: grid; place-items: center; width: 98px; height: 98px; border-radius: 24px; background: var(--light); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08); }
+  .b1-logo img { width: 76px; }
+  .b1-name { display: grid; gap: 8px; }
+  .b1-name button { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; color: var(--text); font: 800 24px/1 var(--sans); letter-spacing: -.01em; cursor: pointer; }
+  .b1-name button svg { width: 18px; height: 18px; color: var(--dim); }
+  .b1-swatches { display: flex; gap: 5px; }
+  .b1-swatches i { width: 34px; height: 14px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }
+  .b1-name small { font: 500 11px/1 var(--mono); color: var(--dim); }
+  .b1-journey { position: relative; display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .b1-journey::before { content: ""; position: absolute; left: 70px; right: 70px; top: 50%; border-top: 1.5px dashed var(--line2); }
+  .b1-step { position: relative; z-index: 1; display: grid; grid-template-columns: 62px auto; grid-template-rows: auto auto auto; align-items: center; column-gap: 12px; row-gap: 2px; min-width: 196px; height: 98px; padding: 10px 16px 10px 10px; border: 1px solid var(--line2); border-radius: 20px; background: var(--s2); color: var(--text); text-align: left; cursor: pointer; transition: transform .22s var(--ease), border-color .2s; }
+  .b1-step img { grid-row: 1 / -1; width: 62px; height: 62px; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .45)); transition: transform .25s var(--ease); }
+  .b1-step span { font: 600 10.5px/1 var(--mono); letter-spacing: .18em; color: var(--dim); }
+  .b1-step b { font: 700 16px/1.15 var(--sans); }
+  .b1-step .bar { display: flex; gap: 3px; margin-top: 4px; }
+  .b1-step .bar i { width: 14px; height: 4px; border-radius: 2px; background: var(--line2); }
+  .b1-step .bar i.on { background: var(--ok); }
+  .b1-step:hover { transform: translateY(-3px); }
+  .b1-step:hover img { transform: scale(1.08) rotate(-4deg); }
+  .b1-step.is-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 14px 30px rgba(0, 0, 0, .5); }
+  .b1-step.is-on span { color: var(--accent); }
+  .b1-health { display: flex; align-items: center; gap: 14px; }
+  .seal { position: relative; display: grid; place-items: center; width: 98px; height: 98px; border-radius: 50%; background: conic-gradient(var(--accent) calc(var(--v) * 1%), #2c2c32 0); }
+  .seal::before { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--s1); }
+  .seal img { position: absolute; width: 46px; height: 46px; top: 10px; border-radius: 50%; object-fit: cover; }
+  .seal b { position: relative; margin-top: 44px; font: 700 15px/1 var(--mono); }
+  .b1-health .txt { display: grid; gap: 6px; }
+  .b1-health .txt span { font: 500 10.5px/1 var(--mono); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+  .b1-health .txt a { display: inline-flex; align-items: center; gap: 8px; color: var(--text); font: 500 14px/1.2 var(--sans); text-decoration: none; }
+  .b1-health .txt a i { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+
+  /* ======================================================================================================================
+     B2 · THE SWATCH BOOK: the panel takes the brand's own colours; its rooms are swatch cards fanned like a Pantone book
+     ====================================================================================================================== */
+  .b2 { position: absolute; left: 16px; top: 86px; bottom: 16px; width: 300px; display: flex; flex-direction: column; padding: 22px 18px 18px; border-radius: 26px; background: radial-gradient(120% 60% at 10% 0%, rgba(154, 223, 200, .14), transparent 60%), var(--ground); box-shadow: inset 0 0 0 1px rgba(255, 243, 220, .1); color: var(--light); }
+  .b2-top { display: grid; gap: 10px; }
+  .b2-top span { font: 500 10.5px/1 var(--mono); letter-spacing: .24em; text-transform: uppercase; color: rgba(255, 243, 220, .55); }
+  .b2-top button { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0; border: 0; background: none; cursor: pointer; }
+  .b2-top button img { width: 210px; }
+  .b2-top button svg { width: 18px; height: 18px; color: rgba(255, 243, 220, .6); }
+  .b2-fan { position: relative; display: flex; flex-direction: column; margin-top: 30px; }
+  .b2-card { --c: var(--light); --t: var(--ground); position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 76px; grid-template-rows: minmax(0, 1fr) auto; width: 252px; height: 132px; margin-top: -12px; padding: 0; border: 0; border-radius: 14px; background: var(--c); color: var(--t); cursor: pointer; text-align: left; overflow: hidden;
+    box-shadow: 0 -1px 0 rgba(255, 255, 255, .25) inset, 0 8px 18px rgba(0, 0, 0, .35); transform: rotate(var(--r, 0deg)); transform-origin: 20% 50%; transition: transform .25s var(--ease), box-shadow .25s; }
+  .b2-card:first-child { margin-top: 0; }
+  .b2-card img { grid-column: 2; grid-row: 1 / -1; align-self: center; width: 72px; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .3)); }
+  .b2-card .face { grid-column: 1; grid-row: 1; padding: 12px 0 0 14px; }
+  .b2-card .face span { font: 700 10.5px/1 var(--mono); letter-spacing: .18em; opacity: .7; }
+  .b2-card .face b { display: block; margin-top: 6px; font: 800 19px/1.05 var(--sans); }
+  .b2-card .chip { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; justify-content: space-between; padding: 7px 14px; background: rgba(255, 255, 255, .92); color: #2a2a2a; font: 600 10.5px/1 var(--mono); letter-spacing: .08em; }
+  .b2-card:hover { transform: rotate(var(--r, 0deg)) translateX(8px); z-index: 3; }
+  .b2-card.is-on { z-index: 4; transform: rotate(0deg) translateX(34px); box-shadow: 0 0 0 2px var(--accent), 0 18px 34px rgba(0, 0, 0, .55); }
+  .b2-seal { margin-top: auto; display: flex; align-items: center; gap: 14px; padding-top: 18px; border-top: 1px solid rgba(255, 243, 220, .14); }
+  .b2-seal .seal { width: 92px; height: 92px; background: conic-gradient(var(--signal) calc(var(--v) * 1%), rgba(255, 243, 220, .16) 0); }
+  .b2-seal .seal::before { background: var(--ground); }
+  .b2-seal ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font: 500 13px/1.25 var(--sans); }
+  .b2-seal li { display: flex; align-items: center; gap: 8px; }
+  .b2-seal li i { width: 8px; height: 8px; border-radius: 50%; background: var(--signal); }
+  .b2-seal li.ok i { background: var(--second); }
+
+  /* ======================================================================================================================
+     B3 · THE DOCK: the five rooms as their pictures in a floating dock (they grow under the pointer), the brand and its health at its ends
+     ====================================================================================================================== */
+  .b3 { position: absolute; left: 20px; top: 50%; transform: translateY(-48%); width: 92px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 0; border: 1px solid var(--line2); border-radius: 46px; background: rgba(28, 28, 32, .94); backdrop-filter: blur(10px); box-shadow: var(--float); }
+  .b3-brand { position: relative; width: 64px; height: 64px; border-radius: 20px; background: var(--ground) url("panels/icon-teal.webp") center / cover; box-shadow: 0 0 0 2px rgba(255, 243, 220, .2); margin-bottom: 8px; cursor: pointer; }
+  .b3-room { position: relative; display: grid; place-items: center; width: 76px; height: 76px; border: 0; border-radius: 24px; background: transparent; cursor: pointer; transition: background .15s; }
+  .b3-room img { width: 62px; height: 62px; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .5)); transition: transform .22s var(--ease); }
+  .b3-room em { position: absolute; left: 8px; top: 8px; font: 700 10px/1 var(--mono); font-style: normal; color: var(--dim); }
+  .b3-room:hover img { transform: scale(1.22) translateX(6px); }
+  .b3-room.is-on { background: var(--s3); box-shadow: inset 0 0 0 2px var(--accent); }
+  .b3-room.is-on em { color: var(--accent); }
+  .b3-room .tip, .b3-brand .tip, .b3 .seal .tip { left: calc(100% + 18px); top: 50%; transform: translate(-4px, -50%); }
+  .b3-room:hover .tip, .b3-brand:hover .tip, .b3 .seal:hover .tip { opacity: 1; transform: translate(0, -50%); }
+  .b3-hr { width: 44px; height: 1px; margin: 6px 0; background: var(--line2); }
+  .b3 .seal { width: 70px; height: 70px; }
+  .b3 .seal::before { inset: 5px; background: rgb(28, 28, 32); }
+  .b3 .seal img { width: 34px; height: 34px; top: 8px; }
+  .b3 .seal b { margin-top: 34px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <span class="eyebrow">Comfyture lab · assistant panels</span>
+      <h1>Truffle's and Brioche's panels</h1>
+      <p class="lede">Three directions for each, drawn live at the app's real size over its real page (laid out for the room each direction leaves it). Click a workspace in any of them to move between rooms, point at the icons for their words. Choose one for each: your choice is kept in this browser and shown at the top right.</p>
+    </div>
+    <div class="picks" id="picks"></div>
+  </header>
+
+  <section class="who" data-who="truffle">
+    <div class="who-head"><img src="../brand/cast/truffle-face.webp" alt=""><div><h2>Truffle · Utensils</h2><p>The way into the seven workspaces and the Library, what is running, what was made.</p></div></div>
+
+    <article class="opt" data-id="T1">
+      <div class="opt-head"><span class="tag">T1</span><h3>The pile</h3><p>Left, but a slim rail of books lying flat, one per workspace, spines out, bound like the Library's. The open one slides out toward the page. Truffle on top with what is running as a ring around her; the latest results as a little stack of photos.</p><button class="choose" type="button">Choose</button></div>
+      <div class="stage"><div class="canvas" style="--bgimg: url('panels/bg-t1.webp')">
+        <aside class="t1">
+          <div class="t1-pet"><div class="t1-face" style="--q: 64%"><img src="../brand/cast/truffle.png" alt=""><i></i></div><span class="t1-say"><b>2</b> running · 6 cr</span></div>
+          <div class="t1-pile" data-group>
+            <button class="t1-book" data-ws style="--c: var(--home); --hh: 44px; --off: 4px"><svg class="ico"><use href="../icons/icons.svg#tool-home"/></svg>Home<em></em></button>
+            <button class="t1-book is-on" data-ws style="--c: var(--shelf); --hh: 50px"><svg class="ico"><use href="../icons/icons.svg#tool-shelf"/></svg>Shelf<em>41</em></button>
+            <button class="t1-book" data-ws style="--c: var(--picture); --hh: 46px; --off: 6px"><svg class="ico"><use href="../icons/icons.svg#image-library"/></svg>Picture<em>04</em></button>
+            <button class="t1-book" data-ws style="--c: var(--video); --hh: 48px; --off: 1px"><svg class="ico"><use href="../icons/icons.svg#film-make"/></svg>Video<em>04</em></button>
+            <button class="t1-book" data-ws style="--c: var(--audio); --hh: 52px; --off: 5px"><svg class="ico"><use href="../icons/icons.svg#audio-music"/></svg>Audio<em>09</em></button>
+            <button class="t1-book" data-ws style="--c: var(--vfx); --hh: 46px; --off: 2px"><svg class="ico"><use href="../icons/icons.svg#tool-vfx"/></svg>VFX<em>11</em></button>
+            <button class="t1-book" data-ws style="--c: var(--edit); --hh: 50px; --off: 7px"><svg class="ico"><use href="../icons/icons.svg#tool-edit"/></svg>Edit<em>12</em></button>
+            <button class="t1-book t1-lib" data-ws title="Opens in front of the page"><svg class="ico"><use href="../icons/icons.svg#tool-templates"/></svg>Library<em>668</em></button>
+          </div>
+          <div class="t1-foot">
+            <div class="t1-photos"><img src="panels/recent-bottle.webp" alt=""><img src="panels/recent-cover.webp" alt=""><img src="panels/recent-taro.webp" alt=""></div>
+            <div class="t1-queue"><b>Recent</b> · 3 of 12</div>
+          </div>
+        </aside>
+      </div></div>
+    </article>
+
+    <article class="opt" data-id="T2">
+      <div class="opt-head"><span class="tag">T2</span><h3>The ledge</h3><p>No panel: one band across the top, so every workspace gets the whole width. Truffle speaks at its left (what she would ask in this room), the workspaces stand on a ledge as tabs in their colours, the Library apart, and at its right what is running and the latest results.</p><button class="choose" type="button">Choose</button></div>
+      <div class="stage"><div class="canvas" style="--bgimg: url('panels/bg-t2.webp')">
+        <div class="t2">
+          <div class="t2-pet"><img src="../brand/cast/truffle.png" alt=""><div class="t2-say"><span>Truffle · shelf keeper</span><b>Which book do you need today?</b></div></div>
+          <nav class="t2-ledge" data-group>
+            <button class="t2-tab" data-ws style="--c: var(--home)"><svg class="ico"><use href="../icons/icons.svg#tool-home"/></svg><b>Home</b><em>start</em></button>
+            <button class="t2-tab is-on" data-ws style="--c: var(--shelf)"><svg class="ico"><use href="../icons/icons.svg#tool-shelf"/></svg><b>Shelf</b><em>41 tools</em></button>
+            <span class="t2-sep"></span>
+            <button class="t2-tab" data-ws style="--c: var(--picture)"><svg class="ico"><use href="../icons/icons.svg#image-library"/></svg><b>Picture</b><em>04</em></button>
+            <button class="t2-tab" data-ws style="--c: var(--video)"><svg class="ico"><use href="../icons/icons.svg#film-make"/></svg><b>Video</b><em>04</em></button>
+            <button class="t2-tab" data-ws style="--c: var(--audio)"><svg class="ico"><use href="../icons/icons.svg#audio-music"/></svg><b>Audio</b><em>09</em></button>
+            <button class="t2-tab" data-ws style="--c: var(--vfx)"><svg class="ico"><use href="../icons/icons.svg#tool-vfx"/></svg><b>VFX</b><em>11</em></button>
+            <button class="t2-tab" data-ws style="--c: var(--edit)"><svg class="ico"><use href="../icons/icons.svg#tool-edit"/></svg><b>Edit</b><em>12</em></button>
+            <span class="t2-sep"></span>
+            <button class="t2-tab t2-lib" data-ws title="Opens in front of the page"><svg class="ico"><use href="../icons/icons.svg#tool-templates"/></svg><b>Library</b><em>668 workflows</em></button>
+          </nav>
+          <div class="t2-status">
+            <div class="t2-ring" style="--q: 64%"><b>64%</b></div>
+            <div class="txt"><b>2 running</b><span>6 cr today</span></div>
+            <div class="t2-film"><img src="panels/recent-taro.webp" alt=""><img src="panels/recent-cover.webp" alt=""><img src="panels/recent-bottle.webp" alt=""></div>
+          </div>
+        </div>
+      </div></div>
+    </article>
+
+    <article class="opt" data-id="T3">
+      <div class="opt-head"><span class="tag">T3</span><h3>The toolbelt</h3><p>A slim floating capsule of icons, each with its workspace's colour, the words in tooltips (point at them); Truffle at its top with what is running as a ring. The page keeps nearly all its width.</p><button class="choose" type="button">Choose</button></div>
+      <div class="stage"><div class="canvas" style="--bgimg: url('panels/bg-t3.webp')">
+        <nav class="t3" data-group>
+          <div class="t3-face" style="--q: 64%"><img src="../brand/cast/truffle.png" alt=""><span class="tip"><b>Truffle</b><span>2 running · 64% · 6 cr today</span></span></div>
+          <button class="t3-btn is-plain" data-ws><svg class="ico"><use href="../icons/icons.svg#tool-home"/></svg><span class="tip"><b>Home</b><span>What every workspace does</span></span></button>
+          <button class="t3-btn is-plain is-on" data-ws><svg class="ico"><use href="../icons/icons.svg#tool-shelf"/></svg><span class="tip"><b>Shelf</b><em>41 tools</em><span>Every tool, a book each</span></span></button>
+          <span class="t3-hr"></span>
+          <button class="t3-btn" data-ws style="--c: var(--picture)"><svg class="ico"><use href="../icons/icons.svg#image-library"/></svg><span class="tip"><b>Picture</b><em>4 tools</em><span>Upscale, cut out, vary, edit</span></span></button>
+          <button class="t3-btn" data-ws style="--c: var(--video)"><svg class="ico"><use href="../icons/icons.svg#film-make"/></svg><span class="tip"><b>Video</b><em>4 tools</em><span>Extend, lip-sync, sound, upscale</span></span></button>
+          <button class="t3-btn" data-ws style="--c: var(--audio)"><svg class="ico"><use href="../icons/icons.svg#audio-music"/></svg><span class="tip"><b>Audio</b><em>9 tools</em><span>Music, voice, stems, master</span></span></button>
+          <button class="t3-btn" data-ws style="--c: var(--vfx)"><svg class="ico"><use href="../icons/icons.svg#tool-vfx"/></svg><span class="tip"><b>VFX</b><em>11 tools</em><span>Remove, relight, restyle, weather</span></span></button>
+          <button class="t3-btn" data-ws style="--c: var(--edit)"><svg class="ico"><use href="../icons/icons.svg#tool-edit"/></svg><span class="tip"><b>Edit</b><em>12 tools · free</em><span>Trim, crop, captions, convert</span></span></button>
+          <span class="t3-hr"></span>
+          <button class="t3-btn" data-ws style="--c: var(--library)"><svg class="ico"><use href="../icons/icons.svg#tool-templates"/></svg><span class="tip"><b>Library</b><em>668 workflows</em><span>Opens in front of the page</span></span></button>
+          <span class="t3-hr"></span>
+          <div class="t3-recent"><img src="panels/recent-taro.webp" alt=""><img src="panels/recent-cover.webp" alt=""></div>
+        </nav>
+      </div></div>
+    </article>
+  </section>
+
+  <section class="who" data-who="brioche">
+    <div class="who-head"><img src="../brand/cast/brioche-face.webp" alt=""><div><h2>Brioche · Macaron</h2><p>The brand open, the five rooms of the work on it, and how ready the brand is.</p></div></div>
+
+    <article class="opt" data-id="B1">
+      <div class="opt-head"><span class="tag">B1</span><h3>The brand passport</h3><p>No panel: the brand itself across the top (its logo on its light, its name to switch, its palette), its five rooms as a journey from idea to book with how far each has come, and its health as a seal with Brioche in it and the first thing to look at.</p><button class="choose" type="button">Choose</button></div>
+      <div class="stage"><div class="canvas" style="--bgimg: url('panels/bg-b1.webp')">
+        <div class="b1">
+          <div class="b1-brand">
+            <div class="b1-logo"><img src="panels/mark-teal.webp" alt=""></div>
+            <div class="b1-name"><button type="button">Little Otter Tea<svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+              <div class="b1-swatches"><i style="background: var(--ground)"></i><i style="background: var(--light)"></i><i style="background: var(--signal)"></i><i style="background: var(--second)"></i></div>
+              <small>4 colours · Manrope · IBM Plex Mono</small></div>
+          </div>
+          <nav class="b1-journey" data-group>
+            <button class="b1-step" data-ws><img src="../brand/macaron/tile-idea.webp" alt=""><span>01</span><b>Design idea</b><span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></button>
+            <button class="b1-step is-on" data-ws><img src="../brand/macaron/tile-kit.webp" alt=""><span>02</span><b>Brand kit</b><span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></button>
+            <button class="b1-step" data-ws><img src="../brand/macaron/tile-content.webp" alt=""><span>03</span><b>Studio</b><span class="bar"><i class="on"></i><i class="on"></i><i></i><i></i></span></button>
+            <button class="b1-step" data-ws><img src="../brand/macaron/tile-create.webp" alt=""><span>04</span><b>Create</b><span class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></button>
+            <button class="b1-step" data-ws><img src="../brand/macaron/tile-book.webp" alt=""><span>05</span><b>Brand book</b><span class="bar"><i class="on"></i><i></i><i></i><i></i></span></button>
+          </nav>
+          <div class="b1-health">
+            <div class="seal" style="--v: 86"><img src="../brand/cast/brioche-face.webp" alt=""><b>86%</b></div>
+            <div class="txt"><span>Brand health</span><a href="#"><i></i>2 posts to review</a><a href="#"><i></i>1 flagged by the guard</a></div>
+          </div>
+        </div>
+      </div></div>
+    </article>
+
+    <article class="opt" data-id="B2">
+      <div class="opt-head"><span class="tag">B2</span><h3>The swatch book</h3><p>Left, but it wears the brand: the panel is the brand's own ground colour with its wordmark on top, the five rooms are swatch cards in the brand's colours fanned like a Pantone book (the open one pulled out toward the page), and the health is a seal at its foot. Another brand, another panel.</p><button class="choose" type="button">Choose</button></div>
+      <div class="stage"><div class="canvas" style="--bgimg: url('panels/bg-b2.webp')">
+        <aside class="b2">
+          <div class="b2-top"><span>Brand room · Brioche</span><button type="button"><img src="panels/wordmark-cream.webp" alt="Little Otter Tea"><svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></div>
+          <div class="b2-fan" data-group>
+            <button class="b2-card" data-ws style="--c: var(--light); --t: var(--ground); --r: -2deg"><span class="face"><span>01</span><b>Design idea</b></span><img src="../brand/macaron/tile-idea.webp" alt=""><span class="chip"><span>LOT · FFF3DC</span><span>07</span></span></button>
+            <button class="b2-card is-on" data-ws style="--c: var(--second); --t: var(--ground); --r: 1.5deg"><span class="face"><span>02</span><b>Brand kit</b></span><img src="../brand/macaron/tile-kit.webp" alt=""><span class="chip"><span>LOT · 9ADFC8</span><span>09</span></span></button>
+            <button class="b2-card" data-ws style="--c: var(--signal); --t: #3a1a05; --r: -1deg"><span class="face"><span>03</span><b>Studio</b></span><img src="../brand/macaron/tile-content.webp" alt=""><span class="chip"><span>LOT · FF8A3D</span><span>09</span></span></button>
+            <button class="b2-card" data-ws style="--c: #1d6670; --t: var(--light); --r: 2deg"><span class="face"><span>04</span><b>Create</b></span><img src="../brand/macaron/tile-create.webp" alt=""><span class="chip"><span>LOT · 1D6670</span><span>14</span></span></button>
+            <button class="b2-card" data-ws style="--c: #f6d9b0; --t: var(--ground); --r: -1.5deg"><span class="face"><span>05</span><b>Brand book</b></span><img src="../brand/macaron/tile-book.webp" alt=""><span class="chip"><span>LOT · F6D9B0</span><span>08</span></span></button>
+          </div>
+          <div class="b2-seal">
+            <div class="seal" style="--v: 86"><img src="../brand/cast/brioche-face.webp" alt=""><b>86%</b></div>
+            <ul><li><i></i>2 posts to review</li><li><i></i>1 flagged by the guard</li><li class="ok"><i></i>Brief 7 of 7</li></ul>
+          </div>
+        </aside>
+      </div></div>
+    </article>
+
+    <article class="opt" data-id="B3">
+      <div class="opt-head"><span class="tag">B3</span><h3>The dock</h3><p>A floating dock of the five rooms as their pictures, which grow under the pointer (their names in tooltips); the brand's icon at its top to switch brands, the health seal with Brioche at its foot. The board keeps nearly all the page.</p><button class="choose" type="button">Choose</button></div>
+      <div class="stage"><div class="canvas" style="--bgimg: url('panels/bg-b3.webp')">
+        <nav class="b3" data-group>
+          <div class="b3-brand"><span class="tip"><b>Little Otter Tea</b><span>Switch brand</span></span></div>
+          <button class="b3-room" data-ws><img src="../brand/macaron/tile-idea.webp" alt=""><em>01</em><span class="tip"><b>Design idea</b><em>7 ready</em><span>Brief, directions, moodboard</span></span></button>
+          <button class="b3-room is-on" data-ws><img src="../brand/macaron/tile-kit.webp" alt=""><em>02</em><span class="tip"><b>Brand kit</b><em>9 parts</em><span>Palette, logos, type, voice, rules</span></span></button>
+          <button class="b3-room" data-ws><img src="../brand/macaron/tile-content.webp" alt=""><em>03</em><span class="tip"><b>Studio</b><em>9 pieces</em><span>Product, shoots, UGC, motion</span></span></button>
+          <button class="b3-room" data-ws><img src="../brand/macaron/tile-create.webp" alt=""><em>04</em><span class="tip"><b>Create</b><em>14 designs</em><span>Posts, flyers, banners, mockups</span></span></button>
+          <button class="b3-room" data-ws><img src="../brand/macaron/tile-book.webp" alt=""><em>05</em><span class="tip"><b>Brand book</b><em>8 pages</em><span>The guidelines, exported</span></span></button>
+          <span class="b3-hr"></span>
+          <div class="seal" style="--v: 86"><img src="../brand/cast/brioche-face.webp" alt=""><b>86%</b><span class="tip"><b>Brand health · 86%</b><span>2 posts to review · 1 flagged by the guard</span></span></div>
+        </nav>
+      </div></div>
+    </article>
+  </section>
+</div>
+<script>
+  // the stages scale the 1920 x 1200 screen to the page
+  const fit = () => document.querySelectorAll(".stage").forEach((s) => s.firstElementChild.style.setProperty("--k", String(s.clientWidth / 1920)));
+  new ResizeObserver(fit).observe(document.body);
+  fit();
+  // a workspace clicked is the one open, in its own direction
+  document.querySelectorAll("[data-group]").forEach((g) => g.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-ws]");
+    if (!b || !g.contains(b)) return;
+    g.querySelectorAll("[data-ws]").forEach((x) => x.classList.toggle("is-on", x === b));
+  }));
+  // the choices, kept in this browser
+  const KEY = "comfyture.lab.panels";
+  const read = () => { try { return JSON.parse(localStorage.getItem(KEY) ?? "{}"); } catch { return {}; } };
+  const draw = () => {
+    const p = read();
+    document.getElementById("picks").innerHTML = `<div><span>Truffle</span> ${p.truffle ?? "–"}</div><div><span>Brioche</span> ${p.brioche ?? "–"}</div>`;
+    document.querySelectorAll(".opt").forEach((o) => {
+      const who = o.closest(".who").dataset.who;
+      o.classList.toggle("is-chosen", p[who] === o.dataset.id);
+      o.querySelector(".choose").textContent = p[who] === o.dataset.id ? "Chosen" : "Choose";
+    });
+  };
+  document.querySelectorAll(".choose").forEach((b) => b.addEventListener("click", () => {
+    const o = b.closest(".opt");
+    const p = read();
+    p[o.closest(".who").dataset.who] = o.dataset.id;
+    try { localStorage.setItem(KEY, JSON.stringify(p)); } catch {}
+    draw();
+  }));
+  draw();
+</script>
+</body>
+</html>
