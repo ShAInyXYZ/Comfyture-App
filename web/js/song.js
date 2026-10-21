@@ -23,7 +23,24 @@ export const SIGNATURES = [
 /** How long the song runs, in seconds: it sets the length of the latent and the duration the text node is told. */
 /** (A short song with a short prompt comes out poorly: a full one is made, 200 s as the Superior workflow's own latent, and the best part is cut from it later.) */
 export const LENGTHS = [30, 60, 120, 200, 240];
-export const DEFAULT_SONG = { seconds: 200, bpm: 140, key: "A minor", signature: "4", language: "en", structure: "pop" };
+export const DEFAULT_SONG = { seconds: 200, bpm: 140, key: "A minor", signature: "4", language: "en", structure: "pop", passes: 3, temperature: 0.75, adherence: 2.5, thinking: true, seed: 0 };
+
+/** The twelve notes and the two modes a key is chosen from (the model names them "A minor", "C# major"). */
+export const PITCHES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+export const MODES = ["major", "minor"];
+export const noteOf = (key) => key.split(" ")[0].replace("Db", "C#").replace("Eb", "D#").replace("Gb", "F#").replace("Ab", "G#").replace("Bb", "A#");
+export const modeOf = (key) => (key.endsWith("major") ? "major" : "minor");
+
+/** Words a style is built from, a press adds or takes away: each lands in the style's tags. */
+export const STYLE_WORDS = [
+  ["Genre", ["lo-fi hip hop", "pop", "indie pop", "K-pop", "city pop", "R&B", "hip-hop", "trap", "rock", "EDM", "house", "synthwave", "jazz", "bossa nova", "folk", "cinematic"]],
+  ["Mood", ["dreamy", "chill", "cozy", "playful", "energetic", "romantic", "melancholic", "dark", "uplifting", "nostalgic", "epic"]],
+  ["Sound", ["soft Rhodes", "piano", "acoustic guitar", "electric guitar", "synth pads", "808 bass", "slap bass", "strings", "brass stabs", "tight drums", "vinyl crackle", "handclaps"]],
+  ["Voice", ["female vocal", "male vocal", "duet vocals", "gang vocal chant", "breathy", "rapid-fire rap", "raw human voice, no autotune"]],
+];
+
+/** How a song is made: a draft is the first pass alone, the full song the first pass and two refinements of it. */
+export const QUALITY = [[1, "Draft", "the first pass alone: quicker, cheaper"], [3, "Full", "three passes: what the XL is at its best"]];
 export const MAX_SECONDS = 240;
 export const lengthLabel = (s) => (s < 60 ? `${s} s` : s % 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : `${s / 60} min`);
 
@@ -47,4 +64,4 @@ export const skeleton = (id) => (STRUCTURES.find((s) => s.id === id)?.sections ?
 export const isTag = (line) => /^\s*\[[^\]]+\]\s*$/.test(line);
 
 /** What the key that makes the song shows, roughly: Comfy Cloud bills a GPU second at 0.266 credits and the XL takes about a second and a bit of them a second of music (three passes), with a little over for loading. */
-export const costOfSong = (seconds) => Math.max(3, Math.round((1.1 * seconds + 12) * 0.266));
+export const costOfSong = (seconds, passes = 3) => Math.max(3, Math.round(((passes === 1 ? 0.55 : 1.1) * seconds + 12) * 0.266));

@@ -830,7 +830,7 @@ export class Engine extends EventEmitter {
    * Music (ACE-Step 1.5) or a sound effect (Stable Audio 3 small SFX) from words, tracked like a
    * paint job; keep() stores what it made in the audio library.
    */
-  audioJob(kind: "music" | "song" | "sfx", v: { prompt: string; seconds: number; lyrics?: string; bpm?: number; seed: number; key?: string; language?: string; timesignature?: string }, keep: (bytes: Buffer) => Promise<Paint["audio"]>): Paint {
+  audioJob(kind: "music" | "song" | "sfx", v: { prompt: string; seconds: number; lyrics?: string; bpm?: number; seed: number; key?: string; language?: string; timesignature?: string; passes?: number; temperature?: number; adherence?: number; thinking?: boolean }, keep: (bytes: Buffer) => Promise<Paint["audio"]>): Paint {
     const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
     this.paints.set(job.id, job);
     const emit = () => this.emit("paint", job);
@@ -839,11 +839,17 @@ export class Engine extends EventEmitter {
         const graph = await loadGraph(this.dirs.workflows, kind === "music" ? "audio/music.json" : kind === "song" ? "audio/song.json" : "audio/sfx.json");
         if (kind === "song") {
           // ACE-Step 1.5 XL in three passes: the first from nothing, the two after light refinements of it
-          Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 140), keyscale: v.key ?? "A minor", language: v.language ?? "en", timesignature: v.timesignature ?? "4" });
+          Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 140), keyscale: v.key ?? "A minor", language: v.language ?? "en", timesignature: v.timesignature ?? "4", temperature: v.temperature ?? 0.75, cfg_scale: v.adherence ?? 2.5, generate_audio_codes: v.thinking ?? true });
           graph.latent.inputs.seconds = v.seconds;
           graph.first.inputs.seed = v.seed;
           graph.second.inputs.seed = v.seed + 1;
           graph.third.inputs.seed = v.seed + 2;
+          // a draft is the first pass alone
+          if (v.passes === 1) {
+            graph.decode.inputs.samples = ["first", 0];
+            delete graph.second;
+            delete graph.third;
+          }
         } else if (kind === "music") {
           Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 100) });
           Object.assign(graph.latent.inputs, { seconds: v.seconds });

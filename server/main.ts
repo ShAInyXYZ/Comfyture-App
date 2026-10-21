@@ -1019,7 +1019,12 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       key: KEYS.includes(input.key) ? input.key : DEFAULT_SONG.key,
       language: LANGUAGES.some((l) => l.value === input.language) ? input.language : "en",
       timesignature: SIGNATURES.some((s) => s.value === String(input.timesignature)) ? String(input.timesignature) : "4",
-      seed: randomBytes(4).readUInt32BE(0),
+      passes: input.passes === 1 ? 1 : 3,
+      temperature: Math.min(1.2, Math.max(0.3, Number(input.temperature) || DEFAULT_SONG.temperature)),
+      adherence: Math.min(6, Math.max(1, Number(input.adherence) || DEFAULT_SONG.adherence)),
+      thinking: input.thinking !== false,
+      // (a seed that is kept makes the same song again from the same words)
+      seed: Number.isInteger(input.seed) && input.seed > 0 ? Math.min(input.seed, 2 ** 32 - 4) : randomBytes(4).readUInt32BE(0) % (2 ** 32 - 4),
     }, async (bytes) => {
       const kept = await keepAudio(bytes, ".mp3", { name, kind: "music", prompt: tags });
       return { file: kept.file, url: kept.url, seconds: kept.seconds, name: kept.name, kind: kept.kind };
