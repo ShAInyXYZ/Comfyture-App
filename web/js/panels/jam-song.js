@@ -8,7 +8,7 @@ import { dropdown } from "../controls.js";
 import { KEYS, LANGUAGES, SIGNATURES, LENGTHS, DEFAULT_SONG, lengthLabel, SECTIONS, STRUCTURES, skeleton, costOfSong } from "../song.js";
 import { jicon, pickFile, cr } from "./jam-ui.js";
 
-const STORE = "comfyture.jam.song";
+const STORE = "comfyture.jam.song.2";
 const MINE = ["idea", "structure", "tags", "lyrics", "seconds", "language", "key", "bpm", "signature", "name"];
 const song = { idea: "", tags: "", lyrics: "", name: "", ...DEFAULT_SONG, writing: false, making: false, made: [], loaded: false };
 try {
