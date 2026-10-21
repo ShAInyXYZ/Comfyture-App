@@ -84,8 +84,9 @@ test("the bar asks and offers what fits the room that is open", () => {
   assert.equal(roomOf("jam"), Object.keys(HARNESSES.jam.placeholders)[0], "Jam opens on its first workspace");
   assert.equal(roomOf("macaron"), "create");
   assert.deepEqual(Object.keys(HARNESSES.macaron.placeholders), ["idea", "kit", "studio", "create", "book"], "Macaron's five workspaces");
-  assert.equal(roomOf("utensils"), "shelf");
-  assert.deepEqual(Object.keys(HARNESSES.utensils.placeholders), ["shelf", "picture", "video", "audio", "vfx", "edit", "templates"], "Utensils' seven workspaces");
+  assert.equal(roomOf("utensils"), "home", "Utensils opens on its Home");
+  assert.deepEqual(Object.keys(HARNESSES.utensils.placeholders), ["home", "shelf", "picture", "video", "audio", "vfx", "edit", "templates"], "Utensils' eight workspaces, Home first");
+  assert.equal(HARNESSES.utensils.placeholders.home, "Ask Truffle — what do you want to make or fix?");
   const heard: string[] = [];
   onRoom((product, room) => heard.push(`${product}:${room}`));
   setRoom("jam", "words");
@@ -240,7 +241,7 @@ test("Truffle is told the tools, the one open and what it holds, and the library
   assert.ok(utensilsPrompt({ ...UTENSILS, open: { ...UTENSILS.open, ready: true, cost: null }, busy: true }, []).includes("own machine"));
 });
 
-test("Truffle knows the seven workspaces: she opens one, opens another's tool by id, and sets what a tool declares", () => {
+test("Truffle knows the eight workspaces: she opens one, opens another's tool by id, and sets what a tool declares", () => {
   const summary: any = {
     ...UTENSILS,
     workspace: "picture",
@@ -270,6 +271,31 @@ test("Truffle knows the seven workspaces: she opens one, opens another's tool by
   const declared = { ...summary, open: null, tools: [{ id: "grade", workspace: "edit", name: "Grade", takes: ["video"], options: [{ key: "warmth", type: "range", min: -10, max: 10 }, { key: "look", type: "choice", values: ["noir", "warm"] }, { key: "keep_audio", type: "flag" }, { key: "seconds", type: "range", min: 1, max: 5 }] }] };
   const set = readUtensilsAnswer(say([{ op: "pick_tool", tool: "grade" }, { op: "set_input", video: "take1", options: { warmth: 99, look: "sepia", keep_audio: true, nonsense: 1 }, seconds: 9 }]), declared);
   assert.deepEqual(set.actions[1], { op: "set_input", video: "take1", seconds: 5, options: { warmth: 10, keep_audio: true } });
+});
+
+test("on Home Truffle is told the workspaces with their counts, the queue and the newest results, and no tool is described", () => {
+  const summary: any = {
+    workspace: "home",
+    workspaces: [{ id: "home", name: "Home" }, { id: "shelf", tools: 41 }, { id: "picture", tools: 4 }, { id: "video", tools: 4 }, { id: "audio", tools: 9 }, { id: "vfx", tools: 11 }, { id: "edit", tools: 12 }, { id: "templates", tools: 674 }],
+    tools: [],
+    // the tools are named by id and name only, to open when the job is named
+    others: [{ id: "upscale", workspace: "picture", name: "Upscale", takes: ["image"] }, { id: "ed-trim", workspace: "edit", name: "Trim", takes: ["video"] }],
+    apps: [{ id: "app-bg-remove", name: "Remove background", takes: ["image"] }],
+    open: null,
+    queue: [{ tool: "upscale-video", status: "running", progress: 0.72 }],
+    results: [{ tool: "cutout", kind: "image", ago: "2m" }],
+    library: UTENSILS.library,
+  };
+  const text = utensilsPrompt(summary, [{ role: "user", text: "trim my latest clip to 3 seconds" }]);
+  for (const piece of ["WORKSPACE OPEN: home.", "THE WORKSPACES: home, shelf (41), picture (4), video (4), audio (9), vfx (11), edit (12), templates (674).", "HOME shows every workspace's tools as pictures. Nothing is open.", "THE QUEUE: upscale-video running 72%", "NEWEST RESULTS: cutout (image, 2m)", "NO TOOL IS OPEN", "ed-trim · edit · Trim · a clip"]) assert.ok(text.includes(piece), piece);
+  assert.ok(!text.includes("THE TOOLS OF HOME"), "no tool is described on Home");
+  assert.ok(!text.includes("(id · workspace · what it does · what it takes · words · settings)"), "Home has no list of tools in full");
+  assert.ok(!text.includes("home (0)"), "Home has no count");
+  // she can go home, and open a tool by its id from there
+  const out = readUtensilsAnswer(say([{ op: "pick_workspace", workspace: "home" }, { op: "pick_tool", tool: "ed-trim" }, { op: "set_input", video: "take1" }]), summary);
+  assert.deepEqual(out.actions, [{ op: "pick_workspace", workspace: "home" }, { op: "pick_tool", tool: "ed-trim" }, { op: "set_input", video: "take1" }]);
+  assert.ok(UTENSILS_BRIEF.includes("home (where it opens"), "her brief names Home");
+  assert.ok(UTENSILS_TOOL.input_schema.properties.actions.items.properties.workspace.enum.includes("home"), "pick_workspace accepts home");
 });
 
 test("Truffle's answer: a tool opened, its input from the library, its words and settings, run_tool once and last", () => {

@@ -1,13 +1,14 @@
-// Utensils' screen. On the left Truffle's panel: who she is, the seven workspaces the shelf is organised in, the queue of what is
+// Utensils' screen. On the left Truffle's panel: who she is, the eight workspaces the shelf is organised in, the queue of what is
 // running and the latest results. Beside it the open workspace, a grid of bentos filling the page (each workspace is a module,
 // web/js/utensils-space-<id>.js, made once and kept: { el, update, sig, count? }). Her bar docks at the foot of the page.
 import { h, icon, sprite, ago } from "../dom.js";
 import { changed } from "../store.js";
 import { currentPage } from "../router.js";
-import { utensils, shelfTools, setWorkspace, toolsOf, toolById, creditsToday, openResult, cancelJob, give } from "../utensils.js";
+import { utensils, shelfTools, setWorkspace, toolsOf, toolById, creditsToday, openResult, cancelJob, give, arrive } from "../utensils.js";
 import { TRUFFLE, WORKSPACES } from "../utensils-harness.js";
 import { setRoom } from "../harnesses.js";
-import { shelfSpace, templatesTotal } from "../utensils-space-shelf.js";
+import { shelfSpace, templatesTotal, loadTemplatesTotal } from "../utensils-space-shelf.js";
+import { homeSpace } from "../utensils-space-home.js";
 import { pictureSpace } from "../utensils-space-picture.js";
 import { videoSpace } from "../utensils-space-video.js";
 import { audioSpace } from "../utensils-space-audio.js";
@@ -15,7 +16,7 @@ import { vfxSpace } from "../utensils-space-vfx.js";
 import { editSpace } from "../utensils-space-edit.js";
 import { templatesSpace } from "../utensils-space-templates.js";
 
-const MAKERS = { shelf: shelfSpace, picture: pictureSpace, video: videoSpace, audio: audioSpace, vfx: vfxSpace, edit: editSpace, templates: templatesSpace };
+const MAKERS = { home: homeSpace, shelf: shelfSpace, picture: pictureSpace, video: videoSpace, audio: audioSpace, vfx: vfxSpace, edit: editSpace, templates: templatesSpace };
 const time = (s) => `${Math.floor((s ?? 0) / 60)}:${String(Math.floor((s ?? 0) % 60)).padStart(2, "0")}`;
 
 // made once and kept: the workspaces hold their own state (a video that plays, a slider being dragged)
@@ -59,6 +60,7 @@ function fillBlock(name, sig, make) {
 // ---------------------------------------------------------------- the workspaces
 
 function countOf(w, spaces) {
+  if (w.id === "home") return null;
   const own = spaces[w.id].count?.();
   if (own !== undefined && own !== null) return own;
   if (w.id === "shelf") return shelfTools().length;
@@ -73,7 +75,7 @@ function tilesBlock(spaces) {
     h(`button.ut-space${w.id === utensils.workspace ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(w.id === utensils.workspace), dataset: { space: w.id }, on: { click: () => setWorkspace(w.id) } },
       h("span.ut-space-icon", {}, sprite(w.icon)),
       h("span.ut-space-name", {}, w.name),
-      h("span.ut-space-count", {}, two(countOf(w, spaces))))));
+      h("span.ut-space-count", {}, w.id === "home" ? "" : two(countOf(w, spaces))))));
 }
 
 // ---------------------------------------------------------------- the queue and the recent results
@@ -128,6 +130,9 @@ function syncProgress() {
 // ---------------------------------------------------------------- the page
 
 export function renderUtensils(el) {
+  // opened from another product: Home, unless something came for a workspace of its own
+  arrive();
+  loadTemplatesTotal();
   if (!shell || shell.el !== el || !el.contains(shell.root)) build(el);
   const spaces = made();
   const space = utensils.workspace;

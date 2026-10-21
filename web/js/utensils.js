@@ -1,4 +1,4 @@
-// Utensils: a shelf of tools, each one input and one result, in seven workspaces (Shelf, Picture, Video, Audio, VFX, Edit,
+// Utensils: a shelf of tools, each one input and one result, in eight workspaces (Home, Shelf, Picture, Video, Audio, VFX, Edit,
 // Templates). This module is the shelf's shared state and the contract the workspaces are built on:
 //
 //   utensils.workspace / setWorkspace(id)   the workspace open (kept in this browser with the tool and what it was given)
@@ -59,7 +59,7 @@ const read = () => {
 };
 const kept = read();
 export const utensils = {
-  workspace: WORKSPACE_IDS.includes(kept.workspace) ? kept.workspace : "shelf",
+  workspace: WORKSPACE_IDS.includes(kept.workspace) ? kept.workspace : "home",
   tool: toolById(kept.tool).id,
   // what each tool was given: { image, video, audio } and its words and settings
   inputs: kept.inputs ?? {},
@@ -97,12 +97,35 @@ const update = () => (persist(), changed("utensils"));
 // ---------------------------------------------------------------- the workspace and the tool open
 
 export function setWorkspace(id) {
-  if (!WORKSPACE_IDS.includes(id) || utensils.workspace === id) return;
+  if (!WORKSPACE_IDS.includes(id)) return;
+  // (a workspace asked for from another page, a result opened there, say, is where the person is going: Home does not take them back)
+  if (landing.away) landing.intent = true;
+  if (utensils.workspace === id) return;
   utensils.workspace = id;
   update();
 }
+
+/**
+ * Utensils opens on Home. Coming back to it from another product (the header, a link) lands on Home too, whatever workspace was open
+ * when it was left; unless something asked for a workspace or a tool while the person was away (Truffle, a result, a deep link): then
+ * it is there they go. A page reload keeps the workspace it was on.
+ */
+const here = () => location.hash.replace(/^#\/?/, "").split("?")[0] === "utensils";
+export const landing = { away: !here(), intent: false };
+window.addEventListener("hashchange", () => (here() ? arrive() : Object.assign(landing, { away: true, intent: false })));
+/** Arriving from elsewhere with no errand, it is Home (the page is drawn again: it was not asked to change while it was out of sight). */
+export function arrive() {
+  if (!landing.away) return;
+  const errand = landing.intent;
+  Object.assign(landing, { away: false, intent: false });
+  if (!errand && utensils.workspace !== "home") {
+    utensils.workspace = "home";
+    update();
+  }
+}
 /** Opens a tool: its workspace comes with it. */
 export function pickTool(id) {
+  if (landing.away) landing.intent = true;
   const t = toolById(id);
   utensils.tool = t.id;
   utensils.workspace = WORKSPACE_IDS.includes(t.workspace) ? t.workspace : utensils.workspace;

@@ -9,7 +9,7 @@
 // reader keeps exactly what a tool declares: no new op is needed. A tool with run() can be run from her key.
 
 export const UTENSILS_OPS = ["pick_workspace", "pick_tool", "set_input", "run_tool"] as const;
-export const UTENSILS_WORKSPACES = ["shelf", "picture", "video", "audio", "vfx", "edit", "templates"] as const;
+export const UTENSILS_WORKSPACES = ["home", "shelf", "picture", "video", "audio", "vfx", "edit", "templates"] as const;
 
 /** How Truffle answers: the tool she is made to call, so her answer is data and never prose to be guessed at. */
 export const UTENSILS_TOOL = {
@@ -48,19 +48,21 @@ export const UTENSILS_TOOL = {
   },
 };
 
-export const UTENSILS_BRIEF = `You are Truffle, the round grey raccoon with a dark eye mask who keeps Comfyture's Utensils: a shelf of small tools, each one job, in seven workspaces: shelf (the home: every tool at a glance), picture, video, audio, vfx (effects that change a clip), edit (free tools that run on this machine) and templates (the official ComfyUI workflows, run on Comfy Cloud). You are practical and a little sly; you speak in one or two short sentences, in the user's language. You answer through the utensils_answer tool: a reply and the actions to take.
+export const UTENSILS_BRIEF = `You are Truffle, the round grey raccoon with a dark eye mask who keeps Comfyture's Utensils: a shelf of small tools, each one job, in eight workspaces: home (where it opens: a dashboard of what the others offer), shelf (the plain catalogue of every tool), picture, video, audio, vfx (effects that change a clip), edit (free tools that run on this machine) and templates (the official ComfyUI workflows, run on Comfy Cloud). You are practical, a little sly; you speak in one or two short sentences, in the user's language. You answer through the utensils_answer tool: a reply and the actions to take.
 
-A tool takes what it works on (a picture, a clip or a sound), sometimes words, sometimes settings, and makes a result kept in Recent. Several jobs can run at once; the queue below says what runs. The user's own files come from the library below: you give a tool one by its id and never invent a file.
+A tool takes what it works on (a picture, a clip or a sound), sometimes words or settings, and makes a result kept in Recent. Several jobs can run at once; the queue below says what runs. Files come from the library below: you give a tool one by its id and never invent a file.
 
 Actions (op and its fields):
 - pick_workspace {workspace}: open a workspace.
-- pick_tool {tool}: open a tool by its id; its workspace opens with it. The open workspace's tools are listed in full, the others by id.
-- set_input {image, video, audio, words, options, lyrics, scale, height, seconds, bpm, real}: give the tool that is open what it works on (an id from the library, and only the kinds that tool takes), its words and its settings. Send only what changes. Words say what to vary, change, make or hear. Settings are the ones listed with the tool, each within its values: send them in options by name (scale, height, seconds, bpm, lyrics and real may be sent as they are).
-- run_tool {}: run the tool that is open on what it holds. It costs credits or takes a minute or more. The app asks the user to confirm the price first, with a key under your answer, so say it is ready to run, never that it has started; if they say yes in words, point them to that key.
+- pick_tool {tool}: open a tool by its id; its workspace opens with it. Its workspace's tools are listed in full, the others by id.
+- set_input {image, video, audio, words, options, lyrics, scale, height, seconds, bpm, real}: give the tool that is open what it works on (an id from the library, and only the kinds that tool takes), its words and its settings. Send only what changes. Words say what to change, make or hear. Settings are the ones listed with the tool, each within its values: send them in options by name (scale, height, seconds, bpm, lyrics and real may be sent as they are).
+- run_tool {}: run the tool that is open on what it holds. It costs credits or takes a minute or more. The app asks the user to confirm the price first, with a key under your answer, so say it is ready, never that it has started; if they say yes in words, point them to that key.
 
-Mini apps: ComfyUI's own workflows shown simply, each asking for one to three things (a picture, a clip, a sound, a few words) and run on Comfy Cloud. They are listed apart below with ids that start with app-: open one with pick_tool when no built-in tool does the job, or when the user names it ("the background remover", "make my picture sing"), then give it what it takes with set_input and its words, and ask for run_tool as for any tool. A built-in tool is the first choice when it does the same job (upscale, cut out, extend, add sound...).
+Mini apps: ComfyUI's own workflows run on Comfy Cloud, each asking for one to three things (a picture, a clip, a sound, a few words). They are listed apart below with ids that start with app-: open one with pick_tool when no built-in tool does the job or when the user names it ("the background remover"), then set_input and run_tool as for any tool. A built-in tool is the first choice when it does the same job.
 
-Rules: use only the ids shown below. "My latest picture" or "my last clip" is the first one listed. Open the tool that fits the job, give it what it needs, and ask for run_tool only when the user says to run, make or do it, or names the job outright ("upscale my latest picture"). When something is missing (a picture, a clip, the words), ask for it in one short question and ask for no run_tool. When the job belongs to another workspace, open its tool: you may set it up in the same answer. When the user only asks a question, answer it and take no action. Never promise what you did not do.`;
+On home nothing is open: name the workspace that fits what the person wants and open it, or open the tool outright when they name the job; never list the tools back.
+
+Rules: use only the ids shown below. "My latest picture" or "my last clip" is the first one listed. Open the tool that fits the job, give it what it needs, and ask for run_tool only when the user says to run, make or do it, or names the job outright ("upscale my latest picture"). When something is missing (a picture, a clip, the words), ask for it in one short question and no run_tool. When the job belongs to another workspace, open its tool and set it up in the same answer. When the user only asks a question, answer and take no action. Never promise what you did not do.`;
 
 /** A setting a tool declares: a choice of values, a number in a range, a flag or a text. */
 interface Option { key: string; type?: string; values?: unknown[]; min?: number; max?: number }
@@ -93,9 +95,12 @@ const optionsLine = (t: Tool) => things<Option>(t.options, 8).map((o) => `${cut(
 /** What Truffle is told each time: the workspace open, its tools, the other workspaces' tools, the tool open and what it holds, the queue, the newest results, the library, the talk so far. */
 export function utensilsPrompt(s: Summary, turns: Turn[]) {
   const lines: string[] = [];
-  const spaces = things<{ id: string; name?: string; tools?: number }>(s.workspaces, 8);
-  if (s.workspace) lines.push(`WORKSPACE OPEN: ${cut(s.workspace, 12)}.${spaces.length ? ` THE WORKSPACES: ${spaces.map((w) => `${cut(w.id, 12)} (${Number(w.tools) || 0})`).join(", ")}.` : ""}`, "");
-  lines.push(`THE TOOLS${s.workspace ? ` OF ${cut(s.workspace, 12).toUpperCase()}` : ""} (id · workspace · what it does · what it takes · words · settings):`);
+  const spaces = things<{ id: string; name?: string; tools?: number }>(s.workspaces, 10);
+  const here = cut(s.workspace, 12);
+  if (s.workspace) lines.push(`WORKSPACE OPEN: ${here}.${spaces.length ? ` THE WORKSPACES: ${spaces.map((w) => `${cut(w.id, 12)}${typeof w.tools === "number" ? ` (${w.tools})` : ""}`).join(", ")}.` : ""}`, "");
+  // home is a dashboard: no tool is described there, only where each kind of job lives (the tools are named by id below, to open when the job is named)
+  if (here === "home") lines.push("HOME shows every workspace's tools as pictures. Nothing is open. Tools are described only inside their own workspace; the ids below open them.", "");
+  else lines.push(`THE TOOLS${s.workspace ? ` OF ${cut(s.workspace, 12).toUpperCase()}` : ""} (id · workspace · what it does · what it takes · words · settings):`);
   for (const t of things<Tool>(s.tools, 24)) lines.push(`- ${cut(t.id, 30)} · ${cut(t.workspace ?? t.group, 12)} · ${cut(t.hint, 90)} · ${t.takes?.length ? t.takes.map((k) => NOUN[k] ?? k).join(" and ") : "words only"} · ${t.words ?? "none"}${optionsLine(t) ? ` · settings: ${optionsLine(t)}` : ""}`);
   const others = things<Tool>(s.others, 60);
   if (others.length) {

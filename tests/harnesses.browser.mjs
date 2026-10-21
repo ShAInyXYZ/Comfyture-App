@@ -147,7 +147,7 @@ try {
     await page.waitForFunction(() => Math.abs(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--chat-h")) - document.querySelector("#assistant .composer").getBoundingClientRect().height) <= 1);
     r = await spaceAbove("utensils");
     ok(r.go <= r.top && r.doc[0] <= r.doc[1], `${width}x${height}: Utensils' run key ends above the bar and the page itself does not scroll`, `key ends ${Math.round(r.go)} px, bar ${Math.round(r.top)} px`);
-    await js(async () => (await import("/js/utensils.js")).setWorkspace("shelf"));
+    await js(async () => (await import("/js/utensils.js")).setWorkspace("home"));
   }
   // writing hides the quick actions but not their room: the page above the bar does not move as you type (on Mixer, which has them)
   await visit("mixer");
@@ -220,7 +220,8 @@ try {
   });
   ok(tool.tool === "cutout" && tool.image === photo.file, "Truffle's setup is made: the tool is open on the Library's latest picture", JSON.stringify(tool));
   const sent = asked.utensils[0];
-  ok(sent.utensils.workspace === "shelf" && sent.utensils.workspaces.length === 7 && sent.utensils.others.length >= 10 && sent.utensils.library.images[0].id === "img1" && sent.utensils.open.tool === "upscale" && !JSON.stringify(sent).match(/Mixer|Praline|Macaron|Brioche|Pickle|Ketkout/), "she was told the workspace open, the other workspaces' tools by id and the library, and nothing of another product", JSON.stringify([sent.utensils.workspace, sent.utensils.workspaces.length, sent.utensils.others.length, sent.utensils.library.images[0]?.id, sent.utensils.open?.tool, JSON.stringify(sent).match(/Mixer|Praline|Macaron|Brioche|Pickle|Ketkout/)?.[0]]));
+  // Utensils opens on Home: nothing is open there and no tool is described; the tools are named by id so she can open one when the job is named
+  ok(sent.utensils.workspace === "home" && sent.utensils.workspaces.length === 8 && sent.utensils.workspaces[0].id === "home" && sent.utensils.tools.length === 0 && sent.utensils.open === null && sent.utensils.others.length >= 10 && sent.utensils.library.images[0].id === "img1" && !JSON.stringify(sent).match(/Mixer|Praline|Macaron|Brioche|Pickle|Ketkout/), "she was told Utensils is on Home (the eight workspaces, no tool described, none open), the tools by id and the library, and nothing of another product", JSON.stringify([sent.utensils.workspace, sent.utensils.workspaces.length, sent.utensils.tools.length, sent.utensils.others.length, sent.utensils.library.images[0]?.id, sent.utensils.open?.tool]));
   const umsg = page.locator("#assistant .chat-thread .msg.is-ai").last();
   ok((await umsg.locator(".msg-face").getAttribute("src")) === HARNESSES.utensils.face, "her reply has her face");
   const run = umsg.locator(".msg-confirm .key.is-primary");
@@ -243,7 +244,7 @@ try {
   await page.waitForTimeout(400);
   const room = await js(() => ({ chips: [...document.querySelectorAll("#assistant .pet-chip")].map((c) => c.textContent), ask: document.querySelector("#assistant .chat-input").dataset.placeholder }));
   ok(room.chips.length === 0 && room.ask === HARNESSES.utensils.placeholders.video, "the bar follows the workspace open: the video one's words, and no canned chips", room.ask);
-  await js(async () => (await import("/js/utensils.js")).setWorkspace("shelf"));
+  await js(async () => (await import("/js/utensils.js")).setWorkspace("home"));
 
   // ---- each product keeps its own conversation
   const kept = () => js(async () => ({

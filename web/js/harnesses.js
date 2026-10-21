@@ -85,7 +85,7 @@ export const HARNESSES = {
     tag: TRUFFLE.tag,
     face: TRUFFLE.face,
     tools: "panel",
-    home: "shelf",
+    home: "home",
     placeholders: UTENSILS_PLACEHOLDER,
     presets: Object.fromEntries(Object.keys(UTENSILS_PLACEHOLDER).map((room) => [room, []])),
   },
