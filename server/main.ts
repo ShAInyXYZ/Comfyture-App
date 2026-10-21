@@ -29,6 +29,7 @@ import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer } fro
 import { createEdit } from "./utensils-edit.ts";
 import { createFx } from "./utensils-fx.ts";
 import { createTemplates, realCloud, fakeRun } from "./comfy-templates.ts";
+import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -583,8 +584,7 @@ async function projectRoute(kind: string, path: string, method: string, req: Inc
 
 // ------------------------------------------------------------------ the audio library
 
-/** Every sound kept: uploads, music, effects and voice lines, with a name, a kind and a length. */
-type AudioEntry = { file: string; url: string; name: string; kind: string; seconds: number; prompt?: string; createdAt: string };
+/** Every sound kept: uploads, music, effects and voice lines, with a name, a kind and a length (a song may also have a cover and a video cover: server/audio-cover.ts). */
 const audioIndexPath = () => join(data, "audio", "index.json");
 async function readAudioIndex(): Promise<Record<string, AudioEntry>> {
   try {
@@ -594,10 +594,10 @@ async function readAudioIndex(): Promise<Record<string, AudioEntry>> {
   }
 }
 let audioWrite: Promise<unknown> = Promise.resolve();
-async function noteAudio(entry: AudioEntry) {
+async function noteAudio(entry: AudioEntry, replace = false) {
   audioWrite = audioWrite.then(async () => {
     const index = await readAudioIndex();
-    index[entry.file] = { ...index[entry.file], ...entry };
+    index[entry.file] = replace ? entry : { ...index[entry.file], ...entry };
     await mkdir(join(data, "audio"), { recursive: true });
     await writeFile(audioIndexPath(), JSON.stringify(index, null, 1));
   });
@@ -1007,6 +1007,25 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       }
     }
     return json(res, 200, list.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+  }
+  if (path === "/api/audio/cover" && method === "POST") {
+    // a song's cover picture and its video cover (a few seconds of a character performing a part of it): the app's own media, noted on the song
+    let ask;
+    try {
+      ask = readCoverRequest(await jsonBody(req));
+    } catch (e) {
+      if (e instanceof CoverError) throw bad(e.message);
+      throw e;
+    }
+    const known = (await readAudioIndex())[ask.file];
+    const onDisk = join(data, "audio", ask.file);
+    if (!known && !(await exists(onDisk))) throw bad("That song is not in the library.", 404);
+    for (const u of [ask.cover, ask.video]) {
+      const there = u ? inside(data, u.slice("/media/".length)) : null;
+      if (u && (!there || !(await exists(there)))) throw bad("That picture or clip is not kept by the app.");
+    }
+    const entry: AudioEntry = known ?? { file: ask.file, url: `/media/audio/${ask.file}`, name: ask.file.replace(/\.\w+$/, ""), kind: "upload", seconds: Math.round((await probeMedia(onDisk)).duration * 100) / 100, createdAt: (await stat(onDisk)).mtime.toISOString() };
+    return json(res, 200, await noteAudio(mergeCover(entry, ask), true));
   }
   if ((path === "/api/audio/music" || path === "/api/audio/sound") && method === "POST") {
     const input = await jsonBody(req);

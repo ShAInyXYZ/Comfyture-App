@@ -91,6 +91,29 @@ const sheen = (g, s) => {
   }
 };
 
+/** A song's cover as the record's label: the picture fills the circle (cropped to a square from its middle), a ring round it and the spindle hole. */
+const coverLabel = (img) => (g, s) => {
+  const c = s / 2;
+  g.fillStyle = "#101012";
+  g.fillRect(0, 0, s, s);
+  g.save();
+  g.beginPath();
+  g.arc(c, c, c * 0.94, 0, Math.PI * 2);
+  g.clip();
+  const side = Math.min(img.naturalWidth, img.naturalHeight);
+  g.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, c - c * 0.94, c - c * 0.94, c * 1.88, c * 1.88);
+  g.restore();
+  g.strokeStyle = "rgba(10,10,10,.55)";
+  g.lineWidth = s * 0.012;
+  g.beginPath();
+  g.arc(c, c, c * 0.94, 0, Math.PI * 2);
+  g.stroke();
+  g.fillStyle = "#101012";
+  g.beginPath();
+  g.arc(c, c, s * 0.022, 0, Math.PI * 2);
+  g.fill();
+};
+
 /** A rounded rectangle slab (the plinth). */
 function slab(w, d, h, r, material) {
   const shape = new THREE.Shape();
@@ -158,9 +181,10 @@ export function createDeck() {
   );
   vinyl.position.y = 0.1;
   // (the label is the app's own yellow, unlit, so the light and the tone mapping leave it as it is)
+  const labelTex = paint(512, label);
   const labelMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 0.98, 0.058, 64), [
     new THREE.MeshBasicMaterial({ color: YELLOW, toneMapped: false }),
-    new THREE.MeshBasicMaterial({ map: paint(512, label), toneMapped: false }),
+    new THREE.MeshBasicMaterial({ map: labelTex, toneMapped: false }),
     new THREE.MeshBasicMaterial({ color: YELLOW, toneMapped: false }),
   ]);
   labelMesh.position.y = 0.1;
@@ -258,8 +282,26 @@ export function createDeck() {
   back.observe(el);
   place();
 
+  let wears = null;
   return {
     el,
+    /** The record's label is this picture (a url), or the jam jar again (null). */
+    setCover(url) {
+      if (url === wears) return;
+      wears = url;
+      const g = labelTex.image.getContext("2d");
+      const done = (draw) => {
+        g.clearRect(0, 0, labelTex.image.width, labelTex.image.height);
+        draw(g, labelTex.image.width);
+        labelTex.needsUpdate = true;
+        kick();
+      };
+      if (!url) return done(label);
+      const img = new Image();
+      img.onload = () => wears === url && done(coverLabel(img));
+      img.onerror = () => wears === url && done(label);
+      img.src = url;
+    },
     play(on) {
       playing = !!on;
       kick();

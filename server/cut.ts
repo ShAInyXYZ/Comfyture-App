@@ -558,7 +558,7 @@ function jamLines(j: any) {
         ...say("idea", j.song.idea), ...say("shape", j.song.shape), ...say("style", j.song.style),
         `length ${n(j.song.length)} s, ${n(j.song.bpm)} bpm, ${j.song.key ?? "?"}, time ${j.song.time ?? "?"}, language ${j.song.language ?? "?"}, quality ${j.song.quality ?? "?"}`,
         ...say("title", j.song.title), ...say("lyrics", j.song.lyrics),
-        ...(j.song.shown ? [`song shown: "${String(j.song.shown.name).slice(0, 60)}", ${n(j.song.shown.seconds)} s`] : []),
+        ...(j.song.shown ? [`song shown: "${String(j.song.shown.name).slice(0, 60)}", ${n(j.song.shown.seconds)} s, cover ${j.song.shown.cover ? "yes" : "none"}, video cover ${j.song.shown.videoCover ? "yes" : "none"} (covers are keys the user presses: the cover row under the song's name)`] : []),
         ...(Array.isArray(j.song.shelf) && j.song.shelf.length ? [`songs on the shelf: ${j.song.shelf.map((x: unknown) => `"${String(x).slice(0, 40)}"`).join(", ")}`] : []),
         ...say("busy", j.song.busy),
       ] : []),

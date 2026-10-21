@@ -112,7 +112,7 @@ export async function newJam(name = "New music video") {
 }
 /** What keeps a video on the server: one save a moment after its last change, for each video, so renaming A and then B keeps both. */
 const keep = async (id, j) => {
-  const thumb = j.body.looks.performance?.url ?? j.body.artist?.url;
+  const thumb = j.body.looks.performance?.url ?? j.body.artist?.url ?? j.body.track?.cover;
   await send(`api/jams/${id}`, "PUT", { name: j.name, body: j.body, ...(thumb ? { thumb } : {}) })
     .then(() => {
       const row = jam.list.find((x) => x.id === id);
@@ -188,7 +188,7 @@ export async function useSong(song, { into = null } = {}) {
   update();
   try {
     const made = song.kind !== "upload";
-    setTrack(j, { file: song.file, url: song.url, seconds: song.seconds, name: song.name || "My song", kind: made ? "made" : "upload", ...(made ? { prompt: song.tags ?? "", lyrics: song.lyrics ?? "", bpm: song.bpm } : {}) });
+    setTrack(j, { file: song.file, url: song.url, seconds: song.seconds, name: song.name || "My song", kind: made ? "made" : "upload", ...(song.cover ? { cover: song.cover } : {}), ...(made ? { prompt: song.tags ?? "", lyrics: song.lyrics ?? "", bpm: song.bpm } : {}) });
     if (song.bpm && made) j.body.track.bpm = song.bpm;
     if (j.name === "New music video" && song.name) j.name = song.name;
     touched(j);
