@@ -8,10 +8,9 @@
 .lbx[hidden] { display: none; }
 body.has-library { overflow: hidden; }
 body.has-library .toast { z-index: 39; }
-.lbx-back { position: absolute; inset: 0; background: rgba(8, 6, 6, .66); backdrop-filter: blur(5px) saturate(.8); animation: lbx-fade .2s var(--ease-out); }
-.lbx-frame { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; width: min(120rem, 100%); height: 100%; padding: 1.125rem 1.25rem .875rem; overflow: hidden; border: 1px solid rgba(255, 220, 180, .1); border-radius: 1.75rem;
-  background: radial-gradient(40% 32% at 6% 18%, rgba(255, 178, 102, .14), transparent 70%), radial-gradient(40% 32% at 96% 22%, rgba(255, 178, 102, .1), transparent 70%), linear-gradient(180deg, #1a110d, #120c0a 70%, #1c0f10);
-  box-shadow: 0 40px 120px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 214, 170, .08); animation: lbx-in .26s var(--ease-out); }
+.lbx-back { position: absolute; inset: 0; background: rgba(8, 8, 9, .7); backdrop-filter: blur(5px) saturate(.8); animation: lbx-fade .2s var(--ease-out); }
+.lbx-frame { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; width: min(120rem, 100%); height: 100%; padding: 1.25rem 1.25rem .875rem; overflow: hidden; border: 1px solid var(--line2); border-radius: 1.5rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .025), transparent 18%), var(--bg); box-shadow: var(--float), 0 40px 120px rgba(0, 0, 0, .55); animation: lbx-in .26s var(--ease-out); }
 .lbx-frame > .ut-grid.is-templates { min-height: 0; }
 @keyframes lbx-fade { from { opacity: 0; } }
 @keyframes lbx-in { from { opacity: 0; transform: translateY(.75rem) scale(.985); } }
@@ -23,18 +22,17 @@ body.has-library .toast { z-index: 39; }
 /* (the recipe's own panel and pill wait under the frame: its reading table shows the recipe here) */
 .rcp-root.is-framed .rcp-panel, .rcp-root.is-framed .rcp-pill { display: none; }
 /* the hall dims behind the reading table */
-.lbx-frame.has-picks .lb-hallwrap::after { content: ""; position: absolute; inset: 0; z-index: 6; background: linear-gradient(180deg, rgba(10, 6, 5, .35), rgba(10, 6, 5, .72) 45%); pointer-events: none; }
+.lbx-frame.has-picks .lb-hallwrap::after { content: ""; position: absolute; inset: 0; z-index: 6; background: linear-gradient(180deg, rgba(10, 10, 12, .3), rgba(10, 10, 12, .75) 45%); pointer-events: none; }
 
 /* ---- the reading table: Truffle's books, brought forward --------------------------------------------------------------- */
-.lbx-table { position: absolute; z-index: 6; left: 1.25rem; right: 1.25rem; bottom: 4.75rem; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: .5rem; max-height: calc(100% - 13rem); padding: .875rem 1.25rem 1.125rem; border-radius: 1.25rem 1.25rem 1rem 1rem;
-  background: linear-gradient(180deg, rgba(255, 214, 170, .22) 0, transparent 3px), linear-gradient(180deg, rgba(58, 36, 22, .97), rgba(36, 22, 14, .98)), url("../brand/utensils/shelf/tex-wood.webp") 0 0 / 22rem; background-blend-mode: normal, normal, soft-light;
-  box-shadow: 0 -24px 60px rgba(0, 0, 0, .55), inset 0 0 0 1px rgba(255, 220, 180, .1); animation: lbx-rise .32s var(--ease-out); }
+.lbx-table { position: absolute; z-index: 6; left: 1.25rem; right: 1.25rem; bottom: 4.75rem; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: .5rem; max-height: calc(100% - 9rem); padding: .875rem 1.25rem 1.125rem; border: 1px solid var(--line2); border-radius: 1.25rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .03), transparent 30%), var(--s1); box-shadow: 0 -24px 60px rgba(0, 0, 0, .55); animation: lbx-rise .32s var(--ease-out); }
 .lbx-table[hidden] { display: none; }
 @keyframes lbx-rise { from { opacity: 0; transform: translateY(1.5rem); } }
 .lbx-table-head { display: flex; align-items: center; gap: .875rem; }
 .lbx-face { flex: none; width: 2.5rem; height: 2.5rem; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--accent-line); }
 .lbx-title { display: grid; flex: 1 1 auto; gap: .25rem; min-width: 0; }
-.lbx-eyebrow { font: 500 .6875rem/1 var(--font-mono); letter-spacing: .24em; text-transform: uppercase; color: #d9b675; }
+.lbx-eyebrow { font: 500 .6875rem/1 var(--font-mono); letter-spacing: .24em; text-transform: uppercase; color: var(--dim); }
 .lbx-title b { overflow: hidden; font: 700 1.125rem/1.2 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
 .lbx-desk { display: flex; align-items: stretch; gap: 1rem; min-height: 0; }
 .lbx-picks { display: grid; flex: 1 1 auto; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 1rem; min-width: 0; margin: 0; padding: 0; list-style: none; }
@@ -52,19 +50,19 @@ body.has-library .toast { z-index: 39; }
     linear-gradient(0deg, transparent 0 .75rem, rgba(255, 255, 255, .14) .75rem calc(.75rem + 1px), rgba(0, 0, 0, .32) calc(.75rem + 1px) calc(.75rem + 2px), transparent 0),
     radial-gradient(120% 90% at 30% 10%, rgba(255, 255, 255, .12), transparent 60%),
     var(--c);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .3), .375rem .625rem 1.25rem rgba(0, 0, 0, .55), .125rem .125rem 0 #efe3c8, .1875rem .1875rem 0 rgba(0, 0, 0, .35);
-  transform: perspective(40rem) rotateY(-9deg) rotateX(3deg); transform-origin: 50% 100%; transition: transform .24s var(--ease-out), box-shadow .24s var(--ease-out); }
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .3), 0 .625rem 1.25rem rgba(0, 0, 0, .55), .125rem .125rem 0 #efe3c8, .1875rem .1875rem 0 rgba(0, 0, 0, .35);
+  transform-origin: 50% 100%; transition: transform .2s var(--ease-out), box-shadow .2s var(--ease-out); }
 .lbx-cover:not([data-maker]) { background-position: 58% 26%, 0 0, 0 0, 0 0, 0 0, 0 0; }
 .lbx-cover-ico { position: absolute; left: 1.375rem; right: .875rem; top: 18%; display: grid; place-items: center; color: var(--ink); filter: drop-shadow(0 1px 0 rgba(255, 255, 255, .17)); }
 .lbx-cover-ico svg { width: 42%; height: auto; aspect-ratio: 1; }
 .lbx-cover-title { display: -webkit-box; overflow: hidden; font: 800 calc(1.05 * var(--u))/1.12 var(--font-sans); letter-spacing: -.005em; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .lbx-cover-foil { font: 700 calc(.62 * var(--u))/1 var(--font-mono); letter-spacing: .12em; }
-.lbx-cover:hover, .lbx-cover:focus-visible { outline: none; transform: perspective(40rem) rotateY(-3deg) translateY(-.375rem); box-shadow: 0 0 0 2px var(--accent), .375rem .875rem 1.5rem rgba(0, 0, 0, .6), .125rem .125rem 0 #efe3c8; }
-.lbx-num { position: absolute; z-index: 2; left: calc(50% - 5.25rem); bottom: .125rem; display: grid; place-items: center; width: 2.125rem; height: 2.125rem; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font: 800 1rem/1 var(--font-sans); box-shadow: 0 0 0 .25rem rgba(28, 17, 11, .95), 0 .375rem .875rem rgba(0, 0, 0, .55); }
+.lbx-cover:hover, .lbx-cover:focus-visible { outline: none; transform: translateY(-.25rem) scale(1.04); box-shadow: 0 0 0 2px var(--accent), 0 .875rem 1.5rem rgba(0, 0, 0, .6), .125rem .125rem 0 #efe3c8; }
+.lbx-num { position: absolute; z-index: 2; left: calc(50% - 5.25rem); bottom: .125rem; display: grid; place-items: center; width: 2.125rem; height: 2.125rem; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font: 800 1rem/1 var(--font-sans); box-shadow: 0 0 0 .25rem var(--s1), 0 .375rem .875rem rgba(0, 0, 0, .55); }
 .lbx-pick.is-now .lbx-cover { box-shadow: 0 0 0 3px var(--accent), 0 0 1.75rem rgba(242, 255, 89, .35), .375rem .625rem 1.25rem rgba(0, 0, 0, .55); }
 
 /* its card: name, maker, why, how to use it, cost, Open */
-.lbx-card { display: flex; flex-direction: column; gap: .5rem; min-height: 0; padding: .875rem 1rem .875rem; overflow-y: auto; border: 1px solid rgba(255, 255, 255, .08); border-radius: 1rem; background: rgba(18, 14, 13, .92); box-shadow: inset 0 2px 0 color-mix(in oklab, var(--c) 70%, transparent); scrollbar-width: thin; }
+.lbx-card { display: flex; flex-direction: column; gap: .5rem; min-height: 0; padding: .875rem 1rem .875rem; overflow-y: auto; border: 1px solid var(--card-line); border-radius: 1rem; background: var(--s2); box-shadow: inset 0 2px 0 color-mix(in oklab, var(--c) 70%, transparent); scrollbar-width: thin; }
 .lbx-name { font: 700 1rem/1.25 var(--font-sans); letter-spacing: -.005em; }
 .lbx-maker { display: inline-flex; align-items: center; gap: .4375rem; font: 600 .8125rem/1.2 var(--font-sans); color: var(--muted); }
 .lbx-maker .lb-maker-logo { width: 1rem; height: 1rem; color: var(--text); }
@@ -85,7 +83,7 @@ body.has-library .toast { z-index: 39; }
 .lbx-open:hover { filter: brightness(1.06); }
 
 /* the total and the first step, at the table's right end, on a small brass-edged plaque */
-.lbx-total { display: flex; flex: none; flex-direction: column; align-self: center; align-items: center; justify-content: center; gap: .625rem; width: 13rem; padding: 1.375rem 1rem; border-radius: 1rem; background: rgba(18, 14, 13, .9); box-shadow: inset 0 0 0 1px rgba(236, 200, 122, .35), inset 0 0 0 4px rgba(18, 14, 13, .9), inset 0 0 0 5px rgba(236, 200, 122, .18); text-align: center; }
+.lbx-total { display: flex; flex: none; flex-direction: column; align-self: center; align-items: center; justify-content: center; gap: .625rem; width: 13rem; padding: 1.375rem 1rem; border: 1px solid var(--line2); border-radius: 1rem; background: var(--s2); text-align: center; }
 .lbx-total > b { font: 600 1.625rem/1 var(--font-mono); color: var(--text); }
 .lbx-start { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: 0 1.125rem; border: 0; border-radius: .875rem; background: var(--accent); color: var(--accent-ink); font: 700 .9375rem/1 var(--font-sans); white-space: nowrap; cursor: pointer; }
 .lbx-start svg { width: 1rem; height: 1rem; }
@@ -93,7 +91,7 @@ body.has-library .toast { z-index: 39; }
 
 /* folded: a strip at the foot of the shelves */
 .lbx-frame.has-strip .lbx-table { left: 50%; right: auto; bottom: 4.875rem; display: block; max-height: none; padding: 0; transform: translateX(-50%); border-radius: var(--r-pill); background: none; box-shadow: none; animation: none; }
-.lbx-strip { display: inline-flex; align-items: center; gap: .75rem; min-height: 2.75rem; padding: .25rem 1rem .25rem .3125rem; border: 1px solid var(--accent-line); border-radius: var(--r-pill); background: rgba(24, 18, 15, .95); color: var(--text); font: 500 .875rem/1 var(--font-sans); white-space: nowrap; cursor: pointer; box-shadow: 0 10px 30px rgba(0, 0, 0, .55); }
+.lbx-strip { display: inline-flex; align-items: center; gap: .75rem; min-height: 2.75rem; padding: .25rem 1rem .25rem .3125rem; border: 1px solid var(--accent-line); border-radius: var(--r-pill); background: var(--s2); color: var(--text); font: 500 .875rem/1 var(--font-sans); white-space: nowrap; cursor: pointer; box-shadow: 0 10px 30px rgba(0, 0, 0, .55); }
 .lbx-strip .lbx-face { width: 2.125rem; height: 2.125rem; }
 .lbx-strip-text { display: inline-flex; align-items: baseline; gap: .5rem; color: var(--muted); }
 .lbx-strip-text b { color: var(--text); font-weight: 700; }
@@ -103,23 +101,15 @@ body.has-library .toast { z-index: 39; }
 .lbx-strip-go svg { width: .875rem; height: .875rem; transform: rotate(180deg); }
 .lbx-strip:hover { border-color: var(--accent); }
 
-/* ---- the Library's key, under the workspaces of the panel ---------------------------------------------------------------- */
-.ut-spaces-wrap { display: grid; flex: none; gap: .625rem; }
-.ut-libkey { display: grid; grid-template-columns: 1.75rem minmax(0, 1fr) auto; align-items: center; gap: .75rem; min-height: clamp(2.875rem, 5.2dvh, 3.75rem); padding: .25rem .875rem .25rem .75rem; border: 1px solid rgba(236, 200, 122, .28); border-radius: 1rem; color: var(--text); text-align: left; cursor: pointer;
-  background: linear-gradient(180deg, rgba(255, 214, 170, .08), transparent), url("../brand/utensils/shelf/tex-wood.webp") 0 0 / 14rem, #2c1b12; background-blend-mode: normal, soft-light, normal; transition: border-color var(--t-fast), box-shadow var(--t-fast); }
-.ut-libkey:hover { border-color: rgba(236, 200, 122, .6); }
-.ut-libkey .ut-space-name { color: #f3dca6; }
-.ut-libkey .ut-space-count { color: rgba(243, 220, 166, .6); }
-.ut-libkey.is-on { border: 2px solid var(--accent); padding: calc(.25rem - 1px) calc(.875rem - 1px) calc(.25rem - 1px) calc(.75rem - 1px); box-shadow: 0 0 0 4px rgba(242, 255, 89, .06); }
-.ut-libkey.is-on .ut-space-name, .ut-libkey.is-on .ut-space-count { color: var(--accent); }
-/* three little spines, its icon */
-.ut-libkey-books { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 1.25rem; }
-.ut-libkey-books i { width: .3125rem; border-radius: 1px 1px 0 0; box-shadow: inset 0 2px 0 rgba(0, 0, 0, .25); }
-.ut-libkey-books i:nth-child(1) { height: 100%; background: #b8742f; }
-.ut-libkey-books i:nth-child(2) { height: 82%; background: #a8253a; }
-.ut-libkey-books i:nth-child(3) { width: .375rem; height: 92%; background: #6f4bc9; transform: rotate(9deg); transform-origin: 0 100%; }
+/* ---- the Library's key, under the workspaces of the panel: a key of the panel's own kind (.ut-space), set a little apart --------- */
+.ut-spaces-wrap { display: grid; flex: none; gap: .375rem; }
+.ut-libkey { margin-top: .5rem; }
+.ut-libkey .ut-space-icon svg { color: var(--text); }
+.ut-libkey-open { display: grid; place-items: center; color: var(--dim); }
+.ut-libkey-open svg { width: .9375rem; height: .9375rem; }
+.ut-libkey.is-on .ut-libkey-open { color: var(--accent); }
 
-@supports (corner-shape: squircle) { .lbx-frame, .lbx-table, .lbx-card, .lbx-total, .lbx-open, .lbx-start, .ut-libkey { corner-shape: squircle; } }
+@supports (corner-shape: squircle) { .lbx-frame, .lbx-table, .lbx-card, .lbx-total, .lbx-open, .lbx-start { corner-shape: squircle; } }
 @media (max-width: 1280px) {
   .lbx-total { width: 10.5rem; }
   .lbx-card { padding: .75rem .75rem; }
@@ -133,3 +123,4 @@ body.has-library .toast { z-index: 39; }
   .lbx-total { width: auto; flex-direction: row; }
 }
 @media (prefers-reduced-motion: reduce) { .lbx-back, .lbx-frame, .lbx-table { animation: none; } .lbx-cover { transition: none; } }
+.ut-libkey .ut-space-count.is-inline { margin-left: .375rem; font-size: .8125rem; }

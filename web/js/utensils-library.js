@@ -1,12 +1,14 @@
 // The LIBRARY's hall: every official ComfyUI workflow of Comfy Cloud (api/utensils/templates/library, server/comfy-templates.ts) as a
-// book, in a hall of walnut bookcases, one bookcase per Cloud category under its carved sign ("IMAGE · 209"); it stands in the Library's
-// frame (utensils-library-frame.js), over whichever workspace is open. A book is bound blind (design D): its category's cloth (a shade of
-// it from the workflow's name), its title pressed up its spine, the logo of the maker of its model pressed at its head (utensils-makers.js),
-// APP (one of ComfyUI's mini apps) or API (a partner service) pressed at its foot; one element. The hall walks sideways: the bookcases
-// stand side by side as tall as the frame, so each shows all its shelves and its sign at once and a book's card has room beside it; the
-// wheel, the arrows and the category chips move along. Above the hall its brass nameplate and the filters: a search that also understands
-// jobs (the knowledge's search: "make my photo move" finds image to video), Open weights | Partner, Mini apps, the close key; the
-// categories with live counts; the makers, a logo and a count each.
+// book, in a hall of bookcases, one per Cloud category; it stands in the Library's frame (utensils-library-frame.js), over whichever
+// workspace is open, in the app's own look. A book is bound blind (design D): its category's cloth (a shade of it from the workflow's
+// name), its title pressed up its spine, the logo of the maker of its model pressed at its head (utensils-makers.js), APP (one of ComfyUI's
+// mini apps) or API (a partner service) pressed at its foot; one element. On each shelf the books stand in GROUPS: a maker's together
+// (the busiest first), in the order of what they do (text to image, edit, upscale, image to video...), a little apart where what they do
+// changes and further apart between makers, each group's label (its logo, its name, what it does) on the shelf's ledge; the makers with
+// a book or two in a bookcase join a group of what their books do. The hall walks sideways: the bookcases stand side by side as tall as
+// the frame; the wheel and the arrows move along. Above the hall: the title, a search that also understands jobs (the knowledge's search:
+// "make my photo move" finds image to video), and two filters, each a dropdown with a preview (utensils-library-pick.js): WHAT (all, the
+// mini apps, a bookcase) and WHO (every maker, open weights, partners, a maker).
 // Pointing at a book (or reaching it with the keyboard) pulls it out and opens its INFO CARD beside it: the workflow's own picture,
 // what it does and HOW IT WORKS (the knowledge base, knowledge/utensils/workflows.json, served at api/utensils/knowledge/wf:<name>;
 // until it answers, the template's own description), what it takes and gives, its models, what it costs, its official tutorial, and
@@ -25,7 +27,8 @@ import { h, icon, sprite } from "./dom.js";
 import { changed } from "./store.js";
 import { setWorkspace, closeLibrary } from "./utensils.js";
 import { apps, loadApps } from "./utensils-templates-api.js";
-import { bookLook, prop, placeCard, fitSpines } from "./utensils-books.js";
+import { bookLook, placeCard, fitSpines } from "./utensils-books.js";
+import { libraryPick } from "./utensils-library-pick.js";
 import { searchKnowledge, knowledgeOf } from "./utensils-knowledge.js";
 import { makerById } from "./utensils-makers.js";
 
@@ -46,12 +49,46 @@ const CATS = {
 };
 const OTHER = { color: "#6a6a72", sign: "Other", icon: "tool-templates" };
 const catOf = (name) => CATS[name] ?? { ...OTHER, sign: name };
-/** The props that fill a shelf with room to spare (a small bookcase, a shelf left short). */
-const PROPS = [{ id: "plant", w: 0.9 }, { id: "globe", w: 0.8 }, { id: "bookend", w: 0.55 }, { id: "lamp", w: 0.78 }, { id: "raccoon", w: 0.8 }];
+/**
+ * What a workflow does, which orders the books of a maker on its shelf: its title says it first (in this order: the more particular jobs
+ * before the general ones), else Comfy's tags. `name` is the label of a shelf's group of books with no maker of their own; the list's
+ * own order is the order on the shelf (making a picture, changing it, enlarging it, then video, sound, 3D, maps).
+ */
+const FUNCTIONS = [
+  { id: "t2i", name: "Text to image", tags: ["Text to Image"], re: /text[\s-]*to[\s-]*image|\bt2i\b|image generation/i },
+  { id: "edit", name: "Image edit", tags: ["Image Edit", "Inpainting", "Outpainting", "Relight", "Style Transfer", "Style Reference", "Character Reference", "Virtual Try-On", "Remove Background", "Layer Decompose"], re: /edit|inpaint|outpaint|relight|try[\s-]*on|remove|swap|replace|style|colou?r|reference|mockup|composit|decompos/i },
+  { id: "upscale", name: "Upscale", tags: ["Image Upscale", "Video Upscale"], re: /upscal|restor|enhanc|super[\s-]*res|increase resolution|\bhdr\b/i },
+  { id: "i2v", name: "Image to video", tags: ["Image to Video"], re: /image[\s-]*to[\s-]*video|\bi2v\b/i },
+  { id: "t2v", name: "Text to video", tags: ["Text to Video"], re: /text[\s-]*to[\s-]*video|\bt2v\b/i },
+  { id: "ref", name: "Reference to video", tags: ["Reference to Video", "Character Replacement"], re: /reference[\s-]*to[\s-]*video|character replace/i },
+  { id: "flf", name: "First and last frame", tags: ["FLF2V"], re: /flf|first[\s-]*last|start[\s-]*end/i },
+  { id: "control", name: "Motion control", tags: ["Motion Control", "ControlNet", "Pose Map"], re: /control|motion|\bpose\b|camera|trajector|dance/i },
+  { id: "vedit", name: "Video edit", tags: ["Video Edit", "Video to Video", "Video Extend", "Frame Interpolation"], re: /video[\s-]*(edit|extend|to[\s-]*video)|\bv2v\b|extend|interpolat|loop|crossfade/i },
+  { id: "talk", name: "Lip sync", tags: ["Lip Sync", "Audio to Video"], re: /lip[\s-]*sync|talking|avatar|dubb|audio[\s-]*driven/i },
+  { id: "voice", name: "Voice", tags: ["Text to Speech", "TTS", "Voice Cloning", "Speech to Text"], re: /speech|voice|dialogue|\btts\b|speaker/i },
+  { id: "music", name: "Music", tags: ["Text to Music", "Music", "Music Cover"], re: /music|song|instrumental/i },
+  { id: "sound", name: "Sound", tags: ["Text to Audio", "Audio Editing"], re: /sound|audio|sfx|separation|stems?\b/i },
+  { id: "3d", name: "3D", tags: ["Image to 3D", "Text to 3D", "3D"], re: /\b3d\b|to[\s-]*model|mesh|splat|topology|uv unwrap|multi[\s-]*view/i },
+  { id: "maps", name: "Maps and masks", tags: ["Depth", "Depth Estimation", "Normal Estimation", "Albedo Estimation", "Element Segmentation"], re: /depth|normal|segment|detect|estimat|albedo|\bmap\b|lineart/i },
+  { id: "vector", name: "Vector", tags: ["Vector"], re: /svg|vector/i },
+];
+/** The order a title is read in: the particular jobs first ("Image to Video" before "edit"), the general ones after. */
+const READ = ["flf", "ref", "talk", "i2v", "t2v", "vedit", "upscale", "control", "t2i", "3d", "edit", "voice", "music", "sound", "maps", "vector"].map((id) => FUNCTIONS.find((f) => f.id === id));
+const FN = new Map(FUNCTIONS.map((f, i) => [f.id, { ...f, rank: i }]));
+FN.set("other", { id: "other", name: "Other", rank: FUNCTIONS.length });
+function functionOf(it) {
+  for (const f of READ) if (f.re.test(it.title)) return f.id;
+  for (const f of FUNCTIONS) if (it.tags.some((t) => f.tags.includes(t))) return f.id;
+  return "other";
+}
+/** A maker with fewer books than this in a bookcase has no group of its own there: its books join the group of what they do. */
+const SMALL = 3;
 const KIND_WORD = { image: "a picture", video: "a clip", audio: "a sound", text: "words", words: "words", "3d": "a 3D model", mask: "a mask", none: "nothing" };
 const KIND_ICON = { image: "image", video: "video", audio: "sound", text: null, words: null, "3d": null };
 /** The height a shelf is given (the hall holds as many as fit, two to five): the books are tall enough for their titles to read. */
 const SHELF_H = 250;
+/** The ledge a shelf's books stand on: its front carries the labels of their groups. */
+const LEDGE = 24;
 
 // ---------------------------------------------------------------- the knowledge (utensils-knowledge.js): the descriptions until it answers
 
@@ -94,16 +131,13 @@ export function revealWorkflow(name, { pulse = true } = {}) {
  * { el, update, count, filterApps, reveal, hideCard, setOpen }.
  */
 export function libraryHall({ open, ask }) {
-  const st = { state: "idle", data: null, q: "", found: null, weights: false, partner: false, apps: false, maker: null };
+  const st = { state: "idle", data: null, q: "", found: null, what: "all", who: "all" };
   const books = new Map(); // name -> { it, el }
   const cases = new Map(); // category -> { el, shelves, count, chip }
 
   const search = h("input.lb-search", { type: "search", placeholder: "Search a job, a model, a maker…", "aria-label": "Search the workflows", autocomplete: "off", spellcheck: false });
   const found = h("span.lb-found", { role: "status" });
-  const chips = h("div.lb-chips", { role: "group", "aria-label": "Bookcases" });
-  const makerRow = h("div.lb-chips.lb-makers", { role: "group", "aria-label": "Makers" });
-  const plateCount = h("span.lb-plate-count", {});
-  const toggles = h("div.lb-toggles", { role: "group", "aria-label": "Filters" });
+  const titleCount = h("span.lb-title-count", {});
   const hall = h("div.lb-hall", { tabindex: "-1", "aria-label": "The hall: a bookcase per category" });
   const row = h("div.lb-cases", {});
   const left = h("button.lb-arrow.is-l", { type: "button", title: "Walk left", "aria-label": "Walk left", on: { click: () => walk(-1) } }, icon("next"));
@@ -111,14 +145,15 @@ export function libraryHall({ open, ask }) {
   const empty = h("div.lb-empty", { hidden: true });
   const card = h("div.lb-card", { role: "dialog", "aria-hidden": "true" });
   hall.append(row);
+  // the two filters: what (a bookcase, or the mini apps) and who (a maker, or open weights, or partners), each with a preview
+  const whatPick = libraryPick({ label: "Bookcase", items: [{ value: "all", label: "All workflows" }], value: "all", onChange: (v) => ((st.what = v), apply(true)), preview: (it) => previewOf("what", it.value) });
+  const whoPick = libraryPick({ label: "Maker", items: [{ value: "all", label: "Every maker" }], value: "all", onChange: (v) => ((st.who = v), apply(true)), preview: (it) => previewOf("who", it.value) });
   const el = h("section.lb", { "aria-label": "The Library" },
     h("div.lb-bar", {},
-      h("div.lb-plate", {}, h("b", {}, "Library"), plateCount),
+      h("div.lb-title", {}, h("span.lb-eyebrow", {}, "Utensils"), h("b", {}, "Library"), titleCount),
       h("label.lb-searchbox", {}, icon("search"), search, found),
-      toggles,
+      h("div.lb-picks", {}, whatPick.el, whoPick.el),
       h("button.lb-close", { type: "button", title: "Close the Library (Esc)", "aria-label": "Close the Library", on: { click: () => closeLibrary() } }, icon("close"))),
-    chips,
-    makerRow,
     h("div.lb-hallwrap", {}, hall, left, right, empty),
     card);
 
@@ -165,12 +200,12 @@ export function libraryHall({ open, ask }) {
     const book = h("button.usb-book.lb-book", {
       type: "button",
       tabindex: "-1",
-      dataset: { workflow: it.name, id: `wf:${it.name}`, cat: it.category, fs: String(fs), ...(maker ? { maker: maker.id } : {}), ...(foil ? { foil } : {}) },
+      dataset: { workflow: it.name, id: `wf:${it.name}`, cat: it.category, fs: String(fs), min: (1.85 + look.w * 0.5).toFixed(2), ...(maker ? { maker: maker.id } : {}), ...(foil ? { foil } : {}) },
       "aria-label": `${it.title}, ${c.sign}${maker ? `, ${maker.name}` : ""}${foil ? `, ${foil === "APP" ? "a mini app" : "a partner service"}` : ""}`,
       style: { "--c": look.color, "--h": look.h.toFixed(3), "--w": `calc(${(1.85 + look.w * 0.5).toFixed(2)} * var(--bk, 13px))`, "--fs": String(fs) },
       on: {
         click: (e) => go(it, book, e),
-        pointerenter: (e) => e.pointerType !== "touch" && show(it, book),
+        pointerenter: (e) => e.pointerType !== "touch" && performance.now() > quietUntil && show(it, book),
         pointerleave: () => later(),
         pointerdown: (e) => (armed = e.pointerType === "touch" ? (showing?.it === it ? it : "show") : null),
         focus: () => (rove(book), show(it, book)),
@@ -195,17 +230,21 @@ export function libraryHall({ open, ask }) {
       if (!list.length) continue;
       list.sort((a, b) => b.usage - a.usage || a.title.localeCompare(b.title));
       const c = catOf(name);
-      const count = h("span.lb-sign-count", {}, String(list.length));
+      const count = h("span.lb-head-count", {}, String(list.length));
       const shelves = h("div.lb-shelves", {});
       const box = h("div.lb-case", { dataset: { cat: name }, style: { "--sec": c.color } },
-        h("div.lb-sign", {}, h("span.lb-sign-in", {}, h("span.lb-sign-ico", {}, sprite(c.icon)), h("b", {}, c.sign), h("span.lb-sign-dot", {}, "·"), count)),
+        h("div.lb-head", {}, h("span.lb-head-in", {}, h("i.lb-head-dot", { "aria-hidden": "true" }), h("span.lb-head-ico", {}, sprite(c.icon)), h("b", {}, c.sign), count)),
         h("div.lb-frame", {}, shelves));
-      for (const it of list) books.set(it.name, { it, el: bookEl(it, appSet.has(it.name)), cat: name });
+      for (const it of list) {
+        it.fn = functionOf(it);
+        books.set(it.name, { it, el: bookEl(it, appSet.has(it.name)), cat: name });
+      }
       cases.set(name, { el: box, shelves, count, list, chip: null });
       row.append(box);
     }
     empty.hidden = true;
-    plateCount.textContent = `${data.total} workflows${data.makers?.length ? ` · ${data.makers.length} makers` : ""}`;
+    titleCount.textContent = `${data.total} workflows${data.makers?.length ? ` · ${data.makers.length} makers` : ""}`;
+    drawPicks();
     refreshFoils();
     apply();
     if (pending) reveal();
@@ -224,19 +263,18 @@ export function libraryHall({ open, ask }) {
       if (want) b.dataset.foil = want;
       else delete b.dataset.foil;
     }
-    drawToggles();
-    if (st.apps) apply();
+    drawPicks();
+    if (st.what === "apps") apply();
   }
 
   // ------------------------------------------------------------ the filters
 
+  /** Whether a workflow is of a "what" (all, the mini apps, a bookcase) and of a "who" (all, open weights, partners, a maker). */
+  const isWhat = (it, what, appSet) => what === "all" || (what === "apps" ? appSet.has(it.name) : it.category === what);
+  const isWho = (it, who) => who === "all" || (who === "open" ? !it.partner : who === "partner" ? it.partner : it.maker === who);
   function visible(it, appSet) {
     if (st.found && !st.found.has(it.name)) return false;
-    if (st.apps && !appSet.has(it.name)) return false;
-    if (st.weights && !st.partner && it.partner) return false;
-    if (st.partner && !st.weights && !it.partner) return false;
-    if (st.maker && it.maker !== st.maker) return false;
-    return true;
+    return isWhat(it, st.what, appSet) && isWho(it, st.who);
   }
 
   /** The words a book is found by: its title, its description, its tags, its models, its category. */
@@ -276,23 +314,64 @@ export function libraryHall({ open, ask }) {
     }
   });
 
-  function drawToggles() {
-    const n = st.state === "ready" ? appNames().size : apps.total || 0;
-    const t = (on, label, title, flip, extra) => h(`button.lb-toggle${extra ?? ""}`, { type: "button", "aria-pressed": String(on), title, on: { click: flip } }, label);
-    toggles.replaceChildren(
-      t(st.weights, "Open weights", "Only the workflows that run open models on Comfy Cloud's GPUs", () => ((st.weights = !st.weights), apply(true))),
-      t(st.partner, "Partner", "Only the workflows a partner service runs (they bill partner credits)", () => ((st.partner = !st.partner), apply(true))),
-      h(`button.lb-toggle.is-apps`, { type: "button", "aria-pressed": String(st.apps), title: "Only the mini apps: a workflow with one simple form", on: { click: () => filterApps(!st.apps) } }, h("span.lb-foil.is-app", {}, "APP"), "Mini apps", n ? h("em", {}, String(n)) : null));
+  /** The two filters' choices, with their counts (the whole catalogue's: a choice says how much it holds). */
+  function drawPicks() {
+    if (st.state !== "ready") return;
+    const items = st.data.items;
+    const appSet = appNames();
+    const makersIn = (list) => new Set(list.map((i) => i.maker).filter(Boolean)).size;
+    whatPick.redraw([
+      { value: "all", label: "All workflows", short: "All workflows", sub: "Every bookcase", count: items.length, glyph: () => sprite("tool-templates") },
+      { value: "apps", label: "Mini apps", sub: "A workflow with one simple form", count: appSet.size, glyph: () => h("span.lbp-tag", {}, "APP") },
+      ...[...cases.entries()].map(([name, c], i) => ({ value: name, label: catOf(name).sign, sub: `${makersIn(c.list)} makers`, count: c.list.length, rule: i === 0, glyph: () => h("span.lbp-swatch", { style: { "--sec": catOf(name).color } }, sprite(catOf(name).icon)) })),
+    ]);
+    whoPick.redraw([
+      { value: "all", label: "Every maker", sub: "Open models and partners", count: items.length, glyph: () => sprite("tool-templates") },
+      { value: "open", label: "Open weights", sub: "Open models, on Comfy Cloud's GPUs", count: items.filter((i) => !i.partner).length, glyph: () => h("span.lbp-tag.is-open", {}, "OPEN") },
+      { value: "partner", label: "Partner services", sub: "Their own models, billed in partner credits", count: items.filter((i) => i.partner).length, glyph: () => h("span.lbp-tag", {}, "API") },
+      ...(st.data.makers ?? []).map((m, i) => ({ value: m.id, label: m.name, sub: m.by ? `by ${m.by}` : "", count: m.count, rule: i === 0, glyph: () => h("i.lb-maker-logo", { dataset: { maker: m.id } }) })),
+    ]);
+  }
+
+  /**
+   * The preview of a filter's choice: what it holds under the other filter as it stands (its counts, the makers of a bookcase or the
+   * bookcases of a maker, its six most used workflows as pictures; a picture opens its workflow).
+   */
+  function previewOf(kind, value) {
+    if (st.state !== "ready") return h("p.lbp-empty", {}, "The Library is opening…");
+    const appSet = appNames();
+    const list = st.data.items.filter((it) => (kind === "what" ? isWhat(it, value, appSet) && isWho(it, st.who) : isWho(it, value) && isWhat(it, st.what, appSet)));
+    const top = [...list].sort((a, b) => b.usage - a.usage).slice(0, 6);
+    const open = list.filter((i) => !i.partner).length;
+    const m = kind === "who" ? makerById(value) : null;
+    const c = kind === "what" && cases.has(value) ? catOf(value) : null;
+    const title = m ? m.name : c ? c.sign : value === "apps" ? "Mini apps" : value === "open" ? "Open weights" : value === "partner" ? "Partner services" : kind === "what" ? "All workflows" : "Every maker";
+    const glyph = m ? h("i.lb-maker-logo.is-big", { dataset: { maker: m.id } }) : c ? h("span.lbp-swatch.is-big", { style: { "--sec": c.color } }, sprite(c.icon)) : sprite("tool-templates");
+    // the other side of it: a bookcase's makers (their logos), a maker's bookcases
+    const side = kind === "what"
+      ? [...new Set(list.map((i) => i.maker).filter(Boolean))].slice(0, 12).map((id) => h("i.lb-maker-logo", { dataset: { maker: id }, title: makerById(id)?.name ?? id }))
+      : [...new Set(list.map((i) => i.category))].map((cat) => h("span.lbp-cat", { style: { "--sec": catOf(cat).color } }, catOf(cat).sign, h("em", {}, String(list.filter((i) => i.category === cat).length))));
+    return h("div.lbp-prev", {},
+      h("div.lbp-prev-head", {}, h("span.lbp-prev-glyph", {}, glyph), h("div", {}, h("b", {}, title), h("span", {}, m?.by ? `by ${m.by}` : `${list.length} ${list.length === 1 ? "workflow" : "workflows"}`))),
+      h("p.lbp-stats", {}, `${list.length} workflows · ${open} open weights · ${list.length - open} partner`),
+      side.length ? h(`div.lbp-side${kind === "what" ? ".is-logos" : ""}`, {}, ...side) : null,
+      top.length ? h("div.lbp-thumbs", {}, ...top.map((it) => h("button.lbp-thumb", { type: "button", title: `Open ${it.title}`, on: { click: () => (whatPick.close(), whoPick.close(), open(it.name)) } },
+        it.thumbKind === "audio" ? h("span.lbp-ph", {}, icon("sound")) : h("img", { src: `api/utensils/templates/thumb/${encodeURIComponent(it.name)}`, alt: "", loading: "lazy", decoding: "async", draggable: false, on: { error: (e) => e.target.replaceWith(h("span.lbp-ph", {}, sprite(catOf(it.category).icon))) } }),
+        h("span.lbp-thumb-title", {}, it.title)))) : h("p.lbp-empty", {}, "Nothing here with the other filter as it is."));
   }
   function filterApps(on) {
-    st.apps = on;
-    drawToggles();
+    st.what = on ? "apps" : "all";
+    whatPick.set(st.what);
     apply(true);
   }
 
   /** What the filters show, laid out on the shelves; `jump`: the hall goes back to its start (a new search, a new filter). */
   function apply(jump = false) {
     if (st.state !== "ready") return;
+    // (a card open for a book the filters now hide, or move, goes; and the books the pointer rests on as a dropdown closes over them
+    // do not open theirs for a moment: the pointer was choosing a filter, not a book)
+    if (showing) hide(true);
+    quietUntil = performance.now() + 500;
     const appSet = appNames();
     let shown = 0;
     for (const [name, c] of cases) {
@@ -301,35 +380,13 @@ export function libraryHall({ open, ask }) {
       c.el.hidden = !c.shown.length;
       c.count.textContent = String(c.shown.length);
     }
-    const filtering = !!(st.found || st.apps || st.maker || st.weights !== st.partner);
+    const filtering = !!(st.found || st.what !== "all" || st.who !== "all");
     found.textContent = filtering ? `${shown} of ${st.data.total}` : `${st.data.total} workflows`;
     empty.hidden = shown > 0;
     if (!shown) empty.replaceChildren(icon("search"), h("span", {}, st.q ? `No workflow for “${st.q}”. Ask Truffle: she knows what each one does.` : "No workflow passes these filters."), st.q ? h("button.lb-retry", { type: "button", on: { click: () => ask(`Which workflow should I use to ${st.q}?`) } }, "Ask Truffle") : null);
-    drawChips();
-    drawMakers();
     layout();
     if (jump) hall.scrollTo({ left: 0 });
     edges();
-  }
-
-  /** The makers' row: a logo, a name and a count each, the busiest first; one picked shows only its books (picked again, all). */
-  function drawMakers() {
-    const list = st.data?.makers ?? [];
-    makerRow.hidden = !list.length;
-    makerRow.replaceChildren(...list.map((m) => h("button.lb-chip.lb-maker", { type: "button", dataset: { maker: m.id }, "aria-pressed": String(st.maker === m.id), title: m.by ? `${m.name}, by ${m.by}` : m.name, on: { click: () => ((st.maker = st.maker === m.id ? null : m.id), apply(true)) } },
-      h("i.lb-maker-logo", { "aria-hidden": "true" }), m.name, h("em", {}, String(m.count)))));
-  }
-
-  function drawChips() {
-    const list = [...cases.entries()];
-    const filtering = !!(st.found || st.apps || st.maker || st.weights !== st.partner);
-    const shown = list.reduce((n, [, c]) => n + (c.shown?.length ?? 0), 0);
-    chips.replaceChildren(
-      h("button.lb-chip.is-all", { type: "button", "aria-pressed": String(!filtering), title: filtering ? "Show every workflow again" : "Every workflow", on: { click: () => clearFilters() } }, "All", h("em", {}, String(filtering ? `${shown}/${st.data.total}` : st.data.total))),
-      ...list.map(([name, c]) => h("button.lb-chip", { type: "button", dataset: { cat: name }, disabled: !c.shown?.length, style: { "--sec": catOf(name).color }, title: `Walk to ${catOf(name).sign}`, on: { click: () => goTo(name) } },
-        h("i.lb-chip-dot"), catOf(name).sign, h("em", {}, String(c.shown?.length ?? c.list.length)))));
-    for (const [name, c] of cases) c.chip = chips.querySelector(`[data-cat="${CSS.escape(name)}"]`);
-    markChip();
   }
 
   // ------------------------------------------------------------ the shelves: as many as the hall's height holds
@@ -337,7 +394,125 @@ export function libraryHall({ open, ask }) {
   let fitting = 0;
   let laidAt = "";
   const layout = () => (cancelAnimationFrame(fitting), (fitting = requestAnimationFrame(() => layoutNow())));
-  /** The books on as many shelves as the hall's height holds (3 to 6), each bookcase's shelves as long as one another. */
+  const measure = document.createElement("canvas").getContext("2d");
+
+  /**
+   * How wide a book will stand (its title's lines at the spine's height), read from the face itself rather than from the page, so a
+   * bookcase can be shared among its shelves before it is drawn: the words are packed into lines as the spine packs them.
+   */
+  function widthOf(b, bk, shelfH, plank) {
+    const el = books.get(b.name).el;
+    const fs = Number(el.dataset.fs) * bk;
+    const tall = Number(el.style.getPropertyValue("--h")) * (shelfH - plank - 0.75 * bk);
+    const room = tall - 3 * bk - (el.dataset.foil ? 2.2 : 1.1) * bk;
+    measure.font = `700 ${fs}px Manrope, sans-serif`;
+    const space = measure.measureText(" ").width;
+    let lines = 1;
+    let line = 0;
+    for (const w of b.title.split(/\s+/)) {
+      const ww = measure.measureText(w).width;
+      if (line && line + space + ww > room) ((lines += 1), (line = ww));
+      else line += (line ? space : 0) + ww;
+    }
+    return Math.max(Number(el.dataset.min) * bk, lines * 1.06 * fs + 0.48 * bk) + 0.1 * bk;
+  }
+
+  /**
+   * A bookcase's books in their groups: a maker's books together (the busiest maker first), each maker's in the order of what they do;
+   * the makers with a book or two there join the group of what their books do, after the makers. Answers the runs of books of one
+   * group and one function, in order: [{ fam, maker, label, fn, books, first }].
+   */
+  function runsOf(list) {
+    const per = new Map();
+    for (const it of list) per.set(it.maker, (per.get(it.maker) ?? 0) + 1);
+    const famOf = (it) => (it.maker && per.get(it.maker) >= SMALL ? `m:${it.maker}` : `f:${it.fn}`);
+    const groups = new Map();
+    for (const it of list) {
+      const k = famOf(it);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(it);
+    }
+    const order = [...groups.entries()].sort(([a, x], [b, y]) => (a[0] === b[0] ? (a[0] === "m" ? y.length - x.length : FN.get(a.slice(2)).rank - FN.get(b.slice(2)).rank) : a[0] === "m" ? -1 : 1));
+    const runs = [];
+    for (const [fam, its] of order) {
+      its.sort((a, b) => FN.get(a.fn).rank - FN.get(b.fn).rank || b.usage - a.usage || a.title.localeCompare(b.title));
+      const maker = fam.startsWith("m:") ? fam.slice(2) : null;
+      const label = maker ? makerById(maker)?.name ?? maker : FN.get(fam.slice(2)).name;
+      for (const it of its) {
+        const last = runs.at(-1);
+        if (last && last.fam === fam && last.fn === it.fn) last.books.push(it);
+        else runs.push({ fam, maker, label, fn: it.fn, books: [it], first: !last || last.fam !== fam });
+      }
+    }
+    return runs;
+  }
+
+  /**
+   * The runs shared among n shelves, as evenly as their widths allow: a shelf ends between two groups when it can, between two functions
+   * else, and only a run longer than half a shelf is cut in the middle. Answers the shelves, each a list of runs (a cut run's second part
+   * carries on: `first: false, cont: true`).
+   */
+  function shelvesOf(runs, n, width, famGap, fnGap) {
+    const w = (r) => r.books.reduce((t, b) => t + width(b), 0);
+    const total = runs.reduce((t, r) => t + w(r) + (r.first ? famGap : fnGap), 0);
+    const target = total / n;
+    const rows = [[]];
+    let acc = 0;
+    const queue = runs.map((r) => ({ ...r, books: [...r.books] }));
+    while (queue.length) {
+      const r = queue.shift();
+      const rw = w(r) + (r.first ? famGap : fnGap);
+      if (acc > 0 && acc + rw > target * 1.08 && rows.length < n) {
+        if (w(r) > target * 0.5) {
+          // a long run fills this shelf to its share and carries on on the next
+          const head = [];
+          let x = acc + (r.first ? famGap : fnGap);
+          while (r.books.length && x + width(r.books[0]) <= target) (x += width(r.books[0])), head.push(r.books.shift());
+          if (head.length) rows.at(-1).push({ ...r, books: head });
+          rows.push([]);
+          acc = 0;
+          if (r.books.length) queue.unshift({ ...r, first: head.length ? false : r.first, cont: !!head.length });
+          continue;
+        }
+        rows.push([]);
+        acc = 0;
+      }
+      rows.at(-1).push(r);
+      acc += rw;
+    }
+    return rows;
+  }
+
+  /** A shelf: its groups side by side (a maker's runs in one group, a little apart by what they do), each group's label on the ledge. */
+  function shelfEl(runs) {
+    const groups = [];
+    for (const r of runs) {
+      const g = groups.at(-1);
+      if (g && g.fam === r.fam) g.runs.push(r);
+      else groups.push({ fam: r.fam, maker: r.maker, label: r.label, cont: !!r.cont, runs: [r] });
+    }
+    return h("div.usb-row.lb-row", {},
+      h("div.lb-rowin", {}, ...groups.map((g) => {
+        // what the group does: its functions, the one with the most books first ("Image to video +3" when it does more than two)
+        const tally = new Map();
+        for (const r of g.runs) tally.set(r.fn, (tally.get(r.fn) ?? 0) + r.books.length);
+        const fns = [...tally.entries()].sort((a, b) => b[1] - a[1]).map(([f]) => f);
+        const sub = g.maker ? (fns.length <= 2 ? fns.map((f) => FN.get(f).name).join(" · ") : `${FN.get(fns[0]).name} +${fns.length - 1}`) : "";
+        return h("div.lb-group", { dataset: { fam: g.fam, ...(g.maker ? { maker: g.maker } : {}) } },
+          h("div.lb-gbooks", {}, ...g.runs.flatMap((r, k) => r.books.map((it, j) => {
+            const b = books.get(it.name).el;
+            b.classList.toggle("is-fn", k > 0 && j === 0);
+            return b;
+          }))),
+          h("span.lb-glabel", { title: [g.label, sub].filter(Boolean).join(" · ") },
+            g.maker ? h("i.lb-maker-logo", { "aria-hidden": "true" }) : null,
+            h("b", {}, g.label),
+            g.cont ? h("em", {}, "continued") : sub ? h("em", {}, sub) : null));
+      })),
+      h("div.lb-ledge", { "aria-hidden": "true" }));
+  }
+
+  /** The books on as many shelves as the hall's height holds (two to five), in their groups, each bookcase's shelves of about one length. */
   function layoutNow(force = false) {
     cancelAnimationFrame(fitting);
     const first = [...cases.values()].find((c) => !c.el.hidden);
@@ -347,30 +522,25 @@ export function libraryHall({ open, ask }) {
     const room = first.shelves.clientHeight;
     const n = Math.max(2, Math.min(5, Math.floor(room / SHELF_H)));
     const shelfH = room / n;
-    const key = [n, Math.round(shelfH), ...[...cases.values()].map((c) => c.shown?.length ?? 0), st.found?.size ?? -1, st.apps, st.weights, st.partner, st.maker].join();
+    const key = [n, Math.round(shelfH), ...[...cases.values()].map((c) => c.shown?.length ?? 0), st.found?.size ?? -1, st.what, st.who].join();
     if (key === laidAt && !force) {
       el.classList.remove("is-measuring");
       return true;
     }
     laidAt = key;
+    const bk = Math.max(12, Math.min(17, shelfH * 0.066));
     el.style.setProperty("--rows", String(n));
     el.style.setProperty("--shelf", `${shelfH.toFixed(2)}px`);
-    el.style.setProperty("--bk", `${Math.max(12, Math.min(17, shelfH * 0.066)).toFixed(2)}px`);
+    el.style.setProperty("--bk", `${bk.toFixed(2)}px`);
+    el.style.setProperty("--plank", `${LEDGE}px`);
+    const width = (it) => widthOf(it, bk, shelfH, LEDGE);
     for (const [, c] of cases) {
       if (!c.shown?.length) {
         c.shelves.replaceChildren();
         continue;
       }
-      const per = Math.ceil(c.shown.length / n);
-      const rows = Array.from({ length: n }, (_, r) => c.shown.slice(r * per, (r + 1) * per));
-      c.shelves.replaceChildren(...rows.map((list, r) => {
-        // a shelf with room to spare (a small bookcase, the last shelf of one) has a prop at its end
-        const spare = list.length < per - 3 || per < 5;
-        const p = spare ? PROPS[(r + c.list.length) % PROPS.length] : null;
-        return h("div.usb-row.lb-row", {},
-          h("div.usb-inner", {}, h("div.lb-books", {}, ...list.map((it) => books.get(it.name).el)), p ? prop(p, r % 2 ? "is-left" : "is-right") : null),
-          h("div.usb-plank", { "aria-hidden": "true" }));
-      }));
+      const shelves = shelvesOf(runsOf(c.shown), n, width, 2.6 * bk, 0.9 * bk);
+      c.shelves.replaceChildren(...shelves.map(shelfEl), ...Array.from({ length: Math.max(0, n - shelves.length) }, () => shelfEl([])));
     }
     // a title whose longest word is longer than its spine runs in a smaller face (only the bookcases drawn: the others when they are)
     fitSpines([...row.querySelectorAll(".lb-book")]);
@@ -378,7 +548,6 @@ export function libraryHall({ open, ask }) {
     for (const [, c] of cases) if (!c.el.hidden) c.el.style.setProperty("--cw", `${c.el.offsetWidth}px`);
     el.classList.remove("is-measuring");
     edges();
-    markChip();
     rove(rover?.isConnected ? rover : row.querySelector(".lb-book"));
     if (pending) reveal();
     return true;
@@ -395,28 +564,15 @@ export function libraryHall({ open, ask }) {
     hall.scrollLeft += e.deltaY * (e.deltaMode === 1 ? 32 : 1);
   }, { passive: false });
   const walk = (dir) => hall.scrollBy({ left: dir * hall.clientWidth * 0.8, behavior: "smooth" });
-  function goTo(name) {
-    const c = cases.get(name);
-    if (!c || c.el.hidden) return;
-    hall.scrollTo({ left: Math.max(0, c.el.offsetLeft - 16), behavior: "smooth" });
-  }
   function edges() {
     left.disabled = hall.scrollLeft <= 4;
     right.disabled = hall.scrollLeft + hall.clientWidth >= hall.scrollWidth - 4;
-  }
-  /** The chip of the bookcase the hall stands at is lit. */
-  function markChip() {
-    const x = hall.scrollLeft + 40;
-    let at = null;
-    for (const [name, c] of cases) if (!c.el.hidden && c.el.offsetLeft <= x) at = name;
-    at ??= [...cases.keys()].find((n) => !cases.get(n).el.hidden) ?? null;
-    for (const [name, c] of cases) c.chip?.setAttribute("aria-current", String(name === at));
   }
   let moving = 0;
   hall.addEventListener("scroll", () => {
     if (showing) hide();
     cancelAnimationFrame(moving);
-    moving = requestAnimationFrame(() => (edges(), markChip()));
+    moving = requestAnimationFrame(() => edges());
   }, { passive: true });
 
   // ------------------------------------------------------------ the keyboard: along a shelf, up and down, Enter opens
@@ -458,6 +614,7 @@ export function libraryHall({ open, ask }) {
   // ------------------------------------------------------------ the card
 
   let showing = null;
+  let quietUntil = 0;
   let hideTimer = 0;
   let armed = null;
   function go(it, b, e) {
@@ -601,11 +758,10 @@ export function libraryHall({ open, ask }) {
     search.value = "";
     st.q = "";
     st.found = null;
-    st.apps = false;
-    st.maker = null;
-    st.weights = st.partner = false;
+    st.what = st.who = "all";
+    whatPick.set("all");
+    whoPick.set("all");
     asked++;
-    drawToggles();
     apply(jump);
   }
 

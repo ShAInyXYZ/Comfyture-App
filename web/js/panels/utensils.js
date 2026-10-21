@@ -89,10 +89,10 @@ function tilesBlock(spaces) {
       h("span.ut-space-name", {}, w.name, w.color ? h("i.ut-space-dot", { style: { "--dot": w.color }, "aria-hidden": "true" }) : null),
       h("span.ut-space-count", {}, w.id === "home" ? "" : two(countOf(w, spaces)))))),
     // the Library: a key of its own under the workspaces, that opens it in front of everything (and closes it)
-    h(`button.ut-libkey${utensils.library ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(!!utensils.library), title: utensils.library ? "Close the Library" : "Open the Library: every ComfyUI workflow, in front of the workspace", on: { click: () => (utensils.library ? closeLibrary() : openLibrary()) } },
-      h("span.ut-libkey-books", { "aria-hidden": "true" }, h("i"), h("i"), h("i")),
-      h("span.ut-space-name", {}, lib?.name ?? "Library"),
-      h("span.ut-space-count", {}, two(countOf(lib ?? { id: LIBRARY }, spaces)))));
+    h(`button.ut-space.ut-libkey${utensils.library ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(!!utensils.library), title: utensils.library ? "Close the Library" : "Open the Library: every ComfyUI workflow, in front of the workspace", on: { click: () => (utensils.library ? closeLibrary() : openLibrary()) } },
+      h("span.ut-space-icon", {}, sprite(lib?.icon ?? "tool-templates")),
+      h("span.ut-space-name", {}, lib?.name ?? "Library", h("span.ut-space-count.is-inline", {}, ` ${two(countOf(lib ?? { id: LIBRARY }, spaces))}`)),
+      h("span.ut-libkey-open", { title: "Opens in front of the workspace" }, icon("open"))));
 }
 
 // ---------------------------------------------------------------- the queue and the recent results
