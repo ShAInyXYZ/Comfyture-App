@@ -1,5 +1,6 @@
-// Utensils' LIBRARY (the workspace keeps its id, "templates"): every official ComfyUI workflow of Comfy Cloud as a book in a hall of
-// bookcases (utensils-library.js), and the one opened in a panel at the right: its picture, what it asks for as a plain form, what it
+// Utensils' LIBRARY (the workspace keeps its id, "templates", and lives in the Library's frame, utensils-library-frame.js, over any
+// workspace): every official ComfyUI workflow of Comfy Cloud as a book in a hall of bookcases (utensils-library.js), and the one opened
+// in a panel at the right: its picture, what it asks for as a plain form, what it
 // uses and what it costs, and a yellow key that asks to confirm the price before anything is sent. A mini app opens as one (a big
 // picture, the one to three things to give, one key, the rest under More settings, what it made right there). What it makes goes to
 // the queue and Recent like every tool's. Closing the panel leaves the hall where it was. The API is in utensils-templates-api.js (and
@@ -409,7 +410,8 @@ export function templatesSpace() {
     select(e.detail.name);
   });
   // Escape anywhere in the Library closes the panel (a field keeps its own Escape)
-  el.addEventListener("keydown", (e) => e.key === "Escape" && st.picked && !e.target.closest("input, textarea, .lb-book, .lb-card") && close());
+  // (what Escape closed, it does not close more: the Library's frame closes on an Escape nothing else took)
+  el.addEventListener("keydown", (e) => e.key === "Escape" && st.picked && !e.target.closest("input, textarea, .lb-book, .lb-card") && (e.stopPropagation(), close()));
 
   return {
     el,
@@ -419,12 +421,16 @@ export function templatesSpace() {
       hall.update();
       // Truffle (or a key elsewhere) opened an app as the tool that is open
       const t = utensils.tool;
-      if (utensils.workspace === "templates" && t.startsWith("app-") && t !== st.toolSeen) {
+      if (utensils.library && t.startsWith("app-") && t !== st.toolSeen) {
         const a = apps.list.find((x) => toolIdOfApp(x) === t);
         st.toolSeen = t;
         if (a) select(a.name);
       }
     },
-    sig: () => JSON.stringify([hall.sig(), utensils.workspace === "templates", utensils.tool, apps.list.length]),
+    sig: () => JSON.stringify([hall.sig(), utensils.library, utensils.tool, apps.list.length]),
+    /** A workflow as the Library has it (its colour, its maker), for the frame's reading table. */
+    itemOf: (name) => hall.itemOf(name),
+    /** The Library's search field. */
+    search: hall.search,
   };
 }

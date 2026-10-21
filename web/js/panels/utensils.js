@@ -3,10 +3,13 @@
 // web/js/utensils-space-<id>.js, made once and kept: { el, update, sig, count? }). Her bar docks at the foot of the page.
 // HOME is the exception: it is a page of its own, the whole width and scrolling, with no panel (its header carries what the panel
 // carries: Truffle, the way into every workspace, the queue and the credits). The panel comes back with every other workspace.
+// The LIBRARY is not one of the workspaces of the list: its key under them opens it as a frame in front of everything, over the workspace
+// that is open (utensils-library-frame.js); its workspace part lives in that frame.
 import { h, icon, sprite, ago } from "../dom.js";
 import { changed } from "../store.js";
 import { currentPage } from "../router.js";
-import { utensils, shelfTools, setWorkspace, toolsOf, toolById, creditsToday, openResult, cancelJob, give, arrive } from "../utensils.js";
+import { utensils, shelfTools, setWorkspace, toolsOf, toolById, creditsToday, openResult, cancelJob, give, arrive, openLibrary, closeLibrary, LIBRARY } from "../utensils.js";
+import { libraryFrame } from "../utensils-library-frame.js";
 import { TRUFFLE, WORKSPACES } from "../utensils-harness.js";
 import { setRoom } from "../harnesses.js";
 import { shelfSpace, templatesTotal, loadTemplatesTotal } from "../utensils-space-shelf.js";
@@ -26,6 +29,7 @@ const time = (s) => `${Math.floor((s ?? 0) / 60)}:${String(Math.floor((s ?? 0) %
 // made once and kept: the workspaces hold their own state (a video that plays, a slider being dragged)
 let parts = null;
 let shell = null;
+let frame = null;
 const made = () => (parts ??= Object.fromEntries(WORKSPACES.map((w) => [w.id, MAKERS[w.id]()])));
 
 function build(el) {
@@ -43,9 +47,11 @@ function build(el) {
   const main = h("div.ut-main");
   for (const [id, part] of Object.entries(spaces)) {
     part.el.dataset.space = id;
-    main.append(part.el);
+    if (id !== LIBRARY) main.append(part.el);
   }
   main.append(slot);
+  // the Library's part goes in its frame (made once, kept in the body: it opens over any workspace)
+  frame ??= libraryFrame({ space: spaces[LIBRARY], slot, home: main });
   const root = h("div.utensils", {}, side, main);
   // the app does not draw a page while a field in it is in use: what waited is drawn as soon as the field is left
   root.addEventListener("focusout", (e) => !root.contains(e.relatedTarget) && setTimeout(() => changed("utensils"), 0));
@@ -75,12 +81,18 @@ function countOf(w, spaces) {
 const two = (n) => (typeof n === "number" ? (n ? String(n).padStart(2, "0") : "–") : String(n));
 
 function tilesBlock(spaces) {
-  return h("nav.ut-spaces", { "aria-label": "Workspaces" }, ...WORKSPACES.map((w) =>
+  const lib = WORKSPACES.find((w) => w.id === LIBRARY);
+  return h("div.ut-spaces-wrap", {}, h("nav.ut-spaces", { "aria-label": "Workspaces" }, ...WORKSPACES.filter((w) => w.id !== LIBRARY).map((w) =>
     h(`button.ut-space${w.id === utensils.workspace ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(w.id === utensils.workspace), dataset: { space: w.id }, on: { click: () => setWorkspace(w.id) } },
       h("span.ut-space-icon", {}, sprite(w.icon)),
       // (a workspace's colour: the cloth of its books on the Shelf)
       h("span.ut-space-name", {}, w.name, w.color ? h("i.ut-space-dot", { style: { "--dot": w.color }, "aria-hidden": "true" }) : null),
-      h("span.ut-space-count", {}, w.id === "home" ? "" : two(countOf(w, spaces))))));
+      h("span.ut-space-count", {}, w.id === "home" ? "" : two(countOf(w, spaces)))))),
+    // the Library: a key of its own under the workspaces, that opens it in front of everything (and closes it)
+    h(`button.ut-libkey${utensils.library ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(!!utensils.library), title: utensils.library ? "Close the Library" : "Open the Library: every ComfyUI workflow, in front of the workspace", on: { click: () => (utensils.library ? closeLibrary() : openLibrary()) } },
+      h("span.ut-libkey-books", { "aria-hidden": "true" }, h("i"), h("i"), h("i")),
+      h("span.ut-space-name", {}, lib?.name ?? "Library"),
+      h("span.ut-space-count", {}, two(countOf(lib ?? { id: LIBRARY }, spaces)))));
 }
 
 // ---------------------------------------------------------------- the queue and the recent results
@@ -143,19 +155,20 @@ export function renderUtensils(el) {
   const space = utensils.workspace;
   // the shell takes its Home or its panel shape in this same pass, before anything is painted: no frame shows the one in the other's place
   shell.root.classList.toggle("is-home-page", space === "home");
-  // the bar asks what fits the workspace that is open
-  setRoom("utensils", space);
+  // the bar asks what fits the workspace that is open (the Library's, while its frame is open)
+  setRoom("utensils", utensils.library ? LIBRARY : space);
   // (the panel is not on screen on Home: its blocks are drawn when a workspace opens)
   if (space !== "home") {
     const counts = WORKSPACES.map((w) => countOf(w, spaces));
-    fillBlock("tiles", JSON.stringify([space, counts]), () => tilesBlock(spaces));
+    fillBlock("tiles", JSON.stringify([space, counts, !!utensils.library]), () => tilesBlock(spaces));
     fillBlock("queue", JSON.stringify([utensils.jobs.map((j) => [j.id, j.status]), creditsToday().total]), queueBlock);
     syncProgress();
     fillBlock("recent", JSON.stringify(utensils.results.slice(0, 3).map((r) => [r.id, r.url])), recentBlock);
   }
+  frame.update();
   for (const w of WORKSPACES) {
     const part = spaces[w.id];
-    const on = w.id === space;
+    const on = w.id === LIBRARY ? !!utensils.library : w.id === space;
     part.el.hidden = !on;
     if (!on) continue;
     try {

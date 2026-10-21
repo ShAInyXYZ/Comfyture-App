@@ -102,7 +102,7 @@ export function editSpace() {
     for (const f of e.dataTransfer.files) take(f);
   });
   document.addEventListener("paste", (e) => {
-    if (currentPage() !== "utensils" || utensils.workspace !== "edit" || e.target.closest?.("input, textarea")) return;
+    if (currentPage() !== "utensils" || utensils.workspace !== "edit" || utensils.library || e.target.closest?.("input, textarea")) return;
     const files = [...(e.clipboardData?.files ?? [])];
     if (!files.length) return;
     e.preventDefault();

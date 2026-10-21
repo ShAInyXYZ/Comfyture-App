@@ -90,9 +90,9 @@ body.has-guide .utensils.is-home-page .ut-chat { margin-left: max(1rem, calc((10
 .usb-case.rcp-on .usb-book:not(.is-guided) { filter: brightness(.5) saturate(.6); }
 .usb-case.rcp-on .usb-book:not(.is-guided):hover, .usb-case.rcp-on .usb-book:not(.is-guided):focus-visible { filter: brightness(.95); }
 .usb-case.rcp-on .usb-prop { filter: brightness(.7) drop-shadow(0 .5em .6em rgba(0, 0, 0, .5)); }
-.usb-book.is-guided { z-index: 3; transform: translateY(-.45em); box-shadow: 0 0 0 2px var(--accent), 0 0 1.3em rgba(242, 255, 89, .34), .4em .6em 1em rgba(0, 0, 0, .6); filter: brightness(1.06); }
+.usb-book.is-guided { z-index: 3; transform: translateY(calc(-.45 * var(--u, 13px))); box-shadow: 0 0 0 2px var(--accent), 0 0 1.3em rgba(242, 255, 89, .34), .4em .6em 1em rgba(0, 0, 0, .6); filter: brightness(1.06); }
 .usb-book.is-guided-now { box-shadow: 0 0 0 3px var(--accent), 0 0 2em rgba(242, 255, 89, .55), .4em .6em 1em rgba(0, 0, 0, .6); }
-.rcp-badge { position: absolute; z-index: 2; left: 50%; top: -.85em; display: grid; place-items: center; width: 1.7em; height: 1.7em; margin-left: -.85em; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font: 800 .95em/1 var(--font-sans); box-shadow: 0 0 0 .18em rgba(20, 10, 14, .85), 0 .3em .7em rgba(0, 0, 0, .5); pointer-events: none; }
+.rcp-badge { position: absolute; z-index: 2; left: 50%; top: -.85em; writing-mode: horizontal-tb; display: grid; place-items: center; width: 1.7em; height: 1.7em; margin-left: -.85em; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font: 800 .95em/1 var(--font-sans); box-shadow: 0 0 0 .18em rgba(20, 10, 14, .85), 0 .3em .7em rgba(0, 0, 0, .5); pointer-events: none; }
 
 /* the Library cart at the end of the middle shelf: the recipe's workflows stand on it */
 .usb-case.has-cart .usb-row[data-row="1"] .usb-prop.is-left { visibility: hidden; }

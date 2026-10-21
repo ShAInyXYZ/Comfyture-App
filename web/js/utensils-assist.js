@@ -22,7 +22,7 @@ import { knowledgeOf } from "./utensils-knowledge.js";
 export const chat = { messages: [], busy: null };
 
 /** The room of the bar on Utensils: the workspace that is open. */
-export const roomOfTool = () => utensils.workspace;
+export const roomOfTool = () => (utensils.library ? "templates" : utensils.workspace);
 
 const NOUN = { image: "Picture", video: "Clip", audio: "Sound" };
 
@@ -84,7 +84,8 @@ const brief = ({ id, workspace, name, takes, words }) => ({ id, workspace, name,
 export function summary(lib) {
   const t = toolById(utensils.tool);
   const i = inputOf(t.id);
-  const here = utensils.workspace;
+  // (the Library's frame open over a workspace is where she is asked from: she is told the Library is open)
+  const here = utensils.library ? "templates" : utensils.workspace;
   // the tool open is the workspace's own only when the workspace holds tools: on the shelf or Templates it is the last one used
   const ownsTool = TOOLS.some((x) => x.workspace === here);
   // Home is a dashboard: no tool is open and none is described (what she is told there is the workspaces with their counts, the queue and the

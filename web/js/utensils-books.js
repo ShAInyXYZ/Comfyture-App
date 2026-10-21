@@ -67,3 +67,37 @@ export function placeCard(card, book, { mode = "above", within = null, gap = 14,
   card.style.setProperty("--arrow", `${Math.round(r.left + r.width / 2 - left)}px`);
   card.classList.toggle("is-below", top > r.top);
 }
+
+/**
+ * Fits the titles of a row of spines (design D: the title is the book's own text, running up it): a spine whose longest word is longer
+ * than the room between its head and its foot stands taller first (`taller`: up to the shelf's height), then runs its title in a smaller
+ * face, down to 0.6 of the bookcase's unit. The books are read all at once first, so only the ones that spill are measured again.
+ */
+export function fitSpines(books, { taller = false } = {}) {
+  const range = document.createRange();
+  const textOf = (b) => [...b.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim());
+  const spills = (b) => {
+    const t = textOf(b);
+    if (!t) return false;
+    range.selectNode(t);
+    const cs = getComputedStyle(b);
+    const room = b.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    return range.getBoundingClientRect().height > room + 0.5;
+  };
+  for (const b of books) {
+    b.dataset.h ??= b.style.getPropertyValue("--h");
+    if (b.dataset.fs) b.style.setProperty("--fs", b.dataset.fs);
+    else b.style.removeProperty("--fs");
+    b.style.setProperty("--h", b.dataset.h);
+  }
+  const over = books.filter(spills);
+  for (const b of over) {
+    if (taller) {
+      b.style.setProperty("--h", "0.98");
+      if (!spills(b)) continue;
+    }
+    const start = Number(b.dataset.fs ?? 0.9);
+    for (let fs = start - 0.04; fs >= 0.6 && spills(b); fs -= 0.04) b.style.setProperty("--fs", fs.toFixed(2));
+  }
+  return over.length;
+}

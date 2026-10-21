@@ -1,29 +1,33 @@
 // The LIBRARY's hall: every official ComfyUI workflow of Comfy Cloud (api/utensils/templates/library, server/comfy-templates.ts) as a
-// book, in a hall of walnut bookcases, one bookcase per Cloud category under its carved sign ("IMAGE · 209"). A book's cloth is its
-// category's colour (a shade of it from the workflow's name), its title runs up its spine, a gold foil says APP (one of ComfyUI's mini
-// apps) or API (a partner service). The hall walks sideways: the bookcases stand side by side as tall as the screen, so each shows all
-// its shelves and its sign at once and a book's card has room beside it; the wheel, the arrows and the category chips move along.
-// Above the hall the filters: a search that also understands jobs (the knowledge's search: "make my photo move" finds image to video),
-// the categories with live counts, Open weights | Partner, Mini apps.
+// book, in a hall of walnut bookcases, one bookcase per Cloud category under its carved sign ("IMAGE · 209"); it stands in the Library's
+// frame (utensils-library-frame.js), over whichever workspace is open. A book is bound blind (design D): its category's cloth (a shade of
+// it from the workflow's name), its title pressed up its spine, the logo of the maker of its model pressed at its head (utensils-makers.js),
+// APP (one of ComfyUI's mini apps) or API (a partner service) pressed at its foot; one element. The hall walks sideways: the bookcases
+// stand side by side as tall as the frame, so each shows all its shelves and its sign at once and a book's card has room beside it; the
+// wheel, the arrows and the category chips move along. Above the hall its brass nameplate and the filters: a search that also understands
+// jobs (the knowledge's search: "make my photo move" finds image to video), Open weights | Partner, Mini apps, the close key; the
+// categories with live counts; the makers, a logo and a count each.
 // Pointing at a book (or reaching it with the keyboard) pulls it out and opens its INFO CARD beside it: the workflow's own picture,
 // what it does and HOW IT WORKS (the knowledge base, knowledge/utensils/workflows.json, served at api/utensils/knowledge/wf:<name>;
 // until it answers, the template's own description), what it takes and gives, its models, what it costs, its official tutorial, and
 // two keys: open it (the run panel of the Library) and ask Truffle about it (the question goes in her bar, sent when you send it).
 //
 // HIGHLIGHT HOOK (for Truffle's guide, web/js/utensils-guide.js):
-//  - every book is <button class="usb-book lb-book" data-workflow="<template name>" data-id="wf:<template name>"> (a mini app's also
-//    data-app="<app id>"); the books of a bookcase hidden by the filters are off the page until it shows again. A guide may set the
+//  - every book is <button class="usb-book lb-book" data-workflow="<template name>" data-id="wf:<template name>" data-maker="<maker id>"
+//    data-foil="APP|API">, its title its text (a mini app's also data-app="<app id>"); the books of a bookcase hidden by the filters are
+//    off the page until it shows again. A guide may set the
 //    class `is-guided` and the custom property `--guide-step` (an integer) on it: the hall never makes a book again, it only moves it
 //    from shelf to shelf, so what is set on a book stays; `.lb-book.is-guided` is pulled out and numbered by css/ut-library.css, which
 //    a guide may restyle.
-//  - revealWorkflow(name, { pulse = true }) (exported here and from utensils-space-templates.js): opens the Library, clears what
+//  - revealWorkflow(name, { pulse = true }) (exported here and from utensils-space-templates.js): opens the Library's frame, clears what
 //    would hide the book, walks the hall to it, pulls it out and outlines it (and pulses it once). Answers a promise of its element.
 import { h, icon, sprite } from "./dom.js";
 import { changed } from "./store.js";
-import { setWorkspace } from "./utensils.js";
+import { setWorkspace, closeLibrary } from "./utensils.js";
 import { apps, loadApps } from "./utensils-templates-api.js";
-import { bookLook, prop, placeCard } from "./utensils-books.js";
+import { bookLook, prop, placeCard, fitSpines } from "./utensils-books.js";
 import { searchKnowledge, knowledgeOf } from "./utensils-knowledge.js";
+import { makerById } from "./utensils-makers.js";
 
 /** The Cloud categories as bookcases: the colour of their cloth, their sign, the icon on their spines. */
 const CATS = {
@@ -46,7 +50,8 @@ const catOf = (name) => CATS[name] ?? { ...OTHER, sign: name };
 const PROPS = [{ id: "plant", w: 0.9 }, { id: "globe", w: 0.8 }, { id: "bookend", w: 0.55 }, { id: "lamp", w: 0.78 }, { id: "raccoon", w: 0.8 }];
 const KIND_WORD = { image: "a picture", video: "a clip", audio: "a sound", text: "words", words: "words", "3d": "a 3D model", mask: "a mask", none: "nothing" };
 const KIND_ICON = { image: "image", video: "video", audio: "sound", text: null, words: null, "3d": null };
-const SHELF_H = 168;
+/** The height a shelf is given (the hall holds as many as fit, two to five): the books are tall enough for their titles to read. */
+const SHELF_H = 250;
 
 // ---------------------------------------------------------------- the knowledge (utensils-knowledge.js): the descriptions until it answers
 
@@ -89,13 +94,15 @@ export function revealWorkflow(name, { pulse = true } = {}) {
  * { el, update, count, filterApps, reveal, hideCard, setOpen }.
  */
 export function libraryHall({ open, ask }) {
-  const st = { state: "idle", data: null, q: "", found: null, weights: false, partner: false, apps: false };
+  const st = { state: "idle", data: null, q: "", found: null, weights: false, partner: false, apps: false, maker: null };
   const books = new Map(); // name -> { it, el }
   const cases = new Map(); // category -> { el, shelves, count, chip }
 
-  const search = h("input.lb-search", { type: "search", placeholder: "Search the workflows: a model, a job, what you give it…", "aria-label": "Search the workflows", autocomplete: "off", spellcheck: false });
+  const search = h("input.lb-search", { type: "search", placeholder: "Search a job, a model, a maker…", "aria-label": "Search the workflows", autocomplete: "off", spellcheck: false });
   const found = h("span.lb-found", { role: "status" });
   const chips = h("div.lb-chips", { role: "group", "aria-label": "Bookcases" });
+  const makerRow = h("div.lb-chips.lb-makers", { role: "group", "aria-label": "Makers" });
+  const plateCount = h("span.lb-plate-count", {});
   const toggles = h("div.lb-toggles", { role: "group", "aria-label": "Filters" });
   const hall = h("div.lb-hall", { tabindex: "-1", "aria-label": "The hall: a bookcase per category" });
   const row = h("div.lb-cases", {});
@@ -106,9 +113,12 @@ export function libraryHall({ open, ask }) {
   hall.append(row);
   const el = h("section.lb", { "aria-label": "The Library" },
     h("div.lb-bar", {},
+      h("div.lb-plate", {}, h("b", {}, "Library"), plateCount),
       h("label.lb-searchbox", {}, icon("search"), search, found),
-      toggles),
+      toggles,
+      h("button.lb-close", { type: "button", title: "Close the Library (Esc)", "aria-label": "Close the Library", on: { click: () => closeLibrary() } }, icon("close"))),
     chips,
+    makerRow,
     h("div.lb-hallwrap", {}, hall, left, right, empty),
     card);
 
@@ -140,19 +150,24 @@ export function libraryHall({ open, ask }) {
   const appsKey = () => apps.list.map((a) => a.id).join();
   const appNames = () => new Set(apps.list.length ? apps.list.map((a) => a.name) : (st.data?.items ?? []).filter((i) => i.isApp).map((i) => i.name));
 
-  /** A book: a thin spine in its category's cloth, its title up it, APP or API in gold at its foot. */
+  /**
+   * A book, bound blind (design D, css/ut-shelf.css .usb-book): its category's cloth, its title pressed up its spine (a long title in a
+   * smaller face, the book as thick as its lines), the logo of the maker of its model pressed at its head (or its category's icon), APP or
+   * API pressed at its foot. One element: the button and its title.
+   */
   function bookEl(it, isApp) {
     const c = catOf(it.category);
     const look = bookLook(it.name, c.color, { thin: true });
-    const lines = it.title.length > 31 ? 3 : 2;
-    const w = Math.max(1.72 + look.w * 0.62, lines === 3 ? 2.62 : 1.95);
+    const n = it.title.length;
+    const fs = n > 44 ? 0.8 : n > 30 ? 0.85 : 0.9;
     const foil = isApp ? "APP" : it.partner ? "API" : null;
-    const book = h(`button.usb-book.lb-book.is-${look.tex}`, {
+    const maker = it.maker ? makerById(it.maker) : null;
+    const book = h("button.usb-book.lb-book", {
       type: "button",
       tabindex: "-1",
-      dataset: { workflow: it.name, id: `wf:${it.name}`, cat: it.category },
-      "aria-label": `${it.title}, ${c.sign}${foil ? `, ${foil === "APP" ? "a mini app" : "a partner service"}` : ""}`,
-      style: { "--c": look.color, "--h": look.h.toFixed(3), "--w": `${w.toFixed(2)}em` },
+      dataset: { workflow: it.name, id: `wf:${it.name}`, cat: it.category, fs: String(fs), ...(maker ? { maker: maker.id } : {}), ...(foil ? { foil } : {}) },
+      "aria-label": `${it.title}, ${c.sign}${maker ? `, ${maker.name}` : ""}${foil ? `, ${foil === "APP" ? "a mini app" : "a partner service"}` : ""}`,
+      style: { "--c": look.color, "--h": look.h.toFixed(3), "--w": `calc(${(1.85 + look.w * 0.5).toFixed(2)} * var(--bk, 13px))`, "--fs": String(fs) },
       on: {
         click: (e) => go(it, book, e),
         pointerenter: (e) => e.pointerType !== "touch" && show(it, book),
@@ -162,11 +177,8 @@ export function libraryHall({ open, ask }) {
         blur: () => later(),
       },
     },
-    h("i.usb-band.is-top"),
-    h("span.usb-ico", {}, sprite(c.icon)),
-    h("span.usb-name", {}, it.title),
-    foil ? h(`span.lb-foil.is-${foil.toLowerCase()}`, {}, foil) : null,
-    h("i.usb-band.is-bottom"));
+    maker ? null : h("span.usb-ico", {}, sprite(c.icon)),
+    it.title);
     return book;
   }
 
@@ -193,6 +205,7 @@ export function libraryHall({ open, ask }) {
       row.append(box);
     }
     empty.hidden = true;
+    plateCount.textContent = `${data.total} workflows${data.makers?.length ? ` · ${data.makers.length} makers` : ""}`;
     refreshFoils();
     apply();
     if (pending) reveal();
@@ -208,10 +221,8 @@ export function libraryHall({ open, ask }) {
       // (an app's book also carries its app's id: the Shelf's and Home's links name apps by it)
       if (ids.has(it.name)) b.dataset.app = ids.get(it.name);
       else delete b.dataset.app;
-      const has = b.querySelector(".lb-foil");
-      if ((has?.textContent ?? null) === want) continue;
-      has?.remove();
-      if (want) b.insertBefore(h(`span.lb-foil.is-${want.toLowerCase()}`, {}, want), b.lastElementChild);
+      if (want) b.dataset.foil = want;
+      else delete b.dataset.foil;
     }
     drawToggles();
     if (st.apps) apply();
@@ -224,12 +235,13 @@ export function libraryHall({ open, ask }) {
     if (st.apps && !appSet.has(it.name)) return false;
     if (st.weights && !st.partner && it.partner) return false;
     if (st.partner && !st.weights && !it.partner) return false;
+    if (st.maker && it.maker !== st.maker) return false;
     return true;
   }
 
   /** The words a book is found by: its title, its description, its tags, its models, its category. */
   const hay = new Map();
-  const textOf = (it) => hay.get(it.name) ?? hay.set(it.name, `${it.title} ${it.name} ${it.description} ${it.tags.join(" ")} ${it.models.join(" ")} ${it.category}`.toLowerCase()).get(it.name);
+  const textOf = (it) => hay.get(it.name) ?? hay.set(it.name, `${it.title} ${it.name} ${it.description} ${it.tags.join(" ")} ${it.models.join(" ")} ${it.category} ${makerById(it.maker)?.name ?? ""} ${makerById(it.maker)?.by ?? ""}`.toLowerCase()).get(it.name);
 
   let asked = 0;
   async function runSearch() {
@@ -257,7 +269,7 @@ export function libraryHall({ open, ask }) {
     typing = setTimeout(runSearch, 220);
   });
   search.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && search.value) ((search.value = ""), runSearch());
+    if (e.key === "Escape" && search.value) (e.stopPropagation(), (search.value = ""), runSearch());
     if (e.key === "Enter") {
       const first = [...row.querySelectorAll(".lb-book")].find((b) => b.offsetParent);
       if (first) first.focus();
@@ -289,19 +301,28 @@ export function libraryHall({ open, ask }) {
       c.el.hidden = !c.shown.length;
       c.count.textContent = String(c.shown.length);
     }
-    const filtering = !!(st.found || st.apps || st.weights !== st.partner);
+    const filtering = !!(st.found || st.apps || st.maker || st.weights !== st.partner);
     found.textContent = filtering ? `${shown} of ${st.data.total}` : `${st.data.total} workflows`;
     empty.hidden = shown > 0;
     if (!shown) empty.replaceChildren(icon("search"), h("span", {}, st.q ? `No workflow for “${st.q}”. Ask Truffle: she knows what each one does.` : "No workflow passes these filters."), st.q ? h("button.lb-retry", { type: "button", on: { click: () => ask(`Which workflow should I use to ${st.q}?`) } }, "Ask Truffle") : null);
     drawChips();
+    drawMakers();
     layout();
     if (jump) hall.scrollTo({ left: 0 });
     edges();
   }
 
+  /** The makers' row: a logo, a name and a count each, the busiest first; one picked shows only its books (picked again, all). */
+  function drawMakers() {
+    const list = st.data?.makers ?? [];
+    makerRow.hidden = !list.length;
+    makerRow.replaceChildren(...list.map((m) => h("button.lb-chip.lb-maker", { type: "button", dataset: { maker: m.id }, "aria-pressed": String(st.maker === m.id), title: m.by ? `${m.name}, by ${m.by}` : m.name, on: { click: () => ((st.maker = st.maker === m.id ? null : m.id), apply(true)) } },
+      h("i.lb-maker-logo", { "aria-hidden": "true" }), m.name, h("em", {}, String(m.count)))));
+  }
+
   function drawChips() {
     const list = [...cases.entries()];
-    const filtering = !!(st.found || st.apps || st.weights !== st.partner);
+    const filtering = !!(st.found || st.apps || st.maker || st.weights !== st.partner);
     const shown = list.reduce((n, [, c]) => n + (c.shown?.length ?? 0), 0);
     chips.replaceChildren(
       h("button.lb-chip.is-all", { type: "button", "aria-pressed": String(!filtering), title: filtering ? "Show every workflow again" : "Every workflow", on: { click: () => clearFilters() } }, "All", h("em", {}, String(filtering ? `${shown}/${st.data.total}` : st.data.total))),
@@ -324,9 +345,9 @@ export function libraryHall({ open, ask }) {
     // the bookcases out of sight are not drawn (content-visibility): they are while the hall is measured
     el.classList.add("is-measuring");
     const room = first.shelves.clientHeight;
-    const n = Math.max(3, Math.min(6, Math.floor(room / SHELF_H)));
+    const n = Math.max(2, Math.min(5, Math.floor(room / SHELF_H)));
     const shelfH = room / n;
-    const key = [n, Math.round(shelfH), ...[...cases.values()].map((c) => c.shown?.length ?? 0), st.found?.size ?? -1, st.apps, st.weights, st.partner].join();
+    const key = [n, Math.round(shelfH), ...[...cases.values()].map((c) => c.shown?.length ?? 0), st.found?.size ?? -1, st.apps, st.weights, st.partner, st.maker].join();
     if (key === laidAt && !force) {
       el.classList.remove("is-measuring");
       return true;
@@ -334,7 +355,7 @@ export function libraryHall({ open, ask }) {
     laidAt = key;
     el.style.setProperty("--rows", String(n));
     el.style.setProperty("--shelf", `${shelfH.toFixed(2)}px`);
-    el.style.setProperty("--bk", `${Math.max(10.5, Math.min(15, shelfH * 0.082)).toFixed(2)}px`);
+    el.style.setProperty("--bk", `${Math.max(12, Math.min(17, shelfH * 0.066)).toFixed(2)}px`);
     for (const [, c] of cases) {
       if (!c.shown?.length) {
         c.shelves.replaceChildren();
@@ -351,6 +372,8 @@ export function libraryHall({ open, ask }) {
           h("div.usb-plank", { "aria-hidden": "true" }));
       }));
     }
+    // a title whose longest word is longer than its spine runs in a smaller face (only the bookcases drawn: the others when they are)
+    fitSpines([...row.querySelectorAll(".lb-book")]);
     // each keeps the width it measured, so the hall is as long when they are not drawn
     for (const [, c] of cases) if (!c.el.hidden) c.el.style.setProperty("--cw", `${c.el.offsetWidth}px`);
     el.classList.remove("is-measuring");
@@ -409,7 +432,10 @@ export function libraryHall({ open, ask }) {
       const other = e.key === "ArrowDown" ? shelf.nextElementSibling : shelf.previousElementSibling;
       const x = b.getBoundingClientRect().left;
       to = other ? [...other.querySelectorAll(".lb-book")].sort((p, q) => Math.abs(p.getBoundingClientRect().left - x) - Math.abs(q.getBoundingClientRect().left - x))[0] : null;
-    } else if (e.key === "Escape") return hide();
+    } else if (e.key === "Escape") {
+      if (showing) (e.stopPropagation(), hide());
+      return;
+    }
     if (!to) return;
     e.preventDefault();
     to.focus({ preventScroll: false });
@@ -477,6 +503,7 @@ export function libraryHall({ open, ask }) {
       pic,
       h("div.lb-card-body", {},
         h("div.lb-card-top", {}, h("b.lb-card-title", {}, it.title), h("span.lb-chip-cat", {}, c.sign), foil ? h(`span.lb-foil.is-${foil.toLowerCase()}`, {}, foil) : null),
+        it.maker && makerById(it.maker) ? h("span.lb-card-maker", { dataset: { maker: it.maker } }, h("i.lb-maker-logo", { "aria-hidden": "true" }), makerById(it.maker).name, makerById(it.maker).by ? h("em", {}, `by ${makerById(it.maker).by}`) : null) : null,
         h("section.lb-sec", {}, h("span.lb-k", {}, "What it does"), h("p.lb-what", {}, k?.what || it.description)),
         h("section.lb-sec", {}, h("span.lb-k", {}, "How it works"), h("p.lb-how", {}, k?.how || plainHow(it)),
           k?.use?.length ? h("ol.lb-use", { "aria-label": "How to use it" }, ...k.use.slice(0, 3).map((s) => h("li", {}, s))) : null),
@@ -538,7 +565,7 @@ export function libraryHall({ open, ask }) {
   }
   card.addEventListener("pointerleave", later);
   card.addEventListener("pointerenter", () => clearTimeout(hideTimer));
-  card.addEventListener("keydown", (e) => e.key === "Escape" && (hide(), showing?.b.focus()));
+  card.addEventListener("keydown", (e) => e.key === "Escape" && (e.stopPropagation(), showing?.b.focus(), hide()));
 
   // ------------------------------------------------------------ the highlight hook: walk to a book and show it
 
@@ -575,6 +602,7 @@ export function libraryHall({ open, ask }) {
     st.q = "";
     st.found = null;
     st.apps = false;
+    st.maker = null;
     st.weights = st.partner = false;
     asked++;
     drawToggles();
@@ -597,6 +625,13 @@ export function libraryHall({ open, ask }) {
     },
     /** How many workflows the Library holds (null until the catalogue has come). */
     count: () => st.data?.total ?? null,
+    /** A workflow as the catalogue has it, with its category's cloth colour (null until the catalogue has come, or when it has none). */
+    itemOf: (name) => {
+      const b = books.get(name);
+      return b ? { ...b.it, color: catOf(b.it.category).color, sign: catOf(b.it.category).sign } : null;
+    },
+    /** The search field (the frame gives it the focus when it opens). */
+    search,
     sig: () => [st.state, appsKey()].join(),
     filterApps,
     reveal,

@@ -15,7 +15,8 @@ export const TRUFFLE = {
  * The workspaces, in the order of the left panel. `icon` is a sprite name of the app. Home is where Utensils opens: a dashboard
  * that shows what every other workspace offers. Shelf is the bookcase: a book for every tool, coloured by the workspace it belongs to.
  * Picture, Video and Audio hold the one-job tools of each medium, VFX the effects that change a clip, Edit the free tools that run on
- * this machine, Templates the official ComfyUI workflows run on Comfy Cloud. `color` is the workspace's own colour (the cloth of its
+ * this machine, Templates the official ComfyUI workflows run on Comfy Cloud: the LIBRARY, which is not a page of the list but a frame
+ * that opens in front of any workspace (its key under the list, utensils-library-frame.js; setWorkspace("templates") opens it). `color` is the workspace's own colour (the cloth of its
  * books on the Shelf, its brass plate's chip, the dot of its row in the panel): set here once so every part of Utensils agrees; Home
  * and Shelf have none (they are of every workspace).
  */

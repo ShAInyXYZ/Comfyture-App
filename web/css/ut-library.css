@@ -1,12 +1,25 @@
-/* Utensils' LIBRARY: the hall of every official ComfyUI workflow (utensils-library.js). A slim filter bar, the category chips, then
-   the hall: walnut bookcases side by side under their carved signs, walked sideways. The books are the Shelf's spines (.usb-*,
-   ut-shelf.css, the same textures and props), thinner, with a gold APP / API foil at their foot; a book's card opens beside it.
-   Mockup: docs/brand/products/utensils-v5/utensils-v5-library.png. The panel of the workflow opened is ut-templates.css's. */
+/* Utensils' LIBRARY: the hall of every official ComfyUI workflow (utensils-library.js), in its frame (ut-library-frame.css). Its brass
+   nameplate, the search and the filters, the category chips, the makers' logos, then the hall: walnut bookcases side by side under their
+   carved signs, walked sideways. The books are the Shelf's, bound blind (.usb-book, ut-shelf.css): the title pressed up the spine, the
+   maker's logo pressed at the head, APP or API at the foot; a book's card opens beside it. Mockups: docs/brand/products/utensils-v6.
+   The panel of the workflow opened is ut-templates.css's. */
 
-.lb { --sign: 56px; display: grid; flex: 1 1 0; grid-template-rows: auto auto minmax(0, 1fr); gap: .75rem; min-height: 0; }
+.lb { --sign: 56px; display: grid; flex: 1 1 0; grid-template-rows: auto auto auto minmax(0, 1fr); gap: .625rem; min-height: 0; }
+.lb-makers[hidden] { display: none; }
 
-/* ---- the filters ---------------------------------------------------------------------------------------------------- */
+/* ---- the nameplate, the filters, the close key ------------------------------------------------------------------------- */
 .lb-bar { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.lb-plate { position: relative; display: inline-flex; flex: none; align-items: center; gap: 1rem; min-height: 3rem; padding: .25rem 1.625rem .1875rem; border-radius: .5rem; color: #2b1a08; white-space: nowrap;
+  background: linear-gradient(180deg, #f2d899, #c99a4b 50%, #93682a); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -1px 0 rgba(0, 0, 0, .3), inset 0 0 0 3px rgba(92, 58, 18, .35), 0 4px 12px rgba(0, 0, 0, .5); }
+.lb-plate::before, .lb-plate::after { content: ""; position: absolute; top: 50%; width: .375rem; height: .375rem; margin-top: -.1875rem; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3c4, #7d5a20 70%); box-shadow: 0 0 0 .5px rgba(0, 0, 0, .4); }
+.lb-plate::before { left: .5rem; }
+.lb-plate::after { right: .5rem; }
+.lb-plate b { font: 700 1.5rem/1 ui-serif, Georgia, "Times New Roman", serif; letter-spacing: .16em; text-transform: uppercase; text-shadow: 0 1px 0 rgba(255, 240, 200, .5); }
+.lb-plate-count { padding-top: .125rem; font: 600 .8125rem/1 var(--font-mono); letter-spacing: .04em; color: rgba(43, 26, 8, .78); }
+.lb-plate-count:empty { display: none; }
+.lb-close { display: grid; flex: none; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0; border: 1px solid var(--line2); border-radius: 50%; background: rgba(255, 255, 255, .03); color: var(--text); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.lb-close svg { width: 1.125rem; height: 1.125rem; }
+.lb-close:hover { border-color: var(--accent); color: var(--accent); }
 .lb-searchbox { position: relative; display: flex; flex: 1 1 18rem; align-items: center; min-width: 12rem; }
 .lb-searchbox > svg { position: absolute; left: 1rem; width: 1.125rem; height: 1.125rem; color: var(--dim); pointer-events: none; }
 .lb-search { width: 100%; min-height: 2.75rem; padding: 0 7.5rem 0 2.75rem; border: 1px solid var(--line2); border-radius: var(--r-pill); background: var(--sunk); color: var(--text); font: 400 .9375rem/1 var(--font-sans); transition: border-color var(--t-fast); }
@@ -35,6 +48,13 @@
 .lb-chip.is-all[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 700; }
 .lb-chip.is-all[aria-pressed="true"] em { color: rgba(20, 20, 20, .6); }
 .lb-chip:disabled { opacity: .32; cursor: default; }
+/* the makers: a logo, a name, a count; the one picked lit */
+.lb-maker { gap: .4375rem; padding-left: .5rem; }
+.lb-maker-logo { flex: none; width: 1.125rem; height: 1.125rem; background: currentColor; -webkit-mask: var(--mk-mono) center / contain no-repeat; mask: var(--mk-mono) center / contain no-repeat; }
+.lb-maker .lb-maker-logo { color: var(--text); opacity: .82; }
+.lb-maker[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.lb-maker[aria-pressed="true"] .lb-maker-logo { color: var(--accent-ink); opacity: 1; }
+.lb-maker[aria-pressed="true"] em { color: rgba(20, 20, 20, .6); }
 
 /* ---- the hall --------------------------------------------------------------------------------------------------------- */
 .lb-hallwrap { position: relative; min-height: 0; overflow: hidden; border-radius: 1.5rem;
@@ -82,21 +102,15 @@
 .lb-row .usb-prop { height: calc(var(--pw) * (var(--shelf, 160px) - var(--plank) - 1em)); }
 .lb-row .usb-prop.is-left { order: -1; }
 
-/* a book: thinner than the Shelf's, its title up the spine on as many lines as it needs, APP or API in gold at its foot */
-.lb-book { --fs: .86; --foot: 3.05; min-width: var(--w); height: calc(var(--h) * (var(--shelf, 160px) - var(--plank) - .75 * var(--bk, 13px))); padding: 0 .1em; }
-.lb-book:has(> .lb-foil) { --foot: 4.35; }
-.lb-book .usb-name { height: calc(var(--h) * (var(--shelf, 160px) - var(--plank) - .75 * var(--bk, 13px)) - var(--foot) * var(--bk, 13px)); padding: 0 .08em; line-height: 1.06; letter-spacing: .01em; }
-.lb-book .usb-ico { margin-top: .95em; }
-.lb-book .usb-ico svg { width: .95em; height: .95em; }
+/* a book: the Shelf's binding (.usb-book), as tall as the Library's shelf allows (its height comes from --shelf, not from a size container) */
+.lb-book { height: calc(var(--h) * (var(--shelf, 250px) - var(--plank) - .75 * var(--bk, 13px))); }
 .lb-foil { flex: none; margin: auto 0 1em; font: 700 .68em/1 var(--font-mono); letter-spacing: .1em; color: transparent; background: linear-gradient(180deg, #fff0bf, #d9aa52 55%, #9c7228); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .65)); }
 .lb-book.is-open { z-index: 3; box-shadow: 0 0 0 2px var(--accent), 0 0 1em rgba(242, 255, 89, .3), 2px 0 3px rgba(0, 0, 0, .35); }
 /* pulled out and outlined: pointed at (.is-out, the shelf's look), shown by revealWorkflow (.is-revealed) or by Truffle's guide (.is-guided) */
-.lb-book.is-revealed { z-index: 4; transform: perspective(28em) translateY(-.6em) translateZ(.9em) rotateY(-16deg); box-shadow: 0 0 0 2px var(--accent), 0 0 1.4em rgba(242, 255, 89, .32), .5em .7em 1.2em rgba(0, 0, 0, .6); filter: brightness(1.08); }
+.lb-book.is-revealed { z-index: 4; transform: perspective(28em) translateY(calc(-.6 * var(--u))) translateZ(calc(.9 * var(--u))) rotateY(-16deg); box-shadow: 0 0 0 2px var(--accent), 0 0 1.4em rgba(242, 255, 89, .32), .5em .7em 1.2em rgba(0, 0, 0, .6); filter: brightness(1.08); }
 .lb-book.is-pulse { animation: lb-pulse 1.3s var(--ease-out) 2; }
 @keyframes lb-pulse { 0% { box-shadow: 0 0 0 2px var(--accent), 0 0 0 0 rgba(242, 255, 89, .55); } 70% { box-shadow: 0 0 0 2px var(--accent), 0 0 0 1.1em rgba(242, 255, 89, 0); } 100% { box-shadow: 0 0 0 2px var(--accent), 0 0 0 0 rgba(242, 255, 89, 0); } }
-.lb-book.is-guided { z-index: 3; transform: translateY(-.45em); }
-.lb-book.is-guided:not(:has(> .rcp-badge))::after { content: counter(gstep); counter-reset: gstep var(--guide-step, 0); position: absolute; top: -.75em; left: 50%; display: grid; place-items: center; min-width: 1.5em; height: 1.5em; margin-left: -.75em; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font: 700 .8em/1 var(--font-mono); box-shadow: 0 2px 6px rgba(0, 0, 0, .5); }
-.lb-book.is-guided:not([style*="--guide-step"])::after { content: none; }
+.lb-book.is-guided { z-index: 3; transform: translateY(calc(-.45 * var(--u))); }
 
 /* ---- the card a book opens, beside it --------------------------------------------------------------------------------- */
 .lb-card { --sec: #888; position: fixed; z-index: 60; left: 0; top: 0; display: flex; flex-direction: column; width: min(24.5rem, calc(100vw - 1.5rem)); max-height: calc(100dvh - var(--head, 4rem) - 1.5rem); padding: .5rem; border: 1px solid var(--line2); border-radius: 1.25rem; background: #17171a; box-shadow: 0 26px 60px rgba(0, 0, 0, .62), 0 0 0 1px rgba(0, 0, 0, .3); opacity: 0; pointer-events: none; transform: translateX(-.375rem) scale(.98); transition: opacity .16s var(--ease-out), transform .16s var(--ease-out); }
@@ -122,6 +136,8 @@
 .lb-card-title { flex: 1 1 12rem; min-width: 0; font: 700 1.125rem/1.25 var(--font-sans); letter-spacing: -.01em; }
 .lb-chip-cat { flex: none; padding: .25rem .625rem; border: 1px solid color-mix(in oklab, var(--sec) 60%, transparent); border-radius: var(--r-pill); background: color-mix(in oklab, var(--sec) 22%, transparent); color: color-mix(in oklab, var(--sec), white 45%); font: 600 .6875rem/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
 .lb-card-top .lb-foil { margin: 0; font-size: .6875rem; }
+.lb-card-maker { display: inline-flex; align-items: center; gap: .5rem; font: 600 .875rem/1.2 var(--font-sans); color: var(--text); }
+.lb-card-maker em { font: 400 .8125rem/1 var(--font-sans); font-style: normal; color: var(--dim); }
 .lb-sec { display: grid; gap: .3125rem; }
 .lb-k { font: 500 .6875rem/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
 .lb-what, .lb-how { margin: 0; font: 400 .84375rem/1.45 var(--font-sans); color: var(--muted); }

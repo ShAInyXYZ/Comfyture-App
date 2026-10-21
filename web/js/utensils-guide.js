@@ -111,7 +111,7 @@ async function enrich() {
 // ---------------------------------------------------------------- going to a step
 
 /** Opens a step: its tool in its workspace, or its workflow in the Library (as an app when it is one); the coach shows how to use it. */
-function openStep(i) {
+export function openStep(i) {
   const g = utensils.guide;
   const s = g?.steps[i];
   if (!s) return;
@@ -203,6 +203,11 @@ function expand(open) {
   persist();
   draw();
 }
+/** Folds the recipe away (its books go back to a strip in the Library's frame, its panel to a pill) or brings it forward again. */
+export function foldGuide(folded) {
+  expand(!folded);
+  changed("utensils");
+}
 
 function stepRow(s, i, g) {
   const now = g.current === i;
@@ -276,7 +281,8 @@ function drawCoach(g) {
 function placeCoach() {
   if (coach.hidden) return;
   const ws = utensils.workspace;
-  const space = document.querySelector(`.ut-main > [data-space="${ws}"]:not([hidden])`);
+  // (in the Library's frame, the workflow's panel is the run key's place)
+  const space = utensils.library ? document.querySelector(`.lbx [data-space="templates"]`) : document.querySelector(`.ut-main > [data-space="${ws}"]:not([hidden])`);
   const keys = space ? [...space.querySelectorAll(".ut-primary")].filter((k) => k.offsetParent && k.getBoundingClientRect().width) : [];
   document.querySelectorAll(".rcp-pulse").forEach((k) => k.classList.remove("rcp-pulse"));
   const key = keys.at(-1);
@@ -323,15 +329,18 @@ function draw() {
   }
   const g = utensils.guide;
   const here = currentPage() === "utensils";
+  // the Library's frame shows the recipe as its reading table: the panel and the pill wait under it (the coach still shows)
+  const framed = !!utensils.library;
   root.hidden = !g || !here;
-  document.body.classList.toggle("has-guide", !!g && here && !g.collapsed);
+  root.classList.toggle("is-framed", framed);
+  document.body.classList.toggle("has-guide", !!g && here && !g.collapsed && !framed);
   if (!g || !here) {
     coach.hidden = true;
     document.querySelectorAll(".rcp-pulse").forEach((k) => k.classList.remove("rcp-pulse"));
     light();
     return;
   }
-  const sig = JSON.stringify([g.title, g.steps.map((s) => [s.id, s.price, s.use.length, s.how]), g.current, g.collapsed, g.coach, utensils.workspace, utensils.results[0]?.id]);
+  const sig = JSON.stringify([g.title, g.steps.map((s) => [s.id, s.price, s.use.length, s.how]), g.current, g.collapsed, g.coach, utensils.workspace, framed, utensils.results[0]?.id]);
   if (sig !== drawnSig) {
     drawnSig = sig;
     panel.hidden = g.collapsed;

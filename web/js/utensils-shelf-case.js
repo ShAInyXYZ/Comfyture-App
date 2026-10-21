@@ -1,7 +1,8 @@
 // The Shelf's BOOKCASE: a book for every tool, on three walnut shelves, coloured by the workspace the tool belongs to. Read from the
 // live registry (a tool registered later gets its book), grouped by workspace in the panel's order, each group with a brass plate on the
-// shelf's edge that opens its workspace. A book's cloth, its height and its thickness come from its id (the same every time), its name
-// runs up its spine. Pointing at a book (or reaching it with the keyboard) pulls it out a little and opens its preview card: what the
+// shelf's edge that opens its workspace. A book is bound blind (design D, css/ut-shelf.css): its cloth and its height come from its id (the
+// same every time), its name is pressed up its spine (the book as thick as its lines), the logo of the maker of its model is pressed at its
+// head (the knowledge says which model it runs: utensils-knowledge.js toolMakers), else its section's icon. Pointing at a book (or reaching it with the keyboard) pulls it out a little and opens its preview card: what the
 // tool does, which workspace it belongs to, how it runs, and a key that opens it there; a click opens it at once (on a touch screen
 // the first tap shows the card, the second opens). The books are sized to fit: when a shelf is too full they get thinner, never hidden.
 import { h, icon, sprite } from "./dom.js";
@@ -11,7 +12,11 @@ import { openTool } from "./utensils-home-ui.js";
 import { wayOf, MARK } from "./utensils-home-facts.js";
 import { apps, loadApps } from "./utensils-templates-api.js";
 import { previewOf, colorOf, sectionOf } from "./utensils-shelf-show.js";
-import { bookLook, prop as propImg, placeCard } from "./utensils-books.js";
+import { bookLook, prop as propImg, placeCard, fitSpines } from "./utensils-books.js";
+import { toolMakers } from "./utensils-knowledge.js";
+
+/** Who made each tool's model (tool id -> maker id), once the knowledge has answered. */
+let makers = null;
 
 /** The workspaces whose tools are books (Home and Shelf are of every workspace). */
 const SECTIONS = WORKSPACES.filter((w) => w.color);
@@ -70,15 +75,16 @@ export function bookcase() {
   let hideTimer = 0;
   let armed = null; // a book a touch has shown (the next tap on it opens it)
 
-  /** A book: a button styled as a spine. */
+  /** A book: a button bound as a spine (design D, css/ut-shelf.css): its name is its text, its maker's logo pressed at its head. */
   function bookEl(b, color) {
     const look = bookLook(b.id, color);
-    b.thick = look.w;
-    const el = h(`button.usb-book.is-${look.tex}`, {
+    const maker = makers?.get(b.id) ?? null;
+    const name = (b.count ? (templatesCount ? `${templatesCount} workflows` : b.name) : b.name).replace(/-/g, "\u2011");
+    const el = h("button.usb-book", {
       type: "button",
-      dataset: { tool: b.id, ws: b.ws },
+      dataset: { tool: b.id, ws: b.ws, ...(maker ? { maker } : {}) },
       "aria-label": `${b.full}, ${sectionOf(b.ws).name}: ${b.hint}`,
-      style: { "--c": look.color, "--h": look.h.toFixed(3), "--w": `${b.thick.toFixed(2)}em` },
+      style: { "--c": look.color, "--h": look.h.toFixed(3), "--w": `calc(${(look.w * 0.92).toFixed(2)} * var(--bk, 13px))` },
       on: {
         click: (e) => go(b, el, e),
         pointerenter: (e) => e.pointerType !== "touch" && show(b, el),
@@ -88,10 +94,8 @@ export function bookcase() {
         blur: () => later(),
       },
     },
-    h("i.usb-band.is-top"),
-    h("span.usb-ico", {}, sprite(b.icon)),
-    h("span.usb-name", {}, (b.count ? (templatesCount ? `${templatesCount} workflows` : b.name) : b.name).replace(/-/g, "\u2011")),
-    h("i.usb-band.is-bottom"));
+    maker ? null : h("span.usb-ico", {}, sprite(b.icon)),
+    name);
     b.el = el;
     return el;
   }
@@ -180,7 +184,8 @@ export function bookcase() {
     templatesCount = total;
     hide(true);
     const groups = SECTIONS.map((w) => ({ w, books: booksOf(w.id) })).filter((g) => g.books.length);
-    for (const g of groups) for (const b of g.books) b.thick = bookLook(b.id, g.w.color).w;
+    // (a book is as thick as its name's lines: about one line for every twelve letters, or its own look when thicker)
+    for (const g of groups) for (const b of g.books) b.thick = Math.max(bookLook(b.id, g.w.color).w * 0.92, Math.ceil(String(b.name).length / 12) * 1.05 + 0.5);
     const rows = shelves(groups);
     books = [];
     el.replaceChildren(...rows.map((row, r) => {
@@ -224,23 +229,8 @@ export function bookcase() {
         size -= 0.5;
         el.style.setProperty("--bk", `${size}px`);
       }
-      // a spine whose longest word does not fit runs it in a smaller face (down to two thirds); its book may get a column wider
-      // (measured on the words themselves: the spine centres its words, so a word too long spills out of both ends, not one)
-      const room = (name) => name.clientHeight;
-      const length = (name) => {
-        const range = document.createRange();
-        range.selectNodeContents(name);
-        return range.getBoundingClientRect().height;
-      };
-      // a book whose longest word does not fit stands taller first (as tall as the shelf allows), and only then takes a smaller face
-      for (const name of el.querySelectorAll(".usb-name")) {
-        const book = name.parentElement;
-        book.dataset.h ??= book.style.getPropertyValue("--h");
-        book.style.setProperty("--h", book.dataset.h);
-        book.style.removeProperty("--fs");
-        if (length(name) > room(name) + 0.5) book.style.setProperty("--h", "0.98");
-        for (let fs = 0.84; length(name) > room(name) + 0.5 && fs >= 0.58; fs -= 0.04) book.style.setProperty("--fs", fs.toFixed(2));
-      }
+      // a spine whose longest word does not fit stands taller first, then runs it in a smaller face (utensils-books.js)
+      fitSpines([...el.querySelectorAll(".usb-book")], { taller: true });
       // the props that have room again come back
       for (const p of el.querySelectorAll(".usb-prop[hidden]")) {
         p.hidden = false;
@@ -249,6 +239,16 @@ export function bookcase() {
     });
   }
   new ResizeObserver(() => fit()).observe(el);
+  // the makers' logos come with the knowledge: the books are given them (a tool with a maker loses its section's icon for the logo)
+  toolMakers().then((map) => {
+    makers = map;
+    for (const b of books) {
+      const m = map.get(b.id);
+      if (!m || !b.el) continue;
+      b.el.dataset.maker = m;
+      b.el.querySelector(":scope > .usb-ico")?.remove();
+    }
+  });
   // the spines are measured in the app's own face: they are measured again once it has come
   document.fonts?.ready.then(() => fit());
   document.fonts?.addEventListener?.("loadingdone", () => fit());

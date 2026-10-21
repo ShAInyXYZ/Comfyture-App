@@ -18,6 +18,8 @@ import { h } from "./dom.js";
 import { WORKSPACES } from "./utensils-harness.js";
 
 export const WORKSPACE_IDS = WORKSPACES.map((w) => w.id);
+/** The Library (its id stays "templates"): not a page of its own but a frame over whichever workspace is open (utensils-library-frame.js). */
+export const LIBRARY = "templates";
 
 export const TOOLS = [
   { id: "upscale", workspace: "picture", group: "Picture", name: "Upscale", icon: "tool-upscale", hint: "More detail, up to 4× larger", takes: ["image"], verb: "Upscale", options: [{ key: "scale", type: "choice", values: [2, 4] }] },
@@ -59,7 +61,10 @@ const read = () => {
 };
 const kept = read();
 export const utensils = {
-  workspace: WORKSPACE_IDS.includes(kept.workspace) ? kept.workspace : "home",
+  // (a browser that kept the Library as its workspace, from before it was a frame, opens on Home with the Library open over it)
+  workspace: WORKSPACE_IDS.includes(kept.workspace) && kept.workspace !== LIBRARY ? kept.workspace : "home",
+  /** The Library's frame is open, over the workspace. */
+  library: kept.library === true || kept.workspace === LIBRARY,
   tool: toolById(kept.tool).id,
   // what each tool was given: { image, video, audio } and its words and settings
   inputs: kept.inputs ?? {},
@@ -81,7 +86,7 @@ export const utensils = {
 let sent = "";
 const persist = () => {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ workspace: utensils.workspace, tool: utensils.tool, inputs: utensils.inputs }));
+    localStorage.setItem(KEY, JSON.stringify({ workspace: utensils.workspace, library: utensils.library, tool: utensils.tool, inputs: utensils.inputs }));
   } catch {}
   const list = JSON.stringify(utensils.results.slice(0, 200));
   if (list !== sent && loaded) {
@@ -102,8 +107,25 @@ export function setWorkspace(id) {
   if (!WORKSPACE_IDS.includes(id)) return;
   // (a workspace asked for from another page, a result opened there, say, is where the person is going: Home does not take them back)
   if (landing.away) landing.intent = true;
-  if (utensils.workspace === id) return;
+  // the Library opens over the workspace that is open; going to a workspace puts it away
+  if (id === LIBRARY) return openLibrary();
+  if (utensils.workspace === id && !utensils.library) return;
   utensils.workspace = id;
+  utensils.library = false;
+  update();
+}
+
+/** Opens the Library's frame over the workspace that is open (from any workspace: its key in the panel, Home, a book, Truffle). */
+export function openLibrary() {
+  if (landing.away) landing.intent = true;
+  if (utensils.library) return;
+  utensils.library = true;
+  update();
+}
+/** Puts the Library's frame away: the workspace under it is where it was. */
+export function closeLibrary() {
+  if (!utensils.library) return;
+  utensils.library = false;
   update();
 }
 
@@ -120,8 +142,9 @@ export function arrive() {
   if (!landing.away) return;
   const errand = landing.intent;
   Object.assign(landing, { away: false, intent: false });
-  if (!errand && utensils.workspace !== "home") {
+  if (!errand && (utensils.workspace !== "home" || utensils.library)) {
     utensils.workspace = "home";
+    utensils.library = false;
     update();
   }
 }
@@ -130,7 +153,12 @@ export function pickTool(id) {
   if (landing.away) landing.intent = true;
   const t = toolById(id);
   utensils.tool = t.id;
-  utensils.workspace = WORKSPACE_IDS.includes(t.workspace) ? t.workspace : utensils.workspace;
+  // a mini app (or the Library's own template tool) opens in the Library's frame, over the workspace; any other tool in its workspace
+  if (t.workspace === LIBRARY) utensils.library = true;
+  else {
+    utensils.workspace = WORKSPACE_IDS.includes(t.workspace) ? t.workspace : utensils.workspace;
+    utensils.library = false;
+  }
   utensils.shown = null;
   update();
 }
