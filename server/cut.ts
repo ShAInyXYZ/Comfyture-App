@@ -8,7 +8,8 @@
 // both makes ffmpeg 4 drop and repeat frames at the joins).
 
 import { fxPlan, FX_KINDS, EVERY, WHIP, whipBlur } from "../web/js/fx.js";
-import { lyricAss, ANIMATED, LYRIC_FONT } from "../web/js/lyrics.js";
+import { lyricAss, ANIMATED, LYRIC_FONT, LOOKS } from "../web/js/lyrics.js";
+import { KEYS, LANGUAGES, STRUCTURES } from "../web/js/song.js";
 
 export type Motion = { from: { scale: number; x: number; y: number }; to: { scale: number; x: number; y: number } };
 export interface CutItem {
@@ -27,7 +28,9 @@ export interface CutItem {
   sound?: boolean;
   join?: "cut" | "dissolve" | "whip";
   text?: string;
-  style?: "center" | "lower" | "pop" | "karaoke" | "bounce" | "top" | "none";
+  style?: "center" | "lower" | "pop" | "karaoke" | "bounce" | "top" | "none" | "stack" | "type" | "neon" | "outline" | "hand" | "minimal" | "comic";
+  /** how a word arrives, when the line names one (else its style's own): fill, pop, bounce, cut, fade */
+  anim?: string;
   grade?: string;
   /** A picture placed on the frame (a sticker): its middle and its width as fractions of the frame, its turn in degrees, its order. */
   x?: number;
@@ -495,8 +498,8 @@ Rules: change only what is asked; use the clip numbers and times of the edit as 
 }
 export const CUT_BRIEF = cutBrief();
 
-/** Jam's four workspaces, and the bentos whose windows Pickle may open for the user (so a key that costs credits is pressed by them). */
-export const JAM_WORKSPACES = ["track", "words", "band", "edit"] as const;
+/** Jam's five workspaces, in the order a video is made, and the bentos whose windows Pickle may open for the user (so a key that costs credits is pressed by them). */
+export const JAM_WORKSPACES = ["song", "track", "words", "band", "edit"] as const;
 export const JAM_WINDOWS = ["record", "start", "hear", "lyrics", "styles", "preview", "artist", "moves", "vibe", "shots", "editor", "effects", "stickers", "make"] as const;
 const JAM_CREW = ["Praline", "Sesame", "Mochi", "Meringue", "Earl", "Josie", "Theo", "Margot", "Ivy", "Dre"];
 
@@ -508,15 +511,16 @@ const JAM_CREW = ["Praline", "Sesame", "Mochi", "Meringue", "Earl", "Josie", "Th
 export function jamBrief(stickers: string[] = []) {
   return `You are Pickle, the little green frog, Jam's band leader. Jam turns a song into a music video starring the user's character; you know that and nothing else of Comfyture. Be brief and warm, one short sentence. The user asks for changes; you answer with JSON only, no other words:
 {"reply": "one short sentence of what you did", "actions": [ ... ]}
-Jam has four workspaces: the track (the song, the part of it used, its beats), the words (lyrics timed word by word, the captions' look), the band (the artist, the dance to copy, the vibe, the planned shots) and the edit (the cut on the beat, joins, effects, stickers, then making and exporting the video). JAM NOW below says which one is open and what is in it. Times are seconds.
-You never start anything that costs credits: making a track, hearing the words and making the video are keys the user presses, each showing its estimate. When one is what they need, open its window and say which key to press.
+Jam has five workspaces, in the order a video is made: the song (a form that makes a song: its idea, shape, style, lyrics, length, tempo and key), the track (the song's part used and its beats), the words (lyrics timed word by word, the captions' look), the band (the artist, the dance to copy, the vibe, the planned shots) and the edit (the cut on the beat, joins, effects, stickers, then making and exporting the video). JAM NOW below says which one is open, how far the video is (its steps, done or next) and what the open workspace holds; what the others hold you are not shown, so do not guess it: say where it is and offer to open it. Times are seconds.
+You never start anything that costs credits: making a song, hearing the words and making the video are keys the user presses, each showing its estimate. When one is what they need, say which key to press (open its window when it has one). Lead them to the next step JAM NOW names: with no song yet, the first thing is the song: fill its form with set_song, then say "Make the song" is ready; a made song is the video's track at once; after the track come the words, then the band, then the edit.
 Actions for the track, the words, the band and Jam itself:
 - {"op": "part", "seconds": 15}: how long the video runs: 15, 30, 60, or 0 for the whole track. {"op": "part", "from": 42.5}: where in the track the part starts. {"op": "part", "drop": true}: starts the part at the track's drop (its biggest lift), {"op": "part", "chorus": true}: at the loudest stretch of the track, when JAM NOW gives them
 - {"op": "words", "text": "first line\nsecond line"}: the lyrics, a line each, put on the singing heard, or spread over the part when none was heard
-- {"op": "captions", "style": "pop", "size": 0.1}: how every line is drawn: karaoke, pop, bounce, lower or none; size is a share of the frame's short side, 0.04 to 0.2 (0.09 is the usual)
+- {"op": "captions", "style": "pop", "size": 0.1}: how every line is drawn: karaoke, pop, bounce, stack (bold, a word to a row), type (typewriter), neon, outline, hand (handwritten), minimal, comic, lower or none; size is a share of the frame's short side, 0.04 to 0.2 (0.09 is the usual)
 - {"op": "artist", "name": "Josie"}: who performs, one of the crew: ${JAM_CREW.join(", ")}
 - {"op": "vibe", "text": "pastel room, soft daylight"}: the look of the scene, a few words
 - {"op": "shots", "every": 2}: the video cut every 1, 2 or 4 bars; {"op": "shots", "shot": 3, "kind": "dance"}: shot 3 is a performance, a dance or broll shot
+- {"op": "set_song", "idea": "a cozy winter song about late-night walks", "structure": "pop", "tags": "lo-fi hip hop, dreamy, soft Rhodes, female vocal", "lyrics": "[Verse 1]\nSnow is falling soft and slow\n\n[Chorus]\nKeep a little summer inside", "name": "Winter nights", "seconds": 200, "bpm": 76, "key": "A minor", "language": "en"}: fills the song form (on the song page: it opens it); any field you leave out stays as it is. It makes nothing: Make the song is a key the user presses. structure is one of ${STRUCTURES.map((x) => x.id).join(", ")}; seconds 20 to 240; bpm 40 to 220; key like "A minor" or "C# major"; language a code (${LANGUAGES.slice(0, 8).map((l) => l.value).join(", ")}...); tags are the style in words (genre, mood, instruments, the voice); lyrics go under [Verse 1], [Chorus]... tags, a line each
 - {"op": "open", "workspace": "track", "window": "hear"}: shows a workspace (${JAM_WORKSPACES.join(", ")}) and, with "window", opens a bento's window (${JAM_WINDOWS.join(", ")}): the track's start window has the ways to add a song, record the track's start, hear has the key that hears the words, make (in the edit) has the key that makes the video
 Actions on the edit (clip numbers are the numbers on the Video track, from 1):
 - {"op": "trim", "clip": 1, "seconds": 3}: the clip runs that long (keeping its start)
@@ -540,25 +544,52 @@ Rules: change only what is asked, in the workspace that is open or the one the t
 function jamLines(j: any) {
   const n = (v: unknown) => (Number.isFinite(Number(v)) ? Math.round(Number(v) * 10) / 10 : null);
   const say = (label: string, v: unknown) => (v === undefined || v === null || v === "" ? [] : [`${label}: ${String(v).slice(0, 160)}`]);
+  const ws = (JAM_WORKSPACES as readonly string[]).includes(j.workspace) ? (j.workspace as string) : "track";
   const t = j.track ?? {};
+  const track = (full: boolean) => t.name
+    ? [`track: "${String(t.name).slice(0, 60)}", ${n(t.seconds)} s${t.bpm ? `, ${n(t.bpm)} bpm` : ""}${full ? `; the part used runs ${n(t.from)} to ${n(t.to)} s${t.drop !== undefined && t.drop !== null ? `; the drop is at ${n(t.drop)} s` : ""}${t.loud !== undefined && t.loud !== null ? `; the loudest stretch starts at ${n(t.loud)} s` : ""}` : ""}`]
+    : ["track: (none yet)"];
+  const shots = Array.isArray(j.shots) && j.shots.length ? [`shots: ${j.shots.slice(0, 24).map((x: any, i: number) => `${i + 1}. ${x.kind} ${n(x.from)}-${n(x.to)} s`).join("; ")}`] : [];
+  const keys = (...names: ("track" | "words" | "video")[]) => (j.costs ? [`keys that cost credits: ${names.map((k) => `${{ track: "make a song", words: "hear the words", video: "make the video" }[k]} ${j.costs[k] ?? "?"}`).join(", ")}`] : []);
+  // (only what the workspace open holds: the others are named in a line, so he says where a thing is rather than guess it)
+  const here: Record<string, string[]> = {
+    song: [
+      ...(j.song ? [
+        ...say("idea", j.song.idea), ...say("shape", j.song.shape), ...say("style", j.song.style),
+        `length ${n(j.song.length)} s, ${n(j.song.bpm)} bpm, ${j.song.key ?? "?"}, time ${j.song.time ?? "?"}, language ${j.song.language ?? "?"}, quality ${j.song.quality ?? "?"}`,
+        ...say("title", j.song.title), ...say("lyrics", j.song.lyrics),
+        ...(j.song.shown ? [`song shown: "${String(j.song.shown.name).slice(0, 60)}", ${n(j.song.shown.seconds)} s`] : []),
+        ...(Array.isArray(j.song.shelf) && j.song.shelf.length ? [`songs on the shelf: ${j.song.shelf.map((x: unknown) => `"${String(x).slice(0, 40)}"`).join(", ")}`] : []),
+        ...say("busy", j.song.busy),
+      ] : []),
+      ...(t.name ? [`the video's track: "${String(t.name).slice(0, 60)}", ${n(t.seconds)} s`] : ["the video has no track yet"]),
+    ],
+    track: [...track(true), ...keys("words")],
+    words: [...track(false), ...(t.from !== undefined ? [`the part used runs ${n(t.from)} to ${n(t.to)} s`] : []), ...(j.words ? [`words: ${j.words.count ?? 0} lines${j.words.heard ? ", the singing was heard" : j.words.count ? ", typed" : ""}; captions ${j.words.style ?? "karaoke"}`] : []), ...keys("words")],
+    band: [...say("artist", j.artist), ...say("dance to copy", j.dance ? `${n(j.dance)} s` : ""), ...say("vibe", j.vibe), ...shots, ...keys("video")],
+    edit: [...track(false), ...say("artist", j.artist), ...shots, ...keys("video")],
+  };
+  const others: Record<string, string> = { song: "a form that makes a song", track: "the part of the song used and its beats", words: "the lyrics and the captions", band: "the artist, the dance, the vibe and the shots", edit: "the cut, effects and stickers" };
   return [
     "JAM NOW",
-    `workspace open: ${JAM_WORKSPACES.includes(j.workspace) ? j.workspace : "track"}`,
-    ...(t.name ? [`track: "${String(t.name).slice(0, 60)}", ${n(t.seconds)} s${t.bpm ? `, ${n(t.bpm)} bpm` : ""}; the part used runs ${n(t.from)} to ${n(t.to)} s${t.drop !== undefined && t.drop !== null ? `; the drop is at ${n(t.drop)} s` : ""}${t.loud !== undefined && t.loud !== null ? `; the loudest stretch starts at ${n(t.loud)} s` : ""}`] : ["track: (none yet)"]),
-    ...(j.words ? [`words: ${j.words.count ?? 0} lines${j.words.heard ? ", the singing was heard" : j.words.count ? ", typed" : ""}; captions ${j.words.style ?? "karaoke"}`] : []),
-    ...say("artist", j.artist),
-    ...say("dance to copy", j.dance ? `${n(j.dance)} s` : ""),
-    ...say("vibe", j.vibe),
-    ...(Array.isArray(j.shots) && j.shots.length ? [`shots: ${j.shots.slice(0, 24).map((x: any, i: number) => `${i + 1}. ${x.kind} ${n(x.from)}-${n(x.to)} s`).join("; ")}`] : []),
-    ...(j.costs ? [`keys that cost credits: make a track ${j.costs.track ?? "?"}, hear the words ${j.costs.words ?? "?"}, make the video ${j.costs.video ?? "?"}`] : []),
+    `workspace open: ${ws}`,
+    ...say("the video's steps", j.steps),
+    ...here[ws],
+    `(not shown to you: ${JAM_WORKSPACES.filter((w) => w !== ws).map((w) => `${w} holds ${others[w]}`).join("; ")})`,
     "",
   ];
 }
 
 export function cutPrompt(summary: any, turns: { role: string; text: string }[]) {
   const s = summary ?? {};
+  // Pickle is told of the edit only as far as the workspace open works on it: the cut and its sounds, titles, effects and stickers in
+  // the edit, the beats in the track, the words and the edit, the lyrics in the words and the edit; the song and the band have none of it.
+  // (Kitchen's Cut, with no jam, is told all of it.)
+  const ws = s.jam ? ((JAM_WORKSPACES as readonly string[]).includes(s.jam.workspace) ? (s.jam.workspace as string) : "track") : null;
+  const sees = { cut: !ws || ws === "edit", beats: !ws || ["track", "words", "edit"].includes(ws), lyrics: !ws || ["words", "edit"].includes(ws) };
   const lines = [
     ...(s.jam ? jamLines(s.jam) : []),
+    ...(sees.cut ? [
     s.jam && s.length === undefined ? "THE EDIT NOW\n(no edit yet: it is made when a track has its part)" : "THE EDIT NOW",
     ...(s.jam && s.length === undefined ? [] : [`length ${s.length ?? 0} s, frame ${s.aspect ?? "16:9"}`]),
     "Video track:",
@@ -570,11 +601,12 @@ export function cutPrompt(summary: any, turns: { role: string; text: string }[])
     "Titles:",
     ...(Array.isArray(s.titles) ? s.titles.slice(0, 12).map((x: any) => `- "${String(x.text ?? "").slice(0, 60)}" at ${x.start} s for ${x.length} s`) : []),
     ...(s.titles?.length ? [] : ["(none)"]),
+    ] : []),
     // (what Pickle works on: his prompt always says; Kitchen's Cut hears of it only when the edit has some)
-    ...(s.jam || s.beats?.count ? ["Beats:", s.beats?.count ? `${s.beats.bpm} bpm, ${s.beats.count} beats (first at ${s.beats.first} s, first bar line is beat ${(s.beats.down ?? 0) + 1}), offset ${s.beats.offset} s, from ${s.beats.source}` : "(none found yet)"] : []),
-    ...(s.jam || s.effects?.length ? ["Effects:", ...(Array.isArray(s.effects) ? s.effects.slice(0, 20).map((x: any) => `- ${x.kind}${x.on === false ? " (off)" : ""}: every ${x.every} beats, intensity ${x.intensity}, from ${x.start} s for ${x.length} s`) : []), ...(s.effects?.length ? [] : ["(none)"])] : []),
-    ...(s.jam || s.stickers?.length ? ["Stickers:", ...(Array.isArray(s.stickers) ? s.stickers.slice(0, 20).map((x: any) => `- ${x.name} at ${x.start} s for ${x.length} s`) : []), ...(s.stickers?.length ? [] : ["(none)"])] : []),
-    ...(s.jam || s.lyrics?.length ? ["Lyrics:", ...(Array.isArray(s.lyrics) ? s.lyrics.slice(0, 60).map((x: any) => `${x.n}. "${String(x.text ?? "").slice(0, 80)}" at ${x.start} s for ${x.length} s, ${x.style}`) : []), ...(s.lyrics?.length ? [] : ["(none)"])] : []),
+    ...(sees.beats && (s.jam || s.beats?.count) ? ["Beats:", s.beats?.count ? `${s.beats.bpm} bpm, ${s.beats.count} beats (first at ${s.beats.first} s, first bar line is beat ${(s.beats.down ?? 0) + 1}), offset ${s.beats.offset} s, from ${s.beats.source}` : "(none found yet)"] : []),
+    ...(sees.cut && (s.jam || s.effects?.length) ? ["Effects:", ...(Array.isArray(s.effects) ? s.effects.slice(0, 20).map((x: any) => `- ${x.kind}${x.on === false ? " (off)" : ""}: every ${x.every} beats, intensity ${x.intensity}, from ${x.start} s for ${x.length} s`) : []), ...(s.effects?.length ? [] : ["(none)"])] : []),
+    ...(sees.cut && (s.jam || s.stickers?.length) ? ["Stickers:", ...(Array.isArray(s.stickers) ? s.stickers.slice(0, 20).map((x: any) => `- ${x.name} at ${x.start} s for ${x.length} s`) : []), ...(s.stickers?.length ? [] : ["(none)"])] : []),
+    ...(sees.lyrics && (s.jam || s.lyrics?.length) ? ["Lyrics:", ...(Array.isArray(s.lyrics) ? s.lyrics.slice(0, 60).map((x: any) => `${x.n}. "${String(x.text ?? "").slice(0, 80)}" at ${x.start} s for ${x.length} s, ${x.style}`) : []), ...(s.lyrics?.length ? [] : ["(none)"])] : []),
     "",
     "THE CONVERSATION",
     ...turns.slice(-8).map((t) => `${t.role === "user" ? "User" : "Editor"}: ${String(t.text).slice(0, 600)}`),
@@ -584,9 +616,9 @@ export function cutPrompt(summary: any, turns: { role: string; text: string }[])
 
 /** What each pet's answer may carry: Kitchen's editor the Cut room's own actions; Pickle the edit's beat work and Jam's own, nothing that makes a sound or a voice. */
 const CUT_OPS = new Set(["trim", "move", "remove", "join", "motion", "fade", "grade", "speed", "title", "music", "sound", "voice", "volume", "render"]);
-const JAM_OPS = new Set(["trim", "move", "remove", "join", "motion", "fade", "grade", "speed", "title", "volume", "render", "beats", "snap", "effect", "sticker", "lyrics", "draft", "part", "words", "captions", "artist", "vibe", "shots", "open"]);
+const JAM_OPS = new Set(["trim", "move", "remove", "join", "motion", "fade", "grade", "speed", "title", "volume", "render", "beats", "snap", "effect", "sticker", "lyrics", "draft", "part", "words", "captions", "artist", "vibe", "shots", "open", "set_song"]);
 const KINDS = new Set(FX_KINDS.map(([id]) => id as string));
-const STYLES = new Set(["karaoke", "pop", "bounce", "lower", "none"]);
+const STYLES = new Set([...Object.keys(LOOKS), "lower", "none"]);
 const SPLITS = new Set(["syllables", "letters", "even"]);
 
 /** One action of the answer, its fields in range and only the fields that action has. */
@@ -598,7 +630,15 @@ function clean(a: any) {
     return pick({ op: "beats", action, bpm: num(a.bpm, 30, 300), offset: num(a.offset, -30, 30), shift: num(a.shift, -30, 30) });
   }
   if (a.op === "snap") return { op: "snap", to: a.to === "bar" ? "bar" : "beat" };
-  // Jam's own: the part of the track, the words, the captions, the artist, the vibe, the shots, a window to open
+  // Jam's own: the song form, the part of the track, the words, the captions, the artist, the vibe, the shots, a window to open
+  if (a.op === "set_song") {
+    const text = (v: unknown, max: number) => (typeof v === "string" && v.trim() ? v.slice(0, max) : undefined);
+    const structure = STRUCTURES.some((x) => x.id === a.structure) ? a.structure : undefined;
+    const key = KEYS.includes(a.key) ? a.key : undefined;
+    const language = LANGUAGES.some((l) => l.value === a.language) ? a.language : undefined;
+    const out = pick({ op: "set_song", idea: text(a.idea, 500), structure, tags: text(a.tags, 400), lyrics: text(a.lyrics, 6000), name: text(a.name, 40), seconds: num(a.seconds, 20, 240), bpm: num(a.bpm, 40, 220), key, language });
+    return Object.keys(out).length > 1 ? out : null;
+  }
   if (a.op === "part") return pick({ op: "part", seconds: a.seconds === 0 || a.seconds === "0" ? 0 : num(a.seconds, 5, 600), from: num(a.from, 0, 36000), drop: a.drop === true ? true : undefined, chorus: a.chorus === true ? true : undefined });
   if (a.op === "words") return typeof a.text === "string" && a.text.trim() ? { op: "words", text: a.text.slice(0, 4000) } : null;
   if (a.op === "captions") return pick({ op: "captions", style: STYLES.has(a.style) ? a.style : undefined, size: num(a.size, 0.04, 0.2) });

@@ -1,26 +1,26 @@
-// Jam's screen: Pickle's panel on the left (the jam, the four workspaces, his tools for the one open), the open
-// workspace in the middle as a bento grid (every bento opens in a window for its details), his chat bar at the foot.
-// The track, the words, the band, the edit: a music video is made in that order, each its own screen. Nothing that
-// costs credits starts by itself: each such step is a key with its estimate on it, and nothing here blocks switching
-// jams or workspaces.
+// Jam's screen: Pickle's panel on the left (the jam, the five workspaces, the video's pipeline and what it has cost), the open
+// workspace beside it with its big title (the song page's two columns, or the others' bento grids, every bento opening in a
+// window for its details), his chat bar at the foot. The song, the track, the words, the band, the edit: a music video is made
+// in that order, each its own screen. Nothing that costs credits starts by itself: each such step is a key with its estimate on
+// it, and nothing here blocks switching jams or workspaces.
 import { h, ago } from "../dom.js";
 import { state, changed, toast, onChange } from "../store.js";
 import { currentPage } from "../router.js";
-import { jam, loadJams, openJam, newJam, removeJam, rename, setWorkspace, statusOf, useTrack, setArtist, setDance, edit } from "../jam.js";
+import { jam, loadJams, openJam, newJam, removeJam, rename, setWorkspace, statusOf, lampsOf, pipeline, spentOf, useTrack, setArtist, setDance, edit } from "../jam.js";
 import { cut, filmLength } from "../cut.js";
 import { lyricItems } from "../edit.js";
-import { tell, setRoom } from "../harnesses.js";
+import { setRoom } from "../harnesses.js";
 import { editorParts, drawEditor, editor } from "./editor.js";
-import { PICKLE, WORKSPACES, PRESETS } from "../jam-harness.js";
+import { PICKLE, WORKSPACES } from "../jam-harness.js";
 import { jicon, drawWindow } from "./jam-ui.js";
 import { trackWorkspace, stopRecord } from "./jam-track.js";
 import { wordsWorkspace } from "./jam-words.js";
 import { bandWorkspace } from "./jam-band.js";
 import { editWorkspace } from "./jam-edit.js";
-import { renderSong } from "./jam-song.js";
+import { songWorkspace, pauseSong, bringSong } from "./jam-song.js";
 
 const VIEWS = { track: trackWorkspace, words: wordsWorkspace, band: bandWorkspace, edit: editWorkspace };
-const TILE_ICON = { track: "disc", words: "notepad", band: "band", edit: "scissors" };
+const TILE_ICON = { song: "note", track: "disc", words: "notepad", band: "band", edit: "scissors" };
 
 let menu = false; // the jam chip's menu, open or not
 let armed = null; // a jam asked to be deleted: the second press does it
@@ -47,45 +47,51 @@ function jamChip(j) {
     menu ? jamMenu(j) : null);
 }
 
+/** A lamp: done (a tick), next (a ring lit), waiting (a ring). */
+const lamp = (state) => h("span.jm-lamp", { dataset: { state }, "aria-hidden": "true" }, state === "done" ? jicon("check") : null);
+
 function side(j) {
   const status = statusOf(j);
+  const lamps = lampsOf(j);
+  const steps = pipeline(j);
+  const spent = spentOf(j);
   return h("aside.jm-side", { "aria-label": "Pickle's panel" },
     h("div.jm-pet", {},
       h("img.jm-pet-face", { src: PICKLE.face, alt: PICKLE.name, draggable: false }),
-      h("div.jm-pet-text", {}, h("b", {}, PICKLE.name), h("span", {}, PICKLE.tag), jamChip(j))),
+      h("div.jm-pet-text", {}, h("b", {}, PICKLE.name), h("span", {}, PICKLE.tag))),
+    jamChip(j),
     h("nav.jm-tiles", { "aria-label": "Workspaces" }, ...WORKSPACES.map((w) =>
-      h(`button.jm-tile${jam.workspace === w.id ? ".is-on" : ""}`, { type: "button", "aria-current": jam.workspace === w.id ? "page" : "false", dataset: { workspace: w.id }, on: { click: () => setWorkspace(w.id) } },
+      h(`button.jm-tile${jam.workspace === w.id ? ".is-on" : ""}`, { type: "button", "aria-current": jam.workspace === w.id ? "page" : "false", dataset: { workspace: w.id, lamp: lamps[w.id] }, on: { click: () => setWorkspace(w.id) } },
         h("span.jm-tile-ic", {}, jicon(TILE_ICON[w.id])),
         h("span.jm-tile-text", {}, h("b", {}, w.name), h("em", {}, status[w.id])),
-        jicon("next")))),
-    h("div.jm-tools", {},
-      h("span.jm-tools-label", {}, "Pickle's tools"),
-      ...PRESETS[jam.workspace].map((p) =>
-        h("button.jm-tool", { type: "button", title: `Ask Pickle: ${p.ask}`, dataset: { preset: p.id }, on: { click: () => tell(p.ask) } }, jicon(p.icon), h("span", {}, p.label)))));
+        jam.workspace === w.id ? jicon("next") : lamp(lamps[w.id])))),
+    h("section.jm-pipe", { "aria-label": "Jam status" },
+      h("span.jm-pipe-label", {}, "Jam status"),
+      h("ol.jm-pipe-list", {}, ...steps.map((st) =>
+        h("li", { dataset: { state: st.state } },
+          h("button.jm-step", { type: "button", title: st.state === "done" ? `${st.label}: open it` : st.state === "next" ? `Next: ${st.label}` : st.label, on: { click: () => setWorkspace(st.open) } },
+            lamp(st.state), h("span", {}, st.label), st.state === "next" ? h("em", {}, "Next") : null))))),
+    h("div.jm-credits", { title: spent === null ? "Nothing here is billed: the work runs on your own GPU" : "Roughly: the song made here, the words heard, the looks and shots rolled. Nothing records what is spent as it goes." },
+      h("span", {}, "Credits spent"),
+      h("b", {}, spent === null ? "0 cr" : `≈ ${spent} cr`)));
 }
 
 // ---------------------------------------------------------------- the page: built once, redrawn in parts
 
 let page = null;
-// Jam's screen is being rebuilt from the song up: for now it is the song's page alone, and the studio below is kept to draw from
-const EMPTY = true;
 function buildPage(el) {
   const parts = editorParts();
   const sideSlot = h("div.jm-side-slot");
   const title = h("h1.jm-h1");
+  const tag = h("p.jm-tag");
   const grid = h("div.jm-grid");
   const chat = h("div.jm-chat#jam-chat");
-  const root = h("div.jam", {}, sideSlot, h("main.jm-main", {}, title, grid, chat));
+  const root = h("div.jam", {}, sideSlot, h("main.jm-main", {}, h("header.jm-head", {}, title, tag), grid, chat));
   el.replaceChildren(root);
-  page = { el, root, side: sideSlot, title, grid, chat, parts };
+  page = { el, root, side: sideSlot, title, tag, grid, chat, parts };
 }
 
 export function renderJam(el) {
-  if (EMPTY) {
-    page = null;
-    renderSong(el);
-    return;
-  }
   loadJams();
   const j = jam.jam;
   const b = j?.body;
@@ -98,9 +104,17 @@ export function renderJam(el) {
   const ws = WORKSPACES.find((w) => w.id === jam.workspace) ?? WORKSPACES[0];
   page.side.replaceChildren(side(j));
   page.title.textContent = ws.title;
+  page.tag.replaceChildren(...ws.tag.map((t) => h("span", {}, t)));
   setRoom("jam", ws.id);
   page.grid.className = `jm-grid is-${ws.id}`;
-  page.grid.replaceChildren(...VIEWS[ws.id]({ j, b, editing, parts: page.parts }).filter(Boolean));
+  if (ws.id === "song") {
+    // the song page keeps its own elements (its fields, its record, the song that plays): they are put in the grid once
+    const root = songWorkspace();
+    if (page.grid.firstElementChild !== root || page.grid.childElementCount !== 1) page.grid.replaceChildren(root);
+  } else {
+    pauseSong();
+    page.grid.replaceChildren(...VIEWS[ws.id]({ j, b, editing, parts: page.parts }).filter(Boolean));
+  }
   page.root.dataset.workspace = ws.id;
   if (ws.id !== "track") stopRecord();
   if (editing) {
@@ -153,6 +167,7 @@ window.addEventListener("hashchange", () => currentPage() === "jam" && changed("
 window.addEventListener("hashchange", () => {
   if (currentPage() === "jam") return;
   stopRecord();
+  pauseSong();
   menu = false;
   jam.win = null;
   drawWindow();
@@ -171,9 +186,11 @@ document.addEventListener("keydown", (e) => e.key === "Escape" && menu && curren
 // a sound or a video dropped on Jam is the track; on the artist, a photo is the artist and on the moves a video is the dance
 document.addEventListener("dragover", (e) => currentPage() === "jam" && e.dataTransfer?.types?.includes("Files") && e.preventDefault());
 document.addEventListener("drop", (e) => {
-  if (EMPTY || currentPage() !== "jam" || !e.dataTransfer?.files?.length) return;
+  if (currentPage() !== "jam" || !e.dataTransfer?.files?.length) return;
   e.preventDefault();
   const f = e.dataTransfer.files[0];
+  // on the song page a sound or a video is a song of the shelf
+  if (jam.workspace === "song") return void (f.type.startsWith("audio/") || f.type.startsWith("video/") ? bringSong(f) : toast("Drop a song: a sound or a video."));
   const moves = e.target.closest?.(".jm-b-moves");
   if (f.type.startsWith("image/")) setArtist(f);
   else if (f.type.startsWith("video/") && moves) setDance(f);

@@ -1,0 +1,167 @@
+/* Jam: the band. A stage with the cast standing in its lights (the lead and up to two performers), the dance to copy and the
+   look of the scene below it, and the key that casts the band. Mockup: docs/brand/products/jam-v3/jam-v3-band.png.
+   The grid is Jam's (css/jam.css); what is here overrides it for this workspace only. */
+
+.jam .jm-grid.is-band {
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1.55fr) minmax(16rem, 1fr);
+  grid-template-areas: "stage stage" "dance look";
+  gap: 1.25rem;
+  overflow: hidden;
+}
+.jm-b-stage { grid-area: stage; } .jm-b-dance { grid-area: dance; } .jm-b-look { grid-area: look; }
+.jm-b-dance, .jm-b-look { gap: .875rem; padding: 1.125rem 1.5rem 1.375rem; }
+.jm-b-dance .jm-b-body, .jm-b-look .jm-b-body { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
+
+/* ---- the stage ----------------------------------------------------------------------------------- */
+.jm-bento.is-bare { position: relative; padding: 0; overflow: hidden; }
+.jm-bento.is-bare .jm-b-head { position: absolute; z-index: 5; top: .875rem; right: .875rem; left: auto; }
+.jm-bento.is-bare .jm-b-label { display: none; }
+.jm-bento.is-bare .jm-b-body { flex: 1 1 0; min-height: 0; }
+.jm-chipkey { display: inline-flex; align-items: center; gap: .5rem; min-height: 2rem; padding: 0 .875rem 0 .75rem; border: 1px solid rgba(255, 255, 255, .14); border-radius: var(--r-pill); background: rgba(14, 14, 16, .66); backdrop-filter: blur(6px); color: var(--text); font: 600 .8125rem/1 var(--font-sans); cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
+.jm-chipkey svg { width: 1rem; height: 1rem; color: var(--accent); }
+.jm-chipkey:hover:not(:disabled) { border-color: var(--accent-line); background: rgba(14, 14, 16, .86); }
+.jm-chipkey:disabled { opacity: .5; cursor: default; }
+
+.jm-stage { position: relative; height: 100%; min-height: 0; overflow: hidden; isolation: isolate; background: radial-gradient(80% 70% at 50% 8%, #3a2358 0, #1d1230 46%, #0f0a18 100%); }
+.jm-curtain { position: absolute; top: 0; bottom: 0; z-index: -2; width: 19%; pointer-events: none; background: repeating-linear-gradient(90deg, #2d1763 0 .875rem, #1a0e3a .875rem 1.75rem, #3a2182 1.75rem 2.25rem, #1a0e3a 2.25rem 3.25rem); opacity: .9; }
+.jm-curtain.is-l { left: 0; -webkit-mask-image: linear-gradient(90deg, #000 20%, transparent); mask-image: linear-gradient(90deg, #000 20%, transparent); }
+.jm-curtain.is-r { right: 0; -webkit-mask-image: linear-gradient(270deg, #000 20%, transparent); mask-image: linear-gradient(270deg, #000 20%, transparent); }
+.jm-glow { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(60% 55% at 50% 100%, rgba(255, 214, 150, .22), transparent 70%), radial-gradient(40% 30% at 50% 0, rgba(255, 238, 200, .16), transparent 75%); }
+.jm-floor { position: absolute; left: 0; right: 0; bottom: 0; z-index: -1; height: 24%; pointer-events: none; background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .035) 0 2px, transparent 2px 5.5rem), linear-gradient(0deg, #2a1810 0, rgba(42, 24, 16, .1) 100%); -webkit-mask-image: linear-gradient(0deg, #000 30%, transparent); mask-image: linear-gradient(0deg, #000 30%, transparent); }
+
+.jm-castrow { display: flex; align-items: stretch; justify-content: center; gap: clamp(1rem, 3vw, 3rem); height: 100%; min-height: 0; padding: 3.5rem clamp(1.5rem, 6%, 5rem) 1.375rem; }
+.jm-cast { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; flex: 1 1 0; max-width: 21rem; min-width: 0; min-height: 0; }
+/* each performer has a spot over them and a pool of light on the boards */
+.jm-cast.is-lead::before, .jm-cast:not(.is-empty):not(.is-slot)::before { content: ""; position: absolute; left: 50%; top: -3.5rem; z-index: -1; width: 135%; height: 84%; transform: translateX(-50%); pointer-events: none; clip-path: polygon(45% 0, 55% 0, 100% 100%, 0 100%); background: linear-gradient(to bottom, rgba(255, 228, 176, .5), rgba(255, 228, 176, 0) 92%); mix-blend-mode: screen; }
+.jm-cast.is-out { opacity: .5; }
+.jm-cast.is-out .jm-fig { filter: grayscale(.7) drop-shadow(0 12px 18px rgba(0, 0, 0, .5)); }
+.jm-cast-pic { position: relative; display: block; min-height: 0; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }
+.jm-cast-pic:not(.is-add)::after { content: ""; position: absolute; left: 50%; bottom: -.375rem; width: 86%; height: 2.25rem; transform: translateX(-50%); z-index: 0; pointer-events: none; background: radial-gradient(closest-side, rgba(255, 232, 186, .5), rgba(255, 232, 186, 0)); }
+.jm-fig { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .55)); transition: transform var(--t-fast) var(--ease-out); }
+.jm-cast-pic:hover .jm-fig { transform: translateY(-.25rem); }
+/* the pets are small: a cat stands about as tall as a person's waist */
+.jm-fig.is-pet { inset: auto 12% 0; width: 76%; height: 58%; }
+.jm-fig.is-photo { inset: 4% 8% 0; width: 84%; height: 96%; border-radius: 1.25rem; object-fit: cover; object-position: 50% 20%; box-shadow: 0 0 0 2px rgba(255, 255, 255, .16), 0 14px 26px rgba(0, 0, 0, .5); }
+.jm-cast-meta { display: grid; justify-items: center; gap: .625rem; padding-top: .875rem; text-align: center; }
+.jm-cast-who { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .5rem .625rem; min-width: 0; }
+.jm-cast-who b { font: 700 1.25rem/1.1 var(--font-sans); letter-spacing: -.01em; color: var(--text); }
+.jm-role { display: inline-flex; align-items: center; min-height: 1.5rem; padding: 0 .625rem; border: 1px solid rgba(181, 156, 255, .5); border-radius: var(--r-pill); background: rgba(73, 55, 139, .5); color: #d9ccff; font: 600 .6875rem/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+button.jm-role { cursor: pointer; }
+button.jm-role:hover { border-color: #d9ccff; }
+.jm-cast.is-lead .jm-role { border-color: var(--accent-line); background: rgba(242, 255, 89, .12); color: var(--accent); }
+
+/* a switch: a pill that is on or off */
+.jm-switch { display: inline-flex; align-items: center; gap: .75rem; justify-self: center; padding: 0; border: 0; background: transparent; color: var(--text); font: 500 .9375rem/1 var(--font-sans); cursor: pointer; }
+.jm-switch i { position: relative; display: block; flex: none; width: 2.75rem; height: 1.5rem; border-radius: var(--r-pill); background: var(--s3); box-shadow: inset 0 0 0 1px var(--line2); transition: background var(--t-fast); }
+.jm-switch i::after { content: ""; position: absolute; left: .25rem; top: .25rem; width: 1rem; height: 1rem; border-radius: 50%; background: #d8d8dd; transition: transform var(--t-fast) var(--ease-out), background var(--t-fast); }
+.jm-switch[aria-checked="true"] i { background: var(--accent); box-shadow: none; }
+.jm-switch[aria-checked="true"] i::after { transform: translateX(1.25rem); background: var(--accent-ink); }
+.jm-switch:hover span { color: #fff; }
+
+/* the places still free: a dashed card, no figure */
+.jm-cast.is-empty, .jm-cast.is-slot { align-self: center; height: 78%; max-width: 17rem; grid-template-rows: minmax(0, 1fr); }
+.jm-cast-add, .jm-cast-pic.is-add { display: grid; place-content: center; justify-items: center; gap: .625rem; height: 100%; padding: 1rem; border: 1.5px dashed rgba(255, 255, 255, .26); border-radius: 1.375rem; background: rgba(14, 14, 16, .28); color: var(--muted); text-align: center; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast); }
+.jm-cast-add:hover:not(:disabled), .jm-cast-pic.is-add:hover { border-color: var(--accent-line); background: rgba(14, 14, 16, .5); color: var(--text); }
+.jm-cast-add:disabled { opacity: .55; cursor: default; }
+.jm-cast-add i, .jm-cast-pic.is-add i { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border: 1.5px solid currentColor; border-radius: 50%; color: var(--accent); }
+.jm-cast-add svg, .jm-cast-pic.is-add svg { width: 1.5rem; height: 1.5rem; }
+.jm-cast-add b, .jm-cast-pic.is-add b { font: 600 1.0625rem/1.2 var(--font-sans); color: var(--text); }
+.jm-cast-add span, .jm-cast-pic.is-add span { font: 500 .8125rem/1.3 var(--font-sans); }
+
+/* ---- the dance to copy --------------------------------------------------------------------------- */
+.jm-dance { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: stretch; gap: 1.5rem; flex: 1 1 0; min-height: 0; }
+.jm-dance.is-empty { grid-template-columns: auto minmax(0, 1fr); }
+.jm-phone { position: relative; align-self: stretch; height: 100%; min-height: 9rem; aspect-ratio: 9 / 16; overflow: hidden; border: 3px solid #2b2b31; border-radius: 1.375rem; background: #0b0b0d; box-shadow: 0 0 0 2px var(--accent), 0 10px 24px rgba(0, 0, 0, .45); }
+.jm-phone video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.jm-pose { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: .6; }
+.jm-phone-time { position: absolute; right: .5rem; bottom: .5rem; padding: .3125rem .5rem; border-radius: .5rem; background: rgba(14, 14, 16, .78); color: #fff; font: 500 .8125rem/1 var(--font-mono); letter-spacing: .04em; }
+.jm-phone.is-add { display: grid; place-content: center; justify-items: center; gap: .5rem; box-shadow: none; border: 1.5px dashed var(--line2); background: transparent; color: var(--muted); text-align: center; cursor: pointer; }
+.jm-phone.is-add:hover:not(:disabled) { border-color: var(--accent-line); color: var(--text); }
+.jm-phone.is-add i { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: .875rem; background: var(--s2); color: var(--accent); }
+.jm-phone.is-add b { font: 600 1rem/1.1 var(--font-sans); color: var(--text); }
+.jm-phone.is-add span { font: 400 .8125rem/1.3 var(--font-sans); }
+.jm-dance-info { display: grid; align-content: center; gap: .875rem; min-width: 0; }
+.jm-fact { display: grid; gap: .375rem; }
+.jm-fact b { font: 700 1.625rem/1.1 var(--font-sans); letter-spacing: -.015em; color: var(--accent); }
+.jm-lead { margin: 0; font: 500 1.0625rem/1.4 var(--font-sans); color: var(--text); }
+.jm-fine { margin: 0; font: 500 .8125rem/1.45 var(--font-mono); letter-spacing: .02em; color: var(--dim); }
+.jm-dance-info .jm-row { gap: .5rem; }
+.jm-b-dance .jm-dance-info { justify-self: start; }
+.jm-dance-info .jm-switch { justify-self: start; }
+.jm-iconkey { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; padding: 0; border: 1px solid var(--line2); border-radius: .875rem; background: transparent; color: var(--muted); cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast); }
+.jm-iconkey:hover:not(:disabled) { color: var(--text); border-color: var(--faint); }
+.jm-iconkey:disabled { opacity: .5; cursor: default; }
+.jm-iconkey svg { width: 1.125rem; height: 1.125rem; }
+
+/* ---- the look, and the key that casts ------------------------------------------------------------ */
+.jm-looks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .875rem; flex: 1 1 0; min-height: 5.5rem; }
+.jm-looks.is-window { flex: none; min-height: 11rem; }
+.jm-look-tile { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: .5rem; min-width: 0; min-height: 0; padding: 0; border: 0; background: none; color: var(--muted); cursor: pointer; }
+.jm-look-scene { position: relative; display: grid; place-items: center; min-height: 0; overflow: hidden; border: 2px solid transparent; border-radius: 1.125rem; transition: border-color var(--t-fast), box-shadow var(--t-fast); }
+.jm-look-scene > svg { width: 2rem; height: 2rem; color: rgba(255, 255, 255, .7); }
+.jm-look-scene .jm-fig.is-pet { inset: auto 0 0; width: 100%; height: 86%; }
+.jm-look-scene .jm-fig { inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 4%; filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .35)); }
+.jm-look-scene .jm-fig.is-photo { inset: 0; width: 100%; height: 100%; border-radius: 0; box-shadow: none; object-position: 50% 24%; }
+.jm-look-tile.is-look-sun .jm-look-scene { background: radial-gradient(70% 60% at 70% 20%, #fff3d6, transparent 70%), linear-gradient(160deg, #ffd9c0, #f3b8d0 55%, #b9a6f2); }
+.jm-look-tile.is-look-studio .jm-look-scene { background: radial-gradient(60% 50% at 50% 0, #ffffff55, transparent 70%), linear-gradient(180deg, #8d8a96, #55525f 70%, #3a3844); }
+.jm-look-tile.is-look-stage .jm-look-scene { background: radial-gradient(45% 70% at 25% 0, #f2ff5977, transparent 70%), radial-gradient(45% 70% at 75% 0, #ff7ab877, transparent 70%), linear-gradient(180deg, #2a1748, #130c20); }
+.jm-look-name { font: 600 1rem/1.2 var(--font-sans); text-align: center; color: var(--text); }
+.jm-look-tile:hover:not(:disabled) .jm-look-scene { border-color: var(--line2); }
+.jm-look-tile[aria-pressed="true"] .jm-look-scene { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(242, 255, 89, .14); }
+.jm-look-tile[aria-pressed="true"] .jm-look-name { color: var(--accent); }
+.jm-look-tile:disabled { opacity: .45; cursor: default; }
+.jm-vibeline { display: grid; gap: .25rem; flex: none; }
+.jm-vibeline .jm-vibe { width: 100%; min-height: 0; padding: .375rem 0 .5rem; border: 0; border-bottom: 1px solid var(--line2); border-radius: 0; background: transparent; box-shadow: none; font: 500 1rem/1.3 var(--font-sans); color: var(--text); }
+.jm-vibeline .jm-vibe:focus { outline: none; border-bottom-color: var(--accent); }
+.jm-castbar { display: flex; align-items: center; gap: 1.25rem; flex: none; }
+.jm-castbar .jm-fine { flex: none; max-width: 11rem; }
+.jm-cast-key { display: flex; align-items: center; justify-content: center; gap: .75rem; flex: 1 1 auto; min-height: 3.5rem; padding: 0 1.5rem; border: 0; border-radius: 1rem; background: var(--accent); color: var(--accent-ink); font: 700 1.125rem/1 var(--font-sans); cursor: pointer; transition: filter var(--t-fast), transform var(--t-fast); }
+.jm-cast-key svg { width: 1.375rem; height: 1.375rem; }
+.jm-cast-key em { font: 600 .875rem/1 var(--font-mono); font-style: normal; opacity: .72; }
+.jm-cast-key:hover:not(:disabled) { filter: brightness(1.06); }
+.jm-cast-key:active:not(:disabled) { transform: translateY(1px); }
+.jm-cast-key:disabled { opacity: .45; cursor: default; }
+.jm-cast-key.is-armed { outline: 3px solid rgba(242, 255, 89, .35); outline-offset: 3px; animation: jm-ask 1.1s ease-in-out infinite alternate; }
+@keyframes jm-ask { from { filter: brightness(1); } to { filter: brightness(1.14); } }
+@media (prefers-reduced-motion: reduce) { .jm-cast-key.is-armed { animation: none; } }
+
+/* ---- the cast window ----------------------------------------------------------------------------- */
+.jm-slots { display: flex; flex-wrap: wrap; gap: .625rem; }
+.jm-slot { display: grid; gap: .1875rem; min-width: 9rem; padding: .75rem 1rem; border: 1px solid var(--line2); border-radius: 1rem; background: transparent; color: var(--text); text-align: left; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
+.jm-slot b { font: 600 1rem/1.2 var(--font-sans); }
+.jm-slot em { font: 500 .8125rem/1.2 var(--font-sans); font-style: normal; color: var(--muted); }
+.jm-slot:hover { border-color: var(--faint); }
+.jm-slot[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.jm-slot[aria-pressed="true"] b { color: var(--accent); }
+.jm-crewgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.25rem, 1fr)); gap: 1rem .75rem; }
+.jm-crew { display: grid; justify-items: center; gap: .1875rem; padding: .375rem; border: 0; border-radius: 1rem; background: transparent; color: var(--text); cursor: pointer; }
+.jm-crew img { width: 4.75rem; height: 4.75rem; margin-bottom: .375rem; border: 2px solid var(--line2); border-radius: 50%; object-fit: cover; background: var(--s2); transition: border-color var(--t-fast); }
+.jm-crew b { font: 600 .9375rem/1.2 var(--font-sans); }
+.jm-crew em { font: 400 .75rem/1.2 var(--font-sans); font-style: normal; color: var(--dim); }
+.jm-crew:hover:not(:disabled) img { border-color: var(--muted); }
+.jm-crew.is-on img { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.jm-crew.is-on b { color: var(--accent); }
+.jm-crew:disabled { opacity: .35; cursor: default; }
+.jm-crew.is-add i { display: grid; place-items: center; width: 4.75rem; height: 4.75rem; margin-bottom: .375rem; border: 2px dashed var(--line2); border-radius: 50%; color: var(--accent); }
+.jm-crew.is-add:hover i { border-color: var(--accent-line); }
+.jm-roles { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+@media (max-width: 1280px) {
+  .jam .jm-grid.is-band { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(22rem, auto) auto auto; grid-template-areas: "stage" "dance" "look"; overflow: auto; }
+  .jm-castrow { min-height: 20rem; }
+}
+@media (max-width: 980px) {
+  .jm-dance { grid-template-columns: minmax(0, 1fr); }
+  .jm-phone { max-height: 14rem; justify-self: start; }
+}
+@media (prefers-reduced-motion: reduce) { .jm-fig { transition: none; } }
+
+/* a short screen: the dance card keeps its phone and its key, and drops the line that explains it */
+@media (max-height: 940px) {
+  .jam .jm-grid.is-band { grid-template-rows: minmax(0, 1.3fr) minmax(15rem, 1fr); }
+  .jm-b-dance, .jm-b-look { padding-top: .875rem; padding-bottom: 1rem; }
+  .jm-dance-info { gap: .625rem; }
+  .jm-dance-info .jm-lead { display: none; }
+  .jm-fact b { font-size: 1.375rem; }
+}

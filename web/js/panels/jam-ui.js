@@ -54,6 +54,12 @@ const PATHS = {
   mixer: '<path d="M7 17.5c2.4-2.2 3.3-5.5 5.5-9 1.4-2.2 3.4-3 5-2.6-.4 1.7-1.6 3.4-3.6 4.4-1.6.8-2.3 1.4-2.7 3.1"/><path d="M5 19.5l3-3"/>',
   dancer: '<circle cx="12" cy="5" r="2"/><path d="M12 8v5l-3 4.5M12 13l3.5 3.5M7 9.5 12 8l5 1.5"/>',
   lamp: '<circle cx="12" cy="12" r="3.5"/>',
+  drum: '<ellipse cx="12" cy="10" rx="7.5" ry="3"/><path d="M4.5 10v5.5c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V10M8 7 5.5 3.5M16 7l2.5-3.5"/>',
+  bass: '<path d="m13.5 10.5 6-6M17.5 3.5l3 3"/><circle cx="9" cy="15" r="5"/><circle cx="9" cy="15" r="1.4"/>',
+  flag: '<path d="M6 21V4M6 5h11l-2.5 3.5L17 12H6"/>',
+  top: '<path d="M5 5h14M8 9.5h8M10 14h4"/>',
+  mid: '<path d="M8 6h8M5 12h14M8 18h8"/>',
+  bottom: '<path d="M10 10h4M8 14.5h8M5 19h14"/>',
   expandwin: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M12 9v6M9 12h6"/>',
 };
 /** One of Jam's icons, in the app's icon style (a stroke on a 24 grid), as an element. */

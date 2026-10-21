@@ -87,26 +87,27 @@ try {
   const b0 = await body();
   ok(b0.product === "jam" && b0.aspect === "9:16" && b0.tracks.find((t) => t.main).items.length === 4, "the seeded Jam opens as its edit: 9:16, its four clips, product kept");
 
-  // ---- Pickle's panel: his portrait, the jam, the four workspaces with their state, the tools of the one open
-  ok(await page.locator(".jm-pet-face").getAttribute("src") === "brand/cast/pickle-face.webp" && (await page.locator(".jm-pet-text").innerText()).includes("band leader"), "Pickle's portrait and tag are on the panel");
+  // ---- Pickle's panel: his portrait, the jam, the five workspaces with their state, the video's pipeline (no canned tools)
+  ok(await page.locator(".jm-pet-face").getAttribute("src") === "brand/cast/pickle-face.webp" && (await page.locator(".jm-pet-text").innerText()).toLowerCase().includes("band leader"), "Pickle's portrait and tag are on the panel");
   ok((await page.locator(".jm-jam").innerText()).trim().length > 0, "the jam chip names the jam");
   const tiles = await page.locator(".jm-tile").evaluateAll((els) => els.map((e) => ({ ws: e.dataset.workspace, name: e.querySelector("b").textContent, status: e.querySelector("em").textContent, on: e.classList.contains("is-on") })));
-  ok(tiles.map((t) => t.name).join() === "The track,The words,The band,The edit" && tiles.map((t) => t.ws).join() === "track,words,band,edit", "four workspaces, in the order a video is made");
-  ok(tiles.filter((t) => t.on).length === 1 && tiles[0].on && tiles.every((t) => t.status.length > 0), `the open one is lit, and each says its state (${tiles.map((t) => t.status).join(" | ")})`);
+  ok(tiles.map((t) => t.name).join() === "The song,The track,The words,The band,The edit" && tiles.map((t) => t.ws).join() === "song,track,words,band,edit", "five workspaces, in the order a video is made");
+  // (a video that has a song opens on its track, not on the page that makes a song)
+  ok(tiles.filter((t) => t.on).length === 1 && tiles[1].on && tiles.every((t) => t.status.length > 0), `the open one (the track) is lit, and each says its state (${tiles.map((t) => t.status).join(" | ")})`);
+  const steps = await page.locator(".jm-pipe-list li").evaluateAll((els) => els.map((e) => [e.querySelector("span:not(.jm-lamp)").textContent, e.dataset.state]));
+  ok(steps.map((x) => x[0]).join() === "Song made,Words heard,Captions styled,Band cast,Edit cut" && steps[0][1] === "done" && steps.filter((x) => x[1] === "next").length === 1, `the pipeline lists the five steps, the song done and one next (${steps.map((x) => x.join(":")).join(" ")})`);
+  ok((await page.locator(".jm-tool").count()) === 0, "there are no canned tools on the panel");
   const bentoNames = () => page.locator(".jm-grid .jm-bento").evaluateAll((els) => els.map((e) => [...e.classList].find((c) => /^jm-b-/.test(c)).slice(5)));
-  const PRESETS = { track: "drop,trim,chorus", words: "write,split,bigger", band: "dance,lipsync,swap", edit: "bars,zoom,whip" };
-  for (const [ws, want] of Object.entries({ track: "record,start,hear", words: "lyrics,styles,preview", band: "artist,moves,vibe,shots", edit: "editor,effects,stickers,make" })) {
+  for (const [ws, want] of Object.entries({ track: "record,start,hear", words: "lyrics,styles,preview", band: "stage,dance,look", edit: "monitor,selected,timeline,foot" })) {
     await workspace(ws);
     ok((await bentoNames()).join() === want, `${ws}: its bentos are ${want}`);
     ok((await page.locator(".jm-tile.is-on").getAttribute("data-workspace")) === ws, `${ws}: its tile is the lit one`);
-    const tools = await page.locator(".jm-tool").evaluateAll((els) => els.map((e) => e.dataset.preset));
-    ok(tools.join() === PRESETS[ws], `${ws}: Pickle's three tools are for it (${tools.join(", ")})`);
     // the editor's monitor is drawn where it is shown, once: in the words' preview and in the edit
     ok((await page.locator(".jam .cut-screen").count()) === (ws === "words" || ws === "edit" ? 1 : 0), `${ws}: the monitor is ${ws === "words" || ws === "edit" ? "there" : "not on this screen"}`);
   }
 
   // ---- every bento opens in a window of its own, centred over the page, closed by Escape or a press outside it
-  const WINDOWS = { track: ["record", "start", "hear"], words: ["lyrics", "styles", "preview"], band: ["artist", "moves", "vibe", "shots"], edit: ["editor", "effects", "stickers", "make"] };
+  const WINDOWS = { track: ["record", "start", "hear"], words: ["lyrics", "styles", "preview"], band: ["stage", "dance", "look"], edit: ["monitor"] };
   for (const [ws, ids] of Object.entries(WINDOWS)) {
     await workspace(ws);
     const opened = [];
@@ -155,12 +156,18 @@ try {
   await closeWindow();
 
   // ---- an effect, two stickers (one moved), a lyric word retimed
-  await page.locator('.jm-b-effects .jm-fxkey[data-fx="shake"]').click();
+  // (the effects and the stickers are windows of the edit: a key of the timeline opens each)
+  await page.locator('.jm-b-timeline .jm-chipkey[data-tooltip^="Beat effects"]').click();
+  await page.locator('.jm-win .jm-fxkey[data-fx="shake"]').click();
   await page.waitForTimeout(400);
   ok((await body()).tracks.find((t) => t.kind === "fx").items.some((i) => i.kind === "shake"), "a shake is on the Beat FX track");
-  ok((await page.locator('.jm-b-effects .jm-fxkey[data-fx="shake"]').getAttribute("aria-pressed")) === "true" && (await page.locator(".jm-b-effects .jm-dial-label").innerText()).includes("Shake"), "the new effect is the one picked, and the dial is its strength");
-  await page.locator('.jm-b-stickers .jm-sticker[data-tooltip^="Star"]').click();
+  ok((await page.locator('.jm-win .jm-fxkey[data-fx="shake"]').getAttribute("aria-pressed")) === "true" && (await page.locator(".jm-win .jm-fxrow.is-picked").count()) === 1, "the new effect is the one picked");
+  await closeWindow();
+  ok((await page.locator(".jm-selected .jm-dial-label").innerText()).includes("Shake"), "and its strength is the dial of the selected effect");
+  await page.locator('.jm-b-timeline .jm-chipkey[data-tooltip^="Stickers"]').click();
+  await page.locator('.jm-win .jm-sticker[data-tooltip^="Star"]').click();
   await page.waitForTimeout(400);
+  await closeWindow();
   const star = (await body()).tracks.find((t) => t.id === "v2").items.find((i) => i.src?.id === "star");
   await seek(star.start + 0.5);
   await page.waitForTimeout(400);
@@ -218,7 +225,7 @@ try {
   ok((await page.locator(".jm-tile.is-on").getAttribute("data-workspace")) === "edit", "and Jam comes back to the workspace that was open");
 
   // ---- exported, and held against the preview
-  await page.locator(".jm-b-make .jm-exportkey:not(.is-link)").click();
+  await page.locator('.jm-foot [data-go="export"]').click();
   ok(await until(() => import("/js/jam.js").then((m) => !!m.jam.jam.body.film).catch(() => false), 360), "the film is exported (Export MP4, on The edit)");
   const film = await page.evaluate(async () => (await import("/js/jam.js")).jam.jam.body.film);
   await writeFile(join(out, "film.mp4"), Buffer.from(await (await fetch(`${base}${film.url}`)).arrayBuffer()));
@@ -305,7 +312,7 @@ try {
     ok(c.beats?.times.length > 8 && c.beats.source === "web" && c.tracks.find((t) => t.role === "music").items.length === 1, `${name} has its beats (${c.beats?.bpm} BPM, ${c.beats?.times.length}) and its sound`);
     // each clip is the stretch of the dance that is at its own time, so the picture is in step with the sound
     ok(main.every((it, i) => Math.abs(it.from - (i ? main[i - 1].to : 0)) < 0.002), `${name}: the clips follow each other through the dance`);
-    await page.locator(".jm-b-make .jm-exportkey:not(.is-link)").click();
+    await page.locator('.jm-foot [data-go="export"]').click();
     ok(await until(() => import("/js/jam.js").then((m) => !!m.jam.jam.body.film).catch(() => false), 240), `${name} is exported`);
     const f = await page.evaluate(async () => (await import("/js/jam.js")).jam.jam.body.film);
     await writeFile(join(out, `${id}.mp4`), Buffer.from(await (await fetch(`${base}${f.url}`)).arrayBuffer()));
@@ -364,7 +371,7 @@ try {
   ok(paid.length === paidBefore, "starting from a trend asked for nothing that costs credits: no track made, no words heard");
   await page.waitForTimeout(600);
   const strip = await page.locator(".jm-tile em").allInnerTexts();
-  ok(strip[0].includes("BPM") && strip[2] === "Josie", `its tiles say so: ${strip.join(" | ")}`);
+  ok(strip[1].includes("BPM") && strip[3] === "Josie", `its tiles say so: ${strip.join(" | ")}`);
 
   // ---- keeping the edit right
   await page.evaluate(() => (location.hash = "#/jam"));
@@ -420,7 +427,7 @@ try {
     c.commit();
     return j.jam.jam.body.film?.id ?? null;
   });
-  await page.locator(".jm-b-make .jm-exportkey:not(.is-link)").click();
+  await page.locator('.jm-foot [data-go="export"]').click();
   ok(await until((was) => import("/js/jam.js").then((m) => m.jam.jam.body.film?.id !== was && !m.jam.busy.has("render")).catch(() => false), 240, before), "it is exported again");
   const shaped = await body();
   ok(shaped.tracks.find((t) => t.role === "music").items.length === 0 && shaped.aspect === "1:1" && shaped.duck === true, `Export left the music away and the aspect (${shaped.aspect}) and ducking (${shaped.duck}) as they were set`);
@@ -475,9 +482,10 @@ try {
     asked.push(JSON.parse(route.request().postData()));
     await route.fulfill({ contentType: "application/json", body: JSON.stringify({ reply: "Bigger, and popping.", actions: [{ op: "captions", style: "pop", size: 0.12 }, { op: "open", workspace: "band" }] }) });
   });
-  const askLabel = await page.locator('.jm-tool[data-preset="bigger"]').innerText();
-  await page.locator('.jm-tool[data-preset="bigger"]').click();
-  ok(await until(() => import("/js/jam.js").then((m) => m.jam.workspace === "band").catch(() => false), 30), "a tool of Pickle's panel is said to him, and what he answers is done (he opened The band)");
+  // (his panel has no canned keys now: the words are said through his bar, as a typed message is)
+  const askLabel = "said through the bar";
+  await page.evaluate(async () => (await import("/js/harnesses.js")).tell("Make the captions bigger."));
+  ok(await until(() => import("/js/jam.js").then((m) => m.jam.workspace === "band").catch(() => false), 30), "words said to Pickle are answered, and what he answers is done (he opened The band)");
   const told = asked[0];
   ok(asked.length === 1 && told.product === "jam" && told.cut.jam?.workspace === "words" && told.messages.at(-1).text === "Make the captions bigger." && told.cut.jam.track?.name, `he is asked as Jam's (${askLabel}): product ${told?.product}, workspace ${told?.cut?.jam?.workspace}, the track ${told?.cut?.jam?.track?.name}`);
   const done = await page.evaluate(async () => {

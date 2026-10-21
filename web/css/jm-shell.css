@@ -1,0 +1,105 @@
+/* Jam's shell: Pickle's panel on the left (his portrait, your jams, the five workspaces, the video's pipeline, what it has cost) and
+   the big title over the open workspace. Same finish as Macaron's panel: roomy, the whole height, nothing that is a canned key.
+   The mockups are docs/brand/products/jam-v3. */
+
+/* ---- the title over the workspace ---------------------------------------------------------------------- */
+.jm-head { display: flex; align-items: flex-end; gap: 1.5rem; min-width: 0; padding: .125rem .25rem 0; }
+.jm-h1 { margin: 0; font: 800 clamp(2.25rem, 3.6vw, 3.75rem)/.95 var(--font-sans); letter-spacing: -.03em; text-transform: uppercase; color: var(--text); white-space: nowrap; }
+.jm-tag { display: grid; gap: .125rem; margin: 0 0 .3125rem; font: 500 .75rem/1.25 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+.jm-tag:empty { display: none; }
+
+/* ---- Pickle's panel -------------------------------------------------------------------------------------- */
+.jam { grid-template-columns: 21.5rem minmax(0, 1fr); gap: var(--jm-gap, 1rem); }
+.jm-side { display: flex; flex-direction: column; gap: clamp(.75rem, 1.5dvh, 1.125rem); height: 100%; min-height: 0; padding: clamp(.875rem, 1.9dvh, 1.375rem) 1rem 1rem; overflow-x: hidden; overflow-y: auto; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: linear-gradient(180deg, rgba(255, 255, 255, .02), transparent 38%), var(--card); scrollbar-width: thin; }
+.jm-pet { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 1rem; flex: none; }
+.jm-pet-face { width: clamp(4rem, 8.4dvh, 5.25rem); aspect-ratio: 1; border-radius: 50%; object-fit: cover; background: var(--s3); box-shadow: 0 0 0 1px var(--line2), 0 8px 20px rgba(0, 0, 0, .4); }
+.jm-pet-text { display: grid; gap: .3125rem; min-width: 0; }
+.jm-pet-text > b { font: 800 1.625rem/1 var(--font-sans); letter-spacing: -.02em; color: var(--text); }
+.jm-pet-text > span { font: 500 .75rem/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.jm-chipwrap { position: relative; flex: none; }
+.jm-jam { display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; min-height: 2.375rem; padding: 0 .625rem 0 .875rem; border: 1px solid var(--line2); border-radius: .75rem; background: var(--sunk); color: var(--text); font: 600 .9375rem/1 var(--font-sans); cursor: pointer; transition: border-color var(--t-fast); }
+.jm-jam:hover, .jm-jam[aria-expanded="true"] { border-color: var(--accent-line); }
+.jm-jam span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jm-jam svg { width: 1.0625rem; height: 1.0625rem; color: var(--muted); transition: rotate var(--t-fast); }
+.jm-jam[aria-expanded="true"] svg { rotate: 180deg; }
+/* the set list of jams, over the tiles */
+.jm-menu { position: absolute; left: 0; right: 0; top: calc(100% + .375rem); z-index: 30; display: grid; gap: .375rem; padding: .5rem; border: 1px solid var(--line2); border-radius: 1rem; background: var(--s1); box-shadow: var(--float); }
+.jm-menu-name { width: 100%; min-height: 2.25rem; padding: 0 .75rem; border: 1px solid var(--line2); border-radius: .625rem; background: var(--sunk); color: var(--text); font: 600 .9375rem/1 var(--font-sans); }
+.jm-menu-name:focus { outline: none; border-color: var(--accent-line); }
+.jm-menu-list { display: grid; gap: .1875rem; max-height: 17rem; overflow-y: auto; scrollbar-width: thin; }
+.jm-menu-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .125rem; border: 1px solid transparent; border-radius: .75rem; }
+.jm-menu-row:hover { background: var(--s2); }
+.jm-menu-row.is-on { border-color: var(--accent-line); background: var(--accent-soft); }
+.jm-menu-open { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: .625rem; min-width: 0; padding: .375rem; border: 0; background: transparent; color: var(--text); text-align: left; cursor: pointer; }
+.jm-menu-open img { width: 2rem; height: 2.875rem; border-radius: .4375rem; object-fit: cover; background: var(--sunk); }
+.jm-menu-open span { display: grid; gap: .25rem; min-width: 0; }
+.jm-menu-open b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 .875rem/1.1 var(--font-sans); }
+.jm-menu-open em { font: 500 var(--fs-small)/1 var(--font-mono); font-style: normal; color: var(--dim); }
+.jm-menu-x { display: grid; place-items: center; width: 2rem; height: 2rem; margin-right: .25rem; padding: 0; border: 0; border-radius: .5rem; background: transparent; color: var(--dim); cursor: pointer; opacity: 0; transition: opacity var(--t-fast), color var(--t-fast); }
+.jm-menu-row:hover .jm-menu-x, .jm-menu-x.is-armed, .jm-menu-x:focus-visible { opacity: 1; }
+.jm-menu-x:hover { color: var(--err); }
+.jm-menu-x.is-armed { background: var(--err); color: var(--text); }
+.jm-menu-x svg { width: 1rem; height: 1rem; }
+.jm-menu-new { display: flex; align-items: center; gap: .5rem; min-height: 2.5rem; padding: 0 .75rem; border: 1px dashed var(--line2); border-radius: .75rem; background: transparent; color: var(--text); font: 600 .875rem/1 var(--font-sans); cursor: pointer; }
+.jm-menu-new:hover { border-color: var(--accent-line); }
+.jm-menu-new svg { color: var(--accent); }
+
+
+/* the five workspaces: a row each, its status in mono, a lamp at its end; the open one lit yellow */
+.jm-tiles { display: grid; gap: .4375rem; flex: none; }
+.jm-tile { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .875rem; min-height: clamp(3.375rem, 6.4dvh, 4.5rem); padding: .375rem .875rem .375rem .75rem; border: 1px solid var(--card-line); border-radius: 1rem; background: var(--bg); color: var(--text); text-align: left; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
+.jm-tile:hover { border-color: var(--line2); background: var(--s2); }
+.jm-tile-ic { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; color: var(--text); }
+.jm-tile-ic svg { width: 1.625rem; height: 1.625rem; stroke-width: 1.6; }
+.jm-tile-text { display: grid; gap: .3125rem; min-width: 0; }
+.jm-tile-text b { font: 700 .9375rem/1.1 var(--font-sans); letter-spacing: .08em; text-transform: uppercase; }
+.jm-tile-text em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 .75rem/1.1 var(--font-mono); font-style: normal; color: var(--muted); }
+.jm-tile > svg { width: 1.125rem; height: 1.125rem; }
+.jm-tile.is-on { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 0 4px rgba(242, 255, 89, .08); }
+.jm-tile.is-on .jm-tile-ic { color: var(--accent-ink); }
+.jm-tile.is-on .jm-tile-text em { color: color-mix(in srgb, var(--accent-ink) 72%, transparent); }
+
+/* a lamp: done (a tick on green), next (a lit ring), waiting (a ring) */
+.jm-lamp { display: grid; place-items: center; width: 1.125rem; height: 1.125rem; border: 2px solid var(--faint); border-radius: 50%; color: var(--ok-ink, #0e1a10); }
+.jm-lamp svg { width: .6875rem; height: .6875rem; stroke-width: 3; }
+.jm-lamp[data-state="done"] { border-color: var(--ok); background: var(--ok); }
+.jm-lamp[data-state="next"] { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(242, 255, 89, .14); }
+.jm-tile[data-lamp="done"] .jm-lamp { border-color: var(--ok); background: var(--ok); }
+.jm-tile[data-lamp="next"] .jm-lamp { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(242, 255, 89, .14); }
+
+/* the video's pipeline: what is done, what is next, each line a way to its workspace */
+.jm-pipe { display: grid; gap: .625rem; flex: none; margin-top: auto; padding: 1rem .75rem .625rem 1rem; border: 1px solid var(--card-line); border-radius: 1.25rem; background: var(--s2); }
+.jm-pipe-label { font: 500 .75rem/1 var(--font-mono); letter-spacing: .24em; text-transform: uppercase; color: var(--dim); }
+.jm-pipe-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.jm-pipe-list li { position: relative; }
+/* (the rail that joins the lamps) */
+.jm-pipe-list li:not(:last-child)::after { content: ""; position: absolute; left: calc(.625rem + .5625rem - 1px); top: calc(50% + .75rem); bottom: calc(-50% + .75rem); width: 2px; background: var(--line2); }
+.jm-pipe-list li[data-state="done"]:not(:last-child)::after { background: color-mix(in srgb, var(--ok) 60%, var(--line2)); }
+.jm-step { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .75rem; width: 100%; min-height: clamp(2rem, 3.6dvh, 2.5rem); padding: 0 .625rem; border: 0; border-radius: .625rem; background: transparent; color: var(--muted); font: 500 .9375rem/1.2 var(--font-sans); text-align: left; cursor: pointer; transition: background var(--t-fast), color var(--t-fast); }
+.jm-step:hover { background: var(--s3); color: var(--text); }
+.jm-pipe-list li[data-state="done"] .jm-step { color: var(--text); }
+.jm-pipe-list li[data-state="next"] .jm-step { color: var(--text); font-weight: 700; }
+.jm-step em { font: 600 .625rem/1 var(--font-mono); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.jm-credits { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; flex: none; padding: .625rem .25rem 0; border-top: 1px solid var(--line); font: 500 .75rem/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.jm-credits b { font: 700 1.25rem/1 var(--font-mono); letter-spacing: 0; text-transform: none; color: var(--text); }
+
+@media (max-width: 1400px) {
+  .jam { grid-template-columns: 19.5rem minmax(0, 1fr); }
+  .jm-tag { display: none; }
+}
+@media (max-height: 800px) {
+  .jm-side { gap: .5rem; }
+  .jm-tile { min-height: 3rem; padding-block: .25rem; }
+  .jm-tile-ic { width: 1.875rem; height: 1.875rem; }
+  .jm-pipe { padding-block: .75rem .25rem; gap: .375rem; }
+  .jm-step { min-height: 1.875rem; }
+  .jm-credits { padding-top: .375rem; }
+}
+@media (max-width: 1100px) {
+  .jm-side { height: auto; }
+  .jm-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .jm-pipe { margin-top: 0; }
+}
+@supports (corner-shape: squircle) {
+  .jm-pipe, .jm-tile { corner-shape: squircle; }
+}

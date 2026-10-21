@@ -16,6 +16,8 @@ import { gridBeats, detectBeats, hearLoudness } from "./beats.js";
 import { splitWords } from "./lyrics.js";
 import { onServer } from "./picker.js";
 import { CREW, crewById, crewPicture } from "./mixer-trends.js";
+import { withBand } from "./jam-band-model.js";
+import { costOfSong } from "./song.js";
 
 const OPEN = "comfyture.jam.open";
 
@@ -43,7 +45,7 @@ class Busy {
     return [...this.#marks].some((k) => k.startsWith(own) && prefixes.some((p) => k.startsWith(own + p)));
   }
 }
-export const jam = { list: [], jam: null, ready: null, busy: new Busy(), playing: false, starting: null, workspace: "track", win: null };
+export const jam = { list: [], jam: null, ready: null, busy: new Busy(), playing: false, starting: null, workspace: "song", win: null };
 const update = () => changed("jam");
 
 const call = async (path, init) => {
@@ -55,7 +57,7 @@ const call = async (path, init) => {
 const send = (path, method, body) => call(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
 
 export const KINDS = { performance: "Performance", dance: "Dance", broll: "B-roll" };
-const blank = () => ({ track: null, span: null, part: null, vocals: null, sung: [], lines: [], bpm: null, beats: [], captions: "karaoke", artist: null, dance: null, style: "", every: 2, shots: [], looks: {}, film: null, cut: null });
+const blank = () => ({ track: null, span: null, part: null, vocals: null, stems: null, sung: [], lines: [], bpm: null, beats: [], captions: "karaoke", artist: null, dance: null, style: "", every: 2, shots: [], looks: {}, film: null, cut: null });
 
 // ---------------------------------------------------------------- the videos kept on the server
 
@@ -83,6 +85,8 @@ export async function openJam(id) {
   try {
     localStorage.setItem(OPEN, id);
   } catch {}
+  // a video with a song opens on the track, one without on the song page (a workspace chosen before is left alone)
+  if (jam.workspace === "song" && jam.jam.body.track) setWorkspace("track");
   update();
   await edit(jam.jam).catch((e) => console.warn("jam edit:", e.message));
   update();
@@ -170,6 +174,34 @@ export async function useTrack(file) {
   }
 }
 
+/**
+ * A song of the song page (made or imported) becomes the track of a video: of the one open when it has no song of its own, else of
+ * a new one (what was cut from another song is not thrown away). Free: the part is cut here. Answers the video it went to.
+ */
+export async function useSong(song, { into = null } = {}) {
+  if (!song?.file) return null;
+  const open = into ?? jam.jam;
+  // (the song is already this video's track: nothing to do but say so)
+  if (open?.body.track?.file === song.file) return open;
+  const j = open && !open.body.track ? open : await newJam(song.name || "New music video");
+  jam.busy.add("track", j);
+  update();
+  try {
+    const made = song.kind !== "upload";
+    setTrack(j, { file: song.file, url: song.url, seconds: song.seconds, name: song.name || "My song", kind: made ? "made" : "upload", ...(made ? { prompt: song.tags ?? "", lyrics: song.lyrics ?? "", bpm: song.bpm } : {}) });
+    if (song.bpm && made) j.body.track.bpm = song.bpm;
+    if (j.name === "New music video" && song.name) j.name = song.name;
+    touched(j);
+    await cutPart(j);
+  } catch (e) {
+    toast(e.message, { tone: "crit" });
+  } finally {
+    jam.busy.delete("track", j);
+    update();
+  }
+  return j;
+}
+
 /** A track made from a few words and lyrics (ACE-Step 1.5), then heard. */
 export async function makeTrack({ prompt, lyrics, seconds, bpm, name }) {
   const j = await ensure();
@@ -253,7 +285,7 @@ export async function startFromTrend(t) {
 
 function setTrack(j, track) {
   const len = j.body.span ? j.body.span.to - j.body.span.from : 30;
-  Object.assign(j.body, { track, span: { from: 0, to: Math.min(track.seconds, len || track.seconds) }, part: null, vocals: null, sung: [], lines: [], bpm: null, beats: [], down: 0, shots: [], film: null });
+  Object.assign(j.body, { track, span: { from: 0, to: Math.min(track.seconds, len || track.seconds) }, part: null, vocals: null, stems: null, sung: [], lines: [], bpm: null, beats: [], down: 0, shots: [], film: null });
   delete j.body.sure;
   delete j.body.musicIn;
   // a new track: what the old one made in the edit goes, what was added stays
@@ -271,7 +303,7 @@ export function setLength(seconds) {
   const from = j.body.span?.from ?? 0;
   const to = seconds ? Math.min(j.body.track.seconds, from + seconds) : j.body.track.seconds;
   j.body.span = { from: Math.max(0, Math.min(from, to - 5)), to };
-  Object.assign(j.body, { shots: [], film: null, vocals: null, sung: [], lines: [] });
+  Object.assign(j.body, { shots: [], film: null, vocals: null, stems: null, sung: [], lines: [] });
   touched();
   cutPart(j);
 }
@@ -282,10 +314,24 @@ export function setStart(from) {
   const start = Math.max(0, Math.min(from, j.body.track.seconds - Math.min(len, j.body.track.seconds)));
   j.body.span = { from: Math.round(start * 10) / 10, to: Math.min(j.body.track.seconds, Math.round((start + len) * 10) / 10) };
   Object.assign(j.body, { shots: [], film: null });
-  Object.assign(j.body, { vocals: null, sung: [], lines: [] });
+  Object.assign(j.body, { vocals: null, stems: null, sung: [], lines: [] });
   touched();
   clearTimeout(setStart.t);
   setStart.t = setTimeout(() => cutPart(j), 900);
+}
+
+/** The part of the track the video uses, from and to (seconds), as dragged on the cut's waveform; the part is cut again a moment after the last change. */
+export function setSpan(from, to) {
+  const j = jam.jam;
+  if (!j?.body.track) return;
+  const total = j.body.track.seconds;
+  const len = Math.max(Math.min(5, total), Math.min(total, to - from));
+  const start = Math.max(0, Math.min(from, total - len));
+  j.body.span = { from: Math.round(start * 10) / 10, to: Math.min(total, Math.round((start + len) * 10) / 10) };
+  Object.assign(j.body, { shots: [], film: null, vocals: null, stems: null, sung: [], lines: [] });
+  touched();
+  clearTimeout(setSpan.t);
+  setSpan.t = setTimeout(() => cutPart(j), 900);
 }
 
 /** The video whose part was asked to be heard again while it was being heard: it is, once that hearing ends (and only if it is still the open one). */
@@ -376,6 +422,9 @@ export async function putHeard(j, asked, track, heard) {
   if (b.span.from !== asked.from || b.span.to !== asked.to) return false;
   b.part = { file: track.file, url: track.url, seconds: track.seconds };
   b.vocals = heard.vocals ? { file: heard.vocals.file, url: heard.vocals.url } : null;
+  // the four stems of the part (Comfy's separation gives them all): the vocals the lips follow, and the bass, the drums and the rest
+  const st = heard.stems ?? {};
+  b.stems = b.vocals ? Object.fromEntries(Object.entries({ vocals: b.vocals, bass: st.bass, drums: st.drums, other: st.other }).filter(([, v]) => v).map(([k, v]) => [k, { file: v.file, url: v.url }])) : null;
   b.sung = b.vocals ? await singing(b.vocals.url) : [];
   b.lines = readSrt(heard.srt ?? "");
   b.bpm = Number((heard.bpm ?? "").match(/([\d.]+)/)?.[1]) || b.track.bpm || null;
@@ -616,6 +665,7 @@ const rolled = (b, s) => !!s.clip || (take(s)?.status === "done" && sameLoras(ta
 export function setCaptions(style) {
   const j = jam.jam;
   j.body.captions = style;
+  j.body.captionsSet = true;
   j.body.film = null;
   if (cut.project?.id === j.body.cut) setLyricStyle(style);
   touched();
@@ -675,7 +725,8 @@ export function plan(j) {
     const shot = {
       from: Math.round(s.from * 1000) / 1000,
       to: Math.round(s.to * 1000) / 1000,
-      kind: sungIn(s) > 0.3 ? "performance" : b.dance ? "dance" : "broll",
+      // (sung parts are performance shots, lip-synced to the vocals, unless the lead's lip-sync is turned off)
+      kind: b.lipsync !== false && sungIn(s) > 0.3 ? "performance" : b.dance ? "dance" : "broll",
       run: null,
     };
     // a shot planned again where it was, of the same kind, is not rolled again: its take and its clip stay
@@ -720,7 +771,8 @@ async function look(j, kind) {
   update();
   try {
     const photo = await (async () => {
-      const [started] = await api.image({ model: artistFor("edit"), template: "edit", prompt: LOOK[kind](j.body.style.trim()), refs: [{ file: j.body.artist.file, name: "artist" }], aspect: "9:16", count: 1, megapixels: 1, seed: Math.floor(Math.random() * 2 ** 31), name: `${j.name} · ${KINDS[kind]}` });
+      const band = withBand(j.body, LOOK[kind](j.body.style.trim()));
+      const [started] = await api.image({ model: artistFor("edit"), template: "edit", prompt: band.prompt, refs: [{ file: j.body.artist.file, name: "artist" }, ...band.refs], aspect: "9:16", count: 1, megapixels: 1, seed: Math.floor(Math.random() * 2 ** 31), name: `${j.name} · ${KINDS[kind]}` });
       return (await waitFor("job", started.id)).photo;
     })();
     j.body.looks[kind] = { file: photo.file, url: photo.url };
@@ -1080,21 +1132,74 @@ export const costOfWords = (seconds) => (cloud() ? Math.max(2, Math.round(second
 export const costOfVideo = () => estimate();
 
 /** The jam's lines of words: the edit's own once it is open, else the ones heard or typed. */
-export const linesOf = (b) => (cut.project?.id === b?.cut ? lyricItems(cut.project.body).map((it) => ({ id: it.id, from: Number(it.start) || 0, text: it.text, words: it.words })) : (b?.lines ?? []));
+export const linesOf = (b) => (b && cut.project?.id === b.cut ? lyricItems(cut.project.body).map((it) => ({ id: it.id, from: Number(it.start) || 0, text: it.text, words: it.words })) : (b?.lines ?? []));
 
 /** What each workspace's tile says: a few words in mono. */
 export function statusOf(j = jam.jam) {
   const b = j?.body;
-  if (!b) return { track: "No song yet", words: "No song yet", band: "Pick who", edit: "Empty" };
+  if (!b) return { song: "No song yet", track: "No song yet", words: "No song yet", band: "Pick who", edit: "Empty" };
   const busy = (k) => jam.busy.has(k, j);
   const lines = linesOf(b);
   return {
+    song: b.track ? "Song made" : "No song yet",
     track: !b.track ? "No song yet" : busy("part") || jam.starting ? "Cutting…" : b.bpm ? `${Math.round(b.bpm)} BPM` : "Ready",
     words: !b.track ? "No song yet" : busy("listen") ? "Hearing…" : !lines.length ? "No words" : b.vocals ? "Word synced" : "Typed",
     band: b.artist ? (crewById(b.artist.crew)?.name ?? "Your photo") : "Pick who",
     edit: !b.part ? "Empty" : busy("make-video") || busy("render") ? "Making…" : b.film ? "Exported" : "Draft",
   };
 }
+
+/**
+ * The video's pipeline, in the order it is made: each step done, the first that is not done "next", the rest waiting. `open` is
+ * the workspace its line goes to. Read from what the video holds, nothing is stored.
+ */
+export const STEPS = [
+  { id: "song", label: "Song made", open: "song" },
+  { id: "words", label: "Words heard", open: "words" },
+  { id: "captions", label: "Captions styled", open: "words" },
+  { id: "band", label: "Band cast", open: "band" },
+  { id: "edit", label: "Edit cut", open: "edit" },
+];
+export function pipeline(j = jam.jam) {
+  const b = j?.body;
+  const lines = b ? linesOf(b) : [];
+  const done = {
+    song: !!b?.track,
+    words: !!b?.track && (!!b.vocals || lines.length > 0),
+    captions: lines.length > 0 && (b.captionsSet === true || (b.captions ?? "karaoke") !== "karaoke"),
+    band: !!b?.artist,
+    edit: !!b?.film,
+  };
+  const next = STEPS.find((s) => !done[s.id])?.id ?? null;
+  return STEPS.map((s) => ({ ...s, state: done[s.id] ? "done" : s.id === next ? "next" : "todo" }));
+}
+
+/** What each workspace's tile shows as its lamp: done when what it is for is made. */
+export function lampsOf(j = jam.jam) {
+  const b = j?.body;
+  const p = Object.fromEntries(pipeline(j).map((s) => [s.id, s.state]));
+  return { song: p.song, track: b?.part ? "done" : b?.track ? "next" : "todo", words: p.words === "done" && p.captions === "done" ? "done" : p.words === "done" ? "next" : p.words, band: p.band, edit: p.edit };
+}
+
+/**
+ * Roughly what this video has cost, in Comfy credits, from what has been made (nothing is recorded as it is spent): the song when it
+ * was made here, the words when the singing was heard, and the looks and shots rolled. Null when the work runs on your own GPU.
+ */
+export function spentOf(j = jam.jam) {
+  const b = j?.body;
+  if (!b || !cloud()) return null;
+  let n = 0;
+  if (b.track?.kind === "made") n += costOfSong(b.track.seconds ?? 30);
+  if (b.vocals) n += costOfWords((b.span?.to ?? 0) - (b.span?.from ?? 0)) ?? 0;
+  const m = (state.image.catalogue?.models ?? []).find((x) => x.id === artistFor("edit"));
+  const pic = m?.router ? m.credits ?? 8 : (m?.seconds ?? 10) * 0.266;
+  n += Object.keys(b.looks ?? {}).length * pic;
+  n += (b.shots ?? []).filter((s) => rolled(b, s)).reduce((t, s) => t + Math.min(10, Math.max(2, Math.ceil(s.to - s.from))), 0) * 18 * 0.266;
+  return Math.round(n);
+}
+
+/** The song page lends Pickle its form (what he is told, and the actions that fill it) without this module reading that page. */
+export const songHook = { summary: () => null, fill: () => false };
 
 /** One of the crew as the artist (their picture goes up once; free). */
 export async function useCrew(id) {
@@ -1126,25 +1231,28 @@ export function setKind(i, kind) {
   syncEdit(jam.jam, { lines: false, beats: false });
 }
 
-/** What Pickle is told of the jam each time he is asked (the workspace open and what is in it), or null on any other page. */
+/**
+ * What Pickle is told of the jam each time he is asked, or null on any other page. Only what the workspace open holds (the server
+ * adds a line on what the others hold): the song page its form and shelf, the track its part and beats, the words its lines and
+ * captions, the band its artist, dance and shots, the edit its shots (the cut's own state comes with it from the editor).
+ */
 function context() {
   if (currentPage() !== "jam") return null;
   const j = jam.jam;
   const b = j?.body;
+  const ws = jam.workspace;
   const lines = b ? linesOf(b) : [];
   const crew = crewById(b?.artist?.crew);
   const part = b?.span ?? {};
   const length = (part.to ?? 0) - (part.from ?? 0) || 30;
-  return {
-    workspace: jam.workspace,
-    track: b?.track ? { name: b.track.name, seconds: b.track.seconds, bpm: b.bpm, from: part.from ?? 0, to: part.to ?? b.track.seconds, drop: b.track.drop ?? null, loud: b.track.loud ?? null } : null,
-    words: b?.track ? { count: lines.length, heard: !!b.vocals, style: b.captions ?? "karaoke" } : null,
-    artist: crew?.name ?? (b?.artist ? "a photo" : null),
-    dance: b?.dance?.duration ?? null,
-    vibe: b?.style || null,
-    shots: (b?.shots ?? []).map((s) => ({ kind: s.kind, from: s.from, to: s.to })),
-    costs: { track: costOfTrack(30) === null ? "your GPU" : `≈ ${costOfTrack(30)} cr for 30 s`, words: costOfWords(length) === null ? "your GPU" : `≈ ${costOfWords(length)} cr`, video: costOfVideo() === null ? "nothing more to make" : `≈ ${costOfVideo()} cr` },
-  };
+  const track = b?.track ? { name: b.track.name, seconds: b.track.seconds, bpm: b.bpm, from: part.from ?? 0, to: part.to ?? b.track.seconds, drop: b.track.drop ?? null, loud: b.track.loud ?? null } : null;
+  const costs = { track: costOfTrack(30) === null ? "your GPU" : `≈ ${costOfTrack(30)} cr for 30 s`, words: costOfWords(length) === null ? "your GPU" : `≈ ${costOfWords(length)} cr`, video: costOfVideo() === null ? "nothing more to make" : `≈ ${costOfVideo()} cr` };
+  const out = { workspace: ws, steps: pipeline(j).map((s) => `${s.label}${s.state === "done" ? " ✓" : s.state === "next" ? " (next)" : ""}`).join(", ") };
+  if (ws === "song") return { ...out, song: songHook.summary(), track: track && { name: track.name, seconds: track.seconds } };
+  if (ws === "track") return { ...out, track, costs: { words: costs.words } };
+  if (ws === "words") return { ...out, track: track && { name: track.name, from: track.from, to: track.to, bpm: track.bpm }, words: b?.track ? { count: lines.length, heard: !!b.vocals, style: b.captions ?? "karaoke" } : null, costs: { words: costs.words } };
+  if (ws === "band") return { ...out, artist: crew?.name ?? (b?.artist ? "a photo" : null), dance: b?.dance?.duration ?? null, vibe: b?.style || null, shots: (b?.shots ?? []).map((s) => ({ kind: s.kind, from: s.from, to: s.to })), costs: { video: costs.video } };
+  return { ...out, track: track && { name: track.name, bpm: track.bpm, from: track.from, to: track.to }, artist: crew?.name ?? (b?.artist ? "a photo" : null), shots: (b?.shots ?? []).map((s) => ({ kind: s.kind, from: s.from, to: s.to })), costs: { video: costs.video } };
 }
 
 /** Pickle's own actions (the part, the words, the captions, the artist, the vibe, the shots, a window): what he did, in short. Nothing here costs credits. */
@@ -1153,7 +1261,10 @@ function pickle(actions) {
   const b = j?.body;
   const did = [];
   for (const a of actions) {
-    if (a.op === "open") {
+    if (a.op === "set_song") {
+      // the song form is filled (free); making it is a key the user presses
+      if (songHook.fill(a)) (setWorkspace("song"), did.push("The song form is filled in: Make the song is ready"));
+    } else if (a.op === "open") {
       if (a.workspace) setWorkspace(a.workspace);
       if (a.window) openWindow(a.window);
       did.push(`Opened ${a.window ? `the ${a.window} window` : `the ${a.workspace} workspace`}`);
@@ -1188,4 +1299,4 @@ function pickle(actions) {
 }
 hooks.context = context;
 hooks.export = exportVideo;
-hooks.apply = (actions) => pickle(actions.filter((a) => ["part", "words", "captions", "artist", "vibe", "shots", "open"].includes(a.op)));
+hooks.apply = (actions) => pickle(actions.filter((a) => ["set_song", "part", "words", "captions", "artist", "vibe", "shots", "open"].includes(a.op)));

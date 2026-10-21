@@ -287,12 +287,15 @@ test("Kitchen's Cut room is told its own actions only: not the beats, the effect
   assert.match(cutPrompt({ length: 5, aspect: "16:9", clips: [], effects: [{ kind: "zoom", every: 4, intensity: 0.6, start: 0, length: 5 }] }, [{ role: "user", text: "hi" }]), /Effects:\n- zoom/);
 });
 
-test("Pickle's brief is Jam's only: its four workspaces and its own actions, no other product, and nothing that spends credits", () => {
+test("Pickle's brief is Jam's only: its five workspaces and its own actions, no other product, and nothing that spends credits", () => {
   const brief = jamBrief(["star", "heart"]);
   assert.match(brief, /You are Pickle/);
   assert.match(brief, /band leader/);
-  for (const w of ["the track", "the words", "the band", "the edit"]) assert.ok(brief.includes(w), `it knows ${w}`);
-  for (const op of ["part", "words", "captions", "artist", "vibe", "shots", "open"]) assert.ok(brief.includes(`{"op": "${op}"`), `it has the ${op} action`);
+  for (const w of ["the song", "the track", "the words", "the band", "the edit"]) assert.ok(brief.includes(w), `it knows ${w}`);
+  for (const op of ["set_song", "part", "words", "captions", "artist", "vibe", "shots", "open"]) assert.ok(brief.includes(`{"op": "${op}"`), `it has the ${op} action`);
+  // the flow: with no song the first thing is the song's form, and making is a key the user presses
+  assert.match(brief, /with no song yet, the first thing is the song/);
+  assert.match(brief, /Make the song is a key the user presses/);
   assert.match(brief, /names: star, heart/);
   assert.doesNotMatch(brief, /Kitchen|Mixer|Macaron|Utensils|Brioche|Ketkout|Truffle/, "nothing of the rest of the app");
   assert.doesNotMatch(brief, /\{"op": "(music|sound|voice)"/, "it is not offered what makes a track, a sound or a voice");
@@ -302,24 +305,61 @@ test("Pickle's brief is Jam's only: its four workspaces and its own actions, no 
   assert.doesNotMatch(cutBrief(), /You are Pickle/);
 });
 
-test("Pickle is told which workspace is open and what the jam holds, before the edit's own state", () => {
-  const jam = { workspace: "words", track: { name: "Toc Toc", seconds: 9.833, bpm: 124.2, from: 0, to: 9.8, drop: 2.4, loud: 4 }, words: { count: 5, heard: false, style: "pop" }, artist: "Josie", dance: 9.8, vibe: "pastel room", shots: [{ kind: "dance", from: 0, to: 2.1 }, { kind: "broll", from: 2.1, to: 4 }], costs: { track: "≈ 8 cr for 30 s", words: "≈ 2 cr", video: "nothing more to make" } };
-  const text = cutPrompt({ jam }, [{ role: "user", text: "bigger captions" }]);
-  assert.match(text, /^JAM NOW$/m);
-  assert.match(text, /workspace open: words/);
-  assert.match(text, /track: "Toc Toc", 9.8 s, 124.2 bpm; the part used runs 0 to 9.8 s; the drop is at 2.4 s; the loudest stretch starts at 4 s/);
-  assert.match(text, /words: 5 lines, typed; captions pop/);
-  assert.match(text, /artist: Josie/);
-  assert.match(text, /dance to copy: 9.8 s/);
-  assert.match(text, /shots: 1\. dance 0-2.1 s; 2\. broll 2.1-4 s/);
-  assert.match(text, /keys that cost credits: make a track ≈ 8 cr for 30 s, hear the words ≈ 2 cr, make the video nothing more to make/);
-  // before there is an edit, it says so (he can answer all the same)
-  assert.match(text, /THE EDIT NOW\n\(no edit yet/);
-  assert.match(text, /User: bigger captions/);
+const JAM = { workspace: "words", steps: "Song made ✓, Words heard (next), Captions styled, Band cast, Edit cut", track: { name: "Toc Toc", seconds: 9.833, bpm: 124.2, from: 0, to: 9.8, drop: 2.4, loud: 4 }, words: { count: 5, heard: false, style: "pop" }, artist: "Josie", dance: 9.8, vibe: "pastel room", shots: [{ kind: "dance", from: 0, to: 2.1 }, { kind: "broll", from: 2.1, to: 4 }], costs: { track: "≈ 8 cr for 30 s", words: "≈ 2 cr", video: "nothing more to make" } };
+const EDIT = { length: 9.8, aspect: "9:16", clips: [{ n: 1, name: "Toc Toc", start: 0, length: 2 }], effects: [{ kind: "zoom", every: 4, intensity: 0.6, start: 0, length: 5 }], stickers: [{ name: "star", start: 1, length: 2 }], titles: [{ text: "TOC TOC", start: 0, length: 2 }], lyrics: [{ n: 1, text: "hello", start: 0, length: 2, style: "pop" }], beats: { count: 20, bpm: 124, first: 0.2, offset: 0.2, source: "found" } };
+const ask = (jam: any, edit: any = {}) => cutPrompt({ jam, ...edit }, [{ role: "user", text: "bigger captions" }]);
+
+test("Pickle is told the video's steps and the open workspace's own things, and where the others are", () => {
+  const words = ask(JAM);
+  assert.match(words, /^JAM NOW$/m);
+  assert.match(words, /workspace open: words/);
+  assert.match(words, /the video's steps: Song made ✓, Words heard \(next\)/);
+  assert.match(words, /track: "Toc Toc", 9.8 s, 124.2 bpm\nthe part used runs 0 to 9.8 s/);
+  assert.match(words, /words: 5 lines, typed; captions pop/);
+  assert.match(words, /keys that cost credits: hear the words ≈ 2 cr$/m, "only the key of this workspace");
+  assert.match(words, /\(not shown to you: song holds .*track holds .*band holds .*edit holds /);
+  assert.doesNotMatch(words, /artist: Josie|dance to copy|vibe:|shots:/, "the band's things are the band's");
+  assert.match(words, /User: bigger captions/);
+  // the track: the part and the drop, its own key; no words, no band
+  const track = ask({ ...JAM, workspace: "track" });
+  assert.match(track, /track: "Toc Toc", 9.8 s, 124.2 bpm; the part used runs 0 to 9.8 s; the drop is at 2.4 s; the loudest stretch starts at 4 s/);
+  assert.doesNotMatch(track, /words: 5 lines|artist: Josie|shots:/);
+  // the band: the artist, the dance, the vibe, the shots, the video's key
+  const band = ask({ ...JAM, workspace: "band" });
+  assert.match(band, /artist: Josie/);
+  assert.match(band, /dance to copy: 9.8 s/);
+  assert.match(band, /shots: 1\. dance 0-2.1 s; 2\. broll 2.1-4 s/);
+  assert.match(band, /keys that cost credits: make the video nothing more to make/);
+  assert.doesNotMatch(band, /words: 5 lines|the part used runs/);
   // a workspace he was not told of is the track; a jam with no song yet says so
   assert.match(cutPrompt({ jam: { workspace: "kitchen" } }, [{ role: "user", text: "hi" }]), /workspace open: track\ntrack: \(none yet\)/);
   // Kitchen's Cut is told nothing of Jam
   assert.doesNotMatch(cutPrompt({ length: 5, aspect: "16:9", clips: [] }, [{ role: "user", text: "hi" }]), /JAM NOW/);
+});
+
+test("Pickle is told of the edit only as far as the workspace open works on it", () => {
+  const has = (text: string) => ({ cut: /THE EDIT NOW|Video track:|Effects:|Stickers:/.test(text), beats: /Beats:/.test(text), lyrics: /Lyrics:/.test(text) });
+  assert.deepEqual(has(ask({ ...JAM, workspace: "song" }, EDIT)), { cut: false, beats: false, lyrics: false }, "the song has no edit");
+  assert.deepEqual(has(ask({ ...JAM, workspace: "track" }, EDIT)), { cut: false, beats: true, lyrics: false }, "the track has its beats");
+  assert.deepEqual(has(ask({ ...JAM, workspace: "words" }, EDIT)), { cut: false, beats: true, lyrics: true }, "the words have the beats and the lyrics");
+  assert.deepEqual(has(ask({ ...JAM, workspace: "band" }, EDIT)), { cut: false, beats: false, lyrics: false }, "the band has its shots in JAM NOW");
+  assert.deepEqual(has(ask({ ...JAM, workspace: "edit" }, EDIT)), { cut: true, beats: true, lyrics: true }, "the edit has all of it");
+  // before there is an edit, the edit's workspace says so (he can answer all the same)
+  assert.match(cutPrompt({ jam: { ...JAM, workspace: "edit" } }, [{ role: "user", text: "hi" }]), /THE EDIT NOW\n\(no edit yet/);
+  // Kitchen's Cut is told its whole edit as before
+  assert.deepEqual(has(cutPrompt({ ...EDIT }, [{ role: "user", text: "hi" }])), { cut: true, beats: true, lyrics: true });
+});
+
+test("on the song page Pickle is told the form and the shelf, never the edit", () => {
+  const song = { idea: "a cozy winter song", shape: "pop", style: "lo-fi hip hop, dreamy", length: 200, bpm: 76, key: "A minor", time: "4", language: "en", quality: "full", title: "Winter nights", lyrics: "10 sections (Intro, Verse 1), 12 lines of words", shown: { name: "Hotel Lobby sound", seconds: 18 }, shelf: ["Hotel Lobby sound", "Three Kittens track"], busy: null };
+  const text = ask({ workspace: "song", steps: "Song made", song, track: { name: "Hotel Lobby sound", seconds: 18 } }, EDIT);
+  assert.match(text, /workspace open: song/);
+  assert.match(text, /idea: a cozy winter song\nshape: pop\nstyle: lo-fi hip hop, dreamy\nlength 200 s, 76 bpm, A minor, time 4, language en, quality full\ntitle: Winter nights\nlyrics: 10 sections/);
+  assert.match(text, /song shown: "Hotel Lobby sound", 18 s/);
+  assert.match(text, /songs on the shelf: "Hotel Lobby sound", "Three Kittens track"/);
+  assert.match(text, /the video's track: "Hotel Lobby sound", 18 s/);
+  assert.doesNotMatch(text, /THE EDIT NOW|Video track|Beats:|Lyrics:|dance to copy|shots:/);
+  assert.match(ask({ workspace: "song", song }), /the video has no track yet/);
 });
 
 test("Pickle's actions are checked: Jam's own, fields in range, a workspace or a window only if it exists, nothing that spends", () => {
@@ -333,12 +373,17 @@ test("Pickle's actions are checked: Jam's own, fields in range, a workspace or a
     { op: "open", workspace: "edit", window: "make" }, { op: "open", workspace: "stage" }, { op: "open", window: "the-vault" },
     { op: "music", prompt: "a hit" }, { op: "sound", prompt: "a bang" }, { op: "voice", line: "hello" },
     { op: "effect", kind: "zoom", every: 4 },
+    { op: "set_song", idea: "a winter song", structure: "pop", tags: "lo-fi, dreamy", key: "A minor", seconds: 300, bpm: 12, language: "xx", extra: "dropped" },
+    { op: "set_song", structure: "opera", key: "H minor" }, { op: "set_song" },
+    { op: "open", workspace: "song" },
   ];
   const r = readCutAnswer(JSON.stringify({ reply: "ok", actions: raw }), "jam");
   const ops = r.actions.map((a: any) => a.op);
   assert.ok(!ops.some((o: string) => ["music", "sound", "voice"].includes(o)), "what spends credits is not carried");
-  assert.equal(ops.at(-1), "effect", "the editor's own actions still are");
+  assert.equal(ops.includes("effect"), true, "the editor's own actions still are");
   const by = (op: string) => r.actions.filter((a: any) => a.op === op) as any[];
+  // the song form: only the fields that are valid, in range; an action with none is not an action
+  assert.deepEqual(by("set_song"), [{ op: "set_song", idea: "a winter song", structure: "pop", tags: "lo-fi, dreamy", seconds: 240, bpm: 40, key: "A minor" }]);
   const [zero, far, drop, chorus] = by("part");
   assert.deepEqual([zero.seconds, far.seconds, far.from, drop.drop, chorus.chorus], [0, 600, 0, true, undefined]);
   assert.deepEqual(by("words").map((a) => a.text), ["one\ntwo"], "empty words are not an action");
@@ -347,7 +392,7 @@ test("Pickle's actions are checked: Jam's own, fields in range, a workspace or a
   assert.deepEqual(by("artist").map((a) => a.name), ["Josie"]);
   assert.deepEqual(by("vibe").map((a) => a.text), ["pastel room"]);
   assert.deepEqual(by("shots").map((a) => [a.every, a.shot, a.kind]), [[4, undefined, undefined], [undefined, 2, "dance"]], "every 1, 2 or 4 bars; a shot's kind among the three");
-  assert.deepEqual(by("open").map((a) => [a.workspace, a.window]), [["edit", "make"]], "a workspace or a window that does not exist is not opened");
+  assert.deepEqual(by("open").map((a) => [a.workspace, a.window]), [["edit", "make"], ["song", undefined]], "a workspace or a window that does not exist is not opened");
   // the same answer for Kitchen's Cut (no product) still carries the sound ones
   const kitchen = readCutAnswer(JSON.stringify({ reply: "ok", actions: raw }));
   assert.ok(kitchen.actions.some((a: any) => a.op === "music"));

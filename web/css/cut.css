@@ -61,6 +61,7 @@ body[data-page="cut"] { padding-bottom: 0; overflow: hidden; }
 .cut-lyric { position: absolute; inset: 0; }
 .cut-word { position: absolute; display: block; overflow: visible; text-align: center; white-space: nowrap; font-family: "Comfyture Lyric", "Manrope", sans-serif; font-weight: 400; cursor: move; pointer-events: auto; user-select: none; -webkit-user-select: none; }
 .cut-word b { position: absolute; inset: 0; font: inherit; paint-order: stroke fill; }
+.cut-lyric .cw-box { position: absolute; display: block; pointer-events: none; }
 /* the frame says where the picked sticker or line of lyrics is, with handles to move, size and turn it */
 .cut-gizmo { position: absolute; z-index: 300; pointer-events: none; }
 .cut-gizmo .gz-box { position: absolute; inset: 0; border: 2px solid var(--accent); border-radius: 4px; pointer-events: auto; cursor: move; }

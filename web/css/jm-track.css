@@ -1,0 +1,221 @@
+/* Jam's track: the whole song as one waveform with its sections, its drop and its beats, and under it three cards, the stems, the
+   beat and the cut. The mockup is docs/brand/products/jam-v3/jam-v3-track.png. Roomy, the whole height, nothing hanging at the top.
+   The cards share a look with the words' (jm-words.css); this file has the track's own. */
+
+.jm-grid.is-track, .jm-grid.is-words { display: block; padding: 0; overflow: hidden; }
+
+/* ---- the cards both workspaces are made of --------------------------------------------------------------- */
+.jt-card { position: relative; display: flex; flex-direction: column; gap: clamp(.625rem, 1.4dvh, 1rem); min-width: 0; min-height: 0; padding: clamp(.875rem, 2dvh, 1.5rem) clamp(1rem, 1.5vw, 1.5rem) clamp(.875rem, 2dvh, 1.375rem); border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); }
+.jt-card-head { display: flex; flex: none; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+.jt-card-title { display: grid; flex: 1 1 auto; gap: .3125rem; min-width: 0; }
+.jt-card-title h3 { margin: 0; font: 800 clamp(1.375rem, 2.1vw, 1.875rem)/1 var(--font-sans); letter-spacing: -.01em; text-transform: uppercase; color: var(--text); }
+.jt-card-title p { margin: 0; overflow: hidden; font: 500 .75rem/1.2 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.jt-card-tools { display: flex; flex: none; align-items: center; gap: .5rem; }
+.jt-card-body { display: flex; flex: 1 1 0; flex-direction: column; gap: clamp(.625rem, 1.5dvh, 1rem); min-height: 0; }
+.jt-card-foot { display: grid; flex: none; gap: .625rem; margin-top: auto; }
+.jt-card-foot.is-keys { grid-template-columns: minmax(0, 1fr) auto; }
+.jt-expand { display: grid; place-items: center; width: 2rem; height: 2rem; padding: 0; border: 1px solid var(--line2); border-radius: .625rem; background: transparent; color: var(--muted); cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast); }
+.jt-expand svg { width: 1rem; height: 1rem; }
+.jt-expand:hover, .jt-expand:focus-visible { border-color: var(--accent-line); color: var(--accent); }
+.jt-note { margin: 0; font: 400 .8125rem/1.4 var(--font-sans); color: var(--dim); }
+/* the one key of a card that does the job: yellow, wide */
+.jt-primary { display: flex; align-items: center; justify-content: center; gap: .625rem; width: 100%; min-height: clamp(2.75rem, 5.2dvh, 3.375rem); padding: 0 1.25rem; border: 0; border-radius: 1rem; background: var(--accent); color: var(--accent-ink); font: 700 1rem/1 var(--font-sans); cursor: pointer; transition: filter var(--t-fast), transform var(--t-fast); }
+.jt-primary svg { width: 1.25rem; height: 1.25rem; }
+.jt-primary em { font: 600 .875rem/1 var(--font-mono); font-style: normal; opacity: .72; }
+.jt-primary:hover:not(:disabled) { filter: brightness(1.06); }
+.jt-primary:active:not(:disabled) { transform: translateY(1px); }
+.jt-primary:disabled { opacity: .45; cursor: default; }
+.jt-ghostkey { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: clamp(2.75rem, 5.2dvh, 3.375rem); padding: 0 1.375rem; border: 1px solid var(--line2); border-radius: 1rem; background: transparent; color: var(--text); font: 600 1rem/1 var(--font-sans); cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast); }
+.jt-ghostkey svg { width: 1.25rem; height: 1.25rem; }
+.jt-ghostkey:hover { border-color: var(--faint); background: var(--s2); }
+.jt-ghostkey[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+/* a segmented control: the one that is on lit yellow */
+.jt-segs { display: inline-flex; align-items: center; gap: .1875rem; padding: .1875rem; border: 1px solid var(--line2); border-radius: .875rem; background: var(--sunk); }
+.jt-seg { min-height: 2.25rem; padding: 0 1.125rem; border: 0; border-radius: .6875rem; background: transparent; color: var(--muted); font: 600 .9375rem/1 var(--font-mono); cursor: pointer; transition: color var(--t-fast), background var(--t-fast); }
+.jt-seg:hover:not(:disabled) { color: var(--text); }
+.jt-seg[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.jt-seg:disabled { opacity: .4; cursor: default; }
+.jt-segs.is-lengths { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.jt-segs.is-lengths .jt-seg { padding: 0 .5rem; }
+
+/* ---- the layout ------------------------------------------------------------------------------------------ */
+.jt { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr) minmax(0, 1.08fr); gap: var(--jm-gap, 1rem); height: 100%; min-height: 0; }
+.jt[data-empty] { grid-template-rows: minmax(0, 1fr); }
+.jt-hero { grid-column: 1 / -1; gap: .5rem; padding-top: clamp(2.5rem, 5.4dvh, 3.5rem); overflow: hidden; }
+
+/* ---- the hero: the song ---------------------------------------------------------------------------------- */
+.jt-hero-corner { position: absolute; top: .75rem; right: .875rem; z-index: 3; display: flex; align-items: flex-start; gap: .5rem; }
+.jt-disc { position: relative; box-shadow: 0 0 0 1px var(--line2); width: clamp(2.75rem, 5.2dvh, 3.5rem); aspect-ratio: 1; margin: -.125rem .125rem 0 0; border-radius: 50%; cursor: pointer; }
+.jt-disc:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.jt-disc .jm-vinyl { position: absolute; inset: 0; filter: drop-shadow(0 .5rem .875rem rgba(0, 0, 0, .55)); }
+.jt-disc .jm-vinyl svg { width: 100%; height: 100%; }
+.jt-hero-main { display: grid; flex: 1 1 0; grid-template-columns: auto minmax(0, 1fr); gap: clamp(1rem, 2vw, 2rem); min-height: 0; }
+.jt-hero-play { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .875rem; padding-bottom: 1.5rem; }
+.jt-bigplay, .jt-stems-play, .jt-partplay { display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: var(--accent-ink); cursor: pointer; transition: transform var(--t-fast), filter var(--t-fast); }
+.jt-bigplay { width: clamp(3.75rem, 8.4dvh, 5.25rem); aspect-ratio: 1; box-shadow: 0 .5rem 1.5rem rgba(242, 255, 89, .18); }
+.jt-bigplay.is-small { width: 3rem; }
+.jt-bigplay:hover:not(:disabled), .jt-stems-play:hover:not(:disabled), .jt-partplay:hover:not(:disabled) { transform: scale(1.06); }
+.jt-bigplay .is-play, .jt-bigplay .is-pause { width: 100%; height: 100%; }
+.jt-bigplay svg { width: 38%; height: 38%; }
+.jt-stems-play, .jt-partplay { width: 2.5rem; aspect-ratio: 1; }
+.jt-stems-play svg, .jt-partplay svg { width: 1.125rem; height: 1.125rem; }
+.jt-stems-play:disabled, .jt-partplay:disabled { opacity: .4; cursor: default; background: var(--s3); color: var(--muted); }
+[data-playing] .is-pause, [data-playing="false"] .is-pause { display: none; }
+[data-playing="true"] .is-play { display: none; }
+[data-playing="true"] .is-pause { display: grid; }
+.is-play, .is-pause { display: grid; place-items: center; }
+.jt-time { font: 500 .875rem/1 var(--font-mono); color: var(--muted); white-space: nowrap; }
+.jt-time .jt-now { color: var(--text); font-weight: 600; }
+.jt-hero-wave { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.jt-wavebox { position: relative; display: grid; grid-template-rows: auto minmax(4rem, 1fr) auto; flex: 1 1 0; min-height: 0; }
+/* the sections' names and times over the waveform, each from where it starts; the drop's flag above them */
+.jt-secs { position: relative; height: clamp(3.5rem, 7.4dvh, 4.5rem); margin-bottom: .375rem; }
+.jt-sec { position: absolute; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: .25rem; min-width: 0; padding-left: .5rem; overflow: hidden; border-left: 1px solid var(--line2); white-space: nowrap; }
+.jt-sec b { overflow: hidden; text-overflow: ellipsis; font: 600 clamp(.6875rem, .9vw, .8125rem)/1 var(--font-mono); letter-spacing: .08em; color: #B8A9F5; }
+.jt-sec em { font: 500 .6875rem/1 var(--font-mono); font-style: normal; color: var(--dim); }
+.jt-sec[data-kind="chorus"] b { color: var(--accent); }
+.jt-sec[data-kind="intro"] b, .jt-sec[data-kind="outro"] b, .jt-sec[data-kind="song"] b { color: var(--muted); }
+.jt-wavewrap { position: relative; min-height: 0; cursor: pointer; touch-action: none; }
+.jt-wave, .jt-ticks { position: absolute; left: 0; width: 100%; display: block; }
+.jt-wave { top: 0; height: 100%; }
+.jt-ticks { bottom: 0; height: 14px; pointer-events: none; }
+/* the part the video uses: a faint band over the waveform, its two edges lit */
+.jt-part { position: absolute; top: -.25rem; bottom: 0; border-radius: .375rem; border: 0 solid rgba(242, 255, 89, .75); border-left-width: 2px; border-right-width: 2px; background: rgba(242, 255, 89, .045); pointer-events: none; }
+.jt-ph { position: absolute; top: -.25rem; bottom: 0; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--accent); box-shadow: 0 0 .625rem rgba(242, 255, 89, .55); pointer-events: none; }
+.jt-ph::before { content: ""; position: absolute; left: 50%; top: -.375rem; width: .6875rem; height: .6875rem; margin-left: -.34375rem; border-radius: 50%; background: var(--accent); }
+.jt-flag { position: absolute; top: 0; z-index: 2; display: inline-flex; align-items: center; gap: .3125rem; height: 1.5rem; margin-left: -.0625rem; padding: 0 .5rem 0 .375rem; border: 0; border-radius: .375rem .375rem .375rem 0; background: var(--accent); color: var(--accent-ink); font: 700 .6875rem/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+.jt-flag[hidden] { display: none; }
+.jt-flag svg { width: .75rem; height: .75rem; stroke-width: 2.4; }
+.jt-flag::after { content: ""; position: absolute; left: 0; top: 100%; width: 2px; height: .875rem; background: var(--accent); }
+.jt-ruler { position: relative; height: 1.5rem; margin-top: .375rem; }
+.jt-ruler span { position: absolute; top: .3125rem; font: 500 .75rem/1 var(--font-mono); color: var(--dim); transform: translateX(-50%); }
+.jt-ruler span.is-first { transform: none; }
+.jt-ruler span::before { content: ""; position: absolute; left: 50%; top: -.3125rem; width: 1px; height: .25rem; background: var(--line2); }
+.jt-ruler span.is-first::before { left: 0; }
+.jt-hero-foot { position: absolute; left: clamp(1rem, 1.5vw, 1.5rem); top: clamp(.875rem, 2dvh, 1.25rem); max-width: calc(100% - 9rem); }
+.jt-song-name { display: flex; align-items: baseline; flex-wrap: wrap; gap: .25rem .875rem; }
+.jt-song-name b { font: 800 clamp(1.125rem, 1.8vw, 1.5rem)/1 var(--font-sans); letter-spacing: -.01em; text-transform: uppercase; }
+.jt-song-name span { display: inline-flex; align-items: center; gap: .4375rem; font: 500 .8125rem/1 var(--font-mono); letter-spacing: .12em; color: var(--muted); }
+.jt-song-name .lamp, .jt-busy .lamp { width: .5625rem; height: .5625rem; border-radius: 50%; }
+.jt-busy { display: inline-flex; align-items: center; gap: .4375rem; font: 500 .8125rem/1 var(--font-mono); color: var(--warn); }
+
+/* ---- the hero before there is a song ---------------------------------------------------------------------- */
+.jt-hero.is-empty { padding-top: clamp(1.25rem, 3dvh, 2rem); }
+.jt-empty { display: grid; flex: 1 1 0; align-content: center; justify-items: center; gap: clamp(1.25rem, 3.4dvh, 2.25rem); min-height: 0; text-align: center; }
+.jt-empty-text h3 { margin: 0 0 .5rem; font: 800 clamp(1.75rem, 3vw, 2.5rem)/1 var(--font-sans); letter-spacing: -.02em; text-transform: uppercase; }
+.jt-empty-text p { max-width: 38rem; margin: 0 auto; font: 400 1rem/1.5 var(--font-sans); color: var(--muted); }
+.jt-ways { display: grid; grid-template-columns: repeat(3, minmax(0, 20rem)); gap: 1rem; width: min(100%, 66rem); justify-content: center; }
+.jt-way { display: grid; align-content: start; justify-items: start; gap: .375rem; min-height: clamp(9rem, 20dvh, 12rem); padding: 1.125rem 1.25rem; border: 1px solid var(--line2); border-radius: 1.25rem; background: var(--s2); color: var(--text); text-align: left; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
+.jt-way:hover:not(:disabled) { border-color: var(--accent-line); background: var(--s3); }
+.jt-way:disabled { opacity: .5; cursor: default; }
+.jt-way i { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; margin-bottom: .5rem; border-radius: .875rem; background: var(--sunk); color: var(--accent); }
+.jt-way i svg { width: 1.5rem; height: 1.5rem; }
+.jt-way b { font: 700 1.125rem/1.2 var(--font-sans); }
+.jt-way span { font: 400 .875rem/1.35 var(--font-sans); color: var(--muted); }
+.jt-way.is-trends { cursor: default; }
+.jt-way.is-trends:hover { border-color: var(--line2); background: var(--s2); }
+.jt-strip { display: flex; gap: .5rem; margin-top: .5rem; }
+.jt-mini { position: relative; display: grid; width: 3.5rem; aspect-ratio: 3 / 4; padding: 0; overflow: hidden; border: 0; border-radius: .625rem; background: var(--sunk); cursor: pointer; }
+.jt-mini img { width: 100%; height: 100%; object-fit: cover; }
+.jt-mini em { position: absolute; inset: auto 0 0; padding: .75rem .25rem .1875rem; background: linear-gradient(transparent, rgba(0, 0, 0, .78)); font: 600 .5625rem/1 var(--font-sans); font-style: normal; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jt-mini-busy { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0, 0, 0, .5); }
+.jt-more { display: inline-flex; align-items: center; gap: .25rem; margin-top: .375rem; padding: 0; border: 0; background: transparent; color: var(--muted); font: 500 .8125rem/1 var(--font-sans); cursor: pointer; }
+.jt-more:hover { color: var(--accent); }
+.jt-more svg { width: .875rem; height: .875rem; }
+.jt-empty-note { margin: 0; font: 500 .75rem/1 var(--font-mono); letter-spacing: .08em; color: var(--dim); text-align: center; }
+
+/* ---- the stems -------------------------------------------------------------------------------------------- */
+.jt-lanes { display: grid; flex: 1 1 0; grid-auto-rows: minmax(0, 1fr); gap: .5rem; min-height: 0; }
+.jt-lane { display: grid; grid-template-columns: clamp(5.5rem, 7vw, 6.75rem) minmax(0, 1fr) auto auto; align-items: center; gap: .5rem; min-height: 0; padding: .25rem .5rem .25rem .75rem; border: 1px solid var(--line); border-radius: .875rem; background: var(--sunk); transition: opacity var(--t-fast); }
+.jt-lane[data-off="true"] { opacity: .45; }
+.jt-lane-name { display: inline-flex; align-items: center; gap: .5rem; min-width: 0; font: 600 .9375rem/1 var(--font-sans); }
+.jt-lane-name svg { flex: none; width: 1.25rem; height: 1.25rem; color: var(--lane, var(--muted)); }
+.jt-lane-name b { overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.jt-lane-track { position: relative; align-self: stretch; min-height: 1.5rem; margin: .25rem 0; cursor: pointer; }
+.jt-lane-wave { position: absolute; inset: 0; width: 100%; height: 100%; }
+.jt-lane-flat { position: absolute; left: 0; right: 0; top: 50%; height: 2px; border-radius: 1px; background: repeating-linear-gradient(90deg, var(--line2) 0 3px, transparent 3px 5px); }
+.jt-sph { position: absolute; top: -.125rem; bottom: -.125rem; width: 2px; margin-left: -1px; background: var(--accent); pointer-events: none; }
+.jt-ms { display: grid; place-items: center; width: 2rem; height: 2rem; padding: 0; border: 1px solid var(--line2); border-radius: .5rem; background: transparent; color: var(--muted); font: 700 .8125rem/1 var(--font-mono); cursor: pointer; transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
+.jt-ms:hover:not(:disabled) { border-color: var(--faint); color: var(--text); }
+.jt-ms[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.jt-ms:disabled { opacity: .35; cursor: default; }
+.jt-lanes.is-ghost { opacity: .7; }
+.jt-lanes.is-big { gap: .75rem; }
+.jt-lanes.is-big .jt-lane { min-height: 4.25rem; }
+
+/* ---- the beat --------------------------------------------------------------------------------------------- */
+.jt-bpm { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem 1rem; }
+.jt-bpm b { font: 800 clamp(3.25rem, 8.4dvh, 5.5rem)/.9 var(--font-sans); letter-spacing: -.04em; color: var(--text); }
+.jt-bpm > span { align-self: flex-end; margin-bottom: .5rem; font: 600 1rem/1 var(--font-mono); letter-spacing: .08em; color: var(--muted); }
+.jt-bpm.is-big b { font-size: 6rem; }
+.jt-bpm em { flex: 1 1 100%; font: 500 .8125rem/1 var(--font-mono); font-style: normal; color: var(--dim); }
+.jt-tap { display: inline-flex; align-items: center; gap: .5rem; margin-left: auto; min-height: 2.75rem; padding: 0 1.125rem; border: 1px solid var(--line2); border-radius: .875rem; background: transparent; color: var(--text); font: 600 .9375rem/1 var(--font-sans); cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
+.jt-tap svg { width: 1.25rem; height: 1.25rem; color: var(--accent); }
+.jt-tap:hover:not(:disabled) { border-color: var(--accent-line); background: var(--s2); }
+.jt-tap:active:not(:disabled) { transform: scale(.97); }
+.jt-tap:disabled { opacity: .4; cursor: default; }
+.jt-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; padding-top: clamp(.5rem, 1.4dvh, .875rem); border-top: 1px solid var(--line); }
+.jt-facts div { display: grid; gap: .375rem; }
+.jt-facts div + div { padding-left: 1rem; border-left: 1px solid var(--line); }
+.jt-facts b { font: 700 clamp(1.25rem, 2.6dvh, 1.625rem)/1 var(--font-sans); }
+.jt-facts span { font: 500 .6875rem/1 var(--font-mono); letter-spacing: .16em; color: var(--dim); }
+.jt-grid { display: grid; flex: none; gap: .375rem; margin-top: auto; padding: .625rem .75rem .5rem; border: 1px solid var(--line); border-radius: .875rem; background: var(--sunk); }
+.jt-dots { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); justify-items: center; }
+.jt-dots i { width: .5rem; height: .5rem; border-radius: 50%; background: var(--line2); }
+.jt-dots i[data-on="true"] { background: rgba(240, 239, 237, .72); }
+.jt-dots i[data-first="true"][data-on="true"] { width: .625rem; height: .625rem; background: var(--accent); box-shadow: 0 0 .5rem rgba(242, 255, 89, .45); }
+.jt-bars { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; }
+.jt-bars span { position: relative; display: grid; justify-items: start; height: 1.5rem; padding-top: .5rem; border-top: 6px solid #8A76E8; }
+.jt-bars span:nth-child(odd) { border-top-color: #6C58C9; }
+.jt-bars em { font: 500 .6875rem/1 var(--font-mono); font-style: normal; color: var(--dim); }
+
+/* ---- the cut ---------------------------------------------------------------------------------------------- */
+.jt-partplay { width: 2.5rem; }
+.jt-rangebox { display: grid; flex: 1 1 0; grid-template-rows: minmax(4rem, 1fr) auto; gap: .5rem; min-height: 0; }
+.jt-range { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: .875rem; background: var(--sunk); user-select: none; -webkit-user-select: none; }
+.jt-range-wave { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border-radius: inherit; }
+.jt-sel { position: absolute; top: -1px; bottom: -1px; border: 2px solid var(--accent); border-radius: .75rem; background: rgba(242, 255, 89, .07); cursor: grab; touch-action: none; }
+.jt-sel:active { cursor: grabbing; }
+.jt-h { position: absolute; top: 50%; width: 1.125rem; height: 2.125rem; margin-top: -1.0625rem; border-radius: .4375rem; background: var(--accent); cursor: ew-resize; }
+.jt-h::after { content: ""; position: absolute; left: 50%; top: .5rem; bottom: .5rem; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--accent-ink); opacity: .55; }
+.jt-h.is-l { left: -.6875rem; }
+.jt-h.is-r { right: -.6875rem; }
+.jt-rph { position: absolute; top: 0; bottom: 0; left: -10%; width: 2px; background: var(--text); box-shadow: 0 0 .5rem rgba(255, 255, 255, .5); pointer-events: none; }
+.jt-readout { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; padding: 0 .25rem; font: 500 .8125rem/1 var(--font-mono); color: var(--muted); }
+.jt-readout b { font-size: .6875rem; letter-spacing: .16em; color: var(--dim); }
+
+/* ---- windows ---------------------------------------------------------------------------------------------- */
+.jt-win-wave { display: grid; height: clamp(14rem, 34dvh, 20rem); padding: 1rem 1rem .5rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--s1); }
+.jt-win-lanes { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 1rem; }
+
+/* ---- short screens: the hero gives a little, the footnotes go --------------------------------------------- */
+@media (max-height: 960px) {
+  .jt { grid-template-rows: minmax(0, .88fr) minmax(0, 1.12fr); }
+  .jt-card-foot .jt-note { display: none; }
+  .jt-card { gap: .5rem; }
+  .jt-bpm b { font-size: clamp(2.75rem, 7.4dvh, 4.5rem); }
+  .jt-secs { height: clamp(2.75rem, 6dvh, 3.5rem); }
+}
+@media (max-height: 800px) {
+  .jm-grid.is-track { overflow-y: auto; scrollbar-width: thin; }
+  .jt { height: auto; min-height: 100%; grid-template-rows: minmax(15rem, auto) minmax(21rem, auto); }
+  .jt-grid { display: none; }
+  .jt-lane { padding-block: .125rem; }
+}
+
+/* ---- narrower screens ------------------------------------------------------------------------------------- */
+@media (max-width: 1180px) {
+  .jt { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, .9fr); }
+  .jt-cut, .jt-c-cut { grid-column: 1 / -1; }
+  .jt-ways { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .jm-grid.is-track, .jm-grid.is-words { overflow: auto; }
+  .jt { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-rows: auto; height: auto; }
+  .jt-hero { min-height: 22rem; }
+  .jt-card { min-height: 18rem; }
+  .jt-hero-main { grid-template-columns: minmax(0, 1fr); }
+  .jt-hero-play { flex-direction: row; padding: 0; }
+  .jt-ways { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { .jt-bigplay, .jt-stems-play, .jt-partplay { transition: none; } }

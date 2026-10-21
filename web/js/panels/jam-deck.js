@@ -124,12 +124,12 @@ export function createDeck() {
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.55;
+  scene.environmentIntensity = 0.32;
   const camera = new THREE.PerspectiveCamera(26, 1, 0.1, 100);
-  camera.position.set(0.5, 15.2, 7.2);
-  camera.lookAt(0.2, 0, 0.2);
+  camera.position.set(0.5, 13.4, 9.4);
+  camera.lookAt(0.2, 0, 0.3);
 
-  const key = new THREE.DirectionalLight(0xfff3e0, 2.2);
+  const key = new THREE.DirectionalLight(0xfff3e0, 1.9);
   key.position.set(-5, 9, 4);
   scene.add(key);
   const rim = new THREE.DirectionalLight(0xb9a8ff, 1.1);
@@ -137,7 +137,7 @@ export function createDeck() {
   scene.add(rim);
   scene.add(new THREE.AmbientLight(0xffffff, 0.25));
 
-  const metal = new THREE.MeshStandardMaterial({ color: 0x1b1b1f, roughness: 0.55, metalness: 0.35 });
+  const metal = new THREE.MeshStandardMaterial({ color: 0x0f0f12, roughness: 0.62, metalness: 0.3 });
   const plinth = slab(8.4, 6.6, 0.5, 0.5, metal);
   plinth.position.set(0, -0.58, 0);
   scene.add(plinth);

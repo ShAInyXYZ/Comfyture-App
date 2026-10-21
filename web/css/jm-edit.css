@@ -1,0 +1,125 @@
+/* Jam: the edit. A monitor with its console (the transport and a few facts), the shot that is picked, the timeline with its
+   keys and a foot that finishes the video. Mockup: docs/brand/products/jam-v3/jam-v3-edit.png. The editor's own parts (its
+   stage, transport, timeline, inspector) are styled as Kitchen's Cut has them (css/cut.css); what is here is Jam's, under .jam.
+   The grid is Jam's (css/jam.css); this overrides it for this workspace only. */
+
+.jam .jm-grid.is-edit {
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+  grid-template-rows: minmax(0, .85fr) minmax(0, 1.15fr) auto;
+  grid-template-areas: "monitor selected" "timeline selected" "foot foot";
+  gap: 1.25rem;
+  overflow: hidden;
+}
+.jm-b-monitor { grid-area: monitor; } .jm-b-selected { grid-area: selected; } .jm-b-timeline { grid-area: timeline; } .jm-b-foot { grid-area: foot; }
+.jm-b-empty { grid-area: 1 / 1 / -1 / -1; }
+.jm-b-monitor .jm-b-body, .jm-b-selected .jm-b-body, .jm-b-timeline .jm-b-body { flex: 1 1 0; min-height: 0; }
+.jm-b-monitor, .jm-b-selected, .jm-b-timeline { padding: 1.125rem 1.5rem 1.25rem; gap: .875rem; }
+
+/* ---- the monitor and its console ----------------------------------------------------------------- */
+.jm-monitor { --ar: 9 / 16; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 2rem; height: 100%; min-height: 0; }
+.jm-monitor[data-aspect="16:9"] { --ar: 16 / 9; }
+.jm-monitor[data-aspect="1:1"] { --ar: 1 / 1; }
+.jam .jm-monitor .jm-set { flex: none; display: block; width: auto; max-width: 100%; height: 100%; aspect-ratio: var(--ar); border-radius: 1.25rem; background: #0b0b0d; box-shadow: 0 0 0 1px rgba(255, 255, 255, .08), 0 14px 30px rgba(0, 0, 0, .5); }
+.jam .jm-monitor .jm-set .cut-stage { display: block; width: 100%; height: 100%; padding: 0; }
+.jam .jm-monitor .jm-set .cut-screen { width: 100%; height: 100%; border-radius: 1.25rem; box-shadow: none; }
+.jm-console { display: flex; flex-direction: column; justify-content: center; gap: 1rem; min-width: 0; }
+.jm-frame-tag { display: inline-flex; align-items: center; gap: .625rem; align-self: flex-start; font: 600 .75rem/1 var(--font-mono); letter-spacing: .2em; color: var(--dim); }
+.jm-frame-tag b { padding: .3125rem .625rem; border-radius: .5rem; background: var(--s3); color: var(--text); letter-spacing: .06em; }
+.jam .jm-console .jm-ed-transport .cut-transport { grid-template-columns: auto auto; justify-content: start; align-items: center; gap: .75rem 1rem; }
+.jam .jm-console .jm-ed-transport .cut-times { grid-column: 1 / -1; }
+.jam .jm-console .jm-ed-transport .cut-times { flex-direction: row; align-items: baseline; flex-wrap: wrap; gap: .25rem .875rem; }
+.jam .jm-console .jm-ed-transport .cut-timecode { font: 500 1.75rem/1 var(--font-mono); letter-spacing: .02em; color: var(--text); }
+.jam .jm-console .jm-ed-transport .cut-timecode-total { font: 500 1rem/1 var(--font-mono); color: var(--dim); }
+.jam .jm-console .jm-ed-transport .cut-transport-keys { justify-content: flex-start; gap: .375rem; }
+.jam .jm-console .jm-ed-transport .cut-play { width: 3.25rem; height: 3.25rem; }
+.jam .jm-console .jm-ed-transport .cut-transport-end { justify-self: start; }
+.jm-ed-facts { display: flex; flex-wrap: wrap; gap: .75rem 2.25rem; padding-top: .875rem; border-top: 1px solid var(--line); }
+.jm-ed-facts .jm-fact { display: grid; grid-template-columns: auto auto; align-items: baseline; gap: .25rem .5rem; }
+.jm-ed-facts .jm-fact .label { grid-column: 1 / -1; }
+.jm-ed-facts .jm-fact b { font: 700 1.25rem/1 var(--font-sans); color: var(--text); }
+.jm-ed-facts .jm-fact em { font: 500 .8125rem/1 var(--font-mono); font-style: normal; color: var(--dim); }
+
+/* ---- the shot that is picked --------------------------------------------------------------------- */
+.jm-selected { display: grid; align-content: start; gap: 1.125rem; height: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; padding-right: .125rem; }
+.jm-shotpic { position: relative; height: clamp(6.5rem, 15dvh, 11rem); overflow: hidden; border-radius: 1rem; background: #0b0b0d; }
+.jm-shotpic img, .jm-shotpic video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
+.jm-shotpic.is-fx { display: grid; place-items: center; background: radial-gradient(70% 90% at 50% 40%, #3a2358, #130c20); color: var(--accent); }
+.jm-shotpic.is-fx > svg { width: 2.5rem; height: 2.5rem; }
+.jm-shotno, .jm-shotstate { position: absolute; display: inline-flex; align-items: center; gap: .5rem; padding: .3125rem .5625rem; border-radius: .5rem; background: rgba(14, 14, 16, .78); font: 600 .6875rem/1 var(--font-mono); letter-spacing: .14em; color: #fff; }
+.jm-shotno { left: .625rem; top: .625rem; }
+.jm-shotstate { right: .625rem; bottom: .625rem; letter-spacing: .06em; text-transform: lowercase; }
+.jm-field { display: grid; gap: .5rem; min-width: 0; }
+.jm-field .field { width: 100%; }
+.jm-big { font: 700 1.5rem/1 var(--font-mono); letter-spacing: -.01em; color: var(--text); }
+.jm-segs { display: inline-flex; align-items: center; gap: .25rem; padding: .25rem; border: 1px solid var(--line2); border-radius: var(--r-pill); }
+.jm-seg { display: inline-flex; align-items: center; justify-content: center; min-height: 2rem; padding: 0 .875rem; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted); font: 500 .875rem/1 var(--font-sans); white-space: nowrap; cursor: pointer; transition: color var(--t-fast), background var(--t-fast); }
+.jm-seg:hover:not(:disabled) { color: var(--text); }
+.jm-seg[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.jm-seg:disabled { opacity: .4; cursor: default; }
+.jm-selected .jm-segs { display: flex; }
+.jm-selected .jm-seg { flex: 1 1 0; padding: 0 .375rem; }
+.jm-chips { display: flex; flex-wrap: wrap; gap: .4375rem; }
+.jm-pick-empty { display: grid; justify-items: center; gap: .5rem; padding: 1.25rem 1rem 1.125rem; border: 1px dashed var(--line2); border-radius: 1.125rem; color: var(--muted); text-align: center; }
+.jm-pick-empty svg { width: 1.75rem; height: 1.75rem; color: var(--accent); }
+.jm-pick-empty b { font: 600 1.0625rem/1.2 var(--font-sans); color: var(--text); }
+.jm-pick-empty p { margin: 0; max-width: 17rem; font: 400 .8125rem/1.45 var(--font-sans); }
+.jm-selected > .cut-inspector { border: 0; background: transparent; padding: 0; }
+.jm-selected .jm-row .key { min-height: 2.5rem; }
+.jm-selected .jm-cost { margin-left: .375rem; opacity: .8; }
+
+/* ---- the timeline --------------------------------------------------------------------------------- */
+.jm-ed-timeline { height: 100%; }
+.jam .jm-ed-timeline .cut-tools { gap: .125rem .25rem; padding: .25rem .5rem; }
+.jam .jm-ed-timeline .ctl-tool { width: 2.25rem; height: 2.25rem; }
+.jam .jm-ed-timeline .cut-zoom { flex: 0 1 7rem; min-width: 3rem; }
+.jam .jm-ed-timeline .cut-zoom input { width: 100%; min-width: 0; }
+.jam .jm-ed-timeline .cut-beats-key { width: auto; padding: 0 .5rem; gap: .375rem; }
+/* the lanes in the order the video is read: the shots first, then the words, the effects, the pictures, the sound */
+.jam .jm-ed-timeline .cut-heads, .jam .jm-ed-timeline .cut-lanes { display: flex; flex-direction: column; }
+.jam .jm-ed-timeline .cut-lanes > *, .jam .jm-ed-timeline .cut-heads > * { flex: none; order: 6; }
+.jam .jm-ed-timeline .cut-head-ruler, .jam .jm-ed-timeline .cut-ruler, .jam .jm-ed-timeline .cut-head-beats, .jam .jm-ed-timeline .cut-beatlane { order: 0; }
+.jam .jm-ed-timeline .is-main { order: 1; }
+.jam .jm-ed-timeline .cut-lane.is-title, .jam .jm-ed-timeline .cut-head.is-title { order: 2; }
+.jam .jm-ed-timeline .cut-lane.is-fx, .jam .jm-ed-timeline .cut-head.is-fx { order: 3; }
+.jam .jm-ed-timeline .cut-lane.is-video:not(.is-main), .jam .jm-ed-timeline .cut-head.is-video:not(.is-main) { order: 4; }
+.jam .jm-ed-timeline .cut-lane.is-audio, .jam .jm-ed-timeline .cut-head.is-audio { order: 5; }
+.jam .jm-ed-timeline .cut-timeline { border-radius: 1rem; }
+.jam .jm-ed-timeline .cut-lane, .jam .jm-ed-timeline .cut-head { height: 2.375rem; }
+.jam .jm-ed-timeline .cut-lane.is-title, .jam .jm-ed-timeline .cut-head.is-title, .jam .jm-ed-timeline .cut-lane.is-fx, .jam .jm-ed-timeline .cut-head.is-fx { height: 2rem; }
+.jam .jm-ed-timeline .cut-lane.is-main, .jam .jm-ed-timeline .cut-head.is-main { height: 3.5rem; }
+.jm-smart { position: relative; }
+.jm-smart-menu { position: absolute; z-index: 20; right: 0; top: calc(100% + .5rem); display: grid; gap: .125rem; min-width: 15.5rem; padding: .375rem; border: 1px solid var(--line2); border-radius: 1rem; background: var(--s2); box-shadow: var(--float); }
+.jm-smart-item { display: flex; align-items: center; gap: .75rem; min-height: 2.5rem; padding: 0 .75rem; border: 0; border-radius: .75rem; background: transparent; color: var(--text); font: 500 .9375rem/1 var(--font-sans); text-align: left; cursor: pointer; }
+.jm-smart-item svg { width: 1.125rem; height: 1.125rem; color: var(--accent); }
+.jm-smart-item:hover:not(:disabled) { background: var(--s3); }
+.jm-smart-item:disabled { opacity: .45; cursor: default; }
+
+/* ---- the foot: the frame, and the keys that finish the video ------------------------------------- */
+.jm-bento.is-foot { padding: .5625rem 1.25rem; }
+.jm-bento.is-foot .jm-b-head { display: none; }
+.jm-foot { display: flex; align-items: center; gap: .875rem; }
+.jm-foot .spacer { flex: 1 1 auto; }
+.jm-formats { display: flex; align-items: center; gap: 1rem; }
+.jm-fmt { padding: .5rem .75rem; border: 1px solid var(--line2); border-radius: .75rem; color: var(--muted); font: 500 .8125rem/1 var(--font-mono); letter-spacing: .04em; cursor: default; }
+.jm-primary { display: inline-flex; align-items: center; justify-content: center; gap: .75rem; min-height: 3rem; padding: 0 1.75rem; border: 0; border-radius: 1rem; background: var(--accent); color: var(--accent-ink); font: 700 1.0625rem/1 var(--font-sans); cursor: pointer; transition: filter var(--t-fast), transform var(--t-fast); }
+.jm-primary svg { width: 1.375rem; height: 1.375rem; }
+.jm-primary em { font: 600 .875rem/1 var(--font-mono); font-style: normal; opacity: .72; }
+.jm-primary:hover:not(:disabled) { filter: brightness(1.06); }
+.jm-primary:active:not(:disabled) { transform: translateY(1px); }
+.jm-primary:disabled { opacity: .45; cursor: default; }
+.jm-primary.is-armed { outline: 3px solid rgba(242, 255, 89, .35); outline-offset: 3px; animation: jm-ask 1.1s ease-in-out infinite alternate; }
+.jm-foot .jm-exportkey { flex: none; min-height: 3rem; padding: 0 1.5rem; }
+.jm-foot .jm-iconkey { flex: none; }
+
+@media (max-width: 1280px) {
+  .jam .jm-grid.is-edit { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(24rem, auto) auto; grid-template-areas: "monitor" "selected" "timeline" "foot"; overflow: auto; }
+  .jm-monitor { min-height: 22rem; }
+  .jm-b-timeline { min-height: 26rem; }
+}
+@media (max-width: 980px) {
+  .jm-monitor { grid-template-columns: minmax(0, 1fr); }
+  .jam .jm-monitor .jm-set { justify-self: center; height: 24rem; }
+  .jm-foot { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) { .jm-primary.is-armed { animation: none; } }
+.jam .jm-ed-timeline .cut-zoom svg { width: 1.125rem; height: 1.125rem; }

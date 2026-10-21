@@ -724,11 +724,28 @@ export function setLyricColours({ color, hi }, id = null) {
   }
   commit();
 }
-/** How the words are drawn, for every line (or one): karaoke, pop, bounce, lower, none. */
+/** How the words are drawn, for every line (or one): a look of lyrics.js, lower, none. A style brings its own way of arriving: one asked for before is let go. */
 export function setLyricStyle(style, id = null) {
   const items = id ? [findItem(id)?.item].filter(Boolean) : lyrics();
   if (!items.length) return;
-  for (const it of items) it.style = style;
+  for (const it of items) {
+    it.style = style;
+    delete it.anim;
+  }
+  commit();
+}
+/** How the words arrive, for every line (or one), whatever the style: fill, pop, bounce, cut, fade (null: the style's own). */
+export function setLyricAnim(anim, id = null) {
+  const items = id ? [findItem(id)?.item].filter(Boolean) : lyrics();
+  if (!items.length) return;
+  for (const it of items) (anim ? (it.anim = anim) : delete it.anim);
+  commit();
+}
+/** Where the words sit, for every line (or one): the middle of the block as a share of the frame's height, 0 the top and 1 the bottom. */
+export function setLyricPlace(y, id = null) {
+  const items = id ? [findItem(id)?.item].filter(Boolean) : lyrics();
+  if (!items.length) return;
+  for (const it of items) it.y = Math.round(clamp(Number(y) || 0.74, 0.1, 0.92) * 1000) / 1000;
   commit();
 }
 /** One word of a line changed: its text, or where it starts and ends (from the line's start). */
