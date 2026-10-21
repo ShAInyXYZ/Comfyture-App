@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book designs · Utensils lab</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+  :root { --bg: #121214; --s1: #19191c; --s2: #222226; --line: #2a2a2f; --text: #f0efed; --muted: #9b9ba3; --dim: #6f6f78; --accent: #f2ff59; --ink: #121214; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 15px/1.45 Manrope, system-ui, sans-serif; }
+  header { display: flex; align-items: end; justify-content: space-between; gap: 2rem; padding: 2rem 2.5rem 1.25rem; }
+  h1 { margin: .35rem 0 0; font: 800 2rem/1.05 Manrope, sans-serif; letter-spacing: -.02em; }
+  h1 + p { margin: .5rem 0 0; color: var(--muted); max-width: 54rem; }
+  .eyebrow { font: 500 .72rem/1 "IBM Plex Mono", monospace; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); }
+  .chosen { font: 500 .9rem/1 "IBM Plex Mono", monospace; color: var(--accent); white-space: nowrap; }
+  main { padding: 0 2.5rem 3rem; display: grid; gap: 1.5rem; }
+  /* the big bookcase */
+  .stage { position: relative; height: min(62vh, 640px); border: 1px solid var(--line); border-radius: 1.25rem; overflow: hidden; background: #0d0d0f; }
+  .stage canvas { display: block; width: 100%; height: 100%; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; }
+  .bar label { display: inline-flex; align-items: center; gap: .5rem; color: var(--muted); font-size: .9rem; }
+  select, button { font: 600 .9rem/1 Manrope, sans-serif; color: var(--text); background: var(--s2); border: 1px solid var(--line); border-radius: .7rem; padding: .55rem .8rem; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--ink); border-color: var(--accent); }
+  button:hover { border-color: #55555e; }
+  .stats { display: flex; flex-wrap: wrap; gap: .5rem 1.75rem; margin-top: -.5rem; font: 500 .8rem/1.3 "IBM Plex Mono", monospace; color: var(--muted); }
+  .stats span { display: inline-flex; gap: .5rem; }
+  .stats b { color: var(--text); font-weight: 600; }
+  .stats .hot { color: var(--accent); }
+  .tip { position: fixed; z-index: 10; pointer-events: none; padding: .45rem .7rem; border-radius: .55rem; background: rgba(12,12,14,.92); border: 1px solid rgba(255,255,255,.1); font: 600 .82rem/1.25 Manrope, sans-serif; max-width: 22rem; transform: translate(-50%, calc(-100% - 14px)); }
+  .tip em { display: block; font: 500 .7rem/1.2 "IBM Plex Mono", monospace; font-style: normal; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: .15rem; }
+  .tip[hidden] { display: none; }
+  /* the six designs */
+  .designs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+  .card { display: grid; border: 1px solid var(--line); border-radius: 1.1rem; overflow: hidden; background: var(--s1); transition: border-color .15s; }
+  .card.is-on { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(242,255,89,.12); }
+  .card .view { height: 260px; background: #0d0d0f; cursor: grab; }
+  .card .view:active { cursor: grabbing; }
+  .card .view canvas { display: block; width: 100%; height: 100%; }
+  .card .info { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .9rem; padding: .9rem 1rem 1rem; }
+  .card .num { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: .6rem; background: var(--s2); font: 700 1rem/1 "IBM Plex Mono", monospace; }
+  .card.is-on .num { background: var(--accent); color: var(--ink); }
+  .card h2 { margin: 0; font: 700 1.05rem/1.2 Manrope, sans-serif; }
+  .card p { margin: .2rem 0 0; color: var(--muted); font-size: .84rem; }
+  .card .cost { margin-top: .35rem; font: 500 .72rem/1.3 "IBM Plex Mono", monospace; color: var(--dim); }
+  .card .keys { display: grid; gap: .4rem; }
+  @media (max-width: 1100px) { .designs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 720px) { .designs { grid-template-columns: minmax(0, 1fr); } header, main { padding-inline: 1rem; } header { flex-direction: column; align-items: start; } }
+</style>
+<script type="importmap">{ "imports": { "three": "../vendor/three/three.module.js", "three/addons/": "../vendor/three/addons/" } }</script>
+</head>
+<body>
+<header>
+  <div>
+    <span class="eyebrow">Utensils lab · 3D shelves</span>
+    <h1>Pick a book design</h1>
+    <p>Every book is an instance: each part (cover, pages, gold, title) is one shape drawn once for all the books, and a book is only a position and a colour. Drag to turn a shelf, point at a book to pull it out. Try any design in the big bookcase with the real 668 workflows, then run the spin test.</p>
+  </div>
+  <span class="chosen" id="chosen"></span>
+</header>
+<main>
+  <div class="bar">
+    <label>Design <select id="design"></select></label>
+    <label>Books <select id="count"><option value="41">41 (the Shelf)</option><option value="668" selected>668 (the Library)</option><option value="1500">1 500</option><option value="3000">3 000</option></select></label>
+    <label><input type="checkbox" id="titles" checked> Titles on the spines</label>
+    <button class="primary" id="spin">Spin test</button>
+  </div>
+  <section class="stage" id="stage"></section>
+  <div class="stats" id="stats"></div>
+  <section class="designs" id="designs"></section>
+</main>
+<div class="tip" id="tip" hidden></div>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+// ---------------------------------------------------------------- the books: the real workflows and tools when the app answers
+
+const CATS = {
+  "Image": "#b8742f", "Image Tools": "#2f8f86", "Video": "#a8253a", "Video Tools": "#2b7a93", "Audio": "#6f4bc9", "3D Model": "#4f6a9c",
+  "Vector": "#a24c78", "Product & Ads": "#8c7a2a", "Character & Fashion": "#7b3a6c", "Brand & Design": "#3a5bb5",
+  picture: "#d8673f", video: "#b3273f", audio: "#7a4fd6", vfx: "#1f9484", edit: "#7f8a35", templates: "#3a5bb5",
+};
+let LIBRARY = [], TOOLS = [];
+async function loadData() {
+  try { LIBRARY = (await (await fetch("../api/utensils/templates/library")).json()).items.map((i) => ({ title: i.title, group: i.category })); } catch {}
+  try { TOOLS = (await (await fetch("../api/utensils/knowledge?kind=tool&k=80")).json()).items.map((i) => ({ title: i.name, group: i.section })); } catch {}
+  if (!LIBRARY.length) LIBRARY = Array.from({ length: 668 }, (_, i) => ({ title: `Workflow ${i + 1}`, group: Object.keys(CATS)[i % 10] }));
+  if (!TOOLS.length) TOOLS = Array.from({ length: 41 }, (_, i) => ({ title: `Tool ${i + 1}`, group: ["picture", "video", "audio", "vfx", "edit"][i % 5] }));
+}
+/** n books: the tools up to 41, the library beyond (repeated past 668), sorted by group so the colours sit together. */
+function booksFor(n) {
+  const src = n <= 41 ? TOOLS : LIBRARY;
+  return Array.from({ length: n }, (_, i) => ({ ...src[i % src.length] })).sort((a, b) => a.group.localeCompare(b.group));
+}
+
+// ---------------------------------------------------------------- the designs: each a few parts, every part one instanced mesh
+
+const T = 0.032, H = 0.23, D = 0.16; // a book's thickness (x), height (y), depth (z); the spine faces +z
+const BT = 0.0028, OV = 0.004;        // a board's thickness, how far the boards stand past the pages
+const box = (w, h, d, x = 0, y = 0, z = 0) => new THREE.BoxGeometry(w, h, d).translate(x, y, z);
+const merged = (...g) => mergeGeometries(g.map((x) => (x.index ? x.toNonIndexed() : x)), false);
+/** A half cylinder standing up, its round side facing +z (the spine), centred at z. */
+const halfRound = (r, h, z, open = false, a = Math.PI / 2, y = 0) =>
+  new THREE.CylinderGeometry(r, r, h, 14, 1, open, Math.PI / 2 - a, 2 * a).rotateY(Math.PI * 1.5).translate(0, y, z);
+
+function hardcover() {
+  return {
+    cover: merged(box(BT, H, D, T / 2 - BT / 2), box(BT, H, D, -T / 2 + BT / 2), box(T, H, BT, 0, 0, D / 2 - BT / 2)),
+    pages: box(T - 2 * BT - 0.0006, H - 2 * OV, D - BT - OV, 0, 0, -(BT + OV) / 2 + 0.0004),
+  };
+}
+function rounded() {
+  const r = T / 2, zc = D / 2 - r;
+  return {
+    cover: merged(halfRound(r, H, zc), box(BT, H, D - r, T / 2 - BT / 2, 0, -r / 2), box(BT, H, D - r, -T / 2 + BT / 2, 0, -r / 2)),
+    pages: box(T - 2 * BT - 0.0006, H - 2 * OV, D - r - OV, 0, 0, -(r + OV) / 2 + 0.0004),
+    gold: merged(...[-0.088, -0.074, 0.074, 0.088].map((y) => halfRound(r + 0.0007, 0.0034, zc, true, Math.PI / 2, y))),
+    // the title follows the round spine
+    title: (th) => halfRound(r + 0.0005, th, zc, true, 0.95),
+  };
+}
+function paperback() {
+  const w = T, d = D, rr = 0.0045, s = new THREE.Shape();
+  s.moveTo(-w / 2 + rr, -d / 2); s.lineTo(w / 2 - rr, -d / 2); s.quadraticCurveTo(w / 2, -d / 2, w / 2, -d / 2 + rr);
+  s.lineTo(w / 2, d / 2 - rr); s.quadraticCurveTo(w / 2, d / 2, w / 2 - rr, d / 2); s.lineTo(-w / 2 + rr, d / 2);
+  s.quadraticCurveTo(-w / 2, d / 2, -w / 2, d / 2 - rr); s.lineTo(-w / 2, -d / 2 + rr); s.quadraticCurveTo(-w / 2, -d / 2, -w / 2 + rr, -d / 2);
+  const cover = new THREE.ExtrudeGeometry(s, { depth: H, bevelEnabled: false, curveSegments: 3 }).rotateX(-Math.PI / 2).translate(0, -H / 2, 0);
+  // the page block shows at the head and the foot, inside a thin rim of cover
+  return { cover, pages: box(w - 0.0018, H + 0.0008, d - 0.0042, 0, 0, -0.0012) };
+}
+function leather() {
+  const hc = hardcover();
+  // two raised ribs at the head, two at the foot, the title between them; a gold line beside each rib
+  const ribs = [-0.088, -0.068, 0.068, 0.088].map((y) => box(T + 0.0012, 0.0055, 0.0034, 0, y, D / 2 + 0.0002));
+  const foil = [-0.078, -0.058, 0.058, 0.078].map((y) => box(T * 0.8, 0.0012, 0.0008, 0, y, D / 2 + 0.0004));
+  return { cover: merged(hc.cover, ...ribs), pages: hc.pages, gold: merged(...foil), titleH: 0.105 };
+}
+function minimal() {
+  return { cover: box(T, H, D), label: box(T * 0.74, H * 0.4, 0.0008, 0, 0.016, D / 2 + 0.0004), titleH: H * 0.34, titleY: 0.016, titleW: T * 0.56, titleZ: D / 2 + 0.0011 };
+}
+function stripes() {
+  const hc = hardcover();
+  const foil = [0.093, 0.083, -0.083, -0.093].map((y) => box(T * 0.86, 0.0022, 0.0008, 0, y, D / 2 + 0.0004));
+  return { cover: hc.cover, pages: hc.pages, gold: merged(...foil), titleH: H * 0.58 };
+}
+
+const DESIGNS = [
+  { id: "A", name: "Classic hardcover", note: "Two boards and a flat spine, the cream pages showing at the top.", make: hardcover, rough: 0.82 },
+  { id: "B", name: "Rounded spine", note: "A round spine with gold bands at the head and the foot.", make: rounded, rough: 0.7 },
+  { id: "C", name: "Paperback", note: "Soft rounded edges, the pages flush: a quieter shelf.", make: paperback, rough: 0.62 },
+  { id: "D", name: "Leather, raised bands", note: "Raised ribs at the head and the foot, gold lines beside them.", make: leather, rough: 0.46 },
+  { id: "E", name: "Minimal with a label", note: "One block and a cream label: the lightest, the easiest to read.", make: minimal, rough: 0.75, ink: "#2a2420" },
+  { id: "F", name: "Cloth, foil stripes", note: "A hardcover with two gold stripes at the head and the foot.", make: stripes, rough: 0.9 },
+];
+
+// ---------------------------------------------------------------- materials, shared by every bookcase
+
+const MAT = {
+  pages: new THREE.MeshStandardMaterial({ color: "#efe3c8", roughness: 0.92 }),
+  gold: new THREE.MeshStandardMaterial({ color: "#d9ad55", metalness: 1, roughness: 0.3 }),
+  label: new THREE.MeshStandardMaterial({ color: "#efe6d2", roughness: 0.85 }),
+  wood: new THREE.MeshStandardMaterial({ color: "#4a2c19", roughness: 0.72 }),
+  back: new THREE.MeshStandardMaterial({ color: "#24161c", roughness: 0.95 }),
+};
+const SHARED = new Set(Object.values(MAT));
+
+// ---------------------------------------------------------------- titles: one picture of all the titles, each book reads its own cell
+
+const CW = 256, CH = 32;
+const atlases = new Map();
+function titleAtlas(titles, ink) {
+  const key = `${ink}|${titles.join("\n")}`;
+  if (atlases.has(key)) return atlases.get(key);
+  const AW = Math.min(4096, CW * Math.max(1, 2 ** Math.ceil(Math.log2(Math.min(16, titles.length)))));
+  const cols = AW / CW, rows = Math.ceil(titles.length / cols);
+  const AH = Math.min(4096, 2 ** Math.ceil(Math.log2(rows * CH)));
+  const cap = cols * Math.floor(AH / CH);
+  const c = document.createElement("canvas");
+  c.width = AW; c.height = AH;
+  const g = c.getContext("2d");
+  g.textBaseline = "middle";
+  g.fillStyle = ink;
+  titles.slice(0, cap).forEach((t, i) => {
+    const x = (i % cols) * CW, y = Math.floor(i / cols) * CH;
+    let size = 21;
+    g.font = `700 ${size}px Manrope, sans-serif`;
+    while (g.measureText(t).width > CW - 16 && size > 12) g.font = `700 ${(size -= 1)}px Manrope, sans-serif`;
+    g.fillText(t, x + 8, y + CH / 2 + 1, CW - 16);
+  });
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  const a = { tex, cols, cap, cell: new THREE.Vector2(CW / AW, CH / AH), bytes: AW * AH * 4 };
+  atlases.set(key, a);
+  return a;
+}
+function titleMaterial(atlas) {
+  const m = new THREE.MeshBasicMaterial({ map: atlas.tex, transparent: true, alphaTest: 0.3, depthWrite: false });
+  m.onBeforeCompile = (s) => {
+    s.uniforms.uCell = { value: atlas.cell };
+    s.vertexShader = s.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute vec2 aCell;\nuniform vec2 uCell;")
+      // the title runs down the spine: along the atlas cell from the top of the book, its letters' tops toward +x
+      .replace("#include <uv_vertex>", "#include <uv_vertex>\nvMapUv = aCell + vec2(1.0 - uv.y, uv.x) * uCell;");
+  };
+  m.customProgramCacheKey = () => "title-atlas";
+  return m;
+}
+
+// ---------------------------------------------------------------- a bookcase: the books on shelves, every part an instanced mesh sharing the books' matrices
+
+const rand = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+function layout(n, { bay = 1.15, rows = 6, gap = 0.31, seed = 7 } = {}) {
+  const r = rand(seed), pad = 0.022, books = [];
+  let x = 0, row = 0, col = 0;
+  for (let i = 0; i < n; i++) {
+    const sx = 0.62 + r() * 0.95, sy = 0.76 + r() * 0.24, sz = 0.86 + r() * 0.14, w = T * sx + 0.0012;
+    if (x + w > bay - 2 * pad) { x = 0; row += 1; if (row >= rows) { row = 0; col += 1; } }
+    // spines flush with the front of the shelf, books standing on the plank
+    books.push({ x: col * (bay + 0.04) - bay / 2 + pad + x + w / 2, y: (rows - 1 - row) * gap + 0.012 + (H * sy) / 2, z: D / 2 - 0.004 - (D * sz) / 2, sx, sy, sz });
+    x += w;
+  }
+  return { books, bays: col + 1, rows, bay, gap };
+}
+function buildCase(scene, design, list, opt = {}) {
+  const lay = layout(list.length, opt), parts = design.make(), n = list.length;
+  const group = new THREE.Group(), meshes = {};
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3();
+  const cover = new THREE.InstancedMesh(parts.cover, new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: design.rough, metalness: 0.02 }), n);
+  const col = new THREE.Color(), hsl = {}, r = rand(31);
+  lay.books.forEach((b, i) => {
+    cover.setMatrixAt(i, m.compose(p.set(b.x, b.y, b.z), q, s.set(b.sx, b.sy, b.sz)));
+    // the group's colour, each book a little lighter or darker so a shelf of one colour still reads as books
+    col.set(CATS[list[i].group] ?? "#666a72").getHSL(hsl);
+    cover.setColorAt(i, col.setHSL(hsl.h + (r() - 0.5) * 0.025, Math.min(1, hsl.s * (0.8 + r() * 0.3)), Math.max(0.07, hsl.l * (0.7 + r() * 0.55))));
+  });
+  group.add((meshes.cover = cover));
+  const add = (key, geo, mat) => {
+    if (!geo) return;
+    const mesh = new THREE.InstancedMesh(geo, mat, n);
+    mesh.instanceMatrix = cover.instanceMatrix; // one matrix per book for all its parts: move the book, every part follows
+    group.add((meshes[key] = mesh));
+  };
+  add("pages", parts.pages, MAT.pages);
+  add("gold", parts.gold, MAT.gold);
+  add("label", parts.label, MAT.label);
+  if (opt.atlas) {
+    const th = parts.titleH ?? H * 0.62, y = parts.titleY ?? 0;
+    const geo = parts.title ? parts.title(th).translate(0, y, 0) : new THREE.PlaneGeometry(parts.titleW ?? T * 0.62, th).translate(0, y, parts.titleZ ?? D / 2 + 0.0008);
+    const cells = new Float32Array(n * 2);
+    for (let i = 0; i < n; i++) {
+      const k = i % opt.atlas.cap;
+      cells[i * 2] = (k % opt.atlas.cols) * opt.atlas.cell.x;
+      cells[i * 2 + 1] = 1 - (Math.floor(k / opt.atlas.cols) + 1) * opt.atlas.cell.y;
+    }
+    geo.setAttribute("aCell", new THREE.InstancedBufferAttribute(cells, 2));
+    add("title", geo, titleMaterial(opt.atlas));
+  }
+  // the bookcase itself: every plank one instance, every side one instance, one back panel
+  const planks = new THREE.InstancedMesh(new THREE.BoxGeometry(lay.bay + 0.04, 0.018, D + 0.05), MAT.wood, lay.bays * (lay.rows + 1));
+  const sides = new THREE.InstancedMesh(new THREE.BoxGeometry(0.04, lay.rows * lay.gap + 0.02, D + 0.05), MAT.wood, lay.bays + 1);
+  let k = 0;
+  for (let c = 0; c < lay.bays; c++) for (let rw = 0; rw <= lay.rows; rw++) planks.setMatrixAt(k++, m.makeTranslation(c * (lay.bay + 0.04), rw * lay.gap + 0.003, -0.01));
+  for (let c = 0; c <= lay.bays; c++) sides.setMatrixAt(c, m.makeTranslation(c * (lay.bay + 0.04) - lay.bay / 2 - 0.02, (lay.rows * lay.gap) / 2, -0.01));
+  const width = lay.bays * (lay.bay + 0.04);
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(width + 0.04, lay.rows * lay.gap + 0.02), MAT.back);
+  back.position.set(width / 2 - lay.bay / 2 - 0.02, (lay.rows * lay.gap) / 2, -D / 2 - 0.035);
+  group.add(planks, sides, back);
+  scene.add(group);
+  return { group, meshes, lay, list, width, height: lay.rows * lay.gap, parts };
+}
+function dispose(c) {
+  if (!c) return;
+  c.group.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); if (!SHARED.has(o.material)) o.material.dispose(); } });
+  c.group.removeFromParent();
+}
+
+// ---------------------------------------------------------------- a view: a renderer, a camera, a scene lit once; it draws only when something changes
+
+function view(host, { fov = 30 } = {}) {
+  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+  renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+  renderer.toneMapping = THREE.NeutralToneMapping; // keeps the section colours as they are (ACES washes them out)
+  renderer.toneMappingExposure = 1;
+  host.prepend(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color("#0d0d0f");
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmrem.dispose();
+  scene.environmentIntensity = 0.32;
+  const key = new THREE.DirectionalLight("#ffe2b8", 1.7);
+  key.position.set(-1.2, 2.4, 2.2);
+  scene.add(key, new THREE.AmbientLight("#ffffff", 0.18));
+  const camera = new THREE.PerspectiveCamera(fov, 1, 0.01, 80);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.12;
+  let queued = false;
+  const draw = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      if (controls.update()) draw(); // damping: keep drawing until the turn settles
+      renderer.render(scene, camera);
+    });
+  };
+  controls.addEventListener("change", draw);
+  const fit = () => {
+    const w = host.clientWidth || 1, h = host.clientHeight || 1;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    draw();
+  };
+  fit();
+  new ResizeObserver(fit).observe(host);
+  return { renderer, scene, camera, controls, draw };
+}
+
+// ---------------------------------------------------------------- hover: the book under the pointer slides out and says its title
+
+const tip = document.getElementById("tip");
+function hover(v, getCase) {
+  const ray = new THREE.Raycaster(), pt = new THREE.Vector2(), m = new THREE.Matrix4(), out = new THREE.Matrix4().makeTranslation(0, 0, 0.05);
+  let current = -1, saved = new THREE.Matrix4(), pending = null;
+  const restore = () => {
+    const c = getCase();
+    if (current >= 0 && c) { c.meshes.cover.setMatrixAt(current, saved); c.meshes.cover.instanceMatrix.needsUpdate = true; }
+    current = -1;
+  };
+  v.renderer.domElement.addEventListener("pointermove", (ev) => {
+    if (pending) { pending = ev; return; }
+    pending = ev;
+    requestAnimationFrame(() => {
+      const e = pending; pending = null;
+      const c = getCase(); if (!c) return;
+      const r = v.renderer.domElement.getBoundingClientRect();
+      ray.setFromCamera(pt.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), v.camera);
+      const hit = ray.intersectObject(c.meshes.cover, false)[0];
+      const id = hit ? hit.instanceId : -1;
+      if (id !== current) {
+        restore();
+        if (id >= 0) {
+          current = id;
+          c.meshes.cover.getMatrixAt(id, saved);
+          c.meshes.cover.setMatrixAt(id, m.multiplyMatrices(out, saved));
+          c.meshes.cover.instanceMatrix.needsUpdate = true;
+        }
+        v.draw();
+      }
+      tip.hidden = id < 0;
+      if (id >= 0) {
+        tip.innerHTML = `<em>${c.list[id].group}</em>${c.list[id].title}`;
+        tip.style.left = `${e.clientX}px`;
+        tip.style.top = `${e.clientY}px`;
+      }
+    });
+  });
+  v.renderer.domElement.addEventListener("pointerleave", () => { restore(); tip.hidden = true; v.draw(); });
+  return { forget: () => { current = -1; } };
+}
+
+// ---------------------------------------------------------------- the page
+
+const KEY = "comfyture.lab.books";
+let chosen = (() => { try { return localStorage.getItem(KEY) ?? ""; } catch { return ""; } })();
+const showChosen = () => {
+  document.getElementById("chosen").textContent = chosen ? `Chosen: ${chosen} · ${DESIGNS.find((d) => d.id === chosen)?.name ?? ""}` : "Nothing chosen yet";
+  document.querySelectorAll(".card").forEach((c) => c.classList.toggle("is-on", c.dataset.id === chosen));
+};
+const trisOf = (g) => (g.index ? g.index.count : g.attributes.position.count) / 3;
+
+await Promise.all([loadData(), document.fonts.load("700 21px Manrope")]);
+const designSel = document.getElementById("design"), countSel = document.getElementById("count"), titlesBox = document.getElementById("titles");
+DESIGNS.forEach((d) => designSel.append(new Option(`${d.id} · ${d.name}`, d.id)));
+if (chosen) designSel.value = chosen;
+
+// the big bookcase
+const stage = view(document.getElementById("stage"));
+const statsEl = document.getElementById("stats");
+let big = null, spun = "";
+const bigHover = hover(stage, () => big);
+function frame(v, c) {
+  const cx = c.width / 2 - c.lay.bay / 2 - 0.02, cy = c.height / 2;
+  const half = Math.tan((v.camera.fov * Math.PI) / 360);
+  const dist = Math.max(c.height / 2 / half, c.width / 2 / (half * v.camera.aspect)) * 1.06 + D;
+  v.controls.target.set(cx, cy, 0);
+  v.camera.position.set(cx + dist * 0.08, cy + dist * 0.04, dist);
+  v.controls.update();
+  v.draw();
+}
+function stats() {
+  stage.renderer.render(stage.scene, stage.camera);
+  const info = stage.renderer.info, n = big.list.length;
+  const book = Object.values(big.meshes).reduce((t, mesh) => t + trisOf(mesh.geometry), 0);
+  const atlas = big.atlas ? `${(big.atlas.bytes / 1048576).toFixed(0)} MB` : "none";
+  statsEl.innerHTML = [
+    ["books", n.toLocaleString()], ["draw calls for the books", Object.keys(big.meshes).length, "hot"], ["draw calls, whole scene", info.render.calls],
+    ["triangles on screen", Math.round(info.render.triangles).toLocaleString()], ["one book", `${Math.round(book)} tris`],
+    ["titles picture", atlas], ["page elements", document.getElementsByTagName("*").length],
+  ].map(([k, v, c]) => `<span>${k} <b class="${c ?? ""}">${v}</b></span>`).join("") + spun;
+}
+function loadBig() {
+  dispose(big);
+  bigHover.forget();
+  const d = DESIGNS.find((x) => x.id === designSel.value), list = booksFor(+countSel.value);
+  const atlas = titlesBox.checked ? titleAtlas(list.map((b) => b.title), d.ink ?? "#f3e3bf") : null;
+  big = buildCase(stage.scene, d, list, { atlas, rows: list.length <= 41 ? 2 : 6 });
+  big.atlas = atlas;
+  spun = "";
+  frame(stage, big);
+  requestAnimationFrame(stats);
+}
+designSel.onchange = countSel.onchange = titlesBox.onchange = loadBig;
+document.getElementById("spin").onclick = async () => {
+  const t = stage.controls.target.clone(), start = stage.camera.position.clone().sub(t), up = new THREE.Vector3(0, 1, 0);
+  const times = [];
+  let last = performance.now();
+  await new Promise((done) => {
+    const t0 = last;
+    const step = (now) => {
+      times.push(now - last); last = now;
+      const k = Math.min(1, (now - t0) / 4000);
+      stage.camera.position.copy(t).add(start.clone().applyAxisAngle(up, Math.sin(k * Math.PI * 2) * 0.55));
+      stage.camera.lookAt(t);
+      stage.renderer.render(stage.scene, stage.camera);
+      if (k < 1) requestAnimationFrame(step); else done();
+    };
+    requestAnimationFrame(step);
+  });
+  times.shift();
+  const avg = times.reduce((a, b) => a + b, 0) / times.length;
+  spun = `<span>spin test <b class="hot">${Math.round(1000 / avg)} fps</b></span><span>slowest frame <b>${Math.max(...times).toFixed(1)} ms</b></span>`;
+  stage.controls.update();
+  stats();
+};
+
+// the six designs, each a short shelf of the tools
+const grid = document.getElementById("designs");
+for (const d of DESIGNS) {
+  const parts = d.make();
+  const geos = ["cover", "pages", "gold", "label"].map((k) => parts[k]).filter(Boolean);
+  const card = document.createElement("article");
+  card.className = "card";
+  card.dataset.id = d.id;
+  card.innerHTML = `<div class="view"></div><div class="info"><span class="num">${d.id}</span><div><h2>${d.name}</h2><p>${d.note}</p><div class="cost">${geos.length + 1} draw calls for every book on the shelf (${geos.length} parts + titles) · ${Math.round(geos.reduce((t, g) => t + trisOf(g), 0)) + 2} triangles a book</div></div><div class="keys"><button class="primary" data-act="pick">Choose</button><button data-act="big">Try 668</button></div></div>`;
+  grid.append(card);
+  const v = view(card.querySelector(".view"), { fov: 28 });
+  const list = booksFor(41).filter((_, i) => i % 2 === 0).slice(0, 16);
+  const c = buildCase(v.scene, d, list, { rows: 1, bay: 0.66, atlas: titleAtlas(list.map((b) => b.title), d.ink ?? "#f3e3bf") });
+  hover(v, () => c);
+  v.controls.target.set(0, 0.125, 0);
+  v.camera.position.set(0.24, 0.22, 0.8);
+  v.controls.update();
+  v.draw();
+  card.querySelector('[data-act="pick"]').onclick = () => { chosen = d.id; try { localStorage.setItem(KEY, chosen); } catch {} showChosen(); };
+  card.querySelector('[data-act="big"]').onclick = () => { designSel.value = d.id; countSel.value = "668"; loadBig(); document.getElementById("stage").scrollIntoView({ behavior: "smooth", block: "center" }); };
+}
+showChosen();
+loadBig();
+</script>
+</body>
+</html>
