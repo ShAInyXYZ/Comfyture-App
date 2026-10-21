@@ -87,6 +87,8 @@ const KIND_WORD = { image: "a picture", video: "a clip", audio: "a sound", text:
 const KIND_ICON = { image: "image", video: "video", audio: "sound", text: null, words: null, "3d": null };
 /** The height a shelf is given (the hall holds as many as fit, two to five): the books are tall enough for their titles to read. */
 const SHELF_H = 250;
+/** How far a book's card stands from its book, in pixels: the three or four books after it stay in sight. */
+const CARD_GAP = 150;
 /** The ledge a shelf's books stand on: its front carries the labels of their groups. */
 const LEDGE = 24;
 
@@ -205,8 +207,8 @@ export function libraryHall({ open, ask }) {
       style: { "--c": look.color, "--h": look.h.toFixed(3), "--w": `calc(${(1.85 + look.w * 0.5).toFixed(2)} * var(--bk, 13px))`, "--fs": String(fs) },
       on: {
         click: (e) => go(it, book, e),
-        pointerenter: (e) => e.pointerType !== "touch" && performance.now() > quietUntil && show(it, book),
-        pointerleave: () => later(),
+        pointerenter: (e) => e.pointerType !== "touch" && performance.now() > quietUntil && point(it, book),
+        pointerleave: () => (clearTimeout(intent), later()),
         pointerdown: (e) => (armed = e.pointerType === "touch" ? (showing?.it === it ? it : "show") : null),
         focus: () => (rove(book), show(it, book)),
         blur: () => later(),
@@ -699,11 +701,39 @@ export function libraryHall({ open, ask }) {
       place();
     });
   }
+  /**
+   * The card stands a few books away from its book (CARD_GAP), so the books next to it stay in sight; a dashed lead joins them. On its
+   * way to the card the pointer crosses those books: a book it only passes over does not take the card (it must rest on it a moment).
+   */
   const place = () => {
     if (!showing) return;
     const r = hall.getBoundingClientRect();
-    placeCard(card, showing.b, { mode: "beside", within: { top: r.top + 4, bottom: r.bottom - 4 } });
+    placeCard(card, showing.b, { mode: "beside", within: { top: r.top + 4, bottom: r.bottom - 4 }, gap: CARD_GAP });
+    card.style.setProperty("--lead", `${CARD_GAP}px`);
   };
+  let intent = 0;
+  /** Whether a book stands between the book shown and its card: the pointer crosses it on its way to the card. */
+  function onTheWay(b) {
+    if (!showing || !card.classList.contains("is-on")) return false;
+    // (by their middles: the book shown is pulled out a little larger, over its neighbours' edges)
+    const br = b.getBoundingClientRect();
+    const sr = showing.b.getBoundingClientRect();
+    const cr = card.getBoundingClientRect();
+    const x = br.left + br.width / 2;
+    const y = br.top + br.height / 2;
+    const from = sr.left + sr.width / 2;
+    if (y < cr.top || y > cr.bottom) return false;
+    // (a book half under the card's edge is on the way too: the pointer crosses what shows of it)
+    return card.classList.contains("is-left") ? x < from && br.right > cr.right : x > from && br.left < cr.left;
+  }
+  function point(it, b) {
+    clearTimeout(intent);
+    if (!showing) return show(it, b);
+    // a card is open for another book: this one takes it only if the pointer stays on it (a long while when it is on the way to the
+    // card, so a hand going to the card does not make it run off)
+    clearTimeout(hideTimer);
+    intent = setTimeout(() => b.matches(":hover") && show(it, b), onTheWay(b) ? 450 : 150);
+  }
   const later = () => {
     clearTimeout(hideTimer);
     hideTimer = setTimeout(() => {

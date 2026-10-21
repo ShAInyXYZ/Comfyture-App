@@ -144,6 +144,9 @@
 .lb-card.is-on { opacity: 1; pointer-events: auto; transform: none; }
 .lb-card::after { content: ""; position: absolute; left: -.4375rem; top: var(--arrow, 50%); width: .875rem; height: .875rem; margin-top: -.4375rem; border-left: 1px solid var(--line2); border-bottom: 1px solid var(--line2); background: #17171a; transform: rotate(45deg); }
 .lb-card.is-left::after { left: auto; right: -.4375rem; transform: rotate(225deg); }
+/* the lead from the card back to its book, across the books left in sight between them */
+.lb-card::before { content: ""; position: absolute; top: var(--arrow, 50%); right: 100%; width: calc(var(--lead, 14px) - .625rem); border-top: 1.5px dashed color-mix(in oklab, var(--accent) 60%, transparent); pointer-events: none; }
+.lb-card.is-left::before { right: auto; left: 100%; }
 .lb-card:empty { display: none; }
 .lb-card-pic { position: relative; flex: none; height: clamp(7.5rem, 17dvh, 10.5rem); overflow: hidden; border-radius: .875rem; background: var(--sunk); }
 .lb-card-pic > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
