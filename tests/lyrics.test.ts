@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { mkdtemp, rm } from "node:fs/promises";
-import { syllables, splitWords, wordsOf, layoutLyric, lyricAss, wordState, textWidth, LINE, POP } from "../web/js/lyrics.js";
+import { syllables, splitWords, wordsOf, layoutLyric, lyricAss, wordState, textWidth, LINE, POP, LOOKS, faceOf } from "../web/js/lyrics.js";
 import { render, rgbFrame } from "./render.ts";
 
 test("syllables, roughly", () => {
@@ -187,4 +187,60 @@ test("a line whose first word starts a moment late still fades in, and the plain
   const { planCut } = await import("../server/cut.ts");
   const plain = planCut(body, () => ({ path: "/x", still: false, hasAudio: true, duration: 5 }), { width: W, height: H, font: "/font.ttf", titleFile: (i: number) => `/t${i}.txt`, ass: false });
   assert.ok(plain.video.includes("drawtext") && !plain.video.includes("ass=") && plain.ass === null);
+});
+
+test("every caption style is a look the engine knows, laid out and written as subtitles", () => {
+  const words = [{ text: "Feel", from: 0, to: 0.6 }, { text: "the", from: 0.6, to: 1 }, { text: "rhythm", from: 1, to: 1.8 }];
+  for (const style of Object.keys(LOOKS)) {
+    const item = { id: "a", start: 0, length: 3, text: "Feel the rhythm", style, words, y: 0.6 };
+    const L = layoutLyric(item, 540, 960);
+    assert.equal(L.look.style, style);
+    assert.equal(L.placed.length, 3);
+    for (const p of L.placed) assert.ok(p.cx - p.w / 2 > -1 && p.cx + p.w / 2 < 541, `${style}: ${p.text} stays in the frame`);
+    const ass = lyricAss([item], { W: 540, H: 960 });
+    assert.ok(ass && ass.includes("Dialogue:"), `${style} makes subtitles`);
+    // a word never shows before it is sung in the styles that bring words in one by one
+    if (["pop", "cut", "fade"].includes(L.look.anim)) assert.equal(wordState(style, words[2], 0.5, 3).show, false, `${style}: not yet`);
+    assert.equal(wordState(style, words[0], 0.3, 3).show, true);
+  }
+});
+
+test("a stack is one word to a row in capitals; the typewriter boxes each row; neon glows; hand and comic are turned", () => {
+  const item = (style: string) => ({ id: "a", start: 0, length: 3, text: "Feel the rhythm", style, words: [{ text: "Feel", from: 0, to: 1 }, { text: "the", from: 1, to: 2 }, { text: "rhythm", from: 2, to: 3 }] });
+  const stack = layoutLyric(item("stack"), 540, 960);
+  assert.equal(stack.rows, 3);
+  assert.deepEqual(stack.placed.map((p: any) => p.text), ["FEEL", "THE", "RHYTHM"]);
+  const type = layoutLyric(item("type"), 540, 960);
+  assert.equal(type.boxes.length, 3);
+  assert.equal(type.look.face, "type");
+  assert.ok(lyricAss([item("type")], { W: 540, H: 960 })!.includes("\\p1}m 0 0 l"), "a box is drawn behind each row");
+  assert.ok(lyricAss([item("neon")], { W: 540, H: 960 })!.includes("\\blur"), "neon has a glow layer");
+  for (const s of ["hand", "comic"]) {
+    const ass = lyricAss([item(s)], { W: 540, H: 960 })!;
+    assert.ok(ass.includes("\\frz4") || ass.includes("\\frz5"), `${s} is turned`);
+    assert.ok(ass.includes(`\\fn${faceOf(layoutLyric(item(s), 540, 960).look.face).family}`), `${s} is drawn in its own face`);
+  }
+  // the three first styles are drawn as they always were: the lyric face, nothing added to their tags
+  const plain = lyricAss([item("karaoke")], { W: 540, H: 960 })!;
+  assert.ok(!plain.includes("\\fn") && !plain.includes("\\frz") && !plain.includes("\\fsp"));
+});
+
+test("the film draws each new style on real frames: its words show where the layout put them", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "lyr-looks-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const { writeFile } = await import("node:fs/promises");
+  const { execFile } = await import("node:child_process");
+  const { promisify } = await import("node:util");
+  await promisify(execFile)("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo", "-t", "4", join(dir, "x.wav")]);
+  for (const style of ["stack", "type", "neon", "outline", "hand", "minimal", "comic"]) {
+    const item = { id: "l", text: "HOME NOW", start: 0.5, length: 3, style, words: [{ text: "HOME", from: 0, to: 1.2 }, { text: "NOW", from: 1.2, to: 2.4 }], size: 0.1, y: 0.5, color: "#FFFFFF", hi: "#FFFFFF" };
+    const body: any = { aspect: "9:16", tracks: [{ id: "t1", kind: "title", items: [item] }, { id: "a2", kind: "audio", role: "music", items: [{ id: "m", src: { kind: "audio", id: "x" }, start: 0 }] }] };
+    const out = await render(body, { m: { path: join(dir, "x.wav"), still: false, hasAudio: true, duration: 4 } }, join(dir, `r-${style}`), { size: { width: W, height: H } });
+    const L = layoutLyric(item, W, H);
+    const frame = await rgbFrame(out.film, Math.round(3 * 24) / 24);
+    for (const p of L.placed) {
+      const got = look(frame, p.cx - p.w / 2 - 4, p.cx + p.w / 2 + 4, p.cy - L.em * 0.7, p.cy + L.em * 0.7);
+      assert.ok(got.lit > 80, `${style}: ${p.text} is on the frame (${got.lit} lit pixels)`);
+    }
+  }
 });

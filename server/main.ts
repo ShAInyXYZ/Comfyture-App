@@ -23,6 +23,7 @@ import { splitEdit } from "./mixer.ts";
 import { macaronBrief, macaronTool, spaceOf, macaronPrompt, readMacaronAnswer, topUpBrand, keepExport, keepFrame, encodeFrames, dropFrames, frameJob, validJob, sweepFrames, ledgerLine } from "./macaron.ts";
 import { SONG_BRIEF, songPrompt, readSong } from "./song.ts";
 import { KEYS, LANGUAGES, SIGNATURES, MAX_SECONDS, DEFAULT_SONG } from "../web/js/song.js";
+import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
 import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer } from "./utensils-assist.ts";
 import { createEdit } from "./utensils-edit.ts";
@@ -710,7 +711,8 @@ async function renderCut(project: { id: string; name: string; body: any }) {
     if (plan.ass) {
       await mkdir(join(work, "fonts"), { recursive: true });
       await writeFile(join(work, "lyrics.ass"), plan.ass);
-      await copyFile(LYRIC_FONT_FILE, join(work, "fonts", "comfyture-lyric.ttf"));
+      // every face a caption style may be drawn in (the lyric face, the typewriter's, the handwriting, the comic's)
+      for (const file of LYRIC_FILES) await copyFile(join(root, "web", "fonts", file), join(work, "fonts", file));
     }
     const picture = join(work, "picture.mp4");
     const sound = join(work, "sound.m4a");
@@ -1486,8 +1488,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       await exec("ffmpeg", ["-v", "error", "-y", "-ss", from.toFixed(3), "-i", where, "-t", (to - from).toFixed(3), "-vn", "-ac", "2", "-ar", "48000", "-b:a", "256k", tmp]);
       const part = await keepAudio(await readFile(tmp), ".mp3", { name: text(input.name, 60) || "Track part", kind: text(input.kind, 20) || "music" });
       if (path.endsWith("slice")) return json(res, 200, part);
-      const job = engine.listenJob(part.file, part.seconds, async (bytes) => {
-        const v = await keepAudio(bytes, ".mp3", { name: `${part.name} vocals`, kind: "voice" });
+      const job = engine.listenJob(part.file, part.seconds, async (bytes, stem = "vocals") => {
+        const v = await keepAudio(bytes, ".mp3", { name: `${part.name} ${stem}`, kind: stem === "vocals" ? "voice" : "stem" });
         return { file: v.file, url: v.url, seconds: v.seconds, name: v.name, kind: v.kind };
       });
       return json(res, 202, { job, track: part });

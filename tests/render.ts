@@ -5,6 +5,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { mkdir, writeFile, copyFile, rm, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { planCut, ffmpegArgs, frameSize, type CutBody, type CutItem, type Source } from "../server/cut.ts";
 
 const exec = promisify(execFile);
@@ -21,7 +22,7 @@ export async function makeClip(path: string, w: number, h: number, seconds: numb
 /** What a render of a body made: the picture's file, and the plan. */
 export async function render(body: CutBody, files: Record<string, Source>, dir: string, { size, ass = true, timeout = 0 }: { size?: { width: number; height: number }; ass?: boolean; timeout?: number } = {}) {
   await mkdir(join(dir, "fonts"), { recursive: true });
-  await copyFile(FONT, join(dir, "fonts", "comfyture-lyric.ttf"));
+  for (const file of LYRIC_FILES) await copyFile(join(root, "web", "fonts", file), join(dir, "fonts", file));
   const { width, height } = size ?? frameSize(body.aspect, null);
   const plan = planCut(body, (it: CutItem) => files[it.id] ?? null, { width, height, font: null, titleFile: (i) => join(dir, `title-${i}.txt`), ass });
   await Promise.all(plan.texts.map((line: string, i: number) => writeFile(join(dir, `title-${i}.txt`), line)));

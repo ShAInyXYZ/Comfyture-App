@@ -132,7 +132,7 @@ export interface Paint {
   /** a video a workflow made (upscaled, or with new sound), kept with the uploaded videos */
   video?: { file: string; url: string; width: number; height: number; duration: number };
   /** what a song was heard to hold: its words as SRT, its tempo and beats as the nodes wrote them, its vocals */
-  listen?: { srt: string; bpm: string; beats: string; vocals?: Paint["audio"] };
+  listen?: { srt: string; bpm: string; beats: string; vocals?: Paint["audio"]; stems?: { bass?: Paint["audio"]; drums?: Paint["audio"]; other?: Paint["audio"] } };
   error?: string;
 }
 
@@ -877,7 +877,7 @@ export class Engine extends EventEmitter {
    * A song listened to: its vocals separated (Demucs), their words written with their times
    * (Whisper, as SRT) and its tempo and beats read. keep(bytes) stores the vocals.
    */
-  listenJob(file: string, seconds: number, keep: (bytes: Buffer) => Promise<Paint["audio"]>): Paint {
+  listenJob(file: string, seconds: number, keep: (bytes: Buffer, stem?: string) => Promise<Paint["audio"]>): Paint {
     const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
     this.paints.set(job.id, job);
     const emit = () => this.emit("paint", job);
@@ -893,7 +893,13 @@ export class Engine extends EventEmitter {
         };
         const [srt, bpm, beats] = await Promise.all([read("srt"), read("bpm"), read("beats")]);
         const [vocals] = result.getOutputs("vocals");
-        job.listen = { srt, bpm, beats, vocals: vocals ? await keep(Buffer.from(await vocals.toBytes())) : undefined };
+        // the other three stems of the same separation (Demucs gives four: no extra work, only more files to keep)
+        const stem = async (id: string) => {
+          const [out] = result.getOutputs(id);
+          return out ? keep(Buffer.from(await out.toBytes()), id) : undefined;
+        };
+        const [bass, drums, other] = await Promise.all([stem("bass"), stem("drums"), stem("other")]);
+        job.listen = { srt, bpm, beats, vocals: vocals ? await keep(Buffer.from(await vocals.toBytes())) : undefined, stems: { bass, drums, other } };
         job.status = "done";
       } catch (error) {
         job.status = "failed";

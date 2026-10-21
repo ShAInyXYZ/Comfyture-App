@@ -8,5 +8,8 @@
   "bpm": { "class_type": "SaveText", "inputs": { "text": ["tempo_text", 0], "filename_prefix": "comfyture/jam-bpm", "format": "txt" } },
   "beats_text": { "class_type": "PreviewAny", "inputs": { "source": ["tempo", 1] } },
   "beats": { "class_type": "SaveText", "inputs": { "text": ["beats_text", 0], "filename_prefix": "comfyture/jam-beats", "format": "txt" } },
-  "vocals": { "class_type": "SaveAudioMP3", "inputs": { "audio": ["stems", 0], "filename_prefix": "comfyture/jam-vocals", "quality": "320k" } }
+  "vocals": { "class_type": "SaveAudioMP3", "inputs": { "audio": ["stems", 0], "filename_prefix": "comfyture/jam-vocals", "quality": "320k" } },
+  "bass": { "class_type": "SaveAudioMP3", "inputs": { "audio": ["stems", 1], "filename_prefix": "comfyture/jam-bass", "quality": "192k" } },
+  "drums": { "class_type": "SaveAudioMP3", "inputs": { "audio": ["stems", 2], "filename_prefix": "comfyture/jam-drums", "quality": "192k" } },
+  "other": { "class_type": "SaveAudioMP3", "inputs": { "audio": ["stems", 3], "filename_prefix": "comfyture/jam-other", "quality": "192k" } }
 }
