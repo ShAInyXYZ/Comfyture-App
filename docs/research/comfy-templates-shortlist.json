@@ -1,0 +1,742 @@
+[
+  {
+    "id": "image_z_image_turbo",
+    "title": "Z-Image-Turbo: Text to Image",
+    "group": "Image",
+    "models": [
+      "Z-Image-Turbo"
+    ],
+    "inputs": [
+      "text"
+    ],
+    "output": "image",
+    "good_for": [
+      "text-to-image",
+      "fast"
+    ],
+    "notes": "Subgraph template; slots: text, width, height, seed, steps, model files."
+  },
+  {
+    "id": "image_flux2",
+    "title": "FLUX.2 Dev",
+    "group": "Image",
+    "models": [
+      "Flux",
+      "Flux.2 Dev"
+    ],
+    "inputs": [
+      "text",
+      "image"
+    ],
+    "output": "image",
+    "good_for": [
+      "text-to-image",
+      "image-editing",
+      "reference-images"
+    ],
+    "notes": "Image inputs are optional references."
+  },
+  {
+    "id": "image_qwen_image_edit_2509",
+    "title": "Qwen Image Edit 2509",
+    "group": "Image",
+    "models": [
+      "Qwen-Image"
+    ],
+    "inputs": [
+      "image",
+      "text"
+    ],
+    "output": "image",
+    "good_for": [
+      "image-editing"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "flux_kontext_dev_basic",
+    "title": "Flux Kontext Dev Image Edit",
+    "group": "Image",
+    "models": [
+      "Flux.1 Kontext",
+      "Flux"
+    ],
+    "inputs": [
+      "image",
+      "text"
+    ],
+    "output": "image",
+    "good_for": [
+      "image-editing",
+      "restyle"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "image_flux2_klein_image_edit_9b_base",
+    "title": "FLUX.2 [Klein] 9B: Image Edit",
+    "group": "Image",
+    "models": [
+      "Flux",
+      "Flux.2 Klein"
+    ],
+    "inputs": [
+      "image",
+      "image",
+      "text"
+    ],
+    "output": "image",
+    "good_for": [
+      "image-editing",
+      "multi-reference"
+    ],
+    "notes": "Two LoadImage nodes."
+  },
+  {
+    "id": "image_qwen_image_edit_2509_relight",
+    "title": "Image Relight",
+    "group": "Image",
+    "models": [
+      "Qwen-Image-Edit"
+    ],
+    "inputs": [
+      "image",
+      "text"
+    ],
+    "output": "image",
+    "good_for": [
+      "relight",
+      "image-editing"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "image_qwen_image_instantx_inpainting_controlnet",
+    "title": "Qwen-Image InstantX Inpainting ControlNet",
+    "group": "Image",
+    "models": [
+      "Qwen-Image"
+    ],
+    "inputs": [
+      "image",
+      "mask",
+      "text"
+    ],
+    "output": "image",
+    "good_for": [
+      "inpainting",
+      "remove-object",
+      "image-editing"
+    ],
+    "notes": "Needs a mask painted on the LoadImage node."
+  },
+  {
+    "id": "templates-1_click_multiple_character_angles-v1.0",
+    "title": "1 Click Multiple Character Angles",
+    "group": "Image",
+    "models": [
+      "Qwen-Image-Edit"
+    ],
+    "inputs": [
+      "image",
+      "text"
+    ],
+    "output": "image",
+    "good_for": [
+      "image-editing",
+      "character-angles"
+    ],
+    "notes": "Large graph (200 nodes)."
+  },
+  {
+    "id": "video_ltx2_3_i2v",
+    "title": "LTX-2.3: Image to Video",
+    "group": "Video",
+    "models": [
+      "LTX-2.3",
+      "Lightricks"
+    ],
+    "inputs": [
+      "image",
+      "text"
+    ],
+    "output": "video",
+    "good_for": [
+      "image-to-video",
+      "sound-with-video"
+    ],
+    "notes": "Generates audio with the video."
+  },
+  {
+    "id": "video_ltx2_3_t2v",
+    "title": "LTX-2.3: Text to Video",
+    "group": "Video",
+    "models": [
+      "LTX-2.3",
+      "Lightricks"
+    ],
+    "inputs": [
+      "text"
+    ],
+    "output": "video",
+    "good_for": [
+      "text-to-video",
+      "sound-with-video"
+    ],
+    "notes": "Generates audio with the video."
+  },
+  {
+    "id": "video_wan2_2_14B_i2v",
+    "title": "Wan 2.2 14B Image to Video",
+    "group": "Video",
+    "models": [
+      "Wan",
+      "Wan2.2"
+    ],
+    "inputs": [
+      "image",
+      "text"
+    ],
+    "output": "video",
+    "good_for": [
+      "image-to-video"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "video_wan_animate2",
+    "title": "Wan Animate 2: Motion Transfer",
+    "group": "Video",
+    "models": [
+      "Wan Animate"
+    ],
+    "inputs": [
+      "image",
+      "video",
+      "text"
+    ],
+    "output": "video",
+    "good_for": [
+      "motion-transfer",
+      "character-replacement",
+      "video-to-video"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "video_wan_vace_inpainting",
+    "title": "Wan2.1 VACE Inpainting",
+    "group": "Video",
+    "models": [
+      "Wan2.1",
+      "Wan"
+    ],
+    "inputs": [
+      "image",
+      "video",
+      "text"
+    ],
+    "output": "video",
+    "good_for": [
+      "remove-object",
+      "inpainting",
+      "video-to-video"
+    ],
+    "notes": "Needs a mask video; one bypassed-link conversion miss in the reference converter (node 306:308)."
+  },
+  {
+    "id": "video_wan_vace_14B_v2v",
+    "title": "Wan2.1 VACE Control Video",
+    "group": "Video",
+    "models": [
+      "Wan2.1",
+      "Wan"
+    ],
+    "inputs": [
+      "image",
+      "video",
+      "text"
+    ],
+    "output": "video",
+    "good_for": [
+      "restyle",
+      "video-to-video"
+    ],
+    "notes": "Control video plus prompt; structurally clean conversion."
+  },
+  {
+    "id": "video_ltx2_3_ia2v",
+    "title": "LTX-2.3: Image Audio to Video",
+    "group": "Video",
+    "models": [
+      "LTX-2.3"
+    ],
+    "inputs": [
+      "audio",
+      "image",
+      "text"
+    ],
+    "output": "video",
+    "good_for": [
+      "lip-sync",
+      "audio-to-video"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "template_ltx2_3_obscura_remova_lora_remove_object_from_video",
+    "title": "Remove Object from Video - LTX 2.3 Obscura Remova LoRA",
+    "group": "Video",
+    "models": [
+      "LTX-2.3"
+    ],
+    "inputs": [
+      "video",
+      "text"
+    ],
+    "output": "video",
+    "good_for": [
+      "remove-object",
+      "vfx",
+      "video-to-video"
+    ],
+    "notes": "Prompt names the object to remove; custom node packs ComfyUI-LTXVideo, KJNodes, VideoHelperSuite (preinstalled on Cloud)."
+  },
+  {
+    "id": "audio_ace_step1_5_xl_turbo",
+    "title": "ACE-Step 1.5XL Turbo: Text to Music",
+    "group": "Audio",
+    "models": [
+      "ACE-Step"
+    ],
+    "inputs": [
+      "text"
+    ],
+    "output": "audio",
+    "good_for": [
+      "music"
+    ],
+    "notes": "Tags and lyrics as text."
+  },
+  {
+    "id": "audio_stable_audio_3_medium",
+    "title": "Stable Audio 3.0 Medium",
+    "group": "Audio",
+    "models": [
+      "Stable Audio"
+    ],
+    "inputs": [
+      "text"
+    ],
+    "output": "audio",
+    "good_for": [
+      "sfx",
+      "music",
+      "ambience"
+    ],
+    "notes": "Category switch: music, SFX or instruments."
+  },
+  {
+    "id": "audio-chatterbox_tts",
+    "title": "Chatter Box: Voice Cloning with TTS",
+    "group": "Audio",
+    "models": [
+      "Chatter Box"
+    ],
+    "inputs": [
+      "audio",
+      "text"
+    ],
+    "output": "audio",
+    "good_for": [
+      "voice",
+      "voice-clone"
+    ],
+    "notes": "Reference voice clip plus text; custom pack comfyui_fill-chatterbox (preinstalled)."
+  },
+  {
+    "id": "audio-chatterbox_vc",
+    "title": "Chatter Box: Voice Cloning Audio Conversion",
+    "group": "Audio",
+    "models": [
+      "Chatter Box"
+    ],
+    "inputs": [
+      "audio",
+      "audio"
+    ],
+    "output": "audio",
+    "good_for": [
+      "voice-clone",
+      "voice-conversion"
+    ],
+    "notes": "Source voice plus target voice; custom pack comfyui_fill-chatterbox."
+  },
+  {
+    "id": "audio_melbandroformer_audio_separation",
+    "title": "MelBandRoFormer Audio Separation",
+    "group": "Audio",
+    "models": [
+      "None"
+    ],
+    "inputs": [
+      "audio"
+    ],
+    "output": "audio",
+    "good_for": [
+      "stem-split",
+      "vocals"
+    ],
+    "notes": "Two outputs: vocals and instrumental; custom pack ComfyUI-MelBandRoFormer (preinstalled)."
+  },
+  {
+    "id": "3d_hunyuan3d-v2.1",
+    "title": "HY 3D 2.1",
+    "group": "3D",
+    "models": [
+      "Hunyuan3D",
+      "Tencent"
+    ],
+    "inputs": [
+      "image"
+    ],
+    "output": "3d",
+    "good_for": [
+      "image-to-3d"
+    ],
+    "notes": "GLB output."
+  },
+  {
+    "id": "3d_triposplat_image_to_gaussian_splat",
+    "title": "TripoSplat: Image to Gaussian Splat",
+    "group": "3D",
+    "models": [
+      "TripoSplat"
+    ],
+    "inputs": [
+      "image"
+    ],
+    "output": "3d",
+    "good_for": [
+      "gaussian-splat",
+      "image-to-3d"
+    ],
+    "notes": "Also renders a turntable video."
+  },
+  {
+    "id": "3d_hunyuan3d_multiview_to_model",
+    "title": "HY 3D 2.0 MV",
+    "group": "3D",
+    "models": [
+      "Hunyuan3D",
+      "Tencent"
+    ],
+    "inputs": [
+      "image",
+      "image",
+      "image",
+      "image"
+    ],
+    "output": "3d",
+    "good_for": [
+      "image-to-3d",
+      "multiview"
+    ],
+    "notes": "Four views."
+  },
+  {
+    "id": "utility_birefnet_remove_background",
+    "title": "Remove Background: BiRefNet",
+    "group": "Utility",
+    "models": [
+      "BiRefNet"
+    ],
+    "inputs": [
+      "image"
+    ],
+    "output": "image",
+    "good_for": [
+      "remove-background",
+      "cutout"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "utility_seedvr2_7b_int8_upscale_image",
+    "title": "Image Upscale: SeedVR2 7B Int8",
+    "group": "Utility",
+    "models": [
+      "SeedVR2"
+    ],
+    "inputs": [
+      "image"
+    ],
+    "output": "image",
+    "good_for": [
+      "upscale",
+      "restore"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "utility_seedvr2_3b_int8_upscale_video",
+    "title": "Video Upscale: SeedVR2 3B Int8",
+    "group": "Utility",
+    "models": [
+      "SeedVR2"
+    ],
+    "inputs": [
+      "video"
+    ],
+    "output": "video",
+    "good_for": [
+      "video-upscale",
+      "restore"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "utility_void_video_inpainting",
+    "title": "Video Inpainting: VOID",
+    "group": "Utility",
+    "models": [
+      "VOID"
+    ],
+    "inputs": [
+      "video",
+      "text"
+    ],
+    "output": "video",
+    "good_for": [
+      "remove-object",
+      "vfx",
+      "video-to-video"
+    ],
+    "notes": "Two SaveVideo outputs."
+  },
+  {
+    "id": "utility_video_frame_interpolation",
+    "title": "Frame Interpolation: FILM or RIFE",
+    "group": "Utility",
+    "models": [
+      "FILM",
+      "RIFE"
+    ],
+    "inputs": [
+      "video"
+    ],
+    "output": "video",
+    "good_for": [
+      "interpolation",
+      "slow-motion"
+    ],
+    "notes": "Choose FILM or RIFE."
+  },
+  {
+    "id": "utility_video_segment_sam3",
+    "title": "Video Segmentation: SAM3",
+    "group": "Utility",
+    "models": [
+      "SAM3"
+    ],
+    "inputs": [
+      "video",
+      "text"
+    ],
+    "output": "mask",
+    "good_for": [
+      "segmentation",
+      "mask-source",
+      "remove-object",
+      "remove-background"
+    ],
+    "notes": "Only a MaskPreview output: committed outputs may be empty, read the temp preview."
+  },
+  {
+    "id": "utility_image_segment_sam3",
+    "title": "Image Segmentation: SAM3",
+    "group": "Utility",
+    "models": [
+      "SAM3"
+    ],
+    "inputs": [
+      "image",
+      "text"
+    ],
+    "output": "mask",
+    "good_for": [
+      "segmentation",
+      "mask-source"
+    ],
+    "notes": "PreviewImage and MaskPreview outputs only."
+  },
+  {
+    "id": "api_nano_banana_2_1_image_edit",
+    "title": "Nano Banana 2.1: Image Edit",
+    "group": "Partner",
+    "models": [
+      "Nano Banana"
+    ],
+    "inputs": [
+      "image",
+      "text"
+    ],
+    "output": "image",
+    "good_for": [
+      "image-editing",
+      "relight",
+      "restyle"
+    ],
+    "notes": "About 12 credits per image (estimate_credits). Needs api_key_comfy_org."
+  },
+  {
+    "id": "api_bria_video_green_screen",
+    "title": "Green Screen: Bria",
+    "group": "Partner",
+    "models": [
+      "BRIA"
+    ],
+    "inputs": [
+      "video"
+    ],
+    "output": "video",
+    "good_for": [
+      "green-screen",
+      "background-removal",
+      "vfx"
+    ],
+    "notes": "Paid partner node; run estimate_credits for the price."
+  },
+  {
+    "id": "api_bria_remove_video_background_transparent",
+    "title": "Remove Background: Bria Transparent",
+    "group": "Partner",
+    "models": [
+      "BRIA"
+    ],
+    "inputs": [
+      "video"
+    ],
+    "output": "video",
+    "good_for": [
+      "background-removal",
+      "alpha",
+      "vfx"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "api_beeble_switchx_video_edit",
+    "title": "Video Edit: Beeble SwitchX",
+    "group": "Partner",
+    "models": [
+      "SwitchX"
+    ],
+    "inputs": [
+      "image",
+      "video",
+      "text"
+    ],
+    "output": "video",
+    "good_for": [
+      "relight",
+      "background-replace",
+      "video-to-video",
+      "vfx"
+    ],
+    "notes": "Also returns an alpha matte; 30 or 90 credits per 30 frames by max_resolution."
+  },
+  {
+    "id": "api_runway_aleph2_video_edit",
+    "title": "Runway Aleph2: Video Edit",
+    "group": "Partner",
+    "models": [
+      "Runway"
+    ],
+    "inputs": [
+      "image",
+      "video",
+      "text"
+    ],
+    "output": "video",
+    "good_for": [
+      "relight",
+      "restyle",
+      "weather",
+      "video-to-video",
+      "vfx"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "api_seedance2_5_video_editing",
+    "title": "Seedance2.5: Video Editing",
+    "group": "Partner",
+    "models": [
+      "Seedance 2.5"
+    ],
+    "inputs": [
+      "video",
+      "text"
+    ],
+    "output": "video",
+    "good_for": [
+      "video-to-video",
+      "remove-object",
+      "restyle",
+      "vfx"
+    ],
+    "notes": "Source clips 0.7 to 15 s, edited from a text instruction."
+  },
+  {
+    "id": "api_elevenlabs_text_to_sound_effects",
+    "title": "ElevenLabs: Text to Sound Effects",
+    "group": "Partner",
+    "models": [
+      "ElevenLabs"
+    ],
+    "inputs": [
+      "text"
+    ],
+    "output": "audio",
+    "good_for": [
+      "sfx"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "api_sonilo_v2m",
+    "title": "Sonilo: Video Soundtrack Generation",
+    "group": "Partner",
+    "models": [
+      "Sonilo"
+    ],
+    "inputs": [
+      "video",
+      "text"
+    ],
+    "output": "audio",
+    "good_for": [
+      "music-for-video",
+      "soundtrack"
+    ],
+    "notes": "Music matched to the footage, not foley. Also outputs the video with the new track."
+  },
+  {
+    "id": "api_elevenlabs_voice_isolation",
+    "title": "ElevenLabs: Voice Isolation",
+    "group": "Partner",
+    "models": [
+      "ElevenLabs"
+    ],
+    "inputs": [
+      "audio"
+    ],
+    "output": "audio",
+    "good_for": [
+      "denoise",
+      "voice-cleanup"
+    ],
+    "notes": "Voice only."
+  }
+]
