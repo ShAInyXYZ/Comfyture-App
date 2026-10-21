@@ -7,19 +7,27 @@ import { mkdir, open, readdir, readFile, rm, stat, writeFile } from "node:fs/pro
 import { join } from "node:path";
 import { promisify } from "node:util";
 
+import { ALL_FORMATS, FAMILIES, FAMILY_KEYS } from "../web/js/design.js";
+import { SCENE_IDS } from "../web/js/macaron-mockup-scenes.js";
+import * as studio from "./macaron-studio.ts";
+import * as book from "./macaron-book.ts";
+
 const exec = promisify(execFile);
 
 // ------------------------------------------------------------------ Brioche, the assistant
 
-/** The workspaces of Macaron: Brioche works in the one that is open, with a brief, a tool and presets of its own. */
-export const SPACES = ["idea", "kit", "content"] as const;
+/** The workspaces of Macaron: Brioche works in the one that is open, with a brief and a tool of its own. */
+export const SPACES = ["idea", "kit", "studio", "create", "book"] as const;
 export type Space = (typeof SPACES)[number];
-export const spaceOf = (v: unknown): Space => ((SPACES as readonly string[]).includes(v as string) ? (v as Space) : "content");
+/** (what an older page sent as Content is Create) */
+export const spaceOf = (v: unknown): Space => ((SPACES as readonly string[]).includes(v as string) ? (v as Space) : v === "content" ? "create" : "create");
 
 const OPS: Record<Space, readonly string[]> = {
   idea: ["write_brief", "add_direction", "pick_direction", "add_note", "open_space"],
   kit: ["set_colour", "add_colour", "add_colourway", "set_voice", "add_rule", "set_type", "open_space"],
-  content: ["edit_text", "set_layer", "add_layer", "remove_layer", "set_background", "apply_kit", "suggest_layout", "adapt_format", "make_variation", "generate_background", "set_status", "rename", "select_design", "add_design", "add_motion", "plan_design", "open_space"],
+  studio: studio.OPS,
+  book: book.OPS,
+  create: ["edit_text", "set_layer", "add_layer", "remove_layer", "set_background", "apply_kit", "suggest_layout", "adapt_format", "make_variation", "generate_background", "set_status", "rename", "select_design", "add_design", "add_motion", "plan_design", "propose_mockup", "open_space"],
 };
 const NESTED = new Set(["edit_text", "set_layer", "add_layer", "remove_layer", "set_background", "apply_kit", "suggest_layout", "adapt_format"]);
 
@@ -55,14 +63,18 @@ const PROPS: Record<Space, Record<string, unknown>> = {
     type: { type: "string", enum: ["display", "text", "mono"], description: "For set_type: the type role." },
     ...SPACE_PROPS,
   },
-  content: {
+  studio: { ...(studio.PROPS as Record<string, unknown>), ...SPACE_PROPS },
+  book: { ...(book.PROPS as Record<string, unknown>), ...SPACE_PROPS },
+  create: {
     layer: str("A layer's id, from the design below."),
     design: str("A design's id."),
     text: str(),
     props: { type: "object", description: "Layer properties to set: x, y, w, h, size, align, valign, colorRole, accent, fontRole, lineHeight, tracking, opacity, hidden, caps, logo, rot, fit, text, src, role, shape, radius." },
     type: { type: "string", enum: ["text", "image", "logo", "shape"] },
-    layout: { type: "string", enum: ["stack", "left", "poster", "split"] },
-    format: { type: "string", enum: ["4:5", "1:1", "9:16"] },
+    layout: { type: "string", enum: ["stack", "left", "poster", "split", "strip"] },
+    format: { type: "string", enum: ALL_FORMATS, description: "A format's id, from the families below (4:5, 1:1, 9:16, 16:9, ad-300x250, a4, og, hero, phone...)." },
+    family: { type: "string", enum: FAMILY_KEYS, description: "For add_design: the family of formats, when no format is named: the first of its formats is used." },
+    scene: { type: "string", enum: SCENE_IDS, description: "For propose_mockup: the real-world scene to place a design in." },
     kind: { type: "string", enum: ["copy", "composition", "colour", "intent", "format"] },
     name: str(),
     note: str(),
@@ -82,11 +94,13 @@ const PROPS: Record<Space, Record<string, unknown>> = {
 const DESCRIPTION: Record<Space, string> = {
   idea: "Answer the user: one short, warm sentence, and the actions to take on the brief, the directions and the story (none when they only ask a question).",
   kit: "Answer the user: one short, warm sentence, and the actions to take on the brand kit: its palette, colourways, voice, rules and type (none when they only ask a question).",
-  content: "Answer the user: one short, warm sentence, and the actions to take on the design (none when they only ask a question).",
+  studio: studio.DESCRIPTION,
+  create: "Answer the user: one short, warm sentence, and the actions to take on the design (none when they only ask a question).",
+  book: book.DESCRIPTION,
 };
 
 /** How Brioche answers in a workspace: the tool she is made to call, with only the actions of that workspace. */
-export function macaronTool(space: Space = "content") {
+export function macaronTool(space: Space = "create") {
   return {
     name: "macaron_answer",
     description: DESCRIPTION[space],
@@ -104,13 +118,15 @@ export function macaronTool(space: Space = "content") {
     },
   };
 }
-export const MACARON_TOOL = macaronTool("content");
+export const MACARON_TOOL = macaronTool("create");
 
 const COMMON = `You are Brioche, the baby bunny who runs Comfyture's Macaron room, the brand room: you know brand work and nothing else. You are warm, brief and practical; you speak in one or two short sentences. You answer through the macaron_answer tool: a reply and the actions to take.
 
-Macaron has three workspaces: Design idea (the brief, the moodboard, the story, the directions), Brand kit (palette, logos, type, voice, rules, product) and Content (posts, stories, motion, exports). You work in the one that is open now, and only its actions are yours. When what is asked belongs to another workspace, say so in a sentence and offer to open it (the open_space action opens it; then the user asks again). When the user only asks a question or for advice, answer it and take no action. Never promise what you did not do. Use the ids shown below, never invent one.`;
+Macaron has five workspaces, in the order a brand's work goes: Design idea (the brief, the moodboard, the story, the directions), Brand kit (palette, logos, type, voice, rules), Studio (the raw material: photography, UGC stories, motion graphics, the product), Create (everything made from the kit: social posts and stories, ads, print, web, app, mockups, video, the week's plan and the exports) and Brand book (the guidelines document built from the kit, the brand guard's audit, the handoff package). You work in the one that is open now, and only its actions are yours. When what is asked belongs to another workspace, say so in a sentence and offer to open it (the open_space action opens it; then the user asks again). When the user only asks a question or for advice, answer it and take no action. Never promise what you did not do. Use the ids shown below, never invent one.`;
 
 const BRIEFS: Record<Space, string> = {
+  studio: studio.BRIEF,
+  book: book.BRIEF,
   idea: `THE OPEN WORKSPACE: Design idea. It holds the brief (the idea in two lines, three goals that say how it should feel, and the brief's fields), a moodboard of references, the story of how the design came about, and the directions tried for the mark and the look, one of them picked.
 
 Actions (op and its fields):
@@ -133,9 +149,9 @@ Actions (op and its fields):
 - open_space {space}.
 
 Logo files are the supplied files: never redraw, recolour or invent one; only pair them. Colours are written as #RRGGBB and must stay readable on each other: the notes below list the pairs that do not. Keep names short.`,
-  content: `THE OPEN WORKSPACE: Content. It holds the brand's posts (designs), their variations, the week's plan, motion pieces and exports.
+  create: `THE OPEN WORKSPACE: Create. It holds everything made from the kit: the brand's designs (social posts and stories, ads, print, web and app screens, mockups), their variations, the week's plan, motion pieces and exports.
 
-A design is layers on a ground: text, image, logo and shape layers, each with an id. Positions are fractions of the frame (x, y, w, h: 0 to 1, from the top left); a text's size is a fraction of the frame's width (0.1 is a big headline, 0.034 a subhead, 0.026 a label). Formats: 4:5 (1080x1350), 1:1 (1080x1080), 9:16 (1080x1920). Safe zones: keep text and logos inside x 0.07 to 0.93 and y 0.06 to 0.94; in 9:16 clear of the top 13% and the bottom 18% (the story's app covers them). Edits apply to the format that is open, so a change to "y" in 1:1 does not move the layer in 4:5.
+A design is layers on a ground: text, image, logo and shape layers, each with an id. Positions are fractions of the frame (x, y, w, h: 0 to 1, from the top left); a text's size is a fraction of the frame's width (0.1 is a big headline, 0.034 a subhead, 0.026 a label). Every frame is 1080 wide whatever it is for, so a size means the same in all of them; the height follows the real thing. Formats, by family: ${Object.entries(FAMILIES).map(([k, f]) => `${k}: ${f.formats.join(", ")}`).join("; ")} (4:5 and 1:1 are feed posts, 9:16 a story or reel; a4 and a5 are flyers, a2 a poster; og is the link-preview share image). Safe zones are given for each format below (inside them keep text and logos); in 9:16 clear of the top 13% and the bottom 18% (the story's app covers them). A strip (728x90, email) has room for one line: the logo, the headline and a call to action. Edits apply to the format that is open, so a change to "y" in 1:1 does not move the layer in 4:5.
 
 Actions (op and its fields):
 - edit_text {layer, text}: the words of a text layer. Wrap one word in *asterisks* to set it in the accent colour; \\n is a new line.
@@ -144,11 +160,12 @@ Actions (op and its fields):
 - remove_layer {layer}
 - set_background {color, asset, dim}: a palette id for the ground, and an asset id for a picture behind (dim: 0 to 0.9 of ink over it).
 - apply_kit {}: sets type roles, colours from the palette, the logo in the file that reads on its ground, keeps everything inside the safe zones. Use it when asked to apply or check the brand.
-- suggest_layout {layout}: lays the layers out by their roles: stack (centred), left (type left, picture bleeding), poster (picture full-bleed, type over it), split (type and picture side by side). In the open format.
-- adapt_format {format}: lays the design out for another format, keeping it readable and inside its safe zones, and opens that format.
+- suggest_layout {layout}: lays the layers out by their roles: stack (centred), left (type left, picture bleeding), poster (picture full-bleed, type over it), split (type and picture side by side), strip (one line: for a banner or an email header). In the open format.
+- adapt_format {format}: lays the design out for another format (any of the families), keeping it readable and inside its safe zones, and opens that format. "Lay it out as a story" is adapt_format 9:16; "make a banner of it" is adapt_format ad-300x250 (or 728x90, 160x600).
 - make_variation {kind, name, note, actions}: saves a copy of the design as a variation and makes the nested actions on the copy. kinds: copy (other words), composition (another layout), colour (another ground and colours), intent (another goal: awareness, trial, community), format. Always nest at least one action.
 - generate_background {prompt, model, use}: makes a new picture with an image model and puts it behind the design (use: background) or as a layer (use: image). gpt is GPT Image 2.5 Flare (follows references, characters, products), flux is FLUX 3 (photographic scenes). The prompt describes a scene only: never ask for words, a logo or a headline in the picture: those are layers.
-- add_design {name, purpose, format, layout}: a new post from the brand kit (type roles, colours, the logo and the product laid out); it opens in the editor.
+- add_design {name, purpose, family, format, layout}: a new design from the brand kit (type roles, colours, the logo and the product laid out) in a format, or in the first format of a family when only family is named; it opens in the editor. A flyer is family print (a4), a banner ad family ads, a share image family web (og), an app store screenshot family app (store).
+- propose_mockup {scene, design}: shows a design (the open one when design is left out) in a real-world scene: opens the mockup window with the scene and the design chosen. It spends nothing: the person looks, then asks for the picture and sees its price. Scenes: ${SCENE_IDS.join(", ")}. Use it when the person asks to see a design on a poster, a phone, a bag, a billboard, a label...
 - add_motion {design}: a motion piece from a design (the open one when design is left out), with a first timing.
 - plan_design {design, day}: the day of the week a post goes out (mon to sun).
 - set_status {design, status}, rename {name}, select_design {design}, open_space {space}.
@@ -156,26 +173,13 @@ Actions (op and its fields):
 Rules: change only what is asked. Use the layer ids and asset ids shown below, and palette ids for colours (never hex). Copy follows the brand's voice and never uses its don'ts; headlines are short. Colours: text must stay readable on its ground (yellow and warm white on ink or plum, ink on yellow or warm white).`,
 };
 
-/** What each tool of her panel asks of her, in the workspace it belongs to (the panel sends the id). */
-const PRESETS: Record<Space, Record<string, string>> = {
-  idea: {
-    direction: "The user picked the tool New direction: invent one more way the mark and the look could go, clearly different from the directions listed. A name of two or three words and one line on how it feels. Add it with add_direction.",
-    brief: "The user picked the tool Write the brief: from what the brand is (its kit, its voice, what the brief already says), write the idea in two short lines (pitch), three short goals that start with a verb, and fill what is empty in the brief's fields. Use write_brief.",
-  },
-  kit: {
-    colourway: "The user picked the tool Make a colourway: choose a ground from the palette and a logo file that reads on it (contrast 4.5 or more), a pairing the kit does not show yet, name it in two or three words, and add it with add_colourway.",
-  },
-  content: {
-    post: "The user picked the tool A post from a design: make a new post from the open design (or the best approved one): a copy variation with a fresh headline and subhead in the brand's voice, drafted, for a day of the week that is free. Use make_variation kind copy with nested edit_text actions, then plan_design for the copy.",
-    story: "The user picked the tool A story version: lay the open design out for the story (9:16), its words kept, inside the story's safe zones. Use adapt_format with format 9:16.",
-    animate: "The user picked the tool Animate it: make a motion piece of the open design, with its first timing. Use add_motion with the design's id.",
-  },
-};
-const SPACE_NAME: Record<Space, string> = { idea: "Design idea", kit: "Brand kit", content: "Content" };
+/** (her panel has no canned tools any more: nothing to arm) */
+const PRESETS: Record<Space, Record<string, string>> = { idea: {}, kit: {}, studio: {}, create: {}, book: {} };
+const SPACE_NAME: Record<Space, string> = { idea: "Design idea", kit: "Brand kit", studio: "Studio", create: "Create", book: "Brand book" };
 
 /** Her brief for a workspace: who she is, what the room is, and only what she can do there. */
-export const macaronBrief = (space: Space = "content") => `${COMMON}\n\n${BRIEFS[space]}`;
-export const MACARON_BRIEF = macaronBrief("content");
+export const macaronBrief = (space: Space = "create") => `${COMMON}\n\n${BRIEFS[space]}`;
+export const MACARON_BRIEF = macaronBrief("create");
 
 type Summary = Record<string, any>;
 const r = (v: unknown, n = 3) => (typeof v === "number" ? Math.round(v * 10 ** n) / 10 ** n : v);
@@ -198,7 +202,6 @@ export function macaronPrompt(s: Summary, turns: { role: string; text: string }[
     lines.push(`Rules: ${(s.rules ?? []).slice(0, 14).map((x: any) => `${x.kind === "do" ? "keep" : "never"}: ${cut(x.text, 110)}`).join(" | ") || "none"}`);
     lines.push(`Colourways saved: ${(s.colourways ?? []).map((c: any) => `${cut(c.name, 30)} (${c.logo} on ${c.ground})`).join("; ") || "none"}`);
     lines.push(`Pairs that do not read (contrast below 4.5): ${(s.lowContrast ?? []).map((c: any) => `${c.a} on ${c.b} ${c.ratio}`).join("; ") || "none"}`);
-    lines.push(`Products: ${(s.products ?? []).map((x: any) => `${cut(x.name, 40)}${x.features?.length ? ` (${x.features.slice(0, 4).join(", ")})` : ""}`).join("; ") || "none"}`);
   }
   if (space === "idea") {
     const br = s.brief ?? {};
@@ -209,12 +212,14 @@ export function macaronPrompt(s: Summary, turns: { role: string; text: string }[
     lines.push(`THE MOODBOARD: ${(s.refs ?? []).slice(0, 14).map((x: any) => `${cut(x.title, 40)} (${x.kind})`).join("; ") || "empty"}`);
     lines.push(`THE STORY, latest last: ${(s.story ?? []).slice(-10).map((x: any) => `${cut(x.title, 60)} (${x.kind})`).join("; ") || "nothing yet"}`);
   }
-  if (space === "content") {
+  if (space === "studio") lines.push("", ...studio.promptLines(s, cut));
+  if (space === "book") lines.push("", ...book.promptLines(s, cut));
+  if (space === "create") {
     if (s.brief?.pitch || s.brief?.goal) lines.push(`Brief: ${cut(s.brief.pitch || s.brief.goal, 260)} Audience: ${cut(s.brief.audience, 140)}`);
     lines.push("");
     if (d) {
       lines.push(`THE DESIGN OPEN: id ${d.id} "${cut(d.name, 60)}", purpose ${d.purpose}, status ${d.status}${d.day ? `, planned ${d.day}` : ""}${d.variantKind ? `, a ${d.variantKind} variation` : ""}. Intent: ${cut(d.intent, 120)}`);
-      lines.push(`Open format: ${d.openFormat} (primary ${d.format}; own layouts: ${(d.ownFormats ?? []).join(", ")}). Ground: ${d.bg?.color ?? "?"}${d.bg?.src ? ` with a picture (dim ${r(d.bg.dim?.alpha ?? 0, 2)})` : ""}.`);
+      lines.push(`Open format: ${d.openFormat} (primary ${d.format}; own layouts: ${(d.ownFormats ?? []).join(", ")}; safe x ${r(d.safe?.x, 2)}-${r((d.safe?.x ?? 0) + (d.safe?.w ?? 1), 2)} y ${r(d.safe?.y, 2)}-${r((d.safe?.y ?? 0) + (d.safe?.h ?? 1), 2)}). Ground: ${d.bg?.color ?? "?"}${d.bg?.src ? ` with a picture (dim ${r(d.bg.dim?.alpha ?? 0, 2)})` : ""}.`);
       lines.push("Layers, bottom to top (id · type · role · place in the open format · look):");
       for (const l of d.layers ?? []) {
         const place = `x${r(l.x)} y${r(l.y)} w${r(l.w)}${l.h ? ` h${r(l.h)}` : ""}`;
@@ -227,9 +232,11 @@ export function macaronPrompt(s: Summary, turns: { role: string; text: string }[
       if (d.guard?.length) lines.push(`Brand guard says: ${d.guard.slice(0, 6).map((g: any) => g.text).join("; ")}`);
     } else lines.push("No design is open.");
     lines.push("");
-    lines.push(`OTHER DESIGNS: ${(s.designs ?? []).slice(0, 30).map((x: any) => `${x.id} "${cut(x.name, 40)}" (${x.purpose}, ${x.format}, ${x.status}${x.day ? `, ${x.day}` : ""}${x.variant ? `, ${x.variant}` : ""})`).join("; ") || "none"}`);
+    if (d?.family) lines.push(`FORMATS OF ITS FAMILY (${d.family}): ${(d.siblings ?? []).map((f: any) => `${f.id} ${f.name} ${f.w}x${f.h}px${f.own ? " (has its layout)" : ""} safe x ${r(f.safe?.x, 2)}-${r(f.safe?.x + f.safe?.w, 2)} y ${r(f.safe?.y, 2)}-${r(f.safe?.y + f.safe?.h, 2)}`).join("; ")}`);
+    lines.push(`OTHER DESIGNS: ${(s.designs ?? []).slice(0, 30).map((x: any) => `${x.id} "${cut(x.name, 40)}" (${x.purpose}, ${x.family ?? "social"} ${x.format}, ${x.status}${x.day ? `, ${x.day}` : ""}${x.variant ? `, ${x.variant}` : ""})`).join("; ") || "none"}`);
     lines.push(`MOTION PIECES: ${(s.motion ?? []).map((m: any) => `${m.id} on ${m.design} (${m.duration} s, ${m.format})`).join("; ") || "none"}`);
-    lines.push(`ASSETS (ids): ${(s.assets ?? []).slice(0, 40).map((a: any) => `${a.id} "${cut(a.name, 36)}" (${a.kind}, ${a.width}x${a.height})`).join("; ") || "none"}`);
+    lines.push(`MOCKUPS MADE: ${(s.mockups ?? []).slice(0, 6).map((m: any) => `${cut(m.scene, 24)} of ${m.design}`).join("; ") || "none"}`);
+    lines.push(`RECENT ASSETS (ids): ${(s.assets ?? []).slice(0, 10).map((a: any) => `${a.id} "${cut(a.name, 36)}" (${a.kind}, ${a.width}x${a.height})`).join("; ") || "none"}`);
   }
   const preset = typeof s.preset === "string" ? PRESETS[space][s.preset] : "";
   if (preset) lines.push("", preset);
@@ -243,7 +250,7 @@ const LAYER_PROPS = new Set(["x", "y", "w", "h", "size", "align", "valign", "col
 const finite = (v: unknown) => typeof v === "number" && Number.isFinite(v);
 // a writer that answers the JSON as text sometimes escapes a line break twice: it is meant as a break
 const breaks = (s: string) => s.replace(/\\n/g, "\n");
-const STRINGS: Record<string, number> = { layer: 120, design: 120, text: 600, type: 20, layout: 20, format: 8, kind: 20, name: 120, note: 160, color: 40, asset: 60, prompt: 600, model: 10, use: 12, status: 12, id: 60, role: 40, ground: 40, logo: 60, summary: 300, family: 40, day: 3, purpose: 12, title: 140, space: 8 };
+const STRINGS: Record<string, number> = { layer: 120, design: 120, text: 600, type: 20, layout: 20, format: 12, kind: 20, name: 120, note: 160, color: 40, asset: 60, prompt: 600, model: 10, use: 12, status: 12, id: 60, role: 40, ground: 40, logo: 60, summary: 300, family: 12, scene: 30, day: 3, purpose: 12, title: 140, space: 8 };
 const LISTS = ["words", "dos", "donts", "goals"];
 const BRIEF_FIELDS = ["pitch", "goal", "audience", "message", "tone", "deliverables", "constraints", "channels"];
 
@@ -251,8 +258,18 @@ function cleanAction(a: any, space: Space, nested = false): any | null {
   if (!a || typeof a !== "object" || !OPS[space].includes(a.op)) return null;
   if (nested && !NESTED.has(a.op)) return null;
   const out: any = { op: a.op };
-  for (const [k, n] of Object.entries(STRINGS)) if (typeof a[k] === "string") out[k] = (k === "text" ? breaks(a[k]) : a[k]).slice(0, n);
-  for (const k of LISTS) if (Array.isArray(a[k])) out[k] = a[k].filter((x: unknown) => typeof x === "string").map((x: string) => x.slice(0, 140)).slice(0, 8);
+  // the Studio and the Brand book carry fields of their own (their modules keep them), the others the shared ones
+  const own = space === "studio" ? studio : space === "book" ? book : null;
+  const strings = { ...STRINGS, ...(own?.STRINGS ?? {}) };
+  const lists = [...LISTS, ...(own?.LISTS ?? [])];
+  for (const [k, n] of Object.entries(strings)) if (typeof a[k] === "string") out[k] = (k === "text" ? breaks(a[k]) : a[k]).slice(0, n);
+  for (const k of lists) if (Array.isArray(a[k])) out[k] = a[k].filter((x: unknown) => typeof x === "string").map((x: string) => x.slice(0, 140)).slice(0, 8);
+  if (own) {
+    // (a module drops an action it cannot make sense of: null)
+    const extra = own.clean(a);
+    if (!extra) return null;
+    Object.assign(out, extra);
+  }
   if (typeof a.hex === "string" && /^#[0-9a-f]{6}$/i.test(a.hex.trim())) out.hex = a.hex.trim().toUpperCase();
   if (finite(a.weight)) out.weight = Math.min(900, Math.max(300, Math.round(a.weight / 100) * 100));
   if (finite(a.dim)) out.dim = Math.min(0.9, Math.max(0, a.dim));
@@ -264,12 +281,17 @@ function cleanAction(a: any, space: Space, nested = false): any | null {
     out.props = {};
     for (const [k, v] of Object.entries(a.props)) if (LAYER_PROPS.has(k) && (typeof v === "string" || typeof v === "boolean" || finite(v))) out.props[k] = typeof v === "string" ? (k === "text" ? breaks(v) : v).slice(0, 600) : v;
   }
+  // formats, families and scenes are ids of the app's own: anything else is dropped
+  if (out.format !== undefined && !(ALL_FORMATS as string[]).includes(out.format)) delete out.format;
+  if (out.family !== undefined && !(FAMILY_KEYS as string[]).includes(out.family)) delete out.family;
+  if (out.scene !== undefined && !(SCENE_IDS as string[]).includes(out.scene)) delete out.scene;
+  if (a.op === "propose_mockup" && !out.scene) return null;
   if (a.op === "make_variation") out.actions = (Array.isArray(a.actions) ? a.actions : []).map((x: any) => cleanAction(x, space, true)).filter(Boolean).slice(0, 12);
   return out;
 }
 
 /** Brioche's answer, read whole and checked: only the actions of the workspace it was asked in, with their fields kept to what is allowed. */
-export function readMacaronAnswer(reply: string, space: Space = "content") {
+export function readMacaronAnswer(reply: string, space: Space = "create") {
   const from = reply.indexOf("{");
   const to = reply.lastIndexOf("}");
   let raw: any;
@@ -333,7 +355,7 @@ export const exportsDir = (data: string) => join(data, "macaron", "exports");
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "design";
 
 /** An exported picture or video, kept under the data folder with a name that says what it is. */
-export async function keepExport(data: string, bytes: Buffer, name: string, ext: "png" | "jpg" | "mp4" | "webm") {
+export async function keepExport(data: string, bytes: Buffer, name: string, ext: "png" | "jpg" | "mp4" | "webm" | "gif") {
   await mkdir(exportsDir(data), { recursive: true });
   const file = `${slug(name)}-${createHash("sha256").update(bytes).digest("hex").slice(0, 8)}.${ext}`;
   await writeFile(join(exportsDir(data), file), bytes);
@@ -399,10 +421,11 @@ async function wholeFrames(dir: string) {
  * Frames sent one by one, encoded as one H.264 video at the size they are, with a soft sound under it when asked.
  * What comes out is probed before it is reported: the frames and seconds it holds, and its sound, are the ones asked for.
  */
-export async function encodeFrames(data: string, job: string, v: { fps: number; name: string; sound?: { pops?: number[]; pad?: boolean }; container?: "mp4" | "webm" }) {
+export async function encodeFrames(data: string, job: string, v: { fps: number; name: string; sound?: { pops?: number[]; pad?: boolean }; container?: "mp4" | "webm" | "gif" }) {
   const dir = framesDir(data, job);
   try {
     const frames = await wholeFrames(dir);
+    if (v.container === "gif") return await encodeGif(data, dir, frames, v);
     const webm = v.container === "webm";
     const out = join(dir, webm ? "video.webm" : "video.mp4");
     const seconds = frames / v.fps;
@@ -431,6 +454,22 @@ export async function encodeFrames(data: string, job: string, v: { fps: number; 
     // the frames of a job are for one video: made or refused, they are not kept
     await dropFrames(data, job);
   }
+}
+
+/**
+ * The frames as a looping GIF: its own palette (palettegen, so brand colours stay true), at most 15 frames a second and 720 px
+ * wide, no sound. What comes out is probed: it must last as long as the frames do.
+ */
+async function encodeGif(data: string, dir: string, frames: number, v: { fps: number; name: string }) {
+  const out = join(dir, "video.gif");
+  const seconds = frames / v.fps;
+  const fps = Math.min(15, v.fps);
+  await exec("ffmpeg", ["-v", "error", "-y", "-framerate", String(v.fps), "-start_number", "0", "-i", join(dir, "%05d.png"), "-filter_complex", `fps=${fps},scale='min(720,iw)':-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4`, "-loop", "0", out], { maxBuffer: 1 << 20 });
+  const probed = JSON.parse((await exec("ffprobe", ["-v", "error", "-show_entries", "stream=width,height:format=duration", "-of", "json", out])).stdout);
+  const size = (probed.streams ?? [])[0];
+  if (!size?.width) throw refuse("The GIF could not be made.");
+  const kept = await keepExport(data, await readFile(out), v.name, "gif");
+  return { ...kept, width: Number(size.width), height: Number(size.height), duration: Math.round(seconds * 100) / 100, frames: Math.round(seconds * fps), sound: false };
 }
 
 /** The pictures of an old job are cleared at start, so a render that was cut off leaves nothing behind. */

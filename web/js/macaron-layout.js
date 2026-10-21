@@ -2,7 +2,7 @@
 // that keeps to the safe zones, never a plain scale), the layouts Brioche can suggest, applying the
 // brand kit to a design, and the brand guard that reads one. Pure: a measurer is handed in (the page
 // measures text with a canvas; tests and the server use the estimate below).
-import { frameOf, FORMAT_KEYS, LAYOUT_PROPS, clamp, round, uid, colorOf, contrast, luminance, newLayer, layoutOf } from "./design.js";
+import { frameOf, FORMAT_KEYS, ALL_FORMATS, familyOf, shapeOf, LAYOUT_PROPS, clamp, round, uid, colorOf, contrast, luminance, newLayer, layoutOf } from "./design.js";
 
 export const safeRect = (format) => {
   const s = frameOf(format).safe;
@@ -35,6 +35,11 @@ const area = (b) => b.w * b.h;
  * it all gives way in the pictures first, then in the gaps, last in the type.
  */
 export function reflow(design, to, measure = estimate) {
+  // a frame of another kind (a banner from a post, a post from a wide cover) is laid out afresh by what its layers are for:
+  // stretching one into the other would only squeeze it
+  const [from0, to0] = [shapeOf(design.format), shapeOf(to)];
+  const odd = (x) => x === "wide" || x === "strip";
+  if (from0 !== to0 && (odd(from0) || odd(to0) || frameOf(to).h / frameOf(to).w > 3)) return layoutPreset(design, to, presetFor(to, design), measure);
   const A = frameOf(design.format);
   const B = frameOf(to);
   const sa = safeRect(design.format);
@@ -102,9 +107,28 @@ export function reflow(design, to, measure = estimate) {
 
 // ---------------------------------------------------------------- layouts Brioche can suggest
 
-export const LAYOUTS = { stack: "Stacked, centred", left: "Type left, picture bleeding", poster: "Poster over a picture", split: "Type and picture, split" };
+export const LAYOUTS = { stack: "Stacked, centred", left: "Type left, picture bleeding", poster: "Poster over a picture", split: "Type and picture, split", strip: "One line, for a banner" };
 
-const SIZES = { headline: { "4:5": 0.1, "1:1": 0.092, "9:16": 0.112 }, sub: { "4:5": 0.036, "1:1": 0.034, "9:16": 0.042 }, eyebrow: { "4:5": 0.026, "1:1": 0.025, "9:16": 0.03 }, cta: { "4:5": 0.028, "1:1": 0.027, "9:16": 0.032 } };
+const SIZES = { headline: { "4:5": 0.1, "1:1": 0.092, "9:16": 0.112 }, sub: { "4:5": 0.036, "1:1": 0.034, "9:16": 0.042 }, eyebrow: { "4:5": 0.026, "1:1": 0.025, "9:16": 0.03 }, cta: { "4:5": 0.028, "1:1": 0.027, "9:16": 0.032 } }
+// the type of the formats that are not the three of social posts, by the shape of the frame: a share of the classic size
+const SHAPE_SIZES = {
+  portrait: { headline: 0.1, sub: 0.036, eyebrow: 0.026, cta: 0.028 },
+  square: { headline: 0.092, sub: 0.034, eyebrow: 0.025, cta: 0.027 },
+  tall: { headline: 0.112, sub: 0.042, eyebrow: 0.03, cta: 0.032 },
+  wide: { headline: 0.074, sub: 0.03, eyebrow: 0.022, cta: 0.026 },
+  strip: { headline: 0.06, sub: 0.03, eyebrow: 0.024, cta: 0.032 },
+};
+const sizeAt = (which, format) => SIZES[which][format] ?? SHAPE_SIZES[shapeOf(format)][which];
+
+/** The preset a format is laid out in when it is not asked for one: what suits its shape, and whether the design has a picture. */
+export function presetFor(format, design) {
+  const shape = shapeOf(format);
+  const hero = design?.layers?.some((l) => l.role === "hero" && !l.hidden);
+  if (shape === "strip") return "strip";
+  if (shape === "wide") return hero ? "split" : "stack";
+  if (shape === "tall") return hero ? (design?.layout === "poster" ? "poster" : "left") : "stack";
+  return design?.layout && LAYOUTS[design.layout] && design.layout !== "strip" ? design.layout : "left";
+};
 
 /**
  * A layout for the layers of a design by what they are for (their role), in one format, as overrides.
@@ -113,6 +137,12 @@ const SIZES = { headline: { "4:5": 0.1, "1:1": 0.092, "9:16": 0.112 }, sub: { "4
  */
 export function layoutPreset(design, format, preset, measure = estimate) {
   const [W, H] = [frameOf(format).w, frameOf(format).h];
+  const shape = shapeOf(format);
+  // a strip has room for one line only; a wide frame has no height for a column: type left and picture right, or centred
+  if (shape === "strip") preset = "strip";
+  else if (preset === "strip") preset = presetFor(format, design);
+  else if (shape === "wide" && (preset === "stack" || preset === "left")) preset = design.layers.some((l) => l.role === "hero" && !l.hidden) ? "split" : "stack";
+  const tallFrame = shape === "tall";
   const S = safeRect(format);
   const role = (r) => design.layers.find((l) => l.role === r && !l.hidden);
   const [headline, sub, eyebrow, cta, logo, hero] = ["headline", "sub", "eyebrow", "cta", "logo", "hero"].map(role);
@@ -129,71 +159,130 @@ export function layoutPreset(design, format, preset, measure = estimate) {
   const g = (n) => n * 0.012;
   const align = preset === "stack" ? "center" : "left";
   let y = S.y;
+  // a frame short on height sets its type smaller, step by step, until the column fits
+  let scaleK = 1;
   // a text laid down at y; moves y past it
   const lay = (l, which, x, w, lines = 4) => {
     if (!l) return;
-    const size = which === "headline" ? biggest(l, w, SIZES.headline[format] * (preset === "poster" ? 1.05 : 1), lines) : SIZES[which][format];
+    const size = which === "headline" ? biggest(l, w, sizeAt("headline", format) * scaleK * (preset === "poster" ? 1.05 : 1), lines) : round(Math.max(0.0235, sizeAt(which, format) * scaleK));
     put(l, { x: round(x), y: round(y), w: round(w), h: 0, size, align });
     y += tall(l, { w, size }) + (which === "headline" ? g(2.2) : g(1.6));
   };
   const top = (wide) => {
     if (!logo) return;
     put(logo, { x: preset === "stack" ? round(0.5 - logoW(logo, wide) / 2) : S.x, y: S.y, w: logoW(logo, wide) });
-    y = S.y + tall(logo, { w: logoW(logo, wide) }) + g(format === "9:16" ? 3 : 2.4);
+    y = S.y + tall(logo, { w: logoW(logo, wide) }) + g(tallFrame ? 3 : 2.4);
   };
   if (preset === "stack") {
     top(0.34);
     lay(eyebrow, "eyebrow", S.x, S.w, 1);
-    lay(headline, "headline", S.x, S.w, format === "9:16" ? 4 : 3);
+    lay(headline, "headline", S.x, S.w, tallFrame ? 4 : 3);
     lay(sub, "sub", S.x + S.w * 0.07, S.w * 0.86, 3);
-    const ctaH = cta ? tall(cta, { w: S.w, size: SIZES.cta[format] }) : 0;
+    const ctaH = cta ? tall(cta, { w: S.w, size: sizeAt("cta", format) }) : 0;
     const room = S.y + S.h - ctaH - (cta ? g(2.4) : 0) - y;
     if (hero && room > 0.12) put(hero, { x: S.x, y: round(y), w: S.w, h: round(Math.min(room, (S.w * W * 1.05) / H)), fit: "cover" });
-    put(cta, { x: S.x, y: round(S.y + S.h - ctaH), w: S.w, h: 0, size: SIZES.cta[format], align: "center" });
+    put(cta, { x: S.x, y: round(S.y + S.h - ctaH), w: S.w, h: 0, size: sizeAt("cta", format), align: "center" });
   } else if (preset === "left") {
-    const w = format === "9:16" ? 0.84 : 0.6;
+    const w = tallFrame ? 0.84 : 0.6;
     top(0.3);
     lay(eyebrow, "eyebrow", S.x, w, 1);
-    lay(headline, "headline", S.x, w, format === "9:16" ? 4 : 5);
+    lay(headline, "headline", S.x, w, tallFrame ? 4 : 5);
     lay(sub, "sub", S.x, w * 0.92, 5);
-    if (cta) (put(cta, { x: S.x, y: round(y + g(0.8)), w: 0.5, h: 0, size: SIZES.cta[format], align: "left" }), (y += tall(cta, { w: 0.5 }) + g(1)));
+    if (cta) (put(cta, { x: S.x, y: round(y + g(0.8)), w: 0.5, h: 0, size: sizeAt("cta", format), align: "left" }), (y += tall(cta, { w: 0.5 }) + g(1)));
     if (hero) {
-      const wide = format === "9:16" ? 0.96 : 0.8;
-      const hy = Math.max(y + 0.03, format === "9:16" ? 0.5 : 0.52);
-      put(hero, { x: format === "9:16" ? 0.12 : 1 - wide + 0.16, y: round(hy), w: wide, h: round(1.04 - hy), fit: "cover", radius: 0.04 });
+      const wide = tallFrame ? 0.96 : 0.8;
+      const hy = Math.max(y + 0.03, tallFrame ? 0.5 : 0.52);
+      put(hero, { x: tallFrame ? 0.12 : 1 - wide + 0.16, y: round(hy), w: wide, h: round(1.04 - hy), fit: "cover", radius: 0.04 });
     }
   } else if (preset === "poster") {
     put(hero, { x: 0, y: 0, w: 1, h: 1, fit: "cover", radius: 0 });
-    const w = format === "9:16" ? 0.84 : 0.82;
-    const size = headline ? biggest(headline, w, SIZES.headline[format] * 1.05, 3) : 0;
+    const w = tallFrame ? 0.84 : 0.82;
+    const size = headline ? biggest(headline, w, sizeAt("headline", format) * 1.05, 3) : 0;
     const hh = headline ? tall(headline, { w, size }) : 0;
-    const sh = sub ? tall(sub, { w: w * 0.9, size: SIZES.sub[format] }) : 0;
-    const ch = cta ? tall(cta, { w: 0.5, size: SIZES.cta[format] }) : 0;
+    const sh = sub ? tall(sub, { w: w * 0.9, size: sizeAt("sub", format) }) : 0;
+    const ch = cta ? tall(cta, { w: 0.5, size: sizeAt("cta", format) }) : 0;
     let at = S.y + S.h - ch - (cta ? g(2.4) : 0) - sh - (sub ? g(1.8) : 0) - hh;
     if (logo) put(logo, { x: S.x, y: S.y, w: logoW(logo, 0.3) });
     if (headline) (put(headline, { x: S.x, y: round(at), w, h: 0, size, align: "left" }), (at += hh + g(1.8)));
-    if (sub) (put(sub, { x: S.x, y: round(at), w: w * 0.9, h: 0, size: SIZES.sub[format], align: "left" }), (at += sh + g(2.4)));
-    if (cta) put(cta, { x: S.x, y: round(at), w: 0.5, h: 0, size: SIZES.cta[format], align: "left" });
+    if (sub) (put(sub, { x: S.x, y: round(at), w: w * 0.9, h: 0, size: sizeAt("sub", format), align: "left" }), (at += sh + g(2.4)));
+    if (cta) put(cta, { x: S.x, y: round(at), w: 0.5, h: 0, size: sizeAt("cta", format), align: "left" });
     const from = Math.max(0, Math.min(0.5, (headline ? out[headline.id].y : 0.6) - 0.16));
     for (const s of design.layers.filter((l) => l.role === "deco" && l.grad)) put(s, { x: 0, y: round(from), w: 1, h: round(1 - from) });
   } else if (preset === "split") {
-    if (format === "9:16") {
+    if (tallFrame) {
       top(0.3);
       lay(eyebrow, "eyebrow", S.x, S.w, 1);
       lay(headline, "headline", S.x, S.w, 4);
       lay(sub, "sub", S.x, S.w * 0.92, 4);
-      if (cta) (put(cta, { x: S.x, y: round(y), w: 0.5, h: 0, size: SIZES.cta[format], align: "left" }), (y += tall(cta, { w: 0.5 }) + g(1)));
+      if (cta) (put(cta, { x: S.x, y: round(y), w: 0.5, h: 0, size: sizeAt("cta", format), align: "left" }), (y += tall(cta, { w: 0.5 }) + g(1)));
       const hy = Math.max(y + 0.02, 0.5);
       put(hero, { x: 0, y: round(hy), w: 1, h: round(1 - hy), fit: "cover", radius: 0 });
     } else {
+      // (a frame with little height has its type in a column of the left half, the picture the right half)
       const w = 0.4;
-      top(0.26);
-      lay(eyebrow, "eyebrow", S.x, w, 1);
-      lay(headline, "headline", S.x, w, format === "1:1" ? 5 : 6);
-      lay(sub, "sub", S.x, w, 7);
-      if (cta) put(cta, { x: S.x, y: round(S.y + S.h - tall(cta, { w, size: SIZES.cta[format] })), w, h: 0, size: SIZES.cta[format], align: "left" });
+      for (const k of shape === "wide" ? [1, 0.9, 0.8, 0.7, 0.6, 0.5] : [1]) {
+        scaleK = k;
+        y = S.y;
+        top(shape === "wide" ? 0.24 : 0.26);
+        lay(eyebrow, "eyebrow", S.x, w, 1);
+        lay(headline, "headline", S.x, w, shape === "wide" ? 4 : format === "1:1" ? 5 : 6);
+        lay(sub, "sub", S.x, w, shape === "wide" ? 4 : 7);
+        // it fits when what is above the call to action ends before it begins
+        if (y <= S.y + S.h - (cta ? tall(cta, { w, size: round(Math.max(0.0235, sizeAt("cta", format) * k)) }) : 0) + 0.002) break;
+      }
+      const ctaSize = round(Math.max(0.0235, sizeAt("cta", format) * scaleK));
+      if (cta) put(cta, { x: S.x, y: round(S.y + S.h - tall(cta, { w, size: ctaSize })), w, h: 0, size: ctaSize, align: "left" });
       put(hero, { x: 0.5, y: 0, w: 0.5, h: 1, fit: "cover", radius: 0 });
     }
+  } else if (preset === "strip") {
+    // one line across: the logo, the words, the picture, the call to action; centred on the middle of the strip. A short strip
+    // (a leaderboard) says the headline only; a taller one (an email header) its subhead too, when it has the room. What it
+    // has not the width for goes, the picture first, then the call to action's width shrinks.
+    const short = H < 220;
+    const mid = S.y + S.h / 2;
+    const col = (l, patch) => {
+      const hh = tall(l, patch);
+      put(l, { ...patch, y: round(mid - hh / 2) });
+      return hh;
+    };
+    const lw = logo ? logoW(logo, short ? 0.2 : 0.22) : 0;
+    const left = S.x + (logo ? lw + 0.035 : 0);
+    let ctaW = cta ? (short ? 0.17 : 0.2) : 0;
+    let heroW = hero && !short ? Math.min(0.2, (S.h * H) / W * 1.1) : 0;
+    const room = (S.x + S.w) - left - (ctaW ? ctaW + 0.03 : 0) - (heroW ? heroW + 0.03 : 0);
+    if (room < 0.34) heroW = 0;
+    if ((S.x + S.w) - left - (ctaW ? ctaW + 0.03 : 0) - (heroW ? heroW + 0.03 : 0) < 0.3) ctaW = cta ? 0.15 : 0;
+    const w = Math.max(0.2, (S.x + S.w) - left - (ctaW ? ctaW + 0.03 : 0) - (heroW ? heroW + 0.03 : 0));
+    if (logo) col(logo, { x: round(S.x), w: lw });
+    let right = S.x + S.w;
+    if (cta) {
+      right -= ctaW;
+      col(cta, { x: round(right), w: ctaW, h: 0, size: sizeAt("cta", format), align: "right" });
+      right -= 0.03;
+    }
+    if (hero && heroW) {
+      right -= heroW;
+      put(hero, { x: round(right), y: round(S.y), w: round(heroW), h: round(S.h), fit: "contain", radius: 0 });
+    } else if (hero) put(hero, { hidden: true });
+    const x = left;
+    if (eyebrow) put(eyebrow, { hidden: true });
+    if (headline) {
+      const lines = short ? 2 : 3;
+      const avail = S.h * 0.98;
+      let subH = sub && !short ? tall(sub, { w, size: sizeAt("sub", format) }) + g(1) : 0;
+      // the biggest it sets in, in so many lines, that leaves the strip's height for the rest
+      let size = biggest(headline, w, sizeAt("headline", format) * (short ? 0.82 : 1), lines);
+      // a subhead that would take most of the height is left out
+      if (subH && tall(headline, { w, size }) + subH > avail) subH = 0;
+      while (size > 0.03 && tall(headline, { w, size }) + subH > avail) size = round(size - 0.004);
+      const hh = tall(headline, { w, size });
+      const top = mid - (hh + subH) / 2;
+      put(headline, { x: round(x), y: round(top), w: round(w), h: 0, size, align: "left" });
+      if (sub && subH) put(sub, { x: round(x), y: round(top + hh + g(1)), w: round(w), h: 0, size: sizeAt("sub", format), align: "left" });
+      else if (sub) put(sub, { hidden: true });
+    } else if (sub) put(sub, { hidden: true });
+    // everything else is left out of a strip: there is no room for a badge, a stamp or a mascot
+    for (const l of design.layers) if (!out[l.id]) put(l, { hidden: true });
   }
   carry(design, out, format, measure);
   return out;
@@ -205,12 +294,15 @@ export function layoutPreset(design, format, preset, measure = estimate) {
  */
 function carry(design, out, format, measure) {
   const [W, H] = [frameOf(format).w, frameOf(format).h];
+  // what a layer was is read in the frame it was laid out in (the design's own), what it becomes in this one
+  const [W0, H0] = [frameOf(design.format).w, frameOf(design.format).h];
   const S = safeRect(format);
   const live = design.layers.filter((l) => !l.hidden);
-  const box = (l, patch = {}) => {
-    const o = { ...l, ...patch };
-    const m = measure(o, W, H);
-    return { x: o.x * W, y: o.y * H, w: m.w, h: m.h };
+  const box = (l, patch) => {
+    const o = { ...l, ...(patch ?? {}) };
+    const [w, h] = patch ? [W, H] : [W0, H0];
+    const m = measure(o, w, h);
+    return { x: o.x * w, y: o.y * h, w: m.w, h: m.h };
   };
   const common = (a, b) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
   const placed = live.filter((l) => out[l.id]);
@@ -230,11 +322,16 @@ function carry(design, out, format, measure) {
     const [x0, x1, y0, y1] = kept ? [S.x * W, (S.x + S.w) * W, S.y * H, (S.y + S.h) * H] : [0, W, 0, H];
     const x = clamp(cx - rb.w / 2, x0, Math.max(x0, x1 - rb.w));
     let y = clamp(cy - rb.h / 2, y0, Math.max(y0, y1 - rb.h));
-    // something that rides a picture does not land on type: it slides down onto the picture
-    if (anchor.type === "image" || anchor.type === "shape") {
-      for (const t of placed.filter((p) => p.type === "text" || p.type === "logo")) {
-        const tb = box(t, out[t.id]);
-        if (Math.min(x + rb.w, tb.x + tb.w) - Math.max(x, tb.x) > 4 && Math.min(y + rb.h, tb.y + tb.h) - Math.max(y, tb.y) > 4) y = tb.y + tb.h + 0.012 * H;
+    // something that rides a picture does not land on type: it slides down onto the picture; and nothing that is type or a
+    // badge lands on other type, where it was carried to (it slides down below what it met)
+    if (anchor.type === "image" || anchor.type === "shape" || kept) {
+      for (let pass = 0; pass < 3; pass++) {
+        let moved = false;
+        for (const t of placed.filter((p) => (p.type === "text" || p.type === "logo") && !out[p.id]?.hidden)) {
+          const tb = box(t, out[t.id]);
+          if (Math.min(x + rb.w, tb.x + tb.w) - Math.max(x, tb.x) > 4 && Math.min(y + rb.h, tb.y + tb.h) - Math.max(y, tb.y) > 4) ((y = tb.y + tb.h + 0.012 * H), (moved = true));
+        }
+        if (!moved) break;
       }
     }
     out[r.id] = { x: round(x / W), y: round(y / H) };
@@ -340,8 +437,8 @@ export function applyKit(design, kit, measure = estimate) {
       note("Logo added");
     }
   }
-  // nothing outside the safe zone but what is meant to bleed, in every format that has a layout
-  for (const format of FORMAT_KEYS) {
+  // nothing outside the safe zone but what is meant to bleed, in every format that has a layout (and the family's others)
+  for (const format of ALL_FORMATS.filter((f) => familyOf(f) === familyOf(design.format) || f === design.format || design.formats?.[f])) {
     const [s, F] = [safeRect(format), frameOf(format)];
     const lay = layoutOf(design, format, { reflow: (d, f) => reflow(d, f, measure) });
     for (const l of lay.layers) {

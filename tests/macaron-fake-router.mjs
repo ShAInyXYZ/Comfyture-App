@@ -32,8 +32,12 @@ function png(w, h, [r, g, b]) {
  */
 function writerAnswer(body) {
   const ops = body.tools?.[0]?.input_schema?.properties?.actions?.items?.properties?.op?.enum ?? [];
+  // the Studio: a story and a shoot as the writer would propose them, and an action of another workspace that must be dropped
+  if (ops.includes("propose_shoot")) return { reply: "A story and a shoot for you.", actions: [{ op: "write_ugc", persona: "leo", hook: "Okay, I finally tried it...", beats: [{ kind: "hook", line: "Okay, I finally tried it...", camera: "selfie" }, { kind: "taste", line: "Look at that. Just look at it.", seconds: 99 }], fresh: true }, { op: "propose_shoot", template: "splash", light: "flash", surface: "marble", background: "plum" }, { op: "add_motion_graphic", kind: "title", copy: { title: "Shots worth keeping", sub: "Stand-in" }, seconds: 3 }, { op: "set_status", status: "approved" }] };
   if (ops.includes("write_brief")) return { reply: "A direction for you.", actions: [{ op: "add_direction", name: "Stand-in direction", note: "From the stand-in writer." }, { op: "set_status", status: "approved" }] };
   if (ops.includes("set_colour")) return { reply: "A colour for you.", actions: [{ op: "add_colour", name: "Stand-in red", hex: "#c0392b", role: "Accent" }, { op: "edit_text", layer: "headline", text: "leaks" }] };
+  // Create: a banner and a mockup to look at, as the writer would propose them; and two actions of other workspaces that must be dropped
+  if (ops.includes("propose_mockup")) return { reply: "A banner, and a poster to look at.", actions: [{ op: "add_design", name: "Stand-in banner", family: "ads", format: "ad-728x90", purpose: "Offer" }, { op: "propose_mockup", scene: "poster-wall" }, { op: "propose_mockup", scene: "the moon" }, { op: "write_brief", fields: { pitch: "leaks" } }] };
   return { reply: "Renamed.", actions: [{ op: "rename", name: "Renamed by the stand-in" }, { op: "write_brief", fields: { pitch: "leaks" } }] };
 }
 

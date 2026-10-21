@@ -1,14 +1,20 @@
 // Brioche, the baby bunny who runs Macaron. She works in the workspace that is open, and is told only what is
 // in it: in Design idea the brief, the directions and the story; in Brand kit the palette, the logos, the type,
-// the voice and the rules; in Content the design open, the others, the week and the motion. She answers with
+// the voice and the rules; in the Studio the product and the pictures; in Create the design open, the others, the week and
+// the motion; in the Brand book the designs it gathers. She answers with
 // actions of that workspace, made here as one step back; what takes time (a new picture) follows once they are done.
 import { changed, toast, writer } from "./store.js";
-import { FORMAT_KEYS, FORMATS, PURPOSES, frameOf, newLayer, ownFormats, contrast } from "./design.js";
-import { LAYOUTS } from "./macaron-layout.js";
+import { ALL_FORMATS, FORMATS, FAMILIES, FAMILY_KEYS, PURPOSES, frameOf, newLayer, ownFormats, contrast, familyOf, familyFormats, nativeSize } from "./design.js";
+import { LAYOUTS, safeRect, presetFor } from "./macaron-layout.js";
+import { SCENE_IDS, sceneById } from "./macaron-mockup-scenes.js";
+import { openWin } from "./macaron-win.js";
 import {
   macaron, designNow, designById, kitNow, layoutNow, patchLayer, postJson, batch, undo, edit, applyLayout, adaptFormat, applyKitNow, makeVariant, openDesign, guardOf, makePicture, VARIANT_KINDS,
-  setBrief, addDirection, pickDirection, addNote, setColour, addColour, setColourField, setKit, setWords, setType, addRule, setRule, planDesign, addDesign, addMotion, setSpace, uid,
+  setBrief, addDirection, pickDirection, addNote, setColour, addColour, setColourField, setKit, setWords, setType, addRule, setRule, planDesign, addDesign, addMotion, setSpace, uid, SPACES,
 } from "./macaron.js";
+import { WORKSPACES } from "./macaron-harness.js";
+import * as studioOps from "./macaron-ops-studio.js";
+import * as bookOps from "./macaron-ops-book.js";
 
 const r = (v, n = 3) => (typeof v === "number" ? Math.round(v * 10 ** n) / 10 ** n : v);
 
@@ -25,22 +31,27 @@ export function summary(space = macaron.space) {
   if (space === "idea") {
     return { ...base, brief: body.brief, directions: (body.directions ?? []).map(({ id, name, note, picked }) => ({ id, name, note, picked })), refs: body.refs.map(({ id, title, kind, note }) => ({ id, title, kind, note })), story: body.history.filter((x) => x.kind !== "export").map(({ title, kind, note }) => ({ title, kind, note })) };
   }
+  if (space === "studio") return { ...base, ...studioOps.summary() };
+  if (space === "book") return { ...base, ...bookOps.summary() };
   if (space === "kit") {
     const pairs = kit.palette.flatMap((a, i) => kit.palette.slice(i + 1).map((c) => ({ a: a.id, b: c.id, ratio: Math.round(contrast(a.hex, c.hex) * 10) / 10 }))).filter((x) => x.ratio < 4.5);
-    return { ...base, rules: body.kit.rules.map(({ id, kind, text }) => ({ id, kind, text })), colourways: (body.kit.colourways ?? []).map(({ name, ground, logo }) => ({ name, ground, logo })), lowContrast: pairs, products: body.products.map(({ name, features }) => ({ name, features })) };
+    return { ...base, rules: body.kit.rules.map(({ id, kind, text }) => ({ id, kind, text })), colourways: (body.kit.colourways ?? []).map(({ name, ground, logo }) => ({ name, ground, logo })), lowContrast: pairs };
   }
   const d = designNow();
   return {
     ...base,
     brief: body.brief,
     design: d && {
-      id: d.id, name: d.name, purpose: d.purpose, status: d.status, day: d.plan?.day, format: d.format, openFormat: macaron.format, ownFormats: ownFormats(d), intent: d.intent, variantKind: d.variant?.kind, bg: layoutNow().bg,
+      id: d.id, name: d.name, purpose: d.purpose, status: d.status, day: d.plan?.day, format: d.format, family: familyOf(d.format), openFormat: macaron.format, safe: safeRect(macaron.format), ownFormats: ownFormats(d),
+      // the formats of its family: what each is, how big, where its safe zone is
+      siblings: familyFormats(d.format).map((f) => ({ id: f, name: FORMATS[f].name, w: nativeSize(f).w, h: nativeSize(f).h, own: ownFormats(d).includes(f), safe: safeRect(f) })), intent: d.intent, variantKind: d.variant?.kind, bg: layoutNow().bg,
       layers: layoutNow().layers.map((l) => ({ id: l.id, type: l.type, role: l.role, name: l.name, x: r(l.x), y: r(l.y), w: r(l.w), h: l.h ? r(l.h) : 0, size: r(l.size), fontRole: l.fontRole, colorRole: l.colorRole, accent: l.accent, align: l.align, hidden: l.hidden, text: l.text, logo: l.logo, shape: l.shape, src: l.src, fit: l.fit })),
       guard: guardOf(d).map((g) => ({ text: g.text, level: g.level })),
     },
-    designs: body.designs.map((x) => ({ id: x.id, name: x.name, purpose: x.purpose, format: x.format, status: x.status, day: x.plan?.day, variant: x.variant?.kind })),
+    designs: body.designs.map((x) => ({ id: x.id, name: x.name, purpose: x.purpose, format: x.format, family: familyOf(x.format), status: x.status, day: x.plan?.day, variant: x.variant?.kind })),
+    mockups: (body.mockups ?? []).slice(0, 6).map(({ scene, design }) => ({ scene, design })),
     motion: body.motion.map(({ id, design, duration, format }) => ({ id, design, duration, format })),
-    assets: body.assets.filter((a) => a.url).slice(0, 40).map((a) => ({ id: a.id, name: a.name, kind: a.kind, width: a.width, height: a.height })),
+    assets: body.assets.filter((a) => a.url).slice(0, 10).map((a) => ({ id: a.id, name: a.name, kind: a.kind, width: a.width, height: a.height })),
   };
 }
 
@@ -78,18 +89,21 @@ const KIT_OPS = ["set_colour", "add_colour", "add_colourway", "set_voice", "add_
 const BRIEF_KEYS = ["pitch", "goal", "audience", "message", "tone", "deliverables", "constraints", "channels"];
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 /** Whether an action belongs to the workspace that is open (the server keeps to this too; the page does not trust it). */
-const allowed = (op) => op === "open_space" || (macaron.space === "idea" ? IDEA_OPS : macaron.space === "kit" ? KIT_OPS : null)?.includes(op) || (macaron.space === "content" && !IDEA_OPS.includes(op) && !KIT_OPS.includes(op));
+const allowed = (op) => op === "open_space" || (macaron.space === "idea" ? IDEA_OPS : macaron.space === "kit" ? KIT_OPS : macaron.space === "studio" ? studioOps.OPS : macaron.space === "book" ? bookOps.OPS : null)?.includes(op) || (macaron.space === "create" && !IDEA_OPS.includes(op) && !KIT_OPS.includes(op));
 
 /** One action, made. Answers what to tell the user; pushes what takes time onto later. */
 function run(a, later) {
   if (!allowed(a.op)) return null;
+  // the Studio and the Brand book make their own actions
+  if (a.op !== "open_space" && macaron.space === "studio") return studioOps.run(a, later);
+  if (a.op !== "open_space" && macaron.space === "book") return bookOps.run(a, later);
   const d = designNow();
   const name = (l) => l?.name ?? "a layer";
   switch (a.op) {
     case "open_space":
-      if (!["idea", "kit", "content"].includes(a.space)) return null;
+      if (!SPACES.includes(a.space)) return null;
       setSpace(a.space);
-      return `Opened ${{ idea: "Design idea", kit: "Brand kit", content: "Content" }[a.space]}`;
+      return `Opened ${WORKSPACES.find((w) => w.id === a.space).name}`;
     case "write_brief": {
       const patch = {};
       for (const [k, v] of Object.entries(a.fields ?? {})) if (BRIEF_KEYS.includes(k) && typeof v === "string" && v.trim()) patch[k] = v.trim();
@@ -166,8 +180,18 @@ function run(a, later) {
       return `Type: ${a.type}`;
     }
     case "add_design": {
-      const made = addDesign({ name: String(a.name || "New post").slice(0, 60), purpose: PURPOSES.includes(a.purpose) ? a.purpose : "Launch", format: FORMAT_KEYS.includes(a.format) ? a.format : macaron.format, layout: LAYOUTS[a.layout] ? a.layout : "left" });
-      return `A new post: ${made.name}`;
+      // a format by its id, else the first of a family, else the one that is open
+      const format = ALL_FORMATS.includes(a.format) ? a.format : FAMILIES[a.family]?.formats[0] ?? macaron.format;
+      const made = addDesign({ name: String(a.name || "New design").slice(0, 60), purpose: PURPOSES.includes(a.purpose) ? a.purpose : "Launch", format, layout: LAYOUTS[a.layout] ? a.layout : presetFor(format) });
+      return `A new ${FORMATS[format].name.toLowerCase()}: ${made.name}`;
+    }
+    case "propose_mockup": {
+      // it only opens the window with the scene and the design chosen: a picture is paid for there, by the person
+      if (!SCENE_IDS.includes(a.scene)) return null;
+      const id = a.design && designById(a.design) ? a.design : macaron.design;
+      macaron.mockup = { ...(macaron.mockup ?? {}), scene: a.scene, ...(id ? { design: id } : {}) };
+      openWin("mockup");
+      return `A mockup to look at: ${sceneById(a.scene).name}`;
     }
     case "add_motion": {
       const id = a.design && designById(a.design) ? a.design : macaron.design;
@@ -228,7 +252,7 @@ function run(a, later) {
       applyLayout(a.layout);
       return `Layout: ${LAYOUTS[a.layout]}`;
     case "adapt_format":
-      if (!FORMAT_KEYS.includes(a.format)) return null;
+      if (!ALL_FORMATS.includes(a.format)) return null;
       if (a.format === d.format) return (macaron.format = a.format, `Opened ${a.format}`);
       adaptFormat(a.format);
       return `Laid out for ${FORMATS[a.format].name}`;

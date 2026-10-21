@@ -9,8 +9,9 @@ const defs = new Map();
 const parts = new Map();
 
 /**
- * A window the workspaces can open by its id: its title (and a line under it), its size (s, m, l, xl), whether it has
- * an Advanced switch, how its content is made, and the keys it carries beside the switch.
+ * A window the workspaces can open by its id: its title (a small `eyebrow` above it, the brand's name under it), its size
+ * (s, m, l, xl, full), whether it has an Advanced switch, how its content is made, the keys it carries beside the switch
+ * (`tools`) and the ones at its foot (`foot`: the window's one primary key lives there).
  */
 export const defineWindow = (id, def) => defs.set(id, def);
 
@@ -40,6 +41,7 @@ export function toggleAdvanced(id = macaron.win) {
 
 /** The layer the windows are drawn on, and what keeps them up to date. */
 export function windowHost() {
+  const eyebrow = h("span.mc-win-eyebrow");
   const title = h("h2");
   const sub = h("span.mc-win-sub");
   // the head's keys are made once: a key that is pressed is not made again under the pointer (the window's own keys, if it has any, when it changes)
@@ -48,7 +50,8 @@ export function windowHost() {
   const closeKey = h("button.mc-close", { type: "button", title: "Close (Esc)", "aria-label": "Close", on: { click: closeWin } }, icon("close"));
   const tools = h("div.mc-win-tools", {}, extra, toggle, closeKey);
   const body = h("div.mc-win-body");
-  const win = h("section.mc-win", { role: "dialog", "aria-modal": "true", tabindex: "-1" }, h("header.mc-win-head", {}, h("div.mc-win-title", {}, title, sub), tools), body);
+  const foot = h("footer.mc-win-foot", { hidden: true });
+  const win = h("section.mc-win", { role: "dialog", "aria-modal": "true", tabindex: "-1" }, h("header.mc-win-head", {}, h("div.mc-win-title", {}, eyebrow, title, sub), tools), body, foot);
   const veil = h("div.mc-veil", { on: { pointerdown: (e) => e.target === veil && closeWin() } });
   const el = h("div.mc-winhost", { hidden: true }, veil, win);
   let shown = null;
@@ -84,6 +87,8 @@ export function windowHost() {
       const part = parts.get(id);
       body.replaceChildren(part.el);
       extra.replaceChildren(...(def.tools?.(part) ?? []));
+      foot.replaceChildren(...(def.foot?.(part) ?? []));
+      foot.hidden = !foot.childNodes.length;
       win.className = `mc-win is-${def.size ?? "m"}`;
       win.dataset.win = id;
       seen = undefined;
@@ -91,6 +96,8 @@ export function windowHost() {
     }
     const part = parts.get(id);
     const adv = isAdvanced(id);
+    eyebrow.textContent = (typeof def.eyebrow === "function" ? def.eyebrow() : def.eyebrow) ?? "";
+    eyebrow.hidden = !eyebrow.textContent;
     title.textContent = typeof def.title === "function" ? def.title() : def.title;
     sub.textContent = def.sub?.() ?? "";
     toggle.hidden = !def.advanced;

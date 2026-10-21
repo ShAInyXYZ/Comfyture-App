@@ -6,13 +6,72 @@
 // A layer's place is in fractions of the frame (x, y, w, h: 0 to 1); a text's size is a fraction of
 // the frame's width, which is 1080 px in every format, so a size reads the same in all of them.
 
+// A format is a frame the design is laid out in. Every frame is 1080 units wide, whatever it is for, so a text's size (a
+// fraction of the width) reads the same in all of them; its height follows the shape of the real thing (w x h below).
+// `px` is what the real thing is made of when it leaves as a picture (an A4 at 300 dpi, a 728 x 90 banner): the frame is drawn
+// at that size, so an export is exactly the size a printer or an ad network asks for. `family` groups them for the Create
+// workspace. The three of social posts come first and are as they always were.
+const frame = (px, label, name, use, family, safe) => ({ w: 1080, h: Math.round((1080 * px[1]) / px[0]), px, label, name, use, family, safe });
 export const FORMATS = {
-  "4:5": { w: 1080, h: 1350, name: "Portrait", use: "Feed post", safe: { l: 0.07, r: 0.07, t: 0.06, b: 0.06 } },
-  "1:1": { w: 1080, h: 1080, name: "Square", use: "Feed post", safe: { l: 0.07, r: 0.07, t: 0.07, b: 0.07 } },
+  "4:5": { label: "4:5", w: 1080, h: 1350, px: [1080, 1350], name: "Portrait", use: "Feed post", family: "social", safe: { l: 0.07, r: 0.07, t: 0.06, b: 0.06 } },
+  "1:1": { label: "1:1", w: 1080, h: 1080, px: [1080, 1080], name: "Square", use: "Feed post", family: "social", safe: { l: 0.07, r: 0.07, t: 0.07, b: 0.07 } },
   // a story or reel: the app covers the top (name, progress) and the bottom (caption, reply) and the reel's keys the right edge
-  "9:16": { w: 1080, h: 1920, name: "Story", use: "Story or reel", safe: { l: 0.06, r: 0.1, t: 0.13, b: 0.18 } },
+  "9:16": { label: "9:16", w: 1080, h: 1920, px: [1080, 1920], name: "Story", use: "Story or reel", family: "social", safe: { l: 0.06, r: 0.1, t: 0.13, b: 0.18 } },
+  // video: a cover, a thumbnail, a title card (the player's controls sit along the foot)
+  "16:9": frame([1920, 1080], "16:9", "Widescreen", "Video cover or thumbnail", "video", { l: 0.06, r: 0.06, t: 0.1, b: 0.14 }),
+  // ads: the three banners every network takes
+  "ad-300x250": frame([300, 250], "300×250", "Medium rectangle", "Banner ad 300 × 250", "ads", { l: 0.06, r: 0.06, t: 0.07, b: 0.07 }),
+  "ad-728x90": frame([728, 90], "728×90", "Leaderboard", "Banner ad 728 × 90", "ads", { l: 0.02, r: 0.02, t: 0.1, b: 0.1 }),
+  "ad-160x600": frame([160, 600], "160×600", "Skyscraper", "Banner ad 160 × 600", "ads", { l: 0.07, r: 0.07, t: 0.03, b: 0.03 }),
+  // print: A4 and A5 at 300 dpi, a poster at the A-series shape (150 dpi on A2); a margin that survives a trim
+  a4: frame([2480, 3508], "A4", "A4 flyer", "Flyer, A4 at 300 dpi", "print", { l: 0.08, r: 0.08, t: 0.06, b: 0.06 }),
+  a5: frame([1748, 2480], "A5", "A5 flyer", "Flyer, A5 at 300 dpi", "print", { l: 0.08, r: 0.08, t: 0.06, b: 0.06 }),
+  a5l: frame([2480, 1748], "A5 wide", "A5 landscape", "Flyer or card, A5 landscape at 300 dpi", "print", { l: 0.06, r: 0.06, t: 0.08, b: 0.08 }),
+  a2: frame([2480, 3508], "A2", "Poster A2", "Poster, A2 at 150 dpi", "print", { l: 0.07, r: 0.07, t: 0.05, b: 0.05 }),
+  // web: a share image, a hero, an email header
+  og: frame([1200, 630], "Share", "Share image", "Link preview 1200 × 630", "web", { l: 0.07, r: 0.07, t: 0.1, b: 0.1 }),
+  hero: frame([1440, 900], "Hero", "Web hero", "Desktop hero 1440 × 900", "web", { l: 0.07, r: 0.07, t: 0.1, b: 0.1 }),
+  email: frame([600, 200], "Email", "Email header", "Email header 600 × 200", "web", { l: 0.05, r: 0.05, t: 0.12, b: 0.12 }),
+  // app: a screen of the app, and a store screenshot (the OS draws the status bar and the home bar)
+  phone: frame([1170, 2532], "Phone", "App screen", "Phone screen 390 × 844 at 3×", "app", { l: 0.06, r: 0.06, t: 0.08, b: 0.06 }),
+  store: frame([1290, 2796], "Store", "Store screenshot", "App store screenshot 1290 × 2796", "app", { l: 0.07, r: 0.07, t: 0.06, b: 0.06 }),
 };
-export const FORMAT_KEYS = Object.keys(FORMATS);
+/** Every format's key. */
+export const ALL_FORMATS = Object.keys(FORMATS);
+/** The formats of social posts, the three Macaron began with: what a window shows when it means "the usual ones". */
+export const FORMAT_KEYS = ["4:5", "1:1", "9:16"];
+/** The families of formats, in the order Create shows them. */
+export const FAMILIES = {
+  social: { name: "Social", formats: ["4:5", "1:1", "9:16"] },
+  ads: { name: "Ads", formats: ["ad-300x250", "ad-728x90", "ad-160x600"] },
+  print: { name: "Print", formats: ["a4", "a5", "a5l", "a2"] },
+  web: { name: "Web", formats: ["og", "hero", "email"] },
+  app: { name: "App", formats: ["phone", "store"] },
+  video: { name: "Video", formats: ["16:9"] },
+};
+export const FAMILY_KEYS = Object.keys(FAMILIES);
+/** The short name a format goes by on a key (the classic three by their ratio). */
+export const labelOf = (format) => (FORMATS[format] ?? FORMATS["4:5"]).label;
+/** The icon of the app's sprite that draws a format's shape. */
+export const ratioGlyph = (format) => ({ tall: "ratio-9-16", portrait: "ratio-3-4", square: "ratio-1-1", wide: "ratio-16-9", strip: "ratio-21-9" })[shapeOf(format)];
+/** The family a format belongs to. */
+export const familyOf = (format) => (FORMATS[format] ?? FORMATS["4:5"]).family;
+/** The formats of the family a format belongs to (its siblings, itself too). */
+export const familyFormats = (format) => FAMILIES[familyOf(format)].formats;
+/**
+ * How a frame is shaped, from its height over its width: a strip (a leaderboard, an email header), wide, square, portrait or
+ * tall (a story, a phone, a skyscraper). The layout engine thinks in these.
+ */
+export const shapeOf = (format) => {
+  const f = frameOf(format);
+  const a = f.h / f.w;
+  return a < 0.45 ? "strip" : a < 0.9 ? "wide" : a < 1.15 ? "square" : a < 1.6 ? "portrait" : "tall";
+};
+/** The size a frame is drawn at when it leaves as a picture: its own pixels, as a scale of the frame (to the pixel). */
+export const nativeSize = (format) => {
+  const f = frameOf(format);
+  return { w: f.px?.[0] ?? f.w, h: f.px?.[1] ?? f.h };
+};
 export const PURPOSES = ["Launch", "Feature", "Showcase", "Brand", "Offer", "Motion"];
 export const STATUSES = ["draft", "review", "approved", "scheduled"];
 export const LAYER_TYPES = ["text", "image", "logo", "shape"];
@@ -87,7 +146,7 @@ export function layoutOf(design, format, opts = {}) {
 }
 
 /** A design's formats that have a layout of their own (the primary one counts). */
-export const ownFormats = (design) => FORMAT_KEYS.filter((f) => f === design.format || design.formats?.[f]);
+export const ownFormats = (design) => ALL_FORMATS.filter((f) => f === design.format || design.formats?.[f]);
 
 // ---------------------------------------------------------------- pictures, fonts and logos
 
@@ -642,14 +701,18 @@ export function drawDesign(ctx, design, { w: W, h: H, format = design.format, ki
   return boxes;
 }
 
-/** A design drawn to a new canvas at its format's size times a scale, ready to be a PNG. */
-export function renderDesign(design, { format = design.format, kit, scale = 1, t = null, reflow } = {}) {
+/**
+ * A design drawn to a new canvas, ready to be a PNG: at its format's size times a scale, or (native) at the pixels the real
+ * thing is made of, the frame stretched to them (an A4 at 300 dpi is 2480 x 3508).
+ */
+export function renderDesign(design, { format = design.format, kit, scale = 1, native = false, t = null, reflow } = {}) {
   const f = frameOf(format);
+  const px = native ? nativeSize(format) : { w: Math.round(f.w * scale), h: Math.round(f.h * scale) };
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(f.w * scale);
-  canvas.height = Math.round(f.h * scale);
+  canvas.width = px.w;
+  canvas.height = px.h;
   const ctx = canvas.getContext("2d");
-  ctx.scale(scale, scale);
+  ctx.scale(px.w / f.w, px.h / f.h);
   drawDesign(ctx, design, { w: f.w, h: f.h, format, kit, t, reflow });
   return canvas;
 }

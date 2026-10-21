@@ -1,6 +1,6 @@
-// Macaron's screen. On the left Brioche's panel: who she is, the brand open, the three workspaces a brand's work goes
-// through (Design idea, Brand kit, Content) and her tools for the one that is open. Beside it that workspace, a grid of
-// bentos; a bento opens as a window over the screen (macaron-win.js). Her bar docks at the foot of the page.
+// Macaron's screen. On the left Brioche's panel: who she is, the brand open, the five workspaces a brand's work goes through
+// (Design idea, Brand kit, Studio, Create, Brand book) and the brand's health. Beside it that workspace, a grid of bentos;
+// a bento opens as a window over the screen (macaron-win.js). Her bar docks at the foot of the page.
 import { h, icon, sprite } from "../dom.js";
 import { changed } from "../store.js";
 import { currentPage } from "../router.js";
@@ -10,16 +10,20 @@ import { mcicon, key, arming, isArmed, armedNow, fill } from "../macaron-ui.js";
 import { ideaSpace } from "../macaron-idea.js";
 import { kitSpace } from "../macaron-kit.js";
 import { contentSpace } from "../macaron-content.js";
+import { studioSpace } from "../macaron-studio-space.js";
+import { bookSpace } from "../macaron-book.js";
+import { brandHealth } from "../macaron-health.js";
 import { windowHost, defineWindow, openWin, closeAll } from "../macaron-win.js";
-import { TOOLS, runTool, waitingFor } from "../macaron-tools.js";
 import { BRIOCHE, WORKSPACES } from "../macaron-harness.js";
 import { setRoom } from "../harnesses.js";
 
-/** What each workspace's count counts: the pictures its moodboard holds, the kit's logo files, the posts. */
+/** What each workspace's count counts: the pictures its moodboard holds, the kit's logo files, the pictures made, the posts. */
 const COUNT = {
   idea: (b) => b.body.refs.filter((r) => r.kind !== "concept").length,
   kit: (b) => b.body.kit.logos.length,
-  content: (b) => b.body.designs.filter((d) => !d.variant).length,
+  studio: (b) => (b.body.assets ?? []).filter((a) => a.url).length,
+  create: (b) => b.body.designs.filter((d) => !d.variant).length,
+  book: (b) => b.body.designs.filter((d) => !d.variant && d.status === "approved").length,
 };
 /** The workspaces, as the panel names them: the name, the picture of its tile and its count. */
 const SPACE_INFO = Object.fromEntries(WORKSPACES.map((w) => [w.id, [w.name, w.tile, COUNT[w.id]]]));
@@ -30,20 +34,20 @@ let parts = null;
 let shell = null;
 let slot = null;
 const made = () =>
-  (parts ??= { idea: ideaSpace(), kit: kitSpace(), content: contentSpace(), host: windowHost() });
+  (parts ??= { idea: ideaSpace(), kit: kitSpace(), studio: studioSpace(), create: contentSpace(), book: bookSpace(), host: windowHost() });
 
 function build(el) {
-  const { idea, kit, content, host } = made();
+  const { idea, kit, studio, create, book, host } = made();
   // Brioche's bar docks into this slot; it is the same element every time the page is built, so the bar goes with it
   slot ??= h("div.mc-chat", { id: "macaron-chat" });
   const side = h("aside.mc-side", { "aria-label": "Brioche, the brand room" });
   const main = h("div.mc-main");
   // (a workspace is kept between builds: it comes back reachable, whatever window was over it when the room went away)
-  for (const [id, part] of Object.entries({ idea, kit, content })) {
+  for (const [id, part] of Object.entries({ idea, kit, studio, create, book })) {
     part.el.dataset.space = id;
     part.el.inert = false;
   }
-  main.append(idea.el, kit.el, content.el, slot);
+  main.append(idea.el, kit.el, studio.el, create.el, book.el, slot);
   const root = h("div.macaron", {}, side, main, host.el);
   // the app does not draw a page while a field in it is in use: what waited is drawn as soon as the field is left
   root.addEventListener("focusout", (e) => !root.contains(e.relatedTarget) && setTimeout(() => changed("macaron"), 0));
@@ -54,13 +58,36 @@ function build(el) {
 
 // ---------------------------------------------------------------- Brioche's panel
 
+/** What the health reads from: the brief, the kit, the product and the posts (the lines are worked out again when it changes). */
+const healthSig = (b) => JSON.stringify([b.body.brief, b.body.kit.palette, b.body.kit.logos?.map((l) => l.id), b.body.kit.voice, b.body.products?.map((p) => p.name), b.body.designs.map((d) => [d.id, d.status, d.updatedAt, d.format])]);
+
+function ring(score) {
+  return h("div.mc-ring", { style: { "--p": String(score) }, role: "img", "aria-label": `${score} percent ready` }, h("b", {}, `${score}%`), h("span", {}, "ready"));
+}
+
+function health(b) {
+  const sig = healthSig(b);
+  if (shell.healthSig !== sig) {
+    shell.healthSig = sig;
+    shell.health = brandHealth(b);
+  }
+  const { score, lines } = shell.health;
+  return h("section.mc-health", { "aria-label": "Brand health" },
+    h("span.mc-health-label", {}, "Brand health"),
+    ring(score),
+    h("p.mc-health-note", {}, lines.some((l) => l.tone !== "ok") ? `${lines.filter((l) => l.tone !== "ok").length} to look at` : "Everything is in place"),
+    h("div.mc-hlines", {}, ...lines.map((l) =>
+      h("button.mc-hline", { type: "button", dataset: { tone: l.tone, line: l.id }, on: { click: () => l.go() } },
+        h("span.lamp", { dataset: { tone: l.tone === "ok" ? "ok" : l.tone === "warn" ? "warn" : "crit" } }),
+        h("span.mc-hline-text", {}, l.text),
+        h("span.mc-hline-go", {}, mcicon("chev"))))));
+}
+
 function drawSide(b) {
   const space = macaron.space;
-  const designs = b.body.designs.filter((d) => !d.variant);
-  const sig = JSON.stringify([b.id, b.name, macaron.list.map((x) => [x.id, x.name]), space, SPACES.map((s) => SPACE_INFO[s][2](b)), macaron.past.length, macaron.future.length, !!macaron.chat.busy, macaron.design, designs.length, armedNow()]);
+  const sig = JSON.stringify([b.id, b.name, macaron.list.map((x) => [x.id, x.name]), space, SPACES.map((s) => SPACE_INFO[s][2](b)), macaron.past.length, macaron.future.length, !!macaron.chat.busy, macaron.design, healthSig(b), armedNow()]);
   if (sig === shell.sideSig) return;
   shell.sideSig = sig;
-  const tools = TOOLS[space] ?? [];
   fill(shell.side,
     h("div.mc-pet", {},
       h("span.mc-pet-pic", {}, h("img", { src: BRIOCHE.portrait, alt: "", draggable: false })),
@@ -79,22 +106,15 @@ function drawSide(b) {
         onChange: (id) => (id === "__new" ? (closeAll(), newBrand()) : id === "__settings" ? ((shell.sideSig = ""), openWin("brand")) : (closeAll(), openBrand(id))),
         width: "fill",
       })),
-    h("nav.mc-spaces", { "aria-label": "Workspaces" }, ...SPACES.map((id) => {
+    h("nav.mc-spaces", { "aria-label": "Workspaces" }, ...SPACES.map((id, i) => {
       const [name, pic, count] = SPACE_INFO[id];
       return h(`button.mc-space${id === space ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(id === space), dataset: { space: id }, on: { click: () => (closeAll(), setSpace(id)) } },
-        h("span.mc-space-pic", {}, h("img", { src: pic, alt: "", draggable: false })),
+        h("span.mc-space-num", {}, String(i + 1)),
         h("span.mc-space-name", {}, name),
+        h("span.mc-space-pic", {}, h("img", { src: pic, alt: "", draggable: false })),
         h("span.mc-space-count", {}, two(count(b))));
     })),
-    h("div.mc-tools", { role: "group", "aria-label": "Brioche's tools" },
-      h("span.mc-tools-label", {}, "Brioche's tools"),
-      ...tools.map((t) => {
-        const why = waitingFor(t);
-        return h("button.mc-tool", { type: "button", disabled: !!why, title: why || t.label, dataset: { tool: t.id }, on: { click: (e) => runTool(t, e) } },
-          h("span.mc-tool-icon", {}, mcicon(t.icon)),
-          h("span.mc-tool-name", {}, t.label),
-          h("span.mc-tool-go", {}, mcicon("chev")));
-      })),
+    health(b),
     h("div.mc-side-foot", {},
       key(sprite("edit-undo"), "Undo (Ctrl Z)", () => undo(), { disabled: !macaron.past.length }),
       key(sprite("edit-redo"), "Redo", () => redo(), { disabled: !macaron.future.length }),
@@ -112,19 +132,25 @@ function brandWin() {
     if (el.contains(document.activeElement) && document.activeElement.matches("input")) return false;
     const designs = b.body.designs.filter((d) => !d.variant);
     const armedKey = `brand:${b.id}`;
+    const logos = b.body.kit.logos ?? [];
+    const mark = logos.find((l) => l.kind === "icon") ?? logos.find((l) => l.kind === "mark") ?? logos[0];
     const stat = (n, label) => h("div.mc-stat", {}, h("b", {}, String(n)), h("span", {}, label));
+    const others = macaron.list.filter((x) => x.id !== b.id);
     fill(el,
-      h("label.mc-bf", {}, h("span.label", {}, "Its name"), h("input.field.mc-text", { value: b.name, "aria-label": "The brand's name", dataset: { focus: `name:${b.id}` }, on: { input: (e) => rename(e.target.value) } })),
+      h("div.mc-brand-id", {},
+        h("span.mc-brand-logo", {}, mark ? h("img", { src: mark.url, alt: "", draggable: false }) : mcicon("kit")),
+        h("input.field.mc-text.mc-brand-name", { value: b.name, "aria-label": "The brand's name", placeholder: "The brand's name", dataset: { focus: `name:${b.id}` }, on: { input: (e) => rename(e.target.value) } })),
       h("div.mc-stats", {}, stat(designs.length, designs.length === 1 ? "post" : "posts"), stat(designs.filter((d) => d.status === "approved").length, "ready"), stat(b.body.motion.length, "motion"), stat(b.body.exports.length, "exports"), stat(b.body.assets.length, "pictures")),
-      h("div.mc-brand-keys", {},
-        h("button.key", { type: "button", on: { click: () => (closeAll(), newBrand()) } }, icon("plus"), "A new brand"),
-        h("span.spacer"),
-        h(`button.key${isArmed(armedKey) ? ".is-armed" : ""}`, { type: "button", title: isArmed(armedKey) ? "Click again to delete the brand" : "Delete this brand", on: { click: () => arming(armedKey, () => changed("macaron"), () => (closeAll(), removeBrand(b.id))) } }, icon("trash"), isArmed(armedKey) ? "Click again to delete it" : "Delete this brand")),
-      h("p.mc-hint", {}, "A brand keeps its kit, its brief and moodboard, its pictures and its posts. Deleting it cannot be undone."));
+      h("div.mc-brand-others", {},
+        others.length ? h("div.mc-fchips", {}, h("span.label", {}, "Another brand"), ...others.map((x) => h("button.mc-fchip", { type: "button", on: { click: () => (closeAll(), openBrand(x.id)) } }, x.name))) : null,
+        h("button.mc-add-prompt", { type: "button", on: { click: () => (closeAll(), newBrand()) } }, icon("plus"), "A new brand")),
+      h("div.mc-brand-end", {},
+        h(`button.mc-quiet-danger${isArmed(armedKey) ? ".is-armed" : ""}`, { type: "button", title: isArmed(armedKey) ? "Click again to delete the brand" : "Delete this brand", on: { click: () => arming(armedKey, () => changed("macaron"), () => (closeAll(), removeBrand(b.id))) } }, isArmed(armedKey) ? "Click again to delete it" : "Delete this brand"),
+        h("p.mc-hint", {}, "A brand keeps its kit, its brief and moodboard, its pictures and its posts. Deleting it cannot be undone.")));
   }
-  return { el, update, sig: () => JSON.stringify([macaron.brand?.name, macaron.brand?.body.designs.length, macaron.brand?.body.assets.length, macaron.brand?.body.exports.length, armedNow()]) };
+  return { el, update, sig: () => JSON.stringify([macaron.brand?.name, macaron.list.map((x) => [x.id, x.name]), macaron.brand?.body.kit.logos, macaron.brand?.body.designs.map((d) => [d.id, d.status, d.variant]), macaron.brand?.body.motion.length, macaron.brand?.body.assets.length, macaron.brand?.body.exports.length, armedNow()]) };
 }
-defineWindow("brand", { title: "Brand", sub: () => macaron.brand?.name ?? "", size: "s", advanced: false, make: brandWin });
+defineWindow("brand", { eyebrow: "Brand room", title: "The brand", sub: () => macaron.brand?.name ?? "", size: "s", advanced: false, make: brandWin });
 
 function welcome() {
   return h("div.mc-welcome", {},

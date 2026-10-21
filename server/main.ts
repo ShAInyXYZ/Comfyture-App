@@ -1320,7 +1320,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (!isRouterImage(model)) throw bad("That picture model is not here: pictures on Comfy Router need a Comfy key.");
     const prompt = text(input.prompt, 4000);
     if (!prompt) throw bad("Say what the picture shows.");
-    const aspect = ["4:5", "1:1", "9:16"].includes(input.aspect) ? input.aspect : "1:1";
+    const aspect = ["4:5", "1:1", "9:16", "16:9"].includes(input.aspect) ? input.aspect : "1:1";
     const refs: { mime: string; data: string }[] = [];
     const names: string[] = [];
     for (const r of (Array.isArray(input.refs) ? input.refs : []).slice(0, 8)) {
@@ -1334,7 +1334,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       names.push(text(r?.name, 40).toLowerCase());
     }
     const gpt = model.startsWith("gpt-image");
-    const size = { "4:5": "1088x1360", "1:1": "1280x1280", "9:16": "1152x2048" }[aspect as "4:5"];
+    const size = { "4:5": "1088x1360", "1:1": "1280x1280", "9:16": "1152x2048", "16:9": "1536x864" }[aspect as "4:5"];
     const seed = Number.isSafeInteger(input.seed) && input.seed >= 0 ? input.seed : randomBytes(4).readUInt32BE(0);
     const job = engine.externalPhotoJob(text(input.name, 80) || prompt.slice(0, 60), async () => {
       const made = await routerDraw(model, { prompt, aspect, refs, names, seed, ...(gpt ? { size, quality: ["low", "medium", "high"].includes(input.quality) ? input.quality : "medium" } : {}), ...(model === "flux-3-image" && input.resolution === "2k" ? { resolution: "2k" } : {}) });
@@ -1373,7 +1373,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const input = await jsonBody(req);
     if (!validJob(input.job)) throw bad("Send the frames first.");
     const pops = (Array.isArray(input.sound?.pops) ? input.sound.pops : []).map(Number).filter((n: number) => Number.isFinite(n) && n >= 0 && n < 30);
-    return json(res, 201, await encodeFrames(data, input.job, { fps: Math.round(num(input.fps, 12, 60, 30)), name: text(input.name, 60) || "motion", sound: input.sound ? { pops, pad: input.sound.pad === true } : undefined, container: input.container === "webm" ? "webm" : "mp4" }));
+    return json(res, 201, await encodeFrames(data, input.job, { fps: Math.round(num(input.fps, 12, 60, 30)), name: text(input.name, 60) || "motion", sound: input.sound ? { pops, pad: input.sound.pad === true } : undefined, container: input.container === "webm" ? "webm" : input.container === "gif" ? "gif" : "mp4" }));
   }
   // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos
   for (const kind of ["stories", "cuts", "mixes", "brands", "jams"]) {

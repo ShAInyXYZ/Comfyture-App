@@ -1,0 +1,85 @@
+/* Macaron's windows: the shared frame and the plain parts every window is made of. Roomy by rule: 40-48px at the edges,
+   32-48px between sections, sections told apart by space and a hairline (not boxes), values that read at 16-20px, a value
+   as plain text on a hairline (not a grey box), one yellow primary key at the foot. The mockups are in
+   docs/brand/products/macaron-v3; each window's own layout is in macaron-win-<idea|kit|content|make>.css. */
+
+/* ---- the frame ----------------------------------------------------------------------------------- */
+.mc-win { grid-template-rows: auto minmax(0, 1fr) auto; width: min(52rem, 100%); border-radius: 2rem; }
+.mc-win.is-s { width: min(34rem, 100%); }
+.mc-win.is-m { width: min(52rem, 100%); }
+.mc-win.is-l { width: min(70rem, 100%); }
+.mc-win.is-xl { width: min(92rem, 100%); }
+.mc-win.is-full { width: min(104rem, 100%); height: 100%; }
+.mc-win-head { align-items: flex-end; padding: 2.25rem 3rem 1.375rem; border-bottom: 1px solid var(--line); }
+.mc-win-title { gap: .5rem; }
+.mc-win-eyebrow { font: 500 .75rem/1 var(--font-mono); letter-spacing: .26em; text-transform: uppercase; color: var(--dim); }
+.mc-win-eyebrow[hidden] { display: none; }
+.mc-win-title h2 { font: 700 2.125rem/1.05 var(--font-mono); letter-spacing: .14em; }
+.mc-win-sub { font: 500 1.0625rem/1.2 var(--font-mono); color: var(--muted); opacity: 1; }
+.mc-win-tools { align-self: flex-start; gap: 1.25rem; }
+.mc-win-tools .mc-switch { font-size: .9375rem; color: var(--muted); }
+.mc-win-body { padding: 2.25rem 3rem 2.5rem; }
+.mc-win-foot { display: flex; align-items: center; gap: 1rem; padding: 1.125rem 3rem 1.375rem; border-top: 1px solid var(--line); }
+.mc-win-foot[hidden] { display: none; }
+.mc-win-foot .spacer { flex: 1 1 auto; }
+.mc-w { gap: 2.5rem; }
+.mc-wpart { gap: 2rem; }
+
+/* ---- the parts ----------------------------------------------------------------------------------- */
+/* a small mono label over a value */
+.mc-win .label { font: 500 .75rem/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+/* a section: its label, then what it holds, told apart from the next by space and a hairline */
+.mc-sec { display: grid; gap: 1.125rem; align-content: start; min-width: 0; }
+.mc-sec + .mc-sec { padding-top: 2.5rem; border-top: 1px solid var(--line); }
+.mc-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+/* a value is plain text on a hairline; where a long text is meant, it grows with what is written */
+.mc-win .field.mc-text, .mc-win input.field, .mc-win textarea.field { min-height: 0; padding: .5rem 0 .625rem; border: 0; border-bottom: 1px solid var(--line2); border-radius: 0; background: transparent; box-shadow: none; color: var(--text); font: 400 1.0625rem/1.45 var(--font-sans); transition: border-color var(--t-fast); }
+.mc-win .field.mc-text:hover, .mc-win input.field:hover, .mc-win textarea.field:hover { border-bottom-color: var(--faint); background: transparent; }
+.mc-win .field.mc-text:focus, .mc-win input.field:focus, .mc-win textarea.field:focus { outline: none; border-bottom-color: var(--accent); box-shadow: none; }
+.mc-win .field::placeholder { color: var(--dim); }
+/* a statement: the one big sentence of a window, typed in place */
+.mc-win textarea.field.mc-statement { padding: .25rem 0 .5rem; font: 500 1.75rem/1.28 var(--font-sans); letter-spacing: -.012em; resize: none; overflow: hidden; }
+/* an empty value: a calm dashed prompt to add it, not an empty box */
+.mc-add-prompt { display: flex; align-items: center; gap: .625rem; width: 100%; min-height: 3rem; padding: 0 1rem; border: 1px dashed var(--line2); border-radius: .875rem; background: transparent; color: var(--muted); font: 500 1rem/1 var(--font-sans); text-align: left; cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.mc-add-prompt:hover { border-color: var(--accent-line); color: var(--text); }
+.mc-add-prompt svg { flex: none; width: 1.125rem; height: 1.125rem; color: var(--accent); }
+/* a segmented control (the window's own switch between views or filters) */
+.mc-segs { display: inline-flex; align-items: center; gap: .25rem; padding: .25rem; border: 1px solid var(--line2); border-radius: var(--r-pill); }
+.mc-seg { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.25rem; padding: 0 1.125rem; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted); font: 500 .9375rem/1 var(--font-sans); cursor: pointer; transition: color var(--t-fast), background var(--t-fast); }
+.mc-seg svg { width: 1.0625rem; height: 1.0625rem; }
+.mc-seg:hover { color: var(--text); }
+.mc-seg[aria-pressed="true"], .mc-seg[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+/* filter chips: a quieter row of the same */
+.mc-fchips { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.mc-fchip { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.125rem; padding: 0 .9375rem; border: 1px solid var(--line2); border-radius: var(--r-pill); background: transparent; color: var(--muted); font: 500 .875rem/1 var(--font-sans); cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast); }
+.mc-fchip:hover { color: var(--text); border-color: var(--faint); }
+.mc-fchip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.mc-fchip:disabled { opacity: .4; cursor: default; }
+.mc-fchip em { font: 500 .75rem/1 var(--font-mono); font-style: normal; opacity: .7; }
+/* the primary key of a window: acid yellow, big, at the foot */
+.mc-win .mc-primary { display: inline-flex; align-items: center; gap: .625rem; min-height: 3.25rem; padding: 0 1.75rem; border: 0; border-radius: 1rem; background: var(--accent); color: var(--accent-ink); font: 700 1.0625rem/1 var(--font-sans); cursor: pointer; transition: filter var(--t-fast), transform var(--t-fast); }
+.mc-win .mc-primary svg { width: 1.25rem; height: 1.25rem; }
+.mc-win .mc-primary:hover:not(:disabled) { filter: brightness(1.06); }
+.mc-win .mc-primary:active:not(:disabled) { transform: translateY(1px); }
+.mc-win .mc-primary:disabled { opacity: .45; cursor: default; }
+/* "Brioche can draft this": her round face, what she will do, one line */
+.mc-draft { display: inline-flex; align-items: center; gap: .875rem; max-width: 100%; padding: .375rem 1.25rem .375rem .375rem; border: 1px solid var(--line2); border-radius: var(--r-pill); background: transparent; color: var(--text); text-align: left; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
+.mc-draft:hover:not(:disabled) { border-color: var(--accent-line); background: var(--s2); }
+.mc-draft:disabled { opacity: .5; cursor: default; }
+.mc-draft img { flex: none; display: block; width: 2.75rem; height: 2.75rem; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 1.5px var(--accent-line); }
+.mc-draft span { display: grid; gap: .1875rem; min-width: 0; }
+.mc-draft b { font: 600 1rem/1.2 var(--font-sans); }
+.mc-draft em { font: 400 .8125rem/1.3 var(--font-sans); font-style: normal; color: var(--muted); }
+/* a quiet icon key, over a picture or beside a value (the word is its tooltip) */
+.mc-iconkey { display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; padding: 0; border: 1px solid var(--line2); border-radius: .875rem; background: transparent; color: var(--muted); cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast); }
+.mc-iconkey svg { width: 1.125rem; height: 1.125rem; }
+.mc-iconkey:hover { color: var(--text); border-color: var(--faint); }
+.mc-iconkey.is-danger:hover { color: var(--err); border-color: var(--err); }
+.mc-iconkey.is-over { background: rgba(14, 14, 16, .72); backdrop-filter: blur(6px); border-color: rgba(255, 255, 255, .12); color: #fff; }
+
+@media (max-width: 980px) {
+  .mc-win-head { padding: 1.5rem 1.5rem 1rem; }
+  .mc-win-body { padding: 1.5rem 1.5rem 1.75rem; }
+  .mc-win-foot { padding: 1rem 1.5rem; flex-wrap: wrap; }
+  .mc-win-title h2 { font-size: 1.5rem; }
+}

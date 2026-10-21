@@ -6,19 +6,21 @@
 import { state, changed, onChange, toast, waitFor, artistFor, presetById } from "./store.js";
 import { api } from "./api.js";
 import { TEMPLATES, templateById } from "./macaron-templates.js";
-import { FORMATS, FORMAT_KEYS, kitOf, prepare, renderDesign, measurer, drawDesign, uid, clamp, newLayer, frameOf, layoutOf, ownFormats, colorOf, contrast, logoColour, lacksLid } from "./design.js";
+import { FORMATS, FORMAT_KEYS, ALL_FORMATS, familyFormats, kitOf, prepare, renderDesign, measurer, drawDesign, uid, clamp, newLayer, frameOf, layoutOf, ownFormats, colorOf, contrast, logoColour, lacksLid } from "./design.js";
 import { reflow, withPreset, applyKit, cloneDesign, guard, LAYOUTS, safeRect, firstTiming, soundPops, patchLayerIn } from "./macaron-layout.js";
 import { WORKSPACES } from "./macaron-harness.js";
+import { studioWords } from "./macaron-studio-setup.js";
 
 const OPEN = "comfyture.macaron.open";
 const SPACE = "comfyture.macaron.space";
-/** The three workspaces: where a brand's work is done, in the order it goes (macaron-harness.js names them). */
+/** The five workspaces: where a brand's work is done, in the order it goes (macaron-harness.js names them). */
 export const SPACES = WORKSPACES.map((w) => w.id);
 /** What can leave as a file: the id, the label and the icon of the app's sprite. */
 export const EXPORT_KINDS = [["png", "PNG", "image-library"], ["jpg", "JPG", "image-library"], ["mp4", "MP4", "film-make"], ["webm", "WEBM", "film-make"]];
 const savedSpace = (() => {
   try {
-    const v = localStorage.getItem(SPACE);
+    // (what was kept as Content before Create had its name)
+    const v = localStorage.getItem(SPACE) === "content" ? "create" : localStorage.getItem(SPACE);
     return SPACES.includes(v) ? v : "kit";
   } catch {
     return "kit";
@@ -60,9 +62,11 @@ function normalize(saved = {}) {
   body.kit.type = kitOf(body).type;
   body.kit.voice = { summary: "", words: body.voice, dos: [], donts: [], lines: [], ...(body.kit.voice ?? {}) };
   body.kit.rules ??= [];
-  for (const k of ["designs", "motion", "exports", "refs", "history", "assets"]) body[k] ??= [];
+  for (const k of ["designs", "motion", "exports", "refs", "history", "assets", "mockups", "ugc"]) body[k] ??= [];
   body.brief = { ...BRIEF, ...(saved.brief ?? {}) };
   body.directions = Array.isArray(saved.directions) ? saved.directions : [];
+  // the brand book's own words (the story page, the notes under the imagery): the rest of the book is built from the kit
+  body.book = { ...(saved.book ?? {}), pages: { ...(saved.book?.pages ?? {}) } };
   return body;
 }
 
@@ -252,7 +256,7 @@ export const layoutNow = (d = designNow(), format = macaron.format) => layoutOf(
 const snap = (all = false) => {
   const b = macaron.brand.body;
   // (the flat lists beside the kit are what the shoot reads: they are kept the same as the kit's)
-  return JSON.stringify(all ? { designs: b.designs, motion: b.motion, kit: b.kit, brief: b.brief, directions: b.directions ?? [], colours: b.colours, voice: b.voice, fonts: b.fonts, dos: b.dos, donts: b.donts, history: b.history } : { designs: b.designs, motion: b.motion });
+  return JSON.stringify(all ? { designs: b.designs, motion: b.motion, kit: b.kit, book: b.book, brief: b.brief, directions: b.directions ?? [], colours: b.colours, voice: b.voice, fonts: b.fonts, dos: b.dos, donts: b.donts, history: b.history } : { designs: b.designs, motion: b.motion });
 };
 /** Where a gesture began is kept with the brand it began in: another brand never reads it. */
 const marked = () => (macaron.mark?.brand === macaron.brand?.id ? macaron.mark : null);
@@ -315,14 +319,14 @@ export function edit(fn, note) {
 }
 const wholeStep = (json) => JSON.parse(json).kit !== undefined;
 function restore(json) {
-  const { designs, motion, kit, brief, directions, colours, voice, fonts, dos, donts, history } = JSON.parse(json);
+  const { designs, motion, kit, book, brief, directions, colours, voice, fonts, dos, donts, history } = JSON.parse(json);
   Object.assign(macaron.brand.body, { designs, motion });
   // a step that held the whole brand puts back the kit, the brief and the story too: what was undone did not happen
-  if (kit) Object.assign(macaron.brand.body, { kit, brief, directions, colours, voice, fonts, dos, donts, ...(history ? { history } : {}) });
+  if (kit) Object.assign(macaron.brand.body, { kit, ...(book ? { book } : {}), brief, directions, colours, voice, fonts, dos, donts, ...(history ? { history } : {}) });
   if (!designNow()) macaron.design = designs[0]?.id ?? null;
   if (!layerNow()) macaron.layer = null;
   const d = designNow();
-  if (d && !ownFormats(d).includes(macaron.format) && !FORMAT_KEYS.includes(macaron.format)) macaron.format = d.format;
+  if (d && !ownFormats(d).includes(macaron.format) && !familyFormats(d.format).includes(macaron.format)) macaron.format = d.format;
   touched();
   for (const h of hooks) h();
 }
@@ -516,7 +520,7 @@ export function openDesign(id, format) {
   const d = designById(id);
   if (!d) return;
   macaron.design = id;
-  macaron.format = format && FORMAT_KEYS.includes(format) ? format : d.format;
+  macaron.format = format && ALL_FORMATS.includes(format) ? format : d.format;
   macaron.layer = null;
   rememberView();
   update();
@@ -531,7 +535,8 @@ export const pickLayer = (id) => ((macaron.layer = id), update());
 export const toggleSafe = () => ((macaron.safe = !macaron.safe), update());
 
 /** A new design from the brand: its ground, logo, headline, subhead and the product's picture, laid out in a format. */
-export function newDesign({ name = "New design", purpose = "Launch", format = "4:5", layout = "left" } = {}) {
+/** (texts: the headline and subhead to start with; cta: a call to action, as a layer of its own, for the formats that carry one) */
+export function newDesign({ name = "New design", purpose = "Launch", format = "4:5", layout = "left", texts = {}, cta = "" } = {}) {
   const b = macaron.brand;
   const kit = kitNow();
   const p = productNow(b);
@@ -546,8 +551,9 @@ export function newDesign({ name = "New design", purpose = "Launch", format = "4
     bg: { color: ground }, formats: {}, history: [{ at: now, who: "you", note: "Started from the brand kit" }],
     layers: [
       ...(kit.logos.length ? [newLayer("logo", { id: "logo", name: "Logo", logo: kit.logos.find((l) => l.kind === "wordmark")?.id ?? kit.logos[0].id, x: 0.07, y: 0.07, w: 0.3 })] : []),
-      newLayer("text", { id: "headline", name: "Headline", role: "headline", fontRole: "display", text: b.body.headline || "Say it in a line.", size: 0.1, lineHeight: 1.02, tracking: -0.02, colorRole: "white", x: 0.07, y: 0.2, w: 0.86 }),
-      newLayer("text", { id: "sub", name: "Subhead", role: "sub", fontRole: "text", text: b.body.tagline || "A few words on why it is worth a look.", size: 0.034, lineHeight: 1.3, colorRole: "white", opacity: 0.86, x: 0.07, y: 0.45, w: 0.6 }),
+      newLayer("text", { id: "headline", name: "Headline", role: "headline", fontRole: "display", text: texts.headline || b.body.headline || "Say it in a line.", size: 0.1, lineHeight: 1.02, tracking: -0.02, colorRole: "white", x: 0.07, y: 0.2, w: 0.86 }),
+      newLayer("text", { id: "sub", name: "Subhead", role: "sub", fontRole: "text", text: texts.sub || b.body.tagline || "A few words on why it is worth a look.", size: 0.034, lineHeight: 1.3, colorRole: "white", opacity: 0.86, x: 0.07, y: 0.45, w: 0.6 }),
+      ...(cta ? [newLayer("text", { id: "cta", name: "Call to action", role: "cta", fontRole: "mono", text: cta, size: 0.028, tracking: 0.06, caps: true, colorRole: "yellow", x: 0.07, y: 0.85, w: 0.5 })] : []),
       ...(p ? [newLayer("image", { id: "hero", name: p.name, role: "hero", src: p.cutout?.url ?? p.photo.url, fit: "contain", x: 0.3, y: 0.55, w: 0.55, h: 0.35 })] : []),
     ],
   };
@@ -778,7 +784,8 @@ export function makeVariant(kind, { from = designNow(), name, note, intent } = {
     const cta = copy.layers.find((l) => l.role === "cta");
     if (cta && it.cta) cta.text = it.cta;
   } else if (kind === "format") {
-    const to = FORMAT_KEYS.find((f) => f !== from.format && !from.formats?.[f]) ?? FORMAT_KEYS.find((f) => f !== from.format);
+    const sibs = familyFormats(from.format);
+    const to = sibs.find((f) => f !== from.format && !from.formats?.[f]) ?? sibs.find((f) => f !== from.format) ?? FORMAT_KEYS.find((f) => f !== from.format);
     const lay = layoutOf(copy, to, { reflow: reflowFor });
     copy.layers = lay.layers;
     copy.bg = lay.bg;
@@ -861,11 +868,12 @@ export function refreshThumbs() {
 onLive(refreshThumbs);
 
 /** A design drawn out to a picture (a PNG, or a JPG when asked), at its format's own size. */
-export async function renderPng(design, format, { scale = 1, t = null, kit = kitNow(), type = "image/png" } = {}) {
+export async function renderPng(design, format, { scale, t = null, kit = kitNow(), type = "image/png" } = {}) {
   const problems = await prepare(design, kit);
   if (problems.length) throw new Error(problems[0]);
   const measure = measurer(kit);
-  const canvas = renderDesign(design, { format, kit, scale, t, reflow: (d, f) => reflow(d, f, measure) });
+  // (with no scale asked, at the pixels the format is made of: an A4 is 2480 x 3508)
+  const canvas = renderDesign(design, { format, kit, scale: scale ?? 1, native: scale === undefined, t, reflow: (d, f) => reflow(d, f, measure) });
   return new Promise((ok, no) => canvas.toBlob((b) => (b ? ok(b) : no(new Error("The picture could not be made."))), type, type === "image/jpeg" ? 0.92 : undefined));
 }
 
@@ -1195,7 +1203,8 @@ export async function shoot() {
     // a logo the library cannot take (an SVG) is left out, and the words about it with it: the shoot goes on
     const logo = b.body.logo ? await inLibrary(b.body.logo).catch(() => null) : null;
     const refs = [{ file: photo.file, name: "product" }, ...(logo ? [{ file: logo.file, name: "logo" }] : [])];
-    const prompt = t.prompt({ ...b.body, ...(logo ? {} : { logo: null }), name: b.name }, p).replace(/\s+/g, " ").trim();
+    // the studio's setup (light, surface, background) follows the template's words, so a shoot can be done again the same way
+    const prompt = (t.prompt({ ...b.body, ...(logo ? {} : { logo: null }), name: b.name }, p) + studioWords(b.body, kitNow())).replace(/\s+/g, " ").trim();
     const jobs = (await Promise.all(formats.map(async (format) => {
       const started = await api.image({ model: artistFor("edit"), template: "edit", prompt, refs, aspect: format, count, megapixels: 1, seed: Math.floor(Math.random() * 2 ** 31), name: `${b.name} · ${t.name}` });
       return started.map((job) => ({ job, format }));
