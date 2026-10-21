@@ -42,6 +42,7 @@ import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { deflateSync } from "node:zlib";
+import { makerOf, makerById } from "../web/js/utensils-makers.js";
 
 const exec = promisify(execFile);
 
@@ -85,6 +86,8 @@ export interface Item {
   category: string;
   /** the official tutorial on docs.comfy.org, when it has one */
   tutorial: string | null;
+  /** who made the model at its core (web/js/utensils-makers.js): its logo is pressed into the book's spine, the Library filters by it */
+  maker: string | null;
 }
 
 /** The categories the app leaves out: text generation and the node tutorials make no picture, clip or sound. */
@@ -130,6 +133,7 @@ export function flatten(index: any[]): Item[] {
         isApp: t.isApp === true,
         category: String(cat.title ?? cat.category ?? "Other"),
         tutorial: typeof t.tutorialUrl === "string" && /^https:\/\/docs\.comfy\.org\//.test(t.tutorialUrl) ? t.tutorialUrl : null,
+        maker: makerOf({ providers: (Array.isArray(t.logos) ? t.logos : []).map((l: any) => l?.provider), models: Array.isArray(t.models) ? t.models.map(String) : [], title: String(t.title ?? "") }),
       });
     }
   }
@@ -144,10 +148,14 @@ export function library(items: Item[]) {
     if (!counts.has(i.category)) order.push(i.category);
     counts.set(i.category, (counts.get(i.category) ?? 0) + 1);
   }
+  // the makers, the busiest first (the Library's row of logos)
+  const made = new Map<string, number>();
+  for (const i of items) if (i.maker) made.set(i.maker, (made.get(i.maker) ?? 0) + 1);
   return {
     total: items.length,
     categories: order.map((name) => ({ name, count: counts.get(name) ?? 0 })),
-    items: items.map((i) => ({ name: i.name, title: i.title, description: i.description, category: i.category, medium: i.medium, partner: i.partner, openSource: i.openSource, isApp: i.isApp, usage: i.usage, models: i.models, inputs: i.inputs, outputs: i.outputs, tags: i.tags, thumbKind: i.thumbKind, variant: i.variant, tutorial: i.tutorial, credits: i.credits })),
+    makers: [...made].sort((a, b) => b[1] - a[1]).map(([id, count]) => ({ id, name: makerById(id)?.name ?? id, by: makerById(id)?.by ?? null, count })),
+    items: items.map((i) => ({ name: i.name, title: i.title, description: i.description, category: i.category, medium: i.medium, partner: i.partner, openSource: i.openSource, isApp: i.isApp, usage: i.usage, models: i.models, inputs: i.inputs, outputs: i.outputs, tags: i.tags, thumbKind: i.thumbKind, variant: i.variant, tutorial: i.tutorial, credits: i.credits, maker: i.maker })),
   };
 }
 

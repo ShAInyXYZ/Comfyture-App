@@ -46,3 +46,15 @@ export function knowledgeIdOf(x) {
 export function entryFor(toolOrTemplate) {
   return knowledgeOf(knowledgeIdOf(toolOrTemplate));
 }
+
+let makers = null;
+/**
+ * Who made the model at the core of each tool (utensils-makers.js), from what the knowledge says each tool runs: a Map of tool id to
+ * maker id, fetched once (empty when the knowledge does not answer; a tool that runs on this machine, ffmpeg, has none).
+ */
+export function toolMakers() {
+  makers ??= Promise.all([import("./utensils-makers.js"), fetch("api/utensils/knowledge?kind=tool&k=200").then((r) => (r.ok ? r.json() : { items: [] }))])
+    .then(([{ makerOf }, { items }]) => new Map((items ?? []).map((e) => [e.id, makerOf({ models: e.models ?? [], title: e.name ?? "" })]).filter(([, m]) => m)))
+    .catch(() => new Map());
+  return makers;
+}
