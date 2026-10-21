@@ -2,7 +2,8 @@
 // at the top switches brands), the five workspaces a brand's work goes through (Design idea, Brand kit, Studio, Create, Brand book) are
 // swatch cards in the brand's own colours fanned like a colour book, the open one pulled out toward the page, and the brand's health is a
 // seal at its foot with Brioche in it. Another brand, another panel; a brand with no palette yet has the app's own greys. Beside it the
-// workspace, a grid of bentos; a bento opens as a window over the screen (macaron-win.js). Her bar docks at the foot of the page.
+// workspace, a grid of bentos, which wear the brand too (its ground, and one of its colours each); a bento opens as a window over the
+// screen (macaron-win.js). Her bar docks at the foot of the page.
 // Mockup: web/labs/panels.html (B2).
 import { h, icon, sprite } from "../dom.js";
 import { changed } from "../store.js";
@@ -133,6 +134,11 @@ function drawSide(b) {
   // the panel wears the brand (its colours as custom properties), or the app's greys
   side.classList.toggle("is-branded", !!col);
   for (const [k, v] of Object.entries({ "--bk-ground": col?.ground, "--bk-ink": col?.ink, "--bk-seal": col?.seal })) v ? side.style.setProperty(k, v) : side.style.removeProperty(k);
+  // and so does the board: its frames take the same colours, one each in turn (css/macaron.css, .macaron.is-branded .mc-bento)
+  const root = shell.root;
+  root.classList.toggle("is-branded", !!col);
+  const vars = { "--bk-ground": col?.ground, "--bk-ink": col?.ink, ...Object.fromEntries([0, 1, 2, 3, 4].map((i) => [`--bk-c${i + 1}`, col?.cards[i]?.c])) };
+  for (const [k, v] of Object.entries(vars)) v ? root.style.setProperty(k, v) : root.style.removeProperty(k);
   const word = col ? wordmarkOn(kit, col.ground) : null;
   const { score, lines } = healthOf(b);
   const tag = initials(b.name);
