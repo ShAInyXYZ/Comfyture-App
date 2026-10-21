@@ -91,7 +91,8 @@ img.is-clear { background: repeating-conic-gradient(#2c2c31 0 25%, #1d1d21 0 50%
 
 /* ---- the grid and the card every workspace is made of ------------------------------------------ */
 .ut-grid { display: grid; flex: 1 0 auto; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--ut-gap); min-width: 0; }
-.ut-grid[hidden] { display: none; }
+/* (a workspace's own display rule must not win over hidden: the Library's hall showed on the Shelf) */
+.utensils .ut-grid[hidden] { display: none !important; }
 .ut-bento { position: relative; display: flex; flex-direction: column; gap: .75rem; min-width: 0; min-height: 0; padding: clamp(.875rem, 1.5dvh, 1.25rem) 1.25rem clamp(1.125rem, 1.9dvh, 1.5rem); border: 1px solid var(--card-line); border-radius: 1.5rem; background: var(--s1); }
 .ut-b-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 1.75rem; }
 .ut-b-label { font: 500 .8125rem/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }

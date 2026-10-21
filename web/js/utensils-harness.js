@@ -27,7 +27,7 @@ export const WORKSPACES = [
   { id: "audio", name: "Audio", icon: "audio-music", color: "#7a4fd6" },
   { id: "vfx", name: "VFX", icon: "tool-vfx", color: "#1f9484" },
   { id: "edit", name: "Edit", icon: "tool-edit", color: "#7f8a35" },
-  { id: "templates", name: "Templates", icon: "tool-templates", color: "#3a5bb5" },
+  { id: "templates", name: "Library", icon: "tool-templates", color: "#3a5bb5" },
 ];
 
 /** What the chat bar says in each workspace (no canned presets: Truffle's bar is her words). */
@@ -39,5 +39,5 @@ export const PLACEHOLDER = {
   audio: "Ask Truffle — heavy rain on a tin roof, a warm acoustic track, split the stems",
   vfx: "Ask Truffle — remove the passer-by, relight the face, add rain",
   edit: "Ask Truffle — trim the first 3 seconds, crop for social, add captions",
-  templates: "Ask Truffle — a template that animates a photo, one for 3D from an image",
+  templates: "Ask Truffle — which workflow animates a photo? one for 3D from an image?",
 };

@@ -1,5 +1,5 @@
 // Home's MINI APPS: "the poster wall". Six tall posters, 3:4, hung at different heights, each a mini app from ComfyUI's own workflows
-// with its picture, its name and its promise; a poster opens its app in the Templates workspace. The six are read from the live list
+// with its picture, its name and its promise; a poster opens its app in the Library. The six are read from the live list
 // (a mix of what they make: a picture, a clip, a sound, a model), so a new app can be on the wall without a change here. A mono counter
 // says how many apps and templates there are, and "Browse all" opens them. Without Comfy Cloud the wall says so, quietly.
 import { apps, loadApps, openApp } from "./utensils-templates-api.js";
@@ -39,7 +39,7 @@ export function appsSection() {
     loadApps();
     const list = pick(apps.list);
     const t = templatesTotal();
-    counter.textContent = apps.total ? `${apps.total} apps${t ? ` · ${t} templates` : ""}` : "";
+    counter.textContent = apps.total ? `${apps.total} apps${t ? ` · ${t} workflows` : ""}` : "";
     wall.classList.toggle("is-empty", !list.length);
     wall.replaceChildren(...(list.length
       ? list.map(poster)

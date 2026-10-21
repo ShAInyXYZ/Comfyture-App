@@ -1,5 +1,5 @@
-// Utensils' mini apps in a real browser, end to end, on a server of its own and a folder of its own: the Templates workspace opens on the
-// Apps chip with their cards; an app is a panel with only what it needs (a picture well and the words), the price is asked before anything
+// Utensils' mini apps in a real browser, end to end, on a server of its own and a folder of its own: the Library (the workspace whose
+// id is "templates") opens on its Mini apps filter, their books alone on its shelves; an app is a panel with only what it needs (a picture well and the words), the price is asked before anything
 // is sent (the first press arms the key, no request is made; the second sends one), what it made shows against the picture it was given
 // and is kept; a poster on Home's wall of mini apps opens an app; the apps are tools for Truffle (opened by id, listed apart from the shelf's tools).
 // Comfy Cloud's paid calls are stood in for (COMFYTURE_FAKE_TEMPLATES=1): nothing is spent. The reads that name the forms and the prices are
@@ -55,25 +55,26 @@ try {
   await page.waitForSelector(".hp", { timeout: 30000 });
   await page.waitForTimeout(2500);
 
-  // Home: a wall of six mini-app posters (and no panel); a poster opens that app in the Templates workspace
+  // Home: a wall of six mini-app posters (and no panel); a poster opens that app in the Library
   await page.waitForSelector(".hm-poster", { timeout: 30000 });
   ok((await page.locator(".hm-poster").count()) === 6, "Home hangs six mini apps");
   ok((await page.locator('.ut-quick-tool[data-tool^="app-"]').count()) === 0, "the apps are not among the quick tools");
   await shot("1-home");
   await page.click('.hm-poster[data-app="bg-remove"]');
   await page.waitForSelector(".ut-app-body", { timeout: 30000 });
-  ok(/REMOVE BACKGROUND/.test(await page.locator(".ut-tpl-detail .ut-b-label").innerText()), "a poster of Home opens its app in the Templates workspace");
-  ok((await page.locator(".ut-tpl-chip[aria-pressed=true]").innerText()) === "Apps", "on the Apps chip");
+  ok(/REMOVE BACKGROUND/.test(await page.locator(".ut-tpl-detail .ut-b-label").innerText()), "a poster of Home opens its app in the Library");
+  ok((await page.locator(".lb-toggle.is-apps[aria-pressed=true]").count()) === 1, "on the Mini apps filter");
 
-  // the Apps chip: cards, no page scroll
-  await page.waitForSelector(".ut-app-card", { timeout: 30000 });
-  const m = await page.evaluate(() => ({ cards: document.querySelectorAll(".ut-app-card").length, v: document.documentElement.scrollHeight - innerHeight, h: document.documentElement.scrollWidth - innerWidth }));
-  ok(m.cards >= 30, "the Apps chip lists the apps", `${m.cards} cards`);
+  // the Mini apps filter: only their books on the shelves, no page scroll
+  await page.waitForSelector(".lb-book[data-app]", { timeout: 30000 });
+  const m = await page.evaluate(() => ({ books: document.querySelectorAll(".lb-book").length, apps: document.querySelectorAll(".lb-book[data-app]").length, v: document.documentElement.scrollHeight - innerHeight, h: document.documentElement.scrollWidth - innerWidth }));
+  ok(m.apps >= 30 && m.books === m.apps, "the Mini apps filter shelves the apps alone", `${m.apps} apps of ${m.books} books`);
   ok(m.v <= 1 && m.h <= 1, "the workspace fills the screen without scroll", `v ${m.v} h ${m.h}`);
   await shot("2-apps");
 
-  // an app is a panel with only what it needs
-  await page.click('.ut-app-card[data-app="edit-words"]');
+  // an app is a panel with only what it needs (the panel open is closed first: the hall is where it was)
+  await page.click(".ut-tpl-detail .ut-expand");
+  await page.click('.lb-book[data-app="edit-words"]');
   await page.waitForSelector(".ut-app-body .ut-tpl-well", { timeout: 30000 });
   ok((await page.locator(".ut-app-form .ut-tpl-field").count()) === 2, "Edit with words asks for two things: a picture and words");
   ok(/more settings/i.test(await page.locator(".ut-tpl-adv summary").innerText()), "the rest is under More settings");
@@ -120,9 +121,22 @@ try {
 
   // the server went on reading the apps' forms: the list is read again, and the app whose form cannot take what it asks for (a clip through a
   // loader of a custom node) is gone, while the others know their own inputs
-  await page.click('.ut-tpl-chip:has-text("Apps")').catch(() => {});
-  const gone = await page.waitForFunction(() => !document.querySelector('.ut-app-card[data-app="live-portrait"]') && document.querySelectorAll(".ut-app-card").length > 20, null, { timeout: 90000 }).then(() => true, () => false);
-  ok(gone, "the list refreshes itself: the app that cannot be driven drops out", `${await page.locator(".ut-app-card").count()} cards`);
+  if (!(await page.locator(".lb-toggle.is-apps[aria-pressed=true]").count())) await page.click(".lb-toggle.is-apps");
+  const gone = await page.waitForFunction(() => !document.querySelector('.lb-book[data-app="live-portrait"]') && document.querySelectorAll(".lb-book[data-app]").length > 20, null, { timeout: 90000 }).then(() => true, () => false);
+  ok(gone, "the list refreshes itself: the app that cannot be driven drops out", `${await page.locator(".lb-book[data-app]").count()} books`);
+
+  // the whole Library: every workflow a book, its card says what it is and how it works, a book opens its form
+  await page.click(".ut-tpl-detail .ut-expand").catch(() => {});
+  await page.click(".lb-chip.is-all");
+  await page.waitForTimeout(600);
+  const lib = await page.evaluate(() => ({ books: document.querySelectorAll(".lb-book").length, total: document.querySelector('.ut-space[data-space="templates"] .ut-space-count')?.textContent, v: document.documentElement.scrollHeight - innerHeight, h: document.documentElement.scrollWidth - innerWidth }));
+  ok(lib.books > 600 && String(lib.books) === lib.total, "every workflow is a book, and the Library's tile counts them", `${lib.books} books, tile ${lib.total}`);
+  ok(lib.v <= 1 && lib.h <= 1, "the hall walks sideways: the page does not scroll", `v ${lib.v} h ${lib.h}`);
+  await page.locator('.lb-book[data-workflow="image_z_image_turbo"]').hover();
+  await page.waitForTimeout(500);
+  const card = await page.evaluate(() => ({ on: document.querySelector(".lb-card")?.classList.contains("is-on"), what: !!document.querySelector(".lb-card .lb-what")?.textContent, how: !!document.querySelector(".lb-card .lb-how")?.textContent }));
+  ok(card.on && card.what && card.how, "a book pointed at opens its card: what it does and how it works");
+  await shot("6-library");
 
   ok(errors.length === 0, "no errors in the page", errors.slice(0, 3).join(" | "));
 } finally {

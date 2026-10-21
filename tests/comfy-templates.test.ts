@@ -7,7 +7,7 @@ import { mkdtemp, readFile, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  flatten, listing, search, buildForm, buildRunRequest, parseCredits, explainError, isDone, isOver, jobOutputs, jobError, loaderName, publicSlot, createTemplates, fakeRun, png, type Cloud,
+  flatten, library, listing, search, buildForm, buildRunRequest, parseCredits, explainError, isDone, isOver, jobOutputs, jobError, loaderName, publicSlot, createTemplates, fakeRun, png, type Cloud,
 } from "../server/comfy-templates.ts";
 
 const fx = (name: string) => readFile(join(import.meta.dirname, "fixtures", "comfy-templates", name), "utf8").then(JSON.parse);
@@ -28,6 +28,21 @@ test("the catalog: one card per template, grouped, with the ones that make nothi
   assert.ok(by.image_qwen_image_edit_2509.inputs.includes("text"));
   assert.match(by.image_z_image_turbo.thumb, /^api\/utensils\/templates\/thumb\/image_z_image_turbo$/);
   for (const i of items) assert.match(i.name, /^[A-Za-z0-9._-]+$/);
+});
+
+test("the Library: every workflow under its Cloud category, the categories in Cloud's order with their counts, tutorials only from docs.comfy.org", async () => {
+  const index = await fx("index.json");
+  const items = flatten(index);
+  const lib = library(items);
+  assert.equal(lib.total, items.length);
+  assert.equal(lib.items.length, items.length);
+  assert.equal(lib.categories.reduce((n, c) => n + c.count, 0), items.length, "every workflow stands in one bookcase");
+  const order = index.map((c: any) => String(c.title ?? c.category)).filter((t: string) => lib.categories.some((c) => c.name === t));
+  assert.deepEqual(lib.categories.map((c) => c.name), order, "the bookcases follow Cloud's own order");
+  for (const i of lib.items) {
+    assert.ok(lib.categories.some((c) => c.name === i.category));
+    assert.ok(i.tutorial === null || i.tutorial.startsWith("https://docs.comfy.org/"));
+  }
 });
 
 test("the listing: search, group, featured first, paging and the counts", async () => {

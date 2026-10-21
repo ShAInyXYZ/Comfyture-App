@@ -81,6 +81,10 @@ export interface Item {
   needsImport: boolean;
   /** one of ComfyUI's own apps: a template with a simplified form of its author's (extra.linearData) */
   isApp: boolean;
+  /** the Cloud category it is listed under (Image, Video Tools, Product & Ads...): the Library's bookcase it stands in */
+  category: string;
+  /** the official tutorial on docs.comfy.org, when it has one */
+  tutorial: string | null;
 }
 
 /** The categories the app leaves out: text generation and the node tutorials make no picture, clip or sound. */
@@ -124,10 +128,27 @@ export function flatten(index: any[]): Item[] {
         size: Number(t.size) || 0,
         needsImport: false,
         isApp: t.isApp === true,
+        category: String(cat.title ?? cat.category ?? "Other"),
+        tutorial: typeof t.tutorialUrl === "string" && /^https:\/\/docs\.comfy\.org\//.test(t.tutorialUrl) ? t.tutorialUrl : null,
       });
     }
   }
   return [...out.values()];
+}
+
+/** The whole catalogue for the Library's hall, in Cloud's own order: what a book and its card need, without the paging of listing(). */
+export function library(items: Item[]) {
+  const order: string[] = [];
+  const counts = new Map<string, number>();
+  for (const i of items) {
+    if (!counts.has(i.category)) order.push(i.category);
+    counts.set(i.category, (counts.get(i.category) ?? 0) + 1);
+  }
+  return {
+    total: items.length,
+    categories: order.map((name) => ({ name, count: counts.get(name) ?? 0 })),
+    items: items.map((i) => ({ name: i.name, title: i.title, description: i.description, category: i.category, medium: i.medium, partner: i.partner, openSource: i.openSource, isApp: i.isApp, usage: i.usage, models: i.models, inputs: i.inputs, outputs: i.outputs, tags: i.tags, thumbKind: i.thumbKind, variant: i.variant, tutorial: i.tutorial, credits: i.credits })),
+  };
 }
 
 const GROUPS: Group[] = ["image", "video", "audio", "3d", "utility", "partner"];
@@ -1328,6 +1349,11 @@ export function createTemplates(deps: Deps) {
         const out = listing(items, { q: query.get("q") ?? "", group: query.get("group") ?? query.get("category") ?? "", tag: query.get("tag") ?? "", featured: query.get("featured") === "1", limit: Number(query.get("limit") ?? 48), offset: Number(query.get("offset") ?? 0) }, featured);
         if (query.get("featured") === "1") warm(out.items);
         return { status: 200, body: { ...out, items: out.items.map(withCredits) } };
+      }
+      if (parts[0] === "library" && !parts[1] && method === "GET") {
+        await ready();
+        const out = library(items);
+        return { status: 200, body: { ...out, items: out.items.map((i) => ({ ...i, credits: credits.get(i.name)?.credits ?? i.credits })) } };
       }
       if (parts[0] === "apps" && !parts[1] && method === "GET") return { status: 200, body: await appsView({ q: query.get("q") ?? "", group: query.get("group") ?? "", limit: Number(query.get("limit")) || undefined, offset: Number(query.get("offset")) || undefined }) };
       if (parts[0] === "thumb" && parts[1] && method === "GET") return thumb(parts[1], query.get("n") === "2" ? 2 : 1);

@@ -11,8 +11,8 @@ import { openTool } from "./utensils-home-ui.js";
 import { wayOf, MARK } from "./utensils-home-facts.js";
 import { apps, loadApps } from "./utensils-templates-api.js";
 import { previewOf, colorOf, sectionOf } from "./utensils-shelf-show.js";
+import { bookLook, prop as propImg, placeCard } from "./utensils-books.js";
 
-const ART = "brand/utensils/shelf";
 /** The workspaces whose tools are books (Home and Shelf are of every workspace). */
 const SECTIONS = WORKSPACES.filter((w) => w.color);
 /** The props at the ends of the shelves: one per end, dropped when the shelf has no room for it. `hang`: it hangs from the shelf above. */
@@ -33,21 +33,14 @@ const SPINE = {
   "upscale-video": "Upscale video", "cutout": "Remove background", "edit": "Edit with words",
 };
 
-/** A small hash of a string, as numbers between 0 and 1 (the same every time). */
-function hashes(text, n = 4) {
-  let x = 2166136261;
-  for (const ch of text) x = Math.imul(x ^ ch.charCodeAt(0), 16777619) >>> 0;
-  return Array.from({ length: n }, () => ((x = Math.imul(x ^ (x >>> 15), 2246822519) >>> 0), (x & 0xffff) / 0xffff));
-}
-
-/** The books of a workspace: its tools (not the mini apps, which are Templates' own), and for Templates its two volumes. */
+/** The books of a workspace: its tools (not the mini apps, which are the Library's own), and for the Library its two volumes. */
 function booksOf(ws) {
   if (ws !== "templates") return toolsOf(ws).map((t) => ({ tool: t, id: t.id, name: SPINE[t.id] ?? t.short ?? t.name, full: t.name, hint: t.hint ?? "", icon: t.icon, ws, way: wayOf(t) }));
-  // the Templates workspace is a catalogue, not tools: two volumes, the mini apps and the templates (its generic tool is not a book)
+  // the Library (workspace id "templates") is a catalogue, not tools: two volumes, the mini apps and every workflow (its generic tool is not a book)
   const own = toolsOf(ws).filter((t) => t.id !== "template").map((t) => ({ tool: t, id: t.id, name: SPINE[t.id] ?? t.short ?? t.name, full: t.name, hint: t.hint ?? "", icon: t.icon, ws, way: wayOf(t) }));
   return [
     { id: "vol-apps", name: "Mini apps", full: apps.total ? `${apps.total} mini apps` : "Mini apps", hint: "A ready-made ComfyUI workflow with one form: a picture in, a result out", icon: "tool-templates", ws, way: "cloud", open: () => (setWorkspace("templates"), document.dispatchEvent(new CustomEvent("utensils:apps"))) },
-    { id: "vol-templates", name: "Templates", full: "Every official ComfyUI template", hint: "The whole catalogue of ComfyUI's workflows, run on Comfy Cloud", icon: "tool-templates", ws, way: "cloud", open: () => setWorkspace("templates"), count: true },
+    { id: "vol-templates", name: "Library", full: "Every official ComfyUI workflow", hint: "The whole library of ComfyUI's workflows, a book each, run on Comfy Cloud", icon: "tool-templates", ws, way: "cloud", open: () => (setWorkspace("templates"), document.dispatchEvent(new CustomEvent("utensils:library"))), count: true },
     ...own,
   ];
 }
@@ -79,17 +72,13 @@ export function bookcase() {
 
   /** A book: a button styled as a spine. */
   function bookEl(b, color) {
-    const [hh, ww, shade, cloth] = hashes(b.id);
-    b.thick = 2.05 + ww * 0.95;
-    const tone = color;
-    const dark = Math.round(shade * 34);
-    const light = shade > 0.82 ? 8 : 0;
-    const tex = cloth > 0.42 ? "cloth" : "leather";
-    const el = h(`button.usb-book.is-${tex}`, {
+    const look = bookLook(b.id, color);
+    b.thick = look.w;
+    const el = h(`button.usb-book.is-${look.tex}`, {
       type: "button",
       dataset: { tool: b.id, ws: b.ws },
       "aria-label": `${b.full}, ${sectionOf(b.ws).name}: ${b.hint}`,
-      style: { "--c": `color-mix(in oklab, color-mix(in oklab, ${tone}, black ${dark}%), white ${light}%)`, "--h": (0.78 + hh * 0.2).toFixed(3), "--w": `${b.thick.toFixed(2)}em` },
+      style: { "--c": look.color, "--h": look.h.toFixed(3), "--w": `${b.thick.toFixed(2)}em` },
       on: {
         click: (e) => go(b, el, e),
         pointerenter: (e) => e.pointerType !== "touch" && show(b, el),
@@ -101,7 +90,7 @@ export function bookcase() {
     },
     h("i.usb-band.is-top"),
     h("span.usb-ico", {}, sprite(b.icon)),
-    h("span.usb-name", {}, (b.count ? (templatesCount ? `${templatesCount} templates` : b.name) : b.name).replace(/-/g, "\u2011")),
+    h("span.usb-name", {}, (b.count ? (templatesCount ? `${templatesCount} workflows` : b.name) : b.name).replace(/-/g, "\u2011")),
     h("i.usb-band.is-bottom"));
     b.el = el;
     return el;
@@ -144,20 +133,7 @@ export function bookcase() {
     place(el);
   }
   /** The card sits above its book, inside the screen; below it when there is no room above. */
-  function place(el) {
-    const r = el.getBoundingClientRect();
-    const cw = card.offsetWidth;
-    const ch = card.offsetHeight;
-    const pad = 12;
-    let left = r.left + r.width / 2 - cw / 2;
-    left = Math.max(pad, Math.min(window.innerWidth - cw - pad, left));
-    let top = r.top - ch - 14;
-    if (top < 70) top = Math.min(window.innerHeight - ch - pad, r.bottom + 14);
-    card.style.left = `${Math.round(left)}px`;
-    card.style.top = `${Math.round(top)}px`;
-    card.style.setProperty("--arrow", `${Math.round(r.left + r.width / 2 - left)}px`);
-    card.classList.toggle("is-below", top > r.top);
-  }
+  const place = (el) => placeCard(card, el, { mode: "above" });
   /** The card stays while the pointer is on it or on its book. */
   const later = () => {
     clearTimeout(hideTimer);
@@ -204,7 +180,7 @@ export function bookcase() {
     templatesCount = total;
     hide(true);
     const groups = SECTIONS.map((w) => ({ w, books: booksOf(w.id) })).filter((g) => g.books.length);
-    for (const g of groups) for (const b of g.books) b.thick = 2.05 + hashes(b.id)[1] * 0.95;
+    for (const g of groups) for (const b of g.books) b.thick = bookLook(b.id, g.w.color).w;
     const rows = shelves(groups);
     books = [];
     el.replaceChildren(...rows.map((row, r) => {
@@ -221,7 +197,7 @@ export function bookcase() {
     }), card);
     fit();
   }
-  const prop = (p, side) => h(`img.usb-prop.is-${p.id}.${side}${p.hang ? ".is-hang" : ""}`, { src: `${ART}/prop-${p.id}.webp`, alt: "", draggable: false, style: { "--pw": String(p.w) }, on: { error: (e) => e.target.remove() } });
+  const prop = (p, side) => propImg(p, side);
 
   // ------------------------------------------------------------ the fit: a size for the books that fills the shelves without spilling
 

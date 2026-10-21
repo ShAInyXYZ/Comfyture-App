@@ -1,179 +1,38 @@
-// The Utensils "templates" workspace: the official ComfyUI workflow templates, run on Comfy Cloud. On the left a browser (a search,
-// the groups, a grid of cards with their pictures that load as they are scrolled to); on the right the one picked: its picture,
-// what it asks for as a plain form, what it uses and what it costs, and a yellow key that asks to confirm the price before anything
-// is sent. What it makes goes to the queue and Recent like every tool's, and shows under the form.
-// The first group, Apps, is the templates shown simply: bigger, calmer cards, and a panel that is a mini app (a big picture, only the
-// one to three things to give, one key, the rest under More settings, and what it makes right there). The API is in
-// utensils-templates-api.js (and server/comfy-templates.ts); a workspace is { el, update, sig, count }.
+// Utensils' LIBRARY (the workspace keeps its id, "templates"): every official ComfyUI workflow of Comfy Cloud as a book in a hall of
+// bookcases (utensils-library.js), and the one opened in a panel at the right: its picture, what it asks for as a plain form, what it
+// uses and what it costs, and a yellow key that asks to confirm the price before anything is sent. A mini app opens as one (a big
+// picture, the one to three things to give, one key, the rest under More settings, what it made right there). What it makes goes to
+// the queue and Recent like every tool's. Closing the panel leaves the hall where it was. The API is in utensils-templates-api.js (and
+// server/comfy-templates.ts); a workspace is { el, update, sig, count }. revealWorkflow (Truffle's guide) is the hall's.
 import { h, icon, sprite } from "./dom.js";
-import { toast, changed } from "./store.js";
+import { toast } from "./store.js";
 import { utensils, openResult, forget, inputOf, setInput, setQuietly, takersOf, handOn } from "./utensils.js";
 import { compare, waveform } from "./utensils-bench.js";
-import { listTemplates, listApps, loadApps, apps, appByName, toolIdOfApp, appCost, getTemplate, estimateTemplate, runTemplate, graphOf, pickForSlot, uploadForSlot, priceLabel, lastError } from "./utensils-templates-api.js";
-import { needPills, priceOf, appPicture, modelViewer } from "./utensils-apps-ui.js";
+import { apps, appByName, toolIdOfApp, appCost, getTemplate, estimateTemplate, runTemplate, graphOf, pickForSlot, uploadForSlot, priceLabel, lastError } from "./utensils-templates-api.js";
+import { modelViewer } from "./utensils-apps-ui.js";
+import { libraryHall, askTruffle, revealWorkflow } from "./utensils-library.js";
 
-const PAGE = 36;
-const GROUPS = [["apps", "Apps"], ["all", "All"], ["image", "Image"], ["video", "Video"], ["audio", "Audio"], ["3d", "3D"], ["utility", "Utility"], ["partner", "Partner"]];
-const KIND_ICON = { image: "image", video: "video", audio: "sound" };
-const two = (n) => String(n).padStart(2, "0");
-const bits = (name) => [...name].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7);
+export { revealWorkflow };
+
 const randomSeed = () => Math.floor(Math.random() * 4294967295);
 
 const st = {
-  q: "", group: "apps", items: [], total: 0, count: 0, categories: [], loading: false, done: false, failed: "",
   picked: null, detail: null, loadingDetail: false, detailError: "", values: {}, est: null, armed: false, adv: false,
   made: {}, graph: null, graphOpen: false, running: new Set(),
-  // an app panel shows what it made (result) or its example; the app open comes from Truffle's tool or a card
+  // an app panel shows what it made (result) or its example; the app open comes from Truffle's tool or a book
   show: {}, toolSeen: null,
 };
-let loadToken = 0;
 let armTimer = 0;
 
 export function templatesSpace() {
   const el = h("div.ut-grid.is-templates");
-  const search = h("input.ut-words.ut-tpl-search", { type: "search", placeholder: "Search templates, models, styles…", "aria-label": "Search the templates", autocomplete: "off", spellcheck: false });
-  const chips = h("div.ut-tpl-chips", { role: "group", "aria-label": "Groups" });
-  const grid = h("div.ut-tpl-grid", { dataset: { scrollKey: "ut-tpl-grid" } });
-  const note = h("p.ut-tpl-note", { role: "status" });
-  const sentinel = h("div.ut-tpl-sentinel");
-  const detail = h("section.ut-bento.ut-tpl-detail", { "aria-label": "The template" });
-  const browse = h("section.ut-bento.ut-tpl-browse", { "aria-label": "The templates" },
-    h("div.ut-tpl-bar", {}, h("span.ut-tpl-searchbox", {}, icon("search"), search), chips, h("span.ut-tpl-cloud", { title: "Templates run on Comfy Cloud: your key, your credits" }, h("i.lamp", { dataset: { tone: "ok" } }), "Runs on Comfy Cloud")),
-    h("div.ut-tpl-scroll", { dataset: { scrollKey: "ut-tpl-scroll" } }, grid, note, sentinel));
-  el.append(browse, detail);
-  let started = false;
+  const hall = libraryHall({ open: (name) => select(name), ask: askTruffle });
+  const detail = h("section.ut-bento.ut-tpl-detail", { "aria-label": "The workflow open", "aria-hidden": "true" });
+  el.append(hall.el, detail);
+  // Escape closes the panel (and gives the focus back to its book)
+  detail.addEventListener("keydown", (e) => e.key === "Escape" && !e.target.closest("input, textarea") && (e.stopPropagation(), close()));
 
-  // ------------------------------------------------------------ the browser
-  function drawChips() {
-    const counts = Object.fromEntries(st.categories.map((c) => [c.id, c.count]));
-    counts.apps = apps.total || undefined;
-    chips.replaceChildren(...GROUPS.map(([id, name]) => h("button.ut-tpl-chip", { type: "button", "aria-pressed": String(st.group === id), disabled: id !== "all" && id !== "apps" && counts[id] === 0, "aria-label": counts[id] !== undefined ? `${name}, ${counts[id]} ${id === "apps" ? "apps" : "templates"}` : name, on: { click: () => ((st.group = id), reload()) } }, name)));
-  }
-
-  /** An app's card: bigger and calmer than a template's: its picture, its title, one line of promise, what it asks for and what it costs. */
-  function appCard(a) {
-    const audio = a.thumbKind === "audio";
-    const media = audio
-      ? h("span.ut-tpl-audio", { style: { "--seed": String(bits(a.name) % 97) } }, ...Array.from({ length: 30 }, (_, k) => h("i", { style: { height: `${Math.round(18 + 62 * Math.abs(Math.sin((k + 1) * 0.55 + (bits(a.name) % 13)) * Math.cos(k * 0.21 + (bits(a.name) % 7))))}%` } })),
-        h("button.ut-tpl-play", { type: "button", title: "Hear the example", "aria-label": "Hear the example", on: { click: (e) => (e.stopPropagation(), hear(e.currentTarget, a)) } }, icon("play")))
-      : appPicture(a);
-    return h(`button.ut-app-card${st.picked === a.name ? ".is-on" : ""}`, { type: "button", dataset: { name: a.name, app: a.id }, "aria-pressed": String(st.picked === a.name), title: a.title, on: { click: () => select(a.name) } },
-      h("span.ut-app-thumb", {}, media, a.partner ? h("span.ut-tpl-partner", { title: "A partner service runs this one: your content goes to it and it bills credits" }, "Partner") : null),
-      h("b.ut-app-title", {}, a.title),
-      h("span.ut-app-line", {}, a.promise),
-      h("span.ut-app-meta", {}, ...needPills(a), h("span.spacer"), priceOf(a) ? h("span.ut-tpl-cost", { title: a.credits > 0 ? "What the partner service bills for one run" : "This one runs on Cloud GPU time" }, priceOf(a)) : null));
-  }
-
-  function card(t, i) {
-    const audio = t.thumbKind === "audio";
-    const media = audio
-      ? h("span.ut-tpl-audio", { style: { "--seed": String(bits(t.name) % 97) } }, ...Array.from({ length: 30 }, (_, k) => h("i", { style: { height: `${Math.round(18 + 62 * Math.abs(Math.sin((k + 1) * 0.55 + (bits(t.name) % 13)) * Math.cos(k * 0.21 + (bits(t.name) % 7))))}%` } })),
-        h("button.ut-tpl-play", { type: "button", title: "Hear the example", "aria-label": "Hear the example", on: { click: (e) => (e.stopPropagation(), hear(e.currentTarget, t)) } }, icon("play")))
-      : h("span.ut-tpl-pic", {}, h("img", { src: t.thumb, alt: "", draggable: false, loading: "lazy", decoding: "async" }));
-    const el2 = h(`button.ut-tpl-card${st.picked === t.name ? ".is-on" : ""}`, { type: "button", dataset: { name: t.name }, "aria-pressed": String(st.picked === t.name), title: t.title, on: { click: () => select(t.name) } },
-      h("span.ut-tpl-thumb", {},
-        media,
-        h("span.ut-tpl-no", {}, two(i + 1)),
-        t.partner ? h("span.ut-tpl-partner", { title: "A partner service runs this one: your content goes to it and it bills credits" }, "Partner") : null),
-      h("b.ut-tpl-title", {}, t.title),
-      h("span.ut-tpl-line", {}, t.description),
-      h("span.ut-tpl-meta", {},
-        t.models[0] ? h("span.ut-pill.is-model", { title: t.models.join(", ") }, t.models[0]) : null,
-        ...t.inputs.slice(0, 3).map((k) => h("span.ut-pill.is-kind", { title: k === "text" ? "Words" : `Takes ${k === "image" ? "a picture" : k === "video" ? "a clip" : "a sound"}` }, KIND_ICON[k] ? icon(KIND_ICON[k]) : "T")),
-        h("span.spacer"),
-        t.credits ? h("span.ut-tpl-cost", { title: "What the partner service bills for one run" }, `≈ ${t.credits} cr`) : null));
-    // the picture that shows on hover (a before/after, a dissolve): asked for only when the card is pointed at
-    if (t.variant && !audio) el2.addEventListener("pointerenter", () => {
-      const pic = el2.querySelector(".ut-tpl-pic");
-      if (pic && !pic.querySelector(".is-after")) pic.append(h("img.is-after", { src: `${t.thumb}?n=2`, alt: "", draggable: false, on: { error: (e) => e.target.remove() } }));
-    }, { once: true });
-    return el2;
-  }
-  let hearing = null;
-  function hear(button, t) {
-    if (hearing && hearing.t !== t) hearing.audio.pause();
-    if (!hearing || hearing.t !== t) hearing = { t, audio: new Audio(t.thumb) };
-    const { audio } = hearing;
-    audio.onended = audio.onpause = () => button.replaceChildren(icon("play"));
-    audio.onplay = () => button.replaceChildren(icon("pause"));
-    audio.paused ? audio.play().catch(() => {}) : audio.pause();
-  }
-
-  async function load(first) {
-    if (st.loading || st.done) return;
-    st.loading = true;
-    const token = loadToken;
-    note.textContent = first ? (st.group === "apps" ? "Loading the apps…" : "Loading the templates…") : "";
-    try {
-      if (st.group === "apps") {
-        const out = st.q ? await listApps({ q: st.q }) : (await loadApps(), { items: apps.list, count: apps.list.length, total: apps.total });
-        if (token !== loadToken) return;
-        st.items = out.items;
-        st.total = out.total;
-        st.count = out.count;
-        st.done = true;
-        drawAppGrid();
-        if (first) changed("utensils");
-        return;
-      }
-      const out = await listTemplates({ q: st.q, group: st.group === "all" ? "" : st.group, featured: !st.q && st.group === "all", limit: PAGE, offset: st.items.length });
-      if (token !== loadToken) return;
-      const at = st.items.length;
-      st.items.push(...out.items);
-      st.total = out.total;
-      st.count = out.count;
-      st.categories = out.categories;
-      st.done = st.items.length >= out.count;
-      grid.append(...out.items.map((t, k) => card(t, at + k)));
-      note.textContent = !st.items.length ? (st.q ? `No template matches “${st.q}”.` : "No templates here yet.") : st.done ? `${st.count} ${st.count === 1 ? "template" : "templates"}` : "";
-      drawChips();
-      const pickedAt = st.items.findIndex((t) => t.name === st.picked);
-      const label = detail.querySelector(".ut-b-head .ut-b-label");
-      if (pickedAt >= 0 && label) label.textContent = labelOf(pickedAt, st.detail);
-      // the panel's count of templates
-      if (first) changed("utensils");
-    } catch (e) {
-      if (token !== loadToken) return;
-      st.failed = e.message;
-      note.textContent = e.message;
-    } finally {
-      if (token === loadToken) st.loading = false;
-      watch();
-    }
-  }
-  /** The apps' cards (the list may be read again as the server learns more of the apps: the card open stays open). */
-  function drawAppGrid() {
-    grid.classList.add("is-apps");
-    grid.replaceChildren(...st.items.map(appCard));
-    note.textContent = !st.items.length ? (st.q ? `No app matches “${st.q}”.` : apps.state === "none" ? "The apps need Comfy Cloud: add a COMFY_API_KEY to .env." : "No apps yet.") : `${st.count} ${st.count === 1 ? "app" : "apps"}`;
-    drawChips();
-  }
-  function reload() {
-    loadToken++;
-    st.items = [];
-    st.done = false;
-    st.loading = false;
-    st.failed = "";
-    grid.classList.toggle("is-apps", st.group === "apps");
-    syncMode();
-    grid.replaceChildren();
-    drawChips();
-    load(true);
-  }
-  // more cards as the end of the grid comes near
-  const io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && !st.failed && load(false), { root: null, rootMargin: "600px" });
-  const watch = () => requestAnimationFrame(() => (io.unobserve(sentinel), io.observe(sentinel)));
-  let typing = 0;
-  search.addEventListener("input", () => {
-    clearTimeout(typing);
-    typing = setTimeout(() => {
-      if (search.value.trim() === st.q) return;
-      st.q = search.value.trim();
-      reload();
-    }, 260);
-  });
-
-  // ------------------------------------------------------------ the one picked
+  // ------------------------------------------------------------ the one opened
   async function select(name) {
     st.picked = name;
     st.detail = null;
@@ -183,7 +42,10 @@ export function templatesSpace() {
     st.graph = null;
     st.graphOpen = false;
     st.loadingDetail = true;
-    for (const c of grid.children) c.classList.toggle("is-on", c.dataset.name === name);
+    hall.hideCard();
+    hall.setOpen(name);
+    el.classList.add("is-picked");
+    detail.setAttribute("aria-hidden", "false");
     drawDetail();
     try {
       const d = await getTemplate(name);
@@ -194,7 +56,7 @@ export function templatesSpace() {
       if (d.app) openAsTool(d);
     } catch (e) {
       if (st.picked !== name) return;
-      st.detailError = e.status === 501 ? "Connect Comfy Cloud (a COMFY_API_KEY in .env) to see what this template asks for and to run it." : e.message;
+      st.detailError = e.status === 501 ? "Connect Comfy Cloud (a COMFY_API_KEY in .env) to see what this workflow asks for and to run it." : e.message;
     } finally {
       if (st.picked === name) {
         st.loadingDetail = false;
@@ -202,6 +64,18 @@ export function templatesSpace() {
         refreshPrice(name);
       }
     }
+  }
+  /** The panel closes; the hall is where it was, and its book has the focus again. */
+  function close() {
+    const name = st.picked;
+    st.picked = null;
+    st.detail = null;
+    st.armed = false;
+    el.classList.remove("is-picked", "is-apps");
+    detail.setAttribute("aria-hidden", "true");
+    hall.setOpen(null);
+    detail.replaceChildren();
+    if (name) el.querySelector(`.lb-book[data-workflow="${CSS.escape(name)}"]`)?.focus({ preventScroll: true });
   }
   /**
    * An app that is open is the tool that is open, and what it is given is what the tools share: the picture, clip or sound already given
@@ -338,28 +212,24 @@ export function templatesSpace() {
           h("button.ut-iconkey.is-quiet", { type: "button", title: "Take it off the list\nThe file stays in the Library", "aria-label": "Take it off the list", on: { click: () => (forget(r.id), (st.made[st.picked] = (st.made[st.picked] ?? []).filter((x) => x.id !== r.id)), drawDetail(true)) } }, icon("trash")))))));
   }
 
-  const labelOf = (idx, d) => `${idx >= 0 ? `${two(idx + 1)} ` : ""}${(d?.title ?? st.items[idx]?.title ?? st.picked).toUpperCase()}`;
-  const syncMode = () => el.classList.toggle("is-apps", st.group === "apps" || !!st.detail?.app);
+  const labelOf = (d) => (d?.title ?? st.picked).toUpperCase();
+  // a mini app's panel is wider (its picture is the show)
+  const syncMode = () => el.classList.toggle("is-apps", !!st.detail?.app);
   function drawDetail(keepScroll) {
     syncMode();
     const scroll = detail.querySelector(".ut-tpl-dscroll");
     const at = keepScroll && scroll ? scroll.scrollTop : 0;
     const focus = detail.contains(document.activeElement) ? document.activeElement.dataset?.slot : null;
-    if (!st.picked) {
-      const apps = st.group === "apps";
-      detail.replaceChildren(h("div.ut-b-head", {}, h("span.ut-b-label", {}, apps ? "App" : "Template")), h("div.ut-empty", {}, icon("sparkle"), h("span", {}, apps ? "Pick an app: you give it a picture or a few words, it does the rest" : "Pick a template to see what it asks for"), h("em.ut-hint", {}, "Official ComfyUI workflows, run on Comfy Cloud")));
-      return;
-    }
-    const idx = st.items.findIndex((t) => t.name === st.picked);
+    if (!st.picked) return void detail.replaceChildren();
     const d = st.detail;
-    const head = h("div.ut-b-head", {}, h("span.ut-b-label", {}, labelOf(idx, d)),
-      h("button.ut-expand", { type: "button", title: "Close", "aria-label": "Close", on: { click: () => ((st.picked = null), (st.detail = null), grid.querySelector(".is-on")?.classList.remove("is-on"), drawDetail()) } }, icon("close")));
+    const head = h("div.ut-b-head", {}, h("span.ut-b-label", {}, labelOf(d)),
+      h("button.ut-expand", { type: "button", title: "Close: back to the hall", "aria-label": "Close", on: { click: () => close() } }, icon("close")));
     if (st.loadingDetail) {
       detail.replaceChildren(head, h("div.ut-empty.is-wait", {}, h("span.lamp", { dataset: { tone: "busy" } }), h("span", {}, "Asking Comfy Cloud what it needs…")));
       return;
     }
     if (!d) {
-      detail.replaceChildren(head, h("div.ut-empty", {}, icon("sparkle"), h("span", {}, st.detailError || "That template did not load.")));
+      detail.replaceChildren(head, h("div.ut-empty", {}, icon("sparkle"), h("span", {}, st.detailError || "That workflow did not load.")));
       return;
     }
     if (d.app) return drawApp(head, d, keepScroll, at, focus);
@@ -526,59 +396,35 @@ export function templatesSpace() {
     }
   }
 
-  // the shelf's carousel opens a template here, and an app (or all the apps)
+  // the Shelf's volumes, Home's apps and Truffle open a workflow here, or the mini apps, or the whole hall
   document.addEventListener("utensils:template", (e) => {
     if (e.detail?.id) select(e.detail.id);
   });
-  function showApps() {
-    if (st.group === "apps") return;
-    st.group = "apps";
-    st.q = "";
-    search.value = "";
-    reload();
-  }
+  const showApps = () => hall.filterApps(true);
   document.addEventListener("utensils:apps", showApps);
+  document.addEventListener("utensils:library", () => hall.filterApps(false));
   document.addEventListener("utensils:app", (e) => {
     if (!e.detail?.name) return;
     showApps();
     select(e.detail.name);
   });
-  const appsKey = () => apps.list.map((a) => `${a.id}:${a.credits}:${a.primary?.length ?? "-"}`).join(",");
-  drawDetail();
-  drawChips();
+  // Escape anywhere in the Library closes the panel (a field keeps its own Escape)
+  el.addEventListener("keydown", (e) => e.key === "Escape" && st.picked && !e.target.closest("input, textarea, .lb-book, .lb-card") && close());
 
   return {
     el,
-    // the Templates tile of the panel counts the whole catalog (the Shelf asks for it), not the few apps
-    count: () => (st.group === "apps" ? null : st.total || null),
+    // the Library's tile counts the whole catalogue (null until it has come: the Shelf's count stands in)
+    count: () => hall.count(),
     update() {
-      if (!started) {
-        started = true;
-        loadApps();
-        load(true);
-        st.appsKey = appsKey();
-        return;
-      }
-      // the server went on reading the apps (the ones that cannot be driven drop out, the prices come in): the cards are drawn again
-      if (st.group === "apps" && !st.q && appsKey() !== st.appsKey && apps.list.length) {
-        st.appsKey = appsKey();
-        st.items = apps.list;
-        st.total = apps.total;
-        st.count = apps.list.length;
-        drawAppGrid();
-        if (st.picked) for (const c of grid.children) c.classList.toggle("is-on", c.dataset.name === st.picked);
-      }
+      hall.update();
       // Truffle (or a key elsewhere) opened an app as the tool that is open
       const t = utensils.tool;
       if (utensils.workspace === "templates" && t.startsWith("app-") && t !== st.toolSeen) {
         const a = apps.list.find((x) => toolIdOfApp(x) === t);
         st.toolSeen = t;
-        if (a) {
-          showApps();
-          select(a.name);
-        }
+        if (a) select(a.name);
       }
     },
-    sig: () => JSON.stringify([started, utensils.workspace === "templates", utensils.tool, appsKey()]),
+    sig: () => JSON.stringify([hall.sig(), utensils.workspace === "templates", utensils.tool, apps.list.length]),
   };
 }
