@@ -14,7 +14,7 @@ import { changed } from "./store.js";
 
 const clock = (s) => `0:${String(Math.round(s)).padStart(2, "0")}`;
 const typingIn = (el) => el.contains(document.activeElement) && document.activeElement.matches("input, textarea");
-const ASK = "Write the script for this UGC story: a hook for the first two seconds, then one idea in each beat, spoken lines that sound natural in the creator's mouth, in the brand's voice. Never claim what the product cannot do. Use write_ugc.";
+const ASK = "Write the script for this UGC story: a hook for the first two seconds, then one idea in each beat, spoken lines that sound natural in the creator's mouth, in the brand's voice. The creator does something real all the way through (their activity: a task that moves on at every beat and pays off at the end), never a still talking head: say what they do in each beat, and name @product only in the shots it is in. Never claim what the product cannot do. Use write_ugc.";
 
 function ugcWin() {
   const el = h("div.mc-w.ug");
@@ -71,7 +71,8 @@ function ugcWin() {
       h("span.ug-beat-pic", {}, h("img", { src: pic, alt: "", draggable: false, loading: "lazy" }),
         busy ? h("span.ug-busy", {}, h("span.lamp", { dataset: { tone: "busy" } })) : bt.take?.status === "done" ? h("span.ug-play", {}, icon("play")) : null,
         h("span.ug-time", {}, clock(bt.seconds))),
-      h("span.ug-line", { dataset: { line: bt.id } }, `“${bt.line}”`));
+      h("span.ug-line", { dataset: { line: bt.id } }, `“${bt.line}”`),
+      bt.doing ? h("span.ug-doing", { dataset: { doing: bt.id } }, bt.doing.replace(/@product/g, "the product")) : null);
   }
 
   function shot(story, bt) {
@@ -88,6 +89,8 @@ function ugcWin() {
       h("button.ug-shot-pic", { type: "button", title: pic ? "See it full size" : "Not made yet", disabled: !pic, on: { click: () => pic && view(pic) } },
         h("img", { src: pic ?? whoOf(story).portrait ?? personaOf(story.persona).portrait, alt: "", draggable: false }),
         pic ? null : h("span.ug-shot-empty", {}, mcicon("picture"), h("em", {}, "Made when you make the story"))),
+      h("div.mc-sec.ug-sec", {}, h("span.label", {}, "What they do"),
+        h("textarea.field.mc-text.ug-said", { rows: 2, value: bt.doing ?? "", maxlength: 160, placeholder: "shaking the bottle, @product on the counter beside her", title: "Write @product where the product is in the shot", "aria-label": "What the creator does in this shot", on: { input: (e) => { setBeat(story.id, bt.id, { doing: e.target.value.slice(0, 160) }); for (const n of el.querySelectorAll(`[data-doing="${bt.id}"]`)) n.textContent = e.target.value.replace(/@product/g, "the product"); } } })),
       h("div.mc-sec.ug-sec", {}, h("span.label", {}, "What is said"),
         h("textarea.field.mc-text.ug-said", { rows: 2, value: bt.line, maxlength: 140, "aria-label": "The line said in this shot", on: { input: (e) => { setBeat(story.id, bt.id, { line: e.target.value.slice(0, 140) }); sync(story, bt, e.target.value); } } })),
       h("div.mc-sec.ug-sec", {}, h("span.label", {}, "Camera"),
@@ -129,7 +132,7 @@ function ugcWin() {
       makeKey.replaceChildren(icon("play"), "Make the story");
       return fill(el, h("div.ug-empty", {},
         h("b", {}, "A story told by a creator"),
-        h("p", {}, "Five short vertical shots: a hook, the product, the moment of trying, the reaction and one thing to do next."),
+        h("p", {}, "Five short vertical shots of a creator at something real (Emma makes a bottle, Leo walks through town, Maya does her makeup) while they tell it: a hook, the product, trying it, the reaction and one thing to do next."),
         h("div.ug-personas.is-row", {}, ...PERSONAS.map((p) => h("button.ug-persona", { type: "button", on: { click: () => startStory(p.id) } }, h("img", { src: p.portrait, alt: "", draggable: false }), h("span.ug-persona-text", {}, h("b", {}, p.name), h("em", {}, p.vibe)))), characterCard(null))));
     }
     const bt = beatNow(story);
@@ -142,7 +145,9 @@ function ugcWin() {
         story.persona === CHARACTER_ID ? characterForm(story) : null,
         h("div.mc-sec.ug-sec", {}, h("div.ug-title", {}, h("span.label", {}, "The hook"), h("em", {}, "Edit your opening line")),
           h("textarea.field.mc-statement.ug-hook", { rows: 3, value: story.hook, maxlength: 120, placeholder: "The first thing they say", "aria-label": "The hook, said in the first two seconds", on: { input: (e) => { setStory(story.id, { hook: e.target.value.slice(0, 120) }); const first = story.beats.find((x) => x.kind === "hook"); if (first) sync(story, first, e.target.value); e.target.parentNode.querySelector(".ug-count").textContent = `${e.target.value.length} / 120`; } } }),
-          h("span.ug-count", {}, `${story.hook.length} / 120`))),
+          h("span.ug-count", {}, `${story.hook.length} / 120`)),
+        h("div.mc-sec.ug-sec", {}, h("div.ug-title", {}, h("span.label", {}, "What they do"), h("em", {}, "Something real, all the way through")),
+          h("input.field.mc-text.ug-activity", { value: story.activity ?? "", maxlength: 120, placeholder: "making her baby's bottle, walking to work, doing her makeup", "aria-label": "What the creator does through the whole story", on: { input: (e) => setStory(story.id, { activity: e.target.value.slice(0, 120) }) } }))),
       h("section.ug-story", {},
         h("div.ug-story-head", {},
           h("div.ug-title", {}, h("span.label", {}, "The story"), h("em", {}, `${story.beats.length} beats for a natural and engaging UGC · ${storyLength(story)} s`)),

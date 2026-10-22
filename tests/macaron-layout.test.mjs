@@ -433,6 +433,7 @@ test("a flagship that version 1 put in gains the new example once, and nothing a
   for (const d of v1.designs) delete d.plan;
   for (const p of v1.products) delete p.scene;
   delete v1.kit.sizes;
+  delete v1.ugc;
   for (const l of v1.kit.logos) if (/^(wordmark|mark)-white$/.test(l.id)) l.ground = "ink, plum";
   const up = topUpBrand(v1, seed);
   assert.equal(up.brief.pitch, seed.brief.pitch);
@@ -444,7 +445,11 @@ test("a flagship that version 1 put in gains the new example once, and nothing a
   assert.deepEqual(up.designs.filter((d) => d.plan).map((d) => d.plan.day).sort(), ["fri", "mon", "sun", "wed"]);
   assert.ok(up.products[0].scene && up.kit.sizes.mark === 24);
   assert.equal(up.kit.logos.find((l) => l.id === "wordmark-white").ground, "plum, ink");
-  assert.equal(up.seedRev, 2);
+  assert.deepEqual(up.ugc.map((u) => u.persona), ["emma", "leo", "maya"], "the example's UGC stories come in when the brand has none");
+  assert.equal(up.seedRev, seed.seedRev);
+  // a brand that already has a story of its own keeps it, and gains none of the example's
+  const own = topUpBrand({ ...structuredClone(v1), ugc: [{ id: "u-mine", persona: "leo", hook: "Mine", beats: [] }] }, seed);
+  assert.deepEqual(own.ugc.map((u) => u.id), ["u-mine"]);
   assert.equal(v1.brief.pitch, "", "the body it was given is not changed");
   // once: a second time there is nothing to do
   assert.equal(topUpBrand(up, seed), null);

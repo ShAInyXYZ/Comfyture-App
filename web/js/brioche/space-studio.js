@@ -24,11 +24,11 @@ export default {
   description: "Answer the user: one short, warm sentence, and the actions to take in the Studio (none when they only ask a question).",
   intro: `THE OPEN WORKSPACE: Studio. It is where the brand's raw material is made, in four crafts, and what is made here is kept as pictures and clips that Create then uses.
 1. Photography: shoots of the product. A shoot is a shot template (the product in a set: ice-cube hover, linen lid lift, golden dew, a white packshot...) taken in a studio setup: the light (softbox, window, hard flash), the surface (linen, marble, wood, plum paper) and a background in one of the palette's colours. The setup is kept with the brand, so a shoot can be done again the same way.
-2. UGC stories: a creator (Maya, warm and real; Leo, casual and fun; Emma, mum life) or the brand's own character (a mascot, a creature, a person the brand has pictured; the person picks its picture and says how it looks and sounds) tells the product in five vertical shots: hook, show, taste, react, call to action. Each beat has a spoken line, a camera and a setting.
+2. UGC stories: a creator (Maya, warm and real; Leo, casual and fun; Emma, mum life) or the brand's own character (a mascot, a creature, a person the brand has pictured; the person picks its picture and says how it looks and sounds) tells the product in five vertical shots: hook, show, try, react, call to action, while doing something real all the way through (their activity: Emma making her baby's bottle, Leo walking through the city, Maya doing her makeup, or anything that fits the brand). Each beat has a spoken line, what they do in it (the next step of the activity), a camera and a setting.
 3. Motion graphics: a logo sting, a lower third, an end card, a title card, a counter, a subscribe nudge, built from the kit.
 4. The product: its photo, cut-out and what makes it good.`,
   rules: `Writing for the brand's own character (when the open story names one): write for IT, in its own name. Keep what it is: a creature stays a creature (it has paws, not hands; it does not hold a phone or wear clothes); keep the look the person wrote. Its lines follow how it sounds: if it talks, short natural lines; if it sings or hums, lines that can be sung, a hummed hook, a sung call to action; if it only mimes or cannot talk, give very short lines of sound or gesture ("*a happy chirp*", "*waves*") that the take can show, never a speech. You never make the character and never choose its picture: the person does, in the creator row.
-Writing a UGC script: the hook is the first two seconds, so open on the product in hand and one real line ("Okay, I finally tried it..."), never a slogan. One idea in each beat. The lines are spoken, so short and natural, in the creator's mouth and the brand's voice, 6 to 14 words. Never claim what the product cannot do, never invent a price, a discount or a result; use only what the product's features say. End on one clear thing to do. Keep the five beats in order unless asked for fewer.
+Writing a UGC script: the hook is the first two seconds: one real line ("Okay, I finally tried it..."), never a slogan, said while they are already busy with their activity. Never a still talking head: the activity moves on at every beat (pouring, shaking, testing; walking, crossing, arriving; concealer, blush, lips, the finished look) and pays off in the last beat, so the viewer keeps watching to see it done; prefer the walk-and-talk, following, close-up, over-the-shoulder and mirror cameras to a plain selfie. Write in each beat's doing what they do, and name @product there only in the shots the product is in (on the counter, in hand, on a phone or laptop screen for an app). One idea in each beat. The lines are spoken, so short and natural, in the creator's mouth and the brand's voice, 6 to 14 words. Never claim what the product cannot do, never invent a price, a discount or a result; use only what the product's features say. End on one clear thing to do. Keep the five beats in order unless asked for fewer.
 Writing a shoot: say in one line why this template and this setup suit the product and the brand; a background colour is a palette id, never a hex; do not propose a template that needs a video unless the person asks for video.
 Rules: only the ids shown below; if what is asked belongs to Design idea, the Brand kit, Create or the Brand book, say so and offer to open it.`,
 
@@ -45,7 +45,7 @@ Rules: only the ids shown below; if what is asked belongs to Design idea, the Br
     const ugc = (s.ugc ?? []).slice(0, 4);
     if (ugc.length) {
       lines.push("UGC STORIES (the first is open):");
-      for (const u of ugc) lines.push(`- ${u.character ? `the brand's character ${cut(u.character.name, 30)} (${u.character.kind === "person" ? "a person" : "a creature"}${u.character.look ? `, looks: ${cut(u.character.look, 120)}` : ""}${u.character.voice ? `, sounds: ${cut(u.character.voice, 60)}` : ""}${u.character.mode ? `, so it ${u.character.mode === "sing" ? "sings or hums" : u.character.mode === "mime" ? "only mimes" : "talks"}` : ""})` : cut(u.persona, 12)}: hook "${cut(u.hook, 120)}" · ${(u.beats ?? []).map((b) => `${cut(b.kind, 6)} "${cut(b.line, 80)}"${b.made ? " (made)" : ""}`).join(" · ")}`);
+      for (const u of ugc) lines.push(`- ${u.character ? `the brand's character ${cut(u.character.name, 30)} (${u.character.kind === "person" ? "a person" : "a creature"}${u.character.look ? `, looks: ${cut(u.character.look, 120)}` : ""}${u.character.voice ? `, sounds: ${cut(u.character.voice, 60)}` : ""}${u.character.mode ? `, so it ${u.character.mode === "sing" ? "sings or hums" : u.character.mode === "mime" ? "only mimes" : "talks"}` : ""})` : cut(u.persona, 12)}${u.activity ? `, ${cut(u.activity, 100)}` : ""}: hook "${cut(u.hook, 120)}" · ${(u.beats ?? []).map((b) => `${cut(b.kind, 6)} "${cut(b.line, 80)}"${b.doing ? ` [${cut(b.doing, 90)}]` : ""}${b.made ? " (made)" : ""}`).join(" · ")}`);
     } else lines.push("UGC STORIES: none yet.");
     if (s.graphicOpen?.kind) lines.push(`THE GRAPHIC OPEN NOW: ${cut(s.graphicOpen.kind, 10)} ${numOf(s.graphicOpen.seconds) ?? ""} s, saying ${Object.entries(s.graphicOpen.fields ?? {}).map(([k, v]) => `${cut(k, 10)} "${cut(v, 60)}"`).join(", ") || "nothing yet"}`);
     const g = (s.graphics ?? []).slice(0, 8);
@@ -65,9 +65,10 @@ Rules: only the ids shown below; if what is asked belongs to Design idea, the Br
       example: () => ({ light: LIGHTS[0].id }),
     },
     write_ugc: {
-      doc: "{persona, hook, beats[{kind, line, camera, setting, seconds}], fresh}: writes the UGC story (changes the open one, or a new one when fresh is true) and opens it. Writes lines only: the pictures and takes are made by the person with Make the story, which shows the price.",
+      doc: "{persona, activity, hook, beats[{kind, line, doing, camera, setting, seconds}], fresh}: writes the UGC story (changes the open one, or a new one when fresh is true) and opens it. Writes lines only: the pictures and takes are made by the person with Make the story, which shows the price.",
       fields: {
         persona: { type: "string", enum: [...PERSONAS.map((p) => p.id), CHARACTER_ID], description: "For write_ugc: who tells the story. 'character' only for a story the brand's own character already tells (the person picks its picture)." },
+        activity: str(120, "For write_ugc: what the creator does through the whole story, a real task that moves on and pays off (making a bottle, walking to work, doing their makeup)."),
         hook: str(120, "For write_ugc: the opening line, said in the first two seconds."),
         beats: {
           type: "array",
@@ -77,6 +78,7 @@ Rules: only the ids shown below; if what is asked belongs to Design idea, the Br
             properties: {
               kind: { type: "string", enum: BEAT_IDS },
               line: { type: "string", description: "What is said, in the creator's own words, short." },
+              doing: { type: "string", description: "What they do in this beat: the next step of the activity, caught mid-action; @product where the product is in the shot." },
               camera: { type: "string", enum: CAMERAS.map((c) => c.id) },
               setting: { type: "string", enum: SETTINGS.map((c) => c.id) },
               seconds: { type: "number", description: "2 to 10." },
@@ -89,11 +91,12 @@ Rules: only the ids shown below; if what is asked belongs to Design idea, the Br
       clean(a, out) {
         const story = cleanStory(a);
         out.hook = story.hook;
+        if (story.activity) out.activity = story.activity;
         out.beats = story.beats;
         out.fresh = a.fresh === true;
         return out;
       },
-      example: () => ({ persona: PERSONAS[0].id, hook: "Okay, I finally tried it", beats: [{ kind: BEAT_IDS[0], line: "Okay, I finally tried it", seconds: 4 }], fresh: true }),
+      example: () => ({ persona: PERSONAS[0].id, activity: PERSONAS[0].routine.activity, hook: "Okay, I finally tried it", beats: [{ kind: BEAT_IDS[0], line: "Okay, I finally tried it", doing: PERSONAS[0].routine.steps[BEAT_IDS[0]].doing, camera: PERSONAS[0].routine.steps[BEAT_IDS[0]].camera, seconds: 4 }], fresh: true }),
     },
     add_motion_graphic: {
       doc: "{kind, copy, seconds, ease}: opens that graphic with its words written. It is made, and any credit or file is spent, only when the person presses Make it.\n  When a graphic is open (THE GRAPHIC OPEN NOW below) and you are asked for its words, write them for THAT kind: add_motion_graphic with kind set to the open kind and copy for its own fields, nothing else. Never open another kind then, and never answer with a new graphic: the words go into the one on screen.",

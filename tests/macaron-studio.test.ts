@@ -9,7 +9,7 @@ import { join } from "node:path";
 import * as macaron from "../server/macaron.ts";
 import studio from "../web/js/brioche/space-studio.js";
 import { LIGHTS, SURFACES, setupOf, studioWords, setupLine } from "../web/js/macaron-studio-setup.js";
-import { PERSONAS, CHARACTER_ID, BEATS, newStory, beatPrompt, beatTake, cleanStory, applyStory, storyCost, beatCost, storyLength, whoOf, voiceMode, characterPictures, characterNameOf, defaultCharacter, cleanCharacter } from "../web/js/macaron-ugc-data.js";
+import { PERSONAS, CHARACTER_ID, BEATS, BEAT_IDS, CAMERAS, showsProduct, newStory, beatPrompt, beatTake, cleanStory, applyStory, storyCost, beatCost, storyLength, whoOf, voiceMode, characterPictures, characterNameOf, defaultCharacter, cleanCharacter } from "../web/js/macaron-ugc-data.js";
 import { GRAPHIC_KINDS, GRAPHIC_IDS, buildGraphic, defaultFields, cleanFields, rolesOf } from "../web/js/macaron-graphics-data.js";
 
 const root = join(import.meta.dirname, "..");
@@ -149,14 +149,32 @@ test("a new story has five beats in order, each with a line, a camera, a setting
   assert.ok(newStory().persona === "maya", "Maya tells it unless another does");
 });
 
-test("a shot is asked of the picture model as the creator with the product, and of the video model as a move and a spoken line", () => {
+test("a shot is the creator caught mid-routine: the product only in the shots that name it, the take a move that carries on and a spoken line", () => {
   const s = newStory({ persona: "leo", productName: "The jar" });
+  assert.equal(s.activity, "walking through the city on his way somewhere");
+  assert.ok(s.beats.every((b: any) => b.doing && b.setting === "street"), "Leo's routine fills every beat");
+  // the hook: walking, no product in it, no product picture asked for
   const hook = beatPrompt(s, s.beats[0], { productName: "The jar", brandName: "Comfyture", features: ["Real plums"] });
-  assert.ok(/@creator/.test(hook) && /@product/.test(hook) && /curly dark hair/.test(hook) && /phone selfie/.test(hook) && /sunlit kitchen/.test(hook) && /Real plums/.test(hook), hook);
+  assert.ok(/@creator/.test(hook) && /curly dark hair/.test(hook) && /walk-and-talk/.test(hook) && /city street/.test(hook) && /mid-action/.test(hook), hook);
+  assert.ok(!/@product/.test(hook) && !showsProduct(s.beats[0]), "a shot that does not name the product does not ask for it");
   assert.ok(/no added text/.test(hook), "no words in the picture");
+  // the show: the product is named, so it is drawn true to its picture
+  const show = beatPrompt(s, s.beats[1], { productName: "The jar", features: ["Real plums"] });
+  assert.ok(showsProduct(s.beats[1]) && /@product/.test(show) && /Real plums/.test(show), show);
+  // the take keeps the routine going, the camera moves as the beat's camera does
   const take = beatTake(s, s.beats[2]);
   assert.equal(take.line, s.beats[2].line);
-  assert.ok(take.action.length > 20 && take.camera === "handheld");
+  assert.ok(/keeps waiting at a crossing/.test(take.action) && !/@product/.test(take.action), take.action);
+  assert.ok(/following/.test(take.camera), take.camera);
+  // a beat with no doing is still the plain shot of the product in hand
+  const plain = { ...s.beats[0], doing: "" };
+  assert.ok(/holding @product up/.test(beatPrompt(s, plain, { productName: "The jar" })) && showsProduct(plain));
+  assert.ok(/bring the product up/.test(beatTake(s, plain).action));
+  // every creator has a routine on cameras and places that exist
+  for (const p of PERSONAS) for (const b of BEAT_IDS) {
+    const step = (p as any).routine.steps[b];
+    assert.ok(step.doing && CAMERAS.some((c: any) => c.id === step.camera), `${p.id} ${b}`);
+  }
 });
 
 test("what making a story costs is a picture and a take for each beat, and a take alone costs less", () => {
@@ -180,7 +198,10 @@ test("a story written by Brioche is checked, and changes the open story without 
   assert.equal(again.beats.length, 5, "no beat added twice");
   assert.equal(again.beats[1].picture.url, "kept.png", "a changed line is not a changed picture");
   assert.equal(again.beats[0].line, "A better hook");
-  assert.deepEqual(cleanStory({ persona: "x", hook: 5, beats: "no" }), { persona: "maya", hook: "", beats: [] });
+  assert.deepEqual(cleanStory({ persona: "x", hook: 5, beats: "no" }), { persona: "maya", hook: "", activity: "", beats: [] });
+  const told = applyStory(list, { activity: "doing her makeup", beats: [{ kind: "react", line: "Done", doing: "turning to the camera, the look finished" }] }, { current: again });
+  assert.equal(told.activity, "doing her makeup");
+  assert.equal(told.beats.find((b: any) => b.kind === "react").doing, "turning to the camera, the look finished", "what they do is kept with the line");
 });
 
 // ---------------------------------------------------------------- motion graphics

@@ -5,7 +5,7 @@
  "updatedAt": "2026-10-20T13:24:59.483Z",
  "thumb": "brand/macaron/comfyture/thumb.webp",
  "body": {
-  "seedRev": 2,
+  "seedRev": 3,
   "logo": {
    "url": "brand/wordmark-2400.png",
    "width": 2400,
@@ -6266,6 +6266,203 @@
     "duration": 8,
     "poster": "brand/macaron/comfyture/exports/intro-poster-9x16.png",
     "at": "2026-10-20T13:24:59.483Z"
+   }
+  ],
+  "ugc": [
+   {
+    "id": "u-emma-shop",
+    "name": "Emma · the blanket shop",
+    "persona": "emma",
+    "activity": "making her baby's bottle while she tells how her shop videos get made",
+    "hook": "Bottle's nearly ready. So is this week's shop video.",
+    "beats": [
+     {
+      "id": "u-emma-shop-b1",
+      "kind": "hook",
+      "line": "Bottle's nearly ready. So is this week's shop video.",
+      "doing": "scooping formula into a baby bottle at the kitchen counter, glancing up at the camera",
+      "camera": "close",
+      "setting": "kitchen",
+      "seconds": 4,
+      "picture": null,
+      "take": null
+     },
+     {
+      "id": "u-emma-shop-b2",
+      "kind": "show",
+      "line": "I knit baby blankets. Comfyture turns my idea into the shots.",
+      "doing": "pouring warm water into the bottle, a phone propped against the kettle showing @product",
+      "camera": "shoulder",
+      "setting": "kitchen",
+      "seconds": 6,
+      "picture": null,
+      "take": null
+     },
+     {
+      "id": "u-emma-shop-b3",
+      "kind": "taste",
+      "line": "I write one line, keep the takes I like, and it cuts them.",
+      "doing": "shaking the bottle with one hand, tapping through @product on the propped-up phone with the other",
+      "camera": "tripod",
+      "setting": "kitchen",
+      "seconds": 6,
+      "picture": null,
+      "take": null
+     },
+     {
+      "id": "u-emma-shop-b4",
+      "kind": "react",
+      "line": "No weekend lost to filming. More time knitting, and for her.",
+      "doing": "testing a drop of milk on her wrist, then smiling at the camera",
+      "camera": "close",
+      "setting": "kitchen",
+      "seconds": 6,
+      "picture": null,
+      "take": null
+     },
+     {
+      "id": "u-emma-shop-b5",
+      "kind": "cta",
+      "line": "Comfyture. It's open source. Have a go tonight.",
+      "doing": "picking up the bottle and walking toward the nursery, looking back at the camera",
+      "camera": "follow",
+      "setting": "kitchen",
+      "seconds": 5,
+      "picture": null,
+      "take": null
+     }
+    ],
+    "at": "2026-10-22T21:00:00.000Z"
+   },
+   {
+    "id": "u-leo-tacos",
+    "name": "Leo · the taco stand",
+    "persona": "leo",
+    "activity": "walking across town to open his taco stand",
+    "hook": "My taco stand posts a video every day. I film none of them.",
+    "beats": [
+     {
+      "id": "u-leo-tacos-b1",
+      "kind": "hook",
+      "line": "My taco stand posts a video every day. I film none of them.",
+      "doing": "walking toward the camera down a busy morning street, phone held out at arm's length",
+      "camera": "walk",
+      "setting": "street",
+      "seconds": 4,
+      "picture": null,
+      "take": null
+     },
+     {
+      "id": "u-leo-tacos-b2",
+      "kind": "show",
+      "line": "I write the scene: hot grill, neon sign, a bit of rain. Comfyture blocks the shots.",
+      "doing": "still walking, turning his phone to the lens to show @product on its screen as shop fronts slide past",
+      "camera": "walk",
+      "setting": "street",
+      "seconds": 6,
+      "picture": null,
+      "take": null
+     },
+     {
+      "id": "u-leo-tacos-b3",
+      "kind": "taste",
+      "line": "Same truck, same tacos, every shot. I just pick the takes.",
+      "doing": "waiting at a crossing, scrolling through @product on his phone while the light is red",
+      "camera": "follow",
+      "setting": "street",
+      "seconds": 6,
+      "picture": null,
+      "take": null
+     },
+     {
+      "id": "u-leo-tacos-b4",
+      "kind": "react",
+      "line": "Customers ask who my film crew is. It's me and Comfyture.",
+      "doing": "crossing the street with a grin, steam rising from a food stall behind him",
+      "camera": "walk",
+      "setting": "street",
+      "seconds": 6,
+      "picture": null,
+      "take": null
+     },
+     {
+      "id": "u-leo-tacos-b5",
+      "kind": "cta",
+      "line": "Comfyture's open source. Go make yours.",
+      "doing": "arriving at his taco stand and rolling up the shutter, then nodding at the camera",
+      "camera": "follow",
+      "setting": "street",
+      "seconds": 5,
+      "picture": null,
+      "take": null
+     }
+    ],
+    "at": "2026-10-22T21:00:00.000Z"
+   },
+   {
+    "id": "u-maya-makeup",
+    "name": "Maya · the makeup artist",
+    "persona": "maya",
+    "activity": "doing her makeup before her next client",
+    "hook": "Clients book me from videos I never have time to film.",
+    "beats": [
+     {
+      "id": "u-maya-makeup-b1",
+      "kind": "hook",
+      "line": "Clients book me from videos I never have time to film.",
+      "doing": "dabbing concealer under her eyes at her vanity, talking to the camera through the mirror",
+      "camera": "mirror",
+      "setting": "vanity",
+      "seconds": 4,
+      "picture": null,
+      "take": null
+     },
+     {
+      "id": "u-maya-makeup-b2",
+      "kind": "show",
+      "line": "So I describe the look, and Comfyture lays out the tutorial shots.",
+      "doing": "blending blush onto her cheek with a soft brush, a laptop beside the mirror showing @product",
+      "camera": "mirror",
+      "setting": "vanity",
+      "seconds": 6,
+      "picture": null,
+      "take": null
+     },
+     {
+      "id": "u-maya-makeup-b3",
+      "kind": "taste",
+      "line": "My colours, my music, my style. I keep the takes I love, it cuts.",
+      "doing": "lining her lips, glancing at @product on the laptop beside her",
+      "camera": "close",
+      "setting": "vanity",
+      "seconds": 6,
+      "picture": null,
+      "take": null
+     },
+     {
+      "id": "u-maya-makeup-b4",
+      "kind": "react",
+      "line": "One small film a week keeps my bookings coming.",
+      "doing": "pressing on her lipstick, then turning to the camera to show the finished look",
+      "camera": "mirror",
+      "setting": "vanity",
+      "seconds": 6,
+      "picture": null,
+      "take": null
+     },
+     {
+      "id": "u-maya-makeup-b5",
+      "kind": "cta",
+      "line": "Comfyture. Try it before your next client.",
+      "doing": "switching off the ring light and smiling at the camera, the look done",
+      "camera": "tripod",
+      "setting": "vanity",
+      "seconds": 5,
+      "picture": null,
+      "take": null
+     }
+    ],
+    "at": "2026-10-22T21:00:00.000Z"
    }
   ]
  }

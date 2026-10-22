@@ -6,7 +6,7 @@
 import { toast, waitFor } from "./store.js";
 import { api } from "./api.js";
 import { macaron, setBrand, makePicture, productNow, uid } from "./macaron.js";
-import { newStory, beatPrompt, beatTake, storyCost, beatCost, applyStory, personaOf, whoOf, CHARACTER_ID, cleanCharacter, defaultCharacter, characterPictures, characterNameOf } from "./macaron-ugc-data.js";
+import { newStory, beatPrompt, beatTake, showsProduct, storyCost, beatCost, applyStory, personaOf, whoOf, CHARACTER_ID, cleanCharacter, defaultCharacter, characterPictures, characterNameOf } from "./macaron-ugc-data.js";
 
 /** What the Studio shows of the stories: the one open, and which of its beats. */
 export const ugcUi = { story: null, beat: null };
@@ -130,7 +130,8 @@ export async function makeBeat(storyId, beatId, { picture = true } = {}) {
         aspect: "9:16",
         name: `${who.name} · ${beat.kind}`,
         // (the creator is the library's portrait, or the picture of the brand's own character: it is what the same one is drawn from in every shot)
-        refs: [give(who.character ? { file: who.file, url: who.portrait } : { url: who.portrait }, "creator"), give(p.photo, "product")],
+        // (the product's picture goes with the shots it is in: one where they are only at their routine has the creator alone)
+        refs: [give(who.character ? { file: who.file, url: who.portrait } : { url: who.portrait }, "creator"), ...(showsProduct(beat) ? [give(p.photo, "product")] : [])],
       });
       beat.picture = { id: asset.id, file: asset.file, url: asset.url, width: asset.width, height: asset.height };
       tick();

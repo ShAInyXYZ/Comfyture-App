@@ -70,6 +70,8 @@ export function topUpBrand(body: any, seed: any) {
   }
   out.kit = { ...(out.kit ?? {}) };
   if (empty(out.kit.sizes) && seed.kit?.sizes) out.kit.sizes = seed.kit.sizes;
+  // the example's UGC stories, when the brand has none of its own yet (a story a person wrote or started is never replaced)
+  if (empty(out.ugc) && !empty(seed.ugc)) out.ugc = structuredClone(seed.ugc);
   // the white files sit on plum first, as the kit's tiles name them
   for (const l of out.kit.logos ?? []) if (/^(wordmark|mark)-white$/.test(l.id) && l.ground === "ink, plum") l.ground = "plum, ink";
   out.seedRev = rev;

@@ -1,35 +1,69 @@
 // UGC stories, the plain part (no imports): who tells it, the beats a story is made of, what each beat's picture and take
 // are asked for in words, what it costs and how a story written by Brioche is checked. A story is kept with the brand
-// (body.ugc) as { id, name, persona, hook, beats: [{ id, kind, line, camera, setting, seconds, picture, take }], at }.
-// web/js/macaron-ugc.js draws it and makes it; server/macaron-studio.ts reads the same ids when Brioche writes one.
+// (body.ugc) as { id, name, persona, activity, hook, beats: [{ id, kind, line, doing, camera, setting, seconds, picture, take }], at }:
+// `activity` is what the creator does through the whole story and each beat's `doing` the step of it in that shot, so the
+// viewer watches something happen while they listen (a beat with no `doing` is the plain shot of the product in hand).
+// web/js/macaron-ugc.js draws it and makes it; web/js/brioche/space-studio.js reads the same ids when Brioche writes one.
 
-/** The creators: who tells the story, with the words a picture model is given to draw them the same in every shot. */
+/**
+ * The creators: who tells the story, with the words a picture model is given to draw them the same in every shot, and their
+ * routine: something real they do through the whole story while they talk (a task that moves on at every beat and pays off at
+ * the end), so a story is never a still talking head. Each step says what they do in that beat, the camera and the place; a
+ * step that names @product is a shot the product is in.
+ */
 export const PERSONAS = [
-  { id: "maya", name: "Maya", vibe: "Warm & real", portrait: "brand/macaron/personas/maya.webp", look: "a young East Asian woman around 25 with long dark hair, a cream knit jumper, a warm natural smile" },
-  { id: "leo", name: "Leo", vibe: "Casual & fun", portrait: "brand/macaron/personas/leo.webp", look: "a young man around 24 with curly dark hair, light stubble and a denim shirt, a cheeky grin" },
-  { id: "emma", name: "Emma", vibe: "Mum life", portrait: "brand/macaron/personas/emma.webp", look: "a woman around 34 with her light brown hair in a loose bun, a soft cardigan, a tender happy smile" },
+  { id: "maya", name: "Maya", vibe: "Warm & real", portrait: "brand/macaron/personas/maya.webp", look: "a young East Asian woman around 25 with long dark hair, a cream knit jumper, a warm natural smile",
+    routine: { activity: "doing her makeup at her vanity", setting: "vanity", steps: {
+      hook: { doing: "dabbing concealer under her eyes at her vanity, talking to the camera through the mirror", camera: "mirror" },
+      show: { doing: "blending blush onto her cheek with a soft brush, @product on the vanity beside her", camera: "mirror" },
+      taste: { doing: "trying @product as the next step of her routine, brushes laid out around her", camera: "close" },
+      react: { doing: "pressing on her lipstick, then turning to the camera to show the finished look", camera: "mirror" },
+      cta: { doing: "switching off the ring light and smiling at the camera, the look done", camera: "tripod" },
+    } } },
+  { id: "leo", name: "Leo", vibe: "Casual & fun", portrait: "brand/macaron/personas/leo.webp", look: "a young man around 24 with curly dark hair, light stubble and a denim shirt, a cheeky grin",
+    routine: { activity: "walking through the city on his way somewhere", setting: "street", steps: {
+      hook: { doing: "walking toward the camera down a busy morning street, phone held out at arm's length", camera: "walk" },
+      show: { doing: "still walking, holding up @product to the lens as shop fronts slide past", camera: "walk" },
+      taste: { doing: "waiting at a crossing, trying @product while the light is red", camera: "follow" },
+      react: { doing: "crossing the street with a grin, passers-by and traffic behind him", camera: "walk" },
+      cta: { doing: "arriving at his door, turning back to the camera with a nod", camera: "follow" },
+    } } },
+  { id: "emma", name: "Emma", vibe: "Mum life", portrait: "brand/macaron/personas/emma.webp", look: "a woman around 34 with her light brown hair in a loose bun, a soft cardigan, a tender happy smile",
+    routine: { activity: "making her baby's bottle in the kitchen", setting: "kitchen", steps: {
+      hook: { doing: "scooping formula into a baby bottle at the kitchen counter, glancing up at the camera", camera: "close" },
+      show: { doing: "pouring warm water into the bottle, @product on the counter beside the kettle", camera: "shoulder" },
+      taste: { doing: "shaking the bottle with one hand and trying @product with the other", camera: "tripod" },
+      react: { doing: "testing a drop of milk on her wrist, then smiling at the camera", camera: "close" },
+      cta: { doing: "picking up the bottle and walking toward the nursery, looking back at the camera", camera: "follow" },
+    } } },
 ];
 
 /** The beats of a story, in their order: what each is for and how long it lasts by default. */
 export const BEATS = [
   { id: "hook", name: "Hook", seconds: 4, what: "the first two seconds: stop the scroll with one line and the product in hand" },
   { id: "show", name: "Show", seconds: 6, what: "show what it is, plainly" },
-  { id: "taste", name: "Taste", seconds: 6, what: "use it: the moment of trying" },
+  { id: "taste", name: "Try", seconds: 6, what: "use it: the moment of trying, while the routine goes on" },
   { id: "react", name: "React", seconds: 6, what: "the honest reaction" },
   { id: "cta", name: "Call to action", seconds: 5, what: "one clear thing to do next" },
 ];
 export const BEAT_IDS = BEATS.map((b) => b.id);
 export const beatKind = (id) => BEATS.find((b) => b.id === id) ?? BEATS[0];
 
-/** How the shot is filmed, and where. */
+/** How the shot is filmed (words for its picture, and how the camera moves in its take), and where. */
 export const CAMERAS = [
-  { id: "selfie", name: "Handheld selfie", words: "a handheld phone selfie, slightly wide, the arm just out of frame" },
-  { id: "shoulder", name: "Over the shoulder", words: "filmed over the shoulder, a casual handheld look" },
-  { id: "close", name: "Close-up", words: "a close-up on the hands and the product, shallow depth of field" },
-  { id: "tripod", name: "Phone on a stand", words: "a phone propped on a stand, steady, framed at waist height" },
+  { id: "selfie", name: "Handheld selfie", words: "a handheld phone selfie, slightly wide, the arm just out of frame", move: "handheld selfie, a slight natural sway" },
+  { id: "walk", name: "Walk and talk", words: "a walk-and-talk phone selfie, the phone held out in front at arm's length, the street moving behind", move: "handheld, moving with them as they walk, a gentle bob in step" },
+  { id: "follow", name: "Following", words: "filmed by a friend a step to the side, following them, a casual handheld look", move: "handheld, following beside them as they move" },
+  { id: "shoulder", name: "Over the shoulder", words: "filmed over the shoulder, a casual handheld look", move: "handheld over the shoulder, small natural movements" },
+  { id: "close", name: "Close-up", words: "a close-up on the hands at work and what they hold, shallow depth of field", move: "close and handheld, staying on the hands" },
+  { id: "mirror", name: "In the mirror", words: "filmed from beside the mirror, their face and its reflection both in frame", move: "steady beside the mirror, a slight drift" },
+  { id: "tripod", name: "Phone on a stand", words: "a phone propped on a stand, steady, framed at waist height", move: "static on a stand" },
 ];
 export const SETTINGS = [
   { id: "kitchen", name: "Cosy kitchen", words: "in a cosy sunlit kitchen" },
+  { id: "street", name: "City street", words: "on a busy city street in the morning, shop fronts and passers-by behind" },
+  { id: "vanity", name: "Makeup vanity", words: "at a makeup vanity with a ring light, brushes and palettes laid out" },
+  { id: "workshop", name: "Their workshop", words: "in a small workshop or studio of their own, work in progress around them" },
   { id: "desk", name: "Desk at home", words: "at a tidy desk at home" },
   { id: "balcony", name: "Sunny balcony", words: "on a sunny balcony with plants" },
   { id: "cafe", name: "Café table", words: "at a café table by a window" },
@@ -112,23 +146,30 @@ export function starterLines(productName = "this", features = []) {
   };
 }
 
-/** A new story with the five beats: the persona, a hook, and a line, a camera and a setting for each. */
+/** A new story with the five beats: the persona, a hook, and for each beat a line, what they do (their routine), a camera and a setting. */
 export function newStory({ persona = "maya", productName = "this", features = [], name, character = null } = {}) {
   const lines = starterLines(productName, features);
   const told = persona === CHARACTER_ID && character ? { persona: CHARACTER_ID, character: cleanCharacter(character) } : { persona: personaOf(persona).id };
+  // (a creator of the library brings their routine; the brand's character starts with the plain shots, the person says what it does)
+  const routine = told.persona === CHARACTER_ID ? null : personaOf(told.persona).routine;
   return {
     id: id("u"),
     name: name ?? `${whoOf(told).name}'s story`,
     ...told,
+    activity: routine?.activity ?? "",
     hook: lines.hook,
     beats: BEATS.map((b) => ({
       id: id("b"), kind: b.id, line: lines[b.id], seconds: b.seconds,
-      camera: b.id === "show" ? "tripod" : b.id === "taste" ? "close" : "selfie",
-      setting: "kitchen", picture: null, take: null,
+      doing: routine?.steps[b.id]?.doing ?? "",
+      camera: routine?.steps[b.id]?.camera ?? (b.id === "show" ? "tripod" : b.id === "taste" ? "close" : "shoulder"),
+      setting: routine?.setting ?? "kitchen", picture: null, take: null,
     })),
     at: new Date().toISOString(),
   };
 }
+
+/** Whether a beat's shot has the product in it: one that says what they do has it only where it names @product. */
+export const showsProduct = (beat) => !String(beat?.doing ?? "").trim() || /@product/.test(beat.doing);
 
 /** The words a beat's picture is drawn from: the creator, the setting, the camera and what the beat is, with the product given as @product. */
 export function beatPrompt(story, beat, { productName = "the product", brandName = "", features = [] } = {}) {
@@ -146,18 +187,27 @@ export function beatPrompt(story, beat, { productName = "the product", brandName
   const first = who.character
     ? `A natural vertical phone-style photo of the same character as in @creator${who.look ? ` (${who.look})` : ""}, kept exactly as pictured (its shape, colours, markings and accessory), ${settingOf(beat.setting).words}, ${cameraOf(beat.camera).words}.${who.creature ? " It is an animal character: it keeps its own body and holds things in its paws, with no human hands, clothes or face." : ""}`
     : `A natural vertical phone photo of the same real person as in @creator (${who.look}), ${settingOf(beat.setting).words}, ${cameraOf(beat.camera).words}.`;
+  // (what they do in this beat, when the story says it, is the shot: caught mid-action, never posing with the product)
+  const doing = String(beat.doing ?? "").trim();
   return [
     first,
-    `${who.name} is ${act}.`,
-    `The product exactly as in @product (its shape, label and colours kept true and legible).${features[0] ? ` It is known for: ${features.slice(0, 2).join(", ")}.` : ""}`,
+    doing ? `${who.name} is ${doing}, caught mid-action and natural, not posing${/camera|lens|mirror/.test(doing) ? "" : `, glancing at the camera as ${who.creature ? "it talks" : "they talk"}`}.` : `${who.name} is ${act}.`,
+    showsProduct(beat) ? `The product exactly as in @product (its shape, label and colours kept true and legible).${features[0] ? ` It is known for: ${features.slice(0, 2).join(", ")}.` : ""}` : "",
     "Authentic social-video look, soft natural light, no added text, no extra logos, no watermark.",
-  ].join(" ");
+  ].filter(Boolean).join(" ");
 }
 
 /** What the beat's take does, and says: for the app's video action (a move, and the creator's own line). */
 export function beatTake(story, beat) {
   const kind = beatKind(beat.kind);
   const who = whoOf(story);
+  // a beat that says what they do: they keep doing it as they talk, and the camera moves as the beat's camera does
+  // ("keeps still walking" reads as "keeps walking")
+  const doing = String(beat.doing ?? "").replace(/@product/g, "the product").trim().replace(/^still\s+/i, "");
+  if (doing) {
+    const voice = !who.character || who.mode === "talk" ? "talking to the camera as they go" : who.mode === "sing" ? "humming softly as it goes" : "miming the words as it goes";
+    return { action: `${who.name} keeps ${doing}, ${voice}; the movement carries on through the whole shot.`, camera: cameraOf(beat.camera).move, line: who.character && who.mode === "mime" ? "" : beat.line };
+  }
   if (who.character) {
     const hands = who.creature ? "paws" : "hands";
     const its = who.creature ? "its" : "their";
@@ -204,19 +254,20 @@ export function cleanStory(raw = {}, current = null, like = current) {
   // (text is text: a number or an object where words should be is no words)
   const text = (v, n) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, n) : "");
   const hook = text(raw.hook, 120);
+  const activity = text(raw.activity, 120);
   const beats = (Array.isArray(raw.beats) ? raw.beats : []).slice(0, 8).map((b) => {
     const kind = BEAT_IDS.includes(b?.kind) ? b.kind : null;
     if (!kind) return null;
     const line = text(b.line, 140);
     const secs = Number(b.seconds);
     return {
-      kind, line,
+      kind, line, doing: text(b.doing, 160),
       camera: byName(CAMERAS, b.camera)?.id ?? undefined,
       setting: byName(SETTINGS, b.setting)?.id ?? undefined,
       seconds: Number.isFinite(secs) ? Math.min(10, Math.max(2, Math.round(secs))) : undefined,
     };
   }).filter(Boolean);
-  return { persona, hook, beats };
+  return { persona, hook, activity, beats };
 }
 
 /**
@@ -230,15 +281,17 @@ export function applyStory(list, draft, { current = null, productName = "this", 
   const base = current ?? newStory({ persona: clean.persona, productName, features, character: clean.persona === CHARACTER_ID ? like?.character : null });
   if (clean.persona) base.persona = clean.persona;
   if (clean.hook) base.hook = clean.hook;
+  if (clean.activity) base.activity = clean.activity;
   for (const b of clean.beats) {
     const mine = base.beats.find((x) => x.kind === b.kind);
     if (mine) {
       if (b.line) mine.line = b.line;
+      if (b.doing) mine.doing = b.doing;
       if (b.camera) mine.camera = b.camera;
       if (b.setting) mine.setting = b.setting;
       if (b.seconds) mine.seconds = b.seconds;
     } else {
-      base.beats.push({ id: id("b"), kind: b.kind, line: b.line, seconds: b.seconds ?? beatKind(b.kind).seconds, camera: b.camera ?? "selfie", setting: b.setting ?? "kitchen", picture: null, take: null });
+      base.beats.push({ id: id("b"), kind: b.kind, line: b.line, doing: b.doing ?? "", seconds: b.seconds ?? beatKind(b.kind).seconds, camera: b.camera ?? "shoulder", setting: b.setting ?? "kitchen", picture: null, take: null });
     }
   }
   // the hook is the first beat's line
