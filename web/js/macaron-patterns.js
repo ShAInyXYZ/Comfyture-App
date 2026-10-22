@@ -198,34 +198,42 @@ const IDEAS = "moons and tea leaves scattered · soft waves of the mark · a che
 function patternsWin() {
   const el = h("div.mc-w.is-patterns");
   const rerender = () => update();
-  let draft = "";
+  // the prompt is made once and kept: the patterns under it are drawn again, never the field being typed in
+  const input = h("input.field", { placeholder: `A new pattern: ${IDEAS}`, "aria-label": "Describe a new pattern" });
+  const go = h("button.mc-go", { type: "submit", title: "Brioche draws it from the kit: its colours and its logo files" }, h("span", {}, "Make it"));
   const ask = () => {
-    const words = draft.trim();
+    const words = input.value.trim();
     if (!words || macaron.chat.busy) return;
-    draft = "";
+    input.value = "";
+    // (the page is not drawn while a field in it has the focus: the field lets go once the ask is sent, so her pattern shows)
+    input.blur();
     askMacaron(`Make a new brand pattern: ${words}`);
   };
+  const form = h("form.kpt-ask", { on: { submit: (e) => (e.preventDefault(), ask()) } }, input, go);
+  const list = h("div.kpt-list");
+  el.append(form, list);
   function update() {
     const b = macaron.brand;
     if (!b) return;
-    if (el.contains(document.activeElement) && document.activeElement.matches("input")) return false;
-    const list = patternsOf(kitOf(b.body), b.body.kit.patterns ?? []);
+    const all = patternsOf(kitOf(b.body), b.body.kit.patterns ?? []);
     const busy = !!macaron.chat.busy;
+    input.disabled = busy;
+    go.disabled = busy;
+    go.firstChild.textContent = busy ? "Brioche is drawing" : "Make it";
     const drop = (p) => {
       const key = `pattern:${p.id}`;
       return h(`button.mc-iconkey.is-danger${isArmed(key) ? ".is-armed" : ""}`, { type: "button", title: isArmed(key) ? "Click again to delete it" : "Delete this pattern", "aria-label": "Delete this pattern",
         on: { click: () => arming(key, rerender, () => setKit("patterns", (macaron.brand.body.kit.patterns ?? []).filter((x) => x.id !== p.id))) } }, icon("trash"));
     };
-    el.replaceChildren(
-      h("form.kpt-ask", { on: { submit: (e) => (e.preventDefault(), ask()) } },
-        h("input.field", { value: draft, placeholder: `A new pattern: ${IDEAS}`, "aria-label": "Describe a new pattern", disabled: busy, on: { input: (e) => (draft = e.target.value) } }),
-        h("button.mc-go", { type: "submit", disabled: busy, title: "Brioche draws it from the kit: its colours and its logo files" }, h("span", {}, busy ? "Brioche is drawing" : "Make it"))),
-      list.length
-        ? h("div.kpt-grid", {}, ...list.map((p) => h(`figure.kpt-cell${p.own ? ".is-own" : ""}`, {},
+    list.replaceChildren(all.length
+      ? h("div.kpt-grid", {},
+        // (while she draws, the place her pattern will take)
+        busy ? h("figure.kpt-cell.is-drawing", {}, h("div.kpt-wait", {}, h("span.lamp", { dataset: { tone: "busy" } }), h("span", {}, "Brioche is drawing")), h("figcaption", {}, h("b", {}, "A new pattern"))) : null,
+        ...all.map((p) => h(`figure.kpt-cell${p.own ? ".is-own" : ""}`, {},
           patternCanvas(p, 960, 640, 1),
           h("figcaption", {}, h("b", {}, p.name), h("span.kpt-keys", {}, p.own ? drop(p) : null,
             h("button.mc-iconkey", { type: "button", title: `Download ${p.name.toLowerCase()} (PNG, 2048 px)`, "aria-label": `Download ${p.name}`, on: { click: () => download(p, b.name) } }, icon("download")))))))
-        : h("p.mc-hint", {}, "Add the brand's colours and its logo files: the patterns are made from them."));
+      : h("p.mc-hint", {}, "Add the brand's colours and its logo files: the patterns are made from them."));
   }
   const sig = () => JSON.stringify([macaron.brand?.body.kit.palette, macaron.brand?.body.kit.logos, macaron.brand?.body.kit.patterns, !!macaron.chat.busy, armedNow()]);
   return { el, update, sig };

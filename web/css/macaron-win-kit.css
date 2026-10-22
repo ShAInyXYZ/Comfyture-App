@@ -217,3 +217,4 @@
 .kpt-ask .field { min-height: 2.75rem; }
 .kpt-keys { display: inline-flex; gap: .375rem; }
 .kpt-cell.is-own b::after { content: "Brioche"; margin-left: .5rem; padding: .125rem .4375rem; border-radius: var(--r-pill); background: var(--s3); color: var(--muted); font: 500 .6875rem/1 var(--font-mono); letter-spacing: .06em; vertical-align: .125rem; }
+.kpt-wait { display: grid; place-items: center; align-content: center; gap: .625rem; aspect-ratio: 3 / 2; border: 1px dashed var(--line2); border-radius: 1rem; color: var(--muted); font: 500 var(--fs-small)/1 var(--font-sans); }
