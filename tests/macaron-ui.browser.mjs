@@ -93,11 +93,11 @@ try {
     name: document.querySelector(".mcb-eyebrow")?.textContent.split("·").pop().trim(), tag: document.querySelector(".mcb-eyebrow")?.textContent,
     pic: (() => { const i = document.querySelector(".mcb-seal img"); return !!i && i.complete && i.naturalWidth > 0; })(),
     round: getComputedStyle(document.querySelector(".mcb-seal img")).borderRadius, project: document.querySelector(".mcb-brand .sel-label")?.textContent,
-    spaces: [...document.querySelectorAll(".mcb-card")].map((b) => [b.querySelector(".mcb-face b").textContent, b.querySelector(".mcb-chip span:last-child").textContent, b.classList.contains("is-on"), b.querySelector("img")?.naturalWidth > 0]),
+    spaces: [...document.querySelectorAll(".mcb-card")].map((b) => [b.querySelector(".mcb-face b").textContent, b.querySelector(".mcb-chip span:last-child").textContent, b.classList.contains("is-on"), b.querySelector(".mcb-art svg")?.childElementCount > 0]),
     label: document.querySelector(".mc-tools-label")?.textContent, tools: [...document.querySelectorAll(".mc-tool .mc-tool-name")].map((t) => t.textContent),
   }));
   ok(side.name === "Brioche" && /brand room/i.test(side.tag) && side.pic && side.round === "50%" && side.project === "Comfyture", "Brioche's panel: her round portrait, her name and room, the brand open", JSON.stringify([side.name, side.tag, side.project]));
-  ok(side.spaces.map((x) => x[0]).join() === "Design idea,Brand kit,Content" && side.spaces.every((x) => x[3]) && side.spaces.map((x) => x[1]).join() === "12,11,07", "three workspaces, each with its picture and its count", side.spaces.map((x) => `${x[0]} ${x[1]}`).join(", "));
+  ok(side.spaces.map((x) => x[0]).join() === "Brand kit,Design idea,Studio,Create,Brand book" && side.spaces.every((x) => x[3]) && side.spaces.map((x) => x[1]).join() === "11,12,28,06,03", "five workspaces, each with its graphic and its count", side.spaces.map((x) => `${x[0]} ${x[1]}`).join(", "));
   ok(side.spaces.filter((x) => x[2]).map((x) => x[0]).join() === "Brand kit" && /brioche's tools/i.test(side.label) && side.tools.join() === "Make a colourway,Check contrast,Export the kit", "the open workspace is lit, and her tools are its own", side.tools.join(", "));
   const kitGrid = await page.evaluate(() => {
     const grid = document.querySelector(".mc-grid.is-kit");

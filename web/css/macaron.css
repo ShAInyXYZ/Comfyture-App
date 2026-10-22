@@ -34,18 +34,28 @@
 
 /* the five workspaces: swatch cards in the brand's colours, fanned; the open one pulled out toward the page */
 .mcb-fan { display: flex; flex: 1 1 auto; flex-direction: column; justify-content: flex-start; min-height: 0; padding: .25rem 0 .5rem; }
-.mcb-card { --c: var(--s2); --t: var(--text); position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 4.5rem; grid-template-rows: minmax(0, 1fr) auto; flex: 0 1 9rem; min-height: 5.75rem; width: calc(100% - 1.5rem); margin-top: -.25rem; padding: 0; border: 0; border-radius: .875rem; overflow: hidden; background: var(--c); color: var(--t); text-align: left; cursor: pointer;
+.mcb-card { --c: var(--s2); --t: var(--text); position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; flex: 0 1 9rem; min-height: 5.75rem; width: calc(100% - 1.5rem); margin-top: -.25rem; padding: 0; border: 0; border-radius: .875rem; overflow: hidden; background: var(--c); color: var(--t); text-align: left; cursor: pointer;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 .5rem 1.125rem rgba(0, 0, 0, .35); transform: rotate(var(--r, 0deg)); transform-origin: 20% 50%; transition: transform .25s var(--ease-out), box-shadow .25s var(--ease-out); }
 .mcb-card:first-child { margin-top: 0; }
 .mcb:not(.is-branded) .mcb-card { border: 1px solid var(--line2); }
-.mcb-face { grid-column: 1; grid-row: 1; display: grid; align-content: start; gap: .375rem; padding: .75rem 0 0 .875rem; }
+.mcb-face { position: relative; grid-column: 1; grid-row: 1; display: grid; align-content: start; gap: .375rem; padding: .75rem 0 0 .875rem; }
 .mcb-num { font: 700 .6875rem/1 var(--font-mono); letter-spacing: .18em; opacity: .7; }
 .mcb-face b { font: 800 1.1875rem/1.05 var(--font-sans); letter-spacing: -.01em; }
-.mcb-pic { grid-column: 2; grid-row: 1 / -1; align-self: center; justify-self: center; width: 4.25rem; height: 4.25rem; object-fit: contain; filter: drop-shadow(0 .375rem .5rem rgba(0, 0, 0, .3)); transition: transform .25s var(--ease-out); }
-.mcb-chip { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .4375rem .875rem; background: rgba(255, 255, 255, .92); color: #2a2a2a; font: 600 .6875rem/1 var(--font-mono); letter-spacing: .08em; }
+/* each card's graphic (macaron-card-art.js): drawn in the card's ink, off its right edge, under its title and its chip */
+.mcb-art { position: absolute; top: 0; right: 0; bottom: 0; width: 64%; opacity: .5; pointer-events: none; transition: transform .35s var(--ease-out), opacity .25s var(--ease-out); }
+.mcb-art svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.mcb-art svg * { vector-effect: non-scaling-stroke; }
+.mcb-art .thin { stroke-width: .75; }
+.mcb-art .dash { stroke-dasharray: 3 3; }
+.mcb-art .fill { fill: currentColor; fill-opacity: .16; stroke: none; }
+.mcb-art .dot { fill: currentColor; stroke: none; }
+.mcb-art .iris { transform-box: view-box; transform-origin: 112px 60px; transition: transform .5s var(--ease-out); }
+.mcb-card:hover .mcb-art, .mcb-card.is-on .mcb-art { opacity: .72; }
+.mcb-card:hover .mcb-art { transform: translateX(-.375rem); }
+.mcb-card:hover .mcb-art .iris { transform: rotate(30deg); }
+.mcb-chip { position: relative; grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .4375rem .875rem; background: rgba(255, 255, 255, .92); color: #2a2a2a; font: 600 .6875rem/1 var(--font-mono); letter-spacing: .08em; }
 .mcb:not(.is-branded) .mcb-chip { background: var(--s3); color: var(--muted); }
 .mcb-card:hover { z-index: 2; transform: rotate(var(--r, 0deg)) translateX(.5rem); }
-.mcb-card:hover .mcb-pic { transform: scale(1.08) rotate(-4deg); }
 .mcb-card:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--accent), 0 .5rem 1.125rem rgba(0, 0, 0, .35); }
 .mcb-card.is-on { z-index: 3; transform: rotate(0deg) translateX(2rem); box-shadow: 0 0 0 2px var(--accent), 0 1.125rem 2.125rem rgba(0, 0, 0, .55); }
 

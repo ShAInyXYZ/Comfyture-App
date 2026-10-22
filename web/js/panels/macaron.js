@@ -1,6 +1,6 @@
 // Macaron's screen. On the left Brioche's panel, the SWATCH BOOK: it wears the brand open (its darkest colour is the panel, its wordmark
 // at the top switches brands), the five workspaces a brand's work goes through (Design idea, Brand kit, Studio, Create, Brand book) are
-// swatch cards in the brand's own colours fanned like a colour book, the open one pulled out toward the page, and the brand's health is a
+// swatch cards in the brand's own colours fanned like a colour book (each with a line graphic of its own, macaron-card-art.js), the open one pulled out toward the page, and the brand's health is a
 // seal at its foot with Brioche in it. Another brand, another panel; a brand with no palette yet has the app's own greys. Beside it the
 // workspace, a grid of bentos, which wears the brand too (the grid is its accent colour, the bentos on it its ground); a bento opens as a
 // window over the screen (macaron-win.js). Her bar docks at the foot of the page.
@@ -20,6 +20,7 @@ import { brandHealth, warmDesigns } from "../macaron-health.js";
 import { kitOf, luminance, contrast } from "../design.js";
 import { windowHost, defineWindow, openWin, closeAll } from "../macaron-win.js";
 import { BRIOCHE, WORKSPACES } from "../macaron-harness.js";
+import { cardArt } from "../macaron-card-art.js";
 import { setRoom } from "../harnesses.js";
 
 /** What each workspace's count counts: the pictures its moodboard holds, the kit's logo files, the pictures made, the posts. */
@@ -30,8 +31,8 @@ const COUNT = {
   create: (b) => b.body.designs.filter((d) => !d.variant && !d.motion && !d.graphic).length,
   book: (b) => b.body.designs.filter((d) => !d.variant && !d.motion && !d.graphic && d.status === "approved").length,
 };
-/** The workspaces, as the panel names them: the name, the picture of its tile and its count. */
-const SPACE_INFO = Object.fromEntries(WORKSPACES.map((w) => [w.id, [w.name, w.tile, COUNT[w.id]]]));
+/** The workspaces, as the panel names them: the name and its count. */
+const SPACE_INFO = Object.fromEntries(WORKSPACES.map((w) => [w.id, [w.name, COUNT[w.id]]]));
 const two = (n) => String(n).padStart(2, "0");
 
 // made once and kept: the windows and the workspaces hold their own state, and some listen to the page
@@ -132,7 +133,7 @@ const initials = (name) => String(name ?? "").split(/\s+/).filter(Boolean).map((
 function drawSide(b) {
   const space = macaron.space;
   const kit = kitOf(b.body);
-  const sig = JSON.stringify([b.id, b.name, macaron.list.map((x) => [x.id, x.name]), space, SPACES.map((s) => SPACE_INFO[s][2](b)), macaron.past.length, macaron.future.length, !!macaron.chat.busy, macaron.design, healthSig(b), kit.palette, kit.logos.map((l) => [l.id, l.kind, l.tone, l.url]), armedNow()]);
+  const sig = JSON.stringify([b.id, b.name, macaron.list.map((x) => [x.id, x.name]), space, SPACES.map((s) => SPACE_INFO[s][1](b)), macaron.past.length, macaron.future.length, !!macaron.chat.busy, macaron.design, healthSig(b), kit.palette, kit.logos.map((l) => [l.id, l.kind, l.tone, l.url]), armedNow()]);
   if (sig === shell.sideSig) return;
   shell.sideSig = sig;
   const col = bookColours(kit);
@@ -166,7 +167,7 @@ function drawSide(b) {
           width: "fill",
         }))),
     h("nav.mcb-fan", { "aria-label": "Workspaces" }, ...SPACES.map((id, i) => {
-      const [name, pic, count] = SPACE_INFO[id];
+      const [name, count] = SPACE_INFO[id];
       const c = col?.cards[i];
       return h(`button.mcb-card${id === space ? ".is-on" : ""}`, {
         type: "button",
@@ -175,8 +176,8 @@ function drawSide(b) {
         style: { ...(c ? { "--c": c.c, "--t": c.t } : {}), "--r": `${[-2, 1.5, -1, 2, -1.5][i]}deg` },
         on: { click: () => (closeAll(), setSpace(id)) },
       },
+      cardArt(id),
       h("span.mcb-face", {}, h("span.mcb-num", {}, two(i + 1)), h("b", {}, name)),
-      h("img.mcb-pic", { src: pic, alt: "", draggable: false }),
       h("span.mcb-chip", {}, h("span", {}, c ? `${tag} · ${c.c.slice(1).toUpperCase()}` : tag), h("span", {}, two(count(b)))));
     })),
     h("section.mcb-health", { "aria-label": "Brand health" },

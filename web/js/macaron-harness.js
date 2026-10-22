@@ -16,15 +16,15 @@ export const BRIOCHE = {
  * Macaron's five workspaces, in the order the panel shows them: the kit first (the brand itself: what everything else is made from),
  * then the idea behind it, the Studio that makes the raw material
  * (photography, UGC stories, motion graphics, the product), Create that makes everything from it (social, ads, print, web,
- * app, mockups, video) and the Brand book that gathers it all into the document a designer hands over. `tile` is the
- * picture on the panel's key for it. Brioche is told only about the one that is open.
+ * app, mockups, video) and the Brand book that gathers it all into the document a designer hands over.
+ * Brioche is told only about the one that is open.
  */
 export const WORKSPACES = [
-  { id: "kit", name: "Brand kit", tile: "brand/macaron/tile-kit.webp" },
-  { id: "idea", name: "Design idea", tile: "brand/macaron/tile-idea.webp" },
-  { id: "studio", name: "Studio", tile: "brand/macaron/tile-content.webp" },
-  { id: "create", name: "Create", tile: "brand/macaron/tile-create.webp" },
-  { id: "book", name: "Brand book", tile: "brand/macaron/tile-book.webp" },
+  { id: "kit", name: "Brand kit" },
+  { id: "idea", name: "Design idea" },
+  { id: "studio", name: "Studio" },
+  { id: "create", name: "Create" },
+  { id: "book", name: "Brand book" },
 ];
 
 /**
