@@ -36,7 +36,7 @@ export const PRESETS = { idea: [], kit: [], studio: [], create: [], book: [] };
 
 /** What the chat bar says in each workspace. */
 export const PLACEHOLDER = {
-  kit: "Ask Brioche — a colourway that reads on ink, a voice in three words, check the contrast",
+  kit: "Ask Brioche — a new pattern, a colourway that reads on ink, check the contrast",
   idea: "Ask Brioche — a new direction, write the brief, what the moodboard is missing",
   studio: "Ask Brioche — a shoot of the jar, a UGC story, a logo sting",
   create: "Ask Brioche — a post from this design, a story version, a poster for the sale",

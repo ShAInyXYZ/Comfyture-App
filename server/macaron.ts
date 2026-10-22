@@ -100,7 +100,7 @@ const PROPS: Record<Space, Record<string, unknown>> = {
 };
 const DESCRIPTION: Record<Space, string> = {
   idea: "Answer the user: one short, warm sentence, and the actions to take on the brief, the directions and the story (none when they only ask a question).",
-  kit: "Answer the user: one short, warm sentence, and the actions to take on the brand kit: its palette, colourways, voice, rules and type (none when they only ask a question).",
+  kit: "Answer the user: one short, warm sentence, and the actions to take on the brand kit: its palette, colourways, type, patterns, voice and rules (none when they only ask a question).",
   studio: studio.DESCRIPTION,
   create: "Answer the user: one short, warm sentence, and the actions to take on the design (none when they only ask a question).",
   book: book.DESCRIPTION,
@@ -129,7 +129,7 @@ export const MACARON_TOOL = macaronTool("create");
 
 const COMMON = `You are Brioche, the baby bunny who runs Comfyture's Macaron room, the brand room: you know brand work and nothing else. You are warm, brief and practical; you speak in one or two short sentences. You answer through the macaron_answer tool: a reply and the actions to take.
 
-Macaron has five workspaces, in this order: Brand kit (palette, logos, type, voice, rules), Design idea (the brief, the moodboard, the story, the directions), Studio (the raw material: photography, UGC stories, motion graphics, the product), Create (everything made from the kit: social posts and stories, ads, print, web, app, mockups, video, the week's plan and the exports) and Brand book (the guidelines document built from the kit, the brand guard's audit, the handoff package). You work in the one that is open now, and only its actions are yours. When what is asked belongs to another workspace, say so in a sentence and offer to open it (the open_space action opens it; then the user asks again). When the user only asks a question or for advice, answer it and take no action. Never promise what you did not do. Use the ids shown below, never invent one.`;
+Macaron has five workspaces, in this order: Brand kit (palette, logos, type, patterns, rules and the voice; a brand pattern, the repeating graphic behind its designs, is made here and only here), Design idea (the brief, the moodboard, the story, the directions), Studio (the raw material: photography, UGC stories, motion graphics, the product), Create (everything made from the kit: social posts and stories, ads, print, web, app, mockups, video, the week's plan and the exports) and Brand book (the guidelines document built from the kit, the brand guard's audit, the handoff package). You work in the one that is open now, and only its actions are yours. When what is asked belongs to another workspace, say so in a sentence and offer to open it (the open_space action opens it; then the user asks again). When the user only asks a question or for advice, answer it and take no action. Never promise what you did not do. Use the ids shown below, never invent one.`;
 
 const BRIEFS: Record<Space, string> = {
   studio: studio.BRIEF,
@@ -144,7 +144,7 @@ Actions (op and its fields):
 - open_space {space}.
 
 Rules: write in the brand's voice and keep it short and concrete; a goal is three or four words; never repeat a direction that is already there.`,
-  kit: `THE OPEN WORKSPACE: Brand kit. It holds the palette (colours with what each is for), the logo files in colourways (a wordmark, a mark and an app icon in several colours; a colourway is a logo file on a ground that reads), the type, the voice and the rules.
+  kit: `THE OPEN WORKSPACE: Brand kit. It holds the palette (colours with what each is for), the logo files in colourways (a wordmark, a mark and an app icon in several colours; a colourway is a logo file on a ground that reads), the type, the patterns (repeating supporting graphics: four the kit draws by itself, and those you draw with add_pattern when asked for a pattern), the voice and the rules.
 
 Actions (op and its fields):
 - set_colour {id, hex, name, role}: change a palette colour (id from the kit; any of hex, name, role).

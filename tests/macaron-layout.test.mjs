@@ -311,6 +311,8 @@ test("her brief is the open workspace's: its things and its actions, nothing of 
   const [kit, idea, studio, create, book] = SPACES.map(macaronBrief);
   assert.match(idea, /write_brief/); assert.doesNotMatch(idea, /edit_text|set_layer|set_colour/);
   assert.match(kit, /add_colourway/); assert.doesNotMatch(kit, /edit_text|write_brief|make_variation/);
+  assert.match(kit, /add_pattern/); assert.match(kit, /Brand kit \(palette, logos, type, patterns/, "every workspace's brief says a pattern is the Brand kit's");
+  assert.match(create, /a brand pattern[^.]*is made here and only here/, "so she does not send a pattern to Create");
   assert.match(create, /edit_text/); assert.doesNotMatch(create, /write_brief|add_colourway|add_direction/);
   assert.match(studio, /THE OPEN WORKSPACE: Studio/); assert.match(book, /THE OPEN WORKSPACE: Brand book/);
   for (const text of [idea, kit, studio, create, book]) assert.match(text, /macaron_answer/);
