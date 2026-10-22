@@ -89,23 +89,22 @@
 .mc-bento { position: relative; display: flex; flex-direction: column; gap: .75rem; min-width: 0; padding: clamp(.875rem, 1.5dvh, 1.25rem) 1.25rem clamp(1.125rem, 1.9dvh, 1.5rem); border: 1px solid var(--card-line); border-radius: 1.5rem; background: var(--s1); cursor: pointer; transition: border-color var(--t-fast); }
 .mc-bento:hover { border-color: var(--line2); }
 /* A brand with a palette: the board's frames wear it, as Brioche's swatch book does (panels/macaron.js sets --bk-ground, --bk-ink and
-   the five colours --bk-c1 to --bk-c5 on .macaron). Each frame takes one colour in turn (--fc): a band of it along its top, a wash of
-   it, its label in it, over the brand's ground; inside, the app's surfaces and lines are the brand's ground and ink, so every card,
-   chip and field of a frame follows without being told. A brand with no palette keeps the app's greys. */
+   the five colours --bk-c1 to --bk-c5 on .macaron). Each frame takes one colour in turn (--fc) as its outline and its label, over the
+   brand's plain ground; inside, the app's surfaces and lines are the brand's ground and ink, so every card, chip and field of a frame
+   follows without being told (their lines stay quiet: only the frame wears the colour). A brand with no palette keeps the app's greys. */
 .macaron.is-branded .mc-bento {
   --fc: var(--bk-c1);
   --s1: color-mix(in oklab, var(--bk-ground) 62%, #141416); --s2: color-mix(in oklab, var(--bk-ground) 52%, #26262b); --s3: color-mix(in oklab, var(--bk-ground) 44%, #313137);
   --card: var(--s2); --sunk: color-mix(in oklab, var(--bk-ground) 58%, #08080a);
-  --line: color-mix(in oklab, var(--bk-ink) 12%, transparent); --line2: color-mix(in oklab, var(--bk-ink) 20%, transparent); --card-line: color-mix(in oklab, var(--fc) 34%, transparent);
-  border-color: var(--card-line);
-  background: linear-gradient(180deg, color-mix(in oklab, var(--fc) 19%, transparent), color-mix(in oklab, var(--fc) 4%, transparent) 55%), var(--s1);
-  box-shadow: inset 0 4px 0 var(--fc);
+  --line: color-mix(in oklab, var(--bk-ink) 12%, transparent); --line2: color-mix(in oklab, var(--bk-ink) 20%, transparent); --card-line: color-mix(in oklab, var(--bk-ink) 12%, transparent);
+  border: 1.5px solid color-mix(in oklab, var(--fc) 72%, transparent);
+  background: var(--s1);
 }
 .macaron.is-branded .mc-grid > .mc-bento:nth-child(5n + 2) { --fc: var(--bk-c2); }
 .macaron.is-branded .mc-grid > .mc-bento:nth-child(5n + 3) { --fc: var(--bk-c3); }
 .macaron.is-branded .mc-grid > .mc-bento:nth-child(5n + 4) { --fc: var(--bk-c4); }
 .macaron.is-branded .mc-grid > .mc-bento:nth-child(5n + 5) { --fc: var(--bk-c5); }
-.macaron.is-branded .mc-bento:hover { border-color: color-mix(in oklab, var(--fc) 55%, transparent); }
+.macaron.is-branded .mc-bento:hover { border-color: var(--fc); }
 .macaron.is-branded .mc-b-label { color: color-mix(in oklab, var(--fc), white 30%); }
 /* (a swatch of the ground itself keeps an edge on a frame of the ground) */
 .macaron.is-branded .mc-sw { border-color: color-mix(in oklab, var(--bk-ink) 18%, transparent); }
