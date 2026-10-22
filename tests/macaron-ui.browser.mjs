@@ -88,6 +88,32 @@ try {
   const shot = (name) => page.screenshot({ path: join(out, `${name}.png`) });
   const png = (url) => page.evaluate(async (u) => { const res = await fetch(u); const b = new Uint8Array(await res.arrayBuffer()); return { type: res.headers.get("content-type"), len: b.length, w: (b[16] << 24) | (b[17] << 16) | (b[18] << 8) | b[19], h: (b[20] << 24) | (b[21] << 16) | (b[22] << 8) | b[23] }; }, url);
 
+  // ---- Brioche's harness on the page: in each workspace, every action of its spec has a handler that makes it (an example of each is
+  // built from the summary the page sends her, and run through the page's own dispatch on the test brand, then taken back in one step)
+  for (const sp of ["kit", "idea", "studio", "create", "book"]) {
+    await space(sp);
+    const made = await page.evaluate(async (sp) => {
+      const [A, H, M] = await Promise.all([import("/js/macaron-assist.js"), import("/js/brioche/harness.js"), import("/js/macaron.js")]);
+      const was = { design: M.macaron.design, format: M.macaron.format };
+      // (Create's actions work on a design: one is open)
+      if (!M.designNow()) M.openDesign(M.macaron.brand.body.designs[0].id);
+      const s = A.summary(sp);
+      const done = [];
+      await M.batch(() => { for (const [op, a] of Object.entries(H.specOf(sp).actions)) done.push([op, A.run({ op, ...a.example(s) }, [])]); }, "Brioche");
+      M.undo();
+      Object.assign(M.macaron, was);
+      return done;
+    }, sp);
+    // (some of the actions open a window: it is closed as a person would)
+    await page.waitForTimeout(700);
+    await closeAll();
+    const missed = made.filter(([, did]) => !did).map(([op]) => op);
+    ok(made.length > 0 && !missed.length, `Brioche in ${sp}: every action of the spec is made by the page (${made.length})`, missed.length ? `not made: ${missed.join(", ")}` : made.map(([, d]) => d).join(" | "));
+  }
+  await space("kit");
+  await page.waitForTimeout(300);
+  ok(!errors.some((e) => /Brioche:/.test(e)), "Brioche's spec and the page's handlers list the same actions in every workspace", errors.filter((e) => /Brioche:/.test(e)).join(" | "));
+
   // ---- the room: Brioche's panel, and a grid of bentos for each of the three workspaces
   const side = await page.evaluate(() => ({
     name: document.querySelector(".mcb-eyebrow")?.textContent.split("·").pop().trim(), tag: document.querySelector(".mcb-eyebrow")?.textContent,

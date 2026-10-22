@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import * as macaron from "../server/macaron.ts";
-import * as studio from "../server/macaron-studio.ts";
+import studio from "../web/js/brioche/space-studio.js";
 import { LIGHTS, SURFACES, setupOf, studioWords, setupLine } from "../web/js/macaron-studio-setup.js";
 import { PERSONAS, CHARACTER_ID, BEATS, newStory, beatPrompt, beatTake, cleanStory, applyStory, storyCost, beatCost, storyLength, whoOf, voiceMode, characterPictures, characterNameOf, defaultCharacter, cleanCharacter } from "../web/js/macaron-ugc-data.js";
 import { GRAPHIC_KINDS, GRAPHIC_IDS, buildGraphic, defaultFields, cleanFields, rolesOf } from "../web/js/macaron-graphics-data.js";
@@ -25,7 +25,7 @@ test("in the Studio her tool offers the Studio's actions and open_space, with th
   const tool = macaron.macaronTool("studio");
   assert.equal(tool.name, "macaron_answer");
   const item = (tool.input_schema.properties.actions as any).items;
-  assert.deepEqual(item.properties.op.enum, ["open_space", "propose_shoot", "set_studio", "write_ugc", "add_motion_graphic"]);
+  assert.deepEqual(item.properties.op.enum, ["propose_shoot", "set_studio", "write_ugc", "add_motion_graphic", "open_space"]);
   for (const k of ["template", "light", "surface", "background", "persona", "hook", "beats", "kind", "copy", "seconds", "ease", "space"]) assert.ok(k in item.properties, `the tool carries ${k}`);
   assert.deepEqual(item.properties.light.enum, LIGHTS.map((l) => l.id));
   assert.deepEqual(item.properties.persona.enum, [...PERSONAS.map((p) => p.id), CHARACTER_ID]);
@@ -34,10 +34,10 @@ test("in the Studio her tool offers the Studio's actions and open_space, with th
   for (const op of ["edit_text", "set_layer", "make_variation", "write_brief", "set_colour"]) assert.ok(!item.properties.op.enum.includes(op), `${op} is not a Studio action`);
 });
 
-test("the server's list of Studio actions is the page's", () => {
-  const page = readFileSync(join(root, "web/js/macaron-ops-studio.js"), "utf8");
-  const listed = page.match(/export const OPS = \[([^\]]*)\]/)?.[1].split(",").map((x) => x.trim().replace(/"/g, "")).filter(Boolean);
-  assert.deepEqual(["open_space", ...(listed ?? [])], [...studio.OPS]);
+test("the Studio's actions are the page's: each action of the spec has a handler in run-studio.js, and no handler is without one", () => {
+  const page = readFileSync(join(root, "web/js/brioche/run-studio.js"), "utf8");
+  const handlers = [...page.slice(page.indexOf("export const RUN")).split("\n};")[0].matchAll(/^  (\w+)\(/gm)].map((m) => m[1]);
+  assert.deepEqual(handlers, Object.keys(studio.actions));
 });
 
 test("her brief in the Studio names the five workspaces, the four crafts and how to write, and says she proposes while the page asks", () => {

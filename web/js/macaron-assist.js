@@ -3,327 +3,57 @@
 // the voice and the rules; in the Studio the product and the pictures; in Create the design open, the others, the week and
 // the motion; in the Brand book the designs it gathers. She answers with
 // actions of that workspace, made here as one step back; what takes time (a new picture) follows once they are done.
-import { changed, toast, writer } from "./store.js";
-import { ALL_FORMATS, FORMATS, FAMILIES, FAMILY_KEYS, PURPOSES, frameOf, newLayer, ownFormats, contrast, familyOf, familyFormats, nativeSize } from "./design.js";
-import { LAYOUTS, safeRect, presetFor } from "./macaron-layout.js";
-import { SCENE_IDS, sceneById } from "./macaron-mockup-scenes.js";
-import { openWin } from "./macaron-win.js";
-import {
-  macaron, designNow, designById, kitNow, layoutNow, patchLayer, postJson, batch, undo, edit, applyLayout, adaptFormat, applyKitNow, makeVariant, openDesign, guardOf, makePicture, VARIANT_KINDS,
-  setBrief, addDirection, pickDirection, addNote, setColour, addColour, setColourField, setKit, setWords, setType, addRule, setRule, planDesign, addDesign, addMotion, setSpace, uid, SPACES,
-} from "./macaron.js";
+// What each workspace is, its actions and what she is told of it are defined once, in brioche/space-*.js (read by the
+// server too); the page's side of each workspace is brioche/run-*.js (what she is told of it, and how each action is made).
+// This file is what they share: the base she is told, the asking, the step back, and the dispatch of an action to its workspace.
+import { changed, writer } from "./store.js";
+import { macaron, kitNow, postJson, batch, undo, setSpace, SPACES } from "./macaron.js";
 import { WORKSPACES } from "./macaron-harness.js";
-import * as studioOps from "./macaron-ops-studio.js";
-import * as bookOps from "./macaron-ops-book.js";
+import { SPACES as ROOMS, opsOf } from "./brioche/harness.js";
+import * as kitRun from "./brioche/run-kit.js";
+import * as ideaRun from "./brioche/run-idea.js";
+import * as studioRun from "./brioche/run-studio.js";
+import * as createRun from "./brioche/run-create.js";
+import * as bookRun from "./brioche/run-book.js";
 
-const r = (v, n = 3) => (typeof v === "number" ? Math.round(v * 10 ** n) / 10 ** n : v);
+/** The page's side of each workspace: what she is told of it beyond the base, and how each of its actions is made. */
+const ROOM_RUN = { kit: kitRun, idea: ideaRun, studio: studioRun, create: createRun, book: bookRun };
 
 /** What she is told: the workspace open and what is in it, nothing of the others. */
 export function summary(space = macaron.space) {
   const b = macaron.brand;
-  const body = b.body;
   const kit = kitNow();
   const base = {
     name: b.name,
     space,
-    kit: { about: body.kit.about, tagline: kit.tagline, palette: kit.palette.map(({ id, name, hex, role, share }) => ({ id, name, hex, role, share })), type: kit.type, logos: kit.logos.map(({ id, kind, tone, ground }) => ({ id, kind, tone, ground })), voice: kit.voice },
+    kit: { about: b.body.kit.about, tagline: kit.tagline, palette: kit.palette.map(({ id, name, hex, role, share }) => ({ id, name, hex, role, share })), type: kit.type, logos: kit.logos.map(({ id, kind, tone, ground }) => ({ id, kind, tone, ground })), voice: kit.voice },
   };
-  if (space === "idea") {
-    return { ...base, brief: body.brief, directions: (body.directions ?? []).map(({ id, name, note, picked }) => ({ id, name, note, picked })), refs: body.refs.map(({ id, title, kind, note }) => ({ id, title, kind, note })), story: body.history.filter((x) => x.kind !== "export").map(({ title, kind, note }) => ({ title, kind, note })) };
-  }
-  if (space === "studio") return { ...base, ...studioOps.summary() };
-  if (space === "book") return { ...base, ...bookOps.summary() };
-  if (space === "kit") {
-    const pairs = kit.palette.flatMap((a, i) => kit.palette.slice(i + 1).map((c) => ({ a: a.id, b: c.id, ratio: Math.round(contrast(a.hex, c.hex) * 10) / 10 }))).filter((x) => x.ratio < 4.5);
-    return { ...base, rules: body.kit.rules.map(({ id, kind, text }) => ({ id, kind, text })), colourways: (body.kit.colourways ?? []).map(({ name, ground, logo }) => ({ name, ground, logo })), patterns: (body.kit.patterns ?? []).map((x) => x.name), lowContrast: pairs };
-  }
-  const d = designNow();
-  return {
-    ...base,
-    brief: body.brief,
-    design: d && {
-      id: d.id, name: d.name, purpose: d.purpose, status: d.status, day: d.plan?.day, format: d.format, family: familyOf(d.format), openFormat: macaron.format, safe: safeRect(macaron.format), ownFormats: ownFormats(d),
-      // the formats of its family: what each is, how big, where its safe zone is
-      siblings: familyFormats(d.format).map((f) => ({ id: f, name: FORMATS[f].name, w: nativeSize(f).w, h: nativeSize(f).h, own: ownFormats(d).includes(f), safe: safeRect(f) })), intent: d.intent, variantKind: d.variant?.kind, bg: layoutNow().bg,
-      layers: layoutNow().layers.map((l) => ({ id: l.id, type: l.type, role: l.role, name: l.name, x: r(l.x), y: r(l.y), w: r(l.w), h: l.h ? r(l.h) : 0, size: r(l.size), fontRole: l.fontRole, colorRole: l.colorRole, accent: l.accent, align: l.align, hidden: l.hidden, text: l.text, logo: l.logo, shape: l.shape, src: l.src, fit: l.fit })),
-      guard: guardOf(d).map((g) => ({ text: g.text, level: g.level })),
-    },
-    designs: body.designs.map((x) => ({ id: x.id, name: x.name, purpose: x.purpose, format: x.format, family: familyOf(x.format), status: x.status, day: x.plan?.day, variant: x.variant?.kind })),
-    mockups: (body.mockups ?? []).slice(0, 6).map(({ scene, design }) => ({ scene, design })),
-    motion: body.motion.map(({ id, design, duration, format }) => ({ id, design, duration, format })),
-    assets: body.assets.filter((a) => a.url).slice(0, 10).map((a) => ({ id: a.id, name: a.name, kind: a.kind, width: a.width, height: a.height })),
-  };
+  return { ...base, ...(ROOM_RUN[space] ?? createRun).summary() };
 }
 
-const ENUM = { align: ["left", "center", "right"], valign: ["top", "middle", "bottom"], fontRole: ["display", "text", "mono"], fit: ["cover", "contain"], shape: ["round", "rect", "pill", "ellipse", "ring"], role: ["eyebrow", "headline", "sub", "cta", "label", "logo", "hero", "badge", "deco"] };
-const RANGE = { x: [-0.5, 1.5], y: [-0.5, 1.5], w: [0.02, 2], h: [0, 2], size: [0.012, 0.4], lineHeight: [0.8, 2], tracking: [-0.1, 0.4], opacity: [0, 1], rot: [-360, 360], radius: [0, 0.5] };
-
-/** A layer by its id, or by its name when she named it so. */
-const find = (ref) => {
-  const d = designNow();
-  const key = String(ref ?? "").toLowerCase();
-  return d?.layers.find((l) => l.id === ref) ?? d?.layers.find((l) => l.name?.toLowerCase() === key) ?? null;
-};
-const palette = () => new Set(kitNow().palette.map((p) => p.id));
-
-/** Her props for a layer, checked: only what a layer has, within range, colours from the palette. */
-function clean(props = {}, layer) {
-  const out = {};
-  const kit = kitNow();
-  for (const [k, v] of Object.entries(props)) {
-    if (RANGE[k] && typeof v === "number") out[k] = Math.min(RANGE[k][1], Math.max(RANGE[k][0], v));
-    else if (ENUM[k] && ENUM[k].includes(v)) out[k] = v;
-    else if ((k === "colorRole" || k === "accent") && (palette().has(v) || /^#[0-9a-f]{6}$/i.test(v))) out[k] = v;
-    else if (k === "hidden" || k === "caps") out[k] = !!v;
-    else if (k === "text" && layer?.type === "text") out[k] = String(v);
-    else if (k === "name") out[k] = String(v).slice(0, 40);
-    else if (k === "logo" && kit.logos.some((l) => l.id === v)) out[k] = v;
-    else if (k === "src" && layer?.type === "image") out[k] = macaron.brand.body.assets.find((a) => a.id === v)?.url ?? (macaron.brand.body.assets.some((a) => a.url === v) ? v : undefined);
+/** The harness and the page must list the same actions: a workspace's spec without a handler here, or a handler without a spec, is an error. */
+function checkParity() {
+  for (const space of ROOMS) {
+    const ops = opsOf(space).filter((op) => op !== "open_space");
+    const handlers = Object.keys(ROOM_RUN[space]?.RUN ?? {});
+    for (const op of ops) if (!handlers.includes(op)) console.error(`Brioche: ${space} has the action ${op} in its spec but no handler in run-${space}.js`);
+    for (const op of handlers) if (!ops.includes(op)) console.error(`Brioche: ${space} has a handler for ${op} in run-${space}.js but no action in its spec`);
   }
-  for (const k of Object.keys(out)) if (out[k] === undefined) delete out[k];
-  return out;
 }
-
-const IDEA_OPS = ["write_brief", "add_direction", "pick_direction", "add_note"];
-const KIT_OPS = ["set_colour", "add_colour", "add_colourway", "set_voice", "add_rule", "set_type", "add_pattern"];
-const BRIEF_KEYS = ["pitch", "goal", "audience", "message", "tone", "deliverables", "constraints", "channels"];
-const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-/** Whether an action belongs to the workspace that is open (the server keeps to this too; the page does not trust it). */
-const allowed = (op) => op === "open_space" || (macaron.space === "idea" ? IDEA_OPS : macaron.space === "kit" ? KIT_OPS : macaron.space === "studio" ? studioOps.OPS : macaron.space === "book" ? bookOps.OPS : null)?.includes(op) || (macaron.space === "create" && !IDEA_OPS.includes(op) && !KIT_OPS.includes(op));
+// (after the modules are all loaded: they import each other)
+setTimeout(checkParity, 0);
 
 /** One action, made. Answers what to tell the user; pushes what takes time onto later. */
-function run(a, later) {
-  if (!allowed(a.op)) return null;
-  // the Studio and the Brand book make their own actions
-  if (a.op !== "open_space" && macaron.space === "studio") return studioOps.run(a, later);
-  if (a.op !== "open_space" && macaron.space === "book") return bookOps.run(a, later);
-  const d = designNow();
-  const name = (l) => l?.name ?? "a layer";
-  switch (a.op) {
-    case "open_space":
-      if (!SPACES.includes(a.space)) return null;
-      setSpace(a.space);
-      return `Opened ${WORKSPACES.find((w) => w.id === a.space).name}`;
-    case "write_brief": {
-      const patch = {};
-      for (const [k, v] of Object.entries(a.fields ?? {})) if (BRIEF_KEYS.includes(k) && typeof v === "string" && v.trim()) patch[k] = v.trim();
-      const goals = (Array.isArray(a.goals) ? a.goals : []).map((g) => String(g).trim().slice(0, 32)).filter(Boolean).slice(0, 3);
-      if (goals.length) patch.goals = goals;
-      if (!Object.keys(patch).length) return null;
-      setBrief(patch);
-      return `Brief: ${Object.keys(patch).join(", ")}`;
-    }
-    case "add_direction": {
-      if (!a.name) return null;
-      const logo = kitNow().logos.some((l) => l.id === a.logo) ? a.logo : undefined;
-      addDirection({ name: a.name, note: a.note ?? "", logo });
-      return `Direction: ${a.name}`;
-    }
-    case "pick_direction":
-      if (!(macaron.brand.body.directions ?? []).some((x) => x.id === a.id)) return null;
-      pickDirection(a.id);
-      return "Direction picked";
-    case "add_note":
-      if (!a.title) return null;
-      addNote(String(a.title).slice(0, 140), String(a.note ?? "").slice(0, 200));
-      return "A note in the story";
-    case "set_colour": {
-      const i = kitNow().palette.findIndex((p) => p.id === a.id);
-      if (i < 0) return null;
-      const did = [];
-      if (a.hex) (setColour(i, a.hex), did.push("colour"));
-      const patch = {};
-      if (a.name) patch.name = String(a.name).slice(0, 24);
-      if (a.role) patch.role = String(a.role).slice(0, 30);
-      if (Object.keys(patch).length) (setColourField(i, patch), did.push(Object.keys(patch).join(" and ")));
-      return did.length ? `${macaron.brand.body.kit.palette[i].name}: ${did.join(", ")}` : null;
-    }
-    case "add_colour": {
-      if (!/^#[0-9a-f]{6}$/i.test(a.hex ?? "") || kitNow().palette.length >= 8) return null;
-      addColour();
-      const i = macaron.brand.body.kit.palette.length - 1;
-      setColour(i, a.hex);
-      setColourField(i, { name: String(a.name ?? "New colour").slice(0, 24), role: String(a.role ?? "").slice(0, 30) });
-      return `Colour: ${a.name ?? a.hex}`;
-    }
-    case "add_colourway": {
-      const kit = kitNow();
-      const g = kit.palette.find((p) => p.id === a.ground);
-      const l = kit.logos.find((x) => x.id === a.logo);
-      if (!g || !l) return null;
-      setKit("colourways", [...(macaron.brand.body.kit.colourways ?? []), { id: uid("cw"), name: String(a.name || `${l.name} on ${g.name}`).slice(0, 40), ground: g.id, logo: l.id }]);
-      return `Colourway: ${a.name || l.name}`;
-    }
-    case "add_pattern": {
-      const kit = kitNow();
-      const ground = kit.palette.find((p) => p.id === a.ground)?.id ?? kit.palette[0]?.id;
-      if (!ground || !a.svg) return null;
-      const marks = (a.marks ?? []).filter((m) => kit.logos.some((l) => l.id === m.logo && l.kind !== "icon"));
-      const name = String(a.name || "New pattern").slice(0, 40);
-      setKit("patterns", [{ id: uid("pt"), name, ground, w: a.w, h: a.h, svg: a.svg, marks, at: new Date().toISOString() }, ...(macaron.brand.body.kit.patterns ?? [])].slice(0, 24));
-      return `Pattern: ${name}`;
-    }
-    case "set_voice": {
-      const v = macaron.brand.body.kit.voice;
-      let did = false;
-      if (typeof a.summary === "string" && a.summary.trim()) (setKit("voice.summary", a.summary.trim().slice(0, 300)), (did = true));
-      if (Array.isArray(a.words) && a.words.length) (setWords("voice", a.words.map(String).slice(0, 6)), (did = true));
-      // example pairs (say / never say): what the window and the brand book show; dos and donts of the same length make pairs too
-      let pairs = (Array.isArray(a.lines) ? a.lines : []).filter((x) => x && String(x.say ?? "").trim()).map((x) => ({ say: String(x.say).slice(0, 120), not: String(x.not ?? "").slice(0, 120) })).slice(0, 8);
-      if (!pairs.length && Array.isArray(a.dos) && Array.isArray(a.donts) && a.dos.length && a.dos.length === a.donts.length) pairs = a.dos.map((x, i) => ({ say: String(x).slice(0, 120), not: String(a.donts[i]).slice(0, 120) })).slice(0, 8);
-      if (pairs.length) (setKit("voice.lines", [...(v?.lines ?? []).filter((x) => x.say), ...pairs].slice(0, 8)), (did = true));
-      if (Array.isArray(a.dos) && a.dos.length) (setKit("voice.dos", a.dos.map(String).slice(0, 8)), (macaron.brand.body.dos = String(a.dos[0])), (did = true));
-      if (Array.isArray(a.donts) && a.donts.length) (setKit("voice.donts", a.donts.map(String).slice(0, 8)), (macaron.brand.body.donts = String(a.donts[0])), (did = true));
-      return did && v ? "Voice" : null;
-    }
-    case "add_rule": {
-      if (!a.text || !["do", "dont"].includes(a.kind)) return null;
-      addRule(a.kind);
-      const rules = macaron.brand.body.kit.rules;
-      setRule(rules.at(-1).id, { text: String(a.text).slice(0, 200) });
-      return a.kind === "do" ? "A rule to keep" : "A rule never to break";
-    }
-    case "set_type": {
-      if (!["display", "text", "mono"].includes(a.type)) return null;
-      const patch = {};
-      if (a.family) patch.family = String(a.family).slice(0, 40);
-      if (typeof a.weight === "number") patch.weight = a.weight;
-      if (!Object.keys(patch).length) return null;
-      setType(a.type, patch);
-      return `Type: ${a.type}`;
-    }
-    case "add_design": {
-      // a format by its id, else the first of a family, else the one that is open
-      const format = ALL_FORMATS.includes(a.format) ? a.format : FAMILIES[a.family]?.formats[0] ?? macaron.format;
-      // (the words ride with the design: a headline and a subhead in the brand's voice, so the new one is not left on the starter's filler)
-      const texts = { ...(typeof a.headline === "string" && a.headline.trim() ? { headline: a.headline.trim().slice(0, 90) } : {}), ...(typeof a.sub === "string" ? { sub: a.sub.trim().slice(0, 140) } : {}) };
-      const made = addDesign({ name: String(a.name || "New design").slice(0, 60), purpose: PURPOSES.includes(a.purpose) ? a.purpose : "Launch", format, layout: LAYOUTS[a.layout] ? a.layout : presetFor(format), texts });
-      return `A new ${FORMATS[format].name.toLowerCase()}: ${made.name}`;
-    }
-    case "propose_mockup": {
-      // it only opens the window with the scene and the design chosen: a picture is paid for there, by the person
-      if (!SCENE_IDS.includes(a.scene)) return null;
-      const id = a.design && designById(a.design) ? a.design : macaron.design;
-      macaron.mockup = { ...(macaron.mockup ?? {}), scene: a.scene, ...(id ? { design: id } : {}) };
-      openWin("mockup");
-      return `A mockup to look at: ${sceneById(a.scene).name}`;
-    }
-    case "add_motion": {
-      const id = a.design && designById(a.design) ? a.design : macaron.design;
-      return id && addMotion(id) ? "A motion piece" : null;
-    }
-    case "plan_design": {
-      const id = a.design && designById(a.design) ? a.design : macaron.design;
-      if (!id || !DAYS.includes(a.day)) return null;
-      planDesign(id, a.day);
-      return `Planned for ${a.day}`;
-    }
-    case "edit_text": {
-      const l = find(a.layer);
-      if (l?.type !== "text" || typeof a.text !== "string") return null;
-      patchLayer(l.id, { text: a.text });
-      return `Words: ${name(l)}`;
-    }
-    case "set_layer": {
-      const l = find(a.layer);
-      const props = clean(a.props, l);
-      if (!l || !Object.keys(props).length) return null;
-      patchLayer(l.id, props);
-      return `${name(l)}: ${Object.keys(props).join(", ")}`;
-    }
-    case "add_layer": {
-      const type = ["text", "image", "logo", "shape"].includes(a.type) ? a.type : null;
-      if (!type) return null;
-      const layer = newLayer(type, { colorRole: "white", ...clean(a.props, { type }) });
-      if (type === "image" && !layer.src) return null;
-      if (type === "text" && !layer.text) layer.text = "Your words";
-      if (type === "logo" && !layer.logo) layer.logo = kitNow().logos[0]?.id ?? "";
-      d.layers.push(layer);
-      macaron.layer = layer.id;
-      return `Added ${type}`;
-    }
-    case "remove_layer": {
-      const l = find(a.layer);
-      if (!l) return null;
-      d.layers = d.layers.filter((x) => x.id !== l.id);
-      for (const f of Object.values(d.formats ?? {})) delete f.layers?.[l.id];
-      if (macaron.layer === l.id) macaron.layer = null;
-      return `Removed ${name(l)}`;
-    }
-    case "set_background": {
-      const patch = {};
-      if (a.color && palette().has(a.color)) patch.color = a.color;
-      const pic = a.asset ? macaron.brand.body.assets.find((x) => x.id === a.asset) : null;
-      if (pic) (patch.src = pic.url, (patch.crop = { x: 0, y: 0, w: 1, h: 1 }));
-      if (typeof a.dim === "number") patch.dim = { color: "ink", alpha: a.dim };
-      if (!Object.keys(patch).length) return null;
-      Object.assign(macaron.format === d.format ? d.bg : ((d.formats[macaron.format] ??= { layers: {} }).bg ??= {}), patch);
-      return patch.color ? `Ground: ${kitNow().palette.find((p) => p.id === patch.color)?.name ?? patch.color}` : "Ground picture";
-    }
-    case "apply_kit":
-      return applyKitNow().length ? "Kit applied" : "Already on brand";
-    case "suggest_layout":
-      if (!LAYOUTS[a.layout]) return null;
-      applyLayout(a.layout);
-      return `Layout: ${LAYOUTS[a.layout]}`;
-    case "adapt_format":
-      if (!ALL_FORMATS.includes(a.format)) return null;
-      if (a.format === d.format) return (macaron.format = a.format, `Opened ${a.format}`);
-      adaptFormat(a.format);
-      return `Laid out for ${FORMATS[a.format].name}`;
-    case "make_variation": {
-      if (!VARIANT_KINDS[a.kind]) return null;
-      const copy = makeVariant(a.kind, { name: a.name?.slice(0, 60), note: a.note?.slice(0, 120) });
-      for (const x of a.actions ?? []) run(x, later);
-      return `Variation: ${copy.name}`;
-    }
-    case "generate_background":
-      if (!a.prompt) return null;
-      later.push(() => makeBackground(a));
-      return "Making a picture";
-    case "set_status":
-      if (!["draft", "review", "approved", "scheduled"].includes(a.status)) return null;
-      d.status = a.status;
-      return `Status: ${a.status}`;
-    case "rename":
-      if (!a.name) return null;
-      d.name = a.name.slice(0, 60);
-      return "Renamed";
-    case "select_design":
-      if (!macaron.brand.body.designs.some((x) => x.id === a.design)) return null;
-      openDesign(a.design);
-      return "Opened it";
-    default:
-      return null;
+export function run(a, later) {
+  if (a.op === "open_space") {
+    if (!SPACES.includes(a.space)) return null;
+    setSpace(a.space);
+    return `Opened ${WORKSPACES.find((w) => w.id === a.space).name}`;
   }
-}
-
-/** A new picture for the design, behind it or as a layer, from the image model she chose. */
-async function makeBackground(a) {
-  const brand = macaron.brand;
-  const d = designNow();
-  const format = macaron.format;
-  const flux = a.model === "flux";
-  const asset = await makePicture({
-    prompt: `${a.prompt} No text, no letters, no logo, no watermark.`,
-    model: flux ? "flux-3-image" : "gpt-image-2.5-flare",
-    aspect: format,
-    name: a.prompt.slice(0, 50),
-    refs: [],
-  });
-  // another brand may be open by now: the picture stays in the library of the brand it was made for
-  if (macaron.brand !== brand) return;
-  edit(() => {
-    if (a.use === "image") {
-      const f = frameOf(format);
-      const l = newLayer("image", { name: asset.name, src: asset.url, x: 0.1, y: 0.3, w: 0.8, h: (0.8 * f.w * (asset.height / asset.width)) / f.h, fit: "cover", crop: { x: 0, y: 0, w: 1, h: 1 } });
-      d.layers.push(l);
-      macaron.layer = l.id;
-    } else {
-      Object.assign(macaron.format === d.format ? d.bg : ((d.formats[format] ??= { layers: {} }).bg ??= {}), { src: asset.url, crop: { x: 0, y: 0, w: 1, h: 1 }, dim: { color: "ink", alpha: 0.45 } });
-    }
-  }, "A new picture");
-  toast("The new picture is in.");
+  // the action must belong to the workspace that is open (the server keeps to this too; the page does not trust it)
+  const space = macaron.space;
+  if (!opsOf(space).includes(a.op)) return null;
+  return ROOM_RUN[space]?.RUN[a.op]?.(a, later) ?? null;
 }
 
 // the tool a key of her panel asked through: its id rides with the words it sent, once (the bar sends them as typed)
