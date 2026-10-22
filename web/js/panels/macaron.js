@@ -2,8 +2,8 @@
 // at the top switches brands), the five workspaces a brand's work goes through (Design idea, Brand kit, Studio, Create, Brand book) are
 // swatch cards in the brand's own colours fanned like a colour book, the open one pulled out toward the page, and the brand's health is a
 // seal at its foot with Brioche in it. Another brand, another panel; a brand with no palette yet has the app's own greys. Beside it the
-// workspace, a grid of bentos, which wear the brand too (its ground, and one of its colours each); a bento opens as a window over the
-// screen (macaron-win.js). Her bar docks at the foot of the page.
+// workspace, a grid of bentos, which wears the brand too (the grid is its accent colour, the bentos on it its ground); a bento opens as a
+// window over the screen (macaron-win.js). Her bar docks at the foot of the page.
 // Mockup: web/labs/panels.html (B2).
 import { h, icon, sprite } from "../dom.js";
 import { changed } from "../store.js";
@@ -114,6 +114,12 @@ function bookColours(kit) {
   return { ground, ink, seal: lively, cards: cards.slice(0, 5).map((c) => ({ c, t: contrast(c, ground) >= contrast(c, ink) ? ground : ink })) };
 }
 
+/** The brand's accent: the palette colour named or meant as its signal or accent, else null (the liveliest one stands in). */
+function accentOf(kit) {
+  const p = kit.palette.find((x) => /signal|accent|highlight|pop/i.test(`${x.name ?? ""} ${x.role ?? ""}`) && hexOf(x.hex));
+  return p ? hexOf(p.hex) : null;
+}
+
 /** The brand's wordmark that reads best on the panel's ground (a logo file's tone is the palette colour it is drawn in), or null. */
 function wordmarkOn(kit, ground) {
   const hex = (tone) => hexOf(kit.palette.find((p) => p.id === tone)?.hex);
@@ -134,10 +140,10 @@ function drawSide(b) {
   // the panel wears the brand (its colours as custom properties), or the app's greys
   side.classList.toggle("is-branded", !!col);
   for (const [k, v] of Object.entries({ "--bk-ground": col?.ground, "--bk-ink": col?.ink, "--bk-seal": col?.seal })) v ? side.style.setProperty(k, v) : side.style.removeProperty(k);
-  // and so does the board: its frames take the same colours, one each in turn (css/macaron.css, .macaron.is-branded .mc-bento)
+  // and so does the board: the frames' container is the brand's accent, the frames on it its ground (css/macaron.css, .macaron.is-branded)
   const root = shell.root;
   root.classList.toggle("is-branded", !!col);
-  const vars = { "--bk-ground": col?.ground, "--bk-ink": col?.ink, ...Object.fromEntries([0, 1, 2, 3, 4].map((i) => [`--bk-c${i + 1}`, col?.cards[i]?.c])) };
+  const vars = { "--bk-ground": col?.ground, "--bk-ink": col?.ink, "--bk-accent": col ? accentOf(kit) ?? col.seal : null };
   for (const [k, v] of Object.entries(vars)) v ? root.style.setProperty(k, v) : root.style.removeProperty(k);
   const word = col ? wordmarkOn(kit, col.ground) : null;
   const { score, lines } = healthOf(b);
