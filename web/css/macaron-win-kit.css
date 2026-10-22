@@ -206,3 +206,10 @@
 
 /* the tagline: one plain line under the voice's summary */
 .mc-win input.field.kv-tagline { font: 600 1.375rem/1.3 var(--font-sans); letter-spacing: -.01em; }
+
+/* Patterns: the four, large, each with its download */
+.kpt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.kpt-cell { display: grid; gap: .5rem; margin: 0; }
+.kpt-cell canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; border: 1px solid var(--line); border-radius: 1rem; }
+.kpt-cell figcaption { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.kpt-cell b { font: 600 var(--fs-body)/1.2 var(--font-sans); }

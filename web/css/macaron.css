@@ -134,7 +134,7 @@
 .is-kit .is-palette { grid-column: span 12; }
 .is-kit .is-logos { grid-column: span 7; }
 .is-kit .is-type { grid-column: span 5; }
-.is-kit .is-imagery { grid-column: span 5; }
+.is-kit .is-patterns { grid-column: span 5; }
 .is-kit .is-rules { grid-column: span 7; }
 
 /* the palette: each swatch as wide as its share of a page; on it its share, the palette's colour that reads best on it (Aa, graded), its hex and name */
@@ -200,14 +200,13 @@
 .mc-kwords { padding-left: 1.25rem; border-left: 1px solid var(--line); cursor: pointer; }
 .mc-kwords:hover .mc-sub { color: var(--muted); }
 
-/* the imagery: the brand's own pictures, one large and the others beside it */
-.mc-imgs { display: grid; flex: 1 1 0; grid-template-columns: 1.4fr 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .5rem; min-height: 9rem; }
-.mc-imgs img { display: block; width: 100%; height: 100%; min-height: 0; border-radius: .75rem; object-fit: cover; }
-.mc-imgs img:first-child { grid-row: span 2; }
-.mc-imgs[data-n="1"] { grid-template-columns: 1fr; } .mc-imgs[data-n="1"] img { grid-row: span 2; }
-.mc-imgs[data-n="2"] { grid-template-columns: 1fr 1fr; } .mc-imgs[data-n="2"] img { grid-row: span 2; }
-.mc-imgs[data-n="3"] { grid-template-columns: 1.4fr 1fr; }
-.mc-imgs[data-n="4"] img:last-child { grid-column: span 2; }
+/* the patterns (macaron-patterns.js): four tiles of supporting graphics made from the kit, each named */
+.mc-patterns { display: grid; flex: 1 1 0; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .625rem .75rem; min-height: 9rem; }
+.mc-patterns[data-n="1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.mc-patterns[data-n="3"] .mc-pattern:first-child { grid-row: span 2; }
+.mc-pattern { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: .375rem; min-width: 0; min-height: 0; margin: 0; }
+.mc-pattern canvas { display: block; width: 100%; height: 100%; min-height: 0; border: 1px solid rgba(255, 255, 255, .1); border-radius: .875rem; object-fit: cover; }
+.mc-pattern figcaption { overflow: hidden; font: 500 .6875rem/1.2 var(--font-mono); letter-spacing: .04em; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
 
 /* the rules: where the logo works (each colourway on its grounds, graded), then four ways it is never used */
 .mc-uses { display: grid; flex: 1 1 0; min-width: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .625rem .75rem; min-height: 9rem; }
@@ -866,7 +865,7 @@ body.mc-has-win { overflow: hidden; }
 }
 @media (max-width: 1280px) {
   .is-kit .is-logos, .is-kit .is-type { grid-column: span 12; }
-  .is-kit .is-imagery { grid-column: span 5; }
+  .is-kit .is-patterns { grid-column: span 5; }
 .is-kit .is-rules { grid-column: span 7; }
   .is-kit .is-product { grid-column: span 12; }
   .is-idea .is-brief, .is-idea .is-mood, .is-idea .is-story, .is-idea .is-dirs { grid-column: span 12; }

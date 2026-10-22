@@ -1,16 +1,17 @@
 // The Brand kit workspace: the palette first (each swatch as wide as its share), then the logos (a plate for each
-// colourway, on its ground), the type (a scale in the brand's own words), the imagery (its own pictures) and the rules
+// colourway, on its ground), the type (a scale in the brand's own words), the patterns (made from its mark and colours) and the rules
 // (where the logo works and four ways it is never used, beside the voice: its words, what it says and never says). Each bento is a picture of its part of the kit; opened, it is the part's window, with an Advanced switch for the finer controls.
 import { h, icon, sprite } from "./dom.js";
 import { toast } from "./store.js";
 import { contrast, colorOf, kitOf, luminance, cssName } from "./design.js";
 import {
-  macaron, setColour, addColour, setColourField, setWords, setKit, setType, addLogoFile, removeLogo, setLogoField, addRule, setRule, removeRule, kitFiles, setSpace,
+  macaron, setColour, addColour, setColourField, setWords, setKit, setType, addLogoFile, removeLogo, setLogoField, addRule, setRule, removeRule, kitFiles,
 } from "./macaron.js";
 import { bento, mcicon, key, chip, chooseFiles, arming, isArmed, armedNow, fill, seg } from "./macaron-ui.js";
 import { defineWindow, openWin, isAdvanced } from "./macaron-win.js";
 import { productParts } from "./macaron-assets.js";
 import { draftKey } from "./macaron-tools.js";
+import { patternsOf, patternCanvas } from "./macaron-patterns.js";
 
 const KINDS = [["wordmark", "Wordmark"], ["mark", "Mark"], ["icon", "App icon"]];
 const norm = (s) => String(s ?? "").trim().toLowerCase();
@@ -130,18 +131,12 @@ export function kitSpace() {
         : h("p.mc-hint", {}, v.summary || "How the brand talks: a few words, and lines it says and never says."));
   }
 
-  /** The brand's imagery: its own pictures (those its Studio made first, then those added, then the moodboard's), opening the Studio. */
-  function imagery(b) {
-    const skip = new Set(["app", "brand", "mascot", "logo", "product"]);
-    const pics = [...new Map([
-      ...b.assets.filter((a) => a.url && !a.video && (a.kind === "made" || a.kind === "render")),
-      ...b.assets.filter((a) => a.url && !a.video && !skip.has(a.kind) && a.kind !== "made" && a.kind !== "render"),
-      ...(b.refs ?? []).filter((r) => r.kind === "inspiration" && r.src).map((r) => ({ url: r.src, name: r.title })),
-    ].map((p) => [p.url, p])).values()].slice(0, 5);
-    const go = () => setSpace("studio");
-    return bento("is-imagery", "Imagery", go,
-      pics.length ? h("div.mc-imgs", { dataset: { n: String(pics.length) } }, ...pics.map((p) => h("img", { src: p.url, alt: p.name ?? "", title: p.name ?? "", draggable: false, loading: "lazy" })))
-        : h("button.mc-empty-tile", { type: "button", on: { click: go } }, icon("image"), h("span", {}, "Make or add the brand's pictures")));
+  /** The brand's patterns, made from its kit (macaron-patterns.js): the mark tone on tone, the mark in signal, the wordmark in rows, bands. */
+  function patterns(kit) {
+    const list = patternsOf(kit);
+    return bento("is-patterns", "Patterns", () => openWin("patterns"),
+      list.length ? h("div.mc-patterns", { dataset: { n: String(list.length) } }, ...list.map((p) => h("figure.mc-pattern", { title: p.name }, patternCanvas(p, 480, 300, 0.72), h("figcaption", {}, p.name))))
+        : h("button.mc-empty-tile", { type: "button", on: { click: () => openWin("palette") } }, icon("plus"), h("span", {}, "Add the brand's colours: the patterns are made from them")));
   }
 
   /** The rules, shown: each colourway on the grounds it is made for (with how well it reads), then four ways it is never used, drawn from the brand's own files. */
@@ -195,11 +190,11 @@ export function kitSpace() {
     const b = macaron.brand;
     if (!b) return;
     const kit = kitOf(b.body);
-    fill(el, withExport(palette(kit)), logos(kit), type(kit), imagery(b.body), rules(kit));
+    fill(el, withExport(palette(kit)), logos(kit), type(kit), patterns(kit), rules(kit));
   }
   const sig = () => {
     const b = macaron.brand?.body;
-    return JSON.stringify([b?.kit, b?.colours, b?.logo, b?.products, b?.product, b?.assets?.length, b?.refs?.length, macaron.colourway]);
+    return JSON.stringify([b?.kit, b?.colours, b?.logo, b?.products, b?.product, b?.assets?.length, macaron.colourway]);
   };
   return { el, update, sig };
 }
