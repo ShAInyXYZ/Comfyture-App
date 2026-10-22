@@ -103,43 +103,33 @@ try {
     const grid = document.querySelector(".mc-grid.is-kit");
     const boxes = [...grid.querySelectorAll(":scope > .mc-bento")].map((b) => ({ label: b.querySelector(".mc-b-label").textContent, rect: b.getBoundingClientRect(), expand: !!b.querySelector(".mc-expand") }));
     const g = grid.getBoundingClientRect();
-    return { labels: boxes.map((b) => b.label), paletteFirst: boxes[0].rect.top === Math.min(...boxes.map((b) => b.rect.top)), paletteWide: boxes[0].rect.width / g.width, expands: boxes.every((b) => b.expand), swatches: grid.querySelectorAll(".mc-sw").length, share: grid.querySelectorAll(".mc-share i").length, hidden: [...document.querySelectorAll(".mc-grid")].filter((x) => x.hidden).length };
+    const sw = [...grid.querySelectorAll(".mc-sw")].map((x) => ({ w: x.getBoundingClientRect().width, aa: !!x.querySelector(".mc-sw-aa b"), pct: parseInt(x.querySelector(".mc-sw-pct").textContent) || 0 }));
+    return { labels: boxes.map((b) => b.label), paletteFirst: boxes[0].rect.top === Math.min(...boxes.map((b) => b.rect.top)), paletteWide: boxes[0].rect.width / g.width, expands: boxes.every((b) => b.expand), sw, share: grid.querySelectorAll(".mc-share").length, hidden: [...document.querySelectorAll(".mc-grid")].filter((x) => x.hidden).length };
   });
-  ok(kitGrid.labels.join() === "Palette,Logos,Type,Voice,Rules,Product" && kitGrid.expands, "Brand kit is six bentos, each with its expand key: palette, logos, type, voice, rules, product", kitGrid.labels.join(", "));
-  ok(kitGrid.paletteFirst && kitGrid.paletteWide > 0.97 && kitGrid.swatches === 4 && kitGrid.share === 4 && kitGrid.hidden === 2, "the palette comes first, the width of the screen: four big swatches and the bar of how much each takes", `${Math.round(kitGrid.paletteWide * 100)}% wide`);
+  ok(kitGrid.labels.join() === "Palette,Logos,Type,Voice,Rules" && kitGrid.expands, "Brand kit is five bentos, each with its expand key: palette, logos, type, voice, rules", kitGrid.labels.join(", "));
+  const widest = (xs, k) => xs.indexOf(xs.reduce((m, x) => (x[k] > m[k] ? x : m)));
+  ok(kitGrid.paletteFirst && kitGrid.paletteWide > 0.97 && kitGrid.sw.length === 4 && kitGrid.sw.every((x) => x.aa) && widest(kitGrid.sw, "w") === widest(kitGrid.sw, "pct") && kitGrid.share === 0,
+    "the palette comes first, the width of the screen: four swatches, each as wide as its share and with the colour that reads on it", kitGrid.sw.map((x) => `${x.pct}% ${Math.round(x.w)}px`).join(", "));
   const fits = () => page.evaluate(() => ({ h: document.documentElement.scrollHeight, vh: innerHeight, w: document.documentElement.scrollWidth, vw: innerWidth }));
   let fit = await fits();
   ok(fit.h <= fit.vh + 2 && fit.w <= fit.vw, "Brand kit fits one screen", `${fit.h} of ${fit.vh}`);
   await shot("room-kit");
 
-  // the logos: the wordmark, the mark and the app icon, and the other colourways passing by like a marquee
-  const logosEl = await page.evaluate(() => ({
-    hero: [...document.querySelectorAll(".mc-logo-hero .mc-ctile")].map((t) => t.dataset.kind), ways: document.querySelectorAll(".mc-marq-track .mc-ctile").length, arrows: document.querySelectorAll(".mc-marq-arrow").length,
-    fade: getComputedStyle(document.querySelector(".mc-marq-view")).maskImage || getComputedStyle(document.querySelector(".mc-marq-view")).webkitMaskImage, srcs: [...document.querySelectorAll(".mc-logo-hero img")].map((i) => i.getAttribute("src")),
-  }));
-  ok(logosEl.hero.join() === "wordmark,mark,icon" && logosEl.ways === 16 && logosEl.arrows === 2 && /gradient/.test(logosEl.fade), "the logos bento: wordmark, mark and app icon big, the other colourways in a marquee with arrows and faded edges", `${logosEl.ways} tiles`);
-  const slide = () => page.evaluate(() => document.querySelector(".mc-marq-track").style.transform);
-  const m0 = await slide();
-  await page.waitForTimeout(1400);
-  const m1 = await slide();
-  ok(m0 !== m1, "the marquee moves by itself", `${m0} -> ${m1}`);
-  await page.hover(".mc-marq-view");
-  const h0 = await slide();
-  await page.waitForTimeout(700);
-  ok(h0 === (await slide()), "and holds still while it is pointed at");
-  await page.mouse.move(20, 20);
-  const a0 = await slide();
-  await page.locator(".mc-marq-arrow").last().click();
-  await page.waitForTimeout(600);
-  const a1 = await slide();
-  const px = (t) => parseFloat(t.match(/\((-?[\d.]+)/)[1]);
-  ok(Math.abs(px(a1) - px(a0)) > 100, "an arrow moves it on", `${a0} -> ${a1}`);
-  await page.locator('.mc-ctile.is-way[data-kind="wordmark"][data-tone="plum"]').first().dispatchEvent("click");
-  await page.waitForTimeout(500);
-  const plum = await page.evaluate(() => [...document.querySelectorAll(".mc-logo-hero img")].map((i) => i.getAttribute("src")));
-  ok(plum.every((s) => /plum/.test(s)), "a colourway in the marquee is put in the big tiles", plum.join(" "));
-  await page.locator('.mc-ctile.is-way[data-kind="wordmark"][data-tone="yellow"]').first().dispatchEvent("click").catch(() => {});
-  await store((m) => m.setColourway(null));
+  // the logos: a plate for each colourway on its ground; the type as a scale; the voice's says and never-says; the rules shown with the brand's files
+  const kitParts = await page.evaluate(() => {
+    const grid = document.querySelector(".mc-grid.is-kit");
+    const plates = [...grid.querySelectorAll(".mc-plate")];
+    return {
+      plates: plates.length, words: plates.filter((p) => p.querySelector(".mc-plate-word img")?.complete).length, caps: plates.map((p) => p.querySelector("figcaption").textContent),
+      clipped: plates.some((p) => { const r = p.getBoundingClientRect(); const i = p.querySelector(".mc-plate-word img")?.getBoundingClientRect(); return i && (i.left < r.left - 1 || i.right > r.right + 1); }),
+      scale: [...grid.querySelectorAll(".mc-scale-row b")].map((x) => x.textContent), says: grid.querySelectorAll(".mc-say:not(.is-not)").length, nots: grid.querySelectorAll(".mc-say.is-not").length, chipOn: grid.querySelector(".is-voice .mc-chip.is-on")?.textContent,
+      works: grid.querySelectorAll(".mc-use:not(.is-never)").length, grades: grid.querySelectorAll(".mc-use-grade").length, nevers: [...grid.querySelectorAll(".mc-use.is-never figcaption")].map((x) => x.textContent),
+    };
+  });
+  ok(kitParts.plates >= 2 && kitParts.words === kitParts.plates && !kitParts.clipped && kitParts.caps.every((c) => / on /.test(c)), "the logos: a plate for each colourway, its wordmark whole, and what it is", kitParts.caps.join(" | "));
+  ok(kitParts.scale.join() === "Display,Text,Mono", "the type is a scale: display, text, mono");
+  ok(kitParts.says >= 1 && kitParts.says === kitParts.nots && !!kitParts.chipOn, "the voice: its words, then what it says beside what it never says", `${kitParts.says} pairs`);
+  ok(kitParts.works >= 1 && kitParts.grades === kitParts.works && kitParts.nevers.join() === "Low contrast,Stretched,Tilted,Recoloured", "the rules: where the logo works, graded, and four ways it is never used", `${kitParts.works} grounds`);
 
   // Design idea
   await space("idea");
