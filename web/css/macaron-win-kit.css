@@ -213,3 +213,7 @@
 .kpt-cell canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; border: 1px solid var(--line); border-radius: 1rem; }
 .kpt-cell figcaption { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
 .kpt-cell b { font: 600 var(--fs-body)/1.2 var(--font-sans); }
+.kpt-ask { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .625rem; margin-bottom: 1.25rem; }
+.kpt-ask .field { min-height: 2.75rem; }
+.kpt-keys { display: inline-flex; gap: .375rem; }
+.kpt-cell.is-own b::after { content: "Brioche"; margin-left: .5rem; padding: .125rem .4375rem; border-radius: var(--r-pill); background: var(--s3); color: var(--muted); font: 500 .6875rem/1 var(--font-mono); letter-spacing: .06em; vertical-align: .125rem; }

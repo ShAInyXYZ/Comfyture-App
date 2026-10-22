@@ -288,11 +288,23 @@ test("each workspace gives Brioche its own tool: only its actions, and a way to 
   assert.equal(spaceOf("content"), "create", "what an older page called Content is Create");
   const [kit, idea, studio, create, book] = SPACES.map(opsOf);
   assert.deepEqual(idea.filter((o) => !["write_brief", "add_direction", "pick_direction", "add_note", "open_space"].includes(o)), []);
-  assert.deepEqual(kit.filter((o) => !["set_colour", "add_colour", "add_colourway", "set_voice", "add_rule", "set_type", "open_space"].includes(o)), []);
+  assert.deepEqual(kit.filter((o) => !["set_colour", "add_colour", "add_colourway", "set_voice", "add_rule", "set_type", "add_pattern", "open_space"].includes(o)), []);
   for (const o of ["edit_text", "set_layer", "make_variation", "generate_background", "add_design", "add_motion", "plan_design", "propose_mockup", "open_space"]) assert.ok(create.includes(o), `Create has ${o}`);
   for (const [name, ops] of [["idea", idea], ["kit", kit], ["studio", studio], ["create", create], ["book", book]]) assert.ok(ops.includes("open_space"), `${name} can open another workspace`);
   assert.ok(!create.includes("write_brief") && !create.includes("set_colour") && !idea.includes("set_layer") && !kit.includes("edit_text") && !studio.includes("edit_text") && !book.includes("set_layer"), "nothing of another workspace is in a tool");
   assert.ok(!idea.includes("propose_mockup") && !kit.includes("propose_mockup"), "a mockup is proposed from Create only");
+});
+
+test("a pattern she draws for the kit is kept to its size: a tile of 40 to 480 units, its drawing, the logo files placed on it", () => {
+  const out = readMacaronAnswer(JSON.stringify({ reply: "Moons.", actions: [
+    { op: "add_pattern", name: "Moons", ground: "teal", w: 9000, h: 3, svg: "<circle cx='5' cy='5' r='3' fill='#FF8A3D'/>", marks: [{ logo: "mark-1", x: 3, y: -1, size: 2, rotate: 900, ink: "cream" }, { x: 0.5 }] },
+    { op: "add_pattern", name: "Empty", svg: "  " },
+  ] }), "kit");
+  assert.equal(out.actions.length, 1, "a pattern with no drawing is dropped");
+  const [a] = out.actions;
+  assert.equal(a.w, 480); assert.equal(a.h, 40); assert.equal(a.ground, "teal"); assert.match(a.svg, /circle/);
+  assert.deepEqual(a.marks, [{ logo: "mark-1", x: 1, y: 0, size: 6, rotate: 360, ink: "cream" }], "a mark without a logo is dropped, the others kept inside the tile");
+  assert.deepEqual(readMacaronAnswer(JSON.stringify({ reply: "", actions: [{ op: "add_pattern", svg: "<rect/>" }] }), "create").actions, [], "only the Brand kit makes patterns");
 });
 
 test("her brief is the open workspace's: its things and its actions, nothing of the others'", () => {

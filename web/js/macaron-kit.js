@@ -133,7 +133,7 @@ export function kitSpace() {
 
   /** The brand's patterns, made from its kit (macaron-patterns.js): the mark tone on tone, the mark in signal, the wordmark in rows, bands. */
   function patterns(kit) {
-    const list = patternsOf(kit);
+    const list = patternsOf(kit, macaron.brand.body.kit.patterns ?? []).slice(0, 4);
     return bento("is-patterns", "Patterns", () => openWin("patterns"),
       list.length ? h("div.mc-patterns", { dataset: { n: String(list.length) } }, ...list.map((p) => h("figure.mc-pattern", { title: p.name }, patternCanvas(p, 480, 300, 0.72), h("figcaption", {}, p.name))))
         : h("button.mc-empty-tile", { type: "button", on: { click: () => openWin("palette") } }, icon("plus"), h("span", {}, "Add the brand's colours: the patterns are made from them")));

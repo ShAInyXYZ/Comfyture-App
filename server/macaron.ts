@@ -24,7 +24,7 @@ export const spaceOf = (v: unknown): Space => ((SPACES as readonly string[]).inc
 
 const OPS: Record<Space, readonly string[]> = {
   idea: ["write_brief", "add_direction", "pick_direction", "add_note", "open_space"],
-  kit: ["set_colour", "add_colour", "add_colourway", "set_voice", "add_rule", "set_type", "open_space"],
+  kit: ["set_colour", "add_colour", "add_colourway", "set_voice", "add_rule", "set_type", "add_pattern", "open_space"],
   studio: studio.OPS,
   book: book.OPS,
   create: ["edit_text", "set_layer", "add_layer", "remove_layer", "set_background", "apply_kit", "suggest_layout", "adapt_format", "make_variation", "generate_background", "set_status", "rename", "select_design", "add_design", "add_motion", "plan_design", "propose_mockup", "open_space"],
@@ -58,6 +58,10 @@ const PROPS: Record<Space, Record<string, unknown>> = {
     donts: list("What the voice never does, up to eight short lines."),
     lines: { type: "array", description: "For set_voice: up to eight example pairs of the voice.", items: { type: "object", properties: { say: str("A line in the brand's voice."), not: str("The line it must never be.") } } },
     kind: { type: "string", enum: ["do", "dont"], description: "For add_rule: a rule to keep (do) or never break (dont)." },
+    svg: str("For add_pattern: the tile's drawing, the inside of an <svg> (no <svg> tag): path, circle, ellipse, rect, line, polyline, polygon and g only, colours as palette #RRGGBB."),
+    w: { type: "number", description: "For add_pattern: the tile's width in units (40 to 480)." },
+    h: { type: "number", description: "For add_pattern: the tile's height in units (40 to 480)." },
+    marks: { type: "array", description: "For add_pattern: the brand's logo files placed on the tile, optional.", items: { type: "object", properties: { logo: str("A logo id from the kit (a mark or a wordmark)."), x: { type: "number", description: "Centre across the tile, 0 to 1." }, y: { type: "number", description: "Centre down the tile, 0 to 1." }, size: { type: "number", description: "Its longer side, in tile units." }, rotate: { type: "number", description: "Degrees." }, ink: str("The palette id it is drawn in.") } } },
     text: str("A rule's words."),
     family: str("A typeface's family."),
     weight: { type: "number", description: "A typeface's weight, 300 to 900." },
@@ -149,6 +153,7 @@ Actions (op and its fields):
 - set_voice {summary, words, lines, dos, donts}: change how the brand talks; only what you give is changed. lines are the voice's examples, each a pair: say (a line in the brand's voice) and not (the line it must never be), up to eight; they are what the Voice window and the brand book show. dos and donts are plain lists of habits to keep and avoid.
 - add_rule {kind, text}: a rule to keep (kind do) or never break (kind dont), one plain line.
 - set_type {type, family, weight}: change a type role (display, text or mono).
+- add_pattern {name, ground, w, h, svg, marks}: a new brand pattern (supporting graphics for backgrounds), drawn as one tile that repeats. ground is a palette id; w and h the tile in units (40 to 480); svg is the tile's drawing: only path, circle, ellipse, rect, line, polyline, polygon and g (transform, opacity allowed), every fill and stroke a palette #RRGGBB, no text, no images, no gradients' urls. The tile must repeat without a seam: a shape crossing an edge is drawn again on the opposite edge (shifted by w or h). marks places the brand's own logo files on the tile (logo id, x and y as fractions of the tile, size in units, rotate, ink a palette id): the files are recoloured to that ink, never redrawn. Make it a real designer's pattern for this brand, from its idea and its shapes: a clear motif, a rhythm (half-drop, scatter, waves, stripes, grid, radial), two or three palette colours, quiet enough to sit behind words. Never repeat a pattern listed below; a name of two or three words.
 - open_space {space}.
 
 Logo files are the supplied files: never redraw, recolour or invent one; only pair them. Colours are written as #RRGGBB and must stay readable on each other: the notes below list the pairs that do not. Keep names short.`,
@@ -204,6 +209,7 @@ export function macaronPrompt(s: Summary, turns: { role: string; text: string }[
     lines.push(`Voice words: ${(kit.voice?.words ?? []).join(", ")}`);
     lines.push(`Rules: ${(s.rules ?? []).slice(0, 14).map((x: any) => `${x.kind === "do" ? "keep" : "never"}: ${cut(x.text, 110)}`).join(" | ") || "none"}`);
     lines.push(`Colourways saved: ${(s.colourways ?? []).map((c: any) => `${cut(c.name, 30)} (${c.logo} on ${c.ground})`).join("; ") || "none"}`);
+    lines.push(`Patterns made: ${(s.patterns ?? []).map((x: any) => cut(x, 40)).join("; ") || "none"} (the kit also draws four of its own: the mark tone on tone, the mark in signal, the wordmark in rows, bands)`);
     lines.push(`Pairs that do not read (contrast below 4.5): ${(s.lowContrast ?? []).map((c: any) => `${c.a} on ${c.b} ${c.ratio}`).join("; ") || "none"}`);
   }
   if (space === "idea") {
@@ -292,6 +298,18 @@ function cleanAction(a: any, space: Space, nested = false): any | null {
   if (out.family !== undefined && !(FAMILY_KEYS as string[]).includes(out.family)) delete out.family;
   if (out.scene !== undefined && !(SCENE_IDS as string[]).includes(out.scene)) delete out.scene;
   if (a.op === "propose_mockup" && !out.scene) return null;
+  if (a.op === "add_pattern") {
+    // the tile's drawing is checked again on the page (only shapes, only the palette's colours); here it is kept to its size
+    if (typeof a.svg !== "string" || !a.svg.trim()) return null;
+    out.svg = a.svg.slice(0, 16000);
+    const span = (v: unknown, d: number) => (finite(v) ? Math.min(480, Math.max(40, Math.round(v as number))) : d);
+    out.w = span(a.w, 160);
+    out.h = span(a.h, out.w);
+    const unit = (v: unknown, d: number) => (finite(v) ? Math.min(1, Math.max(0, v as number)) : d);
+    out.marks = (Array.isArray(a.marks) ? a.marks : []).filter((m: any) => m && typeof m.logo === "string").slice(0, 12).map((m: any) => ({
+      logo: m.logo.slice(0, 60), x: unit(m.x, 0.5), y: unit(m.y, 0.5), size: finite(m.size) ? Math.min(480, Math.max(6, m.size)) : 48, rotate: finite(m.rotate) ? Math.max(-360, Math.min(360, m.rotate)) : 0, ink: typeof m.ink === "string" ? m.ink.slice(0, 60) : "",
+    }));
+  }
   if (a.op === "make_variation") out.actions = (Array.isArray(a.actions) ? a.actions : []).map((x: any) => cleanAction(x, space, true)).filter(Boolean).slice(0, 12);
   return out;
 }

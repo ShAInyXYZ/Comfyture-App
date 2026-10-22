@@ -1,11 +1,15 @@
-// The brand's patterns: supporting graphics made from its own kit, nothing drawn by hand. The mark repeated tone on tone on the
-// darkest colour, the mark in the signal colour on the lightest, the wordmark in rows on the signal colour, and bands in the
-// palette's order and proportions. Each is drawn on a canvas (the logo files recoloured through their transparency), so the
-// Brand kit's frame, the window and a downloaded PNG are the same drawing at different sizes.
+// The brand's patterns: supporting graphics made from its own kit. Four the kit draws by itself (the mark tone on tone on the
+// darkest colour, the mark in the signal colour on the lightest, the wordmark in rows on the signal colour, bands in the
+// palette's order and proportions), and those Brioche draws when asked (her add_pattern: one tile as SVG shapes, with the
+// brand's logo files placed on it, repeated; kept in kit.patterns). A tile she draws keeps only plain shapes, and every colour
+// in it is the palette's nearest. Each pattern is drawn on a canvas (the logo files recoloured through their transparency), so
+// the Brand kit's frame, the window and a downloaded PNG are the same drawing at different sizes.
 import { h, icon } from "./dom.js";
 import { kitOf, luminance } from "./design.js";
-import { macaron } from "./macaron.js";
+import { macaron, setKit } from "./macaron.js";
 import { defineWindow } from "./macaron-win.js";
+import { arming, isArmed, armedNow } from "./macaron-ui.js";
+import { askMacaron } from "./macaron-assist.js";
 
 const hexOk = (c) => /^#[0-9a-f]{6}$/i.test(String(c ?? ""));
 /** A colour a part of the way (t, 0 to 1) to another. */
@@ -22,10 +26,54 @@ const chroma = (hex) => {
   return Math.max(r, g, b) - Math.min(r, g, b);
 };
 
-/** The patterns a kit makes: up to four, from its palette and its logo files (none without colours). */
-export function patternsOf(kit) {
+// ---------------------------------------------------------------- a tile Brioche drew, made safe and on palette
+
+const SHAPES = new Set(["g", "path", "circle", "ellipse", "rect", "line", "polyline", "polygon"]);
+const ATTRS = new Set(["d", "cx", "cy", "r", "rx", "ry", "x", "y", "x1", "y1", "x2", "y2", "width", "height", "points", "transform", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin", "stroke-dasharray", "opacity", "fill-opacity", "stroke-opacity", "fill-rule"]);
+const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+/** The palette colour nearest to a colour (as the eye sees it, roughly), for a colour that is not the palette's. */
+function nearest(c, pal) {
+  const v = String(c).trim().toLowerCase();
+  if (v === "none" || v === "transparent" || v === "currentcolor") return v;
+  let hex = /^#[0-9a-f]{6}$/.test(v) ? v : /^#[0-9a-f]{3}$/.test(v) ? `#${[...v.slice(1)].map((x) => x + x).join("")}` : v === "white" ? "#ffffff" : v === "black" ? "#000000" : null;
+  if (!hex) return pal[0];
+  const [r, g, b] = rgb(hex);
+  return pal.map((p) => {
+    const [R, G, B] = rgb(p);
+    return [p, 2 * (r - R) ** 2 + 4 * (g - G) ** 2 + 3 * (b - B) ** 2];
+  }).sort((a, b2) => a[1] - b2[1])[0][0];
+}
+/** The tile's drawing with only plain shapes and their geometry and paint kept, every colour the palette's nearest. */
+export function cleanTile(svg, pal) {
+  const doc = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${svg}</svg>`, "image/svg+xml");
+  const root = doc.documentElement;
+  if (root.querySelector("parsererror") || root.nodeName !== "svg") return "";
+  const walk = (el) => {
+    for (const c of [...el.children]) {
+      if (!SHAPES.has(c.nodeName)) { c.remove(); continue; }
+      for (const a of [...c.attributes]) {
+        if (!ATTRS.has(a.name)) c.removeAttribute(a.name);
+        else if ((a.name === "fill" || a.name === "stroke") && !/^url\(/i.test(a.value)) c.setAttribute(a.name, nearest(a.value, pal));
+        else if (/url\(/i.test(a.value)) c.removeAttribute(a.name);
+      }
+      walk(c);
+    }
+  };
+  walk(root);
+  return [...root.childNodes].filter((n) => n.nodeType === 1).map((n) => new XMLSerializer().serializeToString(n)).join("").replace(/ xmlns="[^"]*"/g, "");
+}
+
+/** The patterns of a brand: those Brioche drew (newest first), then the four its kit draws (none without colours). */
+export function patternsOf(kit, made = []) {
   const pal = kit.palette.filter((p) => hexOk(p.hex)).map((p) => ({ ...p, hex: p.hex.toLowerCase() }));
   if (!pal.length) return [];
+  const hexes = pal.map((p) => p.hex);
+  const colour = (id, d) => pal.find((p) => p.id === id)?.hex ?? d;
+  const own = made.map((p) => ({
+    id: p.id, name: p.name, kind: "tile", own: true, ground: colour(p.ground, hexes[0]), w: p.w || 160, h: p.h || p.w || 160,
+    svg: cleanTile(p.svg ?? "", hexes),
+    marks: (p.marks ?? []).map((m) => ({ ...m, url: kit.logos.find((l) => l.id === m.logo)?.url, ink: colour(m.ink, null) })).filter((m) => m.url),
+  }));
   const byLum = [...pal].sort((a, b) => luminance(a.hex) - luminance(b.hex));
   const dark = byLum[0].hex;
   const light = byLum.at(-1).hex;
@@ -37,7 +85,7 @@ export function patternsOf(kit) {
   if (mark && signal !== light) out.push({ id: "signal", name: "Mark in signal", kind: "grid", url: mark.url, ground: light, ink: signal, cell: 150, size: 60 });
   if (word && signal !== dark) out.push({ id: "rows", name: "Wordmark rows", kind: "rows", url: word.url, ground: signal, ink: mix(signal, dark, 0.22), cell: 104, size: 250 });
   out.push({ id: "bands", name: "Bands", kind: "bands", ground: dark, bands: pal.map((p) => [p.hex, p.share || 1]) });
-  return out.slice(0, 4);
+  return [...own, ...out];
 }
 
 const pics = new Map();
@@ -87,6 +135,28 @@ export async function drawPattern(cv, p, scale = 1) {
     ctx.restore();
     return;
   }
+  if (p.kind === "tile") {
+    // one tile (her drawing, then the logo files on it, drawn again past each edge so the repeat has no seam), filled over the canvas
+    const tw = Math.max(1, Math.round(p.w * scale));
+    const th = Math.max(1, Math.round(p.h * scale));
+    const tile = h("canvas", { width: tw, height: th });
+    const tx = tile.getContext("2d");
+    if (p.svg) tx.drawImage(await load(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${tw}" height="${th}" viewBox="0 0 ${p.w} ${p.h}">${p.svg}</svg>`)}`), 0, 0, tw, th);
+    for (const m of p.marks) {
+      const img = await load(m.url);
+      const t = tinted(img, m.ink ?? p.ground, m.size * scale, m.size * scale);
+      for (const dx of [-tw, 0, tw]) for (const dy of [-th, 0, th]) {
+        tx.save();
+        tx.translate(m.x * tw + dx, m.y * th + dy);
+        tx.rotate(((m.rotate || 0) * Math.PI) / 180);
+        tx.drawImage(t, -t.width / 2, -t.height / 2);
+        tx.restore();
+      }
+    }
+    ctx.fillStyle = ctx.createPattern(tile, "repeat");
+    ctx.fillRect(0, 0, W, H);
+    return;
+  }
   const img = await load(p.url);
   const cell = p.cell * scale;
   if (p.kind === "grid") {
@@ -123,20 +193,41 @@ async function download(p, brand) {
   setTimeout(() => (URL.revokeObjectURL(a.href), a.remove()), 1000);
 }
 
+const IDEAS = "moons and tea leaves scattered · soft waves of the mark · a checkerboard of the palette";
+
 function patternsWin() {
   const el = h("div.mc-w.is-patterns");
+  const rerender = () => update();
+  let draft = "";
+  const ask = () => {
+    const words = draft.trim();
+    if (!words || macaron.chat.busy) return;
+    draft = "";
+    askMacaron(`Make a new brand pattern: ${words}`);
+  };
   function update() {
     const b = macaron.brand;
     if (!b) return;
-    const list = patternsOf(kitOf(b.body));
-    el.replaceChildren(list.length
-      ? h("div.kpt-grid", {}, ...list.map((p) => h("figure.kpt-cell", {},
-        patternCanvas(p, 960, 640, 1),
-        h("figcaption", {}, h("b", {}, p.name),
-          h("button.mc-iconkey", { type: "button", title: `Download ${p.name.toLowerCase()} (PNG, 2048 px)`, "aria-label": `Download ${p.name}`, on: { click: () => download(p, b.name) } }, icon("download"))))))
-      : h("p.mc-hint", {}, "Add the brand's colours and its logo files: the patterns are made from them."));
+    if (el.contains(document.activeElement) && document.activeElement.matches("input")) return false;
+    const list = patternsOf(kitOf(b.body), b.body.kit.patterns ?? []);
+    const busy = !!macaron.chat.busy;
+    const drop = (p) => {
+      const key = `pattern:${p.id}`;
+      return h(`button.mc-iconkey.is-danger${isArmed(key) ? ".is-armed" : ""}`, { type: "button", title: isArmed(key) ? "Click again to delete it" : "Delete this pattern", "aria-label": "Delete this pattern",
+        on: { click: () => arming(key, rerender, () => setKit("patterns", (macaron.brand.body.kit.patterns ?? []).filter((x) => x.id !== p.id))) } }, icon("trash"));
+    };
+    el.replaceChildren(
+      h("form.kpt-ask", { on: { submit: (e) => (e.preventDefault(), ask()) } },
+        h("input.field", { value: draft, placeholder: `A new pattern: ${IDEAS}`, "aria-label": "Describe a new pattern", disabled: busy, on: { input: (e) => (draft = e.target.value) } }),
+        h("button.mc-go", { type: "submit", disabled: busy, title: "Brioche draws it from the kit: its colours and its logo files" }, h("span", {}, busy ? "Brioche is drawing" : "Make it"))),
+      list.length
+        ? h("div.kpt-grid", {}, ...list.map((p) => h(`figure.kpt-cell${p.own ? ".is-own" : ""}`, {},
+          patternCanvas(p, 960, 640, 1),
+          h("figcaption", {}, h("b", {}, p.name), h("span.kpt-keys", {}, p.own ? drop(p) : null,
+            h("button.mc-iconkey", { type: "button", title: `Download ${p.name.toLowerCase()} (PNG, 2048 px)`, "aria-label": `Download ${p.name}`, on: { click: () => download(p, b.name) } }, icon("download")))))))
+        : h("p.mc-hint", {}, "Add the brand's colours and its logo files: the patterns are made from them."));
   }
-  const sig = () => JSON.stringify([macaron.brand?.body.kit.palette, macaron.brand?.body.kit.logos]);
+  const sig = () => JSON.stringify([macaron.brand?.body.kit.palette, macaron.brand?.body.kit.logos, macaron.brand?.body.kit.patterns, !!macaron.chat.busy, armedNow()]);
   return { el, update, sig };
 }
 defineWindow("patterns", { eyebrow: "Brand kit", title: "Patterns", sub: () => macaron.brand?.name ?? "", size: "l", advanced: false, make: patternsWin });

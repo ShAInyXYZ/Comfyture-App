@@ -35,7 +35,7 @@ export function summary(space = macaron.space) {
   if (space === "book") return { ...base, ...bookOps.summary() };
   if (space === "kit") {
     const pairs = kit.palette.flatMap((a, i) => kit.palette.slice(i + 1).map((c) => ({ a: a.id, b: c.id, ratio: Math.round(contrast(a.hex, c.hex) * 10) / 10 }))).filter((x) => x.ratio < 4.5);
-    return { ...base, rules: body.kit.rules.map(({ id, kind, text }) => ({ id, kind, text })), colourways: (body.kit.colourways ?? []).map(({ name, ground, logo }) => ({ name, ground, logo })), lowContrast: pairs };
+    return { ...base, rules: body.kit.rules.map(({ id, kind, text }) => ({ id, kind, text })), colourways: (body.kit.colourways ?? []).map(({ name, ground, logo }) => ({ name, ground, logo })), patterns: (body.kit.patterns ?? []).map((x) => x.name), lowContrast: pairs };
   }
   const d = designNow();
   return {
@@ -85,7 +85,7 @@ function clean(props = {}, layer) {
 }
 
 const IDEA_OPS = ["write_brief", "add_direction", "pick_direction", "add_note"];
-const KIT_OPS = ["set_colour", "add_colour", "add_colourway", "set_voice", "add_rule", "set_type"];
+const KIT_OPS = ["set_colour", "add_colour", "add_colourway", "set_voice", "add_rule", "set_type", "add_pattern"];
 const BRIEF_KEYS = ["pitch", "goal", "audience", "message", "tone", "deliverables", "constraints", "channels"];
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 /** Whether an action belongs to the workspace that is open (the server keeps to this too; the page does not trust it). */
@@ -153,6 +153,15 @@ function run(a, later) {
       if (!g || !l) return null;
       setKit("colourways", [...(macaron.brand.body.kit.colourways ?? []), { id: uid("cw"), name: String(a.name || `${l.name} on ${g.name}`).slice(0, 40), ground: g.id, logo: l.id }]);
       return `Colourway: ${a.name || l.name}`;
+    }
+    case "add_pattern": {
+      const kit = kitNow();
+      const ground = kit.palette.find((p) => p.id === a.ground)?.id ?? kit.palette[0]?.id;
+      if (!ground || !a.svg) return null;
+      const marks = (a.marks ?? []).filter((m) => kit.logos.some((l) => l.id === m.logo && l.kind !== "icon"));
+      const name = String(a.name || "New pattern").slice(0, 40);
+      setKit("patterns", [{ id: uid("pt"), name, ground, w: a.w, h: a.h, svg: a.svg, marks, at: new Date().toISOString() }, ...(macaron.brand.body.kit.patterns ?? [])].slice(0, 24));
+      return `Pattern: ${name}`;
     }
     case "set_voice": {
       const v = macaron.brand.body.kit.voice;
