@@ -60,7 +60,7 @@ try {
 
   // ---- the workspace: five workspaces, the one of Create fills the height, and the families lead in turn
   const ws = await page.locator(".mcb-card").evaluateAll((els) => els.map((e) => e.dataset.space));
-  ok(ws.join() === "idea,kit,studio,create,book" && (await page.locator('.mcb-card[data-space="create"]').getAttribute("aria-pressed")) === "true", "Create is the fourth of five workspaces and is the one open");
+  ok(ws.join() === "kit,idea,studio,create,book" && (await page.locator('.mcb-card[data-space="create"]').getAttribute("aria-pressed")) === "true", "Create is the fourth of five workspaces and is the one open");
   ok((await page.locator(".mc-tool").count()) === 0 && (await page.locator(".mcb-health .mcb-line").count()) > 0, "no canned tools under the workspaces: the brand's health instead");
   await shot("create-social");
   let m = await page.evaluate(() => { const g = document.querySelector(".mc-grid.is-create").getBoundingClientRect(); const bar = document.getElementById("assistant")?.getBoundingClientRect(); return { doc: document.documentElement.scrollHeight, vh: innerHeight, gridBottom: g.bottom, barTop: bar?.top ?? 0, bentos: [...document.querySelectorAll(".mc-grid.is-create > .mc-bento")].map((b) => b.className.replace(/mc-bento|\s+/g, " ").trim()), cols: [...document.querySelectorAll(".mc-grid.is-create > .mc-bento")].map((b) => Math.round(b.getBoundingClientRect().width)) }; });

@@ -17,7 +17,7 @@ const exec = promisify(execFile);
 // ------------------------------------------------------------------ Brioche, the assistant
 
 /** The workspaces of Macaron: Brioche works in the one that is open, with a brief and a tool of its own. */
-export const SPACES = ["idea", "kit", "studio", "create", "book"] as const;
+export const SPACES = ["kit", "idea", "studio", "create", "book"] as const;
 export type Space = (typeof SPACES)[number];
 /** (what an older page sent as Content is Create) */
 export const spaceOf = (v: unknown): Space => ((SPACES as readonly string[]).includes(v as string) ? (v as Space) : v === "content" ? "create" : "create");
@@ -125,7 +125,7 @@ export const MACARON_TOOL = macaronTool("create");
 
 const COMMON = `You are Brioche, the baby bunny who runs Comfyture's Macaron room, the brand room: you know brand work and nothing else. You are warm, brief and practical; you speak in one or two short sentences. You answer through the macaron_answer tool: a reply and the actions to take.
 
-Macaron has five workspaces, in the order a brand's work goes: Design idea (the brief, the moodboard, the story, the directions), Brand kit (palette, logos, type, voice, rules), Studio (the raw material: photography, UGC stories, motion graphics, the product), Create (everything made from the kit: social posts and stories, ads, print, web, app, mockups, video, the week's plan and the exports) and Brand book (the guidelines document built from the kit, the brand guard's audit, the handoff package). You work in the one that is open now, and only its actions are yours. When what is asked belongs to another workspace, say so in a sentence and offer to open it (the open_space action opens it; then the user asks again). When the user only asks a question or for advice, answer it and take no action. Never promise what you did not do. Use the ids shown below, never invent one.`;
+Macaron has five workspaces, in this order: Brand kit (palette, logos, type, voice, rules), Design idea (the brief, the moodboard, the story, the directions), Studio (the raw material: photography, UGC stories, motion graphics, the product), Create (everything made from the kit: social posts and stories, ads, print, web, app, mockups, video, the week's plan and the exports) and Brand book (the guidelines document built from the kit, the brand guard's audit, the handoff package). You work in the one that is open now, and only its actions are yours. When what is asked belongs to another workspace, say so in a sentence and offer to open it (the open_space action opens it; then the user asks again). When the user only asks a question or for advice, answer it and take no action. Never promise what you did not do. Use the ids shown below, never invent one.`;
 
 const BRIEFS: Record<Space, string> = {
   studio: studio.BRIEF,
@@ -177,8 +177,8 @@ Rules: change only what is asked. Use the layer ids and asset ids shown below, a
 };
 
 /** (her panel has no canned tools any more: nothing to arm) */
-const PRESETS: Record<Space, Record<string, string>> = { idea: {}, kit: {}, studio: {}, create: {}, book: {} };
-const SPACE_NAME: Record<Space, string> = { idea: "Design idea", kit: "Brand kit", studio: "Studio", create: "Create", book: "Brand book" };
+const PRESETS: Record<Space, Record<string, string>> = { kit: {}, idea: {}, studio: {}, create: {}, book: {} };
+const SPACE_NAME: Record<Space, string> = { kit: "Brand kit", idea: "Design idea", studio: "Studio", create: "Create", book: "Brand book" };
 
 /** Her brief for a workspace: who she is, what the room is, and only what she can do there. */
 export const macaronBrief = (space: Space = "create") => `${COMMON}\n\n${BRIEFS[space]}`;

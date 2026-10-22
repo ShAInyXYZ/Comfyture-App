@@ -283,10 +283,10 @@ test("a new picture's ledger line names its job and what it cost", () => {
 const opsOf = (space) => macaronTool(space).input_schema.properties.actions.items.properties.op.enum;
 
 test("each workspace gives Brioche its own tool: only its actions, and a way to open another", () => {
-  assert.deepEqual([...SPACES], ["idea", "kit", "studio", "create", "book"]);
+  assert.deepEqual([...SPACES], ["kit", "idea", "studio", "create", "book"]);
   assert.equal(spaceOf("nonsense"), "create", "a workspace she does not know is Create, where she always worked");
   assert.equal(spaceOf("content"), "create", "what an older page called Content is Create");
-  const [idea, kit, studio, create, book] = SPACES.map(opsOf);
+  const [kit, idea, studio, create, book] = SPACES.map(opsOf);
   assert.deepEqual(idea.filter((o) => !["write_brief", "add_direction", "pick_direction", "add_note", "open_space"].includes(o)), []);
   assert.deepEqual(kit.filter((o) => !["set_colour", "add_colour", "add_colourway", "set_voice", "add_rule", "set_type", "open_space"].includes(o)), []);
   for (const o of ["edit_text", "set_layer", "make_variation", "generate_background", "add_design", "add_motion", "plan_design", "propose_mockup", "open_space"]) assert.ok(create.includes(o), `Create has ${o}`);
@@ -296,7 +296,7 @@ test("each workspace gives Brioche its own tool: only its actions, and a way to 
 });
 
 test("her brief is the open workspace's: its things and its actions, nothing of the others'", () => {
-  const [idea, kit, studio, create, book] = SPACES.map(macaronBrief);
+  const [kit, idea, studio, create, book] = SPACES.map(macaronBrief);
   assert.match(idea, /write_brief/); assert.doesNotMatch(idea, /edit_text|set_layer|set_colour/);
   assert.match(kit, /add_colourway/); assert.doesNotMatch(kit, /edit_text|write_brief|make_variation/);
   assert.match(create, /edit_text/); assert.doesNotMatch(create, /write_brief|add_colourway|add_direction/);

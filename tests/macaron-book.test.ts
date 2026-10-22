@@ -151,7 +151,7 @@ test("a PDF reader opens the file (pdfinfo, when the machine has it)", (t) => {
 // ---------------------------------------------------------------- Brioche in the book
 
 test("Brioche answers in the book through a tool with its three ops and the fields they carry, and nothing of the posts", () => {
-  assert.deepEqual(macaron.SPACES, ["idea", "kit", "studio", "create", "book"]);
+  assert.deepEqual(macaron.SPACES, ["kit", "idea", "studio", "create", "book"]);
   const tool = macaron.macaronTool("book");
   const item = (tool.input_schema.properties.actions as any).items;
   assert.deepEqual(item.properties.op.enum.sort(), ["open_fix", "open_space", "set_tagline", "write_page"]);
