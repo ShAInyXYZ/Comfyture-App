@@ -134,7 +134,8 @@
 .is-kit .is-palette { grid-column: span 12; }
 .is-kit .is-logos { grid-column: span 7; }
 .is-kit .is-type { grid-column: span 5; }
-.is-kit .is-voice, .is-kit .is-rules { grid-column: span 6; }
+.is-kit .is-imagery { grid-column: span 5; }
+.is-kit .is-rules { grid-column: span 7; }
 
 /* the palette: each swatch as wide as its share of a page; on it its share, the palette's colour that reads best on it (Aa, graded), its hex and name */
 .mc-sw-row { display: flex; flex: 1 1 0; min-height: 5.25rem; gap: .75rem; }
@@ -179,20 +180,37 @@
 .mc-quote { flex: 1 1 0; align-content: center; min-height: 4rem; margin: 0; padding: .875rem 1.25rem; border: 1px solid var(--line); border-radius: 1.0625rem; background: rgba(255, 255, 255, .02); font: 500 clamp(1.125rem, .75rem + .9dvh, 1.625rem)/1.3 var(--font-sans); }
 .mc-quote > span { color: var(--dim); font-size: 1.75rem; line-height: 0; vertical-align: -.375rem; }
 
-/* the voice: what it says beside what it never says (the rules use the same two columns when there is no logo to show) */
-.mc-says { container-type: size; display: grid; flex: 1 1 0; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: .5rem 1rem; min-height: 0; overflow: hidden; }
-.mc-says > .label { font: 500 .6875rem/1 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
-.mc-say { display: flex; align-items: center; gap: .625rem; min-width: 0; margin: 0; padding: .625rem .75rem; border: 1px solid var(--line); border-radius: .875rem; background: rgba(255, 255, 255, .025); font: 500 .9375rem/1.25 var(--font-sans); color: var(--text); }
-.mc-say.is-not { color: var(--dim); }
-.mc-say.is-not span { text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--err) 60%, transparent); }
-.mc-say .kv-ring { width: 1.375rem; height: 1.375rem; margin: 0; }
-.mc-say .kv-ring svg { width: .6875rem; height: .6875rem; }
-/* (as many pairs as the frame has room for, never half a one) */
-@container (max-height: 11rem) { .mc-says .mc-say:nth-child(n+7) { display: none; } }
-@container (max-height: 7.75rem) { .mc-says .mc-say:nth-child(n+5) { display: none; } }
+/* the voice, in the rules' second column: its words, then what it says over what it never says, as many pairs as there is room for */
+.mc-sub { font: 500 .6875rem/1 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.mc-ksays { container-type: size; display: grid; flex: 1 1 0; grid-template-columns: minmax(0, 1fr); grid-auto-rows: min-content; align-content: start; gap: .375rem; min-height: 0; overflow: hidden; }
+.mc-ksay { display: flex; align-items: center; gap: .5rem; min-width: 0; margin: 0; padding: .4375rem .625rem; border: 1px solid var(--line); border-radius: .75rem; background: rgba(255, 255, 255, .025); font: 500 .8125rem/1.25 var(--font-sans); color: var(--text); }
+.mc-ksay span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-ksay.is-not { margin-bottom: .25rem; color: var(--dim); }
+.mc-ksay.is-not span { text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--err) 60%, transparent); }
+.mc-ksay .kv-ring { width: 1.25rem; height: 1.25rem; margin: 0; }
+.mc-ksay .kv-ring svg { width: .625rem; height: .625rem; }
+/* (whole pairs only: a pair is two lines, about 4.6rem with its gaps) */
+@container (max-height: 13.75rem) { .mc-ksays .mc-ksay:nth-child(n+5) { display: none; } }
+@container (max-height: 9.25rem) { .mc-ksays .mc-ksay:nth-child(n+3) { display: none; } }
+@container (max-height: 4.5rem) { .mc-ksays .mc-ksay { display: none; } }
+.mc-chips.is-small { gap: .375rem; }
+.mc-chips.is-small .mc-chip { min-height: 1.875rem; padding: 0 .75rem; font-size: .8125rem; }
+.mc-rules-two { display: grid; flex: 1 1 0; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 1.25rem; min-height: 0; }
+.mc-logo-rules, .mc-kwords { display: flex; flex-direction: column; gap: .625rem; min-width: 0; min-height: 0; }
+.mc-kwords { padding-left: 1.25rem; border-left: 1px solid var(--line); cursor: pointer; }
+.mc-kwords:hover .mc-sub { color: var(--muted); }
+
+/* the imagery: the brand's own pictures, one large and the others beside it */
+.mc-imgs { display: grid; flex: 1 1 0; grid-template-columns: 1.4fr 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .5rem; min-height: 9rem; }
+.mc-imgs img { display: block; width: 100%; height: 100%; min-height: 0; border-radius: .75rem; object-fit: cover; }
+.mc-imgs img:first-child { grid-row: span 2; }
+.mc-imgs[data-n="1"] { grid-template-columns: 1fr; } .mc-imgs[data-n="1"] img { grid-row: span 2; }
+.mc-imgs[data-n="2"] { grid-template-columns: 1fr 1fr; } .mc-imgs[data-n="2"] img { grid-row: span 2; }
+.mc-imgs[data-n="3"] { grid-template-columns: 1.4fr 1fr; }
+.mc-imgs[data-n="4"] img:last-child { grid-column: span 2; }
 
 /* the rules: where the logo works (each colourway on its grounds, graded), then four ways it is never used */
-.mc-uses { display: grid; flex: 1 1 0; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .625rem .75rem; min-height: 9rem; }
+.mc-uses { display: grid; flex: 1 1 0; min-width: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .625rem .75rem; min-height: 9rem; }
 .mc-use { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: .375rem; min-width: 0; min-height: 0; margin: 0; }
 .mc-use-pic { position: relative; display: grid; place-items: center; min-height: 0; overflow: hidden; border: 1px solid rgba(255, 255, 255, .1); border-radius: .875rem; background: var(--ground); }
 .mc-use-pic img { position: absolute; inset: 0; display: block; width: 66%; height: 66%; margin: auto; object-fit: contain; }
@@ -848,7 +866,8 @@ body.mc-has-win { overflow: hidden; }
 }
 @media (max-width: 1280px) {
   .is-kit .is-logos, .is-kit .is-type { grid-column: span 12; }
-  .is-kit .is-voice, .is-kit .is-rules { grid-column: span 6; }
+  .is-kit .is-imagery { grid-column: span 5; }
+.is-kit .is-rules { grid-column: span 7; }
   .is-kit .is-product { grid-column: span 12; }
   .is-idea .is-brief, .is-idea .is-mood, .is-idea .is-story, .is-idea .is-dirs { grid-column: span 12; }
   .is-content { grid-template-areas: "week week" "motion posts" "export export"; grid-template-columns: 1fr 2fr; }

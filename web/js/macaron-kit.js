@@ -1,11 +1,11 @@
 // The Brand kit workspace: the palette first (each swatch as wide as its share), then the logos (a plate for each
-// colourway, on its ground), the type (a scale in the brand's own words), the voice (what it says and never says) and
-// the rules (where the logo works, and four ways it is never used). Each bento is a picture of its part of the kit; opened, it is the part's window, with an Advanced switch for the finer controls.
+// colourway, on its ground), the type (a scale in the brand's own words), the imagery (its own pictures) and the rules
+// (where the logo works and four ways it is never used, beside the voice: its words, what it says and never says). Each bento is a picture of its part of the kit; opened, it is the part's window, with an Advanced switch for the finer controls.
 import { h, icon, sprite } from "./dom.js";
 import { toast } from "./store.js";
 import { contrast, colorOf, kitOf, luminance, cssName } from "./design.js";
 import {
-  macaron, setColour, addColour, setColourField, setWords, setKit, setType, addLogoFile, removeLogo, setLogoField, addRule, setRule, removeRule, kitFiles,
+  macaron, setColour, addColour, setColourField, setWords, setKit, setType, addLogoFile, removeLogo, setLogoField, addRule, setRule, removeRule, kitFiles, setSpace,
 } from "./macaron.js";
 import { bento, mcicon, key, chip, chooseFiles, arming, isArmed, armedNow, fill, seg } from "./macaron-ui.js";
 import { defineWindow, openWin, isAdvanced } from "./macaron-win.js";
@@ -118,18 +118,30 @@ export function kitSpace() {
           h("p.mc-scale-sample", { style: { fontFamily: face(role), fontWeight: t[role].weight } }, sample)))));
   }
 
-  /** The voice: its words, then what it says beside what it never says. */
-  function voice(kit) {
+  /** The voice, as the rules' second column: its words, then what it says beside what it never says (it opens the voice's window). */
+  function words() {
     const v = macaron.brand.body.kit.voice ?? {};
-    const words = (v.words ?? kit.voice?.words ?? []).slice(0, 3);
+    const list = (v.words ?? []).slice(0, 3);
     const lines = (v.lines ?? []).filter((l) => l.say && l.not).slice(0, 3);
-    const say = (v.lines ?? [])[0]?.say ?? v.summary ?? "";
-    return bento("is-voice", "Voice", () => openWin("voice"),
-      h("div.mc-chips", {}, ...words.map((w, i) => h(`span.mc-chip${i === 0 ? ".is-on" : ""}`, {}, w[0].toUpperCase() + w.slice(1)))),
-      lines.length ? h("div.mc-says", {},
-        h("span.label", {}, "Says"), h("span.label", {}, "Never says"),
-        ...lines.flatMap((l) => [h("p.mc-say", {}, ring("do"), h("span", {}, l.say)), h("p.mc-say.is-not", {}, ring("dont"), h("span", {}, l.not))]))
-        : say ? h("blockquote.mc-quote", {}, h("span", {}, "“"), say.replace(/^["“]|["”]$/g, ""), h("span", {}, "”")) : h("p.mc-hint", {}, "How the brand talks: a few words, and lines it says and never says."));
+    return h("div.mc-kwords", { title: "Open the voice", "data-keep": "", on: { click: () => openWin("voice") } },
+      h("span.mc-sub", {}, "Words"),
+      list.length ? h("div.mc-chips.is-small", {}, ...list.map((w, i) => h(`span.mc-chip${i === 0 ? ".is-on" : ""}`, {}, w[0].toUpperCase() + w.slice(1)))) : null,
+      lines.length ? h("div.mc-ksays.is-stack", {}, ...lines.flatMap((l) => [h("p.mc-ksay", {}, ring("do"), h("span", {}, l.say)), h("p.mc-ksay.is-not", {}, ring("dont"), h("span", {}, l.not))]))
+        : h("p.mc-hint", {}, v.summary || "How the brand talks: a few words, and lines it says and never says."));
+  }
+
+  /** The brand's imagery: its own pictures (those its Studio made first, then those added, then the moodboard's), opening the Studio. */
+  function imagery(b) {
+    const skip = new Set(["app", "brand", "mascot", "logo", "product"]);
+    const pics = [...new Map([
+      ...b.assets.filter((a) => a.url && !a.video && (a.kind === "made" || a.kind === "render")),
+      ...b.assets.filter((a) => a.url && !a.video && !skip.has(a.kind) && a.kind !== "made" && a.kind !== "render"),
+      ...(b.refs ?? []).filter((r) => r.kind === "inspiration" && r.src).map((r) => ({ url: r.src, name: r.title })),
+    ].map((p) => [p.url, p])).values()].slice(0, 5);
+    const go = () => setSpace("studio");
+    return bento("is-imagery", "Imagery", go,
+      pics.length ? h("div.mc-imgs", { dataset: { n: String(pics.length) } }, ...pics.map((p) => h("img", { src: p.url, alt: p.name ?? "", title: p.name ?? "", draggable: false, loading: "lazy" })))
+        : h("button.mc-empty-tile", { type: "button", on: { click: go } }, icon("image"), h("span", {}, "Make or add the brand's pictures")));
   }
 
   /** The rules, shown: each colourway on the grounds it is made for (with how well it reads), then four ways it is never used, drawn from the brand's own files. */
@@ -139,8 +151,10 @@ export function kitSpace() {
     const works = tonesOf(kit).map(lead).filter(Boolean).flatMap((l) => groundsOf(kit, l).map((g) => ({ l, g, ink: toneOf(kit, l) })))
       .filter((x) => x.g.hex.toLowerCase() !== x.ink.hex.toLowerCase()).slice(0, 4);
     if (!works.length) {
-      const list = (kind) => r.filter((x) => x.kind === kind).slice(0, 2).map((x) => h("p.mc-say", {}, ring(kind), h("span", {}, x.text)));
-      return bento("is-rules", "Rules", () => openWin("rules"), r.length ? h("div.mc-says.is-rules", {}, h("span.label", {}, "Keep"), h("span.label", {}, "Never"), ...list("do"), ...list("dont")) : h("p.mc-hint", {}, "What the brand keeps and never does, and where its logo may sit."));
+      const list = (kind) => r.filter((x) => x.kind === kind).slice(0, 2).map((x) => h("p.mc-ksay", {}, ring(kind), h("span", {}, x.text)));
+      return bento("is-rules", "Rules", () => openWin("rules"), h("div.mc-rules-two", {},
+        h("div.mc-logo-rules", {}, h("span.mc-sub", {}, "Keep and never"), r.length ? h("div.mc-ksays.is-stack", {}, ...list("do"), ...list("dont")) : h("p.mc-hint", {}, "What the brand keeps and never does, and where its logo may sit.")),
+        words()));
     }
     const tile = (cls, l, g, label, badge, style = {}) => h(`figure.mc-use${cls}`, {},
       h("div.mc-use-pic", { style: { "--ground": g.hex } }, h("img", { src: l.url, alt: "", draggable: false, style }), badge),
@@ -162,7 +176,9 @@ export function kitSpace() {
       tile(".is-never", base.l, base.g, "Tilted", no.cloneNode(true), { transform: "rotate(-16deg)" }),
       tile(".is-never", loud.l, loud.g, "Recoloured", no.cloneNode(true), { filter: "hue-rotate(160deg) saturate(1.6)" }),
     ];
-    return bento("is-rules", "Rules", () => openWin("rules"), h("div.mc-uses", {}, ...ok, ...never));
+    return bento("is-rules", "Rules", () => openWin("rules"), h("div.mc-rules-two", {},
+      h("div.mc-logo-rules", {}, h("span.mc-sub", {}, "Logo"), h("div.mc-uses", {}, ...ok, ...never)),
+      words()));
   }
 
   /** The palette's card also carries the way out of the kit: its export (the colours as code, the kit as data, the logo files). */
@@ -179,11 +195,11 @@ export function kitSpace() {
     const b = macaron.brand;
     if (!b) return;
     const kit = kitOf(b.body);
-    fill(el, withExport(palette(kit)), logos(kit), type(kit), voice(kit), rules(kit));
+    fill(el, withExport(palette(kit)), logos(kit), type(kit), imagery(b.body), rules(kit));
   }
   const sig = () => {
     const b = macaron.brand?.body;
-    return JSON.stringify([b?.kit, b?.colours, b?.logo, b?.products, b?.product, b?.assets?.length, macaron.colourway]);
+    return JSON.stringify([b?.kit, b?.colours, b?.logo, b?.products, b?.product, b?.assets?.length, b?.refs?.length, macaron.colourway]);
   };
   return { el, update, sig };
 }

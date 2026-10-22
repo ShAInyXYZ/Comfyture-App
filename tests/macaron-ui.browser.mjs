@@ -106,7 +106,7 @@ try {
     const sw = [...grid.querySelectorAll(".mc-sw")].map((x) => ({ w: x.getBoundingClientRect().width, aa: !!x.querySelector(".mc-sw-aa b"), pct: parseInt(x.querySelector(".mc-sw-pct").textContent) || 0 }));
     return { labels: boxes.map((b) => b.label), paletteFirst: boxes[0].rect.top === Math.min(...boxes.map((b) => b.rect.top)), paletteWide: boxes[0].rect.width / g.width, expands: boxes.every((b) => b.expand), sw, share: grid.querySelectorAll(".mc-share").length, hidden: [...document.querySelectorAll(".mc-grid")].filter((x) => x.hidden).length };
   });
-  ok(kitGrid.labels.join() === "Palette,Logos,Type,Voice,Rules" && kitGrid.expands, "Brand kit is five bentos, each with its expand key: palette, logos, type, voice, rules", kitGrid.labels.join(", "));
+  ok(kitGrid.labels.join() === "Palette,Logos,Type,Imagery,Rules" && kitGrid.expands, "Brand kit is five bentos, each with its expand key: palette, logos, type, imagery, rules", kitGrid.labels.join(", "));
   const widest = (xs, k) => xs.indexOf(xs.reduce((m, x) => (x[k] > m[k] ? x : m)));
   ok(kitGrid.paletteFirst && kitGrid.paletteWide > 0.97 && kitGrid.sw.length === 4 && kitGrid.sw.every((x) => x.aa) && widest(kitGrid.sw, "w") === widest(kitGrid.sw, "pct") && kitGrid.share === 0,
     "the palette comes first, the width of the screen: four swatches, each as wide as its share and with the colour that reads on it", kitGrid.sw.map((x) => `${x.pct}% ${Math.round(x.w)}px`).join(", "));
@@ -115,20 +115,21 @@ try {
   ok(fit.h <= fit.vh + 2 && fit.w <= fit.vw, "Brand kit fits one screen", `${fit.h} of ${fit.vh}`);
   await shot("room-kit");
 
-  // the logos: a plate for each colourway on its ground; the type as a scale; the voice's says and never-says; the rules shown with the brand's files
+  // the logos: a plate for each colourway on its ground; the type as a scale; the imagery; the rules shown with the brand's files, beside the voice
   const kitParts = await page.evaluate(() => {
     const grid = document.querySelector(".mc-grid.is-kit");
     const plates = [...grid.querySelectorAll(".mc-plate")];
     return {
       plates: plates.length, words: plates.filter((p) => p.querySelector(".mc-plate-word img")?.complete).length, caps: plates.map((p) => p.querySelector("figcaption").textContent),
       clipped: plates.some((p) => { const r = p.getBoundingClientRect(); const i = p.querySelector(".mc-plate-word img")?.getBoundingClientRect(); return i && (i.left < r.left - 1 || i.right > r.right + 1); }),
-      scale: [...grid.querySelectorAll(".mc-scale-row b")].map((x) => x.textContent), says: grid.querySelectorAll(".mc-say:not(.is-not)").length, nots: grid.querySelectorAll(".mc-say.is-not").length, chipOn: grid.querySelector(".is-voice .mc-chip.is-on")?.textContent,
+      scale: [...grid.querySelectorAll(".mc-scale-row b")].map((x) => x.textContent), says: grid.querySelectorAll(".mc-ksay:not(.is-not)").length, nots: grid.querySelectorAll(".mc-ksay.is-not").length, chipOn: grid.querySelector(".is-rules .mc-kwords .mc-chip.is-on")?.textContent, pics: grid.querySelectorAll(".is-imagery .mc-imgs img").length,
       works: grid.querySelectorAll(".mc-use:not(.is-never)").length, grades: grid.querySelectorAll(".mc-use-grade").length, nevers: [...grid.querySelectorAll(".mc-use.is-never figcaption")].map((x) => x.textContent),
     };
   });
   ok(kitParts.plates >= 2 && kitParts.words === kitParts.plates && !kitParts.clipped && kitParts.caps.every((c) => / on /.test(c)), "the logos: a plate for each colourway, its wordmark whole, and what it is", kitParts.caps.join(" | "));
   ok(kitParts.scale.join() === "Display,Text,Mono", "the type is a scale: display, text, mono");
-  ok(kitParts.says >= 1 && kitParts.says === kitParts.nots && !!kitParts.chipOn, "the voice: its words, then what it says beside what it never says", `${kitParts.says} pairs`);
+  ok(kitParts.says >= 1 && kitParts.says === kitParts.nots && !!kitParts.chipOn, "the rules carry the voice: its words, then what it says over what it never says", `${kitParts.says} pairs`);
+  ok(kitParts.pics >= 3, "the imagery: the brand's own pictures", `${kitParts.pics} pictures`);
   ok(kitParts.works >= 1 && kitParts.grades === kitParts.works && kitParts.nevers.join() === "Low contrast,Stretched,Tilted,Recoloured", "the rules: where the logo works, graded, and four ways it is never used", `${kitParts.works} grounds`);
 
   // Design idea
