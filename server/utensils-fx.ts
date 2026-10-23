@@ -1,6 +1,7 @@
 // Utensils' free effects for clips and sounds, run on this machine with ffmpeg: a green-screen cutout, a stabiliser, smooth
 // slow-motion, rain, snow and fog laid over a clip, sparks and embers and dust, a spot removed from a still camera, a sound
-// cleaned of noise, a sound mastered to a loudness, and a few sounds mixed into one. Nothing here calls Comfy Cloud and nothing
+// cleaned of noise, a sound mastered to a loudness, a few sounds mixed into one, and an effect clip laid into a shot where it was
+// placed, behind the people a matte holds (Spice's FX). Nothing here calls Comfy Cloud and nothing
 // costs credits (the effects that need an AI model run through the template runner, not here).
 //
 // Three layers, as the Edit tools have: clean() makes what the page sent safe (numbers clamped, words from a list, never a user's
@@ -17,7 +18,7 @@ import { promisify } from "node:util";
 
 const exec = promisify(execFile);
 
-export const TOOLS = ["chroma", "stabilise", "slowmo", "weather", "sparks", "unlogo", "denoise", "master", "mix"] as const;
+export const TOOLS = ["chroma", "stabilise", "slowmo", "weather", "sparks", "unlogo", "denoise", "master", "mix", "layer"] as const;
 export type Tool = (typeof TOOLS)[number];
 /** The tools that can show one frame of what they would make (a preview): they draw on every frame the same way. */
 export const PREVIEWS: Tool[] = ["chroma", "weather", "sparks", "unlogo"];
@@ -49,6 +50,9 @@ export interface Ctx {
   input?: Probe;
   /** a picture laid behind a cutout */
   image?: Probe;
+  /** the effect clip laid into the shot, and the matte of the people it passes behind */
+  layer?: Probe;
+  matte?: Probe;
   /** the tracks of a mix, in order */
   tracks?: { probe: Probe; spec: Track }[];
   /** what a loudness pass measured, so the second pass can be exact */
@@ -147,6 +151,15 @@ export function clean(tool: Tool, raw: Params, ctx: { duration?: number } = {}):
           file: fileName(t?.file), from: oneOf(t?.from, ["audio", "videos", "edits"] as const, "audio"), volume: num(t?.volume, -40, 12, 0), offset: num(t?.offset, 0, MAX_MIX_SECONDS, 0), mute: flag(t?.mute),
         })).filter((t: Track) => t.file),
         master: flag(raw.master), lufs: num(raw.lufs, -30, -8, -16), fadeOut: num(raw.fadeOut, 0, 10, 0), format: oneOf(raw.format, AUDIO_OUT, "mp3"),
+      };
+    case "layer":
+      return {
+        layer: fileName(raw.layer), matte: fileName(raw.matte),
+        // where the effect starts in the shot, and where the matte's first frame is, in seconds of the shot
+        at: num(raw.at, 0, 3600, 0), matteAt: num(raw.matteAt, -3600, 3600, 0),
+        x: num(raw.x, 0, 1, 0.5), y: num(raw.y, 0, 1, 0.5), size: num(raw.size, 0.1, 1, 0.6),
+        // the matte's edge as Roto draws it, in the footage's pixels: a feather softens it, a choke shrinks it (or grows it, negative)
+        feather: num(raw.feather, 0, 40, 2), choke: Math.round(num(raw.choke, -10, 10, 0)),
       };
   }
 }
@@ -373,6 +386,51 @@ export function plan(tool: Tool, p: Params, ctx: Ctx): Plan {
       if (a.hasVideo) return { seconds: a.duration, steps: [{ args: ["-i", a.path, "-map", "0:v", "-map", "0:a", "-c:v", "copy", "-af", `${loud},aresample=48000`, ...AENC, ...FAST, out(ctx, "out.mp4")], out: out(ctx, "out.mp4"), kind: "video", ext: "mp4", note }] };
       return { seconds: a.duration, steps: [{ args: ["-i", a.path, "-vn", "-af", `${loud},aresample=48000`, ...AUDIO_ARGS[p.format as (typeof AUDIO_OUT)[number]], out(ctx, `out.${p.format}`)], out: out(ctx, `out.${p.format}`), kind: "audio", ext: p.format, note }] };
     }
+    case "layer": {
+      const v = clip(ctx);
+      const fx = ctx.layer;
+      if (!fx?.hasVideo) throw new FxError("The effect is missing. Add it again.");
+      const { w, h } = sizeOf(v);
+      const fps = v.fps > 0 ? v.fps : 24;
+      // counted in frames, so no frame of the shot is lost or doubled where it is cut
+      const total = Math.max(1, Math.round(v.duration * fps));
+      const atF = Math.min(Math.max(0, Math.round(p.at * fps)), total - 1);
+      const lenF = Math.max(1, Math.min(Math.round(fx.duration * fps), total - atF));
+      const endF = atF + lenF;
+      // where the effect is: a soft circle around the spot it was placed on (the place dot's circle, size x 45% of the width across,
+      // given room for its glow), full inside, fading out to its edge; drawn once
+      const r = Math.max(16, p.size * 0.225 * w * 1.8);
+      const cx = Math.round(p.x * w);
+      const cy = Math.round(p.y * h);
+      const region: Step = { args: ["-f", "lavfi", "-i", `color=c=black:s=${w}x${h}:d=1,format=gray,geq=lum='255*clip((${f3(r)}-hypot(X-${cx},Y-${cy}))/${f3(r * 0.45)},0,1)'`, "-frames:v", "1", out(ctx, "region.png")], out: out(ctx, "region.png"), kind: "image", ext: "png", keep: false, weight: 0.02 };
+      // the shot in up to three parts: before the effect, under it, after it (an empty part is left out)
+      const parts = [atF >= 1 ? "a" : "", "b", total - endF >= 1 ? "c" : ""].filter(Boolean);
+      const cut: Record<string, string> = { a: `trim=end_frame=${atF}`, b: `trim=start_frame=${atF}:end_frame=${endF}`, c: `trim=start_frame=${endF}` };
+      // (a stream a frame short is held on its last frame, so the part under the effect is never shorter than its frames)
+      const hold = `tpad=stop_mode=clone:stop_duration=1,trim=end_frame=${lenF}`;
+      const graph = [
+        `[0:v]${EVEN},setsar=1,format=yuv420p,split=${parts.length}${parts.map((x) => `[s${x}]`).join("")}`,
+        ...parts.map((x) => `[s${x}]${cut[x]},setpts=PTS-STARTPTS[${x === "b" ? "under" : x}]`),
+        `[1:v]fps=${f3(fps)},${hold},setpts=PTS-STARTPTS,scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},setsar=1,format=yuv420p[fx]`,
+        `[2:v]format=gray,scale=${w}:${h},trim=end_frame=${lenF}[region]`,
+      ];
+      let alpha = "[region]";
+      if (ctx.matte) {
+        // the people held in front: the matte at the shot's time (black, nobody, before it starts; its last frame held after it ends),
+        // its edge as Roto draws it, turned over so it is 0 on them, and taken out of the region
+        const fromF = atF - Math.round(p.matteAt * fps);
+        const time = fromF >= 0 ? `trim=start_frame=${fromF},setpts=PTS-STARTPTS` : `setpts=PTS-STARTPTS,tpad=start=${-fromF}:start_mode=add:color=black`;
+        const edge = [...Array(Math.abs(p.choke)).fill(p.choke > 0 ? "erosion" : "dilation"), p.feather > 0 ? `gblur=sigma=${f3(p.feather)}` : ""].filter(Boolean).join(",");
+        graph.push(`[3:v]fps=${f3(fps)},${time},tpad=stop_mode=clone:stop=${lenF},trim=end_frame=${lenF},scale=${w}:${h},format=gray${edge ? `,${edge}` : ""},negate[open]`);
+        graph.push(`[region][open]blend=all_mode=multiply:shortest=1[alpha]`);
+        alpha = "[alpha]";
+      }
+      graph.push(`[fx]${alpha}alphamerge[fxa]`, `[under][fxa]overlay=format=auto:shortest=1,format=yuv420p[b]`);
+      graph.push(parts.length > 1 ? `${parts.map((x) => `[${x}]`).join("")}concat=n=${parts.length}:v=1:a=0[out]` : `[b]null[out]`);
+      const inputs = ["-i", v.path, "-i", fx.path, "-loop", "1", "-framerate", f3(fps), "-i", out(ctx, "region.png"), ...(ctx.matte ? ["-i", ctx.matte.path] : [])];
+      const steps = finishVideo(inputs, ["-filter_complex", graph.join(";"), "-map", "[out]"], ctx, v.hasAudio ? ["-map", "0:a?", ...AENC] : ["-an"], ctx.matte ? "The effect laid in, behind the people" : "The effect laid in");
+      return { steps: [region, ...steps], seconds: v.duration };
+    }
     case "mix": {
       const tracks = ctx.tracks ?? [];
       if (!tracks.length) throw new FxError("Add a sound to the mix.");
@@ -473,6 +531,7 @@ export async function capabilities() {
   return {
     chroma: has("chromakey") && has("despill"), stabilise: has("vidstabdetect") && has("vidstabtransform"), slowmo: has("minterpolate"), weather: has("geq") && has("blend"),
     sparks: has("geq") && has("blend"), unlogo: has("removelogo") && has("dilation"), denoise: has("afftdn"), master: has("loudnorm"), mix: has("amix") && has("adelay"),
+    layer: has("alphamerge") && has("geq") && has("gblur") && has("tpad"),
   };
 }
 
@@ -552,6 +611,11 @@ export function createFx({ data, keepAudio }: FxDeps) {
       if ((tool === "weather" || tool === "sparks") && input.duration > 180) throw new FxError("Lay effects over clips of up to three minutes.");
       if (tool === "chroma" && params.output === "picture") ctx.image = await probe(await find(["photos"], params.picture, "The background picture"));
       if (tool === "chroma" && params.output === "picture" && !params.picture) throw new FxError("Pick the picture to put behind.");
+      if (tool === "layer") {
+        ctx.layer = await probe(await find(["videos", "edits"], params.layer, "The effect"));
+        if (params.matte) ctx.matte = await probe(await find(["videos", "edits"], params.matte, "Roto's matte"));
+        if (input.duration > 180) throw new FxError("Lay effects into clips of up to three minutes.");
+      }
       if (tool === "unlogo") {
         const m = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(params.mask);
         const bytes = m ? Buffer.from(m[1], "base64") : null;
@@ -701,7 +765,7 @@ export function createFx({ data, keepAudio }: FxDeps) {
 
 /** A name for what a job made: the tool's, and the file it worked on. */
 function fileLabel(tool: Tool, body: Params) {
-  const names: Record<Tool, string> = { chroma: "Cutout", stabilise: "Stabilised", slowmo: "Slow motion", weather: "Weather", sparks: "Particles", unlogo: "Spot removed", denoise: "Cleaned sound", master: "Mastered sound", mix: "Mix" };
+  const names: Record<Tool, string> = { chroma: "Cutout", stabilise: "Stabilised", slowmo: "Slow motion", weather: "Weather", sparks: "Particles", unlogo: "Spot removed", denoise: "Cleaned sound", master: "Mastered sound", mix: "Mix", layer: "Effect laid in" };
   const src = String(body.title ?? body.name ?? "").replace(/[^\w .-]/g, "").trim().slice(0, 40);
   return src ? `${names[tool]}: ${src}` : names[tool];
 }

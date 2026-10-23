@@ -370,3 +370,70 @@ test("each tool runs on a real clip and sound and makes a file that plays", asyn
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+// ---------------------------------------------------------------- an effect laid into a shot (Spice's FX)
+
+test("an effect is laid in only where it was placed, behind the people a matte holds, and the shot keeps its every frame", async () => {
+  const caps = await capabilities();
+  if (!caps.layer) return;
+  const dir = await mkdtemp(join(tmpdir(), "fx-layer-"));
+  try {
+    await mkdir(join(dir, "videos"), { recursive: true });
+    const lav = (src: string, name: string) => make(["-f", "lavfi", "-i", src, "-pix_fmt", "yuv420p", join(dir, "videos", name)]);
+    // the shot: two seconds of blue; the effect: one second of red from half a second in; the matte: the left half held (white), from 0.75 s
+    await lav("color=c=blue:s=160x90:d=2:r=24", "shot.mp4");
+    await lav("color=c=red:s=320x180:d=1:r=24", "fx.mp4");
+    await lav("color=c=black:s=160x90:d=2:r=24,format=gray,geq=lum='if(lt(X,80),255,0)'", "matte.mp4");
+    const fx = createFx({ data: dir, root });
+    const run = async (body: Record<string, unknown>) => {
+      let job = await fx.start("layer", body);
+      for (let i = 0; i < 600 && !["done", "failed", "canceled"].includes(job.status); i++) {
+        await new Promise((r) => setTimeout(r, 100));
+        job = fx.get(job.id)!;
+      }
+      assert.equal(job.status, "done", job.error);
+      return join(dir, job.results[0].url.replace(/^\/media\//, ""));
+    };
+    const pixel = async (path: string, t: number, x: number, y: number) => {
+      const { stdout } = await exec("ffmpeg", ["-v", "error", "-ss", String(t), "-i", path, "-frames:v", "1", "-vf", `format=rgb24,crop=1:1:${x}:${y}`, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], { encoding: "buffer" as any, maxBuffer: 1 << 16 });
+      const [r, , b] = stdout as unknown as Buffer;
+      return r > b + 60 ? "red" : b > r + 60 ? "blue" : "mixed";
+    };
+    const frames = async (path: string) => Number((await exec("ffprobe", ["-v", "error", "-count_frames", "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", path])).stdout.trim());
+
+    const held = await run({ video: "shot.mp4", layer: "fx.mp4", matte: "matte.mp4", matteAt: 0.75, at: 0.5, x: 0.5, y: 0.5, size: 1, feather: 0, choke: 0 });
+    assert.equal(await frames(held), 48, "the shot keeps its 48 frames");
+    assert.equal(await pixel(held, 0.2, 110, 45), "blue", "before the effect starts, the shot");
+    assert.equal(await pixel(held, 1.0, 110, 45), "red", "under it, where it was placed and nobody is held");
+    assert.equal(await pixel(held, 0.6, 50, 45), "red", "before the matte starts, nobody is held");
+    assert.equal(await pixel(held, 1.0, 50, 45), "blue", "the people the matte holds stay in front");
+    assert.equal(await pixel(held, 1.0, 3, 3), "blue", "outside its place, the shot");
+    assert.equal(await pixel(held, 1.8, 110, 45), "blue", "after it ends, the shot");
+
+    const front = await run({ video: "shot.mp4", layer: "fx.mp4", at: 0, x: 0.5, y: 0.5, size: 1 });
+    assert.equal(await frames(front), 48);
+    assert.equal(await pixel(front, 0.3, 50, 45), "red", "with no matte it passes in front, from the first frame");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("laying an effect in is three parts of the shot and one of the effect, its place a soft circle drawn once, the matte's edge baked", () => {
+  const probe = (path: string, duration: number, width = 1920, height = 1080): Probe => ({ path, duration, width, height, fps: 24, hasAudio: true, hasVideo: true });
+  const ctx: Ctx = { work: "/w", input: probe("/v/shot.mp4", 5), layer: probe("/v/fx.mp4", 3, 1280, 720), matte: probe("/v/matte.mp4", 5) };
+  const p = clean("layer", { layer: "fx.mp4", matte: "matte.mp4", at: 1, matteAt: -0.5, x: 0.7, y: 0.3, size: 0.6, feather: 2.4, choke: -2 });
+  const made = plan("layer", p, ctx);
+  assert.equal(made.steps.length, 2, "the place, then the shot");
+  assert.ok(made.steps[0].args.some((a) => /geq=lum='255\*clip\(/.test(a)) && made.steps[0].keep === false);
+  const graph = made.steps[1].args[made.steps[1].args.indexOf("-filter_complex") + 1];
+  assert.ok(/split=3\[sa\]\[sb\]\[sc\]/.test(graph) && /concat=n=3:v=1:a=0\[out\]/.test(graph), "before, under and after the effect");
+  assert.ok(/trim=start_frame=24:end_frame=96,/.test(graph) && /\[sc\]trim=start_frame=96,/.test(graph), "cut in frames: one second in, three seconds of effect");
+  assert.ok(/\[1:v\]fps=24,.*trim=end_frame=72,.*scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080/.test(graph), "the effect at the shot's size and rate");
+  assert.ok(/\[3:v\]fps=24,trim=start_frame=36,/.test(graph), "the matte read at the shot's time");
+  assert.ok(/dilation,dilation,gblur=sigma=2.4,negate\[open\]/.test(graph), "its edge grown and softened as Roto draws it");
+  assert.ok(made.steps[1].args.includes("0:a?"), "the shot's own sound");
+  assert.equal(made.seconds, 5);
+  const alone = plan("layer", clean("layer", { layer: "fx.mp4", at: 0 }), { ...ctx, matte: undefined, layer: probe("/v/fx.mp4", 9) });
+  const g2 = alone.steps[1].args[alone.steps[1].args.indexOf("-filter_complex") + 1];
+  assert.ok(/split=1\[sb\]/.test(g2) && /\[b\]null\[out\]/.test(g2) && !/\[3:v\]/.test(g2), "an effect over the whole shot is one part, with no matte");
+});

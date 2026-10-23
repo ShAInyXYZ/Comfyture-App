@@ -1,12 +1,14 @@
 // The FX department: add elements to the shot. Its bentos: ELEMENTS (the ten effects Kitchen's presets hold, and a free one of sparks, each a
 // tile; the yellow key under them adds the one picked), PLACE (where it is in the frame and how big), WHEN (the frames it plays on and how it
 // eases) and MIX (how strong it is, how its light falls, whether it is behind the people or in front). An element is an LTX shot made from
-// the frame it starts on, told the preset's own words and what the three bentos say (spice-model.js: fxPrompt); the sparks run on this
-// machine and cost nothing. Made once and kept: { el, update, sig, slot }.
+// the frame it starts on, told the preset's own words and what the three bentos say (spice-model.js: fxPrompt), then laid into the shot on
+// this machine (the free "layer" tool): only where it was placed, from its first frame, behind the people Roto's matte holds when it
+// passes behind them, so the shot keeps its own performance, its size and every frame. The sparks run on this machine and cost nothing.
+// Made once and kept: { el, update, sig, slot }.
 import { h } from "./dom.js";
 import { state, changed } from "./store.js";
 import { spice, edit, setSet, setQuietly, workingOn } from "./spice.js";
-import { ELEMENTS, EASES, elementById, easeAt, whenOf, fxSeconds, fxPrompt, rangeOf, lastFrame, framesIn, ltxCredits } from "./spice-model.js";
+import { FIRST, ELEMENTS, EASES, elementById, easeAt, whenOf, fxSeconds, fxPrompt, rangeOf, lastFrame, framesIn, ltxCredits } from "./spice-model.js";
 import { bento, spicon, primary, fill, thumb, svg } from "./spice-ui.js";
 import { openWin, defineWindow } from "./spice-win.js";
 import { work, inputFor, timeIn, frameOf, ltx, freeFx } from "./spice-engines.js";
@@ -57,12 +59,21 @@ function runElement() {
       return { files, from: input.from, to: input.from + framesIn(input.media.seconds ?? 0, fps) - 1 };
     }, { note: el.name, source: "free" });
   }
+  // the people it passes behind: Roto's matte, when there is one to hold them (its edge as Roto draws it)
+  const roto = shot.body.passes.roto;
+  const matte = set.depth !== "front" && roto?.type === "matte" && roto.eye !== false && roto.media?.kind === "video" && roto.media.file ? roto : null;
   return work("fx", el.name, async (progress, job) => {
     const input = await inputFor("fx", shot);
     const photo = await frameOf(input.media, timeIn(input, when.from, fps));
-    const out = await ltx({ photo, prompt: fxPrompt(presetAction(el), set), seconds, name: `${shot.name} · ${el.name}` })(progress, job);
-    return { files: out, from: when.from, to: when.from + framesIn(out.duration ?? seconds, fps) - 1 };
-  }, { note: `${el.name} · frames ${when.from} – ${when.from + framesIn(seconds, fps) - 1}`, credits: ltxCredits(seconds), source: "cloud" });
+    const out = await ltx({ photo, prompt: fxPrompt(presetAction(el), set), seconds, name: `${shot.name} · ${el.name}` })((p) => progress(p * 0.9), job);
+    // LTX makes the whole frame again: only the effect is kept, laid into the shot where it was placed
+    const edge = shot.body.set.roto;
+    const files = await freeFx("layer", {
+      video: input.media.file, layer: out.file, at: timeIn(input, when.from, fps), x: set.place.x, y: set.place.y, size: set.place.size,
+      ...(matte ? { matte: matte.media.file, matteAt: ((matte.from ?? FIRST) - input.from) / fps, feather: edge.feather, choke: edge.choke } : {}),
+    })((p) => progress(0.9 + p * 0.1), job);
+    return { files, from: input.from };
+  }, { note: `${el.name} · frames ${when.from} – ${when.from + framesIn(seconds, fps) - 1}${matte ? " · behind Roto's matte" : ""}`, credits: ltxCredits(seconds), source: "cloud" });
 }
 
 registerRunner("fx", () => {
