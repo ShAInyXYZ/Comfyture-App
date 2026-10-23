@@ -1493,9 +1493,9 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const pops = (Array.isArray(input.sound?.pops) ? input.sound.pops : []).map(Number).filter((n: number) => Number.isFinite(n) && n >= 0 && n < 30);
     return json(res, 201, await encodeFrames(data, input.job, { fps: Math.round(num(input.fps, 12, 60, 30)), name: text(input.name, 60) || "motion", sound: input.sound ? { pops, pad: input.sound.pad === true } : undefined, container: input.container === "webm" ? "webm" : input.container === "gif" ? "gif" : "mp4" }));
   }
-  // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos, Spice's shots
+  // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos, Spice's shots, Toaster's drafts
   if (path === "/api/spice-shots" && method === "GET") await (seedingShots ??= seedShots().catch((e) => console.warn("spice: the examples were not added:", e.message)));
-  for (const kind of ["stories", "cuts", "mixes", "brands", "jams", "spice-shots"]) {
+  for (const kind of ["stories", "cuts", "mixes", "brands", "jams", "spice-shots", "toasts"]) {
     if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {
       const answered = await projectRoute(kind, path, method, req, res);
       if (answered !== false) return answered;

@@ -19,13 +19,15 @@ import { manual } from "../server/manual.ts";
 import * as macaron from "../server/macaron.ts";
 
 const web = join(import.meta.dirname, "..", "web");
+const NO_PET = new Set(["toaster"]);
 const PETS = { kitchen: "Ketkout", mixer: "Praline", jam: "Pickle", macaron: "Brioche", spice: "Paprika", utensils: "Truffle" } as const;
 const TAGS = { kitchen: "head chef", mixer: "trend boss", jam: "band leader", macaron: "brand room", spice: "VFX house", utensils: "shelf keeper" } as const;
 
 // ---------------------------------------------------------------- the registry
 
 test("every product has its pet, with a name, a tag and a face that is on disk", () => {
-  assert.deepEqual(Object.keys(HARNESSES).sort(), Object.keys(PRODUCTS).sort(), "one harness for each of the app's products");
+  // (Toaster has no pet yet: its page has no chat bar)
+  assert.deepEqual(Object.keys(HARNESSES).sort(), Object.keys(PRODUCTS).filter((p) => !NO_PET.has(p)).sort(), "one harness for each of the app's products that has a pet");
   for (const [product, name] of Object.entries(PETS)) {
     const h = harnessOf(product)!;
     assert.equal(h.name, name);

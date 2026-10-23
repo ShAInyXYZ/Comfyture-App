@@ -20,6 +20,7 @@ import { renderMixer } from "./panels/mixer.js";
 import { renderUtensils } from "./panels/utensils.js";
 import { renderMacaron } from "./panels/macaron.js";
 import { renderSpice } from "./panels/spice.js";
+import { renderToaster } from "./panels/toaster.js";
 import { renderJam } from "./panels/jam.js";
 import { renderAssistant } from "./panels/assistant.js";
 import { renderImage } from "./panels/image.js";
@@ -55,6 +56,7 @@ const panels = {
   jam: [$("page-jam"), renderJam, "jam"],
   macaron: [$("page-macaron"), renderMacaron, "macaron"],
   spice: [$("page-spice"), renderSpice, "spice"],
+  toaster: [$("page-toaster"), renderToaster, "toaster"],
   utensils: [$("page-utensils"), renderUtensils, "utensils"],
 };
 

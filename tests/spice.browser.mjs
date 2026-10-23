@@ -121,7 +121,7 @@ try {
   await page.waitForSelector(".sp-stack .sp-layer", { timeout: 30000 });
   await page.waitForTimeout(800);
   ok(await page.locator('.products .product[aria-current="page"] span').innerText() === "Spice", "Spice is lit in the top bar");
-  ok((await js(() => [...document.querySelectorAll(".products .product span")].map((s) => s.textContent))).join() === "Kitchen,Mixer,Jam,Macaron,Spice,Utensils", "six products, Spice between Macaron and Utensils");
+  ok((await js(() => [...document.querySelectorAll(".products .product span")].map((s) => s.textContent))).join() === "Kitchen,Mixer,Jam,Macaron,Spice,Toaster,Utensils", "seven products, Spice between Macaron and Toaster");
   ok((await page.locator(".sp-layer").evaluateAll((l) => l.map((x) => x.dataset.dept))).join() === "comp,fx,light,paint,roto,plate", "the stack is drawn from the top: the comp on top, the plate at the foot");
   ok((await page.locator(".sp-id-text").innerText()).replace(/\s+/g, " ").includes("Paprika · VFX house"), "Paprika and her house are at the top of the panel");
   // a first visit finds the example shots (spice/examples), the newest open, its passes made

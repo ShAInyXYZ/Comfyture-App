@@ -1,0 +1,181 @@
+/* Toaster: the object's parts on the left, the viewport and the look in the middle, what was toasted on the right. One screen
+   tall; the side columns scroll inside themselves when the screen is short. Mockup: docs/brand/products/toaster-v1/toaster-ui.png.
+   The viewport's frame and tool pill are the Stage's own (.ctl-frame, .ctl-tools in control.css). */
+
+#page-toaster { width: calc(100% - 1.5rem); margin-top: .625rem; }
+.toaster { --ts-gap: .75rem; --ts-pic: 44dvh; display: grid; grid-template-columns: clamp(17.5rem, 19vw, 22rem) minmax(0, 1fr) clamp(21rem, 25vw, 29rem); gap: var(--ts-gap); height: calc(100dvh - var(--head, 4rem) - 1.5rem); min-height: 36rem; user-select: none; -webkit-user-select: none; }
+.toaster input { user-select: text; -webkit-user-select: text; }
+.toaster img { -webkit-user-drag: none; }
+.toaster .spacer { flex: 1 1 auto; }
+
+.ts-col { display: flex; flex-direction: column; gap: var(--ts-gap); min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.ts-card { display: flex; flex-direction: column; gap: .75rem; flex: none; padding: .875rem 1rem 1rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); }
+.ts-head { display: flex; align-items: center; gap: .5rem; min-height: 1rem; }
+.ts-label { margin: 0; font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.ts-count { font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--dim); }
+.ts-empty { margin: 0; font: 400 var(--fs-small)/1.45 var(--font-sans); color: var(--dim); }
+.ts-note { font: 400 var(--fs-small)/1.3 var(--font-sans); color: var(--dim); }
+.ts-mini { display: grid; place-items: center; flex: none; width: 1.875rem; height: 1.875rem; padding: 0; border: 0; border-radius: .5rem; background: transparent; color: var(--dim); cursor: pointer; transition: background var(--t-fast), color var(--t-fast); }
+.ts-mini:hover { background: var(--s3); color: var(--text); }
+.ts-mini[aria-pressed="true"] { color: var(--faint); }
+.ts-mini.is-danger { color: var(--err); box-shadow: inset 0 0 0 1px var(--err); }
+.ts-mini svg { width: 1rem; height: 1rem; }
+
+/* ---- the draft open ------------------------------------------------------------------------------------- */
+.ts-draft { position: relative; flex: none; }
+.ts-draft-chip { display: flex; align-items: center; gap: .75rem; min-height: 3.75rem; padding: .5rem .5rem .5rem .625rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); }
+.ts-draft-chip > img, .ts-draft-thumb { flex: none; width: 3.25rem; height: 2.5rem; border-radius: .4375rem; object-fit: cover; background: var(--sunk); }
+.ts-draft-thumb { display: grid; place-items: center; color: var(--dim); }
+.ts-draft-thumb svg { width: 1.25rem; height: 1.25rem; }
+.ts-draft-name { flex: 1 1 auto; min-width: 0; font: 600 var(--fs-title)/1.2 var(--font-sans); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: default; }
+.ts-draft-chip .ts-mini[aria-expanded="true"] svg { transform: rotate(180deg); }
+.ts-draft-menu { position: absolute; z-index: 40; top: calc(100% + .375rem); left: 0; right: 0; display: grid; gap: 2px; max-height: min(24rem, 60dvh); overflow-y: auto; padding: .3125rem; border: 1px solid var(--line2); border-radius: .875rem; background: var(--s2); box-shadow: var(--float); animation: img-in 120ms var(--ease-out); }
+.ts-draft-row { display: flex; align-items: center; gap: .25rem; border-radius: .5rem; }
+.ts-draft-row:hover { background: var(--s3); }
+.ts-draft-open { display: flex; flex: 1 1 auto; align-items: center; gap: .625rem; min-width: 0; padding: .375rem; border: 0; background: transparent; color: var(--muted); font: 500 var(--fs-body)/1.2 var(--font-sans); text-align: left; cursor: pointer; }
+.ts-draft-open img, .ts-draft-open .ts-draft-thumb { width: 2.5rem; height: 1.875rem; }
+.ts-draft-open span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ts-draft-row.is-on .ts-draft-open { color: var(--text); }
+.ts-draft-new { display: flex; align-items: center; gap: .5rem; padding: .625rem .5rem; border: 0; border-top: 1px solid var(--line); border-radius: 0 0 .5rem .5rem; background: transparent; color: var(--muted); font: 500 var(--fs-body)/1 var(--font-sans); cursor: pointer; }
+.ts-draft-new:hover { color: var(--accent); }
+.ts-draft-new svg { width: 1rem; height: 1rem; }
+.ts-rename { flex: 1 1 auto; min-width: 0; height: 1.875rem; padding: 0 .5rem; border: 1px solid var(--accent-line); border-radius: .4375rem; background: var(--sunk); color: var(--text); font: 500 var(--fs-body)/1 var(--font-sans); outline: none; }
+
+/* ---- the parts ------------------------------------------------------------------------------------------ */
+.ts-parts-card { flex: 1 1 auto; min-height: 9rem; }
+.ts-parts { display: grid; align-content: start; gap: 2px; flex: 1 1 0; min-height: 3rem; overflow-y: auto; margin: 0 -.375rem; padding: 0 .375rem; scrollbar-width: thin; }
+.ts-part { display: grid; grid-template-columns: 1.375rem .875rem minmax(0, 1fr) auto auto; align-items: center; gap: .625rem; min-height: 2.5rem; padding: 0 .25rem 0 .625rem; border: 1px solid transparent; border-radius: .625rem; color: var(--muted); cursor: pointer; transition: background var(--t-fast), border-color var(--t-fast); }
+.ts-part:hover { background: var(--s2); color: var(--text); }
+.ts-part.is-on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.ts-part.is-hidden .ts-name, .ts-part.is-hidden .ts-chip, .ts-part.is-hidden .ts-glyph { opacity: .4; }
+.ts-glyph { display: grid; place-items: center; color: var(--dim); }
+.ts-glyph svg { width: 1.125rem; height: 1.125rem; }
+.ts-chip { width: .875rem; height: .875rem; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
+.ts-name { font: 500 var(--fs-body)/1.2 var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- the shapes to add ---------------------------------------------------------------------------------- */
+.ts-add { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .5rem; }
+.ts-tile { display: grid; place-items: center; aspect-ratio: 1; padding: 0; border: 1px solid var(--line); border-radius: .75rem; background: var(--sunk); color: var(--muted); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast); }
+.ts-tile:hover { border-color: var(--line2); background: var(--s2); color: var(--text); }
+.ts-tile:active { transform: translateY(1px); }
+.ts-tile svg { width: 1.5rem; height: 1.5rem; }
+
+/* ---- the part selected ---------------------------------------------------------------------------------- */
+.ts-inspector { display: grid; gap: .625rem; }
+.ts-many { margin: 0; font: 600 var(--fs-body)/1.2 var(--font-sans); color: var(--text); }
+.ts-row { display: grid; grid-template-columns: 5rem minmax(0, 1fr); align-items: center; gap: .5rem; }
+.ts-field { width: 100%; min-width: 0; height: 2.125rem; padding: 0 .625rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); color: var(--text); font: 500 var(--fs-body)/1 var(--font-sans); outline: none; transition: border-color var(--t-fast); }
+.ts-field::placeholder { color: var(--faint); }
+.ts-field:focus { border-color: var(--accent-line); }
+.ts-swatches { display: flex; flex-wrap: wrap; gap: .4375rem; }
+.ts-swatch { width: 1.5rem; height: 1.5rem; padding: 0; border: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .3), 0 1px 2px rgba(0, 0, 0, .4); cursor: pointer; transition: transform var(--t-fast); }
+.ts-swatch:hover { transform: scale(1.1); }
+.ts-swatch[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ts-triple { display: grid; grid-template-columns: 2.75rem repeat(3, minmax(0, 1fr)) .5rem; align-items: center; gap: .3125rem; }
+.ts-num { display: flex; align-items: center; gap: .25rem; min-width: 0; height: 1.875rem; padding: 0 .25rem 0 .375rem; border: 1px solid var(--line); border-radius: .4375rem; background: var(--sunk); }
+.ts-num:focus-within { border-color: var(--accent-line); }
+.ts-num span { flex: none; font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--faint); }
+.ts-num input { width: 100%; min-width: 0; padding: 0; border: 0; background: transparent; color: var(--text); font: 500 var(--fs-small)/1 var(--font-mono); text-align: right; outline: none; -moz-appearance: textfield; appearance: textfield; }
+.ts-num input::-webkit-outer-spin-button, .ts-num input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.ts-unit { font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--dim); }
+.ts-slider { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem; align-items: center; gap: .5rem; }
+.ts-slider input { width: 100%; accent-color: var(--accent); }
+.ts-readout { justify-self: end; font: 500 var(--fs-small)/1 var(--font-mono); color: var(--text); }
+
+/* ---- the viewport --------------------------------------------------------------------------------------- */
+.ts-mid { display: flex; flex-direction: column; gap: var(--ts-gap); min-width: 0; min-height: 0; }
+.ts-view { position: relative; flex: 1 1 0; min-height: 16rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: #141416; overflow: hidden; }
+.ts-stage { position: absolute; inset: 0; }
+.ts-stage canvas { display: block; touch-action: none; outline: none; }
+.ts-boot { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; font: 500 var(--fs-small)/1 var(--font-mono); letter-spacing: .12em; color: var(--dim); }
+.ts-views { position: absolute; left: 50%; top: .75rem; display: flex; gap: 2px; padding: .25rem; border: 1px solid var(--line2); border-radius: .75rem; background: rgba(25, 25, 28, .92); box-shadow: var(--float); transform: translateX(-50%); }
+.ts-view-key { display: grid; justify-items: center; gap: .25rem; min-width: 3.75rem; padding: .375rem .375rem .3125rem; border: 0; border-radius: .5rem; background: transparent; color: var(--muted); cursor: pointer; }
+.ts-view-key:hover { background: var(--s3); color: var(--text); }
+.ts-view-key[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.ts-view-key svg { width: 1.15rem; height: 1.15rem; }
+.ts-view-key span { font: 500 .625rem/1 var(--font-sans); white-space: nowrap; }
+
+/* ---- the look ------------------------------------------------------------------------------------------- */
+.ts-look { gap: .5rem; padding: .875rem 1rem; }
+.ts-look .ts-row { grid-template-columns: 6.25rem minmax(0, 1fr); }
+.ts-look .ts-field { height: 2.375rem; }
+.ts-look-keys { display: flex; align-items: center; gap: .5rem; padding-top: .25rem; }
+.ts-pick { flex: none; }
+.ts-pick .sel-trigger { min-height: 2.5rem; padding: .25rem .625rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--sunk); }
+.ts-pick .sel-trigger:hover { border-color: var(--line2); }
+.ts-iconkey { display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; padding: 0; border: 1px solid var(--line); border-radius: .75rem; background: var(--sunk); color: var(--muted); text-decoration: none; cursor: pointer; transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
+.ts-iconkey:hover:not(:disabled) { border-color: var(--line2); color: var(--text); }
+.ts-iconkey[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.ts-iconkey:disabled { opacity: .35; cursor: default; }
+.ts-iconkey svg { width: 1.125rem; height: 1.125rem; }
+.ts-toast, .ts-wide { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; padding: 0 1.25rem; border-radius: .875rem; font: 600 var(--fs-body)/1 var(--font-sans); }
+.ts-toast { min-width: 11rem; }
+.ts-toast svg, .ts-wide svg { width: 1.125rem; height: 1.125rem; }
+.ts-toast em, .ts-wide em { font: 500 var(--fs-micro)/1 var(--font-mono); font-style: normal; opacity: .7; }
+.ts-wide { flex: 1 1 auto; }
+
+/* ---- what was toasted: the render fills the room the other two cards leave ------------------------------- */
+.ts-right { overflow-y: auto; }
+.ts-render { flex: 1 1 auto; min-height: 17rem; }
+.ts-head .ts-iconkey.is-sm { margin: -.375rem 0; }
+.ts-head .ts-iconkey.is-sm + .ts-iconkey.is-sm { margin-left: -.125rem; }
+.ts-keys { display: flex; align-items: center; gap: .5rem; }
+.ts-armed { display: flex; gap: .5rem; }
+.ts-not-now { flex: none; min-height: 2.75rem; padding: 0 .875rem; border-radius: .875rem; }
+.ts-iconkey.is-sm { width: 2rem; height: 2rem; border-color: transparent; border-radius: .5625rem; background: transparent; }
+.ts-iconkey.is-sm:hover:not(:disabled) { border-color: transparent; background: var(--s3); }
+.ts-iconkey.is-sm[aria-pressed="true"] { background: var(--accent); }
+.ts-iconkey.is-sm svg { width: 1rem; height: 1rem; }
+
+.ts-render-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; flex: 1 1 0; min-height: 0; }
+.ts-render-body:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
+.ts-pic { position: relative; display: grid; place-items: center; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; border-radius: .75rem; background: var(--sunk); overflow: hidden; color: var(--dim); }
+button.ts-pic { cursor: zoom-in; }
+.ts-pic > img, .ts-under { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.ts-under { opacity: .35; filter: saturate(.6); }
+.ts-pic.is-empty, .ts-pic.is-failed { gap: .625rem; align-content: center; padding: 1.5rem; text-align: center; font: 400 var(--fs-small)/1.45 var(--font-sans); border: 1px dashed var(--line2); background: transparent; }
+.ts-pic.is-empty svg { width: 2rem; height: 2rem; color: var(--faint); }
+.ts-pic.is-failed, .ts-sheet-pic.is-failed, .ts-well.is-failed { color: var(--err); border-color: rgba(239, 90, 74, .4); }
+.ts-pic.is-failed svg, .ts-well.is-failed svg, .ts-sheet-pic.is-failed svg { width: 1.25rem; height: 1.25rem; }
+.ts-working { position: absolute; left: .625rem; right: .625rem; bottom: .625rem; display: flex; align-items: center; gap: .625rem; padding: .5rem .75rem; overflow: hidden; border-radius: .625rem; background: rgba(14, 14, 16, .86); color: var(--muted); font: 500 var(--fs-small)/1.2 var(--font-sans); text-align: left; }
+.ts-bar { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--accent); transition: width .4s var(--ease-out); }
+.ts-pic.is-compare { cursor: ew-resize; touch-action: none; }
+.ts-wipe { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--accent); box-shadow: 0 0 0 1px rgba(0, 0, 0, .3); pointer-events: none; }
+.ts-tag { position: absolute; top: .5rem; padding: .25rem .4375rem; border-radius: .3125rem; background: rgba(14, 14, 16, .78); font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--text); pointer-events: none; }
+.ts-tag.is-a { left: .5rem; }
+.ts-tag.is-b { right: .5rem; }
+.ts-strip { display: flex; flex-direction: column; gap: .375rem; height: 100%; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+.ts-thumb { display: grid; place-items: center; flex: none; width: 3.5rem; height: 3.5rem; padding: 0; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); color: var(--err); overflow: hidden; cursor: pointer; }
+.ts-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ts-thumb.is-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.ts-thumb svg { width: 1rem; height: 1rem; }
+
+/* the sheet is shown by its middle band (the views sit there; the template's sheet is mostly room above and below) */
+.ts-clay-strip, .ts-sheet-pic { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 2.9; padding: 0; border: 0; border-radius: .5rem; overflow: hidden; }
+img.ts-clay-strip { object-fit: cover; background: #d6d6d2; }
+.ts-sheet-pic { background: var(--sunk); color: var(--dim); }
+button.ts-sheet-pic { cursor: zoom-in; }
+.ts-sheet-pic > img { width: 100%; height: 100%; object-fit: cover; }
+.ts-sheet-pic.is-empty { border: 1px dashed var(--line2); background: transparent; font: 400 var(--fs-small)/1.3 var(--font-sans); }
+.ts-sheet-pic.is-failed { gap: .5rem; padding: 1rem; font: 400 var(--fs-small)/1.4 var(--font-sans); text-align: center; border: 1px dashed; background: transparent; }
+
+.ts-model-body { display: grid; grid-template-columns: clamp(7.5rem, 9vw, 10rem) minmax(0, 1fr); gap: .875rem; }
+.ts-model-side { display: flex; flex-direction: column; justify-content: space-between; gap: .625rem; min-width: 0; }
+.ts-model-side .ts-wide { flex: none; }
+.ts-model-side .ts-armed .ts-wide { flex: 1 1 auto; }
+.ts-well { position: relative; display: grid; place-items: center; gap: .5rem; width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: .75rem; background: #141416; box-shadow: inset 0 0 0 1px var(--line); color: var(--dim); font: 400 var(--fs-micro)/1.35 var(--font-sans); text-align: center; }
+.ts-well.is-empty svg { width: 2.25rem; height: 2.25rem; color: var(--faint); }
+.ts-well.is-failed { align-content: center; padding: .75rem; overflow-y: auto; }
+.ts-well .ts-working { left: .375rem; right: .375rem; bottom: .375rem; padding: .375rem .5rem; font-size: var(--fs-micro); }
+.ts-model-view { cursor: grab; }
+.ts-model-view canvas { position: absolute; inset: 0; display: block; width: 100% !important; height: 100% !important; }
+.ts-meta { margin: 0; font: 500 var(--fs-micro)/1.35 var(--font-mono); letter-spacing: .06em; color: var(--dim); }
+
+/* ---- a narrow screen: the columns one under the other ------------------------------------------------------ */
+@media (max-width: 1100px) {
+  .toaster { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .ts-col { overflow: visible; }
+  .ts-view { flex: none; height: 62dvh; }
+  .ts-left { order: 2; }
+  .ts-right { order: 3; }
+}

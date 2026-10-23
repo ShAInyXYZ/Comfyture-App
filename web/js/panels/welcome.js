@@ -1,4 +1,4 @@
-// The app's home: the six products in one banner (the one shown large, all six as tiles along its foot, turning from one to the next),
+// The app's home: the seven products in one banner (the one shown large, all seven as tiles along its foot, turning from one to the next),
 // then the storefront of the most-run Comfy Cloud workflows (welcome-popular.js), then the films last worked on.
 import { h, icon, sprite } from "../dom.js";
 import { state } from "../store.js";
@@ -12,6 +12,7 @@ const ABOUT = {
   jam: { who: "For musicians and dancers", line: "A music video from a track: the singing performed, a dance copied, the words on it.", does: ["Lip-sync", "Dance", "Captions"] },
   macaron: { who: "For brands", line: "Turn any product into ready-to-post content, on brand.", does: ["Product shots", "UGC ads", "Brand kit"] },
   spice: { who: "For visual effects", line: "One shot through six departments, every pass kept on top of the last: cut out, cleaned up, relit, an effect added, the comp finished.", does: ["Roto", "Paint", "Light", "FX", "Comp"] },
+  toaster: { who: "For objects in 3D", line: "Block an object out in clay shapes, then toast it: a finished picture, four views that agree, and a textured 3D model.", does: ["Blockout", "Render", "Turnaround", "3D model"] },
   utensils: { who: "For one small job", line: "One small tool, one job, one result: upscale, cut out, vary, lip-sync. A shot that needs pass after pass goes to Spice.", does: ["Upscale", "Cutout", "Variations", "Lip-sync"] },
 };
 const ids = Object.keys(PRODUCTS);
