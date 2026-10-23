@@ -177,7 +177,7 @@ test("LTX is told the preset's words, then where the effect is, how big and stro
   const set = { place: { x: 0.8, y: 0.2, size: 0.9 }, intensity: 0.9, spill: 0.7, depth: "behind", ease: "inout", words: "" };
   const text = m.fxPrompt("A ring of fire opens.", set);
   assert.ok(text.startsWith("A ring of fire opens."));
-  for (const piece of ["The effect is large, on the right, high in the frame.", "Make it huge and dramatic.", "Its light spills onto the wet surfaces and onto the people.", "It stays behind the people, who stay fully visible in front of it.", "It builds smoothly, peaks, then settles."]) assert.ok(text.includes(piece), piece);
+  for (const piece of ["The effect is large, on the right, high in the frame.", "Make it huge and dramatic.", "Its light spills onto the surfaces around it and onto the people.", "It stays behind the people, who stay fully visible in front of it.", "It builds smoothly, peaks, then settles."]) assert.ok(text.includes(piece), piece);
   const quiet = m.fxPrompt("x", { place: { x: 0.5, y: 0.5, size: 0.2 }, intensity: 0.1, spill: 0.1, depth: "front", ease: "linear", words: "My own words." });
   assert.ok(quiet.startsWith("My own words."), "the person's words take the preset's place");
   for (const piece of ["small, in the middle, at the middle of the frame", "Keep it subtle.", "Its light does not touch the surroundings.", "It passes in front of the people."]) assert.ok(quiet.includes(piece), piece);

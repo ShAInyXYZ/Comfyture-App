@@ -4,7 +4,10 @@
 // Running costs credits (or time): it waits in her answer for one yes from you, with its price, and nothing runs until you give it.
 import { changed, toast, writer } from "./store.js";
 import { spice, edit, setSet, setDept, creditsTodayAll, workingOn } from "./spice.js";
-import { FIRST, lastFrame, rangeOf, whenOf, fxSeconds, elementById, passOf, visible } from "./spice-model.js";
+import { FIRST, lastFrame, rangeOf, ELEMENTS, passOf, visible } from "./spice-model.js";
+import { layerName } from "./spice-elements.js";
+import { addLayer, selected, patchLayer } from "./spice-fx-ops.js";
+import { fxGround } from "./spice-engines.js";
 import { WORKSPACES } from "./spice-harness.js";
 import { runnerFor } from "./spice-runs.js";
 
@@ -24,7 +27,6 @@ export function summary() {
   const plate = b.passes.plate;
   const r = rangeOf(b);
   const f = b.set.fx;
-  const w = whenOf(b);
   const fps = plate?.fps ?? 24;
   const tool = spice.tool[spice.dept];
   const key = runnerFor(spice.dept, tool);
@@ -35,7 +37,7 @@ export function summary() {
     footage: plate ? { kind: plate.media.kind, name: plate.name, width: plate.media.width, height: plate.media.height, fps, first: FIRST, last: lastFrame(plate), range: [r.in, r.out] } : null,
     passes: WORKSPACES.map((d) => d.id).filter((d) => passOf(b, d)?.media).map((d) => ({ dept: d, note: passOf(b, d).note, from: passOf(b, d).from, to: passOf(b, d).to, shown: visible(passOf(b, d)) })),
     subjects: b.set.roto.subjects.map((x) => ({ name: x.name, tracked: !!x.media && !x.stale, clicks: x.points.length })),
-    fx: { element: f.element, from: w.from, to: w.to, seconds: fxSeconds(w, fps), depth: f.depth, intensity: f.intensity, spill: f.spill, ease: f.ease },
+    fx: { layers: f.layers.map((l) => ({ el: l.el, name: layerName(l), x: l.x, y: l.y, size: l.scale, blend: l.blend, behind: l.behind, made: l.el !== "ai" || !!l.media, from: l.from, to: l.to })), held: f.layers.find((l) => l.id === f.sel) ? layerName(f.layers.find((l) => l.id === f.sel)) : null, matte: !!fxGround(b).matte },
     paint: { what: b.set.paint.how === "describe" ? "object" : b.set.paint.how, engine: b.set.paint.engine, words: b.set.paint.words, after: b.set.paint.after },
     light: { tool: spice.tool.light, words: b.set.light.words || b.set.light.look, weather: b.set.light.weather, grade: b.set.light.grade },
     comp: { tool: spice.tool.comp, height: b.set.comp.height, factor: b.set.comp.factor, engine: b.set.comp.engine, format: b.set.comp.format },
@@ -79,21 +81,24 @@ export function apply(a) {
     });
     setDept("roto");
     did.push(`Subject: ${a.name}`);
-  } else if (a.op === "fx") {
-    const patch = {};
-    if (a.element) patch.element = a.element;
-    if (a.words !== undefined) patch.words = a.words;
-    if (a.element && a.words === undefined) patch.words = "";
-    if (a.from !== undefined || a.to !== undefined) {
-      const w = whenOf(b);
-      const from = a.from ?? w.from;
-      patch.when = { from, to: Math.max(from, a.to ?? w.to) };
-    }
-    for (const k of ["depth", "intensity", "spill", "ease"]) if (a[k] !== undefined) patch[k] = a[k];
-    if (a.x !== undefined || a.y !== undefined || a.size !== undefined) patch.place = { ...b.set.fx.place, ...(a.x !== undefined ? { x: a.x } : {}), ...(a.y !== undefined ? { y: a.y } : {}), ...(a.size !== undefined ? { size: a.size } : {}) };
-    setSet("fx", patch);
+  } else if (a.op === "layer" || a.op === "tweak") {
+    // Fx: a layer added (a library element, or an AI effect made when run) and held, or the one held changed
     setDept("fx");
-    did.push(a.element ? `FX: ${elementById(a.element).name}` : "FX settings");
+    const preset = a.op === "layer" && a.element?.startsWith("ai:") ? ELEMENTS.find((e) => `ai:${e.id}` === a.element) : null;
+    const l = a.op === "layer" ? addLayer(preset ? "ai" : a.element, { ...(a.x !== undefined ? { x: a.x } : {}), ...(a.y !== undefined ? { y: a.y } : {}) }) : selected();
+    if (!l) failed.push(a.op === "layer" ? "That effect is not in the library" : "No layer is held: pick one first");
+    else {
+      const patch = {};
+      for (const [k, to] of [["x", "x"], ["y", "y"], ["size", "scale"], ["angle", "rot"], ["blend", "blend"], ["opacity", "opacity"], ["glow", "glow"], ["tint", "tint"], ["motion", "motion"], ["from", "from"], ["to", "to"], ["words", "words"]]) if (a[k] !== undefined) patch[to] = a[k];
+      if (preset) patch.preset = preset.preset;
+      // (behind the people only when Roto holds someone)
+      if (a.behind !== undefined) {
+        if (a.behind && !fxGround(b).matte) failed.push("Behind the people: Roto holds nobody yet");
+        else patch.behind = a.behind;
+      }
+      patchLayer(l.id, patch);
+      did.push(a.op === "layer" ? `Layer: ${layerName(l)}` : `Changed: ${layerName(l)}`);
+    }
   } else if (a.op === "paint") {
     const patch = { how: a.what === "object" ? "describe" : a.what };
     if (a.words !== undefined) patch.words = a.words;

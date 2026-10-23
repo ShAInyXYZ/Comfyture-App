@@ -151,8 +151,8 @@ function drawSide() {
         h("button.sp-eye", { type: "button", disabled: !has || d === "comp", "aria-pressed": String(shown), title: shown ? `Hide ${w.name} in the viewer` : `Show ${w.name} in the viewer`, "aria-label": `${w.name} in the viewer`, on: { click: () => toggleEye(d) } }, spicon(shown ? "eye" : "eyeOff")));
     })),
     h("dl.sp-facts", {},
-      fact("Frame range", plate ? rangeText(r) : "–"),
-      fact("Resolution · fps", plate ? `${plate.media.width} × ${plate.media.height}${plate.media.kind === "video" ? ` · ${plate.fps ?? 24} fps` : ""}` : "–"),
+      plate?.media.kind === "image" ? fact("Footage", "A picture") : fact("Frame range", plate ? rangeText(r) : "–"),
+      fact(plate?.media.kind === "image" ? "Resolution" : "Resolution · fps", plate ? `${plate.media.width} × ${plate.media.height}${plate.media.kind === "video" ? ` · ${plate.fps ?? 24} fps` : ""}` : "–"),
       fact("Passes done", `${passesDone(b)} / 6`),
       fact("Compute (Comfy Cloud)", `${credits} cr today`)),
     // what Spice is for, beside the other product that does VFX: one shot, every pass kept here; one quick fix, Utensils

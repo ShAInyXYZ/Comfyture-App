@@ -824,6 +824,8 @@ let seedingBrands: Promise<void> | null = null;
  * A shot the person took out is not put back (the ids put in are kept in .seeded).
  */
 let seedingShots: Promise<void> | null = null;
+/** Spice's bakes on their way: the frames sent so far (a folder under edits), the rate, and the clip whose sound goes with them. */
+const bakes = new Map<string, { dir: string; at: number; fps: number; frames: number; audio: string; audioFrom: number }>();
 async function seedShots() {
   const dir = join(root, "spice", "examples");
   const kept = join(projectsDir("spice-shots"), ".seeded");
@@ -866,6 +868,14 @@ async function seedShots() {
         // Roto's pass is its subject's matte
         const subject = dept === "roto" ? body.set.roto.subjects.find((x: any) => !x.media) : null;
         if (subject) Object.assign(subject, { media, from: SPICE_FIRST, to, stale: false, at, credits: 0 });
+      }
+      // the clips its FX layers hold (an AI layer's clip), kept in the library beside its passes
+      for (const [i, l] of (body.set.fx.layers ?? []).entries()) {
+        const raw = spec.set?.fx?.layers?.[i]?.media;
+        if (!raw || !/^[\w.-]+\.mp4$/.test(raw.file ?? "")) continue;
+        const file = `${spec.id}-layer${i}${Number(spec.rev) > 1 ? `-r${Number(spec.rev)}` : ""}.mp4`;
+        await copyFile(join(dir, folder, raw.file), join(data, "videos", file));
+        l.media = { kind: "video", url: `/media/videos/${file}`, file, width: 720, height: 480, seconds: Number(raw.seconds) || 5 };
       }
       await writeProject("spice-shots", { id: spec.id, name: String(spec.name ?? "Example"), createdAt: at, updatedAt: at, ...(thumb ? { thumb } : {}), body } as Project);
       seeded.push(tag);
@@ -1548,6 +1558,52 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const source = await photo((await jsonBody(req)).source);
     if (!source) throw bad("Add a picture to cut out.");
     return json(res, 202, engine.clearCutout(source));
+  }
+  // Spice's bake of FX's layers on a clip: the page draws every frame of the composite (spice-layers.js, what the viewer showed) and sends
+  // it here as a JPEG; ffmpeg makes the clip of them with the sound of the clip they were drawn over, kept in the library
+  if (path === "/api/spice/bake" && method === "POST") {
+    if (!ffmpeg) throw bad("Spice needs ffmpeg on the server.", 501);
+    const input = await jsonBody(req);
+    const audio = typeof input.audio === "string" ? inside(join(data, "videos"), input.audio) : "";
+    const id = randomBytes(6).toString("hex");
+    const dir = join(data, "edits", `bake-${id}`);
+    await mkdir(dir, { recursive: true });
+    for (const [k, b] of bakes) if (Date.now() - b.at > 60 * 60_000) (bakes.delete(k), await rm(b.dir, { recursive: true, force: true }));
+    bakes.set(id, { dir, at: Date.now(), fps: num(input.fps, 1, 120, 24), frames: Math.round(num(input.frames, 1, 24 * 120, 1)), audio: audio && (await exists(audio)) ? audio : "", audioFrom: num(input.audioFrom, 0, 36_000, 0) });
+    return json(res, 200, { id });
+  }
+  const bakeStep = /^\/api\/spice\/bake\/([a-f0-9]{12})\/(\d{1,5}|done)$/.exec(path);
+  if (bakeStep) {
+    const b = bakes.get(bakeStep[1]);
+    if (!b) throw bad("That bake is over. Bake again.", 404);
+    if (bakeStep[2] !== "done" && method === "PUT") {
+      const n = Number(bakeStep[2]);
+      if (n >= b.frames) throw bad("That frame is past the end.");
+      const bytes = await body(req, 40 * 1024 * 1024);
+      if (bytes[0] !== 0xff || bytes[1] !== 0xd8) throw bad("A frame is a JPEG.", 415);
+      await writeFile(join(b.dir, `f${String(n).padStart(5, "0")}.jpg`), bytes);
+      b.at = Date.now();
+      return json(res, 200, { ok: true });
+    }
+    if (bakeStep[2] === "done" && method === "POST") {
+      try {
+        const out = join(b.dir, "out.mp4");
+        const args = ["-v", "error", "-y", "-framerate", String(b.fps), "-start_number", "0", "-i", join(b.dir, "f%05d.jpg")];
+        if (b.audio) args.push("-ss", b.audioFrom.toFixed(3), "-i", b.audio);
+        args.push("-map", "0:v", ...(b.audio ? ["-map", "1:a?", "-c:a", "aac", "-b:a", "192k", "-shortest"] : []),
+          "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p", "-c:v", "libx264", "-preset", "medium", "-crf", "16", "-movflags", "+faststart", "-frames:v", String(b.frames), out);
+        await exec("ffmpeg", args);
+        const bytes = await readFile(out);
+        const name = `${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}.mp4`;
+        const kept = join(data, "videos", name);
+        if (!(await exists(kept))) await writeFile(kept, bytes);
+        const v = await probeVideo(kept);
+        return json(res, 200, { kind: "video", file: name, url: `/media/videos/${name}`, width: v.width, height: v.height, seconds: v.duration });
+      } finally {
+        bakes.delete(bakeStep[1]);
+        await rm(b.dir, { recursive: true, force: true });
+      }
+    }
   }
   if ((path === "/api/utensils/upscale-video" || path === "/api/utensils/sound" || path === "/api/spice/matte") && method === "POST") {
     if (!ffmpeg) throw bad("Video tools need ffmpeg on the server.", 501);

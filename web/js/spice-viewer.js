@@ -14,6 +14,7 @@ import { spice, setFrame } from "./spice.js";
 import { FIRST, STACK, secondsAt, frameAt, lastFrame, rangeOf, layerAt, barsOf, pairOf } from "./spice-model.js";
 import { WORKSPACES } from "./spice-harness.js";
 import { spicon, fill, svg } from "./spice-ui.js";
+import { createLive } from "./spice-canvas.js";
 
 const strips = new Map();
 /** A clip's thumbnails in one picture (the server makes it once per clip); null while it is made or when it cannot be. */
@@ -53,6 +54,10 @@ export function createViewer(on = {}) {
   const edgeDefs = svg("sp-edge-defs", { width: "0", height: "0", focusable: "false" }, '<filter id="sp-edge" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB"><feMorphology operator="dilate" radius="0"/><feGaussianBlur stdDeviation="0"/></filter>');
   const stage = h("div.sp-stage", {}, beforeBox, afterBox, mask, points, wipe, drop, note, chipBefore, chipAfter, edgeDefs);
   const host = h("div.sp-stage-host", {}, stage);
+  // FX: the shot with its layers, drawn live over the stage, and the handles of the layer held (spice-canvas.js)
+  const live = createLive(stage);
+  stage.insertBefore(live.el, mask);
+  st.ai = new Map();
 
   const counter = h("output.sp-counter", { "aria-label": "Frame" }, String(FIRST));
   const play = h("button.sp-iconkey.is-play", { type: "button", title: "Play or pause (Space)", "aria-label": "Play or pause", on: { click: () => (spice.playing ? pause() : playNow()) } }, spicon("play"));
@@ -66,7 +71,10 @@ export function createViewer(on = {}) {
   const time = h("div.sp-time", {}, h("div.sp-time-head", {}, counter, keys), strip, ruler, rows, scrub);
   const title = h("span.sp-b-label.sp-viewer-title");
   const expand = h("button.sp-expand", { type: "button", title: "Make the viewer large", "aria-label": "Make the viewer large", on: { click: () => toggleBig() } }, spicon("expand"));
-  const el = h("section.sp-bento.sp-viewer", { role: "group", "aria-label": "Viewer" }, h("div.sp-b-head", {}, title, expand), host, time);
+  // (FX: the wipe between the shot and its layers comes and goes; the other departments always have it)
+  const compare = h("button.sp-expand.sp-compare", { type: "button", hidden: true, title: "Compare before and after", "aria-label": "Compare before and after", "aria-pressed": "false", on: { click: () => ((st.compare = !st.compare), compare.setAttribute("aria-pressed", String(st.compare)), show()) } }, spicon("compare"));
+  const picbar = h("div.sp-picbar", { hidden: true });
+  const el = h("section.sp-bento.sp-viewer", { role: "group", "aria-label": "Viewer" }, h("div.sp-b-head", {}, title, compare, expand), host, time, picbar);
 
   const plate = () => st.ctx?.body.passes.plate ?? null;
   const range = () => (st.ctx ? rangeOf(st.ctx.body) : { in: FIRST, out: FIRST });
@@ -81,6 +89,9 @@ export function createViewer(on = {}) {
       node.dataset.key = k;
       node.hidden = true;
       pool.set(k, node);
+      // a clip the live compositor draws from is drawn again when it has its frame
+      node.addEventListener(node.tagName === "VIDEO" ? "seeked" : "load", () => st.ctx?.comp && live.draw());
+      if (node.tagName === "VIDEO") node.addEventListener("loadeddata", () => st.ctx?.comp && live.draw());
       // the footage goes under what is drawn over it (Roto's rubylith)
       if (role === "before") parent.prepend(node);
       else parent.append(node);
@@ -110,12 +121,29 @@ export function createViewer(on = {}) {
       baseEl = pooled("before", base, beforeBox);
       wanted.add(baseEl.dataset.key);
     }
-    const layer = layerAt(body, dept, spice.frame);
+    // FX draws its layers live over what it works on (its input), not over the pass it baked
+    const comp = c.comp ?? null;
+    const layer = comp ? (comp.base ? { media: comp.base, from: comp.baseFrom ?? FIRST, dept: "fx" } : null) : layerAt(body, dept, spice.frame);
     let afterEl = null;
     if (layer) {
       afterEl = pooled("after", layer.media, afterBox);
       wanted.add(afterEl.dataset.key);
     }
+    // what the live compositor draws from without showing it: Roto's matte (the people held in front), the clips of the AI layers
+    const aux = new Set();
+    let holdEl = null;
+    if (comp?.matte) {
+      holdEl = pooled("hold", comp.matte, afterBox);
+      aux.add(holdEl);
+    }
+    st.ai.clear();
+    for (const l of comp?.layers ?? []) {
+      if (l.el !== "ai" || !l.media?.url) continue;
+      const n = pooled(`ai-${l.id}`, l.media, afterBox);
+      st.ai.set(l.id, n);
+      aux.add(n);
+    }
+    for (const n of aux) (wanted.add(n.dataset.key), n.classList.add("is-aux"));
     // Roto: the footage under its subjects' matte as a rubylith; its pass keeps the right of the wipe
     let matteEl = null;
     const matte = dept === "roto" && body.passes.roto?.type !== "green" ? body.passes.roto : null;
@@ -130,20 +158,23 @@ export function createViewer(on = {}) {
         node.pause?.();
         node.remove();
         pool.delete(k);
-      } else node.hidden = !(node === baseEl || node === afterEl || node === matteEl);
+      } else node.hidden = !(node === baseEl || node === afterEl || node === matteEl || aux.has(node));
     }
     const t = secondsAt(spice.frame, fps);
     if (baseEl) setTime(baseEl, t);
     if (matteEl) setTime(matteEl, t);
     if (afterEl) setTime(afterEl, secondsAt(spice.frame - (layer.from - FIRST), fps));
+    if (holdEl) setTime(holdEl, secondsAt(spice.frame - ((comp.matteFrom ?? FIRST) - FIRST), fps));
+    for (const l of comp?.layers ?? []) if (st.ai.has(l.id)) setTime(st.ai.get(l.id), secondsAt(spice.frame - ((l.from ?? FIRST) - FIRST), fps));
     // the right of the wipe is the footage again where the layer has not worked (and when there is nothing yet to show)
     // one real frame of what a free tool would make (Light's weather and grade), over the right of the wipe
     const preview = c.preview && c.preview.frame === spice.frame ? c.preview.url : null;
     shot.hidden = !preview;
     if (preview && shot.getAttribute("src") !== preview) shot.src = preview;
     afterBox.hidden = !afterEl && !preview;
-    wipe.hidden = !afterEl && !preview;
+    wipe.hidden = comp ? !st.compare : !afterEl && !preview;
     st.layer = layer;
+    st.holdEl = holdEl;
     st.baseEl = baseEl;
     st.afterEl = afterEl;
     st.matteEl = matteEl;
@@ -157,6 +188,14 @@ export function createViewer(on = {}) {
     chipBefore.hidden = !base;
     chipAfter.hidden = !afterEl && !preview;
     if (preview) chipAfter.textContent = "Preview · 1 frame";
+    // FX: the live composite, the whole stage, or the right of the wipe when comparing
+    compare.hidden = !comp;
+    if (comp) {
+      chipBefore.hidden = chipAfter.hidden = !st.compare;
+      chipAfter.textContent = "FX · live";
+      live.el.style.clipPath = st.compare ? "inset(0 0 0 var(--wipe))" : "none";
+    }
+    live.update(comp, comp ? { base: afterEl ?? baseEl, matte: holdEl, aiOf: (l) => st.ai.get(l.id) ?? null, frame: spice.frame, fps, still: plate()?.media.kind === "image", footageWidth: plate()?.media.width } : null);
   }
 
   // ---------------------------------------------------------------- transport
@@ -203,7 +242,19 @@ export function createViewer(on = {}) {
           if (Math.abs(node.currentTime - want) > 0.12) node.currentTime = want;
           if (node.paused) node.play().catch(() => {});
         }
+        const comp = st.ctx.comp;
+        if (comp) {
+          const sync = (node, from) => {
+            if (node?.tagName !== "VIDEO") return;
+            const want = secondsAt(f - (from - FIRST), st.fps);
+            if (Math.abs(node.currentTime - want) > 0.12) node.currentTime = want;
+            if (node.paused && want >= 0 && want < (node.duration || 0)) node.play().catch(() => {});
+          };
+          sync(st.holdEl, comp.matteFrom ?? FIRST);
+          for (const l of comp.layers) sync(st.ai.get(l.id), l.from ?? FIRST);
+        }
       }
+      if (st.ctx?.comp) live.draw();
       st.loop = requestAnimationFrame(tick);
     };
     st.loop = requestAnimationFrame(tick);
@@ -333,6 +384,15 @@ export function createViewer(on = {}) {
     const c = st.ctx;
     const body = c.body;
     const p = plate();
+    // a picture has no frames: a quiet bar says what it is instead of a timeline
+    const pic = p?.media.kind === "image";
+    time.hidden = pic;
+    picbar.hidden = !pic;
+    if (pic) {
+      const n = c.comp?.layers.length ?? 0;
+      fill(picbar, h("span", {}, `PICTURE · ${p.media.width} × ${p.media.height}`), h("span.spacer"), c.comp ? h("span", {}, `${n} ${n === 1 ? "LAYER" : "LAYERS"}`) : null);
+      return;
+    }
     const span = Math.max(1, last() - FIRST);
     const pct = (f) => `${(((f - FIRST) / span) * 100).toFixed(3)}%`;
     const s = p?.media.kind === "video" ? stripOf(p.media.file, () => changed("spice")) : null;

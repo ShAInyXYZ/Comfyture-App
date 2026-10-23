@@ -4,6 +4,7 @@
 // one before and the top one that is shown is the picture of the shot; Roto's pass is a matte beside them (what Fx and Comp may use as
 // a holdout), and Comp's is the finished composite. The frames are numbered as a slate numbers them: the first is 1001.
 import { DEPARTMENTS } from "./spice-harness.js";
+import { cleanLayers } from "./spice-elements.js";
 
 export const FIRST = 1001;
 /** The passes that are the picture of the shot, from the footage up: each is made from the one below it. */
@@ -50,7 +51,9 @@ export const blankBody = () => ({
     roto: { subjects: [], open: null, feather: 2.4, choke: -0.8, out: "alpha" },
     paint: { how: "describe", words: "", after: "", engine: "void" },
     light: { look: "warm golden light from the left", words: "", reference: null, sky: null, weather: "rain", amount: 0.55, grade: "warm", exposure: 0, contrast: 1, saturation: 1 },
-    fx: { element: "portal", words: "", place: { x: 0.62, y: 0.4, size: 0.6 }, when: null, ease: "inout", intensity: 0.8, spill: 0.65, depth: "behind" },
+    // (layers: the effects laid on the shot by hand, bottom of the stack first; sel: the one being worked on. The rest is what an AI
+    // effect is asked for: its element, words, place and frames)
+    fx: { element: "portal", words: "", place: { x: 0.62, y: 0.4, size: 0.6 }, when: null, ease: "inout", intensity: 0.8, spill: 0.65, depth: "behind", layers: [], sel: null },
     comp: { height: 1080, factor: 2, engine: "free", format: "mp4", exports: [] },
   },
   log: [],
@@ -64,6 +67,8 @@ export function normaliseBody(raw) {
   for (const d of Object.keys(blank.set)) set[d] = { ...blank.set[d], ...(b.set?.[d] ?? {}) };
   set.fx.place = { ...blank.set.fx.place, ...(b.set?.fx?.place ?? {}) };
   set.roto.subjects = Array.isArray(set.roto.subjects) ? set.roto.subjects : [];
+  set.fx.layers = cleanLayers(set.fx.layers);
+  if (!set.fx.layers.some((l) => l.id === set.fx.sel)) set.fx.sel = set.fx.layers.at(-1)?.id ?? null;
   return { ...blank, ...b, passes: { ...blank.passes, ...(b.passes ?? {}) }, set, log: Array.isArray(b.log) ? b.log.slice(-200) : [] };
 }
 
@@ -201,7 +206,7 @@ export function fxPrompt(base, set) {
   const size = (p.size ?? 0.6) < 0.4 ? "small" : (p.size ?? 0.6) < 0.75 ? "medium sized" : "large";
   const where = `${x < 0.34 ? "on the left" : x > 0.66 ? "on the right" : "in the middle"}, ${y < 0.34 ? "high in the frame" : y > 0.66 ? "low in the frame" : "at the middle of the frame"}`;
   const strength = (set.intensity ?? 0.8) < 0.35 ? "Keep it subtle." : (set.intensity ?? 0.8) > 0.75 ? "Make it huge and dramatic." : "";
-  const spill = (set.spill ?? 0.5) >= 0.5 ? "Its light spills onto the wet surfaces and onto the people." : (set.spill ?? 0.5) < 0.2 ? "Its light does not touch the surroundings." : "";
+  const spill = (set.spill ?? 0.5) >= 0.5 ? "Its light spills onto the surfaces around it and onto the people." : (set.spill ?? 0.5) < 0.2 ? "Its light does not touch the surroundings." : "";
   const depth = set.depth === "front" ? "It passes in front of the people." : "It stays behind the people, who stay fully visible in front of it.";
   const ease = { in: "It starts slowly and builds.", out: "It starts fast and fades away gently.", inout: "It builds smoothly, peaks, then settles." }[set.ease] ?? "";
   return [String(set.words ?? "").trim() || base, `The effect is ${size}, ${where}.`, strength, spill, depth, ease].filter(Boolean).join(" ");
@@ -267,6 +272,8 @@ export const TEMPLATES = {
   beeble: { dept: "light", name: "api_beeble_switchx_video_edit", title: "Beeble SwitchX", partner: "Beeble", about: "Relights the footage to match a reference picture", want: { video: true, image: true, text: true } },
   background: { dept: "light", name: "api_bria_video_replace_background", title: "Bria", partner: "Bria", about: "Puts a new sky or background behind the people", want: { video: true, image: true } },
   qwen: { dept: "light", name: "image_qwen_image_edit_2509_relight", title: "Qwen Image Edit", about: "Changes the light of a picture", want: { image: true, text: true }, gpu: 9 },
+  // (an AI layer on a picture: the picture made again with the effect, kept by the layer inside its circle)
+  qwenfx: { dept: "fx", name: "image_qwen_image_edit_2509", title: "Qwen Image Edit", about: "Makes the picture again with the effect described", want: { image: true, text: true }, gpu: 9 },
   film: { dept: "comp", name: "utility_video_frame_interpolation", title: "FILM", about: "Makes the frames between the frames with an AI model", want: { video: true }, gpu: 3 },
 };
 /** What a template run brought back, as a pass's media. */

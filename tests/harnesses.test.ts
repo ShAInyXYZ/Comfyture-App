@@ -382,7 +382,7 @@ const OWN = {
   jam: { op: "part", seconds: 15 },
   macaron: { op: "edit_text", layer: "headline", text: "Say it." },
   mixer: { op: "pick_trend", trend: "hotel-lobby" },
-  spice: { op: "fx", element: "portal" },
+  spice: { op: "layer", element: "flame" },
   utensils: { op: "pick_tool", tool: "cutout" },
 };
 const EVERYONE = Object.values(OWN);

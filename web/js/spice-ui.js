@@ -36,6 +36,15 @@ const PATHS = {
   cloud: '<path d="M7 18a4 4 0 0 1-.4-8A5.500 5.500 0 0 1 17 8.500a4.800 4.800 0 0 1 .5 9.500z"/>',
   text: '<path d="M5 6.500V5h14v1.500M12 5v14M9.500 19h5"/>',
   more: '<circle cx="6" cy="12" r="1.200" fill="currentColor"/><circle cx="12" cy="12" r="1.200" fill="currentColor"/><circle cx="18" cy="12" r="1.200" fill="currentColor"/>',
+  copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',
+  flip: '<path d="M12 3.5v17M9 7 4 17h5zM15 7l5 10h-5z"/>',
+  flipv: '<path d="M3.5 12h17M7 9 17 4v5zM7 15l10 5v-5z"/>',
+  person: '<circle cx="12" cy="7.5" r="3.200"/><path d="M5.500 19.500c.6-3.800 3.200-6 6.500-6s5.900 2.200 6.500 6"/>',
+  layers: '<path d="m12 4 8.500 4.500L12 13 3.500 8.500z"/><path d="m3.500 12.500 8.500 4.500 8.500-4.500M3.500 16 12 20.500 20.500 16"/>',
+  sparkle: '<path d="M12 3.500c.6 4.200 2.300 5.900 6.500 6.500-4.200.6-5.900 2.300-6.500 6.500-.6-4.200-2.300-5.900-6.500-6.500 4.200-.6 5.900-2.300 6.500-6.500z"/><path d="M18.500 15.500c.3 1.700 1 2.400 2.700 2.700-1.700.3-2.400 1-2.700 2.700-.3-1.700-1-2.400-2.700-2.700 1.700-.3 2.400-1 2.700-2.700z"/>',
+  compare: '<rect x="3.500" y="5" width="17" height="14" rx="2.500"/><path d="M12 3v18" stroke-dasharray="2 2"/>',
+  grip: '<circle cx="9" cy="6.500" r="1.100" fill="currentColor"/><circle cx="15" cy="6.500" r="1.100" fill="currentColor"/><circle cx="9" cy="12" r="1.100" fill="currentColor"/><circle cx="15" cy="12" r="1.100" fill="currentColor"/><circle cx="9" cy="17.500" r="1.100" fill="currentColor"/><circle cx="15" cy="17.500" r="1.100" fill="currentColor"/>',
+  bake: '<path d="M4.500 13.500h15M6 13.500l1.200 5.500h9.600L18 13.500"/><path d="M9 10.500c0-1.500 1.200-1.500 1.200-3S9 6 9 4.500M14 10.500c0-1.500 1.200-1.500 1.200-3S14 6 14 4.500"/>',
 };
 /** An icon of Spice's own, in the app's icon style. */
 export function spicon(name) {

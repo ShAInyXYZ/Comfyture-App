@@ -4,19 +4,23 @@
 // add a subject to Roto, set up an effect, a clean-up, a light or a finish, and ask for it to run. She knows Spice and nothing else. Setting
 // up costs nothing, so the page does it at once; running costs credits (or time), so her answer only asks for it: the page asks the user,
 // with the price, before anything runs. She cannot click in the viewer or paint a mask: those are the user's.
-import { ELEMENTS, REMOVERS, EASES } from "../web/js/spice-model.js";
+import { ELEMENTS, REMOVERS } from "../web/js/spice-model.js";
+import { LIBRARY, BLENDS, MOTIONS } from "../web/js/spice-elements.js";
 import { DEPARTMENTS } from "../web/js/spice-harness.js";
 
-export const SPICE_OPS = ["open", "trim", "subject", "fx", "paint", "light", "finish", "run"] as const;
+export const SPICE_OPS = ["open", "trim", "subject", "layer", "tweak", "paint", "light", "finish", "run"] as const;
 export const SPICE_DEPARTMENTS = DEPARTMENTS as readonly string[];
-const ELEMENT_IDS = ELEMENTS.map((e) => e.id);
+// Fx: the library's elements (laid free) and the AI effects (Kitchen's presets: made by a model, they cost credits)
+const LIBRARY_IDS = LIBRARY.filter((e) => e.kind !== "ai").map((e) => e.id);
+export const AI_IDS = ELEMENTS.filter((e) => e.preset).map((e) => `ai:${e.id}`);
+const BLEND_IDS = BLENDS.map((b) => b.id);
+const MOTION_IDS = MOTIONS.map(([id]) => id);
 const LIGHT_TOOLS = ["relight", "weather", "grade"] as const;
 const FINISH_TOOLS = ["upscale", "slow", "export"] as const;
 const PAINT_WHAT = ["object", "logo", "subtitles"] as const;
 const WEATHERS = ["rain", "snow", "fog"] as const;
 const GRADES = ["none", "warm", "cool", "filmic", "punchy", "faded", "noir"] as const;
 const FORMATS = ["mp4", "webm", "mov", "gif"] as const;
-const EASE_IDS = EASES.map(([id]: [string, string]) => id);
 
 /** How Paprika answers: the tool she is made to call, so her answer is data and never prose to be guessed at. */
 export const SPICE_TOOL = {
@@ -37,17 +41,20 @@ export const SPICE_TOOL = {
             in: { type: "number", description: "For trim: the first frame to work on." },
             out: { type: "number", description: "For trim: the last frame to work on." },
             name: { type: "string", description: "For subject: what to cut out, by its name." },
-            element: { type: "string", enum: ELEMENT_IDS, description: "For fx: the element to add." },
-            words: { type: "string", description: "In your own words: what happens (fx), what to remove (paint), the light you want (light)." },
-            from: { type: "number", description: "For fx: the frame the element starts on." },
-            to: { type: "number", description: "For fx: the frame the element ends on." },
-            depth: { type: "string", enum: ["behind", "front"], description: "For fx: behind the people or in front of them." },
-            intensity: { type: "number", description: "For fx: 0 to 1." },
-            spill: { type: "number", description: "For fx: how much its light falls on the shot, 0 to 1." },
-            ease: { type: "string", enum: EASE_IDS, description: "For fx: how it builds." },
-            x: { type: "number", description: "For fx: where it is, 0 (left) to 1 (right)." },
-            y: { type: "number", description: "For fx: where it is, 0 (top) to 1 (bottom)." },
-            size: { type: "number", description: "For fx: how big, 0.1 to 1." },
+            element: { type: "string", enum: [...LIBRARY_IDS, ...AI_IDS], description: "For layer: a library element (free) or an AI effect (ai:..., made by a model)." },
+            words: { type: "string", description: "In your own words: what an AI layer is (layer), what to remove (paint), the light you want (light)." },
+            x: { type: "number", description: "For layer and tweak: its centre, 0 (left) to 1 (right)." },
+            y: { type: "number", description: "For layer and tweak: its centre, 0 (top) to 1 (bottom)." },
+            size: { type: "number", description: "For layer and tweak: its width as a share of the frame's (1 is the whole width)." },
+            angle: { type: "number", description: "For layer and tweak: its angle in degrees." },
+            blend: { type: "string", enum: BLEND_IDS, description: "For layer and tweak: how it lies on the picture (screen for light and fire)." },
+            opacity: { type: "number", description: "For layer and tweak: 0 to 1." },
+            glow: { type: "number", description: "For layer and tweak: 0 to 1." },
+            tint: { type: "string", description: "For layer and tweak: a colour #rrggbb laid on its light." },
+            behind: { type: "boolean", description: "For layer and tweak: behind the people Roto holds (true) or in front (false)." },
+            motion: { type: "string", enum: MOTION_IDS, description: "For layer and tweak, on a clip: how it moves." },
+            from: { type: "number", description: "For layer and tweak, on a clip: the first frame it plays on." },
+            to: { type: "number", description: "For layer and tweak, on a clip: the last frame it plays on." },
             what: { type: "string", enum: [...PAINT_WHAT], description: "For paint: object (words say which), logo or subtitles." },
             after: { type: "string", description: "For paint with void: the place once the object is gone, what is left there (an empty pavement, a bare wall), never the object." },
             engine: { type: "string", description: "For paint: void or obscura. For finish slow: free or film." },
@@ -69,21 +76,22 @@ export const SPICE_TOOL = {
   },
 };
 
-export const SPICE_BRIEF = `You are Paprika, the baby chameleon who runs Comfyture's Spice: a VFX house. One shot goes through six departments in order, each making its pass: plate (the footage: import it, trim it to a frame range, read its depth), roto (cut subjects out, a matte for each), paint (clean up: take out an object, a logo or the subtitles), light (relight it, a new sky, weather, a grade), fx (add an element: portal, fire, explosion, lightning, disintegrate, hologram, freeze, petals, levitate, shatter, sparks) and comp (the stack of every pass, then upscale, slow motion, export). You are warm, quick and a little theatrical; you speak in one or two short sentences, in the user's language. You answer through the spice_answer tool: a reply and the actions to take.
+export const SPICE_BRIEF = `You are Paprika, the baby chameleon who runs Comfyture's Spice: a VFX house. A shot (a clip or a picture) goes through six departments, each making its pass: plate (the footage: trim it, read its depth), roto (cut subjects out as mattes), paint (take out an object, a logo, the subtitles), light (relight, a new sky, weather, a grade), fx (a compositor: effects laid as layers the user moves on the picture, from a library or made by an AI model from words) and comp (upscale, slow motion, export). You are warm, quick, a little theatrical, and say one or two short sentences in the user's language, through the spice_answer tool.
 
-You set a department up; the user presses its key. You cannot click in the viewer, paint a mask or import a file: those are theirs.
+You set things up; the user presses the keys. You cannot click in the viewer, paint a mask or import a file.
 
-Actions (op and its fields):
-- open {department}: open a department (plate, roto, paint, light, fx, comp).
-- trim {in, out}: the frame range the shot is worked on. Frames are slate numbers: the first frame of the footage is 1001.
-- subject {name}: add a subject to Roto by its name ("the woman in the raincoat"); Roto cuts it out from its name, and the user may click it in the viewer too.
-- fx {element, words, from, to, depth, intensity, spill, ease, x, y, size}: open Fx with that element and its settings. from and to are the frames it plays on; depth is behind or front (the people); intensity and spill are 0 to 1; x and y say where it is (0 to 1); size 0.1 to 1. Send only what the user asked for; words only when they describe it their own way.
-- paint {what, words, after, engine}: open Paint ready: what is object (words name it, short), logo or subtitles; engine void or obscura. after (void): what is left once it is gone, never the object.
-- light {tool, words, weather, amount, grade, exposure, saturation}: open Light with that tool set up: relight (words say the light), weather (rain, snow or fog, amount 0 to 1) or grade (none, warm, cool, filmic, punchy, faded, noir).
-- finish {tool, height, factor, engine, format}: open Comp with a finish set up: upscale (height 720, 1080 or 1440), slow (factor 1.5, 2, 3 or 4; engine free or film) or export (mp4, webm, mov or gif).
-- run {}: run what is open, with what it holds. It can cost credits: the app asks the user to confirm the price with a key under your answer, so say it is ready, never that it has started; a yes in words gets pointed to that key.
+Actions:
+- open {department}
+- trim {in, out}: the frames worked on (slate numbers: the footage's first frame is 1001).
+- subject {name}: a subject for Roto to cut out ("the woman in the raincoat").
+- layer {element, x, y, size, angle, blend, opacity, glow, tint, behind, motion, from, to, words}: add an Fx layer and hold it. element: a library id, laid free, or an AI id (ai:portal...), made by a model when run (credits; words say what it is). x, y: its centre, 0 to 1. size: its width as a share of the frame. angle in degrees. opacity, glow 0 to 1. tint #rrggbb. behind true: behind the people Roto holds. motion (clips) and from, to (frames). Send only what was asked.
+- tweak {same fields, no element}: change the layer held.
+- paint {what, words, after, engine}: object (words name it, short), logo or subtitles; engine void or obscura; after (void): what is left once it is gone.
+- light {tool, words, weather, amount, grade, exposure, saturation}: relight (words), weather (rain, snow, fog; amount 0 to 1) or grade (none, warm, cool, filmic, punchy, faded, noir).
+- finish {tool, height, factor, engine, format}: upscale (720, 1080, 1440), slow (1.5, 2, 3, 4; free or film) or export (mp4, webm, mov, gif).
+- run {}: run the key of the department open (Fx: make the AI layer held, else bake the layers, free). It may cost credits: the app asks the user to confirm under your answer, so say it is ready, never that it has started.
 
-Rules: use only the ids and the frames shown below. Set up the department that fits the job in the same answer (open it, set it, then run if the user says to make it, do it or add it); when they only ask for it ("a portal behind her") set it up and say it is ready. A job that lacks the footage, or a name or a picture it needs, gets one short question and no run. A question gets an answer and no action. Never promise what you did not do.`;
+Rules: only the ids and frames shown below. Set up what fits the job (open it, set it; run when they say make it or do it). Missing footage, a name or a picture: one short question, no run. A question: an answer, no action. Never promise what you did not do.`;
 
 interface Pass { dept: string; note?: string; credits?: number; from?: number; to?: number; shown?: boolean }
 interface Summary {
@@ -93,7 +101,7 @@ interface Summary {
   footage?: { kind?: string; name?: string; width?: number; height?: number; fps?: number; frames?: number; first?: number; last?: number; range?: [number, number] } | null;
   passes?: Pass[];
   subjects?: { name: string; tracked?: boolean; clicks?: number }[];
-  fx?: { element?: string; from?: number; to?: number; depth?: string; intensity?: number; spill?: number; ease?: string; seconds?: number };
+  fx?: { layers?: { el?: string; name?: string; x?: number; y?: number; size?: number; blend?: string; behind?: boolean; made?: boolean; from?: number | null; to?: number | null }[]; held?: string | null; matte?: boolean };
   paint?: { what?: string; engine?: string; words?: string; after?: string };
   light?: { tool?: string; words?: string; weather?: string; grade?: string };
   comp?: { tool?: string; height?: number; factor?: number; engine?: string; format?: string };
@@ -126,8 +134,15 @@ export function spicePrompt(s: Summary, turns: Turn[]) {
   lines.push(passes.length ? `THE PASSES MADE: ${passes.map((p) => `${cut(p.dept, 8)}${p.note ? ` (${cut(p.note, 60)})` : ""}${typeof p.from === "number" ? `, frames ${p.from}-${p.to}` : ""}${p.shown === false ? ", hidden" : ""}`).join("; ")}.` : "THE PASSES MADE: none beyond the footage.");
   const subjects = things<{ name: string; tracked?: boolean; clicks?: number }>(s.subjects, 6);
   if (subjects.length) lines.push(`ROTO'S SUBJECTS: ${subjects.map((x) => `${cut(x.name, 40)} (${x.tracked ? "cut out" : "not yet"}, ${Number(x.clicks) || 0} clicks)`).join("; ")}.`);
-  lines.push(`FX ELEMENTS (ids): ${ELEMENT_IDS.join(", ")}. EASES: ${EASE_IDS.join(", ")}.`);
-  if (s.fx && typeof s.fx === "object") lines.push(`FX HOLDS: ${cut(s.fx.element, 16)}, frames ${Number(s.fx.from) || "?"} to ${Number(s.fx.to) || "?"} (${Number(s.fx.seconds) || "?"} s), ${cut(s.fx.depth, 8)}, intensity ${s.fx.intensity ?? "?"}, light spill ${s.fx.spill ?? "?"}, ease ${cut(s.fx.ease, 8)}.`);
+  lines.push(`FX LIBRARY (ids): ${LIBRARY_IDS.join(", ")}. AI EFFECTS (ids): ${AI_IDS.join(", ")}. BLENDS: ${BLEND_IDS.join(", ")}. MOTIONS: ${MOTION_IDS.join(", ")}.`);
+  if (s.fx && typeof s.fx === "object") {
+    const layers = things<NonNullable<NonNullable<Summary["fx"]>["layers"]>[number]>(s.fx.layers, 12);
+    const at = (v: unknown) => (typeof v === "number" ? v.toFixed(2) : "?");
+    lines.push(layers.length
+      ? `FX LAYERS (bottom first): ${layers.map((l) => `${cut(l.name || l.el, 30)} (${cut(l.el, 16)}, at ${at(l.x)} ${at(l.y)}, size ${at(l.size)}, ${cut(l.blend, 8)}${l.behind ? ", behind the people" : ""}${l.made === false ? ", not made yet" : ""}${typeof l.from === "number" ? `, frames ${l.from}-${l.to}` : ""})`).join("; ")}. HELD: ${cut(s.fx.held, 30) || "none"}.`
+      : "FX LAYERS: none yet.");
+    if (s.fx.matte === false) lines.push("ROTO HOLDS NOBODY YET: a layer cannot go behind the people until a subject is cut out.");
+  }
   if (s.paint && typeof s.paint === "object") lines.push(`PAINT HOLDS: ${cut(s.paint.what, 12)}${s.paint.words ? ` "${cut(s.paint.words, 80)}"` : ""}${s.paint.after ? `, what is left "${cut(s.paint.after, 80)}"` : ""}, engine ${cut(s.paint.engine, 10)}. ENGINES: ${REMOVERS.join(", ")}.`);
   if (s.light && typeof s.light === "object") lines.push(`LIGHT HOLDS: ${cut(s.light.tool, 10)}, light "${cut(s.light.words, 80)}", weather ${cut(s.light.weather, 6)}, grade ${cut(s.light.grade, 8)}.`);
   if (s.comp && typeof s.comp === "object") lines.push(`COMP HOLDS: ${cut(s.comp.tool, 8)}, ${Number(s.comp.height) || "?"}p, ${s.comp.factor ?? "?"}x, ${cut(s.comp.engine, 6)}, ${cut(s.comp.format, 5)}.`);
@@ -177,20 +192,28 @@ export function readSpiceAnswer(reply: string, s: Summary = {}) {
         if (name) actions.push({ op: "subject", name });
         break;
       }
-      case "fx": {
-        const out: any = { op: "fx" };
-        const element = oneOf(a.element, ELEMENT_IDS);
-        if (element) out.element = element;
+      case "layer":
+      case "tweak": {
+        const out: any = { op: a.op };
+        if (a.op === "layer") {
+          const element = oneOf(a.element, [...LIBRARY_IDS, ...AI_IDS]);
+          if (!element) break;
+          out.element = element;
+        }
         if (typeof a.words === "string" && cut(a.words, 600)) out.words = cut(a.words, 600);
+        const r2 = (v: number) => Math.round(v * 100) / 100;
+        for (const k of ["x", "y"] as const) if (num(a[k], -0.5, 1.5) !== undefined) out[k] = r2(num(a[k], -0.5, 1.5)!);
+        if (num(a.size, 0.03, 3) !== undefined) out.size = r2(num(a.size, 0.03, 3)!);
+        if (num(a.angle, -360, 360) !== undefined) out.angle = Math.round(num(a.angle, -360, 360)!);
+        const blend = oneOf(a.blend, BLEND_IDS);
+        if (blend) out.blend = blend;
+        for (const k of ["opacity", "glow"] as const) if (num(a[k], 0, 1) !== undefined) out[k] = r2(num(a[k], 0, 1)!);
+        if (typeof a.tint === "string" && /^#[0-9a-f]{6}$/i.test(a.tint)) out.tint = a.tint.toLowerCase();
+        if (typeof a.behind === "boolean") out.behind = a.behind;
+        const motion = oneOf(a.motion, MOTION_IDS);
+        if (motion) out.motion = motion;
         for (const k of ["from", "to"] as const) if (frame(a[k]) !== undefined) out[k] = frame(a[k]);
-        const depth = oneOf(a.depth, ["behind", "front"] as const);
-        if (depth) out.depth = depth;
-        for (const k of ["intensity", "spill"] as const) if (num(a[k], 0, 1) !== undefined) out[k] = Math.round(num(a[k], 0, 1)! * 100) / 100;
-        const ease = oneOf(a.ease, EASE_IDS as readonly string[]);
-        if (ease) out.ease = ease;
-        for (const k of ["x", "y"] as const) if (num(a[k], 0, 1) !== undefined) out[k] = Math.round(num(a[k], 0, 1)! * 100) / 100;
-        if (num(a.size, 0.1, 1) !== undefined) out.size = Math.round(num(a.size, 0.1, 1)! * 100) / 100;
-        if (Object.keys(out).length > 1) actions.push(out);
+        if (a.op === "layer" || Object.keys(out).length > 1) actions.push(out);
         break;
       }
       case "paint": {

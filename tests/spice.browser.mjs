@@ -110,7 +110,7 @@ try {
   const state = () => js(async () => {
     const { spice } = await import("/js/spice.js");
     const b = spice.shot.body;
-    return { name: spice.shot.name, dept: spice.dept, passes: Object.fromEntries(Object.entries(b.passes).map(([k, v]) => [k, v ? { url: v.media?.url, kind: v.media?.kind, from: v.from, to: v.to, note: v.note, eye: v.eye, type: v.type } : null])), set: b.set, range: b.range, log: b.log, frame: spice.frame, depth: !!b.depth };
+    return { name: spice.shot.name, dept: spice.dept, passes: Object.fromEntries(Object.entries(b.passes).map(([k, v]) => [k, v ? { url: v.media?.url, kind: v.media?.kind, seconds: v.media?.seconds, from: v.from, to: v.to, note: v.note, eye: v.eye, type: v.type } : null])), set: b.set, range: b.range, log: b.log, frame: spice.frame, depth: !!b.depth };
   });
 
   // ---- the page: the stack, the shot chip, the facts
@@ -182,67 +182,108 @@ try {
   await page.setViewportSize({ width: 1920, height: 1200 });
   await open("fx");
 
-  // ---- Fx: the elements, the free sparks run for real, the portal asks first
-  ok((await page.locator(".sp-tile").count()) === 11, "Fx has ten of Kitchen's presets and the free sparks as tiles");
-  ok(/Add the portal/.test(await page.locator('.sp-primary[data-key="fx:add"]').innerText()) && /≈ \d+ cr/.test(await page.locator('.sp-primary[data-key="fx:add"]').innerText()), "the portal's key says its price");
-  await page.locator('.sp-tile[data-element="fire"]').click();
+  // ---- Fx: a compositor. A tile dropped on the picture is a layer where it fell; its handles move, scale and turn it; its look changes
+  // live; the layers bake for free; an AI layer asks first and sends one LTX shot
+  ok((await page.locator(".sp-lib-tile").count()) === 27, "the library has its twenty-one elements, five particles and the AI tile");
+  await page.locator(".sp-lib-groups .sp-pill", { hasText: "Fire" }).click();
   await settle();
-  ok(/Add the fire/.test(await page.locator('.sp-primary[data-key="fx:add"]').innerText()), "another tile, another verb");
-  await page.locator('.sp-tile[data-element="portal"]').click();
+  ok((await page.locator(".sp-lib-tile").count()) === 8, "a group shows its own, and the AI tile");
+  await page.locator(".sp-lib-groups .sp-pill", { hasText: "All" }).click();
   await settle();
-  // the first press of a paid key asks, the second sends; LTX's shot is refused here and counted
-  await page.locator('.sp-primary[data-key="fx:add"]').click();
+  ok(await page.locator('.sp-primary[data-key="fx:bake"]').isDisabled(), "with no layer, nothing to bake");
+  const fxStage = await page.locator(".sp-stage").boundingBox();
+  await page.locator('.sp-lib-tile[data-el="flame"]').dragTo(page.locator(".sp-stage"), { targetPosition: { x: fxStage.width * 0.3, y: fxStage.height * 0.6 } });
+  await settle(600);
+  st = await state();
+  let flame = st.set.fx.layers.at(-1);
+  ok(st.set.fx.layers.length === 1 && flame?.el === "flame" && Math.abs(flame.x - 0.3) < 0.03 && Math.abs(flame.y - 0.6) < 0.03 && st.set.fx.sel === flame.id, "a tile dropped on the picture is a layer where it fell, held", JSON.stringify(flame));
+  ok(await page.locator(".sp-gizmo:not([hidden])").count() === 1 && (await page.locator(".sp-gz-name").innerText()) === "FLAME", "its handles are on the picture, with its name");
+  // the live composite: the flame lightens the picture where it is
+  const lit = () => js(() => {
+    const c = document.querySelector(".sp-live");
+    const g = c.getContext("2d");
+    const at = (x, y) => { const d = g.getImageData(Math.round(x * c.width), Math.round(y * c.height), 1, 1).data; return d[0] + d[1] + d[2]; };
+    return { flame: at(0.3, 0.6), far: at(0.85, 0.15), w: c.width };
+  });
+  const l1 = await lit();
+  ok(l1.w > 100 && l1.flame > 200, "the viewer draws the flame live over the footage", JSON.stringify(l1));
+  // its handles: moved, scaled by a corner, turned by the knob
+  const gz = await page.locator(".sp-gizmo").boundingBox();
+  await page.mouse.move(gz.x + gz.width / 2, gz.y + gz.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(gz.x + gz.width / 2 + fxStage.width * 0.2, gz.y + gz.height / 2, { steps: 6 });
+  await page.mouse.up();
   await settle();
-  ok(paid.length === 0 && (await page.locator('.sp-primary[data-armed="1"]').count()) === 1 && /Yes, spend it/.test(await page.locator(".sp-primary-row").innerText()), "the first press only asks: the key becomes the yes, with its price", `${paid.map((p) => p.path)} ${(await page.locator(".sp-primary-row").innerText()).replace(/\s+/g, " ")}`);
-  await page.getByRole("button", { name: "Not now" }).click();
+  const se = await page.locator(".sp-gz-corner.is-se").boundingBox();
+  await page.mouse.move(se.x + se.width / 2, se.y + se.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(se.x + 40, se.y + 40, { steps: 6 });
+  await page.mouse.up();
   await settle();
-  ok((await page.locator('.sp-primary[data-armed="1"]').count()) === 0 && paid.length === 0, "not now leaves it as it was");
-  await page.locator('.sp-primary[data-key="fx:add"]').click();
+  const knob = await page.locator(".sp-gz-rot").boundingBox();
+  const g2 = await page.locator(".sp-gizmo").boundingBox();
+  await page.mouse.move(knob.x + knob.width / 2, knob.y + knob.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(g2.x + g2.width + 60, g2.y + g2.height / 2, { steps: 8 });
+  await page.mouse.up();
   await settle();
+  st = await state();
+  const moved = st.set.fx.layers[0];
+  ok(Math.abs(moved.x - 0.5) < 0.04 && moved.scale > flame.scale * 1.1 && moved.rot > 45, "dragged, it moves; by a corner, it grows; by its knob, it turns", JSON.stringify({ x: moved.x, scale: moved.scale, rot: moved.rot }));
+  // the arrows nudge it, Escape lets go of it, a click on it holds it again
+  await page.keyboard.press("ArrowLeft");
+  await settle(500);
+  ok((await state()).set.fx.layers[0].x < moved.x, "an arrow nudges it");
+  // its look: a blend, a tint, a glow
+  await page.locator(".sp-b-look .ut-seg", { hasText: "Add" }).click();
+  await settle();
+  await page.locator(".sp-b-look .sp-swatch").nth(5).click();
+  await settle();
+  st = await state();
+  ok(st.set.fx.layers[0].blend === "add" && /^#[0-9a-f]{6}$/.test(st.set.fx.layers[0].tint), "its blend and its tint are chosen in Look", JSON.stringify(st.set.fx.layers[0]));
+  // a second layer by a click, then the stack: hidden, put back, reordered
+  await page.locator('.sp-lib-tile[data-el="rain"]').click();
+  await settle();
+  ok((await page.locator(".sp-fxl").count()) === 2 && (await page.locator(".sp-fxl").first().innerText()).includes("Rain"), "a click adds one in the middle, on top of the stack");
+  await page.locator(".sp-fxl").first().locator('.sp-fxl-key[aria-label="Shown"]').click();
+  await settle();
+  ok((await state()).set.fx.layers[1].eye === false, "the eye hides a layer");
+  await page.locator(".sp-fxl").first().locator('.sp-fxl-key[aria-label="Shown"]').click();
+  await page.locator(".sp-fxl").nth(1).dragTo(page.locator(".sp-fxl").first());
+  await settle();
+  ok((await state()).set.fx.layers.map((l) => l.el).join() === "rain,flame", "a layer dragged on another takes its place in the stack");
+  await shot("2-fx");
+  // the bake: free, on this machine, the whole range
+  ok(/Bake 2 layers/.test(await page.locator('.sp-primary[data-key="fx:bake"]').innerText()) && /free/.test(await page.locator('.sp-primary[data-key="fx:bake"]').innerText()), "the key bakes the two layers, free");
+  await page.locator('.sp-primary[data-key="fx:bake"]').click();
+  await page.waitForFunction(() => /Baked/.test(document.querySelector('.sp-primary[data-key="fx:bake"]')?.innerText ?? ""), null, { timeout: 120000 });
+  st = await state();
+  ok(st.passes.fx?.kind === "video" && st.passes.fx.from === 1001 && st.passes.fx.to === 1120 && paid.length === 0 && st.log.length === 0, "the layers are baked into the FX pass, on every frame, and nothing was sent", JSON.stringify(st.passes.fx));
+  ok(Math.abs((st.passes.fx.seconds ?? 0) - 5) < 0.1, "a clip as long as the footage", String(st.passes.fx.seconds));
+  // an AI layer: placed, described, its key asks first, then one LTX shot goes
+  await page.locator('.sp-lib-tile[data-el="ai"]').click();
+  await settle();
+  await page.locator(".sp-b-look select.ut-select").selectOption("portal");
+  await settle();
+  ok(/Make it/.test(await page.locator('.sp-b-look .sp-primary').innerText()) && /≈ \d+ cr/.test(await page.locator('.sp-b-look .sp-primary').innerText()), "an AI layer's key says its price");
+  await page.locator(".sp-b-look .sp-primary").click();
+  await settle();
+  ok(paid.length === 0 && (await page.locator('.sp-primary[data-armed="1"]').count()) === 1, "the first press only asks");
   await page.locator('.sp-primary[data-armed="1"]').click();
   await page.waitForFunction(() => document.querySelector(".toast:not([hidden])")?.textContent, null, { timeout: 30000 }).catch(() => {});
-  ok(paid.length === 1 && paid[0].path === "/api/shots", "the second press sends one LTX shot", paid.map((p) => p.path).join());
-  const shotBody = paid[0]?.body ?? {};
-  ok(shotBody.start && /^[0-9a-f]+\.(jpg|png)$/.test(shotBody.start) && shotBody.seconds >= 2 && shotBody.seconds <= 10, "it starts from a frame of the footage, for the seconds of the range", `${shotBody.start} ${shotBody.seconds}`);
-  const told = shotBody.script?.shots?.[0]?.action ?? "";
-  ok(/swirling ring of glowing orange energy/.test(told) && /behind the people/.test(told) && /The effect is /.test(told), "and is told the preset's own words and the mix", told.slice(0, 90));
+  ok(paid.length === 1 && paid[0].path === "/api/shots", "the second sends one LTX shot", paid.map((p) => p.path).join());
+  const told = paid[0]?.body?.script?.shots?.[0]?.action ?? "";
+  ok(/swirling ring of glowing orange energy/.test(told) && /The effect is /.test(told) && paid[0].body.start && paid[0].body.seconds >= 2, "told the portal's own words and where it is, from a frame of the footage", told.slice(0, 90));
   st = await state();
-  ok(st.passes.fx === null && st.log.length === 0, "a shot that did not come back leaves no pass and no spend");
-  // the free one
-  if (caps.sparks !== false) {
-    await page.locator('.sp-tile[data-element="sparks"]').click();
-    await settle();
-    ok(!/cr/.test(await page.locator('.sp-primary[data-key="fx:add"]').innerText()), "the sparks are free: no price on their key");
-    await page.locator('.sp-primary[data-key="fx:add"]').click();
-    await page.waitForFunction(() => document.querySelector('.sp-layer[data-dept="fx"] .sp-lamp[data-tone="done"]'), null, { timeout: 90000 });
-    st = await state();
-    ok(st.passes.fx?.kind === "video" && st.passes.fx.note === "Sparks" && paid.length === 1, "the sparks ran on this machine: the Fx pass is there, and nothing was sent", JSON.stringify(st.passes.fx));
-    ok(st.log.length === 0, "a free pass costs nothing and is not in the ledger");
-  }
-  // place, when, mix keep what is set
-  await page.locator('.sp-b-mix .uf-range').first().fill("0.35");
-  await page.locator('.sp-b-mix .uf-range').first().dispatchEvent("change");
-  await page.locator('.sp-b-mix .ut-seg', { hasText: "In front" }).click();
-  await page.locator('.sp-b-when .sp-ease').selectOption("out");
-  await page.waitForTimeout(700);
-  st = await state();
-  ok(st.set.fx.intensity === 0.35 && st.set.fx.depth === "front" && st.set.fx.ease === "out", "intensity, in front and the ease are kept in the shot", JSON.stringify(st.set.fx));
-  const frameBox = await page.locator(".sp-place-frame").boundingBox();
-  await page.mouse.click(frameBox.x + frameBox.width * 0.25, frameBox.y + frameBox.height * 0.75);
-  await page.waitForTimeout(600);
-  st = await state();
-  ok(Math.abs(st.set.fx.place.x - 0.25) < 0.03 && Math.abs(st.set.fx.place.y - 0.75) < 0.03, "a click on the mini frame places the effect", JSON.stringify(st.set.fx.place));
-  const stripBox = await page.locator(".sp-when-strip").boundingBox();
-  await page.mouse.move(stripBox.x + stripBox.width * 0.5, stripBox.y + stripBox.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(stripBox.x + stripBox.width * 0.3, stripBox.y + stripBox.height / 2, { steps: 5 });
-  await page.mouse.up();
-  await page.waitForTimeout(600);
-  st = await state();
-  ok(st.set.fx.when && st.set.fx.when.from < 1060 && st.set.fx.when.to === 1120, "the frames it plays on are dragged on the strip (its start handle moved)", JSON.stringify(st.set.fx.when));
-  await shot("2-fx");
+  ok(st.set.fx.layers.at(-1).el === "ai" && !st.set.fx.layers.at(-1).media && st.log.length === 0, "a shot that did not come back leaves the layer to make and no spend");
+  // Delete takes the layer held away
+  await page.locator(".sp-stage").hover();
+  await page.keyboard.press("Delete");
+  await settle();
+  ok((await state()).set.fx.layers.length === 2, "Delete takes the layer held away");
 
-  // ---- the viewer's wipe: dragged, and the stack's eye
+  // ---- the viewer's wipe: dragged, and the stack's eye (in Comp: in FX the wipe comes with its compare key)
+  await open("comp");
   const handle = await page.locator(".sp-wipe").boundingBox();
   const stage = await page.locator(".sp-stage").boundingBox();
   await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
@@ -258,18 +299,16 @@ try {
   await page.waitForTimeout(300);
 
   // ---- windows: a bento opens one, Escape closes it
-  await page.locator(".sp-b-mix .sp-expand").click();
+  await open("fx");
+  await page.locator(".sp-b-look .sp-expand").click();
   await page.waitForSelector(".sp-win");
-  ok((await page.locator(".sp-win h2").innerText()) === "MIX" && (await page.locator(".sp-win .uf-range").count()) === 2, "the expand key opens the bento's window");
+  ok((await page.locator(".sp-win h2").innerText()) === "LOOK" && (await page.locator(".sp-win .uf-range").count()) >= 3, "the expand key opens the bento's window");
   await shot("3-window");
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector(".sp-winhost")?.hidden);
-  await page.locator(".sp-b-elements .sp-expand").click();
+  await page.locator(".sp-b-library .sp-expand").click();
   await page.waitForSelector(".sp-win");
-  ok((await page.locator(".sp-win .sp-words").count()) === 1 && /swirling/.test(await page.locator(".sp-win .sp-prompt").innerText()) === false, "the elements' window has the words, and says what the shot is told (the sparks are the one picked: free)");
-  await page.locator(".sp-win .sp-tile[data-element='portal']").click();
-  await settle(500);
-  ok(/swirling ring/.test(await page.locator(".sp-win .sp-prompt").innerText()), "the portal's window shows what LTX is told");
+  ok((await page.locator(".sp-win .sp-lib-tile").count()) === 27, "the library's window has every tile, larger");
   await page.keyboard.press("Escape");
 
   // ---- Roto: a subject clicked, the points in the viewer, the paid tracking asks first and sends the name and the clicks
@@ -399,7 +438,7 @@ try {
   await page.waitForSelector(".sp-stack .sp-layer", { timeout: 30000 });
   await page.waitForTimeout(800);
   const kept = await state();
-  ok(kept.name === "SH010" && kept.passes.plate?.kind === "video" && kept.passes.roto?.type === "matte" && kept.passes.light && kept.passes.comp && kept.set.fx.when, "the shot, its passes and its settings come back after a reload");
+  ok(kept.name === "SH010" && kept.passes.plate?.kind === "video" && kept.passes.roto?.type === "matte" && kept.passes.light && kept.passes.comp && kept.passes.fx && kept.set.fx.layers.length >= 2, "the shot, its passes, its layers and its settings come back after a reload", JSON.stringify(kept.set.fx.layers.map((l) => l.el)));
   ok((await page.locator(".sp-lamp[data-tone='done']").count()) >= 5, "the lamps are green again");
   const list = await (await fetch(`${base}/api/spice-shots`)).json();
   // (beside the two example shots, the person's own)
@@ -418,7 +457,7 @@ try {
 
   // ---- Paprika: what she is told, what she sets up, the yes
   await open("fx");
-  queue.push({ reply: "A portal behind her, from frame 1030.", actions: [{ op: "fx", element: "portal", from: 1030, depth: "behind", intensity: 0.9 }, { op: "run" }] });
+  queue.push({ reply: "A portal behind her, from frame 1030.", actions: [{ op: "layer", element: "ai:portal", from: 1030, x: 0.7, y: 0.35, size: 0.6, behind: true }, { op: "run" }] });
   await page.locator("#assistant .chat-input").click();
   await page.keyboard.type("a portal behind her");
   await page.keyboard.press("Enter");
@@ -426,9 +465,10 @@ try {
   const told2 = asked.at(-1)?.spice ?? {};
   ok(told2.department === "fx" && told2.shot === "SH010" && told2.footage?.last === 1120 && told2.passes?.some((p) => p.dept === "plate") && told2.run?.label, "she is told the department, the shot, the footage's frames, the passes and the key", JSON.stringify(told2).slice(0, 160));
   st = await state();
-  ok(st.set.fx.element === "portal" && st.set.fx.when.from === 1030 && st.set.fx.intensity === 0.9, "her setting-up is made at once: the portal, from 1030, stronger");
+  const herLayer = st.set.fx.layers.at(-1);
+  ok(herLayer?.el === "ai" && herLayer.preset === "portal" && herLayer.from === 1030 && herLayer.x === 0.7 && st.set.fx.sel === herLayer.id && herLayer.behind === true, "her setting-up is made at once: an AI portal layer, from 1030, where she said, behind the woman Roto holds", JSON.stringify(herLayer));
   const before = paid.length;
-  ok(/Add the portal/.test(await page.locator("#assistant .msg-confirm").innerText()) && /≈ \d+ cr/.test(await page.locator("#assistant .msg-confirm").innerText()), "running is only offered, with its price", (await page.locator("#assistant .msg-confirm").innerText()).replace(/\s+/g, " "));
+  ok(/Make it/.test(await page.locator("#assistant .msg-confirm").innerText()) && /≈ \d+ cr/.test(await page.locator("#assistant .msg-confirm").innerText()), "running is only offered, with its price", (await page.locator("#assistant .msg-confirm").innerText()).replace(/\s+/g, " "));
   ok(paid.length === before, "nothing was sent for her answer");
   await page.locator("#assistant .msg-confirm .is-primary").click();
   await page.waitForFunction((n) => true, before);
