@@ -38,10 +38,10 @@ export const SAY = {
 /** What the chat bar says in each department (no canned presets: Paprika's bar is her words). */
 export const PLACEHOLDER = {
   plate: "Ask Paprika — trim it to the first four seconds, read its depth, what is in this shot?",
-  roto: "Ask Paprika — cut out the woman, track the umbrella, feather the edge",
+  roto: "Ask Paprika — cut out the chick, track the frog, feather the edge",
   paint: "Ask Paprika — remove the sign, take the subtitles off, paint out the wire",
-  light: "Ask Paprika — a golden hour, rain on it, a stormy sky behind her",
-  fx: "Ask Paprika — a portal behind her, rain over it all, embers rising, make it a storm",
+  light: "Ask Paprika — a golden hour, snow on it, a stormy sky behind the frog",
+  fx: "Ask Paprika — a portal behind the chameleon, flames in the pan, make it a storm",
   comp: "Ask Paprika — upscale it, slow it down, export it as a webm",
 };
 

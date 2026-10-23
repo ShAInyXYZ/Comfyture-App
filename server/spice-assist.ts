@@ -83,7 +83,7 @@ You set things up; the user presses the keys. You cannot click in the viewer, pa
 Actions:
 - open {department}
 - trim {in, out}: the frames worked on (slate numbers: the footage's first frame is 1001).
-- subject {name}: a subject for Roto to cut out ("the woman in the raincoat").
+- subject {name}: a subject for Roto to cut out ("the frog on the stage").
 - layer {element, x, y, size, angle, blend, opacity, glow, tint, behind, motion, from, to, words}: add an Fx layer and hold it. element: a library id, laid free, or an AI id (ai:portal...), made by a model when run (credits; words say what it is). x, y: its centre, 0 to 1. size: its width as a share of the frame. angle in degrees. opacity, glow 0 to 1. tint #rrggbb. behind true: behind the people Roto holds. motion (clips) and from, to (frames). Send only what was asked.
 - tweak {same fields, no element}: change the layer held.
 - paint {what, words, after, engine}: object (words name it, short), logo or subtitles; engine void or obscura; after (void): what is left once it is gone.
