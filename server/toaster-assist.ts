@@ -5,7 +5,7 @@
 // Toaster and nothing else. Building costs nothing, so the page does it at once; a render, a turnaround or a 3D model costs, so his
 // answer only offers it: the page asks the user, with the price, before anything runs.
 import { readFileSync } from "node:fs";
-import { SHAPES, PALETTE } from "../web/js/toaster-model.js";
+import { SHAPES, PALETTE, POSE_SLIDERS } from "../web/js/toaster-model.js";
 import { BODY_TYPES } from "../web/js/control/skeleton.js";
 import { POSES, POSE_CATEGORIES } from "../web/js/control/poses.js";
 
@@ -46,6 +46,7 @@ export const TOASTER_TOOL = {
             piece: { type: "string", enum: PIECE_IDS, description: "For add a piece: its type id from the catalogue." },
             body: { type: "string", enum: BODY_IDS, description: "For add a character: its body type." },
             pose: { type: "string", enum: POSE_IDS, description: "For add a character, and set on one: its pose (stand by default)." },
+            tweak: { type: "object", description: "For a character: sliders laid over its pose, in degrees (crouch 0 to 1): look (head left/right), nod (down/up), tilt, lean (forward), twist, side (bend), arms (up), reach (arms forward), elbows, stance (legs apart), step, crouch. 0 takes one back.", properties: Object.fromEntries(POSE_SLIDERS.map(([k, , lo, hi]) => [k, { type: "number", minimum: lo, maximum: hi }])) },
             part: { type: "string", description: "For set and remove: the part's name, from the scene or added earlier in this answer." },
             name: { type: "string", description: "For add: how to call it (later actions may use it). For set: a new name." },
             at: { type: "array", items: { type: "number" }, description: "[x, z] in metres: the centre of the part's footprint on the floor." },
@@ -90,8 +91,8 @@ You build and arrange; the user presses the paid keys. You see a photo when one 
 Coordinates: metres. Floor y = 0; +X the viewer's right, +Z the front (the default camera), -Z the back. at [x, z]: the centre of a part's footprint; y: the height of its BOTTOM (0.75 on a table top). turn: yaw in degrees, 0 faces +Z, 90 faces +X, 180 the back. size [w, h, d] before its turn.
 
 Actions:
-- add {kind, shape | piece | body, pose, name, PLACE, size | scale, color, made}: kind shape (a primitive id), piece (a library type id; animals too) or character (a body id, in a pose). name: how later actions name it. scale: a factor on its own size.
-- set {part, PLACE, size | scale, color, made, name, pose, hidden}: change a part, by its name in the scene or added earlier in this answer.
+- add {kind, shape | piece | body, pose, tweak, name, PLACE, size | scale, color, made}: kind shape (a primitive id), piece (a library type id; animals too) or character (a body id, in a pose). name: how later actions name it. scale: a factor on its own size.
+- set {part, PLACE, size | scale, color, made, name, pose, tweak, hidden}: change a part, by its name in the scene or added earlier in this answer.
 PLACE is a relation (best) or numbers: against (back, left, right, front: a wall of the room, facing in); near + side (front, back, left, right of that part, as seen facing it) + gap (m): beside it, facing it; on: on its top; or at + y. Then turn or face (a part's name or [x, z]) if it must face elsewhere.
 - remove {part}
 - clear {}: every part goes, to build a new scene from scratch. Only as the first action.
@@ -110,10 +111,11 @@ const COMPOSING = `COMPOSING. A piece's front is the side it is used from (the s
 - a part added before it can be named: add the desk, then its chair near it.
 Example, a boss's office: floor; back wall; left wall; add desk "Boss desk" at [0, -1.2] turn 180 (its user's side toward the back wall, so the boss looks into the room); add office-chair near "Boss desk" side front gap 0.1; add armchair "Guest 1" near "Boss desk" side back gap 0.7; add armchair "Guest 2" near "Guest 1" side right gap 0.2 face "Boss desk"; add bookcase against back; add a second against back (it slides beside the first); add fireplace against left; add sofa near the fireplace side front gap 2.2; add coffee-table near the sofa side front gap 0.45; add desk-lamp on "Boss desk".
 The camera of a room: from a front corner at 1.2 to 1.6, looking across at the focal point, lens 24 to 35; of an object: 3/4 front at its middle height, lens 50 to 85.
+A character: a pose that fits what they do, then tweak to make it theirs: look 30 turns the head to its left, nod 15 looks down, lean 10 leans in, arms 40 lifts the arms, reach 60 reaches forward, stance 15 spreads the legs, crouch 0.3 bends the knees. A character's front is its face; face turns the whole body.
 Framing a hero piece front-on (a boss at his desk): camera subject that piece, side the one it shows best (a desk the boss sits behind: its back, the visitors' side), height 1.2 to 1.4, margin 1.8, lens 35, frame 16:9; then dress the frame: behind it against the back wall bookcases on both sides of the middle, a picture on the wall above its centre (y 1.4), plants or lamps at its two sides, a rug under it; keep the camera's axis clear (no chair between, or turn the visitors' chairs aside). Symmetry reads as power. Save it as a slot only when asked to keep it.`;
 
 export interface Part {
-  name?: string; kind?: string; shape?: string; piece?: string; body?: string; pose?: string; color?: string; made?: string;
+  name?: string; kind?: string; shape?: string; piece?: string; body?: string; pose?: string; tweak?: Record<string, number>; edited?: boolean; color?: string; made?: string;
   size?: number[]; at?: number[]; y?: number; turn?: number; hidden?: boolean;
 }
 export interface Summary {
@@ -147,7 +149,8 @@ export function toasterPrompt(s: Summary, turns: Turn[], { picture = false }: { 
   const parts = things<Part>(s.parts, 150);
   lines.push(`THE SCENE: ${cut(s.draft, 60) || "untitled"}, ${parts.length ? `${parts.length} part${parts.length === 1 ? "" : "s"}` : "empty"}.`);
   for (const p of parts) {
-    const what = p.kind === "piece" ? `piece ${cut(p.piece, 40)}` : p.kind === "character" ? `character ${cut(p.body, 20)}, pose ${cut(p.pose, 30) || "stand"}` : `shape ${cut(p.shape, 20)}`;
+    const tweaks = p.tweak && typeof p.tweak === "object" ? Object.entries(p.tweak).filter(([, v]) => Number(v)).map(([k, v]) => `${cut(k, 10)} ${Number(v)}`).join(" ") : "";
+    const what = p.kind === "piece" ? `piece ${cut(p.piece, 40)}` : p.kind === "character" ? `character ${cut(p.body, 20)}, pose ${cut(p.pose, 30) || "stand"}${tweaks ? `, tweaked ${tweaks}` : ""}${p.edited ? ", joints edited by hand" : ""}` : `shape ${cut(p.shape, 20)}`;
     lines.push(`- ${cut(p.name, 40) || "part"}: ${what}, ${cut(p.color, 12) || "grey"}, size ${triple(p.size)}, at ${Array.isArray(p.at) ? p.at.slice(0, 2).map(metres).join(", ") : "?"}, y ${metres(p.y)}, turn ${metres(p.turn)}${p.made ? `, made of ${cut(p.made, 60)}` : ""}${p.hidden ? ", hidden" : ""}`);
   }
   const selected = list<unknown>(s.selected, 20).map((n) => cut(n, 40)).filter(Boolean);
@@ -221,6 +224,12 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
     if (at) out.at = at;
     if (num(a.y, 0, 60) !== undefined) out.y = r2(num(a.y, 0, 60)!);
     if (num(a.turn, -1e6, 1e6) !== undefined) out.turn = r2(wrap(num(a.turn, -1e6, 1e6)!));
+    // a character's pose tweaks: only the Stage's sliders, each within its range (0 takes one back)
+    if (a.tweak && typeof a.tweak === "object") {
+      const tweak: Record<string, number> = {};
+      for (const [k, , lo, hi] of POSE_SLIDERS as [string, string, number, number][]) if (num(a.tweak[k], lo, hi) !== undefined) tweak[k] = r2(num(a.tweak[k], lo, hi)!);
+      if (Object.keys(tweak).length) out.tweak = tweak;
+    }
     // where it goes by a relation: against a wall, near a part on one of its sides, on a part (a part named must exist by then)
     const wall = oneOf(a.against, ["back", "left", "right", "front"] as const);
     if (wall) out.against = wall;

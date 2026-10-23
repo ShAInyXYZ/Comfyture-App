@@ -141,3 +141,16 @@ test("an answer in words alone builds nothing and says so; actions sent as a str
   assert.deepEqual(aimed, { op: "camera", subject: "Desk", side: "back", height: 1.3, margin: 4, frame: "16:9", lens: 35 });
   assert.equal(readToasterAnswer(say([{ op: "camera", subject: "Nobody" }]), SCENE).actions.length, 0, "a camera on nobody is dropped");
 });
+
+test("a character's pose is tweaked by the Stage's sliders, each within its range; what is not a slider is dropped", () => {
+  const out = readToasterAnswer(say([
+    { op: "set", part: "Ava", tweak: { look: 30, nod: -999, wiggle: 5, crouch: 0.4 } },
+    { op: "add", kind: "character", body: "man", pose: "sit", name: "Boss", tweak: { lean: 12 } },
+    { op: "set", part: "Ava", tweak: { wiggle: 5 } },
+  ]), SCENE).actions;
+  assert.deepEqual(out[0], { op: "set", part: "Ava", tweak: { look: 30, nod: -40, crouch: 0.4 } });
+  assert.deepEqual(out[1].tweak, { lean: 12 });
+  assert.equal(out.length, 2, "a change with no slider left is no change");
+  const prompt = toasterPrompt({ ...SCENE, parts: [{ ...SCENE.parts[1], tweak: { look: 30 }, edited: true }] }, [{ role: "user", text: "go" }]);
+  assert.match(prompt, /character woman, pose sit-desk, tweaked look 30, joints edited by hand/);
+});
