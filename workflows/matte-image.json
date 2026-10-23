@@ -1,0 +1,8 @@
+{
+  "photo": { "class_type": "LoadImage", "inputs": { "image": "" } },
+  "sam": { "class_type": "CheckpointLoaderSimple", "inputs": { "ckpt_name": "sam3.1_multiplex_fp16.safetensors" } },
+  "words": { "class_type": "CLIPTextEncode", "inputs": { "clip": ["sam", 1], "text": "" } },
+  "pick": { "class_type": "SAM3_Detect", "inputs": { "model": ["sam", 0], "image": ["photo", 0], "conditioning": ["words", 0], "positive_coords": "[]", "negative_coords": "[]", "threshold": 0.5, "refine_iterations": 2, "individual_masks": false } },
+  "pictures": { "class_type": "MaskToImage", "inputs": { "mask": ["pick", 0] } },
+  "frame": { "class_type": "SaveImage", "inputs": { "images": ["pictures", 0], "filename_prefix": "comfyture/matte" } }
+}

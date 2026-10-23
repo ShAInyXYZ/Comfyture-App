@@ -31,14 +31,15 @@ function plan() {
   const p = b.set.paint;
   const plate = b.passes.plate;
   const seconds = plate?.media.kind === "video" ? framesIn(plate.media.seconds ?? 0, plate.fps ?? 24) / (plate.fps ?? 24) : 0;
-  const engine = REMOVERS.includes(p.engine) ? p.engine : "void";
-  const t = p.how === "logo" ? "watermark" : p.how === "subtitles" ? "subtitles" : engine;
-  const base = { engine, template: t, seconds };
+  // (a picture is cleaned by Qwen Image Edit, told what to take out; a clip by VOID, Obscura or the LTX clean-ups)
+  const pic = plate?.media.kind === "image";
+  const engine = pic ? "qwenedit" : REMOVERS.includes(p.engine) ? p.engine : "void";
+  const t = pic ? "qwenedit" : p.how === "logo" ? "watermark" : p.how === "subtitles" ? "subtitles" : engine;
+  const base = { engine, template: t, seconds: pic ? 1 : seconds, pic };
   if (!plate) return { ...base, why: "Bring the footage to the Plate first", label: "Remove it" };
-  if (plate.media.kind !== "video") return { ...base, why: "Paint works on a clip: this shot is a picture", label: "Remove it" };
   if (p.how === "brush") return { ...base, label: "Remove the spot", why: masked ? "" : "Paint over the spot in the viewer first", free: true };
-  if (p.how === "describe") return { ...base, label: "Remove it", why: String(p.words ?? "").trim() ? "" : "Say what to remove first", cost: priceOf(t, seconds), needs: "words" };
-  return { ...base, label: p.how === "logo" ? "Take the logo out" : "Take the subtitles off", why: "", cost: priceOf(t, seconds) };
+  if (p.how === "describe") return { ...base, label: "Remove it", why: String(p.words ?? "").trim() ? "" : "Say what to remove first", cost: priceOf(t, base.seconds), needs: "words" };
+  return { ...base, label: p.how === "logo" ? "Take the logo out" : "Take the subtitles off", why: "", cost: priceOf(t, base.seconds) };
 }
 
 function run(viewer) {
@@ -53,7 +54,15 @@ function run(viewer) {
     }, { note: "A spot removed · ffmpeg", source: "free" }).then((m) => m && viewer.clearMask());
   }
   const words = String(p.words ?? "").trim();
-  return work("paint", p.how === "describe" ? `Remove ${words}` : TARGETS.find((t) => t.id === p.how).name, async (progress, job) => {
+  const label = p.how === "describe" ? `Remove ${words}` : TARGETS.find((t) => t.id === p.how).name;
+  if (pl.pic) {
+    // a picture: Qwen is told what to take out and what is left in its place
+    const what = p.how === "logo" ? "the logo and any watermark" : p.how === "subtitles" ? "the subtitles and any text written over the picture" : words.replace(/^remove\s+/i, "");
+    const left = String(p.after ?? "").trim();
+    const told = `Remove ${what}. Fill the space with ${left || "what would naturally be there behind it"}. Keep everything else in the picture exactly as it is: the people, their faces, the light and the framing.`;
+    return work("paint", label, async (progress, job) => ({ files: await cloud("qwenedit", { image: (await inputFor("paint", shot)).media, text: told })(progress, job) }), { note: `${p.how === "describe" ? words : TARGETS.find((t) => t.id === p.how).name} · Qwen`, credits: pl.cost ?? 0, source: "cloud" });
+  }
+  return work("paint", label, async (progress, job) => {
     const input = await inputFor("paint", shot);
     const m = input.media;
     const given = { video: m };
@@ -89,7 +98,7 @@ function targetBody(viewer) {
         h("button.sp-target-tile", { type: "button", "aria-pressed": String(p.how === t.id), dataset: { how: t.id }, title: `${t.name} — ${t.about}`, on: { click: () => setSet("paint", { how: t.id }) } },
           sprite(t.icon), h("b", {}, t.name), h("span", {}, t.about)))),
       words,
-      p.how === "describe" && pl.engine === "void" ? h("input.ut-words.sp-after", {
+      p.how === "describe" && (pl.engine === "void" || pl.pic) ? h("input.ut-words.sp-after", {
         value: p.after ?? "", placeholder: "What's left: an empty street, a bare wall…", "aria-label": "What the place looks like once it is gone", title: "VOID fills the space from these words: say what is there without it, not what goes",
         on: { input: (e) => setQuietly("paint", { after: e.target.value }), change: () => edit(() => {}) },
       }) : null,
@@ -103,7 +112,7 @@ function engineBody() {
   const pl = plan();
   const seconds = pl.seconds;
   if (p.how === "brush") return h("div.sp-engine", {}, h("b", {}, "ffmpeg"), h("p.sp-hint", {}, "The spot is filled from what is around it, on every frame. Free, on this machine: nothing is sent anywhere."));
-  if (p.how !== "describe") return h("div.sp-engine", {}, h("b", {}, TEMPLATES[pl.template].title), h("p.sp-hint", {}, TEMPLATES[pl.template].about), h("span.sp-engine-price", {}, typeof pl.cost === "number" ? `≈ ${pl.cost} cr` : "≈ ? cr"));
+  if (p.how !== "describe" || pl.pic) return h("div.sp-engine", {}, h("b", {}, TEMPLATES[pl.template].title), h("p.sp-hint", {}, pl.pic ? "A picture is cleaned by Qwen Image Edit: it is told what to take out and makes the picture again without it." : TEMPLATES[pl.template].about), h("span.sp-engine-price", {}, typeof pl.cost === "number" ? `≈ ${pl.cost} cr` : "≈ ? cr"));
   return h("div.sp-engine", {}, ...REMOVERS.map((id) => {
     const t = TEMPLATES[id];
     return h("button.sp-engine-row", { type: "button", "aria-pressed": String(pl.engine === id), dataset: { engine: id }, title: t.about, on: { click: () => setSet("paint", { engine: id }) } },
@@ -179,7 +188,7 @@ export function paintSpace(viewer) {
     },
     viewer: () => {
       const p = set();
-      const tool = p.how === "brush" && spice.shot.body.passes.plate?.media.kind === "video" ? "mask" : null;
+      const tool = p.how === "brush" && spice.shot.body.passes.plate ? "mask" : null;
       return { tool, brush: { tool: p.brush ?? "brush", size: p.size ?? 60 }, hint: tool && !masked ? "Paint over the spot to remove" : null };
     },
   };

@@ -449,6 +449,25 @@ export function buildMatte(graph: Graph, video: unknown, v: { text: string; posi
   return graph;
 }
 
+/**
+ * Spice's Roto on a picture: the subject's matte, white where it is. With clicks, SAM3 takes the subject they are on (and not the other
+ * things of its name); with only a name, everything that name is.
+ */
+export function buildMatteImage(graph: Graph, photo: unknown, v: { text: string; positive: { x: number; y: number }[]; negative: { x: number; y: number }[] }): Graph {
+  set(graph, "photo", "image", photo);
+  if (v.positive.length) {
+    set(graph, "pick", "positive_coords", JSON.stringify(v.positive));
+    set(graph, "pick", "negative_coords", JSON.stringify(v.negative));
+    delete graph.pick.inputs.conditioning;
+    delete graph.words;
+  } else {
+    set(graph, "words", "text", v.text);
+    delete graph.pick.inputs.positive_coords;
+    delete graph.pick.inputs.negative_coords;
+  }
+  return graph;
+}
+
 /** ComfyUI's background removal, with the subject composited onto black. */
 export function buildCutout(graph: Graph, source: unknown): Graph {
   set(graph, "photo", "image", source);

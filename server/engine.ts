@@ -9,7 +9,7 @@ import { compose, finalPrompt } from "../web/js/script.js";
 import { imageSize } from "./media.ts";
 import {
   EXTEND_OVERLAP, FPS, REFERENCE_SIZE, addClipGuide, applyAudio, buildCutout, buildGenerate, buildGuided, buildI2V, buildMotion, buildPaint, buildPlan,
-  buildProduction, buildSound, buildSwap, buildMatte, loadGraph, outputSize, type Aspect, type Graph, type Guide, type Quality,
+  buildProduction, buildSound, buildSwap, buildMatte, buildMatteImage, loadGraph, outputSize, type Aspect, type Graph, type Guide, type Quality,
 } from "./workflows.ts";
 import { CAMERA } from "../web/js/script.js";
 import { untagRefs, type ImageModels } from "./images.ts";
@@ -742,6 +742,11 @@ export class Engine extends EventEmitter {
     });
   }
 
+  /** Spice's Roto on a picture: the subject's matte, from its clicks or its name (SAM3). */
+  matteImage(source: string, v: Parameters<typeof buildMatteImage>[2]): Paint {
+    return this.photoJob("matte", source, `${this.imageNames[source] ?? "subject"} matte`, async (photo) => buildMatteImage(await loadGraph(this.dirs.workflows, "matte-image.json"), photo, v));
+  }
+
   /** A picture two or four times larger (4x-UltraSharp), its long side kept within 4096 pixels. */
   async upscale(source: string, scale: 2 | 4): Promise<Paint> {
     const size = imageSize(await readFile(this.photoPath(source)));
@@ -934,7 +939,7 @@ export class Engine extends EventEmitter {
   }
 
   /** A workflow that makes a photo (from another one, or from nothing), tracked like a paint job. */
-  private photoJob(kind: "paint" | "cutout" | "generate" | "upscale", source: string | null, name: string, build: (photo: unknown) => Promise<Graph>): Paint {
+  private photoJob(kind: "paint" | "cutout" | "generate" | "upscale" | "matte", source: string | null, name: string, build: (photo: unknown) => Promise<Graph>): Paint {
     const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
     this.paints.set(job.id, job);
     const emit = () => this.emit("paint", job);

@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { join } from "node:path";
-import { loadGraph, buildMatte } from "../server/workflows.ts";
+import { loadGraph, buildMatte, buildMatteImage } from "../server/workflows.ts";
 
 const dir = join(import.meta.dirname, "..", "workflows");
 // the reachable nodes of an API graph, from its output
@@ -44,4 +44,18 @@ test("the matte is saved as a clip, at the footage's frame rate, white where the
   assert.deepEqual(g.clip.inputs.fps, ["parts", 2]);
   assert.equal(g.pictures.class_type, "MaskToImage");
   assert.equal(g.sam.inputs.ckpt_name, "sam3.1_multiplex_fp16.safetensors");
+});
+
+test("a picture's matte: SAM3 takes the subject its clicks are on (not every thing of its name), or with only a name everything it is", async () => {
+  const clicked = buildMatteImage(await loadGraph(dir, "matte-image.json"), "pic.png", { text: "Woman", positive: [{ x: 10, y: 20 }], negative: [] });
+  assert.equal(clicked.photo.inputs.image, "pic.png");
+  assert.deepEqual(JSON.parse(String(clicked.pick.inputs.positive_coords)), [{ x: 10, y: 20 }]);
+  assert.equal(clicked.pick.inputs.conditioning, undefined);
+  assert.equal(clicked.words, undefined);
+  const named = buildMatteImage(await loadGraph(dir, "matte-image.json"), "pic.png", { text: "car", positive: [], negative: [] });
+  assert.equal(named.words.inputs.text, "car");
+  assert.deepEqual(named.pick.inputs.conditioning, ["words", 0]);
+  assert.equal(named.pick.inputs.positive_coords, undefined);
+  assert.equal(named.frame.class_type, "SaveImage");
+  assert.deepEqual(named.frame.inputs.images, ["pictures", 0]);
 });

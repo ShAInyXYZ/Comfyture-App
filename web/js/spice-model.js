@@ -54,7 +54,7 @@ export const blankBody = () => ({
     // (layers: the effects laid on the shot by hand, bottom of the stack first; sel: the one being worked on. The rest is what an AI
     // effect is asked for: its element, words, place and frames)
     fx: { element: "portal", words: "", place: { x: 0.62, y: 0.4, size: 0.6 }, when: null, ease: "inout", intensity: 0.8, spill: 0.65, depth: "behind", layers: [], sel: null },
-    comp: { height: 1080, factor: 2, engine: "free", format: "mp4", exports: [] },
+    comp: { height: 1080, factor: 2, engine: "free", format: "mp4", scale: 2, picFormat: "png", exports: [] },
   },
   log: [],
 });
@@ -264,6 +264,7 @@ export const TEMPLATES = {
   green: { dept: "roto", name: "api_bria_video_green_screen", title: "Bria", partner: "Bria", about: "Puts the subject on a flat green", want: { video: true } },
   cutout: { dept: "roto", name: "api_bria_remove_video_background_transparent", title: "Bria", partner: "Bria", about: "Takes the background out and leaves it clear", want: { video: true } },
   depth: { dept: "plate", name: "utility_depth_anything3_video_depth_estimation", title: "Depth Anything 3", about: "A depth map of every frame", want: { video: true }, gpu: 8 },
+  depthpic: { dept: "plate", name: "utility_depth_anything3_image_depth_estimation", title: "Depth Anything 3", about: "A depth map of the picture", want: { image: true }, gpu: 4 },
   // (VOID takes its words as two of its own, its object and the place without it: voidExtra below)
   void: { dept: "paint", name: "utility_void_video_inpainting", title: "VOID", about: "Finds the object by its name and paints it out, with its shadows", want: { video: true }, gpu: 26 },
   obscura: { dept: "paint", name: "template_ltx2_3_obscura_remova_lora_remove_object_from_video", title: "Obscura Remova", about: "Removes what you describe, with no mask", want: { video: true, text: true }, gpu: 18 },
@@ -273,7 +274,9 @@ export const TEMPLATES = {
   background: { dept: "light", name: "api_bria_video_replace_background", title: "Bria", partner: "Bria", about: "Puts a new sky or background behind the people", want: { video: true, image: true } },
   qwen: { dept: "light", name: "image_qwen_image_edit_2509_relight", title: "Qwen Image Edit", about: "Changes the light of a picture", want: { image: true, text: true }, gpu: 9 },
   // (an AI layer on a picture: the picture made again with the effect, kept by the layer inside its circle)
-  qwenfx: { dept: "fx", name: "image_qwen_image_edit_2509", title: "Qwen Image Edit", about: "Makes the picture again with the effect described", want: { image: true, text: true }, gpu: 9 },
+  qwenedit: { dept: "fx", name: "image_qwen_image_edit_2509", title: "Qwen Image Edit", about: "Makes the picture again as it is told: an effect added, something taken out", want: { image: true, text: true }, gpu: 9 },
+  // (a picture's new sky: picture 1 is the shot, picture 2 the sky)
+  qwensky: { dept: "light", name: "image_qwen_image_edit_2511", title: "Qwen Image Edit", about: "Puts the sky of a picture behind the people of the shot", want: { image: true, text: true }, gpu: 12 },
   film: { dept: "comp", name: "utility_video_frame_interpolation", title: "FILM", about: "Makes the frames between the frames with an AI model", want: { video: true }, gpu: 3 },
 };
 /** What a template run brought back, as a pass's media. */

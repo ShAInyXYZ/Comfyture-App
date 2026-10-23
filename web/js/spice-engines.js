@@ -253,16 +253,16 @@ export function serverJob(path, body) {
     const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const started = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(started.error ?? `Request failed (${res.status})`);
+    // (a clip the job made, or a picture)
+    const made = (j) => (j.video ? { kind: "video", url: j.video.url, file: j.video.file, width: j.video.width, height: j.video.height, duration: j.video.duration } : j.photo ? { kind: "image", url: j.photo.url, file: j.photo.file, width: j.photo.width, height: j.photo.height } : null);
     // (a job answered already done needs no waiting)
-    if (started.status === "done" && started.video) {
-      const v = started.video;
-      return { kind: "video", url: v.url, file: v.file, width: v.width, height: v.height, duration: v.duration };
-    }
+    if (started.status === "done" && (started.video || started.photo)) return made(started);
     jobWatchers.set(started.id, (j) => set(j.progress ?? 0));
     try {
       const j = await waitFor("job", started.id);
-      const v = j.video;
-      return { kind: "video", url: v.url, file: v.file, width: v.width, height: v.height, duration: v.duration };
+      const m = made(j);
+      if (!m) throw new Error("Nothing came back.");
+      return m;
     } finally {
       jobWatchers.delete(started.id);
     }

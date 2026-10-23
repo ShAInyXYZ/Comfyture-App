@@ -1,5 +1,5 @@
 // The LIGHT department: change the light of the shot. Its bentos: RELIGHT (the light to give it, in a few words and a picture of it: Beeble
-// SwitchX on a clip, Qwen on a picture), SKY (a new sky or background behind the people: Bria), WEATHER (rain, snow or fog laid over it, free,
+// SwitchX on a clip, Qwen on a picture), SKY (a new sky or background behind the people: Bria on a clip, Qwen on a picture), WEATHER (rain, snow or fog laid over it, free,
 // on this machine) and GRADE (a look and its exposure and colour, free). Each look builds on the last: Light works on its own pass if it has
 // one, else on the clean-up, else on the footage; "Start over" takes the pass away. The two free tools can show one real frame first.
 // Made once and kept: { el, update, sig, slot, viewer }.
@@ -39,9 +39,9 @@ function plans() {
   const words = String(l.words || l.look || "").trim();
   return {
     relight: { why: none || (!words ? "Say what light you want first" : clip && !l.reference?.file ? "Add a picture of the light you want first" : ""), cost: clip ? priceOf("beeble", seconds()) : priceOf("qwen", 1), key: clip ? "beeble" : "qwen" },
-    sky: { why: none || (!clip ? "The sky is replaced in a clip" : !l.sky?.file ? "Pick the new sky first" : ""), cost: priceOf("background", seconds()) },
-    weather: { why: none || (!clip ? "Weather is laid over a clip" : ""), free: true },
-    grade: { why: none || (!clip ? "The grade is made on a clip" : ""), free: true },
+    sky: { why: none || (!l.sky?.file ? "Pick the new sky first" : ""), cost: clip ? priceOf("background", seconds()) : priceOf("qwensky", 1), key: clip ? "background" : "qwensky" },
+    weather: { why: none, free: true },
+    grade: { why: none, free: true },
   };
 }
 
@@ -51,7 +51,8 @@ function relight() {
   const words = String(l.words || l.look).trim();
   const p = plans().relight;
   if (!isClip()) {
-    return work("light", "Relight", async (progress, job) => ({ files: await cloud("qwen", { image: shot.body.passes.plate.media, text: `relight the image using ${words}` })(progress, job), from: FIRST }), { note: `${words} · Qwen`, credits: p.cost ?? 0, source: "cloud" });
+    // (a picture: the clean-up when there is one, else the footage)
+    return work("light", "Relight", async (progress, job) => ({ files: await cloud("qwen", { image: (await inputFor("light", shot)).media, text: `relight the image using ${words}` })(progress, job), from: FIRST }), { note: `${words} · Qwen`, credits: p.cost ?? 0, source: "cloud" });
   }
   return work("light", "Relight", async (progress, job) => {
     const input = await inputFor("light", shot);
@@ -61,6 +62,11 @@ function relight() {
 function replaceSky() {
   const shot = spice.shot;
   const l = set();
+  if (!isClip()) {
+    // a picture: Qwen is shown the shot (picture 1) and the sky (picture 2)
+    const words = "Replace the sky and the background of picture 1 with the scene of picture 2. Keep the people, their faces, their light and everything in front of the background exactly as they are, with the same framing.";
+    return work("light", "Sky", async (progress, job) => ({ files: await cloud("qwensky", { image: (await inputFor("light", shot)).media, text: words }, { extra: { image2: l.sky } })(progress, job), from: FIRST }), { note: "A new sky · Qwen", credits: plans().sky.cost ?? 0, source: "cloud" });
+  }
   return work("light", "Sky", async (progress, job) => {
     const input = await inputFor("light", shot);
     return { files: await cloud("background", { video: input.media, image: l.sky })(progress, job), from: input.from };
@@ -144,7 +150,7 @@ function skyBody() {
   const p = plans().sky;
   const busy = workingOn("light");
   return h("div.sp-sky", {}, pic(l.sky, "A new sky or background", "a picture of it", "sky"),
-    primary({ id: "light:sky", label: "Replace the sky", cost: p.cost, working: !!busy && busy.label === "Sky", disabled: !!p.why || !runnerReady(), title: p.why || TEMPLATES.background.about, run: replaceSky }));
+    primary({ id: "light:sky", label: "Replace the sky", cost: p.cost, working: !!busy && busy.label === "Sky", disabled: !!p.why || !runnerReady(), title: p.why || TEMPLATES[p.key].about, run: replaceSky }));
 }
 function weatherBody() {
   const l = set();

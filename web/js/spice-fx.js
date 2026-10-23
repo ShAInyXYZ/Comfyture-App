@@ -57,7 +57,7 @@ function tileArt(e) {
 }
 function tile(e, used) {
   const ai = e.kind === "ai";
-  const price = ai ? (isPicture() ? priceOf("qwenfx", 1) : ltxCredits(5)) : null;
+  const price = ai ? (isPicture() ? priceOf("qwenedit", 1) : ltxCredits(5)) : null;
   return h(`button.sp-lib-tile${ai ? ".is-ai" : ""}`, {
     type: "button", draggable: true, dataset: { el: e.id },
     title: ai ? "Describe an effect and an AI model makes it (it costs credits): place its circle first" : `${e.name}: drag it onto the picture, or click to add it`,
@@ -110,7 +110,7 @@ function aiPlan(l) {
   const seconds = Math.min(10, Math.max(2, Math.round((to - from + 1) / fps)));
   const words = String(l.words ?? "").trim() || presetAction(elementById(l.preset));
   const why = !b.passes.plate ? "Bring the footage to the Plate first" : !words ? "Say what the effect is, or pick one" : !runnerReady() && pic ? "The template runner is not on this page yet" : "";
-  return { pic, from, to, seconds, words, why, cost: pic ? priceOf("qwenfx", 1) : ltxCredits(seconds) };
+  return { pic, from, to, seconds, words, why, cost: pic ? priceOf("qwenedit", 1) : ltxCredits(seconds) };
 }
 
 function makeAi(l) {
@@ -130,7 +130,7 @@ function makeAi(l) {
     // a picture: Qwen Image Edit makes the whole picture again with the effect; the layer keeps it in its circle
     const where = fxPrompt("", { place, depth: l.behind ? "behind" : "front", intensity: 0.6, spill: 0.5 });
     const words = `${p.words}. ${where} Keep everything else in the picture exactly as it is: the people, their faces, the light and the framing.`;
-    return work("fx", label, async (progress, job) => ({ files: await cloud("qwenfx", { image: fxGround(b).base, text: words })(progress, job) }), { credits: p.cost ?? 0, source: "cloud", keep });
+    return work("fx", label, async (progress, job) => ({ files: await cloud("qwenedit", { image: fxGround(b).base, text: words })(progress, job) }), { credits: p.cost ?? 0, source: "cloud", keep });
   }
   // a clip: LTX makes the shot again from the frame the effect starts on; the layer keeps it in its circle, on its frames
   return work("fx", label, async (progress, job) => {
@@ -221,7 +221,7 @@ function aiLook(l, big) {
       : row("Effect", h("select.ut-select", { "aria-label": "The effect", on: { change: (ev) => pick(ev.target.value) } }, h("option", { value: "", selected: !l.preset }, "My words"), ...AI_PRESETS.map((e) => h("option", { value: e.preset, selected: l.preset === e.preset }, e.name)))),
     words,
     big ? h("p.sp-hint", {}, p.pic ? "Qwen Image Edit makes the picture again with it; the layer keeps it inside its circle." : "LTX makes the shot again from the frame it starts on; the layer keeps it inside its circle, on its frames.") : null,
-    primary({ id: `fx:ai:${l.id}`, label: l.media ? "Make it again" : "Make it", cost: p.cost, working: !!busy, disabled: !!p.why, title: p.why || (p.pic ? TEMPLATES.qwenfx.about : "LTX makes the shot again with the effect, from the frame it starts on"), run: () => makeAi(l) }));
+    primary({ id: `fx:ai:${l.id}`, label: l.media ? "Make it again" : "Make it", cost: p.cost, working: !!busy, disabled: !!p.why, title: p.why || (p.pic ? TEMPLATES.qwenedit.about : "LTX makes the shot again with the effect, from the frame it starts on"), run: () => makeAi(l) }));
 }
 
 function lookBody(big) {

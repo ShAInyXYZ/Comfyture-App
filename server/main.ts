@@ -1605,6 +1605,17 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       }
     }
   }
+  if (path === "/api/spice/matte-picture" && method === "POST") {
+    // Spice's Roto on a picture: the subject's matte from its clicks (pixels of the picture) or its name
+    const input = await jsonBody(req);
+    const source = await photo(input.picture);
+    if (!source) throw bad("The picture is missing. Add it again.");
+    const points = (list: unknown) => (Array.isArray(list) ? list : []).slice(0, 24).filter((p: any) => Number.isFinite(p?.x) && Number.isFinite(p?.y)).map((p: any) => ({ x: Math.round(Math.max(0, p.x)), y: Math.round(Math.max(0, p.y)) }));
+    const positive = points(input.positive);
+    const name = text(input.text, 120);
+    if (!positive.length && !name) throw bad("Click the subject or name it.");
+    return json(res, 202, engine.matteImage(source, { text: name, positive, negative: points(input.negative) }));
+  }
   if ((path === "/api/utensils/upscale-video" || path === "/api/utensils/sound" || path === "/api/spice/matte") && method === "POST") {
     if (!ffmpeg) throw bad("Video tools need ffmpeg on the server.", 501);
     const input = await jsonBody(req);

@@ -61,27 +61,32 @@ function plan() {
   const s = openSubject();
   const seconds = plate?.media.kind === "video" ? framesIn(plate.media.seconds ?? 0, plate.fps ?? 24) / (plate.fps ?? 24) : 0;
   if (!plate) return { kind: "none", label: "Pass to Paint", why: "Bring the footage to the Plate first" };
-  if (plate.media.kind !== "video") return { kind: "none", label: "Pass to Paint", why: "Roto cuts a clip: this shot is a picture" };
+  const pic = plate.media.kind === "image";
+  if (r.out === "green" && pic) return { kind: "none", label: "Key the green", why: "A picture's subject is cut out as a matte: pick Alpha or Holdout" };
   if (r.out === "green") {
     if (b.passes.roto?.type === "green") return { kind: "pass", label: "Pass to Paint" };
     return { kind: "green", label: "Key the green", cost: priceOf("green", seconds) };
   }
-  if (!s) return { kind: "none", label: "Click a subject", why: "Click the subject in the viewer, then track it" };
-  if (!s.media || s.stale) return { kind: "track", label: `Track ${s.name.toLowerCase()}`, cost: priceOf("sam3", seconds), subject: s };
+  if (!s) return { kind: "none", label: "Click a subject", why: `Click the subject in the viewer, then ${pic ? "cut it out" : "track it"}` };
+  if (!s.media || s.stale) return { kind: "track", label: `${pic ? "Cut out" : "Track"} ${s.name.toLowerCase()}`, cost: priceOf("sam3", pic ? 1 : seconds), subject: s };
   return { kind: "pass", label: "Pass to Paint" };
 }
 
 function track(s) {
   const shot = spice.shot;
-  const label = `Track ${s.name}`;
   const plate = shot.body.passes.plate;
-  const seconds = framesIn(plate.media.seconds ?? 0, plate.fps ?? 24) / (plate.fps ?? 24);
+  const pic = plate.media.kind === "image";
+  const label = `${pic ? "Cut out" : "Track"} ${s.name}`;
+  const seconds = pic ? 1 : framesIn(plate.media.seconds ?? 0, plate.fps ?? 24) / (plate.fps ?? 24);
   const credits = priceOf("sam3", seconds) ?? 0;
   // the subject is found from its first clicks and tracked from that frame to the end of the range (spice-model.js matteAsk)
   const ask = matteAsk(s, plate.media.width, plate.media.height, rangeOf(shot.body).in);
   return work("roto", label, async (progress, job) => {
     const media = await footage(shot);
-    const out = await serverJob("api/spice/matte", { video: media.file, text: ask.text, positive: ask.positive, negative: ask.negative, key: ask.key })(progress, job);
+    // (a picture: the subject cut out where it was clicked, nothing to track)
+    const out = pic
+      ? await serverJob("api/spice/matte-picture", { picture: media.file, text: ask.text, positive: ask.positive, negative: ask.negative })(progress, job)
+      : await serverJob("api/spice/matte", { video: media.file, text: ask.text, positive: ask.positive, negative: ask.negative, key: ask.key })(progress, job);
     return { files: out, from: ask.from };
   }, {
     credits, source: "cloud",
@@ -127,10 +132,11 @@ function subjectsBody(big) {
   return h("div.sp-subjects", {},
     h("div.sp-subject-list", {}, ...r.subjects.map((s) => {
       const on = (r.open ?? r.subjects[0]?.id) === s.id;
-      const here = busy && busy.label === `Track ${s.name}`;
+      const here = busy && (busy.label === `Track ${s.name}` || busy.label === `Cut out ${s.name}`);
       const first = s.points[0];
       const tone = here ? "busy" : s.media && !s.stale ? "done" : "empty";
-      const word = here ? `Tracking ${Math.round((busy.progress ?? 0) * 100)}%` : s.media && !s.stale ? "Tracked" : s.stale ? "Clicks changed" : s.points.length ? "Not tracked" : "No clicks yet";
+      const pic = plate?.media.kind === "image";
+      const word = here ? `${pic ? "Cutting out" : "Tracking"} ${Math.round((busy.progress ?? 0) * 100)}%` : s.media && !s.stale ? (pic ? "Cut out" : "Tracked") : s.stale ? "Clicks changed" : s.points.length ? (pic ? "Not cut out" : "Not tracked") : "No clicks yet";
       return h(`div.sp-subject${on ? ".is-on" : ""}`, { dataset: { subject: s.id } },
         h("button.sp-subject-main", { type: "button", "aria-pressed": String(on), title: `${s.name}: ${word}`, on: { click: () => (setSet("roto", { open: s.id }), (spice.pointer = "points")) } },
           h("span.sp-subject-pic", { style: pic && first ? { backgroundImage: `url(${pic})`, backgroundSize: "420%", backgroundPosition: `${first.x * 100}% ${first.y * 100}%` } : {} }, pic && first ? null : spicon("plus")),
@@ -141,7 +147,7 @@ function subjectsBody(big) {
         h("button.sp-eye", { type: "button", disabled: !s.media, "aria-pressed": String(s.eye !== false), title: s.eye === false ? "Show its matte" : "Hide its matte", "aria-label": `${s.name}'s matte`, on: { click: () => edit((x) => { const q = x.set.roto.subjects.find((y) => y.id === s.id); q.eye = q.eye === false; syncPass(x); }) } }, spicon(s.eye === false ? "eyeOff" : "eye")),
         big ? h("button.sp-iconkey.is-quiet", { type: "button", title: "Take this subject out", "aria-label": `Take ${s.name} out`, on: { click: () => edit((x) => { x.set.roto.subjects = x.set.roto.subjects.filter((y) => y.id !== s.id); if (x.set.roto.open === s.id) x.set.roto.open = null; syncPass(x); }) } }, spicon("trash")) : null);
     })),
-    h("button.sp-add-subject", { type: "button", disabled: !plate || plate.media.kind !== "video", "aria-pressed": String(armed), title: "Click the subject in the viewer: Shift or Alt for what it is not", on: { click: () => (armed ? ((spice.pointer = null), setSet("roto", { open: r.subjects[0]?.id ?? null })) : ((spice.pointer = "points"), setSet("roto", { open: "new" }))) } },
+    h("button.sp-add-subject", { type: "button", disabled: !plate, "aria-pressed": String(armed), title: "Click the subject in the viewer: Shift or Alt for what it is not", on: { click: () => (armed ? ((spice.pointer = null), setSet("roto", { open: r.subjects[0]?.id ?? null })) : ((spice.pointer = "points"), setSet("roto", { open: "new" }))) } },
       spicon(armed ? "close" : "plus"), h("span", {}, armed ? "Click the subject in the viewer" : "Click a subject")),
     big ? h("p.sp-hint", {}, "A subject is cut out by its name and by where it was clicked: a click puts a green + on it, Shift or Alt a red − on what is not it. The name is what the cutting reads, so name it for what it is.") : null);
 }
@@ -274,7 +280,7 @@ export function rotoSpace() {
       const b = spice.shot.body;
       const s = openSubject();
       const r = b.set.roto;
-      const tool = spice.pointer === "points" && b.passes.plate?.media.kind === "video" ? "points" : null;
+      const tool = spice.pointer === "points" && b.passes.plate ? "points" : null;
       return {
         tool,
         points: s ? s.points : [],

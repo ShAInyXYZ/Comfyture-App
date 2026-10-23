@@ -80,13 +80,21 @@ function trimBody() {
 /** What reading the depth needs and costs now. */
 function depthPlan() {
   const plate = spice.shot.body.passes.plate;
-  const ok = !!plate && plate.media.kind === "video";
-  const seconds = ok ? framesIn(plate.media.seconds ?? 0, plate.fps ?? 24) / (plate.fps ?? 24) : 0;
-  return { ok, seconds, cost: ok ? priceOf("depth", seconds) : undefined, why: !ok ? "Bring a clip to the Plate first" : !runnerReady() ? "The template runner is not on this page yet" : "" };
+  const ok = !!plate;
+  // (a picture's depth is read by the picture template; a clip's frame by frame)
+  const pic = plate?.media.kind === "image";
+  const seconds = ok && !pic ? framesIn(plate.media.seconds ?? 0, plate.fps ?? 24) / (plate.fps ?? 24) : 1;
+  return { ok, pic, seconds, cost: ok ? priceOf(pic ? "depthpic" : "depth", seconds) : undefined, why: !ok ? "Bring the footage to the Plate first" : !runnerReady() ? "The template runner is not on this page yet" : "" };
 }
 function readDepth() {
-  const { seconds } = depthPlan();
-  const credits = priceOf("depth", seconds) ?? 0;
+  const { seconds, pic } = depthPlan();
+  const credits = priceOf(pic ? "depthpic" : "depth", seconds) ?? 0;
+  if (pic) {
+    return work("plate", "Depth", async (set, job) => cloud("depthpic", { image: await footage() })(set, job), {
+      credits, note: "Depth Anything 3", source: "cloud",
+      keep: (m, shot) => setPass("depth", m, { from: FIRST, note: "Depth Anything 3", credits, label: "Depth", source: "cloud" }, shot),
+    });
+  }
   // (the template reads five seconds unless told the clip's own length)
   return work("plate", "Depth", async (set, job) => { const v = await footage(); return cloud("depth", { video: v }, { extra: { start_time: 0, duration: Math.max(1, Math.ceil(v.seconds ?? seconds ?? 5)) } })(set, job); }, {
     credits, note: "Depth Anything 3", source: "cloud",
@@ -107,9 +115,9 @@ function depthBody() {
   return h("div.sp-depth", {},
     h("div.sp-depth-pic", {}, d?.media ? thumb(d.media, { cls: "is-big" }) : h("span.sp-thumb.is-empty.is-big", {}, spicon("film")),
       d ? iconKey(spicon(d.eye === false ? "eyeOff" : "eye"), d.eye === false ? "Show the depth in the viewer" : "Hide the depth in the viewer", () => edit((x) => (x.depth.eye = x.depth.eye === false)), { cls: "is-over" }) : null),
-    h("div.sp-depth-text", {}, h("b", {}, d ? "Depth read" : "Depth"), h("span", {}, d ? `${TEMPLATES.depth.title} · ${d.credits ? `${d.credits} cr` : "free"}` : TEMPLATES.depth.about)),
+    h("div.sp-depth-text", {}, h("b", {}, d ? "Depth read" : "Depth"), h("span", {}, d ? `${TEMPLATES[p.pic ? "depthpic" : "depth"].title} · ${d.credits ? `${d.credits} cr` : "free"}` : TEMPLATES[p.pic ? "depthpic" : "depth"].about)),
     h("div.sp-keys", {},
-      primary({ id: "plate:depth", label: d ? "Read it again" : "Read the depth", cost: p.cost, working: !!busy && busy.label === "Depth", disabled: !!p.why, title: p.why || TEMPLATES.depth.about, run: readDepth }),
+      primary({ id: "plate:depth", label: d ? "Read it again" : "Read the depth", cost: p.cost, working: !!busy && busy.label === "Depth", disabled: !!p.why, title: p.why || TEMPLATES[p.pic ? "depthpic" : "depth"].about, run: readDepth }),
       d ? ghost("Take it away", () => clearPass("depth"), { icon: spicon("trash") }) : null));
 }
 
