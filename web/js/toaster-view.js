@@ -5,6 +5,9 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { geometryOf } from "./toaster-shapes.js";
+import { assetByType } from "./control/assets.js";
+import { openSurface } from "./control/models.js";
+import { assetPiece, libraryNow, loadLibrary, onLibrary, preciseBox } from "./toaster-assets.js";
 import { RATIOS, SHEET, VIEWS, sheetScale } from "./toaster-model.js";
 
 // 50 mm on a 24 mm high film
@@ -15,7 +18,9 @@ const MODES = { move: "translate", rotate: "rotate", scale: "scale" };
 const rnd = (v, step) => Math.round(v / step) * step;
 const fix = (v, d) => Number(v.toFixed(d));
 // what the geometry depends on: when it changes, the mesh is rebuilt
-const keyOf = (p) => [p.shape, ...p.size, p.round ?? "", p.sides ?? ""].join("|");
+// (a piece also depends on whether the library has it yet: until then it is a box)
+const hasPiece = (p) => Boolean(libraryNow() && assetByType(p.asset));
+const keyOf = (p) => (p.shape === "asset" ? ["asset", p.asset, hasPiece(p) ? 1 : 0, ...p.size] : [p.shape, ...p.size, p.round ?? "", p.sides ?? ""]).join("|");
 
 export class ToasterView {
   constructor(container, frameEl, { onPick = () => {}, onChange = () => {}, onDrag = () => {}, onCamera = () => {} } = {}) {
@@ -152,52 +157,115 @@ export class ToasterView {
 
   // ------------------------------------------------------------ parts
 
-  /** Makes the scene match the parts: one mesh each, its geometry rebuilt only when its shape changes. */
+  /** Makes the scene match the parts: one object each (a mesh, or a group for a piece of the library), rebuilt only when its shape changes. */
   setParts(parts) {
+    this.parts = parts;
     const seen = new Set();
     for (const p of parts) {
       seen.add(p.id);
+      const asset = p.shape === "asset";
       let m = this.meshes.get(p.id);
+      if (m && m.userData.asset !== asset) (this.drop(p.id), (m = null));
       if (!m) {
-        m = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ roughness: 0.62, metalness: 0 }));
-        m.castShadow = m.receiveShadow = true;
+        m = asset ? new THREE.Group() : new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ roughness: 0.62, metalness: 0 }));
+        if (!asset) m.castShadow = m.receiveShadow = true;
         m.userData.id = p.id;
+        m.userData.asset = asset;
         this.meshes.set(p.id, m);
         this.scene.add(m);
       }
       if (m.userData.key !== keyOf(p)) this.rebuild(m, p);
-      m.material.color.set(p.color);
+      for (const mat of asset ? m.userData.mats : [m.material]) mat.color.set(p.color);
       m.position.fromArray(p.pos);
       m.rotation.set(p.rot[0] * DEG, p.rot[1] * DEG, p.rot[2] * DEG, "XYZ");
       m.scale.set(1, 1, 1);
       m.visible = !p.hidden;
+      if (asset && !hasPiece(p)) this.waitForLibrary();
     }
-    for (const [id, m] of this.meshes) {
-      if (seen.has(id)) continue;
-      this.scene.remove(m);
-      m.geometry.dispose();
-      m.material.dispose();
-      this.meshes.delete(id);
-    }
+    for (const id of [...this.meshes.keys()]) if (!seen.has(id)) this.drop(id);
     this.setSelection(this.selected);
   }
 
+  /** Takes a part's object out of the scene and frees what it made (never a piece's shared geometry). */
+  drop(id) {
+    const m = this.meshes.get(id);
+    this.scene.remove(m);
+    this.clear(m);
+    m.userData.wire.geometry.dispose();
+    m.userData.wire.material.dispose();
+    (m.userData.mats ?? [m.material]).forEach((mat) => mat.dispose());
+    this.meshes.delete(id);
+  }
+
+  /** Empties what a part's object holds, keeping its wire and materials. */
+  clear(m) {
+    if (m.userData.asset) {
+      m.userData.fit?.traverse((o) => !o.userData.shared && o.geometry?.dispose());
+      m.userData.fit?.removeFromParent();
+      m.userData.fit = null;
+    } else m.geometry?.dispose();
+  }
+
   rebuild(m, p) {
-    m.geometry?.dispose();
-    m.geometry = geometryOf(p);
+    this.clear(m);
     m.userData.key = keyOf(p);
-    m.userData.part = { shape: p.shape, round: p.round, sides: p.sides };
     m.userData.size = [...p.size];
+    if (m.userData.asset) {
+      m.userData.part = { shape: "asset", asset: p.asset };
+      this.fillAsset(m, p);
+    } else {
+      m.geometry = geometryOf(p);
+      m.userData.part = { shape: p.shape, round: p.round, sides: p.sides };
+    }
     // the selection wire: the part's own box, a hair larger so it clears the surface
-    if (m.userData.wire) (m.remove(m.userData.wire), m.userData.wire.geometry.dispose());
+    const old = m.userData.wire;
+    if (old) (m.remove(old), old.geometry.dispose());
     const box = new THREE.BoxGeometry(...p.size);
-    const wire = new THREE.LineSegments(new THREE.EdgesGeometry(box), m.userData.wire?.material ?? new THREE.LineBasicMaterial({ color: "#f2ff59", depthTest: false, transparent: true, toneMapped: false }));
+    const wire = new THREE.LineSegments(new THREE.EdgesGeometry(box), old?.material ?? new THREE.LineBasicMaterial({ color: "#f2ff59", depthTest: false, transparent: true, toneMapped: false }));
     box.dispose();
     wire.scale.setScalar(1.01);
     wire.renderOrder = 999;
+    wire.raycast = () => {};
     wire.visible = this.selected.includes(m.userData.id);
     m.add(wire);
     m.userData.wire = wire;
+  }
+
+  /** A piece of the library, scaled and moved so its box is exactly the part's size around the part's origin; a faint box until it is known. */
+  fillAsset(m, p) {
+    const fit = new THREE.Group();
+    // the part's own materials: solid, two-sided for open sheets, and the faint one of the box before the piece is known
+    m.userData.mats ??= [0, 1, 2].map((i) => new THREE.MeshStandardMaterial({ color: p.color, roughness: 0.62, metalness: 0, side: i === 1 ? THREE.DoubleSide : THREE.FrontSide, transparent: i === 2, opacity: i === 2 ? 0.35 : 1 }));
+    const [solid, sheet, ghost] = m.userData.mats;
+    m.userData.fit = fit;
+    // (measured before it joins the part, so the part's own place does not count)
+    if (!hasPiece(p)) return void (fit.add(new THREE.Mesh(new THREE.BoxGeometry(...p.size), ghost)), m.add(fit));
+    const piece = assetPiece(p.asset);
+    fit.add(piece);
+    piece.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material = openSurface(o.geometry) ? sheet : solid;
+      o.castShadow = o.receiveShadow = true;
+      if (o.isSkinnedMesh) o.frustumCulled = false;
+    });
+    const box = preciseBox(fit);
+    const ext = box.getSize(new THREE.Vector3());
+    const k = p.size.map((v, i) => (ext.getComponent(i) > 1e-6 ? v / ext.getComponent(i) : 1));
+    fit.scale.set(...k);
+    fit.position.copy(box.getCenter(new THREE.Vector3())).multiply(fit.scale).negate();
+    m.add(fit);
+  }
+
+  /** The library has arrived (or grown): pieces that were boxes become themselves. */
+  refreshAssets() {
+    if (this.parts && !this.disposed) this.setParts(this.parts);
+  }
+
+  waitForLibrary() {
+    if (this.waiting) return;
+    this.waiting = true;
+    loadLibrary().then(() => this.refreshAssets(), () => {});
+    this.offLibrary = onLibrary(() => this.refreshAssets());
   }
 
   // ------------------------------------------------------------ selection and tools
@@ -273,7 +341,8 @@ export class ToasterView {
   read(m, snap = false) {
     const size = m.userData.size.map((v, i) => {
       const k = Math.abs(m.scale.getComponent(i));
-      const s = Math.max(0.01, fix(rnd(v * k, 0.01), 2));
+      // a size the drag did not touch stays as it was
+      const s = Math.abs(k - 1) < 1e-6 ? v : Math.max(0.01, fix(rnd(v * k, 0.01), 2));
       // snapping rounds only the sizes the drag changed
       return snap && this.snap && Math.abs(k - 1) > 1e-6 ? Math.max(0.01, fix(rnd(s, 0.05), 2)) : s;
     });
@@ -303,8 +372,11 @@ export class ToasterView {
   pick(e) {
     const box = this.renderer.domElement.getBoundingClientRect();
     this.raycaster.setFromCamera(new THREE.Vector2(((e.clientX - box.left) / box.width) * 2 - 1, -((e.clientY - box.top) / box.height) * 2 + 1), this.camera);
-    const hit = this.raycaster.intersectObjects([...this.meshes.values()].filter((m) => m.visible), false)[0];
-    this.onPick(hit?.object.userData.id ?? null, { shift: e.shiftKey || e.ctrlKey || e.metaKey });
+    const hit = this.raycaster.intersectObjects([...this.meshes.values()].filter((m) => m.visible), true)[0];
+    // a leg of a chair is a part of the chair: walk up to the part's own object
+    let o = hit?.object;
+    while (o?.parent && o.parent !== this.scene) o = o.parent;
+    this.onPick(o?.userData.id ?? null, { shift: e.shiftKey || e.ctrlKey || e.metaKey });
   }
 
   // ------------------------------------------------------------ camera and bounds
@@ -316,6 +388,11 @@ export class ToasterView {
     for (const id of ids ?? this.meshes.keys()) {
       const m = this.meshes.get(id);
       if (!m?.visible) continue;
+      if (m.userData.asset) {
+        m.updateWorldMatrix(true, true);
+        box.union(preciseBox(m.userData.fit));
+        continue;
+      }
       m.updateWorldMatrix(true, false);
       const p = m.geometry.attributes.position;
       for (let i = 0; i < p.count; i++) box.expandByPoint(v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld));
@@ -469,8 +546,8 @@ export class ToasterView {
     el.removeEventListener("pointerup", this.onUp);
     this.gizmo.dispose();
     this.orbit.dispose();
-    for (const m of this.meshes.values()) (m.geometry.dispose(), m.material.dispose(), m.userData.wire.geometry.dispose(), m.userData.wire.material.dispose());
-    this.meshes.clear();
+    this.offLibrary?.();
+    for (const id of [...this.meshes.keys()]) this.drop(id);
     this.ground.geometry.dispose();
     this.ground.material.dispose();
     this.grid.geometry.dispose();
