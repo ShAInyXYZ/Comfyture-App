@@ -27,7 +27,7 @@ import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
 import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer, utensilsCandidates } from "./utensils-assist.ts";
 import { SPICE_BRIEF, SPICE_TOOL, spicePrompt, readSpiceAnswer } from "./spice-assist.ts";
-import { TOASTER_BRIEF, TOASTER_TOOL, toasterPrompt, readToasterAnswer } from "./toaster-assist.ts";
+import { TOASTER_BRIEF, TOASTER_TOOL, toasterPrompt, readToasterAnswer, TOASTER_IMPROVE_BRIEF, improvePrompt, readImprovedPrompt } from "./toaster-assist.ts";
 import { normaliseBody as spiceBody, FIRST as SPICE_FIRST } from "../web/js/spice-model.js";
 import { searchKnowledge, knowledgeById } from "./utensils-knowledge.ts";
 import { createEdit } from "./utensils-edit.ts";
@@ -1546,6 +1546,25 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     }
     if (process.env.COMFYTURE_DEBUG) console.log(`crumpet answered\n${reply}`);
     return json(res, 200, readToasterAnswer(reply, summary));
+  }
+  if (path === "/api/toaster/improve" && method === "POST") {
+    // the prompt of a render written again for the image model: from the words, the cast with its sheets and, on Comfy Router, the clay frame and a picture of each sheet
+    const input = await jsonBody(req, 256 * 1024);
+    const model = pickLlm(input.model, "assistant");
+    const refs = (Array.isArray(input.refs) ? input.refs : []).slice(0, 12).filter((r: any) => r && typeof r.file === "string" && r.file);
+    const seen: { name: string; file: string }[] = [];
+    for (const r of refs) {
+      if (seen.length >= 5) break;
+      if (await photo(r.file).then(() => true, () => false)) seen.push({ name: text(r.name, 40), file: r.file });
+    }
+    const asked = improvePrompt({ ...input, refs: onRouter(model) ? seen : [] });
+    const images = onRouter(model) ? await Promise.all(seen.map((r) => imageBlock(engine.photoPath(r.file)))) : [];
+    const reply = onRouter(model)
+      ? await routerAsk(model, TOASTER_IMPROVE_BRIEF, asked, { maxTokens: 1200, temperature: 0.5, images })
+      : await engine.write(TOASTER_IMPROVE_BRIEF, asked, { maxLength: 1500, temperature: 0.5 });
+    const improved = readImprovedPrompt(reply);
+    if (!improved) throw Object.assign(new Error("The writer answered nothing. Try again?"), { status: 502 });
+    return json(res, 200, { prompt: improved });
   }
   // Utensils' knowledge: what every tool and Library workflow is and how it works, searched (?q=&k=&kind=) or read by id
   if (path === "/api/utensils/knowledge" && method === "GET") {

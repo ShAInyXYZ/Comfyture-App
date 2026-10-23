@@ -61,7 +61,7 @@ export const TOASTER_TOOL = {
             size: { type: "array", items: { type: "number" }, description: "[w, h, d] in metres, before the turn." },
             scale: { type: "number", description: "A factor on the part's own size (instead of size)." },
             color: { type: "string", enum: COLORS, description: "A clay colour, by name." },
-            made: { type: "string", description: "What the part is made of, in a few words (it goes into the render's words)." },
+            made: { type: "string", description: "The part's sheet words: what it is, its material, colour, make (it goes into the render's words), up to 400 characters." },
             hidden: { type: "boolean", description: "For set: hide or show the part." },
             view: { type: "string", enum: [...VIEWS], description: "For camera: frame everything from that side." },
             from: { type: "array", items: { type: "number" }, description: "For camera: [x, y, z], where the camera stands." },
@@ -112,10 +112,11 @@ const COMPOSING = `COMPOSING. A piece's front is the side it is used from (the s
 Example, a boss's office: floor; back wall; left wall; add desk "Boss desk" at [0, -1.2] turn 180 (its user's side toward the back wall, so the boss looks into the room); add office-chair near "Boss desk" side front gap 0.1; add armchair "Guest 1" near "Boss desk" side back gap 0.7; add armchair "Guest 2" near "Guest 1" side right gap 0.2 face "Boss desk"; add bookcase against back; add a second against back (it slides beside the first); add fireplace against left; add sofa near the fireplace side front gap 2.2; add coffee-table near the sofa side front gap 0.45; add desk-lamp on "Boss desk".
 The camera of a room: from a front corner at 1.2 to 1.6, looking across at the focal point, lens 24 to 35; of an object: 3/4 front at its middle height, lens 50 to 85.
 A character: a pose that fits what they do, then tweak to make it theirs: look 30 turns the head to its left, nod 15 looks down, lean 10 leans in, arms 40 lifts the arms, reach 60 reaches forward, stance 15 spreads the legs, crouch 0.3 bends the knees. A character's front is its face; face turns the whole body.
-Framing a hero piece front-on (a boss at his desk): camera subject that piece, side the one it shows best (a desk the boss sits behind: its back, the visitors' side), height 1.2 to 1.4, margin 1.8, lens 35, frame 16:9; then dress the frame: behind it against the back wall bookcases on both sides of the middle, a picture on the wall above its centre (y 1.4), plants or lamps at its two sides, a rug under it; keep the camera's axis clear (no chair between, or turn the visitors' chairs aside). Symmetry reads as power. Save it as a slot only when asked to keep it.`;
+Framing a hero piece front-on (a boss at his desk): camera subject that piece, side the one it shows best (a desk the boss sits behind: its back, the visitors' side), height 1.2 to 1.4, margin 1.8, lens 35, frame 16:9; then dress the frame: behind it against the back wall bookcases on both sides of the middle, a picture on the wall above its centre (y 1.4), plants or lamps at its two sides, a rug under it; keep the camera's axis clear (no chair between, or turn the visitors' chairs aside). Symmetry reads as power. Save it as a slot only when asked to keep it.
+SHEETS. Each part has an @tag (shown with it below): made is the part's sheet words (what it is: material, colour, make; for a character age, face, hair, clothes), and pictures: n counts the pictures on its sheet, which go to the render with its tag. In words, what and scene may name parts by their @tag ("the @desk under a warm lamp"): keep the tags exactly as shown.`;
 
 export interface Part {
-  name?: string; kind?: string; shape?: string; piece?: string; body?: string; pose?: string; tweak?: Record<string, number>; edited?: boolean; color?: string; made?: string;
+  name?: string; kind?: string; shape?: string; piece?: string; body?: string; pose?: string; tweak?: Record<string, number>; edited?: boolean; color?: string; made?: string; tag?: string; pictures?: number;
   size?: number[]; at?: number[]; y?: number; turn?: number; hidden?: boolean;
 }
 export interface Summary {
@@ -151,7 +152,8 @@ export function toasterPrompt(s: Summary, turns: Turn[], { picture = false }: { 
   for (const p of parts) {
     const tweaks = p.tweak && typeof p.tweak === "object" ? Object.entries(p.tweak).filter(([, v]) => Number(v)).map(([k, v]) => `${cut(k, 10)} ${Number(v)}`).join(" ") : "";
     const what = p.kind === "piece" ? `piece ${cut(p.piece, 40)}` : p.kind === "character" ? `character ${cut(p.body, 20)}, pose ${cut(p.pose, 30) || "stand"}${tweaks ? `, tweaked ${tweaks}` : ""}${p.edited ? ", joints edited by hand" : ""}` : `shape ${cut(p.shape, 20)}`;
-    lines.push(`- ${cut(p.name, 40) || "part"}: ${what}, ${cut(p.color, 12) || "grey"}, size ${triple(p.size)}, at ${Array.isArray(p.at) ? p.at.slice(0, 2).map(metres).join(", ") : "?"}, y ${metres(p.y)}, turn ${metres(p.turn)}${p.made ? `, made of ${cut(p.made, 60)}` : ""}${p.hidden ? ", hidden" : ""}`);
+    const tag = /^[a-z0-9][a-z0-9-]*$/i.test(String(p.tag ?? "")) ? ` @${p.tag}` : "";
+    lines.push(`- ${cut(p.name, 40) || "part"}${tag}: ${what}, ${cut(p.color, 12) || "grey"}, size ${triple(p.size)}, at ${Array.isArray(p.at) ? p.at.slice(0, 2).map(metres).join(", ") : "?"}, y ${metres(p.y)}, turn ${metres(p.turn)}${p.made ? `, made: ${cut(p.made, 400)}` : ""}${Number(p.pictures) > 0 ? `, pictures: ${Math.round(Number(p.pictures))}` : ""}${p.hidden ? ", hidden" : ""}`);
   }
   const selected = list<unknown>(s.selected, 20).map((n) => cut(n, 40)).filter(Boolean);
   lines.push(`SELECTED: ${selected.length ? selected.join(", ") : "nothing"}.`);
@@ -249,7 +251,7 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
     else if (num(a.scale, 0.05, 20) !== undefined) out.scale = r2(num(a.scale, 0.05, 20)!);
     const color = oneOf(a.color, COLORS);
     if (color) out.color = color;
-    if (cut(a.made, 120)) out.made = cut(a.made, 120);
+    if (cut(a.made, 400)) out.made = cut(a.made, 400);
     if (cut(a.name, 40)) out.name = cut(a.name, 40);
   };
   const actions: any[] = [];
@@ -358,4 +360,41 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
   const kept = actions.filter((a) => a.op !== "set" || Object.keys(a).length > 2);
   if (run) kept.push({ op: run });
   return { reply: cut(raw.reply, 600), actions: kept };
+}
+
+// ---------------------------------------------------------------- Improve: the prompt, written for the image model
+
+/** The brief of the writer that improves a render's prompt. */
+export const TOASTER_IMPROVE_BRIEF = `You write the one prompt an image-edit model reads to turn a clay blockout (@frame) into a finished picture. The user gives you their words, the draft prompt, who is in the frame (each by its @name, with its words and pictures), and you may see the pictures, each named by its @name in the text.
+
+Keep the frame's camera, its framing, its layout and every part's place and size. Keep every @name exactly as given, and say what each picture is for ("@desk is the desk, exactly as in that picture"; a reference picture sets the look, never the layout). The control maps (@colour-id, @depth, @silhouette) only say where things are: the materials, the light, the lens and the mood come from the user's words and the sheets. Invent nothing that is not in the frame or the words.
+
+One paragraph, at most 170 words, no lists, no quotes, no title. Answer with the prompt only.`;
+
+export interface ImproveInput {
+  what?: string; scene?: string; prompt?: string;
+  cast?: { tag?: string; name?: string; kind?: string; color?: string; words?: string; pictures?: string[] }[];
+  refs?: { name?: string }[];
+}
+
+/** What the writer is told: the words, the cast with its sheets, the pictures it can see, and the draft prompt to improve. */
+export function improvePrompt(input: ImproveInput) {
+  const cast = things<NonNullable<ImproveInput["cast"]>[number]>(input.cast, 40);
+  const lines = [`WHAT IT IS: ${cut(input.what, 600) || "(not said)"}`, `THE SCENE: ${cut(input.scene, 600) || "(not said)"}`, "", "WHO IS IN THE FRAME"];
+  if (!cast.length) lines.push("(nothing tagged)");
+  for (const c of cast) {
+    const tag = cut(c.tag, 40);
+    if (!/^[a-z0-9][a-z0-9-]*$/i.test(tag)) continue;
+    const pics = list<unknown>(c.pictures, 8).map((n) => cut(n, 40)).filter(Boolean).map((n) => `@${n}`).join(", ");
+    lines.push(`- @${tag}: ${cut(c.name, 40) || tag}${c.kind ? `, ${cut(c.kind, 12)}` : ""}${c.color ? `, ${cut(c.color, 24)} in the clay` : ""}${c.words ? `. Words: ${cut(c.words, 400)}` : ""}${pics ? `. Pictures: ${pics}` : ""}`);
+  }
+  const seen = list<{ name?: string }>(input.refs, 8).map((r) => cut(r?.name, 40)).filter(Boolean);
+  lines.push("", seen.length ? `THE PICTURES YOU SEE, in order: ${seen.map((n) => `@${n}`).join(", ")}.` : "You see no pictures: work from the words.", "", `THE DRAFT PROMPT TO IMPROVE:\n${cut(input.prompt, 4000) || "(none: write it from the words and the cast)"}`);
+  return lines.join("\n");
+}
+
+/** The writer's answer as a prompt: trimmed, without fences or quotes, at most 1500 characters. Empty when it said nothing. */
+export function readImprovedPrompt(reply: string) {
+  const t = String(reply ?? "").trim().replace(/^```[a-z]*\s*/i, "").replace(/\s*```$/, "").trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, "").replace(/\s+/g, " ").trim();
+  return t.slice(0, 1500);
 }

@@ -52,7 +52,9 @@ export async function imageBlock(path: string) {
 }
 
 type Tool = { name: string; description: string; input_schema: unknown };
-type Ask = { maxTokens?: number; temperature?: number; image?: { type: string; data: string }; tool?: Tool };
+type Ask = { maxTokens?: number; temperature?: number; image?: { type: string; data: string }; images?: { type: string; data: string }[]; tool?: Tool };
+/** The pictures an ask carries, in order: `image` first, then `images`. */
+const picturesOf = ({ image, images }: Ask) => [...(image ? [image] : []), ...(images ?? [])];
 
 /**
  * A model on Comfy Router: the brief as its system prompt, the prompt and a picture if there is one.
@@ -75,9 +77,10 @@ export async function routerAsk(id: string, system: string, prompt: string, opts
   return text;
 }
 
-function anthropic(m: Llm, system: string, prompt: string, { maxTokens = 3000, temperature = 0.7, image, tool }: Ask) {
+function anthropic(m: Llm, system: string, prompt: string, ask: Ask) {
+  const { maxTokens = 3000, temperature = 0.7, tool } = ask;
   const content: Record<string, unknown>[] = [];
-  if (image) content.push({ type: "image", source: { type: "base64", media_type: image.type, data: image.data } });
+  for (const image of picturesOf(ask)) content.push({ type: "image", source: { type: "base64", media_type: image.type, data: image.data } });
   content.push({ type: "text", text: prompt });
   return {
     body: {
@@ -96,9 +99,10 @@ function anthropic(m: Llm, system: string, prompt: string, { maxTokens = 3000, t
 }
 
 // OpenAI's Responses API: the GPT-6 ids reason, so their room covers the thinking too, kept brief
-function openai(m: Llm, system: string, prompt: string, { maxTokens = 3000, image }: Ask) {
+function openai(m: Llm, system: string, prompt: string, ask: Ask) {
+  const { maxTokens = 3000 } = ask;
   const content: Record<string, unknown>[] = [{ type: "input_text", text: prompt }];
-  if (image) content.push({ type: "input_image", image_url: `data:${image.type};base64,${image.data}` });
+  for (const image of picturesOf(ask)) content.push({ type: "input_image", image_url: `data:${image.type};base64,${image.data}` });
   return {
     body: { instructions: system, input: [{ role: "user", content }], max_output_tokens: maxTokens * 3, reasoning: { effort: "low" } },
     read: (out: any) => String((out.output ?? []).filter((o: any) => o.type === "message").flatMap((o: any) => o.content ?? []).filter((c: any) => c.type === "output_text").map((c: any) => c.text ?? "").join("")),
@@ -106,9 +110,10 @@ function openai(m: Llm, system: string, prompt: string, { maxTokens = 3000, imag
 }
 
 // Google's generateContent: thought parts are left out of the answer
-function vertex(m: Llm, system: string, prompt: string, { maxTokens = 3000, temperature = 0.7, image }: Ask) {
+function vertex(m: Llm, system: string, prompt: string, ask: Ask) {
+  const { maxTokens = 3000, temperature = 0.7 } = ask;
   const parts: Record<string, unknown>[] = [{ text: prompt }];
-  if (image) parts.push({ inlineData: { mimeType: image.type, data: image.data } });
+  for (const image of picturesOf(ask)) parts.push({ inlineData: { mimeType: image.type, data: image.data } });
   return {
     body: { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts }], generationConfig: { maxOutputTokens: Math.min(65536, maxTokens * 3), temperature } },
     read: (out: any) => String((out.candidates?.[0]?.content?.parts ?? []).filter((p: any) => !p.thought).map((p: any) => p.text ?? "").join("")),

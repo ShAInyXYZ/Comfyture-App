@@ -3,7 +3,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TOASTER_BRIEF, TOASTER_OPS, TOASTER_TOOL, toasterPrompt, readToasterAnswer } from "../server/toaster-assist.ts";
+import { TOASTER_BRIEF, TOASTER_OPS, TOASTER_TOOL, toasterPrompt, readToasterAnswer, TOASTER_IMPROVE_BRIEF, improvePrompt, readImprovedPrompt } from "../server/toaster-assist.ts";
 
 const say = (actions: unknown[], reply = "Done.") => JSON.stringify({ reply, actions });
 
@@ -30,7 +30,7 @@ test("the tool lists exactly his ops", () => {
 
 test("Crumpet is told the scene, the camera, the catalogue and the talk so far", () => {
   const text = toasterPrompt(SCENE, [{ role: "user", text: "a chair for her" }, { role: "assistant", text: "Here.", did: ["Added a chair"] }, { role: "user", text: "turn it" }], { picture: true });
-  for (const piece of ["THE SCENE: Study, 3 parts", "- Desk: piece desk, brown, size 1.4, 0.75, 0.7, at 0, -1, y 0, turn 0, made of oak", "character woman, pose sit-desk", "hidden", "shape box", "SELECTED: Desk", "from 0, 1.6, 4, looking at 0, 0.8, 0, frame 16:9", "2 renders, a turnaround", "A PHOTO IS ATTACHED", "office-chair", "woman 1.66 m", "Shapes: box", "Colours: grey, cream", "Crumpet: Here. [the app did: Added a chair]", "User: turn it"]) assert.ok(text.includes(piece), piece);
+  for (const piece of ["THE SCENE: Study, 3 parts", "- Desk: piece desk, brown, size 1.4, 0.75, 0.7, at 0, -1, y 0, turn 0, made: oak", "character woman, pose sit-desk", "hidden", "shape box", "SELECTED: Desk", "from 0, 1.6, 4, looking at 0, 0.8, 0, frame 16:9", "2 renders, a turnaround", "A PHOTO IS ATTACHED", "office-chair", "woman 1.66 m", "Shapes: box", "Colours: grey, cream", "Crumpet: Here. [the app did: Added a chair]", "User: turn it"]) assert.ok(text.includes(piece), piece);
   assert.ok(/Poses, Sit: .*sit/.test(text), "a sit pose");
   assert.ok(toasterPrompt({}, []).includes("empty") && toasterPrompt({}, []).includes("NO PHOTO"));
 });
@@ -153,4 +153,41 @@ test("a character's pose is tweaked by the Stage's sliders, each within its rang
   assert.equal(out.length, 2, "a change with no slider left is no change");
   const prompt = toasterPrompt({ ...SCENE, parts: [{ ...SCENE.parts[1], tweak: { look: 30 }, edited: true }] }, [{ role: "user", text: "go" }]);
   assert.match(prompt, /character woman, pose sit-desk, tweaked look 30, joints edited by hand/);
+});
+
+test("Crumpet is told each part's @tag and its pictures, and that the sheet words are made", () => {
+  const text = toasterPrompt({ parts: [{ name: "Desk", tag: "desk", kind: "piece", piece: "desk", color: "brown", size: [1.4, 0.75, 0.7], at: [0, -1], y: 0, turn: 0, made: "a walnut desk", pictures: 2 }, { name: "Box", tag: "bad tag!", kind: "shape", shape: "box" }] }, [{ role: "user", text: "hi" }]);
+  assert.match(text, /- Desk @desk: piece desk, brown/);
+  assert.match(text, /made: a walnut desk, pictures: 2/);
+  assert.match(text, /- Box: shape box/, "a tag that is not one is not told");
+  assert.match(text, /SHEETS\..*made is the part's sheet words.*what and scene may name parts by their @tag/s);
+  assert.ok(TOASTER_BRIEF.length <= 3000, "the brief stays short");
+  const answer = readToasterAnswer(JSON.stringify({ reply: "ok", actions: [{ op: "add", kind: "shape", shape: "box", name: "Table", made: "m".repeat(500) }] }));
+  assert.equal(answer.actions[0].made.length, 400);
+});
+
+test("Improve: the writer is told the words, the cast with its sheets and the pictures it sees, and answers one prompt", () => {
+  const text = improvePrompt({
+    what: "A boss's office", scene: "Dusk, warm lamp",
+    prompt: "Render @frame as a finished photograph. @desk",
+    cast: [{ tag: "desk", name: "Desk", kind: "piece", color: "walnut", words: "a walnut desk with brass handles", pictures: ["desk", "desk-2"] }, { tag: "mood", name: "mood", kind: "reference", pictures: ["mood"] }, { tag: "bad tag", name: "x" }],
+    refs: [{ name: "frame" }, { name: "mood" }, { name: "desk" }],
+  });
+  assert.match(text, /WHAT IT IS: A boss's office/);
+  assert.match(text, /- @desk: Desk, piece, walnut in the clay\. Words: a walnut desk with brass handles\. Pictures: @desk, @desk-2/);
+  assert.match(text, /- @mood: mood, reference/);
+  assert.ok(!text.includes("bad tag"));
+  assert.match(text, /THE PICTURES YOU SEE, in order: @frame, @mood, @desk\./);
+  assert.match(text, /THE DRAFT PROMPT TO IMPROVE:\nRender @frame as a finished photograph\. @desk/);
+  assert.match(improvePrompt({}), /You see no pictures: work from the words/);
+  assert.match(improvePrompt({}), /nothing tagged/);
+  assert.ok(TOASTER_IMPROVE_BRIEF.length > 300 && TOASTER_IMPROVE_BRIEF.length < 1600, "a brief of a paragraph or three");
+  for (const need of [/@frame/, /camera/, /every @name exactly as given/, /170 words/, /colour-id/, /Answer with the prompt only/]) assert.match(TOASTER_IMPROVE_BRIEF, need);
+});
+
+test("Improve's reply is trimmed, unfenced, unquoted and capped; nothing is empty", () => {
+  assert.equal(readImprovedPrompt('```text\n"Render @frame as a photo."\n```'), "Render @frame as a photo.");
+  assert.equal(readImprovedPrompt("  A  b\n c "), "A b c");
+  assert.equal(readImprovedPrompt("x".repeat(3000)).length, 1500);
+  assert.equal(readImprovedPrompt("  "), "");
 });
