@@ -160,7 +160,8 @@ test("a shot is the creator caught mid-routine: the product only in the shots th
   assert.ok(/no added text/.test(hook), "no words in the picture");
   // the show: the product is named, so it is drawn true to its picture
   const show = beatPrompt(s, s.beats[1], { productName: "The jar", features: ["Real plums"] });
-  assert.ok(showsProduct(s.beats[1]) && /@product/.test(show) && /Real plums/.test(show), show);
+  assert.ok(showsProduct(s.beats[1]) && /@product/.test(show) && !/Real plums/.test(show), show);
+  assert.ok(/no writing or labels on any object/.test(show), "nothing made up is printed on the props");
   // the take keeps the routine going, the camera moves as the beat's camera does
   const take = beatTake(s, s.beats[2]);
   assert.equal(take.line, s.beats[2].line);
@@ -168,7 +169,7 @@ test("a shot is the creator caught mid-routine: the product only in the shots th
   assert.ok(/following/.test(take.camera), take.camera);
   // a beat with no doing is still the plain shot of the product in hand
   const plain = { ...s.beats[0], doing: "" };
-  assert.ok(/holding @product up/.test(beatPrompt(s, plain, { productName: "The jar" })) && showsProduct(plain));
+  assert.ok(/holding @product up/.test(beatPrompt(s, plain, { productName: "The jar", features: ["Real plums"] })) && /Real plums/.test(beatPrompt(s, plain, { productName: "The jar", features: ["Real plums"] })) && showsProduct(plain), "the plain shot of the product says what it is known for");
   assert.ok(/bring the product up/.test(beatTake(s, plain).action));
   // every creator has a routine on cameras and places that exist
   for (const p of PERSONAS) for (const b of BEAT_IDS) {

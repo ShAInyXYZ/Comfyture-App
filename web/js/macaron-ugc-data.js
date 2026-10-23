@@ -31,10 +31,10 @@ export const PERSONAS = [
   { id: "emma", name: "Emma", vibe: "Mum life", portrait: "brand/macaron/personas/emma.webp", look: "a woman around 34 with her light brown hair in a loose bun, a soft cardigan, a tender happy smile",
     routine: { activity: "making her baby's bottle in the kitchen", setting: "kitchen", steps: {
       hook: { doing: "scooping formula into a baby bottle at the kitchen counter, glancing up at the camera", camera: "close" },
-      show: { doing: "pouring warm water into the bottle, @product on the counter beside the kettle", camera: "shoulder" },
-      taste: { doing: "shaking the bottle with one hand and trying @product with the other", camera: "tripod" },
-      react: { doing: "testing a drop of milk on her wrist, then smiling at the camera", camera: "close" },
-      cta: { doing: "picking up the bottle and walking toward the nursery, looking back at the camera", camera: "follow" },
+      show: { doing: "pouring warm water into the baby bottle, @product on the counter beside the kettle", camera: "shoulder" },
+      taste: { doing: "shaking the baby bottle with one hand and trying @product with the other", camera: "tripod" },
+      react: { doing: "testing a drop of milk from the baby bottle on her wrist, then smiling at the camera", camera: "close" },
+      cta: { doing: "picking up the baby bottle and walking toward the nursery, looking back at the camera", camera: "follow" },
     } } },
 ];
 
@@ -192,8 +192,9 @@ export function beatPrompt(story, beat, { productName = "the product", brandName
   return [
     first,
     doing ? `${who.name} is ${doing}, caught mid-action and natural, not posing${/camera|lens|mirror/.test(doing) ? "" : `, glancing at the camera as ${who.creature ? "it talks" : "they talk"}`}.` : `${who.name} is ${act}.`,
-    showsProduct(beat) ? `The product exactly as in @product (its shape, label and colours kept true and legible).${features[0] ? ` It is known for: ${features.slice(0, 2).join(", ")}.` : ""}` : "",
-    "Authentic social-video look, soft natural light, no added text, no extra logos, no watermark.",
+    // (what the product is known for helps a product held up to the lens; in a shot of the routine it ends up printed on the props)
+    showsProduct(beat) ? `The product exactly as in @product (its shape, label and colours kept true and legible).${features[0] && !doing ? ` It is known for: ${features.slice(0, 2).join(", ")}.` : ""}` : "",
+    `Authentic social-video look, soft natural light, no added text, no extra logos, no watermark, no writing or labels on any object${showsProduct(beat) ? " except what @product itself shows" : ""}.`,
   ].filter(Boolean).join(" ");
 }
 
