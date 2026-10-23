@@ -26,6 +26,7 @@ import { KEYS, LANGUAGES, SIGNATURES, MAX_SECONDS, DEFAULT_SONG } from "../web/j
 import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
 import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer, utensilsCandidates } from "./utensils-assist.ts";
+import { SPICE_BRIEF, SPICE_TOOL, spicePrompt, readSpiceAnswer } from "./spice-assist.ts";
 import { searchKnowledge, knowledgeById } from "./utensils-knowledge.ts";
 import { createEdit } from "./utensils-edit.ts";
 import { createFx } from "./utensils-fx.ts";
@@ -1421,6 +1422,16 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const reply = await petAnswer(pickLlm(input.model, "assistant"), UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt(summary, turns, candidates));
     if (process.env.COMFYTURE_DEBUG) console.log(`truffle answered\n${reply}`);
     return json(res, 200, readUtensilsAnswer(reply, summary, candidates));
+  }
+  if (path === "/api/spice/assist" && method === "POST") {
+    // Paprika reads the shot, its passes and the department open, and answers with what to set up; nothing runs here
+    const input = await jsonBody(req, 256 * 1024);
+    const turns = petTurns(input.messages);
+    if (!turns.length) throw bad("Say what to do.");
+    const summary = input.spice && typeof input.spice === "object" ? input.spice : {};
+    const reply = await petAnswer(pickLlm(input.model, "assistant"), SPICE_BRIEF, SPICE_TOOL, spicePrompt(summary, turns));
+    if (process.env.COMFYTURE_DEBUG) console.log(`paprika answered\n${reply}`);
+    return json(res, 200, readSpiceAnswer(reply, summary));
   }
   // Utensils' knowledge: what every tool and Library workflow is and how it works, searched (?q=&k=&kind=) or read by id
   if (path === "/api/utensils/knowledge" && method === "GET") {
