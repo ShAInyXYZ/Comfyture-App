@@ -27,6 +27,7 @@ import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
 import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer, utensilsCandidates } from "./utensils-assist.ts";
 import { SPICE_BRIEF, SPICE_TOOL, spicePrompt, readSpiceAnswer } from "./spice-assist.ts";
+import { TOASTER_BRIEF, TOASTER_TOOL, toasterPrompt, readToasterAnswer } from "./toaster-assist.ts";
 import { normaliseBody as spiceBody, FIRST as SPICE_FIRST } from "../web/js/spice-model.js";
 import { searchKnowledge, knowledgeById } from "./utensils-knowledge.ts";
 import { createEdit } from "./utensils-edit.ts";
@@ -440,11 +441,11 @@ async function write(model: string, brief: string, prompt: string, opts: { maxLe
 }
 
 /** A pet's answer (Praline's, Truffle's): through its tool on Claude, so it is data; as JSON in plain text on the others. */
-async function petAnswer(model: string, brief: string, tool: { name: string; description: string; input_schema: unknown }, prompt: string) {
+async function petAnswer(model: string, brief: string, tool: { name: string; description: string; input_schema: unknown }, prompt: string, image?: { type: string; data: string }) {
   const forced = onRouter(model) && takesTools(model);
   const system = forced ? brief : `${brief}\n\nAnswer with JSON only, no other words: {"reply": "...", "actions": [{"op": "...", ...}]}`;
   return onRouter(model)
-    ? routerAsk(model, system, prompt, { maxTokens: 3000, temperature: 0.3, ...(forced ? { tool } : {}) })
+    ? routerAsk(model, system, prompt, { maxTokens: 3000, temperature: 0.3, ...(forced ? { tool } : {}), ...(image ? { image } : {}) })
     : engine.write(system, prompt, { maxLength: 1200, temperature: 0.3 });
 }
 /** What a pet's page said to it: the last turns as they were, each with what the app did for it. */
@@ -1522,6 +1523,21 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const reply = await petAnswer(pickLlm(input.model, "assistant"), SPICE_BRIEF, SPICE_TOOL, spicePrompt(summary, turns));
     if (process.env.COMFYTURE_DEBUG) console.log(`paprika answered\n${reply}`);
     return json(res, 200, readSpiceAnswer(reply, summary));
+  }
+  if (path === "/api/toaster/assist" && method === "POST") {
+    // Crumpet reads the scene, the camera and the words (and a photo, on Comfy Router), and answers with what to build; nothing runs here
+    const input = await jsonBody(req, 256 * 1024);
+    const turns = petTurns(input.messages);
+    if (!turns.length) throw bad("Say what to do.");
+    const summary = input.toaster && typeof input.toaster === "object" ? input.toaster : {};
+    const model = pickLlm(input.model, "assistant");
+    const file = typeof input.picture?.file === "string" ? input.picture.file : "";
+    if (file) await photo(file);
+    const image = file && onRouter(model) ? await imageBlock(engine.photoPath(file)) : undefined;
+    const prompt = toasterPrompt(summary, turns, { picture: !!image });
+    const reply = await petAnswer(model, TOASTER_BRIEF, TOASTER_TOOL, file && !image ? `${prompt}\n\n(The user attached a photo, but this model cannot see it: say so, and build from their words.)` : prompt, image);
+    if (process.env.COMFYTURE_DEBUG) console.log(`crumpet answered\n${reply}`);
+    return json(res, 200, readToasterAnswer(reply, summary));
   }
   // Utensils' knowledge: what every tool and Library workflow is and how it works, searched (?q=&k=&kind=) or read by id
   if (path === "/api/utensils/knowledge" && method === "GET") {
