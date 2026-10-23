@@ -309,6 +309,60 @@ try {
   await until(() => window.__toaster.list.length === 2, null, 5000);
   d = await draft();
   ok(d.name === "Object 2" && d.body.parts.length === 1, "a new draft starts with a box", d.name);
+
+  // ---------------------------------------------------------------- Crumpet builds a scene
+  // his answer stood in for: a scene from scratch (a sofa, an armchair turned toward it, a woman sitting on the sofa, a lamp on a box),
+  // the camera placed low, the words set, and a render offered
+  const asked = [];
+  await page.route("**/api/toaster/assist", (route) => {
+    asked.push(route.request().postDataJSON());
+    return route.fulfill({ json: { reply: "A cosy corner, ready to toast.", actions: [
+      { op: "clear" },
+      { op: "add", kind: "piece", piece: "sofa", name: "Sofa", at: [0, -1], turn: 0, color: "teal" },
+      { op: "add", kind: "piece", piece: "armchair", name: "Armchair", at: [1.7, -0.2], turn: -60, color: "orange" },
+      { op: "add", kind: "character", body: "woman", pose: "sit", name: "Reader", at: [0.3, -0.9], y: 0.1, color: "pink" },
+      { op: "add", kind: "shape", shape: "box", name: "Side table", at: [-1.4, -1], size: [0.5, 0.5, 0.5], color: "brown", made: "oak" },
+      { op: "set", part: "Side table", made: "walnut" },
+      { op: "camera", from: [0.5, 0.6, 3.5], at: [0, 0.5, -0.8], frame: "16:9" },
+      { op: "words", what: "A cosy reading corner", scene: "Warm lamp light, evening" },
+      { op: "toast" },
+    ] } });
+  });
+  await page.locator("#toaster-chat #assistant").waitFor({ timeout: 10000 });
+  ok(await js(() => document.querySelector("#assistant .pet-face img")?.getAttribute("src") === "brand/cast/crumpet-face.webp"), "Crumpet's bar is docked under the viewport, his face in it");
+  // a photo for him to look at, from the Library
+  await js(async (photo) => (await import("/js/toaster-assist.js")).addToasterPhoto({ ...photo, name: "corner" }), sheet.photo);
+  await page.locator("#assistant .file-chip", { hasText: "Photo" }).waitFor({ timeout: 3000 }).catch(() => {});
+  ok(await page.locator("#assistant .file-chip", { hasText: "Photo" }).isVisible(), "the photo waits on the bar");
+  await page.locator("#assistant .chat-input").click();
+  await page.keyboard.type("Make a cosy reading corner like this photo");
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => document.querySelectorAll("#assistant .chat-thread .msg.is-ai:not(.is-busy)").length >= 1, null, { timeout: 20000 }).catch(() => {});
+  await page.waitForTimeout(500);
+  const sent = asked[0];
+  ok(sent?.toaster?.parts?.length === 1 && sent.toaster.parts[0].kind === "shape" && Array.isArray(sent.toaster.parts[0].at) && typeof sent.toaster.parts[0].y === "number", "he is told the parts as places on the floor (at, y, turn, size)", JSON.stringify(sent?.toaster?.parts?.[0]));
+  ok(sent?.toaster?.camera?.from?.length === 3 && sent.toaster.camera.frame, "and the camera", JSON.stringify(sent?.toaster?.camera));
+  ok(sent?.picture?.file === sheet.photo.file, "the photo goes with the words");
+  d = await draft();
+  const named = (n) => d.body.parts.find((p) => p.name === n);
+  const sofa = named("Sofa");
+  const arm = named("Armchair");
+  const reader = named("Reader");
+  const tbl = named("Side table");
+  ok(d.body.parts.length === 4 && sofa?.asset === "sofa" && arm?.asset === "armchair" && reader?.shape === "character" && tbl?.shape === "box", "he cleared the floor and built the corner: two pieces, a character and a shape", d.body.parts.map((p) => p.name).join(", "));
+  ok(sofa && Math.abs(sofa.pos[0]) < 1e-3 && Math.abs(sofa.pos[2] + 1) < 1e-3 && Math.abs(sofa.pos[1] - sofa.size[1] / 2) < 1e-3, "the sofa stands where he said, on the floor", JSON.stringify(sofa?.pos));
+  ok(arm && arm.rot[1] === -60 && sofa.color === "#4fb3a9" && arm.color === "#e0884b", "the armchair turned toward it, each in its colour", JSON.stringify(arm?.rot));
+  ok(reader && reader.pose === "sit" && Math.abs(reader.pos[1] - reader.size[1] / 2 - 0.1) < 1e-3, "the reader sits, her bottom at the height he said", JSON.stringify(reader?.pos));
+  ok(tbl && tbl.made === "walnut" && tbl.size[0] === 0.5, "the side table sized and then changed by name", JSON.stringify(tbl));
+  const cam = await js(() => window.__toaster.view.cameraState());
+  ok(Math.abs(cam.position[1] - 0.6) < 0.01 && Math.abs(cam.target[2] + 0.8) < 0.01 && d.body.ratio === "16:9", "the camera placed low, in a wide frame", JSON.stringify(cam));
+  ok(d.body.what === "A cosy reading corner" && (await page.locator('input[aria-label="Scene"]').inputValue()) === "Warm lamp light, evening", "the render's words set, in their fields");
+  ok(await page.locator("#assistant .msg-confirm .key.is-primary", { hasText: "Toast it" }).isVisible(), "the render is only offered, with its price");
+  ok(pictures.length === 2, "nothing was rendered without a yes");
+  await shot("4-crumpet");
+  await page.locator("#assistant .undo").click();
+  d = await draft();
+  ok(d.body.parts.length === 1 && d.body.parts[0].shape === "box", "Undo puts the draft back as it was before his build");
   ok(outbound.length === 0, "no call left the machine", outbound.join(" "));
   ok(errors.length === 0, "no error on the page", errors.join(" | "));
 } finally {

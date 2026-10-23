@@ -3,7 +3,7 @@
    The viewport's frame and tool pill are the Stage's own (.ctl-frame, .ctl-tools in control.css). */
 
 #page-toaster { width: calc(100% - 1.5rem); margin-top: .625rem; }
-.toaster { --ts-gap: .75rem; --ts-pic: 44dvh; display: grid; grid-template-columns: clamp(17.5rem, 19vw, 22rem) minmax(0, 1fr) clamp(21rem, 25vw, 29rem); gap: var(--ts-gap); height: calc(100dvh - var(--head, 4rem) - 1.5rem); min-height: 36rem; user-select: none; -webkit-user-select: none; }
+.toaster { --ts-gap: .75rem; --ts-pic: 44dvh; display: grid; grid-template-columns: clamp(17.5rem, 19vw, 22rem) minmax(0, 1fr) clamp(22rem, 27vw, 31rem); gap: var(--ts-gap); height: calc(100dvh - var(--head, 4rem) - 1.5rem); min-height: 36rem; user-select: none; -webkit-user-select: none; }
 .toaster input { user-select: text; -webkit-user-select: text; }
 .toaster img { -webkit-user-drag: none; }
 .toaster .spacer { flex: 1 1 auto; }
@@ -133,10 +133,22 @@
 .ts-view-key span { font: 500 .625rem/1 var(--font-sans); white-space: nowrap; }
 
 /* ---- the look ------------------------------------------------------------------------------------------- */
-.ts-look { gap: .5rem; padding: .875rem 1rem; }
-.ts-look .ts-row { grid-template-columns: 6.25rem minmax(0, 1fr); }
-.ts-look .ts-field { height: 2.375rem; }
-.ts-look-keys { display: flex; align-items: center; gap: .5rem; padding-top: .25rem; }
+.ts-look { display: grid; flex: none; gap: .5rem; padding-top: .75rem; border-top: 1px solid var(--line); }
+.ts-look .ts-row { grid-template-columns: 5.25rem minmax(0, 1fr); }
+.ts-look .ts-field { height: 2.125rem; }
+.ts-look-keys { display: flex; align-items: center; gap: .5rem; padding-top: .125rem; }
+.ts-look-keys .ts-toast { min-width: 0; }
+
+/* ---- Crumpet's bar, docked under the viewport ------------------------------------------------------------- */
+.ts-chat { flex: none; position: relative; z-index: 29; width: 100%; pointer-events: none; }
+.ts-chat > * { pointer-events: auto; }
+
+/* ---- Crumpet, at the top of the left column (as each product's pet is) ---------------------------------- */
+.ts-id { display: flex; flex: none; align-items: center; gap: .75rem; padding: .125rem .25rem 0; }
+.ts-id > img { flex: none; width: 2.75rem; aspect-ratio: 1; border-radius: 50%; object-fit: cover; background: var(--sunk); box-shadow: 0 0 0 2px var(--line2); }
+.ts-id-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: .125rem .5rem; min-width: 0; }
+.ts-id-text b { font: 700 var(--fs-heading)/1.1 var(--font-sans); }
+.ts-id-text span { color: var(--muted); font: 500 var(--fs-body)/1.1 var(--font-sans); }
 .ts-pick { flex: none; }
 .ts-pick .sel-trigger { min-height: 2.5rem; padding: .25rem .625rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--sunk); }
 .ts-pick .sel-trigger:hover { border-color: var(--line2); }
@@ -153,7 +165,8 @@
 
 /* ---- what was toasted: the render fills the room the other two cards leave ------------------------------- */
 .ts-right { overflow-y: auto; }
-.ts-render { flex: 1 1 auto; min-height: 17rem; }
+.ts-render { flex: 1 1 auto; min-height: 24rem; }
+.ts-render-view { display: flex; flex: 1 1 0; flex-direction: column; gap: .75rem; min-height: 0; }
 .ts-head .ts-iconkey.is-sm { margin: -.375rem 0; }
 .ts-head .ts-iconkey.is-sm + .ts-iconkey.is-sm { margin-left: -.125rem; }
 .ts-keys { display: flex; align-items: center; gap: .5rem; }
@@ -188,7 +201,7 @@ button.ts-pic { cursor: zoom-in; }
 .ts-thumb svg { width: 1rem; height: 1rem; }
 
 /* the sheet is shown by its middle band (the views sit there; the template's sheet is mostly room above and below) */
-.ts-clay-strip, .ts-sheet-pic { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 2.9; padding: 0; border: 0; border-radius: .5rem; overflow: hidden; }
+.ts-clay-strip, .ts-sheet-pic { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 3.6; padding: 0; border: 0; border-radius: .5rem; overflow: hidden; }
 img.ts-clay-strip { object-fit: cover; background: #d6d6d2; }
 .ts-sheet-pic { background: var(--sunk); color: var(--dim); }
 button.ts-sheet-pic { cursor: zoom-in; }
@@ -196,7 +209,7 @@ button.ts-sheet-pic { cursor: zoom-in; }
 .ts-sheet-pic.is-empty { border: 1px dashed var(--line2); background: transparent; font: 400 var(--fs-small)/1.3 var(--font-sans); }
 .ts-sheet-pic.is-failed { gap: .5rem; padding: 1rem; font: 400 var(--fs-small)/1.4 var(--font-sans); text-align: center; border: 1px dashed; background: transparent; }
 
-.ts-model-body { display: grid; grid-template-columns: clamp(7.5rem, 9vw, 10rem) minmax(0, 1fr); gap: .875rem; }
+.ts-model-body { display: grid; grid-template-columns: clamp(6rem, 7vw, 7.5rem) minmax(0, 1fr); gap: .875rem; }
 .ts-model-side { display: flex; flex-direction: column; justify-content: space-between; gap: .625rem; min-width: 0; }
 .ts-model-side .ts-wide { flex: none; }
 .ts-model-side .ts-armed .ts-wide { flex: 1 1 auto; }
@@ -216,3 +229,7 @@ button.ts-sheet-pic { cursor: zoom-in; }
   .ts-left { order: 2; }
   .ts-right { order: 3; }
 }
+
+/* the keys at the foot of the turnaround and the 3D model are a step smaller than the render's own */
+.ts-sheet .ts-wide, .ts-model .ts-wide { min-height: 2.5rem; }
+.ts-sheet, .ts-model { gap: .625rem; padding-top: .75rem; padding-bottom: .875rem; }

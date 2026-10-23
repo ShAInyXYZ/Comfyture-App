@@ -16,8 +16,11 @@ import {
   renderFrame, renderSheet, forget, showRender, setCompare, price3d, priceNow, make3d, putOnStage, isArmed, arm, disarm,
 } from "../toaster.js";
 import { SHAPES, PALETTE, RATIOS, roundLabel, hasSides, colorName, shapeOf } from "../toaster-model.js";
+import { CRUMPET } from "../toaster-harness.js";
 
 let shell = null;
+// the slot Crumpet's bar docks in: the same element every time the page is built, so the bar goes with it
+let chatSlot = null;
 let mounting = null;
 let model3d = null;
 
@@ -54,6 +57,7 @@ function build(el) {
     sprite("character-add"), h("span", {}, "Characters"));
   s.inspector = h("div.ts-inspector");
   const left = h("aside.ts-col.ts-left", { "aria-label": "The object" },
+    h("div.ts-id", {}, h("img", { src: CRUMPET.face, alt: "", draggable: false }), h("div.ts-id-text", {}, h("b", {}, CRUMPET.name), h("span", {}, CRUMPET.tag))),
     s.draft,
     h("section.ts-card.ts-parts-card", {}, h("header.ts-head", {}, h("h2.ts-label", {}, "Parts"), s.partsCount), s.parts),
     h("section.ts-card", {}, h("header.ts-head", {}, h("h2.ts-label", {}, "Add")), s.add, h("div.ts-add-keys", {}, s.libraryKey, s.peopleKey)),
@@ -73,13 +77,17 @@ function build(el) {
   s.what = h("input.ts-field", { type: "text", maxLength: 600, placeholder: "A retro 1950s toaster, chrome body, walnut lever, cream knob", "aria-label": "What it is", on: { input: (e) => setWords("what", e.target.value) } });
   s.scene = h("input.ts-field", { type: "text", maxLength: 600, placeholder: "On a marble kitchen counter, soft morning light, product photo", "aria-label": "Scene", on: { input: (e) => setWords("scene", e.target.value) } });
   s.lookKeys = h("div.ts-look-keys");
-  const look = h("section.ts-card.ts-look", { "aria-label": "Look" },
-    h("label.ts-row", {}, h("span.ts-label", {}, "What it is"), s.what),
-    h("label.ts-row", {}, h("span.ts-label", {}, "Scene"), s.scene),
-    s.lookKeys);
-  const mid = h("div.ts-mid", {}, viewport, look);
+  // Crumpet's bar docks here, under the viewport (app.js moves the one bar of the app into it)
+  chatSlot ??= h("div.ts-chat", { id: "toaster-chat" });
+  const mid = h("div.ts-mid", {}, viewport, chatSlot);
 
-  s.render = h("section.ts-card.ts-render", { "aria-label": "Render" });
+  // the render: the picture (drawn again as it comes) over its words and its key (made once, so typing is never drawn over)
+  s.renderView = h("div.ts-render-view");
+  s.render = h("section.ts-card.ts-render", { "aria-label": "Render" }, s.renderView,
+    h("div.ts-look", { "aria-label": "Look" },
+      h("label.ts-row", {}, h("span.ts-label", {}, "What it is"), s.what),
+      h("label.ts-row", {}, h("span.ts-label", {}, "Scene"), s.scene),
+      s.lookKeys));
   s.sheet = h("section.ts-card.ts-sheet", { "aria-label": "Turnaround" });
   s.model = h("section.ts-card.ts-model", { "aria-label": "3D model" });
   const right = h("aside.ts-col.ts-right", { "aria-label": "Toasted" }, s.render, s.sheet, s.model);
@@ -90,6 +98,7 @@ function build(el) {
   el.replaceChildren(s.root);
   shell = s;
   mountView();
+  document.dispatchEvent(new Event("toaster:drawn"));
 }
 
 /** The viewport, made once (three.js loads with it): it tells the page what is clicked and moved, the page tells it the draft. */
@@ -437,11 +446,9 @@ function drawLook() {
   const busy = b.renders.some((r) => r.status === "running");
   const models = modelItems();
   shell.lookKeys.replaceChildren(
-    h("button.ts-iconkey", { type: "button", title: "Keep the clay frame in the Library", "aria-label": "Keep the clay frame in the Library", disabled: !toaster.view || !hasClay(), on: { click: keepClay } }, sprite("image-upload")),
     models.length ? h("div.ts-pick", {}, dropdown({ label: "Image model", value: m?.id, items: models, onChange: setModel, width: "fit", note: "What renders the clay: a partner model's credits, or Comfy Cloud's GPU time" })) : h("span.ts-note", {}, "No image model yet"),
     h("div.ts-pick", {}, dropdown({ label: "Frame", value: b.ratio, items: Object.keys(RATIOS).map((r) => ({ value: r, label: r, glyph: () => sprite(r === "4:5" ? "ratio-3-4" : `ratio-${r.replace(":", "-")}`) })), onChange: setRatio })),
-    h("span.spacer"),
-    h("button.key.is-primary.ts-toast", { type: "button", disabled: busy || !m || !hasClay(), title: "Render the frame: the clay is the layout, the words what it becomes", on: { click: renderFrame } },
+    h("button.key.is-primary.ts-toast.ts-wide", { type: "button", disabled: busy || !m || !hasClay(), title: "Render the frame: the clay is the layout, the words what it becomes", on: { click: renderFrame } },
       sprite("toast-it"), h("span", {}, busy ? "Toasting…" : "Toast it"), m ? h("em", {}, priceOf(m)) : null));
 }
 
@@ -483,8 +490,9 @@ function drawRender() {
   const strip = renders.length > 1 ? h("div.ts-strip", { role: "list", "aria-label": "Earlier renders", dataset: { scrollKey: "ts-strip" } }, ...renders.map((x) =>
     h(`button.ts-thumb${x.id === r?.id ? ".is-on" : ""}`, { type: "button", role: "listitem", title: x.status === "failed" ? x.error : "Show it, from its camera", on: { click: () => showRender(x.id) } },
       x.photo ? h("img", { src: x.photo.url, alt: "", draggable: false, loading: "lazy" }) : x.status === "running" ? h("span.typing", {}, h("i"), h("i"), h("i")) : icon("close")))) : null;
-  shell.render.replaceChildren(
+  shell.renderView.replaceChildren(
     head("Render", renders,
+      keyIcon(sprite("image-upload"), "Keep the clay frame in the Library", keepClay, { disabled: !toaster.view || !hasClay(), small: true }),
       keyIcon(sprite("image-compare"), "Compare with the clay", () => setCompare(!toaster.compare), { pressed: toaster.compare, disabled: !done || !r.frame, small: true }),
       keyIcon(icon("expand"), "Look at it, full size", () => viewImage(r.photo.url), { disabled: !done, small: true }),
       keyIcon(icon("video"), "Start a shot from it", () => useStageRender(r.photo), { disabled: !done, small: true }),
