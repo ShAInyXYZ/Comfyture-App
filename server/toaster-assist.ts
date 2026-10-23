@@ -67,6 +67,9 @@ export const TOASTER_TOOL = {
             to: { type: "array", items: { type: "number" }, description: "For camera: [x, y, z], the point it looks at." },
             frame: { type: "string", enum: [...FRAMES], description: "For camera: the picture's ratio." },
             lens: { type: "number", description: "For camera: the focal length in mm, 14 to 200 (24-35 a room, 50-85 an object)." },
+            subject: { type: "string", description: "For camera: a part's name: the camera stands on one of its sides (side), on its axis, looking at it." },
+            height: { type: "number", description: "For camera with subject: the camera's height in metres (1.6 standing, 1.2 seated, 0.4 low)." },
+            margin: { type: "number", description: "For camera with subject: how much room around the subject, 1 (just it) to 4 (its whole surroundings); 1.8 frames it with what is around." },
             save: { type: "string", description: "For camera: keep the camera (as set by this action) in a slot of this name." },
             slot: { type: "string", description: "For camera: go back to a saved camera, by its name." },
             what: { type: "string", description: "For words: what the object or scene is, with the materials of its parts." },
@@ -92,8 +95,8 @@ Actions:
 PLACE is a relation (best) or numbers: against (back, left, right, front: a wall of the room, facing in); near + side (front, back, left, right of that part, as seen facing it) + gap (m): beside it, facing it; on: on its top; or at + y. Then turn or face (a part's name or [x, z]) if it must face elsewhere.
 - remove {part}
 - clear {}: every part goes, to build a new scene from scratch. Only as the first action.
-- camera {view | from, to | slot, frame, lens, save}: view (front, right, back, left, top, persp) frames everything from that side; or from (where it stands) and to (what it looks at), [x, y, z]: eye height 1.6, low 0.4. frame 1:1, 4:5, 4:3, 3:4, 16:9, 9:16; lens mm. save keeps it as a named slot; slot goes back to one.
-- words {what, scene}: the render's two lines. what: what the object or scene is, with the materials of its parts. scene: the scene, the light and the look.
+- camera {view | subject + side + height + margin | from, to | slot, frame, lens, save}: view (front, right, back, left, top, persp) frames all from that side; subject: on that side of a part, on its axis, looking at it, margin 1 to 4 (room around it); or from and to, [x, y, z]. frame 1:1, 4:5, 4:3, 3:4, 16:9, 9:16; lens mm. save keeps it as a named slot; slot goes back to one.
+- words {what, scene}: the render's lines: what it is, with its parts' materials; the scene, light and look.
 - toast {}, turnaround {}, model3d {}: offer a paid run. The app asks the user for a yes, with the price, under your answer, so say it is ready, never that it has started. At most one, always last.
 
 Rules: real-world sizes; place by relations as COMPOSING below shows; nothing floating, nothing overlapping. Real things are the catalogue's pieces; primitives are for custom shapes. When you build a scene, set a camera that frames it. From a photo, rebuild its layout: what is there, where, at what sizes, and match the photo's camera height and direction. Set words when asked, or when building from a description or a photo. Offer a toast only when asked to render. Only the ids, colours and names shown below. A question: an answer, no action. Never promise what you did not do.`;
@@ -106,7 +109,8 @@ const COMPOSING = `COMPOSING. A piece's front is the side it is used from (the s
 - a room: first a floor (a box about 8 x 0.1 x 6 at y 0) and walls (boxes 0.12 thick, 2.7 tall) along the back and the left, then the pieces against them, then the rest near them. One focal point leads; leave a walkway.
 - a part added before it can be named: add the desk, then its chair near it.
 Example, a boss's office: floor; back wall; left wall; add desk "Boss desk" at [0, -1.2] turn 180 (its user's side toward the back wall, so the boss looks into the room); add office-chair near "Boss desk" side front gap 0.1; add armchair "Guest 1" near "Boss desk" side back gap 0.7; add armchair "Guest 2" near "Guest 1" side right gap 0.2 face "Boss desk"; add bookcase against back; add a second against back (it slides beside the first); add fireplace against left; add sofa near the fireplace side front gap 2.2; add coffee-table near the sofa side front gap 0.45; add desk-lamp on "Boss desk".
-The camera of a room: from a front corner at 1.2 to 1.6, looking across at the focal point, lens 24 to 35; of an object: 3/4 front at its middle height, lens 50 to 85. Save it as a slot only when asked to keep it.`;
+The camera of a room: from a front corner at 1.2 to 1.6, looking across at the focal point, lens 24 to 35; of an object: 3/4 front at its middle height, lens 50 to 85.
+Framing a hero piece front-on (a boss at his desk): camera subject that piece, side the one it shows best (a desk the boss sits behind: its back, the visitors' side), height 1.2 to 1.4, margin 1.8, lens 35, frame 16:9; then dress the frame: behind it against the back wall bookcases on both sides of the middle, a picture on the wall above its centre (y 1.4), plants or lamps at its two sides, a rug under it; keep the camera's axis clear (no chair between, or turn the visitors' chairs aside). Symmetry reads as power. Save it as a slot only when asked to keep it.`;
 
 export interface Part {
   name?: string; kind?: string; shape?: string; piece?: string; body?: string; pose?: string; color?: string; made?: string;
@@ -196,7 +200,16 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
   try {
     raw = JSON.parse(reply.slice(from, to + 1));
   } catch {
-    return { reply: reply.replace(/[{}"]/g, "").trim().slice(0, 400) || "I didn't catch that. Say it again?", actions: [] as any[] };
+    // words alone: nothing was built, whatever they say
+    return { reply: "I answered without building anything. Ask me again?", actions: [] as any[] };
+  }
+  // (an answer whose actions came as a string of JSON is read as the list it holds)
+  if (typeof raw?.actions === "string") {
+    try {
+      raw.actions = JSON.parse(raw.actions);
+    } catch {
+      raw.actions = [];
+    }
   }
   const names = new Map<string, string>();
   for (const p of things<Part>(s.parts, 150)) if (cut(p.name, 40)) names.set(cut(p.name, 40).toLowerCase(), cut(p.name, 40));
@@ -298,8 +311,15 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
           if (pos) out.from = pos;
           if (look) out.at = look;
         }
+        if (!out.view && !out.from && known(a.subject)) {
+          out.subject = known(a.subject);
+          const side = oneOf(a.side, ["front", "back", "left", "right"] as const);
+          if (side) out.side = side;
+          if (num(a.height, 0.1, 10) !== undefined) out.height = r2(num(a.height, 0.1, 10)!);
+          if (num(a.margin, 1, 4) !== undefined) out.margin = r2(num(a.margin, 1, 4)!);
+        }
         const slot = slotNames.get(cut(a.slot, 30).toLowerCase());
-        if (slot && !out.view && !out.from) out.slot = slot;
+        if (slot && !out.view && !out.from && !out.subject) out.slot = slot;
         const frame = oneOf(a.frame, FRAMES);
         if (frame) out.frame = frame;
         if (num(a.lens, 14, 200) !== undefined) out.lens = Math.round(num(a.lens, 14, 200)!);

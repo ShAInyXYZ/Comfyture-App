@@ -336,6 +336,7 @@ try {
       { op: "set", part: "Side table", made: "walnut" },
       { op: "add", kind: "piece", piece: "desk-lamp", name: "Lamp", on: "Side table" },
       { op: "camera", from: [0.5, 0.6, 3.5], at: [0, 0.5, -0.8], frame: "16:9", lens: 28, save: "Reading corner" },
+      { op: "camera", subject: "Sofa", side: "front", height: 1.2, margin: 1.8, save: "Sofa front-on" },
       { op: "words", what: "A cosy reading corner", scene: "Warm lamp light, evening" },
       { op: "toast" },
     ] } });
@@ -373,6 +374,10 @@ try {
   ok(sofa.color === "#3d7fd9" && arm.color === "#76aef2" && reader.color === "#ff6b3d" && tbl.color === "#b07a52", "pieces and people wear their colour ID (seats in blues, a person their own), whatever colour he said; a shape takes his", JSON.stringify([sofa.color, arm.color, reader.color, tbl.color]));
   ok(reader && reader.pose === "sit" && Math.abs(reader.pos[1] - reader.size[1] / 2 - 0.1) < 1e-3, "the reader sits, her bottom at the height he said", JSON.stringify(reader?.pos));
   ok(tbl && tbl.made === "walnut" && tbl.size[0] === 0.5, "the side table sized and then changed by name", JSON.stringify(tbl));
+  const aimed = d.body.cameras.find((k) => k.name === "Sofa front-on");
+  ok(aimed && Math.abs(aimed.position[0] - sofa.pos[0]) < 1e-3 && aimed.position[2] > sofa.pos[2] + 1 && Math.abs(aimed.position[1] - 1.2) < 1e-3 && Math.abs(aimed.target[2] - sofa.pos[2]) < 1e-3, "a camera aimed at the sofa stands on its axis, before it, at the height he said, looking at it", JSON.stringify(aimed && [aimed.position, aimed.target]));
+  await page.locator('.ts-cams [aria-label="Go to Reading corner"]').click();
+  await page.waitForTimeout(200);
   const cam = await js(() => window.__toaster.view.cameraState());
   ok(Math.abs(cam.position[1] - 0.6) < 0.01 && Math.abs(cam.target[2] + 0.8) < 0.01 && d.body.ratio === "16:9" && cam.focal === 28, "the camera placed low, in a wide frame, with a 28 mm lens", JSON.stringify(cam));
   const slot = d.body.cameras.find((k) => k.name === "Reading corner");
@@ -392,7 +397,7 @@ try {
   // a camera of yours, kept with the key
   await page.locator(".ts-cam-add").click();
   await page.waitForTimeout(200);
-  ok((await draft()).body.cameras.length === 2, "the key keeps the camera as it is in a new slot");
+  ok((await draft()).body.cameras.length === 3, "the key keeps the camera as it is in a new slot");
   ok(d.body.what === "A cosy reading corner" && (await page.locator('input[aria-label="Scene"]').inputValue()) === "Warm lamp light, evening", "the render's words set, in their fields");
   ok(await page.locator("#assistant .msg-confirm .key.is-primary", { hasText: "Toast it" }).isVisible(), "the render is only offered, with its price");
   ok(pictures.length === 2, "nothing was rendered without a yes");

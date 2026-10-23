@@ -130,3 +130,14 @@ test("a part is placed by a relation: against a wall, near another on one of its
   assert.equal(out.at(-1).gap, 5, "the gap is kept within 5 m");
   assert.match(TOASTER_BRIEF, /against \(back, left, right, front/);
 });
+
+test("an answer in words alone builds nothing and says so; actions sent as a string of JSON are read; a camera aimed at a part is kept", () => {
+  const words = readToasterAnswer("I rebuilt the room around the desk, ready to toast!", SCENE);
+  assert.deepEqual(words.actions, []);
+  assert.doesNotMatch(words.reply, /rebuilt/, "a claim of building that built nothing is not passed on");
+  const stringy = readToasterAnswer(JSON.stringify({ reply: "Done.", actions: JSON.stringify([{ op: "set", part: "Desk", turn: 90 }]) }), SCENE);
+  assert.deepEqual(stringy.actions, [{ op: "set", part: "Desk", turn: 90 }]);
+  const aimed = readToasterAnswer(say([{ op: "camera", subject: "desk", side: "back", height: 1.3, margin: 9, lens: 35, frame: "16:9" }]), SCENE).actions[0];
+  assert.deepEqual(aimed, { op: "camera", subject: "Desk", side: "back", height: 1.3, margin: 4, frame: "16:9", lens: 35 });
+  assert.equal(readToasterAnswer(say([{ op: "camera", subject: "Nobody" }]), SCENE).actions.length, 0, "a camera on nobody is dropped");
+});

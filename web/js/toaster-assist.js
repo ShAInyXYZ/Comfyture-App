@@ -209,6 +209,28 @@ async function build(actions) {
   return { did, failed };
 }
 
+/**
+ * The camera on one side of a part (front, back, left or right, as seen facing it), on its axis at a height, looking at its middle, as far
+ * as it takes for the part and `margin` times its size around it to fill the frame with the lens and the frame's ratio.
+ */
+function aimAt(p, { side = "front", height, margin = 1.8 } = {}) {
+  const t = (p.rot[1] * Math.PI) / 180;
+  const f = [Math.sin(t), Math.cos(t)];
+  const r = [Math.cos(t), -Math.sin(t)];
+  const u = side === "back" ? [-f[0], -f[1]] : side === "right" ? r : side === "left" ? [-r[0], -r[1]] : f;
+  // what is across the frame (the part's width seen from this side) and its height, with room around them
+  const across = (side === "left" || side === "right" ? p.size[2] : p.size[0]) * margin;
+  const tall = Math.max(p.size[1], 0.5) * margin;
+  const deep = (side === "left" || side === "right" ? p.size[0] : p.size[2]) / 2;
+  const focal = toaster.view?.focal ?? 50;
+  const tanY = 12 / focal;
+  const ratio = RATIOS[body()?.ratio] ?? 1;
+  const dist = Math.max(across / 2 / (tanY * ratio), tall / 2 / tanY) + deep;
+  const mid = [p.pos[0], p.pos[1], p.pos[2]];
+  const y = Number.isFinite(height) ? height : mid[1] + p.size[1] * 0.25;
+  return { position: [r3(mid[0] + u[0] * dist), r3(y), r3(mid[2] + u[1] * dist)], target: [r3(mid[0]), r3(mid[1]), r3(mid[2])] };
+}
+
 /** The camera, the frame and the render's words: after the parts, so a view frames what was just built. */
 function look(a) {
   const did = [];
@@ -216,7 +238,9 @@ function look(a) {
     if (a.slot && recallCamera(a.slot)) did.push(`Camera: ${a.slot}`);
     if (a.frame && a.frame in RATIOS) setRatio(a.frame);
     if (Number.isFinite(a.lens)) setFocal(a.lens);
-    if (toaster.view && Array.isArray(a.from) && Array.isArray(a.at)) toaster.view.setCameraState({ position: a.from, target: a.at });
+    const subject = a.subject && partsNow().find((p) => p.name.toLowerCase() === String(a.subject).toLowerCase());
+    if (toaster.view && subject) toaster.view.setCameraState(aimAt(subject, a));
+    else if (toaster.view && Array.isArray(a.from) && Array.isArray(a.at)) toaster.view.setCameraState({ position: a.from, target: a.at });
     else if (toaster.view && a.view) toaster.view.view(a.view);
     keepCamera();
     if (!a.slot) did.push(a.view ? `Camera: ${a.view}` : "Camera placed");
