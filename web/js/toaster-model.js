@@ -85,17 +85,22 @@ export const partId = () => `p-${Math.random().toString(36).slice(2, 9)}`;
 
 /** Whether a part is a piece of the Stage's library (a chair, a cup, a car) rather than a primitive: its `asset` names the piece. */
 export const isAsset = (p) => p?.shape === "asset" && typeof p.asset === "string" && /^[\w.-]{1,80}$/.test(p.asset);
+/** Whether a part is one of the Stage's characters: a body type (or the user's own rigged character) in one of the Stage's poses. */
+export const isCharacter = (p) => p?.shape === "character" && typeof p.body === "string" && /^[\w-]{1,40}$/.test(p.body);
+const ID = /^[\w.-]{1,80}$/;
 
 /** A part as it is kept, whatever came in (a draft from disk, a paste, an agent). */
 export function cleanPart(p) {
   p = p && typeof p === "object" ? p : {};
-  // a piece of the Stage's library keeps its piece and the size it was given (its own until then)
+  // a piece of the Stage's library keeps its piece, a character its body, rig and pose, and both the size they were given
   const asset = isAsset(p);
-  const shape = asset ? { id: "asset", name: "Piece", size: vec(p.size, [1, 1, 1], 0.01, 100) } : shapeOf(p.shape);
+  const character = isCharacter(p);
+  const shape = asset ? { id: "asset", name: "Piece", size: vec(p.size, [1, 1, 1], 0.01, 100) } : character ? { id: "character", name: "Character", size: vec(p.size, [0.5, 1.75, 0.3], 0.01, 100) } : shapeOf(p.shape);
   const part = {
     id: typeof p.id === "string" && /^[\w-]{1,40}$/.test(p.id) ? p.id : partId(),
     shape: shape.id,
     ...(asset ? { asset: p.asset } : {}),
+    ...(character ? { body: p.body, ...(typeof p.rig === "string" && ID.test(p.rig) ? { rig: p.rig } : {}), pose: typeof p.pose === "string" && ID.test(p.pose) ? p.pose : "stand" } : {}),
     name: words(p.name, 40).trim() || shape.name,
     color: PALETTE.some(([h]) => h === String(p.color).toLowerCase()) ? String(p.color).toLowerCase() : /^#[0-9a-f]{6}$/i.test(p.color) ? String(p.color).toLowerCase() : PALETTE[0][0],
     made: words(p.made, 120),
@@ -129,6 +134,22 @@ export function newAssetPart(piece, parts = [], { at, color, random = Math.rando
   for (let i = 2; taken.has(name.toLowerCase()); i++) name = `${piece.name} ${i}`;
   const size = vec(piece.size, [1, 1, 1], 0.01, 100);
   return cleanPart({ shape: "asset", asset: piece.type, name, color: color ?? pieceColor(piece.type, parts, random), size, pos: at ?? [0, size[1] / 2, 0] });
+}
+
+/**
+ * One of the Stage's characters as a new part: `who` is { body, rig?, name, size } (its size standing), in `pose`, standing on the floor
+ * (or where `at` says). A character is someone: each takes a clay colour of its own, like the Stage's colour ID.
+ */
+export function newCharacterPart(who, parts = [], { at, pose = "stand", size, random = Math.random } = {}) {
+  const taken = new Set(parts.map((p) => p.name.toLowerCase()));
+  const base = String(who.name || who.body).slice(0, 40);
+  let name = base;
+  for (let i = 2; taken.has(name.toLowerCase()); i++) name = `${base} ${i}`;
+  const box = vec(size ?? who.size, [0.5, 1.75, 0.3], 0.01, 100);
+  const used = new Set(parts.map((p) => p.color));
+  const free = PALETTE.map(([h]) => h).filter((h) => !used.has(h));
+  const pool = free.length ? free : PALETTE.map(([h]) => h);
+  return cleanPart({ shape: "character", body: who.body ?? "man", rig: who.rig, pose, name, color: pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))], size: box, pos: at ?? [0, box[1] / 2, 0] });
 }
 
 /**
@@ -261,7 +282,7 @@ export function legendOf(parts) {
     if (!by.has(k)) by.set(k, { names: [], made: [] });
     const g = by.get(k);
     const name = p.name.trim().toLowerCase();
-    if (name && !g.names.includes(name) && (isAsset(p) || !SHAPES.some((s) => s.name.toLowerCase() === name.replace(/ \d+$/, "")))) g.names.push(name);
+    if (name && !g.names.includes(name) && (isAsset(p) || isCharacter(p) || !SHAPES.some((s) => s.name.toLowerCase() === name.replace(/ \d+$/, "")))) g.names.push(name);
     const m = p.made.trim().replace(/[.;]+$/, "");
     if (m && !g.made.includes(m)) g.made.push(m);
   }

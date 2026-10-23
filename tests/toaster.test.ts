@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   SHAPES, PALETTE, RATIOS, SHEET, VIEWS, TO_3D, shapeOf, roundLabel, hasSides, colorName, sheetScale,
-  cleanPart, cleanDraft, newPart, mirrorPart, duplicatePart, starterDraft, legendOf, framePrompt, sheetPrompt, newAssetPart, isAsset, pieceColor, freeSpot,
+  cleanPart, cleanDraft, newPart, mirrorPart, duplicatePart, starterDraft, legendOf, framePrompt, sheetPrompt, newAssetPart, isAsset, pieceColor, freeSpot, newCharacterPart, isCharacter,
 } from "../web/js/toaster-model.js";
 
 test("ten shapes, each with a size; the slider and the sides only where they mean something", () => {
@@ -186,4 +186,24 @@ test("a free spot on the floor: the middle when it is free, else the nearest pla
     taken.push(box);
   }
   assert.ok(taken.every((t) => Math.hypot((t.min[0] + t.max[0]) / 2, (t.min[1] + t.max[1]) / 2) < 3), "they stay together");
+});
+
+test("one of the Stage's characters is a part: its body, its rig and its pose kept, a colour of its own, told by name", () => {
+  const man = newCharacterPart({ body: "man", name: "Man", size: [0.55, 1.78, 0.3] }, [], { pose: "sit-chair", random: () => 0 });
+  assert.ok(isCharacter(man));
+  assert.equal(man.shape, "character");
+  assert.equal(man.body, "man");
+  assert.equal(man.pose, "sit-chair");
+  assert.equal(man.rig, undefined);
+  assert.deepEqual(man.size, [0.55, 1.78, 0.3]);
+  assert.equal(man.pos[1], 0.89, "standing on the floor");
+  const other = newCharacterPart({ body: "man", name: "Man", size: [0.55, 1.78, 0.3] }, [man], { random: () => 0 });
+  assert.equal(other.name, "Man 2");
+  assert.notEqual(other.color, man.color, "each character is someone: a colour of its own");
+  assert.equal(other.pose, "stand");
+  const mine = cleanPart({ shape: "character", body: "man", rig: "rig-bob-1a2b3c", pose: "../x", name: "Bob" });
+  assert.equal(mine.rig, "rig-bob-1a2b3c");
+  assert.equal(mine.pose, "stand", "an odd pose falls back to standing");
+  assert.equal(cleanPart({ shape: "character" }).shape, "box", "a character needs its body");
+  assert.deepEqual(legendOf([{ ...man, made: "a chef in whites" }]), ["the grey clay (man) becomes a chef in whites"]);
 });
