@@ -1,4 +1,4 @@
-# Comfyture product map: five products on one engine
+# Comfyture product map: six products on one engine
 
 Goal plan for the session building the app platform. Everything below is built from the components Kitchen already has, so each new product is mostly a new screen, not a new engine.
 
@@ -8,7 +8,7 @@ Higgsfield names its products with a Japanese theme (Katana, Cinema Studio, Mark
 
 **Where the app is today.** Home already has the Kitchen's front door: a prompt bar with Imagine and Make the film, @-tagged references (pictures or videos pasted or dropped anywhere, up to eight), a writer picker (Sonnet 5.5) and an artist picker (Qwen 2.1), a New project button and a grid of projects. A project is one film at a time, and every section keeps to the open project.
 
-**Built so far (2026-10-19).** Every product has a first version on its own screen, designed first as a GPT Image mockup (`docs/brand/products/`): the app's home presents all five, the header switches between them, and Kitchen's rooms sit on a second bar. Mixer remixes an edit shot by shot with your cast (split at its cuts, frames redrawn, motion copied, cut on its sound). Jam listens to a track on Comfy Cloud (Demucs vocals, Whisper words with their times, the beat), cuts on the beat, and performs, dances and captions it. Macaron has the brand kit, products, sixteen templates and the brand guard (palette). Utensils has ten tools. Recipes, Pantry and Delivery are not built yet.
+**Built so far (2026-10-19).** Every product has a first version on its own screen, designed first as a GPT Image mockup (`docs/brand/products/`): the app's home presents all six, the header switches between them, and Kitchen's rooms sit on a second bar. Mixer remixes an edit shot by shot with your cast (split at its cuts, frames redrawn, motion copied, cut on its sound). Jam listens to a track on Comfy Cloud (Demucs vocals, Whisper words with their times, the beat), cuts on the beat, and performs, dances and captions it. Macaron has the brand kit, products, sixteen templates and the brand guard (palette). Utensils has ten tools. Spice (added 2026-10-23) runs a shot through six VFX departments. Recipes, Pantry and Delivery are not built yet.
 
 **Models: LTX-2.5 first, anything pickable.** LTX-2.5 in ComfyUI is the priority and the default for video: open weights, cheapest (about $1 per minute of clips) and the one that makes picture and sound together. The Video picker can still choose a partner model through Comfy Router (Veo 3.1 and Veo 3.1 Fast, Kling 3, Seedance 2.5, MiniMax H3, Wan 3.0, Runway), each showing its price for a 5-second shot, and the artist picker likewise mixes open-weights and partner image models. A partner result is kept as an ordinary take. Every product below defaults to LTX-2.5 and lets the user pick another model when it matters.
 
@@ -56,12 +56,18 @@ Everything below is a suggestion for how to build the products faster. The produ
 - **Cover recreation:** recreate a TikTok cover with edits: beat-synced cuts, lip-sync performance shots, transitions.
 - Reuses: Cut's music and voice tools, lip sync, motion copy, the timeline.
 
+**Spice** (the VFX house; assistant: Paprika, a baby chameleon)
+- One shot, six departments in pipeline order, each a workspace of its own: **Plate** (the footage: import a clip or a picture, a frame range, a depth pass), **Roto** (subjects clicked and cut out by SAM3, an edge, outputs alpha, green screen or holdout), **Paint** (remove an object, a logo, the subtitles, or a painted spot), **Light** (relight, sky, weather, grade), **FX** (Kitchen's ten VFX presets as elements, placed, timed and mixed; free sparks), **Comp** (the ledger of passes, upscale, slow motion, export).
+- The left panel is the comp stack: the six departments as layers of a composite (the comp on top, the plate at the foot), each with the picture of its pass, a lamp (green done, amber working, hollow empty) and an eye (whether the pass shows in the viewer). The centre is the open department as a grid of bentos around the viewer: the footage against the department's pass on a draggable wipe, a frame counter (frames are numbered from 1001), the transport and a timeline with a bar per department.
+- Built from what Utensils already has: its free effects server (weather, sparks, slow motion, a spot removed), its edit tools (trim, grade, convert), its template runner (SAM3, Bria, VOID and the other removers, Beeble, depth, FILM) and its video upscale; Kitchen's presets and its LTX shot for the FX elements. Every paid run asks first. Shots are kept like Jam's videos (`data/spice-shots`). Utensils' own VFX workspace stays as it is.
+- Reuses: the template runner, the effects and edit servers, Kitchen's presets, the pet bar and the windows pattern.
+
 **Utensils**
 - One frame per tool, one input and one result. Start with: upscale, remove background, create variations, and the tools Kitchen already has (extend a clip, lip-sync, add or replace sound, image edit). Add tools by wrapping an existing component.
 
 ## Navigation
 
-- A top-level switch between the five products (Kitchen is the default for existing users). Icons with tooltips, not text labels.
+- A top-level switch between the six products (Kitchen is the default for existing users). Icons with tooltips, not text labels.
 - Inside Kitchen the rooms stay as they are: Story, Stage, Shot, Cut, Library.
 - Pantry, Recipes and Delivery appear inside every product, not as separate destinations.
 
