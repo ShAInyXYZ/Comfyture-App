@@ -276,6 +276,13 @@ try {
   ok(/swirling ring of glowing orange energy/.test(told) && /The effect is /.test(told) && paid[0].body.start && paid[0].body.seconds >= 2, "told the portal's own words and where it is, from a frame of the footage", told.slice(0, 90));
   st = await state();
   ok(st.set.fx.layers.at(-1).el === "ai" && !st.set.fx.layers.at(-1).media && st.log.length === 0, "a shot that did not come back leaves the layer to make and no spend");
+  await page.locator('.sp-fxl').nth(1).click();
+  await page.locator(".sp-b-look .ut-seg", { hasText: "Overlay" }).click();
+  await settle();
+  ok((await row("fx").locator(".sp-lamp").getAttribute("data-tone")) === "stale" && /Bake again/.test(await page.locator('.sp-primary[data-key="fx:bake"]').innerText()), "a layer changed after the bake: FX's lamp is hollow yellow and its key bakes again");
+  await page.locator(".sp-fxl").first().click();
+  await settle();
+  ok((await page.locator(".sp-winhost:not([hidden])").count()) === 0, "a click on a layer's row holds it, and opens no window");
   // Delete takes the layer held away
   await page.locator(".sp-stage").hover();
   await page.keyboard.press("Delete");
@@ -291,6 +298,7 @@ try {
 
   // ---- the viewer's wipe: dragged, and the stack's eye (in Comp: in FX the wipe comes with its compare key)
   await open("comp");
+  ok((await page.locator(".sp-pending").count()) === 1, "Comp says FX has layers not baked, and offers to bake them");
   const handle = await page.locator(".sp-wipe").boundingBox();
   const stage = await page.locator(".sp-stage").boundingBox();
   await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);

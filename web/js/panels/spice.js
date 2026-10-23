@@ -21,7 +21,7 @@ import { plateSpace } from "../spice-plate.js";
 import { rotoSpace } from "../spice-roto.js";
 import { paintSpace } from "../spice-paint.js";
 import { lightSpace } from "../spice-light.js";
-import { fxSpace } from "../spice-fx.js";
+import { fxSpace, fxPending } from "../spice-fx.js";
 import { compSpace } from "../spice-comp.js";
 
 const MAKERS = { plate: plateSpace, roto: rotoSpace, paint: paintSpace, light: lightSpace, fx: fxSpace, comp: compSpace };
@@ -127,7 +127,7 @@ function drawSide() {
   const plate = b.passes.plate;
   const credits = creditsTodayAll();
   const working = Object.fromEntries(STACK.map((d) => [d, workingOn(d)]));
-  const sig = JSON.stringify([s.id, s.name, spice.list.map((x) => [x.id, x.name]), spice.dept, STACK.map((d) => [d, passOf(b, d)?.eye, passOf(b, d)?.media?.url, working[d]?.progress != null ? 1 : 0]), b.passes.comp?.media?.url, topOf(b)?.media.url, r, plate?.fps, plate?.media.width, credits]);
+  const sig = JSON.stringify([s.id, s.name, spice.list.map((x) => [x.id, x.name]), spice.dept, STACK.map((d) => [d, passOf(b, d)?.eye, passOf(b, d)?.media?.url, working[d]?.progress != null ? 1 : 0]), b.passes.comp?.media?.url, topOf(b)?.media.url, r, plate?.fps, plate?.media.width, credits, fxPending().pending]);
   if (sig === shell.sideSig) return;
   shell.sideSig = sig;
   fill(shell.side,
@@ -140,14 +140,15 @@ function drawSide() {
       const w = WORKSPACES.find((x) => x.id === d);
       const on = d === spice.dept;
       const p = d === "comp" ? b.passes.comp : passOf(b, d);
-      const lamp = lampOf(b, d, !!working[d]);
+      // (FX's lamp is hollow yellow while it has layers its pass is not made of yet)
+      const lamp = d === "fx" && !working[d] && fxPending().pending ? "stale" : lampOf(b, d, !!working[d]);
       const has = d === "comp" ? !!topOf(b) : !!p?.media;
       const shown = d === "comp" ? has : visible(p);
       return h(`div.sp-layer${on ? ".is-on" : ""}${has ? "" : ".is-empty"}`, { dataset: { dept: d } },
         h("button.sp-layer-main", { type: "button", "aria-pressed": String(on), title: `${w.name} — ${w.makes}`, on: { click: () => setDept(d) } },
           layerPicture(b, d),
           h("span.sp-layer-name", {}, w.name.toUpperCase()),
-          h("span.sp-lamp", { dataset: { tone: lamp }, title: lamp === "done" ? "Done" : lamp === "busy" ? `Working: ${working[d]?.label ?? ""}` : "Nothing yet" })),
+          h("span.sp-lamp", { dataset: { tone: lamp }, title: lamp === "done" ? "Done" : lamp === "busy" ? `Working: ${working[d]?.label ?? ""}` : lamp === "stale" ? "Its layers are not baked yet: the pass is not them" : "Nothing yet" })),
         h("button.sp-eye", { type: "button", disabled: !has || d === "comp", "aria-pressed": String(shown), title: shown ? `Hide ${w.name} in the viewer` : `Show ${w.name} in the viewer`, "aria-label": `${w.name} in the viewer`, on: { click: () => toggleEye(d) } }, spicon(shown ? "eye" : "eyeOff")));
     })),
     h("dl.sp-facts", {},

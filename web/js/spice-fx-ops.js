@@ -30,6 +30,8 @@ function remember({ live = false } = {}) {
   if (h.undo.at(-1) !== now) h.undo.push(now);
   if (h.undo.length > 40) h.undo.shift();
   h.redo = [];
+  // (the FX pass is no longer the layers as they stand: they wait to be baked again)
+  if (fx()) fx().dirty = true;
 }
 function restore(from, to) {
   const h = historyOf();
@@ -37,7 +39,7 @@ function restore(from, to) {
   if (!back) return false;
   h[to].push(snapshot());
   const { layers, sel } = JSON.parse(back);
-  edit((b) => ((b.set.fx.layers = layers), (b.set.fx.sel = sel)));
+  edit((b) => ((b.set.fx.layers = layers), (b.set.fx.sel = sel), (b.set.fx.dirty = true)));
   return true;
 }
 export const undo = () => restore("undo", "redo");

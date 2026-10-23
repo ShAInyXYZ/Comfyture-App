@@ -13,7 +13,8 @@ import { openWin, defineWindow } from "./spice-win.js";
 import { work, inputFor, cloud, freeFx, freeEdit, serverJob, priceOf } from "./spice-engines.js";
 import { runnerReady } from "./utensils-cloud.js";
 import { chipRow } from "./utensils-fx-controls.js";
-import { registerRunner } from "./spice-runs.js";
+import { registerRunner, runnerFor } from "./spice-runs.js";
+import { fxPending } from "./spice-fx.js";
 
 const set = () => spice.shot.body.set.comp;
 const HEIGHTS = [[720, "720p"], [1080, "1080p"], [1440, "1440p"]];
@@ -85,7 +86,10 @@ function passesBody() {
   const top = topOf(b);
   const rows = [...PICTURES.slice(), "roto", "comp"].filter((d, i, a) => a.indexOf(d) === i).sort((x, y) => WORKSPACES.findIndex((w) => w.id === x) - WORKSPACES.findIndex((w) => w.id === y)).map((d) => ({ d, pass: passOf(b, d) })).filter((r) => r.pass?.media).reverse();
   const credits = b.log.reduce((n, e) => n + (Number(e.credits) || 0), 0);
+  // (FX's layers not baked yet are not in the comp: it says so, and bakes them from here)
+  const fp = fxPending();
   return h("div.sp-ledger", {},
+    fp.pending ? h("div.sp-pending", {}, spicon("bake"), h("span", {}, `FX has ${fp.layers} ${fp.layers === 1 ? "layer" : "layers"} not baked yet: the comp is made without ${fp.layers === 1 ? "it" : "them"}.`), ghost("Bake", () => runnerFor("fx")?.run(), { icon: spicon("bake"), disabled: !!workingOn("fx") })) : null,
     h("div.sp-ledger-list", {}, rows.length ? rows.map(({ d, pass }) =>
       h("div.sp-ledger-row", { dataset: { dept: d } }, thumb(pass.media), h("div", {}, h("b", {}, WORKSPACES.find((w) => w.id === d).name), h("span", {}, d === "plate" ? (pass.name ?? "Footage") : pass.note ?? "")), h("em", {}, pass.credits ? `${pass.credits} cr` : d === "plate" || pass.source === "free" ? "free" : ""))) : h("p.sp-hint", {}, "Every pass the departments make is listed here.")),
     h("div.sp-ledger-foot", {}, h("span.ut-label", {}, "On top"), h("b", {}, top ? WORKSPACES.find((w) => w.id === top.dept).name : "Nothing yet"),
@@ -137,7 +141,7 @@ for (const [id, title, , body] of BENTOS) {
     eyebrow: "Comp", title, size: "s",
     make: () => {
       const el = h("div.sp-w");
-      return { el, update: () => fill(el, body()), sig: () => JSON.stringify([spice.shot?.body.set.comp, spice.shot?.body.passes, spice.shot?.body.log.length]) };
+      return { el, update: () => fill(el, body()), sig: () => JSON.stringify([spice.shot?.body.set.comp, spice.shot?.body.passes, spice.shot?.body.log.length, fxPending().pending]) };
     },
   });
 }

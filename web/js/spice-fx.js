@@ -77,7 +77,14 @@ function bakePlan() {
   const ground = fxGround(b);
   const sig = JSON.stringify([layers, ground.base?.url, ground.matte?.url, b?.range, b?.set.roto.feather, b?.set.roto.choke]);
   const why = !ground.base ? "Bring the footage to the Plate first" : !layers.length ? "Add a layer from the library first" : "";
-  return { layers, ground, sig, why, done: !!b?.passes.fx?.media && b.set.fx.baked === sig };
+  // (baked: the FX pass is these layers, nothing changed since; a pass made before the layers were kept is taken as theirs)
+  const done = !!b?.passes.fx?.media && !b.set.fx.dirty && (!b.set.fx.baked || b.set.fx.baked === sig);
+  return { layers, ground, sig, why, done };
+}
+/** Whether FX has layers its pass is not made of yet (the stack's lamp and Comp say so): { layers, pending }. */
+export function fxPending() {
+  const p = bakePlan();
+  return { layers: p.layers.length, pending: p.layers.length > 0 && !p.done };
 }
 
 function runBake() {
@@ -92,7 +99,7 @@ function runBake() {
       base: ground.base, baseFrom: ground.baseFrom, matte: ground.matte, matteFrom: ground.matteFrom, layers, edge: { feather: b.set.roto.feather, choke: b.set.roto.choke },
       width: plate.media.width, height: plate.media.height, fps: plate.fps ?? 24, range: r, name: `${shot.name} · FX`,
     }, progress);
-    edit((x) => (x.set.fx.baked = sig), shot);
+    edit((x) => ((x.set.fx.baked = sig), (x.set.fx.dirty = false)), shot);
     return { files: made, from: plate.media.kind === "image" ? FIRST : r.in, to: plate.media.kind === "image" ? FIRST : r.out };
   }, { note: `${n} ${n === 1 ? "layer" : "layers"} baked`, source: "free" });
 }
@@ -200,7 +207,8 @@ function layersBody(big) {
       h("button.sp-fxl-key", { type: "button", "aria-pressed": String(l.eye !== false), "aria-label": "Shown", title: l.eye === false ? "Show it" : "Hide it", on: { click: () => toggleLayerEye(l.id) } }, spicon(l.eye === false ? "eyeOff" : "eye")));
     return row;
   });
-  return h(`div.sp-fxls${big ? ".is-big" : ""}`, {}, history, ...rows);
+  // (a click in the list holds a layer: it does not open the bento's window)
+  return h(`div.sp-fxls${big ? ".is-big" : ""}`, { dataset: { keep: "1" } }, history, ...rows);
 }
 
 const segs = (list, value, set, title) => h("div.ut-segs.sp-segs", { role: "group", title }, ...list.map(([v, label]) => h("button.ut-seg", { type: "button", "aria-pressed": String(value === v), on: { click: () => set(v) } }, label)));
