@@ -59,7 +59,7 @@ test("a layer as it is kept: every value inside its range, words from lists, and
 test("a shot keeps its layers cleaned and one of them selected", () => {
   const b = normaliseBody({ set: { fx: { layers: [{ id: "l-1", el: "flame" }, { el: "unknown" }, { id: "l-2", el: "rain" }], sel: "l-9" } } });
   assert.deepEqual(b.set.fx.layers.map((l: any) => l.id), ["l-1", "l-2"]);
-  assert.equal(b.set.fx.sel, "l-2", "a selection that is gone falls on the top layer");
+  assert.equal(b.set.fx.sel, null, "a selection that is gone holds nothing: the shot opens clean");
   assert.deepEqual(normaliseBody({}).set.fx.layers, []);
 });
 

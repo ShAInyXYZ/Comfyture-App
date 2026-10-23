@@ -68,7 +68,8 @@ export function normaliseBody(raw) {
   set.fx.place = { ...blank.set.fx.place, ...(b.set?.fx?.place ?? {}) };
   set.roto.subjects = Array.isArray(set.roto.subjects) ? set.roto.subjects : [];
   set.fx.layers = cleanLayers(set.fx.layers);
-  if (!set.fx.layers.some((l) => l.id === set.fx.sel)) set.fx.sel = set.fx.layers.at(-1)?.id ?? null;
+  // (a shot opens clean: no layer held unless the one held is still there)
+  if (!set.fx.layers.some((l) => l.id === set.fx.sel)) set.fx.sel = null;
   return { ...blank, ...b, passes: { ...blank.passes, ...(b.passes ?? {}) }, set, log: Array.isArray(b.log) ? b.log.slice(-200) : [] };
 }
 
