@@ -1,0 +1,15 @@
+/* Spice: the Light department (spice-light.js): the looks, the sky, the weather and the grade. */
+
+.sp-relight, .sp-sky, .sp-weather, .sp-grade { display: flex; flex: 1 1 0; flex-direction: column; gap: .625rem; min-height: 0; overflow: hidden auto; scrollbar-width: thin; }
+.sp-relight > .sp-looks .uf-chips { gap: .375rem; }
+.sp-relight .uf-chip, .sp-weather .uf-chip, .sp-grade .uf-chip { min-height: 1.75rem; padding: 0 .625rem; font-size: .75rem; }
+.sp-relight .sp-words { min-height: 3.5rem; }
+.sp-ref { display: grid; gap: .375rem; }
+.sp-relight-key { display: grid; gap: .5rem; margin-top: auto; }
+.sp-sky .ut-well, .sp-ref .ut-well { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) auto; align-items: center; gap: .75rem; padding: .5rem; border: 1px dashed var(--line2); border-radius: .875rem; }
+.sp-sky .ut-well-pic, .sp-ref .ut-well-pic { display: grid; place-items: center; width: 3.5rem; aspect-ratio: 16 / 10; padding: 0; overflow: hidden; border: 0; border-radius: .5rem; background: var(--sunk); color: var(--muted); cursor: pointer; }
+.sp-sky .ut-well-pic img, .sp-ref .ut-well-pic img { width: 100%; height: 100%; object-fit: cover; }
+.sp-sky .ut-well-text, .sp-ref .ut-well-text { display: grid; gap: .125rem; min-width: 0; }
+.sp-sky .ut-well-text b, .sp-ref .ut-well-text b { overflow: hidden; font: 600 .8125rem/1.2 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.sp-sky .ut-well-text em, .sp-ref .ut-well-text em { font: 400 .75rem/1.2 var(--font-sans); font-style: normal; color: var(--dim); }
+.sp-sky .sp-primary, .sp-weather .sp-primary, .sp-grade .sp-primary { margin-top: auto; }
