@@ -1,6 +1,6 @@
 {
  "id": "spice-example-rooftop",
- "rev": 3,
+ "rev": 4,
  "name": "Rooftop explosion",
  "about": "A locked-off plate of a man on a rooftop at dusk, relit to a rainy night, cut out, an explosion laid in behind him, the comp with the rain over all of it. Paint is set up, not made.",
  "passes": {
@@ -14,6 +14,6 @@
   "roto": { "subjects": [{ "id": "s-man", "name": "Man in a suit", "points": [], "media": null, "eye": true }], "open": "s-man" },
   "paint": { "how": "describe", "words": "the tallest tower on the left", "engine": "void" },
   "light": { "weather": "rain", "amount": 0.45, "grade": "cool", "exposure": -0.25, "contrast": 1.08, "saturation": 0.92 },
-  "fx": { "element": "explosion", "depth": "behind", "when": { "from": 1001, "to": 1121 }, "place": { "x": 0.5, "y": 0.32, "size": 1 } }
+  "fx": { "element": "explosion", "depth": "behind", "when": { "from": 1001, "to": 1121 }, "place": { "x": 0.5, "y": 0.32, "size": 1 }, "layers": [{ "id": "l-explosion", "el": "ai", "preset": "explosion", "words": "", "x": 0.5, "y": 0.32, "scale": 0.85, "soft": 0.45, "behind": true, "from": 1001, "to": 1121, "note": "Explosion · LTX", "media": { "file": "ltx.mp4", "seconds": 5.042 } }] }
  }
 }
