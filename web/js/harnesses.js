@@ -1,7 +1,7 @@
 // The pets: one harness per product. A harness says who answers in the chat bar (the pet), what to call
 // them, their face, what the bar asks in each room or workspace, and the quick actions (presets) offered
 // there. It is data only. A pet's brief and the actions it may take live on the server, beside the reader
-// that checks its answer (server/mixer-assist.ts, server/utensils-assist.ts, server/macaron.ts; Kitchen's
+// that checks its answer (server/mixer-assist.ts, server/utensils-assist.ts, server/spice-assist.ts, server/macaron.ts; Kitchen's
 // rooms keep the briefs they had), so a pet knows its own product and nothing else.
 //
 // tools: where the pet's presets are shown. "bar": as chips above the composer, for a product with no left
@@ -13,6 +13,7 @@
 // the workspaces, the tools), plain data like this module, so the server's tests can read the registry as well as the page.
 import { PICKLE, WORKSPACES, PRESETS as JAM_PRESETS, PLACEHOLDER as JAM_PLACEHOLDER } from "./jam-harness.js";
 import { BRIOCHE, PRESETS as MACARON_PRESETS, PLACEHOLDER as MACARON_PLACEHOLDER } from "./macaron-harness.js";
+import { PAPRIKA, PLACEHOLDER as SPICE_PLACEHOLDER } from "./spice-harness.js";
 import { TRUFFLE, PLACEHOLDER as UTENSILS_PLACEHOLDER } from "./utensils-harness.js";
 
 const p = (label, text) => ({ label, text });
@@ -75,6 +76,19 @@ export const HARNESSES = {
     home: "create",
     placeholders: MACARON_PLACEHOLDER,
     presets: Object.fromEntries(Object.entries(MACARON_PRESETS).map(([room, list]) => [room, list.filter((t) => t.ask).map((t) => p(t.label, t.ask))])),
+  },
+
+  // the VFX house: Paprika and her six departments (the stack of the left panel) are Spice's own data (web/js/spice-harness.js);
+  // she has no canned tools: her panel shows the stack of passes, and her bar is her words
+  spice: {
+    pet: PAPRIKA.id,
+    name: PAPRIKA.name,
+    tag: PAPRIKA.tag,
+    face: PAPRIKA.face,
+    tools: "panel",
+    home: "plate",
+    placeholders: SPICE_PLACEHOLDER,
+    presets: Object.fromEntries(Object.keys(SPICE_PLACEHOLDER).map((room) => [room, []])),
   },
 
   // one-tool jobs: Truffle, her seven workspaces and what the bar says in each are Utensils' own data (web/js/utensils-harness.js);

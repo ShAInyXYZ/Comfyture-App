@@ -61,9 +61,9 @@ try {
   await context.route(PAID, (route) => (route.request().method() === "POST" ? (paid.push(new URL(route.request().url()).pathname), route.abort()) : route.continue()));
 
   // the writers' answers, stood in for: each route answers from its queue and keeps what it was asked
-  const asked = { mixer: [], utensils: [], cut: [], shot: [], story: [], stage: [] };
-  const queue = { mixer: [], utensils: [], cut: [], shot: [], story: [], stage: [] };
-  for (const [name, path] of [["mixer", "mixer/assist"], ["utensils", "utensils/assist"], ["cut", "cut/assist"], ["shot", "assistant"], ["story", "story/assist"], ["stage", "control/assist"]]) {
+  const asked = { mixer: [], utensils: [], spice: [], cut: [], shot: [], story: [], stage: [] };
+  const queue = { mixer: [], utensils: [], spice: [], cut: [], shot: [], story: [], stage: [] };
+  for (const [name, path] of [["mixer", "mixer/assist"], ["utensils", "utensils/assist"], ["spice", "spice/assist"], ["cut", "cut/assist"], ["shot", "assistant"], ["story", "story/assist"], ["stage", "control/assist"]]) {
     await page.route(`**/api/${path}`, (route) => {
       asked[name].push(route.request().postDataJSON());
       route.fulfill({ json: queue[name].shift() ?? { reply: "Fine.", actions: [] } });
@@ -89,7 +89,7 @@ try {
 
   // ---- every product's page: its pet in the bar
   await page.goto(`${base}/#/shot`, { waitUntil: "networkidle" });
-  const PAGES = [["shot", "kitchen", "shot"], ["stage", "kitchen", "stage"], ["story", "kitchen", "story"], ["cut", "kitchen", "cut"], ["jam", "jam"], ["macaron", "macaron"], ["mixer", "mixer"], ["utensils", "utensils"]];
+  const PAGES = [["shot", "kitchen", "shot"], ["stage", "kitchen", "stage"], ["story", "kitchen", "story"], ["cut", "kitchen", "cut"], ["jam", "jam"], ["macaron", "macaron"], ["spice", "spice"], ["mixer", "mixer"], ["utensils", "utensils"]];
   for (const [p, product, room] of PAGES) {
     await visit(p);
     if (p === "stage") await page.waitForFunction(() => document.querySelector("#stage-chat #assistant"), null, { timeout: 30000 });

@@ -19,6 +19,7 @@ import { renderWelcome } from "./panels/welcome.js";
 import { renderMixer } from "./panels/mixer.js";
 import { renderUtensils } from "./panels/utensils.js";
 import { renderMacaron } from "./panels/macaron.js";
+import { renderSpice } from "./panels/spice.js";
 import { renderJam } from "./panels/jam.js";
 import { renderAssistant } from "./panels/assistant.js";
 import { renderImage } from "./panels/image.js";
@@ -53,6 +54,7 @@ const panels = {
   mixer: [$("page-mixer"), renderMixer, "mixer"],
   jam: [$("page-jam"), renderJam, "jam"],
   macaron: [$("page-macaron"), renderMacaron, "macaron"],
+  spice: [$("page-spice"), renderSpice, "spice"],
   utensils: [$("page-utensils"), renderUtensils, "utensils"],
 };
 
@@ -134,11 +136,12 @@ onChange((scopes) => {
 /** Shows the section the address names, and draws what changed while it was hidden. */
 /**
  * The assistant's bar floats over the Shot's desk and docks under the Stage's viewport, the Cut's timeline, Jam's page.
- * Mixer's page redraws all it holds, so its bar floats from the body, like the Shot's. Utensils' and Macaron's docks in their pages' foot.
+ * Mixer's page redraws all it holds, so its bar floats from the body, like the Shot's. Utensils', Spice's and Macaron's docks in their pages' foot.
  */
 function dockAssistant(page = currentPage()) {
   const bar = $("assistant");
   if (dockMacaron(bar, page)) return;
+  if (dockSpice(bar, page)) return;
   if (dockUtensils(bar, page)) return;
   const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : page === "cut" ? $("cut-chat") : page === "jam" ? $("jam-chat") : page === "mixer" ? document.body : $("page-shot");
   bar.hidden = !slot || !["shot", "stage", "story", "cut", "jam", "mixer"].includes(page);
@@ -165,6 +168,18 @@ function dockMacaron(bar, page) {
   return true;
 }
 document.addEventListener("macaron:drawn", () => currentPage() === "macaron" && $("assistant").parentElement?.id !== "macaron-chat" && dockAssistant());
+// Spice: Paprika's bar docks at the foot of her page, as Brioche's does (the slot is drawn with the page)
+function dockSpice(bar, page) {
+  if (page !== "spice") return false;
+  const slot = $("spice-chat");
+  bar.hidden = !slot;
+  if (slot && bar.parentElement !== slot) slot.append(bar);
+  bar.classList.toggle("is-docked", !!slot);
+  pending.add("assistant");
+  flush();
+  return true;
+}
+document.addEventListener("spice:drawn", () => currentPage() === "spice" && $("assistant").parentElement?.id !== "spice-chat" && dockAssistant());
 // Utensils: Truffle's bar docks at the foot of her page, as Brioche's does (the slot is drawn with the page)
 function dockUtensils(bar, page) {
   if (page !== "utensils") return false;

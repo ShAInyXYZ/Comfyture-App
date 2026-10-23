@@ -18,9 +18,10 @@ import { askMacaron, undoMacaron, clearMacaronChat } from "../macaron-assist.js"
 import { harnessOf, barOf, introOf, onRoom, setTeller } from "../harnesses.js";
 import { chat as mixerChat, askMixer, clearMixerChat, confirmMixer, declineMixer } from "../mixer-assist.js";
 import { chat as utensilsChat, roomOfTool, askUtensils, clearUtensilsChat, confirmUtensils, declineUtensils } from "../utensils-assist.js";
+import { chat as spiceChat, roomOfSpice, askSpice, clearSpiceChat, confirmSpice, declineSpice } from "../spice-assist.js";
 
 // One bar, and a pet in it for every product (web/js/harnesses.js): Ketkout in Kitchen's rooms, Praline in Mixer,
-// Pickle in Jam, Brioche in Macaron, Truffle in Utensils. The page the bar is on says whose bar it is, and each
+// Pickle in Jam, Brioche in Macaron, Paprika in Spice, Truffle in Utensils. The page the bar is on says whose bar it is, and each
 // product keeps its own conversation, so what is said to one is never in front of another.
 
 // on the Stage the bar stages a scene; on the Shot it sets up the shot: one bar, two conversations
@@ -51,6 +52,8 @@ function surface() {
       return { product: "jam", chat: jamChat, ask: askJam, blocked: editorBusy, clear: () => ((jamChat.messages = []), changed("assistant")), role: "writer" };
     case "mixer":
       return { product: "mixer", chat: mixerChat, ask: askMixer, clear: clearMixerChat, confirm: confirmMixer, decline: declineMixer, role: "assistant" };
+    case "spice":
+      return { product: "spice", room: roomOfSpice(), chat: spiceChat, ask: askSpice, clear: clearSpiceChat, confirm: confirmSpice, decline: declineSpice, role: "assistant" };
     case "utensils":
       return { product: "utensils", room: roomOfTool(), chat: utensilsChat, ask: askUtensils, clear: clearUtensilsChat, confirm: confirmUtensils, decline: declineUtensils, role: "assistant" };
     case "story": {
@@ -457,7 +460,7 @@ export function renderAssistant(el) {
   const c = composer ?? makeComposer();
   c.key.disabled = !!busy || !!blocked(s);
   c.render.disabled = !!busy;
-  // the model that answers here, on every page: the writer on Story, Cut, Jam and Macaron, the quick assistant on Shot, the Stage, Mixer and Utensils
+  // the model that answers here, on every page: the writer on Story, Cut, Jam and Macaron, the quick assistant on Shot, the Stage, Mixer, Spice and Utensils
   const llm = writers().length > 1 ? [writerPicker(s.role)] : [];
   if (stage) {
     const models = stageModels();
@@ -487,7 +490,7 @@ export function renderAssistant(el) {
   c.el.classList.toggle("is-story", storyPage);
   c.el.classList.toggle("is-cut", cutPage);
   c.el.classList.toggle("no-clip", !filesOn);
-  // a product with a left panel of its own (Jam, Macaron) has its bar on one row; the others keep the card
+  // a product with a left panel of its own (Jam, Macaron, Spice, Utensils) has its bar on one row; the others keep the card
   c.el.classList.toggle("is-compact", harness.tools === "panel");
   c.input.refresh();
   c.el.classList.toggle("is-stage", stage);
