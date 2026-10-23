@@ -9,9 +9,9 @@
 // The parts and the scene are called by @tags in the words (pills.js), as on the Stage. The right column draws itself on "toaster-runs", so
 // a render's progress never redraws a field in use.
 import { h, icon, sprite } from "../dom.js";
-import { onChange, toast, useStageRender } from "../store.js";
+import { onChange, toast, useStageRender, makeToasterRef } from "../store.js";
 import { currentPage } from "../router.js";
-import { dropdown } from "../controls.js";
+import { dropdown, float } from "../controls.js";
 import { view as viewImage } from "../viewer.js";
 import { pillField } from "../pills.js";
 import { mentionAt, putMention } from "../mentions.js";
@@ -333,7 +333,31 @@ const pictureTile = (r, off, caption) => h("div.ts-pic-tile", {},
     h("img", { src: r.url, alt: "", draggable: false, ...(r.width && r.height ? { style: { aspectRatio: `${r.width} / ${r.height}` } } : {}) })),
   h("button.ts-pic-off", { type: "button", title: "Take it off", "aria-label": "Take it off", on: { click: off } }, icon("close")),
   caption ? h("code", {}, `@${caption}`) : null);
-const addTile = (label, add) => h("button.ts-pic-add", { type: "button", title: label, "aria-label": label, on: { click: () => pickFiles(add) } }, sprite("image-upload"));
+/**
+ * The tile that adds pictures: it asks where from — a file on the computer, the Library, or made here in the Image window (what it makes
+ * comes back on its own). Files dropped or pasted on the card are taken too.
+ */
+let addMenu = null;
+const closeAddMenu = () => (addMenu?.remove(), (addMenu = null));
+function addTile(label, { files, library, make }) {
+  const tile = h("button.ts-pic-add", { type: "button", title: label, "aria-label": label, "aria-haspopup": "menu", on: { click: () => {
+    if (addMenu?.dataset.for === label) return closeAddMenu();
+    closeAddMenu();
+    const choice = (glyph, words, run) => h("button", { type: "button", role: "menuitem", on: { click: () => (closeAddMenu(), run()) } }, sprite(glyph), h("span", {}, words));
+    addMenu = h("div.menu.ts-add-menu", { role: "menu", dataset: { for: label } },
+      choice("image-upload", "From your computer", () => pickFiles(files)),
+      choice("image-library", "From the Library", library),
+      choice("image-generate", "Make it in the Image window", make));
+    document.body.append(addMenu);
+    float(addMenu, tile.getBoundingClientRect(), 240);
+    addMenu.querySelector("button")?.focus();
+  } } }, sprite("image-upload"));
+  return tile;
+}
+document.addEventListener("pointerdown", (e) => addMenu && !addMenu.contains(e.target) && !e.target.closest?.(".ts-pic-add") && closeAddMenu(), true);
+document.addEventListener("keydown", (e) => addMenu && e.key === "Escape" && (e.stopPropagation(), closeAddMenu()), true);
+/** The Library's picker of a sheet (or of the references) opened, its pictures read again. */
+const openLibrary = (which, redraw) => () => ((libraries[which].open = true), (photosCache = null), redraw());
 
 // ---------------------------------------------------------------- Selected: the part, and its sheet
 
@@ -382,7 +406,11 @@ function sheetPictures(p) {
   const add = (files) => (full ? toast(`A sheet holds ${MOST_PICTURES} pictures.`) : addSheetPictures(p, files));
   const box = h("div.ts-sheet-box", {},
     h("div.ts-row-head", {}, h("span.ts-label", {}, "Pictures"), h("span.ts-count", {}, refs.length ? `${refs.length}/${MOST_PICTURES}` : ""), h("span.spacer"), libraryKey("part", "From the Library", drawInspector)),
-    h("div.ts-pics", {}, ...refs.map((r) => pictureTile(r, () => removePartRef(p.id, r.file))), full ? null : addTile("Add pictures — or drop or paste them here", add)));
+    h("div.ts-pics", {}, ...refs.map((r) => pictureTile(r, () => removePartRef(p.id, r.file))), full ? null : addTile("Add pictures — or drop or paste them here", {
+      files: add,
+      library: openLibrary("part", drawInspector),
+      make: () => makeToasterRef({ kind: "part", draftId: toaster.draft?.id, partId: p.id, name: p.name, words: describeOf(p, pieceOf), character: isCharacter(p) }),
+    })));
   if (libraries.part.open) {
     box.append(libraryPane("part", {
       has: () => new Set((body()?.parts.find((x) => x.id === p.id)?.refs ?? []).map((r) => r.file)),
@@ -830,7 +858,11 @@ function drawLook() {
   // the references: pictures for the whole render (a style, a mood, a material, a place), each called by an @name
   const full = b.refs.length >= MOST_PICTURES;
   const refs = h("div.ts-refs-in", {}, h("div.ts-refs-row", {}, h("span.ts-label", {}, "References"), h("span.ts-count", {}, b.refs.length ? `${b.refs.length}/${MOST_PICTURES}` : ""),
-    h("div.ts-pics", {}, ...b.refs.map((r) => pictureTile(r, () => removeSceneRef(r.name), r.name)), full ? null : addTile("Add reference pictures — or drop or paste them on the composer", (files) => addReferences(files))),
+    h("div.ts-pics", {}, ...b.refs.map((r) => pictureTile(r, () => removeSceneRef(r.name), r.name)), full ? null : addTile("Add reference pictures — or drop or paste them on the composer", {
+      files: (files) => addReferences(files),
+      library: openLibrary("scene", drawLook),
+      make: () => makeToasterRef({ kind: "scene", draftId: toaster.draft?.id, name: "the look", words: [b.scene, b.what].map((t) => String(t ?? "").replace(/@[a-z0-9-]+/gi, "").trim()).filter(Boolean).join(". "), aspect: b.ratio }),
+    })),
     libraryKey("scene", "From the Library", drawLook)));
   if (libraries.scene.open) {
     refs.append(libraryPane("scene", {

@@ -689,6 +689,35 @@ export function removeSceneRef(name) {
   changed("toaster");
 }
 
+/**
+ * A picture made in the Image window for Toaster (makeToasterRef) taken where it was asked for: on its part's sheet, or in the render's
+ * references, of its project; the project open takes it at once (Undo takes a part's back), another is changed where it is kept.
+ */
+export async function takeRef(ref, photo) {
+  const pic = { file: photo.file, url: photo.url, width: photo.width, height: photo.height, name: photo.name ?? ref.name };
+  const where = ref.kind === "scene" ? "in the render's references" : `on ${ref.name}'s sheet`;
+  if (toaster.draft?.id === ref.draftId) {
+    if (ref.kind === "scene") addSceneRef(pic);
+    else if (partsNow().some((p) => p.id === ref.partId)) addPartRef(ref.partId, pic);
+    else return toast(`${ref.name} is gone from the project: the picture is in the Library.`);
+  } else {
+    await flushDrafts();
+    const { project } = await call(`api/${KIND}/${ref.draftId}`);
+    const b = cleanDraft(project.body);
+    if (ref.kind === "scene") {
+      const r = newSceneRef(pic, b.parts, b.refs);
+      if (!r) return toast("That project's render holds six references: the picture is in the Library.");
+      b.refs.push(r);
+    } else {
+      const part = b.parts.find((p) => p.id === ref.partId);
+      if (!part) return toast(`${ref.name} is gone from that project: the picture is in the Library.`);
+      part.refs = addRef(part.refs, pic);
+    }
+    await send(`api/${KIND}/${ref.draftId}`, "PUT", { name: project.name, body: b });
+  }
+  toast(`The picture is ${where} now.`);
+}
+
 /** The prompt written by hand or by Improve ("" goes back to the automatic one, composed at render time). */
 export function setPrompt(text) {
   const b = body();

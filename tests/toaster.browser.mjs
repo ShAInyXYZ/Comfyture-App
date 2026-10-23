@@ -538,7 +538,10 @@ try {
   ok((await page.locator('.ts-inspector textarea[aria-label="What it is"]').getAttribute("placeholder")).startsWith("brushed chrome"), "a shape's words are asked for by their kind");
   await page.locator('.ts-inspector textarea[aria-label="What it is"]').fill("a walnut mid-century desk with brass handles");
   await page.locator('.ts-inspector input[aria-label="Name"]').click();
-  let [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.locator(".ts-inspector .ts-pic-add").click()]);
+  // the add tile asks where the pictures come from: the computer, the Library, or made here in the Image window
+  await page.locator(".ts-inspector .ts-pic-add").click();
+  ok((await page.locator(".ts-add-menu [role=menuitem]").allInnerTexts()).join(" | ") === "From your computer | From the Library | Make it in the Image window", "the add tile asks: the computer, the Library, or made here", (await page.locator(".ts-add-menu [role=menuitem]").allInnerTexts()).join(" | "));
+  let [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.locator(".ts-add-menu [role=menuitem]", { hasText: "From your computer" }).click()]);
   await chooser.setFiles({ name: "desk.png", mimeType: "image/png", buffer: png([150, 90, 40]) });
   await until(() => window.__toaster.draft.body.parts[0].refs?.length === 1, null, 8000);
   d = await draft();
@@ -555,8 +558,28 @@ try {
   ok(!(await draft()).body.parts[0].refs, "a picture is taken off its sheet");
   await page.keyboard.press("Control+z");
   ok((await draft()).body.parts[0].refs?.length === 1, "and Undo puts it back");
+  // made here: the Image window opens with a reference sheet of what the part is, and what it makes lands on the part's sheet
+  await page.locator(".ts-inspector .ts-pic-add").click();
+  await page.locator(".ts-add-menu [role=menuitem]", { hasText: "Make it in the Image window" }).click();
+  await page.waitForSelector("#image:not([hidden])", { timeout: 5000 }).catch(() => {});
+  const asked3 = await js(async () => {
+    const { state } = await import("/js/store.js");
+    return { open: state.image.open, prompt: state.image.prompt, origin: state.image.origin };
+  });
+  ok(asked3.open && asked3.prompt.startsWith("A reference sheet of a walnut mid-century desk with brass handles") && asked3.origin?.toasterRef?.partId === (await draft()).body.parts[0].id, "Make it here opens the Image window with a reference sheet of what the part is (nothing is made until you press its key)", JSON.stringify(asked3).slice(0, 300));
+  const made3 = await page.evaluate(async (bytes) => (await fetch("api/photos?name=made%20here", { method: "POST", headers: { "Content-Type": "image/png" }, body: new Uint8Array(bytes) })).json(), [...png([200, 160, 90])]);
+  await js(async ([origin, photo]) => {
+    const { state, changed } = await import("/js/store.js");
+    state.image.open = false;
+    changed("image");
+    await (await import("/js/toaster.js")).takeRef(origin.toasterRef, photo);
+  }, [asked3.origin, made3]);
+  ok((await draft()).body.parts[0].refs?.length === 2 && (await draft()).body.parts[0].refs[1].file === made3.file, "the picture it made lands on the part's sheet", JSON.stringify((await draft()).body.parts[0].refs));
+  await page.locator(".ts-inspector .ts-pic-tile").nth(1).hover();
+  await page.locator(".ts-inspector .ts-pic-off").nth(1).click();
   // a reference for the whole render, from a file; a second one pasted on the composer
-  [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.locator(".ts-refs .ts-pic-add").click()]);
+  await page.locator(".ts-refs .ts-pic-add").click();
+  [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.locator(".ts-add-menu [role=menuitem]", { hasText: "From your computer" }).click()]);
   await chooser.setFiles({ name: "Mood Board.png", mimeType: "image/png", buffer: png([40, 90, 150]) });
   await until(() => window.__toaster.draft.body.refs?.length === 1, null, 8000);
   d = await draft();

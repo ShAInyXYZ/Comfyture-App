@@ -2115,6 +2115,29 @@ export const makeStageRef = ({ kind, id, name, what, description, stageId }) =>
     setImage({ template: "generate", aspect: "16:9", count: 1 });
   });
 
+/**
+ * The Image window, to make a picture for Toaster: a reference sheet of a part (a turnaround for a character, views of the thing for a
+ * piece or a shape) from what it is, or a picture for the look of the whole render (`kind` "scene") from the words. What it makes goes on
+ * that part's sheet, or in the render's references, of the project it was asked for.
+ */
+export const makeToasterRef = ({ kind, draftId, partId, name, words, character, aspect }) =>
+  attempt(async () => {
+    const im = state.image;
+    if (!im.catalogue) im.catalogue = await api.imageModels();
+    im.refs = [];
+    const what = String(words ?? "").trim().replace(/[.;]+$/, "");
+    im.prompt = kind === "scene"
+      ? `${what || "A reference picture for the look of the scene: its light, its colours, its materials and its mood"}. A photograph, no text.`
+      : character
+        ? `A character sheet of ${what || name}. Three full-length views side by side: front, three-quarter and back, standing in a relaxed neutral pose, the same face, hair and clothes in every view. Plain light grey background, soft even studio light.`
+        : `A reference sheet of ${what || name}. The object alone in three views side by side: front, three-quarter and side. Plain light grey background, soft studio light.`;
+    im.before = null;
+    im.keep = false;
+    im.origin = { toasterRef: { kind, draftId, partId, name } };
+    im.open = true;
+    setImage({ template: "generate", aspect: kind === "scene" ? aspect ?? "16:9" : "16:9", count: 1 });
+  });
+
 /** A paint event for one of the window's pictures. */
 function imageJob(job) {
   // a picture the Stage asked for is kept with its stage, however it was asked for
@@ -2133,6 +2156,12 @@ function imageJob(job) {
       stage.addTagRef(target, job.photo);
       toast(`On ${ref.name}'s sheet now: renders follow it.`);
     });
+  }
+  // a picture made for Toaster goes on its part's sheet, or in its render's references
+  const tref = r.origin?.toasterRef;
+  if (tref && job.status === "done" && job.photo && !r.attached) {
+    r.attached = true;
+    import("./toaster.js").then((t) => t.takeRef(tref, job.photo)).catch((e) => toast(e.message, { tone: "crit" }));
   }
   if (job.status === "done") api.photos().then((photos) => ((state.photos = photos), changed("library"))).catch(() => {});
   changed("image");
