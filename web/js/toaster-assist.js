@@ -8,6 +8,7 @@ import { changed, toast, writer } from "./store.js";
 import { api } from "./api.js";
 import {
   toaster, body, partsNow, editParts, select, setWords, setRatio, keepCamera, modelNow, hasClay, renderFrame, renderSheet, make3d, price3d, priceNow,
+  setFocal, saveCamera, recallCamera,
 } from "./toaster.js";
 import { cleanPart, newPart, newAssetPart, newCharacterPart, freeSpot, PALETTE, colorName, RATIOS, isAsset, isCharacter } from "./toaster-model.js";
 
@@ -45,7 +46,8 @@ export function summary() {
     draft: toaster.draft.name,
     parts: b.parts.map(partOf),
     selected: b.parts.filter((p) => toaster.selected.includes(p.id)).map((p) => p.name),
-    camera: { from: cam.position.map(r2), at: cam.target.map(r2), frame: b.ratio },
+    camera: { from: cam.position.map(r2), at: cam.target.map(r2), frame: b.ratio, focal: cam.focal ?? 50 },
+    cameras: b.cameras.map((k) => ({ name: k.name, from: k.position.map(r2), at: k.target.map(r2), frame: k.ratio, focal: k.focal })),
     words: { what: b.what, scene: b.scene },
     renders: b.renders.filter((r) => r.status === "done").length,
     turnaround: b.sheets.some((s) => s.status === "done"),
@@ -89,6 +91,7 @@ async function build(actions) {
     else if (typeof a.scale === "number") p.size = own.map((v) => Math.max(0.01, r3(v * a.scale)));
   };
   const added = [];
+  const faces = [];
   editParts((list) => {
     const byName = (n) => list.find((p) => p.name.toLowerCase() === String(n ?? "").toLowerCase());
     for (const a of actions) {
@@ -118,6 +121,7 @@ async function build(actions) {
           const [x, z] = freeSpot([p.size[0], p.size[2]], list.filter((q) => !q.hidden).map(footprint), { near: [0, 0] });
           placed(p, { ...a, at: [x, z] });
         }
+        if (a.face !== undefined) faces.push([p, a.face]);
         p.fresh = true;
         list.push(p);
         added.push(p);
@@ -145,6 +149,7 @@ async function build(actions) {
         if (a.color && hexOf(a.color)) p.color = hexOf(a.color);
         if (a.made !== undefined) p.made = String(a.made).slice(0, 120);
         if (a.hidden !== undefined) p.hidden = !!a.hidden;
+        if (a.face !== undefined) faces.push([p, a.face]);
         if (a.name && !byName(a.name)) p.name = String(a.name).slice(0, 40);
         did.push(`Set ${p.name}`);
       } else if (a.op === "remove") {
@@ -155,6 +160,15 @@ async function build(actions) {
           did.push(`Removed ${p.name}`);
         }
       }
+    }
+    // what each part faces, once every part of the answer stands where it goes: the turn that points its front at it
+    for (const [p, face] of faces) {
+      const t = Array.isArray(face) ? face : (() => {
+        const q = byName(face);
+        return q ? [q.pos[0], q.pos[2]] : null;
+      })();
+      if (!t || (Math.abs(t[0] - p.pos[0]) < 1e-6 && Math.abs(t[1] - p.pos[2]) < 1e-6)) continue;
+      p.rot = [p.rot[0], Math.round((Math.atan2(t[0] - p.pos[0], t[1] - p.pos[2]) * 180) / Math.PI), p.rot[2]];
     }
     for (const p of list) delete p.fresh;
     return list.map(cleanPart);
@@ -168,11 +182,14 @@ async function build(actions) {
 function look(a) {
   const did = [];
   if (a.op === "camera") {
+    if (a.slot && recallCamera(a.slot)) did.push(`Camera: ${a.slot}`);
     if (a.frame && a.frame in RATIOS) setRatio(a.frame);
+    if (Number.isFinite(a.lens)) setFocal(a.lens);
     if (toaster.view && Array.isArray(a.from) && Array.isArray(a.at)) toaster.view.setCameraState({ position: a.from, target: a.at });
     else if (toaster.view && a.view) toaster.view.view(a.view);
     keepCamera();
-    did.push(a.view ? `Camera: ${a.view}` : "Camera placed");
+    if (!a.slot) did.push(a.view ? `Camera: ${a.view}` : "Camera placed");
+    if (a.save && saveCamera(a.save)) did.push(`Kept as ${a.save}`);
   } else if (a.op === "words") {
     if (a.what !== undefined) setWords("what", a.what);
     if (a.scene !== undefined) setWords("scene", a.scene);

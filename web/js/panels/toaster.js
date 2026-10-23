@@ -12,7 +12,7 @@ import { view as viewImage } from "../viewer.js";
 import {
   toaster, body, partsNow, selectedParts, sync, loadDrafts, openDraft, newDraft, removeDraft, renameDraft, pick, select, selectAll,
   setTool, toggleSnap, addPart, addPiece, addCharacter, setPose, setProps, applyTransforms, removeSelected, removePart, duplicateSelected, mirrorSelected, dropSelected,
-  toggleHidden, undoParts, redoParts, canUndo, canRedo, setWords, setRatio, setModel, keepCamera, loadModels, modelNow, hasClay,
+  toggleHidden, undoParts, redoParts, canUndo, canRedo, setWords, setRatio, setModel, keepCamera, setFocal, saveCamera, recallCamera, onCamera, removeCamera, renameCamera, loadModels, modelNow, hasClay,
   renderFrame, renderSheet, forget, showRender, setCompare, price3d, priceNow, make3d, putOnStage, isArmed, arm, disarm,
 } from "../toaster.js";
 import { SHAPES, PALETTE, RATIOS, roundLabel, hasSides, colorName, shapeOf } from "../toaster-model.js";
@@ -71,7 +71,8 @@ function build(el) {
   s.boot = h("p.ts-boot", {}, "Warming up the toaster…");
   s.notice = h("div.ts-notice", { hidden: true, role: "alert" });
   s.library = h("div.ts-library", { hidden: true, role: "dialog", "aria-label": "The Stage's library" });
-  const viewport = h("section.ts-view", { "aria-label": "Viewport" }, s.stage, s.frame, s.views, s.tools, s.boot, s.library, s.notice);
+  s.cams = h("div.ts-cams", { role: "toolbar", "aria-label": "Cameras" });
+  const viewport = h("section.ts-view", { "aria-label": "Viewport" }, s.stage, s.frame, s.views, s.cams, s.tools, s.boot, s.library, s.notice);
 
   // the look: the words and the key that renders
   s.what = h("input.ts-field", { type: "text", maxLength: 600, placeholder: "A retro 1950s toaster, chrome body, walnut lever, cream knob", "aria-label": "What it is", on: { input: (e) => setWords("what", e.target.value) } });
@@ -111,6 +112,7 @@ function mountView() {
       onCamera: () => {
         lastView = null;
         drawViews();
+        drawCameras();
         keepCamera();
         stripSoon();
       },
@@ -407,6 +409,40 @@ function goView(id) {
   drawViews();
 }
 
+// ---------------------------------------------------------------- the cameras kept in slots
+
+const LENSES = [18, 24, 35, 50, 85, 135];
+let renamingCam = null;
+/**
+ * The cameras strip, at the viewport's top right: the lens, a tile for each camera kept (its picture; lit while the camera is on it; a
+ * click goes back to it to the pixel, with its frame and lens), and the key that keeps the camera as it is now.
+ */
+function drawCameras() {
+  if (!shell || !body()) return;
+  const b = body();
+  const focal = toaster.view?.focal ?? b.camera?.focal ?? 50;
+  const lens = dropdown({ label: "Lens", value: focal, items: [...new Set([...LENSES, focal])].sort((x, y) => x - y).map((mm) => ({ value: mm, label: `${mm} mm`, desc: mm <= 24 ? "wide: a room" : mm <= 35 ? "a little wide" : mm <= 50 ? "natural" : "long: an object, a face" })), onChange: (mm) => setFocal(mm) });
+  const tiles = b.cameras.map((k) => {
+    const on = onCamera(k.id);
+    const name = renamingCam === k.id
+      ? h("input.ts-rename.ts-cam-rename", { value: k.name, maxLength: 30, "aria-label": "Name", on: {
+        keydown: (e) => (e.stopPropagation(), e.key === "Enter" ? e.target.blur() : e.key === "Escape" && ((renamingCam = null), drawCameras())),
+        blur: (e) => ((renamingCam = null), renameCamera(k.id, e.target.value), drawCameras()),
+      } })
+      : h("span.ts-cam-name", { title: "Double-click to rename", on: { dblclick: (e) => (e.stopPropagation(), (renamingCam = k.id), drawCameras(), requestAnimationFrame(() => shell.cams.querySelector(".ts-cam-rename")?.select())) } }, k.name);
+    return h(`div.ts-cam${on ? ".is-on" : ""}`, {},
+      h("button.ts-cam-pic", { type: "button", title: `${k.name} — ${k.focal} mm, ${k.ratio}: go back to it`, "aria-label": `Go to ${k.name}`, style: { aspectRatio: k.ratio.replace(":", " / ") }, on: { click: () => recallCamera(k.id) } },
+        k.thumb ? h("img", { src: k.thumb, alt: "", draggable: false }) : sprite("scene-camera")),
+      name,
+      h("button.ts-cam-x.is-save", { type: "button", title: `Keep the camera as it is now in ${k.name}`, "aria-label": `Save over ${k.name}`, on: { click: () => saveCamera(k.name) } }, icon("download")),
+      h("button.ts-cam-x.is-forget", { type: "button", title: `Forget ${k.name}`, "aria-label": `Forget ${k.name}`, on: { click: () => removeCamera(k.id) } }, icon("close")));
+  });
+  shell.cams.replaceChildren(
+    h("div.ts-pick.ts-lens", {}, lens),
+    ...tiles,
+    h("button.ts-cam-add", { type: "button", title: "Keep this camera — its place, aim, lens and frame, to come back to it to the pixel", "aria-label": "Keep this camera", disabled: b.cameras.length >= 12, on: { click: () => saveCamera() } }, sprite("scene-camera"), icon("plus")));
+}
+
 function drawTools() {
   const has = toaster.selected.length > 0;
   const key = (glyph, label, run, { pressed, disabled } = {}) =>
@@ -636,6 +672,7 @@ export function renderToaster(el) {
   if (partsNow().some((p) => p.shape === "asset" || p.shape === "character")) assetsModule();
   drawLeft();
   drawViews();
+  drawCameras();
   drawTools();
   drawLook();
   drawRight();

@@ -319,11 +319,11 @@ try {
     return route.fulfill({ json: { reply: "A cosy corner, ready to toast.", actions: [
       { op: "clear" },
       { op: "add", kind: "piece", piece: "sofa", name: "Sofa", at: [0, -1], turn: 0, color: "teal" },
-      { op: "add", kind: "piece", piece: "armchair", name: "Armchair", at: [1.7, -0.2], turn: -60, color: "orange" },
+      { op: "add", kind: "piece", piece: "armchair", name: "Armchair", at: [1.7, -0.2], face: "Sofa", color: "orange" },
       { op: "add", kind: "character", body: "woman", pose: "sit", name: "Reader", at: [0.3, -0.9], y: 0.1, color: "pink" },
       { op: "add", kind: "shape", shape: "box", name: "Side table", at: [-1.4, -1], size: [0.5, 0.5, 0.5], color: "brown", made: "oak" },
       { op: "set", part: "Side table", made: "walnut" },
-      { op: "camera", from: [0.5, 0.6, 3.5], at: [0, 0.5, -0.8], frame: "16:9" },
+      { op: "camera", from: [0.5, 0.6, 3.5], at: [0, 0.5, -0.8], frame: "16:9", lens: 28, save: "Reading corner" },
       { op: "words", what: "A cosy reading corner", scene: "Warm lamp light, evening" },
       { op: "toast" },
     ] } });
@@ -351,11 +351,29 @@ try {
   const tbl = named("Side table");
   ok(d.body.parts.length === 4 && sofa?.asset === "sofa" && arm?.asset === "armchair" && reader?.shape === "character" && tbl?.shape === "box", "he cleared the floor and built the corner: two pieces, a character and a shape", d.body.parts.map((p) => p.name).join(", "));
   ok(sofa && Math.abs(sofa.pos[0]) < 1e-3 && Math.abs(sofa.pos[2] + 1) < 1e-3 && Math.abs(sofa.pos[1] - sofa.size[1] / 2) < 1e-3, "the sofa stands where he said, on the floor", JSON.stringify(sofa?.pos));
-  ok(arm && arm.rot[1] === -60 && sofa.color === "#4fb3a9" && arm.color === "#e0884b", "the armchair turned toward it, each in its colour", JSON.stringify(arm?.rot));
+  ok(arm && arm.rot[1] === Math.round((Math.atan2(0 - 1.7, -1 + 0.2) * 180) / Math.PI) && sofa.color === "#4fb3a9" && arm.color === "#e0884b", "the armchair faces the sofa (he said face, the page turned it), each in its colour", JSON.stringify(arm?.rot));
   ok(reader && reader.pose === "sit" && Math.abs(reader.pos[1] - reader.size[1] / 2 - 0.1) < 1e-3, "the reader sits, her bottom at the height he said", JSON.stringify(reader?.pos));
   ok(tbl && tbl.made === "walnut" && tbl.size[0] === 0.5, "the side table sized and then changed by name", JSON.stringify(tbl));
   const cam = await js(() => window.__toaster.view.cameraState());
-  ok(Math.abs(cam.position[1] - 0.6) < 0.01 && Math.abs(cam.target[2] + 0.8) < 0.01 && d.body.ratio === "16:9", "the camera placed low, in a wide frame", JSON.stringify(cam));
+  ok(Math.abs(cam.position[1] - 0.6) < 0.01 && Math.abs(cam.target[2] + 0.8) < 0.01 && d.body.ratio === "16:9" && cam.focal === 28, "the camera placed low, in a wide frame, with a 28 mm lens", JSON.stringify(cam));
+  const slot = d.body.cameras.find((k) => k.name === "Reading corner");
+  ok(slot && slot.focal === 28 && slot.ratio === "16:9" && slot.thumb?.startsWith("data:image/"), "and kept in a slot with its picture", JSON.stringify(slot && { ...slot, thumb: !!slot.thumb }));
+  await page.waitForSelector(".ts-cams .ts-cam.is-on", { timeout: 3000 }).catch(() => {});
+  ok(await page.locator(".ts-cams .ts-cam.is-on .ts-cam-name", { hasText: "Reading corner" }).isVisible(), "its slot is lit while the camera is on it");
+  // back to the slot, to the pixel: the frame drawn before and after a trip elsewhere is the same picture
+  const before = await js(() => window.__toaster.view.frameStill({ long: 480 }));
+  await page.locator(".ts-view-key", { hasText: "Top" }).click();
+  await js(() => window.__toaster.view.setFocal(85));
+  await page.waitForTimeout(300);
+  ok((await js(() => window.__toaster.view.frameStill({ long: 480 }))) !== before, "the camera went elsewhere, with another lens");
+  ok(!(await page.locator(".ts-cams .ts-cam.is-on").count()), "and the slot is no longer lit");
+  await page.locator('.ts-cams [aria-label="Go to Reading corner"]').click();
+  await page.waitForTimeout(300);
+  ok((await js(() => window.__toaster.view.frameStill({ long: 480 }))) === before, "a click on the slot brings the very picture back: place, aim, lens and frame");
+  // a camera of yours, kept with the key
+  await page.locator(".ts-cam-add").click();
+  await page.waitForTimeout(200);
+  ok((await draft()).body.cameras.length === 2, "the key keeps the camera as it is in a new slot");
   ok(d.body.what === "A cosy reading corner" && (await page.locator('input[aria-label="Scene"]').inputValue()) === "Warm lamp light, evening", "the render's words set, in their fields");
   ok(await page.locator("#assistant .msg-confirm .key.is-primary", { hasText: "Toast it" }).isVisible(), "the render is only offered, with its price");
   ok(pictures.length === 2, "nothing was rendered without a yes");
