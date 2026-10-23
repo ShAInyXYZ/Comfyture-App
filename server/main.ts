@@ -419,6 +419,12 @@ function summary(kind: string, body: any) {
     const designs: any[] = Array.isArray(body?.designs) ? body.designs.filter((d: any) => !d?.variant) : [];
     return { designs: designs.length, approved: designs.filter((d) => d?.status === "approved").length, motion: Array.isArray(body?.motion) ? body.motion.length : 0, exports: Array.isArray(body?.exports) ? body.exports.length : 0 };
   }
+  if (kind === "spice-shots") {
+    // Spice's shot: how many departments have made their pass, and what each cost (the panel adds up the day's credits)
+    const passes: any[] = Object.values(body?.passes ?? {}).filter((p: any) => p?.media);
+    const log: any[] = Array.isArray(body?.log) ? body.log : [];
+    return { passes: passes.length, log: log.slice(-60).map((e) => ({ at: String(e?.at ?? ""), credits: Number(e?.credits) || 0 })) };
+  }
   return {};
 }
 /** How long a script or a storyboard may run: a five-minute film needs room for fifteen scenes and their shots. */
@@ -1397,8 +1403,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const pops = (Array.isArray(input.sound?.pops) ? input.sound.pops : []).map(Number).filter((n: number) => Number.isFinite(n) && n >= 0 && n < 30);
     return json(res, 201, await encodeFrames(data, input.job, { fps: Math.round(num(input.fps, 12, 60, 30)), name: text(input.name, 60) || "motion", sound: input.sound ? { pops, pad: input.sound.pad === true } : undefined, container: input.container === "webm" ? "webm" : input.container === "gif" ? "gif" : "mp4" }));
   }
-  // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos
-  for (const kind of ["stories", "cuts", "mixes", "brands", "jams"]) {
+  // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos, Spice's shots
+  for (const kind of ["stories", "cuts", "mixes", "brands", "jams", "spice-shots"]) {
     if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {
       const answered = await projectRoute(kind, path, method, req, res);
       if (answered !== false) return answered;
