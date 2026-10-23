@@ -89,3 +89,25 @@ test("bad answers are dropped or clamped", () => {
   assert.ok(bad.reply.length > 0);
   assert.deepEqual(readToasterAnswer(say([{ op: "remove", part: "crate" }, { op: "set", part: "Crate", color: "red" }]), SCENE).actions, [{ op: "remove", part: "Crate" }], "a part removed can no longer be set");
 });
+
+test("a part faces a point or another part (even one added later in the answer); the camera takes a lens, goes back to a slot, or is kept in one", () => {
+  const scene = { ...SCENE, cameras: [{ name: "Hero", from: [1, 1.5, 3], at: [0, 1, 0], frame: "16:9", focal: 35 }] };
+  const out = readToasterAnswer(say([
+    { op: "add", kind: "piece", piece: "armchair", name: "Chair A", at: [1, 1], face: "Desk B" },
+    { op: "add", kind: "piece", piece: "desk", name: "Desk B", at: [0, -1], face: [0, 5] },
+    { op: "set", part: "Crate", face: "Nobody" },
+    { op: "camera", from: [2, 1.4, 3], to: [0, 0.8, 0], lens: 400, save: "Wide corner" },
+    { op: "camera", slot: "hero" },
+    { op: "camera", slot: "No such camera" },
+  ]), scene).actions;
+  assert.equal(out[0].face, "Desk B", "a face named after a part added later is kept");
+  assert.deepEqual(out[1].face, [0, 5], "a face can be a point");
+  assert.ok(!out.some((a) => a.op === "set" && a.part === "Crate"), "a face on nobody is dropped, and the set with it");
+  assert.deepEqual(out[2], { op: "camera", from: [2, 1.4, 3], at: [0, 0.8, 0], lens: 200, save: "Wide corner" }, "the lens is kept within 14 to 200 mm");
+  assert.deepEqual(out[3], { op: "camera", slot: "Hero" }, "a slot is named as it was saved");
+  assert.equal(out.length, 4, "a slot nobody saved is dropped");
+  const prompt = toasterPrompt(scene, [{ role: "user", text: "go" }]);
+  assert.match(prompt, /SAVED CAMERAS: Hero \(from/);
+  assert.match(prompt, /COMPOSING: a piece's front is the side it is used from/);
+  assert.match(TOASTER_BRIEF, /turn \| face/);
+});

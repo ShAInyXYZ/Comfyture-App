@@ -51,6 +51,7 @@ export const TOASTER_TOOL = {
             at: { type: "array", items: { type: "number" }, description: "[x, z] in metres: the centre of the part's footprint on the floor." },
             y: { type: "number", description: "Height of the part's bottom above the floor, in metres (0 on the floor, 0.75 on a table top)." },
             turn: { type: "number", description: "Yaw in degrees: 0 faces the front (+Z), 90 the right (+X), 180 the back, -90 the left." },
+            face: { description: "Instead of turn: what the part faces, a part's name (from the scene or this answer) or a point [x, z]; the page turns it.", anyOf: [{ type: "string" }, { type: "array", items: { type: "number" } }] },
             size: { type: "array", items: { type: "number" }, description: "[w, h, d] in metres, before the turn." },
             scale: { type: "number", description: "A factor on the part's own size (instead of size)." },
             color: { type: "string", enum: COLORS, description: "A clay colour, by name." },
@@ -60,6 +61,9 @@ export const TOASTER_TOOL = {
             from: { type: "array", items: { type: "number" }, description: "For camera: [x, y, z], where the camera stands." },
             to: { type: "array", items: { type: "number" }, description: "For camera: [x, y, z], the point it looks at." },
             frame: { type: "string", enum: [...FRAMES], description: "For camera: the picture's ratio." },
+            lens: { type: "number", description: "For camera: the focal length in mm, 14 to 200 (24-35 a room, 50-85 an object)." },
+            save: { type: "string", description: "For camera: keep the camera (as set by this action) in a slot of this name." },
+            slot: { type: "string", description: "For camera: go back to a saved camera, by its name." },
             what: { type: "string", description: "For words: what the object or scene is, with the materials of its parts." },
             scene: { type: "string", description: "For words: the scene, the light and the look." },
           },
@@ -78,15 +82,24 @@ You build and arrange; the user presses the paid keys. You see a photo when one 
 Coordinates: metres, real-world sizes. The floor is y = 0. +X is the viewer's right, +Z is toward the front (where the default camera is), -Z the back. A part's place is at [x, z], the centre of its footprint on the floor, plus y: the height of its BOTTOM above the floor (on a 0.75 m table top, y = 0.75). turn is the yaw in degrees: 0 faces the front (+Z), 90 faces the right (+X), 180 the back, -90 the left. size is [w (x), h (y), d (z)] of the part's own box, before its turn.
 
 Actions:
-- add {kind, shape | piece | body, pose, name, at, y, turn, size | scale, color, made}: kind shape (a primitive id), piece (a library type id; animals too) or character (a body id, in a pose, stand by default). name: how to call it, so later actions in the same answer can name it. size or scale (a factor on the piece's own size). Without at, the page sets it down beside the others.
-- set {part, at, y, turn, size | scale, color, made, name, pose, hidden}: change a part, by its name in the scene or one added earlier in this answer.
+- add {kind, shape | piece | body, pose, name, at, y, turn | face, size | scale, color, made}: kind shape (a primitive id), piece (a library type id; animals too) or character (a body id, in a pose, stand by default). name: how to call it, so later actions in the same answer can name it. size or scale (a factor on the piece's own size). Without at, the page sets it down beside the others.
+- set {part, at, y, turn | face, size | scale, color, made, name, pose, hidden}: change a part, by its name in the scene or one added earlier in this answer.
 - remove {part}
 - clear {}: every part goes, to build a new scene from scratch. Only as the first action.
-- camera {view | from, to, frame}: view (front, right, back, left, top, persp) frames everything from that side; or from (where the camera stands) and to (the point it looks at), [x, y, z] in metres: a person's eye height is about 1.6, a low angle 0.4. frame is the ratio: 1:1, 4:5, 4:3, 3:4, 16:9, 9:16.
+- camera {view | from, to | slot, frame, lens, save}: view (front, right, back, left, top, persp) frames everything from that side; or from (where it stands) and to (what it looks at), [x, y, z]: eye height 1.6, low 0.4. frame 1:1, 4:5, 4:3, 3:4, 16:9, 9:16; lens mm. save keeps it as a named slot; slot goes back to one.
 - words {what, scene}: the render's two lines. what: what the object or scene is, with the materials of its parts. scene: the scene, the light and the look.
 - toast {}, turnaround {}, model3d {}: offer a paid run. The app asks the user for a yes, with the price, under your answer, so say it is ready, never that it has started. At most one, always last.
 
-Rules: use real-world sizes and believable layouts: furniture against a wall line, chairs facing their tables, people at sensible places, nothing floating unless asked, nothing overlapping. Real things are the catalogue's pieces; primitives are for custom shapes. When you build a scene, set a camera that frames it. From a photo, rebuild its layout: what is there, where, at what sizes, and match the photo's camera height and direction. Set words when asked, or when building from a description or a photo. Offer a toast only when asked to render. Only the ids, colours and names shown below. A question: an answer, no action. Never promise what you did not do.`;
+Rules: real-world sizes; every piece turned on purpose (turn, or face), as COMPOSING below says; nothing floating unless asked, nothing overlapping. Real things are the catalogue's pieces; primitives are for custom shapes. When you build a scene, set a camera that frames it. From a photo, rebuild its layout: what is there, where, at what sizes, and match the photo's camera height and direction. Set words when asked, or when building from a description or a photo. Offer a toast only when asked to render. Only the ids, colours and names shown below. A question: an answer, no action. Never promise what you did not do.`;
+
+/** How a scene is composed: told each time with the scene (the brief stays short). A piece's front is the side it is used from. */
+const COMPOSING = `COMPOSING: a piece's front is the side it is used from (where you sit on a seat, stand at a desk or a counter, look at a screen, a shelf, a fireplace or a picture). Turn every piece on purpose, with turn or face:
+- seats face what they are for: a sofa faces the coffee table and the fireplace or the screen; armchairs angle in toward the same centre; dining chairs face their table; an office chair faces its desk.
+- a desk's front is its user's side: the boss's desk has its front toward the back wall, the boss's chair between the desk and the wall facing the desk (so the boss looks into the room), visitors' chairs on the other side facing the desk.
+- shelves, cabinets, a fireplace, a bed's head, wardrobes and wall art stand with their backs to a wall and face into the room; wall art hangs at y about 1.3 on a wall.
+- people face what they do or who they talk to; in a pose that fits (sit on a seat at its seat height).
+- a room: build its walls as boxes (0.12 thick, 2.7 tall) along the back and one side, the floor as a flat box, unless asked not to; things stand against the walls, a walkway is left free, one focal point (a desk, a fireplace) leads the layout.
+- the camera of a room: from a front corner at 1.2 to 1.6, looking across the room at the focal point, lens 24 to 35; of an object: 3/4 front at its middle height, lens 50 to 85. Save it as a slot only when asked to keep it.`;
 
 export interface Part {
   name?: string; kind?: string; shape?: string; piece?: string; body?: string; pose?: string; color?: string; made?: string;
@@ -96,7 +109,8 @@ export interface Summary {
   draft?: string;
   parts?: Part[];
   selected?: string[];
-  camera?: { from?: number[]; at?: number[]; frame?: string };
+  camera?: { from?: number[]; at?: number[]; frame?: string; focal?: number };
+  cameras?: { name?: string; from?: number[]; at?: number[]; frame?: string; focal?: number }[];
   words?: { what?: string; scene?: string };
   renders?: number;
   turnaround?: boolean;
@@ -128,13 +142,15 @@ export function toasterPrompt(s: Summary, turns: Turn[], { picture = false }: { 
   const selected = list<unknown>(s.selected, 20).map((n) => cut(n, 40)).filter(Boolean);
   lines.push(`SELECTED: ${selected.length ? selected.join(", ") : "nothing"}.`);
   const c = s.camera;
-  lines.push(c && typeof c === "object" ? `CAMERA: from ${triple(c.from)}, looking at ${triple(c.at)}, frame ${cut(c.frame, 5) || "?"}.` : "CAMERA: the default, in front.");
+  lines.push(c && typeof c === "object" ? `CAMERA: from ${triple(c.from)}, looking at ${triple(c.at)}, frame ${cut(c.frame, 5) || "?"}, lens ${Number(c.focal) || 50} mm.` : "CAMERA: the default, in front.");
+  const slots = things<{ name?: string; from?: number[]; at?: number[]; frame?: string; focal?: number }>(s.cameras, 12);
+  lines.push(slots.length ? `SAVED CAMERAS: ${slots.map((k) => `${cut(k.name, 30)} (from ${triple(k.from)}, at ${triple(k.at)}, ${cut(k.frame, 5)}, ${Number(k.focal) || 50} mm)`).join("; ")}.` : "SAVED CAMERAS: none.");
   const w = s.words && typeof s.words === "object" ? s.words : {};
   lines.push(`WORDS: what "${cut(w.what, 300)}"; scene "${cut(w.scene, 300)}".`);
   const made = [Number(s.renders) > 0 ? `${Math.round(Number(s.renders))} render${Number(s.renders) === 1 ? "" : "s"}` : "", s.turnaround ? "a turnaround" : "", s.model3d ? "a 3D model" : ""].filter(Boolean);
   lines.push(`TOASTED SO FAR: ${made.length ? made.join(", ") : "nothing yet"}.`);
   lines.push(picture ? "A PHOTO IS ATTACHED: the user wants this layout rebuilt. Look at it." : "NO PHOTO is attached, and you cannot see one.");
-  lines.push("", "THE CATALOGUE (ids)");
+  lines.push("", COMPOSING, "", "THE CATALOGUE (ids)");
   const byCategory = new Map<string, string[]>();
   for (const e of PIECE_LIST) byCategory.set(cut(e.category, 30) || "Other", [...(byCategory.get(cut(e.category, 30) || "Other") ?? []), e.type]);
   for (const [category, ids] of byCategory) lines.push(`Pieces, ${category}: ${ids.join(", ")}`);
@@ -178,12 +194,17 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
   const names = new Map<string, string>();
   for (const p of things<Part>(s.parts, 150)) if (cut(p.name, 40)) names.set(cut(p.name, 40).toLowerCase(), cut(p.name, 40));
   const known = (v: unknown) => names.get(cut(v, 40).toLowerCase());
+  const slotNames = new Map(things<{ name?: string }>(s.cameras, 12).map((k) => [cut(k.name, 30).toLowerCase(), cut(k.name, 30)]));
   // the fields add and set share
   const fields = (a: any, out: any) => {
     const at = vector(a.at, 2, -60, 60);
     if (at) out.at = at;
     if (num(a.y, 0, 60) !== undefined) out.y = r2(num(a.y, 0, 60)!);
     if (num(a.turn, -1e6, 1e6) !== undefined) out.turn = r2(wrap(num(a.turn, -1e6, 1e6)!));
+    // what it faces: a point, or a part's name (checked once the whole answer is read: it may be added after)
+    const point = vector(a.face, 2, -60, 60);
+    if (point) out.face = point;
+    else if (cut(a.face, 40)) out.face = cut(a.face, 40);
     const size = vector(a.size, 3, 0.01, 60);
     if (size) out.size = size;
     else if (num(a.scale, 0.05, 20) !== undefined) out.scale = r2(num(a.scale, 0.05, 20)!);
@@ -260,8 +281,12 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
           if (pos) out.from = pos;
           if (look) out.at = look;
         }
+        const slot = slotNames.get(cut(a.slot, 30).toLowerCase());
+        if (slot && !out.view && !out.from) out.slot = slot;
         const frame = oneOf(a.frame, FRAMES);
         if (frame) out.frame = frame;
+        if (num(a.lens, 14, 200) !== undefined) out.lens = Math.round(num(a.lens, 14, 200)!);
+        if (cut(a.save, 30)) out.save = cut(a.save, 30);
         if (Object.keys(out).length > 1) actions.push(out);
         break;
       }
@@ -280,6 +305,11 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
         break;
     }
   }
-  if (run) actions.push({ op: run });
-  return { reply: cut(raw.reply, 600), actions };
+  // a face named after a part is kept when that part exists by the end of the answer
+  for (const a of actions) if (typeof a.face === "string" && !known(a.face)) delete a.face;
+  for (const a of actions) if (typeof a.face === "string") a.face = known(a.face);
+  // (a change that had nothing left but a face on nobody is no change)
+  const kept = actions.filter((a) => a.op !== "set" || Object.keys(a).length > 2);
+  if (run) kept.push({ op: run });
+  return { reply: cut(raw.reply, 600), actions: kept };
 }
