@@ -11,11 +11,11 @@ import { dropdown } from "../controls.js";
 import { view as viewImage } from "../viewer.js";
 import {
   toaster, body, partsNow, selectedParts, sync, loadDrafts, openDraft, newDraft, removeDraft, renameDraft, pick, select, selectAll,
-  setTool, toggleSnap, addPart, addPiece, addCharacter, setPose, setProps, colourAllByKind, applyTransforms, removeSelected, removePart, duplicateSelected, mirrorSelected, dropSelected,
+  setTool, toggleSnap, addPart, addPiece, addCharacter, reposeCharacter, setProps, colourAllByKind, applyTransforms, removeSelected, removePart, duplicateSelected, mirrorSelected, dropSelected,
   toggleHidden, undoParts, redoParts, canUndo, canRedo, setWords, setRatio, setModel, keepCamera, setFocal, saveCamera, recallCamera, onCamera, removeCamera, renameCamera, loadModels, modelNow, hasClay,
   renderFrame, renderSheet, forget, showRender, setCompare, price3d, priceNow, make3d, putOnStage, isArmed, arm, disarm, toggleMap,
 } from "../toaster.js";
-import { SHAPES, PALETTE, RATIOS, MAPS, roundLabel, hasSides, colorName, shapeOf } from "../toaster-model.js";
+import { SHAPES, PALETTE, RATIOS, MAPS, POSE_SLIDERS, roundLabel, hasSides, colorName, shapeOf } from "../toaster-model.js";
 import { CRUMPET } from "../toaster-harness.js";
 
 let shell = null;
@@ -111,6 +111,8 @@ function mountView() {
       onPick: (id, { shift } = {}) => pick(id, { shift }),
       onChange: (changes) => applyTransforms(changes),
       onDrag: (changes) => liveNumbers(changes),
+      onPose: (id, { joints }) => reposeCharacter(id, { joints }, measure),
+      onJoint: () => drawInspector(),
       onCamera: () => {
         lastView = null;
         drawViews();
@@ -236,7 +238,7 @@ function drawInspector() {
   ];
   if (!many) {
     rows.push(triple("Size", "size", p.size, { step: 0.05, min: 0.01 }), triple("Move", "pos", p.pos, { step: 0.05 }), triple("Turn", "rot", p.rot, { step: 5, unit: "°" }));
-    if (p.shape === "character") rows.push(posePicker(p));
+    if (p.shape === "character") rows.push(...posePicker(p));
     const label = roundLabel(p.shape);
     if (label) rows.push(slider(label, p.round ?? 0, 0, 1, 0.01, (v) => setProps({ round: v }, { coalesce: "round" }), (v) => fixed(v)));
     if (hasSides(p.shape)) rows.push(slider("Sides", p.sides ?? 32, 3, 64, 1, (v) => setProps({ sides: v }, { coalesce: "sides" }), (v) => String(v)));
@@ -245,17 +247,52 @@ function drawInspector() {
 }
 
 /** A character's pose, from the Stage's poses by kind; the figure keeps how it was stretched and its feet stay on the floor. */
+/** A figure's own box in a pose, with its tweaks and joints (for the part to keep how it is stretched when it is posed again). */
+let measureNow = null;
+const measure = (q) => measureNow?.({ body: q.body, rig: q.rig, pose: q.pose, params: q.params, joints: q.joints }) ?? q.size;
+
+/**
+ * A character's pose: the Stage's presets by kind, then the tweaks laid over it (the Stage's twelve sliders, folded away until opened),
+ * the joints mode (turn a joint in the viewport, drag a hand or a foot), and a key that takes the tweaks and the joints back.
+ */
+let tweaksOpen = false;
 function posePicker(p) {
   const poses = people?.poses ?? [{ id: p.pose, name: p.pose, category: "" }];
   const choose = async (pose) => {
     if (pose === p.pose) return;
-    const m = await assetsModule();
-    const was = m.characterSize({ body: p.body, rig: p.rig, pose: p.pose });
-    const next = m.characterSize({ body: p.body, rig: p.rig, pose });
-    setPose(p.id, pose, next.map((v, i) => Math.max(0.01, Math.round(v * (p.size[i] / Math.max(0.01, was[i])) * 1000) / 1000)));
+    await assetsModule();
+    reposeCharacter(p.id, { pose }, measure);
   };
-  return h("div.ts-row", {}, h("span.ts-label", {}, "Pose"),
-    h("div.ts-pick.ts-pose", {}, dropdown({ label: "Pose", value: p.pose, items: poses.map((x) => ({ value: x.id, label: x.name, group: x.category })), onChange: choose })));
+  const tweaked = Object.keys(p.params ?? {}).length + (p.joints ? 1 : 0);
+  const jointsOn = toaster.poseMode === p.id;
+  const keys = h("div.ts-pose-keys", {},
+    h("button.ts-map", { type: "button", "aria-pressed": String(tweaksOpen), title: "Tweak the pose: sliders laid over it (where the head looks, the lean, the arms…)", on: { click: () => ((tweaksOpen = !tweaksOpen), drawInspector()) } }, sprite("pose-rest"), h("span", {}, tweaked ? `Tweak · ${Object.keys(p.params ?? {}).length}` : "Tweak")),
+    h("button.ts-map", { type: "button", "aria-pressed": String(jointsOn), title: "Joints — J: click a joint in the viewport and turn it, or drag a hand or a foot", on: { click: () => setPoseMode(jointsOn ? null : p.id) } }, sprite("channel-pose"), h("span", {}, p.joints ? "Joints ·" : "Joints")),
+    h("button.ts-iconkey.is-sm", { type: "button", title: "Back to the preset: no tweaks, no joints turned by hand", "aria-label": "Back to the preset", disabled: !tweaked, on: { click: async () => (await assetsModule(), reposeCharacter(p.id, { params: Object.fromEntries(Object.keys(p.params ?? {}).map((k) => [k, 0])), joints: undefined }, measure)) } }, icon("remix")));
+  const rows = [
+    h("div.ts-row", {}, h("span.ts-label", {}, "Pose"),
+      h("div.ts-pick.ts-pose", {}, dropdown({ label: "Pose", value: p.pose, items: poses.map((x) => ({ value: x.id, label: x.name, group: x.category })), onChange: choose }))),
+    keys,
+  ];
+  if (jointsOn) rows.push(h("p.ts-hint-line", {}, toaster.view?.pickedJoint?.() ? `${toaster.view.pickedJoint().replace(/([a-z])([A-Z])/g, "$1 $2")}: turn it with the gizmo — Esc lets it go` : "Click a joint on the figure: a hand or a foot moves, the others turn"));
+  if (tweaksOpen) rows.push(h("div.ts-tweaks", {}, ...POSE_SLIDERS.map(([k, label, lo, hi]) => {
+    const v = p.params?.[k] ?? 0;
+    const out = h("output.ts-readout", {}, k === "crouch" ? v.toFixed(2) : `${Math.round(v)}°`);
+    return h("label.ts-tweak", { title: `${label}: double-click to take it back to 0`, on: { dblclick: () => reposeCharacter(p.id, { params: { [k]: 0 } }, measure) } }, h("span", {}, label),
+      h("input", { type: "range", min: lo, max: hi, step: k === "crouch" ? 0.01 : 1, value: v, "aria-label": label, on: { input: (e) => {
+        const n = Number(e.target.value);
+        out.textContent = k === "crouch" ? n.toFixed(2) : `${Math.round(n)}°`;
+        reposeCharacter(p.id, { params: { [k]: n } }, measure, { coalesce: `tweak-${p.id}-${k}` });
+      } } }), out);
+  })));
+  return rows;
+}
+
+/** The joints mode on a character (or off): the viewport shows its joints to turn and its hands and feet to drag. */
+function setPoseMode(id) {
+  toaster.poseMode = id;
+  toaster.view?.setPoseMode?.(id);
+  drawInspector();
 }
 
 function slider(label, value, min, max, step, set, show) {
@@ -295,6 +332,7 @@ const pieceOf = (type) => library?.pieces.find((x) => x.type === type) ?? null;
 /** The library module, loaded on first need (it brings three.js and the Stage's models with it). */
 function assetsModule() {
   assets ??= import("../toaster-assets.js").then((m) => {
+    measureNow = m.characterSize;
     const got = (lib) => {
       library = lib;
       people = m.characterList?.() ?? null;
@@ -721,7 +759,15 @@ window.addEventListener("keydown", (e) => {
   const tool = TOOLS.find(([, , , key]) => key.toLowerCase() === k);
   if (tool) return done(), setTool(tool[0]);
   if (k === "delete" || k === "backspace") return done(), removeSelected();
-  if (k === "escape") return drawer ? openDrawer(null) : select([]);
+  if (k === "escape") {
+    if (toaster.poseMode && toaster.view?.pickedJoint?.()) return toaster.view.pickJoint(null), drawInspector();
+    if (toaster.poseMode) return setPoseMode(null);
+    return drawer ? openDrawer(null) : select([]);
+  }
+  if (k === "j") {
+    const p = selectedParts()[0];
+    if (p?.shape === "character") return setPoseMode(toaster.poseMode === p.id ? null : p.id);
+  }
   if (k === "l") return openDrawer("library");
   if (k === "c") return openDrawer("characters");
   if (k === "m") return mirrorSelected();

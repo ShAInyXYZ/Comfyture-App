@@ -91,6 +91,42 @@ export const isAsset = (p) => p?.shape === "asset" && typeof p.asset === "string
 export const isCharacter = (p) => p?.shape === "character" && typeof p.body === "string" && /^[\w-]{1,40}$/.test(p.body);
 const ID = /^[\w.-]{1,80}$/;
 
+/**
+ * The pose's tweaks, the Stage's own (web/js/control/skeleton.js PARAMS, copied here so the model needs no three.js): sliders laid over the
+ * pose, in degrees (crouch 0 to 1). [id, label, min, max]
+ */
+export const POSE_SLIDERS = [
+  ["look", "Look", -80, 80], ["nod", "Nod", -40, 40], ["tilt", "Tilt", -30, 30],
+  ["lean", "Lean", -30, 60], ["twist", "Twist", -45, 45], ["side", "Side bend", -30, 30],
+  ["arms", "Arms up", -20, 160], ["reach", "Arms forward", -40, 120], ["elbows", "Elbows", -20, 140],
+  ["stance", "Stance", -10, 40], ["step", "Step", -45, 45], ["crouch", "Crouch", 0, 1],
+];
+/** The joints a posed body has (the Stage's skeleton), for a pose edited joint by joint. */
+export const JOINT_IDS = ["Hips", "Spine", "Chest", "Neck", "Head", "LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand", "RightShoulder", "RightArm", "RightForeArm", "RightHand", "LeftUpLeg", "LeftLeg", "LeftFoot", "LeftToe", "RightUpLeg", "RightLeg", "RightFoot", "RightToe"];
+
+/**
+ * A character's tweaks as they are kept: `params`, the sliders that are not at zero; `joints`, the pose edited joint by joint (each joint's
+ * turn as a quaternion [x, y, z, w]; the preset's own when there is none).
+ */
+function tweakOf(p) {
+  const out = {};
+  const params = {};
+  for (const [k, , lo, hi] of POSE_SLIDERS) {
+    const v = Number(p.params?.[k]);
+    if (Number.isFinite(v) && v !== 0) params[k] = Math.round(Math.min(hi, Math.max(lo, v)) * 100) / 100;
+  }
+  if (Object.keys(params).length) out.params = params;
+  if (p.joints && typeof p.joints === "object") {
+    const joints = {};
+    for (const n of JOINT_IDS) {
+      const q = p.joints[n];
+      if (Array.isArray(q) && q.length === 4 && q.every((v) => Number.isFinite(Number(v)))) joints[n] = q.map((v) => Math.round(Math.min(1, Math.max(-1, Number(v))) * 1e5) / 1e5);
+    }
+    if (Object.keys(joints).length) out.joints = joints;
+  }
+  return out;
+}
+
 /** A part as it is kept, whatever came in (a draft from disk, a paste, an agent). */
 export function cleanPart(p) {
   p = p && typeof p === "object" ? p : {};
@@ -102,7 +138,7 @@ export function cleanPart(p) {
     id: typeof p.id === "string" && /^[\w-]{1,40}$/.test(p.id) ? p.id : partId(),
     shape: shape.id,
     ...(asset ? { asset: p.asset } : {}),
-    ...(character ? { body: p.body, ...(typeof p.rig === "string" && ID.test(p.rig) ? { rig: p.rig } : {}), pose: typeof p.pose === "string" && ID.test(p.pose) ? p.pose : "stand" } : {}),
+    ...(character ? { body: p.body, ...(typeof p.rig === "string" && ID.test(p.rig) ? { rig: p.rig } : {}), pose: typeof p.pose === "string" && ID.test(p.pose) ? p.pose : "stand", ...tweakOf(p) } : {}),
     name: words(p.name, 40).trim() || shape.name,
     color: PALETTE.some(([h]) => h === String(p.color).toLowerCase()) ? String(p.color).toLowerCase() : /^#[0-9a-f]{6}$/i.test(p.color) ? String(p.color).toLowerCase() : PALETTE[0][0],
     made: words(p.made, 120),

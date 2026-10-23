@@ -226,6 +226,10 @@ export const canRedo = () => redo.length > 0;
 
 export function select(ids) {
   toaster.selected = [...new Set(ids)].filter((id) => partsNow().some((p) => p.id === id));
+  if (toaster.poseMode && !(toaster.selected.length === 1 && toaster.selected[0] === toaster.poseMode)) {
+    toaster.poseMode = null;
+    toaster.view?.setPoseMode?.(null);
+  }
   update();
 }
 /** A click in the viewport or on a row: the part alone, or added to (taken from) the selection with Shift. */
@@ -292,11 +296,27 @@ function setDown(part) {
 }
 
 /**
- * A character's pose changed: `size` is its new box (the page measures the figure in the new pose, keeping how it was stretched), and its
- * feet stay on the floor where they were.
+ * A character posed again: `patch` is { pose, params, joints } (a new preset lets go of the joints edited by hand). `measure(part)` answers
+ * the figure's own box in a pose (toaster-assets.js characterSize); the part keeps how it was stretched, and its feet stay where they were.
  */
-export function setPose(id, pose, size) {
-  setProps((p) => ({ pose, size, pos: [p.pos[0], Math.round((p.pos[1] - p.size[1] / 2 + size[1] / 2) * 1000) / 1000, p.pos[2]] }), { ids: [id] });
+export function reposeCharacter(id, patch, measure, { coalesce } = {}) {
+  setProps((p) => repose(p, patch, measure), { ids: [id], coalesce });
+}
+/** The fields of a character posed again (see reposeCharacter): for the page and for Crumpet's builds. */
+export function repose(p, patch, measure) {
+  const next = { ...p, ...patch };
+  if (patch.pose && patch.pose !== p.pose && !("joints" in patch)) next.joints = undefined;
+  if (patch.params) {
+    const params = { ...(p.params ?? {}), ...patch.params };
+    for (const k of Object.keys(params)) if (!params[k]) delete params[k];
+    next.params = Object.keys(params).length ? params : undefined;
+  }
+  const r = (v) => Math.round(v * 1000) / 1000;
+  const was = measure(p);
+  const now = measure(next);
+  const size = now.map((v, i) => Math.max(0.01, r(v * (p.size[i] / Math.max(0.01, was[i])))));
+  const bottom = p.pos[1] - p.size[1] / 2;
+  return { pose: next.pose, params: next.params, joints: next.joints, size, pos: [p.pos[0], r(bottom + size[1] / 2), p.pos[2]] };
 }
 
 function place(part) {

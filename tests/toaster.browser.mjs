@@ -230,6 +230,28 @@ try {
   await page.waitForFunction((id) => { const b = window.__toaster.view.bounds([id]); return b && Math.abs(b.max[1] - b.min[1] - window.__toaster.draft.body.parts.find((p) => p.id === id).size[1]) < 0.02; }, woman.id, { timeout: 15000 }).catch(() => {});
   const wb = await js((id) => window.__toaster.view.bounds([id]), woman.id);
   ok(wb && Math.abs(wb.max[1] - wb.min[1] - sat.size[1]) < 0.02, "the seated figure fills her box in the viewport", JSON.stringify(wb));
+  // her pose tweaked: the sliders laid over the preset, her box measured again, her feet still on the floor
+  await page.locator(".ts-pose-keys .ts-map", { hasText: "Tweak" }).click();
+  await page.locator('.ts-tweaks input[aria-label="Look"]').waitFor({ timeout: 3000 });
+  await page.locator('.ts-tweaks input[aria-label="Look"]').evaluate((el) => ((el.value = "40"), el.dispatchEvent(new Event("input", { bubbles: true }))));
+  await page.locator('.ts-tweaks input[aria-label="Arms up"]').evaluate((el) => ((el.value = "90"), el.dispatchEvent(new Event("input", { bubbles: true }))));
+  await page.waitForTimeout(300);
+  d = await draft();
+  const tweaked = d.body.parts.find((p) => p.id === woman.id);
+  ok(tweaked?.params?.look === 40 && tweaked.params.arms === 90, "the sliders tweak her pose", JSON.stringify(tweaked?.params));
+  ok(tweaked.size[0] > sat.size[0] + 0.3 && Math.abs(tweaked.pos[1] - tweaked.size[1] / 2) < 0.01, "her arms out to her sides widen her box (measured again), her feet stay on the floor", JSON.stringify([sat.size, tweaked.size]));
+  // the joints mode: on with J, its hint in Selected, off with Esc
+  await page.locator(".ts-view").hover();
+  await page.keyboard.press("j");
+  await page.waitForTimeout(200);
+  ok((await js(() => window.__toaster.poseMode)) === woman.id && (await page.locator(".ts-hint-line").isVisible()), "J puts her in the joints mode");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(200);
+  ok(!(await js(() => window.__toaster.poseMode)), "Esc takes her out of it");
+  await page.locator('.ts-pose-keys [aria-label="Back to the preset"]').click();
+  await page.waitForTimeout(200);
+  d = await draft();
+  ok(!d.body.parts.find((p) => p.id === woman.id)?.params, "the key takes her back to the preset");
   await shot("0b-characters");
   await page.locator(".ts-view").hover();
   await page.keyboard.press("Delete");
@@ -331,7 +353,7 @@ try {
       { op: "add", kind: "piece", piece: "bookcase", name: "Books", against: "back" },
       { op: "add", kind: "piece", piece: "coffee-table", name: "Low table", near: "Sofa", side: "front", gap: 0.45 },
       { op: "add", kind: "piece", piece: "armchair", name: "Armchair", at: [1.7, -0.2], face: "Sofa", color: "orange" },
-      { op: "add", kind: "character", body: "woman", pose: "sit", name: "Reader", at: [0.3, -0.9], y: 0.1, color: "pink" },
+      { op: "add", kind: "character", body: "woman", pose: "sit", name: "Reader", at: [0.3, -0.9], y: 0.1, color: "pink", tweak: { look: 25, nod: 15 } },
       { op: "add", kind: "shape", shape: "box", name: "Side table", at: [-1.4, -1], size: [0.5, 0.5, 0.5], color: "brown", made: "oak" },
       { op: "set", part: "Side table", made: "walnut" },
       { op: "add", kind: "piece", piece: "desk-lamp", name: "Lamp", on: "Side table" },
@@ -373,6 +395,7 @@ try {
   ok(arm && arm.rot[1] === Math.round((Math.atan2(0 - 1.7, -1 + 0.2) * 180) / Math.PI), "the armchair faces the sofa (he said face, the page turned it)", JSON.stringify(arm?.rot));
   ok(sofa.color === "#3d7fd9" && arm.color === "#76aef2" && reader.color === "#ff6b3d" && tbl.color === "#b07a52", "pieces and people wear their colour ID (seats in blues, a person their own), whatever colour he said; a shape takes his", JSON.stringify([sofa.color, arm.color, reader.color, tbl.color]));
   ok(reader && reader.pose === "sit" && Math.abs(reader.pos[1] - reader.size[1] / 2 - 0.1) < 1e-3, "the reader sits, her bottom at the height he said", JSON.stringify(reader?.pos));
+  ok(reader?.params?.look === 25 && reader.params.nod === 15, "her pose tweaked as he said: looking aside and down", JSON.stringify(reader?.params));
   ok(tbl && tbl.made === "walnut" && tbl.size[0] === 0.5, "the side table sized and then changed by name", JSON.stringify(tbl));
   const aimed = d.body.cameras.find((k) => k.name === "Sofa front-on");
   ok(aimed && Math.abs(aimed.position[0] - sofa.pos[0]) < 1e-3 && aimed.position[2] > sofa.pos[2] + 1 && Math.abs(aimed.position[1] - 1.2) < 1e-3 && Math.abs(aimed.target[2] - sofa.pos[2]) < 1e-3, "a camera aimed at the sofa stands on its axis, before it, at the height he said, looking at it", JSON.stringify(aimed && [aimed.position, aimed.target]));

@@ -8,7 +8,7 @@ import { changed, toast, writer } from "./store.js";
 import { api } from "./api.js";
 import {
   toaster, body, partsNow, editParts, select, setWords, setRatio, keepCamera, modelNow, hasClay, renderFrame, renderSheet, make3d, price3d, priceNow,
-  setFocal, saveCamera, recallCamera,
+  setFocal, saveCamera, recallCamera, repose,
 } from "./toaster.js";
 import { cleanPart, newPart, newAssetPart, newCharacterPart, freeSpot, PALETTE, colorName, RATIOS, isAsset, isCharacter, roomOf, placeAgainst, placeNear, topOf } from "./toaster-model.js";
 
@@ -23,7 +23,7 @@ const hexOf = (name) => PALETTE.find(([, n]) => n === name)?.[0];
 
 /** A part as Crumpet reads it: what it is, its colour by name, its size, where its footprint is on the floor, its bottom's height, its turn. */
 function partOf(p) {
-  const kind = isAsset(p) ? { kind: "piece", piece: p.asset } : isCharacter(p) ? { kind: "character", body: p.body, pose: p.pose } : { kind: "shape", shape: p.shape };
+  const kind = isAsset(p) ? { kind: "piece", piece: p.asset } : isCharacter(p) ? { kind: "character", body: p.body, pose: p.pose, ...(p.params ? { tweak: p.params } : {}), ...(p.joints ? { edited: true } : {}) } : { kind: "shape", shape: p.shape };
   return {
     name: p.name,
     ...kind,
@@ -71,7 +71,9 @@ async function catalogue() {
 async function build(actions) {
   const did = [];
   const failed = [];
-  const needs = actions.some((a) => a.op === "add" && a.kind !== "shape") || actions.some((a) => a.op === "set" && a.pose);
+  const needs = actions.some((a) => a.op === "add" && a.kind !== "shape") || actions.some((a) => a.op === "set" && (a.pose || a.tweak));
+  // a figure's own box in its pose, its tweaks and its joints
+  const measure = (q) => m.characterSize({ body: q.body, rig: q.rig, pose: q.pose, params: q.params, joints: q.joints });
   const { m, lib } = needs ? await catalogue() : {};
   const pieceOf = (type) => lib?.pieces.find((x) => x.type === type);
   const peopleOf = (body) => m?.characterList().people.find((x) => x.body === body);
@@ -137,7 +139,10 @@ async function build(actions) {
         } else if (a.kind === "character") {
           const x = peopleOf(a.body);
           if (!x) failed.push(`No ${a.body} among the characters`);
-          else p = newCharacterPart(x, list, { pose: a.pose ?? "stand", size: m.characterSize({ body: a.body, pose: a.pose ?? "stand" }) });
+          else {
+            p = newCharacterPart(x, list, { pose: a.pose ?? "stand", size: m.characterSize({ body: a.body, pose: a.pose ?? "stand", params: a.tweak }) });
+            if (a.tweak) p.params = { ...a.tweak };
+          }
         }
         if (!p) continue;
         const own = [...p.size];
@@ -163,15 +168,8 @@ async function build(actions) {
           failed.push(`No part called ${a.part}`);
           continue;
         }
-        if (a.pose && isCharacter(p) && a.pose !== p.pose) {
-          // a new pose is a new box: the figure keeps how it was stretched and its feet stay where they were
-          const was = m.characterSize({ body: p.body, rig: p.rig, pose: p.pose });
-          const next = m.characterSize({ body: p.body, rig: p.rig, pose: a.pose });
-          const bottom = p.pos[1] - p.size[1] / 2;
-          p.size = next.map((v, i) => Math.max(0.01, r3(v * (p.size[i] / Math.max(0.01, was[i])))));
-          p.pose = a.pose;
-          p.pos = [p.pos[0], r3(bottom + p.size[1] / 2), p.pos[2]];
-        }
+        // a new pose or new tweaks are a new box: the figure keeps how it was stretched and its feet stay where they were
+        if (isCharacter(p) && ((a.pose && a.pose !== p.pose) || a.tweak)) Object.assign(p, repose(p, { ...(a.pose ? { pose: a.pose } : {}), ...(a.tweak ? { params: a.tweak } : {}) }, measure));
         const bottom = p.pos[1] - p.size[1] / 2;
         sized(p, a, [...p.size]);
         // a new size keeps the bottom where it was, unless a height is said
