@@ -252,6 +252,12 @@ try {
   await page.locator(".sp-fxl").nth(1).dragTo(page.locator(".sp-fxl").first());
   await settle();
   ok((await state()).set.fx.layers.map((l) => l.el).join() === "rain,flame", "a layer dragged on another takes its place in the stack");
+  await page.locator(".sp-fxl.is-on .sp-fxl-text b").dblclick();
+  await page.locator(".sp-fxl-rename").fill("Big flame");
+  await page.keyboard.press("Enter");
+  await settle();
+  const renamed = await state();
+  ok(renamed.set.fx.layers.find((l) => l.id === renamed.set.fx.sel)?.name === "Big flame" && (await page.locator(".sp-fxl.is-on").innerText()).includes("Big flame"), "a double-click on a layer's name renames it");
   await shot("2-fx");
   // the bake: free, on this machine, the whole range
   ok(/Bake 2 layers/.test(await page.locator('.sp-primary[data-key="fx:bake"]').innerText()) && /free/.test(await page.locator('.sp-primary[data-key="fx:bake"]').innerText()), "the key bakes the two layers, free");

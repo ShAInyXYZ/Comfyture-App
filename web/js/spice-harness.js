@@ -21,7 +21,7 @@ export const WORKSPACES = [
   { id: "roto", name: "Roto", icon: "tool-cutout", verb: "Add subjects", makes: "a matte for each subject" },
   { id: "paint", name: "Paint", icon: "tool-fx-remove", verb: "Clean up", makes: "the footage with the object, the logo or the subtitles gone" },
   { id: "light", name: "Light", icon: "tool-fx-relight", verb: "Change the light", makes: "the footage relit, with another sky, weather or grade" },
-  { id: "fx", name: "FX", icon: "tool-vfx", verb: "Add elements", makes: "the effect added to the shot" },
+  { id: "fx", name: "FX", icon: "tool-vfx", verb: "Add elements", makes: "the effects laid on the shot as layers, baked" },
   { id: "comp", name: "Comp", icon: "tool-fx-master", verb: "Finish", makes: "the stack of every pass, finished and exported" },
 ];
 
@@ -31,7 +31,7 @@ export const SAY = {
   roto: "Click who I should cut out.",
   paint: "What is in the way?",
   light: "Where is the light coming from?",
-  fx: "What should happen behind her?",
+  fx: "What shall we lay on it?",
   comp: "Everything is on the stack. Ready to finish?",
 };
 
@@ -41,7 +41,7 @@ export const PLACEHOLDER = {
   roto: "Ask Paprika — cut out the woman, track the umbrella, feather the edge",
   paint: "Ask Paprika — remove the sign, take the subtitles off, paint out the wire",
   light: "Ask Paprika — a golden hour, rain on it, a stormy sky behind her",
-  fx: "Ask Paprika — a portal behind her, lightning on the cut, set the coat on fire",
+  fx: "Ask Paprika — a portal behind her, rain over it all, embers rising, make it a storm",
   comp: "Ask Paprika — upscale it, slow it down, export it as a webm",
 };
 

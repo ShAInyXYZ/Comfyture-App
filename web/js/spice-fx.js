@@ -169,6 +169,17 @@ function libraryBody(big) {
     h("div.sp-lib-key", {}, key));
 }
 
+/** A layer's name typed in its row (empty: its element's name again). */
+function renameIn(el, l) {
+  const input = h("input.sp-fxl-rename", { value: layerName(l), "aria-label": "The layer's name", maxlength: 40 });
+  const done = (keep) => (keep ? patchLayer(l.id, { name: input.value.trim() }) : changed("spice"));
+  input.addEventListener("keydown", (e) => (e.key === "Enter" ? input.blur() : e.key === "Escape" ? ((input.dataset.cancel = "1"), input.blur()) : null));
+  input.addEventListener("blur", () => done(!input.dataset.cancel));
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+}
+
 function layersBody(big) {
   const list = layersOf();
   const sel = selected();
@@ -202,7 +213,7 @@ function layersBody(big) {
     },
       h("i.sp-fxl-grip", { title: "Drag to put it higher or lower" }, spicon("grip")),
       h("span.sp-fxl-pic", {}, pic),
-      h("span.sp-fxl-text", {}, h("b", {}, layerName(l)), h("em", {}, l.el === "ai" && !l.media ? "NOT MADE" : (BLENDS.find((x) => x.id === l.blend)?.name ?? "").toUpperCase())),
+      h("span.sp-fxl-text", {}, h("b", { title: "Double-click to rename it", on: { dblclick: (ev) => renameIn(ev.currentTarget, l) } }, layerName(l)), h("em", {}, l.el === "ai" && !l.media ? "NOT MADE" : (BLENDS.find((x) => x.id === l.blend)?.name ?? "").toUpperCase())),
       h("button.sp-fxl-key", { type: "button", "aria-pressed": String(!!l.behind), "aria-label": "Behind the people", disabled: !hasMatte && !l.behind, title: !hasMatte ? "Cut the people out in Roto first, to put it behind them" : l.behind ? "Behind the people: put it in front" : "In front: put it behind the people", on: { click: () => patchLayer(l.id, { behind: !l.behind }) } }, spicon("person")),
       h("button.sp-fxl-key", { type: "button", "aria-pressed": String(l.eye !== false), "aria-label": "Shown", title: l.eye === false ? "Show it" : "Hide it", on: { click: () => toggleLayerEye(l.id) } }, spicon(l.eye === false ? "eyeOff" : "eye")));
     return row;

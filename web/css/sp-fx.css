@@ -169,3 +169,4 @@
 /* a tighter look, so a clip's motion and speed fit too */
 .sp-look { gap: .375rem; }
 .sp-look-row { min-height: 1.625rem; }
+.sp-fxl-rename { min-width: 0; padding: .125rem .375rem; border: 1px solid var(--accent); border-radius: .375rem; background: var(--bg); color: var(--text); font: 600 .875rem/1.15 var(--font-sans); }
