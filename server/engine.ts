@@ -9,7 +9,7 @@ import { compose, finalPrompt } from "../web/js/script.js";
 import { imageSize } from "./media.ts";
 import {
   EXTEND_OVERLAP, FPS, REFERENCE_SIZE, addClipGuide, applyAudio, buildCutout, buildGenerate, buildGuided, buildI2V, buildMotion, buildPaint, buildPlan,
-  buildProduction, buildSound, buildSwap, loadGraph, outputSize, type Aspect, type Graph, type Guide, type Quality,
+  buildProduction, buildSound, buildSwap, buildMatte, loadGraph, outputSize, type Aspect, type Graph, type Guide, type Quality,
 } from "./workflows.ts";
 import { CAMERA } from "../web/js/script.js";
 import { untagRefs, type ImageModels } from "./images.ts";
@@ -138,9 +138,9 @@ export interface Paint {
 
 const TERMINAL = new Set(["succeeded", "failed", "canceled", "expired"]);
 
-type Kind = "paint" | "cutout" | "generate" | "plan" | "i2v" | "guided" | "references" | "production" | "sound" | "motion" | "swap" | "music" | "sfx" | "upscale" | "restore" | "listen";
+type Kind = "paint" | "cutout" | "generate" | "plan" | "i2v" | "guided" | "references" | "production" | "sound" | "motion" | "swap" | "music" | "sfx" | "upscale" | "restore" | "listen" | "matte";
 /** First guesses before any job has finished: seconds per job for paint, per unit otherwise. */
-const DEFAULT_RATE: Record<Kind, number> = { paint: 25, cutout: 8, generate: 25, plan: 30, i2v: 10, guided: 14, references: 140, production: 30, sound: 7, motion: 12, swap: 19, music: 40, sfx: 15, upscale: 10, restore: 20, listen: 2 };
+const DEFAULT_RATE: Record<Kind, number> = { paint: 25, cutout: 8, generate: 25, plan: 30, i2v: 10, guided: 14, references: 140, production: 30, sound: 7, motion: 12, swap: 19, music: 40, sfx: 15, upscale: 10, restore: 20, listen: 2, matte: 6 };
 /** Kinds timed per job rather than per second of video. */
 const PER_JOB = new Set<Kind>(["paint", "cutout", "generate", "plan", "upscale"]);
 
@@ -758,10 +758,10 @@ export class Engine extends EventEmitter {
   }
 
   /**
-   * A video a workflow makes from another one, kept with the uploads: SeedVR2 restoring it larger,
-   * or LTX-2.5 writing its sound. keep(bytes) stores the result.
+   * A video a workflow makes from another one, kept with the uploads: SeedVR2 restoring it larger, LTX-2.5 writing its sound, or
+   * SAM3 tracking a subject through it as a matte (Spice's Roto). keep(bytes) stores the result.
    */
-  videoJob(kind: "upscale" | "sound", source: string, v: { height?: number; prompt?: string; frames?: number; seed: number; loras?: VideoLora[] }, keep: (bytes: Buffer) => Promise<NonNullable<Paint["video"]>>): Paint {
+  videoJob(kind: "upscale" | "sound" | "matte", source: string, v: { height?: number; prompt?: string; frames?: number; seed: number; loras?: VideoLora[]; matte?: Parameters<typeof buildMatte>[2] }, keep: (bytes: Buffer) => Promise<NonNullable<Paint["video"]>>): Paint {
     const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
     this.paints.set(job.id, job);
     const emit = () => this.emit("paint", job);
@@ -774,8 +774,9 @@ export class Engine extends EventEmitter {
           graph = await loadGraph(this.dirs.workflows, "upscale-video.json");
           graph.video_in.inputs.file = asset;
           Object.assign(graph.up.inputs, { seed: v.seed, resolution: v.height ?? 1080, max_resolution: Math.round(((v.height ?? 1080) * 16) / 9 / 2) * 2 });
-        } else graph = buildSound(await loadGraph(this.dirs.workflows, "sound.json"), asset, v.prompt ?? "", v.frames ?? 121, v.seed);
-        const result = await this.execute(graph, new AbortController().signal, { kind: kind === "upscale" ? "restore" : "sound", stage: "shot", units: (v.frames ?? 121) / FPS, loras: v.loras, onProgress: (p) => ((job.progress = p), emit()) });
+        } else if (kind === "matte") graph = buildMatte(await loadGraph(this.dirs.workflows, "matte.json"), asset, v.matte!);
+        else graph = buildSound(await loadGraph(this.dirs.workflows, "sound.json"), asset, v.prompt ?? "", v.frames ?? 121, v.seed);
+        const result = await this.execute(graph, new AbortController().signal, { kind: kind === "upscale" ? "restore" : kind, stage: "shot", units: (v.frames ?? 121) / FPS, loras: v.loras, onProgress: (p) => ((job.progress = p), emit()) });
         const [out] = result.getOutputs("video");
         if (!out) throw new Error("The workflow returned no video.");
         job.video = await keep(Buffer.from(await out.toBytes()));

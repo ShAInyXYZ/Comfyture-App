@@ -1536,7 +1536,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (!source) throw bad("Add a picture to cut out.");
     return json(res, 202, engine.clearCutout(source));
   }
-  if ((path === "/api/utensils/upscale-video" || path === "/api/utensils/sound") && method === "POST") {
+  if ((path === "/api/utensils/upscale-video" || path === "/api/utensils/sound" || path === "/api/spice/matte") && method === "POST") {
     if (!ffmpeg) throw bad("Video tools need ffmpeg on the server.", 501);
     const input = await jsonBody(req);
     const file = typeof input.video === "string" ? input.video : "";
@@ -1552,6 +1552,16 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       return { file: name, url: `/media/videos/${name}`, width: v.width, height: v.height, duration: v.duration };
     };
     const seed = randomBytes(4).readUInt32BE(0);
+    if (path.endsWith("matte")) {
+      // Spice's Roto: a subject tracked through the clip as a matte, from its clicks (pixels of the frame they were made on) or its name
+      const points = (list: unknown) => (Array.isArray(list) ? list : []).slice(0, 24).filter((p: any) => Number.isFinite(p?.x) && Number.isFinite(p?.y))
+        .map((p: any) => ({ x: Math.round(Math.min(Math.max(p.x, 0), info.width)), y: Math.round(Math.min(Math.max(p.y, 0), info.height)) }));
+      const positive = points(input.positive);
+      const name = text(input.text, 120);
+      if (!positive.length && !name) throw bad("Click the subject or name it.");
+      const key = Math.round(num(input.key, 0, Math.max(0, info.frames - 1), 0));
+      return json(res, 202, engine.videoJob("matte", file, { seed, frames: info.frames, matte: { text: name, positive, negative: points(input.negative), key } }, keep));
+    }
     if (path.endsWith("upscale-video")) {
       if (info.duration > 12) throw bad("Upscale clips of up to 12 seconds.");
       const height = [720, 1080, 1440].includes(input.height) ? input.height : 1080;

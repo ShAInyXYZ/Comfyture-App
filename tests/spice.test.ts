@@ -187,12 +187,15 @@ test("LTX is told the preset's words, then where the effect is, how big and stro
 test("Roto's clicks reach the segmenter as pixels of the frame: those on the subject, and those that are not", () => {
   const s = { points: [{ x: 0.5, y: 0.25 }, { x: 1.4, y: -1 }, { x: 0.1, y: 0.9, neg: true }] };
   assert.deepEqual(m.pointsOf(s, 1920, 1080), { positive: [{ x: 960, y: 270 }, { x: 1920, y: 0 }], negative: [{ x: 192, y: 972 }] });
-  const extra = m.samExtra(s, 1920, 1080);
-  assert.deepEqual(JSON.parse(extra.positive_coords!), [{ x: 960, y: 270 }, { x: 1920, y: 0 }]);
-  assert.deepEqual(JSON.parse(extra.negative!), [{ x: 192, y: 972 }]);
-  assert.deepEqual(m.samExtra({ points: [] }, 1920, 1080), {}, "no clicks: the name alone");
-  assert.deepEqual(m.samExtra(null, 1920, 1080), {});
   assert.deepEqual(m.OUTS.map((o) => o.id), ["alpha", "green", "holdout"]);
+});
+
+test("Roto asks the tracker for a subject by its first clicks, on the frame they were made on, and the matte starts there", () => {
+  const s = { name: " Woman ", points: [{ x: 0.5, y: 0.5, frame: 1030 }, { x: 0.1, y: 0.1, frame: 1030, neg: true }, { x: 0.9, y: 0.9, frame: 1060 }, { x: 0.2, y: 0.2, frame: 1001 }] };
+  const ask = m.matteAsk(s, 1920, 1080, 1010);
+  assert.deepEqual(ask, { text: "Woman", positive: [{ x: 960, y: 540 }], negative: [{ x: 192, y: 108 }], key: 20, from: 1030 }, "the clicks before the range and on later frames wait");
+  assert.deepEqual(m.matteAsk({ name: "car", points: [] }, 1920, 1080, 1001), { text: "car", positive: [], negative: [], key: 0, from: 1001 }, "no clicks: the name, from the first frame");
+  assert.equal(m.matteAsk({ points: [{ x: 0.5, y: 0.5 }] }, 100, 100).from, m.FIRST, "a click with no frame is on the first");
 });
 
 test("the templates each department runs are named, belong to a department and say who bills them", () => {

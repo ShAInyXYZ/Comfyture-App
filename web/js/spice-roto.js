@@ -7,10 +7,10 @@
 import { h } from "./dom.js";
 import { changed } from "./store.js";
 import { spice, edit, setSet, setQuietly, setDept, setFrame, setPass, workingOn } from "./spice.js";
-import { FIRST, lastFrame, rangeOf, framesIn, samExtra, OUTS, TEMPLATES, secondsAt } from "./spice-model.js";
+import { FIRST, lastFrame, rangeOf, framesIn, matteAsk, OUTS, TEMPLATES, secondsAt } from "./spice-model.js";
 import { bento, spicon, iconKey, primary, fill, thumb, svg } from "./spice-ui.js";
 import { openWin, defineWindow } from "./spice-win.js";
-import { work, footage, cloud, priceOf } from "./spice-engines.js";
+import { work, footage, cloud, serverJob, priceOf } from "./spice-engines.js";
 import { runnerReady } from "./utensils-cloud.js";
 import { stripOf } from "./spice-viewer.js";
 import { slider } from "./utensils-fx-controls.js";
@@ -77,16 +77,17 @@ function track(s) {
   const plate = shot.body.passes.plate;
   const seconds = framesIn(plate.media.seconds ?? 0, plate.fps ?? 24) / (plate.fps ?? 24);
   const credits = priceOf("sam3", seconds) ?? 0;
+  // the subject is found from its first clicks and tracked from that frame to the end of the range (spice-model.js matteAsk)
+  const ask = matteAsk(s, plate.media.width, plate.media.height, rangeOf(shot.body).in);
   return work("roto", label, async (progress, job) => {
     const media = await footage(shot);
-    const input = { from: rangeOf(shot.body).in };
-    const out = await cloud("sam3", { video: media, text: s.name }, { extra: samExtra(s, media.width || plate.media.width, media.height || plate.media.height), label: TEMPLATES.sam3.title })(progress, job);
-    return { files: out, from: input.from };
+    const out = await serverJob("api/spice/matte", { video: media.file, text: ask.text, positive: ask.positive, negative: ask.negative, key: ask.key })(progress, job);
+    return { files: out, from: ask.from };
   }, {
     credits, source: "cloud",
     keep: (m, sh) => {
       const fps = sh.body.passes.plate?.fps ?? 24;
-      const from = rangeOf(sh.body).in;
+      const from = ask.from;
       edit((b) => {
         const subject = b.set.roto.subjects.find((x) => x.id === s.id);
         if (!subject) return;

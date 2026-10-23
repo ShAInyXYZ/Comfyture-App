@@ -70,7 +70,7 @@ try {
   const FORMS = {
     utility_video_segment_sam3: [["video", "video", true], ["prompt", "text"], ["positive_coords", "text"], ["negative", "text"], ["threshold", "number"]],
     api_bria_video_green_screen: [["video", "video", true]],
-    utility_void_video_inpainting: [["video", "video", true], ["prompt", "text"]],
+    utility_void_video_inpainting: [["source_video", "video", true], ["positive_prompt_inpaint_fill_", "text"], ["negative", "text"], ["sam3_object_mask_prompt", "text"], ["width_pass_2_", "number"], ["height_pass_2_", "number"], ["clip_duration_seconds_", "number"]],
     template_ltx2_3_remove_watermark_from_video: [["video", "video", true]],
     api_beeble_switchx_video_edit: [["video", "video", true], ["image", "image", true], ["prompt", "text"]],
     utility_depth_anything3_video_depth_estimation: [["video", "video", true]],
@@ -85,6 +85,11 @@ try {
     }
     if (!tail && FORMS[name]) return route.fulfill({ json: { name, title: name, schema: { slots: FORMS[name].map(([id, kind, required]) => ({ id, kind, required: !!required, label: id })), models: [], notes: [] } } });
     return route.continue();
+  });
+  // Roto's tracker (the server's own SAM3 graph), stood in for: it answers at once with the matte, and what it was asked is kept with the runs
+  await page.route("**/api/spice/matte", (route) => {
+    runs.push({ name: "spice/matte", body: route.request().postDataJSON() });
+    return route.fulfill({ status: 202, json: { id: `matte-${runs.length}`, status: "done", progress: 1, video: { file: matte.file, url: matte.url, width: matte.width, height: matte.height, duration: matte.duration } } });
   });
   // Paprika's answers, stood in for: each is the next of the queue, and what she was asked is kept
   const asked = [];
@@ -291,10 +296,10 @@ try {
   ok(runs.length === 0 && (await page.locator('.sp-primary[data-armed="1"]').count()) === 1, "the first press of the tracking only asks");
   await page.locator('.sp-primary[data-armed="1"]').click();
   await page.waitForFunction(() => document.querySelector('.sp-layer[data-dept="roto"] .sp-lamp[data-tone="done"]'), null, { timeout: 30000 });
-  ok(runs.length === 1 && runs[0].name === "utility_video_segment_sam3", "the second sends the SAM3 template, once", runs.map((r) => r.name).join());
-  const sent = runs[0].body.inputs;
-  ok(sent.prompt === "Woman in raincoat" && JSON.parse(sent.positive_coords).length === 2 && JSON.parse(sent.negative).length === 1, "with the subject's name as the words, its clicks in pixels of the frame", JSON.stringify(sent));
-  const px = JSON.parse(sent.positive_coords)[0];
+  ok(runs.length === 1 && runs[0].name === "spice/matte", "the second asks the tracker, once", runs.map((r) => r.name).join());
+  const sent = runs[0].body;
+  ok(sent.text === "Woman in raincoat" && sent.positive.length === 2 && sent.negative.length === 1 && sent.key === 0 && /\.mp4$/.test(sent.video), "with the subject's name, its clicks in pixels of the frame they were made on, and the footage", JSON.stringify(sent));
+  const px = sent.positive[0];
   ok(px.x > 280 && px.x < 360 && px.y > 150 && px.y < 210, "the first click is in the footage's own pixels (640 × 360)", JSON.stringify(px));
   st = await state();
   ok(st.passes.roto?.url === matte.url && st.passes.roto.type === "matte", "the matte is Roto's pass");
@@ -326,7 +331,19 @@ try {
   await page.locator('.sp-primary[data-key="paint:run"]').click();
   await settle();
   ok(runs.length === 1 && (await page.locator('.sp-primary[data-armed="1"]').count()) === 1, "and asks first");
-  await page.getByRole("button", { name: "Not now" }).click();
+  await page.locator('.sp-target .sp-after').fill("a bare brick wall");
+  await page.locator('.sp-target .sp-after').dispatchEvent("change");
+  await page.waitForTimeout(300);
+  if (!(await page.locator('.sp-primary[data-armed="1"]').count())) {
+    await page.locator('.sp-primary[data-key="paint:run"]').click();
+    await settle();
+  }
+  await page.locator('.sp-primary[data-armed="1"]').click();
+  await page.waitForFunction(() => document.querySelector('.sp-layer[data-dept="paint"] .sp-lamp[data-tone="done"]'), null, { timeout: 30000 });
+  const voidSent = runs[1]?.body.inputs ?? {};
+  ok(runs.length === 2 && runs[1].name === "utility_void_video_inpainting", "the yes sends VOID, once", runs.map((r) => r.name).join());
+  ok(voidSent.sam3_object_mask_prompt === "the street sign" && voidSent.positive_prompt_inpaint_fill_ === "a bare brick wall" && voidSent.width_pass_2_ === 672 && voidSent.height_pass_2_ === 384 && voidSent.clip_duration_seconds_ >= 1 && voidSent.clip_duration_seconds_ <= 5 && voidSent.source_video,
+    "VOID is told the object to find and what is left, at its own size in the footage's shape, over the whole clip", JSON.stringify(voidSent));
   await page.locator('.sp-target-tile[data-how="brush"]').click();
   await settle();
   ok(await page.locator('.sp-primary[data-key="paint:run"]').isDisabled(), "a spot needs its brush first");
@@ -340,9 +357,10 @@ try {
   await shot("5-paint");
   if (caps.unlogo !== false) {
     await page.locator('.sp-primary[data-key="paint:run"]').click();
-    await page.waitForFunction(() => document.querySelector('.sp-layer[data-dept="paint"] .sp-lamp[data-tone="done"]'), null, { timeout: 90000 });
+    // (the lamp is already green from VOID's pass: the spot's own pass is waited for)
+    for (let i = 0; i < 180 && !/ffmpeg/.test((await state()).passes.paint?.note ?? ""); i++) await page.waitForTimeout(500);
     st = await state();
-    ok(st.passes.paint?.kind === "video" && /ffmpeg/.test(st.passes.paint.note) && runs.length === 1, "the spot was painted out on this machine: the Paint pass is there, and nothing was sent", JSON.stringify(st.passes.paint));
+    ok(st.passes.paint?.kind === "video" && /ffmpeg/.test(st.passes.paint.note) && runs.length === 2, "the spot was painted out on this machine: the Paint pass is there, and nothing was sent", JSON.stringify(st.passes.paint));
   }
 
   // ---- Light: the free weather runs on the clean-up; the paid relight needs a picture and asks first
@@ -356,7 +374,7 @@ try {
     await page.locator('.sp-primary[data-key="light:weather"]').click();
     await page.waitForFunction(() => document.querySelector('.sp-layer[data-dept="light"] .sp-lamp[data-tone="done"]'), null, { timeout: 90000 });
     st = await state();
-    ok(st.passes.light?.kind === "video" && /snow/.test(st.passes.light.note) && runs.length === 1, "the weather ran on this machine: the Light pass is there", JSON.stringify(st.passes.light));
+    ok(st.passes.light?.kind === "video" && /snow/.test(st.passes.light.note) && runs.length === 2, "the weather ran on this machine: the Light pass is there", JSON.stringify(st.passes.light));
   }
   ok(await page.locator('.sp-primary[data-key="light:relight"]').isDisabled(), "a relight of a clip needs a picture of the light: the key waits");
   await shot("6-light");

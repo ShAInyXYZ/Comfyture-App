@@ -215,13 +215,17 @@ export function pointsOf(subject, width, height) {
   const pts = Array.isArray(subject?.points) ? subject.points : [];
   return { positive: pts.filter((p) => !p.neg).map(px), negative: pts.filter((p) => p.neg).map(px) };
 }
-/** What a run of the segmenter is given for a subject: its name as the words, its points in pixels as JSON. */
-export function samExtra(subject, width, height) {
-  const { positive, negative } = pointsOf(subject, width, height);
-  const extra = {};
-  if (positive.length) extra.positive_coords = JSON.stringify(positive);
-  if (negative.length) extra.negative = JSON.stringify(negative);
-  return extra;
+/**
+ * What Roto asks the tracker for a subject (the server's spice/matte, workflows/matte.json): its name, and its clicks on the first frame
+ * it was clicked on within the range, as pixels of that frame, with that frame counted from the clip's first (`key`). The tracker follows
+ * the subject from there to the end, so the matte starts on that frame (`from`); with no clicks, the name is followed from the first.
+ */
+export function matteAsk(subject, width, height, rangeIn = FIRST) {
+  const at = (p) => p.frame ?? FIRST;
+  const pts = (Array.isArray(subject?.points) ? subject.points : []).filter((p) => at(p) >= rangeIn);
+  const key = pts.length ? Math.min(...pts.map(at)) : rangeIn;
+  const { positive, negative } = pointsOf({ points: pts.filter((p) => at(p) === key) }, width, height);
+  return { text: String(subject?.name ?? "").trim().slice(0, 120), positive, negative, key: key - rangeIn, from: positive.length ? key : rangeIn };
 }
 
 /** What each of Roto's three outputs hands on, for its tile's tooltip. */
@@ -250,7 +254,8 @@ export const titleOf = (shot) => String(shot?.name ?? "Untitled shot");
  * GPU for each second, the same numbers Utensils' VFX tools use). `dept` is the department that runs it.
  */
 export const TEMPLATES = {
-  sam3: { dept: "roto", name: "utility_video_segment_sam3", title: "SAM3", about: "Cuts a subject out of the footage, from its name and where it was clicked", want: { video: true, text: true }, gpu: 10 },
+  // (priced and named as the official template, run through Comfyture's own graph: SAM3 finds the subject and its tracker follows it)
+  sam3: { dept: "roto", name: "utility_video_segment_sam3", title: "SAM3", about: "Finds the subject where it was clicked and tracks it through the footage", want: { video: true, text: true }, gpu: 10 },
   green: { dept: "roto", name: "api_bria_video_green_screen", title: "Bria", partner: "Bria", about: "Puts the subject on a flat green", want: { video: true } },
   cutout: { dept: "roto", name: "api_bria_remove_video_background_transparent", title: "Bria", partner: "Bria", about: "Takes the background out and leaves it clear", want: { video: true } },
   depth: { dept: "plate", name: "utility_depth_anything3_video_depth_estimation", title: "Depth Anything 3", about: "A depth map of every frame", want: { video: true }, gpu: 8 },

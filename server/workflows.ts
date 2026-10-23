@@ -422,6 +422,33 @@ export function buildGenerate(graph: Graph, prompt: string, aspect: string, seed
   return graph;
 }
 
+/**
+ * Spice's Roto: a subject's matte as a clip, white where the subject is. With clicks, SAM3 finds the subject from them on the frame they
+ * were made on (the key, counted from the clip's first frame) and its tracker follows that one subject from there to the end; with only
+ * a name, the tracker follows everything that name is, from the first frame. (SAM3_Detect alone would take the clicks at the same pixels
+ * on every frame, where a moving subject no longer is.)
+ */
+export function buildMatte(graph: Graph, video: unknown, v: { text: string; positive: { x: number; y: number }[]; negative: { x: number; y: number }[]; key: number }): Graph {
+  set(graph, "video_in", "file", video);
+  set(graph, "words", "text", v.text);
+  if (v.positive.length) {
+    set(graph, "key", "batch_index", v.key);
+    set(graph, "frames", "batch_index", v.key);
+    set(graph, "pick", "positive_coords", JSON.stringify(v.positive));
+    set(graph, "pick", "negative_coords", JSON.stringify(v.negative));
+    // (the name is not asked for too: SAM3 would add every other thing of that name to the clicked one)
+    delete graph.words;
+  } else {
+    // no clicks: the name is what is followed, every one of it, from the first frame
+    delete graph.key;
+    delete graph.pick;
+    delete graph.track.inputs.initial_mask;
+    graph.track.inputs.conditioning = ["words", 0];
+    graph.track.inputs.max_objects = 8;
+  }
+  return graph;
+}
+
 /** ComfyUI's background removal, with the subject composited onto black. */
 export function buildCutout(graph: Graph, source: unknown): Graph {
   set(graph, "photo", "image", source);
