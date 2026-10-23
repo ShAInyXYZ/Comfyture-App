@@ -724,9 +724,11 @@ export function buildRunRequest(name: string, form: Form, values: Record<string,
 }
 
 /** The loader name of an uploaded file: Cloud stores by content hash, and the loaders take `<hash>.<ext>`. */
-export function loaderName(asset: { name?: string; asset_hash?: string }, ext: string) {
+export function loaderName(asset: { name?: string; asset_hash?: string; hash?: string }, ext: string) {
   if (asset.name && /^[a-f0-9]{64}\./i.test(asset.name)) return asset.name;
-  const hex = String(asset.asset_hash ?? "").replace(/^blake3:/, "");
+  // (Cloud's /assets answers the stored name as `hash`, "<64 hex>.mp4"; an older answer gave `asset_hash`, "blake3:<64 hex>")
+  if (asset.hash && /^[a-f0-9]{64}\.\w+$/i.test(asset.hash)) return asset.hash;
+  const hex = String(asset.hash ?? asset.asset_hash ?? "").replace(/^blake3:/, "").replace(/\.\w+$/, "");
   return /^[a-f0-9]{64}$/i.test(hex) ? `${hex}.${ext}` : asset.name ?? `${hex}.${ext}`;
 }
 

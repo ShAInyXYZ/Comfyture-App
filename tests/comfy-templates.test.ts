@@ -162,6 +162,9 @@ test("what an upload is called for a loader", () => {
   assert.equal(loaderName({ name: `${hex}.mp3` }, "mp3"), `${hex}.mp3`);
   assert.equal(loaderName({ name: "clip.mp4", asset_hash: `blake3:${hex}` }, "mp4"), `${hex}.mp4`);
   assert.equal(loaderName({ name: "clip.mp4" }, "mp4"), "clip.mp4");
+  // what Cloud's /assets answers today: the display name as `name`, the stored name as `hash`
+  assert.equal(loaderName({ name: "clip.mp4", hash: `${hex}.mp4` }, "mp4"), `${hex}.mp4`);
+  assert.equal(loaderName({ name: "voice.mp3", hash: hex }, "mp3"), `${hex}.mp3`);
 });
 
 test("the price: a total, a rate per unit, or no partner credits at all", () => {
