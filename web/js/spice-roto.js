@@ -139,7 +139,8 @@ function subjectsBody(big) {
       const word = here ? `${pic ? "Cutting out" : "Tracking"} ${Math.round((busy.progress ?? 0) * 100)}%` : s.media && !s.stale ? (pic ? "Cut out" : "Tracked") : s.stale ? "Clicks changed" : s.points.length ? (pic ? "Not cut out" : "Not tracked") : "No clicks yet";
       return h(`div.sp-subject${on ? ".is-on" : ""}`, { dataset: { subject: s.id } },
         h("button.sp-subject-main", { type: "button", "aria-pressed": String(on), title: `${s.name}: ${word}`, on: { click: () => (setSet("roto", { open: s.id }), (spice.pointer = "points")) } },
-          h("span.sp-subject-pic", { style: pic && first ? { backgroundImage: `url(${pic})`, backgroundSize: "420%", backgroundPosition: `${first.x * 100}% ${first.y * 100}%` } : {} }, pic && first ? null : spicon("plus")),
+          // (its face where it was clicked; with no click, its matte; with neither, a plus)
+          h("span.sp-subject-pic", { style: pic && first ? { backgroundImage: `url(${pic})`, backgroundSize: "420%", backgroundPosition: `${first.x * 100}% ${first.y * 100}%` } : {} }, pic && first ? null : s.media ? thumb(s.media, { cls: "is-subject" }) : spicon("plus")),
           h("span.sp-subject-text", {},
             h("input.sp-subject-name", { value: s.name, "aria-label": "The subject's name, what it is cut out by", on: { click: (e) => e.stopPropagation(), input: (e) => ((s.name = e.target.value), (s.stale = s.media ? true : s.stale)), change: () => edit(() => {}) } }),
             h("em", {}, word)),
@@ -153,14 +154,63 @@ function subjectsBody(big) {
 }
 
 /** The magnified edge: the matte (or the footage, before there is one) four times larger around the subject's first click, with the edge settings on it. */
+const focuses = new Map();
+/**
+ * Where a matte's edge is best judged when the subject was not clicked: the top of what it holds (a head, its hair), found once by
+ * reading a small copy of the matte; null until it is read (the bento is drawn again then).
+ */
+function focusOf(m) {
+  if (!m?.url) return null;
+  if (focuses.has(m.url)) return focuses.get(m.url);
+  focuses.set(m.url, null);
+  const read = (src, w, h) => {
+    const c = document.createElement("canvas");
+    c.width = 96;
+    c.height = Math.max(8, Math.round((96 * h) / Math.max(1, w)));
+    const g = c.getContext("2d", { willReadFrequently: true });
+    g.drawImage(src, 0, 0, c.width, c.height);
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    // the subject's height (its first and last rows of white), then its left side a sixth of the way down: an edge, black on one side
+    const white = (x, y) => d[(y * c.width + x) * 4] > 128;
+    const rows = [];
+    for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (white(x, y)) (rows.push(y), (x = c.width));
+    if (!rows.length) return;
+    const y = Math.round(rows[0] + (rows.at(-1) - rows[0]) / 6);
+    let x = 0;
+    while (x < c.width && !white(x, y)) x++;
+    const at = { x: Math.min(1, (x + 0.5) / c.width), y: y / c.height };
+    focuses.set(m.url, at);
+    // (the magnifier waiting for it is pointed there at once: the bento is not drawn again for it)
+    for (const el of document.querySelectorAll(".sp-edge-zoom[data-focus]")) {
+      if (el.dataset.focus !== m.url) continue;
+      el.style.setProperty("--ox", `${at.x * 100}%`);
+      el.style.setProperty("--oy", `${at.y * 100}%`);
+    }
+  };
+  if (m.kind === "image") {
+    const img = new Image();
+    img.onload = () => read(img, img.naturalWidth, img.naturalHeight);
+    img.src = m.url;
+  } else {
+    const v = document.createElement("video");
+    v.muted = true;
+    v.preload = "auto";
+    v.onloadeddata = () => read(v, v.videoWidth, v.videoHeight);
+    v.src = m.url;
+  }
+  return null;
+}
+
 function edgeBody() {
   const b = spice.shot.body;
   const r = b.set.roto;
   const s = openSubject();
   const matte = (s?.media && s.stale !== true ? s.media : b.passes.roto?.media) ?? null;
   const m = matte ?? b.passes.plate?.media ?? null;
-  const at = s?.points.find((p) => !p.neg) ?? { x: 0.5, y: 0.25 };
-  const zoom = h("div.sp-edge-zoom", { style: { "--ox": `${at.x * 100}%`, "--oy": `${at.y * 100}%` } },
+  // (the first click on the subject, else the top of its matte, where its hair is)
+  const clicked = s?.points.find((p) => !p.neg);
+  const at = clicked ?? focusOf(matte) ?? { x: 0.5, y: 0.25 };
+  const zoom = h("div.sp-edge-zoom", { style: { "--ox": `${at.x * 100}%`, "--oy": `${at.y * 100}%` }, dataset: clicked || !matte ? {} : { focus: matte.url } },
     m ? (m.kind === "image" ? h("img.sp-media", { src: m.url, alt: "", draggable: false }) : h("video.sp-media", { src: m.url, muted: true, playsInline: true, preload: "auto" })) : null,
     h("b.sp-chip.is-left", {}, matte ? "4:1" : "4:1 · footage"));
   edgeVideo = zoom.querySelector("video");
@@ -176,6 +226,13 @@ function trackBody() {
   const plate = b.passes.plate;
   const r = b.set.roto;
   const s = openSubject();
+  // a picture has nothing to track: the bento shows the subject cut out, on the squares a cut-out is judged on
+  if (plate?.media.kind === "image") {
+    const m = s?.media && !s.stale ? s.media : b.passes.roto?.type === "matte" ? b.passes.roto.media : null;
+    return h("div.sp-track.is-picture", {},
+      m ? h("div.sp-cutout", { style: { "--pic": `url("${plate.media.url}")`, "--matte": `url("${m.url}")`, aspectRatio: `${plate.media.width} / ${plate.media.height}` } }) : h("p.sp-hint", {}, "A picture is cut out once: click the subject, then cut it out."),
+      h("span.sp-track-name", {}, s ? `${s.name} · ${m ? "cut out" : "not cut out yet"}` : "No subject yet"));
+  }
   const last = lastFrame(plate);
   const span = Math.max(1, last - FIRST);
   const keys = keysOf(s);
