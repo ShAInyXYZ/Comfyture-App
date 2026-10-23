@@ -62,8 +62,8 @@ try {
 
   // the writers' answers, stood in for: each route answers from its queue and keeps what it was asked
   const asked = { mixer: [], utensils: [], spice: [], cut: [], shot: [], story: [], stage: [] };
-  const queue = { mixer: [], utensils: [], spice: [], cut: [], shot: [], story: [], stage: [] };
-  for (const [name, path] of [["mixer", "mixer/assist"], ["utensils", "utensils/assist"], ["spice", "spice/assist"], ["cut", "cut/assist"], ["shot", "assistant"], ["story", "story/assist"], ["stage", "control/assist"]]) {
+  const queue = { mixer: [], utensils: [], spice: [], toaster: [], cut: [], shot: [], story: [], stage: [] };
+  for (const [name, path] of [["mixer", "mixer/assist"], ["utensils", "utensils/assist"], ["spice", "spice/assist"], ["toaster", "toaster/assist"], ["cut", "cut/assist"], ["shot", "assistant"], ["story", "story/assist"], ["stage", "control/assist"]]) {
     await page.route(`**/api/${path}`, (route) => {
       asked[name].push(route.request().postDataJSON());
       route.fulfill({ json: queue[name].shift() ?? { reply: "Fine.", actions: [] } });
@@ -89,7 +89,7 @@ try {
 
   // ---- every product's page: its pet in the bar
   await page.goto(`${base}/#/shot`, { waitUntil: "networkidle" });
-  const PAGES = [["shot", "kitchen", "shot"], ["stage", "kitchen", "stage"], ["story", "kitchen", "story"], ["cut", "kitchen", "cut"], ["jam", "jam"], ["macaron", "macaron"], ["spice", "spice"], ["mixer", "mixer"], ["utensils", "utensils"]];
+  const PAGES = [["shot", "kitchen", "shot"], ["stage", "kitchen", "stage"], ["story", "kitchen", "story"], ["cut", "kitchen", "cut"], ["jam", "jam"], ["macaron", "macaron"], ["spice", "spice"], ["toaster", "toaster"], ["mixer", "mixer"], ["utensils", "utensils"]];
   for (const [p, product, room] of PAGES) {
     await visit(p);
     if (p === "stage") await page.waitForFunction(() => document.querySelector("#stage-chat #assistant"), null, { timeout: 30000 });
@@ -113,7 +113,7 @@ try {
     if (h.tools === "bar") ok(info.chipsShown && JSON.stringify(info.chips) === JSON.stringify(look.presets.map((x) => x.label)), `${p}: ${h.name}'s presets are chips above the bar`, info.chips.join(" | "));
     else ok(!info.chipsShown && !info.chips.length, `${p}: ${h.name}'s presets are left to the product's own panel`);
     ok(info.picker, `${p}: the model picker is still there`);
-    ok(info.clip === (p === "shot" || p === "stage"), `${p}: the attach key is only where the bar takes files`);
+    ok(info.clip === (p === "shot" || p === "stage" || p === "toaster"), `${p}: the attach key is only where the bar takes files (Toaster: a photo for Crumpet)`);
     // a product with a left panel has its bar on one row (the face, the words, the model, the send key); the others keep the card
     if (h.tools === "panel") ok(info.bar >= 56 && info.bar <= 72, `${p}: ${h.name}'s bar is one row`, `${Math.round(info.bar)}px`);
     else ok(info.bar > 100, `${p}: ${h.name}'s bar is the card`, `${Math.round(info.bar)}px`);

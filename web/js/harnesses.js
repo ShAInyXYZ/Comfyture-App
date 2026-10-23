@@ -15,6 +15,7 @@ import { PICKLE, WORKSPACES, PRESETS as JAM_PRESETS, PLACEHOLDER as JAM_PLACEHOL
 import { BRIOCHE, PRESETS as MACARON_PRESETS, PLACEHOLDER as MACARON_PLACEHOLDER } from "./macaron-harness.js";
 import { PAPRIKA, PLACEHOLDER as SPICE_PLACEHOLDER } from "./spice-harness.js";
 import { TRUFFLE, PLACEHOLDER as UTENSILS_PLACEHOLDER } from "./utensils-harness.js";
+import { CRUMPET, PLACEHOLDER as TOASTER_PLACEHOLDER } from "./toaster-harness.js";
 
 const p = (label, text) => ({ label, text });
 
@@ -89,6 +90,19 @@ export const HARNESSES = {
     home: "plate",
     placeholders: SPICE_PLACEHOLDER,
     presets: Object.fromEntries(Object.keys(SPICE_PLACEHOLDER).map((room) => [room, []])),
+  },
+
+  // the model maker: Crumpet, the baby beaver who builds the scene with you (web/js/toaster-harness.js); he has no canned tools: Toaster's
+  // left panel is the draft, and his bar is his words
+  toaster: {
+    pet: CRUMPET.id,
+    name: CRUMPET.name,
+    tag: CRUMPET.tag,
+    face: CRUMPET.face,
+    tools: "panel",
+    home: "toaster",
+    placeholders: TOASTER_PLACEHOLDER,
+    presets: { toaster: [] },
   },
 
   // one-tool jobs: Truffle, her seven workspaces and what the bar says in each are Utensils' own data (web/js/utensils-harness.js);

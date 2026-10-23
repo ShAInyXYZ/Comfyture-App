@@ -1,4 +1,4 @@
-// The pets: the registry has all six, each with a face on disk, a placeholder that names it and a few presets for
+// The pets: the registry has all seven, each with a face on disk, a placeholder that names it and a few presets for
 // every room; a pet's brief knows its own product only; and each assist route's answer reader keeps its own actions
 // and drops everything else (Praline's and Truffle's against what the page told them). No model is called.
 
@@ -11,6 +11,7 @@ import { HARNESSES, harnessOf, barOf, roomOf, setRoom, onRoom, tell, setTeller }
 import { MIXER_BRIEF, MIXER_OPS, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "../server/mixer-assist.ts";
 import { UTENSILS_BRIEF, UTENSILS_OPS, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer } from "../server/utensils-assist.ts";
 import { SPICE_BRIEF, SPICE_OPS, SPICE_TOOL, spicePrompt, readSpiceAnswer } from "../server/spice-assist.ts";
+import { TOASTER_BRIEF, TOASTER_OPS } from "../server/toaster-assist.ts";
 import { readAnswer } from "../server/assistant.ts";
 import { readControlAnswer } from "../server/control.ts";
 import { readStoryAssist } from "../server/story.ts";
@@ -19,15 +20,13 @@ import { manual } from "../server/manual.ts";
 import * as macaron from "../server/macaron.ts";
 
 const web = join(import.meta.dirname, "..", "web");
-const NO_PET = new Set(["toaster"]);
-const PETS = { kitchen: "Ketkout", mixer: "Praline", jam: "Pickle", macaron: "Brioche", spice: "Paprika", utensils: "Truffle" } as const;
-const TAGS = { kitchen: "head chef", mixer: "trend boss", jam: "band leader", macaron: "brand room", spice: "VFX house", utensils: "shelf keeper" } as const;
+const PETS = { kitchen: "Ketkout", mixer: "Praline", jam: "Pickle", macaron: "Brioche", spice: "Paprika", toaster: "Crumpet", utensils: "Truffle" } as const;
+const TAGS = { kitchen: "head chef", mixer: "trend boss", jam: "band leader", macaron: "brand room", spice: "VFX house", toaster: "model maker", utensils: "shelf keeper" } as const;
 
 // ---------------------------------------------------------------- the registry
 
 test("every product has its pet, with a name, a tag and a face that is on disk", () => {
-  // (Toaster has no pet yet: its page has no chat bar)
-  assert.deepEqual(Object.keys(HARNESSES).sort(), Object.keys(PRODUCTS).filter((p) => !NO_PET.has(p)).sort(), "one harness for each of the app's products that has a pet");
+  assert.deepEqual(Object.keys(HARNESSES).sort(), Object.keys(PRODUCTS).sort(), "one harness for each of the app's products");
   for (const [product, name] of Object.entries(PETS)) {
     const h = harnessOf(product)!;
     assert.equal(h.name, name);
@@ -36,8 +35,8 @@ test("every product has its pet, with a name, a tag and a face that is on disk",
     assert.ok(/\.webp$/.test(h.face) && existsSync(join(web, h.face)), `${name}'s face is a picture under web/: ${h.face}`);
     assert.ok(h.tools === "bar" || h.tools === "panel");
   }
-  assert.equal(new Set(Object.values(HARNESSES).map((h) => h.pet)).size, 6, "six different pets");
-  assert.equal(new Set(Object.values(HARNESSES).map((h) => h.face)).size, 6, "six different faces");
+  assert.equal(new Set(Object.values(HARNESSES).map((h) => h.pet)).size, 7, "seven different pets");
+  assert.equal(new Set(Object.values(HARNESSES).map((h) => h.face)).size, 7, "seven different faces");
   assert.equal(harnessOf("library"), null);
 });
 
@@ -54,7 +53,7 @@ test("Kitchen's pet fronts every room that has an assistant; the products withou
 
 // Brioche, Pickle, Paprika and Truffle have no canned tools: Brioche's panel shows the brand's health, Pickle's the video's pipeline,
 // Paprika's the comp stack of the shot, Truffle's the queue and the recent results (the four registry entries keep an empty list per room)
-const NO_PRESETS = new Set(["macaron", "jam", "spice", "utensils"]);
+const NO_PRESETS = new Set(["macaron", "jam", "spice", "toaster", "utensils"]);
 
 test("each room's placeholder names its pet, and each room has a few short presets (but for the four that have none)", () => {
   for (const [product, h] of Object.entries(HARNESSES)) {
@@ -123,14 +122,14 @@ const PET_NAMES = Object.values(PETS);
 /** The names of everything else in the app, to look for in a brief that must not know them. */
 const foreign = (product: keyof typeof PETS) => [...PET_NAMES.filter((n) => n !== PETS[product]), ...PRODUCT_NAMES.filter((n) => n !== PRODUCTS[product][0])];
 
-test("Praline's, Paprika's and Truffle's briefs are their own product's: their pet, their product, their actions and nothing of the others", () => {
-  for (const [product, brief, ops] of [["mixer", MIXER_BRIEF, MIXER_OPS], ["spice", SPICE_BRIEF, SPICE_OPS], ["utensils", UTENSILS_BRIEF, UTENSILS_OPS]] as const) {
+test("Praline's, Paprika's, Crumpet's and Truffle's briefs are their own product's: their pet, their product, their actions and nothing of the others", () => {
+  for (const [product, brief, ops] of [["mixer", MIXER_BRIEF, MIXER_OPS], ["spice", SPICE_BRIEF, SPICE_OPS], ["toaster", TOASTER_BRIEF, TOASTER_OPS], ["utensils", UTENSILS_BRIEF, UTENSILS_OPS]] as const) {
     assert.ok(brief.includes(PETS[product]) && brief.includes(PRODUCTS[product][0]));
     for (const n of foreign(product)) assert.ok(!brief.includes(n), `the ${product} brief names ${n}`);
     for (const op of ops) assert.ok(brief.includes(op), `${op} is in the brief`);
     assert.ok(brief.length < 3000, `a short brief (${brief.length} characters)`);
   }
-  assert.ok([MIXER_BRIEF, SPICE_BRIEF, UTENSILS_BRIEF].every((b) => /never that it has started/.test(b)), "what costs credits is only asked for");
+  assert.ok([MIXER_BRIEF, SPICE_BRIEF, TOASTER_BRIEF, UTENSILS_BRIEF].every((b) => /never that it has started/.test(b)), "what costs credits is only asked for");
 });
 
 test("their tools are forced answers: a reply and actions, each action one of the pet's own ops", () => {
