@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   SHAPES, PALETTE, RATIOS, SHEET, VIEWS, TO_3D, shapeOf, roundLabel, hasSides, colorName, sheetScale,
-  cleanPart, cleanDraft, newPart, mirrorPart, duplicatePart, starterDraft, legendOf, framePrompt, sheetPrompt,
+  cleanPart, cleanDraft, newPart, mirrorPart, duplicatePart, starterDraft, legendOf, framePrompt, sheetPrompt, newAssetPart, isAsset,
 } from "../web/js/toaster-model.js";
 
 test("ten shapes, each with a size; the slider and the sides only where they mean something", () => {
@@ -120,4 +120,23 @@ test("the words: what each clay colour becomes, the object, the scene; hidden pa
   const sheet = sheetPrompt({ parts, what: "a toaster" });
   assert.match(sheet, /^Render @sheet as a finished turnaround sheet of one object: four views side by side, the front, the left side, the back and the right side\./);
   assert.match(sheet, /no floor, no shadow, no text/);
+});
+
+test("a piece of the Stage's library is a part: its piece and its own size kept, named after it, told by name in the words", () => {
+  const chair = newAssetPart({ type: "office-chair", name: "Office chair", size: [0.65, 1.033, 0.621] }, []);
+  assert.ok(isAsset(chair));
+  assert.equal(chair.shape, "asset");
+  assert.equal(chair.asset, "office-chair");
+  assert.equal(chair.name, "Office chair");
+  assert.deepEqual(chair.size, [0.65, 1.033, 0.621]);
+  assert.equal(chair.pos[1], 0.517, "standing on the floor");
+  assert.equal(chair.round, undefined);
+  assert.equal(chair.sides, undefined);
+  const again = newAssetPart({ type: "office-chair", name: "Office chair", size: [0.65, 1.033, 0.621] }, [chair]);
+  assert.equal(again.name, "Office chair 2");
+  assert.equal(cleanPart({ ...chair, size: [2, 3, 4] }).asset, "office-chair", "kept through a clean");
+  assert.equal(cleanPart({ shape: "asset", asset: "../../etc" }).shape, "box", "a piece's name is a type id, nothing else");
+  assert.equal(mirrorPart({ ...chair, pos: [1, 0.5, 0] }, [chair]).asset, "office-chair");
+  assert.deepEqual(legendOf([{ ...chair, made: "black leather" }]), ["the grey clay (office chair) becomes black leather"]);
+  assert.deepEqual(legendOf([cleanPart({ shape: "asset", asset: "box", name: "Box" })]), ["the grey clay is the box"], "a piece named like a shape is still told");
 });
