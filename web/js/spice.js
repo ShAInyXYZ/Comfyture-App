@@ -107,9 +107,11 @@ export async function takePending() {
     await loadShots();
     const shot = await newShot(p.name ? String(p.name).slice(0, 40) : undefined);
     const m = p.media;
-    const media = { kind: "video", url: m.url, file: m.file, width: m.width, height: m.height, seconds: m.seconds ?? m.duration };
+    // (a picture is one frame; a clip its seconds at 24 fps)
+    const pic = m.kind === "image";
+    const media = pic ? { kind: "image", url: m.url, file: m.file, width: m.width, height: m.height } : { kind: "video", url: m.url, file: m.file, width: m.width, height: m.height, seconds: m.seconds ?? m.duration };
     edit((b) => {
-      b.passes.plate = { media, eye: true, fps: 24, name: p.name ?? "From Utensils", from: FIRST, to: FIRST + Math.max(1, framesIn(media.seconds ?? 0, 24)) - 1, at: new Date().toISOString() };
+      b.passes.plate = { media, eye: true, fps: 24, name: p.name ?? "From Utensils", from: FIRST, to: pic ? FIRST : FIRST + Math.max(1, framesIn(media.seconds ?? 0, 24)) - 1, at: new Date().toISOString() };
     }, shot);
   } finally {
     taking = false;

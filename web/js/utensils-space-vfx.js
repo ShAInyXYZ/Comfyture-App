@@ -269,7 +269,12 @@ export function vfxSpace() {
     gallery.replaceChildren(
       h("div.ut-b-head", {}, h("span.ut-b-label", {}, "VFX tools"), h("span.ut-b-note", {}, GROUP),
         // one trick on one clip is here; a whole shot worked pass after pass (cut out, cleaned, relit, an effect, the comp) is Spice's
-        h("button.uv-to-spice", { type: "button", title: inputOf(current().id).video ? "A whole shot, pass after pass? Open this clip in Spice: cut out, clean up, relight, add an effect and comp it, every pass kept" : "A whole shot, pass after pass? Spice cuts out, cleans up, relights, adds an effect and comps it, every pass kept", on: { click: () => { const v = inputOf(current().id).video; sendToSpice(v ? { url: v.url, file: v.file, width: v.width, height: v.height, seconds: v.duration ?? v.seconds } : null, v?.name); } } },
+        h("button.uv-to-spice", { type: "button", title: inputOf(current().id).video || inputOf(current().id).image ? "A whole shot, pass after pass? Open this in Spice: cut out, clean up, relight, lay effects on it by hand and comp it, every pass kept" : "A whole shot, pass after pass? Spice cuts out, cleans up, relights, lays effects on it by hand and comps it, every pass kept", on: { click: () => {
+          // the clip the tool holds, else its picture: Spice takes either
+          const { video: v, image: p } = inputOf(current().id);
+          if (v) sendToSpice({ kind: "video", url: v.url, file: v.file, width: v.width, height: v.height, seconds: v.duration ?? v.seconds }, v.name);
+          else sendToSpice(p ? { kind: "image", url: p.url, file: p.file, width: p.width, height: p.height } : null, p?.name);
+        } } },
           sprite("product-spice"), h("span", {}, "Whole shot? Spice"))),
       h("div.uv-cards", { dataset: { scrollKey: "uv-cards" } }, ...cards()));
     draw();
