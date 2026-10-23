@@ -989,7 +989,7 @@ export interface Job {
   progress: number;
   template: string;
   promptId: string;
-  outputs: { kind: string; url: string; file: string; width?: number; height?: number; seconds?: number; name?: string }[];
+  outputs: { kind: string; url: string; file: string; width?: number; height?: number; seconds?: number; name?: string; saved?: string }[];
   error?: string;
   needsImport?: boolean;
   credits?: number | null;
@@ -1157,12 +1157,12 @@ export function createTemplates(deps: Deps) {
     if (o.kind === "image") {
       const path = await place("photos");
       const info = await probe(path);
-      return { kind: "image", url: `/media/photos/${name}`, file: name, width: info.width || o.width, height: info.height || o.height };
+      return { kind: "image", url: `/media/photos/${name}`, file: name, width: info.width || o.width, height: info.height || o.height, saved: o.filename };
     }
     if (o.kind === "video") {
       const path = await place(ext === "mp4" ? "videos" : "edits");
       const info = await probe(path);
-      return { kind: "video", url: `/media/${ext === "mp4" ? "videos" : "edits"}/${name}`, file: name, width: info.width || o.width, height: info.height || o.height, seconds: info.duration || o.seconds };
+      return { kind: "video", url: `/media/${ext === "mp4" ? "videos" : "edits"}/${name}`, file: name, width: info.width || o.width, height: info.height || o.height, seconds: info.duration || o.seconds, saved: o.filename };
     }
     if (o.kind === "audio") {
       if (deps.keepAudio) {
@@ -1193,14 +1193,20 @@ export function createTemplates(deps: Deps) {
     const values = body?.inputs && typeof body.inputs === "object" ? body.inputs : {};
     // the pictures, clips and sounds go to Cloud first, each under the name its loader takes
     const uploaded: Record<string, Uploaded> = {};
+    // (a file two slots take, the clip and its "before" of a comparison, is sent once)
+    const sent = new Map<string, string>();
     for (const s of form.slots) {
       if (s.kind !== "image" && s.kind !== "video" && s.kind !== "audio") continue;
       const v = values[s.id];
       const file = typeof v === "string" ? v : v?.file;
       if (!file) continue;
-      const local = await localFile(s.kind, file);
-      const ext = local.file.split(".").pop()?.toLowerCase() ?? "";
-      uploaded[s.id] = { name: await deps.cloud.upload(s.kind, { name: local.file, bytes: await readFile(local.path), type: MIME[ext] ?? "application/octet-stream" }) };
+      const key = `${s.kind}:${file}`;
+      if (!sent.has(key)) {
+        const local = await localFile(s.kind, file);
+        const ext = local.file.split(".").pop()?.toLowerCase() ?? "";
+        sent.set(key, await deps.cloud.upload(s.kind, { name: local.file, bytes: await readFile(local.path), type: MIME[ext] ?? "application/octet-stream" }));
+      }
+      uploaded[s.id] = { name: sent.get(key)! };
     }
     const req = withOverrides(buildRunRequest(name, form, values, uploaded), body?.overrides);
     const confirm = body?.confirm === true;

@@ -6,7 +6,7 @@
 import { h, sprite } from "./dom.js";
 import { changed } from "./store.js";
 import { spice, edit, setSet, setQuietly, setDept, clearPass, workingOn } from "./spice.js";
-import { REMOVERS, TEMPLATES, framesIn } from "./spice-model.js";
+import { REMOVERS, TEMPLATES, framesIn, voidExtra } from "./spice-model.js";
 import { bento, spicon, iconKey, ghost, primary, fill, thumb, lightKey } from "./spice-ui.js";
 import { openWin, defineWindow } from "./spice-win.js";
 import { work, inputFor, cloud, freeFx, priceOf } from "./spice-engines.js";
@@ -55,9 +55,15 @@ function run(viewer) {
   const words = String(p.words ?? "").trim();
   return work("paint", p.how === "describe" ? `Remove ${words}` : TARGETS.find((t) => t.id === p.how).name, async (progress, job) => {
     const input = await inputFor("paint", shot);
-    const given = { video: input.media };
-    if (p.how === "describe") given.text = pl.engine === "obscura" && !/^remove/i.test(words) ? `Remove ${words}.` : words;
-    return { files: await cloud(pl.template, given)(progress, job), from: input.from };
+    const m = input.media;
+    const given = { video: m };
+    // VOID takes its object and the place without it as two sets of words; Obscura one sentence; the LTX clean-ups compare the clip with
+    // itself (their "before" is the same clip)
+    let extra;
+    if (p.how !== "describe") extra = { before_video: m };
+    else if (pl.engine === "void") extra = voidExtra(words, p.after, { width: m.width, height: m.height, seconds: m.seconds });
+    else given.text = /^remove/i.test(words) ? words : `Remove ${words}.`;
+    return { files: await cloud(pl.template, given, { extra })(progress, job), from: input.from };
   }, { note: `${p.how === "describe" ? words : TARGETS.find((t) => t.id === p.how).name} · ${TEMPLATES[pl.template].title}`, credits: pl.cost ?? 0, source: "cloud" });
 }
 
@@ -83,6 +89,10 @@ function targetBody(viewer) {
         h("button.sp-target-tile", { type: "button", "aria-pressed": String(p.how === t.id), dataset: { how: t.id }, title: `${t.name} — ${t.about}`, on: { click: () => setSet("paint", { how: t.id }) } },
           sprite(t.icon), h("b", {}, t.name), h("span", {}, t.about)))),
       words,
+      p.how === "describe" && pl.engine === "void" ? h("input.ut-words.sp-after", {
+        value: p.after ?? "", placeholder: "What's left: an empty street, a bare wall…", "aria-label": "What the place looks like once it is gone", title: "VOID fills the space from these words: say what is there without it, not what goes",
+        on: { input: (e) => setQuietly("paint", { after: e.target.value }), change: () => edit(() => {}) },
+      }) : null,
       p.how !== "describe" ? h("p.sp-hint", {}, p.how === "brush" ? "Paint over the spot in the viewer. It is taken out of every frame, so it is for what stays where it is: a sign, a mark on a wall." : p.how === "logo" ? "The logo or the watermark is found and taken out of the footage." : "The subtitles are found and taken off.") : null,
       h("div.sp-target-key", {}, primary({ id: "paint:run", label: pl.label, cost: pl.free ? undefined : pl.cost, working: !!busy, disabled: !!pl.why || (!pl.free && !runnerReady()), title: pl.why || (pl.free ? "Free, on this machine" : TEMPLATES[pl.template].about), run: () => run(viewer) })));
   };

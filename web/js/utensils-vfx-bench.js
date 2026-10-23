@@ -84,8 +84,9 @@ export function whereLine(id, p) {
 function more(id, p, env) {
   const t = templateOf(id, p);
   const schema = t && env.schema(t);
-  if (!t || !schema?.rest?.length) return [];
-  const rows = slotControls(schema.rest, p, env);
+  const rest = (schema?.rest ?? []).filter((x) => !(t?.own ?? []).includes(x.id));
+  if (!t || !rest.length) return [];
+  const rows = slotControls(rest, p, env);
   return rows.length ? [h("details.uv-more", {}, h("summary", {}, icon("chevron"), "More settings of the template"), ...rows)] : [];
 }
 
@@ -135,7 +136,8 @@ export const CONTROLS = {
       ? [...maskTools(p, env), note("Free, on this machine. Best on something that stays put: a logo, a sign, a mark on the lens. A person who moves needs Describe it.")]
       : [
         line("Remove", h("input.ut-words.uv-words", { value: p.words ?? "", placeholder: p.engine === "obscura" ? "the crystal glass in the foreground" : "person · car · the dog", "aria-label": "What to remove", dataset: { focus: "vfx-words" }, on: { input: (e) => env.say({ words: e.target.value }) } })),
-        line("Model", chipRow(Object.entries({ void: "VOID", obscura: "Obscura", vace: "Wan VACE" }), p.engine, (v) => env.set({ engine: v }), "Which template removes it")),
+        p.engine === "obscura" ? null : line("What's left", h("input.ut-words.uv-words", { value: p.after ?? "", placeholder: "an empty street, a bare wall… (the place without it)", "aria-label": "What the place looks like once it is gone", dataset: { focus: "vfx-after" }, on: { input: (e) => env.say({ after: e.target.value }) } })),
+        line("Model", chipRow(Object.entries({ void: "VOID", obscura: "Obscura" }), p.engine === "obscura" ? "obscura" : "void", (v) => env.set({ engine: v }), "Which template removes it")),
         whereLine("vfx-remove", p),
         ...more("vfx-remove", p, env),
       ]),

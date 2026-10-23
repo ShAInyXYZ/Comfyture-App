@@ -48,7 +48,7 @@ export const blankBody = () => ({
   range: null,
   set: {
     roto: { subjects: [], open: null, feather: 2.4, choke: -0.8, out: "alpha" },
-    paint: { how: "describe", words: "", engine: "void" },
+    paint: { how: "describe", words: "", after: "", engine: "void" },
     light: { look: "warm golden light from the left", words: "", reference: null, sky: null, weather: "rain", amount: 0.55, grade: "warm", exposure: 0, contrast: 1, saturation: 1 },
     fx: { element: "portal", words: "", place: { x: 0.62, y: 0.4, size: 0.6 }, when: null, ease: "inout", intensity: 0.8, spill: 0.65, depth: "behind" },
     comp: { height: 1080, factor: 2, engine: "free", format: "mp4", exports: [] },
@@ -254,9 +254,9 @@ export const TEMPLATES = {
   green: { dept: "roto", name: "api_bria_video_green_screen", title: "Bria", partner: "Bria", about: "Puts the subject on a flat green", want: { video: true } },
   cutout: { dept: "roto", name: "api_bria_remove_video_background_transparent", title: "Bria", partner: "Bria", about: "Takes the background out and leaves it clear", want: { video: true } },
   depth: { dept: "plate", name: "utility_depth_anything3_video_depth_estimation", title: "Depth Anything 3", about: "A depth map of every frame", want: { video: true }, gpu: 8 },
-  void: { dept: "paint", name: "utility_void_video_inpainting", title: "VOID", about: "Finds the object by its name and paints it out, with its shadows", want: { video: true, text: true }, gpu: 26 },
+  // (VOID takes its words as two of its own, its object and the place without it: voidExtra below)
+  void: { dept: "paint", name: "utility_void_video_inpainting", title: "VOID", about: "Finds the object by its name and paints it out, with its shadows", want: { video: true }, gpu: 26 },
   obscura: { dept: "paint", name: "template_ltx2_3_obscura_remova_lora_remove_object_from_video", title: "Obscura Remova", about: "Removes what you describe, with no mask", want: { video: true, text: true }, gpu: 18 },
-  vace: { dept: "paint", name: "video_wan_vace_inpainting", title: "Wan VACE", about: "Finds the object by its name and fills the space", want: { video: true, text: true }, gpu: 22 },
   watermark: { dept: "paint", name: "template_ltx2_3_remove_watermark_from_video", title: "LTX 2.3 watermark", about: "Takes a logo or a watermark out of the footage", want: { video: true }, gpu: 18 },
   subtitles: { dept: "paint", name: "template_ltx2_3_lora_remove_subtitles_from_video", title: "LTX 2.3 subtitles", about: "Takes the subtitles off the footage", want: { video: true }, gpu: 18 },
   beeble: { dept: "light", name: "api_beeble_switchx_video_edit", title: "Beeble SwitchX", partner: "Beeble", about: "Relights the footage to match a reference picture", want: { video: true, image: true, text: true } },
@@ -264,5 +264,42 @@ export const TEMPLATES = {
   qwen: { dept: "light", name: "image_qwen_image_edit_2509_relight", title: "Qwen Image Edit", about: "Changes the light of a picture", want: { image: true, text: true }, gpu: 9 },
   film: { dept: "comp", name: "utility_video_frame_interpolation", title: "FILM", about: "Makes the frames between the frames with an AI model", want: { video: true }, gpu: 3 },
 };
+/** What a template run brought back, as a pass's media. */
+export const mediaOf = (r) => ({
+  kind: r.kind === "image" ? "image" : "video",
+  url: r.url, file: r.file, width: r.width, height: r.height,
+  ...(r.kind === "image" ? {} : { seconds: r.duration ?? r.seconds }),
+});
+/**
+ * The clip of what came back, else its picture: a template that also saves a side-by-side comparison (the LTX clean-ups) or a rough
+ * first pass (VOID) has its result told by the name Cloud saved it under, so the comparison and the rough pass are never the pass.
+ */
+const rank = (r) => (r.kind === "video" ? 0 : 4) + (/compar/i.test(r.saved ?? "") ? 2 : 0) + (/pass_?1\b|pass1/i.test(r.saved ?? "") ? 1 : 0);
+export const pickMedia = (list) => {
+  const all = (Array.isArray(list) ? list : [list]).filter((r) => r?.url && (r.kind === "video" || r.kind === "image"));
+  const m = all.slice().sort((a, b) => rank(a) - rank(b))[0];
+  return m ? mediaOf(m) : null;
+};
+
+
+/**
+ * VOID's own inputs, for Spice's Paint and Utensils' Remove (it takes two sets of words, not one): SAM3 finds the object by a short name (32 tokens at most), and the hole is
+ * filled from words that say how the place looks without it, never naming what is gone (or it comes back). It works at its model's own
+ * size, about 672 x 384 pixels, turned to the clip's shape, over the whole clip in whole seconds (ten at most).
+ */
+export const VOID_AFTER = "The same place with nothing there: what was behind carries on naturally, the same light and colours, a steady camera.";
+export function voidExtra(words, after, { width, height, seconds } = {}) {
+  const what = String(words ?? "").trim().replace(/^remove\s+/i, "").replace(/[.!]+$/, "").split(/\s+/).slice(0, 12).join(" ");
+  const shape = width > 0 && height > 0 ? width / height : 16 / 9;
+  const w = Math.max(256, Math.round(Math.sqrt(672 * 384 * shape) / 16) * 16);
+  const h = Math.max(256, Math.round(Math.sqrt((672 * 384) / shape) / 16) * 16);
+  return {
+    sam3_object_mask_prompt: what,
+    positive_prompt_inpaint_fill_: String(after ?? "").trim() || VOID_AFTER,
+    width_pass_2_: w, height_pass_2_: h,
+    start_frame_index: 0, clip_duration_seconds_: Math.max(1, Math.min(10, Math.ceil(seconds || 5))),
+  };
+}
+
 /** The engines of Paint's object removal, by id (the first is the one it starts with). */
-export const REMOVERS = ["void", "obscura", "vace"];
+export const REMOVERS = ["void", "obscura"];

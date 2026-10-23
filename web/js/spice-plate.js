@@ -87,7 +87,8 @@ function depthPlan() {
 function readDepth() {
   const { seconds } = depthPlan();
   const credits = priceOf("depth", seconds) ?? 0;
-  return work("plate", "Depth", async (set, job) => cloud("depth", { video: await footage() })(set, job), {
+  // (the template reads five seconds unless told the clip's own length)
+  return work("plate", "Depth", async (set, job) => { const v = await footage(); return cloud("depth", { video: v }, { extra: { start_time: 0, duration: Math.max(1, Math.ceil(v.seconds ?? seconds ?? 5)) } })(set, job); }, {
     credits, note: "Depth Anything 3", source: "cloud",
     keep: (m, shot) => setPass("depth", m, { from: rangeOf(shot.body).in, note: "Depth Anything 3", credits, label: "Depth", source: "cloud" }, shot),
   });

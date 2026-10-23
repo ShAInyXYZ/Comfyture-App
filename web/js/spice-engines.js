@@ -10,22 +10,12 @@ import { editRun, editStop, editProbe, editPreview } from "./utensils-edit-api.j
 import { fxRun, fxStop } from "./utensils-fx-api.js";
 import { runnerOf, fillInputs, costOf, priceText } from "./utensils-cloud.js";
 import { spice, setPass, setBusy, edit, flushShots } from "./spice.js";
-import { FIRST, TEMPLATES, framesIn, secondsAt, lastFrame, rangeOf, gpuCredits, ltxCredits } from "./spice-model.js";
+import { FIRST, TEMPLATES, framesIn, secondsAt, lastFrame, rangeOf, gpuCredits, ltxCredits, mediaOf, pickMedia } from "./spice-model.js";
 
 // ---------------------------------------------------------------- what a file made is a media
 
 /** A file an engine made, as the shot keeps it. */
-export const mediaOf = (r) => ({
-  kind: r.kind === "image" ? "image" : "video",
-  url: r.url, file: r.file, width: r.width, height: r.height,
-  ...(r.kind === "image" ? {} : { seconds: r.duration ?? r.seconds }),
-});
-/** The first clip of what came back, else its first picture. */
-export const pickMedia = (list) => {
-  const all = (Array.isArray(list) ? list : [list]).filter((r) => r?.url && (r.kind === "video" || r.kind === "image"));
-  const m = all.find((r) => r.kind === "video") ?? all[0];
-  return m ? mediaOf(m) : null;
-};
+export { mediaOf, pickMedia };
 
 // ---------------------------------------------------------------- a department's job
 

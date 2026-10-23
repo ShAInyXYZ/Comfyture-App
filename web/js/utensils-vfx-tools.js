@@ -7,6 +7,7 @@
 import { registerTool, utensils, inputOf, setWorkspace, pickTool } from "./utensils.js";
 import { fxRun, fxStop, asResult } from "./utensils-fx-api.js";
 import { runCloud, runnerOf, costOf, priceText } from "./utensils-cloud.js";
+import { voidExtra } from "./spice-model.js";
 
 /** The card art: a before/after pair under web/brand/utensils/vfx/ (made by scripts/utensils-fx-art.ts from the pictures in docs/brand/products/utensils-v2/vfx-art). */
 export const artOf = (id) => ({ before: `brand/utensils/vfx/${id}-before.webp`, after: `brand/utensils/vfx/${id}-after.webp` });
@@ -44,9 +45,9 @@ export const STYLES = [
 ];
 /** The official templates the cloud tools run, by engine: the name in the catalogue, what it is, who runs it, what it takes. */
 export const TEMPLATES = {
-  void: { name: "utility_void_video_inpainting", title: "VOID", about: "Finds the object by its name and paints it out, with its shadows", partner: null, want: { video: true, text: true }, gpu: 26 },
+  // (VOID's words are its own two, set by voidExtra: they are not offered again in the template's other settings)
+  void: { name: "utility_void_video_inpainting", title: "VOID", about: "Finds the object by its name and paints it out, with its shadows", partner: null, want: { video: true }, gpu: 26, own: Object.keys(voidExtra("")) },
   obscura: { name: "template_ltx2_3_obscura_remova_lora_remove_object_from_video", title: "Obscura Remova", about: "Removes what you describe, with no mask", partner: null, want: { video: true, text: true }, gpu: 18 },
-  vace: { name: "video_wan_vace_inpainting", title: "Wan VACE", about: "Finds the object by its name and fills the space", partner: null, want: { video: true, text: true }, gpu: 22 },
   "bg-new": { name: "api_bria_video_replace_background", title: "Bria", about: "Puts a new background behind the people in a clip", partner: "Bria", want: { video: true, image: true }, gpu: 0 },
   "bg-clear": { name: "api_bria_remove_video_background_transparent", title: "Bria", about: "Takes the background out and leaves it clear", partner: "Bria", want: { video: true }, gpu: 0 },
   "light-picture": { name: "image_qwen_image_edit_2509_relight", title: "Qwen Image Edit relight", about: "Changes the light of a picture", partner: null, want: { image: true, text: true }, gpu: 9 },
@@ -60,7 +61,7 @@ export const TEMPLATES = {
 /** The template a cloud tool runs with its settings as they stand. */
 export function templateOf(id, p) {
   switch (id) {
-    case "vfx-remove": return TEMPLATES[p.engine] ?? TEMPLATES.void;
+    case "vfx-remove": return (p.engine === "obscura" ? TEMPLATES.obscura : TEMPLATES.void);
     case "vfx-background": return p.mode === "clear" ? TEMPLATES["bg-clear"] : TEMPLATES["bg-new"];
     case "vfx-relight": return p.mode === "clip" ? TEMPLATES["light-clip"] : TEMPLATES["light-picture"];
     case "vfx-restyle": return p.engine === "partner" ? TEMPLATES["style-partner"] : TEMPLATES["style-open"];
@@ -123,7 +124,7 @@ export function givenOf(id, p, i) {
   else if (p.picture?.file) given.image = { file: p.picture.file, url: p.picture.url, name: "picture" };
   const words = String(p.words ?? "").trim();
   if (id === "vfx-restyle") given.text = words || STYLES.find((s) => s[0] === p.style)?.[2] || "";
-  else if (id === "vfx-remove") given.text = p.engine === "obscura" && !/^remove/i.test(words) ? `Remove ${words}.` : words;
+  else if (id === "vfx-remove") given.text = p.engine === "obscura" ? (/^remove/i.test(words) ? words : `Remove ${words}.`) : undefined;
   else if (id === "vfx-relight") given.text = `relight the image using ${words}`;
   else if (words) given.text = words;
   return given;
@@ -200,7 +201,8 @@ export async function runCloudTool(id) {
   const p = paramsOf(id);
   const t = templateOf(id, p);
   if (!t || !(await runnerOf())) return null;
-  return runCloud(t.name, t.want, givenOf(id, p, i), { tool: id, label: vfxById(id).name, extra: p.extra, credits: costFor(id, i)?.credits ?? null, note: t.partner ? `${t.title} (partner)` : t.title });
+  const extra = t === TEMPLATES.void ? { ...p.extra, ...voidExtra(p.words, p.after, { width: i.video?.width, height: i.video?.height, seconds: i.video?.duration }) } : p.extra;
+  return runCloud(t.name, t.want, givenOf(id, p, i), { tool: id, label: vfxById(id).name, extra, credits: costFor(id, i)?.credits ?? null, note: t.partner ? `${t.title} (partner)` : t.title });
 }
 
 /** What runs on this machine for a tool, with its settings as they stand: the free tools and the free ways of two others. */

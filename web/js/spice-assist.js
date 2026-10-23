@@ -36,7 +36,7 @@ export function summary() {
     passes: WORKSPACES.map((d) => d.id).filter((d) => passOf(b, d)?.media).map((d) => ({ dept: d, note: passOf(b, d).note, from: passOf(b, d).from, to: passOf(b, d).to, shown: visible(passOf(b, d)) })),
     subjects: b.set.roto.subjects.map((x) => ({ name: x.name, tracked: !!x.media && !x.stale, clicks: x.points.length })),
     fx: { element: f.element, from: w.from, to: w.to, seconds: fxSeconds(w, fps), depth: f.depth, intensity: f.intensity, spill: f.spill, ease: f.ease },
-    paint: { what: b.set.paint.how === "describe" ? "object" : b.set.paint.how, engine: b.set.paint.engine, words: b.set.paint.words },
+    paint: { what: b.set.paint.how === "describe" ? "object" : b.set.paint.how, engine: b.set.paint.engine, words: b.set.paint.words, after: b.set.paint.after },
     light: { tool: spice.tool.light, words: b.set.light.words || b.set.light.look, weather: b.set.light.weather, grade: b.set.light.grade },
     comp: { tool: spice.tool.comp, height: b.set.comp.height, factor: b.set.comp.factor, engine: b.set.comp.engine, format: b.set.comp.format },
     run: key ? { label: key.label, cost: key.cost, free: key.free, ready: key.ready, why: key.why } : null,
@@ -97,6 +97,7 @@ export function apply(a) {
   } else if (a.op === "paint") {
     const patch = { how: a.what === "object" ? "describe" : a.what };
     if (a.words !== undefined) patch.words = a.words;
+    if (a.after !== undefined) patch.after = a.after;
     if (a.engine) patch.engine = a.engine;
     setSet("paint", patch);
     setDept("paint");

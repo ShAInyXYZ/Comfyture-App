@@ -237,3 +237,27 @@ test("Spice's example shots are whole: each has its plate, every clip and still 
     }
   }
 });
+
+test("a run's pass is its result: never the side-by-side comparison an LTX clean-up also saves, nor VOID's rough first pass", () => {
+  const out = (saved: string, kind = "video") => ({ kind, url: `/media/videos/${saved}`, file: saved, width: 1920, height: 1080, seconds: 5, saved });
+  assert.equal(m.pickMedia([out("video_compare_00001_.mp4"), out("video_00001_.mp4")])!.file, "video_00001_.mp4");
+  assert.equal(m.pickMedia([out("VOID_pass1_00001_.mp4"), out("VOID_pass2_00001_.mp4")])!.file, "VOID_pass2_00001_.mp4");
+  assert.equal(m.pickMedia([out("mask_00001_.png", "image"), out("matte_00001_.mp4")])!.file, "matte_00001_.mp4", "a clip before a picture");
+  assert.equal(m.pickMedia([out("video_compare_00001_.mp4")])!.file, "video_compare_00001_.mp4", "and the comparison when it is all there is");
+  assert.equal(m.pickMedia([]), null);
+});
+
+test("VOID is told the object to find and the place without it, at its own size turned to the clip's shape, over the whole clip", () => {
+  const wide = m.voidExtra("Remove the man in the red coat.", "", { width: 1920, height: 1080, seconds: 5.2 });
+  assert.equal(wide.sam3_object_mask_prompt, "the man in the red coat", "SAM3 gets a short name, not an order");
+  assert.equal(wide.positive_prompt_inpaint_fill_, m.VOID_AFTER, "the fill says what is left, never what goes");
+  assert.ok(!/man|coat/.test(wide.positive_prompt_inpaint_fill_));
+  assert.deepEqual([wide.width_pass_2_, wide.height_pass_2_], [672, 384], "a wide clip at VOID's own 672 x 384");
+  assert.equal(wide.clip_duration_seconds_, 6, "the whole clip, in whole seconds");
+  const tall = m.voidExtra("the bin", "an empty pavement", { width: 1080, height: 1920, seconds: 30 });
+  assert.deepEqual([tall.width_pass_2_, tall.height_pass_2_], [384, 672], "a tall clip is not squashed into a wide frame");
+  assert.equal(tall.positive_prompt_inpaint_fill_, "an empty pavement");
+  assert.equal(tall.clip_duration_seconds_, 10, "ten seconds at most");
+  assert.equal(m.voidExtra(Array(30).fill("word").join(" ")).sam3_object_mask_prompt.split(" ").length, 12, "within SAM3's 32 tokens");
+  assert.ok(!m.REMOVERS.includes("vace"), "Wan VACE is not a remover: it needs a reference picture and renders square");
+});

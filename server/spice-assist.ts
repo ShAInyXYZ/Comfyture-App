@@ -49,7 +49,8 @@ export const SPICE_TOOL = {
             y: { type: "number", description: "For fx: where it is, 0 (top) to 1 (bottom)." },
             size: { type: "number", description: "For fx: how big, 0.1 to 1." },
             what: { type: "string", enum: [...PAINT_WHAT], description: "For paint: object (words say which), logo or subtitles." },
-            engine: { type: "string", description: "For paint: void, obscura or vace. For finish slow: free or film." },
+            after: { type: "string", description: "For paint with void: the place once the object is gone, what is left there (an empty pavement, a bare wall), never the object." },
+            engine: { type: "string", description: "For paint: void or obscura. For finish slow: free or film." },
             tool: { type: "string", enum: [...LIGHT_TOOLS, ...FINISH_TOOLS], description: "For light: relight, weather or grade. For finish: upscale, slow or export." },
             weather: { type: "string", enum: [...WEATHERS] },
             amount: { type: "number", description: "For light weather: 0 to 1." },
@@ -77,7 +78,7 @@ Actions (op and its fields):
 - trim {in, out}: the frame range the shot is worked on. Frames are slate numbers: the first frame of the footage is 1001.
 - subject {name}: add a subject to Roto by its name ("the woman in the raincoat"); Roto cuts it out from its name, and the user may click it in the viewer too.
 - fx {element, words, from, to, depth, intensity, spill, ease, x, y, size}: open Fx with that element and its settings. from and to are the frames it plays on; depth is behind or front (the people); intensity and spill are 0 to 1; x and y say where it is (0 to 1); size 0.1 to 1. Send only what the user asked for; words only when they describe it their own way.
-- paint {what, words, engine}: open Paint ready: what is object (words say which one), logo or subtitles; engine void, obscura or vace for an object.
+- paint {what, words, after, engine}: open Paint ready: what is object (words name it, short), logo or subtitles; engine void or obscura. after (void): what is left once it is gone, never the object.
 - light {tool, words, weather, amount, grade, exposure, saturation}: open Light with that tool set up: relight (words say the light), weather (rain, snow or fog, amount 0 to 1) or grade (none, warm, cool, filmic, punchy, faded, noir).
 - finish {tool, height, factor, engine, format}: open Comp with a finish set up: upscale (height 720, 1080 or 1440), slow (factor 1.5, 2, 3 or 4; engine free or film) or export (mp4, webm, mov or gif).
 - run {}: run what is open, with what it holds. It can cost credits: the app asks the user to confirm the price with a key under your answer, so say it is ready, never that it has started; a yes in words gets pointed to that key.
@@ -93,7 +94,7 @@ interface Summary {
   passes?: Pass[];
   subjects?: { name: string; tracked?: boolean; clicks?: number }[];
   fx?: { element?: string; from?: number; to?: number; depth?: string; intensity?: number; spill?: number; ease?: string; seconds?: number };
-  paint?: { what?: string; engine?: string; words?: string };
+  paint?: { what?: string; engine?: string; words?: string; after?: string };
   light?: { tool?: string; words?: string; weather?: string; grade?: string };
   comp?: { tool?: string; height?: number; factor?: number; engine?: string; format?: string };
   run?: { label?: string; cost?: number | null; free?: boolean; ready?: boolean; why?: string };
@@ -127,7 +128,7 @@ export function spicePrompt(s: Summary, turns: Turn[]) {
   if (subjects.length) lines.push(`ROTO'S SUBJECTS: ${subjects.map((x) => `${cut(x.name, 40)} (${x.tracked ? "cut out" : "not yet"}, ${Number(x.clicks) || 0} clicks)`).join("; ")}.`);
   lines.push(`FX ELEMENTS (ids): ${ELEMENT_IDS.join(", ")}. EASES: ${EASE_IDS.join(", ")}.`);
   if (s.fx && typeof s.fx === "object") lines.push(`FX HOLDS: ${cut(s.fx.element, 16)}, frames ${Number(s.fx.from) || "?"} to ${Number(s.fx.to) || "?"} (${Number(s.fx.seconds) || "?"} s), ${cut(s.fx.depth, 8)}, intensity ${s.fx.intensity ?? "?"}, light spill ${s.fx.spill ?? "?"}, ease ${cut(s.fx.ease, 8)}.`);
-  if (s.paint && typeof s.paint === "object") lines.push(`PAINT HOLDS: ${cut(s.paint.what, 12)}${s.paint.words ? ` "${cut(s.paint.words, 80)}"` : ""}, engine ${cut(s.paint.engine, 10)}. ENGINES: ${REMOVERS.join(", ")}.`);
+  if (s.paint && typeof s.paint === "object") lines.push(`PAINT HOLDS: ${cut(s.paint.what, 12)}${s.paint.words ? ` "${cut(s.paint.words, 80)}"` : ""}${s.paint.after ? `, what is left "${cut(s.paint.after, 80)}"` : ""}, engine ${cut(s.paint.engine, 10)}. ENGINES: ${REMOVERS.join(", ")}.`);
   if (s.light && typeof s.light === "object") lines.push(`LIGHT HOLDS: ${cut(s.light.tool, 10)}, light "${cut(s.light.words, 80)}", weather ${cut(s.light.weather, 6)}, grade ${cut(s.light.grade, 8)}.`);
   if (s.comp && typeof s.comp === "object") lines.push(`COMP HOLDS: ${cut(s.comp.tool, 8)}, ${Number(s.comp.height) || "?"}p, ${s.comp.factor ?? "?"}x, ${cut(s.comp.engine, 6)}, ${cut(s.comp.format, 5)}.`);
   const r = s.run;
@@ -197,6 +198,7 @@ export function readSpiceAnswer(reply: string, s: Summary = {}) {
         if (!what) break;
         const out: any = { op: "paint", what };
         if (what === "object" && cut(a.words, 300)) out.words = cut(a.words, 300);
+        if (what === "object" && cut(a.after, 300)) out.after = cut(a.after, 300);
         const engine = oneOf(a.engine, REMOVERS as readonly string[]);
         if (what === "object" && engine) out.engine = engine;
         actions.push(out);
