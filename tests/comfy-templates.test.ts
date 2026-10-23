@@ -7,7 +7,7 @@ import { mkdtemp, readFile, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  flatten, library, listing, search, buildForm, buildRunRequest, parseCredits, explainError, isDone, isOver, jobOutputs, jobError, loaderName, publicSlot, createTemplates, fakeRun, png, type Cloud,
+  flatten, library, listing, search, buildForm, buildRunRequest, withOverrides, parseCredits, explainError, isDone, isOver, jobOutputs, jobError, loaderName, publicSlot, createTemplates, fakeRun, png, type Cloud,
 } from "../server/comfy-templates.ts";
 
 const fx = (name: string) => readFile(join(import.meta.dirname, "fixtures", "comfy-templates", name), "utf8").then(JSON.parse);
@@ -337,4 +337,20 @@ test("the words of a job's status: a finished job ends the wait well, a failed o
   }
   for (const w of ["success", "completed", "succeeded"]) assert.equal(isDone(w), true, w);
   for (const w of ["error", "failed", "cancelled", "canceled", "timeout"]) assert.equal(isOver(w), true, w);
+});
+
+test("a run can set a template's own nodes beyond its form: node ids, input names and plain values only", () => {
+  const req = withOverrides({ name: "t", slot_overrides: {}, input_overrides: { "440": { image: "a.png" } } }, {
+    "441": { system_prompt: "Repeat it.", model: "gemini-3-1-flash-lite", seed: 7 },
+    "442": { voice: "Matilda (female, american)" },
+    "440": { image: "b.png" },
+    "x9": { voice: "dropped" },
+    "443": { "bad key!": 1, nested: { no: true }, big: "y".repeat(9000) },
+  });
+  assert.deepEqual(req.input_overrides["441"], { system_prompt: "Repeat it.", model: "gemini-3-1-flash-lite", seed: 7 });
+  assert.equal(req.input_overrides["442"].voice, "Matilda (female, american)");
+  assert.equal(req.input_overrides["440"].image, "b.png", "a setting given is the one used");
+  assert.ok(!("x9" in req.input_overrides) && !("bad key!" in req.input_overrides["443"]) && !("nested" in req.input_overrides["443"]));
+  assert.equal(String(req.input_overrides["443"].big).length, 8000);
+  assert.equal(withOverrides(req, null), req);
 });
