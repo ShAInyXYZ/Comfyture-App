@@ -4,8 +4,8 @@
 // works on the top of the stack, and each finish builds on the last; "Start over" takes the Comp pass away. Made once and kept:
 // { el, update, sig, slot, viewer }.
 import { h } from "./dom.js";
-import { spice, edit, setSet, setPass, setQuietly, clearPass, workingOn, creditsTodayAll } from "./spice.js";
-import { PICTURES, TEMPLATES, framesIn, topOf, passOf, visible, rangeText } from "./spice-model.js";
+import { spice, edit, setSet, setPass, clearPass, workingOn, creditsTodayAll } from "./spice.js";
+import { PICTURES, TEMPLATES, framesIn, topOf, passOf } from "./spice-model.js";
 import { WORKSPACES } from "./spice-harness.js";
 import { bento, spicon, ghost, primary, fill, thumb } from "./spice-ui.js";
 import { openWin, defineWindow } from "./spice-win.js";

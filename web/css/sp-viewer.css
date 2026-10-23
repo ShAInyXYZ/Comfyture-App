@@ -7,7 +7,8 @@
 .sp-viewer-title b { font: 600 1.375rem/1 var(--font-mono); color: var(--accent); letter-spacing: .02em; }
 .sp-viewer-title em { font: 500 .75rem/1 var(--font-mono); font-style: normal; letter-spacing: .22em; color: var(--muted); }
 
-.sp-stage-host { flex: 1 1 0; min-height: 7rem; container-type: size; display: grid; place-items: center; overflow: hidden; border-radius: 1rem; background: var(--sunk); }
+.sp-stage-host { position: relative; flex: 1 1 0; min-height: 7rem; container-type: size; display: grid; place-items: center; overflow: hidden; border-radius: 1rem; background: var(--sunk); isolation: isolate; }
+.sp-stage-host::before { content: ""; position: absolute; inset: -12%; z-index: -1; background: var(--sp-still, none) center / cover; filter: blur(28px) brightness(.34) saturate(1.1); }
 .sp-stage { --wipe: 50%; position: relative; width: min(100cqw, calc(100cqh * var(--arn, 1.7778))); aspect-ratio: var(--ar, 16 / 9); overflow: hidden; border-radius: .5rem; background: #000; touch-action: none; }
 .sp-stage[data-tool="points"] { cursor: crosshair; }
 .sp-stage[data-tool="mask"] { cursor: cell; }

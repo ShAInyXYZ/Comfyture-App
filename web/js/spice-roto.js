@@ -5,10 +5,10 @@
 // then passes the matte to Paint). A subject is cut out by the SAM3 template (utility_video_segment_sam3) from its name and its clicks;
 // the green screen is Bria's. Made once and kept: { el, update, sig, slot, viewer, point, frame }.
 import { h } from "./dom.js";
-import { state, changed } from "./store.js";
+import { changed } from "./store.js";
 import { spice, edit, setSet, setQuietly, setDept, setFrame, setPass, workingOn } from "./spice.js";
-import { FIRST, lastFrame, rangeOf, framesIn, samExtra, OUTS, TEMPLATES, secondsAt, frameAt } from "./spice-model.js";
-import { bento, spicon, iconKey, ghost, primary, fill, thumb, svg } from "./spice-ui.js";
+import { FIRST, lastFrame, rangeOf, framesIn, samExtra, OUTS, TEMPLATES, secondsAt } from "./spice-model.js";
+import { bento, spicon, iconKey, primary, fill, thumb, svg } from "./spice-ui.js";
 import { openWin, defineWindow } from "./spice-win.js";
 import { work, footage, cloud, priceOf } from "./spice-engines.js";
 import { runnerReady } from "./utensils-cloud.js";

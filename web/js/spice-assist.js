@@ -4,7 +4,7 @@
 // Running costs credits (or time): it waits in her answer for one yes from you, with its price, and nothing runs until you give it.
 import { changed, toast, writer } from "./store.js";
 import { spice, edit, setSet, setDept, creditsTodayAll, workingOn } from "./spice.js";
-import { FIRST, lastFrame, rangeOf, framesIn, whenOf, fxSeconds, elementById, passOf, visible } from "./spice-model.js";
+import { FIRST, lastFrame, rangeOf, whenOf, fxSeconds, elementById, passOf, visible } from "./spice-model.js";
 import { WORKSPACES } from "./spice-harness.js";
 import { runnerFor } from "./spice-runs.js";
 

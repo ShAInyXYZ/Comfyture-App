@@ -2,12 +2,12 @@
 // frame range the shot is worked on: every engine takes the footage cut to it) and DEPTH (an analysis pass read from the footage, a depth
 // map of every frame). Plate has no pass of its own to make: the footage is the pass. Made once and kept: { el, update, sig, slot }.
 import { h } from "./dom.js";
-import { state, changed } from "./store.js";
+import { state } from "./store.js";
 import { spice, edit, setPass, clearPass, workingOn } from "./spice.js";
-import { FIRST, lastFrame, rangeOf, rangeText, framesIn, secondsAt, TEMPLATES } from "./spice-model.js";
+import { FIRST, lastFrame, rangeOf, rangeText, framesIn, TEMPLATES } from "./spice-model.js";
 import { bento, spicon, iconKey, ghost, primary, fill, thumb } from "./spice-ui.js";
 import { openWin, defineWindow } from "./spice-win.js";
-import { work, footage, cloud, importFootage, useClip, pickFile, priceOf, priceLabel } from "./spice-engines.js";
+import { work, footage, cloud, importFootage, useClip, pickFile, priceOf } from "./spice-engines.js";
 import { runnerReady } from "./utensils-cloud.js";
 import { registerRunner } from "./spice-runs.js";
 

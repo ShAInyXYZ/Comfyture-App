@@ -413,6 +413,17 @@ try {
   ok((await page.locator(".sp-facts").innerText()).includes("1010 – 1100"), "the facts show the new range");
   await shot("8-paprika");
 
+  // ---- the range is respected: the engines take the footage cut to it (made once, kept with the plate), and what they make starts at its first frame
+  const input = await js(async () => {
+    const { inputFor, footage } = await import("/js/spice-engines.js");
+    const { spice } = await import("/js/spice.js");
+    const first = await inputFor("paint");
+    const again = await footage();
+    const plate = spice.shot.body.passes.plate;
+    return { from: first.from, seconds: first.media.seconds, same: again.url === first.media.url, cut: plate.cut && [plate.cut.in, plate.cut.out], whole: plate.media.url !== first.media.url };
+  });
+  ok(input.from === 1010 && input.whole && input.same && input.cut?.join() === "1010,1100" && Math.abs(input.seconds - 91 / 24) < 0.3, "the footage is cut to the range once, kept with the plate, and its first frame is the range's", JSON.stringify(input));
+
   ok(errors.length === 0, "no page errors", errors.join(" | ").slice(0, 300));
   ok(outbound.length === 0, "nothing left this machine", outbound.slice(0, 2).join(" "));
 } finally {

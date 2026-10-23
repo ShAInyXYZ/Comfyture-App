@@ -371,7 +371,8 @@ export function createViewer(on = {}) {
   // Space plays, the arrows step: only while the viewer is the page's own (no field is being typed in)
   document.addEventListener("keydown", (e) => {
     if (!el.isConnected || el.closest("[hidden]") || e.target.closest?.("input, textarea, select, [contenteditable], .sp-wipe") || e.ctrlKey || e.metaKey) return;
-    if (e.key === " ") (e.preventDefault(), spice.playing ? pause() : playNow());
+    // (Space on a key is that key's own press)
+    if (e.key === " " && !e.target.closest?.("button, a")) (e.preventDefault(), spice.playing ? pause() : playNow());
     else if (e.key === "ArrowLeft") (e.preventDefault(), seek(spice.frame - 1));
     else if (e.key === "ArrowRight") (e.preventDefault(), seek(spice.frame + 1));
   });
@@ -390,6 +391,9 @@ export function createViewer(on = {}) {
     stage.style.setProperty("--ar", `${p?.media.width || 16} / ${p?.media.height || 9}`);
     stage.style.setProperty("--arn", String(ar));
     stage.dataset.tool = ctx.tool ?? "";
+    // the monitor around a stage of another shape is the footage again, blurred and dimmed, not a black bar
+    const still = p?.media.still ?? (p?.media.kind === "image" ? p.media.url : null);
+    host.style.setProperty("--sp-still", still ? `url("${still}")` : "none");
     // the edge: a choke grows (negative) or shrinks the matte, a feather softens it; the stage is a little smaller than the footage's pixels
     const edge = dept === "roto" ? ctx.edge : null;
     stage.style.setProperty("--sp-edge", edge ? "url(#sp-edge)" : "none");

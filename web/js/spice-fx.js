@@ -6,7 +6,7 @@
 import { h } from "./dom.js";
 import { state, changed } from "./store.js";
 import { spice, edit, setSet, setQuietly, workingOn } from "./spice.js";
-import { ELEMENTS, EASES, elementById, easeAt, whenOf, fxSeconds, fxPrompt, rangeOf, lastFrame, framesIn, FIRST, ltxCredits } from "./spice-model.js";
+import { ELEMENTS, EASES, elementById, easeAt, whenOf, fxSeconds, fxPrompt, rangeOf, lastFrame, framesIn, ltxCredits } from "./spice-model.js";
 import { bento, spicon, primary, fill, thumb, svg } from "./spice-ui.js";
 import { openWin, defineWindow } from "./spice-win.js";
 import { work, inputFor, timeIn, frameOf, ltx, freeFx } from "./spice-engines.js";
