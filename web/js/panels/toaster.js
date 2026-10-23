@@ -1,11 +1,11 @@
 // Toaster's screen: block an object or a whole scene out in clay, toast it into a picture, then a turnaround and a 3D model. A project bar
-// on top (toaster-projects.js: the projects as tabs, and the Scene / Render switch, key T), then three columns, one screen tall.
-// SCENE mode: on the left the PARTS, the ADD grid and the part SELECTED (its @tag, what it is, its pictures: the part's sheet); in the middle
-// the viewport (toaster-view.js, made once and kept) with Crumpet's bar under it; on the right a compact RENDER card (the picture, Toast it,
-// the way to the studio), the TURNAROUND (four clay views, rendered as one sheet) and the 3D MODEL made from it on Comfy Cloud.
-// RENDER mode: the middle becomes the studio (a big picture, then what it is, the scene, the pictures that go with it, who is in the frame,
-// the prompt, and the keys that toast it or improve its words), and the viewport goes small and live to the top of the right column, with the
-// cameras as a row under it: the camera you render from. The left keeps the parts and Selected, which is the room for a part's sheet.
+// on top (toaster-projects.js: the projects as tabs, and the Scene / Render switch, key T), then one of two views, one screen tall.
+// SCENE (building): the PARTS, the ADD grid and the part SELECTED (its editing) on the left; the viewport (toaster-view.js, made once and
+// kept) across all the rest, with Crumpet's bar under it. Nothing of the render is in sight.
+// RENDER (rendering): no viewport in sight. On the left "In the frame": the parts, and under them the selected part's SHEET (its @tag, what it
+// is, its pictures). In the middle the studio: a big picture (the render, or the clay as the chosen camera sees it), what it is, the scene,
+// the references and the prompt as pills, and the keys that toast it or improve its words. On the right the CAMERA to render from (the slots
+// kept in the Scene), the TURNAROUND (four clay views, rendered as one sheet) and the 3D MODEL made from it on Comfy Cloud.
 // The parts and the scene are called by @tags in the words (pills.js), as on the Stage. The right column draws itself on "toaster-runs", so
 // a render's progress never redraws a field in use.
 import { h, icon, sprite } from "../dom.js";
@@ -17,13 +17,13 @@ import { pillField } from "../pills.js";
 import { mentionAt, putMention } from "../mentions.js";
 import { peek, unpeek } from "../peek.js";
 import {
-  toaster, body, partsNow, selectedParts, sync, loadDrafts, pick, select, selectAll,
+  toaster, describeParts, body, partsNow, selectedParts, sync, loadDrafts, pick, select, selectAll,
   setTool, toggleSnap, addPart, addPiece, addCharacter, reposeCharacter, setProps, colourAllByKind, applyTransforms, removeSelected, removePart, duplicateSelected, mirrorSelected, dropSelected,
   toggleHidden, undoParts, redoParts, canUndo, canRedo, setWords, setRatio, setModel, keepCamera, setFocal, saveCamera, recallCamera, onCamera, removeCamera, renameCamera, loadModels, modelNow, hasClay,
   renderFrame, renderSheet, forget, showRender, setCompare, price3d, priceNow, make3d, putOnStage, isArmed, arm, disarm, toggleMap,
   setMode, addPartRef, removePartRef, addSceneRef, removeSceneRef, setPrompt, framePlan, improveWords,
 } from "../toaster.js";
-import { SHAPES, PALETTE, RATIOS, MAPS, POSE_SLIDERS, roundLabel, hasSides, colorName, shapeOf, tagsOf, isAsset, isCharacter } from "../toaster-model.js";
+import { SHAPES, PALETTE, RATIOS, MAPS, POSE_SLIDERS, roundLabel, hasSides, colorName, shapeOf, tagsOf, describeOf, isAsset, isCharacter } from "../toaster-model.js";
 import { CRUMPET } from "../toaster-harness.js";
 import { projectBar, drawProjectBar } from "./toaster-projects.js";
 
@@ -72,13 +72,13 @@ function build(el) {
   s.selectedCard = h("section.ts-card.ts-selected", {}, h("header.ts-head", {}, h("h2.ts-label", {}, "Selected")), s.inspector);
   s.left = h("aside.ts-col.ts-left", { "aria-label": "The scene" },
     h("div.ts-id", {}, h("img", { src: CRUMPET.face, alt: "", draggable: false }), h("div.ts-id-text", {}, h("b", {}, CRUMPET.name), h("span", {}, CRUMPET.tag))),
-    h("section.ts-card.ts-parts-card", {}, h("header.ts-head", {}, h("h2.ts-label", {}, "Parts"), s.partsCount, h("span.spacer"),
+    h("section.ts-card.ts-parts-card", {}, h("header.ts-head", {}, s.partsLabel = h("h2.ts-label", {}, "Parts"), s.partsCount, h("span.spacer"),
       h("button.ts-iconkey.is-sm", { type: "button", title: "Colour by kind — the colour ID: each kind of thing its family of colours, each type its shade, people each their own (shapes keep theirs)", "aria-label": "Colour by kind", on: { click: async () => (await assetsModule(), colourAllByKind(pieceOf)) } }, sprite("channel-id"))), s.parts),
     s.addCard, s.selectedCard);
   // pictures dropped or pasted on the part's card go on its sheet
   const sheetFiles = (files) => {
     const one = selectedParts();
-    if (one.length === 1) addSheetPictures(one[0], files);
+    if (one.length === 1 && toaster.mode === "render") addSheetPictures(one[0], files);
   };
   dropFiles(s.selectedCard, sheetFiles);
 
@@ -97,8 +97,7 @@ function build(el) {
   s.mid = h("div.ts-mid");
 
   // the compact render card of the scene: the picture (drawn again as it comes), Toast it and the way to the studio
-  s.renderView = h("div.ts-render-view");
-  s.render = h("section.ts-card.ts-render", { "aria-label": "Render" }, s.renderView);
+  s.cameraCard = h("section.ts-card.ts-camera-card", { "aria-label": "Camera" });
   s.sheet = h("section.ts-card.ts-sheet", { "aria-label": "Turnaround" });
   s.model = h("section.ts-card.ts-model", { "aria-label": "3D model" });
   s.right = h("aside.ts-col.ts-right", { "aria-label": "Toasted" });
@@ -119,9 +118,10 @@ function build(el) {
 }
 
 /**
- * The page's nodes where the mode puts them (they are moved, never made again: the viewport keeps its canvas). The scene: the viewport in
- * the middle and the compact render card on the right. The render: the studio in the middle, the viewport small at the top of the right
- * column with the cameras as a row under it, and no Add card on the left (Selected is the room for a part's sheet).
+ * One mode at a time (the nodes are moved, never made again: the viewport keeps its canvas). The scene: two areas, the parts, Add and the
+ * part's editing on the left, the viewport across the rest with Crumpet's bar under it. The render: the parts as "In the frame" with the
+ * selected part's sheet on the left, the studio in the middle, the camera, the turnaround and the 3D model on the right; the viewport is
+ * kept hidden (its stills draw through their own lens and size, and it measures itself again when the scene comes back).
  */
 function layout() {
   const s = shell;
@@ -130,15 +130,16 @@ function layout() {
   s.root.classList.toggle("is-render", render);
   s.root.classList.toggle("is-scene", !render);
   s.addCard.hidden = render;
-  s.cams.classList.toggle("is-row", render);
+  s.partsLabel.textContent = render ? "In the frame" : "Parts";
   if (render) {
     if (drawer) openDrawer(null);
     s.mid.replaceChildren(s.studio, chatSlot);
-    s.right.replaceChildren(s.viewport, s.cams, s.sheet, s.model);
+    // (the viewport stays in the page, hidden: the stills are drawn through their own lens and size)
+    s.right.replaceChildren(s.cameraCard, s.sheet, s.model, s.viewport);
+    s.root.replaceChildren(s.left, s.mid, s.right);
   } else {
-    s.viewport.insertBefore(s.cams, s.tools);
     s.mid.replaceChildren(s.viewport, chatSlot);
-    s.right.replaceChildren(s.render, s.sheet, s.model);
+    s.root.replaceChildren(s.left, s.mid);
   }
   for (const b of s.modes.children) b.setAttribute("aria-pressed", String(b.dataset.mode === toaster.mode));
 }
@@ -215,7 +216,9 @@ function drawParts() {
         : h("span.ts-glyph", { title: shapeOf(p.shape).name }, sprite(`shape-${p.shape}`)),
       h("span.ts-marks", {}, h("span.ts-chip", { style: { background: p.color }, title: colorName(p.color) }),
         first ? h("span.ts-mini-pic", { title: `${p.refs.length} picture${p.refs.length > 1 ? "s" : ""} on its sheet` }, h("img", { src: first.url, alt: "", draggable: false }), p.refs.length > 1 ? h("i", {}, String(p.refs.length)) : null) : null),
-      renaming === p.id ? nameField(p.name, (v) => setProps({ name: v }, { ids: [p.id] })) : h("span.ts-name", { title: "Double-click to rename" }, p.name),
+      renaming === p.id ? nameField(p.name, (v) => setProps({ name: v }, { ids: [p.id] })) : toaster.mode === "render"
+        ? h("span.ts-name", { title: `${p.name} — double-click to rename` }, describeOf(p, pieceOf) || p.name, tags.has(p.id) ? h("code.ts-at-mini", {}, `@${tags.get(p.id)}`) : null)
+        : h("span.ts-name", { title: "Double-click to rename" }, p.name),
       h("button.ts-mini", { type: "button", "aria-pressed": String(!!p.hidden), title: p.hidden ? "Show" : "Hide", "aria-label": p.hidden ? `Show ${p.name}` : `Hide ${p.name}`, on: { click: (e) => (e.stopPropagation(), toggleHidden(p.id)) } }, sprite("eye")),
       h("button.ts-mini", { type: "button", title: "Remove", "aria-label": `Remove ${p.name}`, on: { click: (e) => (e.stopPropagation(), removePart(p.id)) } }, icon("trash")));
     // a part with a sheet shows it on hover
@@ -341,7 +344,8 @@ const WORDS_FOR = {
 };
 function drawInspector() {
   const sel = selectedParts();
-  if (!sel.length) return shell.inspector.replaceChildren(h("p.ts-empty", {}, "Click a part in the viewport or in the list. Shift adds to the selection."));
+  const sheetOnly = toaster.mode === "render";
+  if (!sel.length) return shell.inspector.replaceChildren(h("p.ts-empty", {}, sheetOnly ? "Click a part in the list to write what it is and add its pictures." : "Click a part in the viewport or in the list. Shift adds to the selection."));
   const p = sel[0];
   const many = sel.length > 1;
   const swatches = h("div.ts-swatches", { role: "group", "aria-label": "Colour" }, ...PALETTE.map(([hex, name]) =>
@@ -356,7 +360,10 @@ function drawInspector() {
         tag ? h("code.ts-at", { title: `Its @tag: call it by this name in the words, and its sheet goes with it` }, `@${tag}`) : null)),
     h("label.ts-stack", {}, h("span.ts-label", {}, "What it is"), made),
   ];
-  if (!many) rows.push(sheetPictures(p));
+  if (sheetOnly) {
+    if (!many) rows.push(sheetPictures(p));
+    return shell.inspector.replaceChildren(...rows);
+  }
   rows.push(swatches);
   if (!many) {
     rows.push(triple("Size", "size", p.size, { step: 0.05, min: 0.01 }), triple("Move", "pos", p.pos, { step: 0.05 }), triple("Turn", "rot", p.rot, { step: 5, unit: "°" }));
@@ -467,6 +474,7 @@ let pieceQuery = "";
 let pieceGroup = "All";
 let assets = null;
 const pieceOf = (type) => library?.pieces.find((x) => x.type === type) ?? null;
+toaster.pieceOf = pieceOf;
 /** The library module, loaded on first need (it brings three.js and the Stage's models with it). */
 function assetsModule() {
   assets ??= import("../toaster-assets.js").then((m) => {
@@ -476,6 +484,7 @@ function assetsModule() {
       people = m.characterList?.() ?? null;
       drawCounts();
       if (drawer) drawDrawer();
+      describeParts(pieceOf);
       drawParts();
       drawInspector();
     };
@@ -598,6 +607,7 @@ let renamingCam = null;
 function drawCameras() {
   if (!shell || !body()) return;
   const b = body();
+  if (toaster.mode === "render") return drawCameraCard();
   const focal = toaster.view?.focal ?? b.camera?.focal ?? 50;
   const lens = dropdown({ label: "Lens", value: focal, items: [...new Set([...LENSES, focal])].sort((x, y) => x - y).map((mm) => ({ value: mm, label: `${mm} mm`, desc: mm <= 24 ? "wide: a room" : mm <= 35 ? "a little wide" : mm <= 50 ? "natural" : "long: an object, a face" })), onChange: (mm) => setFocal(mm) });
   const tiles = b.cameras.map((k) => {
@@ -619,6 +629,30 @@ function drawCameras() {
     h("div.ts-pick.ts-lens", {}, lens),
     ...tiles,
     h("button.ts-cam-add", { type: "button", title: "Keep this camera — its place, aim, lens and frame, to come back to it to the pixel", "aria-label": "Keep this camera", disabled: b.cameras.length >= 12, on: { click: () => saveCamera() } }, sprite("scene-camera"), icon("plus")));
+}
+
+/**
+ * The render's camera: the slots kept in the Scene as picture tiles, and one more for the view as it was left when it is on no slot. A click
+ * puts the camera there (the studio's clay follows); the lit tile is the camera the render will use. Cameras are made in the Scene.
+ */
+function drawCameraCard() {
+  const b = body();
+  const on = b.cameras.find((k) => onCamera(k.id));
+  const tile = (name, thumb, lit, run, title) => h(`div.ts-cam${lit ? ".is-on" : ""}`, {},
+    h("button.ts-cam-pic", { type: "button", title, "aria-label": title, "aria-pressed": String(lit), style: { aspectRatio: b.ratio.replace(":", " / ") }, on: { click: run } }, thumb ? h("img", { src: thumb, alt: "", draggable: false }) : sprite("scene-camera")),
+    h("span.ts-cam-name", {}, name));
+  let now = null;
+  if (!on && toaster.view) {
+    try {
+      now = toaster.view.frameStill({ long: 220, type: "image/jpeg", quality: 0.8 });
+    } catch {}
+  }
+  shell.cameraCard.replaceChildren(
+    h("header.ts-head", {}, h("h2.ts-label", {}, "Camera"), h("span.spacer"), h("span.ts-note", {}, on ? on.name : "The view as you left it")),
+    h("div.ts-cam-tiles", {},
+      ...(!on ? [tile("Current view", now, true, () => {}, "The view as you left it in the Scene: the render will use it")] : []),
+      ...b.cameras.map((k) => tile(k.name, k.thumb, on === k, () => recallCamera(k.id), `${k.name} — ${k.focal} mm, ${k.ratio}: render from it`))),
+    b.cameras.length ? null : h("p.ts-empty", {}, "Keep cameras in the Scene: they show here to pick from."));
 }
 
 function drawTools() {
@@ -738,16 +772,18 @@ function buildStudio(s) {
   s.scene.addEventListener("input", () => (setWords("scene", s.scene.value), drawAuto()));
   s.prompt.addEventListener("input", () => (setPrompt(s.prompt.value), drawPromptHead()));
   s.refsBox = h("div.ts-refs");
-  s.castBox = h("div.ts-cast");
   s.promptHead = h("div.ts-prompt-head");
   s.studioHead = h("div.ts-studio-head");
   s.studioMain = h("div.ts-studio-main");
   s.sent = h("div.ts-sent", { hidden: true });
   s.foot = h("div.ts-foot");
   const labelled = (label, field) => h("div.ts-stack", {}, h("span.ts-label", {}, label), field.el);
+  // the rows, each as tall as its content: what it is | the scene, the references on one row, the prompt
   s.compose = h("div.ts-compose", {},
-    h("div.ts-compose-col", {}, labelled("What it is", s.what), labelled("Scene", s.scene)),
-    h("div.ts-compose-col", {}, s.refsBox, s.castBox, h("div.ts-stack.ts-prompt", {}, s.promptHead, s.prompt.el)));
+    h("div.ts-words-row", {}, labelled("What it is", s.what), labelled("Scene", s.scene)),
+    s.refsBox,
+    // (the prompt sits in a box of its own: the box has the border and the room around the words, so the words fold at a whole line)
+    h("div.ts-stack.ts-prompt", {}, s.promptHead, h("div.ts-prompt-box", { on: { click: (e) => e.target === e.currentTarget && s.prompt.focus() } }, s.prompt.el)));
   // pictures dropped or pasted on the composer are references for the whole render
   dropFiles(s.compose, (files) => addReferences(files));
   s.studio = h("section.ts-card.ts-studio", { "aria-label": "Render studio" }, s.studioHead, s.studioMain, s.sent, s.compose, s.foot);
@@ -763,15 +799,20 @@ function drawAuto() {
   const own = body().prompt.trim();
   if (!own) setField(shell.prompt, framePlan().auto);
 }
+let promptOpen = false;
 function drawPromptHead() {
   const own = !!body().prompt.trim();
   shell.prompt.el.classList.toggle("is-auto", !own);
+  shell.prompt.el.classList.toggle("is-open", promptOpen);
   shell.promptHead.replaceChildren(...[
     h("span.ts-label", {}, "Prompt"),
     h(`span.ts-badge${own ? ".is-own" : ""}`, { title: own ? "Your prompt: sent as written" : "Composed at render time from the words, the legend and the sheets" }, own ? "Yours" : "Auto"),
     own ? h("span.ts-note", {}, "Your prompt — sent as written") : null,
     h("span.spacer"),
+    h("button.key.is-sm.ts-improve", { type: "button", disabled: toaster.improving || !hasClay(), title: "Improve — the writer rewrites the prompt from your words, the sheets and their pictures (a small writer call)", on: { click: improveWords } },
+      sprite("prompt-enhance"), h("span", {}, toaster.improving ? "Improving…" : "Improve")),
     own ? keyIcon(icon("remix"), "Back to automatic", () => (setPrompt(""), drawLook()), { small: true }) : null,
+    keyIcon(icon("chevron"), promptOpen ? "Show it short" : "Show it whole", () => ((promptOpen = !promptOpen), drawPromptHead()), { pressed: promptOpen, small: true }),
   ].filter(Boolean));
 }
 
@@ -788,8 +829,9 @@ function drawLook() {
 
   // the references: pictures for the whole render (a style, a mood, a material, a place), each called by an @name
   const full = b.refs.length >= MOST_PICTURES;
-  const refs = h("div.ts-refs-in", {}, h("div.ts-row-head", {}, h("span.ts-label", {}, "References"), h("span.ts-count", {}, b.refs.length ? `${b.refs.length}/${MOST_PICTURES}` : ""), h("span.spacer"), libraryKey("scene", "From the Library", drawLook)),
-    h("div.ts-pics", {}, ...b.refs.map((r) => pictureTile(r, () => removeSceneRef(r.name), r.name)), full ? null : addTile("Add reference pictures — or drop or paste them on the composer", (files) => addReferences(files))));
+  const refs = h("div.ts-refs-in", {}, h("div.ts-refs-row", {}, h("span.ts-label", {}, "References"), h("span.ts-count", {}, b.refs.length ? `${b.refs.length}/${MOST_PICTURES}` : ""),
+    h("div.ts-pics", {}, ...b.refs.map((r) => pictureTile(r, () => removeSceneRef(r.name), r.name)), full ? null : addTile("Add reference pictures — or drop or paste them on the composer", (files) => addReferences(files))),
+    libraryKey("scene", "From the Library", drawLook)));
   if (libraries.scene.open) {
     refs.append(libraryPane("scene", {
       has: () => new Set((body()?.refs ?? []).map((r) => r.file)),
@@ -798,15 +840,6 @@ function drawLook() {
   }
   shell.refsBox.replaceChildren(refs);
 
-  // who is in the frame: a chip per tagged part, lit when it has a sheet; a click opens its sheet in Selected
-  const tags = tagsOf(b.parts, b.refs.map((r) => r.name));
-  const chips = b.parts.filter((p) => tags.has(p.id)).map((p) => {
-    const sheet = p.made || p.refs?.length;
-    return h(`button.ts-who${sheet ? ".is-sheet" : ""}${toaster.selected.includes(p.id) ? ".is-on" : ""}`, { type: "button", title: sheet ? `${p.name}: its sheet goes with @${tags.get(p.id)} — click to open it in Selected` : `${p.name}: no sheet yet — click to write what it is and add pictures in Selected`, on: { click: () => pick(p.id) } },
-      p.refs?.[0] ? h("img", { src: p.refs[0].url, alt: "", draggable: false }) : h("i", { style: { background: p.color } }), h("span", {}, `@${tags.get(p.id)}`));
-  });
-  shell.castBox.replaceChildren(h("div.ts-row-head", {}, h("span.ts-label", {}, "In the frame"), h("span.ts-count", {}, chips.length ? String(chips.length) : "")),
-    chips.length ? h("div.ts-whos", {}, ...chips) : h("p.ts-empty", {}, "Nothing in the frame yet."));
   drawFoot();
 }
 
@@ -823,8 +856,6 @@ function drawFoot() {
     maps, h("span.spacer"),
     models.length ? h("div.ts-pick", {}, dropdown({ label: "Image model", value: m?.id, items: models, onChange: setModel, width: "fit", note: "What renders the clay: a partner model's credits, or Comfy Cloud's GPU time" })) : h("span.ts-note", {}, "No image model yet"),
     h("div.ts-pick", {}, dropdown({ label: "Frame", value: b.ratio, items: Object.keys(RATIOS).map((r) => ({ value: r, label: r, glyph: () => sprite(r === "4:5" ? "ratio-3-4" : `ratio-${r.replace(":", "-")}`) })), onChange: setRatio })),
-    h("button.key.ts-improve", { type: "button", disabled: toaster.improving || !hasClay(), title: "Improve — the writer rewrites the prompt from your words, the sheets and their pictures (a small writer call)", on: { click: improveWords } },
-      sprite("prompt-enhance"), h("span", {}, toaster.improving ? "Improving…" : "Improve")),
     toastKey(m, busy));
 }
 const toastKey = (m, busy) => h("button.key.is-primary.ts-toast", { type: "button", disabled: busy || !m || !hasClay(), title: "Render the frame: the clay is the layout, the words what it becomes", on: { click: renderFrame } },
@@ -885,20 +916,11 @@ function drawRender() {
   else if (r.status === "failed") picture = h("div.ts-pic.is-failed", {}, icon("close"), h("span", {}, r.error ?? "That didn't work."));
   else if (toaster.compare && r.frame) picture = comparePic(r);
   else picture = h("button.ts-pic", { type: "button", title: "Look at it, full size", on: { click: () => viewImage(r.photo.url) } }, h("img", { src: r.photo.url, alt: "", draggable: false }));
-  const strip = renders.length > 1 ? h("div.ts-strip", { role: "list", "aria-label": "Earlier renders", dataset: { scrollKey: "ts-strip" } }, ...renders.map((x) =>
+  const strip = renders.length ? h("div.ts-strip", { role: "list", "aria-label": "Earlier renders", dataset: { scrollKey: "ts-strip" } }, ...renders.map((x) =>
     h(`button.ts-thumb${x.id === r?.id ? ".is-on" : ""}`, { type: "button", role: "listitem", title: x.status === "failed" ? x.error : "Show it, from its camera", on: { click: () => showRender(x.id) } },
       x.photo ? h("img", { src: x.photo.url, alt: "", draggable: false, loading: "lazy" }) : x.status === "running" ? h("span.typing", {}, h("i"), h("i"), h("i")) : icon("close")))) : null;
-  const pictures = h("div.ts-render-body", {}, picture, strip);
-  if (!studio) {
-    const m = modelNow();
-    const busy = renders.some((x) => x.status === "running");
-    return shell.renderView.replaceChildren(
-      head("Render", renders, ...renderKeys(r, done)),
-      pictures,
-      h("div.ts-render-keys", {},
-        toastKey(m, busy),
-        h("button.key.ts-studio-key", { type: "button", title: "Render studio — T: say what it is, add pictures, write the prompt", on: { click: () => setMode("render") } }, sprite("scene-render"), h("span", {}, "Render studio"))));
-  }
+  const ratio = RATIOS[r?.ratio] ?? RATIOS[b.ratio] ?? 1;
+  const pictures = h("div.ts-render-body", {}, h("div.ts-pic-box", { style: { "--ratio": String(ratio) } }, picture), strip);
   shell.studioHead.replaceChildren(head("Render", renders, ...renderKeys(r, done),
     keyIcon(sprite("file"), "What was sent — the prompt and the pictures of the render shown", () => ((sentOpen = !sentOpen), drawRender()), { pressed: sentOpen, small: true })));
   shell.studioMain.replaceChildren(pictures);
@@ -936,7 +958,7 @@ let stripTimer = 0;
 function stripSoon() {
   clearTimeout(stripTimer);
   stripTimer = setTimeout(() => {
-    if (!toaster.view || currentPage() !== "toaster") return;
+    if (!toaster.view || currentPage() !== "toaster" || toaster.mode !== "render") return;
     try {
       strip = hasClay() ? toaster.view.sheetStill({ scale: 0.1, type: "image/jpeg", quality: 0.85 }).url : null;
       clayLive = needLive() ? toaster.view.frameStill({ long: 1000, type: "image/jpeg", quality: 0.88 }) : null;
@@ -1029,7 +1051,7 @@ function drawModel() {
 }
 
 function drawRight() {
-  if (!shell || !body()) return;
+  if (!shell || !body() || toaster.mode !== "render") return;
   drawRender();
   drawSheet();
   drawModel();
@@ -1055,6 +1077,8 @@ export function renderToaster(el) {
   if (shell.laid !== toaster.mode) layout();
   // a draft with pieces of the library needs the library (their models, their icons)
   if (partsNow().some((p) => p.shape === "asset" || p.shape === "character")) assetsModule();
+  // what a piece or a character is, written in What it is when it is empty (the pieces once the library is read)
+  if (describeParts(library ? pieceOf : () => null)) return;
   drawLeft();
   drawViews();
   drawCameras();
@@ -1073,6 +1097,7 @@ function drawRuns() {
   if (held) return void (owed = true);
   drawRight();
   drawFoot();
+  if (toaster.mode === "render" && body()) drawPromptHead();
 }
 const release = () => {
   if (!held) return;
@@ -1097,6 +1122,9 @@ window.addEventListener("keydown", (e) => {
   if (mod && k === "d") return done(), duplicateSelected();
   if (mod && k === "a") return done(), selectAll();
   if (mod || e.altKey) return;
+  if (k === "t") return done(), setMode(toaster.mode === "render" ? "scene" : "render");
+  // (in the render the keys of the scene's editing rest: no part is deleted or moved from there)
+  if (toaster.mode === "render") return k === "escape" ? select([]) : undefined;
   const tool = TOOLS.find(([, , , key]) => key.toLowerCase() === k);
   if (tool) return done(), setTool(tool[0]);
   if (k === "delete" || k === "backspace") return done(), removeSelected();
@@ -1109,8 +1137,6 @@ window.addEventListener("keydown", (e) => {
     const p = selectedParts()[0];
     if (p?.shape === "character") return setPoseMode(toaster.poseMode === p.id ? null : p.id);
   }
-  if (k === "t") return done(), setMode(toaster.mode === "render" ? "scene" : "render");
-  if (toaster.mode === "render") return;
   if (k === "l") return openDrawer("library");
   if (k === "c") return openDrawer("characters");
   if (k === "m") return mirrorSelected();

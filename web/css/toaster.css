@@ -7,7 +7,7 @@
 #page-toaster[hidden] { display: none; }
 body[data-page="toaster"] { padding-bottom: 0; overflow: hidden; }
 .toaster { --ts-gap: .75rem; display: grid; flex: 1 1 0; gap: var(--ts-gap); min-height: 0; padding: .75rem; user-select: none; -webkit-user-select: none; }
-.toaster.is-scene { grid-template-columns: clamp(17.5rem, 19vw, 22rem) minmax(0, 1fr) clamp(22rem, 27vw, 31rem); }
+.toaster.is-scene { grid-template-columns: clamp(17.5rem, 19vw, 22rem) minmax(0, 1fr); }
 .toaster.is-render { grid-template-columns: clamp(16rem, 17vw, 20rem) minmax(0, 1fr) clamp(19rem, 22vw, 26rem); }
 .toaster input, .toaster textarea, .toaster .pill-field { user-select: text; -webkit-user-select: text; }
 .toaster img { -webkit-user-drag: none; }
@@ -304,20 +304,17 @@ button.ts-sheet-pic { cursor: zoom-in; }
 .ts-studio-key { display: inline-flex; flex: none; align-items: center; gap: .5rem; min-height: 2.75rem; padding: 0 .875rem; border-radius: .875rem; font: 600 var(--fs-body)/1 var(--font-sans); }
 .ts-studio-key svg { width: 1.125rem; height: 1.125rem; }
 
-/* ---- the render mode: the viewport small on the right, its cameras a row under it ------------------------------- */
-.is-render .ts-right .ts-view { flex: none; height: clamp(12.5rem, 30dvh, 19rem); min-height: 0; }
-.is-render .ts-view .ts-tools, .is-render .ts-view .ts-views, .is-render .ts-view .ts-library { display: none; }
-.ts-cams.is-row { position: static; flex: none; flex-direction: row; align-items: stretch; width: auto; max-height: none; overflow-x: auto; overflow-y: hidden; padding: .4375rem; border-color: var(--card-line); background: var(--card); box-shadow: none; border-radius: var(--r-panel); scrollbar-width: thin; }
-.ts-cams.is-row .ts-lens { flex: none; width: 5.25rem; align-self: flex-start; }
-.ts-cams.is-row .ts-cam { flex: none; width: 5.5rem; align-content: start; }
-.ts-cams.is-row .ts-cam-pic { max-height: 3.5rem; }
-.ts-cams.is-row .ts-cam-add { flex: none; align-self: flex-start; width: 2.75rem; height: 2rem; }
+/* ---- the render mode: no viewport in sight (it stays in the page, hidden); the camera card on the right ---------------- */
+.is-render .ts-view { display: none; }
+.ts-camera-card { gap: .625rem; }
+.ts-cam-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.ts-cam-tiles .ts-cam-pic { max-height: none; }
+.ts-cam-tiles .ts-cam-pic[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.ts-at-mini { margin-left: .5rem; font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--accent); }
 
 /* ---- the studio ---------------------------------------------------------------------------------------------- */
 .ts-studio { flex: 1 1 0; gap: .625rem; min-height: 0; container-type: inline-size; }
 .ts-studio-head { flex: none; }
-.ts-studio-main { display: flex; flex: 1 1 0; flex-direction: column; min-height: 9rem; }
-.ts-studio-main .ts-render-body { flex: 1 1 0; }
 .ts-pic.is-clay { background: #141416; }
 .ts-sent { flex: none; max-height: 11rem; overflow-y: auto; padding: .625rem .75rem; border: 1px solid var(--line); border-radius: .625rem; background: var(--sunk); scrollbar-width: thin; }
 .ts-sent[hidden] { display: none; }
@@ -329,18 +326,13 @@ button.ts-sheet-pic { cursor: zoom-in; }
 .ts-sent-pics img { width: 100%; height: 100%; object-fit: cover; }
 .ts-sent-pics figcaption { overflow: hidden; font: 500 var(--fs-micro)/1.2 var(--font-mono); color: var(--accent); text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 
-.ts-compose { display: grid; flex: 1.15 1 0; grid-template-columns: minmax(0, 1fr); align-content: start; gap: .875rem; min-height: 7rem; overflow-y: auto; padding: .125rem .375rem .125rem 0; scrollbar-width: thin; }
-.ts-compose-col { display: grid; align-content: start; gap: .75rem; min-width: 0; }
-.ts-pills { min-height: 4.5rem; max-height: 9.5rem; padding: .5rem .625rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); color: var(--text); font: 500 var(--fs-body)/1.55 var(--font-sans); outline: none; transition: border-color var(--t-fast); }
 .ts-pills:focus { border-color: var(--accent-line); }
-.ts-pills.is-prompt { min-height: 5.5rem; max-height: 12rem; font-size: var(--fs-small); }
 .ts-pills.is-auto { border-style: dashed; color: var(--muted); }
 .ts-prompt-head { display: flex; align-items: center; gap: .5rem; min-height: 1.5rem; }
 .ts-prompt-head .ts-iconkey.is-sm { margin: -.25rem 0; }
 .ts-badge { padding: .1875rem .4375rem; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--line2); color: var(--dim); font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
 .ts-badge.is-own { box-shadow: inset 0 0 0 1px var(--accent-line); background: var(--accent-soft); color: var(--accent); }
 .ts-refs-in { display: grid; gap: .5rem; }
-.ts-cast { display: grid; gap: .5rem; }
 .ts-whos { display: flex; flex-wrap: wrap; gap: .375rem; max-height: 4.5rem; overflow-y: auto; scrollbar-width: thin; }
 .ts-who { display: inline-flex; align-items: center; gap: .375rem; max-width: 100%; height: 1.75rem; padding: 0 .5rem 0 .25rem; border: 1px solid var(--line); border-radius: var(--r-pill); background: transparent; color: var(--dim); font: 500 var(--fs-micro)/1 var(--font-mono); cursor: pointer; }
 .ts-who img, .ts-who i { flex: none; width: 1.25rem; height: 1.25rem; border-radius: 50%; object-fit: cover; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .3); }
@@ -368,18 +360,63 @@ button.ts-sheet-pic { cursor: zoom-in; }
 .ts-tag-face img { width: 100%; height: 100%; object-fit: cover; }
 .ts-tag-face i { width: .875rem; height: .875rem; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
 
-/* the studio's picture is the room the composer leaves; its strip goes under it when the middle is narrow */
-@container (min-width: 46rem) {
-  .ts-compose { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-}
-@container (max-width: 36rem) {
-  .ts-studio .ts-render-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
-  .ts-studio .ts-strip { flex-direction: row; height: auto; overflow-x: auto; overflow-y: hidden; }
-}
+/* the studio is a vertical flow with no voids: the picture takes what is left, every row of the composer is as tall as its content */
+.ts-studio-main { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 30%; }
+.ts-studio-main .ts-render-body { display: flex; flex: 1 1 0; flex-direction: column; gap: .5rem; min-height: 0; }
+.ts-pic-box { display: grid; flex: 1 1 0; place-items: center; min-height: 0; container-type: size; }
+.ts-pic-box > .ts-pic { width: min(100cqw, calc(100cqh * var(--ratio, 1.78))); height: auto; aspect-ratio: var(--ratio, 1.78); }
+.ts-studio .ts-strip { flex: none; flex-direction: row; justify-content: center; height: auto; overflow-x: auto; overflow-y: hidden; }
+.ts-studio .ts-thumb { width: 3rem; height: 3rem; }
+.ts-compose { display: flex; flex: 0 1 auto; min-height: 5rem; flex-direction: column; gap: .75rem; max-height: 50%; overflow-y: auto; padding: 0 .25rem 0 0; scrollbar-width: thin; }
+.ts-words-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.ts-pills { min-height: 4.5rem; max-height: 9.5rem; padding: .5rem .625rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); color: var(--text); font: 500 var(--fs-body)/1.55 var(--font-sans); outline: none; transition: border-color var(--t-fast); }
+.ts-pills.is-prompt { min-height: 0; max-height: 5.2rem; overflow: hidden; font-size: var(--fs-small); }
+.ts-pills.is-prompt.is-open { max-height: 16rem; overflow-y: auto; }
+.ts-refs-row { display: flex; align-items: center; gap: .625rem; min-width: 0; }
+.ts-refs-row .ts-pics { display: flex; flex: 1 1 auto; align-items: flex-start; gap: .4375rem; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.ts-refs-row .ts-pic-tile, .ts-refs-row .ts-pic-add { flex: none; width: 3.5rem; }
+.ts-refs-row .ts-pic-add { height: 3.5rem; }
+.ts-refs-row .ts-iconkey.is-sm { flex: none; margin: 0; }
+.ts-improve.is-sm { display: inline-flex; align-items: center; gap: .375rem; min-height: 2rem; padding: 0 .75rem; border-radius: .5625rem; font: 600 var(--fs-small)/1 var(--font-sans); }
+.ts-improve.is-sm svg { width: 1rem; height: 1rem; }
+.ts-prompt-head .ts-iconkey.is-sm[aria-pressed="true"] svg { transform: rotate(180deg); }
+.ts-foot { flex: none; }
+.ts-foot .ts-map span { display: inline; }
 @container (max-width: 50rem) {
   .ts-foot .ts-map span { display: none; }
-  .ts-foot .ts-map { padding: 0 .5625rem; }
 }
+@container (max-width: 34rem) {
+  .ts-words-row { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* the left column in the render: the parts as "In the frame" (the list scrolls), the part's sheet pinned under it */
+.is-render .ts-left { overflow: hidden; }
+.is-render .ts-parts-card { flex: 1 1 0; min-height: 8rem; }
+.is-render .ts-selected { flex: none; max-height: 56%; overflow-y: auto; scrollbar-width: thin; }
+.ts-at-mini { color: var(--dim); }
+.is-render .ts-part .ts-name { display: block; }
+.is-render .ts-part { grid-template-columns: 1.375rem auto minmax(0, 1fr); min-height: 2.75rem; }
+.is-render .ts-part > .ts-mini { display: none; }
+.is-render .ts-part .ts-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.is-render .ts-part .ts-at-mini { display: block; margin: .125rem 0 0; overflow: hidden; text-overflow: ellipsis; }
+/* the prompt folded: three whole lines (pills make a line taller, so a height would cut one in half); open, or being edited, it shows all */
+.ts-prompt-box { padding: .5rem .625rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); cursor: text; transition: border-color var(--t-fast); }
+.ts-prompt-box:has(.is-auto) { border-style: dashed; }
+.ts-prompt-box:focus-within { border-color: var(--accent-line); }
+.ts-prompt-box .ts-pills.is-prompt { min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; }
+.ts-pills.is-prompt:not(.is-open):not(:focus) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; max-height: none; overflow: hidden; }
+.ts-pills.is-prompt.is-open, .ts-pills.is-prompt:focus { max-height: 16rem; overflow-y: auto; }
+.ts-pills { min-height: 3.875rem; }
+.is-render .ts-parts-card { flex: 1 1 auto; }
 @media (max-height: 820px) {
-  .ts-studio-main { flex: .8 1 0; min-height: 7rem; }
+  .ts-studio { gap: .5rem; }
+  .ts-studio-main { min-height: 36%; }
+  .ts-pills { min-height: 3rem; padding: .375rem .625rem; }
+  .ts-refs-row .ts-pic-tile code { display: none; }
+  .ts-refs-row .ts-pic-tile, .ts-refs-row .ts-pic-add { width: 2.75rem; }
+  .ts-refs-row .ts-pic-add { height: 2.75rem; }
+  .ts-compose { gap: .5rem; max-height: 56%; }
+  .ts-prompt-head .ts-note { display: none; }
 }
+.is-render .ts-parts-card { min-height: 11.5rem; }
+.ts-studio { overflow: hidden; }
