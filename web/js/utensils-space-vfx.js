@@ -5,6 +5,7 @@
 // utensils-vfx-bench.js, the stage in utensils-vfx-stage.js. Made once and kept: a clip that plays must not be made again at each
 // redraw, so the stage lives on and the cards and the controls are drawn again around it.
 // A workspace is { el, update, sig, count }: the shell (panels/utensils.js) puts el in the grid and calls update() when sig() changes.
+import { sendToSpice } from "./spice.js";
 import { h, icon, sprite } from "./dom.js";
 import { changed, toast } from "./store.js";
 import { utensils, inputOf, setInput, setQuietly, pickTool, pickInput, runTool, takersOf, handOn, forget, recent } from "./utensils.js";
@@ -266,7 +267,10 @@ export function vfxSpace() {
       el.replaceChildren(gallery, benchBox);
     }
     gallery.replaceChildren(
-      h("div.ut-b-head", {}, h("span.ut-b-label", {}, "VFX tools"), h("span.ut-b-note", {}, GROUP)),
+      h("div.ut-b-head", {}, h("span.ut-b-label", {}, "VFX tools"), h("span.ut-b-note", {}, GROUP),
+        // one trick on one clip is here; a whole shot worked pass after pass (cut out, cleaned, relit, an effect, the comp) is Spice's
+        h("button.uv-to-spice", { type: "button", title: inputOf(current().id).video ? "A whole shot, pass after pass? Open this clip in Spice: cut out, clean up, relight, add an effect and comp it, every pass kept" : "A whole shot, pass after pass? Spice cuts out, cleans up, relights, adds an effect and comps it, every pass kept", on: { click: () => { const v = inputOf(current().id).video; sendToSpice(v ? { url: v.url, file: v.file, width: v.width, height: v.height, seconds: v.duration ?? v.seconds } : null, v?.name); } } },
+          sprite("product-spice"), h("span", {}, "Whole shot? Spice"))),
       h("div.uv-cards", { dataset: { scrollKey: "uv-cards" } }, ...cards()));
     draw();
   }

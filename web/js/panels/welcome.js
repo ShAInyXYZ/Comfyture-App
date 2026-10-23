@@ -11,8 +11,8 @@ const ABOUT = {
   mixer: { who: "For trend followers", line: "An edit you like, made yours: drop it in, add your cast, get your version.", does: ["Remix an edit", "Your cast", "Recipes"] },
   jam: { who: "For musicians and dancers", line: "A music video from a track: the singing performed, a dance copied, the words on it.", does: ["Lip-sync", "Dance", "Captions"] },
   macaron: { who: "For brands", line: "Turn any product into ready-to-post content, on brand.", does: ["Product shots", "UGC ads", "Brand kit"] },
-  spice: { who: "For visual effects", line: "One shot through six departments: cut out, cleaned up, relit, an effect added, the comp finished.", does: ["Roto", "Paint", "Light", "FX", "Comp"] },
-  utensils: { who: "For one small job", line: "Upscale, cut out, vary, lip-sync: one small tool at a time.", does: ["Upscale", "Cutout", "Variations", "Lip-sync"] },
+  spice: { who: "For visual effects", line: "One shot through six departments, every pass kept on top of the last: cut out, cleaned up, relit, an effect added, the comp finished.", does: ["Roto", "Paint", "Light", "FX", "Comp"] },
+  utensils: { who: "For one small job", line: "One small tool, one job, one result: upscale, cut out, vary, lip-sync. A shot that needs pass after pass goes to Spice.", does: ["Upscale", "Cutout", "Variations", "Lip-sync"] },
 };
 const ids = Object.keys(PRODUCTS);
 const cover = (id) => `brand/products/covers/${id}.webp`;

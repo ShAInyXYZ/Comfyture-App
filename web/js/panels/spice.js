@@ -5,11 +5,11 @@
 // credits. Beside it the open department as a grid of bentos that fills the screen down to the chat bar; the hero bento is always THE
 // VIEWER (spice-viewer.js, made once and moved into the open department's grid). Paprika's bar docks at the foot of the page. A bento
 // opens as a window over the screen (spice-win.js). Mockups: docs/brand/products/spice-v1/spice-fx.png and spice-roto.png.
-import { h, icon } from "../dom.js";
+import { h, icon, sprite } from "../dom.js";
 import { changed, toast, onChange } from "../store.js";
 import { currentPage } from "../router.js";
 import { dropdown } from "../controls.js";
-import { spice, loadShots, openShot, newShot, removeShot, rename, setDept, toggleEye, creditsTodayAll, workingOn } from "../spice.js";
+import { hasPending, takePending, spice, loadShots, openShot, newShot, removeShot, rename, setDept, toggleEye, creditsTodayAll, workingOn } from "../spice.js";
 import { PAPRIKA, WORKSPACES } from "../spice-harness.js";
 import { STACK, lampOf, passOf, passesDone, rangeOf, rangeText, topOf, visible } from "../spice-model.js";
 import { setRoom } from "../harnesses.js";
@@ -154,7 +154,11 @@ function drawSide() {
       fact("Frame range", plate ? rangeText(r) : "–"),
       fact("Resolution · fps", plate ? `${plate.media.width} × ${plate.media.height}${plate.media.kind === "video" ? ` · ${plate.fps ?? 24} fps` : ""}` : "–"),
       fact("Passes done", `${passesDone(b)} / 6`),
-      fact("Compute (Comfy Cloud)", `${credits} cr today`)));
+      fact("Compute (Comfy Cloud)", `${credits} cr today`)),
+    // what Spice is for, beside the other product that does VFX: one shot, every pass kept here; one quick fix, Utensils
+    h("div.sp-about", {},
+      h("p", {}, "One shot, every pass on top of the last: nothing is overwritten, the comp keeps them all."),
+      h("a.sp-about-link", { href: "#/utensils", title: "Utensils: one small tool, one job, one result (an upscale, a cutout, a quick removal)" }, sprite("product-utensils"), h("span", {}, "One quick fix? Utensils"))));
 }
 const fact = (k, v) => h("div", {}, h("dt", {}, k), h("dd", {}, v));
 
@@ -165,6 +169,8 @@ onChange((scopes) => scopes.has("spice-frame") && parts && currentPage() === "sp
 
 export function renderSpice(el) {
   loadShots();
+  // a clip sent from another product (Utensils' VFX) becomes a new shot first
+  if (hasPending()) takePending();
   if (!spice.shot) {
     shell = null;
     // Paprika's bar is not left in the page that is being replaced: it waits at the body until a shot is open

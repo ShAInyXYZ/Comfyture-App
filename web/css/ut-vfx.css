@@ -141,3 +141,8 @@
   .uv-lower { max-height: none; }
   .uv-controls { overflow: visible; }
 }
+
+/* the way to Spice, in the VFX gallery's head: one trick on one clip is here, a whole shot pass after pass is Spice's */
+.uv-to-spice { display: inline-flex; align-items: center; gap: .5rem; height: 2rem; margin-left: auto; padding: 0 .875rem 0 .625rem; border: 1px solid var(--line2); border-radius: 999px; background: transparent; color: var(--text); font: 600 .8125rem/1 var(--font-sans); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.uv-to-spice:hover { border-color: var(--accent-line, var(--accent)); color: var(--accent); }
+.uv-to-spice svg.icon { width: 1.125rem; height: 1.125rem; color: var(--accent); }

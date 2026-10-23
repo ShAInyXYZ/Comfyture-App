@@ -4,9 +4,11 @@
 import { changed, toast } from "./store.js";
 import { keyedSaver } from "./saving.js";
 import { DEPARTMENTS } from "./spice-harness.js";
-import { FIRST, blankBody, normaliseBody, passOf, logCredits, creditsToday, nextName } from "./spice-model.js";
+import { FIRST, blankBody, normaliseBody, passOf, logCredits, creditsToday, nextName, framesIn } from "./spice-model.js";
 
 const KIND = "spice-shots";
+/** a clip another product hands over (Utensils' VFX: "Open in Spice"), waiting in the session until Spice is drawn */
+const PENDING = "comfyture.spice.pending";
 const OPEN = "comfyture.spice.open";
 const DEPT = "comfyture.spice.dept";
 
@@ -69,6 +71,49 @@ export function loadShots() {
     }
     update();
   })());
+}
+
+/**
+ * A clip of the library sent to Spice from another product: it becomes the footage of a new shot (Spice opens on it). Without a clip,
+ * Spice simply opens. `media` is { url, file, width, height, seconds } of a clip kept in the library of clips.
+ */
+export function sendToSpice(media, name) {
+  if (media?.file) {
+    try {
+      sessionStorage.setItem(PENDING, JSON.stringify({ media, name }));
+    } catch {}
+  }
+  location.hash = "#/spice";
+}
+let taking = false;
+export const hasPending = () => {
+  try {
+    return !!sessionStorage.getItem(PENDING);
+  } catch {
+    return false;
+  }
+};
+/** The clip handed over, made a new shot's plate (once: it leaves the session as it is taken). */
+export async function takePending() {
+  if (taking) return;
+  taking = true;
+  try {
+    let p = null;
+    try {
+      p = JSON.parse(sessionStorage.getItem(PENDING) || "null");
+      sessionStorage.removeItem(PENDING);
+    } catch {}
+    if (!p?.media?.file) return;
+    await loadShots();
+    const shot = await newShot(p.name ? String(p.name).slice(0, 40) : undefined);
+    const m = p.media;
+    const media = { kind: "video", url: m.url, file: m.file, width: m.width, height: m.height, seconds: m.seconds ?? m.duration };
+    edit((b) => {
+      b.passes.plate = { media, eye: true, fps: 24, name: p.name ?? "From Utensils", from: FIRST, to: FIRST + Math.max(1, framesIn(media.seconds ?? 0, 24)) - 1, at: new Date().toISOString() };
+    }, shot);
+  } finally {
+    taking = false;
+  }
 }
 
 export async function openShot(id) {
