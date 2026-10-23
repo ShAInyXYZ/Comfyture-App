@@ -133,3 +133,39 @@
 .sp-lib-groups .sp-pill { flex: none; padding: .3125rem .4375rem; font-size: .6875rem; }
 .sp-look.is-ai:not(.is-big) .sp-words { min-height: 3rem; }
 .sp-look-row > .ut-select { min-width: 0; }
+
+/* the centre lines a layer snaps to, and the empty picture's invitation */
+.sp-guide { position: absolute; z-index: 2; background: var(--accent); opacity: .75; pointer-events: none; }
+.sp-guide[hidden] { display: none; }
+.sp-guide.is-x { left: 50%; top: 0; bottom: 0; width: 1px; }
+.sp-guide.is-y { top: 50%; left: 0; right: 0; height: 1px; }
+.sp-live-empty { position: absolute; left: 50%; top: 50%; z-index: 2; display: grid; justify-items: center; gap: .375rem; max-width: 80%; padding: 1rem 1.25rem; border: 1.5px dashed rgba(255, 255, 255, .45); border-radius: 1rem; background: rgba(14, 14, 16, .62); color: #fff; text-align: center; transform: translate(-50%, -50%); pointer-events: none; }
+.sp-live-empty[hidden] { display: none; }
+.sp-live-empty .icon { width: 1.5rem; height: 1.5rem; color: var(--accent); }
+.sp-live-empty b { font: 700 1rem/1.2 var(--font-sans); }
+.sp-live-empty span { font: 400 .8125rem/1.35 var(--font-sans); color: rgba(255, 255, 255, .75); }
+.sp-stage.is-dropping .sp-live-empty { border-color: var(--accent); }
+/* undo and redo sit in the bento's header line, beside its expand key (they take no room from the stack) */
+.sp-fxls-head { position: absolute; top: clamp(.75rem, 1.3dvh, 1.125rem); right: calc(clamp(.875rem, 1.1vw, 1.25rem) + 2.25rem); display: flex; gap: .25rem; }
+.sp-w .sp-fxls-head { position: static; justify-content: flex-end; }
+.sp-fxls-head .sp-iconkey { width: 1.875rem; height: 1.875rem; border-radius: .625rem; }
+.sp-fxls-head .sp-iconkey .icon { width: 1rem; height: 1rem; }
+
+/* a clip's layers on the timeline: a bar each, its ends to drag */
+.sp-rows.is-layers { max-height: 7.25rem; overflow: hidden auto; scrollbar-width: thin; }
+.sp-row.is-layer { cursor: pointer; }
+.sp-row.is-layer.is-off > span { opacity: .45; }
+.sp-bar.is-layer { height: .5rem; border-radius: .25rem; --c: #5a5a64; cursor: grab; }
+.sp-row.is-layer.is-open .sp-bar.is-layer { --c: var(--accent); }
+.sp-bar.is-layer > b { position: absolute; top: -.1875rem; width: .4375rem; height: .875rem; border-radius: .1875rem; background: inherit; cursor: ew-resize; }
+.sp-bar.is-layer > .is-in { left: -.1875rem; }
+.sp-bar.is-layer > .is-out { right: -.1875rem; }
+
+/* looks: a few layers that go together, in one click */
+.sp-looks { display: flex; flex-wrap: wrap; justify-content: center; gap: .3125rem; }
+.sp-looks.is-lib { justify-content: flex-start; align-items: center; }
+.sp-looks .sp-pill { color: var(--text); }
+.sp-fxls.is-empty .sp-hint { max-width: 22rem; }
+/* a tighter look, so a clip's motion and speed fit too */
+.sp-look { gap: .375rem; }
+.sp-look-row { min-height: 1.625rem; }

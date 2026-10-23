@@ -174,6 +174,10 @@ try {
 
   // ---- FX: a layer behind the person Roto holds, baked into a picture
   await open("fx");
+  await page.locator('.sp-looks .sp-pill[data-look="storm"]').click();
+  await settle(500);
+  st = await state();
+  ok(st.set.fx.layers.map((l) => l.el).join() === "lightning,rain" && st.set.fx.layers[0].behind === true, "a look lays its layers in one click, the lightning behind the person", JSON.stringify(st.set.fx.layers.map((l) => [l.el, l.behind])));
   await page.locator('.sp-lib-tile[data-el="spark-portal"]').click();
   await settle(600);
   st = await state();

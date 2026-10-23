@@ -15,6 +15,8 @@ import { FIRST, STACK, secondsAt, frameAt, lastFrame, rangeOf, layerAt, barsOf, 
 import { WORKSPACES } from "./spice-harness.js";
 import { spicon, fill, svg } from "./spice-ui.js";
 import { createLive } from "./spice-canvas.js";
+import { selectLayer, patchLayer, commit } from "./spice-fx-ops.js";
+import { layerName } from "./spice-elements.js";
 
 const strips = new Map();
 /** A clip's thumbnails in one picture (the server makes it once per clip); null while it is made or when it cannot be. */
@@ -403,6 +405,18 @@ export function createViewer(on = {}) {
     fill(strip,
       trimmed ? h("i.sp-range", { style: { left: pct(r.in), right: `calc(100% - ${pct(r.out)})` } }) : null);
     fill(ruler, h("span", { style: { left: "0" } }, String(FIRST)), h("span", { style: { right: "0" } }, String(last())));
+    // FX on a clip: the rows are its layers (the top first), each a bar of the frames it plays on, to drag by its ends or whole
+    rows.classList.toggle("is-layers", !!c.comp?.layers.length);
+    if (c.comp?.layers.length) {
+      fill(rows, ...[...c.comp.layers].reverse().map((l) => {
+        const from = l.from ?? FIRST;
+        const to = l.to ?? last();
+        return h(`div.sp-row.is-layer${l.id === c.comp.sel ? ".is-open" : ""}${l.eye === false ? ".is-off" : ""}`, { dataset: { layer: l.id } },
+          h("span", {}, layerName(l).toUpperCase()),
+          h("div.sp-bar-track", {}, h("i.sp-bar.is-layer", { style: { left: pct(from), right: `calc(100% - ${pct(to)})` }, title: `Frames ${from} – ${to}: drag its ends, or the whole of it` }, h("b.is-in"), h("b.is-out"))));
+      }));
+      return;
+    }
     const bars = barsOf(body);
     fill(rows, ...STACK.map((d) => {
       const name = WORKSPACES.find((w) => w.id === d).name;
@@ -412,6 +426,46 @@ export function createViewer(on = {}) {
         h("div.sp-bar-track", {}, b ? h("i.sp-bar", { style: { left: pct(b[0]), right: `calc(100% - ${pct(b[1])})` } }) : null));
     }));
   }
+
+  // a layer's bar on the timeline: its ends move where it starts and ends, its middle moves it whole; a click on its row holds the layer
+  rows.addEventListener("pointerdown", (e) => {
+    const rowEl = e.target.closest(".sp-row.is-layer");
+    if (!rowEl || !st.ctx?.comp) return;
+    const id = rowEl.dataset.layer;
+    if (id !== st.ctx.comp.sel) selectLayer(id);
+    const bar = e.target.closest(".sp-bar.is-layer");
+    if (!bar) return;
+    e.preventDefault();
+    const track = bar.parentElement;
+    const span = Math.max(1, last() - FIRST);
+    const at = (ev) => {
+      const r = track.getBoundingClientRect();
+      return FIRST + Math.round(Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)) * span);
+    };
+    const l = st.ctx.comp.layers.find((x) => x.id === id);
+    const was = { from: l.from ?? FIRST, to: l.to ?? last() };
+    const grab = e.target.classList.contains("is-in") ? "in" : e.target.classList.contains("is-out") ? "out" : "all";
+    const start = at(e);
+    rows.setPointerCapture(e.pointerId);
+    const move = (ev) => {
+      const f = at(ev);
+      const next = { ...was };
+      if (grab === "in") next.from = Math.min(Math.max(FIRST, f), was.to);
+      else if (grab === "out") next.to = Math.max(Math.min(last(), f), was.from);
+      else {
+        const d = Math.min(Math.max(f - start, FIRST - was.from), last() - was.to);
+        next.from = was.from + d;
+        next.to = was.to + d;
+      }
+      patchLayer(id, next, { live: true });
+      bar.style.left = `${(((next.from - FIRST) / span) * 100).toFixed(3)}%`;
+      bar.style.right = `calc(100% - ${(((next.to - FIRST) / span) * 100).toFixed(3)}%)`;
+      live.draw();
+    };
+    const up = () => (rows.removeEventListener("pointermove", move), rows.removeEventListener("pointerup", up), commit());
+    rows.addEventListener("pointermove", move);
+    rows.addEventListener("pointerup", up);
+  });
 
   // ---------------------------------------------------------------- big
 

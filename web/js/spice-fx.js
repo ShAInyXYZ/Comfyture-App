@@ -12,7 +12,7 @@ import { h } from "./dom.js";
 import { state, toast, changed } from "./store.js";
 import { spice, edit, setDept, workingOn } from "./spice.js";
 import { ELEMENTS, FIRST, rangeOf, lastFrame, framesIn, ltxCredits, fxPrompt, elementById, TEMPLATES } from "./spice-model.js";
-import { GROUPS, BLENDS, MOTIONS, TINTS, tilesOf, elementOf, layerName, newLayer } from "./spice-elements.js";
+import { GROUPS, BLENDS, MOTIONS, TINTS, LOOKS, tilesOf, elementOf, layerName, newLayer } from "./spice-elements.js";
 import { render } from "./spice-layers.js";
 import { bento, spicon, primary, fill, iconKey, ghost } from "./spice-ui.js";
 import { openWin, defineWindow } from "./spice-win.js";
@@ -20,7 +20,7 @@ import { work, frameOf, ltx, cloud, priceOf, fxGround } from "./spice-engines.js
 import { stripOf } from "./spice-viewer.js";
 import { DRAG_TYPE } from "./spice-canvas.js";
 import { bake } from "./spice-bake.js";
-import { layersOf, selected, addLayer, selectLayer, patchLayer, removeLayer, duplicateLayer, moveLayer, toggleLayerEye } from "./spice-fx-ops.js";
+import { layersOf, selected, addLayer, addLook, selectLayer, patchLayer, removeLayer, duplicateLayer, moveLayer, toggleLayerEye, undo, redo, canUndo, canRedo } from "./spice-fx-ops.js";
 import { slider } from "./utensils-fx-controls.js";
 import { registerRunner } from "./spice-runs.js";
 import { runnerReady } from "./utensils-cloud.js";
@@ -149,11 +149,12 @@ function libraryBody(big) {
   const busy = workingOn("fx");
   const n = pl.layers.length;
   const key = primary({
-    id: "fx:bake", label: busy ? "Working" : pl.done ? "Baked" : `Bake ${n} ${n === 1 ? "layer" : "layers"}`, working: !!busy, disabled: !!pl.why || pl.done,
+    id: "fx:bake", label: busy ? "Working" : pl.done ? "Baked" : !n ? "Add a layer to bake" : spice.shot.body.passes.fx?.media && spice.shot.body.set.fx.baked ? "Bake again" : `Bake ${n} ${n === 1 ? "layer" : "layers"}`, working: !!busy, disabled: !!pl.why || pl.done,
     title: pl.why || (pl.done ? "The FX pass is these layers: change one to bake again" : "Makes the layers part of the shot, at its full size: free, on this machine"), run: runBake,
   });
   if (!busy && !pl.done && !pl.why) key.append(h("em", {}, "· free"));
   return h(`div.sp-lib${big ? ".is-big" : ""}`, {},
+    big ? h("div.sp-looks.is-lib", {}, h("span.ut-label", {}, "Looks"), ...LOOKS.map((k) => h("button.sp-pill", { type: "button", dataset: { look: k.id }, title: k.layers.map((x) => elementOf(x.el).name).join(", "), on: { click: () => addLook(k.id) } }, k.name))) : null,
     h("div.sp-lib-groups", { role: "group", "aria-label": "Groups" }, ...GROUPS.map(([id, name]) =>
       h("button.sp-pill", { type: "button", "aria-pressed": String(group === id), on: { click: () => ((group = id), changed("spice")) } }, name))),
     h("p.sp-lib-hint", {}, "Drag onto the picture"),
@@ -165,7 +166,14 @@ function layersBody(big) {
   const list = layersOf();
   const sel = selected();
   const hasMatte = !!fxGround().matte;
-  if (!list.length) return h("div.sp-fxls.is-empty", {}, spicon("layers"), h("p.sp-hint", {}, "No layer yet. Drag an effect from the library onto the picture."));
+  const history = h("div.sp-fxls-head", {},
+    iconKey(spicon("undo"), "Undo (Ctrl+Z)", undo, { disabled: !canUndo() }),
+    iconKey(spicon("redo"), "Redo (Ctrl+Shift+Z)", redo, { disabled: !canRedo() }));
+  if (!list.length) {
+    return h("div.sp-fxls.is-empty", {}, canUndo() ? history : null,
+      h("p.sp-hint", {}, "No layer yet. Drag an effect from the library onto the picture, or start from a look:"),
+      h("div.sp-looks", {}, ...LOOKS.map((k) => h("button.sp-pill", { type: "button", dataset: { look: k.id }, title: `${k.name}: ${k.layers.map((x) => elementOf(x.el).name).join(", ")}`, on: { click: () => addLook(k.id) } }, k.name))));
+  }
   const rows = [...list].reverse().map((l) => {
     const e = elementOf(l.el);
     const pic = e.kind === "image" ? h("img", { src: e.thumb, alt: "", draggable: false }) : e.kind === "particles" ? h("img", { src: particleArt(e.id), alt: "", draggable: false }) : l.media ? (l.media.kind === "image" ? h("img", { src: l.media.url, alt: "", draggable: false }) : h("video", { src: `${l.media.url}#t=0.5`, muted: true, preload: "metadata" })) : spicon("sparkle");
@@ -192,7 +200,7 @@ function layersBody(big) {
       h("button.sp-fxl-key", { type: "button", "aria-pressed": String(l.eye !== false), "aria-label": "Shown", title: l.eye === false ? "Show it" : "Hide it", on: { click: () => toggleLayerEye(l.id) } }, spicon(l.eye === false ? "eyeOff" : "eye")));
     return row;
   });
-  return h(`div.sp-fxls${big ? ".is-big" : ""}`, {}, ...rows);
+  return h(`div.sp-fxls${big ? ".is-big" : ""}`, {}, history, ...rows);
 }
 
 const segs = (list, value, set, title) => h("div.ut-segs.sp-segs", { role: "group", title }, ...list.map(([v, label]) => h("button.ut-seg", { type: "button", "aria-pressed": String(value === v), on: { click: () => set(v) } }, label)));

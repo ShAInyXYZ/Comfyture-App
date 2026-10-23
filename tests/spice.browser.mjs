@@ -281,6 +281,13 @@ try {
   await page.keyboard.press("Delete");
   await settle();
   ok((await state()).set.fx.layers.length === 2, "Delete takes the layer held away");
+  ok((await page.locator(".sp-rows.is-layers .sp-row.is-layer").count()) === 2, "on a clip, the timeline's rows are the layers, a bar each");
+  await page.keyboard.press("Control+z");
+  await settle();
+  ok((await state()).set.fx.layers.length === 3, "Ctrl+Z puts it back");
+  await page.keyboard.press("Control+Shift+z");
+  await settle();
+  ok((await state()).set.fx.layers.length === 2, "Ctrl+Shift+Z takes it away again");
 
   // ---- the viewer's wipe: dragged, and the stack's eye (in Comp: in FX the wipe comes with its compare key)
   await open("comp");

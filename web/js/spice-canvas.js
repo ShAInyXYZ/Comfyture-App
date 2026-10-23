@@ -11,7 +11,7 @@ import { h } from "./dom.js";
 import { render, layerBox } from "./spice-layers.js";
 import { elementOf, layerName } from "./spice-elements.js";
 import { spicon } from "./spice-ui.js";
-import { addLayer, selectLayer, patchLayer, commit, removeLayer, duplicateLayer, layerById } from "./spice-fx-ops.js";
+import { addLayer, selectLayer, patchLayer, commit, removeLayer, duplicateLayer, layerById, undo, redo } from "./spice-fx-ops.js";
 
 /** The kind of drag a library tile carries onto the picture. */
 export const DRAG_TYPE = "application/x-spice-element";
@@ -47,7 +47,11 @@ export function createLive(stage) {
     corner("nw"), corner("ne"), corner("sw"), corner("se"));
   // (the bar is the stage's own, not the box's: it stays on the picture however big or turned the box is)
   bar.hidden = true;
-  stage.append(canvas, gizmo, bar);
+  // the centre lines a layer snaps to while it is moved, and what the picture says while it has no layer
+  const guideX = h("i.sp-guide.is-x", { hidden: true });
+  const guideY = h("i.sp-guide.is-y", { hidden: true });
+  const empty = h("div.sp-live-empty", { hidden: true }, spicon("layers"), h("b", {}, "Drag an effect onto the picture"), h("span", {}, "from the library: then move it, scale it by a corner, turn it by its knob"));
+  stage.append(canvas, gizmo, bar, guideX, guideY, empty);
 
   const stageSize = () => {
     const r = stage.getBoundingClientRect();
@@ -158,7 +162,16 @@ export function createLive(stage) {
     if (!d) return;
     const p = pointer(e);
     let patch;
-    if (d.mode === "move") patch = { x: d.x0 + (p.x - d.p0.x) / d.w, y: d.y0 + (p.y - d.p0.y) / d.h };
+    if (d.mode === "move") {
+      patch = { x: d.x0 + (p.x - d.p0.x) / d.w, y: d.y0 + (p.y - d.p0.y) / d.h };
+      // it snaps to the picture's centre lines (Alt lets it go free)
+      const snapX = !e.altKey && Math.abs(patch.x - 0.5) * d.w < 6;
+      const snapY = !e.altKey && Math.abs(patch.y - 0.5) * d.h < 6;
+      if (snapX) patch.x = 0.5;
+      if (snapY) patch.y = 0.5;
+      guideX.hidden = !snapX;
+      guideY.hidden = !snapY;
+    }
     else if (d.mode === "scale") {
       const k = Math.hypot(p.x - d.c.x, p.y - d.c.y) / Math.max(4, Math.hypot(d.p0.x - d.c.x, d.p0.y - d.c.y));
       patch = { scale: d.s0 * k };
@@ -176,6 +189,7 @@ export function createLive(stage) {
   const let_go = () => {
     if (!st.drag) return;
     st.drag = null;
+    guideX.hidden = guideY.hidden = true;
     stage.classList.remove("is-handling");
     commit();
   };
@@ -205,7 +219,16 @@ export function createLive(stage) {
 
   const typing = (t) => t?.closest?.("input, textarea, select, [contenteditable]");
   document.addEventListener("keydown", (e) => {
-    if (!st.comp || !stage.isConnected || stage.closest("[hidden]") || typing(e.target) || e.ctrlKey || e.metaKey) return;
+    if (!st.comp || !stage.isConnected || stage.closest("[hidden]") || typing(e.target)) return;
+    // Ctrl+Z undoes a change of the layers, Ctrl+Shift+Z (or Ctrl+Y) does it again
+    if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z" || e.key === "y")) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (e.key === "y" || e.shiftKey) redo();
+      else undo();
+      return;
+    }
+    if (e.ctrlKey || e.metaKey) return;
     const l = layerById(st.comp.sel);
     if (!l) return;
     const { w, h: hh } = stageSize();
@@ -228,8 +251,9 @@ export function createLive(stage) {
     st.env = env;
     canvas.hidden = !comp;
     stage.classList.toggle("is-comp", !!comp);
+    empty.hidden = !comp || !env?.base || comp.layers.length > 0;
     if (!comp) {
-      gizmo.hidden = true;
+      gizmo.hidden = bar.hidden = true;
       return;
     }
     draw();

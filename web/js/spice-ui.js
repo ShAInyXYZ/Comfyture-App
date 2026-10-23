@@ -36,6 +36,8 @@ const PATHS = {
   cloud: '<path d="M7 18a4 4 0 0 1-.4-8A5.500 5.500 0 0 1 17 8.500a4.800 4.800 0 0 1 .5 9.500z"/>',
   text: '<path d="M5 6.500V5h14v1.500M12 5v14M9.500 19h5"/>',
   more: '<circle cx="6" cy="12" r="1.200" fill="currentColor"/><circle cx="12" cy="12" r="1.200" fill="currentColor"/><circle cx="18" cy="12" r="1.200" fill="currentColor"/>',
+  undo: '<path d="M9 7.5 4.500 12 9 16.500"/><path d="M4.500 12h10a5 5 0 0 1 0 10h-2"/>',
+  redo: '<path d="m15 7.500 4.500 4.500-4.500 4.500"/><path d="M19.500 12h-10a5 5 0 0 0 0 10h2"/>',
   copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',
   flip: '<path d="M12 3.5v17M9 7 4 17h5zM15 7l5 10h-5z"/>',
   flipv: '<path d="M3.5 12h17M7 9 17 4v5zM7 15l10 5v-5z"/>',

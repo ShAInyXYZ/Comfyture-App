@@ -102,3 +102,16 @@ test("particles: as many as their amount says, in their box, where they were for
   assert.ok(e0.filter((s, i) => e1[i].y < s.y).length > e0.length * 0.9, "embers rise");
   assert.ok([0, 1, 2, 3].every((i) => rand(7, i) >= 0 && rand(7, i) < 1) && rand(7, 1) === rand(7, 1));
 });
+
+test("a look is a few layers of the library that go together, each a layer like any other, with what differs from its element", () => {
+  for (const k of e.LOOKS) {
+    const list = e.lookLayers(k.id);
+    assert.equal(list.length, k.layers.length, `${k.id}: every layer is made`);
+    assert.equal(new Set(list.map((l: any) => l.id)).size, list.length, `${k.id}: an id each`);
+  }
+  const inferno = e.lookLayers("inferno");
+  assert.deepEqual(inferno.map((l: any) => l.el), ["smoke", "fire-wall", "light-leak", "embers"]);
+  assert.equal(inferno[2].tint, "#ff7a1a");
+  assert.equal(inferno[1].y, 0.86, "a place of its own");
+  assert.deepEqual(e.lookLayers("nothing"), []);
+});

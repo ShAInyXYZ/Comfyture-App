@@ -76,6 +76,24 @@ export const elementOf = (id) => LIBRARY.find((e) => e.id === id) ?? null;
 /** The library's tiles for a group (the AI tile ends every group). */
 export const tilesOf = (group) => LIBRARY.filter((e) => e.kind === "ai" || group === "all" || e.group === group);
 
+/**
+ * Looks: a few layers that go together, laid in one click (each a layer like any other afterwards). Their elements' own look, with what
+ * differs from it.
+ */
+export const LOOKS = [
+  { id: "rain-night", name: "Rain at night", layers: [{ el: "bokeh", opacity: 0.25, behind: true }, { el: "lens-flare", x: 0.3, y: 0.25, scale: 0.7, opacity: 0.8 }, { el: "rain", amount: 0.65 }] },
+  { id: "inferno", name: "Inferno", layers: [{ el: "smoke", x: 0.8, y: 0.22, scale: 0.55, opacity: 0.32 }, { el: "fire-wall", y: 0.86 }, { el: "light-leak", tint: "#ff7a1a", opacity: 0.7 }, { el: "embers", amount: 0.55 }] },
+  { id: "sorcery", name: "Sorcery", layers: [{ el: "spark-portal", x: 0.68, y: 0.4, behind: true }, { el: "magic-swirl", x: 0.35, y: 0.55, scale: 0.35 }, { el: "sparkles", amount: 0.4 }] },
+  { id: "storm", name: "Storm", layers: [{ el: "lightning", x: 0.72, y: 0.3, scale: 0.45, behind: true }, { el: "rain", amount: 0.8, rot: 14 }] },
+  { id: "dream", name: "Dream", layers: [{ el: "bokeh", opacity: 0.38, soft: 0.3, behind: true }, { el: "light-leak", tint: "#ff3b6b", opacity: 0.6 }, { el: "dust", amount: 0.5 }, { el: "starburst", x: 0.75, y: 0.2, scale: 0.25 }] },
+  { id: "winter", name: "Winter", layers: [{ el: "god-rays", tint: "#3fa9ff", opacity: 0.55 }, { el: "snow", amount: 0.6 }] },
+];
+/** The layers of a look, made new (bottom first). */
+export const lookLayers = (id) => (LOOKS.find((l) => l.id === id)?.layers ?? []).map(({ el, x, y, ...more }, i) => {
+  const l = newLayer(el, { x, y }, Date.now() + i);
+  return l && cleanLayer({ ...l, ...more });
+}).filter(Boolean);
+
 /** The tints offered as swatches (a layer's colour: its hue and saturation laid over its own light). */
 export const TINTS = ["#ff7a1a", "#ffd23f", "#ff3b6b", "#b56bff", "#3fa9ff", "#3fffd2"];
 
