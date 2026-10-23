@@ -182,6 +182,18 @@ try {
   await settle(600);
   st = await state();
   ok(st.set.fx.layers.at(-1)?.behind === true, "an element that likes to be behind the people is, now that Roto holds someone");
+  // an AI layer on a picture: Qwen Image Edit is told the effect and where it is, after a yes; the layer keeps what comes back
+  await page.locator('.sp-lib-tile[data-el="ai"]').click();
+  await settle();
+  await page.locator(".sp-b-look textarea.sp-words").fill("a glowing ring of blue fire");
+  await page.locator(".sp-b-look textarea.sp-words").dispatchEvent("change");
+  await settle();
+  const runsBefore = runs.length;
+  await yes(".sp-b-look .sp-primary");
+  for (let i = 0; i < 60 && !(await state()).set.fx.layers.at(-1)?.media; i++) await page.waitForTimeout(300);
+  st = await state();
+  const qwen = runs.slice(runsBefore).find((r) => r.name === "image_qwen_image_edit_2509")?.body.inputs ?? {};
+  ok(/^a glowing ring of blue fire\. The effect is /.test(qwen.prompt ?? "") && /Keep everything else/.test(qwen.prompt) && st.set.fx.layers.at(-1)?.media?.kind === "image", "an AI layer on a picture: Qwen is told the effect and where it is, and the layer keeps the picture that comes back", qwen.prompt?.slice(0, 90));
   await page.locator('.sp-primary[data-key="fx:bake"]').click();
   await waitPass("fx", (p) => p?.note?.includes("baked"));
   st = await state();
