@@ -39,6 +39,8 @@ export const toaster = {
   /** the draft open: { id, name, body } (body: toaster-model.js cleanDraft) */
   draft: null,
   ready: null,
+  /** why the drafts could not be read, when they could not */
+  error: null,
   /** the ids of the parts selected */
   selected: [],
   tool: ["select", "move", "rotate", "scale"].includes(prefs.tool) ? prefs.tool : "move",
@@ -94,8 +96,12 @@ export function loadDrafts() {
       const id = toaster.list.find((d) => d.id === read(OPEN))?.id ?? toaster.list[0]?.id;
       if (id) await openDraft(id);
       else await newDraft();
+      toaster.error = null;
     } catch (e) {
+      // (a server started before Toaster existed does not know its drafts: the page says so, and a visit later tries again)
       console.warn("toaster:", e.message);
+      toaster.error = e.message;
+      toaster.ready = null;
     }
     update();
   })());

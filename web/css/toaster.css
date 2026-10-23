@@ -116,6 +116,11 @@
 .ts-stage { position: absolute; inset: 0; }
 .ts-stage canvas { display: block; touch-action: none; outline: none; }
 .ts-boot { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; font: 500 var(--fs-small)/1 var(--font-mono); letter-spacing: .12em; color: var(--dim); }
+.ts-notice { position: absolute; z-index: 6; inset: 0; display: grid; place-content: center; justify-items: center; gap: .75rem; padding: 2rem; background: rgba(18, 18, 20, .92); color: var(--muted); font: 400 var(--fs-body)/1.5 var(--font-sans); text-align: center; }
+.ts-notice[hidden] { display: none; }
+.ts-notice svg { width: 3rem; height: 3rem; color: var(--accent); }
+.ts-notice b { font: 600 var(--fs-heading)/1.2 var(--font-sans); color: var(--text); }
+.ts-notice span { max-width: 28rem; }
 .ts-views { position: absolute; left: 50%; top: .75rem; display: flex; gap: 2px; padding: .25rem; border: 1px solid var(--line2); border-radius: .75rem; background: rgba(25, 25, 28, .92); box-shadow: var(--float); transform: translateX(-50%); }
 .ts-view-key { display: grid; justify-items: center; gap: .25rem; min-width: 3.75rem; padding: .375rem .375rem .3125rem; border: 0; border-radius: .5rem; background: transparent; color: var(--muted); cursor: pointer; }
 .ts-view-key:hover { background: var(--s3); color: var(--text); }

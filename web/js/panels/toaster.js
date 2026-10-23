@@ -63,8 +63,9 @@ function build(el) {
   s.views = h("div.ts-views", { role: "toolbar", "aria-label": "Views" });
   s.tools = h("div.ctl-tools.ts-tools", { role: "toolbar", "aria-label": "Tools" });
   s.boot = h("p.ts-boot", {}, "Warming up the toaster…");
+  s.notice = h("div.ts-notice", { hidden: true, role: "alert" });
   s.library = h("div.ts-library", { hidden: true, role: "dialog", "aria-label": "The Stage's library" });
-  const viewport = h("section.ts-view", { "aria-label": "Viewport" }, s.stage, s.frame, s.views, s.tools, s.boot, s.library);
+  const viewport = h("section.ts-view", { "aria-label": "Viewport" }, s.stage, s.frame, s.views, s.tools, s.boot, s.library, s.notice);
 
   // the look: the words and the key that renders
   s.what = h("input.ts-field", { type: "text", maxLength: 600, placeholder: "A retro 1950s toaster, chrome body, walnut lever, cream knob", "aria-label": "What it is", on: { input: (e) => setWords("what", e.target.value) } });
@@ -556,9 +557,17 @@ function drawRight() {
 
 export function renderToaster(el) {
   if (!shell || !el.contains(shell.root)) build(el);
-  loadDrafts();
+  // (after a failure only "Try again" reads the drafts again: a redraw does not, or a failing read would ask over and over)
+  if (!toaster.error) loadDrafts();
   if (!toaster.models) loadModels();
   if (!priceNow()) price3d();
+  // the drafts could not be read: say why, and how to put it right, instead of an empty page
+  shell.notice.hidden = !!body() || !toaster.error;
+  if (toaster.error && !body()) {
+    shell.notice.replaceChildren(sprite("product-toaster"), h("b", {}, "Toaster can't reach its drafts."),
+      h("span", {}, /404|not found/i.test(toaster.error) ? "The Comfyture server was started before Toaster existed: restart it, then come back here." : toaster.error),
+      h("button.key", { type: "button", on: { click: () => ((toaster.error = null), loadDrafts()) } }, "Try again"));
+  }
   if (!body()) return;
   // a draft with pieces of the library needs the library (their models, their icons)
   if (partsNow().some((p) => p.shape === "asset")) assetsModule();
