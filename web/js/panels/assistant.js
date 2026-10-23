@@ -431,18 +431,47 @@ function confirmRow(m, s) {
   return h("div.msg-confirm.is-settled", {}, c.state === "running" ? h("span.typing", {}, h("i"), h("i"), h("i")) : c.state === "done" ? icon("check") : c.state === "failed" ? icon("close") : null, note);
 }
 
+/**
+ * A message's words copied with a click (to take a pet's description into a field elsewhere): a click on a key, a picture or a link does
+ * its own thing, and a drag that selects words leaves the selection alone. The bubble says it was copied, for a moment.
+ */
+function copyOnClick(el, text) {
+  if (!text?.trim()) return el;
+  el.classList.add("is-copyable");
+  el.title ||= "Click to copy";
+  el.addEventListener("click", async (e) => {
+    if (e.target.closest("button, a, input, .msg-renders, .msg-confirm, .msg-files") || String(getSelection?.() ?? "").trim()) return;
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+      else {
+        // (a page served over plain http on another machine has no clipboard API: the old way)
+        const area = h("textarea", { value: text, style: { position: "fixed", opacity: "0" } });
+        document.body.append(area);
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+      }
+      el.classList.add("is-copied");
+      setTimeout(() => el.classList.remove("is-copied"), 1200);
+    } catch {
+      toast("Could not copy.", { tone: "crit" });
+    }
+  });
+  return el;
+}
+
 function message(m, last, s, harness) {
   const files = (m.files ?? []).map((n) => state.chat.files.find((f) => f.name === n)).filter(Boolean);
   if (m.role === "user") {
-    return h("div.msg.is-user", {},
+    return copyOnClick(h("div.msg.is-user", {},
       m.about ? h("span.msg-about", {}, m.about) : null,
       pillText("p", m.text, lookup),
       files.length ? h("div.msg-files", {}, files.map((f) => h("span.msg-file", { title: `@${f.name}` }, thumb(f)))) : null,
-      m.picture ? h("div.msg-files", {}, h("span.msg-file", { title: "The photo sent with these words" }, h("img", { src: m.picture.url, alt: "", draggable: false }))) : null);
+      m.picture ? h("div.msg-files", {}, h("span.msg-file", { title: "The photo sent with these words" }, h("img", { src: m.picture.url, alt: "", draggable: false }))) : null), m.text);
   }
   // a pet's answer: its face, its words, what it did (and could not), a yes or no for what costs credits, one step back
   const [undo, back] = m.macaron ? [undoMacaron, "Put the design back as it was"] : m.toaster ? [undoToaster, "Put the draft back as it was"] : m.stage ? [undoStage, "Put the stage back as it was"] : [undoAssistant, "Put the shot back as it was"];
-  return h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
+  return copyOnClick(h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
     h("img.msg-face", { src: harness.face, alt: "", draggable: false }),
     h("p", m.detail ? { title: m.detail } : {}, m.text),
     m.renders?.length ? h("div.msg-renders", {}, m.renders.map(renderTile)) : null,
@@ -452,7 +481,7 @@ function message(m, last, s, harness) {
         ...(m.failed ?? []).map((f) => h("span.chip.is-failed", { title: f }, icon("close"), m.stage ? f.split(":")[0].replace(/_/g, " ") : f)))
       : null,
     m.confirm ? confirmRow(m, s) : null,
-    last && m.undo ? h("button.key.is-sm.is-quiet.undo", { type: "button", title: back, on: { click: () => undo(m) } }, icon("remix"), "Undo") : null);
+    last && m.undo ? h("button.key.is-sm.is-quiet.undo", { type: "button", title: back, on: { click: () => undo(m) } }, icon("remix"), "Undo") : null), m.error ? "" : m.text);
 }
 
 // a picture shown over the Stage's frame asks for room

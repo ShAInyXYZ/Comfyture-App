@@ -421,6 +421,13 @@ body[data-product="kitchen"] .rooms { display: block; }
 .msg.is-ai { position: relative; align-self: flex-start; padding-left: 2.75rem; background: var(--sunk); border-bottom-left-radius: .25rem; }
 .msg-face { position: absolute; left: .5rem; top: .5rem; width: 1.75rem; height: 1.75rem; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 1.5px var(--accent-line); }
 .msg.is-error { box-shadow: inset 0 0 0 1px rgba(239, 90, 74, .55); color: var(--err); }
+/* a message copied with a click: it lifts under the pointer, and says "Copied" for a moment */
+.msg.is-copyable { cursor: copy; transition: background var(--t-fast), box-shadow var(--t-fast); }
+.msg.is-user.is-copyable:hover { background: var(--s4, var(--s3)); box-shadow: inset 0 0 0 1px var(--line2); }
+.msg.is-ai.is-copyable:hover { box-shadow: inset 0 0 0 1px var(--line2); }
+.msg.is-copied { box-shadow: inset 0 0 0 1px var(--accent-line); }
+.msg.is-copied::after { content: "Copied"; position: absolute; top: .375rem; right: .5rem; padding: .125rem .4375rem; border-radius: var(--r-pill); background: var(--accent); color: var(--accent-ink); font: 600 var(--fs-micro)/1.3 var(--font-mono); letter-spacing: .04em; pointer-events: none; }
+.msg.is-user { position: relative; }
 .msg.is-busy { display: inline-flex; align-items: center; gap: .625rem; color: var(--muted); }
 .msg-files { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .25rem; margin-top: .4375rem; }
 .msg-file { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: .375rem; overflow: hidden; background: var(--sunk); outline: 1px solid var(--accent-line); }

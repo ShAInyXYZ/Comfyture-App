@@ -434,6 +434,19 @@ try {
   ok(sent?.toaster?.parts?.length === 1 && sent.toaster.parts[0].kind === "shape" && Array.isArray(sent.toaster.parts[0].at) && typeof sent.toaster.parts[0].y === "number", "he is told the parts as places on the floor (at, y, turn, size)", JSON.stringify(sent?.toaster?.parts?.[0]));
   ok(sent?.toaster?.camera?.from?.length === 3 && sent.toaster.camera.frame, "and the camera", JSON.stringify(sent?.toaster?.camera));
   ok(sent?.picture?.file === sheet.photo.file, "the photo goes with the words");
+  // a click on a message copies its words (the clipboard is stood in for: the test's browser has none to read)
+  await js(() => {
+    window.__copied = null;
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (t) => void (window.__copied = t) } });
+  });
+  const answer = page.locator("#assistant .chat-thread .msg.is-ai:not(.is-busy) p").first();
+  const answerText = await answer.textContent();
+  await answer.click();
+  await page.waitForTimeout(150);
+  ok((await js(() => window.__copied)) === answerText && (await page.locator("#assistant .msg.is-ai.is-copied").count()) === 1, "a click on Crumpet's answer copies its words, and the bubble says so", await js(() => window.__copied));
+  await page.locator("#assistant .chat-thread .msg.is-user p").first().click();
+  await page.waitForTimeout(100);
+  ok((await js(() => window.__copied)) === "Make a cosy reading corner like this photo", "and a click on what was asked copies that");
   d = await draft();
   const named = (n) => d.body.parts.find((p) => p.name === n);
   const sofa = named("Sofa");
