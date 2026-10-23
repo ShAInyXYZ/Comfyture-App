@@ -5,7 +5,7 @@
  "updatedAt": "2026-10-20T13:24:59.483Z",
  "thumb": "brand/macaron/comfyture/thumb.webp",
  "body": {
-  "seedRev": 3,
+  "seedRev": 4,
   "logo": {
    "url": "brand/wordmark-2400.png",
    "width": 2400,
@@ -6291,7 +6291,7 @@
       "id": "u-emma-shop-b2",
       "kind": "show",
       "line": "I knit baby blankets. Comfyture turns my idea into the shots.",
-      "doing": "pouring warm water into the bottle, a phone propped against the kettle showing @product",
+      "doing": "pouring warm water into the bottle, a tablet propped against the kettle showing @product",
       "camera": "shoulder",
       "setting": "kitchen",
       "seconds": 6,
@@ -6302,7 +6302,7 @@
       "id": "u-emma-shop-b3",
       "kind": "taste",
       "line": "I write one line, keep the takes I like, and it cuts them.",
-      "doing": "shaking the bottle with one hand, tapping through @product on the propped-up phone with the other",
+      "doing": "shaking the bottle with one hand, tapping through @product on the propped-up tablet with the other",
       "camera": "tripod",
       "setting": "kitchen",
       "seconds": 6,
@@ -6332,7 +6332,8 @@
       "take": null
      }
     ],
-    "at": "2026-10-22T21:00:00.000Z"
+    "at": "2026-10-22T21:00:00.000Z",
+    "product": "desk"
    },
    {
     "id": "u-leo-tacos",
@@ -6356,7 +6357,7 @@
       "id": "u-leo-tacos-b2",
       "kind": "show",
       "line": "I write the scene: hot grill, neon sign, a bit of rain. Comfyture blocks the shots.",
-      "doing": "still walking, turning his phone to the lens to show @product on its screen as shop fronts slide past",
+      "doing": "still walking, holding his phone sideways to the lens to show @product on its screen as shop fronts slide past",
       "camera": "walk",
       "setting": "street",
       "seconds": 6,
@@ -6367,7 +6368,7 @@
       "id": "u-leo-tacos-b3",
       "kind": "taste",
       "line": "Same truck, same tacos, every shot. I just pick the takes.",
-      "doing": "waiting at a crossing, scrolling through @product on his phone while the light is red",
+      "doing": "waiting at a crossing, scrolling through @product on his phone held sideways while the light is red",
       "camera": "follow",
       "setting": "street",
       "seconds": 6,
@@ -6397,7 +6398,8 @@
       "take": null
      }
     ],
-    "at": "2026-10-22T21:00:00.000Z"
+    "at": "2026-10-22T21:00:00.000Z",
+    "product": "desk"
    },
    {
     "id": "u-maya-makeup",
@@ -6462,7 +6464,8 @@
       "take": null
      }
     ],
-    "at": "2026-10-22T21:00:00.000Z"
+    "at": "2026-10-22T21:00:00.000Z",
+    "product": "desk"
    }
   ]
  }

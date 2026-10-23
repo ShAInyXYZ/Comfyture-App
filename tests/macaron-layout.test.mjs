@@ -450,6 +450,9 @@ test("a flagship that version 1 put in gains the new example once, and nothing a
   // a brand that already has a story of its own keeps it, and gains none of the example's
   const own = topUpBrand({ ...structuredClone(v1), ugc: [{ id: "u-mine", persona: "leo", hook: "Mine", beats: [] }] }, seed);
   assert.deepEqual(own.ugc.map((u) => u.id), ["u-mine"]);
+  // an example story put in before stories named their product is told the one it shows (the app), nothing else of it touched
+  const told = topUpBrand({ ...structuredClone(seed), seedRev: 3, ugc: seed.ugc.map(({ product, ...u }) => ({ ...u, hook: "Edited" })) }, seed);
+  assert.ok(told.ugc.every((u) => u.product === "desk" && u.hook === "Edited"));
   assert.equal(v1.brief.pitch, "", "the body it was given is not changed");
   // once: a second time there is nothing to do
   assert.equal(topUpBrand(up, seed), null);

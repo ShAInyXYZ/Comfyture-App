@@ -8,8 +8,8 @@ import { defineWindow, openWin } from "./macaron-win.js";
 import { draftKey } from "./macaron-tools.js";
 import { mcicon, fill, arming, isArmed, armedNow } from "./macaron-ui.js";
 import { PERSONAS, BEATS, CAMERAS, SETTINGS, CHARACTER_ID, beatKind, personaOf, whoOf, storyLength } from "./macaron-ugc-data.js";
-import { ugcUi, storiesOf, storyNow, beatNow, pickStory, pickBeat, startStory, setStory, setBeat, setCharacter, characterChoices, removeStory, makeStory, makeBeat, making, toMake, costOf } from "./macaron-ugc.js";
-import { addAsset, productNow } from "./macaron.js";
+import { ugcUi, productOf, storiesOf, storyNow, beatNow, pickStory, pickBeat, startStory, setStory, setBeat, setCharacter, characterChoices, removeStory, makeStory, makeBeat, making, toMake, costOf } from "./macaron-ugc.js";
+import { addAsset } from "./macaron.js";
 import { changed } from "./store.js";
 
 const clock = (s) => `0:${String(Math.round(s)).padStart(2, "0")}`;
@@ -146,6 +146,12 @@ function ugcWin() {
         h("div.mc-sec.ug-sec", {}, h("div.ug-title", {}, h("span.label", {}, "The hook"), h("em", {}, "Edit your opening line")),
           h("textarea.field.mc-statement.ug-hook", { rows: 3, value: story.hook, maxlength: 120, placeholder: "The first thing they say", "aria-label": "The hook, said in the first two seconds", on: { input: (e) => { setStory(story.id, { hook: e.target.value.slice(0, 120) }); const first = story.beats.find((x) => x.kind === "hook"); if (first) sync(story, first, e.target.value); e.target.parentNode.querySelector(".ug-count").textContent = `${e.target.value.length} / 120`; } } }),
           h("span.ug-count", {}, `${story.hook.length} / 120`)),
+        b.body.products.length ? h("div.mc-sec.ug-sec", {}, h("div.ug-title", {}, h("span.label", {}, "The product"), h("em", {}, "Shown in the shots that name it")),
+          h("div.ug-products", {}, ...b.body.products.map((p) => {
+            const on = productOf(story)?.id === p.id;
+            return h(`button.ug-product${on ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(on), title: `${p.name}: shown on screen in the shots whose action names @product`, on: { click: () => setStory(story.id, { product: p.id }) } },
+              h("img", { src: p.cutout?.url ?? p.photo?.url, alt: "", draggable: false }), h("span", {}, p.name));
+          }))) : null,
         h("div.mc-sec.ug-sec", {}, h("div.ug-title", {}, h("span.label", {}, "What they do"), h("em", {}, "Something real, all the way through")),
           h("input.field.mc-text.ug-activity", { value: story.activity ?? "", maxlength: 120, placeholder: "making her baby's bottle, walking to work, doing her makeup", "aria-label": "What the creator does through the whole story", on: { input: (e) => setStory(story.id, { activity: e.target.value.slice(0, 120) }) } }))),
       h("section.ug-story", {},
@@ -167,7 +173,7 @@ function ugcWin() {
     const key = `ugcmake:${story.id}`;
     const faceless = story.persona === CHARACTER_ID && !whoOf(story).portrait;
     // (every shot shows the product in hand: with none, the foot says so and where to add it, instead of a key that only answers with a toast)
-    const noProduct = !productNow(macaron.brand);
+    const noProduct = !productOf(story);
     const nothing = !left.length;
     const state = JSON.stringify([story.id, left.length, credits, busy, isArmed(key), macaron.chat.busy, faceless, noProduct]);
     if (state === footState) return;

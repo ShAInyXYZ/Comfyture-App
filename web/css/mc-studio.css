@@ -102,6 +102,12 @@
 .ug-title em { font: 400 .875rem/1.3 var(--font-sans); font-style: normal; color: var(--muted); }
 .ug-personas { display: grid; gap: .625rem; }
 .ug-personas.is-row { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 52rem; }
+/* the product a story shows: a chip for each product of the brand, the story's own lit */
+.ug-products { display: flex; flex-wrap: wrap; gap: .5rem; }
+.ug-product { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.5rem; padding: .25rem .75rem .25rem .25rem; border: 1px solid var(--line); border-radius: .875rem; background: transparent; color: var(--muted); font: 500 var(--fs-small)/1.2 var(--font-sans); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.ug-product img { width: 2rem; height: 2rem; border-radius: .5rem; background: var(--sunk); object-fit: cover; }
+.ug-product:hover { border-color: var(--line2); color: var(--text); }
+.ug-product.is-on { border-color: var(--accent); color: var(--text); }
 .ug-persona { position: relative; display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) 1.75rem; align-items: center; gap: .875rem; padding: .5rem .75rem .5rem .5rem; border: 1px solid var(--line); border-radius: 1.125rem; background: transparent; color: var(--text); text-align: left; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
 .ug-persona:hover { border-color: var(--line2); background: var(--s2); }
 .ug-persona img { width: 3.5rem; height: 3.5rem; border-radius: 50%; object-fit: cover; }

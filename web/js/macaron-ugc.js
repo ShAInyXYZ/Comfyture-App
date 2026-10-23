@@ -18,6 +18,8 @@ export const pickStory = (id) => ((ugcUi.story = id), (ugcUi.beat = null), setBr
 export const pickBeat = (id) => ((ugcUi.beat = id), setBrand({}));
 
 const mine = () => macaron.brand.body.ugc;
+/** The product a story shows: its own (a brand with several products tells each in its stories), else the brand's current one. */
+export const productOf = (story, b = macaron.brand) => b?.body.products.find((p) => p.id === story?.product) ?? productNow(b);
 const kept = () => setBrand({ ugc: mine() });
 
 /** A new story told by a creator (or by the brand's own character, from the likeliest of its pictures), with its five beats; it becomes the one open. */
@@ -25,6 +27,7 @@ export function startStory(persona = "maya") {
   const b = macaron.brand;
   const p = productNow(b);
   const s = newStory({ persona, productName: p?.name ?? b.name, features: p?.features ?? [], character: persona === CHARACTER_ID ? defaultCharacter(b.body) : null });
+  if (p) s.product = p.id;
   mine().unshift(s);
   ugcUi.story = s.id;
   ugcUi.beat = s.beats[0].id;
@@ -81,8 +84,10 @@ export function removeStory(id) {
 /** A story Brioche wrote: into the one open (when asked to change it) or a new one. Answers the story, or null for an empty draft. */
 export function applyUgcDraft(draft, { fresh = false } = {}) {
   if (!draft || (!draft.hook && !(draft.beats ?? []).length)) return null;
-  const p = productNow();
+  const p = productOf(storyNow());
   const s = applyStory(mine(), draft, { current: fresh ? null : storyNow(), like: storyNow(), productName: p?.name ?? macaron.brand.name, features: p?.features ?? [] });
+  // (a new story shows the product of the one it was written beside)
+  if (!s.product && p) s.product = p.id;
   ugcUi.story = s.id;
   ugcUi.beat = ugcUi.beat && s.beats.some((x) => x.id === ugcUi.beat) ? ugcUi.beat : s.beats[0].id;
   kept();
@@ -111,7 +116,7 @@ export async function makeBeat(storyId, beatId, { picture = true } = {}) {
   const b = macaron.brand;
   const story = mine().find((x) => x.id === storyId);
   const beat = story?.beats.find((x) => x.id === beatId);
-  const p = productNow(b);
+  const p = productOf(story, b);
   if (!beat) return;
   if (!p) return void toast("Add a product to the brand first.");
   const who = whoOf(story);
