@@ -19,9 +19,10 @@ import { harnessOf, barOf, introOf, onRoom, setTeller } from "../harnesses.js";
 import { chat as mixerChat, askMixer, clearMixerChat, confirmMixer, declineMixer } from "../mixer-assist.js";
 import { chat as utensilsChat, roomOfTool, askUtensils, clearUtensilsChat, confirmUtensils, declineUtensils } from "../utensils-assist.js";
 import { chat as spiceChat, roomOfSpice, askSpice, clearSpiceChat, confirmSpice, declineSpice } from "../spice-assist.js";
+import { chat as toasterChat, askToaster, clearToasterChat, confirmToaster, declineToaster, undoToaster, addToasterPictures, addToasterPhoto, removeToasterPicture } from "../toaster-assist.js";
 
 // One bar, and a pet in it for every product (web/js/harnesses.js): Ketkout in Kitchen's rooms, Praline in Mixer,
-// Pickle in Jam, Brioche in Macaron, Paprika in Spice, Truffle in Utensils. The page the bar is on says whose bar it is, and each
+// Pickle in Jam, Brioche in Macaron, Paprika in Spice, Crumpet in Toaster, Truffle in Utensils. The page the bar is on says whose bar it is, and each
 // product keeps its own conversation, so what is said to one is never in front of another.
 
 // on the Stage the bar stages a scene; on the Shot it sets up the shot: one bar, two conversations
@@ -32,7 +33,9 @@ const onStory = () => currentPage() === "story";
 // about the music video's edit: "a zoom on every bar, make the words bounce"
 const onCut = () => currentPage() === "cut" || currentPage() === "jam";
 // only the Shot's and the Stage's bars take files and @names: on any other page they would end up in the Shot's conversation, out of sight
-const takesFiles = () => onStage() || currentPage() === "shot";
+const onToaster = () => currentPage() === "toaster";
+// (Crumpet takes one photo, to rebuild what it shows)
+const takesFiles = () => onStage() || currentPage() === "shot" || onToaster();
 
 // Jam's editor is Cut's editor, asked with a conversation of its own (Kitchen's Cut keeps the one in `cut`). The two share one
 // edit, so one answers at a time.
@@ -54,6 +57,8 @@ function surface() {
       return { product: "mixer", chat: mixerChat, ask: askMixer, clear: clearMixerChat, confirm: confirmMixer, decline: declineMixer, role: "assistant" };
     case "spice":
       return { product: "spice", room: roomOfSpice(), chat: spiceChat, ask: askSpice, clear: clearSpiceChat, confirm: confirmSpice, decline: declineSpice, role: "assistant" };
+    case "toaster":
+      return { product: "toaster", room: "toaster", chat: toasterChat, ask: askToaster, clear: clearToasterChat, confirm: confirmToaster, decline: declineToaster, role: "assistant" };
     case "utensils":
       return { product: "utensils", room: roomOfTool(), chat: utensilsChat, ask: askUtensils, clear: clearUtensilsChat, confirm: confirmUtensils, decline: declineUtensils, role: "assistant" };
     case "story": {
@@ -264,14 +269,17 @@ function makeComposer() {
     if (files.length && takesFiles()) {
       e.preventDefault();
       if (onStage()) attachStagePictures(files);
+      else if (onToaster()) addToasterPictures(files);
       else attach(files);
     }
   });
-  fileInput.addEventListener("change", () => (attach([...fileInput.files]), (fileInput.value = "")));
+  fileInput.addEventListener("change", () => ((onToaster() ? addToasterPictures : attach)([...fileInput.files]), (fileInput.value = "")));
   // the paperclip opens its two frames: files (from the computer, or the Library), and the Stage's control maps
   const clip = h("button.composer-key.clip-key", { type: "button", title: "Attach — a file, a picture from the Library, or a control map of the Stage", "aria-label": "Attach", "aria-expanded": "false" }, sprite("paperclip"));
   clip.addEventListener("click", () => {
     const inputs = state.stageChat.inputs;
+    // Toaster: one photo, from the computer or the Library, for Crumpet to rebuild
+    if (onToaster()) return attachMenu(clip, { files: addToasterPictures, picture: addToasterPhoto, taken: (photo) => toasterChat.pictures.some((p) => p.file === photo.file) });
     attachMenu(clip, onStage() ? {
       files: (files) => attachStagePictures(files),
       picture: (photo) => addStagePicture(photo),
@@ -379,6 +387,14 @@ function stagePictureChip(p) {
     h("button.chip-x", { type: "button", "aria-label": `Remove @${p.name}`, title: "Remove", on: { click: () => removeStagePicture(p.name) } }, icon("close")));
 }
 
+/** Toaster: the photo waiting to go to Crumpet with the next words. */
+function toasterPictureChip(p) {
+  return h("div.file-chip", { title: `${p.name} — Crumpet sees it with your next words` },
+    h("button.chip-thumb", { type: "button", "aria-label": "Look at the photo", on: { click: () => view(p.url) } }, h("img", { src: p.url, alt: "", draggable: false })),
+    h("span.chip-name", {}, "Photo"),
+    h("button.chip-x", { type: "button", "aria-label": "Take the photo away", title: "Remove", on: { click: removeToasterPicture } }, icon("close")));
+}
+
 function fileChip(f) {
   const look = f.kind === "image" ? () => view(f.url) : f.kind === "video" ? () => view(f.url, "video") : () => mention(f.name);
   return h("div.file-chip", { dataset: { name: f.name }, title: `${f.title ?? f.name} — ${describe(f)}` },
@@ -421,10 +437,11 @@ function message(m, last, s, harness) {
     return h("div.msg.is-user", {},
       m.about ? h("span.msg-about", {}, m.about) : null,
       pillText("p", m.text, lookup),
-      files.length ? h("div.msg-files", {}, files.map((f) => h("span.msg-file", { title: `@${f.name}` }, thumb(f)))) : null);
+      files.length ? h("div.msg-files", {}, files.map((f) => h("span.msg-file", { title: `@${f.name}` }, thumb(f)))) : null,
+      m.picture ? h("div.msg-files", {}, h("span.msg-file", { title: "The photo sent with these words" }, h("img", { src: m.picture.url, alt: "", draggable: false }))) : null);
   }
   // a pet's answer: its face, its words, what it did (and could not), a yes or no for what costs credits, one step back
-  const [undo, back] = m.macaron ? [undoMacaron, "Put the design back as it was"] : m.stage ? [undoStage, "Put the stage back as it was"] : [undoAssistant, "Put the shot back as it was"];
+  const [undo, back] = m.macaron ? [undoMacaron, "Put the design back as it was"] : m.toaster ? [undoToaster, "Put the draft back as it was"] : m.stage ? [undoStage, "Put the stage back as it was"] : [undoAssistant, "Put the shot back as it was"];
   return h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
     h("img.msg-face", { src: harness.face, alt: "", draggable: false }),
     h("p", m.detail ? { title: m.detail } : {}, m.text),
@@ -480,13 +497,13 @@ export function renderAssistant(el) {
   c.chips.replaceChildren(...offered.map((p) => h("button.pet-chip", { type: "button", title: p.text, disabled: !!blocked(s), on: { click: () => tell(p.text) } }, p.label)));
   shownRoom = s.room;
   const inputs = state.stageChat.inputs;
-  c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : filesOn ? files.map(fileChip) : []), ...(filesOn && !stage && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
+  c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : onToaster() ? toasterChat.pictures.map(toasterPictureChip) : filesOn ? files.map(fileChip) : []), ...(filesOn && !stage && !onToaster() && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
   // on Story, what the assistant will edit: the block (or the card) that is picked
   if (storyPage) {
     const label = selectionLabel();
     c.tray.replaceChildren(...(label ? [h("div.file-chip.is-context", { title: "The assistant edits what is picked; it knows the whole story" }, h("span.chip-thumb.is-glyph", {}, sprite("prompt-enhance")), h("span.chip-name", {}, `Editing: ${label}`), h("button.chip-x", { type: "button", "aria-label": "Edit the whole story", title: "The whole story", on: { click: () => selectInStory(null) } }, icon("close")))] : []));
   }
-  c.tray.hidden = storyPage ? !selectionLabel() : !filesOn || (stage ? !inputs.maps.length && !inputs.pictures.length : !files.length && !attaching);
+  c.tray.hidden = storyPage ? !selectionLabel() : !filesOn || (stage ? !inputs.maps.length && !inputs.pictures.length : onToaster() ? !toasterChat.pictures.length : !files.length && !attaching);
   c.el.classList.toggle("is-story", storyPage);
   c.el.classList.toggle("is-cut", cutPage);
   c.el.classList.toggle("no-clip", !filesOn);
@@ -543,6 +560,7 @@ export function renderAssistant(el) {
     e.preventDefault();
     el.classList.remove("is-drop");
     if (onStage()) attachStagePictures([...e.dataTransfer.files]);
+    else if (onToaster()) addToasterPictures([...e.dataTransfer.files]);
     else attach([...e.dataTransfer.files]);
   };
   el.onkeydown = (e) => {

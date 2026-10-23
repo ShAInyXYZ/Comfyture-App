@@ -138,13 +138,15 @@ onChange((scopes) => {
 /** Shows the section the address names, and draws what changed while it was hidden. */
 /**
  * The assistant's bar floats over the Shot's desk and docks under the Stage's viewport, the Cut's timeline, Jam's page.
- * Mixer's page redraws all it holds, so its bar floats from the body, like the Shot's. Utensils', Spice's and Macaron's docks in their pages' foot.
+ * Mixer's page redraws all it holds, so its bar floats from the body, like the Shot's. Utensils', Spice's and Macaron's docks in their pages' foot,
+ * Toaster's under its viewport.
  */
 function dockAssistant(page = currentPage()) {
   const bar = $("assistant");
   if (dockMacaron(bar, page)) return;
   if (dockSpice(bar, page)) return;
   if (dockUtensils(bar, page)) return;
+  if (dockToaster(bar, page)) return;
   const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : page === "cut" ? $("cut-chat") : page === "jam" ? $("jam-chat") : page === "mixer" ? document.body : $("page-shot");
   bar.hidden = !slot || !["shot", "stage", "story", "cut", "jam", "mixer"].includes(page);
   if (slot && bar.parentElement !== slot) slot.append(bar);
@@ -194,6 +196,18 @@ function dockUtensils(bar, page) {
   return true;
 }
 document.addEventListener("utensils:drawn", () => currentPage() === "utensils" && $("assistant").parentElement?.id !== "utensils-chat" && dockAssistant());
+// Toaster: Crumpet's bar docks under the viewport (the slot is drawn with the page)
+function dockToaster(bar, page) {
+  if (page !== "toaster") return false;
+  const slot = $("toaster-chat");
+  bar.hidden = !slot;
+  if (slot && bar.parentElement !== slot) slot.append(bar);
+  bar.classList.toggle("is-docked", !!slot);
+  pending.add("assistant");
+  flush();
+  return true;
+}
+document.addEventListener("toaster:drawn", () => currentPage() === "toaster" && $("assistant").parentElement?.id !== "toaster-chat" && dockAssistant());
 
 function showPage() {
   const page = currentPage();
