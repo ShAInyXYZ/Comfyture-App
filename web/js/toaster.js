@@ -5,7 +5,7 @@
 import { changed, toast, waitFor, jobWatchers } from "./store.js";
 import { api } from "./api.js";
 import { keyedSaver } from "./saving.js";
-import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D } from "./toaster-model.js";
+import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, freeSpot, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D } from "./toaster-model.js";
 
 const KIND = "toasts";
 // where a draft's camera starts: the studio's own view, the floor around the object in sight
@@ -252,10 +252,29 @@ export function addPart(shape) {
   place(newPart(shape, partsNow()));
 }
 
-/** A piece of the Stage's library as a new part ({ type, name, size }), placed the way a shape is. */
+/**
+ * A piece of the Stage's library as a new part ({ type, name, size }), in the colour of its kind, set down on the floor beside what is
+ * there instead of on top of it: furniture goes side by side (freeSpot).
+ */
 export function addPiece(piece) {
   if (!piece?.type) return;
-  place(newAssetPart(piece, partsNow()));
+  const parts = partsNow();
+  const part = newAssetPart(piece, parts);
+  // what stands on the floor already, as footprints (the viewport measures them as they are turned)
+  const footprint = (p) => {
+    const b = toaster.view?.bounds([p.id]);
+    return b ? { min: [b.min[0], b.min[2]], max: [b.max[0], b.max[2]] } : { min: [p.pos[0] - p.size[0] / 2, p.pos[2] - p.size[2] / 2], max: [p.pos[0] + p.size[0] / 2, p.pos[2] + p.size[2] / 2] };
+  };
+  const shown = parts.filter((p) => !p.hidden);
+  const taken = shown.map(footprint);
+  // as near the middle of everything as can be, so the pieces gather in rows instead of trailing off in a line
+  const mid = (k) => (Math.min(...taken.map((t) => t.min[k])) + Math.max(...taken.map((t) => t.max[k]))) / 2;
+  const near = taken.length ? [mid(0), mid(1)] : [0, 0];
+  const [x, z] = freeSpot([part.size[0], part.size[2]], taken, { near });
+  part.pos = [x, Math.round((part.size[1] / 2) * 1000) / 1000, z];
+  editParts((list) => void list.push(part));
+  select([part.id]);
+  if (toaster.tool === "select") setTool("move");
 }
 
 function place(part) {

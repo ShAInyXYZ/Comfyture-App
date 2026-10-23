@@ -121,14 +121,60 @@ export function newPart(shape, parts = [], { at, color } = {}) {
 
 /**
  * A piece of the Stage's library as a new part: `piece` is { type, name, size } (its size at its own scale), standing on the floor (or where
- * `at` says), in grey clay like the Stage's pieces until it is given a colour.
+ * `at` says), in the colour of its kind (pieceColor) unless `color` says otherwise.
  */
-export function newAssetPart(piece, parts = [], { at } = {}) {
+export function newAssetPart(piece, parts = [], { at, color, random = Math.random } = {}) {
   const taken = new Set(parts.map((p) => p.name.toLowerCase()));
   let name = String(piece.name || piece.type).slice(0, 40);
   for (let i = 2; taken.has(name.toLowerCase()); i++) name = `${piece.name} ${i}`;
   const size = vec(piece.size, [1, 1, 1], 0.01, 100);
-  return cleanPart({ shape: "asset", asset: piece.type, name, color: PALETTE[0][0], size, pos: at ?? [0, size[1] / 2, 0] });
+  return cleanPart({ shape: "asset", asset: piece.type, name, color: color ?? pieceColor(piece.type, parts, random), size, pos: at ?? [0, size[1] / 2, 0] });
+}
+
+/**
+ * The colour of a kind of piece in a draft, like a colour ID: the one its kind already wears (two shelves are one colour), else a clay
+ * colour picked at random among those no part wears yet (any of them once all are worn). `random` is for the tests.
+ */
+export function pieceColor(type, parts = [], random = Math.random) {
+  const same = parts.find((p) => p.shape === "asset" && p.asset === type);
+  if (same) return same.color;
+  const used = new Set(parts.map((p) => p.color));
+  const free = PALETTE.map(([h]) => h).filter((h) => !used.has(h));
+  const pool = free.length ? free : PALETTE.map(([h]) => h);
+  return pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))];
+}
+
+/**
+ * A free place on the floor for a footprint [w, d] (x and z) beside what is there: edge to edge with a `taken` footprint ({ min: [x, z],
+ * max: [x, z] }), `gap` apart, touching none. Of the places that are free, the one nearest `near` ([x, z]) wins, a place to the side
+ * counting less than one behind and one behind less than one in front, so pieces line up side by side as the camera sees them and do
+ * not hide each other. With nothing there, the place is `near` itself; when every edge is taken, the nearest free point, ring after ring.
+ */
+export function freeSpot([w, d], taken = [], { near = [0, 0], gap = 0.1 } = {}) {
+  const hw = Math.max(0.005, w) / 2;
+  const hd = Math.max(0.005, d) / 2;
+  const eps = 1e-6;
+  const clear = (x, z) => taken.every((t) => x + hw + gap <= t.min[0] + eps || x - hw - gap >= t.max[0] - eps || z + hd + gap <= t.min[1] + eps || z - hd - gap >= t.max[1] - eps);
+  const round = (v) => Math.round(v * 1000) / 1000;
+  const cost = ([x, z]) => Math.abs(x - near[0]) + (z < near[1] ? 2 : 3) * Math.abs(z - near[1]);
+  if (clear(near[0], near[1])) return near.map(round);
+  // beside each footprint: to its right and left (lined up with it), behind it and in front of it
+  const spots = taken.flatMap((t) => {
+    const cx = (t.min[0] + t.max[0]) / 2;
+    const cz = (t.min[1] + t.max[1]) / 2;
+    return [[t.max[0] + gap + hw, cz], [t.min[0] - gap - hw, cz], [cx, t.min[1] - gap - hd], [cx, t.max[1] + gap + hd]];
+  }).filter(([x, z]) => clear(x, z)).sort((a, b) => cost(a) - cost(b));
+  if (spots.length) return spots[0].map(round);
+  // (a crowded floor: the nearest free point, ring after ring)
+  const step = Math.min(0.5, Math.max(0.05, Math.min(w, d) / 2));
+  for (let r = step; r <= 60; r += step) {
+    const count = Math.max(8, Math.ceil((2 * Math.PI * r) / step));
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * 2 * Math.PI;
+      if (clear(near[0] + Math.cos(a) * r, near[1] + Math.sin(a) * r)) return [round(near[0] + Math.cos(a) * r), round(near[1] + Math.sin(a) * r)];
+    }
+  }
+  return near.map(round);
 }
 
 /**

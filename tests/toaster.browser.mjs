@@ -180,6 +180,21 @@ try {
   const chair = d.body.parts.at(-1);
   ok(chair?.shape === "asset" && chair.asset === "office-chair" && chair.name === "Office chair", "a click adds the piece as a part", JSON.stringify(chair));
   ok(Math.abs(chair.size[1] - 1.033) < 0.02 && Math.abs(chair.pos[1] - chair.size[1] / 2) < 0.02, "at its own size, standing on the floor", JSON.stringify(chair?.size));
+  ok(chair.color !== "#c9c4bb" && d.body.parts.slice(0, -1).every((p) => p.color !== chair.color), "in a colour of its own kind, worn by no other part", chair.color);
+  // a second chair: the same colour, set down beside the first, never on it
+  await page.locator('.ts-library .ts-piece[aria-label="Add office chair"]').click();
+  d = await draft();
+  const chair2 = d.body.parts.at(-1);
+  const foot = (p) => ({ x0: p.pos[0] - p.size[0] / 2, x1: p.pos[0] + p.size[0] / 2, z0: p.pos[2] - p.size[2] / 2, z1: p.pos[2] + p.size[2] / 2 });
+  const [f1, f2] = [foot(chair), foot(chair2)];
+  ok(chair2.asset === "office-chair" && chair2.color === chair.color, "a second chair wears the first one's colour", chair2.color);
+  ok(Math.abs(chair2.pos[1] - chair.pos[1]) < 1e-3 && (f2.x0 >= f1.x1 || f2.x1 <= f1.x0 || f2.z0 >= f1.z1 || f2.z1 <= f1.z0), "and stands on the floor beside it, not on top", JSON.stringify([chair.pos, chair2.pos]));
+  const others = await js((id) => window.__toaster.draft.body.parts.filter((p) => p.id !== id && !p.hidden).map((p) => window.__toaster.view.bounds([p.id])), chair2.id);
+  const b2 = await js((id) => window.__toaster.view.bounds([id]), chair2.id);
+  ok(others.every((o) => b2.min[0] >= o.max[0] - 1e-3 || b2.max[0] <= o.min[0] + 1e-3 || b2.min[2] >= o.max[2] - 1e-3 || b2.max[2] <= o.min[2] + 1e-3), "touching no other part");
+  ok(others.some((o) => Math.max(o.min[0] - b2.max[0], b2.min[0] - o.max[0], o.min[2] - b2.max[2], b2.min[2] - o.max[2]) < 0.15), "edge to edge with one of them");
+  await page.keyboard.press("Delete");
+  await page.locator(".ts-part").last().click();
   await page.waitForFunction((id) => { const b = window.__toaster.view.bounds([id]); return b && b.max[1] - b.min[1] > 0.9; }, chair.id, { timeout: 15000 }).catch(() => {});
   const cb = await js((id) => window.__toaster.view.bounds([id]), chair.id);
   ok(cb && Math.abs(cb.max[1] - cb.min[1] - chair.size[1]) < 0.02 && Math.abs(cb.max[0] - cb.min[0] - chair.size[0]) < 0.02, "its model fills its size box in the viewport", JSON.stringify(cb));

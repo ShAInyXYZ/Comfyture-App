@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   SHAPES, PALETTE, RATIOS, SHEET, VIEWS, TO_3D, shapeOf, roundLabel, hasSides, colorName, sheetScale,
-  cleanPart, cleanDraft, newPart, mirrorPart, duplicatePart, starterDraft, legendOf, framePrompt, sheetPrompt, newAssetPart, isAsset,
+  cleanPart, cleanDraft, newPart, mirrorPart, duplicatePart, starterDraft, legendOf, framePrompt, sheetPrompt, newAssetPart, isAsset, pieceColor, freeSpot,
 } from "../web/js/toaster-model.js";
 
 test("ten shapes, each with a size; the slider and the sides only where they mean something", () => {
@@ -123,7 +123,7 @@ test("the words: what each clay colour becomes, the object, the scene; hidden pa
 });
 
 test("a piece of the Stage's library is a part: its piece and its own size kept, named after it, told by name in the words", () => {
-  const chair = newAssetPart({ type: "office-chair", name: "Office chair", size: [0.65, 1.033, 0.621] }, []);
+  const chair = newAssetPart({ type: "office-chair", name: "Office chair", size: [0.65, 1.033, 0.621] }, [], { color: PALETTE[0][0] });
   assert.ok(isAsset(chair));
   assert.equal(chair.shape, "asset");
   assert.equal(chair.asset, "office-chair");
@@ -139,4 +139,51 @@ test("a piece of the Stage's library is a part: its piece and its own size kept,
   assert.equal(mirrorPart({ ...chair, pos: [1, 0.5, 0] }, [chair]).asset, "office-chair");
   assert.deepEqual(legendOf([{ ...chair, made: "black leather" }]), ["the grey clay (office chair) becomes black leather"]);
   assert.deepEqual(legendOf([cleanPart({ shape: "asset", asset: "box", name: "Box" })]), ["the grey clay is the box"], "a piece named like a shape is still told");
+});
+
+test("a kind of piece wears one colour, picked at random among the free ones: two shelves are alike, a new kind is apart", () => {
+  const shelf = newAssetPart({ type: "shelf", name: "Shelf", size: [1, 2, 0.4] }, [], { random: () => 0.5 });
+  const box = cleanPart({ shape: "box", color: "#4fb3a9" });
+  assert.ok(PALETTE.some(([h]) => h === shelf.color));
+  const twin = newAssetPart({ type: "shelf", name: "Shelf", size: [1, 2, 0.4] }, [shelf, box], { random: () => 0.99 });
+  assert.equal(twin.color, shelf.color, "the same kind, the same colour");
+  const sofa = newAssetPart({ type: "sofa", name: "Sofa", size: [2, 0.9, 0.9] }, [shelf, twin, box], { random: () => 0.3 });
+  assert.notEqual(sofa.color, shelf.color, "a new kind takes a colour nobody wears");
+  assert.notEqual(sofa.color, box.color);
+  // with every colour worn, any colour will do
+  const all = PALETTE.map(([h], i) => cleanPart({ shape: "box", color: h, name: `b${i}` }));
+  assert.ok(PALETTE.some(([h]) => h === pieceColor("lamp", all, () => 0.2)));
+  // the pick follows the random draw among the free ones
+  const picks = new Set([0, 0.2, 0.4, 0.6, 0.8, 0.99].map((r) => pieceColor("lamp", [], () => r)));
+  assert.ok(picks.size >= 5, "different draws, different colours");
+});
+
+test("a free spot on the floor: the middle when it is free, else the nearest place beside what is there, never overlapping", () => {
+  assert.deepEqual(freeSpot([1, 1], []), [0, 0]);
+  const sofa = { min: [-1, -0.45], max: [1, 0.45] };
+  const [x, z] = freeSpot([0.8, 0.8], [sofa], { gap: 0.1 });
+  const overlaps = (a, b) => a.min[0] < b.max[0] && a.max[0] > b.min[0] && a.min[1] < b.max[1] && a.max[1] > b.min[1];
+  const placed = { min: [x - 0.4, z - 0.4], max: [x + 0.4, z + 0.4] };
+  assert.ok(!overlaps(placed, sofa), `not on the sofa: ${x}, ${z}`);
+  assert.ok(Math.hypot(x, z) < 1.6, `right beside it: ${x}, ${z}`);
+  assert.deepEqual([x, z], [1.5, 0], "edge to edge on its right, lined up with it, a gap between");
+  // a row: the pieces go to the sides before they go behind, and behind before they go in front (toward the camera)
+  const row = [{ min: [-0.5, -0.5], max: [0.5, 0.5] }];
+  const spots = [];
+  for (let i = 0; i < 4; i++) {
+    const [px, pz] = freeSpot([1, 1], row, { near: [0, 0], gap: 0.1 });
+    spots.push([px, pz]);
+    row.push({ min: [px - 0.5, pz - 0.5], max: [px + 0.5, pz + 0.5] });
+  }
+  assert.ok(spots.slice(0, 2).every(([, z]) => z === 0), `the first two beside it, in its row: ${JSON.stringify(spots)}`);
+  assert.ok(spots.every(([, z]) => z <= 0), `none in front: ${JSON.stringify(spots)}`);
+  // a row of pieces added one after another stays a cluster with no overlaps
+  const taken = [sofa];
+  for (let i = 0; i < 8; i++) {
+    const [px, pz] = freeSpot([0.6, 0.6], taken, { near: [0, 0] });
+    const box = { min: [px - 0.3, pz - 0.3], max: [px + 0.3, pz + 0.3] };
+    assert.ok(taken.every((t) => !overlaps(box, t)), `piece ${i} overlaps`);
+    taken.push(box);
+  }
+  assert.ok(taken.every((t) => Math.hypot((t.min[0] + t.max[0]) / 2, (t.min[1] + t.max[1]) / 2) < 3), "they stay together");
 });
