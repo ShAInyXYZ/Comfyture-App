@@ -1,9 +1,10 @@
-// The app's home: the six products, each with its cover, what it is for and what it does, the
-// featured one in a banner that turns from one to the next; then the films last worked on.
+// The app's home: the six products in one banner (the one shown large, all six as tiles along its foot, turning from one to the next),
+// then the storefront of the most-run Comfy Cloud workflows (welcome-popular.js), then the films last worked on.
 import { h, icon, sprite } from "../dom.js";
 import { state } from "../store.js";
 import { PRODUCTS, currentPage } from "../router.js";
 import { openFilm } from "./home.js";
+import { popularSection } from "../welcome-popular.js";
 
 const ABOUT = {
   kitchen: { who: "For directors", line: "The full studio: a story and its cast, every shot staged and rolled, the cut.", does: ["Story", "Stage", "Shot", "Cut", "Library"] },
@@ -16,47 +17,54 @@ const ABOUT = {
 const ids = Object.keys(PRODUCTS);
 const cover = (id) => `brand/products/covers/${id}.webp`;
 
-// the banner's turn: one product after the next, held while the pointer is over it
+// the banner's turn: one product after the next. The products are the tiles along its foot; the lit one fills as its time runs, and
+// when it is full the next slides in (held while the pointer is over the banner). A tile picked slides its product in from its side.
 let at = 0;
-let held = false;
 let banner = null;
 function show(i) {
   at = (i + ids.length) % ids.length;
   if (!banner?.isConnected) return;
-  banner.querySelectorAll(".welcome-slide").forEach((el, n) => el.classList.toggle("is-on", n === at));
-  banner.querySelectorAll(".welcome-dot").forEach((el, n) => el.setAttribute("aria-current", n === at ? "true" : "false"));
+  banner.querySelectorAll(".welcome-slide").forEach((el, n) => {
+    el.classList.toggle("is-on", n === at);
+    // the ones before the lit one wait on its left, the ones after on its right: the new one slides in from where it was
+    el.classList.toggle("is-past", n < at);
+    el.setAttribute("aria-hidden", n === at ? "false" : "true");
+  });
+  banner.querySelectorAll(".welcome-tile").forEach((el, n) => {
+    el.setAttribute("aria-current", n === at ? "true" : "false");
+    // the fill starts again on the tile that is lit
+    const bar = el.querySelector(".welcome-tile-fill");
+    if (bar && n === at) {
+      bar.style.animation = "none";
+      void bar.offsetWidth;
+      bar.style.animation = "";
+    }
+  });
 }
-setInterval(() => !held && !document.hidden && currentPage() === "home" && show(at + 1), 7000);
 
 const mark = (id) => sprite(`product-${id}`);
 
 function hero() {
-  banner = h("section.welcome-hero", { "aria-label": "The products", on: { pointerenter: () => (held = true), pointerleave: () => (held = false) } },
+  banner = h("section.welcome-hero", { "aria-label": "The products", on: { pointerenter: () => banner.classList.add("is-held"), pointerleave: () => banner.classList.remove("is-held") } },
     ...ids.map((id, n) => {
       const [name, tagline] = PRODUCTS[id];
-      return h(`div.welcome-slide${n === at ? ".is-on" : ""}`, { "aria-hidden": n === at ? undefined : "true" },
+      return h(`div.welcome-slide${n === at ? ".is-on" : ""}${n < at ? ".is-past" : ""}`, { "aria-hidden": n === at ? "false" : "true" },
         h("img.welcome-slide-art", { src: cover(id), alt: "", draggable: false, loading: n ? "lazy" : "eager" }),
         h("div.welcome-slide-text", {},
           h("span.welcome-eyebrow", {}, mark(id), ABOUT[id].who),
           h("h1", {}, h("span", {}, name), h("em", {}, tagline)),
           h("p", {}, ABOUT[id].line),
+          h("div.welcome-tags", {}, ...ABOUT[id].does.map((t) => h("span", {}, t))),
           h("a.welcome-go", { href: `#/${id}` }, `Open ${name}`, icon("arrow"))));
     }),
-    h("div.welcome-dots", {}, ...ids.map((id, n) =>
-      h("button.welcome-dot", { type: "button", "aria-label": PRODUCTS[id][0], "aria-current": n === at ? "true" : "false", on: { click: () => show(n) } }))));
+    h("nav.welcome-strip", { "aria-label": "Every product" }, ...ids.map((id, n) => {
+      const [name, tagline] = PRODUCTS[id];
+      return h("button.welcome-tile", { type: "button", title: `${name}: ${tagline}`, "aria-current": n === at ? "true" : "false", dataset: { product: id }, on: { click: () => (n === at ? (location.hash = `#/${id}`) : show(n)) } },
+        h("img", { src: cover(id), alt: "", draggable: false, loading: "lazy" }),
+        h("span.welcome-tile-text", {}, h("span.welcome-tile-mark", {}, mark(id)), h("b", {}, name)),
+        h("i.welcome-tile-fill", { on: { animationend: () => !document.hidden && currentPage() === "home" && show(at + 1) } }));
+    })));
   return banner;
-}
-
-function card(id) {
-  const [name, tagline] = PRODUCTS[id];
-  return h(`a.welcome-card.is-${id}`, { href: `#/${id}` },
-    h("img.welcome-card-art", { src: cover(id), alt: "", draggable: false, loading: "lazy" }),
-    h("div.welcome-card-foot", {},
-      h("span.welcome-card-mark", {}, mark(id)),
-      h("div.welcome-card-text", {},
-        h("h3", {}, name),
-        h("p", {}, tagline),
-        h("div.welcome-tags", {}, ...ABOUT[id].does.map((t) => h("span", {}, t))))));
 }
 
 function recent() {
@@ -70,11 +78,15 @@ function recent() {
         h("span.welcome-film-text", {}, h("b", {}, f.name), h("span", {}, mark("kitchen"), "Kitchen", icon("open")))))));
 }
 
+// the page is built once: the banner keeps turning through redraws, only the storefront and the films are drawn again
+let page = null;
+let parts = null;
 export function renderWelcome(el) {
-  el.replaceChildren(h("div.welcome", {},
-    hero(),
-    h("section.welcome-section", {},
-      h("h2", {}, "Everything on the menu"),
-      h("div.welcome-menu", {}, ...ids.map(card))),
-    recent()));
+  if (!page || !el.contains(page)) {
+    parts = { popular: h("div.welcome-part"), recent: h("div.welcome-part") };
+    page = h("div.welcome", {}, hero(), parts.popular, parts.recent);
+    el.replaceChildren(page);
+  }
+  parts.popular.replaceChildren(popularSection());
+  parts.recent.replaceChildren(...[recent()].filter(Boolean));
 }
