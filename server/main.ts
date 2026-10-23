@@ -832,18 +832,28 @@ async function seedShots() {
   for (const folder of (await readdir(dir).catch(() => [] as string[])).sort()) {
     try {
       const spec = JSON.parse(await readFile(join(dir, folder, "shot.json"), "utf8"));
-      if (!/^[\w-]+$/.test(spec.id) || seeded.includes(spec.id)) continue;
+      // a newer version of an example (its rev) replaces the one kept only while the person has not touched it; a deleted one stays deleted
+      const tag = Number(spec.rev) > 1 ? `${spec.id}@${Number(spec.rev)}` : spec.id;
+      if (!/^[\w-]+$/.test(spec.id) || seeded.includes(tag)) continue;
+      if (seeded.some((x) => x === spec.id || x.startsWith(`${spec.id}@`))) {
+        const kept = await readProject("spice-shots", spec.id);
+        if (!kept || kept.updatedAt !== kept.createdAt) {
+          seeded.push(tag);
+          added = true;
+          continue;
+        }
+      }
       const body: any = spiceBody({ set: spec.set });
       const at = new Date().toISOString();
       let thumb: string | undefined;
       for (const [dept, p] of Object.entries<any>(spec.passes ?? {})) {
         if (!(dept in body.passes) || !/^[\w.-]+\.mp4$/.test(p.file)) continue;
-        const file = `${spec.id}-${dept}.mp4`;
+        const file = `${spec.id}-${dept}${Number(spec.rev) > 1 ? `-r${Number(spec.rev)}` : ""}.mp4`;
         await mkdir(join(data, "videos"), { recursive: true });
         await copyFile(join(dir, folder, p.file), join(data, "videos", file));
         const media: any = { kind: "video", url: `/media/videos/${file}`, file, width: 720, height: 480, seconds: p.seconds };
         if (p.still && /^[\w.-]+\.(jpg|png|webp)$/.test(p.still)) {
-          const still = `${spec.id}-${dept}.${p.still.split(".").pop()}`;
+          const still = `${spec.id}-${dept}${Number(spec.rev) > 1 ? `-r${Number(spec.rev)}` : ""}.${p.still.split(".").pop()}`;
           await mkdir(join(data, "photos"), { recursive: true });
           await copyFile(join(dir, folder, p.still), join(data, "photos", still));
           media.still = `/media/photos/${still}`;
@@ -852,10 +862,13 @@ async function seedShots() {
         const to = SPICE_FIRST + Math.max(1, Math.round((Number(p.seconds) || 5) * 24)) - 1;
         body.passes[dept] = dept === "plate"
           ? { media, eye: true, fps: 24, name: String(p.name ?? "Plate"), from: SPICE_FIRST, to, at }
-          : { media, eye: true, from: SPICE_FIRST, to, note: String(p.note ?? ""), credits: 0, at, source: p.source === "cloud" ? "cloud" : "free" };
+          : { media, eye: true, from: SPICE_FIRST, to, note: String(p.note ?? ""), credits: 0, at, source: p.source === "cloud" ? "cloud" : "free", ...(dept === "roto" ? { type: "matte" } : {}) };
+        // Roto's pass is its subject's matte
+        const subject = dept === "roto" ? body.set.roto.subjects.find((x: any) => !x.media) : null;
+        if (subject) Object.assign(subject, { media, from: SPICE_FIRST, to, stale: false, at, credits: 0 });
       }
       await writeProject("spice-shots", { id: spec.id, name: String(spec.name ?? "Example"), createdAt: at, updatedAt: at, ...(thumb ? { thumb } : {}), body } as Project);
-      seeded.push(spec.id);
+      seeded.push(tag);
       added = true;
     } catch (e) {
       console.warn(`spice: the example ${folder} was not added:`, (e as Error).message);

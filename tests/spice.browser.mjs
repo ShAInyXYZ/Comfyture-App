@@ -124,9 +124,11 @@ try {
   // a first visit finds the example shots (spice/examples), the newest open, its passes made
   const examples = await js(async () => {
     const { spice } = await import("/js/spice.js");
-    return { names: spice.list.map((x) => x.name), open: spice.shot.name, done: Object.values(spice.shot.body.passes).filter((p) => p?.media).length };
+    const b = spice.shot.body;
+    return { names: spice.list.map((x) => x.name), open: spice.shot.name, done: Object.values(b.passes).filter((p) => p?.media).length, roto: b.passes.roto?.type, subject: !!b.set.roto.subjects[0]?.media, fx: b.passes.fx?.to - b.passes.fx?.from + 1, plate: b.passes.plate?.to - b.passes.plate?.from + 1 };
   });
-  ok(examples.names.includes("Rooftop explosion") && examples.names.includes("Neon street portal") && examples.done >= 3, "the example shots are there on a first visit, one open with its passes", JSON.stringify(examples));
+  ok(examples.names.includes("Rooftop explosion") && examples.names.includes("Neon street portal") && examples.done >= 4, "the example shots are there on a first visit, one open with its passes", JSON.stringify(examples));
+  ok(examples.roto === "matte" && examples.subject && examples.fx === examples.plate, "its Roto pass is its subject's matte, and its effect is laid into every frame of the shot", JSON.stringify(examples));
   ok((await page.locator(".sp-about-link").getAttribute("href")) === "#/utensils" && /nothing is overwritten/.test(await page.locator(".sp-about").innerText()), "the panel says what Spice is for, and points a quick fix to Utensils");
   // a new shot of the person's own starts empty
   await js(async () => (await import("/js/spice.js")).newShot());
