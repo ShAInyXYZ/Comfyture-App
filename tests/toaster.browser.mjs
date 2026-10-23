@@ -264,6 +264,13 @@ try {
   await page.waitForSelector(".ts-render .ts-pic img", { timeout: 5000 }).catch(() => {});
   const frameAsk = pictures[0];
   ok(frameAsk?.template === "edit" && frameAsk.refs?.[0]?.name === "frame" && frameAsk.aspect === "1:1", "Toast it sends the clay frame to an image edit, at the frame's aspect", JSON.stringify(frameAsk && { template: frameAsk.template, refs: frameAsk.refs, aspect: frameAsk.aspect }));
+  ok(JSON.stringify(frameAsk?.refs?.map((r) => r.name)) === JSON.stringify(["frame", "colour-id", "depth"]), "with its control maps: the colour ID and the depth", JSON.stringify(frameAsk?.refs));
+  ok(/In @frame and @colour-id, /.test(frameAsk?.prompt) && /@depth shows how far everything is/.test(frameAsk?.prompt), "the words name the maps and what they say");
+  {
+    const lib = await (await fetch(`${base}/api/photos`)).json();
+    const [fr, id, dp] = frameAsk.refs.map((r) => lib.find((p) => p.file === r.file));
+    ok(fr && id && dp && fr.width === id.width && fr.height === dp.height, "the maps are the frame's very size", JSON.stringify([fr, id, dp].map((p) => p && `${p.width}x${p.height}`)));
+  }
   ok(/^Render @frame/.test(frameAsk?.prompt) && /the orange clay \(cylinder\) becomes walnut|the orange clay becomes walnut/.test(frameAsk?.prompt) && /the blue clay is the office chair/.test(frameAsk?.prompt) && /A retro 1950s toaster/.test(frameAsk?.prompt) && /marble counter/i.test(frameAsk?.prompt), "its words tell the clay's colours, the object and the scene", frameAsk?.prompt);
   d = await draft();
   ok(d.body.renders[0]?.status === "done" && d.body.renders[0].photo?.url && d.body.renders[0].camera, "the render is kept with its camera");
@@ -318,11 +325,16 @@ try {
     asked.push(route.request().postDataJSON());
     return route.fulfill({ json: { reply: "A cosy corner, ready to toast.", actions: [
       { op: "clear" },
+      { op: "add", kind: "shape", shape: "box", name: "Floor", at: [0, 0], size: [8, 0.1, 6], color: "grey" },
+      { op: "add", kind: "shape", shape: "box", name: "Back wall", at: [0, -3], size: [8, 2.7, 0.12], color: "grey" },
       { op: "add", kind: "piece", piece: "sofa", name: "Sofa", at: [0, -1], turn: 0, color: "teal" },
+      { op: "add", kind: "piece", piece: "bookcase", name: "Books", against: "back" },
+      { op: "add", kind: "piece", piece: "coffee-table", name: "Low table", near: "Sofa", side: "front", gap: 0.45 },
       { op: "add", kind: "piece", piece: "armchair", name: "Armchair", at: [1.7, -0.2], face: "Sofa", color: "orange" },
       { op: "add", kind: "character", body: "woman", pose: "sit", name: "Reader", at: [0.3, -0.9], y: 0.1, color: "pink" },
       { op: "add", kind: "shape", shape: "box", name: "Side table", at: [-1.4, -1], size: [0.5, 0.5, 0.5], color: "brown", made: "oak" },
       { op: "set", part: "Side table", made: "walnut" },
+      { op: "add", kind: "piece", piece: "desk-lamp", name: "Lamp", on: "Side table" },
       { op: "camera", from: [0.5, 0.6, 3.5], at: [0, 0.5, -0.8], frame: "16:9", lens: 28, save: "Reading corner" },
       { op: "words", what: "A cosy reading corner", scene: "Warm lamp light, evening" },
       { op: "toast" },
@@ -349,9 +361,16 @@ try {
   const arm = named("Armchair");
   const reader = named("Reader");
   const tbl = named("Side table");
-  ok(d.body.parts.length === 4 && sofa?.asset === "sofa" && arm?.asset === "armchair" && reader?.shape === "character" && tbl?.shape === "box", "he cleared the floor and built the corner: two pieces, a character and a shape", d.body.parts.map((p) => p.name).join(", "));
+  ok(d.body.parts.length === 9 && sofa?.asset === "sofa" && arm?.asset === "armchair" && reader?.shape === "character" && tbl?.shape === "box", "he cleared the floor and built the corner: a floor, a wall, pieces, a character and a shape", d.body.parts.map((p) => p.name).join(", "));
+  const books = named("Books");
+  const low = named("Low table");
+  const lamp = named("Lamp");
+  ok(books && books.rot[1] === 0 && Math.abs(books.pos[2] - books.size[2] / 2 - (-3 + 0.06)) < 0.02, "the bookcase stands against the back wall, its back on it, facing the room", JSON.stringify(books?.pos));
+  ok(low && low.pos[2] > sofa.pos[2] + sofa.size[2] / 2 && Math.abs(Math.abs(low.rot[1]) - 180) < 1 && Math.abs(low.pos[2] - low.size[2] / 2 - (sofa.pos[2] + sofa.size[2] / 2) - 0.45) < 0.02, "the coffee table stands before the sofa, 45 cm from it, facing it", JSON.stringify([low?.pos, low?.rot]));
+  ok(lamp && Math.abs(lamp.pos[1] - lamp.size[1] / 2 - (tbl.pos[1] + tbl.size[1] / 2)) < 0.01, "the lamp stands on the side table", JSON.stringify(lamp?.pos));
   ok(sofa && Math.abs(sofa.pos[0]) < 1e-3 && Math.abs(sofa.pos[2] + 1) < 1e-3 && Math.abs(sofa.pos[1] - sofa.size[1] / 2) < 1e-3, "the sofa stands where he said, on the floor", JSON.stringify(sofa?.pos));
-  ok(arm && arm.rot[1] === Math.round((Math.atan2(0 - 1.7, -1 + 0.2) * 180) / Math.PI) && sofa.color === "#4fb3a9" && arm.color === "#e0884b", "the armchair faces the sofa (he said face, the page turned it), each in its colour", JSON.stringify(arm?.rot));
+  ok(arm && arm.rot[1] === Math.round((Math.atan2(0 - 1.7, -1 + 0.2) * 180) / Math.PI), "the armchair faces the sofa (he said face, the page turned it)", JSON.stringify(arm?.rot));
+  ok(sofa.color === "#3d7fd9" && arm.color === "#76aef2" && reader.color === "#ff6b3d" && tbl.color === "#b07a52", "pieces and people wear their colour ID (seats in blues, a person their own), whatever colour he said; a shape takes his", JSON.stringify([sofa.color, arm.color, reader.color, tbl.color]));
   ok(reader && reader.pose === "sit" && Math.abs(reader.pos[1] - reader.size[1] / 2 - 0.1) < 1e-3, "the reader sits, her bottom at the height he said", JSON.stringify(reader?.pos));
   ok(tbl && tbl.made === "walnut" && tbl.size[0] === 0.5, "the side table sized and then changed by name", JSON.stringify(tbl));
   const cam = await js(() => window.__toaster.view.cameraState());
@@ -381,6 +400,10 @@ try {
   await page.locator("#assistant .undo").click();
   d = await draft();
   ok(d.body.parts.length === 1 && d.body.parts[0].shape === "box", "Undo puts the draft back as it was before his build");
+  // the control maps are the draft's choice: the silhouette added, the depth taken away
+  await page.locator(".ts-map", { hasText: "Silhouette" }).click();
+  await page.locator(".ts-map", { hasText: "Depth" }).click();
+  ok(JSON.stringify((await draft()).body.maps) === JSON.stringify(["id", "silhouette"]), "the Control keys choose the maps sent with the clay");
   ok(outbound.length === 0, "no call left the machine", outbound.join(" "));
   ok(errors.length === 0, "no error on the page", errors.join(" | "));
 } finally {

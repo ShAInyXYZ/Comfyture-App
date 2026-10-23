@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   SHAPES, PALETTE, RATIOS, SHEET, VIEWS, TO_3D, shapeOf, roundLabel, hasSides, colorName, sheetScale,
-  cleanPart, cleanDraft, newPart, mirrorPart, duplicatePart, starterDraft, legendOf, framePrompt, sheetPrompt, newAssetPart, isAsset, pieceColor, freeSpot, newCharacterPart, isCharacter,
+  cleanPart, cleanDraft, newPart, mirrorPart, duplicatePart, starterDraft, legendOf, framePrompt, sheetPrompt, newAssetPart, isAsset, freeSpot, newCharacterPart, isCharacter, idColor, familyOf, colourByKind, personColor, FAMILIES, PEOPLE,
 } from "../web/js/toaster-model.js";
 
 test("ten shapes, each with a size; the slider and the sides only where they mean something", () => {
@@ -141,21 +141,38 @@ test("a piece of the Stage's library is a part: its piece and its own size kept,
   assert.deepEqual(legendOf([cleanPart({ shape: "asset", asset: "box", name: "Box" })]), ["the grey clay is the box"], "a piece named like a shape is still told");
 });
 
-test("a kind of piece wears one colour, picked at random among the free ones: two shelves are alike, a new kind is apart", () => {
-  const shelf = newAssetPart({ type: "shelf", name: "Shelf", size: [1, 2, 0.4] }, [], { random: () => 0.5 });
-  const box = cleanPart({ shape: "box", color: "#4fb3a9" });
-  assert.ok(PALETTE.some(([h]) => h === shelf.color));
-  const twin = newAssetPart({ type: "shelf", name: "Shelf", size: [1, 2, 0.4] }, [shelf, box], { random: () => 0.99 });
-  assert.equal(twin.color, shelf.color, "the same kind, the same colour");
-  const sofa = newAssetPart({ type: "sofa", name: "Sofa", size: [2, 0.9, 0.9] }, [shelf, twin, box], { random: () => 0.3 });
-  assert.notEqual(sofa.color, shelf.color, "a new kind takes a colour nobody wears");
-  assert.notEqual(sofa.color, box.color);
-  // with every colour worn, any colour will do
-  const all = PALETTE.map(([h], i) => cleanPart({ shape: "box", color: h, name: `b${i}` }));
-  assert.ok(PALETTE.some(([h]) => h === pieceColor("lamp", all, () => 0.2)));
-  // the pick follows the random draw among the free ones
-  const picks = new Set([0, 0.2, 0.4, 0.6, 0.8, 0.99].map((r) => pieceColor("lamp", [], () => r)));
-  assert.ok(picks.size >= 5, "different draws, different colours");
+test("the colour ID: each kind of thing its family, each type its shade in the order it came, one type one colour, people each their own", () => {
+  const lib: Record<string, any> = {
+    sofa: { type: "sofa", name: "Sofa", category: "Furniture" }, armchair: { type: "armchair", name: "Armchair", category: "Furniture" },
+    shelf: { type: "shelf", name: "Shelf", category: "Furniture" }, "articulated-desk-lamp": { type: "articulated-desk-lamp", name: "Articulated desk lamp", category: "Objects" },
+    desk: { type: "desk", name: "Desk", category: "Furniture" }, "coffee-table": { type: "coffee-table", name: "Coffee table", category: "Furniture" },
+    fireplace: { type: "fireplace", name: "Fireplace", category: "Furniture" }, "baby-chick": { type: "baby-chick", name: "Chick", category: "Animals", animal: true },
+  };
+  const of = (t: string) => lib[t];
+  assert.equal(familyOf(of("articulated-desk-lamp")).id, "light", "a desk lamp is a lamp: its own last word counts first");
+  assert.equal(familyOf(of("coffee-table")).id, "table");
+  assert.equal(familyOf(of("baby-chick")).id, "animal");
+  assert.equal(familyOf({ type: "mystery-gizmo", name: "Gizmo", category: "Vehicles" }).id, "vehicle", "a piece the words miss falls back on its category");
+  const parts: any[] = [];
+  for (const t of ["sofa", "armchair", "shelf", "shelf", "desk", "coffee-table", "fireplace"]) parts.push(newAssetPart(of(t), parts, { pieceOf: of }));
+  const colour = (t: string) => parts.filter((p) => p.asset === t).map((p) => p.color);
+  const seat = FAMILIES.find((f) => f.id === "seat")!.shades.map(([h]) => h);
+  assert.equal(colour("sofa")[0], seat[0], "the first seat type takes the family's first shade");
+  assert.equal(colour("armchair")[0], seat[1], "the next seat type its next shade");
+  assert.equal(new Set(colour("shelf")).size, 1, "two shelves are one colour");
+  assert.notEqual(colour("desk")[0], colour("coffee-table")[0], "two kinds of table, two shades of the tables' family");
+  assert.equal(colorName(colour("sofa")[0]), "blue");
+  const a = newCharacterPart({ body: "man", name: "Man", size: [0.5, 1.8, 0.3] }, parts);
+  const b = newCharacterPart({ body: "man", name: "Man", size: [0.5, 1.8, 0.3] }, [...parts, a]);
+  assert.equal(a.color, PEOPLE[0][0]);
+  assert.notEqual(a.color, b.color, "two men are two people: two colours");
+  // a draft coloured any old way is put back to the colour ID, the shapes left as they were
+  const messy = [...parts.map((p) => ({ ...p, color: "#123456" })), cleanPart({ shape: "box", color: "#e0884b" })];
+  const tidy = colourByKind(messy, of);
+  assert.deepEqual(tidy.slice(0, -1).map((p: any) => p.color), parts.map((p) => p.color));
+  assert.equal(tidy.at(-1).color, "#e0884b");
+  assert.equal(idColor(of("sofa"), tidy, of), colour("sofa")[0]);
+  assert.equal(personColor([]), PEOPLE[0][0]);
 });
 
 test("a free spot on the floor: the middle when it is free, else the nearest place beside what is there, never overlapping", () => {
@@ -189,7 +206,7 @@ test("a free spot on the floor: the middle when it is free, else the nearest pla
 });
 
 test("one of the Stage's characters is a part: its body, its rig and its pose kept, a colour of its own, told by name", () => {
-  const man = newCharacterPart({ body: "man", name: "Man", size: [0.55, 1.78, 0.3] }, [], { pose: "sit-chair", random: () => 0 });
+  const man = newCharacterPart({ body: "man", name: "Man", size: [0.55, 1.78, 0.3] }, [], { pose: "sit-chair" });
   assert.ok(isCharacter(man));
   assert.equal(man.shape, "character");
   assert.equal(man.body, "man");
@@ -197,7 +214,7 @@ test("one of the Stage's characters is a part: its body, its rig and its pose ke
   assert.equal(man.rig, undefined);
   assert.deepEqual(man.size, [0.55, 1.78, 0.3]);
   assert.equal(man.pos[1], 0.89, "standing on the floor");
-  const other = newCharacterPart({ body: "man", name: "Man", size: [0.55, 1.78, 0.3] }, [man], { random: () => 0 });
+  const other = newCharacterPart({ body: "man", name: "Man", size: [0.55, 1.78, 0.3] }, [man]);
   assert.equal(other.name, "Man 2");
   assert.notEqual(other.color, man.color, "each character is someone: a colour of its own");
   assert.equal(other.pose, "stand");
@@ -205,5 +222,39 @@ test("one of the Stage's characters is a part: its body, its rig and its pose ke
   assert.equal(mine.rig, "rig-bob-1a2b3c");
   assert.equal(mine.pose, "stand", "an odd pose falls back to standing");
   assert.equal(cleanPart({ shape: "character" }).shape, "box", "a character needs its body");
-  assert.deepEqual(legendOf([{ ...man, made: "a chef in whites" }]), ["the grey clay (man) becomes a chef in whites"]);
+  assert.deepEqual(legendOf([{ ...man, made: "a chef in whites" }]), ["the vermilion clay (man) becomes a chef in whites"]);
+});
+
+test("placing by relations: against a wall facing in, beside a part facing it, on its top, the room brought in to its walls", async () => {
+  const { roomOf, placeAgainst, placeNear, topOf, faceTurn, footprintOf } = await import("../web/js/toaster-model.js");
+  const floor = cleanPart({ shape: "box", name: "Floor", size: [8, 0.1, 6], pos: [0, 0.05, 0] });
+  const back = cleanPart({ shape: "box", name: "Back wall", size: [8, 2.7, 0.12], pos: [0, 1.35, -3] });
+  const left = cleanPart({ shape: "box", name: "Left wall", size: [0.12, 2.7, 6], pos: [-4, 1.35, 0] });
+  const room = roomOf([floor, back, left]);
+  assert.deepEqual(room.min.map((v) => Math.round(v * 100) / 100), [-3.94, -2.94], "the room starts at the inner face of the walls");
+  assert.deepEqual(room.max, [4, 3]);
+  const shelf = cleanPart({ shape: "box", name: "Shelf", size: [1, 2, 0.4] });
+  const a = placeAgainst(shelf, "back", room, [floor, back, left]);
+  assert.equal(a.turn, 0, "against the back wall it faces the front");
+  assert.ok(Math.abs(a.pos[1] - (-2.94 + 0.2 + 0.01)) < 1e-3, `its back on the wall: ${a.pos}`);
+  const placed = { ...shelf, pos: [a.pos[0], 1, a.pos[1]] };
+  const b = placeAgainst(shelf, "back", room, [floor, back, left, placed]);
+  assert.ok(Math.abs(b.pos[0] - a.pos[0]) >= 1 - 1e-3, "a second shelf slides along the wall, beside the first");
+  const l = placeAgainst(shelf, "left", room, [floor]);
+  assert.equal(l.turn, 90, "against the left wall it faces right, into the room");
+  assert.ok(Math.abs(l.pos[0] - (-3.94 + 0.2 + 0.01)) < 1e-3);
+  // a desk whose user's side faces the back wall (turn 180), its chair at its front, a visitor's chair at its back
+  const desk = cleanPart({ shape: "box", name: "Desk", size: [1.6, 0.75, 0.8], pos: [0, 0.375, -1], rot: [0, 180, 0] });
+  const chair = cleanPart({ shape: "box", name: "Chair", size: [0.6, 1, 0.6] });
+  const boss = placeNear(chair, desk, "front", 0.1);
+  assert.ok(Math.abs(boss.pos[1] - (-1 - (0.4 + 0.1 + 0.3))) < 1e-3, `the boss's chair behind the desk, toward the wall: ${boss.pos}`);
+  assert.equal(Math.abs(boss.turn), 0, "and faces the desk (toward the room)");
+  const guest = placeNear(chair, desk, "back", 0.5);
+  assert.ok(Math.abs(guest.pos[1] - (-1 + 0.4 + 0.5 + 0.3)) < 1e-3, `a visitor's chair before it: ${guest.pos}`);
+  assert.equal(Math.abs(guest.turn), 180, "facing the desk");
+  const side = placeNear(chair, desk, "right", 0.2);
+  assert.ok(Math.abs(Math.abs(side.pos[0]) - (0.8 + 0.2 + 0.3)) < 1e-3, `at its side: ${side.pos}`);
+  assert.equal(topOf(desk), 0.75, "a lamp on the desk stands at its top");
+  assert.equal(faceTurn([0, 0], [1, 0]), 90);
+  assert.deepEqual(footprintOf({ size: [2, 1, 1], pos: [0, 0, 0], rot: [0, 90, 0] }).max.map((v) => Math.round(v * 1000) / 1000), [0.5, 1], "a turned part's footprint turns with it");
 });

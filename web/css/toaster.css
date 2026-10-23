@@ -159,6 +159,12 @@
 .ts-look .ts-row { grid-template-columns: 5.25rem minmax(0, 1fr); }
 .ts-look .ts-field { height: 2.125rem; }
 .ts-look-keys { display: flex; align-items: center; gap: .5rem; padding-top: .125rem; }
+.ts-map-keys { display: flex; gap: .3125rem; min-width: 0; }
+.ts-map { display: inline-flex; flex: 1 1 0; align-items: center; justify-content: center; gap: .3125rem; min-width: 0; height: 2rem; padding: 0 .5rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); color: var(--dim); font: 500 var(--fs-micro)/1 var(--font-sans); white-space: nowrap; cursor: pointer; }
+.ts-map:hover { border-color: var(--line2); color: var(--text); }
+.ts-map[aria-pressed="true"] { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent); }
+.ts-map svg { flex: none; width: .9375rem; height: .9375rem; }
+.ts-map span { overflow: hidden; text-overflow: ellipsis; }
 .ts-look-keys .ts-toast { min-width: 0; }
 
 /* ---- Crumpet's bar, docked under the viewport ------------------------------------------------------------- */

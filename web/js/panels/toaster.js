@@ -11,11 +11,11 @@ import { dropdown } from "../controls.js";
 import { view as viewImage } from "../viewer.js";
 import {
   toaster, body, partsNow, selectedParts, sync, loadDrafts, openDraft, newDraft, removeDraft, renameDraft, pick, select, selectAll,
-  setTool, toggleSnap, addPart, addPiece, addCharacter, setPose, setProps, applyTransforms, removeSelected, removePart, duplicateSelected, mirrorSelected, dropSelected,
+  setTool, toggleSnap, addPart, addPiece, addCharacter, setPose, setProps, colourAllByKind, applyTransforms, removeSelected, removePart, duplicateSelected, mirrorSelected, dropSelected,
   toggleHidden, undoParts, redoParts, canUndo, canRedo, setWords, setRatio, setModel, keepCamera, setFocal, saveCamera, recallCamera, onCamera, removeCamera, renameCamera, loadModels, modelNow, hasClay,
-  renderFrame, renderSheet, forget, showRender, setCompare, price3d, priceNow, make3d, putOnStage, isArmed, arm, disarm,
+  renderFrame, renderSheet, forget, showRender, setCompare, price3d, priceNow, make3d, putOnStage, isArmed, arm, disarm, toggleMap,
 } from "../toaster.js";
-import { SHAPES, PALETTE, RATIOS, roundLabel, hasSides, colorName, shapeOf } from "../toaster-model.js";
+import { SHAPES, PALETTE, RATIOS, MAPS, roundLabel, hasSides, colorName, shapeOf } from "../toaster-model.js";
 import { CRUMPET } from "../toaster-harness.js";
 
 let shell = null;
@@ -59,7 +59,8 @@ function build(el) {
   const left = h("aside.ts-col.ts-left", { "aria-label": "The object" },
     h("div.ts-id", {}, h("img", { src: CRUMPET.face, alt: "", draggable: false }), h("div.ts-id-text", {}, h("b", {}, CRUMPET.name), h("span", {}, CRUMPET.tag))),
     s.draft,
-    h("section.ts-card.ts-parts-card", {}, h("header.ts-head", {}, h("h2.ts-label", {}, "Parts"), s.partsCount), s.parts),
+    h("section.ts-card.ts-parts-card", {}, h("header.ts-head", {}, h("h2.ts-label", {}, "Parts"), s.partsCount, h("span.spacer"),
+      h("button.ts-iconkey.is-sm", { type: "button", title: "Colour by kind — the colour ID: each kind of thing its family of colours, each type its shade, people each their own (shapes keep theirs)", "aria-label": "Colour by kind", on: { click: async () => (await assetsModule(), colourAllByKind(pieceOf)) } }, sprite("channel-id"))), s.parts),
     h("section.ts-card", {}, h("header.ts-head", {}, h("h2.ts-label", {}, "Add")), s.add, h("div.ts-add-keys", {}, s.libraryKey, s.peopleKey)),
     h("section.ts-card.ts-selected", {}, h("header.ts-head", {}, h("h2.ts-label", {}, "Selected")), s.inspector));
 
@@ -88,6 +89,7 @@ function build(el) {
     h("div.ts-look", { "aria-label": "Look" },
       h("label.ts-row", {}, h("span.ts-label", {}, "What it is"), s.what),
       h("label.ts-row", {}, h("span.ts-label", {}, "Scene"), s.scene),
+      s.maps = h("div.ts-row.ts-maps"),
       s.lookKeys));
   s.sheet = h("section.ts-card.ts-sheet", { "aria-label": "Turnaround" });
   s.model = h("section.ts-card.ts-model", { "aria-label": "3D model" });
@@ -342,7 +344,7 @@ const thumb = (data) => {
 };
 const drawerHead = (label, count) => h("header.ts-lib-head", {}, h("h2.ts-label", {}, label), h("span.ts-count", {}, count ?? ""), h("span.spacer"),
   h("button.ts-mini", { type: "button", title: "Close — Esc", "aria-label": "Close", on: { click: () => openDrawer(null) } }, icon("close")));
-const pieceTile = (x) => h("button.ts-piece", { type: "button", title: x.themes?.length ? `${x.name} — ${x.themes.join(", ")}` : x.name, "aria-label": `Add ${x.name.toLowerCase()}`, on: { click: () => addPiece(x) } }, thumb({ type: x.type }), h("span", {}, x.name));
+const pieceTile = (x) => h("button.ts-piece", { type: "button", title: x.themes?.length ? `${x.name} — ${x.themes.join(", ")}` : x.name, "aria-label": `Add ${x.name.toLowerCase()}`, on: { click: () => addPiece(x, pieceOf) } }, thumb({ type: x.type }), h("span", {}, x.name));
 
 function drawLibrary() {
   const finds = (x) => {
@@ -473,9 +475,13 @@ function modelItems() {
 }
 const priceOf = (m) => (!m ? "" : m.router ? `≈ ${m.credits} cr` : "GPU time");
 
+const MAP_ICON = { id: "channel-id", depth: "channel-depth", silhouette: "material-mask" };
 function drawLook() {
   const b = body();
   if (!b) return;
+  // the control maps sent beside the clay, each on or off (the model's room for pictures permitting)
+  shell.maps.replaceChildren(h("span.ts-label", {}, "Control"), h("div.ts-map-keys", { role: "group", "aria-label": "Control maps" }, ...MAPS.map((m) =>
+    h("button.ts-map", { type: "button", "aria-pressed": String(b.maps.includes(m.id)), title: `${m.label}: sent with the clay frame — ${m.says.replace(/^@[\w-]+ /, "it ")}`, on: { click: () => toggleMap(m.id) } }, sprite(MAP_ICON[m.id]), h("span", {}, m.label)))));
   if (document.activeElement !== shell.what) shell.what.value = b.what;
   if (document.activeElement !== shell.scene) shell.scene.value = b.scene;
   const m = modelNow();

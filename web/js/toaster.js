@@ -5,7 +5,7 @@
 import { changed, toast, waitFor, jobWatchers } from "./store.js";
 import { api } from "./api.js";
 import { keyedSaver } from "./saving.js";
-import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D } from "./toaster-model.js";
+import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS } from "./toaster-model.js";
 
 const KIND = "toasts";
 // where a draft's camera starts: the studio's own view, the floor around the object in sight
@@ -253,12 +253,17 @@ export function addPart(shape) {
 }
 
 /**
- * A piece of the Stage's library as a new part ({ type, name, size }), in the colour of its kind, set down on the floor beside what is
- * there instead of on top of it: furniture goes side by side (freeSpot).
+ * A piece of the Stage's library as a new part ({ type, name, category, tags, size }), in its colour ID (its kind's family, its type's
+ * shade), set down on the floor beside what is there instead of on top of it. `pieceOf(type)` answers the library's piece of a type.
  */
-export function addPiece(piece) {
+export function addPiece(piece, pieceOf = () => null) {
   if (!piece?.type) return;
-  setDown(newAssetPart(piece, partsNow()));
+  setDown(newAssetPart(piece, partsNow(), { pieceOf }));
+}
+
+/** Every piece and character coloured again by the colour ID, in the draft's order (the shapes keep their colours); one step for Undo. */
+export function colourAllByKind(pieceOf = () => null) {
+  editParts((list) => colourByKind(list, pieceOf));
 }
 
 /** One of the Stage's characters as a new part ({ body, rig?, name, size }), standing, set down on the floor beside the others. */
@@ -519,8 +524,17 @@ async function picture(run, request) {
 }
 
 /** The request every render makes: the model's edit, its first size, the clay kept a little (the layout stays the clay's). */
-function request(model, prompt, ref, aspect, name) {
-  return { model: model.id, template: "edit", prompt, aspect, refs: [{ file: ref.file, name: ref.name }], count: 1, megapixels: model.megapixels?.[0] ?? 1, keep: 0.97, seed: Math.floor(Math.random() * 2 ** 32), name };
+function request(model, prompt, refs, aspect, name) {
+  return { model: model.id, template: "edit", prompt, aspect, refs: [refs].flat().map((r) => ({ file: r.file, name: r.name })), count: 1, megapixels: model.megapixels?.[0] ?? 1, keep: 0.97, seed: Math.floor(Math.random() * 2 ** 32), name };
+}
+
+/** Which control maps the renders send beside the clay frame (the colour ID, the depth, the silhouette). */
+export function toggleMap(id) {
+  const b = body();
+  if (!b) return;
+  b.maps = b.maps.includes(id) ? b.maps.filter((x) => x !== id) : MAPS.map((m) => m.id).filter((x) => x === id || b.maps.includes(x));
+  save();
+  changed("toaster");
 }
 
 /** Whether there is anything to toast: a visible part. */
@@ -543,8 +557,13 @@ export async function renderFrame() {
   update("toaster-runs");
   try {
     run.frame = await keepPicture(v.frameStill({ long: 1536 }), `${draft.name} clay`);
-    run.prompt = framePrompt(b);
-    const done = await picture(run, request(model, run.prompt, { ...run.frame, name: "frame" }, b.ratio, draft.name));
+    // the control maps beside it, as many as the model takes (the frame is its first picture)
+    const room = Math.max(0, (model.templates?.find((t) => t.id === "edit")?.refs ?? 4) - 1);
+    const maps = MAPS.filter((m) => b.maps.includes(m.id)).slice(0, room);
+    run.maps = [];
+    for (const m of maps) run.maps.push({ ...(await keepPicture(v.frameStill({ long: 1536, channel: m.id }), `${draft.name} ${m.name}`)), name: m.name });
+    run.prompt = framePrompt({ ...b, maps: maps.map((m) => m.id) });
+    const done = await picture(run, request(model, run.prompt, [{ ...run.frame, name: "frame" }, ...run.maps], b.ratio, draft.name));
     run.photo = media(done.photo);
     run.status = "done";
   } catch (e) {

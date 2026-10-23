@@ -10,7 +10,7 @@ import {
   toaster, body, partsNow, editParts, select, setWords, setRatio, keepCamera, modelNow, hasClay, renderFrame, renderSheet, make3d, price3d, priceNow,
   setFocal, saveCamera, recallCamera,
 } from "./toaster.js";
-import { cleanPart, newPart, newAssetPart, newCharacterPart, freeSpot, PALETTE, colorName, RATIOS, isAsset, isCharacter } from "./toaster-model.js";
+import { cleanPart, newPart, newAssetPart, newCharacterPart, freeSpot, PALETTE, colorName, RATIOS, isAsset, isCharacter, roomOf, placeAgainst, placeNear, topOf } from "./toaster-model.js";
 
 /** Crumpet's conversation: Toaster's own, never mixed with another product's. `pictures` is the photo waiting to go with the next words. */
 export const chat = { messages: [], busy: null, pictures: [] };
@@ -86,6 +86,35 @@ async function build(actions) {
     else if (a.y !== undefined) p.pos = [p.pos[0], r3(a.y + p.size[1] / 2), p.pos[2]];
     if (a.turn !== undefined) p.rot = [p.rot[0], a.turn, p.rot[2]];
   };
+  /**
+   * The relations that place a part instead of numbers: on another (its bottom on that one's top), near another (on a side of it, facing it
+   * unless turned), against a wall of the room (its back on the wall, facing in). Answers whether one placed it.
+   */
+  const related = (p, a, list, byName) => {
+    const others = list.filter((q) => q !== p);
+    const lift = (y) => r3((a.y ?? y) + p.size[1] / 2);
+    if (a.on && byName(a.on) && byName(a.on) !== p) {
+      const q = byName(a.on);
+      const [x, z] = Array.isArray(a.at) ? a.at : [q.pos[0], q.pos[2]];
+      p.pos = [r3(x), lift(topOf(q)), r3(z)];
+      if (a.turn !== undefined) p.rot = [p.rot[0], a.turn, p.rot[2]];
+      return true;
+    }
+    if (a.near && byName(a.near) && byName(a.near) !== p) {
+      const { pos, turn } = placeNear(p, byName(a.near), a.side ?? "front", a.gap ?? 0.3, a.turn);
+      p.pos = [pos[0], lift(0), pos[1]];
+      p.rot = [p.rot[0], turn, p.rot[2]];
+      return true;
+    }
+    if (a.against) {
+      const along = Array.isArray(a.at) ? (a.against === "back" || a.against === "front" ? a.at[0] : a.at[1]) : undefined;
+      const { pos, turn } = placeAgainst(p, a.against, roomOf(others), others, along);
+      p.pos = [pos[0], lift(0), pos[1]];
+      p.rot = [p.rot[0], turn, p.rot[2]];
+      return true;
+    }
+    return false;
+  };
   const sized = (p, a, own) => {
     if (Array.isArray(a.size)) p.size = a.size.map((v) => Math.max(0.01, r3(v)));
     else if (typeof a.scale === "number") p.size = own.map((v) => Math.max(0.01, r3(v * a.scale)));
@@ -104,7 +133,7 @@ async function build(actions) {
         else if (a.kind === "piece") {
           const x = pieceOf(a.piece);
           if (!x) failed.push(`No ${a.piece} in the library`);
-          else p = newAssetPart(x, list);
+          else p = newAssetPart(x, list, { pieceOf });
         } else if (a.kind === "character") {
           const x = peopleOf(a.body);
           if (!x) failed.push(`No ${a.body} among the characters`);
@@ -114,9 +143,11 @@ async function build(actions) {
         const own = [...p.size];
         if (a.name && !byName(a.name)) p.name = String(a.name).slice(0, 40);
         sized(p, a, own);
-        if (a.color && hexOf(a.color)) p.color = hexOf(a.color);
+        // a piece and a character wear their colour ID: only a shape takes the colour he says
+        if (a.color && hexOf(a.color) && a.kind === "shape") p.color = hexOf(a.color);
         if (a.made !== undefined) p.made = String(a.made).slice(0, 120);
-        if (Array.isArray(a.at)) placed(p, a);
+        if (related(p, a, list, byName));
+        else if (Array.isArray(a.at)) placed(p, a);
         else {
           const [x, z] = freeSpot([p.size[0], p.size[2]], list.filter((q) => !q.hidden).map(footprint), { near: [0, 0] });
           placed(p, { ...a, at: [x, z] });
@@ -145,8 +176,8 @@ async function build(actions) {
         sized(p, a, [...p.size]);
         // a new size keeps the bottom where it was, unless a height is said
         if (a.size || a.scale) p.pos = [p.pos[0], r3((a.y ?? bottom) + p.size[1] / 2), p.pos[2]];
-        placed(p, a.size || a.scale ? { ...a, y: a.y ?? bottom } : a);
-        if (a.color && hexOf(a.color)) p.color = hexOf(a.color);
+        if (!related(p, a, list, byName)) placed(p, a.size || a.scale ? { ...a, y: a.y ?? bottom } : a);
+        if (a.color && hexOf(a.color) && !isAsset(p) && !isCharacter(p)) p.color = hexOf(a.color);
         if (a.made !== undefined) p.made = String(a.made).slice(0, 120);
         if (a.hidden !== undefined) p.hidden = !!a.hidden;
         if (a.face !== undefined) faces.push([p, a.face]);
