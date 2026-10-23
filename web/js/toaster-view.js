@@ -24,6 +24,30 @@ const grouped = (p) => p.shape === "asset" || p.shape === "character";
 const hasPiece = (p) => Boolean(libraryNow() && (p.shape === "character" ? !p.rig || rigById(p.rig) : assetByType(p.asset)));
 const keyOf = (p) => (p.shape === "asset" ? ["asset", p.asset, hasPiece(p) ? 1 : 0, ...p.size] : p.shape === "character" ? ["character", p.body, p.rig ?? "", p.pose, hasPiece(p) ? 1 : 0, ...p.size] : [p.shape, ...p.size, p.round ?? "", p.sides ?? ""]).join("|");
 
+// the control maps' own shader: a flat colour, or the disparity (1/z) between the nearest and the farthest point; skinned meshes too
+const PASS_VERTEX = /* glsl */ `
+  #include <common>
+  #include <skinning_pars_vertex>
+  varying float vDepth;
+  void main() {
+    #include <skinbase_vertex>
+    #include <begin_vertex>
+    #include <skinning_vertex>
+    vec4 mv = modelViewMatrix * vec4(transformed, 1.0);
+    vDepth = -mv.z;
+    gl_Position = projectionMatrix * mv;
+  }`;
+const PASS_FRAGMENT = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uDepth;
+  uniform float uNear;
+  uniform float uFar;
+  varying float vDepth;
+  void main() {
+    float d = clamp((1.0 / max(vDepth, 1e-4) - 1.0 / uFar) / (1.0 / uNear - 1.0 / uFar), 0.0, 1.0);
+    gl_FragColor = vec4(uDepth > 0.5 ? vec3(d) : uColor, 1.0);
+  }`;
+
 export class ToasterView {
   constructor(container, frameEl, { onPick = () => {}, onChange = () => {}, onDrag = () => {}, onCamera = () => {} } = {}) {
     Object.assign(this, { container, frameEl, onPick, onChange, onDrag, onCamera });
@@ -183,6 +207,7 @@ export class ToasterView {
       m.rotation.set(p.rot[0] * DEG, p.rot[1] * DEG, p.rot[2] * DEG, "XYZ");
       m.scale.set(1, 1, 1);
       m.visible = !p.hidden;
+      m.userData.color = p.color;
       if (asset && !hasPiece(p)) this.waitForLibrary();
     }
     for (const id of [...this.meshes.keys()]) if (!seen.has(id)) this.drop(id);
@@ -504,19 +529,91 @@ export class ToasterView {
     }
   }
 
-  /** What the frame shows, as a data URL of the frame's ratio: no grid, no gizmo, no wires; ground and shadows kept. */
-  frameStill({ long = 1024, type = "image/png", quality } = {}) {
+  /**
+   * What the frame shows, as a data URL of the frame's ratio: no grid, no gizmo, no wires. The "clay" channel keeps the ground and
+   * shadows; the others are control maps of the same frame (pixel for pixel): "id" (each part flat in its own colour), "depth" (near is
+   * white) and "silhouette" (white on black), on black, with no ground.
+   */
+  frameStill({ long = 1024, type = "image/png", quality, channel = "clay" } = {}) {
     const ratio = RATIOS[this.ratio] ?? 1;
     const [w, h] = ratio >= 1 ? [long, Math.round(long / ratio)] : [Math.round(long * ratio), long];
     const width = w - (w % 2), height = h - (h % 2);
-    return this.capture(false, (r) => {
-      r.setSize(width, height, false);
+    const lens = () => {
       const cam = new THREE.PerspectiveCamera(fovOf(this.focal), width / height, 0.05, 200);
       cam.position.copy(this.camera.position);
       cam.lookAt(this.orbit.target);
-      r.render(this.scene, cam);
+      cam.updateMatrixWorld();
+      return cam;
+    };
+    if (channel !== "clay") return this.capture(true, (r) => this.passStill(r, lens(), width, height, channel, type, quality));
+    return this.capture(false, (r) => {
+      r.setSize(width, height, false);
+      r.render(this.scene, lens());
       return r.domElement.toDataURL(type, quality);
     });
+  }
+
+  /** A control map: every visible part drawn with a flat material of its own, into a target without smoothing, so each colour is exact. */
+  passStill(r, cam, width, height, channel, type, quality) {
+    const parts = [...this.meshes.values()].filter((m) => m.visible);
+    // the depth runs from the nearest to the farthest point of the parts, seen from the camera
+    let near = 1e9, far = 0;
+    if (channel === "depth") {
+      const fwd = cam.getWorldDirection(new THREE.Vector3());
+      const v = new THREE.Vector3();
+      for (const m of parts) {
+        m.updateWorldMatrix(true, true);
+        m.traverse((o) => {
+          if (!o.isMesh) return;
+          o.isSkinnedMesh && o.skeleton.update();
+          for (let i = 0; i < o.geometry.attributes.position.count; i++) {
+            const d = o.getVertexPosition(i, v).applyMatrix4(o.matrixWorld).sub(cam.position).dot(fwd);
+            near = Math.min(near, d);
+            far = Math.max(far, d);
+          }
+        });
+      }
+      near = Math.max(0.05, near - 0.01);
+      far = Math.max(near + 0.01, far + 0.01);
+    }
+    const make = (color, depth) => new THREE.ShaderMaterial({
+      side: THREE.DoubleSide,
+      uniforms: { uColor: { value: new THREE.Vector3(...color) }, uDepth: { value: depth ? 1 : 0 }, uNear: { value: near }, uFar: { value: far } },
+      vertexShader: PASS_VERTEX,
+      fragmentShader: PASS_FRAGMENT,
+    });
+    const shared = channel === "id" ? null : make(channel === "silhouette" ? [1, 1, 1] : [0, 0, 0], channel === "depth");
+    const mats = [];
+    const swapped = [];
+    for (const m of parts) {
+      const mat = shared ?? make([1, 3, 5].map((i) => parseInt(String(m.userData.color).slice(i, i + 2), 16) / 255), false);
+      mats.push(mat);
+      m.traverse((o) => o.isMesh && (swapped.push([o, o.material]), (o.material = mat)));
+    }
+    const target = new THREE.WebGLRenderTarget(width, height, { depthBuffer: true, samples: 0 });
+    const clear = { color: r.getClearColor(new THREE.Color()).getHex(), alpha: r.getClearAlpha() };
+    try {
+      r.setRenderTarget(target);
+      r.setClearColor(0x000000, 1);
+      r.clear();
+      r.render(this.scene, cam);
+      const px = new Uint8Array(width * height * 4);
+      r.readRenderTargetPixels(target, 0, 0, width, height, px);
+      const canvas = document.createElement("canvas");
+      Object.assign(canvas, { width, height });
+      const ctx = canvas.getContext("2d");
+      const img = ctx.createImageData(width, height);
+      // the target is bottom-up
+      for (let y = 0; y < height; y++) img.data.set(px.subarray((height - 1 - y) * width * 4, (height - y) * width * 4), y * width * 4);
+      ctx.putImageData(img, 0, 0);
+      return canvas.toDataURL(type, quality);
+    } finally {
+      r.setRenderTarget(null);
+      r.setClearColor(clear.color, clear.alpha);
+      target.dispose();
+      for (const [o, mat] of swapped) o.material = mat;
+      for (const mat of new Set(mats)) mat.dispose();
+    }
   }
 
   /** The turnaround: four orthographic views at one scale, each in its window of the sheet, lit alike, on a plain background. */
