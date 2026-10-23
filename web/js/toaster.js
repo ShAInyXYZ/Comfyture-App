@@ -2,16 +2,17 @@
 // history, the selection and the tool, and what is toasted from it: renders of the frame, turnarounds of four views, and 3D models
 // made from a turnaround on Comfy Cloud. The viewport (toaster-view.js) is told every change here (sync), so whatever edits the
 // draft (the page, a key, an undo) moves the clay at once. toaster-model.js holds the rules and the words.
-import { changed, toast, waitFor, jobWatchers } from "./store.js";
+import { changed, toast, waitFor, jobWatchers, writer } from "./store.js";
 import { api } from "./api.js";
 import { keyedSaver } from "./saving.js";
-import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS } from "./toaster-model.js";
+import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS, tagsOf, castOf, referencesFor, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
 
 const KIND = "toasts";
 // where a draft's camera starts: the studio's own view, the floor around the object in sight
 const HOME = { position: [4.6, 3.4, 6.2], target: [0, 0.8, 0], focal: 50 };
 const OPEN = "comfyture.toaster.open";
 const PREFS = "comfyture.toaster.prefs";
+const MODE = "comfyture.toaster.mode";
 
 const read = (k) => {
   try {
@@ -54,6 +55,10 @@ export const toaster = {
   compare: false,
   /** the viewport, once the page has made it */
   view: null,
+  /** what the page shows: the "scene" (the viewport in the middle) or the "render" studio (the viewport small, on the right) */
+  mode: read(MODE) === "render" ? "render" : "scene",
+  /** whether Improve is writing the prompt */
+  improving: false,
 };
 let undo = [];
 let redo = [];
@@ -128,12 +133,12 @@ function opened(project) {
   undo = [];
   redo = [];
   write(OPEN, project.id);
+  lamp("ok", { at: project.updatedAt ? new Date(project.updatedAt).getTime() : Date.now() });
   // a picture that was rendering when the page was left is not followed again (it lands in the Library); a 3D model is
   const b = toaster.draft.body;
   for (const r of [...b.renders, ...b.sheets]) if (r.status === "running") Object.assign(r, { status: "failed", error: "The page was left while it rendered: look for it in the Library." });
   for (const m of b.models) if (m.status === "running" && m.job) void follow3d(toaster.draft, m);
   if (toaster.view) toaster.view.setCameraState(b.camera ?? HOME);
-  lamp("ok", { at: project.updatedAt ? new Date(project.updatedAt).getTime() : Date.now() });
 }
 
 export async function openDraft(id) {
@@ -160,6 +165,8 @@ const keep = async (id, draft) => {
     .then(() => {
       const row = toaster.list.find((x) => x.id === id);
       if (row) Object.assign(row, { name: draft.name, ...(thumb ? { thumb } : {}), updatedAt: new Date().toISOString() });
+      if (toaster.draft?.id === id) lamp("ok", { at: Date.now() });
+      else changed("toaster-saved");
     })
     .catch((e) => {
       toast(e.message, { tone: "crit" });
@@ -168,8 +175,6 @@ const keep = async (id, draft) => {
 };
 const saver = keyedSaver(600, keep);
 export const flushDrafts = () => saver.flush();
-      if (toaster.draft?.id === id) lamp("ok", { at: Date.now() });
-      else changed("toaster-saved");
 export function save(draft = toaster.draft) {
   if (!draft) return;
   saver.save(draft.id, draft);
@@ -453,6 +458,29 @@ export function dropSelected() {
 
 export const toggleHidden = (id) => setProps((p) => ({ hidden: !p.hidden }), { ids: [id] });
 
+/** A picture of the Library put on a part's sheet (six at most, none twice); Undo takes it back. */
+export function addPartRef(id, photo) {
+  editParts((list) => {
+    const p = list.find((x) => x.id === id);
+    if (p) p.refs = addRef(p.refs, photo);
+  });
+}
+export function removePartRef(id, file) {
+  editParts((list) => {
+    const p = list.find((x) => x.id === id);
+    if (p?.refs) p.refs = p.refs.filter((r) => r.file !== file);
+  });
+}
+
+/** The page shown: the "scene" or the "render" studio (kept for the next visit). */
+export function setMode(mode) {
+  const m = mode === "render" ? "render" : "scene";
+  if (toaster.mode === m) return;
+  toaster.mode = m;
+  write(MODE, m);
+  changed("toaster");
+}
+
 // ---------------------------------------------------------------- the draft's words and frame
 
 /** The words typed (what it is, the scene): kept quietly, the page not drawn again under the cursor. */
@@ -622,6 +650,80 @@ export function toggleMap(id) {
 /** Whether there is anything to toast: a visible part. */
 export const hasClay = () => partsNow().some((p) => !p.hidden);
 
+/** A picture of the Library as a reference for the whole render (a style, a mood, a material, a place), called by an @name of its own. */
+export function addSceneRef(photo) {
+  const b = body();
+  if (!b) return null;
+  const ref = newSceneRef(photo, b.parts, b.refs);
+  if (!ref) {
+    toast("The render holds six reference pictures, none twice.", { tone: "warn" });
+    return null;
+  }
+  b.refs = [...b.refs, ref];
+  save();
+  changed("toaster");
+  return ref;
+}
+export function removeSceneRef(name) {
+  const b = body();
+  if (!b) return;
+  b.refs = b.refs.filter((r) => r.name !== name);
+  save();
+  changed("toaster");
+}
+
+/** The prompt written by hand or by Improve ("" goes back to the automatic one, composed at render time). */
+export function setPrompt(text) {
+  const b = body();
+  if (!b) return;
+  b.prompt = String(text ?? "").slice(0, 6000);
+  save();
+}
+
+/**
+ * What a render would send from the draft as it is: the maps (as many as the model's room takes beside the frame), the pictures (the scene's
+ * references, then the parts'), the automatic prompt with its @tags, and who is in the frame.
+ */
+export function framePlan() {
+  const b = body();
+  const model = modelNow();
+  const total = model?.templates?.find((t) => t.id === "edit")?.refs ?? 4;
+  const maps = MAPS.filter((m) => b.maps.includes(m.id)).slice(0, Math.max(0, total - 1));
+  const parts = b.parts;
+  const mentioned = mentionsIn(`${b.prompt} ${b.what} ${b.scene}`);
+  const { refs, named } = referencesFor({ parts, sceneRefs: b.refs, room: Math.max(0, total - 1 - maps.length), mentioned });
+  const tags = tagsOf(parts, b.refs.map((r) => r.name));
+  const auto = framePrompt({ parts, what: b.what, scene: b.scene, maps: maps.map((m) => m.id), sceneRefs: b.refs, named, tags });
+  return { model, maps, refs, named, auto, cast: castOf(parts, b.refs), prompt: b.prompt.trim() || auto };
+}
+
+/** Improve: the writer (the assistants' model) writes the prompt again from the words, the sheets and the pictures; it becomes the draft's own. */
+export async function improveWords() {
+  const draft = toaster.draft;
+  const b = body();
+  const v = toaster.view;
+  if (!draft || !b || !v || toaster.improving) return;
+  if (!hasClay()) return toast("Block something out first: add a shape.", { tone: "warn" });
+  toaster.improving = true;
+  changed("toaster-runs");
+  try {
+    const plan = framePlan();
+    const frame = await keepPicture(v.frameStill({ long: 1536 }), `${draft.name} clay`);
+    // one picture of each sheet is shown to the writer, after the frame and the scene's references
+    const firsts = [...plan.named].map(([, names]) => plan.refs.find((r) => r.name === names[0])).filter(Boolean);
+    const cast = plan.cast.map((c) => ({ tag: c.tag, name: c.name ?? c.tag, kind: c.ref ? "reference" : c.kind, color: c.color ? colorName(c.color) : undefined, words: c.words, pictures: plan.named.get(c.tag) ?? [] }));
+    const out = await send("api/toaster/improve", "POST", { model: writer("assistant"), what: b.what, scene: b.scene, prompt: b.prompt.trim() || plan.auto, cast, refs: [{ name: "frame", file: frame.file }, ...firsts.map((r) => ({ name: r.name, file: r.file }))] });
+    if (toaster.draft === draft) b.prompt = String(out.prompt ?? "").slice(0, 6000);
+    save(draft);
+  } catch (e) {
+    toast(e.message, { tone: "crit" });
+  } finally {
+    toaster.improving = false;
+    changed("toaster-runs");
+    changed("toaster");
+  }
+}
+
 /** The frame as the camera sees it, rendered: the clay is the layout, the words what it becomes. */
 export async function renderFrame() {
   const draft = toaster.draft;
@@ -644,8 +746,12 @@ export async function renderFrame() {
     const maps = MAPS.filter((m) => b.maps.includes(m.id)).slice(0, room);
     run.maps = [];
     for (const m of maps) run.maps.push({ ...(await keepPicture(v.frameStill({ long: 1536, channel: m.id }), `${draft.name} ${m.name}`)), name: m.name });
-    run.prompt = framePrompt({ ...b, maps: maps.map((m) => m.id) });
-    const done = await picture(run, request(model, run.prompt, [{ ...run.frame, name: "frame" }, ...run.maps], b.ratio, draft.name));
+    // the pictures that go with them (the scene's references, then the parts', within the room left) and the words that name them
+    const plan = framePlan();
+    const sent = plan.refs;
+    run.prompt = b.prompt.trim() || expandPrompt(plan.auto, plan.cast, plan.named);
+    run.refs = sent.map((r) => ({ name: r.name, url: r.url }));
+    const done = await picture(run, request(model, run.prompt, [{ ...run.frame, name: "frame" }, ...run.maps, ...sent], b.ratio, draft.name));
     run.photo = media(done.photo);
     run.status = "done";
   } catch (e) {
@@ -688,8 +794,12 @@ export async function renderSheet() {
   update("toaster-runs");
   try {
     run.frame = await keepPicture(v.sheetStill({ scale: 1 / 3 }).url, `${draft.name} turnaround clay`);
-    run.prompt = sheetPrompt(b);
-    const done = await picture(run, request(model, run.prompt, { ...run.frame, name: "sheet" }, SHEET.aspect, `${draft.name} turnaround`));
+    // the parts' pictures go along (the model's room permitting), and the words call the parts by their tags
+    const room = Math.max(0, (model.templates?.find((t) => t.id === "edit")?.refs ?? 4) - 1);
+    const { refs, named } = referencesFor({ parts: b.parts, room });
+    run.prompt = expandPrompt(sheetPrompt({ ...b, tags: tagsOf(b.parts) }), castOf(b.parts), named);
+    run.refs = refs.map((r) => ({ name: r.name, url: r.url }));
+    const done = await picture(run, request(model, run.prompt, [{ ...run.frame, name: "sheet" }, ...refs], SHEET.aspect, `${draft.name} turnaround`));
     run.photo = await keepPicture(await resized(done.photo.url, SHEET.width, SHEET.height), `${draft.name} turnaround`);
     run.status = "done";
   } catch (e) {

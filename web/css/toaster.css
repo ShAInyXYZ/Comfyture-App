@@ -1,15 +1,21 @@
-/* Toaster: the object's parts on the left, the viewport and the look in the middle, what was toasted on the right. One screen
-   tall; the side columns scroll inside themselves when the screen is short. Mockup: docs/brand/products/toaster-v1/toaster-ui.png.
-   The viewport's frame and tool pill are the Stage's own (.ctl-frame, .ctl-tools in control.css). */
+/* Toaster: two modes on one screen. SCENE: the parts on the left, the viewport and Crumpet's bar in the middle, what was toasted on the right.
+   RENDER: the studio in the middle, the viewport small at the top of the right column. The page is as tall as the screen under the project bar
+   (it never scrolls); the side columns scroll inside themselves when the screen is short. The viewport's frame and tool pill are the Stage's
+   own (.ctl-frame, .ctl-tools in control.css). */
 
-#page-toaster { width: calc(100% - 1.5rem); margin-top: .625rem; }
-.toaster { --ts-gap: .75rem; --ts-pic: 44dvh; display: grid; grid-template-columns: clamp(17.5rem, 19vw, 22rem) minmax(0, 1fr) clamp(22rem, 27vw, 31rem); gap: var(--ts-gap); height: calc(100dvh - var(--head, 4rem) - 1.5rem); min-height: 36rem; user-select: none; -webkit-user-select: none; }
-.toaster input { user-select: text; -webkit-user-select: text; }
+#page-toaster { display: flex; flex-direction: column; width: 100%; height: calc(100dvh - var(--head)); margin: 0; overflow: hidden; }
+#page-toaster[hidden] { display: none; }
+body[data-page="toaster"] { padding-bottom: 0; overflow: hidden; }
+.toaster { --ts-gap: .75rem; display: grid; flex: 1 1 0; gap: var(--ts-gap); min-height: 0; padding: .75rem; user-select: none; -webkit-user-select: none; }
+.toaster.is-scene { grid-template-columns: clamp(17.5rem, 19vw, 22rem) minmax(0, 1fr) clamp(22rem, 27vw, 31rem); }
+.toaster.is-render { grid-template-columns: clamp(16rem, 17vw, 20rem) minmax(0, 1fr) clamp(19rem, 22vw, 26rem); }
+.toaster input, .toaster textarea, .toaster .pill-field { user-select: text; -webkit-user-select: text; }
 .toaster img { -webkit-user-drag: none; }
 .toaster .spacer { flex: 1 1 auto; }
 
 .ts-col { display: flex; flex-direction: column; gap: var(--ts-gap); min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .ts-card { display: flex; flex-direction: column; gap: .75rem; flex: none; padding: .875rem 1rem 1rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); }
+.ts-card[hidden] { display: none; }
 .ts-head { display: flex; align-items: center; gap: .5rem; min-height: 1rem; }
 .ts-label { margin: 0; font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .ts-count { font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--dim); }
@@ -21,35 +27,22 @@
 .ts-mini.is-danger { color: var(--err); box-shadow: inset 0 0 0 1px var(--err); }
 .ts-mini svg { width: 1rem; height: 1rem; }
 
-/* ---- the draft open ------------------------------------------------------------------------------------- */
-.ts-draft { position: relative; flex: none; }
-.ts-draft-chip { display: flex; align-items: center; gap: .75rem; min-height: 3.75rem; padding: .5rem .5rem .5rem .625rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); }
-.ts-draft-chip > img, .ts-draft-thumb { flex: none; width: 3.25rem; height: 2.5rem; border-radius: .4375rem; object-fit: cover; background: var(--sunk); }
-.ts-draft-thumb { display: grid; place-items: center; color: var(--dim); }
-.ts-draft-thumb svg { width: 1.25rem; height: 1.25rem; }
-.ts-draft-name { flex: 1 1 auto; min-width: 0; font: 600 var(--fs-title)/1.2 var(--font-sans); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: default; }
-.ts-draft-chip .ts-mini[aria-expanded="true"] svg { transform: rotate(180deg); }
-.ts-draft-menu { position: absolute; z-index: 40; top: calc(100% + .375rem); left: 0; right: 0; display: grid; gap: 2px; max-height: min(24rem, 60dvh); overflow-y: auto; padding: .3125rem; border: 1px solid var(--line2); border-radius: .875rem; background: var(--s2); box-shadow: var(--float); animation: img-in 120ms var(--ease-out); }
-.ts-draft-row { display: flex; align-items: center; gap: .25rem; border-radius: .5rem; }
-.ts-draft-row:hover { background: var(--s3); }
-.ts-draft-open { display: flex; flex: 1 1 auto; align-items: center; gap: .625rem; min-width: 0; padding: .375rem; border: 0; background: transparent; color: var(--muted); font: 500 var(--fs-body)/1.2 var(--font-sans); text-align: left; cursor: pointer; }
-.ts-draft-open img, .ts-draft-open .ts-draft-thumb { width: 2.5rem; height: 1.875rem; }
-.ts-draft-open span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ts-draft-row.is-on .ts-draft-open { color: var(--text); }
-.ts-draft-new { display: flex; align-items: center; gap: .5rem; padding: .625rem .5rem; border: 0; border-top: 1px solid var(--line); border-radius: 0 0 .5rem .5rem; background: transparent; color: var(--muted); font: 500 var(--fs-body)/1 var(--font-sans); cursor: pointer; }
-.ts-draft-new:hover { color: var(--accent); }
-.ts-draft-new svg { width: 1rem; height: 1rem; }
 .ts-rename { flex: 1 1 auto; min-width: 0; height: 1.875rem; padding: 0 .5rem; border: 1px solid var(--accent-line); border-radius: .4375rem; background: var(--sunk); color: var(--text); font: 500 var(--fs-body)/1 var(--font-sans); outline: none; }
 
 /* ---- the parts ------------------------------------------------------------------------------------------ */
-.ts-parts-card { flex: 1 1 auto; min-height: 9rem; }
+.ts-parts-card { flex: 1 1 auto; min-height: 11.5rem; }
 .ts-parts { display: grid; align-content: start; gap: 2px; flex: 1 1 0; min-height: 3rem; overflow-y: auto; margin: 0 -.375rem; padding: 0 .375rem; scrollbar-width: thin; }
-.ts-part { display: grid; grid-template-columns: 1.375rem .875rem minmax(0, 1fr) auto auto; align-items: center; gap: .625rem; min-height: 2.5rem; padding: 0 .25rem 0 .625rem; border: 1px solid transparent; border-radius: .625rem; color: var(--muted); cursor: pointer; transition: background var(--t-fast), border-color var(--t-fast); }
+.ts-part { display: grid; grid-template-columns: 1.375rem auto minmax(0, 1fr) auto auto; align-items: center; gap: .625rem; min-height: 2.5rem; padding: 0 .25rem 0 .625rem; border: 1px solid transparent; border-radius: .625rem; color: var(--muted); cursor: pointer; transition: background var(--t-fast), border-color var(--t-fast); }
 .ts-part:hover { background: var(--s2); color: var(--text); }
 .ts-part.is-on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
 .ts-part.is-hidden .ts-name, .ts-part.is-hidden .ts-chip, .ts-part.is-hidden .ts-glyph { opacity: .4; }
 .ts-glyph { display: grid; place-items: center; color: var(--dim); }
 .ts-glyph svg { width: 1.125rem; height: 1.125rem; }
+.ts-marks { display: flex; align-items: center; gap: .375rem; }
+.ts-mini-pic { position: relative; flex: none; width: 1.5rem; height: 1.5rem; border-radius: .3125rem; background: var(--sunk); box-shadow: 0 0 0 1px var(--line2); }
+.ts-mini-pic img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.ts-mini-pic i { position: absolute; right: -.3125rem; bottom: -.3125rem; min-width: .875rem; padding: 0 .1875rem; border-radius: var(--r-pill); background: var(--accent); color: var(--accent-ink); font: 700 .5625rem/.875rem var(--font-mono); font-style: normal; text-align: center; }
+.ts-part.is-hidden .ts-mini-pic { opacity: .4; }
 .ts-chip { width: .875rem; height: .875rem; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
 .ts-name { font: 500 var(--fs-body)/1.2 var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -162,18 +155,13 @@
 .ts-cam-add:disabled { opacity: .35; cursor: default; }
 .ts-cam-add svg { width: 1rem; height: 1rem; }
 
-/* ---- the look ------------------------------------------------------------------------------------------- */
-.ts-look { display: grid; flex: none; gap: .5rem; padding-top: .75rem; border-top: 1px solid var(--line); }
-.ts-look .ts-row { grid-template-columns: 5.25rem minmax(0, 1fr); }
-.ts-look .ts-field { height: 2.125rem; }
-.ts-look-keys { display: flex; align-items: center; gap: .5rem; padding-top: .125rem; }
+/* ---- the control maps and the keys of the studio's foot ---------------------------------------------------- */
 .ts-map-keys { display: flex; gap: .3125rem; min-width: 0; }
 .ts-map { display: inline-flex; flex: 1 1 0; align-items: center; justify-content: center; gap: .3125rem; min-width: 0; height: 2rem; padding: 0 .5rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); color: var(--dim); font: 500 var(--fs-micro)/1 var(--font-sans); white-space: nowrap; cursor: pointer; }
 .ts-map:hover { border-color: var(--line2); color: var(--text); }
 .ts-map[aria-pressed="true"] { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent); }
 .ts-map svg { flex: none; width: .9375rem; height: .9375rem; }
 .ts-map span { overflow: hidden; text-overflow: ellipsis; }
-.ts-look-keys .ts-toast { min-width: 0; }
 
 /* ---- Crumpet's bar, docked under the viewport ------------------------------------------------------------- */
 .ts-chat { flex: none; position: relative; z-index: 29; width: 100%; pointer-events: none; }
@@ -259,9 +247,12 @@ button.ts-sheet-pic { cursor: zoom-in; }
 
 /* ---- a narrow screen: the columns one under the other ------------------------------------------------------ */
 @media (max-width: 1100px) {
-  .toaster { grid-template-columns: minmax(0, 1fr); height: auto; }
+  #page-toaster { height: auto; overflow: visible; }
+  body[data-page="toaster"] { overflow: auto; }
+  .toaster.is-scene, .toaster.is-render { grid-template-columns: minmax(0, 1fr); }
   .ts-col { overflow: visible; }
   .ts-view { flex: none; height: 62dvh; }
+  .ts-studio { min-height: 60rem; }
   .ts-left { order: 2; }
   .ts-right { order: 3; }
 }
@@ -269,3 +260,126 @@ button.ts-sheet-pic { cursor: zoom-in; }
 /* the keys at the foot of the turnaround and the 3D model are a step smaller than the render's own */
 .ts-sheet .ts-wide, .ts-model .ts-wide { min-height: 2.5rem; }
 .ts-sheet, .ts-model { gap: .625rem; padding-top: .75rem; padding-bottom: .875rem; }
+
+/* ---- the switch of the project bar: Scene | Render -------------------------------------------------------- */
+.ts-modes { display: inline-flex; align-self: center; gap: 2px; height: 2.25rem; padding: 2px; border: 1px solid var(--line2); border-radius: .75rem; background: var(--sunk); }
+.ts-mode { display: inline-flex; align-items: center; gap: .4375rem; padding: 0 .875rem 0 .75rem; border: 0; border-radius: .5625rem; background: transparent; color: var(--muted); font: 600 var(--fs-small)/1 var(--font-sans); cursor: pointer; transition: background var(--t-fast), color var(--t-fast); }
+.ts-mode:hover { color: var(--text); }
+.ts-mode[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.ts-mode svg { width: 1.0625rem; height: 1.0625rem; }
+
+/* ---- Selected: a part's @tag, its words, its pictures ------------------------------------------------------- */
+.ts-stack { display: grid; gap: .375rem; min-width: 0; }
+.ts-name-in { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.ts-name-in .ts-field { flex: 1 1 auto; }
+.ts-at { flex: none; padding: .125rem .4375rem; border-radius: var(--r-pill); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-line); color: var(--accent); font: 500 var(--fs-micro)/1.3 var(--font-mono); }
+.ts-words { height: auto; min-height: 4.75rem; padding: .5rem .625rem; resize: vertical; font: 500 var(--fs-body)/1.45 var(--font-sans); }
+.ts-row-head { display: flex; align-items: center; gap: .5rem; min-height: 1.5rem; }
+.ts-row-head .ts-iconkey.is-sm { margin: -.25rem 0; }
+.ts-sheet-box { display: grid; gap: .5rem; }
+.ts-pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(3.75rem, 1fr)); gap: .4375rem; }
+.ts-pic-tile { position: relative; display: grid; gap: .25rem; min-width: 0; }
+.ts-pic-look { display: block; aspect-ratio: 1; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); cursor: zoom-in; }
+.ts-pic-look img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: auto !important; }
+.ts-pic-look:hover { border-color: var(--line2); }
+.ts-pic-off { position: absolute; top: .1875rem; right: .1875rem; display: none; place-items: center; width: 1.25rem; height: 1.25rem; padding: 0; border: 0; border-radius: .3125rem; background: rgba(14, 14, 16, .85); color: var(--text); cursor: pointer; }
+.ts-pic-tile:hover .ts-pic-off, .ts-pic-off:focus-visible { display: grid; }
+.ts-pic-off svg { width: .75rem; height: .75rem; }
+.ts-pic-tile code { overflow: hidden; font: 500 var(--fs-micro)/1.2 var(--font-mono); color: var(--accent); text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.ts-pic-add { display: grid; place-items: center; align-self: start; aspect-ratio: 1; padding: 0; border: 1px dashed var(--line2); border-radius: .5rem; background: transparent; color: var(--muted); cursor: pointer; }
+.ts-pic-add:hover { border-color: var(--accent-line); color: var(--accent); }
+.ts-pic-add svg { width: 1.25rem; height: 1.25rem; }
+.is-dropping { outline: 2px dashed var(--accent); outline-offset: -4px; }
+.ts-sheet-lib { display: grid; gap: .5rem; padding: .5rem; border: 1px solid var(--line); border-radius: .625rem; background: var(--sunk); }
+.ts-sheet-lib .ts-lib-search { height: 2rem; background: var(--s1); }
+.ts-lib-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(3.25rem, 1fr)); gap: .3125rem; max-height: 9.5rem; overflow-y: auto; scrollbar-width: thin; }
+.ts-lib-photo { aspect-ratio: 1; padding: 0; overflow: hidden; border: 1px solid transparent; border-radius: .4375rem; background: var(--s1); cursor: pointer; }
+.ts-lib-photo img { width: 100%; height: 100%; object-fit: cover; }
+.ts-lib-photo:hover { border-color: var(--line2); }
+.ts-lib-photo[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+/* ---- the compact render card of the scene: its picture, then Toast it and the way to the studio -------------- */
+.ts-render-keys { display: flex; align-items: center; gap: .5rem; }
+.ts-render-keys .ts-toast { flex: 1 1 auto; min-width: 0; }
+.ts-studio-key { display: inline-flex; flex: none; align-items: center; gap: .5rem; min-height: 2.75rem; padding: 0 .875rem; border-radius: .875rem; font: 600 var(--fs-body)/1 var(--font-sans); }
+.ts-studio-key svg { width: 1.125rem; height: 1.125rem; }
+
+/* ---- the render mode: the viewport small on the right, its cameras a row under it ------------------------------- */
+.is-render .ts-right .ts-view { flex: none; height: clamp(12.5rem, 30dvh, 19rem); min-height: 0; }
+.is-render .ts-view .ts-tools, .is-render .ts-view .ts-views, .is-render .ts-view .ts-library { display: none; }
+.ts-cams.is-row { position: static; flex: none; flex-direction: row; align-items: stretch; width: auto; max-height: none; overflow-x: auto; overflow-y: hidden; padding: .4375rem; border-color: var(--card-line); background: var(--card); box-shadow: none; border-radius: var(--r-panel); scrollbar-width: thin; }
+.ts-cams.is-row .ts-lens { flex: none; width: 5.25rem; align-self: flex-start; }
+.ts-cams.is-row .ts-cam { flex: none; width: 5.5rem; align-content: start; }
+.ts-cams.is-row .ts-cam-pic { max-height: 3.5rem; }
+.ts-cams.is-row .ts-cam-add { flex: none; align-self: flex-start; width: 2.75rem; height: 2rem; }
+
+/* ---- the studio ---------------------------------------------------------------------------------------------- */
+.ts-studio { flex: 1 1 0; gap: .625rem; min-height: 0; container-type: inline-size; }
+.ts-studio-head { flex: none; }
+.ts-studio-main { display: flex; flex: 1 1 0; flex-direction: column; min-height: 9rem; }
+.ts-studio-main .ts-render-body { flex: 1 1 0; }
+.ts-pic.is-clay { background: #141416; }
+.ts-sent { flex: none; max-height: 11rem; overflow-y: auto; padding: .625rem .75rem; border: 1px solid var(--line); border-radius: .625rem; background: var(--sunk); scrollbar-width: thin; }
+.ts-sent[hidden] { display: none; }
+.ts-sent-in { display: grid; gap: .625rem; }
+.ts-sent-prompt { margin: 0; font: 400 var(--fs-small)/1.5 var(--font-sans); color: var(--muted); white-space: pre-wrap; user-select: text; -webkit-user-select: text; }
+.ts-sent-pics { display: flex; flex-wrap: wrap; gap: .5rem; }
+.ts-sent-pics figure { display: grid; gap: .25rem; width: 5rem; margin: 0; }
+.ts-sent-pics button { aspect-ratio: 1; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: .4375rem; background: var(--s1); cursor: zoom-in; }
+.ts-sent-pics img { width: 100%; height: 100%; object-fit: cover; }
+.ts-sent-pics figcaption { overflow: hidden; font: 500 var(--fs-micro)/1.2 var(--font-mono); color: var(--accent); text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+
+.ts-compose { display: grid; flex: 1.15 1 0; grid-template-columns: minmax(0, 1fr); align-content: start; gap: .875rem; min-height: 7rem; overflow-y: auto; padding: .125rem .375rem .125rem 0; scrollbar-width: thin; }
+.ts-compose-col { display: grid; align-content: start; gap: .75rem; min-width: 0; }
+.ts-pills { min-height: 4.5rem; max-height: 9.5rem; padding: .5rem .625rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); color: var(--text); font: 500 var(--fs-body)/1.55 var(--font-sans); outline: none; transition: border-color var(--t-fast); }
+.ts-pills:focus { border-color: var(--accent-line); }
+.ts-pills.is-prompt { min-height: 5.5rem; max-height: 12rem; font-size: var(--fs-small); }
+.ts-pills.is-auto { border-style: dashed; color: var(--muted); }
+.ts-prompt-head { display: flex; align-items: center; gap: .5rem; min-height: 1.5rem; }
+.ts-prompt-head .ts-iconkey.is-sm { margin: -.25rem 0; }
+.ts-badge { padding: .1875rem .4375rem; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--line2); color: var(--dim); font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.ts-badge.is-own { box-shadow: inset 0 0 0 1px var(--accent-line); background: var(--accent-soft); color: var(--accent); }
+.ts-refs-in { display: grid; gap: .5rem; }
+.ts-cast { display: grid; gap: .5rem; }
+.ts-whos { display: flex; flex-wrap: wrap; gap: .375rem; max-height: 4.5rem; overflow-y: auto; scrollbar-width: thin; }
+.ts-who { display: inline-flex; align-items: center; gap: .375rem; max-width: 100%; height: 1.75rem; padding: 0 .5rem 0 .25rem; border: 1px solid var(--line); border-radius: var(--r-pill); background: transparent; color: var(--dim); font: 500 var(--fs-micro)/1 var(--font-mono); cursor: pointer; }
+.ts-who img, .ts-who i { flex: none; width: 1.25rem; height: 1.25rem; border-radius: 50%; object-fit: cover; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .3); }
+.ts-who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ts-who:hover { border-color: var(--line2); color: var(--text); }
+.ts-who.is-sheet { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent); }
+.ts-who.is-on { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.ts-foot { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: .5rem; padding-top: .625rem; border-top: 1px solid var(--line); }
+.ts-foot .ts-map-keys { flex: 0 1 auto; }
+.ts-foot .ts-map { flex: 0 0 auto; padding: 0 .625rem; }
+.ts-improve { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: 0 1rem; border-radius: .875rem; font: 600 var(--fs-body)/1 var(--font-sans); }
+.ts-improve svg { width: 1.125rem; height: 1.125rem; }
+.ts-foot .ts-toast { min-width: 9.5rem; }
+
+/* the list that opens on an @ in the words */
+.ts-tags { position: fixed; z-index: 880; left: 0; top: 0; display: grid; align-content: start; gap: 2px; width: 17rem; max-height: 14rem; overflow-y: auto; padding: .3125rem; border: 1px solid var(--line2); border-radius: .75rem; background: var(--s2); box-shadow: var(--float); scrollbar-width: thin; animation: img-in 120ms var(--ease-out); }
+.ts-tags[hidden] { display: none; }
+.ts-tag-row { display: grid; grid-template-columns: 1.75rem minmax(0, 1fr) auto; align-items: center; gap: .5rem; padding: .3125rem .4375rem; border: 0; border-radius: .5rem; background: transparent; color: var(--muted); text-align: left; cursor: pointer; }
+.ts-tag-row.is-active, .ts-tag-row:hover { background: var(--s3); }
+.ts-tag-row b { overflow: hidden; font: 600 var(--fs-small)/1.2 var(--font-mono); color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
+.ts-tag-row.is-active b { color: var(--accent); }
+.ts-tag-row span:last-child { font: 400 var(--fs-micro)/1.2 var(--font-sans); color: var(--dim); }
+.ts-tag-face { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; overflow: hidden; border-radius: .375rem; background: var(--sunk); }
+.ts-tag-face img { width: 100%; height: 100%; object-fit: cover; }
+.ts-tag-face i { width: .875rem; height: .875rem; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
+
+/* the studio's picture is the room the composer leaves; its strip goes under it when the middle is narrow */
+@container (min-width: 46rem) {
+  .ts-compose { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@container (max-width: 36rem) {
+  .ts-studio .ts-render-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .ts-studio .ts-strip { flex-direction: row; height: auto; overflow-x: auto; overflow-y: hidden; }
+}
+@container (max-width: 50rem) {
+  .ts-foot .ts-map span { display: none; }
+  .ts-foot .ts-map { padding: 0 .5625rem; }
+}
+@media (max-height: 820px) {
+  .ts-studio-main { flex: .8 1 0; min-height: 7rem; }
+}

@@ -10,7 +10,7 @@ import {
   toaster, body, partsNow, editParts, select, setWords, setRatio, keepCamera, modelNow, hasClay, renderFrame, renderSheet, make3d, price3d, priceNow,
   setFocal, saveCamera, recallCamera, repose,
 } from "./toaster.js";
-import { cleanPart, newPart, newAssetPart, newCharacterPart, freeSpot, PALETTE, colorName, RATIOS, isAsset, isCharacter, roomOf, placeAgainst, placeNear, topOf } from "./toaster-model.js";
+import { tagsOf, cleanPart, newPart, newAssetPart, newCharacterPart, freeSpot, PALETTE, colorName, RATIOS, isAsset, isCharacter, roomOf, placeAgainst, placeNear, topOf } from "./toaster-model.js";
 
 /** Crumpet's conversation: Toaster's own, never mixed with another product's. `pictures` is the photo waiting to go with the next words. */
 export const chat = { messages: [], busy: null, pictures: [] };
@@ -21,14 +21,16 @@ const hexOf = (name) => PALETTE.find(([, n]) => n === name)?.[0];
 
 // ---------------------------------------------------------------- what he is told
 
-/** A part as Crumpet reads it: what it is, its colour by name, its size, where its footprint is on the floor, its bottom's height, its turn. */
-function partOf(p) {
+/** A part as Crumpet reads it: its @tag, what it is, its colour by name, its size, where its footprint is on the floor, its bottom's height, its turn. */
+function partOf(p, tags = new Map()) {
   const kind = isAsset(p) ? { kind: "piece", piece: p.asset } : isCharacter(p) ? { kind: "character", body: p.body, pose: p.pose, ...(p.params ? { tweak: p.params } : {}), ...(p.joints ? { edited: true } : {}) } : { kind: "shape", shape: p.shape };
   return {
     name: p.name,
+    ...(tags.has(p.id) ? { tag: tags.get(p.id) } : {}),
     ...kind,
     color: colorName(p.color),
     ...(p.made ? { made: p.made } : {}),
+    ...(p.refs?.length ? { pictures: p.refs.length } : {}),
     size: p.size.map(r2),
     at: [r2(p.pos[0]), r2(p.pos[2])],
     y: r2(p.pos[1] - p.size[1] / 2),
@@ -42,9 +44,10 @@ export function summary() {
   const b = body();
   if (!b) return {};
   const cam = toaster.view?.cameraState() ?? b.camera ?? { position: [0, 0, 0], target: [0, 0, 0] };
+  const tags = tagsOf(b.parts, b.refs.map((r) => r.name));
   return {
     draft: toaster.draft.name,
-    parts: b.parts.map(partOf),
+    parts: b.parts.map((p) => partOf(p, tags)),
     selected: b.parts.filter((p) => toaster.selected.includes(p.id)).map((p) => p.name),
     camera: { from: cam.position.map(r2), at: cam.target.map(r2), frame: b.ratio, focal: cam.focal ?? 50 },
     cameras: b.cameras.map((k) => ({ name: k.name, from: k.position.map(r2), at: k.target.map(r2), frame: k.ratio, focal: k.focal })),
@@ -150,7 +153,7 @@ async function build(actions) {
         sized(p, a, own);
         // a piece and a character wear their colour ID: only a shape takes the colour he says
         if (a.color && hexOf(a.color) && a.kind === "shape") p.color = hexOf(a.color);
-        if (a.made !== undefined) p.made = String(a.made).slice(0, 120);
+        if (a.made !== undefined) p.made = String(a.made).slice(0, 400);
         if (related(p, a, list, byName));
         else if (Array.isArray(a.at)) placed(p, a);
         else {
@@ -176,7 +179,7 @@ async function build(actions) {
         if (a.size || a.scale) p.pos = [p.pos[0], r3((a.y ?? bottom) + p.size[1] / 2), p.pos[2]];
         if (!related(p, a, list, byName)) placed(p, a.size || a.scale ? { ...a, y: a.y ?? bottom } : a);
         if (a.color && hexOf(a.color) && !isAsset(p) && !isCharacter(p)) p.color = hexOf(a.color);
-        if (a.made !== undefined) p.made = String(a.made).slice(0, 120);
+        if (a.made !== undefined) p.made = String(a.made).slice(0, 400);
         if (a.hidden !== undefined) p.hidden = !!a.hidden;
         if (a.face !== undefined) faces.push([p, a.face]);
         if (a.name && !byName(a.name)) p.name = String(a.name).slice(0, 40);

@@ -83,6 +83,29 @@ const num = (v, lo, hi, d) => {
 };
 const vec = (v, d, lo = -1000, hi = 1000) => (Array.isArray(v) && v.length === 3 ? v.map((x, i) => round2(num(x, lo, hi, d[i]))) : [...d]);
 const words = (v, n) => (typeof v === "string" ? v.slice(0, n) : "");
+/** The names a tag may never take: the frame, the control maps and the turnaround sheet. */
+export const RESERVED = ["frame", "colour-id", "depth", "silhouette", "sheet"];
+const slug = (v) => String(v ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 30).replace(/-+$/, "");
+/** A tag from `base`, free among `used` and never reserved (desk, desk-2, desk-3…); it is added to `used`. */
+function freeTag(base, used) {
+  const root = base || "part";
+  let n = root;
+  for (let i = 2; used.has(n) || RESERVED.includes(n); i++) n = `${root}-${i}`;
+  used.add(n);
+  return n;
+}
+/** A picture of the Library as a sheet or a draft keeps it, or null when it is not one. */
+const photoRef = (r) => (r && typeof r === "object" && typeof r.file === "string" && r.file && r.file.length <= 200 && typeof r.url === "string" && r.url
+  ? { file: r.file, url: r.url.slice(0, 400), ...(Number(r.width) > 0 ? { width: Number(r.width) } : {}), ...(Number(r.height) > 0 ? { height: Number(r.height) } : {}) } : null);
+const MOST_REFS = 6;
+const refList = (v) => {
+  const out = [];
+  for (const r of Array.isArray(v) ? v : []) {
+    const p = photoRef(r);
+    if (p && !out.some((x) => x.file === p.file) && out.length < MOST_REFS) out.push(p);
+  }
+  return out;
+};
 export const partId = () => `p-${Math.random().toString(36).slice(2, 9)}`;
 
 /** Whether a part is a piece of the Stage's library (a chair, a cup, a car) rather than a primitive: its `asset` names the piece. */
@@ -141,7 +164,8 @@ export function cleanPart(p) {
     ...(character ? { body: p.body, ...(typeof p.rig === "string" && ID.test(p.rig) ? { rig: p.rig } : {}), pose: typeof p.pose === "string" && ID.test(p.pose) ? p.pose : "stand", ...tweakOf(p) } : {}),
     name: words(p.name, 40).trim() || shape.name,
     color: PALETTE.some(([h]) => h === String(p.color).toLowerCase()) ? String(p.color).toLowerCase() : /^#[0-9a-f]{6}$/i.test(p.color) ? String(p.color).toLowerCase() : PALETTE[0][0],
-    made: words(p.made, 120),
+    made: words(p.made, 400),
+    ...(refList(p.refs).length ? { refs: refList(p.refs) } : {}),
     size: vec(p.size, shape.size, 0.01, 100),
     pos: vec(p.pos, [0, shape.size[1] / 2, 0]),
     rot: vec(p.rot, [0, 0, 0], -360, 360),
@@ -447,6 +471,7 @@ export function cleanDraft(b) {
     ratio: r.ratio in RATIOS || r.ratio === SHEET.aspect ? r.ratio : undefined,
     model: words(r.model, 60) || undefined,
     prompt: words(r.prompt, 6000) || undefined,
+    refs: (Array.isArray(r.refs) ? r.refs : []).slice(0, 12).filter((x) => x && typeof x.url === "string").map((x) => ({ name: words(x.name, 40), url: x.url.slice(0, 400) })),
     error: words(r.error, 300) || undefined,
     at: words(r.at, 40) || undefined,
   });
@@ -461,6 +486,14 @@ export function cleanDraft(b) {
     error: words(m.error, 300) || undefined,
     at: words(m.at, 40) || undefined,
   });
+  // the pictures of the whole render: each is called by an @name of its own, never a part's tag nor a reserved one
+  const taken = new Set([...RESERVED, ...tagsOf(parts).values()]);
+  const sceneRefs = [];
+  for (const r of Array.isArray(b.refs) ? b.refs : []) {
+    const p = photoRef(r);
+    if (!p || sceneRefs.length >= MOST_REFS || sceneRefs.some((x) => x.file === p.file)) continue;
+    sceneRefs.push({ ...p, name: freeTag(slug(r.name) || slug(String(p.file).replace(/\.\w+$/, "")) || "ref", taken) });
+  }
   return {
     parts,
     camera: cam,
@@ -469,6 +502,8 @@ export function cleanDraft(b) {
     maps: Array.isArray(b.maps) ? MAPS.map((m) => m.id).filter((id) => b.maps.includes(id)) : ["id", "depth"],
     what: words(b.what, 600),
     scene: words(b.scene, 600),
+    refs: sceneRefs,
+    prompt: words(b.prompt, 6000),
     model: words(b.model, 60) || null,
     renders: (Array.isArray(b.renders) ? b.renders : []).slice(0, 60).map(run),
     sheets: (Array.isArray(b.sheets) ? b.sheets : []).slice(0, 30).map(run),
@@ -481,18 +516,92 @@ export function starterDraft() {
   return cleanDraft({ parts: [newPart("box", [])] });
 }
 
+// ---------------------------------------------------------------- tags: each part called by an @name
+
+/** The @tag of every visible part (by its id): the slug of its name, unique, never a reserved name nor one in `taken` (a scene reference's). */
+export function tagsOf(parts = [], taken = []) {
+  const used = new Set(taken);
+  const out = new Map();
+  for (const p of parts) if (!p.hidden) out.set(p.id, freeTag(slug(p.name), used));
+  return out;
+}
+/** A picture of the Library as a scene reference: called by the slug of its name, unique, never reserved nor a part's tag. Null when full, doubled or bad. */
+export function newSceneRef(photo, parts = [], sceneRefs = []) {
+  const p = photoRef(photo);
+  if (!p || sceneRefs.length >= MOST_REFS || sceneRefs.some((r) => r.file === p.file)) return null;
+  const used = new Set([...RESERVED, ...tagsOf(parts).values(), ...sceneRefs.map((r) => r.name)]);
+  return { ...p, name: freeTag(slug(photo.name) || slug(String(p.file).replace(/\.\w+$/, "")) || "ref", used) };
+}
+/** A picture of the Library added to a part's sheet (at most six, none twice). */
+export const addRef = (refs = [], photo) => refList([...refs, photo]);
+/** The tags a text calls: the @names in it, lower case. */
+export const mentionsIn = (text) => [...String(text ?? "").matchAll(/@([a-z0-9][a-z0-9-]*)/gi)].map((m) => m[1].toLowerCase());
+const kindOf = (p) => (isCharacter(p) ? "character" : isAsset(p) ? "piece" : "shape");
+const sheetOf = (p) => Boolean(p.made?.trim() || p.refs?.length);
+
+/** Who is in the frame, for the words and the pictures: the visible tagged parts, then the scene's references. */
+export function castOf(parts = [], sceneRefs = []) {
+  const tags = tagsOf(parts, sceneRefs.map((r) => r.name));
+  return [
+    ...parts.filter((p) => tags.has(p.id)).map((p) => ({ tag: tags.get(p.id), name: p.name, id: p.id, kind: kindOf(p), color: p.color, words: (p.made ?? "").trim(), pictures: p.refs ?? [] })),
+    ...sceneRefs.map((r) => ({ tag: r.name, ref: true, pictures: [r] })),
+  ];
+}
+
+/**
+ * The pictures that go with a render, within the model's `room`: the scene's references first (attached on purpose), then the parts' pictures
+ * one each per round (the parts named in the words first). A part's first picture is called by its tag, the next ones tag-2, tag-3.
+ * Answers { refs: [{ file, url, width, height, name }], named: Map(tag -> [names]) }.
+ */
+export function referencesFor({ parts = [], sceneRefs = [], room = 0, mentioned = [] } = {}) {
+  const tags = tagsOf(parts, sceneRefs.map((r) => r.name));
+  const refs = [];
+  const named = new Map();
+  const used = new Set([...RESERVED, ...tags.values(), ...sceneRefs.map((r) => r.name)]);
+  for (const r of sceneRefs) {
+    if (refs.length >= room) break;
+    refs.push({ file: r.file, url: r.url, width: r.width, height: r.height, name: r.name });
+    named.set(r.name, [r.name]);
+  }
+  const first = new Set(mentioned.map((m) => String(m).toLowerCase()));
+  const order = parts.filter((p) => tags.has(p.id) && p.refs?.length);
+  order.sort((a, b) => Number(first.has(tags.get(b.id))) - Number(first.has(tags.get(a.id))));
+  for (let round = 0; refs.length < room; round++) {
+    let more = false;
+    for (const p of order) {
+      const pic = p.refs[round];
+      if (!pic || refs.length >= room) continue;
+      const tag = tags.get(p.id);
+      let name = tag;
+      if (round) for (let i = round + 1; ; i++) if (!used.has((name = `${tag}-${i}`))) break;
+      used.add(name);
+      refs.push({ file: pic.file, url: pic.url, width: pic.width, height: pic.height, name });
+      named.set(tag, [...(named.get(tag) ?? []), name]);
+      more = true;
+    }
+    if (!more) break;
+  }
+  return { refs, named };
+}
+
 // ---------------------------------------------------------------- the words sent with the clay
 
 /**
  * What each clay colour becomes, one phrase per colour seen: "the teal clay (body, lid) becomes brushed chrome", or with nothing
- * said of what it is made of, "the teal clay is the body and the lid". Hidden parts are not in the picture, so not in the words.
+ * said of what it is made of, "the teal clay is the body and the lid". A part with a sheet (words or pictures) is called by its @tag when
+ * `tags` (tagsOf) is given: "the walnut clay is @desk" (its words and pictures go with the tag, see expandPrompt). Hidden parts are not
+ * in the picture, so not in the words.
  */
-export function legendOf(parts) {
+export function legendOf(parts, tags = null) {
   const by = new Map();
   for (const p of parts.filter((p) => !p.hidden)) {
     const k = p.color;
-    if (!by.has(k)) by.set(k, { names: [], made: [] });
+    if (!by.has(k)) by.set(k, { tagged: [], names: [], made: [] });
     const g = by.get(k);
+    if (tags?.has(p.id) && sheetOf(p)) {
+      g.tagged.push(`@${tags.get(p.id)}`);
+      continue;
+    }
     const name = p.name.trim().toLowerCase();
     if (name && !g.names.includes(name) && (isAsset(p) || isCharacter(p) || !SHAPES.some((s) => s.name.toLowerCase() === name.replace(/ \d+$/, "")))) g.names.push(name);
     const m = p.made.trim().replace(/[.;]+$/, "");
@@ -501,6 +610,7 @@ export function legendOf(parts) {
   const list = (a) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a.at(-1)}`);
   return [...by].map(([hex, g]) => {
     const clay = `the ${colorName(hex)} clay`;
+    if (g.tagged.length) return `${clay} is ${list([...g.tagged, ...g.names.map((n) => `the ${n}`)])}`;
     if (g.made.length) return `${clay}${g.names.length ? ` (${g.names.join(", ")})` : ""} becomes ${list(g.made)}`;
     return g.names.length ? `${clay} is the ${list(g.names)}` : "";
   }).filter(Boolean);
@@ -511,7 +621,6 @@ const sentence = (s) => {
   return t ? (/[.!?]$/.test(t) ? t : `${t}.`) : "";
 };
 
-/** The words for a render of the frame: the clay is the layout, the words what it becomes and where it stands. */
 /** The control maps a render can send beside the clay frame: their reference names, and what each says to the image model. */
 export const MAPS = [
   { id: "id", name: "colour-id", label: "Colour ID", says: "@colour-id shows each kind of thing as one flat colour, as the clay does" },
@@ -519,25 +628,37 @@ export const MAPS = [
   { id: "silhouette", name: "silhouette", label: "Silhouette", says: "@silhouette shows the outline of every part in white" },
 ];
 
-/** The words for a render of the frame: the clay is the layout, the control maps where things are, the words what it all becomes. */
-export function framePrompt({ parts = [], what = "", scene = "", maps = [] }) {
-  const legend = legendOf(parts);
+/** The pictures of the scene that were sent, said in a line: what they are for. */
+const referenceLine = (sceneRefs, named) => {
+  const used = sceneRefs.filter((r) => !named || named.has(r.name)).map((r) => `@${r.name}`);
+  if (!used.length) return "";
+  const list = used.length < 2 ? used[0] : `${used.slice(0, -1).join(", ")} and ${used.at(-1)}`;
+  return `${list} ${used.length > 1 ? "are reference pictures" : "is a reference picture"} for the look: follow ${used.length > 1 ? "them" : "it"} for the style, the light, the materials and the mood, never for the layout.`;
+};
+
+/**
+ * The words for a render of the frame: the clay is the layout, the control maps where things are, the words what it all becomes. Parts with
+ * a sheet are called by their @tag (`named`, from referencesFor, says which pictures were sent); the user's @tags stay in what and scene.
+ */
+export function framePrompt({ parts = [], what = "", scene = "", maps = [], sceneRefs = [], named = null, tags = null }) {
+  const legend = legendOf(parts, tags ?? tagsOf(parts, sceneRefs.map((r) => r.name)));
   const sent = MAPS.filter((m) => maps.includes(m.id));
   const id = sent.some((m) => m.id === "id");
   return [
-    "Render @frame as a finished photograph of one object.",
-    "Keep its camera, framing, silhouette and proportions exactly: each clay shape becomes the real part, in its very place and at its very size.",
+    "Render @frame as a finished photograph.",
+    "Keep its camera, framing, layout and proportions exactly: each clay shape becomes the real thing, in its very place and at its very size.",
     legend.length ? `In @frame${id ? " and @colour-id" : ""}, ${legend.join("; ")}.` : "",
     sent.length ? `${sent.map((m) => m.says).join("; ")}. They only say what is where: the materials, the light and what is behind come from these words.` : "",
-    what.trim() ? `The object: ${sentence(what)}` : "",
+    referenceLine(sceneRefs, named),
+    what.trim() ? `What it is: ${sentence(what)}` : "",
     sentence(scene) || "A plain studio backdrop, soft even light.",
     "No clay, no grid and no coloured shape is left.",
   ].filter(Boolean).join(" ");
 }
 
 /** The words for the turnaround: four views of one object, each kept where and as large as its clay view, the object alone. */
-export function sheetPrompt({ parts = [], what = "" }) {
-  const legend = legendOf(parts);
+export function sheetPrompt({ parts = [], what = "", tags = null }) {
+  const legend = legendOf(parts, tags ?? tagsOf(parts));
   return [
     "Render @sheet as a finished turnaround sheet of one object: four views side by side, the front, the left side, the back and the right side.",
     "Each view stays exactly where, as large and as shaped as its clay view, and all four show the same object with the same materials and colours.",
@@ -545,4 +666,25 @@ export function sheetPrompt({ parts = [], what = "" }) {
     what.trim() ? `The object: ${sentence(what)}` : "",
     "A plain light grey studio background, soft even light, no floor, no shadow, no text, no labels and nothing else.",
   ].filter(Boolean).join(" ");
+}
+
+const AT_TAG = /@([a-z0-9][a-z0-9-]*)/gi;
+const lowered = (t) => String(t ?? "").trim().replace(/[.;]+$/, "").replace(/^(A|An|The) /, (m) => m.toLowerCase());
+/**
+ * What the image model reads: each part's @tag, the first time, carries its words and its pictures ("Desk (exactly as in @desk: a walnut
+ * desk)", a character "Mia (who looks exactly like @mia: …)"), then its name alone. A scene reference's @name stays as it is. `named` says
+ * which pictures were sent (referencesFor); a part whose pictures did not fit goes by its words.
+ */
+export function expandPrompt(text, cast = [], named = new Map()) {
+  const by = new Map(cast.filter((c) => !c.ref).map((c) => [c.tag, c]));
+  const seen = new Set();
+  return String(text ?? "").replace(AT_TAG, (all, raw, at, whole) => {
+    const c = by.get(raw.toLowerCase());
+    if (!c || /[a-z0-9-]/i.test(whole[at + all.length] ?? "")) return all;
+    if (seen.has(c.tag)) return c.name;
+    seen.add(c.tag);
+    const pics = (named.get(c.tag) ?? []).map((n) => `@${n}`).join(" and ");
+    const inner = [pics ? (c.kind === "character" ? `who looks exactly like ${pics}` : `exactly as in ${pics}`) : "", lowered(c.words)].filter(Boolean).join(": ");
+    return inner ? `${c.name} (${inner})` : c.name;
+  });
 }

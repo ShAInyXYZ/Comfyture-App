@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   SHAPES, PALETTE, RATIOS, SHEET, VIEWS, TO_3D, shapeOf, roundLabel, hasSides, colorName, sheetScale,
-  cleanPart, cleanDraft, newPart, mirrorPart, duplicatePart, starterDraft, legendOf, framePrompt, sheetPrompt, newAssetPart, isAsset, freeSpot, newCharacterPart, isCharacter, idColor, familyOf, colourByKind, personColor, FAMILIES, PEOPLE,
+  cleanPart, cleanDraft, newPart, mirrorPart, duplicatePart, starterDraft, legendOf, framePrompt, sheetPrompt, newAssetPart, isAsset, freeSpot, newCharacterPart, isCharacter, tagsOf, castOf, referencesFor, expandPrompt, RESERVED, newSceneRef, addRef, mentionsIn, idColor, familyOf, colourByKind, personColor, FAMILIES, PEOPLE,
 } from "../web/js/toaster-model.js";
 
 test("ten shapes, each with a size; the slider and the sides only where they mean something", () => {
@@ -112,9 +112,9 @@ test("the words: what each clay colour becomes, the object, the scene; hidden pa
   ];
   assert.deepEqual(legendOf(parts), ["the teal clay (body, lid) becomes brushed chrome", "the cream clay is the knob"]);
   const words = framePrompt({ parts, what: "A retro toaster", scene: "on a marble counter" });
-  assert.match(words, /^Render @frame as a finished photograph of one object\./);
-  assert.match(words, /In @frame, the teal clay \(body, lid\) becomes brushed chrome; the cream clay is the knob\./);
-  assert.match(words, /The object: A retro toaster\. On a marble counter\./i);
+  assert.match(words, /^Render @frame as a finished photograph\. Keep its camera, framing, layout and proportions exactly: each clay shape becomes the real thing/);
+  assert.match(words, /In @frame, the teal clay is @body and @lid; the cream clay is the knob\./, "a part with words is told by its @tag");
+  assert.match(words, /What it is: A retro toaster\. On a marble counter\./i);
   assert.doesNotMatch(words, /glass/);
   assert.match(framePrompt({ parts: [] }), /A plain studio backdrop/);
   const sheet = sheetPrompt({ parts, what: "a toaster" });
@@ -257,4 +257,105 @@ test("placing by relations: against a wall facing in, beside a part facing it, o
   assert.equal(topOf(desk), 0.75, "a lamp on the desk stands at its top");
   assert.equal(faceTurn([0, 0], [1, 0]), 90);
   assert.deepEqual(footprintOf({ size: [2, 1, 1], pos: [0, 0, 0], rot: [0, 90, 0] }).max.map((v) => Math.round(v * 1000) / 1000), [0.5, 1], "a turned part's footprint turns with it");
+});
+
+// ---------------------------------------------------------------- tags and sheets
+
+const desk = (extra = {}) => cleanPart({ id: "p-desk", shape: "asset", asset: "desk", name: "Desk", color: "#9a5a2a", made: "a walnut mid-century desk with brass handles", refs: [{ file: "d1.png", url: "/media/photos/d1.png", width: 800, height: 600 }, { file: "d2.png", url: "/media/photos/d2.png" }], ...extra });
+const mia = (extra = {}) => cleanPart({ id: "p-mia", shape: "character", body: "woman", name: "Mia", color: "#ff6b3d", made: "A woman in her thirties, curly red hair.", refs: [{ file: "m1.png", url: "/media/photos/m1.png" }], ...extra });
+
+test("tagsOf: the slug of each visible part's name, unique, never a reserved name nor a taken one", () => {
+  const parts = [cleanPart({ id: "a", name: "Office Chair" }), cleanPart({ id: "b", name: "Office chair" }), cleanPart({ id: "c", name: "Frame" }), cleanPart({ id: "d", name: "Box 3" }), cleanPart({ id: "e", name: "Ghost", hidden: true }), cleanPart({ id: "f", name: "Mood" }), cleanPart({ id: "g", name: "Café Crème" })];
+  const tags = tagsOf(parts, ["mood"]);
+  assert.deepEqual([...tags], [["a", "office-chair"], ["b", "office-chair-2"], ["c", "frame-2"], ["d", "box-3"], ["f", "mood-2"], ["g", "cafe-creme"]]);
+  assert.ok(!tags.has("e"), "a hidden part has no tag");
+  for (const r of RESERVED) assert.ok(![...tagsOf([cleanPart({ name: r })]).values()].includes(r), r);
+  assert.deepEqual([...tagsOf([cleanPart({ id: "x", name: "!!!" })].map((p) => p)).values()], ["part"]);
+});
+
+test("a part keeps its words (400) and up to six pictures; bad pictures and doubles are dropped", () => {
+  const p = cleanPart({ name: "Desk", made: "x".repeat(500), refs: [...Array.from({ length: 9 }, (_, i) => ({ file: `f${i}.png`, url: `/m/f${i}.png`, width: 10, height: 20 })), { file: "f0.png", url: "/m/f0.png" }, { url: "/no-file" }, null, { file: "", url: "/x" }] });
+  assert.equal(p.made.length, 400);
+  assert.equal(p.refs.length, 6);
+  assert.deepEqual(p.refs[0], { file: "f0.png", url: "/m/f0.png", width: 10, height: 20 });
+  assert.equal(cleanPart({ name: "A" }).refs, undefined, "no pictures, no key");
+  assert.equal(duplicatePart(desk()).refs.length, 2, "a copy keeps the pictures");
+  assert.equal(mirrorPart(desk()).refs.length, 2);
+});
+
+test("a draft keeps its scene references (named by themselves, never a part's tag) and its own prompt", () => {
+  const b = cleanDraft({
+    parts: [desk(), cleanPart({ name: "Mood" })],
+    refs: [{ file: "a.png", url: "/m/a.png", name: "Desk" }, { file: "b.png", url: "/m/b.png", name: "Frame" }, { file: "c.png", url: "/m/c.png", name: "Mood" }, { file: "d.png", url: "/m/d.png" }, { file: "a.png", url: "/m/a.png", name: "again" }, { url: "/bad" }, "no"],
+    prompt: "My own words".padEnd(7000, "!"),
+  });
+  assert.deepEqual(b.refs.map((r) => r.name), ["desk-2", "frame-2", "mood-2", "d"]);
+  assert.equal(b.prompt.length, 6000);
+  assert.equal(cleanDraft({}).prompt, "");
+  assert.deepEqual(cleanDraft({}).refs, []);
+  assert.equal(cleanDraft({ refs: Array.from({ length: 10 }, (_, i) => ({ file: `${i}.png`, url: `/m/${i}.png`, name: `r${i}` })) }).refs.length, 6);
+  const run = cleanDraft({ renders: [{ id: "r1", status: "done", prompt: "sent", refs: [{ name: "desk", url: "/m/d1.png" }, { name: "bad" }] }] }).renders[0];
+  assert.deepEqual(run.refs, [{ name: "desk", url: "/m/d1.png" }]);
+});
+
+test("referencesFor: scene references first, then the parts' pictures round-robin, the named parts first, never past the room", () => {
+  const parts = [desk(), mia({ refs: [{ file: "m1.png", url: "/m/m1.png" }, { file: "m2.png", url: "/m/m2.png" }] }), cleanPart({ id: "p-box", name: "Box" })];
+  const sceneRefs = [{ file: "s1.png", url: "/m/s1.png", name: "mood" }];
+  const all = referencesFor({ parts, sceneRefs, room: 10 });
+  assert.deepEqual(all.refs.map((r) => r.name), ["mood", "desk", "mia", "desk-2", "mia-2"]);
+  assert.deepEqual([...all.named], [["mood", ["mood"]], ["desk", ["desk", "desk-2"]], ["mia", ["mia", "mia-2"]]]);
+  assert.deepEqual(referencesFor({ parts, sceneRefs, room: 3 }).refs.map((r) => r.name), ["mood", "desk", "mia"]);
+  assert.deepEqual(referencesFor({ parts, sceneRefs, room: 3, mentioned: ["mia"] }).refs.map((r) => r.name), ["mood", "mia", "desk"]);
+  assert.deepEqual(referencesFor({ parts, sceneRefs, room: 1 }).refs.map((r) => r.name), ["mood"], "the scene's own pictures come first");
+  assert.deepEqual(referencesFor({ parts, sceneRefs, room: 0 }).refs, []);
+  assert.deepEqual(referencesFor({ parts: [{ ...parts[0], hidden: true }], room: 4 }).refs, [], "a hidden part sends nothing");
+  // a name taken by a part's tag is skipped for a picture
+  const tricky = referencesFor({ parts: [desk(), cleanPart({ id: "p-d2", name: "Desk 2" })], room: 4 });
+  assert.deepEqual(tricky.refs.map((r) => r.name), ["desk", "desk-3"]);
+});
+
+test("castOf: the visible tagged parts with their words and pictures, then the references", () => {
+  const cast = castOf([desk(), mia(), cleanPart({ name: "Ghost", hidden: true }), cleanPart({ id: "p-b", name: "Box" })], [{ file: "s.png", url: "/m/s.png", name: "mood" }]);
+  assert.deepEqual(cast.map((c) => [c.tag, c.kind]), [["desk", "piece"], ["mia", "character"], ["box", "shape"], ["mood", undefined]]);
+  assert.equal(cast[0].words, "a walnut mid-century desk with brass handles");
+  assert.equal(cast[0].pictures.length, 2);
+  assert.equal(cast[0].color, "#9a5a2a");
+  assert.deepEqual(cast.at(-1), { tag: "mood", ref: true, pictures: [{ file: "s.png", url: "/m/s.png", name: "mood" }] });
+});
+
+test("the frame's words name a part with a sheet by its @tag; expandPrompt opens the first mention, then goes by the name", () => {
+  const parts = [desk(), mia(), cleanPart({ id: "p-box", name: "Box", color: "#e3c35a" }), cleanPart({ id: "p-ch", shape: "asset", asset: "office-chair", name: "Office chair", color: "#76aef2" })];
+  const sceneRefs = [{ file: "s1.png", url: "/m/s1.png", name: "mood" }];
+  const { named } = referencesFor({ parts, sceneRefs, room: 6 });
+  const text = framePrompt({ parts, what: "A study. @mia reads at @desk.", scene: "Late light, like @mood.", maps: ["id", "depth"], sceneRefs, named });
+  assert.match(text, /^Render @frame as a finished photograph\./);
+  assert.match(text, /In @frame and @colour-id, the walnut clay is @desk; the vermilion clay is @mia; the sky blue clay is the office chair\./);
+  assert.match(text, /@mood is a reference picture for the look/);
+  assert.match(text, /What it is: A study\. @mia reads at @desk\./);
+  const sent = expandPrompt(text, castOf(parts, sceneRefs), named);
+  assert.match(sent, /the walnut clay is Desk \(exactly as in @desk and @desk-2: a walnut mid-century desk with brass handles\);/, "the first mention carries the sheet");
+  assert.match(sent, /the vermilion clay is Mia \(who looks exactly like @mia: a woman in her thirties, curly red hair\);/, "a character looks like her picture");
+  assert.match(sent, /Mia reads at Desk\./, "later mentions go by the name alone");
+  assert.match(sent, /like @mood\./, "a scene reference stays as it is");
+  assert.match(sent, /@mood is a reference picture/);
+  // words and no picture: the words alone; neither: the name; a longer name is not a tag
+  const cast = [{ tag: "lamp", name: "Lamp", kind: "piece", words: "A brass lamp.", pictures: [] }, { tag: "rug", name: "Rug", kind: "piece", words: "", pictures: [] }];
+  assert.equal(expandPrompt("@lamp and @rug, @lamp-2 and @lamp again @lamp", cast, new Map()), "Lamp (a brass lamp) and Rug, @lamp-2 and Lamp again Lamp");
+  // a sheet whose pictures did not fit goes by its words
+  assert.match(expandPrompt("@desk", castOf([desk()]), new Map()), /^Desk \(a walnut mid-century desk with brass handles\)$/);
+  // the turnaround speaks the same way
+  assert.match(sheetPrompt({ parts }), /In @sheet, the walnut clay is @desk; the vermilion clay is @mia;/);
+});
+
+test("a new scene reference is named after its picture, never a part's tag; a part's sheet takes six pictures, none twice", () => {
+  const parts = [desk()];
+  const a = newSceneRef({ file: "x1.png", url: "/m/x1.png", name: "Desk" }, parts, []);
+  assert.equal(a.name, "desk-2", "a part's tag is not taken");
+  assert.equal(newSceneRef({ file: "x2.png", url: "/m/x2.png", name: "Colour ID" }, parts, [a]).name, "colour-id-2");
+  assert.equal(newSceneRef({ file: "x1.png", url: "/m/x1.png", name: "again" }, parts, [a]), null, "a picture is not twice a reference");
+  assert.equal(newSceneRef({ url: "/bad" }, parts, []), null);
+  assert.equal(newSceneRef({ file: "z.png", url: "/m/z.png" }, [], []).name, "z", "no name: the file's");
+  assert.equal(addRef(Array.from({ length: 6 }, (_, i) => ({ file: `${i}.png`, url: `/m/${i}.png` })), { file: "7.png", url: "/m/7.png" }).length, 6);
+  assert.deepEqual(addRef([{ file: "a.png", url: "/m/a.png" }], { file: "a.png", url: "/m/a.png" }).length, 1);
+  assert.deepEqual(mentionsIn("The @Desk and @mood-board, not an@email"), ["desk", "mood-board", "email"]);
 });

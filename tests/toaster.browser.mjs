@@ -3,6 +3,9 @@
 // frame, a turnaround sheet brought back to the 6336 x 2688 that Pixal3D's template crops, and a 3D model made from it, shown and put
 // on the Stage. What would spend credits is stood in for (the image model answers with the clay it was sent; the template answers
 // with a small GLB), the 3D model waits for a yes, and every call to Comfy's hosts is refused, so no credit can be spent.
+// The page has two modes (Scene, Render studio): the viewport moves to the right column in the studio and still draws, a part gets a sheet
+// (words and a picture, uploaded to this server's own Library) and an @tag, the scene gets a reference picture, an @ in the words picks a
+// tag as a pill, Improve (the writer stood in for) writes an own prompt, and the next render sends the pictures by their @names.
 // Not part of `node --test` (it needs a browser). From the repo root:
 //   PLAYWRIGHT_MODULE=<playwright's folder> node tests/toaster.browser.mjs        (OUT=<folder> keeps screenshots)
 import { spawn } from "node:child_process";
@@ -11,6 +14,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createRequire } from "node:module";
+import { deflateSync, crc32 } from "node:zlib";
 
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const root = resolve(import.meta.dirname, "..");
@@ -41,6 +45,24 @@ function glb() {
     return Buffer.concat([h, data]);
   };
   return Buffer.concat([head, chunk(0x4e4f534a, json), chunk(0x004e4942, bin)]);
+}
+// a small PNG of one colour (a sheet's picture, a scene reference)
+function png([r, g, b], size = 16) {
+  const chunk = (type, data) => {
+    const head = Buffer.alloc(8);
+    head.writeUInt32BE(data.length, 0);
+    head.write(type, 4, "latin1");
+    const tail = Buffer.alloc(4);
+    tail.writeUInt32BE(crc32(Buffer.concat([Buffer.from(type, "latin1"), data])), 0);
+    return Buffer.concat([head, data, tail]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(size, 0);
+  ihdr.writeUInt32BE(size, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 2;
+  const row = Buffer.concat([Buffer.from([0]), Buffer.from(Array.from({ length: size }, () => [r, g, b]).flat())]);
+  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(Buffer.concat(Array.from({ length: size }, () => row)))), chunk("IEND", Buffer.alloc(0))]);
 }
 await mkdir(join(dataDir, "models"), { recursive: true });
 await writeFile(join(dataDir, "models", "toaster-test.glb"), glb());
@@ -134,10 +156,9 @@ try {
   // its colour
   await page.locator('.ts-swatch[aria-label="orange"]').click();
   ok((await draft()).body.parts[1].color === "#e0884b", "a swatch colours the part");
-  await page.locator('.ts-inspector input[aria-label="Made of"]').fill("walnut");
-  await page.locator('.ts-inspector input[aria-label="Made of"]').press("Enter");
+  await page.locator('.ts-inspector textarea[aria-label="What it is"]').fill("walnut");
   await page.locator(".ts-view").click({ position: { x: 20, y: 300 } });
-  ok((await draft()).body.parts[1].made === "walnut", "what it is made of is kept");
+  ok((await draft()).body.parts[1].made === "walnut", "what the part is (its sheet words) is kept");
   // moved off the middle, mirrored, undone and done again
   await page.locator(".ts-part").nth(1).click();
   const px = page.locator('.ts-inspector input[data-key="pos"][data-axis="0"]');
@@ -265,9 +286,30 @@ try {
   await page.locator(".ts-view").click({ position: { x: 20, y: 300 } });
   await shot("0-library");
 
-  // ---------------------------------------------------------------- the words, kept across a reload
-  await page.locator('input[aria-label="What it is"]').fill("A retro 1950s toaster, chrome body");
-  await page.locator('input[aria-label="Scene"]').fill("On a marble counter, morning light");
+  // ---------------------------------------------------------------- the Render mode, and the words kept across a reload
+  ok((await js(() => window.__toaster.mode)) === "scene" && (await page.locator(".ts-modes .ts-mode[aria-pressed=true]").innerText()) === "Scene", "the page opens in the Scene");
+  ok(await page.locator(".ts-render .ts-toast").isVisible() && await page.locator(".ts-render .ts-studio-key").isVisible(), "the scene's Render card is compact: Toast it, and the way to the studio");
+  ok(!(await page.locator(".ts-look, .ts-draft").count()), "the old look fields and the draft chip are gone from the scene");
+  const viewBefore = await page.locator(".ts-view").boundingBox();
+  await page.locator(".ts-render .ts-studio-key").click();
+  await page.waitForSelector(".toaster.is-render .ts-studio", { timeout: 5000 });
+  ok((await js(() => window.__toaster.mode)) === "render", "Render studio switches the page to the studio");
+  const viewAfter = await page.locator(".toaster.is-render .ts-right .ts-view").boundingBox();
+  ok(viewAfter && viewAfter.width > 150 && viewAfter.height > 120 && viewAfter.x > viewBefore.x + viewBefore.width / 2, "the viewport is in the right column, small", JSON.stringify(viewAfter));
+  await page.waitForTimeout(400);
+  ok(await js(() => { const c = document.querySelector(".ts-stage canvas"); return c.clientWidth > 100 && c.width > 0 && c.height > 0; }), "and its canvas is sized and still draws");
+  ok(await page.locator(".ts-view .ts-tools").isHidden() && await page.locator(".ts-view .ts-views").isHidden() && await page.locator(".ts-add-keys").isHidden(), "its tools, views and library are put away, and Add is hidden on the left");
+  ok(await page.locator(".ts-right .ts-cams.is-row").isVisible() && (await page.locator(".ts-right .ts-cams").boundingBox()).y >= viewAfter.y + viewAfter.height - 2, "the cameras are a row under the canvas");
+  await page.keyboard.press("t");
+  await page.waitForSelector(".toaster.is-scene");
+  ok((await js(() => window.__toaster.mode)) === "scene" && await page.locator(".ts-mid > .ts-view").count() === 1, "T goes back to the scene: the viewport is in the middle again");
+  await page.keyboard.press("t");
+  await page.waitForSelector(".toaster.is-render .ts-studio");
+  ok(await page.locator('.ts-studio [aria-label="What it is"]').isVisible() && await page.locator('.ts-studio [aria-label="Scene"]').isVisible(), "the studio has What it is and Scene");
+  await page.locator('.ts-studio [aria-label="What it is"]').click();
+  await page.keyboard.type("A retro 1950s toaster, chrome body");
+  await page.locator('.ts-studio [aria-label="Scene"]').click();
+  await page.keyboard.type("On a marble counter, morning light");
   await page.waitForTimeout(900);
   await page.reload();
   await page.waitForSelector(".ts-stage canvas", { timeout: 20000 });
@@ -275,15 +317,18 @@ try {
   await until(() => document.querySelectorAll(".ts-part").length === 5, null, 10000);
   d = await draft();
   ok(d.body.parts.length === 5 && d.body.what === "A retro 1950s toaster, chrome body" && d.body.scene.startsWith("On a marble"), "the draft, its parts and its words are kept across a reload");
-  ok((await page.locator('input[aria-label="What it is"]').inputValue()) === "A retro 1950s toaster, chrome body", "the words are back in their field");
+  ok((await js(() => window.__toaster.mode)) === "render", "and the mode");
+  await page.waitForTimeout(500);
+  ok((await page.locator('.ts-studio [aria-label="What it is"]').innerText()) === "A retro 1950s toaster, chrome body", "the words are back in their field");
+  ok(await page.locator(".ts-studio .ts-pic.is-clay img").isVisible(), "with no render yet the studio shows the clay frame, as Toaster sends it");
   await page.waitForSelector("img.ts-clay-strip", { timeout: 5000 }).catch(() => {});
   ok(await page.locator("img.ts-clay-strip").isVisible(), "the four clay views are drawn in the Turnaround card");
   await shot("1-blockout");
 
   // ---------------------------------------------------------------- toasting the frame
-  await page.locator(".ts-toast").click();
+  await page.locator(".ts-studio .ts-toast").click();
   await until(() => window.__toaster.draft.body.renders[0]?.status === "done");
-  await page.waitForSelector(".ts-render .ts-pic img", { timeout: 5000 }).catch(() => {});
+  await page.waitForSelector(".ts-studio .ts-pic img", { timeout: 5000 }).catch(() => {});
   const frameAsk = pictures[0];
   ok(frameAsk?.template === "edit" && frameAsk.refs?.[0]?.name === "frame" && frameAsk.aspect === "1:1", "Toast it sends the clay frame to an image edit, at the frame's aspect", JSON.stringify(frameAsk && { template: frameAsk.template, refs: frameAsk.refs, aspect: frameAsk.aspect }));
   ok(JSON.stringify(frameAsk?.refs?.map((r) => r.name)) === JSON.stringify(["frame", "colour-id", "depth"]), "with its control maps: the colour ID and the depth", JSON.stringify(frameAsk?.refs));
@@ -293,11 +338,12 @@ try {
     const [fr, id, dp] = frameAsk.refs.map((r) => lib.find((p) => p.file === r.file));
     ok(fr && id && dp && fr.width === id.width && fr.height === dp.height, "the maps are the frame's very size", JSON.stringify([fr, id, dp].map((p) => p && `${p.width}x${p.height}`)));
   }
-  ok(/^Render @frame/.test(frameAsk?.prompt) && /the orange clay \(cylinder\) becomes walnut|the orange clay becomes walnut/.test(frameAsk?.prompt) && /the blue clay is the office chair/.test(frameAsk?.prompt) && /A retro 1950s toaster/.test(frameAsk?.prompt) && /marble counter/i.test(frameAsk?.prompt), "its words tell the clay's colours, the object and the scene", frameAsk?.prompt);
+  ok(/^Render @frame as a finished photograph\./.test(frameAsk?.prompt) && /the orange clay is Cylinder \(walnut\)/.test(frameAsk?.prompt) && /the blue clay is the office chair/.test(frameAsk?.prompt) && /A retro 1950s toaster/.test(frameAsk?.prompt) && /marble counter/i.test(frameAsk?.prompt), "its words tell the clay's colours, the object and the scene", frameAsk?.prompt);
   d = await draft();
   ok(d.body.renders[0]?.status === "done" && d.body.renders[0].photo?.url && d.body.renders[0].camera, "the render is kept with its camera");
-  ok(await page.locator(".ts-render .ts-pic img").isVisible(), "the render shows in the Render card");
-  await page.locator('.ts-render [aria-label="Compare with the clay"]').click();
+  ok(await page.locator(".ts-studio .ts-pic img").isVisible(), "the render shows in the studio");
+  ok(d.body.renders[0].prompt === frameAsk.prompt && Array.isArray(d.body.renders[0].refs), "the render keeps what was sent");
+  await page.locator('.ts-studio [aria-label="Compare with the clay"]').click();
   await page.waitForSelector(".ts-pic.is-compare", { timeout: 3000 }).catch(() => {});
   ok(await page.locator(".ts-pic.is-compare .ts-wipe").isVisible(), "Compare shows the clay under the render with a wipe");
   await shot("2-render");
@@ -332,12 +378,13 @@ try {
   ok(models.models?.some((m) => m.kind === "prop" && m.ext === "glb"), "Put on the Stage keeps it in the Stage's assets, as a prop", JSON.stringify(models.models?.map((m) => m.name)));
   await shot("3-toasted");
 
-  // ---------------------------------------------------------------- drafts
-  await page.locator('.ts-draft [aria-label="Every draft"]').click();
-  await page.locator(".ts-draft-new").click();
+  // ---------------------------------------------------------------- drafts (the project bar has the tabs; here a new one is made through the page's state)
+  await js(async () => (await import("/js/toaster.js")).newDraft());
   await until(() => window.__toaster.list.length === 2, null, 5000);
   d = await draft();
-  ok(d.name === "Object 2" && d.body.parts.length === 1, "a new draft starts with a box", d.name);
+  ok(/^Project 2$/.test(d.name) && d.body.parts.length === 1, "a new draft starts with a box", d.name);
+  await page.keyboard.press("t");
+  await page.waitForSelector(".toaster.is-scene");
 
   // ---------------------------------------------------------------- Crumpet builds a scene
   // his answer stood in for: a scene from scratch (a sofa, an armchair turned toward it, a woman sitting on the sofa, a lamp on a box),
@@ -421,17 +468,138 @@ try {
   await page.locator(".ts-cam-add").click();
   await page.waitForTimeout(200);
   ok((await draft()).body.cameras.length === 3, "the key keeps the camera as it is in a new slot");
-  ok(d.body.what === "A cosy reading corner" && (await page.locator('input[aria-label="Scene"]').inputValue()) === "Warm lamp light, evening", "the render's words set, in their fields");
+  ok(d.body.what === "A cosy reading corner" && d.body.scene === "Warm lamp light, evening", "the render's words set");
   ok(await page.locator("#assistant .msg-confirm .key.is-primary", { hasText: "Toast it" }).isVisible(), "the render is only offered, with its price");
   ok(pictures.length === 2, "nothing was rendered without a yes");
   await shot("4-crumpet");
   await page.locator("#assistant .undo").click();
   d = await draft();
   ok(d.body.parts.length === 1 && d.body.parts[0].shape === "box", "Undo puts the draft back as it was before his build");
+  // ---------------------------------------------------------------- the studio: a sheet per part, references, @tags, Improve, the pictures sent
+  // (Crumpet's thread is folded: it opens over the page)
+  await page.locator("#assistant .msg-confirm .key", { hasText: "Not now" }).click().catch(() => {});
+  await page.locator('#assistant [aria-label="Fold the conversation"]').click().catch(() => {});
+  await page.keyboard.press("t");
+  await page.waitForSelector(".toaster.is-render .ts-studio");
   // the control maps are the draft's choice: the silhouette added, the depth taken away
   await page.locator(".ts-map", { hasText: "Silhouette" }).click();
   await page.locator(".ts-map", { hasText: "Depth" }).click();
   ok(JSON.stringify((await draft()).body.maps) === JSON.stringify(["id", "silhouette"]), "the Control keys choose the maps sent with the clay");
+  await page.locator(".ts-map", { hasText: "Silhouette" }).click();
+  ok(JSON.stringify((await draft()).body.maps) === JSON.stringify(["id"]), "(the colour ID alone is sent)");
+  // a part's sheet, in Selected: renamed (its tag follows), its words, a picture uploaded to the server's own Library
+  await page.locator(".ts-part").first().click();
+  await page.locator('.ts-inspector input[aria-label="Name"]').fill("Desk");
+  await page.locator('.ts-inspector input[aria-label="Name"]').press("Enter");
+  await page.waitForFunction(() => document.querySelector(".ts-inspector .ts-at")?.textContent === "@desk", null, { timeout: 3000 }).catch(() => {});
+  ok((await page.locator(".ts-inspector .ts-at").textContent()) === "@desk", "renamed, the part's tag follows its name", await page.locator(".ts-inspector .ts-at").textContent());
+  ok(await page.locator('.ts-inspector textarea[aria-label="What it is"]').isVisible() && await page.locator(".ts-inspector .ts-pic-add").isVisible(), "Selected holds the part's sheet: what it is, and its pictures");
+  ok((await page.locator('.ts-inspector textarea[aria-label="What it is"]').getAttribute("placeholder")).startsWith("brushed chrome"), "a shape's words are asked for by their kind");
+  await page.locator('.ts-inspector textarea[aria-label="What it is"]').fill("a walnut mid-century desk with brass handles");
+  await page.locator('.ts-inspector input[aria-label="Name"]').click();
+  let [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.locator(".ts-inspector .ts-pic-add").click()]);
+  await chooser.setFiles({ name: "desk.png", mimeType: "image/png", buffer: png([150, 90, 40]) });
+  await until(() => window.__toaster.draft.body.parts[0].refs?.length === 1, null, 8000);
+  d = await draft();
+  const deskPart = d.body.parts[0];
+  ok(deskPart.name === "Desk" && deskPart.made.startsWith("a walnut") && deskPart.refs?.length === 1 && deskPart.refs[0].url.startsWith("/media/photos/"), "its words and its picture (uploaded to the Library) are on its sheet", JSON.stringify(deskPart.refs));
+  ok(await page.locator(".ts-inspector .ts-pic-tile img").isVisible() && (await page.locator(".ts-parts .ts-mini-pic img").count()) === 1, "the picture is a tile in Selected and a small thumb in the parts list");
+  await page.locator(".ts-parts .ts-part").first().hover();
+  await page.waitForSelector(".peek:not([hidden])", { timeout: 2000 }).catch(() => {});
+  ok(/Desk/.test(await page.locator(".peek").innerText()) && /walnut/.test(await page.locator(".peek").innerText()) && (await page.locator(".peek img").count()) === 1, "hovering its row shows its sheet");
+  await page.mouse.move(700, 500);
+  // undo covers the sheet
+  await page.locator(".ts-pic-tile").first().hover();
+  await page.locator(".ts-pic-off").first().click();
+  ok(!(await draft()).body.parts[0].refs, "a picture is taken off its sheet");
+  await page.keyboard.press("Control+z");
+  ok((await draft()).body.parts[0].refs?.length === 1, "and Undo puts it back");
+  // a reference for the whole render, from a file; a second one pasted on the composer
+  [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.locator(".ts-refs .ts-pic-add").click()]);
+  await chooser.setFiles({ name: "Mood Board.png", mimeType: "image/png", buffer: png([40, 90, 150]) });
+  await until(() => window.__toaster.draft.body.refs?.length === 1, null, 8000);
+  d = await draft();
+  ok(d.body.refs[0]?.name === "mood-board" && d.body.refs[0].url.startsWith("/media/photos/"), "a reference picture is called by an @name of its own", JSON.stringify(d.body.refs));
+  await page.locator(".ts-compose").evaluate((el, bytes) => {
+    const dt = new DataTransfer();
+    dt.items.add(new File([new Uint8Array(bytes)], "paste.png", { type: "image/png" }));
+    el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
+  }, [...png([90, 150, 40])]);
+  await until(() => window.__toaster.draft.body.refs?.length === 2, null, 8000);
+  ok((await draft()).body.refs.length === 2, "pictures pasted on the composer are references too");
+  await page.locator(".ts-refs .ts-pic-tile").nth(1).hover();
+  await page.locator(".ts-refs .ts-pic-off").nth(1).click();
+  ok((await draft()).body.refs.length === 1, "a reference is taken off with its cross");
+  // the Library picker: the pictures of this server's Library, lit when on the render
+  await page.locator('.ts-refs [aria-label="From the Library"]').click();
+  await page.waitForSelector(".ts-refs .ts-lib-photo", { timeout: 5000 });
+  ok((await page.locator(".ts-refs .ts-lib-photo[aria-pressed=true]").count()) === 1 && (await page.locator(".ts-refs .ts-lib-photo").count()) >= 3, "the Library picker lists the pictures, the one on the render lit");
+  await page.locator('.ts-refs [aria-label="From the Library"]').click();
+  // "In the frame": the part, lit as it has a sheet; a click selects it
+  ok(await page.locator(".ts-who.is-sheet", { hasText: "@desk" }).isVisible(), "the part is in the frame, lit: it has a sheet");
+  // an @ in the words opens the tags; Enter puts one in as a pill
+  await page.locator('.ts-studio [aria-label="What it is"]').click();
+  await page.keyboard.press("Control+End");
+  await page.keyboard.type(" on @d");
+  await page.waitForSelector(".ts-tags:not([hidden])", { timeout: 3000 });
+  ok((await page.locator(".ts-tags .ts-tag-row").first().innerText()).includes("@desk"), "typing an @ opens the list of tags, the part first", await page.locator(".ts-tags").innerText());
+  await page.keyboard.press("Enter");
+  await page.waitForSelector('.ts-studio [aria-label="What it is"] .pill[data-name="desk"]', { timeout: 3000 }).catch(() => {});
+  ok(await page.locator('.ts-studio [aria-label="What it is"] .pill[data-name="desk"]').isVisible() && (await page.locator(".ts-tags").isHidden()), "Enter puts @desk in as a pill");
+  await page.keyboard.type("under a lamp, like @mo");
+  ok((await page.locator(".ts-tags .ts-tag-row").first().innerText()).includes("@mood-board"), "the scene's references are in the list too");
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(900);
+  d = await draft();
+  ok(/^A cosy reading corner on @desk under a lamp, like @mood-board $/.test(d.body.what) || /on @desk under a lamp, like @mood-board/.test(d.body.what), "the words keep the tags as plain @names", d.body.what);
+  await page.locator('.ts-studio [aria-label="What it is"] .pill[data-name="desk"]').hover();
+  await page.waitForSelector(".peek:not([hidden])", { timeout: 2000 }).catch(() => {});
+  ok(/walnut/.test(await page.locator(".peek").innerText()), "hovering a pill shows its sheet");
+  await page.mouse.move(700, 500);
+  // the prompt: automatic (dimmed, Auto) until it is written
+  ok((await page.locator(".ts-prompt-head .ts-badge").textContent()) === "Auto" && (await page.locator(".ts-pills.is-prompt.is-auto").count()) === 1, "the prompt is automatic: dimmed, with an Auto badge");
+  const autoText = await page.locator(".ts-pills.is-prompt").textContent();
+  ok(/^Render @frame as a finished photograph\./.test(autoText) && /the walnut clay is @desk|clay is @desk/.test(autoText) && /@mood-board is a reference picture/.test(autoText), "it shows the words with their @tags, unexpanded", autoText);
+  // Improve, with the writer stood in for
+  const improved = [];
+  await page.route("**/api/toaster/improve", (route) => {
+    improved.push(route.request().postDataJSON());
+    return route.fulfill({ json: { prompt: "Render @frame as a warm photograph: @desk is the desk, exactly as in that picture, lit like @mood-board." } });
+  });
+  await page.locator(".ts-improve").click();
+  await until(() => window.__toaster.draft.body.prompt.startsWith("Render @frame as a warm"), null, 8000);
+  const ask = improved[0];
+  ok(ask?.what.includes("@desk") && ask.cast?.some((c) => c.tag === "desk" && c.kind === "shape" && c.words.startsWith("a walnut") && c.pictures.join() === "desk") && ask.cast.some((c) => c.tag === "mood-board" && c.kind === "reference"), "Improve sends the words and the cast with its sheets", JSON.stringify(ask?.cast));
+  ok(JSON.stringify(ask?.refs?.map((r) => r.name)) === JSON.stringify(["frame", "mood-board", "desk"]) && ask.refs.every((r) => r.file) && typeof ask.model === "string", "and the clay frame, then a picture of each sheet", JSON.stringify(ask?.refs));
+  ok(/^Render @frame as a finished photograph/.test(ask.prompt), "the draft to improve is the automatic prompt");
+  await page.waitForFunction(() => document.querySelector(".ts-pills.is-prompt")?.textContent.startsWith("Render @frame as a warm"), null, { timeout: 3000 }).catch(() => {});
+  ok((await page.locator(".ts-prompt-head .ts-badge").textContent()) === "Yours" && (await page.locator(".ts-pills.is-prompt.is-auto").count()) === 0 && /sent as written/.test(await page.locator(".ts-prompt-head").textContent()), "the Prompt field holds it as the user's own", await page.locator(".ts-prompt-head").textContent());
+  // toasted: the own prompt as written, with the pictures by their @names
+  await page.locator(".ts-studio .ts-toast").click();
+  await until(() => window.__toaster.draft.body.renders[0]?.status === "done" && window.__toaster.draft.body.renders[0].prompt.startsWith("Render @frame as a warm"));
+  const own = pictures.at(-1);
+  const names = own.refs.map((r) => r.name);
+  ok(["frame", "colour-id", "desk", "mood-board"].every((n) => names.includes(n)), "Toast it sends the frame, the map, the part's picture and the scene reference", names.join());
+  ok(own.prompt === "Render @frame as a warm photograph: @desk is the desk, exactly as in that picture, lit like @mood-board.", "its prompt is the user's own, as written");
+  d = await draft();
+  ok(d.body.renders[0].refs.map((r) => r.name).join() === "mood-board,desk" && d.body.renders[0].prompt === own.prompt, "the render keeps what was sent: its prompt and the pictures by name", JSON.stringify(d.body.renders[0].refs));
+  await page.locator('.ts-studio [aria-label^="What was sent"]').click();
+  await page.waitForSelector(".ts-sent:not([hidden]) figure", { timeout: 3000 });
+  ok(/warm photograph/.test(await page.locator(".ts-sent-prompt").innerText()) && (await page.locator(".ts-sent figcaption").allInnerTexts()).join() === "@frame,@colour-id,@mood-board,@desk", "What was sent shows the prompt and the pictures by @name", (await page.locator(".ts-sent figcaption").allInnerTexts()).join());
+  await shot("5-studio");
+  // back to automatic: the next render's words carry the sheet
+  await page.locator('.ts-studio [aria-label="Back to automatic"]').click();
+  ok((await page.locator(".ts-prompt-head .ts-badge").textContent()) === "Auto" && (await draft()).body.prompt === "", "Back to automatic clears the user's own prompt");
+  await page.locator(".ts-studio .ts-toast").click();
+  await until(() => window.__toaster.draft.body.renders.length === 2 && window.__toaster.draft.body.renders[0].status === "done");
+  const auto = pictures.at(-1);
+  ok(/Desk \(exactly as in @desk: a walnut mid-century desk with brass handles\)/.test(auto.prompt) && /@mood-board is a reference picture/.test(auto.prompt) && /like @mood-board\./.test(auto.prompt), "the automatic prompt names the part by its sheet: exactly as in @desk, its words", auto.prompt);
+  ok(["frame", "colour-id", "desk", "mood-board"].every((n) => auto.refs.map((r) => r.name).includes(n)), "and sends the same pictures");
+  // Crumpet is told the tag and the pictures
+  const told = await js(async () => (await import("/js/toaster-assist.js")).summary().parts[0]);
+  ok(told.tag === "desk" && told.pictures === 1 && told.made.startsWith("a walnut"), "Crumpet is told each part's tag and its pictures", JSON.stringify(told));
+  await shot("6-studio-auto");
+
   ok(outbound.length === 0, "no call left the machine", outbound.join(" "));
   ok(errors.length === 0, "no error on the page", errors.join(" | "));
 } finally {
