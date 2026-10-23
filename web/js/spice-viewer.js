@@ -94,6 +94,8 @@ export function createViewer(on = {}) {
       // a clip the live compositor draws from is drawn again when it has its frame
       node.addEventListener(node.tagName === "VIDEO" ? "seeked" : "load", () => st.ctx?.comp && live.draw());
       if (node.tagName === "VIDEO") node.addEventListener("loadeddata", () => st.ctx?.comp && live.draw());
+      // a clip that was set to a time before it could be is set again as soon as it knows its length
+      if (node.tagName === "VIDEO") node.addEventListener("loadedmetadata", () => st.ctx && !spice.playing && show());
       // the footage goes under what is drawn over it (Roto's rubylith)
       if (role === "before") parent.prepend(node);
       else parent.append(node);

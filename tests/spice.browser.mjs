@@ -129,6 +129,29 @@ try {
   });
   ok(examples.names.includes("Rooftop explosion") && examples.names.includes("Neon street portal") && examples.done >= 4, "the example shots are there on a first visit, one open with its passes", JSON.stringify(examples));
   ok(examples.roto === "matte" && examples.subject && examples.fx === examples.plate, "its Roto pass is its subject's matte, and its effect is laid into every frame of the shot", JSON.stringify(examples));
+  // the example's portal is an AI layer: in FX, at a frame where it is open, the live canvas is brighter than the plate inside its circle
+  const glow = await js(async () => {
+    const s = await import("/js/spice.js");
+    await s.openShot("spice-example-street");
+    s.setDept("fx");
+    s.setFrame(1090);
+    await new Promise((r) => setTimeout(r, 3000));
+    const c = document.querySelector(".sp-live");
+    const plate = [...document.querySelectorAll(".sp-plane.is-before video")].find((v) => !v.hidden);
+    const red = (src, w, h) => {
+      const t = document.createElement("canvas");
+      t.width = w;
+      t.height = h;
+      const g = t.getContext("2d");
+      g.drawImage(src, 0, 0, w, h);
+      const d = g.getImageData(Math.round(w * 0.6), Math.round(h * 0.12), Math.round(w * 0.22), Math.round(h * 0.36)).data;
+      let n = 0;
+      for (let i = 0; i < d.length; i += 4) n += d[i];
+      return n / (d.length / 4);
+    };
+    return { layers: s.spice.shot.body.set.fx.layers.map((l) => l.el).join(), live: red(c, c.width, c.height), plate: plate ? red(plate, c.width, c.height) : null };
+  });
+  ok(glow.layers === "ai" && glow.plate !== null && glow.live > glow.plate + 8, "the example's portal is an AI layer drawn live in its circle", JSON.stringify(glow));
   ok((await page.locator(".sp-about-link").getAttribute("href")) === "#/utensils" && /nothing is overwritten/.test(await page.locator(".sp-about").innerText()), "the panel says what Spice is for, and points a quick fix to Utensils");
   // a new shot of the person's own starts empty
   await js(async () => (await import("/js/spice.js")).newShot());
