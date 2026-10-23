@@ -191,3 +191,16 @@ test("Improve's reply is trimmed, unfenced, unquoted and capped; nothing is empt
   assert.equal(readImprovedPrompt("x".repeat(3000)).length, 1500);
   assert.equal(readImprovedPrompt("  "), "");
 });
+
+test("Crumpet's names are a person's: underscores become spaces and the first letter a capital, in new names and in the parts he names", () => {
+  const answer = readToasterAnswer(JSON.stringify({ reply: "ok", actions: [
+    { op: "add", kind: "piece", piece: "sofa", name: "guest_sofa", made: "a charcoal leather chesterfield sofa" },
+    { op: "set", part: "Guest_sofa", color: "red" },
+    { op: "set", part: "boss_desk", made: "a walnut desk" },
+  ] }), { parts: [{ name: "Boss desk" }] });
+  assert.equal(answer.actions[0].name, "Guest sofa");
+  assert.equal(answer.actions[1].part, "Guest sofa");
+  assert.equal(answer.actions[2].part, "Boss desk");
+  assert.match(TOASTER_BRIEF + toasterPrompt({}, [{ role: "user", text: "x" }]), /full description[\s\S]*never by its name/);
+  assert.ok(TOASTER_BRIEF.length <= 3000);
+});

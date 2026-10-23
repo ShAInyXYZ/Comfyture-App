@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   SHAPES, PALETTE, RATIOS, SHEET, VIEWS, TO_3D, shapeOf, roundLabel, hasSides, colorName, sheetScale,
-  cleanPart, cleanDraft, newPart, mirrorPart, duplicatePart, starterDraft, legendOf, framePrompt, sheetPrompt, newAssetPart, isAsset, freeSpot, newCharacterPart, isCharacter, tagsOf, castOf, referencesFor, expandPrompt, RESERVED, newSceneRef, addRef, mentionsIn, idColor, familyOf, colourByKind, personColor, FAMILIES, PEOPLE,
+  cleanPart, cleanDraft, newPart, mirrorPart, duplicatePart, starterDraft, legendOf, describeOf, described, framePrompt, sheetPrompt, newAssetPart, isAsset, freeSpot, newCharacterPart, isCharacter, tagsOf, castOf, referencesFor, expandPrompt, RESERVED, newSceneRef, addRef, mentionsIn, idColor, familyOf, colourByKind, personColor, FAMILIES, PEOPLE,
 } from "../web/js/toaster-model.js";
 
 test("ten shapes, each with a size; the slider and the sides only where they mean something", () => {
@@ -110,15 +110,17 @@ test("the words: what each clay colour becomes, the object, the scene; hidden pa
     cleanPart({ shape: "box", name: "Box 3", color: "#e0884b" }),
     cleanPart({ shape: "box", name: "Ghost", color: "#d65a5a", made: "glass", hidden: true }),
   ];
-  assert.deepEqual(legendOf(parts), ["the teal clay (body, lid) becomes brushed chrome", "the cream clay is the knob"]);
-  const words = framePrompt({ parts, what: "A retro toaster", scene: "on a marble counter" });
-  assert.match(words, /^Render @frame as a finished photograph\. Keep its camera, framing, layout and proportions exactly: each clay shape becomes the real thing/);
-  assert.match(words, /In @frame, the teal clay is @body and @lid; the cream clay is the knob\./, "a part with words is told by its @tag");
-  assert.match(words, /What it is: A retro toaster\. On a marble counter\./i);
-  assert.doesNotMatch(words, /glass/);
-  assert.match(framePrompt({ parts: [] }), /A plain studio backdrop/);
+  assert.deepEqual(legendOf(parts), ["teal is brushed chrome (×2)", "cream is a knob"], "each part by its description, equal ones counted; a default shape says nothing");
+  const words = framePrompt({ parts, what: "A retro toaster", scene: "on a marble counter", maps: ["id", "depth", "silhouette"] });
+  assert.match(words, /^Turn @frame, a clay blockout, into a finished photograph\. Keep its camera, framing and layout exactly: every clay shape becomes the real thing, in its very place and at its very size\. It is: A retro toaster\. /);
+  assert.match(words, /Each clay colour is one kind of thing \(@colour-id shows them flat\): teal is brushed chrome \(×2\); cream is a knob\. on a marble counter\. /);
+  assert.match(words, /@depth shows how far things are, near light and far dark; @silhouette their outlines; the maps only place things and never colour them\. No clay, no flat colour and no mannequin is left: people are real people, things are real things\.$/);
+  assert.doesNotMatch(words, /glass|Body|Lid|Knob/, "no name of a part is said");
+  assert.match(framePrompt({ parts: [] }), /Soft natural light\./);
+  assert.doesNotMatch(framePrompt({ parts, maps: ["depth"] }), /colour-id shows|@silhouette/);
   const sheet = sheetPrompt({ parts, what: "a toaster" });
   assert.match(sheet, /^Render @sheet as a finished turnaround sheet of one object: four views side by side, the front, the left side, the back and the right side\./);
+  assert.match(sheet, /In @sheet, teal is brushed chrome \(×2\); cream is a knob\./);
   assert.match(sheet, /no floor, no shadow, no text/);
 });
 
@@ -137,8 +139,8 @@ test("a piece of the Stage's library is a part: its piece and its own size kept,
   assert.equal(cleanPart({ ...chair, size: [2, 3, 4] }).asset, "office-chair", "kept through a clean");
   assert.equal(cleanPart({ shape: "asset", asset: "../../etc" }).shape, "box", "a piece's name is a type id, nothing else");
   assert.equal(mirrorPart({ ...chair, pos: [1, 0.5, 0] }, [chair]).asset, "office-chair");
-  assert.deepEqual(legendOf([{ ...chair, made: "black leather" }]), ["the grey clay (office chair) becomes black leather"]);
-  assert.deepEqual(legendOf([cleanPart({ shape: "asset", asset: "box", name: "Box" })]), ["the grey clay is the box"], "a piece named like a shape is still told");
+  assert.deepEqual(legendOf([{ ...chair, made: "black leather" }]), ["grey is black leather"]);
+  assert.deepEqual(legendOf([cleanPart({ shape: "asset", asset: "box", name: "Box" })]), ["grey is a box"], "a piece is told by what it is, whatever its name");
 });
 
 test("the colour ID: each kind of thing its family, each type its shade in the order it came, one type one colour, people each their own", () => {
@@ -222,7 +224,8 @@ test("one of the Stage's characters is a part: its body, its rig and its pose ke
   assert.equal(mine.rig, "rig-bob-1a2b3c");
   assert.equal(mine.pose, "stand", "an odd pose falls back to standing");
   assert.equal(cleanPart({ shape: "character" }).shape, "box", "a character needs its body");
-  assert.deepEqual(legendOf([{ ...man, made: "a chef in whites" }]), ["the vermilion clay (man) becomes a chef in whites"]);
+  assert.deepEqual(legendOf([{ ...man, made: "a chef in whites" }]), ["vermilion is a chef in whites"]);
+  assert.equal(describeOf({ ...man, made: "" }), "a man", "a character is a person");
 });
 
 test("placing by relations: against a wall facing in, beside a part facing it, on its top, the room brought in to its walls", async () => {
@@ -318,33 +321,53 @@ test("castOf: the visible tagged parts with their words and pictures, then the r
   const cast = castOf([desk(), mia(), cleanPart({ name: "Ghost", hidden: true }), cleanPart({ id: "p-b", name: "Box" })], [{ file: "s.png", url: "/m/s.png", name: "mood" }]);
   assert.deepEqual(cast.map((c) => [c.tag, c.kind]), [["desk", "piece"], ["mia", "character"], ["box", "shape"], ["mood", undefined]]);
   assert.equal(cast[0].words, "a walnut mid-century desk with brass handles");
+  assert.equal(cast[0].name, "a walnut mid-century desk with brass handles", "its name is what it is");
+  assert.equal(cast[2].name, "a box" === cast[2].name ? "a box" : cast[2].label, "a default shape has no description: its name");
   assert.equal(cast[0].pictures.length, 2);
   assert.equal(cast[0].color, "#9a5a2a");
   assert.deepEqual(cast.at(-1), { tag: "mood", ref: true, pictures: [{ file: "s.png", url: "/m/s.png", name: "mood" }] });
 });
 
-test("the frame's words name a part with a sheet by its @tag; expandPrompt opens the first mention, then goes by the name", () => {
-  const parts = [desk(), mia(), cleanPart({ id: "p-box", name: "Box", color: "#e3c35a" }), cleanPart({ id: "p-ch", shape: "asset", asset: "office-chair", name: "Office chair", color: "#76aef2" })];
+test("the legend names each thing by its description; a part with pictures adds its @tag; expandPrompt turns the user's @tags into descriptions", () => {
+  const parts = [desk(), mia(), cleanPart({ id: "p-box", name: "Box", color: "#e3c35a" }), cleanPart({ id: "p-ch", shape: "asset", asset: "office-chair", name: "Guest_1", color: "#76aef2" }), cleanPart({ id: "p-ch2", shape: "asset", asset: "office-chair", name: "Guest_2", color: "#76aef2" })];
   const sceneRefs = [{ file: "s1.png", url: "/m/s1.png", name: "mood" }];
   const { named } = referencesFor({ parts, sceneRefs, room: 6 });
   const text = framePrompt({ parts, what: "A study. @mia reads at @desk.", scene: "Late light, like @mood.", maps: ["id", "depth"], sceneRefs, named });
-  assert.match(text, /^Render @frame as a finished photograph\./);
-  assert.match(text, /In @frame and @colour-id, the walnut clay is @desk; the vermilion clay is @mia; the sky blue clay is the office chair\./);
+  assert.match(text, /^Turn @frame, a clay blockout/);
+  assert.match(text, /Each clay colour is one kind of thing \(@colour-id shows them flat\): walnut is a walnut mid-century desk with brass handles, exactly as in @desk and @desk-2; vermilion is a woman in her thirties, curly red hair, exactly as in @mia; sky blue is an office chair \(×2\)\./);
+  assert.doesNotMatch(text, /Guest|guest|Box/, "no part name or id in the words");
   assert.match(text, /@mood is a reference picture for the look/);
-  assert.match(text, /What it is: A study\. @mia reads at @desk\./);
+  assert.match(text, /It is: A study\. @mia reads at @desk\./);
   const sent = expandPrompt(text, castOf(parts, sceneRefs), named);
-  assert.match(sent, /the walnut clay is Desk \(exactly as in @desk and @desk-2: a walnut mid-century desk with brass handles\);/, "the first mention carries the sheet");
-  assert.match(sent, /the vermilion clay is Mia \(who looks exactly like @mia: a woman in her thirties, curly red hair\);/, "a character looks like her picture");
-  assert.match(sent, /Mia reads at Desk\./, "later mentions go by the name alone");
+  assert.match(sent, /It is: A study\. a woman in her thirties, curly red hair \(exactly as in @mia\) reads at a walnut mid-century desk with brass handles \(exactly as in @desk and @desk-2\)\./, "the first mention is the description, with its pictures");
+  assert.match(sent, /walnut is a walnut mid-century desk with brass handles, exactly as in @desk and @desk-2;/, "a tag said as a picture is left alone");
   assert.match(sent, /like @mood\./, "a scene reference stays as it is");
-  assert.match(sent, /@mood is a reference picture/);
-  // words and no picture: the words alone; neither: the name; a longer name is not a tag
-  const cast = [{ tag: "lamp", name: "Lamp", kind: "piece", words: "A brass lamp.", pictures: [] }, { tag: "rug", name: "Rug", kind: "piece", words: "", pictures: [] }];
-  assert.equal(expandPrompt("@lamp and @rug, @lamp-2 and @lamp again @lamp", cast, new Map()), "Lamp (a brass lamp) and Rug, @lamp-2 and Lamp again Lamp");
-  // a sheet whose pictures did not fit goes by its words
-  assert.match(expandPrompt("@desk", castOf([desk()]), new Map()), /^Desk \(a walnut mid-century desk with brass handles\)$/);
-  // the turnaround speaks the same way
-  assert.match(sheetPrompt({ parts }), /In @sheet, the walnut clay is @desk; the vermilion clay is @mia;/);
+  // later mentions: "the …"; words alone when no picture was sent; no description, the name
+  const cast = [{ tag: "lamp", name: "an articulated desk lamp", kind: "piece", pictures: [] }, { tag: "rug", name: "rug", kind: "piece", pictures: [] }];
+  assert.equal(expandPrompt("@lamp and @rug, @lamp-2 and @lamp again @lamp", cast, new Map()), "an articulated desk lamp and rug, @lamp-2 and the articulated desk lamp again the articulated desk lamp");
+  assert.equal(expandPrompt("@lamp", cast, new Map([["lamp", ["lamp"]]])), "an articulated desk lamp (exactly as in @lamp)");
+  assert.match(sheetPrompt({ parts }), /In @sheet, walnut is a walnut mid-century desk with brass handles; vermilion is a woman/);
+});
+
+test("describeOf: the sheet words, else the piece, the person or the shape's own name; a new piece starts with its description", () => {
+  const pieceOf = (t) => ({ "armchair": { name: "Armchair" }, "desk-lamp": { name: "Articulated desk lamp" } })[t] ?? null;
+  assert.equal(describeOf(cleanPart({ shape: "asset", asset: "armchair", name: "Guest_1" }), pieceOf), "an armchair");
+  assert.equal(describeOf(cleanPart({ shape: "asset", asset: "desk-lamp", name: "Lamp" }), pieceOf), "an articulated desk lamp");
+  assert.equal(describeOf(cleanPart({ shape: "asset", asset: "wall-clock", name: "x" })), "a wall clock", "no library: the type's words");
+  assert.equal(describeOf(cleanPart({ shape: "asset", asset: "armchair", made: "A charcoal leather chesterfield." }), pieceOf), "a charcoal leather chesterfield");
+  assert.equal(describeOf(cleanPart({ shape: "character", body: "elder", name: "Gran" })), "an older person");
+  assert.equal(describeOf(cleanPart({ shape: "character", body: "man", rig: "rig-bob-1", name: "Bob" })), "a bob");
+  assert.equal(describeOf(cleanPart({ shape: "box", name: "Back wall" })), "a back wall");
+  assert.equal(describeOf(cleanPart({ shape: "box", name: "Floor" })), "the floor");
+  assert.equal(describeOf(cleanPart({ shape: "cylinder", name: "Cylinder 2" })), "", "a default shape says nothing");
+  const made = newAssetPart({ type: "armchair", name: "Armchair", size: [1, 1, 1] }, []);
+  assert.equal(made.made, "an armchair", "a piece added starts with what it is");
+  assert.equal(newCharacterPart({ body: "child", name: "Child" }, []).made, "a child");
+  // a draft opened: the empty ones are filled (the pieces only when the library knows them)
+  const parts = [cleanPart({ shape: "asset", asset: "armchair" }), cleanPart({ shape: "character", body: "woman" }), cleanPart({ shape: "box", name: "Floor" }), cleanPart({ shape: "asset", asset: "sofa", made: "mine" })];
+  assert.deepEqual(described(parts, () => null).map((p) => p.made), ["", "a woman", "", "mine"]);
+  assert.deepEqual(described(parts, pieceOf).map((p) => p.made), ["an armchair", "a woman", "", "mine"]);
+  assert.equal(described(parts, pieceOf)[3], parts[3], "what is written stays");
 });
 
 test("a new scene reference is named after its picture, never a part's tag; a part's sheet takes six pictures, none twice", () => {

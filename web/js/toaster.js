@@ -5,7 +5,7 @@
 import { changed, toast, waitFor, jobWatchers, writer } from "./store.js";
 import { api } from "./api.js";
 import { keyedSaver } from "./saving.js";
-import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS, tagsOf, castOf, referencesFor, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
+import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS, described, tagsOf, castOf, referencesFor, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
 
 const KIND = "toasts";
 // where a draft's camera starts: the studio's own view, the floor around the object in sight
@@ -57,6 +57,8 @@ export const toaster = {
   view: null,
   /** what the page shows: the "scene" (the viewport in the middle) or the "render" studio (the viewport small, on the right) */
   mode: read(MODE) === "render" ? "render" : "scene",
+  /** the library's piece of a type (the page sets it once the library is read): what a part is called in words */
+  pieceOf: () => null,
   /** whether Improve is writing the prompt */
   improving: false,
 };
@@ -458,6 +460,21 @@ export function dropSelected() {
 
 export const toggleHidden = (id) => setProps((p) => ({ hidden: !p.hidden }), { ids: [id] });
 
+/**
+ * What a piece or a character is, written in its What it is when that is empty (a data fix: kept with the draft, not a step of Undo). Pieces
+ * wait for the library (their names); returns whether anything was written.
+ */
+export function describeParts(pieceOf = toaster.pieceOf) {
+  const b = body();
+  if (!b) return false;
+  const next = described(b.parts, pieceOf);
+  if (next.every((p, i) => p === b.parts[i])) return false;
+  b.parts = next.map(cleanPart);
+  save();
+  update();
+  return true;
+}
+
 /** A picture of the Library put on a part's sheet (six at most, none twice); Undo takes it back. */
 export function addPartRef(id, photo) {
   editParts((list) => {
@@ -693,8 +710,8 @@ export function framePlan() {
   const mentioned = mentionsIn(`${b.prompt} ${b.what} ${b.scene}`);
   const { refs, named } = referencesFor({ parts, sceneRefs: b.refs, room: Math.max(0, total - 1 - maps.length), mentioned });
   const tags = tagsOf(parts, b.refs.map((r) => r.name));
-  const auto = framePrompt({ parts, what: b.what, scene: b.scene, maps: maps.map((m) => m.id), sceneRefs: b.refs, named, tags });
-  return { model, maps, refs, named, auto, cast: castOf(parts, b.refs), prompt: b.prompt.trim() || auto };
+  const auto = framePrompt({ parts, what: b.what, scene: b.scene, maps: maps.map((m) => m.id), sceneRefs: b.refs, named, tags, pieceOf: toaster.pieceOf });
+  return { model, maps, refs, named, auto, cast: castOf(parts, b.refs, toaster.pieceOf), prompt: b.prompt.trim() || auto };
 }
 
 /** Improve: the writer (the assistants' model) writes the prompt again from the words, the sheets and the pictures; it becomes the draft's own. */
@@ -797,7 +814,7 @@ export async function renderSheet() {
     // the parts' pictures go along (the model's room permitting), and the words call the parts by their tags
     const room = Math.max(0, (model.templates?.find((t) => t.id === "edit")?.refs ?? 4) - 1);
     const { refs, named } = referencesFor({ parts: b.parts, room });
-    run.prompt = expandPrompt(sheetPrompt({ ...b, tags: tagsOf(b.parts) }), castOf(b.parts), named);
+    run.prompt = expandPrompt(sheetPrompt({ ...b, tags: tagsOf(b.parts), named, pieceOf: toaster.pieceOf }), castOf(b.parts, [], toaster.pieceOf), named);
     run.refs = refs.map((r) => ({ name: r.name, url: r.url }));
     const done = await picture(run, request(model, run.prompt, [{ ...run.frame, name: "sheet" }, ...refs], SHEET.aspect, `${draft.name} turnaround`));
     run.photo = await keepPicture(await resized(done.photo.url, SHEET.width, SHEET.height), `${draft.name} turnaround`);

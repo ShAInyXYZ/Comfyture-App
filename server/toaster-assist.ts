@@ -61,7 +61,7 @@ export const TOASTER_TOOL = {
             size: { type: "array", items: { type: "number" }, description: "[w, h, d] in metres, before the turn." },
             scale: { type: "number", description: "A factor on the part's own size (instead of size)." },
             color: { type: "string", enum: COLORS, description: "A clay colour, by name." },
-            made: { type: "string", description: "The part's sheet words: what it is, its material, colour, make (it goes into the render's words), up to 400 characters." },
+            made: { type: "string", description: "A full description of the part, as a person would say it: \"a charcoal leather chesterfield sofa\", \"a walnut desk with brass handles\", \"a man in his fifties, grey suit\" (up to 400 characters). The render calls the part by it." },
             hidden: { type: "boolean", description: "For set: hide or show the part." },
             view: { type: "string", enum: [...VIEWS], description: "For camera: frame everything from that side." },
             from: { type: "array", items: { type: "number" }, description: "For camera: [x, y, z], where the camera stands." },
@@ -113,6 +113,7 @@ Example, a boss's office: floor; back wall; left wall; add desk "Boss desk" at [
 The camera of a room: from a front corner at 1.2 to 1.6, looking across at the focal point, lens 24 to 35; of an object: 3/4 front at its middle height, lens 50 to 85.
 A character: a pose that fits what they do, then tweak to make it theirs: look 30 turns the head to its left, nod 15 looks down, lean 10 leans in, arms 40 lifts the arms, reach 60 reaches forward, stance 15 spreads the legs, crouch 0.3 bends the knees. A character's front is its face; face turns the whole body.
 Framing a hero piece front-on (a boss at his desk): camera subject that piece, side the one it shows best (a desk the boss sits behind: its back, the visitors' side), height 1.2 to 1.4, margin 1.8, lens 35, frame 16:9; then dress the frame: behind it against the back wall bookcases on both sides of the middle, a picture on the wall above its centre (y 1.4), plants or lamps at its two sides, a rug under it; keep the camera's axis clear (no chair between, or turn the visitors' chairs aside). Symmetry reads as power. Save it as a slot only when asked to keep it.
+NAMES. Name parts the way a person would ("Guest sofa", "Boss desk"), never with underscores or ids. For every piece or character you add, write made: its full description ("a charcoal leather chesterfield sofa"): the render calls each thing by it, never by its name.
 SHEETS. Each part has an @tag (shown with it below): made is the part's sheet words (what it is: material, colour, make; for a character age, face, hair, clothes), and pictures: n counts the pictures on its sheet, which go to the render with its tag. In words, what and scene may name parts by their @tag ("the @desk under a warm lamp"): keep the tags exactly as shown.`;
 
 export interface Part {
@@ -140,6 +141,11 @@ const num = (v: unknown, lo: number, hi: number): number | undefined => {
   return v !== null && v !== "" && v !== undefined && !Array.isArray(v) && Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : undefined;
 };
 const oneOf = <T extends string>(v: unknown, values: readonly T[]): T | undefined => (typeof v === "string" && (values as readonly string[]).includes(v) ? (v as T) : undefined);
+/** A part's name as a person writes it: no underscores ("Guest_1" is "Guest 1"), the first letter a capital. */
+const tidy = (v: unknown) => {
+  const t = cut(v, 40).replace(/_+/g, " ").replace(/\s+/g, " ").trim();
+  return t ? t[0].toUpperCase() + t.slice(1) : "";
+};
 const r2 = (v: number) => Math.round(v * 100) / 100;
 const metres = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? String(r2(v)) : "?");
 const triple = (v: unknown) => (Array.isArray(v) ? v.slice(0, 3).map(metres).join(", ") : "?");
@@ -217,8 +223,8 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
     }
   }
   const names = new Map<string, string>();
-  for (const p of things<Part>(s.parts, 150)) if (cut(p.name, 40)) names.set(cut(p.name, 40).toLowerCase(), cut(p.name, 40));
-  const known = (v: unknown) => names.get(cut(v, 40).toLowerCase());
+  for (const p of things<Part>(s.parts, 150)) if (cut(p.name, 40)) names.set(tidy(p.name).toLowerCase(), cut(p.name, 40));
+  const known = (v: unknown) => names.get(tidy(v).toLowerCase());
   const slotNames = new Map(things<{ name?: string }>(s.cameras, 12).map((k) => [cut(k.name, 30).toLowerCase(), cut(k.name, 30)]));
   // the fields add and set share
   const fields = (a: any, out: any) => {
@@ -252,7 +258,7 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
     const color = oneOf(a.color, COLORS);
     if (color) out.color = color;
     if (cut(a.made, 400)) out.made = cut(a.made, 400);
-    if (cut(a.name, 40)) out.name = cut(a.name, 40);
+    if (tidy(a.name)) out.name = tidy(a.name);
   };
   const actions: any[] = [];
   let run: string | undefined;
