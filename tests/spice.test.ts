@@ -191,9 +191,9 @@ test("Roto's clicks reach the segmenter as pixels of the frame: those on the sub
 });
 
 test("Roto asks the tracker for a subject by its first clicks, on the frame they were made on, and the matte starts there", () => {
-  const s = { name: " Woman ", points: [{ x: 0.5, y: 0.5, frame: 1030 }, { x: 0.1, y: 0.1, frame: 1030, neg: true }, { x: 0.9, y: 0.9, frame: 1060 }, { x: 0.2, y: 0.2, frame: 1001 }] };
+  const s = { name: " Pickle ", points: [{ x: 0.5, y: 0.5, frame: 1030 }, { x: 0.1, y: 0.1, frame: 1030, neg: true }, { x: 0.9, y: 0.9, frame: 1060 }, { x: 0.2, y: 0.2, frame: 1001 }] };
   const ask = m.matteAsk(s, 1920, 1080, 1010);
-  assert.deepEqual(ask, { text: "Woman", positive: [{ x: 960, y: 540 }], negative: [{ x: 192, y: 108 }], key: 20, from: 1030 }, "the clicks before the range and on later frames wait");
+  assert.deepEqual(ask, { text: "Pickle", positive: [{ x: 960, y: 540 }], negative: [{ x: 192, y: 108 }], key: 20, from: 1030 }, "the clicks before the range and on later frames wait");
   assert.deepEqual(m.matteAsk({ name: "car", points: [] }, 1920, 1080, 1001), { text: "car", positive: [], negative: [], key: 0, from: 1001 }, "no clicks: the name, from the first frame");
   assert.equal(m.matteAsk({ points: [{ x: 0.5, y: 0.5 }] }, 100, 100).from, m.FIRST, "a click with no frame is on the first");
 });
@@ -213,9 +213,9 @@ test("the templates each department runs are named, belong to a department and s
 
 test("a new shot is named SH010, SH020... after the ones there are", () => {
   assert.equal(m.nextName([]), "SH010");
-  assert.equal(m.nextName([{ name: "SH010 · Rooftop portal" }, { name: "My own name" }]), "SH020");
+  assert.equal(m.nextName([{ name: "SH010 · Ketkout's flambé" }, { name: "My own name" }]), "SH020");
   assert.equal(m.nextName([{ name: "sh100" }, { name: "SH030" }]), "SH110");
-  assert.equal(m.titleOf({ name: "SH010 · Rooftop portal" }), "SH010 · Rooftop portal");
+  assert.equal(m.titleOf({ name: "SH010 · Ketkout's flambé" }), "SH010 · Ketkout's flambé");
   assert.equal(m.titleOf(null), "Untitled shot");
 });
 
@@ -235,7 +235,9 @@ test("Spice's example shots are whole: each has its plate, every clip and still 
     for (const [dept, p] of Object.entries<any>(spec.passes)) {
       assert.ok(["plate", "roto", "paint", "light", "fx", "comp"].includes(dept), `${folder}: ${dept} is a department`);
       assert.ok((await stat(join(dir, folder, p.file))).size > 10_000, `${folder}/${p.file} is there`);
-      assert.ok(Number(p.seconds) > 0, `${folder}: ${dept} says how long it is`);
+      // (a clip says how long it is; a picture how big)
+      if (p.file.endsWith(".mp4")) assert.ok(Number(p.seconds) > 0, `${folder}: ${dept} says how long it is`);
+      else assert.ok(Number(p.width) > 0 && Number(p.height) > 0, `${folder}: ${dept} says how big it is`);
       if (p.still) assert.ok((await stat(join(dir, folder, p.still))).size > 1_000, `${folder}/${p.still} is there`);
     }
   }

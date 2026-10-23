@@ -848,20 +848,26 @@ async function seedShots() {
       const body: any = spiceBody({ set: spec.set });
       const at = new Date().toISOString();
       let thumb: string | undefined;
+      const rev = Number(spec.rev) > 1 ? `-r${Number(spec.rev)}` : "";
       for (const [dept, p] of Object.entries<any>(spec.passes ?? {})) {
-        if (!(dept in body.passes) || !/^[\w.-]+\.mp4$/.test(p.file)) continue;
-        const file = `${spec.id}-${dept}${Number(spec.rev) > 1 ? `-r${Number(spec.rev)}` : ""}.mp4`;
-        await mkdir(join(data, "videos"), { recursive: true });
-        await copyFile(join(dir, folder, p.file), join(data, "videos", file));
-        const media: any = { kind: "video", url: `/media/videos/${file}`, file, width: 720, height: 480, seconds: p.seconds };
+        // a pass is a clip (in videos) or a picture (in photos), at the size its spec says
+        if (!(dept in body.passes) || !/^[\w.-]+\.(mp4|jpg|png|webp)$/.test(p.file)) continue;
+        const ext = p.file.split(".").pop().toLowerCase();
+        const pic = ext !== "mp4";
+        const file = `${spec.id}-${dept}${rev}.${ext}`;
+        await mkdir(join(data, pic ? "photos" : "videos"), { recursive: true });
+        await copyFile(join(dir, folder, p.file), join(data, pic ? "photos" : "videos", file));
+        const size = { width: Number(p.width) || 720, height: Number(p.height) || 480 };
+        const media: any = pic ? { kind: "image", url: `/media/photos/${file}`, file, ...size } : { kind: "video", url: `/media/videos/${file}`, file, ...size, seconds: p.seconds };
+        if (pic && dept === "plate") thumb ??= media.url;
         if (p.still && /^[\w.-]+\.(jpg|png|webp)$/.test(p.still)) {
-          const still = `${spec.id}-${dept}${Number(spec.rev) > 1 ? `-r${Number(spec.rev)}` : ""}.${p.still.split(".").pop()}`;
+          const still = `${spec.id}-${dept}${rev}.${p.still.split(".").pop()}`;
           await mkdir(join(data, "photos"), { recursive: true });
           await copyFile(join(dir, folder, p.still), join(data, "photos", still));
           media.still = `/media/photos/${still}`;
           thumb ??= media.still;
         }
-        const to = SPICE_FIRST + Math.max(1, Math.round((Number(p.seconds) || 5) * 24)) - 1;
+        const to = pic ? SPICE_FIRST : SPICE_FIRST + Math.max(1, Math.round((Number(p.seconds) || 5) * 24)) - 1;
         body.passes[dept] = dept === "plate"
           ? { media, eye: true, fps: 24, name: String(p.name ?? "Plate"), from: SPICE_FIRST, to, at }
           : { media, eye: true, from: SPICE_FIRST, to, note: String(p.note ?? ""), credits: 0, at, source: p.source === "cloud" ? "cloud" : "free", ...(dept === "roto" ? { type: "matte" } : {}) };
@@ -873,9 +879,9 @@ async function seedShots() {
       for (const [i, l] of (body.set.fx.layers ?? []).entries()) {
         const raw = spec.set?.fx?.layers?.[i]?.media;
         if (!raw || !/^[\w.-]+\.mp4$/.test(raw.file ?? "")) continue;
-        const file = `${spec.id}-layer${i}${Number(spec.rev) > 1 ? `-r${Number(spec.rev)}` : ""}.mp4`;
+        const file = `${spec.id}-layer${i}${rev}.mp4`;
         await copyFile(join(dir, folder, raw.file), join(data, "videos", file));
-        l.media = { kind: "video", url: `/media/videos/${file}`, file, width: 720, height: 480, seconds: Number(raw.seconds) || 5 };
+        l.media = { kind: "video", url: `/media/videos/${file}`, file, width: Number(raw.width) || 720, height: Number(raw.height) || 480, seconds: Number(raw.seconds) || 5 };
       }
       await writeProject("spice-shots", { id: spec.id, name: String(spec.name ?? "Example"), createdAt: at, updatedAt: at, ...(thumb ? { thumb } : {}), body } as Project);
       seeded.push(tag);
@@ -883,6 +889,19 @@ async function seedShots() {
     } catch (e) {
       console.warn(`spice: the example ${folder} was not added:`, (e as Error).message);
     }
+  }
+  // an example that is no longer one (retired): its copy goes from the shots, unless the person has worked on it
+  const current = new Set<string>();
+  for (const folder of await readdir(dir).catch(() => [] as string[])) {
+    const spec = await readFile(join(dir, folder, "shot.json"), "utf8").then((t) => JSON.parse(t), () => null);
+    if (spec?.id) current.add(spec.id);
+  }
+  for (const id of new Set(seeded.map((t) => t.split("@")[0]))) {
+    if (current.has(id) || seeded.includes(`${id}@retired`) || !/^[\w-]+$/.test(id)) continue;
+    const kept = await readProject("spice-shots", id);
+    if (kept && kept.updatedAt === kept.createdAt) await rm(join(projectsDir("spice-shots"), `${id}.json`), { force: true });
+    seeded.push(`${id}@retired`);
+    added = true;
   }
   if (added) await writeFile(kept, JSON.stringify(seeded));
 }

@@ -8,10 +8,10 @@ import { SPICE_BRIEF, SPICE_OPS, SPICE_TOOL, spicePrompt, readSpiceAnswer } from
 const say = (actions: unknown[], reply = "Done.") => JSON.stringify({ reply, actions });
 
 const SPICE = {
-  department: "fx", shot: "SH010 · Rooftop portal", shots: 2,
-  footage: { kind: "video", name: "rooftop.mp4", width: 1920, height: 1080, fps: 24, first: 1001, last: 1120, range: [1001, 1120] as [number, number] },
-  passes: [{ dept: "plate" }, { dept: "roto", note: "Woman in raincoat", from: 1001, to: 1120 }, { dept: "paint", note: "Sign removed", from: 1001, to: 1120, shown: false }],
-  subjects: [{ name: "Woman in raincoat", tracked: true, clicks: 3 }],
+  department: "fx", shot: "SH050 · Paprika's portal", shots: 5,
+  footage: { kind: "video", name: "paprika-rooftop.mp4", width: 1920, height: 1080, fps: 24, first: 1001, last: 1120, range: [1001, 1120] as [number, number] },
+  passes: [{ dept: "plate" }, { dept: "roto", note: "Paprika", from: 1001, to: 1120 }, { dept: "paint", note: "Lamp post removed", from: 1001, to: 1120, shown: false }],
+  subjects: [{ name: "Paprika", tracked: true, clicks: 3 }],
   fx: { layers: [{ el: "flame", name: "Flame", x: 0.3, y: 0.7, size: 0.32, blend: "screen", made: true }, { el: "ai", name: "Portal · LTX", x: 0.7, y: 0.3, size: 0.5, blend: "normal", behind: true, made: false, from: 1030, to: 1120 }], held: "Portal · LTX", matte: true },
   run: { label: "Make it", cost: 24, ready: true },
   today: 62, busy: ["light"],
@@ -19,7 +19,7 @@ const SPICE = {
 
 test("Paprika is told the shot, its footage and frames, the passes, the department open and what it holds, the key's price, and the talk so far", () => {
   const text = spicePrompt(SPICE, [{ role: "user", text: "a portal behind her" }, { role: "assistant", text: "Set up.", did: ["Layer: Portal"] }, { role: "user", text: "make it" }]);
-  for (const piece of ["SH010 · Rooftop portal (2 shots in all)", "DEPARTMENT OPEN: fx", "THE FOOTAGE: a clip rooftop.mp4, 1920 × 1080, 24 fps, frames 1001 to 1120", "paint (Sign removed), frames 1001-1120, hidden", "Woman in raincoat (cut out, 3 clicks)", "FX LAYERS (bottom first): Flame (flame, at 0.30 0.70, size 0.32, screen); Portal · LTX (ai, at 0.70 0.30, size 0.50, normal, behind the people, not made yet, frames 1030-1120). HELD: Portal · LTX.", "ai:portal", "spark-portal", "\"Make it\"", "about 24 credits", "WORKING NOW: light", "CREDITS SPENT TODAY: 62", "Paprika: Set up. [the app did: Layer: Portal]", "User: make it"]) assert.ok(text.includes(piece), piece);
+  for (const piece of ["SH050 · Paprika's portal (5 shots in all)", "DEPARTMENT OPEN: fx", "THE FOOTAGE: a clip paprika-rooftop.mp4, 1920 × 1080, 24 fps, frames 1001 to 1120", "paint (Lamp post removed), frames 1001-1120, hidden", "Paprika (cut out, 3 clicks)", "FX LAYERS (bottom first): Flame (flame, at 0.30 0.70, size 0.32, screen); Portal · LTX (ai, at 0.70 0.30, size 0.50, normal, behind the people, not made yet, frames 1030-1120). HELD: Portal · LTX.", "ai:portal", "spark-portal", "\"Make it\"", "about 24 credits", "WORKING NOW: light", "CREDITS SPENT TODAY: 62", "Paprika: Set up. [the app did: Layer: Portal]", "User: make it"]) assert.ok(text.includes(piece), piece);
   assert.ok(spicePrompt({}, []).includes("THE FOOTAGE: none yet"), "an empty summary is read as no footage");
   assert.ok(spicePrompt({ ...SPICE, run: { label: "Remove it", ready: false, why: "Say what to remove first" } }, []).includes("missing something: Say what to remove first"));
   assert.ok(spicePrompt({ ...SPICE, run: { label: "Bake the layers", free: true, ready: true } }, []).includes("runs free, on this machine"));
@@ -32,7 +32,7 @@ test("Paprika's answer: her nine actions, each with only what it takes, every nu
     { op: "open", department: "roto" },
     { op: "open", department: "kitchen" },
     { op: "trim", in: 1010, out: 5000 },
-    { op: "subject", name: "  the woman   in the raincoat " },
+    { op: "subject", name: "  the frog   on the stage " },
     { op: "subject", name: "" },
     { op: "layer", element: "ai:portal", words: "a calm ring", from: 1030, to: 9999, x: 0.2, y: -4, size: 9, angle: 400.4, blend: "melt", opacity: 3, tint: "red", behind: true, motion: "dance", colour: "red" },
     { op: "layer", element: "meteor" },
@@ -52,7 +52,7 @@ test("Paprika's answer: her nine actions, each with only what it takes, every nu
   assert.deepEqual(out.actions.slice(0, 5), [
     { op: "open", department: "roto" },
     { op: "trim", in: 1010, out: 1120 },
-    { op: "subject", name: "the woman in the raincoat" },
+    { op: "subject", name: "the frog on the stage" },
     { op: "layer", element: "ai:portal", words: "a calm ring", from: 1030, to: 1120, x: 0.2, y: -0.5, size: 3, angle: 360, opacity: 1, behind: true },
     { op: "paint", what: "object", words: "the sign", engine: "obscura" },
   ], "a department that does not exist, an empty subject and an element that is not one are dropped; frames stay inside the footage");

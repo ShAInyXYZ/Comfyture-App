@@ -23,10 +23,11 @@ const ok = (cond, msg, extra = "") => {
   if (!cond) failures++;
 };
 
-// the picture and a matte of it, made here: colour bars, and a white ellipse on black where "the person" is
+// the picture and its matte, from our own cast (spice/examples): Truffle at his workbench, and Truffle cut out
 const ff = (...args) => execFileSync("ffmpeg", ["-v", "error", "-y", ...args]);
-ff("-f", "lavfi", "-i", "testsrc2=s=640x360:d=1", "-frames:v", "1", join(mediaDir, "picture.png"));
-ff("-f", "lavfi", "-i", "color=c=black:s=640x360:d=1,format=gray,geq=lum='if(lt(pow((X-200)/90,2)+pow((Y-200)/150,2),1),255,0)'", "-frames:v", "1", join(mediaDir, "matte.png"));
+const truffle = join(root, "spice", "examples", "sh040-truffle");
+ff("-i", join(truffle, "plate.jpg"), "-vf", "scale=640:-2,crop=640:360", "-frames:v", "1", join(mediaDir, "picture.png"));
+ff("-i", join(truffle, "roto.png"), "-vf", "scale=640:-2,crop=640:360,format=gray", "-frames:v", "1", join(mediaDir, "matte.png"));
 
 const port = await new Promise((done) => {
   const s = createServer().listen(0, () => {
@@ -154,7 +155,7 @@ try {
   ok(st.passes.paint?.kind === "image" && /\.png$/.test(st.passes.paint.file), "the spot is painted out of the picture, free: a picture back", JSON.stringify(st.passes.paint));
   await page.locator('.sp-target-tile[data-how="describe"]').click();
   await settle();
-  await page.locator(".sp-target .sp-words").fill("the street sign");
+  await page.locator(".sp-target .sp-words").fill("the desk lamp");
   await page.locator(".sp-target .sp-words").dispatchEvent("change");
   await page.locator(".sp-target .sp-after").fill("a bare brick wall");
   await page.locator(".sp-target .sp-after").dispatchEvent("change");
@@ -163,7 +164,7 @@ try {
   await yes('.sp-primary[data-key="paint:run"]');
   await waitPass("paint", (p) => p?.note?.includes("Qwen"));
   const told = runs.slice(before).find((r) => r.name === "image_qwen_image_edit_2509")?.body.inputs ?? {};
-  ok(/^Remove the street sign\. Fill the space with a bare brick wall\./.test(told.prompt ?? "") && told.image, "Qwen is told what to take out, and what is left", told.prompt);
+  ok(/^Remove the desk lamp\. Fill the space with a bare brick wall\./.test(told.prompt ?? "") && told.image, "Qwen is told what to take out, and what is left", told.prompt);
 
   // ---- Light: the grade and the weather, free, a picture each
   await open("light");

@@ -28,10 +28,13 @@ const ok = (cond, msg, extra = "") => {
   if (!cond) failures++;
 };
 
-// the footage and a matte, made here: five seconds of colour bars at 24 fps, and a white ellipse on black
+// the footage and its matte, from our own cast (spice/examples): Truffle at his workbench, five seconds at 24 fps pushed in slowly, and
+// his matte pushed in the same way
 const ff = (...args) => execFileSync("ffmpeg", ["-v", "error", "-y", ...args]);
-ff("-f", "lavfi", "-i", "testsrc2=s=640x360:r=24:d=5", "-pix_fmt", "yuv420p", join(mediaDir, "plate.mp4"));
-ff("-f", "lavfi", "-i", "color=c=black:s=640x360:d=5:r=24,format=gray,geq=lum='if(lt(pow((X-320)/120,2)+pow((Y-200)/150,2),1),255,0)'", "-pix_fmt", "yuv420p", join(mediaDir, "matte.mp4"));
+const truffle = join(root, "spice", "examples", "sh040-truffle");
+const push = "scale=1280:-2,crop=1280:720,zoompan=z='1+0.05*on/119':x='iw*0.3*(1-1/zoom)':y='ih*0.5*(1-1/zoom)':d=120:s=640x360:fps=24";
+ff("-loop", "1", "-i", join(truffle, "plate.jpg"), "-vf", `${push},format=yuv420p`, "-frames:v", "120", join(mediaDir, "plate.mp4"));
+ff("-loop", "1", "-i", join(truffle, "roto.png"), "-vf", `${push},format=gray,format=yuv420p`, "-frames:v", "120", join(mediaDir, "matte.mp4"));
 
 const port = await new Promise((done) => {
   const s = createServer().listen(0, () => {
@@ -127,31 +130,30 @@ try {
     const b = spice.shot.body;
     return { names: spice.list.map((x) => x.name), open: spice.shot.name, done: Object.values(b.passes).filter((p) => p?.media).length, roto: b.passes.roto?.type, subject: !!b.set.roto.subjects[0]?.media, fx: b.passes.fx?.to - b.passes.fx?.from + 1, plate: b.passes.plate?.to - b.passes.plate?.from + 1 };
   });
-  ok(examples.names.includes("Rooftop explosion") && examples.names.includes("Neon street portal") && examples.done >= 4, "the example shots are there on a first visit, one open with its passes", JSON.stringify(examples));
+  ok(["Ketkout's flambé", "Pickle's storm on stage", "Brioche's first snow", "Truffle's spark of genius", "Paprika's portal"].every((n) => examples.names.includes(n)) && examples.done >= 3, "the example shots are there on a first visit, one open with its passes", JSON.stringify(examples));
   ok(examples.roto === "matte" && examples.subject && examples.fx === examples.plate, "its Roto pass is its subject's matte, and its effect is laid into every frame of the shot", JSON.stringify(examples));
-  // the example's portal is an AI layer: in FX, at a frame where it is open, the live canvas is brighter than the plate inside its circle
+  // Paprika's example: in FX its layers are drawn live, the portal of sparks bright over the night sky where the plate is dark
   const glow = await js(async () => {
     const s = await import("/js/spice.js");
-    await s.openShot("spice-example-street");
+    await s.openShot("spice-example-paprika");
     s.setDept("fx");
-    s.setFrame(1090);
     await new Promise((r) => setTimeout(r, 3000));
     const c = document.querySelector(".sp-live");
-    const plate = [...document.querySelectorAll(".sp-plane.is-before video")].find((v) => !v.hidden);
+    const plate = [...document.querySelectorAll(".sp-plane.is-before img, .sp-plane.is-before video")].find((v) => !v.hidden);
     const red = (src, w, h) => {
       const t = document.createElement("canvas");
       t.width = w;
       t.height = h;
       const g = t.getContext("2d");
       g.drawImage(src, 0, 0, w, h);
-      const d = g.getImageData(Math.round(w * 0.6), Math.round(h * 0.12), Math.round(w * 0.22), Math.round(h * 0.36)).data;
+      const d = g.getImageData(Math.round(w * 0.52), Math.round(h * 0.12), Math.round(w * 0.36), Math.round(h * 0.48)).data;
       let n = 0;
       for (let i = 0; i < d.length; i += 4) n += d[i];
       return n / (d.length / 4);
     };
     return { layers: s.spice.shot.body.set.fx.layers.map((l) => l.el).join(), live: red(c, c.width, c.height), plate: plate ? red(plate, c.width, c.height) : null };
   });
-  ok(glow.layers === "ai" && glow.plate !== null && glow.live > glow.plate + 8, "the example's portal is an AI layer drawn live in its circle", JSON.stringify(glow));
+  ok(glow.layers.startsWith("spark-portal") && glow.plate !== null && glow.live > glow.plate + 8, "Paprika's portal is a layer drawn live over the night sky", JSON.stringify(glow));
   ok((await page.locator(".sp-about-link").getAttribute("href")) === "#/utensils" && /nothing is overwritten/.test(await page.locator(".sp-about").innerText()), "the panel says what Spice is for, and points a quick fix to Utensils");
   // a new shot of the person's own starts empty
   await js(async () => (await import("/js/spice.js")).newShot());
@@ -372,7 +374,7 @@ try {
   ok(st.set.roto.subjects.length === 1 && subject.points.length === 3 && subject.points.filter((p) => p.neg).length === 1, "clicking the viewer makes a subject, and its clicks: two on it and one that is not", JSON.stringify(subject?.points));
   ok((await page.locator(".sp-point").count()) === 3 && (await page.locator(".sp-point.is-neg").count()) === 1, "its clicks are drawn on the picture: green +, red −");
   ok(/Track subject/i.test(await page.locator('.sp-out .sp-primary').innerText()) || /Track/.test(await page.locator('.sp-out .sp-primary').innerText()), "the yellow key tracks it", await page.locator(".sp-out .sp-primary").innerText());
-  await page.locator(".sp-subject-name").fill("Woman in raincoat");
+  await page.locator(".sp-subject-name").fill("Truffle");
   await page.locator(".sp-subject-name").dispatchEvent("change");
   await page.waitForTimeout(400);
   ok(runs.length === 0, "nothing was sent while it was only set up");
@@ -383,7 +385,7 @@ try {
   await page.waitForFunction(() => document.querySelector('.sp-layer[data-dept="roto"] .sp-lamp[data-tone="done"]'), null, { timeout: 30000 });
   ok(runs.length === 1 && runs[0].name === "spice/matte", "the second asks the tracker, once", runs.map((r) => r.name).join());
   const sent = runs[0].body;
-  ok(sent.text === "Woman in raincoat" && sent.positive.length === 2 && sent.negative.length === 1 && sent.key === 0 && /\.mp4$/.test(sent.video), "with the subject's name, its clicks in pixels of the frame they were made on, and the footage", JSON.stringify(sent));
+  ok(sent.text === "Truffle" && sent.positive.length === 2 && sent.negative.length === 1 && sent.key === 0 && /\.mp4$/.test(sent.video), "with the subject's name, its clicks in pixels of the frame they were made on, and the footage", JSON.stringify(sent));
   const px = sent.positive[0];
   ok(px.x > 280 && px.x < 360 && px.y > 150 && px.y < 210, "the first click is in the footage's own pixels (640 × 360)", JSON.stringify(px));
   st = await state();
@@ -409,7 +411,7 @@ try {
   // ---- Paint: the brush paints a spot, the free removal runs for real; an object by its name asks first
   await page.locator('.sp-target-tile[data-how="describe"]').click();
   ok(await page.locator('.sp-primary[data-key="paint:run"]').isDisabled(), "an object needs its words: the key waits");
-  await page.locator('.sp-target .sp-words').fill("the street sign");
+  await page.locator('.sp-target .sp-words').fill("the desk lamp");
   await page.locator('.sp-target .sp-words').dispatchEvent("change");
   await page.waitForTimeout(400);
   ok(!(await page.locator('.sp-primary[data-key="paint:run"]').isDisabled()) && /≈ \d+ cr/.test(await page.locator('.sp-primary[data-key="paint:run"]').innerText()), "with its words the key has its price");
@@ -427,7 +429,7 @@ try {
   await page.waitForFunction(() => document.querySelector('.sp-layer[data-dept="paint"] .sp-lamp[data-tone="done"]'), null, { timeout: 30000 });
   const voidSent = runs[1]?.body.inputs ?? {};
   ok(runs.length === 2 && runs[1].name === "utility_void_video_inpainting", "the yes sends VOID, once", runs.map((r) => r.name).join());
-  ok(voidSent.sam3_object_mask_prompt === "the street sign" && voidSent.positive_prompt_inpaint_fill_ === "a bare brick wall" && voidSent.width_pass_2_ === 672 && voidSent.height_pass_2_ === 384 && voidSent.clip_duration_seconds_ >= 1 && voidSent.clip_duration_seconds_ <= 5 && voidSent.source_video,
+  ok(voidSent.sam3_object_mask_prompt === "the desk lamp" && voidSent.positive_prompt_inpaint_fill_ === "a bare brick wall" && voidSent.width_pass_2_ === 672 && voidSent.height_pass_2_ === 384 && voidSent.clip_duration_seconds_ >= 1 && voidSent.clip_duration_seconds_ <= 5 && voidSent.source_video,
     "VOID is told the object to find and what is left, at its own size in the footage's shape, over the whole clip", JSON.stringify(voidSent));
   await page.locator('.sp-target-tile[data-how="brush"]').click();
   await settle();
@@ -485,9 +487,9 @@ try {
   ok(kept.name === "SH010" && kept.passes.plate?.kind === "video" && kept.passes.roto?.type === "matte" && kept.passes.light && kept.passes.comp && kept.passes.fx && kept.set.fx.layers.length >= 2, "the shot, its passes, its layers and its settings come back after a reload", JSON.stringify(kept.set.fx.layers.map((l) => l.el)));
   ok((await page.locator(".sp-lamp[data-tone='done']").count()) >= 5, "the lamps are green again");
   const list = await (await fetch(`${base}/api/spice-shots`)).json();
-  // (beside the two example shots, the person's own)
+  // (beside the five example shots, the person's own)
   const own = list["spice-shots"].find((x) => x.name === "SH010");
-  ok(list["spice-shots"].length === 3 && own?.info.passes >= 5, "the server keeps it as a shot with its passes counted, beside the examples", JSON.stringify(own?.info));
+  ok(list["spice-shots"].length === 6 && own?.info.passes >= 5, "the server keeps it as a shot with its passes counted, beside the examples", JSON.stringify(own?.info));
 
   // ---- a second shot, switched to and back
   await page.locator(".sp-shotchip .sel-trigger").click();
@@ -519,13 +521,13 @@ try {
   await page.waitForTimeout(2500);
   ok(paid.length === before + 1 && paid.at(-1).path === "/api/shots", "the user's yes sends the shot, once", paid.map((p) => p.path).join());
   // opening a department, the shot trimmed, a subject
-  queue.push({ reply: "Trimmed, and the woman is a subject.", actions: [{ op: "trim", in: 1010, out: 1100 }, { op: "subject", name: "the umbrella" }, { op: "open", department: "comp" }] });
+  queue.push({ reply: "Trimmed, and his screwdriver is a subject.", actions: [{ op: "trim", in: 1010, out: 1100 }, { op: "subject", name: "the screwdriver" }, { op: "open", department: "comp" }] });
   await page.locator("#assistant .chat-input").click();
-  await page.keyboard.type("trim it and cut out the umbrella");
+  await page.keyboard.type("trim it and cut out the screwdriver");
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector(".sp-dept.is-comp:not([hidden])"), null, { timeout: 15000 });
   st = await state();
-  ok(st.range?.in === 1010 && st.range?.out === 1100 && st.set.roto.subjects.some((s) => s.name === "the umbrella") && st.dept === "comp", "she trims, adds a subject and opens a department");
+  ok(st.range?.in === 1010 && st.range?.out === 1100 && st.set.roto.subjects.some((s) => s.name === "the screwdriver") && st.dept === "comp", "she trims, adds a subject and opens a department");
   ok((await page.locator(".sp-facts").innerText()).includes("1010 – 1100"), "the facts show the new range");
   await shot("8-paprika");
 

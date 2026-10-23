@@ -16,7 +16,7 @@ const reach = (g: Record<string, any>, from = "video", seen = new Set<string>())
 };
 
 test("with clicks, SAM3 finds the subject from them on their frame and its tracker follows that one subject from there", async () => {
-  const g = buildMatte(await loadGraph(dir, "matte.json"), "clip.mp4", { text: "Woman", positive: [{ x: 960, y: 540 }], negative: [{ x: 10, y: 10 }], key: 20 });
+  const g = buildMatte(await loadGraph(dir, "matte.json"), "clip.mp4", { text: "Pickle", positive: [{ x: 960, y: 540 }], negative: [{ x: 10, y: 10 }], key: 20 });
   assert.equal(g.video_in.inputs.file, "clip.mp4");
   assert.equal(g.key.inputs.batch_index, 20, "the frame the clicks were made on");
   assert.equal(g.frames.inputs.batch_index, 20, "and the tracker starts there");
@@ -47,7 +47,7 @@ test("the matte is saved as a clip, at the footage's frame rate, white where the
 });
 
 test("a picture's matte: SAM3 takes the subject its clicks are on (not every thing of its name), or with only a name everything it is", async () => {
-  const clicked = buildMatteImage(await loadGraph(dir, "matte-image.json"), "pic.png", { text: "Woman", positive: [{ x: 10, y: 20 }], negative: [] });
+  const clicked = buildMatteImage(await loadGraph(dir, "matte-image.json"), "pic.png", { text: "Pickle", positive: [{ x: 10, y: 20 }], negative: [] });
   assert.equal(clicked.photo.inputs.image, "pic.png");
   assert.deepEqual(JSON.parse(String(clicked.pick.inputs.positive_coords)), [{ x: 10, y: 20 }]);
   assert.equal(clicked.pick.inputs.conditioning, undefined);

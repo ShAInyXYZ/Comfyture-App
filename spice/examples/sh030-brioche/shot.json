@@ -1,0 +1,20 @@
+{
+ "id": "spice-example-brioche",
+ "rev": 2,
+ "name": "Brioche's first snow",
+ "about": "Brioche in the garden at blue hour, given a cool winter grade in Light, then snow, cold light through the branches and the lantern's glint in FX.",
+ "passes": {
+  "plate": {"file": "plate.jpg", "width": 1536, "height": 1024, "name": "Brioche in the garden at blue hour (a picture)"},
+  "roto": {"file": "roto.png", "width": 1536, "height": 1024, "note": "Brioche · cut out on this machine for the example", "source": "free"},
+  "light": {"file": "light.jpg", "width": 1536, "height": 1024, "note": "A cool winter grade · ffmpeg", "source": "free"},
+  "fx": {"file": "fx.jpg", "width": 1536, "height": 1024, "note": "3 layers baked", "source": "free"}
+ },
+ "set": {
+  "roto": {"subjects": [{"id": "s-hero", "name": "Brioche", "points": [], "media": null, "eye": true}], "open": "s-hero"},
+  "fx": { "layers": [
+   {"id": "l-brioche-1", "el": "god-rays", "x": 0.55, "y": 0.3, "scale": 1, "opacity": 0.45, "tint": "#3fa9ff", "tintAmt": 0.6, "behind": true},
+   {"id": "l-brioche-2", "el": "starburst", "x": 0.14, "y": 0.71, "scale": 0.16, "opacity": 0.8},
+   {"id": "l-brioche-3", "el": "snow", "amount": 0.75, "size": 0.75}
+  ] }
+ }
+}

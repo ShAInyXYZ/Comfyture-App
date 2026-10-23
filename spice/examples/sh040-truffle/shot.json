@@ -1,0 +1,20 @@
+{
+ "id": "spice-example-truffle",
+ "rev": 2,
+ "name": "Truffle's spark of genius",
+ "about": "Truffle, the toolsmith, at his workbench: an energy orb above his paws, an electric arc to his screwdriver, a burst of sparks at its tip, the orb's cold light on the room.",
+ "passes": {
+  "plate": {"file": "plate.jpg", "width": 1536, "height": 1024, "name": "Truffle at his workbench at night (a picture)"},
+  "roto": {"file": "roto.png", "width": 1536, "height": 1024, "note": "Truffle · cut out on this machine for the example", "source": "free"},
+  "fx": {"file": "fx.jpg", "width": 1536, "height": 1024, "note": "4 layers baked", "source": "free"}
+ },
+ "set": {
+  "roto": {"subjects": [{"id": "s-hero", "name": "Truffle", "points": [], "media": null, "eye": true}], "open": "s-hero"},
+  "fx": { "layers": [
+   {"id": "l-truffle-1", "el": "energy-orb", "x": 0.6, "y": 0.3, "scale": 0.22, "glow": 0.45},
+   {"id": "l-truffle-2", "el": "electric-arc", "x": 0.51, "y": 0.35, "scale": 0.2, "rot": -24, "glow": 0.3},
+   {"id": "l-truffle-3", "el": "sparks-burst", "x": 0.43, "y": 0.4, "scale": 0.16},
+   {"id": "l-truffle-4", "el": "light-leak", "name": "Orb light", "flipX": true, "opacity": 0.3, "tint": "#3fa9ff", "tintAmt": 0.7}
+  ] }
+ }
+}

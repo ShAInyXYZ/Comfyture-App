@@ -1,0 +1,21 @@
+{
+ "id": "spice-example-pickle",
+ "rev": 2,
+ "name": "Pickle's storm on stage",
+ "about": "Pickle, the band leader, singing on stage, five seconds pushed in slowly: two bolts of lightning strike behind him, violet stage rays pulse, a lamp flares. A clip: every layer moves and was baked free.",
+ "passes": {
+  "plate": {"file": "plate.mp4", "still": "plate.jpg", "seconds": 5, "width": 1280, "height": 852, "name": "Pickle singing on stage (a still, pushed in slowly here)"},
+  "roto": {"file": "roto.mp4", "seconds": 5, "width": 1280, "height": 852, "note": "Pickle · cut out on this machine for the example", "source": "free"},
+  "fx": {"file": "fx.mp4", "seconds": 5, "width": 1280, "height": 852, "note": "5 layers baked", "source": "free"}
+ },
+ "set": {
+  "roto": {"subjects": [{"id": "s-hero", "name": "Pickle", "points": [], "media": null, "eye": true}], "open": "s-hero"},
+  "fx": { "layers": [
+   {"id": "l-pickle-1", "el": "god-rays", "x": 0.3, "y": 0.32, "scale": 0.95, "opacity": 0.55, "tint": "#b56bff", "tintAmt": 0.6, "behind": true, "motion": "pulse", "speed": 0.6},
+   {"id": "l-pickle-2", "el": "lightning", "x": 0.75, "y": 0.4, "scale": 0.62, "glow": 0.6, "behind": true, "motion": "strobe", "speed": 0.45},
+   {"id": "l-pickle-3", "el": "lightning", "x": 0.91, "y": 0.42, "scale": 0.55, "flipX": true, "opacity": 0.8, "glow": 0.5, "behind": true, "motion": "strobe", "speed": 0.6},
+   {"id": "l-pickle-4", "el": "lens-flare", "x": 0.17, "y": 0.61, "scale": 0.45, "opacity": 0.8, "motion": "pulse"},
+   {"id": "l-pickle-5", "el": "sparkles", "amount": 0.4}
+  ] }
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "id": "spice-example-paprika",
+ "rev": 2,
+ "name": "Paprika's portal",
+ "about": "Paprika, who runs the VFX house, on a rooftop at night: a portal of sparks opens over the city, a magic swirl winds around her, the lamp glints.",
+ "passes": {
+  "plate": {"file": "plate.jpg", "width": 1536, "height": 1024, "name": "Paprika on a rooftop at night (a picture)"},
+  "roto": {"file": "roto.png", "width": 1536, "height": 1024, "note": "Paprika · cut out on this machine for the example", "source": "free"},
+  "fx": {"file": "fx.jpg", "width": 1536, "height": 1024, "note": "4 layers baked", "source": "free"}
+ },
+ "set": {
+  "roto": {"subjects": [{"id": "s-hero", "name": "Paprika", "points": [], "media": null, "eye": true}], "open": "s-hero"},
+  "fx": { "layers": [
+   {"id": "l-paprika-1", "el": "spark-portal", "x": 0.7, "y": 0.36, "scale": 0.44, "rot": 12, "glow": 0.35, "behind": true},
+   {"id": "l-paprika-2", "el": "starburst", "x": 0.13, "y": 0.28, "scale": 0.18, "opacity": 0.75},
+   {"id": "l-paprika-3", "el": "magic-swirl", "x": 0.36, "y": 0.6, "scale": 0.3, "opacity": 0.9},
+   {"id": "l-paprika-4", "el": "sparkles", "amount": 0.35}
+  ] }
+ }
+}
