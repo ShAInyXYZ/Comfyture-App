@@ -163,6 +163,36 @@ try {
   await page.waitForFunction(() => document.querySelectorAll(".ts-parts .ts-part").length === 4, null, { timeout: 3000 }).catch(() => {});
   ok((await js(() => document.querySelectorAll(".ts-parts .ts-part").length)) === 4, "the parts list shows every part", String(await js(() => document.querySelectorAll(".ts-parts .ts-part").length)));
 
+  // ---------------------------------------------------------------- a piece of the Stage's library
+  await page.locator(".ts-library-key").click();
+  await page.waitForSelector(".ts-library .ts-piece", { timeout: 30000 }).catch(() => {});
+  const pieces = await page.locator(".ts-library .ts-piece").count();
+  ok(pieces > 300, "the library holds the Stage's pieces", String(pieces));
+  ok((await js(() => [...document.querySelectorAll(".ts-lib-cat")].map((b) => b.textContent))).includes("Furniture"), "by the Stage's categories");
+  await page.locator(".ts-lib-search input").fill("office chair");
+  await page.waitForTimeout(200);
+  const found = await page.locator(".ts-library .ts-piece").count();
+  ok(found >= 1 && found < 6 && (await page.locator('.ts-library .ts-piece[aria-label="Add office chair"]').count()) === 1, "a search finds the office chair", String(found));
+  await page.waitForFunction(() => document.querySelector('.ts-library .ts-piece[aria-label="Add office chair"] img')?.src.startsWith("data:image/"), null, { timeout: 15000 }).catch(() => {});
+  ok(await js(() => document.querySelector('.ts-library .ts-piece[aria-label="Add office chair"] img')?.src.startsWith("data:image/")), "its thumbnail is drawn");
+  await page.locator('.ts-library .ts-piece[aria-label="Add office chair"]').click();
+  d = await draft();
+  const chair = d.body.parts.at(-1);
+  ok(chair?.shape === "asset" && chair.asset === "office-chair" && chair.name === "Office chair", "a click adds the piece as a part", JSON.stringify(chair));
+  ok(Math.abs(chair.size[1] - 1.033) < 0.02 && Math.abs(chair.pos[1] - chair.size[1] / 2) < 0.02, "at its own size, standing on the floor", JSON.stringify(chair?.size));
+  await page.waitForFunction((id) => { const b = window.__toaster.view.bounds([id]); return b && b.max[1] - b.min[1] > 0.9; }, chair.id, { timeout: 15000 }).catch(() => {});
+  const cb = await js((id) => window.__toaster.view.bounds([id]), chair.id);
+  ok(cb && Math.abs(cb.max[1] - cb.min[1] - chair.size[1]) < 0.02 && Math.abs(cb.max[0] - cb.min[0] - chair.size[0]) < 0.02, "its model fills its size box in the viewport", JSON.stringify(cb));
+  await page.keyboard.press("Escape");
+  ok(await page.locator(".ts-library").isHidden(), "Esc shuts the library");
+  const sy = page.locator('.ts-inspector input[data-key="size"][data-axis="1"]');
+  await sy.fill("1.5");
+  await sy.press("Enter");
+  ok((await draft()).body.parts.at(-1).size[1] === 1.5, "a piece is sized like any part");
+  await page.locator('.ts-swatch[aria-label="blue"]').click();
+  await page.locator(".ts-view").click({ position: { x: 20, y: 300 } });
+  await shot("0-library");
+
   // ---------------------------------------------------------------- the words, kept across a reload
   await page.locator('input[aria-label="What it is"]').fill("A retro 1950s toaster, chrome body");
   await page.locator('input[aria-label="Scene"]').fill("On a marble counter, morning light");
@@ -170,9 +200,9 @@ try {
   await page.reload();
   await page.waitForSelector(".ts-stage canvas", { timeout: 20000 });
   await expose();
-  await until(() => document.querySelectorAll(".ts-part").length === 4, null, 10000);
+  await until(() => document.querySelectorAll(".ts-part").length === 5, null, 10000);
   d = await draft();
-  ok(d.body.parts.length === 4 && d.body.what === "A retro 1950s toaster, chrome body" && d.body.scene.startsWith("On a marble"), "the draft, its parts and its words are kept across a reload");
+  ok(d.body.parts.length === 5 && d.body.what === "A retro 1950s toaster, chrome body" && d.body.scene.startsWith("On a marble"), "the draft, its parts and its words are kept across a reload");
   ok((await page.locator('input[aria-label="What it is"]').inputValue()) === "A retro 1950s toaster, chrome body", "the words are back in their field");
   await page.waitForSelector("img.ts-clay-strip", { timeout: 5000 }).catch(() => {});
   ok(await page.locator("img.ts-clay-strip").isVisible(), "the four clay views are drawn in the Turnaround card");
@@ -184,7 +214,7 @@ try {
   await page.waitForSelector(".ts-render .ts-pic img", { timeout: 5000 }).catch(() => {});
   const frameAsk = pictures[0];
   ok(frameAsk?.template === "edit" && frameAsk.refs?.[0]?.name === "frame" && frameAsk.aspect === "1:1", "Toast it sends the clay frame to an image edit, at the frame's aspect", JSON.stringify(frameAsk && { template: frameAsk.template, refs: frameAsk.refs, aspect: frameAsk.aspect }));
-  ok(/^Render @frame/.test(frameAsk?.prompt) && /the orange clay \(cylinder\) becomes walnut|the orange clay becomes walnut/.test(frameAsk?.prompt) && /A retro 1950s toaster/.test(frameAsk?.prompt) && /marble counter/i.test(frameAsk?.prompt), "its words tell the clay's colours, the object and the scene", frameAsk?.prompt);
+  ok(/^Render @frame/.test(frameAsk?.prompt) && /the orange clay \(cylinder\) becomes walnut|the orange clay becomes walnut/.test(frameAsk?.prompt) && /the blue clay is the office chair/.test(frameAsk?.prompt) && /A retro 1950s toaster/.test(frameAsk?.prompt) && /marble counter/i.test(frameAsk?.prompt), "its words tell the clay's colours, the object and the scene", frameAsk?.prompt);
   d = await draft();
   ok(d.body.renders[0]?.status === "done" && d.body.renders[0].photo?.url && d.body.renders[0].camera, "the render is kept with its camera");
   ok(await page.locator(".ts-render .ts-pic img").isVisible(), "the render shows in the Render card");

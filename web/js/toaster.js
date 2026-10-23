@@ -5,7 +5,7 @@
 import { changed, toast, waitFor, jobWatchers } from "./store.js";
 import { api } from "./api.js";
 import { keyedSaver } from "./saving.js";
-import { cleanDraft, cleanPart, starterDraft, newPart, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D } from "./toaster-model.js";
+import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D } from "./toaster-model.js";
 
 const KIND = "toasts";
 // where a draft's camera starts: the studio's own view, the floor around the object in sight
@@ -243,9 +243,17 @@ export function toggleSnap() {
 
 /** A new part: on top of the selection when there is one (blocking out goes upward), else on the floor in the middle. */
 export function addPart(shape) {
-  const parts = partsNow();
+  place(newPart(shape, partsNow()));
+}
+
+/** A piece of the Stage's library as a new part ({ type, name, size }), placed the way a shape is. */
+export function addPiece(piece) {
+  if (!piece?.type) return;
+  place(newAssetPart(piece, partsNow()));
+}
+
+function place(part) {
   const box = toaster.selected.length ? toaster.view?.bounds(toaster.selected) : null;
-  const part = newPart(shape, parts);
   if (box) part.pos = [(box.min[0] + box.max[0]) / 2, box.max[1] + part.size[1] / 2, (box.min[2] + box.max[2]) / 2].map((v) => Math.round(v * 1000) / 1000);
   editParts((list) => void list.push(part));
   select([part.id]);

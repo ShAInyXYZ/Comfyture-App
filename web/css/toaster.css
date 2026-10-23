@@ -55,10 +55,38 @@
 
 /* ---- the shapes to add ---------------------------------------------------------------------------------- */
 .ts-add { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .5rem; }
+.ts-add + .ts-library-key { margin-top: -.125rem; }
 .ts-tile { display: grid; place-items: center; aspect-ratio: 1; padding: 0; border: 1px solid var(--line); border-radius: .75rem; background: var(--sunk); color: var(--muted); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast); }
 .ts-tile:hover { border-color: var(--line2); background: var(--s2); color: var(--text); }
 .ts-tile:active { transform: translateY(1px); }
 .ts-tile svg { width: 1.5rem; height: 1.5rem; }
+
+.ts-library-key { display: flex; align-items: center; gap: .625rem; width: 100%; min-height: 2.625rem; padding: 0 .875rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--sunk); color: var(--muted); font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .18em; text-transform: uppercase; cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast); }
+.ts-library-key:hover { border-color: var(--line2); color: var(--text); }
+.ts-library-key[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.ts-library-key svg { width: 1.125rem; height: 1.125rem; }
+.ts-library-key em { margin-left: auto; font-style: normal; letter-spacing: .06em; color: var(--dim); }
+
+/* ---- the Stage's library, a drawer over the viewport's left side ------------------------------------------ */
+.ts-library { position: absolute; z-index: 5; left: .75rem; top: 4.5rem; bottom: 5.25rem; display: flex; flex-direction: column; gap: .625rem; width: min(23rem, calc(100% - 1.5rem)); padding: .875rem; border: 1px solid var(--line2); border-radius: .875rem; background: rgba(25, 25, 28, .97); box-shadow: var(--float); animation: img-in 140ms var(--ease-out); }
+.ts-library[hidden] { display: none; }
+.ts-lib-head { display: flex; align-items: center; gap: .5rem; }
+.ts-lib-search { display: flex; align-items: center; gap: .5rem; height: 2.375rem; padding: 0 .75rem; border: 1px solid var(--line); border-radius: .625rem; background: var(--sunk); color: var(--dim); }
+.ts-lib-search:focus-within { border-color: var(--accent-line); }
+.ts-lib-search svg { flex: none; width: 1rem; height: 1rem; }
+.ts-lib-search input { flex: 1 1 auto; min-width: 0; border: 0; background: transparent; color: var(--text); font: 500 var(--fs-body)/1 var(--font-sans); outline: none; }
+.ts-lib-cats { display: flex; flex: none; gap: .3125rem; overflow-x: auto; padding-bottom: .125rem; scrollbar-width: none; }
+.ts-lib-cat { flex: none; height: 1.75rem; padding: 0 .625rem; border: 1px solid var(--line); border-radius: var(--r-pill); background: transparent; color: var(--muted); font: 500 var(--fs-small)/1 var(--font-sans); white-space: nowrap; cursor: pointer; }
+.ts-lib-cat:hover { border-color: var(--line2); color: var(--text); }
+.ts-lib-cat[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.ts-lib-results { display: grid; align-content: start; gap: .5rem; flex: 1 1 0; min-height: 0; overflow-y: auto; margin-right: -.375rem; padding-right: .375rem; scrollbar-width: thin; }
+.ts-lib-group { margin-top: .375rem; letter-spacing: .18em; color: var(--dim); }
+.ts-lib-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4375rem; }
+.ts-piece { display: grid; grid-template-rows: auto auto; gap: .25rem; padding: .3125rem .3125rem .375rem; border: 1px solid var(--line); border-radius: .625rem; background: var(--sunk); color: var(--muted); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast); }
+.ts-piece:hover { border-color: var(--line2); background: var(--s2); color: var(--text); }
+.ts-piece:active { transform: translateY(1px); }
+.ts-piece img { width: 100%; aspect-ratio: 112 / 96; object-fit: contain; border-radius: .375rem; background: radial-gradient(70% 70% at 50% 45%, #2a2a2f, #19191c); }
+.ts-piece span { overflow: hidden; font: 500 var(--fs-micro)/1.2 var(--font-sans); text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---- the part selected ---------------------------------------------------------------------------------- */
 .ts-inspector { display: grid; gap: .625rem; }

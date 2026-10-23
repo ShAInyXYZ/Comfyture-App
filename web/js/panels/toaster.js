@@ -11,7 +11,7 @@ import { dropdown } from "../controls.js";
 import { view as viewImage } from "../viewer.js";
 import {
   toaster, body, partsNow, selectedParts, sync, loadDrafts, openDraft, newDraft, removeDraft, renameDraft, pick, select, selectAll,
-  setTool, toggleSnap, addPart, setProps, applyTransforms, removeSelected, removePart, duplicateSelected, mirrorSelected, dropSelected,
+  setTool, toggleSnap, addPart, addPiece, setProps, applyTransforms, removeSelected, removePart, duplicateSelected, mirrorSelected, dropSelected,
   toggleHidden, undoParts, redoParts, canUndo, canRedo, setWords, setRatio, setModel, keepCamera, loadModels, modelNow, hasClay,
   renderFrame, renderSheet, forget, showRender, setCompare, price3d, priceNow, make3d, putOnStage, isArmed, arm, disarm,
 } from "../toaster.js";
@@ -47,11 +47,14 @@ function build(el) {
   s.partsCount = h("span.ts-count");
   s.add = h("div.ts-add", { role: "group", "aria-label": "Add a shape" }, ...SHAPES.map((sh) =>
     h("button.ts-tile", { type: "button", title: `Add a ${sh.name.toLowerCase()}`, "aria-label": `Add a ${sh.name.toLowerCase()}`, on: { click: () => addPart(sh.id) } }, sprite(`shape-${sh.id}`))));
+  // the Stage's library: every piece it stages (furniture, objects, food, vehicles…), in a drawer over the viewport
+  s.libraryKey = h("button.ts-library-key", { type: "button", "aria-pressed": "false", title: "The Stage's library: furniture, objects, food, products, vehicles, creatures — L", on: { click: () => toggleLibrary() } },
+    sprite("asset-library"), h("span", {}, "Library"), h("em.ts-library-count"));
   s.inspector = h("div.ts-inspector");
   const left = h("aside.ts-col.ts-left", { "aria-label": "The object" },
     s.draft,
     h("section.ts-card.ts-parts-card", {}, h("header.ts-head", {}, h("h2.ts-label", {}, "Parts"), s.partsCount), s.parts),
-    h("section.ts-card", {}, h("header.ts-head", {}, h("h2.ts-label", {}, "Add")), s.add),
+    h("section.ts-card", {}, h("header.ts-head", {}, h("h2.ts-label", {}, "Add")), s.add, s.libraryKey),
     h("section.ts-card.ts-selected", {}, h("header.ts-head", {}, h("h2.ts-label", {}, "Selected")), s.inspector));
 
   // the viewport: the canvas, the frame over it, the view keys and the tools
@@ -60,7 +63,8 @@ function build(el) {
   s.views = h("div.ts-views", { role: "toolbar", "aria-label": "Views" });
   s.tools = h("div.ctl-tools.ts-tools", { role: "toolbar", "aria-label": "Tools" });
   s.boot = h("p.ts-boot", {}, "Warming up the toaster…");
-  const viewport = h("section.ts-view", { "aria-label": "Viewport" }, s.stage, s.frame, s.views, s.tools, s.boot);
+  s.library = h("div.ts-library", { hidden: true, role: "dialog", "aria-label": "The Stage's library" });
+  const viewport = h("section.ts-view", { "aria-label": "Viewport" }, s.stage, s.frame, s.views, s.tools, s.boot, s.library);
 
   // the look: the words and the key that renders
   s.what = h("input.ts-field", { type: "text", maxLength: 600, placeholder: "A retro 1950s toaster, chrome body, walnut lever, cream knob", "aria-label": "What it is", on: { input: (e) => setWords("what", e.target.value) } });
@@ -174,7 +178,7 @@ function drawParts() {
       role: "treeitem", "aria-selected": String(on), tabindex: "0", dataset: { focusKey: p.id },
       on: { click: (e) => pick(p.id, { shift: e.shiftKey || e.ctrlKey || e.metaKey }), dblclick: () => ((renaming = p.id), drawParts()) },
     },
-      h("span.ts-glyph", { title: shapeOf(p.shape).name }, sprite(`shape-${p.shape}`)),
+      p.shape === "asset" ? h("span.ts-glyph", { title: "A piece of the Stage's library" }, sprite(pieceOf(p.asset)?.icon ?? "asset-library")) : h("span.ts-glyph", { title: shapeOf(p.shape).name }, sprite(`shape-${p.shape}`)),
       h("span.ts-chip", { style: { background: p.color }, title: colorName(p.color) }),
       renaming === p.id ? nameField(p.name, (v) => setProps({ name: v }, { ids: [p.id] })) : h("span.ts-name", { title: p.made ? `${p.name} · ${p.made}` : "Double-click to rename" }, p.name),
       h("button.ts-mini", { type: "button", "aria-pressed": String(!!p.hidden), title: p.hidden ? "Show" : "Hide", "aria-label": p.hidden ? `Show ${p.name}` : `Hide ${p.name}`, on: { click: (e) => (e.stopPropagation(), toggleHidden(p.id)) } }, sprite("eye")),
@@ -244,12 +248,91 @@ function drawLeft() {
   drawInspector();
 }
 
+// ---------------------------------------------------------------- the Stage's library
+
+// the pieces (toaster-assets.js, with the Stage's own models), once read; the drawer's search and category are kept while it is shut
+let library = null;
+let libraryOpen = false;
+let pieceQuery = "";
+let pieceGroup = "All";
+let assets = null;
+const pieceOf = (type) => library?.pieces.find((x) => x.type === type) ?? null;
+/** The library module, loaded on first need (it brings three.js and the Stage's models with it). */
+function assetsModule() {
+  assets ??= import("../toaster-assets.js").then((m) => {
+    m.onLibrary?.((lib) => ((library = lib), drawLibraryCount(), libraryOpen && drawLibrary(), drawParts()));
+    m.loadLibrary().then((lib) => ((library = lib), drawLibraryCount(), libraryOpen && drawLibrary(), drawParts())).catch((e) => console.warn("toaster: the library did not load:", e.message));
+    return m;
+  });
+  return assets;
+}
+function drawLibraryCount() {
+  const em = shell?.libraryKey.querySelector(".ts-library-count");
+  if (em) em.textContent = library ? String(library.pieces.length) : "";
+}
+
+export function toggleLibrary(on = !libraryOpen) {
+  if (!shell) return;
+  libraryOpen = on;
+  shell.libraryKey.setAttribute("aria-pressed", String(on));
+  shell.library.hidden = !on;
+  if (on) {
+    assetsModule();
+    drawLibrary();
+    requestAnimationFrame(() => shell.library.querySelector(".ts-lib-search input")?.focus());
+  }
+}
+
+// a thumbnail is drawn when its tile scrolls into view, so the long library opens at once
+const thumbs = new IntersectionObserver((seen) => {
+  for (const e of seen) {
+    if (!e.isIntersecting) continue;
+    thumbs.unobserve(e.target);
+    assets?.then((m) => (e.target.src = m.assetThumb(e.target.dataset.type)));
+  }
+}, { rootMargin: "200px" });
+
+function drawLibrary() {
+  const finds = (x) => {
+    const hay = [x.name, x.type, x.category, ...(x.themes ?? []), ...(x.tags ?? [])].join(" ").toLowerCase().replace(/[-_]+/g, " ");
+    return pieceQuery.toLowerCase().split(/\s+/).filter(Boolean).every((w) => hay.includes(w));
+  };
+  const results = h("div.ts-lib-results", { dataset: { scrollKey: "ts-lib" } });
+  const fill = () => {
+    if (!library) return results.replaceChildren(h("p.ts-empty", {}, "Bringing the Stage's pieces…"));
+    const all = library.pieces.filter((x) => (pieceGroup === "All" || x.category === pieceGroup) && (!pieceQuery || finds(x)));
+    const groups = [...new Set(all.map((x) => x.category))].map((c) => [c, all.filter((x) => x.category === c)]);
+    results.replaceChildren(...groups.flatMap(([c, list]) => [
+      h("span.ts-label.ts-lib-group", {}, c === "Mine" ? "Yours" : c),
+      h("div.ts-lib-grid", {}, ...list.map((x) => {
+        const img = h("img", { alt: "", draggable: false, dataset: { type: x.type } });
+        thumbs.observe(img);
+        return h("button.ts-piece", { type: "button", title: x.themes?.length ? `${x.name} — ${x.themes.join(", ")}` : x.name, "aria-label": `Add ${x.name.toLowerCase()}`, on: { click: () => addPiece(x) } }, img, h("span", {}, x.name));
+      })),
+    ]));
+    if (!groups.length) results.append(h("p.ts-empty", {}, pieceQuery ? `Nothing for "${pieceQuery}". Try a theme: kitchen, food, office, street, studio…` : "Nothing here."));
+  };
+  const cats = library ? ["All", ...new Set(library.pieces.map((x) => x.category))] : ["All"];
+  const chips = h("div.ts-lib-cats", { role: "group", "aria-label": "Category" }, ...cats.map((c) =>
+    h("button.ts-lib-cat", { type: "button", "aria-pressed": String(pieceGroup === c), on: { click: () => ((pieceGroup = c), drawLibrary()) } }, c === "Mine" ? "Yours" : c)));
+  const search = h("label.ts-lib-search", {}, icon("search"),
+    h("input", { type: "search", value: pieceQuery, placeholder: "Chair, kitchen, food, car…", "aria-label": "Search the library", autocomplete: "off", spellcheck: false,
+      on: { input: (e) => ((pieceQuery = e.target.value), fill()), keydown: (e) => (e.stopPropagation(), e.key === "Escape" && (e.target.value ? ((e.target.value = ""), (pieceQuery = ""), fill()) : toggleLibrary(false))) } }));
+  fill();
+  shell.library.replaceChildren(
+    h("header.ts-lib-head", {}, h("h2.ts-label", {}, "Library"), h("span.ts-count", {}, library ? String(library.pieces.length) : ""), h("span.spacer"),
+      h("button.ts-mini", { type: "button", title: "Close — Esc", "aria-label": "Close the library", on: { click: () => toggleLibrary(false) } }, icon("close"))),
+    search, chips, results);
+}
+
 // ---------------------------------------------------------------- the viewport's keys
 
 let lastView = "persp";
+/** The view keys, made once (a key made again on every turn of the camera flickers); the one the camera is on is lit. */
 function drawViews() {
-  shell.views.replaceChildren(...VIEW_KEYS.map(([id, glyph, label]) =>
-    h("button.ts-view-key", { type: "button", "aria-pressed": String(lastView === id), title: label, on: { click: () => goView(id) } }, sprite(glyph), h("span", {}, label))));
+  if (!shell.views.childElementCount) shell.views.replaceChildren(...VIEW_KEYS.map(([id, glyph, label]) =>
+    h("button.ts-view-key", { type: "button", title: label, dataset: { view: id }, on: { click: () => goView(id) } }, sprite(glyph), h("span", {}, label))));
+  for (const b of shell.views.children) b.setAttribute("aria-pressed", String(lastView === b.dataset.view));
 }
 function goView(id) {
   if (!toaster.view) return;
@@ -477,6 +560,8 @@ export function renderToaster(el) {
   if (!toaster.models) loadModels();
   if (!priceNow()) price3d();
   if (!body()) return;
+  // a draft with pieces of the library needs the library (their models, their icons)
+  if (partsNow().some((p) => p.shape === "asset")) assetsModule();
   drawLeft();
   drawViews();
   drawTools();
@@ -521,7 +606,8 @@ window.addEventListener("keydown", (e) => {
   const tool = TOOLS.find(([, , , key]) => key.toLowerCase() === k);
   if (tool) return done(), setTool(tool[0]);
   if (k === "delete" || k === "backspace") return done(), removeSelected();
-  if (k === "escape") return select([]);
+  if (k === "escape") return libraryOpen ? toggleLibrary(false) : select([]);
+  if (k === "l") return toggleLibrary();
   if (k === "m") return mirrorSelected();
   if (k === "g") return dropSelected();
   if (k === "s") return toggleSnap();
