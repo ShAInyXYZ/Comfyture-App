@@ -109,7 +109,15 @@ export function loadDrafts() {
 
 const nextName = () => {
   const taken = new Set(toaster.list.map((d) => d.name.toLowerCase()));
-  for (let i = 1; ; i++) if (!taken.has(`object ${i}`)) return `Object ${i}`;
+  for (let i = 1; ; i++) if (!taken.has(`project ${i}`)) return `Project ${i}`;
+};
+
+// the lamp of the project bar: whether the draft open is kept ("ok", and when), being kept ("busy") or could not be ("crit", why)
+toaster.saving = { tone: "ok", at: Date.now(), error: null };
+const lamp = (tone, extra = {}) => {
+  const was = toaster.saving.tone;
+  toaster.saving = { tone, at: toaster.saving.at, error: null, ...extra };
+  if (tone !== was || tone !== "busy") changed("toaster-saved");
 };
 
 function opened(project) {
@@ -125,6 +133,7 @@ function opened(project) {
   for (const r of [...b.renders, ...b.sheets]) if (r.status === "running") Object.assign(r, { status: "failed", error: "The page was left while it rendered: look for it in the Library." });
   for (const m of b.models) if (m.status === "running" && m.job) void follow3d(toaster.draft, m);
   if (toaster.view) toaster.view.setCameraState(b.camera ?? HOME);
+  lamp("ok", { at: project.updatedAt ? new Date(project.updatedAt).getTime() : Date.now() });
 }
 
 export async function openDraft(id) {
@@ -134,9 +143,10 @@ export async function openDraft(id) {
   update();
 }
 
-export async function newDraft(name) {
+/** A new project, open at once: empty (the starter box) or from a body (a copy, an import). */
+export async function newDraft(name, body) {
   await flushDrafts();
-  const { project } = await send(`api/${KIND}`, "POST", { name: name || nextName(), body: starterDraft() });
+  const { project } = await send(`api/${KIND}`, "POST", { name: name || nextName(), body: body ?? starterDraft() });
   toaster.list = [{ id: project.id, name: project.name, updatedAt: project.updatedAt }, ...toaster.list];
   opened(project);
   update();
@@ -151,12 +161,64 @@ const keep = async (id, draft) => {
       const row = toaster.list.find((x) => x.id === id);
       if (row) Object.assign(row, { name: draft.name, ...(thumb ? { thumb } : {}), updatedAt: new Date().toISOString() });
     })
-    .catch((e) => toast(e.message, { tone: "crit" }));
+    .catch((e) => {
+      toast(e.message, { tone: "crit" });
+      if (toaster.draft?.id === id) lamp("crit", { error: e.message });
+    });
 };
 const saver = keyedSaver(600, keep);
 export const flushDrafts = () => saver.flush();
+      if (toaster.draft?.id === id) lamp("ok", { at: Date.now() });
+      else changed("toaster-saved");
 export function save(draft = toaster.draft) {
-  if (draft) saver.save(draft.id, draft);
+  if (!draft) return;
+  saver.save(draft.id, draft);
+  if (draft === toaster.draft) lamp("busy");
+}
+
+/** Keeps the draft open now (Ctrl+S): what waits for its moment is sent at once, else it is sent as it is. Answers whether it is kept. */
+export async function saveNow() {
+  const d = toaster.draft;
+  if (!d) return false;
+  lamp("busy");
+  if (saver.has(d.id)) await saver.flush(d.id);
+  else await keep(d.id, d);
+  return toaster.saving.tone === "ok";
+}
+
+/** A copy of the draft open, with its own name, open in a project of its own (its renders and models are kept: their pictures live in the Library). */
+export async function duplicateDraft() {
+  const d = toaster.draft;
+  if (!d) return null;
+  await flushDrafts();
+  return newDraft(`${d.name} copy`, structuredClone(d.body));
+}
+
+/** The draft open as a file to share: { kind, version, name, body } in JSON, downloaded as "<name>.toaster.json". */
+export async function exportDraft() {
+  const d = toaster.draft;
+  if (!d) return;
+  await flushDrafts();
+  const file = JSON.stringify({ kind: "comfyture-toaster", version: 1, name: d.name, body: d.body }, null, 2);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([file], { type: "application/json" }));
+  a.download = `${d.name.replace(/[\\/:*?"<>|]+/g, "-").trim() || "project"}.toaster.json`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/** A project someone exported, from its file: opened as a project of its own. A file that is not one throws. */
+export async function importDraft(file) {
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+  } catch {
+    throw new Error("That file is not a Toaster project.");
+  }
+  if (data?.kind !== "comfyture-toaster" || typeof data.body !== "object" || !data.body) throw new Error("That file is not a Toaster project.");
+  return newDraft(String(data.name ?? "").trim().slice(0, 60) || undefined, cleanDraft(data.body));
 }
 
 export async function removeDraft(id) {
