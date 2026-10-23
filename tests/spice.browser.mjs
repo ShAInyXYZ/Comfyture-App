@@ -116,7 +116,17 @@ try {
   ok((await js(() => [...document.querySelectorAll(".products .product span")].map((s) => s.textContent))).join() === "Kitchen,Mixer,Jam,Macaron,Spice,Utensils", "six products, Spice between Macaron and Utensils");
   ok((await page.locator(".sp-layer").evaluateAll((l) => l.map((x) => x.dataset.dept))).join() === "comp,fx,light,paint,roto,plate", "the stack is drawn from the top: the comp on top, the plate at the foot");
   ok((await page.locator(".sp-id-text").innerText()).replace(/\s+/g, " ").includes("Paprika · VFX house"), "Paprika and her house are at the top of the panel");
-  ok(/SH010/.test(await page.locator(".sp-shotchip").innerText()), "the first shot is made at once, named SH010");
+  // a first visit finds the example shots (spice/examples), the newest open, its passes made
+  const examples = await js(async () => {
+    const { spice } = await import("/js/spice.js");
+    return { names: spice.list.map((x) => x.name), open: spice.shot.name, done: Object.values(spice.shot.body.passes).filter((p) => p?.media).length };
+  });
+  ok(examples.names.includes("Rooftop explosion") && examples.names.includes("Neon street portal") && examples.done >= 3, "the example shots are there on a first visit, one open with its passes", JSON.stringify(examples));
+  ok((await page.locator(".sp-about-link").getAttribute("href")) === "#/utensils" && /nothing is overwritten/.test(await page.locator(".sp-about").innerText()), "the panel says what Spice is for, and points a quick fix to Utensils");
+  // a new shot of the person's own starts empty
+  await js(async () => (await import("/js/spice.js")).newShot());
+  await page.waitForTimeout(800);
+  ok(/SH010/.test(await page.locator(".sp-shotchip").innerText()), "a new shot is made at once, named SH010");
   ok((await page.locator(".sp-lamp[data-tone='done']").count()) === 0 && (await page.locator(".sp-lamp[data-tone='empty']").count()) === 6, "six hollow lamps before any footage");
   ok((await page.locator(".sp-facts").innerText()).includes("0 / 6"), "the facts count the passes done");
   const bar = await js(() => ({ pet: document.getElementById("assistant").dataset.pet, src: document.querySelector("#assistant .pet-face img").getAttribute("src"), docked: document.getElementById("assistant").parentElement.id, ph: document.querySelector("#assistant .chat-input").dataset.placeholder, h: document.querySelector("#assistant .chat-bar").getBoundingClientRect().height }));
@@ -372,7 +382,9 @@ try {
   ok(kept.name === "SH010" && kept.passes.plate?.kind === "video" && kept.passes.roto?.type === "matte" && kept.passes.light && kept.passes.comp && kept.set.fx.when, "the shot, its passes and its settings come back after a reload");
   ok((await page.locator(".sp-lamp[data-tone='done']").count()) >= 5, "the lamps are green again");
   const list = await (await fetch(`${base}/api/spice-shots`)).json();
-  ok(list["spice-shots"].length === 1 && list["spice-shots"][0].info.passes >= 5, "the server keeps it as a shot with its passes counted", JSON.stringify(list["spice-shots"][0].info.passes));
+  // (beside the two example shots, the person's own)
+  const own = list["spice-shots"].find((x) => x.name === "SH010");
+  ok(list["spice-shots"].length === 3 && own?.info.passes >= 5, "the server keeps it as a shot with its passes counted, beside the examples", JSON.stringify(own?.info));
 
   // ---- a second shot, switched to and back
   await page.locator(".sp-shotchip .sel-trigger").click();

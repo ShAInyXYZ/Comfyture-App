@@ -215,3 +215,25 @@ test("a new shot is named SH010, SH020... after the ones there are", () => {
   assert.equal(m.titleOf({ name: "SH010 · Rooftop portal" }), "SH010 · Rooftop portal");
   assert.equal(m.titleOf(null), "Untitled shot");
 });
+
+test("Spice's example shots are whole: each has its plate, every clip and still it names is in its folder, and no id twice", async () => {
+  const { readdir, readFile, stat } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const dir = join(import.meta.dirname, "..", "spice", "examples");
+  const ids = new Set<string>();
+  const folders = (await readdir(dir)).sort();
+  assert.ok(folders.length >= 2, "at least two example shots");
+  for (const folder of folders) {
+    const spec = JSON.parse(await readFile(join(dir, folder, "shot.json"), "utf8"));
+    assert.match(spec.id, /^[\w-]+$/);
+    assert.ok(!ids.has(spec.id), `${spec.id} once`);
+    ids.add(spec.id);
+    assert.ok(spec.name && spec.passes?.plate, `${folder} names itself and has a plate`);
+    for (const [dept, p] of Object.entries<any>(spec.passes)) {
+      assert.ok(["plate", "roto", "paint", "light", "fx", "comp"].includes(dept), `${folder}: ${dept} is a department`);
+      assert.ok((await stat(join(dir, folder, p.file))).size > 10_000, `${folder}/${p.file} is there`);
+      assert.ok(Number(p.seconds) > 0, `${folder}: ${dept} says how long it is`);
+      if (p.still) assert.ok((await stat(join(dir, folder, p.still))).size > 1_000, `${folder}/${p.still} is there`);
+    }
+  }
+});

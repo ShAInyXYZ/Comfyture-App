@@ -1,0 +1,17 @@
+{
+ "id": "spice-example-rooftop",
+ "name": "Rooftop explosion",
+ "about": "A locked-off plate of a man on a rooftop at dusk, relit to a rainy night, an explosion behind him, the comp of both. Roto and Paint are set up, not made.",
+ "passes": {
+  "plate": { "file": "plate.mp4", "still": "plate.jpg", "seconds": 5.084, "name": "Rooftop at dusk (locked-off plate)" },
+  "light": { "file": "light.mp4", "seconds": 5.084, "note": "A cooler night grade with rain over it", "source": "free" },
+  "fx": { "file": "fx.mp4", "seconds": 5.042, "note": "Explosion (Kitchen's LTX effect, from the plate's first frame)", "source": "cloud" },
+  "comp": { "file": "comp.mp4", "seconds": 5.042, "note": "The explosion over the relit plate, the rain and the grade", "source": "free" }
+ },
+ "set": {
+  "roto": { "subjects": [{ "id": "s-man", "name": "Man in a suit", "points": [], "media": null, "eye": true }], "open": "s-man" },
+  "paint": { "how": "describe", "words": "the tallest tower on the left", "engine": "void" },
+  "light": { "weather": "rain", "amount": 0.45, "grade": "cool", "exposure": -0.25, "contrast": 1.08, "saturation": 0.92 },
+  "fx": { "element": "explosion", "depth": "behind" }
+ }
+}

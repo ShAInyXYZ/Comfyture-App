@@ -1,0 +1,14 @@
+{
+ "id": "spice-example-street",
+ "name": "Neon street portal",
+ "about": "A locked-off plate of a woman in a yellow raincoat on a wet neon street, a portal opening behind her, the comp graded filmic.",
+ "passes": {
+  "plate": { "file": "plate.mp4", "still": "plate.jpg", "seconds": 5.084, "name": "Neon street at night (locked-off plate)" },
+  "fx": { "file": "fx.mp4", "seconds": 5.042, "note": "Portal (Kitchen's LTX effect, from the plate's first frame)", "source": "cloud" },
+  "comp": { "file": "comp.mp4", "seconds": 5.042, "note": "The portal, graded filmic", "source": "free" }
+ },
+ "set": {
+  "roto": { "subjects": [{ "id": "s-woman", "name": "Woman in raincoat", "points": [], "media": null, "eye": true }], "open": "s-woman" },
+  "fx": { "element": "portal", "depth": "behind" }
+ }
+}

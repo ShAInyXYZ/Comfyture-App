@@ -27,6 +27,7 @@ import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
 import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer, utensilsCandidates } from "./utensils-assist.ts";
 import { SPICE_BRIEF, SPICE_TOOL, spicePrompt, readSpiceAnswer } from "./spice-assist.ts";
+import { normaliseBody as spiceBody, FIRST as SPICE_FIRST } from "../web/js/spice-model.js";
 import { searchKnowledge, knowledgeById } from "./utensils-knowledge.ts";
 import { createEdit } from "./utensils-edit.ts";
 import { createFx } from "./utensils-fx.ts";
@@ -817,6 +818,52 @@ async function seedStages() {
 // the brands that come with the app (brands/*.brand.json, Comfyture's own among them) are there to open the
 // first time Macaron lists them; one that is deleted stays deleted, so the ids already seeded are kept
 let seedingBrands: Promise<void> | null = null;
+/**
+ * Spice's example shots (spice/examples/<shot>/shot.json beside its clips), put in once: each pass's clip goes into the library of
+ * clips (data/videos) so every department can work on it like footage of the person's own, and the shot is written as Spice keeps one.
+ * A shot the person took out is not put back (the ids put in are kept in .seeded).
+ */
+let seedingShots: Promise<void> | null = null;
+async function seedShots() {
+  const dir = join(root, "spice", "examples");
+  const kept = join(projectsDir("spice-shots"), ".seeded");
+  const seeded: string[] = await readFile(kept, "utf8").then((t) => JSON.parse(t), () => []);
+  let added = false;
+  for (const folder of (await readdir(dir).catch(() => [] as string[])).sort()) {
+    try {
+      const spec = JSON.parse(await readFile(join(dir, folder, "shot.json"), "utf8"));
+      if (!/^[\w-]+$/.test(spec.id) || seeded.includes(spec.id)) continue;
+      const body: any = spiceBody({ set: spec.set });
+      const at = new Date().toISOString();
+      let thumb: string | undefined;
+      for (const [dept, p] of Object.entries<any>(spec.passes ?? {})) {
+        if (!(dept in body.passes) || !/^[\w.-]+\.mp4$/.test(p.file)) continue;
+        const file = `${spec.id}-${dept}.mp4`;
+        await mkdir(join(data, "videos"), { recursive: true });
+        await copyFile(join(dir, folder, p.file), join(data, "videos", file));
+        const media: any = { kind: "video", url: `/media/videos/${file}`, file, width: 720, height: 480, seconds: p.seconds };
+        if (p.still && /^[\w.-]+\.(jpg|png|webp)$/.test(p.still)) {
+          const still = `${spec.id}-${dept}.${p.still.split(".").pop()}`;
+          await mkdir(join(data, "photos"), { recursive: true });
+          await copyFile(join(dir, folder, p.still), join(data, "photos", still));
+          media.still = `/media/photos/${still}`;
+          thumb ??= media.still;
+        }
+        const to = SPICE_FIRST + Math.max(1, Math.round((Number(p.seconds) || 5) * 24)) - 1;
+        body.passes[dept] = dept === "plate"
+          ? { media, eye: true, fps: 24, name: String(p.name ?? "Plate"), from: SPICE_FIRST, to, at }
+          : { media, eye: true, from: SPICE_FIRST, to, note: String(p.note ?? ""), credits: 0, at, source: p.source === "cloud" ? "cloud" : "free" };
+      }
+      await writeProject("spice-shots", { id: spec.id, name: String(spec.name ?? "Example"), createdAt: at, updatedAt: at, ...(thumb ? { thumb } : {}), body } as Project);
+      seeded.push(spec.id);
+      added = true;
+    } catch (e) {
+      console.warn(`spice: the example ${folder} was not added:`, (e as Error).message);
+    }
+  }
+  if (added) await writeFile(kept, JSON.stringify(seeded));
+}
+
 async function seedBrands() {
   const dir = join(root, "brands");
   const kept = join(projectsDir("brands"), ".seeded");
@@ -1405,6 +1452,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     return json(res, 201, await encodeFrames(data, input.job, { fps: Math.round(num(input.fps, 12, 60, 30)), name: text(input.name, 60) || "motion", sound: input.sound ? { pops, pad: input.sound.pad === true } : undefined, container: input.container === "webm" ? "webm" : input.container === "gif" ? "gif" : "mp4" }));
   }
   // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos, Spice's shots
+  if (path === "/api/spice-shots" && method === "GET") await (seedingShots ??= seedShots().catch((e) => console.warn("spice: the examples were not added:", e.message)));
   for (const kind of ["stories", "cuts", "mixes", "brands", "jams", "spice-shots"]) {
     if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {
       const answered = await projectRoute(kind, path, method, req, res);
