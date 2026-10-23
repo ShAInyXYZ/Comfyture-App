@@ -7,6 +7,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { geometryOf } from "./toaster-shapes.js";
 import { assetByType } from "./control/assets.js";
 import { openSurface, rigById } from "./control/models.js";
+import { CHAINS } from "./control/skeleton.js";
 import { assetPiece, characterPiece, libraryNow, loadLibrary, onLibrary, preciseBox } from "./toaster-assets.js";
 import { RATIOS, SHEET, VIEWS, sheetScale } from "./toaster-model.js";
 
@@ -22,7 +23,7 @@ const fix = (v, d) => Number(v.toFixed(d));
 // (a piece also depends on whether the library has it yet: until then it is a box)
 const grouped = (p) => p.shape === "asset" || p.shape === "character";
 const hasPiece = (p) => Boolean(libraryNow() && (p.shape === "character" ? !p.rig || rigById(p.rig) : assetByType(p.asset)));
-const keyOf = (p) => (p.shape === "asset" ? ["asset", p.asset, hasPiece(p) ? 1 : 0, ...p.size] : p.shape === "character" ? ["character", p.body, p.rig ?? "", p.pose, hasPiece(p) ? 1 : 0, ...p.size] : [p.shape, ...p.size, p.round ?? "", p.sides ?? ""]).join("|");
+const keyOf = (p) => (p.shape === "asset" ? ["asset", p.asset, hasPiece(p) ? 1 : 0, ...p.size] : p.shape === "character" ? ["character", p.body, p.rig ?? "", p.pose, JSON.stringify([p.params ?? null, p.joints ?? null]), hasPiece(p) ? 1 : 0, ...p.size] : [p.shape, ...p.size, p.round ?? "", p.sides ?? ""]).join("|");
 
 // the control maps' own shader: a flat colour, or the disparity (1/z) between the nearest and the farthest point; skinned meshes too
 const PASS_VERTEX = /* glsl */ `
@@ -49,8 +50,8 @@ const PASS_FRAGMENT = /* glsl */ `
   }`;
 
 export class ToasterView {
-  constructor(container, frameEl, { onPick = () => {}, onChange = () => {}, onDrag = () => {}, onCamera = () => {} } = {}) {
-    Object.assign(this, { container, frameEl, onPick, onChange, onDrag, onCamera });
+  constructor(container, frameEl, { onPick = () => {}, onChange = () => {}, onDrag = () => {}, onCamera = () => {}, onPose = () => {}, onJoint = () => {} } = {}) {
+    Object.assign(this, { container, frameEl, onPick, onChange, onDrag, onCamera, onPose, onJoint });
     this.ratio = "1:1";
     this.meshes = new Map();
     this.selected = [];
@@ -125,6 +126,16 @@ export class ToasterView {
     this.pivot = new THREE.Object3D();
     scene.add(this.pivot);
     this.setSnap(true);
+    // joints mode: the handles of a posed figure's joints, and the target a hand or foot is reached to
+    this.handles = new THREE.Group();
+    this.handles.renderOrder = 1000;
+    scene.add(this.handles);
+    this.ikTarget = new THREE.Object3D();
+    scene.add(this.ikTarget);
+    this.poseId = null;
+    this.joint = null;
+    const mat = (color) => new THREE.MeshBasicMaterial({ color, depthTest: false, depthWrite: false, transparent: true, opacity: 0.95, toneMapped: false });
+    this.handleLook = { off: mat("#d4d4d8"), on: mat("#f2ff59"), ball: new THREE.SphereGeometry(1, 14, 10), gem: new THREE.OctahedronGeometry(1) };
 
     // a click picks; a press that moved, or that began on the gizmo, does not
     this.raycaster = new THREE.Raycaster();
@@ -178,6 +189,7 @@ export class ToasterView {
     if (this.pending || this.disposed) return;
     this.pending = requestAnimationFrame(() => {
       this.pending = 0;
+      this.placeHandles();
       this.renderer.render(this.scene, this.camera);
     });
   }
@@ -230,6 +242,7 @@ export class ToasterView {
     if (m.userData.asset) {
       m.userData.fit?.traverse((o) => !o.userData.shared && o.geometry?.dispose());
       m.userData.fit?.removeFromParent();
+      m.userData.man = null;
       m.userData.fit = null;
     } else m.geometry?.dispose();
   }
@@ -239,7 +252,7 @@ export class ToasterView {
     m.userData.key = keyOf(p);
     m.userData.size = [...p.size];
     if (m.userData.asset) {
-      m.userData.part = { shape: p.shape, asset: p.asset, body: p.body, rig: p.rig, pose: p.pose };
+      m.userData.part = { shape: p.shape, asset: p.asset, body: p.body, rig: p.rig, pose: p.pose, params: p.params, joints: p.joints };
       this.fillAsset(m, p);
     } else {
       m.geometry = geometryOf(p);
@@ -271,6 +284,7 @@ export class ToasterView {
     const figure = p.shape === "character";
     const piece = figure ? characterPiece(p) : assetPiece(p.asset);
     fit.add(piece);
+    m.userData.man = figure ? piece.userData.character : null;
     piece.traverse((o) => {
       if (!o.isMesh) return;
       o.material = !figure && openSurface(o.geometry) ? sheet : solid;
@@ -301,6 +315,12 @@ export class ToasterView {
 
   setSelection(ids) {
     this.selected = ids.filter((id) => this.meshes.has(id));
+    // a part that is not selected any more is not posed any more
+    if (this.poseId && !this.selected.includes(this.poseId)) {
+      const had = this.joint;
+      this.poseId = this.joint = null;
+      if (had) this.onJoint(null);
+    }
     for (const [id, m] of this.meshes) m.userData.wire.visible = this.selected.includes(id);
     this.attach();
     this.render();
@@ -322,6 +342,7 @@ export class ToasterView {
   /** The gizmo goes on the one selected part, or on a pivot at the middle of several. */
   attach() {
     const g = this.gizmo;
+    if (this.attachPose()) return;
     const ms = this.selected.map((id) => this.meshes.get(id)).filter((m) => m.visible);
     if (this.tool === "select" || !ms.length || !(this.tool in MODES)) return void g.detach();
     g.setMode(MODES[this.tool]);
@@ -339,10 +360,11 @@ export class ToasterView {
     this.orbit.enabled = !on;
     if (on) {
       this.moving = true;
+      if (this.poseId && this.gizmo.object) return void (this.drag = { pose: true, changed: new Set() });
       const ms = this.selected.map((id) => this.meshes.get(id)).filter((m) => m.visible);
       this.drag = { ms, start: ms.map((m) => (m.updateMatrix(), m.matrix.clone())), pivot: this.pivot.matrix.clone().invert() };
     } else if (this.drag) {
-      this.finish();
+      this.drag.pose ? this.finishPose() : this.finish();
       // the click that ends a drag is not a pick
       setTimeout(() => (this.moving = false));
     }
@@ -352,6 +374,7 @@ export class ToasterView {
   moved() {
     const d = this.drag;
     if (!d) return;
+    if (d.pose) return this.poseMoved(d);
     if (d.ms.length > 1) {
       this.pivot.updateMatrix();
       const delta = this.pivot.matrix.clone().multiply(d.pivot);
@@ -401,11 +424,149 @@ export class ToasterView {
   pick(e) {
     const box = this.renderer.domElement.getBoundingClientRect();
     this.raycaster.setFromCamera(new THREE.Vector2(((e.clientX - box.left) / box.width) * 2 - 1, -((e.clientY - box.top) / box.height) * 2 + 1), this.camera);
+    if (this.poseId && this.pickPose()) return;
     const hit = this.raycaster.intersectObjects([...this.meshes.values()].filter((m) => m.visible), true)[0];
     // a leg of a chair is a part of the chair: walk up to the part's own object
     let o = hit?.object;
     while (o?.parent && o.parent !== this.scene) o = o.parent;
     this.onPick(o?.userData.id ?? null, { shift: e.shiftKey || e.ctrlKey || e.metaKey });
+  }
+
+  // ------------------------------------------------------------ joints mode
+
+  /** Puts a character part's joints on show as handles (null leaves the mode). A picked joint is kept while the figure is rebuilt. */
+  setPoseMode(id) {
+    const was = this.poseId;
+    this.poseId = id && this.meshes.get(id)?.userData.asset ? id : null;
+    if (this.poseId !== was && this.joint) (this.joint = null), this.onJoint(null);
+    this.attach();
+    this.render();
+  }
+
+  pickedJoint() {
+    return this.joint;
+  }
+
+  pickJoint(name) {
+    this.choose(name, false);
+  }
+
+  choose(name, tell) {
+    const man = this.poseMan();
+    this.joint = name && man?.joints[name] ? name : null;
+    this.attach();
+    this.render();
+    if (tell) this.onJoint(this.joint);
+  }
+
+  poseMan() {
+    const m = this.poseId && this.meshes.get(this.poseId);
+    return m?.visible ? m.userData.man ?? null : null;
+  }
+
+  /** In joints mode the gizmo works on the picked joint: it turns it, or (a hand or foot) moves a target the limb reaches to. Returns whether the mode took over. */
+  attachPose() {
+    if (!this.poseId) return this.handles.clear(), false;
+    const g = this.gizmo;
+    const man = this.poseMan();
+    g.detach();
+    this.buildHandles(man);
+    if (!man || !this.joint) return true;
+    g.showY = true;
+    if (CHAINS[this.joint]) {
+      man.joints[this.joint].getWorldPosition(this.ikTarget.position);
+      g.setMode("translate");
+      g.setSpace("world");
+      g.attach(this.ikTarget);
+    } else {
+      g.setMode("rotate");
+      g.setSpace("local");
+      g.attach(man.joints[this.joint]);
+    }
+    return true;
+  }
+
+  /** A small ball on every joint (a diamond on the hands and feet, which are moved, not turned), always on top. */
+  buildHandles(man) {
+    this.handles.clear();
+    if (!man) return;
+    const look = this.handleLook;
+    const r = Math.max(0.012, 0.014 * this.meshes.get(this.poseId).userData.size[1]);
+    for (const name of Object.keys(man.joints)) {
+      const effector = Boolean(CHAINS[name]);
+      const h = new THREE.Mesh(effector ? look.gem : look.ball, name === this.joint ? look.on : look.off);
+      h.scale.setScalar(effector ? r * 1.7 : r);
+      h.renderOrder = 1000;
+      h.userData.joint = name;
+      this.handles.add(h);
+    }
+    this.placeHandles();
+  }
+
+  placeHandles() {
+    const man = this.poseMan();
+    if (!man || !this.handles.children.length) return;
+    man.root.updateWorldMatrix(true, true);
+    for (const h of this.handles.children) man.joints[h.userData.joint].getWorldPosition(h.position);
+  }
+
+  /** A click in joints mode: a handle picks its joint, the figure the joint nearest the click, empty space none. Other parts go on to the page. */
+  pickPose() {
+    const man = this.poseMan();
+    if (!man) return false;
+    const handle = this.raycaster.intersectObjects(this.handles.children, false)[0];
+    if (handle) return this.choose(handle.object.userData.joint, true), true;
+    const hit = this.raycaster.intersectObjects([...this.meshes.values()].filter((m) => m.visible), true)[0];
+    let o = hit?.object;
+    while (o?.parent && o.parent !== this.scene) o = o.parent;
+    if (!hit) return this.choose(null, true), true;
+    if (o.userData.id !== this.poseId) return false;
+    let best = null, bd = Infinity;
+    const w = new THREE.Vector3();
+    for (const [name, j] of Object.entries(man.joints)) {
+      const d = j.getWorldPosition(w).distanceTo(hit.point);
+      if (d < bd) (bd = d), (best = name);
+    }
+    this.choose(best, true);
+    return true;
+  }
+
+  /** The gizmo moved a joint, or the target of a hand or foot: the figure follows (the limb reaches in the figure's own space, whatever the part's stretch). */
+  poseMoved(d) {
+    const man = this.poseMan();
+    if (!man) return;
+    if (this.gizmo.object === this.ikTarget) {
+      const m = this.meshes.get(this.poseId);
+      m.updateWorldMatrix(true, true);
+      const target = m.userData.fit.worldToLocal(this.ikTarget.position.clone());
+      // the limb is worked out in a room of its own, where the figure is neither turned nor stretched
+      const room = new THREE.Group();
+      room.add(man.root);
+      room.updateMatrixWorld(true);
+      man.reach(this.joint, target);
+      man.reach(this.joint, target);
+      m.userData.fit.add(man.root);
+      const chain = CHAINS[this.joint];
+      d.changed.add(chain.root).add(chain.mid);
+    } else {
+      man.constrain(this.joint);
+      d.changed.add(this.joint);
+    }
+    man.driveRig();
+    this.placeHandles();
+    this.render();
+  }
+
+  /** The drag ended: what changed becomes the base pose, and the page is given the joints. */
+  finishPose() {
+    const d = this.drag;
+    this.drag = null;
+    const man = this.poseMan();
+    if (!man) return;
+    man.absorb([...d.changed]);
+    this.attach();
+    this.render();
+    this.onPose(this.poseId, { joints: man.getPose() });
   }
 
   // ------------------------------------------------------------ camera and bounds
@@ -506,6 +667,8 @@ export class ToasterView {
     const r = this.ensureShot();
     const s = this.scene;
     const helper = this.gizmo.getHelper();
+    const handlesWere = this.handles.visible;
+    this.handles.visible = false;
     const keep = { env: s.environment, bg: s.background, fog: s.fog, cast: this.key.castShadow, turn: this.rig.rotation.y, helper: helper.visible };
     const wires = [...this.meshes.values()].map((m) => m.userData.wire);
     const was = wires.map((w) => w.visible);
@@ -523,6 +686,7 @@ export class ToasterView {
       this.rig.rotation.y = keep.turn;
       // (the gizmo comes back only if it was there: a capture with nothing selected leaves it away)
       helper.visible = keep.helper;
+      this.handles.visible = handlesWere;
       this.grid.visible = true;
       wires.forEach((w, i) => (w.visible = was[i]));
       this.render();
@@ -659,6 +823,8 @@ export class ToasterView {
     this.gizmo.dispose();
     this.orbit.dispose();
     this.offLibrary?.();
+    this.handles.clear();
+    Object.values(this.handleLook).forEach((x) => x.dispose());
     for (const id of [...this.meshes.keys()]) this.drop(id);
     this.ground.geometry.dispose();
     this.ground.material.dispose();

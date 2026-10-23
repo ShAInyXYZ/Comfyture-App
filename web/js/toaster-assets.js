@@ -138,19 +138,22 @@ export function assetThumb(type, { width = 112, height = 96 } = {}) {
 // ------------------------------------------------------------ people
 
 /** A figure of the Stage: a body type (or one of the user's rigged characters) in a pose, on the ground, front toward +Z. Call after loadLibrary. */
-export function characterPiece({ body = "man", rig, pose = "stand" } = {}) {
+export function characterPiece({ body = "man", rig, pose = "stand", params, joints } = {}) {
   const c = new Mannequin({ name: "toaster", color: "#b9b5ae", body, rig: rig && rigById(rig) ? rig : undefined });
+  // the preset first (its holds and aims), then the joints edited by hand in place of its base, then the sliders over both
   c.setPreset(poseById(pose) ?? poseById("stand"));
+  if (joints) c.setPose(joints);
+  c.setParams(params ?? {});
   c.ground();
   c.driveRig();
   return c.root;
 }
 
-/** The precise box of a figure in a pose, [w, h, d]. Cached. */
-export function characterSize({ body = "man", rig, pose = "stand" } = {}) {
-  const key = `figure:${rig ?? body}|${pose}`;
+/** The precise box of a figure in a pose (with its sliders and edited joints), [w, h, d]. Cached. */
+export function characterSize({ body = "man", rig, pose = "stand", params, joints } = {}) {
+  const key = `figure:${rig ?? body}|${pose}${params || joints ? `|${JSON.stringify([params ?? {}, joints ?? null])}` : ""}`;
   if (!sizes.has(key)) {
-    const root = characterPiece({ body, rig, pose });
+    const root = characterPiece({ body, rig, pose, params, joints });
     sizes.set(key, preciseBox(root).getSize(new THREE.Vector3()).toArray().map((v) => Math.max(0.01, Math.round(v * 1000) / 1000)));
     root.traverse((o) => o.geometry?.dispose());
   }
