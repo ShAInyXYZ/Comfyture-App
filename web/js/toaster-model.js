@@ -226,14 +226,25 @@ const media = (m) => (m && typeof m.url === "string" ? { url: m.url, file: typeo
 export function cleanDraft(b) {
   b = b && typeof b === "object" ? b : {};
   const parts = (Array.isArray(b.parts) ? b.parts : []).slice(0, 300).map(cleanPart);
-  const cam = b.camera && Array.isArray(b.camera.position) && Array.isArray(b.camera.target) ? { position: vec(b.camera.position, [3.2, 2.4, 4.2]), target: vec(b.camera.target, [0, 0.5, 0]) } : null;
+  const lens = (v) => Math.round(num(v, 14, 200, 50));
+  const cam = b.camera && Array.isArray(b.camera.position) && Array.isArray(b.camera.target) ? { position: vec(b.camera.position, [3.2, 2.4, 4.2]), target: vec(b.camera.target, [0, 0.5, 0]), focal: lens(b.camera.focal) } : null;
+  // the cameras kept in slots: where it stood, what it looked at, its lens and its frame, to come back to the very picture
+  const slot = (k) => ({
+    id: String(k.id ?? partId()).slice(0, 60),
+    name: words(k.name, 30).trim() || "Camera",
+    position: vec(k.position, [3.2, 2.4, 4.2]),
+    target: vec(k.target, [0, 0.5, 0]),
+    focal: lens(k.focal),
+    ratio: k.ratio in RATIOS ? k.ratio : "1:1",
+    thumb: typeof k.thumb === "string" && k.thumb.startsWith("data:image/") ? k.thumb.slice(0, 60000) : undefined,
+  });
   const run = (r) => ({
     id: String(r.id ?? partId()).slice(0, 60),
     status: RUN.test(r.status) ? r.status : "failed",
     job: typeof r.job === "string" ? r.job : undefined,
     photo: media(r.photo),
     frame: media(r.frame),
-    camera: r.camera && Array.isArray(r.camera.position) ? { position: vec(r.camera.position, [0, 0, 0]), target: vec(r.camera.target, [0, 0, 0]) } : undefined,
+    camera: r.camera && Array.isArray(r.camera.position) ? { position: vec(r.camera.position, [0, 0, 0]), target: vec(r.camera.target, [0, 0, 0]), focal: Math.round(num(r.camera.focal, 14, 200, 50)) } : undefined,
     ratio: r.ratio in RATIOS || r.ratio === SHEET.aspect ? r.ratio : undefined,
     model: words(r.model, 60) || undefined,
     prompt: words(r.prompt, 6000) || undefined,
@@ -254,6 +265,7 @@ export function cleanDraft(b) {
   return {
     parts,
     camera: cam,
+    cameras: (Array.isArray(b.cameras) ? b.cameras : []).filter((k) => k && typeof k === "object").slice(0, 12).map(slot),
     ratio: b.ratio in RATIOS ? b.ratio : "1:1",
     what: words(b.what, 600),
     scene: words(b.scene, 600),

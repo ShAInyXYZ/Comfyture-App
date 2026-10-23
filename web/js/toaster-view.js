@@ -10,8 +10,9 @@ import { openSurface, rigById } from "./control/models.js";
 import { assetPiece, characterPiece, libraryNow, loadLibrary, onLibrary, preciseBox } from "./toaster-assets.js";
 import { RATIOS, SHEET, VIEWS, sheetScale } from "./toaster-model.js";
 
-// 50 mm on a 24 mm high film
-const BASE_FOV = THREE.MathUtils.radToDeg(2 * Math.atan(12 / 50));
+// the lens: its focal length on a 24 mm high film gives the frame's vertical field of view (50 mm unless the camera says otherwise)
+const fovOf = (mm) => THREE.MathUtils.radToDeg(2 * Math.atan(12 / mm));
+const BASE_FOV = fovOf(50);
 const DEG = Math.PI / 180;
 const DIRS = { front: [0, 0, 1], right: [1, 0, 0], back: [0, 0, -1], left: [-1, 0, 0], top: [0, 1, 0.001], persp: [0.62, 0.45, 0.85] };
 const MODES = { move: "translate", rotate: "rotate", scale: "scale" };
@@ -79,6 +80,7 @@ export class ToasterView {
     this.ground = ground;
     this.grid = grid;
 
+    this.focal = 50;
     this.camera = new THREE.PerspectiveCamera(BASE_FOV, 1, 0.05, 200);
     this.camera.position.set(4.6, 3.4, 6.2);
     const orbit = new OrbitControls(this.camera, renderer.domElement);
@@ -137,7 +139,7 @@ export class ToasterView {
     Object.assign(this.frameEl.style, { left: `${this.rect.x}px`, top: `${this.rect.y}px`, width: `${fw}px`, height: `${fh}px` });
     // the frame has the base field of view; the viewport shows a little more around it
     this.camera.aspect = w / h;
-    this.camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan((BASE_FOV * DEG) / 2) * (h / fh)));
+    this.camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan((fovOf(this.focal) * DEG) / 2) * (h / fh)));
     this.camera.updateProjectionMatrix();
     this.render();
   }
@@ -406,17 +408,28 @@ export class ToasterView {
     return this.bounds(ids)?.min[1] ?? null;
   }
 
+  /** Where the camera is, what it looks at and its lens (mm): all it takes to come back to this very picture. */
   cameraState() {
     const r = (v) => v.toArray().map((x) => fix(x, 3));
-    return { position: r(this.camera.position), target: r(this.orbit.target) };
+    return { position: r(this.camera.position), target: r(this.orbit.target), focal: this.focal };
   }
 
   setCameraState(s) {
+    if (Number.isFinite(s.focal)) this.setFocal(s.focal, { quiet: true });
     this.camera.position.fromArray(s.position);
     this.orbit.target.fromArray(s.target);
     this.orbit.update();
     this.render();
     this.onCamera();
+  }
+
+  /** The lens, in mm (14 wide to 200 long): the frame keeps its place, the field of view changes. */
+  setFocal(mm, { quiet = false } = {}) {
+    const f = Math.round(THREE.MathUtils.clamp(Number(mm) || 50, 14, 200));
+    if (f === this.focal) return;
+    this.focal = f;
+    this.resize();
+    if (!quiet) this.onCamera();
   }
 
   /** Puts the camera on a side of the object, far enough for it to fit the frame with a margin. */
@@ -436,7 +449,7 @@ export class ToasterView {
     // the camera's own axes, then how far back each corner of the box needs it to fit the frame, with 15% to spare
     const right = new THREE.Vector3(0, 1, 0).cross(dir).normalize();
     const up = dir.clone().cross(right);
-    const tanY = Math.tan((BASE_FOV * DEG) / 2), tanX = tanY * (RATIOS[this.ratio] ?? 1);
+    const tanY = Math.tan((fovOf(this.focal) * DEG) / 2), tanX = tanY * (RATIOS[this.ratio] ?? 1);
     let dist = 0.1;
     for (let i = 0; i < 8; i++) {
       const c = new THREE.Vector3(i & 1 ? max.x : min.x, i & 2 ? max.y : min.y, i & 4 ? max.z : min.z).sub(centre);
@@ -498,7 +511,7 @@ export class ToasterView {
     const width = w - (w % 2), height = h - (h % 2);
     return this.capture(false, (r) => {
       r.setSize(width, height, false);
-      const cam = new THREE.PerspectiveCamera(BASE_FOV, width / height, 0.05, 200);
+      const cam = new THREE.PerspectiveCamera(fovOf(this.focal), width / height, 0.05, 200);
       cam.position.copy(this.camera.position);
       cam.lookAt(this.orbit.target);
       r.render(this.scene, cam);

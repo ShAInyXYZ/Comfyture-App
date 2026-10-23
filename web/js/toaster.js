@@ -9,7 +9,7 @@ import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacte
 
 const KIND = "toasts";
 // where a draft's camera starts: the studio's own view, the floor around the object in sight
-const HOME = { position: [4.6, 3.4, 6.2], target: [0, 0.8, 0] };
+const HOME = { position: [4.6, 3.4, 6.2], target: [0, 0.8, 0], focal: 50 };
 const OPEN = "comfyture.toaster.open";
 const PREFS = "comfyture.toaster.prefs";
 
@@ -393,13 +393,80 @@ export function setModel(id) {
 export function keepCamera() {
   const b = body();
   if (!b || !toaster.view) return;
-  const r = (a) => a.map((v) => Math.round(v * 1000) / 1000);
-  const { position, target } = toaster.view.cameraState();
-  const cam = { position: r(position), target: r(target) };
+  const cam = cameraNow();
   // (a draft opened puts its own camera back: that is not a change to keep)
   if (JSON.stringify(cam) === JSON.stringify(b.camera)) return;
   b.camera = cam;
   save();
+}
+
+/** The camera as it is now: where it stands, what it looks at, its lens. */
+function cameraNow() {
+  const r = (a) => a.map((v) => Math.round(v * 1000) / 1000);
+  const { position, target, focal } = toaster.view.cameraState();
+  return { position: r(position), target: r(target), focal };
+}
+
+/** The lens, in mm: the frame stays, what it takes in changes. */
+export function setFocal(mm) {
+  if (!toaster.view) return;
+  toaster.view.setFocal(mm);
+  keepCamera();
+  changed("toaster");
+}
+
+// ---------------------------------------------------------------- the cameras kept in slots
+
+/** The camera as it is (its place, its aim, its lens and the frame) kept in a slot, with a small picture of what it shows. */
+export function saveCamera(name) {
+  const b = body();
+  if (!b || !toaster.view) return null;
+  const taken = new Set(b.cameras.map((k) => k.name.toLowerCase()));
+  let n = String(name ?? "").trim().slice(0, 30);
+  if (!n) for (let i = 1; !n || taken.has(n.toLowerCase()); i++) n = `Camera ${i}`;
+  const old = b.cameras.find((k) => k.name.toLowerCase() === n.toLowerCase());
+  const slot = { id: old?.id ?? runId(), name: old?.name ?? n, ...cameraNow(), ratio: b.ratio, thumb: toaster.view.frameStill({ long: 220, type: "image/jpeg", quality: 0.8 }) };
+  b.cameras = old ? b.cameras.map((k) => (k === old ? slot : k)) : [...b.cameras, slot].slice(-12);
+  save();
+  changed("toaster");
+  return slot;
+}
+
+/** Back to a kept camera, to the pixel: its frame first (the frame sets what the lens takes in), then its place, aim and lens. */
+export function recallCamera(id) {
+  const k = body()?.cameras.find((x) => x.id === id || x.name.toLowerCase() === String(id).toLowerCase());
+  if (!k || !toaster.view) return false;
+  if (body().ratio !== k.ratio) setRatio(k.ratio);
+  toaster.view.setCameraState({ position: k.position, target: k.target, focal: k.focal });
+  keepCamera();
+  changed("toaster");
+  return true;
+}
+
+/** Whether the camera is on a kept one now (to light its slot). */
+export function onCamera(id) {
+  const k = body()?.cameras.find((x) => x.id === id);
+  if (!k || !toaster.view) return false;
+  const c = cameraNow();
+  const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 1e-3);
+  return near(c.position, k.position) && near(c.target, k.target) && c.focal === k.focal && body().ratio === k.ratio;
+}
+
+export function removeCamera(id) {
+  const b = body();
+  if (!b) return;
+  b.cameras = b.cameras.filter((k) => k.id !== id);
+  save();
+  changed("toaster");
+}
+
+export function renameCamera(id, name) {
+  const k = body()?.cameras.find((x) => x.id === id);
+  const n = String(name ?? "").trim().slice(0, 30);
+  if (!k || !n) return;
+  k.name = n;
+  save();
+  changed("toaster");
 }
 
 // ---------------------------------------------------------------- the image models
