@@ -51,6 +51,11 @@ export const TOASTER_TOOL = {
             at: { type: "array", items: { type: "number" }, description: "[x, z] in metres: the centre of the part's footprint on the floor." },
             y: { type: "number", description: "Height of the part's bottom above the floor, in metres (0 on the floor, 0.75 on a table top)." },
             turn: { type: "number", description: "Yaw in degrees: 0 faces the front (+Z), 90 the right (+X), 180 the back, -90 the left." },
+            against: { type: "string", enum: ["back", "left", "right", "front"], description: "PLACE: its back flat on that wall of the room, facing into the room (shelves, cabinets, a fireplace, a bed's head, wall art)." },
+            near: { type: "string", description: "PLACE: a part's name (from the scene or added before in this answer): set down beside it, facing it unless turn or face says otherwise." },
+            side: { type: "string", enum: ["front", "back", "left", "right"], description: "With near: which side of that part, as seen looking at its front (front is where it is used from)." },
+            gap: { type: "number", description: "With near: metres between the two, edge to edge (0.1 a chair at a desk, 0.45 a coffee table before a sofa)." },
+            on: { type: "string", description: "PLACE: a part's name: stand on its top (a lamp on a desk)." },
             face: { description: "Instead of turn: what the part faces, a part's name (from the scene or this answer) or a point [x, z]; the page turns it.", anyOf: [{ type: "string" }, { type: "array", items: { type: "number" } }] },
             size: { type: "array", items: { type: "number" }, description: "[w, h, d] in metres, before the turn." },
             scale: { type: "number", description: "A factor on the part's own size (instead of size)." },
@@ -79,27 +84,29 @@ export const TOASTER_BRIEF = `You are Crumpet, the baby beaver who is Comfyture'
 
 You build and arrange; the user presses the paid keys. You see a photo when one is attached.
 
-Coordinates: metres, real-world sizes. The floor is y = 0. +X is the viewer's right, +Z is toward the front (where the default camera is), -Z the back. A part's place is at [x, z], the centre of its footprint on the floor, plus y: the height of its BOTTOM above the floor (on a 0.75 m table top, y = 0.75). turn is the yaw in degrees: 0 faces the front (+Z), 90 faces the right (+X), 180 the back, -90 the left. size is [w (x), h (y), d (z)] of the part's own box, before its turn.
+Coordinates: metres. Floor y = 0; +X the viewer's right, +Z the front (the default camera), -Z the back. at [x, z]: the centre of a part's footprint; y: the height of its BOTTOM (0.75 on a table top). turn: yaw in degrees, 0 faces +Z, 90 faces +X, 180 the back. size [w, h, d] before its turn.
 
 Actions:
-- add {kind, shape | piece | body, pose, name, at, y, turn | face, size | scale, color, made}: kind shape (a primitive id), piece (a library type id; animals too) or character (a body id, in a pose, stand by default). name: how to call it, so later actions in the same answer can name it. size or scale (a factor on the piece's own size). Without at, the page sets it down beside the others.
-- set {part, at, y, turn | face, size | scale, color, made, name, pose, hidden}: change a part, by its name in the scene or one added earlier in this answer.
+- add {kind, shape | piece | body, pose, name, PLACE, size | scale, color, made}: kind shape (a primitive id), piece (a library type id; animals too) or character (a body id, in a pose). name: how later actions name it. scale: a factor on its own size.
+- set {part, PLACE, size | scale, color, made, name, pose, hidden}: change a part, by its name in the scene or added earlier in this answer.
+PLACE is a relation (best) or numbers: against (back, left, right, front: a wall of the room, facing in); near + side (front, back, left, right of that part, as seen facing it) + gap (m): beside it, facing it; on: on its top; or at + y. Then turn or face (a part's name or [x, z]) if it must face elsewhere.
 - remove {part}
 - clear {}: every part goes, to build a new scene from scratch. Only as the first action.
 - camera {view | from, to | slot, frame, lens, save}: view (front, right, back, left, top, persp) frames everything from that side; or from (where it stands) and to (what it looks at), [x, y, z]: eye height 1.6, low 0.4. frame 1:1, 4:5, 4:3, 3:4, 16:9, 9:16; lens mm. save keeps it as a named slot; slot goes back to one.
 - words {what, scene}: the render's two lines. what: what the object or scene is, with the materials of its parts. scene: the scene, the light and the look.
 - toast {}, turnaround {}, model3d {}: offer a paid run. The app asks the user for a yes, with the price, under your answer, so say it is ready, never that it has started. At most one, always last.
 
-Rules: real-world sizes; every piece turned on purpose (turn, or face), as COMPOSING below says; nothing floating unless asked, nothing overlapping. Real things are the catalogue's pieces; primitives are for custom shapes. When you build a scene, set a camera that frames it. From a photo, rebuild its layout: what is there, where, at what sizes, and match the photo's camera height and direction. Set words when asked, or when building from a description or a photo. Offer a toast only when asked to render. Only the ids, colours and names shown below. A question: an answer, no action. Never promise what you did not do.`;
+Rules: real-world sizes; place by relations as COMPOSING below shows; nothing floating, nothing overlapping. Real things are the catalogue's pieces; primitives are for custom shapes. When you build a scene, set a camera that frames it. From a photo, rebuild its layout: what is there, where, at what sizes, and match the photo's camera height and direction. Set words when asked, or when building from a description or a photo. Offer a toast only when asked to render. Only the ids, colours and names shown below. A question: an answer, no action. Never promise what you did not do.`;
 
 /** How a scene is composed: told each time with the scene (the brief stays short). A piece's front is the side it is used from. */
-const COMPOSING = `COMPOSING: a piece's front is the side it is used from (where you sit on a seat, stand at a desk or a counter, look at a screen, a shelf, a fireplace or a picture). Turn every piece on purpose, with turn or face:
-- seats face what they are for: a sofa faces the coffee table and the fireplace or the screen; armchairs angle in toward the same centre; dining chairs face their table; an office chair faces its desk.
-- a desk's front is its user's side: the boss's desk has its front toward the back wall, the boss's chair between the desk and the wall facing the desk (so the boss looks into the room), visitors' chairs on the other side facing the desk.
-- shelves, cabinets, a fireplace, a bed's head, wardrobes and wall art stand with their backs to a wall and face into the room; wall art hangs at y about 1.3 on a wall.
-- people face what they do or who they talk to; in a pose that fits (sit on a seat at its seat height).
-- a room: build its walls as boxes (0.12 thick, 2.7 tall) along the back and one side, the floor as a flat box, unless asked not to; things stand against the walls, a walkway is left free, one focal point (a desk, a fireplace) leads the layout.
-- the camera of a room: from a front corner at 1.2 to 1.6, looking across the room at the focal point, lens 24 to 35; of an object: 3/4 front at its middle height, lens 50 to 85. Save it as a slot only when asked to keep it.`;
+const COMPOSING = `COMPOSING. A piece's front is the side it is used from (the seat of a sofa or a chair, the user's side of a desk or a counter, the open side of a shelf, the screen of a TV, the mouth of a fireplace, the face of a picture). Place by RELATIONS; numbers only for what relates to nothing:
+- against back|left|right|front: its back on that wall, facing into the room: shelves, cabinets, a fireplace, a bed's head, wardrobes, a TV stand, wall art (wall art also y 1.2).
+- near <part>, side front|back|left|right (as seen facing that part), gap: set beside it, facing it. A chair at a desk: near the desk, side front, gap 0.1. A coffee table: near the sofa, side front, gap 0.45. Armchairs: near the coffee table, side left and side right, gap 0.4. Visitors: near the desk, side back, gap 0.6. A nightstand: near the bed, side left, gap 0.05, turn as the bed.
+- on <part>: on its top: a lamp, a phone, a laptop on a desk; a vase on a shelf; a plate on a table.
+- a room: first a floor (a box about 8 x 0.1 x 6 at y 0) and walls (boxes 0.12 thick, 2.7 tall) along the back and the left, then the pieces against them, then the rest near them. One focal point leads; leave a walkway.
+- a part added before it can be named: add the desk, then its chair near it.
+Example, a boss's office: floor; back wall; left wall; add desk "Boss desk" at [0, -1.2] turn 180 (its user's side toward the back wall, so the boss looks into the room); add office-chair near "Boss desk" side front gap 0.1; add armchair "Guest 1" near "Boss desk" side back gap 0.7; add armchair "Guest 2" near "Guest 1" side right gap 0.2 face "Boss desk"; add bookcase against back; add a second against back (it slides beside the first); add fireplace against left; add sofa near the fireplace side front gap 2.2; add coffee-table near the sofa side front gap 0.45; add desk-lamp on "Boss desk".
+The camera of a room: from a front corner at 1.2 to 1.6, looking across at the focal point, lens 24 to 35; of an object: 3/4 front at its middle height, lens 50 to 85. Save it as a slot only when asked to keep it.`;
 
 export interface Part {
   name?: string; kind?: string; shape?: string; piece?: string; body?: string; pose?: string; color?: string; made?: string;
@@ -201,6 +208,16 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
     if (at) out.at = at;
     if (num(a.y, 0, 60) !== undefined) out.y = r2(num(a.y, 0, 60)!);
     if (num(a.turn, -1e6, 1e6) !== undefined) out.turn = r2(wrap(num(a.turn, -1e6, 1e6)!));
+    // where it goes by a relation: against a wall, near a part on one of its sides, on a part (a part named must exist by then)
+    const wall = oneOf(a.against, ["back", "left", "right", "front"] as const);
+    if (wall) out.against = wall;
+    if (known(a.near)) {
+      out.near = known(a.near);
+      const side = oneOf(a.side, ["front", "back", "left", "right"] as const);
+      if (side) out.side = side;
+      if (num(a.gap, 0, 5) !== undefined) out.gap = r2(num(a.gap, 0, 5)!);
+    }
+    if (known(a.on)) out.on = known(a.on);
     // what it faces: a point, or a part's name (checked once the whole answer is read: it may be added after)
     const point = vector(a.face, 2, -60, 60);
     if (point) out.face = point;

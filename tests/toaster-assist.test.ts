@@ -108,6 +108,25 @@ test("a part faces a point or another part (even one added later in the answer);
   assert.equal(out.length, 4, "a slot nobody saved is dropped");
   const prompt = toasterPrompt(scene, [{ role: "user", text: "go" }]);
   assert.match(prompt, /SAVED CAMERAS: Hero \(from/);
-  assert.match(prompt, /COMPOSING: a piece's front is the side it is used from/);
-  assert.match(TOASTER_BRIEF, /turn \| face/);
+  assert.match(prompt, /COMPOSING. A piece's front is the side it is used from/);
+  assert.match(TOASTER_BRIEF, /turn or face/);
+});
+
+test("a part is placed by a relation: against a wall, near another on one of its sides with a gap, or on another; the parts named must exist", () => {
+  const out = readToasterAnswer(say([
+    { op: "add", kind: "piece", piece: "bookcase", name: "Books", against: "back" },
+    { op: "add", kind: "piece", piece: "office-chair", name: "Seat", near: "Desk", side: "front", gap: 0.1 },
+    { op: "add", kind: "piece", piece: "desk-lamp", name: "Lamp", on: "Desk" },
+    { op: "add", kind: "piece", piece: "armchair", name: "Guest", near: "Nobody", side: "back" },
+    { op: "set", part: "Crate", against: "ceiling" },
+    { op: "add", kind: "piece", piece: "armchair", name: "Far", near: "Desk", side: "under", gap: 99 },
+  ]), SCENE).actions;
+  assert.deepEqual(out[0], { op: "add", kind: "piece", piece: "bookcase", name: "Books", against: "back" });
+  assert.deepEqual(out[1], { op: "add", kind: "piece", piece: "office-chair", name: "Seat", near: "Desk", side: "front", gap: 0.1 });
+  assert.deepEqual(out[2], { op: "add", kind: "piece", piece: "desk-lamp", name: "Lamp", on: "Desk" });
+  assert.equal(out[3].near, undefined, "near a part nobody has is dropped (the page sets it down beside the others)");
+  assert.ok(!out.some((a) => a.op === "set"), "a wall that is not one is dropped, and the change with it");
+  assert.equal(out.at(-1).side, undefined, "a side that is not one is dropped");
+  assert.equal(out.at(-1).gap, 5, "the gap is kept within 5 m");
+  assert.match(TOASTER_BRIEF, /against \(back, left, right, front/);
 });
