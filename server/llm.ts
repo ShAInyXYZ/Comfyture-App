@@ -1,7 +1,8 @@
 // The writers' models: Claude, GPT and Gemini on Comfy Router, billed in Comfy credits with the
 // same Comfy key as everything else, or Gemma 4 running inside ComfyUI (open weights). Two roles,
 // each with its own default: the writer (Story's writers and its assistant, the Cut editor) on
-// Claude Sonnet 5.5, and the quick assistants (Shot and Stage) on Claude Haiku 4.5. The pages pick
+// Claude Sonnet 5.5, and the quick assistants (the pets, the Shot's and the Stage's) on GPT-6 Luna, the cheapest
+// (answering in JSON, as it cannot be made to call a tool). The pages pick
 // another; without a Comfy key (or with COMFYTURE_OPEN_WEIGHTS) only Gemma 4 is offered.
 // COMFYTURE_LLM and COMFYTURE_LLM_ASSISTANT set the defaults.
 
@@ -17,9 +18,9 @@ type Provider = "anthropic" | "openai" | "vertexai" | "comfyui";
 export type Llm = { id: string; name: string; short: string; about: string; provider: Provider; rates?: [number, number]; tuned?: boolean; forced?: boolean };
 const LLMS: Llm[] = [
   { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", short: "Sonnet 5.5", about: "The strongest writer", provider: "anthropic", rates: [0.603, 3.017] },
-  { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", short: "Haiku 4.5", about: "Quick, for the assistants", provider: "anthropic", rates: [0.302, 1.509], tuned: true, forced: true },
+  { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", short: "Haiku 4.5", about: "Quick, and it calls the tools", provider: "anthropic", rates: [0.302, 1.509], tuned: true, forced: true },
   { id: "gpt-6-sol", name: "GPT-6 Sol", short: "Sol", about: "A strong writer", provider: "openai", rates: [0.603, 3.017] },
-  { id: "gpt-6-luna", name: "GPT-6 Luna", short: "Luna", about: "The cheapest", provider: "openai", rates: [0.030, 0.151] },
+  { id: "gpt-6-luna", name: "GPT-6 Luna", short: "Luna", about: "The cheapest, for the assistants", provider: "openai", rates: [0.030, 0.151] },
   { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", short: "3.1 Pro", about: "A strong writer, slower", provider: "vertexai", rates: [0.422, 2.532], tuned: true },
   { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash", short: "3.8 Flash", about: "Quick", provider: "vertexai", rates: [0.453, 2.263], tuned: true },
   { id: "gemma-4", name: "Gemma 4", short: "Gemma 4", about: "Open weights, inside ComfyUI", provider: "comfyui" },
@@ -35,7 +36,7 @@ export function defaultLlm(role: Role = "writer") {
   const want = (role === "assistant" ? process.env.COMFYTURE_LLM_ASSISTANT?.trim() : process.env.COMFYTURE_LLM?.trim()) || gemma;
   if (want && llms().some((m) => m.id === want)) return want;
   if (!hasKey()) return "gemma-4";
-  return role === "assistant" ? "claude-haiku-4-5-20251001" : "claude-sonnet-5-5";
+  return role === "assistant" ? "gpt-6-luna" : "claude-sonnet-5-5";
 }
 /** The model a request asks for, if it may be used; else its role's default. */
 export const pickLlm = (v: unknown, role: Role = "writer") => (typeof v === "string" && llms().some((m) => m.id === v) ? v : defaultLlm(role));
