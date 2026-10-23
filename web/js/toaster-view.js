@@ -6,8 +6,8 @@ import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { geometryOf } from "./toaster-shapes.js";
 import { assetByType } from "./control/assets.js";
-import { openSurface } from "./control/models.js";
-import { assetPiece, libraryNow, loadLibrary, onLibrary, preciseBox } from "./toaster-assets.js";
+import { openSurface, rigById } from "./control/models.js";
+import { assetPiece, characterPiece, libraryNow, loadLibrary, onLibrary, preciseBox } from "./toaster-assets.js";
 import { RATIOS, SHEET, VIEWS, sheetScale } from "./toaster-model.js";
 
 // 50 mm on a 24 mm high film
@@ -19,8 +19,9 @@ const rnd = (v, step) => Math.round(v / step) * step;
 const fix = (v, d) => Number(v.toFixed(d));
 // what the geometry depends on: when it changes, the mesh is rebuilt
 // (a piece also depends on whether the library has it yet: until then it is a box)
-const hasPiece = (p) => Boolean(libraryNow() && assetByType(p.asset));
-const keyOf = (p) => (p.shape === "asset" ? ["asset", p.asset, hasPiece(p) ? 1 : 0, ...p.size] : [p.shape, ...p.size, p.round ?? "", p.sides ?? ""]).join("|");
+const grouped = (p) => p.shape === "asset" || p.shape === "character";
+const hasPiece = (p) => Boolean(libraryNow() && (p.shape === "character" ? !p.rig || rigById(p.rig) : assetByType(p.asset)));
+const keyOf = (p) => (p.shape === "asset" ? ["asset", p.asset, hasPiece(p) ? 1 : 0, ...p.size] : p.shape === "character" ? ["character", p.body, p.rig ?? "", p.pose, hasPiece(p) ? 1 : 0, ...p.size] : [p.shape, ...p.size, p.round ?? "", p.sides ?? ""]).join("|");
 
 export class ToasterView {
   constructor(container, frameEl, { onPick = () => {}, onChange = () => {}, onDrag = () => {}, onCamera = () => {} } = {}) {
@@ -163,7 +164,7 @@ export class ToasterView {
     const seen = new Set();
     for (const p of parts) {
       seen.add(p.id);
-      const asset = p.shape === "asset";
+      const asset = grouped(p);
       let m = this.meshes.get(p.id);
       if (m && m.userData.asset !== asset) (this.drop(p.id), (m = null));
       if (!m) {
@@ -211,7 +212,7 @@ export class ToasterView {
     m.userData.key = keyOf(p);
     m.userData.size = [...p.size];
     if (m.userData.asset) {
-      m.userData.part = { shape: "asset", asset: p.asset };
+      m.userData.part = { shape: p.shape, asset: p.asset, body: p.body, rig: p.rig, pose: p.pose };
       this.fillAsset(m, p);
     } else {
       m.geometry = geometryOf(p);
@@ -240,13 +241,14 @@ export class ToasterView {
     m.userData.fit = fit;
     // (measured before it joins the part, so the part's own place does not count)
     if (!hasPiece(p)) return void (fit.add(new THREE.Mesh(new THREE.BoxGeometry(...p.size), ghost)), m.add(fit));
-    const piece = assetPiece(p.asset);
+    const figure = p.shape === "character";
+    const piece = figure ? characterPiece(p) : assetPiece(p.asset);
     fit.add(piece);
     piece.traverse((o) => {
       if (!o.isMesh) return;
-      o.material = openSurface(o.geometry) ? sheet : solid;
+      o.material = !figure && openSurface(o.geometry) ? sheet : solid;
       o.castShadow = o.receiveShadow = true;
-      if (o.isSkinnedMesh) o.frustumCulled = false;
+      if (o.isSkinnedMesh || figure) o.frustumCulled = false;
     });
     const box = preciseBox(fit);
     const ext = box.getSize(new THREE.Vector3());

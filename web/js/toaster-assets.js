@@ -2,7 +2,10 @@
 // props), listed once with their sizes, made as objects on demand, and drawn as small clay pictures for the Add grid.
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { MODELS, USER, loadModels, loadUserModels, onUserModels } from "./control/models.js";
+import { MODELS, USER, loadModels, loadUserModels, onUserModels, rigById } from "./control/models.js";
+import { BODY_TYPES } from "./control/skeleton.js";
+import { Mannequin } from "./control/mannequin.js";
+import { allPoses, poseById } from "./control/poses.js";
 import { ASSETS, assetCategories, isAnimal, makeProp, poseAnimal, registerAnimals, registerModelAssets, registerUserProp } from "./control/assets.js";
 
 let library = null;
@@ -56,7 +59,11 @@ export function loadLibrary() {
     refresh();
     // the user's own props join Mine as they load
     onUserModels((entry) => {
-      if (entry.gone || !USER.props.has(entry.id)) return;
+      if (USER.rigs.has(entry.id) || entry.gone) {
+        for (const k of [...sizes.keys()]) if (k.startsWith(`figure:${entry.id}|`)) sizes.delete(k);
+        return refresh();
+      }
+      if (!USER.props.has(entry.id)) return;
       registerUserProp(USER.props.get(entry.id));
       sizes.delete(entry.id);
       refresh();
@@ -97,30 +104,71 @@ function ensureShot() {
   return (shot = { renderer, scene, clay, camera: new THREE.PerspectiveCamera(30, 1, 0.01, 200) });
 }
 
-/** A piece alone in clay grey, three-quarter front, on a clear background, as a data URL. Cached per type. */
-export function assetThumb(type, { width = 112, height = 96 } = {}) {
-  const key = `${type}:${width}x${height}`;
-  if (thumbs.has(key)) return thumbs.get(key);
+/** An object alone in clay grey, from a direction, on a clear background, as a data URL. */
+function still(object, width, height, from, margin) {
   const { renderer, scene, clay, camera } = ensureShot();
-  const piece = assetPiece(type);
-  piece.traverse((o) => o.isMesh && (o.material = clay, (o.frustumCulled = false)));
-  scene.add(piece);
-  const box = preciseBox(piece);
+  object.traverse((o) => o.isMesh && ((o.material = clay), (o.frustumCulled = false)));
+  scene.add(object);
+  const box = preciseBox(object);
   const centre = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   const span = Math.max(size.y, size.x * (height / width), size.z * (height / width), 0.05);
-  const dist = (span / 2 / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.25 + Math.max(size.x, size.z) / 2;
-  camera.position.copy(centre).addScaledVector(new THREE.Vector3(0.55, 0.42, 1).normalize(), dist);
+  const dist = (span / 2 / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * margin + Math.max(size.x, size.z) / 2;
+  camera.position.copy(centre).addScaledVector(from.normalize(), dist);
   camera.lookAt(centre);
   renderer.setSize(width, height, false);
   renderer.setClearColor(0x000000, 0);
   renderer.clear();
   renderer.render(scene, camera);
   const url = renderer.domElement.toDataURL("image/png");
-  scene.remove(piece);
-  piece.traverse((o) => !o.userData.shared && o.geometry?.dispose());
-  thumbs.set(key, url);
+  scene.remove(object);
+  object.traverse((o) => !o.userData.shared && o.geometry?.dispose());
   return url;
+}
+
+/** A piece alone in clay grey, three-quarter front, on a clear background, as a data URL. Cached per type. */
+export function assetThumb(type, { width = 112, height = 96 } = {}) {
+  const key = `${type}:${width}x${height}`;
+  if (!thumbs.has(key)) thumbs.set(key, still(assetPiece(type), width, height, new THREE.Vector3(0.55, 0.42, 1), 1.25));
+  return thumbs.get(key);
+}
+
+// ------------------------------------------------------------ people
+
+/** A figure of the Stage: a body type (or one of the user's rigged characters) in a pose, on the ground, front toward +Z. Call after loadLibrary. */
+export function characterPiece({ body = "man", rig, pose = "stand" } = {}) {
+  const c = new Mannequin({ name: "toaster", color: "#b9b5ae", body, rig: rig && rigById(rig) ? rig : undefined });
+  c.setPreset(poseById(pose) ?? poseById("stand"));
+  c.ground();
+  c.driveRig();
+  return c.root;
+}
+
+/** The precise box of a figure in a pose, [w, h, d]. Cached. */
+export function characterSize({ body = "man", rig, pose = "stand" } = {}) {
+  const key = `figure:${rig ?? body}|${pose}`;
+  if (!sizes.has(key)) {
+    const root = characterPiece({ body, rig, pose });
+    sizes.set(key, preciseBox(root).getSize(new THREE.Vector3()).toArray().map((v) => Math.max(0.01, Math.round(v * 1000) / 1000)));
+    root.traverse((o) => o.geometry?.dispose());
+  }
+  return sizes.get(key);
+}
+
+/** The people to add: the body types, the user's rigged characters, and the poses (a size is the figure standing). */
+export function characterList() {
+  return {
+    people: BODY_TYPES.map((b) => ({ body: b.id, name: b.name, size: characterSize({ body: b.id }) })),
+    rigs: [...USER.rigs.values()].map((r) => ({ rig: r.id, name: r.name, size: characterSize({ rig: r.id }) })),
+    poses: allPoses().map((p) => ({ id: p.id, name: p.name, category: p.category })),
+  };
+}
+
+/** A figure alone in clay grey, three-quarter front, on a clear background, as a data URL. Cached. */
+export function characterThumb({ body = "man", rig, pose = "stand" } = {}, { width = 112, height = 132 } = {}) {
+  const key = `figure:${rig ?? body}|${pose}:${width}x${height}`;
+  if (!thumbs.has(key)) thumbs.set(key, still(characterPiece({ body, rig, pose }), width, height, new THREE.Vector3(0.45, 0.12, 1), 1.12));
+  return thumbs.get(key);
 }
