@@ -1,4 +1,4 @@
-// The app's home: the five products, each with its cover, what it is for and what it does, the
+// The app's home: the six products, each with its cover, what it is for and what it does, the
 // featured one in a banner that turns from one to the next; then the films last worked on.
 import { h, icon, sprite } from "../dom.js";
 import { state } from "../store.js";
@@ -10,6 +10,7 @@ const ABOUT = {
   mixer: { who: "For trend followers", line: "An edit you like, made yours: drop it in, add your cast, get your version.", does: ["Remix an edit", "Your cast", "Recipes"] },
   jam: { who: "For musicians and dancers", line: "A music video from a track: the singing performed, a dance copied, the words on it.", does: ["Lip-sync", "Dance", "Captions"] },
   macaron: { who: "For brands", line: "Turn any product into ready-to-post content, on brand.", does: ["Product shots", "UGC ads", "Brand kit"] },
+  spice: { who: "For visual effects", line: "One shot through six departments: cut out, cleaned up, relit, an effect added, the comp finished.", does: ["Roto", "Paint", "Light", "FX", "Comp"] },
   utensils: { who: "For one small job", line: "Upscale, cut out, vary, lip-sync: one small tool at a time.", does: ["Upscale", "Cutout", "Variations", "Lip-sync"] },
 };
 const ids = Object.keys(PRODUCTS);
