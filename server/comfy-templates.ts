@@ -660,6 +660,23 @@ export interface RunRequest {
  * what was given is sent: an empty field leaves the template's own value. Numbers are clamped to the slot's range, a combo to its
  * options, a missing required picture/clip/sound is an error.
  */
+/**
+ * Settings of a template's own nodes, by node id, beyond what its form shows: what a product's pipeline sets on a template it
+ * runs (a voice, an instruction to a writer node). Only node ids, input names and plain values are kept; the rest is dropped.
+ */
+export function withOverrides(req: RunRequest, overrides: unknown): RunRequest {
+  if (!overrides || typeof overrides !== "object") return req;
+  for (const [node, inputs] of Object.entries(overrides as Record<string, unknown>)) {
+    if (!/^\d+$/.test(node) || !inputs || typeof inputs !== "object") continue;
+    for (const [k, v] of Object.entries(inputs as Record<string, unknown>)) {
+      if (!/^[a-z_][\w.]*$/i.test(k)) continue;
+      if (typeof v === "string") (req.input_overrides[node] ??= {})[k] = v.slice(0, 8000);
+      else if ((typeof v === "number" && Number.isFinite(v)) || typeof v === "boolean") (req.input_overrides[node] ??= {})[k] = v;
+    }
+  }
+  return req;
+}
+
 export function buildRunRequest(name: string, form: Form, values: Record<string, unknown>, uploaded: Record<string, Uploaded> = {}): RunRequest {
   const req: RunRequest = { name, slot_overrides: {}, input_overrides: {} };
   const write = (t: Target, value: unknown) => {
@@ -1183,7 +1200,7 @@ export function createTemplates(deps: Deps) {
       const ext = local.file.split(".").pop()?.toLowerCase() ?? "";
       uploaded[s.id] = { name: await deps.cloud.upload(s.kind, { name: local.file, bytes: await readFile(local.path), type: MIME[ext] ?? "application/octet-stream" }) };
     }
-    const req = buildRunRequest(name, form, values, uploaded);
+    const req = withOverrides(buildRunRequest(name, form, values, uploaded), body?.overrides);
     const confirm = body?.confirm === true;
     let text: string;
     try {
