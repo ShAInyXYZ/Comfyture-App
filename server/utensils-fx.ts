@@ -22,6 +22,8 @@ export const TOOLS = ["chroma", "stabilise", "slowmo", "weather", "sparks", "unl
 export type Tool = (typeof TOOLS)[number];
 /** The tools that can show one frame of what they would make (a preview): they draw on every frame the same way. */
 export const PREVIEWS: Tool[] = ["chroma", "weather", "sparks", "unlogo"];
+/** The tools that take a picture as well as a clip: a picture in, a picture out (Spice's light and paint on a shot that is a picture). */
+export const STILLS: Tool[] = ["weather", "sparks", "unlogo"];
 
 export class FxError extends Error {
   status: number;
@@ -58,6 +60,8 @@ export interface Ctx {
   /** what a loudness pass measured, so the second pass can be exact */
   measured?: Measured;
   preview?: { at: number };
+  /** the input is a picture: the tool makes a picture of it */
+  still?: boolean;
 }
 export interface Measured {
   input_i: number;
@@ -196,6 +200,7 @@ const hexArg = (h: string) => `0x${h.slice(1)}`;
 
 /** One frame as a picture (a preview) or the whole clip, encoded: the end of every video plan. */
 function finishVideo(inputs: string[], graph: string[], ctx: Ctx, audio: string[] = ["-map", "0:a?", ...AENC], note?: string): Step[] {
+  if (ctx.still) return [{ args: [...inputs, ...graph, "-an", "-frames:v", "1", out(ctx, "out.png")], out: out(ctx, "out.png"), kind: "image", ext: "png", note }];
   if (ctx.preview) return [{ args: [...inputs, ...graph, "-an", "-frames:v", "1", "-q:v", "3", out(ctx, "out.jpg")], out: out(ctx, "out.jpg"), kind: "image", ext: "jpg" }];
   return [{ args: [...inputs, ...graph, ...VENC, ...audio, ...FAST, out(ctx, "out.mp4")], out: out(ctx, "out.mp4"), kind: "video", ext: "mp4", note }];
 }
@@ -302,7 +307,7 @@ function overlayOver(kind: string, p: Params, ctx: Ctx): { inputs: string[]; gra
   const look = LOOKS[kind];
   const opacity = clamp(look.strength * (0.2 + p.amount * 0.8), 0.05, 1);
   const [r, g, b] = look.tint;
-  const fx = overlayGraph(kind, p as any, w, h, v.fps, ctx.preview ? 4 : v.duration);
+  const fx = overlayGraph(kind, p as any, w, h, v.fps || 24, ctx.preview || ctx.still ? 4 : v.duration);
   const filter = `${fx};[0:v]${EVEN},format=gbrp[v];[fx]format=gbrp,colorchannelmixer=rr=${f3(r)}:gg=${f3(g)}:bb=${f3(b)}[o];[v][o]blend=all_mode=screen:all_opacity=${f3(opacity)}:shortest=1,format=yuv420p[out]`;
   return { inputs: [...seek(ctx), "-i", v.path], graph: ["-filter_complex", filter, "-map", "[out]"] };
 }
@@ -601,8 +606,10 @@ export function createFx({ data, keepAudio }: FxDeps) {
       ctx.tracks = ctx.tracks.filter((t) => !t.spec.mute);
     } else {
       const audioTool = tool === "denoise" || tool === "master";
-      const path = audioTool ? await find(["audio", "videos", "edits"], body.file ?? body.audio ?? body.video, "The file") : await find(["videos", "edits"], body.video, "The clip");
+      const path = audioTool ? await find(["audio", "videos", "edits"], body.file ?? body.audio ?? body.video, "The file") : await find(STILLS.includes(tool) ? ["videos", "edits", "photos"] : ["videos", "edits"], body.video, "The clip");
       const input = await probe(path);
+      // (a picture of the library: the tools that take one make a picture of it)
+      ctx.still = STILLS.includes(tool) && path.startsWith(join(data, "photos"));
       if (audioTool ? !input.hasAudio : !input.hasVideo) throw new FxError(audioTool ? "That file has no sound." : "That file has no picture.");
       ctx.input = input;
       params = clean(tool, body, { duration: input.duration });
@@ -716,6 +723,8 @@ export function createFx({ data, keepAudio }: FxDeps) {
     try {
       const d = ctx.input!.duration;
       ctx.preview = { at: clamp(Number(body.at) || 0, 0, Math.max(0, d - 0.04)) };
+      // (a picture's preview is its one frame, as a clip's is)
+      ctx.still = false;
       const made = plan(tool, params, ctx);
       for (const step of made.steps) {
         await exec("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-y", ...step.args], { cwd: work, maxBuffer: 1 << 20 }).catch((e) => {

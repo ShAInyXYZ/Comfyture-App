@@ -407,3 +407,18 @@ test("a clip's strip of thumbnails is one picture with its frames side by side",
   const probe = await edit.handle("POST", "probe", { file: "clip.mp4" });
   assert.deepEqual(probe.body, { duration: 2, width: 320, height: 180, fps: 24, hasAudio: true, hasVideo: true });
 });
+
+test("a picture in, a picture out: the grade is one frame saved as a PNG, the export a PNG, JPG or WebP, and a clip's formats are refused", () => {
+  const still: Probe = { path: "/data/photos/a.png", duration: 0, width: 640, height: 360, fps: 25, hasAudio: false, hasVideo: true } as any;
+  const ctx = { work: "/w", videos: [still], still: true } as any;
+  const graded = plan("grade", clean("grade", { preset: "filmic" }, { duration: 0 }), ctx);
+  assert.equal(graded.steps.length, 1);
+  assert.deepEqual([graded.steps[0].kind, graded.steps[0].ext], ["image", "png"]);
+  assert.ok(graded.steps[0].args.includes("-frames:v") && !graded.steps[0].args.includes("libx264"), "one frame, no clip");
+  const webp = plan("convert", clean("convert", { format: "webp", quality: "high" }, { duration: 0 }), ctx);
+  assert.deepEqual([webp.steps[0].ext, webp.steps[0].args.includes("libwebp")], ["webp", true]);
+  const jpg = plan("convert", clean("convert", { format: "jpg", height: "360" }, { duration: 0 }), ctx);
+  assert.ok(jpg.steps[0].args.includes("scale=-2:360") && jpg.steps[0].ext === "jpg");
+  assert.throws(() => plan("convert", clean("convert", { format: "mp4" }, { duration: 0 }), ctx), /PNG, JPG or WebP/);
+  assert.throws(() => plan("convert", clean("convert", { format: "png" }, { duration: 5 }), { ...ctx, still: false }), /MP4, WebM, MOV or GIF/);
+});

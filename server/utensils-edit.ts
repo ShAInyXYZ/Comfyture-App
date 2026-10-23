@@ -51,6 +51,8 @@ export interface Ctx {
   /** whether a trim's start is on a keyframe, so the stream can be copied and the cut stays exact */
   startOnKeyframe?: boolean;
   preview?: { at: number };
+  /** the input is a picture: the tool makes a picture of it */
+  still?: boolean;
 }
 
 export interface Step {
@@ -81,7 +83,10 @@ const f4 = (v: number) => (Math.round(v * 10000) / 10000).toString();
 
 export const GRADES = ["none", "warm", "cool", "filmic", "punchy", "faded", "noir"] as const;
 export const CORNERS = ["tl", "tr", "bl", "br", "centre"] as const;
-export const CONVERTS = ["mp4", "webm", "mov", "gif", "mp3", "wav", "m4a"] as const;
+export const CONVERTS = ["mp4", "webm", "mov", "gif", "mp3", "wav", "m4a", "png", "jpg", "webp"] as const;
+/** The tools that take a picture as well as a clip: a picture in, a picture out (Spice's light and comp on a shot that is a picture). */
+export const STILLS: readonly string[] = ["grade", "convert"];
+const PICTURE_FORMATS = ["png", "jpg", "webp"];
 export const CAPTION_STYLES = ["bold", "outline", "box", "minimal"] as const;
 export const MAX_TOTAL_SECONDS = 180;
 
@@ -166,6 +171,7 @@ export function atempoChain(f: number) {
 /** A picture and its encoding: one frame at a time (a preview), or the whole clip. */
 function finish(inputs: string[], filter: string, label: string | null, ctx: Ctx, audio: string[] = ["-map", "0:a?", ...AENC]): Step[] {
   const graph = label ? ["-filter_complex", filter, "-map", `[${label}]`] : ["-vf", filter, "-map", "0:v"];
+  if (ctx.still) return [{ args: [...inputs, ...graph, "-frames:v", "1", join(ctx.work, "out.png")], out: join(ctx.work, "out.png"), kind: "image", ext: "png" }];
   if (ctx.preview) return [{ args: [...inputs, ...graph, "-an", "-ss", f3(ctx.preview.at), "-frames:v", "1", "-q:v", "3", join(ctx.work, "out.jpg")], out: join(ctx.work, "out.jpg"), kind: "image", ext: "jpg" }];
   return [{ args: [...inputs, ...graph, ...VENC, ...audio, ...FAST, join(ctx.work, "out.mp4")], out: join(ctx.work, "out.mp4"), kind: "video", ext: "mp4" }];
 }
@@ -356,6 +362,14 @@ export function plan(tool: Tool, p: Params, ctx: Ctx): Plan {
     }
     case "convert": {
       const q = p.quality as "high" | "medium" | "small";
+      // a picture: PNG, JPG or WebP of it, at a height asked or its own
+      if (ctx.still) {
+        if (!PICTURE_FORMATS.includes(p.format)) throw new EditError("A picture is exported as PNG, JPG or WebP.");
+        const vf = Number(p.height) ? ["-vf", `scale=-2:${p.height}`] : [];
+        const codec = p.format === "jpg" ? ["-q:v", { high: "2", medium: "4", small: "7" }[q]] : p.format === "webp" ? ["-c:v", "libwebp", "-quality", { high: "92", medium: "82", small: "68" }[q]] : [];
+        return { steps: [{ args: ["-i", src, ...vf, ...codec, "-frames:v", "1", out(ctx, p.format)], out: out(ctx, p.format), kind: "image", ext: p.format }], seconds: 0 };
+      }
+      if (PICTURE_FORMATS.includes(p.format)) throw new EditError("A clip is exported as MP4, WebM, MOV or GIF.");
       const scale = Number(p.height) ? `scale=-2:${p.height}` : EVEN;
       const rate = Number(p.fps) ? `,fps=${p.fps}` : "";
       switch (p.format) {
@@ -493,16 +507,16 @@ export function createEdit({ data, root }: EditDeps) {
     if (!path || !(await exists(path))) throw new EditError(`${what} is missing. Add it again.`);
     return path;
   };
-  const video = async (v: unknown) => {
+  const video = async (v: unknown, still = false) => {
     const name = fileName(v);
-    for (const dir of ["videos", "edits"]) if (name && (await exists(join(data, dir, name)))) return join(data, dir, name);
+    for (const dir of still ? ["videos", "edits", "photos"] : ["videos", "edits"]) if (name && (await exists(join(data, dir, name)))) return join(data, dir, name);
     throw new EditError("The clip is missing. Add it again.");
   };
 
   async function keep(step: Step): Promise<Result> {
     const hash = await sha(step.out);
     const file = `${hash}.${step.ext}`;
-    const dir = step.kind === "video" && step.ext === "mp4" ? "videos" : step.kind === "audio" ? "audio" : step.kind === "image" && (step.ext === "png" || step.ext === "jpg") ? "photos" : "edits";
+    const dir = step.kind === "video" && step.ext === "mp4" ? "videos" : step.kind === "audio" ? "audio" : step.kind === "image" && (step.ext === "png" || step.ext === "jpg" || step.ext === "webp") ? "photos" : "edits";
     await mkdir(join(data, dir), { recursive: true });
     const target = join(data, dir, file);
     if (!(await exists(target))) await rename(step.out, target).catch(async () => (await copyFile(step.out, target), await rm(step.out, { force: true })));
@@ -521,7 +535,7 @@ export function createEdit({ data, root }: EditDeps) {
     if (tool === "merge" && sources.length < 2) throw new EditError("Add at least two clips to join.");
     const videos: Probe[] = [];
     for (const s of sources) {
-      const p = await probe(await video(s));
+      const p = await probe(await video(s, STILLS.includes(tool)));
       if (!p.hasVideo) throw new EditError("That file has no picture.");
       videos.push(p);
     }
@@ -532,7 +546,8 @@ export function createEdit({ data, root }: EditDeps) {
     if (tool === "loop" && d * p.times * (p.pingpong ? 2 : 1) > MAX_TOTAL_SECONDS) throw new EditError(`The loop would run past ${MAX_TOTAL_SECONDS} seconds.`);
     if (tool === "speed" && p.smooth && p.factor < 1 && d > 30) throw new EditError("Smooth slow-motion takes clips of up to 30 seconds.");
     if (tool === "merge" && videos.reduce((s, c) => s + c.duration, 0) > MAX_TOTAL_SECONDS) throw new EditError(`The film would run past ${MAX_TOTAL_SECONDS} seconds.`);
-    const ctx: Ctx = { work, videos };
+    // (a picture of the library: the tools that take one make a picture of it)
+    const ctx: Ctx = { work, videos, still: STILLS.includes(tool) && videos[0].path.includes(`${join(data, "photos")}`) };
     await mkdir(work, { recursive: true });
     if (tool === "logo") {
       ctx.image = await probe(await find("photos", body.image, "The logo picture"));
@@ -618,6 +633,8 @@ export function createEdit({ data, root }: EditDeps) {
     try {
       const d = ctx.videos[0].duration;
       ctx.preview = { at: clamp(Number(body.at) || 0, 0, Math.max(0, d - 0.04)) };
+      // (a picture's preview is its one frame, as a clip's is)
+      ctx.still = false;
       const made = plan(tool, params, ctx);
       await writeFiles(work, made.files);
       await exec("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-y", ...made.steps[0].args], { cwd: work, maxBuffer: 1 << 20 }).catch((e) => {

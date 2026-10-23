@@ -437,3 +437,13 @@ test("laying an effect in is three parts of the shot and one of the effect, its 
   const g2 = alone.steps[1].args[alone.steps[1].args.indexOf("-filter_complex") + 1];
   assert.ok(/split=1\[sb\]/.test(g2) && /\[b\]null\[out\]/.test(g2) && !/\[3:v\]/.test(g2), "an effect over the whole shot is one part, with no matte");
 });
+
+test("a picture in, a picture out: weather, particles and a spot removed are one frame saved as a PNG", () => {
+  const still: Probe = { path: "/data/photos/a.png", duration: 0, width: 640, height: 360, fps: 25, hasAudio: false, hasVideo: true };
+  for (const [tool, body] of [["weather", { kind: "rain", amount: 0.6 }], ["sparks", { kind: "embers" }], ["unlogo", { grow: 2, mask: "data:image/png;base64,AAAA" }]] as [Tool, Record<string, unknown>][]) {
+    const made = plan(tool, clean(tool, body, { duration: 0 }), { work: "/w", input: still, still: true });
+    const last = made.steps.at(-1)!;
+    assert.deepEqual([last.kind, last.ext], ["image", "png"], `${tool}: a picture back`);
+    assert.ok(last.args.includes("-frames:v") && !last.args.includes("libx264"), `${tool}: one frame, no clip`);
+  }
+});
