@@ -441,12 +441,13 @@ async function write(model: string, brief: string, prompt: string, opts: { maxLe
 }
 
 /** A pet's answer (Praline's, Truffle's): through its tool on Claude, so it is data; as JSON in plain text on the others. */
-async function petAnswer(model: string, brief: string, tool: { name: string; description: string; input_schema: unknown }, prompt: string, image?: { type: string; data: string }) {
+async function petAnswer(model: string, brief: string, tool: { name: string; description: string; input_schema: unknown }, prompt: string, image?: { type: string; data: string }, maxTokens = 3000) {
   const forced = onRouter(model) && takesTools(model);
-  const system = forced ? brief : `${brief}\n\nAnswer with JSON only, no other words: {"reply": "...", "actions": [{"op": "...", ...}]}`;
+  // (a model that cannot be made to call the tool, Sonnet among them, is told to: an answer in words alone does nothing)
+  const system = forced ? `${brief}\n\nAnswer only by calling the ${tool.name} tool, never in words alone.` : `${brief}\n\nAnswer with JSON only, no other words: {"reply": "...", "actions": [{"op": "...", ...}]}`;
   return onRouter(model)
-    ? routerAsk(model, system, prompt, { maxTokens: 3000, temperature: 0.3, ...(forced ? { tool } : {}), ...(image ? { image } : {}) })
-    : engine.write(system, prompt, { maxLength: 1200, temperature: 0.3 });
+    ? routerAsk(model, system, prompt, { maxTokens, temperature: 0.3, ...(forced ? { tool } : {}), ...(image ? { image } : {}) })
+    : engine.write(system, prompt, { maxLength: Math.max(1200, Math.round(maxTokens / 2)), temperature: 0.3 });
 }
 /** What a pet's page said to it: the last turns as they were, each with what the app did for it. */
 function petTurns(messages: unknown) {
@@ -1535,7 +1536,14 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (file) await photo(file);
     const image = file && onRouter(model) ? await imageBlock(engine.photoPath(file)) : undefined;
     const prompt = toasterPrompt(summary, turns, { picture: !!image });
-    const reply = await petAnswer(model, TOASTER_BRIEF, TOASTER_TOOL, file && !image ? `${prompt}\n\n(The user attached a photo, but this model cannot see it: say so, and build from their words.)` : prompt, image);
+    const asked = file && !image ? `${prompt}\n\n(The user attached a photo, but this model cannot see it: say so, and build from their words.)` : prompt;
+    // a whole room is many actions: room for them
+    let reply = await petAnswer(model, TOASTER_BRIEF, TOASTER_TOOL, asked, image, 8000);
+    // an answer in words alone builds nothing: he is asked once more, for the tool's answer
+    if (!reply.includes("{")) {
+      if (process.env.COMFYTURE_DEBUG) console.log(`crumpet answered in words only, asked again\n${reply}`);
+      reply = await petAnswer(model, TOASTER_BRIEF, TOASTER_TOOL, `${asked}\n\nYour last answer was words only, so nothing was built: "${reply.slice(0, 400)}". Answer now through toaster_answer, with every action it takes.`, image, 8000);
+    }
     if (process.env.COMFYTURE_DEBUG) console.log(`crumpet answered\n${reply}`);
     return json(res, 200, readToasterAnswer(reply, summary));
   }
