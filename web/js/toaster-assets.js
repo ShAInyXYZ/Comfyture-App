@@ -10,6 +10,8 @@ import { ASSETS, assetCategories, isAnimal, makeProp, poseAnimal, registerAnimal
 
 let library = null;
 let loading = null;
+// what each piece is, in words (models/descriptions.json: its kind and its form, as the model shows it), keyed by type
+let descriptions = {};
 const listeners = new Set();
 const sizes = new Map();
 
@@ -40,7 +42,7 @@ function list() {
     pieces: ASSETS.map((def, i) => ({ def, i }))
       .sort((a, b) => rank(a.def.category) - rank(b.def.category) || a.i - b.i)
       .map(({ def }) => ({
-        type: def.type, name: def.name, category: def.category, icon: def.icon, themes: def.themes ?? [], tags: def.tags ?? [], size: sizeOf(def),
+        type: def.type, name: def.name, category: def.category, icon: def.icon, themes: def.themes ?? [], tags: def.tags ?? [], size: sizeOf(def), description: descriptions[def.type] ?? "",
         ...(def.animal ? { animal: true } : {}), ...(def.user ? { user: true } : {}),
       })),
   };
@@ -54,7 +56,8 @@ function refresh() {
 /** Loads the models and lists every piece (once). */
 export function loadLibrary() {
   loading ??= (async () => {
-    await loadModels();
+    // (a library without its descriptions still lists every piece, each then called by its name)
+    [descriptions] = await Promise.all([fetch("models/descriptions.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({})), loadModels()]);
     if (MODELS.manifest) (registerModelAssets(MODELS.manifest.assets ?? []), registerAnimals(MODELS.manifest.animals ?? []));
     refresh();
     // the user's own props join Mine as they load

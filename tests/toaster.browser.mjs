@@ -347,7 +347,7 @@ try {
     const [fr, id, dp] = frameAsk.refs.map((r) => lib.find((p) => p.file === r.file));
     ok(fr && id && dp && fr.width === id.width && fr.height === dp.height, "the maps are the frame's very size", JSON.stringify([fr, id, dp].map((p) => p && `${p.width}x${p.height}`)));
   }
-  ok(/^Turn @frame, a clay blockout/.test(frameAsk?.prompt) && /orange is walnut/.test(frameAsk?.prompt) && /blue is an office chair/.test(frameAsk?.prompt) && !/Cylinder|Office chair/.test(frameAsk?.prompt) && /A retro 1950s toaster/.test(frameAsk?.prompt) && /marble counter/i.test(frameAsk?.prompt), "its words tell the clay's colours, the object and the scene", frameAsk?.prompt);
+  ok(/^Turn @frame, a clay blockout/.test(frameAsk?.prompt) && /orange is walnut/.test(frameAsk?.prompt) && /blue is a swivel office chair with/.test(frameAsk?.prompt) && !/Cylinder|Office chair/.test(frameAsk?.prompt) && /A retro 1950s toaster/.test(frameAsk?.prompt) && /marble counter/i.test(frameAsk?.prompt), "its words tell the clay's colours (a piece by the library's description of it), the object and the scene", frameAsk?.prompt);
   d = await draft();
   ok(d.body.renders[0]?.status === "done" && d.body.renders[0].photo?.url && d.body.renders[0].camera, "the render is kept with its camera");
   ok(await page.locator(".ts-studio .ts-pic img").isVisible(), "the render shows in the studio");

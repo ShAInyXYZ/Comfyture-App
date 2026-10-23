@@ -547,24 +547,43 @@ const plainShape = (name) => SHAPES.some((s) => s.name.toLowerCase() === name.to
 /** A sheet's words as they follow a name: no full stop, a lower-case start ("A woman…" reads "a woman…"). */
 const lowered = (t) => String(t ?? "").trim().replace(/[.;]+$/, "").replace(/^(A|An|The) /, (m) => m.toLowerCase());
 
+/** A piece's name as words, with its article: "an articulated desk lamp" (what a piece is called when the library has no description of it). */
+const pieceName = (p, pieceOf) => withArticle(String(pieceOf(p.asset)?.name ?? p.asset).replace(/[-_]+/g, " ").toLowerCase());
+/** A piece's identity in the library: its description ("an articulated desk lamp with a round weighted base…"), else its name. */
+const pieceWords = (p, pieceOf) => lowered(pieceOf(p.asset)?.description) || pieceName(p, pieceOf);
+
 /**
- * What a part is, in words, never its name or id: its sheet words; else, for a piece of the library, the piece's name ("an armchair"); a
- * character's person ("a woman", a rigged one by its rig); a shape by its name when that says something ("the floor", "a back wall"), and
- * "" for a default shape ("Box 3"). `pieceOf(type)` answers a library piece.
+ * What a part is, in words, never its name or id: its sheet words (What it is); else, for a piece of the library, the library's description
+ * of it; a character's person ("a woman", a rigged one by its rig); a shape by its name when that says something ("the floor", "a back
+ * wall"), and "" for a default shape ("Box 3"). `pieceOf(type)` answers a library piece (with its `description`).
  */
 export function describeOf(p, pieceOf = () => null) {
   const own = lowered(p.made);
   if (own) return own;
-  if (isAsset(p)) return withArticle(String(pieceOf(p.asset)?.name ?? p.asset).replace(/[-_]+/g, " ").toLowerCase());
+  if (isAsset(p)) return pieceWords(p, pieceOf);
   if (isCharacter(p)) return p.rig ? withArticle(String(p.name ?? p.rig).toLowerCase()) : (PERSON[p.body] ?? "a person");
   const name = String(p.name ?? "").trim().replace(/[_]+/g, " ").toLowerCase();
   if (!name || plainShape(name)) return "";
   return /^(floor|ground|ceiling|sky)$/.test(name) ? `the ${name}` : withArticle(name);
 }
-/** The words a new piece or character starts with in What it is: what it is, ready to refine. */
-export const startingWords = (p, pieceOf) => describeOf({ ...p, made: "" }, pieceOf);
-/** The parts with an empty What it is filled in for the pieces and the characters (`pieceOf` must know the library for the pieces). */
-export const described = (parts, pieceOf) => parts.map((p) => (!p.made && (isCharacter(p) || (isAsset(p) && pieceOf(p.asset))) ? { ...p, made: startingWords(p, pieceOf) } : p));
+/**
+ * The words a new part starts with in What it is: a piece, its identity as the library describes it, ready to refine; a character nothing
+ * (who they are, their face, hair and clothes, is the user's to say); a shape nothing.
+ */
+export const startingWords = (p, pieceOf) => (isAsset(p) ? pieceWords(p, pieceOf) : "");
+/**
+ * The parts with What it is filled in where it says nothing yet: a piece gets the library's description (once the library, with its
+ * descriptions, is known), also over the bare name an earlier Toaster wrote there ("an armchair"); a character's bare person ("a man"),
+ * written there the same way, is taken back out. What the user wrote stays. A name written as an id ("desk_lamp") becomes a name ("Desk lamp").
+ */
+export const described = (parts, pieceOf) => parts.map((p) => {
+  // (a name written as an id, "desk_lamp", reads as a name: "Desk lamp")
+  if (/^[a-z0-9]+(?:_[a-z0-9]+)+$/i.test(p.name ?? "")) p = { ...p, name: p.name.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) };
+  const own = String(p.made ?? "").trim();
+  if (isAsset(p) && pieceOf(p.asset)?.description && (!own || own.toLowerCase() === pieceName(p, pieceOf))) return { ...p, made: pieceWords(p, pieceOf) };
+  if (isCharacter(p) && own && own.toLowerCase() === (p.rig ? withArticle(String(p.name ?? p.rig).toLowerCase()) : PERSON[p.body])) return { ...p, made: "" };
+  return p;
+});
 
 /** Who is in the frame, for the words and the pictures: the visible tagged parts (each by its description), then the scene's references. */
 export function castOf(parts = [], sceneRefs = [], pieceOf = () => null) {

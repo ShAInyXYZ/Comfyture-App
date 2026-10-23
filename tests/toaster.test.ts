@@ -349,10 +349,11 @@ test("the legend names each thing by its description; a part with pictures adds 
   assert.match(sheetPrompt({ parts }), /In @sheet, walnut is a walnut mid-century desk with brass handles; vermilion is a woman/);
 });
 
-test("describeOf: the sheet words, else the piece, the person or the shape's own name; a new piece starts with its description", () => {
-  const pieceOf = (t) => ({ "armchair": { name: "Armchair" }, "desk-lamp": { name: "Articulated desk lamp" } })[t] ?? null;
-  assert.equal(describeOf(cleanPart({ shape: "asset", asset: "armchair", name: "Guest_1" }), pieceOf), "an armchair");
-  assert.equal(describeOf(cleanPart({ shape: "asset", asset: "desk-lamp", name: "Lamp" }), pieceOf), "an articulated desk lamp");
+test("describeOf: the sheet words, else the library's description of the piece, the person or the shape's own name", () => {
+  const ARM = "a deep armchair with a padded back, rolled arms and a loose seat cushion";
+  const pieceOf = (t) => ({ "armchair": { name: "Armchair", description: ARM }, "desk-lamp": { name: "Articulated desk lamp" } })[t] ?? null;
+  assert.equal(describeOf(cleanPart({ shape: "asset", asset: "armchair", name: "Guest_1" }), pieceOf), ARM, "never the part's name: the library's description");
+  assert.equal(describeOf(cleanPart({ shape: "asset", asset: "desk-lamp", name: "Lamp" }), pieceOf), "an articulated desk lamp", "no description: the piece's name");
   assert.equal(describeOf(cleanPart({ shape: "asset", asset: "wall-clock", name: "x" })), "a wall clock", "no library: the type's words");
   assert.equal(describeOf(cleanPart({ shape: "asset", asset: "armchair", made: "A charcoal leather chesterfield." }), pieceOf), "a charcoal leather chesterfield");
   assert.equal(describeOf(cleanPart({ shape: "character", body: "elder", name: "Gran" })), "an older person");
@@ -360,14 +361,29 @@ test("describeOf: the sheet words, else the piece, the person or the shape's own
   assert.equal(describeOf(cleanPart({ shape: "box", name: "Back wall" })), "a back wall");
   assert.equal(describeOf(cleanPart({ shape: "box", name: "Floor" })), "the floor");
   assert.equal(describeOf(cleanPart({ shape: "cylinder", name: "Cylinder 2" })), "", "a default shape says nothing");
-  const made = newAssetPart({ type: "armchair", name: "Armchair", size: [1, 1, 1] }, []);
-  assert.equal(made.made, "an armchair", "a piece added starts with what it is");
-  assert.equal(newCharacterPart({ body: "child", name: "Child" }, []).made, "a child");
-  // a draft opened: the empty ones are filled (the pieces only when the library knows them)
-  const parts = [cleanPart({ shape: "asset", asset: "armchair" }), cleanPart({ shape: "character", body: "woman" }), cleanPart({ shape: "box", name: "Floor" }), cleanPart({ shape: "asset", asset: "sofa", made: "mine" })];
-  assert.deepEqual(described(parts, () => null).map((p) => p.made), ["", "a woman", "", "mine"]);
-  assert.deepEqual(described(parts, pieceOf).map((p) => p.made), ["an armchair", "a woman", "", "mine"]);
-  assert.equal(described(parts, pieceOf)[3], parts[3], "what is written stays");
+});
+
+test("What it is starts as the piece's identity from the library; a character's is the user's to write; the bare names written before are mended", () => {
+  const ARM = "a deep armchair with a padded back, rolled arms and a loose seat cushion";
+  const pieceOf = (t) => ({ "armchair": { name: "Armchair", description: ARM }, "sofa": { name: "Sofa", description: "a three-seat sofa" }, "rug": { name: "Rug" } })[t] ?? null;
+  assert.equal(newAssetPart({ type: "armchair", name: "Armchair", description: ARM, size: [1, 1, 1] }, []).made, ARM, "a piece added starts with its description");
+  assert.equal(newAssetPart({ type: "rug", name: "Rug", size: [1, 1, 1] }, []).made, "a rug", "a piece the library does not describe: its name");
+  assert.equal(newCharacterPart({ body: "child", name: "Child" }, []).made, "", "who a character is is the user's to say");
+  const parts = [
+    cleanPart({ shape: "asset", asset: "armchair" }),
+    cleanPart({ shape: "asset", asset: "armchair", made: "an armchair" }),
+    cleanPart({ shape: "character", body: "woman", made: "a woman" }),
+    cleanPart({ shape: "character", body: "woman", made: "a nurse in scrubs" }),
+    cleanPart({ shape: "box", name: "Floor" }),
+    cleanPart({ shape: "asset", asset: "sofa", made: "mine" }),
+    cleanPart({ shape: "asset", asset: "rug" }),
+    cleanPart({ shape: "asset", asset: "sofa", name: "guest_sofa_2", made: "mine" }),
+  ];
+  assert.deepEqual(described(parts, () => null).map((p) => p.made), ["", "an armchair", "", "a nurse in scrubs", "", "mine", "", "mine"], "the pieces wait for the library");
+  assert.deepEqual(described(parts, pieceOf).map((p) => p.made), [ARM, ARM, "", "a nurse in scrubs", "", "mine", "", "mine"]);
+  assert.equal(described(parts, pieceOf)[5], parts[5], "what is written stays");
+  assert.equal(described(parts, pieceOf)[7].name, "Guest sofa 2", "a name written as an id reads as a name");
+  assert.equal(described([cleanPart({ shape: "box", name: "Guest_1" })], pieceOf)[0].name, "Guest 1");
 });
 
 test("a new scene reference is named after its picture, never a part's tag; a part's sheet takes six pictures, none twice", () => {
