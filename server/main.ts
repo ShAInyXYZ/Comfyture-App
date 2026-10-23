@@ -1550,6 +1550,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/toaster/improve" && method === "POST") {
     // the prompt of a render written again for the image model: from the words, the cast with its sheets and, on Comfy Router, the clay frame and a picture of each sheet
     const input = await jsonBody(req, 256 * 1024);
+    // nothing said and nothing tagged: there is nothing to improve, and no writer is asked
+    if (![input.what, input.scene, input.prompt].some((v) => typeof v === "string" && v.trim()) && !(Array.isArray(input.cast) && input.cast.length)) throw bad("Nothing to improve yet: say what it is, or tag a part.");
     const model = pickLlm(input.model, "assistant");
     const refs = (Array.isArray(input.refs) ? input.refs : []).slice(0, 12).filter((r: any) => r && typeof r.file === "string" && r.file);
     const seen: { name: string; file: string }[] = [];
