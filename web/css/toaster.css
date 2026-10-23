@@ -55,7 +55,8 @@
 
 /* ---- the shapes to add ---------------------------------------------------------------------------------- */
 .ts-add { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .5rem; }
-.ts-add + .ts-library-key { margin-top: -.125rem; }
+.ts-add-keys { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin-top: -.125rem; }
+.ts-add-keys .ts-library-key { padding: 0 .75rem; letter-spacing: .14em; }
 .ts-tile { display: grid; place-items: center; aspect-ratio: 1; padding: 0; border: 1px solid var(--line); border-radius: .75rem; background: var(--sunk); color: var(--muted); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast); }
 .ts-tile:hover { border-color: var(--line2); background: var(--s2); color: var(--text); }
 .ts-tile:active { transform: translateY(1px); }
@@ -86,6 +87,9 @@
 .ts-piece:hover { border-color: var(--line2); background: var(--s2); color: var(--text); }
 .ts-piece:active { transform: translateY(1px); }
 .ts-piece img { width: 100%; aspect-ratio: 112 / 96; object-fit: contain; border-radius: .375rem; background: radial-gradient(70% 70% at 50% 45%, #2a2a2f, #19191c); }
+.ts-piece.is-person img { aspect-ratio: 112 / 132; }
+.ts-pose .sel-trigger { min-height: 2.125rem; border-radius: .5rem; }
+.ts-pick.ts-pose { min-width: 0; }
 .ts-piece span { overflow: hidden; font: 500 var(--fs-micro)/1.2 var(--font-sans); text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---- the part selected ---------------------------------------------------------------------------------- */

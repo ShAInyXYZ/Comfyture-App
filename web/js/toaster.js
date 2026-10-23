@@ -5,7 +5,7 @@
 import { changed, toast, waitFor, jobWatchers } from "./store.js";
 import { api } from "./api.js";
 import { keyedSaver } from "./saving.js";
-import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, freeSpot, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D } from "./toaster-model.js";
+import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D } from "./toaster-model.js";
 
 const KIND = "toasts";
 // where a draft's camera starts: the studio's own view, the floor around the object in sight
@@ -258,15 +258,24 @@ export function addPart(shape) {
  */
 export function addPiece(piece) {
   if (!piece?.type) return;
+  setDown(newAssetPart(piece, partsNow()));
+}
+
+/** One of the Stage's characters as a new part ({ body, rig?, name, size }), standing, set down on the floor beside the others. */
+export function addCharacter(who) {
+  if (!who?.body && !who?.rig) return;
+  setDown(newCharacterPart({ ...who, body: who.body ?? "man" }, partsNow()));
+}
+
+/** A new part set down on the floor beside what is there, edge to edge, never on it (freeSpot); then selected. */
+function setDown(part) {
   const parts = partsNow();
-  const part = newAssetPart(piece, parts);
   // what stands on the floor already, as footprints (the viewport measures them as they are turned)
   const footprint = (p) => {
     const b = toaster.view?.bounds([p.id]);
     return b ? { min: [b.min[0], b.min[2]], max: [b.max[0], b.max[2]] } : { min: [p.pos[0] - p.size[0] / 2, p.pos[2] - p.size[2] / 2], max: [p.pos[0] + p.size[0] / 2, p.pos[2] + p.size[2] / 2] };
   };
-  const shown = parts.filter((p) => !p.hidden);
-  const taken = shown.map(footprint);
+  const taken = parts.filter((p) => !p.hidden).map(footprint);
   // as near the middle of everything as can be, so the pieces gather in rows instead of trailing off in a line
   const mid = (k) => (Math.min(...taken.map((t) => t.min[k])) + Math.max(...taken.map((t) => t.max[k]))) / 2;
   const near = taken.length ? [mid(0), mid(1)] : [0, 0];
@@ -275,6 +284,14 @@ export function addPiece(piece) {
   editParts((list) => void list.push(part));
   select([part.id]);
   if (toaster.tool === "select") setTool("move");
+}
+
+/**
+ * A character's pose changed: `size` is its new box (the page measures the figure in the new pose, keeping how it was stretched), and its
+ * feet stay on the floor where they were.
+ */
+export function setPose(id, pose, size) {
+  setProps((p) => ({ pose, size, pos: [p.pos[0], Math.round((p.pos[1] - p.size[1] / 2 + size[1] / 2) * 1000) / 1000, p.pos[2]] }), { ids: [id] });
 }
 
 function place(part) {

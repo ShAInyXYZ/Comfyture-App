@@ -164,7 +164,7 @@ try {
   ok((await js(() => document.querySelectorAll(".ts-parts .ts-part").length)) === 4, "the parts list shows every part", String(await js(() => document.querySelectorAll(".ts-parts .ts-part").length)));
 
   // ---------------------------------------------------------------- a piece of the Stage's library
-  await page.locator(".ts-library-key").click();
+  await page.locator(".ts-library-key", { hasText: "Library" }).click();
   await page.waitForSelector(".ts-library .ts-piece", { timeout: 30000 }).catch(() => {});
   const pieces = await page.locator(".ts-library .ts-piece").count();
   ok(pieces > 300, "the library holds the Stage's pieces", String(pieces));
@@ -198,8 +198,43 @@ try {
   await page.waitForFunction((id) => { const b = window.__toaster.view.bounds([id]); return b && b.max[1] - b.min[1] > 0.9; }, chair.id, { timeout: 15000 }).catch(() => {});
   const cb = await js((id) => window.__toaster.view.bounds([id]), chair.id);
   ok(cb && Math.abs(cb.max[1] - cb.min[1] - chair.size[1]) < 0.02 && Math.abs(cb.max[0] - cb.min[0] - chair.size[0]) < 0.02, "its model fills its size box in the viewport", JSON.stringify(cb));
+  // the categories scroll sideways under the wheel
+  await page.locator(".ts-lib-search input").fill("");
+  await page.locator(".ts-lib-cats").hover();
+  await page.mouse.wheel(0, 400);
+  await page.waitForTimeout(200);
+  ok((await page.locator(".ts-lib-cats").evaluate((e) => e.scrollLeft)) > 0, "the wheel scrolls the categories sideways");
+  await page.locator(".ts-view").click({ position: { x: 900, y: 40 } }).catch(() => {});
   await page.keyboard.press("Escape");
   ok(await page.locator(".ts-library").isHidden(), "Esc shuts the library");
+
+  // ---------------------------------------------------------------- one of the Stage's characters
+  await page.locator(".ts-library-key", { hasText: "Characters" }).click();
+  await page.waitForSelector(".ts-library .ts-piece.is-person", { timeout: 30000 }).catch(() => {});
+  ok((await page.locator(".ts-library .ts-piece.is-person").count()) === 8, "the characters drawer holds the Stage's eight body types", String(await page.locator(".ts-library .ts-piece.is-person").count()));
+  ok((await page.locator(".ts-library .ts-lib-group", { hasText: "Animals" }).count()) === 1, "and the animals");
+  await page.locator('.ts-library .ts-piece[aria-label="Add woman"]').click();
+  d = await draft();
+  const woman = d.body.parts.at(-1);
+  ok(woman?.shape === "character" && woman.body === "woman" && woman.pose === "stand" && woman.size[1] > 1.4 && woman.size[1] < 2, "a click adds a woman, standing, at her height", JSON.stringify(woman));
+  ok(d.body.parts.slice(0, -1).every((p) => p.color !== woman.color), "in a colour of her own");
+  await page.keyboard.press("Escape");
+  await page.locator(".ts-pose .sel-trigger").click();
+  await page.locator(".sel-group", { hasText: /^Sit/ }).first().click();
+  await page.locator(".sel-item", { hasText: /^Sit$/ }).first().click();
+  await page.waitForTimeout(300);
+  d = await draft();
+  const sat = d.body.parts.find((p) => p.id === woman.id);
+  ok(sat?.pose === "sit" && sat.size[1] < woman.size[1] - 0.2, "the pose picker sits her down: her box is the seated figure's", JSON.stringify(sat?.size));
+  ok(Math.abs(sat.pos[1] - sat.size[1] / 2) < 0.01, "her feet stay on the floor", JSON.stringify(sat?.pos));
+  await page.waitForFunction((id) => { const b = window.__toaster.view.bounds([id]); return b && Math.abs(b.max[1] - b.min[1] - window.__toaster.draft.body.parts.find((p) => p.id === id).size[1]) < 0.02; }, woman.id, { timeout: 15000 }).catch(() => {});
+  const wb = await js((id) => window.__toaster.view.bounds([id]), woman.id);
+  ok(wb && Math.abs(wb.max[1] - wb.min[1] - sat.size[1]) < 0.02, "the seated figure fills her box in the viewport", JSON.stringify(wb));
+  await shot("0b-characters");
+  await page.locator(".ts-view").hover();
+  await page.keyboard.press("Delete");
+  ok(!(await draft()).body.parts.some((p) => p.id === woman.id), "Delete takes her away");
+  await page.locator(".ts-part").last().click();
   const sy = page.locator('.ts-inspector input[data-key="size"][data-axis="1"]');
   await sy.fill("1.5");
   await sy.press("Enter");
