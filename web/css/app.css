@@ -466,7 +466,7 @@ body[data-product="kitchen"] .rooms { display: block; }
 
 /* the bar: the conversation's files ride just above it, as in a chat */
 .composer { position: relative; display: grid; gap: .5rem; }
-/* a squircle card: what you write on top, its keys on a row underneath, as in the Image window */
+/* a squircle card: what you write on top, its keys on a row underneath, as in the Oven */
 .chat-bar { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0 .75rem; padding: .875rem .75rem .75rem .75rem; border: 1px solid var(--line2); border-radius: calc(.875rem * var(--corner-k)); background: var(--s2); box-shadow: var(--float); transition: border-color var(--t-fast); }
 .chat-bar:has(.file-tray:not([hidden])) { padding-top: .75rem; }
 .bar-main { display: grid; gap: .625rem; min-width: 0; }
@@ -844,7 +844,7 @@ textarea.field.preset-move { min-height: 2.75rem; font-size: var(--fs-small); }
 .icon { display: inline-flex; }
 .icon svg, svg.icon { width: 1rem; height: 1rem; }
 
-/* ---- the Image window: a floating window over the dimmed, blurred page ---------- */
+/* ---- the Oven: a floating window over the dimmed, blurred page ---------- */
 
 .img-layer { position: fixed; inset: 0; z-index: 28; display: grid; place-items: center; padding: 2rem; background: rgba(6, 6, 8, .62); backdrop-filter: blur(10px) saturate(.8); -webkit-backdrop-filter: blur(10px) saturate(.8); animation: img-in 160ms var(--ease-out); }
 .img-layer[hidden] { display: none; }
@@ -1037,6 +1037,22 @@ body.has-window { overflow: hidden; }
 .img-send svg.icon { width: 1rem; height: 1rem; }
 .send-menu { z-index: 33; min-width: 12.5rem; }
 .send-menu svg.icon { width: 1rem; height: 1rem; color: var(--accent); }
+.send-menu { overflow-y: auto; scrollbar-width: thin; }
+.send-menu button { white-space: nowrap; }
+.send-menu .send-label { flex: 1 1 auto; }
+.send-menu em { font: 500 var(--fs-micro)/1 var(--font-mono); font-style: normal; color: var(--dim); letter-spacing: .02em; }
+.send-menu .send-chip { flex: none; width: .75rem; height: .75rem; border-radius: .25rem; }
+.send-menu .send-check { display: inline-flex; color: var(--accent); }
+.send-menu .send-none { padding: .5rem .625rem; color: var(--dim); font: 400 var(--fs-small)/1.4 var(--font-sans); }
+/* what it costs: the model's price under its select, the key's price, each picture's tag and the Spent list */
+.img-price { margin-top: -.125rem; }
+.img-go-cost { font-weight: 500; letter-spacing: .04em; text-transform: none; opacity: .62; }
+.img-cost { padding: 0 .5rem; font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--muted); white-space: nowrap; }
+.spent-row { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr) auto; gap: .5rem; align-items: baseline; font: 500 var(--fs-micro)/1.5 var(--font-mono); color: var(--muted); }
+.spent-n { color: var(--dim); }
+.spent-model { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spent-cost { color: var(--text); text-align: right; }
+.spent-row.is-total { grid-template-columns: minmax(0, 1fr) auto; margin-top: .125rem; padding-top: .375rem; border-top: 1px solid var(--line); }
 
 /* the notch: the window's surface flows down into the canvas over two curved shoulders;
    inside it, a tab per picture (the shown one carries a small curved accent mark) and one or all */
@@ -1118,7 +1134,7 @@ body.has-window { overflow: hidden; }
   .img-official { display: none; }
 }
 
-/* step 0 on the desk: the Image window, for any input */
+/* step 0 on the desk: the Oven, for any input */
 .step-zero { display: flex; align-items: center; gap: .875rem; width: 100%; min-height: 4rem; margin-bottom: .375rem; padding: .75rem 1.125rem .75rem .875rem; border: 1px solid var(--accent-line); border-radius: var(--r-panel); background: linear-gradient(100deg, rgba(242, 255, 89, .14), rgba(242, 255, 89, .04) 70%); color: var(--accent); text-align: left; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
 .step-zero:hover { border-color: var(--accent); background: linear-gradient(100deg, rgba(242, 255, 89, .2), rgba(242, 255, 89, .07) 70%); }
 .step-zero .card-num { background: var(--accent); color: var(--accent-ink); }

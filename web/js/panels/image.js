@@ -1,6 +1,8 @@
 import { h, icon, sprite } from "../dom.js";
+import { currentPage } from "../router.js";
+import { stageReady } from "../control/link.js";
 import {
-  state, imageChoice, setImage, setImagePrompt, closeImage, addImageRef, removeImageRef, uploadImageRefs, imageMentionables,
+  state, onChange, toast, changed, imageChoice, setImage, setImagePrompt, closeImage, addImageRef, removeImageRef, uploadImageRefs, imageMentionables,
   enhanceImage, unenhanceImage, generateImages, placePhoto, addImageLora, removeImageLora, setLoraStrength, addStageMap, removeStageMap,
 } from "../store.js";
 import { view } from "../viewer.js";
@@ -33,6 +35,16 @@ const release = () => {
   menuOpen = false;
   if (held) (held = false), renderImage(layer);
 };
+
+// a picture still coming moves only its number: the window stays as it is and the readouts are patched
+onChange((scopes) => {
+  if (!scopes.has("image-progress") || !layer) return;
+  for (const r of state.image.results) {
+    if (r.status === "done" || r.status === "failed") continue;
+    const text = `${Math.round((r.progress ?? 0) * 100)}%`;
+    for (const n of layer.querySelectorAll(`[data-job="${CSS.escape(r.id)}"] .img-pct`)) if (n.textContent !== text) n.textContent = text;
+  }
+});
 
 /** Width × height the server will make, on the model's grid. */
 function sizeOf(model, aspect, mp, first) {
@@ -162,12 +174,13 @@ function makeComposer() {
   }));
   const improve = h("button.img-key.improve-key", { type: "button", "aria-label": "Improve the prompt", on: { click: enhanceImage } }, sprite("prompt-enhance"));
   const undo = h("button.img-key", { type: "button", title: "Put my words back", "aria-label": "Put my words back", on: { click: unenhanceImage } }, icon("remix"));
-  const go = h("button.img-go", { type: "button", title: "Generate — Ctrl + Enter", on: { click: generateImages } }, sprite("image-generate"), h("span", {}, "Generate"));
+  const cost = h("span.img-go-cost");
+  const go = h("button.img-go", { type: "button", title: "Generate — Ctrl + Enter", on: { click: generateImages } }, sprite("image-generate"), h("span", {}, "Generate"), cost);
   const tray = h("div.file-tray");
   const picker = h("div.mention-picker.is-images", { hidden: true, role: "listbox", "aria-label": "Pictures" });
   const bar = h("div.img-bar", {}, tray, input.el, h("div.img-row", {}, clip, h("span.spacer"), undo, improve, go));
   const el = h("div.composer.img-composer", {}, picker, bar, fileInput);
-  composer = { el, input, tray, picker, improve, undo, go, pick: 0, list: [], grow };
+  composer = { el, input, tray, picker, improve, undo, go, cost, pick: 0, list: [], grow };
   return composer;
 }
 
@@ -183,6 +196,10 @@ function syncKeys() {
   c.improve.classList.toggle("is-busy", im.enhancing);
   c.undo.hidden = im.before === null;
   if (choice) {
+    // what pressing it costs
+    const price = costOf(choice.model, im.count);
+    c.cost.textContent = price;
+    c.go.title = `Generate — Ctrl + Enter · ${price}`;
     const official = choice.template.enhancer === "official";
     c.improve.dataset.tooltip = im.enhancing
       ? "Improving…"
@@ -270,6 +287,32 @@ function loraMenu(at, items) {
   setTimeout(() => document.addEventListener("pointerdown", outside, true));
 }
 
+// ---------------------------------------------------------------- what it costs
+
+/** A router model costs credits a picture; the open-weights ones run on Comfy Cloud's GPU time. */
+const perPicture = (model) => (model.router && typeof model.credits === "number" ? model.credits : null);
+/** What pressing Generate costs, for the key. */
+const costOf = (model, count) => (perPicture(model) === null ? "GPU time" : `≈ ${perPicture(model) * count} cr`);
+/** One finished or running picture's cost: "6 cr", or "GPU · 21 s" once it took that long. */
+function spentOf(r) {
+  if (r.status === "failed") return "failed";
+  if (typeof r.credits === "number") return `${r.credits} cr`;
+  return r.seconds ? `GPU · ${r.seconds} s` : "GPU";
+}
+
+/** The pictures of this window and what they cost, with the total. */
+function spentGroup(im) {
+  const order = [...im.results].reverse();
+  const mine = order.filter((r) => r.started);
+  if (!mine.length) return null;
+  const rows = mine.map((r) => h("div.spent-row", {}, h("span.spent-n", {}, String(order.indexOf(r) + 1)), h("span.spent-model", {}, r.model), h("span.spent-cost", {}, spentOf(r))));
+  const paid = mine.filter((r) => r.status !== "failed");
+  const credits = paid.reduce((n, r) => n + (typeof r.credits === "number" ? r.credits : 0), 0);
+  const gpu = paid.filter((r) => typeof r.credits !== "number").length;
+  const total = [credits ? `${credits} cr` : null, gpu ? `${gpu} on GPU time` : null].filter(Boolean).join(" + ") || "nothing";
+  return group("Spent", ...rows, h("div.spent-row.is-total", {}, h("span.spent-model", {}, "Total"), h("span.spent-cost", {}, total)));
+}
+
 const group = (label, ...body) => h("div.img-group", {}, h("span.row-label", {}, label), ...body);
 
 function rail(im, choice) {
@@ -347,7 +390,7 @@ function rail(im, choice) {
     h("span", {}, `${im.count} picture${im.count > 1 ? "s" : ""}`),
     h("span", { title: t.enhancer === "official" ? "Improve uses the template's own prompt enhancer" : "Improve uses Gemma 4 with the model's prompting guide" }, t.enhancer === "official" ? "official enhancer" : "guide enhancer"));
   return h("aside.img-rail", {},
-    group("Model", models),
+    group("Model", models, h("span.img-readout.img-price", {}, perPicture(choice.model) === null ? "Comfy Cloud GPU time" : `≈ ${perPicture(choice.model)} cr a picture`)),
     loraGroup(im, choice),
     group("Template", templates),
     ...(layout ? [group("Layout", layout)] : []),
@@ -355,6 +398,7 @@ function rail(im, choice) {
     group("Size", sizes, h("span.img-readout", {}, `${size.width} × ${size.height}`)),
     group("Pictures", counts),
     group("Seed", seed),
+    spentGroup(im),
     summary,
   );
 }
@@ -433,7 +477,7 @@ function stage(im, choice) {
       ? h("img", { src: r.photo.url, alt: "", draggable: false })
       : r.status === "failed"
       ? h("div.img-wait.is-error", {}, icon("close"), big ? h("span", {}, r.error ?? "That picture didn't work.") : null)
-      : h("div.img-wait", {}, h("span.typing", {}, h("i"), h("i"), h("i")), h("span.img-pct", {}, `${Math.round((r.progress ?? 0) * 100)}%`));
+      : h("div.img-wait", { dataset: { job: r.id } }, h("span.typing", {}, h("i"), h("i"), h("i")), h("span.img-pct", {}, `${Math.round((r.progress ?? 0) * 100)}%`));
   let picture;
   if (comparing) {
     picture = compareView(pair[0], pair[1], pair.map(number));
@@ -460,9 +504,10 @@ function stage(im, choice) {
 
   // the keys act on the shown picture; comparing, there is no single one to act on
   const done = !comparing && shown?.status === "done" && shown.photo;
-  const send = h("button.img-send", { type: "button", "aria-haspopup": "menu", title: "Send it to an input of the open tab", on: { click: () => sendMenu(send, shown.photo) } }, sprite("send"), h("span", {}, "Send to"));
+  const send = h("button.img-send", { type: "button", "aria-haspopup": "menu", title: `Send it ${sendWhere()}`, on: { click: () => sendMenu(send, shown.photo) } }, sprite("send"), h("span", {}, "Send to"));
   const actions = done
     ? h("div.img-actions", {},
+        shown.started ? h("span.img-cost", { title: shown.credits === null || shown.credits === undefined ? "Run on Comfy Cloud: GPU time" : `${shown.model}: credits for this picture` }, spentOf(shown)) : null,
         send,
         h("button.key.is-icon", { type: "button", title: "Edit this picture — it becomes a reference", "aria-label": "Edit this picture", on: { click: () => {
           addImageRef(shown.photo);
@@ -512,26 +557,91 @@ function stage(im, choice) {
   return h("div.img-stage", {}, h("div.img-view", { className: many ? "has-notch" : "" }, notch, h("div.img-canvas", {}, picture), actions), composer.el);
 }
 
-/** The inputs a picture can go to, as a menu over the Send key. */
-function sendMenu(at, photo) {
+/** Where the Send key sends, for its tooltip: the section you are in. */
+function sendWhere() {
+  const page = currentPage();
+  const im = state.image;
+  if (page === "toaster") return "to a part's sheet or the render's references";
+  if (page === "stage" && im.origin?.stageRef) return `to ${im.origin.stageRef.name}'s sheet, or an input of the shot`;
+  return "to an input of the open tab";
+}
+
+/** A picture sent to a target is remembered, so the menu can show it as sent. */
+const wasSent = (photo, key) => state.image.sent.includes(`${photo.file}|${key}`);
+const markSent = (photo, key) => !wasSent(photo, key) && state.image.sent.push(`${photo.file}|${key}`);
+
+/**
+ * The targets of the page you are on. Toaster: the one the window was asked for, the render's references, then every part's sheet
+ * (it stays open, so several pictures can go). The Stage: the sheet it was asked for, then the shot's inputs.
+ */
+async function targets(photo) {
+  const page = currentPage();
+  const origin = state.image.origin;
+  const out = [];
+  const shotInputs = () => out.push(...SEND.map(([slot, ic, label]) => ({ icon: ic, label, run: () => (placePhoto(slot, photo), closeImage()) })));
+  if (page === "toaster") {
+    const t = await import("../toaster.js");
+    const draft = t.toaster.draft;
+    if (!draft) return out;
+    const send = (ref) => async () => {
+      await t.takeRef({ ...ref, draftId: draft.id }, photo);
+    };
+    const parts = t.partsNow();
+    const scene = { key: "scene", label: "The render's references", icon: "image-reference", run: send({ kind: "scene", name: "the render" }) };
+    const partTarget = (p) => ({ key: `part:${p.id}`, label: `${p.name}'s sheet`, swatch: p.color, run: send({ kind: "part", partId: p.id, name: p.name }) });
+    const asked = origin?.toasterRef;
+    const first = asked && asked.draftId === draft.id ? (asked.kind === "scene" ? scene : parts.find((p) => p.id === asked.partId) && partTarget(parts.find((p) => p.id === asked.partId))) : null;
+    if (first) out.push({ ...first, note: "asked for" }, { divider: true });
+    if (first !== scene) out.push(scene);
+    out.push(...parts.filter((p) => !first || first.key !== `part:${p.id}`).map(partTarget));
+  } else if (page === "stage" && origin?.stageRef) {
+    const ref = origin.stageRef;
+    out.push({ key: `stage:${ref.id}`, label: `${ref.name}'s sheet`, icon: "image-reference", note: "asked for", run: async () => {
+      const { stage, projects } = await stageReady;
+      const target = (!ref.stageId || projects.current()?.id === ref.stageId) && stage.targetById(ref);
+      if (!target) return toast(`${ref.name} is not on the open stage: the picture is still here.`);
+      stage.addTagRef(target, photo);
+      toast(`On ${ref.name}'s sheet now: renders follow it.`);
+    } }, { divider: true });
+    shotInputs();
+  } else shotInputs();
+  return out;
+}
+
+/** The places a picture can go, as a menu over the Send key. */
+async function sendMenu(at, photo) {
   document.querySelector(".send-menu")?.remove();
   menuOpen = true;
+  const list = await targets(photo);
   const close = () => {
     menu.remove();
     document.removeEventListener("pointerdown", outside, true);
     release();
   };
   const outside = (e) => !menu.contains(e.target) && e.target !== at && !at.contains(e.target) && close();
-  const menu = h("div.menu.send-menu", { role: "menu" }, SEND.map(([slot, ic, label]) =>
-    h("button", { type: "button", role: "menuitem", on: { click: () => {
+  const menu = h("div.menu.send-menu", { role: "menu" }, list.length ? list.map((t) =>
+    t.divider ? h("hr") : h("button", { type: "button", role: "menuitem", className: t.key && wasSent(photo, t.key) ? "is-sent" : "", on: { click: async () => {
       close();
-      placePhoto(slot, photo);
-      closeImage();
-    } } }, sprite(ic), label)));
+      try {
+        await t.run();
+        if (t.key) markSent(photo, t.key);
+      } catch (e) {
+        toast(e.message, { tone: "crit" });
+      }
+      changed("image");
+    } } },
+      t.swatch ? h("i.send-chip", { style: { background: t.swatch } }) : t.icon ? sprite(t.icon) : null,
+      h("span.send-label", {}, t.label),
+      t.note ? h("em", {}, t.note) : null,
+      t.key && wasSent(photo, t.key) ? h("span.send-check", { title: "Already sent here" }, icon("check")) : null)) : [h("span.send-none", {}, "Open a project to send it to.")]);
   document.body.append(menu);
   const box = at.getBoundingClientRect();
-  Object.assign(menu.style, { left: `${box.left}px`, top: `${box.top - 6}px`, transform: "translateY(-100%)" });
-  menu.querySelector("button").focus();
+  // under the key when there is room, else over it; the menu scrolls when it is long
+  const below = innerHeight - box.bottom > box.top;
+  Object.assign(menu.style, { right: `${innerWidth - box.right}px`, maxHeight: `${Math.max(160, (below ? innerHeight - box.bottom : box.top) - 24)}px` });
+  if (below) menu.style.top = `${box.bottom + 6}px`;
+  else Object.assign(menu.style, { top: `${box.top - 6}px`, transform: "translateY(-100%)" });
+  menu.querySelector("button")?.focus();
   menu.addEventListener("keydown", (e) => {
     const items = [...menu.querySelectorAll("button")];
     const i = items.indexOf(document.activeElement);
@@ -565,7 +675,7 @@ export function renderImage(el) {
   else c.input.refresh();
   const choice = imageChoice();
   if (!choice) {
-    el.replaceChildren(h("section.img-window", { role: "dialog", "aria-modal": "true", "aria-label": "Image" }, h("div.img-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))));
+    el.replaceChildren(h("section.img-window", { role: "dialog", "aria-modal": "true", "aria-label": "Oven" }, h("div.img-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))));
     return;
   }
   c.tray.replaceChildren(...im.refs.map((r) => refChip(r, choice.takesRefs)));
@@ -574,12 +684,12 @@ export function renderImage(el) {
   syncKeys();
 
   const head = h("header.img-head", {},
-    h("span.img-title", {}, sprite("image-generate"), "Image"),
+    h("span.img-title", {}, sprite("image-generate"), "Oven"),
     h("span.spacer"),
     h("span.img-official", { title: "The workflow this runs: Comfy's official template, from the Cloud template library" }, choice.template.official),
     h("button.key.is-icon.is-quiet", { type: "button", "aria-label": "Close", title: "Close — Esc", on: { click: closeImage } }, icon("close")),
   );
-  const win = h("section.img-window", { role: "dialog", "aria-modal": "true", "aria-label": "Image" }, head, h("div.img-body", {}, rail(im, choice), stage(im, choice)));
+  const win = h("section.img-window", { role: "dialog", "aria-modal": "true", "aria-label": "Oven" }, head, h("div.img-body", {}, rail(im, choice), stage(im, choice)));
   el.replaceChildren(win);
   if (typing) {
     c.input.focus({ preventScroll: true });
@@ -587,7 +697,10 @@ export function renderImage(el) {
   }
 
   // a click on the dimmed page closes; drops anywhere add references
-  el.onmousedown = (e) => e.target === el && closeImage();
+  // (a block body: an onmousedown handler that returns false cancels the press, and with it the caret and the drag-select in the prompt)
+  el.onmousedown = (e) => {
+    if (e.target === el) closeImage();
+  };
   el.onkeydown = (e) => {
     if (e.key === "Escape" && composer.picker.hidden) closeImage();
   };

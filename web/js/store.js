@@ -102,7 +102,7 @@ function loadChat() {
 }
 
 const IMAGE = "comfyture.image.v1";
-/** The Image window's choices, kept between visits: model, template, frame, size, count. */
+/** The Oven's choices, kept between visits: model, template, frame, size, count. */
 function loadImage() {
   try {
     const saved = JSON.parse(localStorage.getItem(IMAGE)) ?? {};
@@ -156,10 +156,10 @@ export const state = {
   /** The image library, newest first. */
   photos: [],
   /**
-   * The Image window: the models (official templates) and what you chose, the references you
+   * The Oven: the models (official templates) and what you chose, the references you
    * gave it, and the pictures it made this visit (newest first).
    */
-  image: { ...loadImage(), open: false, catalogue: null, seed: 0, lockSeed: false, refs: [], results: [], shown: null, enhancing: false, before: null, keep: false, origin: null, cast: [] },
+  image: { ...loadImage(), open: false, catalogue: null, seed: 0, lockSeed: false, refs: [], results: [], shown: null, enhancing: false, before: null, keep: false, origin: null, cast: [], sent: [] },
   /** The Director: the idea, its plan, and how far making the film has got. */
   director: { phase: "idle", idea: "", shots: 4, seconds: 5, aspect: "16:9", fromPhoto: false, plan: null, shotsState: [], film: null, error: null },
 };
@@ -1639,7 +1639,7 @@ export async function askStage(text) {
 }
 
 /**
- * The pictures an answer started become the Image window's results too, so they fill in as
+ * The pictures an answer started become the Oven's results too, so they fill in as
  * they render; the message keeps their ids.
  */
 function adoptRenders(message) {
@@ -1818,7 +1818,7 @@ export function useStageVideo(video, name, channel) {
   toast(`${name} drives the shot's motion. Add a start photo for the look, or let the script set it.`);
 }
 
-// -------------------------------------------------------------- the Image window
+// -------------------------------------------------------------- the Oven
 
 function saveImage() {
   const { model, template, aspect, megapixels, count, prompt, loras } = state.image;
@@ -2049,7 +2049,7 @@ export const generateImages = () =>
     const request = imageRequest();
     const jobs = await api.image({ ...request, megapixels: im.megapixels, count: im.count, seed, keep });
     const label = `${choice.model.name} · ${im.catalogue.templates[choice.template.id]?.name ?? choice.template.id}`;
-    im.results.unshift(...jobs.map((j, i) => ({ id: j.id, status: "running", progress: 0, prompt: im.prompt, label, seed: seed + i, aspect: im.aspect, origin: im.origin ?? null })));
+    im.results.unshift(...jobs.map((j, i) => ({ id: j.id, status: "running", progress: 0, prompt: im.prompt, label, seed: seed + i, aspect: im.aspect, origin: im.origin ?? null, model: choice.model.short ?? choice.model.name, credits: choice.model.router ? choice.model.credits ?? null : null, started: Date.now(), seconds: null })));
     im.shown = jobs[0]?.id ?? im.shown;
     changed("image");
     // made again from a Stage render: the new pictures join that stage's renders, from the same camera
@@ -2074,7 +2074,7 @@ function imageSize(model, aspect, megapixels, first) {
   return { width: snap(h * ratio), height: snap(h) };
 }
 
-/** A Stage render into the Image window: its frame as @frame, its pictures, its words, its seed and model, the layout kept. */
+/** A Stage render into the Oven: its frame as @frame, its pictures, its words, its seed and model, the layout kept. */
 export const editStageRun = (run, stageId) =>
   attempt(async () => {
     const im = state.image;
@@ -2094,7 +2094,7 @@ export const editStageRun = (run, stageId) =>
   });
 
 /**
- * The Image window, to make a sheet for a character or a piece of the Stage: its sheet's words to
+ * The Oven, to make a sheet for a character or a piece of the Stage: its sheet's words to
  * start from (a turnaround for a character, views of the thing for a piece); what it makes goes on
  * that sheet, so renders follow it.
  */
@@ -2116,7 +2116,7 @@ export const makeStageRef = ({ kind, id, name, what, description, stageId }) =>
   });
 
 /**
- * The Image window, to make a picture for Toaster: a reference sheet of a part (a turnaround for a character, views of the thing for a
+ * The Oven, to make a picture for Toaster: a reference sheet of a part (a turnaround for a character, views of the thing for a
  * piece or a shape) from what it is, or a picture for the look of the whole render (`kind` "scene") from the words. What it makes goes on
  * that part's sheet, or in the render's references, of the project it was asked for.
  */
@@ -2144,27 +2144,15 @@ function imageJob(job) {
   stageReady.then(({ stage }) => stage.runDone(job));
   const r = state.image.results.find((x) => x.id === job.id);
   if (!r) return;
+  const over = job.status === "done" || job.status === "failed";
+  // a picture still coming only moves its number: the window is not drawn again, its readouts are patched
+  const progressOnly = !over && job.status === r.status && !job.photo;
   Object.assign(r, { status: job.status, progress: job.progress ?? r.progress, photo: job.photo ?? r.photo, error: job.error });
+  if (over && !r.seconds && r.started) r.seconds = Math.max(1, Math.round((Date.now() - r.started) / 1000));
   if (job.status === "failed") toast(job.error ?? "That picture didn't work.", { tone: "crit" });
-  // a picture made for one on the Stage goes on its sheet
-  const ref = r.origin?.stageRef;
-  if (ref && job.status === "done" && job.photo && !r.attached) {
-    r.attached = true;
-    stageReady.then(({ stage, projects }) => {
-      const target = (!ref.stageId || projects.current()?.id === ref.stageId) && stage.targetById(ref);
-      if (!target) return;
-      stage.addTagRef(target, job.photo);
-      toast(`On ${ref.name}'s sheet now: renders follow it.`);
-    });
-  }
-  // a picture made for Toaster goes on its part's sheet, or in its render's references
-  const tref = r.origin?.toasterRef;
-  if (tref && job.status === "done" && job.photo && !r.attached) {
-    r.attached = true;
-    import("./toaster.js").then((t) => t.takeRef(tref, job.photo)).catch((e) => toast(e.message, { tone: "crit" }));
-  }
+  // a finished picture waits in the window: the Send to menu puts it where the user says
   if (job.status === "done") api.photos().then((photos) => ((state.photos = photos), changed("library"))).catch(() => {});
-  changed("image");
+  changed(progressOnly ? "image-progress" : "image");
   // a picture the Stage asked for fills in in its conversation
   if (state.stageChat.messages.some((m) => m.renders?.includes(job.id))) changed("assistant");
 }

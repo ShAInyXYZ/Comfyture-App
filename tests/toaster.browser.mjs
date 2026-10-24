@@ -92,6 +92,18 @@ try {
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => m.type() === "error" && !/GL Driver|favicon|Failed to load resource|WebGL/.test(m.text()) && errors.push(m.text()));
   await context.route((url) => !["127.0.0.1", "localhost"].includes(url.hostname), (route) => (outbound.push(route.request().url()), route.abort()));
+  // the live events, kept so a picture's paint event can be sent by hand
+  await page.addInitScript(() => {
+    const Real = window.EventSource;
+    window.__es = {};
+    window.EventSource = class extends Real {
+      addEventListener(name, fn, o) {
+        (window.__es[name] ??= []).push(fn);
+        return super.addEventListener(name, fn, o);
+      }
+    };
+    window.__paint = (job) => (window.__es.paint ?? []).forEach((f) => f({ data: JSON.stringify(job) }));
+  });
   // the image model, stood in for: it answers at once with the clay it was sent (a picture of the library)
   await page.route("**/api/image", async (route) => {
     const body = route.request().postDataJSON();
@@ -538,9 +550,9 @@ try {
   ok((await page.locator('.ts-inspector textarea[aria-label="What it is"]').getAttribute("placeholder")).startsWith("brushed chrome"), "a shape's words are asked for by their kind");
   await page.locator('.ts-inspector textarea[aria-label="What it is"]').fill("a walnut mid-century desk with brass handles");
   await page.locator('.ts-inspector input[aria-label="Name"]').click();
-  // the add tile asks where the pictures come from: the computer, the Library, or made here in the Image window
+  // the add tile asks where the pictures come from: the computer, the Library, or made here in the Oven
   await page.locator(".ts-inspector .ts-pic-add").click();
-  ok((await page.locator(".ts-add-menu [role=menuitem]").allInnerTexts()).join(" | ") === "From your computer | From the Library | Make it in the Image window", "the add tile asks: the computer, the Library, or made here", (await page.locator(".ts-add-menu [role=menuitem]").allInnerTexts()).join(" | "));
+  ok((await page.locator(".ts-add-menu [role=menuitem]").allInnerTexts()).join(" | ") === "From your computer | From the Library | Make it in the Oven", "the add tile asks: the computer, the Library, or made here", (await page.locator(".ts-add-menu [role=menuitem]").allInnerTexts()).join(" | "));
   let [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.locator(".ts-add-menu [role=menuitem]", { hasText: "From your computer" }).click()]);
   await chooser.setFiles({ name: "desk.png", mimeType: "image/png", buffer: png([150, 90, 40]) });
   await until(() => window.__toaster.draft.body.parts[0].refs?.length === 1, null, 8000);
@@ -558,22 +570,50 @@ try {
   ok(!(await draft()).body.parts[0].refs, "a picture is taken off its sheet");
   await page.keyboard.press("Control+z");
   ok((await draft()).body.parts[0].refs?.length === 1, "and Undo puts it back");
-  // made here: the Image window opens with a reference sheet of what the part is, and what it makes lands on the part's sheet
+  // made here: the Oven opens with a reference sheet of what the part is, and what it makes lands on the part's sheet
   await page.locator(".ts-inspector .ts-pic-add").click();
-  await page.locator(".ts-add-menu [role=menuitem]", { hasText: "Make it in the Image window" }).click();
+  await page.locator(".ts-add-menu [role=menuitem]", { hasText: "Make it in the Oven" }).click();
   await page.waitForSelector("#image:not([hidden])", { timeout: 5000 }).catch(() => {});
   const asked3 = await js(async () => {
     const { state } = await import("/js/store.js");
     return { open: state.image.open, prompt: state.image.prompt, origin: state.image.origin };
   });
-  ok(asked3.open && asked3.prompt.startsWith("A reference sheet of a walnut mid-century desk with brass handles") && asked3.origin?.toasterRef?.partId === (await draft()).body.parts[0].id, "Make it here opens the Image window with a reference sheet of what the part is (nothing is made until you press its key)", JSON.stringify(asked3).slice(0, 300));
+  ok(asked3.open && asked3.prompt.startsWith("A reference sheet of a walnut mid-century desk with brass handles") && asked3.origin?.toasterRef?.partId === (await draft()).body.parts[0].id, "Make it here opens the Oven with a reference sheet of what the part is (nothing is made until you press its key)", JSON.stringify(asked3).slice(0, 300));
   const made3 = await page.evaluate(async (bytes) => (await fetch("api/photos?name=made%20here", { method: "POST", headers: { "Content-Type": "image/png" }, body: new Uint8Array(bytes) })).json(), [...png([200, 160, 90])]);
-  await js(async ([origin, photo]) => {
+  // the Oven is called the Oven; a picture it finishes does not land on the sheet by itself
+  await page.waitForSelector("#image .img-window .img-title", { timeout: 5000 });
+  ok((await page.locator("#image .img-title").textContent()).trim() === "Oven", "the window's title is Oven");
+  await js(async (photo) => {
+    const { state } = await import("/js/store.js");
+    state.image.results.unshift({ id: "oven-1", status: "running", progress: 0, prompt: state.image.prompt, label: "test", seed: 1, aspect: "16:9", origin: state.image.origin, model: "Qwen 2.1", credits: null, started: Date.now(), seconds: null });
+    state.image.shown = "oven-1";
+    window.__paint({ id: "oven-1", status: "done", progress: 1, photo: { file: photo.file, url: `/media/photos/${photo.file}`, width: photo.width, height: photo.height } });
+  }, made3);
+  await page.waitForSelector("#image .img-shown", { timeout: 5000 });
+  await page.waitForTimeout(400);
+  ok((await draft()).body.parts[0].refs?.length === 1, "a finished picture does not land on the sheet by itself");
+  ok(await page.locator("#image .img-send").isVisible(), "it waits in the window, with its Send to key");
+  // Send to lists the section's targets: the sheet it was asked for first, the render's references, then the other parts
+  await page.locator("#image .img-send").click();
+  await page.waitForSelector(".send-menu [role=menuitem]", { timeout: 3000 });
+  const items = await page.locator(".send-menu [role=menuitem]").allInnerTexts();
+  const parts = (await draft()).body.parts;
+  ok(/^Desk's sheet/.test(items[0]) && /asked for/.test(items[0]), "Send to puts the sheet it was asked for first", items[0]);
+  ok(items[1] === "The render's references" && items.length === 2 + parts.length - 1, "then the render's references and the other parts", items.join(" | "));
+  ok(parts.slice(1).every((p) => items.includes(`${p.name}'s sheet`)) && (await page.locator(".send-menu .send-chip").count()) === parts.length, "every part is listed as its sheet, with its colour chip", items.join(" | "));
+  await shot("oven-send-menu");
+  await page.locator(".send-menu [role=menuitem]").first().click();
+  await until(() => window.__toaster.draft.body.parts[0].refs?.length === 2, null, 8000);
+  ok((await draft()).body.parts[0].refs?.length === 2 && (await draft()).body.parts[0].refs[1].file === made3.file && (await page.locator("#image:not([hidden]) .img-window").count()) === 1, "sending puts the picture on that sheet and the window stays open");
+  await page.locator("#image .img-send").click();
+  await page.waitForSelector(".send-menu [role=menuitem]", { timeout: 3000 });
+  ok((await page.locator(".send-menu [role=menuitem]").first().locator(".send-check").count()) === 1, "the sheet it went to shows as sent");
+  await page.keyboard.press("Escape");
+  await js(async () => {
     const { state, changed } = await import("/js/store.js");
     state.image.open = false;
     changed("image");
-    await (await import("/js/toaster.js")).takeRef(origin.toasterRef, photo);
-  }, [asked3.origin, made3]);
+  });
   ok((await draft()).body.parts[0].refs?.length === 2 && (await draft()).body.parts[0].refs[1].file === made3.file, "the picture it made lands on the part's sheet", JSON.stringify((await draft()).body.parts[0].refs));
   await page.locator(".ts-inspector .ts-pic-tile").nth(1).hover();
   await page.locator(".ts-inspector .ts-pic-off").nth(1).click();
