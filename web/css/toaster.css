@@ -325,6 +325,9 @@ button.ts-sheet-pic { cursor: zoom-in; }
 .ts-map-send { flex: none; padding: .125rem .375rem; border: 1px solid var(--line); border-radius: var(--r-pill); background: transparent; color: var(--dim); font: 600 var(--fs-micro)/1.2 var(--font-mono); cursor: pointer; }
 .ts-map-send[aria-pressed="true"] { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent); }
 .ts-map-send:hover { color: var(--text); }
+/* a map asked for that the model has no room for: struck through, the reason in its tooltip */
+.ts-map.is-left-out, .ts-map-send.is-left-out { border-style: dashed; opacity: .55; }
+.ts-map.is-left-out span { text-decoration: line-through; }
 .ts-cam-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .ts-cam-tiles .ts-cam-pic { max-height: none; }
 .ts-cam-tiles .ts-cam-pic[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }

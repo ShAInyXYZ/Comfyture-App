@@ -686,7 +686,8 @@ function drawCameraCard() {
 function drawMaps() {
   const b = body();
   if (!shell || !b || toaster.mode !== "render") return;
-  const sent = MAPS.filter((m) => b.maps.includes(m.id)).length;
+  const out = leftOut();
+  const sent = MAPS.filter((m) => b.maps.includes(m.id) && !out.ids.includes(m.id)).length;
   shell.mapsCard.replaceChildren(
     h("header.ts-head", {}, h("h2.ts-label", {}, "Control maps"), h("span.spacer"), h("span.ts-note", {}, sent ? `${sent} sent with the frame` : "None sent")),
     h("div.ts-map-tiles", {}, ...MAPS.map((m) => {
@@ -695,7 +696,9 @@ function drawMaps() {
         h("button.ts-map-pic", { type: "button", "aria-pressed": String(mapShown === m.id), style: { aspectRatio: b.ratio.replace(":", " / ") }, title: mapShown === m.id ? `Back to the ${b.renders.length ? "render" : "clay"}` : `${m.label}: show it big in the studio`, on: { click: () => showMap(mapShown === m.id ? null : m.id) } },
           stills[m.id] ? h("img", { src: stills[m.id], alt: "", draggable: false }) : sprite(MAP_ICON[m.id])),
         h("div.ts-map-foot", {}, h("span", {}, m.label),
-          h("button.ts-map-send", { type: "button", "aria-pressed": String(on), title: on ? `${m.label} goes with the frame — click to leave it out` : `${m.label} is left out — click to send it with the frame`, on: { click: () => toggleMap(m.id) } }, on ? "Sent" : "Off")));
+          out.ids.includes(m.id)
+            ? h("button.ts-map-send.is-left-out", { type: "button", "aria-pressed": "true", title: `${m.label} is left out: ${out.why}. Click to stop asking for it`, on: { click: () => toggleMap(m.id) } }, "Left out")
+            : h("button.ts-map-send", { type: "button", "aria-pressed": String(on), title: on ? `${m.label} goes with the frame — click to leave it out` : `${m.label} is left out — click to send it with the frame`, on: { click: () => toggleMap(m.id) } }, on ? "Sent" : "Off")));
     })));
 }
 /** A control map shown big in the studio, or (null) the clay or the render again. */
@@ -914,6 +917,20 @@ function drawLook() {
   drawFoot();
 }
 
+/**
+ * The maps chosen but not sent, and why: a model takes so many pictures, and the frame, the people's pictures and the maps that say the
+ * most go first (the render's plan says which).
+ */
+function leftOut() {
+  const b = body();
+  const plan = framePlan();
+  const sent = plan.maps.map((m) => m.id);
+  const ids = b.maps.filter((id) => !sent.includes(id));
+  const total = plan.model?.templates?.find((t) => t.id === "edit")?.refs ?? 4;
+  const first = ["the frame", ...plan.maps.map((m) => m.label), ...plan.refs.map((r) => `@${r.name}`)];
+  return { ids, why: `${plan.model?.short ?? plan.model?.name ?? "this model"} takes ${total} pictures: ${first.join(", ")} go first` };
+}
+
 /** The foot of the studio: the control maps, the image model, the frame, and Toast it. */
 function drawFoot() {
   const b = body();
@@ -921,8 +938,9 @@ function drawFoot() {
   const m = modelNow();
   const busy = b.renders.some((r) => r.status === "running");
   const models = modelItems();
+  const out = leftOut();
   const maps = h("div.ts-map-keys", { role: "group", "aria-label": "Control maps" }, ...MAPS.map((x) =>
-    h("button.ts-map", { type: "button", "aria-pressed": String(b.maps.includes(x.id)), title: `${x.label}: sent with the clay frame — ${x.says.replace(/^@[\w-]+ /, "it ")}`, on: { click: () => toggleMap(x.id) } }, sprite(MAP_ICON[x.id]), h("span", {}, x.label))));
+    h(`button.ts-map${out.ids.includes(x.id) ? ".is-left-out" : ""}`, { type: "button", "aria-pressed": String(b.maps.includes(x.id)), title: out.ids.includes(x.id) ? `${x.label} is left out: ${out.why}` : `${x.label}: sent with the clay frame — ${x.says.replace(/^@[\w-]+ /, "it ")}`, on: { click: () => toggleMap(x.id) } }, sprite(MAP_ICON[x.id]), h("span", {}, x.label))));
   shell.foot.replaceChildren(
     maps, strengthSlider(b), h("span.spacer"),
     models.length ? h("div.ts-pick", {}, dropdown({ label: "Image model", value: m?.id, items: models, onChange: setModel, width: "fit", note: "What renders the clay: a partner model's credits, or Comfy Cloud's GPU time" })) : h("span.ts-note", {}, "No image model yet"),

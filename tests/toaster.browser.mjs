@@ -366,7 +366,7 @@ try {
   ok(writes.length === 1 && typeof firstWrite.imageModel === "string" && firstWrite.facts?.model?.id === firstWrite.imageModel && firstWrite.facts.model.name && firstWrite.model, "Toast it with no prompt asks the writer first, with the image model and the facts", JSON.stringify(firstWrite?.facts?.model));
   ok(JSON.stringify(firstWrite.facts.pictures.map((p) => p.name)) === JSON.stringify(["frame", "colour-id", "depth"]) && firstWrite.facts.pictures[0].plain === true && firstWrite.facts.pictures[1].map === "id", "the facts list the pictures sent, in order: the frame (plain grey clay), the colour ID, the depth", JSON.stringify(firstWrite.facts.pictures));
   ok(firstWrite.facts.strength.percent === 60 && firstWrite.facts.strength.band === "middle" && /A retro 1950s toaster/.test(firstWrite.facts.what) && /marble counter/i.test(firstWrite.facts.scene), "and the strength, what it is and the look");
-  ok(firstWrite.facts.who.some((g) => g.colour === "orange" && g.things.some((t) => /walnut/.test(t.name))) && firstWrite.facts.who.some((g) => g.colour === "blue" && g.things.some((t) => /swivel office chair/.test(t.name))) && !/Cylinder|Office chair/.test(JSON.stringify(firstWrite.facts.who)), "and who is what by clay colour (a piece by the head of the library's description, never a part's name)", JSON.stringify(firstWrite.facts.who));
+  ok(firstWrite.facts.who.some((g) => g.colour === "orange" && g.things.some((t) => /walnut/.test(t.name))) && firstWrite.facts.who.some((g) => g.colour === "blue" && g.things.some((t) => t.name === "an office chair")) && !/Cylinder|Office chair/.test(JSON.stringify(firstWrite.facts.who)), "and who is what by clay colour (a piece by its name in the library, never a part's name)", JSON.stringify(firstWrite.facts.who));
   ok(frameAsk.prompt === `Written for ${firstWrite.facts.model.name}: @frame @colour-id @depth. ${firstWrite.facts.what} ${firstWrite.facts.scene}`, "the image edit gets exactly the written prompt", frameAsk.prompt);
   ok(frameAsk?.keep === 0.888, "at the middle strength an open-weights edit keeps 0.888", JSON.stringify({ keep: frameAsk?.keep }));
   ok((await draft()).body.promptBy === "writer" && (await draft()).body.prompt === frameAsk.prompt && (await draft()).body.promptFor?.model === firstWrite.imageModel, "which is kept as the writer's, with the model it was written for");
@@ -805,6 +805,18 @@ try {
   ok(/could not write the prompt/.test(await page.locator("#toast").textContent()), "with a toast saying so", await page.locator("#toast").textContent());
   ok((await draft()).body.prompt === "" && (await badge()) === "Not written yet", "and nothing is kept as written");
 
+  // a model with little room (Qwen 3.0 Pro takes three pictures): with a frame in its colours, the colour ID is the map left out, and it says so
+  await js(async () => {
+    const t = await import("/js/toaster.js");
+    const b = t.toaster.draft.body;
+    for (const id of ["depth", "silhouette"]) if (!b.maps.includes(id)) t.toggleMap(id);
+    t.setModel("qwen-image-3.0-pro");
+  });
+  await page.waitForTimeout(400);
+  const outKeys = await page.locator(".ts-studio .ts-map.is-left-out").allInnerTexts();
+  const outKey = page.locator(".ts-studio .ts-map.is-left-out").first();
+  const outWhy = ((await outKey.getAttribute("title").catch(() => null)) ?? (await outKey.getAttribute("data-tooltip").catch(() => null))) ?? "";
+  ok(outKeys.join() === "Colour ID,Silhouette" && /takes 3 pictures: the frame, Depth, @mood-board go first/.test(outWhy) && (await page.locator(".ts-maps-card .ts-map-send.is-left-out").count()) === 2, "a map the model has no room for is struck through, and says why", JSON.stringify([outKeys, outWhy]));
   ok(outbound.length === 0, "no call left the machine", outbound.join(" "));
   ok(errors.length === 0, "no error on the page", errors.join(" | "));
 } finally {

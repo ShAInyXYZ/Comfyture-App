@@ -5,7 +5,7 @@
 import { changed, toast, waitFor, jobWatchers, writer } from "./store.js";
 import { api } from "./api.js";
 import { keyedSaver } from "./saving.js";
-import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, factsOf, factsKey, promptStale, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS, plainFrame, keepOf, described, tagsOf, castOf, referencesFor, pickMaps, isCharacter, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
+import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, factsOf, factsKey, promptStale, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS, plainFrame, keepOf, described, tagsOf, castOf, referencesFor, pickMaps, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
 
 const KIND = "toasts";
 // where a draft's camera starts: the studio's own view, the floor around the object in sight
@@ -746,9 +746,9 @@ export function framePlan() {
   const model = modelNow();
   const total = model?.templates?.find((t) => t.id === "edit")?.refs ?? 4;
   const parts = b.parts;
-  // (a model with little room for pictures keeps a person's picture before the depth or the silhouette)
-  const people = parts.filter((p) => !p.hidden && isCharacter(p) && p.refs?.length).length;
-  const picked = pickMaps({ wanted: b.maps, strength: b.strength, room: Math.max(0, total - 1), people });
+  // (a model with little room for pictures keeps the pictures put on the parts' sheets before the depth or the silhouette)
+  const pictured = parts.filter((p) => !p.hidden && p.refs?.length).length;
+  const picked = pickMaps({ wanted: b.maps, strength: b.strength, room: Math.max(0, total - 1), people: pictured });
   const maps = MAPS.filter((m) => picked.includes(m.id));
   // (only the user's own prompt picks the pictures: a written one must not change the facts it was written from)
   const mentioned = mentionsIn(`${b.promptBy === "you" ? b.prompt : ""} ${b.what} ${b.scene}`);

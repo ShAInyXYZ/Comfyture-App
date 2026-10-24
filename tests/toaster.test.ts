@@ -323,7 +323,8 @@ test("referencesFor: a person's picture first, then the scene references, then t
 test("pickMaps: the colour ID first when the frame is plain clay, then a person's picture keeps its place before the depth or the silhouette", () => {
   assert.deepEqual(pickMaps({ wanted: ["id", "depth"], strength: 0.6, room: 2, people: 1 }), ["id"], "Qwen 3.0 Pro (three pictures): the frame, the colour ID, the person");
   assert.deepEqual(pickMaps({ wanted: ["id", "depth"], strength: 0.6, room: 9, people: 1 }), ["id", "depth"], "room enough: all of them");
-  assert.deepEqual(pickMaps({ wanted: ["id", "depth"], strength: 0.2, room: 2, people: 1 }), ["id"], "a coloured frame: the maps are extras, one left for the person");
+  assert.deepEqual(pickMaps({ wanted: ["id", "depth"], strength: 0.4, room: 2, people: 1 }), ["depth"], "a frame in its colours already says who is who: the depth goes before the colour ID");
+  assert.deepEqual(pickMaps({ wanted: ["id", "depth", "silhouette"], strength: 0.2, room: 3, people: 1 }), ["depth", "silhouette"], "the colour ID is the last to go with a coloured frame");
   assert.deepEqual(pickMaps({ wanted: ["depth", "silhouette"], strength: 0.9, room: 2, people: 0 }), ["depth", "silhouette"]);
   assert.deepEqual(pickMaps({ wanted: ["id", "depth", "silhouette"], strength: 0.9, room: 1, people: 2 }), ["id"], "the colour ID stays: it alone says who is who over plain clay");
 });
@@ -425,9 +426,9 @@ test("the strength: how far a render goes from the clay, in its words, the frame
   const parts = [cleanPart({ shape: "box", name: "Body", color: "#4fb3a9", made: "brushed chrome" })];
   assert.doesNotMatch(framePrompt({ parts, maps: ["id"], strength: 0.2 }), /plain grey clay/);
   assert.match(framePrompt({ parts, maps: ["id"], strength: 0.9 }), /@frame is in plain grey clay: it gives the forms only\./);
-  // a short name for the legend: the head of the library's description, the user's own words whole, someone by their name
+  // a short name for the legend: a piece's name in the library, the user's own words whole, someone by their name
   const pieceOf = () => ({ name: "Desk", description: "a rectangular writing desk with a flat top and a shallow drawer" });
-  assert.equal(shortOf(cleanPart({ shape: "asset", asset: "desk", made: "a rectangular writing desk with a flat top and a shallow drawer" }), pieceOf), "a rectangular writing desk");
+  assert.equal(shortOf(cleanPart({ shape: "asset", asset: "desk", made: "a rectangular writing desk with a flat top and a shallow drawer" }), pieceOf), "a desk", "left as the library describes it: its name in the library");
   assert.equal(shortOf(cleanPart({ shape: "asset", asset: "desk", made: "a mahogany desk with brass handles" }), pieceOf), "a mahogany desk with brass handles");
   assert.equal(shortOf(cleanPart({ shape: "character", body: "man", name: "Giorno", made: "a slim young man" })), "Giorno");
   assert.equal(shortOf(cleanPart({ shape: "character", body: "man", name: "Man 2", made: "a chef in whites" })), "a chef in whites", "a body's name says nothing: the words do");
@@ -480,4 +481,15 @@ test("cleanDraft keeps who wrote the prompt and what it was written for", () => 
   const none = cleanDraft({ prompt: "  ", promptBy: "writer", promptFor: { model: "x", key: "y" } });
   assert.deepEqual([none.promptBy, none.promptFor], ["", null], "no prompt, nobody wrote it");
   assert.deepEqual([cleanDraft({}).promptBy, cleanDraft({}).promptFor], ["", null]);
+});
+
+test("factsOf: a piece left as the library describes it goes by its name, with no words; the user's own words go along", () => {
+  const pieceOf = (t) => ({ floor: { name: "Floor", description: "a thin flat rectangular floor slab, plain and level" }, desk: { name: "Desk", description: "a rectangular writing desk with a flat top" } })[t] ?? null;
+  const parts = [
+    cleanPart({ id: "f", shape: "asset", asset: "floor", name: "Floor", color: "#6b6b70", made: "a thin flat rectangular floor slab, plain and level" }),
+    cleanPart({ id: "d", shape: "asset", asset: "desk", name: "Desk", color: "#c8823e", made: "a mahogany executive desk with brass handles" }),
+  ];
+  const things = factsOf({ parts, pieceOf }).who.flatMap((g) => g.things);
+  assert.deepEqual(things.find((t) => t.name === "a floor"), { name: "a floor", count: 1 }, "no floor slab in the words");
+  assert.equal(things.find((t) => t.name === "a mahogany executive desk with brass handles")?.name, "a mahogany executive desk with brass handles");
 });

@@ -576,8 +576,8 @@ export function describeOf(p, pieceOf = () => null) {
 const headOf = (t) => String(t ?? "").split(/,| with | in | holding |:| — /)[0].trim();
 /**
  * What a part is, in a few words, for the legend: a person by their name when the user said who they are (in words or pictures), else
- * "a man"; a piece by the user's own words when they wrote some, else the head of the library's description ("a rectangular writing
- * desk"); a shape by its name.
+ * "a man"; a piece by the user's own words when they wrote some, else its name in the library ("a floor", "an articulated desk lamp");
+ * a shape by its name.
  */
 export function shortOf(p, pieceOf = () => null) {
   if (isCharacter(p)) {
@@ -588,7 +588,8 @@ export function shortOf(p, pieceOf = () => null) {
   if (isAsset(p)) {
     const own = lowered(p.made);
     const lib = lowered(pieceOf(p.asset)?.description);
-    if (!own || own === lib) return headOf(lib) || describeOf({ ...p, made: "" }, pieceOf);
+    // (left as the library describes it: its name in the library says it, "a floor", "an articulated desk lamp")
+    if (!own || own === lib) return pieceOf(p.asset)?.name ? pieceName(p, pieceOf) : headOf(lib) || describeOf({ ...p, made: "" }, pieceOf);
     return own;
   }
   return describeOf(p, pieceOf);
@@ -663,12 +664,15 @@ export function referencesFor({ parts = [], sceneRefs = [], room = 0, mentioned 
 
 /**
  * Which control maps go, within the model's room for pictures: the colour ID first when the frame is plain grey clay (it alone says who
- * is who then), then each person's picture keeps its place before the other maps (depth, silhouette) take what is left. In the maps' order.
+ * is who then), then each picture put on a part's sheet (`people`: a person's likeness first) keeps its place before the other maps
+ * (depth, silhouette; the colour ID last, when the frame's own colours already say it) take what is left. In the maps' order.
  */
 export function pickMaps({ wanted = [], strength = STRENGTH, room = 0, people = 0 } = {}) {
   const ids = MAPS.map((m) => m.id).filter((id) => wanted.includes(id));
-  const must = plainFrame(strength, ids) ? ["id"] : [];
-  const rest = ids.filter((id) => !must.includes(id)).slice(0, Math.max(0, room - must.length - people));
+  const plain = plainFrame(strength, ids);
+  const must = plain ? ["id"] : [];
+  // (a frame in its colours already says who is who: then the colour ID is the last map to go, after the depth and the silhouette)
+  const rest = ids.filter((id) => !must.includes(id)).sort((a, b) => Number(!plain && a === "id") - Number(!plain && b === "id")).slice(0, Math.max(0, room - must.length - people));
   const keep = new Set([...must, ...rest].slice(0, room));
   return ids.filter((id) => keep.has(id));
 }
@@ -786,7 +790,9 @@ export function factsOf({ parts = [], what = "", scene = "", maps = [], sceneRef
     const name = shortOf(p, pieceOf);
     if (!name) continue;
     const own = String(p.made ?? "").trim().replace(/\s+/g, " ").slice(0, 400);
-    const said = own && lowered(own).toLowerCase() !== name.toLowerCase() ? own : "";
+    // (the library's own description, left as it was, is not the user's words: the frame shows the form)
+    const libWords = isAsset(p) ? lowered(pieceOf(p.asset)?.description).toLowerCase() : "";
+    const said = own && lowered(own).toLowerCase() !== name.toLowerCase() && lowered(own).toLowerCase() !== libWords ? own : "";
     const pics = named.get(tags.get(p.id)) ?? [];
     if (!by.has(p.color)) by.set(p.color, { people: false, things: new Map() });
     const g = by.get(p.color);
