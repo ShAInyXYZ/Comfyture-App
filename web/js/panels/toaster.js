@@ -168,6 +168,8 @@ function mountView() {
       onDrag: (changes) => liveNumbers(changes),
       onPose: (id, { joints }) => reposeCharacter(id, { joints }, measure),
       onJoint: () => drawInspector(),
+      // the library's pieces arrived: the stills drawn while they were boxes are drawn again
+      onAssets: () => stripSoon(),
       onCamera: () => {
         lastView = null;
         drawViews();

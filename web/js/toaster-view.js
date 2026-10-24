@@ -53,8 +53,8 @@ const PASS_FRAGMENT = /* glsl */ `
   }`;
 
 export class ToasterView {
-  constructor(container, frameEl, { onPick = () => {}, onChange = () => {}, onDrag = () => {}, onCamera = () => {}, onPose = () => {}, onJoint = () => {} } = {}) {
-    Object.assign(this, { container, frameEl, onPick, onChange, onDrag, onCamera, onPose, onJoint });
+  constructor(container, frameEl, { onPick = () => {}, onChange = () => {}, onDrag = () => {}, onCamera = () => {}, onPose = () => {}, onJoint = () => {}, onAssets = () => {} } = {}) {
+    Object.assign(this, { container, frameEl, onPick, onChange, onDrag, onCamera, onPose, onJoint, onAssets });
     this.ratio = "1:1";
     this.meshes = new Map();
     this.selected = [];
@@ -304,7 +304,10 @@ export class ToasterView {
 
   /** The library has arrived (or grown): pieces that were boxes become themselves. */
   refreshAssets() {
-    if (this.parts && !this.disposed) this.setParts(this.parts);
+    if (!this.parts || this.disposed) return;
+    this.setParts(this.parts);
+    // (the pictures drawn from the clay while the pieces were boxes are drawn again)
+    this.onAssets();
   }
 
   waitForLibrary() {
