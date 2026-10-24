@@ -529,6 +529,21 @@ try {
   await page.waitForSelector(".toaster.is-render .ts-camera-card .ts-cam");
   await page.waitForTimeout(800);
   ok((await page.locator(".ts-camera-card .ts-cam").allInnerTexts()).join().endsWith("Wide,Above") && (await page.locator(".ts-camera-card .ts-cam").first().innerText()) === "Current view" && (await page.locator(".ts-camera-card .ts-cam.is-on").innerText()) === "Current view", "the Camera card has a tile per slot and the view as it was left, lit", (await page.locator(".ts-camera-card .ts-cam").allInnerTexts()).join());
+  ok(!/\bnull\b/.test(await page.locator(".ts-camera-card").innerText()) && (await page.locator(".ts-camera-card .ts-cam").first().locator("img").count()) === 1, "the view as it was left has its picture (drawn once the clay is there), and nothing reads null", await page.locator(".ts-camera-card").innerText());
+  // the control maps on the right: each a picture of what the camera sees; a click shows it big in the studio; its key sends it or not
+  ok((await page.locator(".ts-maps-card .ts-map-tile").allInnerTexts()).map((t) => t.split("\n")[0]).join() === "Colour ID,Depth,Silhouette" && (await page.locator(".ts-maps-card .ts-map-pic img").count()) === 3, "the Control maps card shows the colour ID, the depth and the silhouette as pictures", (await page.locator(".ts-maps-card").innerText()).replace(/\n/g, " | "));
+  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Depth" }).locator(".ts-map-pic").click();
+  await page.waitForTimeout(300);
+  ok(await page.locator(".ts-studio img.ts-map-big").isVisible() && /^Depth — /i.test(await page.locator(".ts-studio .ts-tag.is-a").innerText()), "a map's picture is shown big in the studio", await page.locator(".ts-studio .ts-tag.is-a").innerText().catch(() => ""));
+  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Depth" }).locator(".ts-map-pic").click();
+  await page.waitForTimeout(300);
+  ok(!(await page.locator(".ts-studio img.ts-map-big").count()) && await page.locator(".ts-clay-live").isVisible(), "and clicked again, the clay is back");
+  const sentBefore = (await draft()).body.maps;
+  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Silhouette" }).locator(".ts-map-send").click();
+  await page.waitForTimeout(400);
+  ok((await draft()).body.maps.includes("silhouette") && !sentBefore.includes("silhouette") && (await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Silhouette" }).locator(".ts-map-send").getAttribute("aria-pressed")) === "true", "a map's key sends it with the frame", JSON.stringify((await draft()).body.maps));
+  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Silhouette" }).locator(".ts-map-send").click();
+  ok(JSON.stringify((await draft()).body.maps) === JSON.stringify(sentBefore), "and leaves it out again");
   const clayA = await page.locator(".ts-clay-live").getAttribute("src");
   await page.locator('.ts-camera-card [aria-label^="Above"]').click();
   await page.waitForTimeout(1200);

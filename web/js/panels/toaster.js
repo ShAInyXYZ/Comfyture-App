@@ -98,6 +98,7 @@ function build(el) {
 
   // the compact render card of the scene: the picture (drawn again as it comes), Toast it and the way to the studio
   s.cameraCard = h("section.ts-card.ts-camera-card", { "aria-label": "Camera" });
+  s.mapsCard = h("section.ts-card.ts-maps-card", { "aria-label": "Control maps" });
   s.sheet = h("section.ts-card.ts-sheet", { "aria-label": "Turnaround" });
   s.model = h("section.ts-card.ts-model", { "aria-label": "3D model" });
   s.right = h("aside.ts-col.ts-right", { "aria-label": "Toasted" });
@@ -135,7 +136,7 @@ function layout() {
     if (drawer) openDrawer(null);
     s.mid.replaceChildren(s.studio, chatSlot);
     // (the viewport stays in the page, hidden: the stills are drawn through their own lens and size)
-    s.right.replaceChildren(s.cameraCard, s.sheet, s.model, s.viewport);
+    s.right.replaceChildren(s.cameraCard, s.mapsCard, s.sheet, s.model, s.viewport);
     s.root.replaceChildren(s.left, s.mid, s.right);
   } else {
     s.mid.replaceChildren(s.viewport, chatSlot);
@@ -669,18 +670,45 @@ function drawCameraCard() {
   const tile = (name, thumb, lit, run, title) => h(`div.ts-cam${lit ? ".is-on" : ""}`, {},
     h("button.ts-cam-pic", { type: "button", title, "aria-label": title, "aria-pressed": String(lit), style: { aspectRatio: b.ratio.replace(":", " / ") }, on: { click: run } }, thumb ? h("img", { src: thumb, alt: "", draggable: false }) : sprite("scene-camera")),
     h("span.ts-cam-name", {}, name));
-  let now = null;
-  if (!on && toaster.view) {
-    try {
-      now = toaster.view.frameStill({ long: 220, type: "image/jpeg", quality: 0.8 });
-    } catch {}
-  }
+  const now = on ? null : stills.camera;
   shell.cameraCard.replaceChildren(
     h("header.ts-head", {}, h("h2.ts-label", {}, "Camera"), h("span.spacer"), h("span.ts-note", {}, on ? on.name : "The view as you left it")),
     h("div.ts-cam-tiles", {},
       ...(!on ? [tile("Current view", now, true, () => {}, "The view as you left it in the Scene: the render will use it")] : []),
       ...b.cameras.map((k) => tile(k.name, k.thumb, on === k, () => recallCamera(k.id), `${k.name} — ${k.focal} mm, ${k.ratio}: render from it`))),
-    b.cameras.length ? null : h("p.ts-empty", {}, "Keep cameras in the Scene: they show here to pick from."));
+    ...(b.cameras.length ? [] : [h("p.ts-empty", {}, "Keep cameras in the Scene: they show here to pick from.")]));
+}
+
+/**
+ * The control maps, as the camera sees the clay now (the Stage's channels): the colour ID, the depth and the silhouette, each a picture; a
+ * click shows it big in the studio (again: back to the clay or the render), and its key says whether it goes with the frame (and changes it).
+ */
+function drawMaps() {
+  const b = body();
+  if (!shell || !b || toaster.mode !== "render") return;
+  const sent = MAPS.filter((m) => b.maps.includes(m.id)).length;
+  shell.mapsCard.replaceChildren(
+    h("header.ts-head", {}, h("h2.ts-label", {}, "Control maps"), h("span.spacer"), h("span.ts-note", {}, sent ? `${sent} sent with the frame` : "None sent")),
+    h("div.ts-map-tiles", {}, ...MAPS.map((m) => {
+      const on = b.maps.includes(m.id);
+      return h(`div.ts-map-tile${mapShown === m.id ? ".is-shown" : ""}`, {},
+        h("button.ts-map-pic", { type: "button", "aria-pressed": String(mapShown === m.id), style: { aspectRatio: b.ratio.replace(":", " / ") }, title: mapShown === m.id ? `Back to the ${b.renders.length ? "render" : "clay"}` : `${m.label}: show it big in the studio`, on: { click: () => showMap(mapShown === m.id ? null : m.id) } },
+          stills[m.id] ? h("img", { src: stills[m.id], alt: "", draggable: false }) : sprite(MAP_ICON[m.id])),
+        h("div.ts-map-foot", {}, h("span", {}, m.label),
+          h("button.ts-map-send", { type: "button", "aria-pressed": String(on), title: on ? `${m.label} goes with the frame — click to leave it out` : `${m.label} is left out — click to send it with the frame`, on: { click: () => toggleMap(m.id) } }, on ? "Sent" : "Off")));
+    })));
+}
+/** A control map shown big in the studio, or (null) the clay or the render again. */
+function showMap(id) {
+  mapShown = id;
+  stills.big = null;
+  if (id && toaster.view) {
+    try {
+      stills.big = toaster.view.frameStill({ long: 1200, channel: id });
+    } catch {}
+  }
+  drawRender();
+  drawMaps();
 }
 
 function drawTools() {
@@ -930,6 +958,9 @@ function renderKeys(r, done) {
 
 // the clay as the camera sees it now, drawn big a moment after it changes (the studio shows it until something is toasted)
 let clayLive = null;
+// the render's right column's pictures, drawn by the timer: the view as it is now, each control map small, and the one shown big
+const stills = {};
+let mapShown = null;
 let sentOpen = false;
 const needLive = () => toaster.mode === "render" && !body()?.renders.length;
 
@@ -941,7 +972,11 @@ function drawRender() {
   const done = r?.status === "done";
   const studio = toaster.mode === "render";
   let picture;
-  if (!r) {
+  const map = studio && mapShown ? MAPS.find((m) => m.id === mapShown) : null;
+  if (map) {
+    picture = h("div.ts-pic.is-clay", {}, stills.big ? h("img.ts-map-big", { src: stills.big, alt: `The ${map.label} map`, draggable: false }) : h("span", {}, "…"),
+      h("span.ts-tag.is-a", {}, `${map.label} — ${b.maps.includes(map.id) ? "sent with the frame" : "not sent"}`));
+  } else if (!r) {
     picture = studio ? h("div.ts-pic.is-clay", {}, clayLive ? h("img.ts-clay-live", { src: clayLive, alt: "The clay frame, as Toaster sends it", draggable: false }) : h("span", {}, "Warming up the clay…"), h("span.ts-tag.is-a", {}, "Clay — what Toaster sends"))
       : h("div.ts-pic.is-empty", {}, sprite("toast-it"), h("span", {}, "Block it out, say what it is, and toast it."));
   } else if (r.status === "running") picture = h("div.ts-pic.is-running", {}, r.frame ? h("img.ts-under", { src: r.frame.url, alt: "", draggable: false }) : null, progress(r, "Toasting the frame"));
@@ -949,7 +984,7 @@ function drawRender() {
   else if (toaster.compare && r.frame) picture = comparePic(r);
   else picture = h("button.ts-pic", { type: "button", title: "Look at it, full size", on: { click: () => viewImage(r.photo.url) } }, h("img", { src: r.photo.url, alt: "", draggable: false }));
   const strip = renders.length ? h("div.ts-strip", { role: "list", "aria-label": "Earlier renders", dataset: { scrollKey: "ts-strip" } }, ...renders.map((x) =>
-    h(`button.ts-thumb${x.id === r?.id ? ".is-on" : ""}`, { type: "button", role: "listitem", title: x.status === "failed" ? x.error : "Show it, from its camera", on: { click: () => showRender(x.id) } },
+    h(`button.ts-thumb${x.id === r?.id ? ".is-on" : ""}`, { type: "button", role: "listitem", title: x.status === "failed" ? x.error : "Show it, from its camera", on: { click: () => ((mapShown = null), drawMaps(), showRender(x.id)) } },
       x.photo ? h("img", { src: x.photo.url, alt: "", draggable: false, loading: "lazy" }) : x.status === "running" ? h("span.typing", {}, h("i"), h("i"), h("i")) : icon("close")))) : null;
   const ratio = RATIOS[r?.ratio] ?? RATIOS[b.ratio] ?? 1;
   const pictures = h("div.ts-render-body", {}, h("div.ts-pic-box", { style: { "--ratio": String(ratio) } }, picture), strip);
@@ -994,9 +1029,16 @@ function stripSoon() {
     try {
       strip = hasClay() ? toaster.view.sheetStill({ scale: 0.1, type: "image/jpeg", quality: 0.85 }).url : null;
       clayLive = needLive() ? toaster.view.frameStill({ long: 1000, type: "image/jpeg", quality: 0.88 }) : null;
+      stills.camera = toaster.view.frameStill({ long: 320, type: "image/jpeg", quality: 0.82 });
+      for (const m of MAPS) stills[m.id] = hasClay() ? toaster.view.frameStill({ long: 320, channel: m.id }) : null;
+      if (mapShown) stills.big = toaster.view.frameStill({ long: 1200, channel: mapShown });
     } catch {
       strip = null;
     }
+    drawCameraCard();
+    drawMaps();
+    const big = mapShown && shell?.studioMain.querySelector("img.ts-map-big");
+    if (big && stills.big) big.src = stills.big;
     const img = shell?.sheet.querySelector("img.ts-clay-strip");
     const live = shell?.studioMain.querySelector("img.ts-clay-live");
     if (img && strip && (!needLive() || live)) {
@@ -1084,6 +1126,7 @@ function drawModel() {
 
 function drawRight() {
   if (!shell || !body() || toaster.mode !== "render") return;
+  drawMaps();
   drawRender();
   drawSheet();
   drawModel();
