@@ -697,7 +697,7 @@ function drawCameraCard() {
 
 /**
  * What goes with the render, in the order it goes: the clay frame and the control maps as the camera sees them now, each a picture with
- * whether it is sent (a click shows it big in the studio; its key sends it or not), the first one sent marked as the one that leads (the
+ * whether it is sent (the picture is the switch: a click sends it or not; its corner key shows it big in the studio), the first one sent marked as the one that leads (the
  * layout comes from it); under them the pictures that go with them, by @name, and those the model has no room for.
  */
 function drawMaps() {
@@ -719,13 +719,15 @@ function drawMaps() {
     h("div.ts-map-tiles", {}, ...MAPS.map((m) => {
       const on = b.maps.includes(m.id);
       const gone = out.ids.includes(m.id);
-      return h(`div.ts-map-tile${mapShown === m.id ? ".is-shown" : ""}${lead === m.id ? ".is-lead" : ""}`, {},
-        h("button.ts-map-pic", { type: "button", "aria-pressed": String(mapShown === m.id), style: { aspectRatio: b.ratio.replace(":", " / ") }, title: mapShown === m.id ? `Back to the ${b.renders.length ? "render" : "clay"}` : `${m.label}: show it big in the studio`, on: { click: () => showMap(mapShown === m.id ? null : m.id) } },
-          stills[m.id] ? h("img", { src: stills[m.id], alt: "", draggable: false }) : sprite(MAP_ICON[m.id])),
-        h("div.ts-map-foot", {}, h("span", {}, m.label),
-          gone
-            ? h("button.ts-map-send.is-left-out", { type: "button", "aria-pressed": "true", title: `${m.label} is left out: ${out.why}. Click to stop asking for it`, on: { click: () => toggleMap(m.id) } }, "Left out")
-            : h("button.ts-map-send", { type: "button", "aria-pressed": String(on), title: on ? `${m.label} goes with the frame — click to leave it out` : `${m.label} is left out — click to send it with the frame`, on: { click: () => toggleMap(m.id) } }, on ? "Sent" : "Off")),
+      const shown = mapShown === m.id;
+      const state = gone ? "No room" : on ? "✓" : "Off";
+      const tip = gone ? `${m.label} is left out: ${out.why}. Click to stop asking for it` : on ? `${m.label} — Sent — click to leave it out` : `${m.label} — Left out by you — click to send it`;
+      return h(`div.ts-map-tile${shown ? ".is-shown" : ""}${lead === m.id ? ".is-lead" : ""}`, {},
+        h(`button.ts-map-pic${gone ? ".is-left-out" : on ? ".is-sent" : ".is-off"}`, { type: "button", "aria-pressed": String(on || gone), "aria-label": `${m.label}: ${gone ? "no room" : on ? "sent" : "off"}`, style: { aspectRatio: b.ratio.replace(":", " / ") }, title: tip, on: { click: () => toggleMap(m.id) } },
+          stills[m.id] ? h("img", { src: stills[m.id], alt: "", draggable: false }) : sprite(MAP_ICON[m.id]),
+          h("span.ts-map-name", {}, m.label),
+          h("span.ts-map-badge", {}, state)),
+        h("button.ts-map-view", { type: "button", "aria-pressed": String(shown), "aria-label": shown ? `Back to the ${b.renders.length ? "render" : "clay"}` : `Show ${m.label} big`, title: shown ? `Back to the ${b.renders.length ? "render" : "clay"}` : `${m.label}: show it big in the studio`, on: { click: () => showMap(shown ? null : m.id) } }, sprite("image-compare")),
         lead === m.id ? h("em.ts-lead", { title: "It leads: the render takes its layout from this picture" }, "Leads") : null);
     })),
     plan.refs.length || left.length

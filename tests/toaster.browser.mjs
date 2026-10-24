@@ -582,12 +582,30 @@ try {
   ok(!/\bnull\b/.test(await page.locator(".ts-camera-card").innerText()) && (await page.locator(".ts-camera-card .ts-cam").first().locator("img").count()) === 1, "the view as it was left has its picture (drawn once the clay is there), and nothing reads null", await page.locator(".ts-camera-card").innerText());
   // the control maps on the right: each a picture of what the camera sees; a click shows it big in the studio; its key sends it or not
   ok((await page.locator(".ts-maps-card .ts-map-tile").allInnerTexts()).map((t) => t.split("\n")[0]).join() === "Clay frame,Colour ID,Depth,Silhouette" && (await page.locator(".ts-maps-card .ts-map-pic img").count()) === 4, "the Control maps card shows the clay frame and colour ID, the depth and the silhouette as pictures", (await page.locator(".ts-maps-card").innerText()).replace(/\n/g, " | "));
-  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Depth" }).locator(".ts-map-pic").click();
+  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Depth" }).locator(".ts-map-view").click();
   await page.waitForTimeout(300);
   ok(await page.locator(".ts-studio img.ts-map-big").isVisible() && /^Depth — /i.test(await page.locator(".ts-studio .ts-tag.is-a").innerText()), "a map's picture is shown big in the studio", await page.locator(".ts-studio .ts-tag.is-a").innerText().catch(() => ""));
-  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Depth" }).locator(".ts-map-pic").click();
+  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Depth" }).locator(".ts-map-view").click();
   await page.waitForTimeout(300);
   ok(!(await page.locator(".ts-studio img.ts-map-big").count()) && await page.locator(".ts-clay-live").isVisible(), "and clicked again, the clay is back");
+  {
+    // the picture is the switch: a click sends or leaves out (badge and look follow), the corner key only shows it big
+    const tile = page.locator(".ts-maps-card .ts-map-tile", { hasText: "Silhouette" });
+    const before = JSON.stringify((await draft()).body.maps);
+    await tile.locator(".ts-map-pic").click();
+    await page.waitForTimeout(300);
+    const onBadge = await tile.locator(".ts-map-badge").innerText();
+    const onCls = await tile.locator(".ts-map-pic").getAttribute("class");
+    await tile.locator(".ts-map-pic").click();
+    await page.waitForTimeout(300);
+    const offBadge = await tile.locator(".ts-map-badge").innerText();
+    ok(onBadge === "✓" && /is-sent/.test(onCls) && offBadge === "Off" && /is-off/.test(await tile.locator(".ts-map-pic").getAttribute("class")) && JSON.stringify((await draft()).body.maps) === before, "a click on a map's picture sends it (a tick) or leaves it out (Off)", JSON.stringify([onBadge, offBadge]));
+    await tile.locator(".ts-map-view").click();
+    await page.waitForTimeout(300);
+    ok(await page.locator(".ts-studio img.ts-map-big").isVisible() && (await tile.locator(".ts-map-view").getAttribute("aria-pressed")) === "true" && JSON.stringify((await draft()).body.maps) === before, "the corner key shows the map big without changing what is sent");
+    await tile.locator(".ts-map-view").click();
+    await page.waitForTimeout(300);
+  }
   // a floor reaching under the camera does not put "near" at its feet: the depth of the room keeps its greys
   const depthSpread = await js(async () => {
     const t = await import("/js/toaster.js");
@@ -609,10 +627,10 @@ try {
   });
   ok(depthSpread.top > 200 && depthSpread.median > 25, "with a floor running under the camera, the depth still goes from white near to dark far (not all black)", JSON.stringify(depthSpread));
   const sentBefore = (await draft()).body.maps;
-  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Silhouette" }).locator(".ts-map-send").click();
+  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Silhouette" }).locator(".ts-map-pic").click();
   await page.waitForTimeout(400);
-  ok((await draft()).body.maps.includes("silhouette") && !sentBefore.includes("silhouette") && (await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Silhouette" }).locator(".ts-map-send").getAttribute("aria-pressed")) === "true", "a map's key sends it with the frame", JSON.stringify((await draft()).body.maps));
-  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Silhouette" }).locator(".ts-map-send").click();
+  ok((await draft()).body.maps.includes("silhouette") && !sentBefore.includes("silhouette") && (await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Silhouette" }).locator(".ts-map-pic").getAttribute("aria-pressed")) === "true", "a map's key sends it with the frame", JSON.stringify((await draft()).body.maps));
+  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Silhouette" }).locator(".ts-map-pic").click();
   ok(JSON.stringify((await draft()).body.maps) === JSON.stringify(sentBefore), "and leaves it out again");
   const clayA = await page.locator(".ts-clay-live").getAttribute("src");
   await page.locator('.ts-camera-card [aria-label^="Above"]').click();
@@ -620,7 +638,7 @@ try {
   const clayB = await page.locator(".ts-clay-live").getAttribute("src");
   ok(clayA !== clayB && (await page.locator(".ts-camera-card .ts-cam.is-on .ts-cam-name").innerText()) === "Above" && (await js(() => window.__toaster.view.cameraState().position[1])) > 2, "a click on a tile puts the camera there: the clay still changes and the tile is lit", JSON.stringify([clayA === clayB, await page.locator(".ts-camera-card .ts-cam.is-on .ts-cam-name").allInnerTexts(), await js(() => window.__toaster.view.cameraState().position)]));
   // the control maps are the draft's choice: the silhouette added, the depth taken away
-  const sendKey = (name) => page.locator(".ts-maps-card .ts-map-tile", { hasText: name }).locator(".ts-map-send");
+  const sendKey = (name) => page.locator(".ts-maps-card .ts-map-tile", { hasText: name }).locator(".ts-map-pic");
   ok((await page.locator(".ts-maps-card .ts-map-tile.is-lead .ts-lead").textContent()) === "Leads" && (await page.locator(".ts-maps-card .ts-map-tile.is-lead").innerText()).startsWith("Clay frame") && /of \d+ pictures/.test(await page.locator(".ts-maps-card .ts-note").innerText()), "the first map sent is marked Leads, and the header counts the pictures", await page.locator(".ts-maps-card .ts-note").innerText());
   await sendKey("Silhouette").click();
   await sendKey("Depth").click();
@@ -886,12 +904,12 @@ try {
     t.setModel("qwen-image-3.0-pro");
   });
   await page.waitForTimeout(400);
-  const outKeys = await page.locator(".ts-maps-card .ts-map-tile:has(.ts-map-send.is-left-out) .ts-map-foot > span").allInnerTexts();
-  const outKey = page.locator(".ts-maps-card .ts-map-send.is-left-out").first();
+  const outKeys = await page.locator(".ts-maps-card .ts-map-tile:has(.ts-map-pic.is-left-out) .ts-map-name").allInnerTexts();
+  const outKey = page.locator(".ts-maps-card .ts-map-pic.is-left-out").first();
   const outWhy = ((await outKey.getAttribute("title").catch(() => null)) ?? (await outKey.getAttribute("data-tooltip").catch(() => null))) ?? "";
-  ok(outKeys.join() === "Colour ID,Silhouette" && /takes 3 pictures: the clay frame, Depth, @mood-board go first/.test(outWhy) && (await page.locator(".ts-maps-card .ts-map-send.is-left-out").count()) === 2, "a map the model has no room for is marked Left out, and says why", JSON.stringify([outKeys, outWhy]));
+  ok(outKeys.join() === "Colour ID,Silhouette" && /takes 3 pictures: the clay frame, Depth, @mood-board go first/.test(outWhy) && (await page.locator(".ts-maps-card .ts-map-pic.is-left-out").count()) === 2, "a map the model has no room for is marked Left out, and says why", JSON.stringify([outKeys, outWhy]));
   // the clay frame left out: the next one on leads and is the first picture sent; the last one on cannot be switched off
-  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Clay frame" }).locator(".ts-map-send").click();
+  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Clay frame" }).locator(".ts-map-pic").click();
   await page.waitForTimeout(300);
   const leadPlan = await js(async () => {
     const t = await import("/js/toaster.js");
