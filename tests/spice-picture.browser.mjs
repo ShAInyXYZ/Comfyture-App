@@ -23,9 +23,9 @@ const ok = (cond, msg, extra = "") => {
   if (!cond) failures++;
 };
 
-// the picture and its matte, from our own cast (spice/examples): Truffle at his workbench, and Truffle cut out
+// the picture and its matte, from our own cast (examples/spice): Truffle at his workbench, and Truffle cut out
 const ff = (...args) => execFileSync("ffmpeg", ["-v", "error", "-y", ...args]);
-const truffle = join(root, "spice", "examples", "sh040-truffle");
+const truffle = join(root, "examples", "spice", "sh040-truffle");
 ff("-i", join(truffle, "plate.jpg"), "-vf", "scale=640:-2,crop=640:360", "-frames:v", "1", join(mediaDir, "picture.png"));
 ff("-i", join(truffle, "roto.png"), "-vf", "scale=640:-2,crop=640:360,format=gray", "-frames:v", "1", join(mediaDir, "matte.png"));
 

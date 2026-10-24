@@ -8,6 +8,7 @@ import { createServer } from "node:net";
 import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { readLedger, ledgerState } from "../server/examples.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const freePort = () => new Promise<number>((done) => {
@@ -41,8 +42,9 @@ test("a newer version of a showcase replaces an older copy nobody has touched, a
     const ids = (await get("api/jams")).jams.map((j: any) => j.id).sort();
     assert.deepEqual(ids, ["jam-hotel-lobby", "jam-test-showcase", "jam-toc-toc"], "Hotel Lobby and Toc Toc ship; Ramalama is not one of them");
   });
-  const marker = (await readFile(join(data, "jams", ".seeded"), "utf8")).split("\n").sort();
-  assert.deepEqual(marker, ["jam-hotel-lobby@3", "jam-test-showcase", "jam-toc-toc@2"]);
+  // the ledger says what went in, at which version (server/examples.ts)
+  const versions = async () => Object.fromEntries(ledgerState(readLedger(await readFile(join(data, "jams", ".seeded"), "utf8"))));
+  assert.deepEqual(await versions(), { "jam-hotel-lobby": 3, "jam-test-showcase": 1, "jam-toc-toc": 2 });
   // they were put in at an older version (as a data folder from before is): one is untouched, one was edited since
   await writeFile(join(data, "jams", ".seeded"), ["jam-hotel-lobby", "jam-test-showcase", "jam-toc-toc"].join("\n"));
   const edit = async (kind: string, id: string, change: (p: any) => void) => {
@@ -59,5 +61,5 @@ test("a newer version of a showcase replaces an older copy nobody has touched, a
     assert.equal(names["jam-toc-toc"], "My Toc Toc", "one that was edited is left as it is");
     assert.equal(names["jam-test-showcase"], "Sun in the jar (test)", "one at its version is not touched");
   });
-  assert.deepEqual((await readFile(join(data, "jams", ".seeded"), "utf8")).split("\n").sort(), ["jam-hotel-lobby@3", "jam-test-showcase", "jam-toc-toc@2"]);
+  assert.deepEqual(await versions(), { "jam-hotel-lobby": 3, "jam-test-showcase": 1, "jam-toc-toc": 2 }, "an older ledger (one id a line) is read, and the versions now in are noted");
 });

@@ -36,6 +36,7 @@ import { createEdit } from "./utensils-edit.ts";
 import { createFx } from "./utensils-fx.ts";
 import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templates.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
+import { seedExamples, placeMedia, placeThumb, type ExampleKind, type Kept } from "./examples.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -830,7 +831,7 @@ let seeding: Promise<void> | null = null;
 async function seedStages() {
   if (await access(stagesDir()).then(() => true, () => false)) return;
   await mkdir(stagesDir(), { recursive: true });
-  const dir = join(root, "stages");
+  const dir = join(EXAMPLES, "stage");
   const files = (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith(".stage.json")).sort();
   // the first example is the newest, so it is the one that opens
   const start = Date.now();
@@ -843,181 +844,143 @@ async function seedStages() {
   }
 }
 
-// the brands that come with the app (brands/*.brand.json, Comfyture's own among them) are there to open the
-// first time Macaron lists them; one that is deleted stays deleted, so the ids already seeded are kept
-let seedingBrands: Promise<void> | null = null;
-/**
- * Spice's example shots (spice/examples/<shot>/shot.json beside its clips), put in once: each pass's clip goes into the library of
- * clips (data/videos) so every department can work on it like footage of the person's own, and the shot is written as Spice keeps one.
- * A shot the person took out is not put back (the ids put in are kept in .seeded).
- */
-let seedingShots: Promise<void> | null = null;
+// ------------------------------------------------------------------ the examples every product ships
+
+// Every product's examples live in examples/<product>/<id>/ and are put into the data folder by server/examples.ts: once, a newer
+// version replacing only an untouched copy, a deleted one staying deleted, a retired one going. A product says here where its examples
+// are, how to put one in and how to take one out.
+const EXAMPLES = join(root, "examples");
+const ledgerOf = (store: string) => join(projectsDir(store), ".seeded");
+const keptIn = (store: string) => (id: string) => readProject(store, id);
+const dropFrom = (store: string) => async (id: string) => void (await rm(join(projectsDir(store), `${id}.json`), { force: true }));
+
 /** Spice's bakes on their way: the frames sent so far (a folder under edits), the rate, and the clip whose sound goes with them. */
 const bakes = new Map<string, { dir: string; at: number; fps: number; frames: number; audio: string; audioFrom: number }>();
-async function seedShots() {
-  const dir = join(root, "spice", "examples");
-  const kept = join(projectsDir("spice-shots"), ".seeded");
-  const seeded: string[] = await readFile(kept, "utf8").then((t) => JSON.parse(t), () => []);
-  let added = false;
-  for (const folder of (await readdir(dir).catch(() => [] as string[])).sort()) {
-    try {
-      const spec = JSON.parse(await readFile(join(dir, folder, "shot.json"), "utf8"));
-      // a newer version of an example (its rev) replaces the one kept only while the person has not touched it; a deleted one stays deleted
-      const tag = Number(spec.rev) > 1 ? `${spec.id}@${Number(spec.rev)}` : spec.id;
-      if (!/^[\w-]+$/.test(spec.id) || seeded.includes(tag)) continue;
-      if (seeded.some((x) => x === spec.id || x.startsWith(`${spec.id}@`))) {
-        const kept = await readProject("spice-shots", spec.id);
-        if (!kept || kept.updatedAt !== kept.createdAt) {
-          seeded.push(tag);
-          added = true;
-          continue;
-        }
-      }
-      const body: any = spiceBody({ set: spec.set });
-      const at = new Date().toISOString();
-      let thumb: string | undefined;
-      const rev = Number(spec.rev) > 1 ? `-r${Number(spec.rev)}` : "";
-      for (const [dept, p] of Object.entries<any>(spec.passes ?? {})) {
-        // a pass is a clip (in videos) or a picture (in photos), at the size its spec says
-        if (!(dept in body.passes) || !/^[\w.-]+\.(mp4|jpg|png|webp)$/.test(p.file)) continue;
-        const ext = p.file.split(".").pop().toLowerCase();
-        const pic = ext !== "mp4";
-        const file = `${spec.id}-${dept}${rev}.${ext}`;
-        await mkdir(join(data, pic ? "photos" : "videos"), { recursive: true });
-        await copyFile(join(dir, folder, p.file), join(data, pic ? "photos" : "videos", file));
-        const size = { width: Number(p.width) || 720, height: Number(p.height) || 480 };
-        const media: any = pic ? { kind: "image", url: `/media/photos/${file}`, file, ...size } : { kind: "video", url: `/media/videos/${file}`, file, ...size, seconds: p.seconds };
-        if (pic && dept === "plate") thumb ??= media.url;
-        if (p.still && /^[\w.-]+\.(jpg|png|webp)$/.test(p.still)) {
-          const still = `${spec.id}-${dept}${rev}.${p.still.split(".").pop()}`;
-          await mkdir(join(data, "photos"), { recursive: true });
-          await copyFile(join(dir, folder, p.still), join(data, "photos", still));
-          media.still = `/media/photos/${still}`;
-          thumb ??= media.still;
-        }
-        const to = pic ? SPICE_FIRST : SPICE_FIRST + Math.max(1, Math.round((Number(p.seconds) || 5) * 24)) - 1;
-        body.passes[dept] = dept === "plate"
-          ? { media, eye: true, fps: 24, name: String(p.name ?? "Plate"), from: SPICE_FIRST, to, at }
-          : { media, eye: true, from: SPICE_FIRST, to, note: String(p.note ?? ""), credits: 0, at, source: p.source === "cloud" ? "cloud" : "free", ...(dept === "roto" ? { type: "matte" } : {}) };
-        // Roto's pass is its subject's matte
-        const subject = dept === "roto" ? body.set.roto.subjects.find((x: any) => !x.media) : null;
-        if (subject) Object.assign(subject, { media, from: SPICE_FIRST, to, stale: false, at, credits: 0 });
-      }
-      // the clips its FX layers hold (an AI layer's clip), kept in the library beside its passes
-      for (const [i, l] of (body.set.fx.layers ?? []).entries()) {
-        const raw = spec.set?.fx?.layers?.[i]?.media;
-        if (!raw || !/^[\w.-]+\.mp4$/.test(raw.file ?? "")) continue;
-        const file = `${spec.id}-layer${i}${rev}.mp4`;
-        await copyFile(join(dir, folder, raw.file), join(data, "videos", file));
-        l.media = { kind: "video", url: `/media/videos/${file}`, file, width: Number(raw.width) || 720, height: Number(raw.height) || 480, seconds: Number(raw.seconds) || 5 };
-      }
-      await writeProject("spice-shots", { id: spec.id, name: String(spec.name ?? "Example"), createdAt: at, updatedAt: at, ...(thumb ? { thumb } : {}), body } as Project);
-      seeded.push(tag);
-      added = true;
-    } catch (e) {
-      console.warn(`spice: the example ${folder} was not added:`, (e as Error).message);
-    }
-  }
-  // an example that is no longer one (retired): its copy goes from the shots, unless the person has worked on it
-  const current = new Set<string>();
-  for (const folder of await readdir(dir).catch(() => [] as string[])) {
-    const spec = await readFile(join(dir, folder, "shot.json"), "utf8").then((t) => JSON.parse(t), () => null);
-    if (spec?.id) current.add(spec.id);
-  }
-  for (const id of new Set(seeded.map((t) => t.split("@")[0]))) {
-    if (current.has(id) || seeded.includes(`${id}@retired`) || !/^[\w-]+$/.test(id)) continue;
-    const kept = await readProject("spice-shots", id);
-    if (kept && kept.updatedAt === kept.createdAt) await rm(join(projectsDir("spice-shots"), `${id}.json`), { force: true });
-    seeded.push(`${id}@retired`);
-    added = true;
-  }
-  if (added) await writeFile(kept, JSON.stringify(seeded));
-}
 
-async function seedBrands() {
-  const dir = join(root, "brands");
-  const kept = join(projectsDir("brands"), ".seeded");
-  const seeded: string[] = await readFile(kept, "utf8").then((t) => JSON.parse(t), () => []);
-  let added = false;
-  for (const file of (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith(".brand.json")).sort()) {
-    try {
-      const brand: Project = JSON.parse(await readFile(join(dir, file), "utf8"));
-      if (!/^[\w-]+$/.test(brand.id)) continue;
-      if (seeded.includes(brand.id)) {
-        // one an earlier version put in gains what the newer one has, once (never what a person wrote, changed or took out)
-        const have = await readProject("brands", brand.id);
-        const body = have && topUpBrand(have.body, brand.body);
-        if (have && body) await writeProject("brands", { ...have, body, updatedAt: new Date().toISOString() });
-        continue;
-      }
-      seeded.push(brand.id);
-      added = true;
-      // the newest one is the one that opens
-      if (!(await readProject("brands", brand.id))) await writeProject("brands", { ...brand, updatedAt: new Date().toISOString() });
-    } catch (e) {
-      console.warn(`brands: ${file} was not added:`, (e as Error).message);
+/**
+ * One of Spice's example shots (examples/spice/<shot>/shot.json beside its pictures and clips): each pass's media goes into the
+ * library (data/videos or data/photos) so every department can work on it like footage of the person's own, and the shot is written as
+ * Spice keeps one.
+ */
+async function putSpiceShot(spec: any, folder: string, id: string, version: number) {
+  const body: any = spiceBody({ set: spec.set });
+  const at = new Date().toISOString();
+  let thumb: string | undefined;
+  const rev = version > 1 ? `-r${version}` : "";
+  for (const [dept, p] of Object.entries<any>(spec.passes ?? {})) {
+    // a pass is a clip (in videos) or a picture (in photos), at the size its spec says
+    if (!(dept in body.passes) || !/^[\w.-]+\.(mp4|jpg|png|webp)$/.test(p.file)) continue;
+    const ext = p.file.split(".").pop().toLowerCase();
+    const pic = ext !== "mp4";
+    const file = `${id}-${dept}${rev}.${ext}`;
+    await mkdir(join(data, pic ? "photos" : "videos"), { recursive: true });
+    await copyFile(join(folder, p.file), join(data, pic ? "photos" : "videos", file));
+    const size = { width: Number(p.width) || 720, height: Number(p.height) || 480 };
+    const media: any = pic ? { kind: "image", url: `/media/photos/${file}`, file, ...size } : { kind: "video", url: `/media/videos/${file}`, file, ...size, seconds: p.seconds };
+    if (pic && dept === "plate") thumb ??= media.url;
+    if (p.still && /^[\w.-]+\.(jpg|png|webp)$/.test(p.still)) {
+      const still = `${id}-${dept}${rev}.${p.still.split(".").pop()}`;
+      await mkdir(join(data, "photos"), { recursive: true });
+      await copyFile(join(folder, p.still), join(data, "photos", still));
+      media.still = `/media/photos/${still}`;
+      thumb ??= media.still;
     }
+    const to = pic ? SPICE_FIRST : SPICE_FIRST + Math.max(1, Math.round((Number(p.seconds) || 5) * 24)) - 1;
+    body.passes[dept] = dept === "plate"
+      ? { media, eye: true, fps: 24, name: String(p.name ?? "Plate"), from: SPICE_FIRST, to, at }
+      : { media, eye: true, from: SPICE_FIRST, to, note: String(p.note ?? ""), credits: 0, at, source: p.source === "cloud" ? "cloud" : "free", ...(dept === "roto" ? { type: "matte" } : {}) };
+    // Roto's pass is its subject's matte
+    const subject = dept === "roto" ? body.set.roto.subjects.find((x: any) => !x.media) : null;
+    if (subject) Object.assign(subject, { media, from: SPICE_FIRST, to, stale: false, at, credits: 0 });
   }
-  if (added) await writeFile(kept, JSON.stringify(seeded));
+  // the clips its FX layers hold (an AI layer's clip), kept in the library beside its passes
+  for (const [i, l] of (body.set.fx.layers ?? []).entries()) {
+    const raw = spec.set?.fx?.layers?.[i]?.media;
+    if (!raw || !/^[\w.-]+\.mp4$/.test(raw.file ?? "")) continue;
+    const file = `${id}-layer${i}${rev}.mp4`;
+    await copyFile(join(folder, raw.file), join(data, "videos", file));
+    l.media = { kind: "video", url: `/media/videos/${file}`, file, width: Number(raw.width) || 720, height: Number(raw.height) || 480, seconds: Number(raw.seconds) || 5 };
+  }
+  await writeProject("spice-shots", { id, name: String(spec.name ?? "Example"), createdAt: at, updatedAt: at, ...(thumb ? { thumb } : {}), body } as Project);
 }
 
 /**
- * The showcase projects Jam ships (web/brand/jam/projects/<id>/project.json with its media) are
- * copied in the first time they are missing: their media into the library, their video into
- * data/jams and its edit into data/cuts. One a person deletes stays deleted (data/jams/.seeded
- * lists what was copied in), and a showcase added in a later version still comes.
- * project.json: { name, thumb?, jam: the Jam body, cut: { id, name, body }, media: [{ file, to, name?, kind? }] },
- * where `to` is where the file goes in data (audio/…, videos/…, photos/…).
+ * One of Jam's showcase videos (examples/jam/<id>/project.json beside its media): its media into the library, its video into data/jams
+ * and its edit into data/cuts. project.json: { name, version?, thumb?, jam: the Jam body, cut: { id, name, body }, media: [{ file, to,
+ * name?, kind? }] }, where `to` is where the file goes in data (audio/…, videos/…, photos/…) and `file` is a file of the example's folder
+ * or one the app already ships (web/brand/…: a trend's sound, a crew picture). A thumb that is a file of the folder goes in as a photo.
  */
-async function seedJams() {
-  const dir = join(root, "web", "brand", "jam", "projects");
-  const ids = (await readdir(dir, { withFileTypes: true }).catch(() => [])).filter((d) => d.isDirectory() && /^[\w-]+$/.test(d.name)).map((d) => d.name).sort();
-  if (!ids.length) return;
-  const seededPath = join(projectsDir("jams"), ".seeded");
-  // the showcases already put in, each with the version it had then ("id", or "id@2")
-  const seeded = new Map<string, number>();
-  for (const line of (await readFile(seededPath, "utf8").catch(() => "")).split("\n").filter(Boolean)) {
-    const [id, v] = line.split("@");
-    seeded.set(id, Number(v) > 1 ? Number(v) : 1);
-  }
-  for (const id of ids) {
-    try {
-      const m = JSON.parse(await readFile(join(dir, id, "project.json"), "utf8"));
-      const version = Number.isInteger(m.version) && m.version > 1 ? m.version : 1;
-      const had = seeded.get(id) ?? 0;
-      if (had >= version) continue;
-      const jamNow = await readProject("jams", id);
-      const cutNow = m.cut?.id && /^[\w-]+$/.test(m.cut.id) ? await readProject("cuts", m.cut.id) : null;
-      // a video of that name that did not come from here is the user's; one that did, of an older version, is replaced while nobody has touched it
-      const untouched = (p: Project | null) => !p || p.updatedAt === p.createdAt;
-      if (jamNow && (!had || !untouched(jamNow) || !untouched(cutNow))) {
-        if (had) seeded.set(id, version);
-        continue;
-      }
-      for (const f of Array.isArray(m.media) ? m.media : []) {
-        const to = /^(audio|videos|photos)\/[\w.-]+$/.exec(String(f?.to ?? ""));
-        const from = String(f?.file ?? "");
-        if (!to || !/^[\w./-]+$/.test(from) || from.includes("..")) continue;
-        const target = join(data, to[0]);
-        await mkdir(join(data, to[1]), { recursive: true });
-        // a file of the project's own folder, or one the app already ships (web/brand/...: a trend's sound and dance, a crew picture);
-        // an older version's copy is made again (a sound replaced there is the sound here)
-        if (had || !(await exists(target))) await copyFile(/^web\/brand\//.test(from) ? join(root, from) : join(dir, id, from), target);
-        if (to[1] === "audio") {
-          const name = basename(to[0]);
-          await noteAudio({ file: name, url: `/media/audio/${name}`, name: text(f.name, 60) || name, kind: text(f.kind, 20) || "music", seconds: Math.round((await probeMedia(target)).duration * 100) / 100, createdAt: new Date().toISOString() });
-        }
-      }
-      const now = new Date().toISOString();
-      if (m.cut?.id && /^[\w-]+$/.test(m.cut.id) && (had || !cutNow)) await writeProject("cuts", { id: m.cut.id, name: text(m.cut.name, 60) || text(m.name, 60), createdAt: now, updatedAt: now, body: m.cut.body ?? {} });
-      await writeProject("jams", { id, name: text(m.name, 60) || id, createdAt: now, updatedAt: now, thumb: typeof m.thumb === "string" ? m.thumb.slice(0, 400) : undefined, body: m.jam ?? {} });
-      seeded.set(id, version);
-    } catch (e) {
-      console.warn(`jam: the showcase ${id} was not added:`, (e as Error).message);
+async function putJam(m: any, folder: string, id: string) {
+  for (const f of Array.isArray(m.media) ? m.media : []) {
+    const to = /^(audio|videos|photos)\/[\w.-]+$/.exec(String(f?.to ?? ""));
+    const from = String(f?.file ?? "");
+    if (!to || !/^[\w./-]+$/.test(from) || from.includes("..")) continue;
+    const target = join(data, to[0]);
+    await mkdir(join(data, to[1]), { recursive: true });
+    await copyFile(/^web\/brand\//.test(from) ? join(root, from) : join(folder, from), target);
+    if (to[1] === "audio") {
+      const name = basename(to[0]);
+      await noteAudio({ file: name, url: `/media/audio/${name}`, name: text(f.name, 60) || name, kind: text(f.kind, 20) || "music", seconds: Math.round((await probeMedia(target)).duration * 100) / 100, createdAt: new Date().toISOString() });
     }
   }
-  await mkdir(projectsDir("jams"), { recursive: true });
-  await writeFile(seededPath, [...seeded].map(([id, v]) => (v > 1 ? `${id}@${v}` : id)).join("\n"));
+  const now = new Date().toISOString();
+  if (m.cut?.id && /^[\w-]+$/.test(m.cut.id)) await writeProject("cuts", { id: m.cut.id, name: text(m.cut.name, 60) || text(m.name, 60), createdAt: now, updatedAt: now, body: m.cut.body ?? {} });
+  const thumb = await placeThumb(m.thumb, folder, id, data);
+  await writeProject("jams", { id, name: text(m.name, 60) || id, createdAt: now, updatedAt: now, thumb, body: m.jam ?? {} });
+}
+/** A showcase is untouched while neither its video nor its edit has been worked on. */
+async function keptJam(id: string): Promise<Kept | null> {
+  const jam = await readProject("jams", id);
+  if (!jam) return null;
+  const cut = await readProject("cuts", `cut-${id}`);
+  return cut && cut.updatedAt !== cut.createdAt ? { createdAt: jam.createdAt, updatedAt: cut.updatedAt } : jam;
+}
+
+/** One of Toaster's examples (examples/toaster/<id>/example.json): its body as Toaster keeps a draft, its files named "example:<file>". */
+async function putToast(spec: any, folder: string, id: string) {
+  const { body } = await placeMedia(spec.body ?? {}, folder, id, data);
+  const thumb = await placeThumb(spec.thumb, folder, id, data);
+  const now = new Date().toISOString();
+  await writeProject("toasts", { id, name: text(spec.name, 60) || id, createdAt: now, updatedAt: now, ...(thumb ? { thumb } : {}), body });
+}
+
+/** The examples of each store: Spice's shots, Jam's showcase videos, Macaron's brands (Comfyture's own), Toaster's drafts. */
+const EXAMPLE_KINDS: Record<string, ExampleKind> = {
+  "spice-shots": { name: "spice", dir: join(EXAMPLES, "spice"), spec: "shot.json", ledger: ledgerOf("spice-shots"), kept: keptIn("spice-shots"), drop: dropFrom("spice-shots"), put: putSpiceShot },
+  jams: {
+    name: "jam",
+    dir: join(EXAMPLES, "jam"),
+    spec: "project.json",
+    ledger: ledgerOf("jams"),
+    idOf: (_spec, folder) => folder,
+    kept: keptJam,
+    drop: async (id) => (await dropFrom("jams")(id), await dropFrom("cuts")(`cut-${id}`)),
+    put: putJam,
+  },
+  brands: {
+    name: "macaron",
+    dir: join(EXAMPLES, "macaron"),
+    spec: "*.brand.json",
+    ledger: ledgerOf("brands"),
+    kept: keptIn("brands"),
+    drop: dropFrom("brands"),
+    put: async (brand) => writeProject("brands", { ...brand, updatedAt: new Date().toISOString() }),
+    // a brand an earlier version put in gains what the newer one has, once (never what a person wrote, changed or took out)
+    topUp: async (brand, id) => {
+      const have = await readProject("brands", id);
+      const body = have && topUpBrand(have.body, brand.body);
+      if (have && body) await writeProject("brands", { ...have, body, updatedAt: new Date().toISOString() });
+    },
+  },
+  toasts: { name: "toaster", dir: join(EXAMPLES, "toaster"), spec: "example.json", ledger: ledgerOf("toasts"), kept: keptIn("toasts"), drop: dropFrom("toasts"), put: putToast },
+};
+const seedings = new Map<string, Promise<unknown>>();
+/** A store's examples, put in once per start of the server (before anything of that store is first served). */
+function seedStore(store: string) {
+  const kind = EXAMPLE_KINDS[store];
+  if (!kind) return Promise.resolve();
+  if (!seedings.has(store)) seedings.set(store, seedExamples(kind).catch((e) => console.warn(`${kind.name}: the examples were not added:`, (e as Error).message)));
+  return seedings.get(store)!;
 }
 
 // ------------------------------------------------------------------ events
@@ -1447,7 +1410,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     return json(res, 200, { projects: await listFilms() });
   }
   // Macaron: the brands that come with the app, Brioche, new pictures, and what a design leaves as
-  if (path === "/api/brands" && method === "GET") await (seedingBrands ??= seedBrands().catch((e) => console.warn("brands: the examples were not added:", e.message)));
+  if (path === "/api/brands" && method === "GET") await seedStore("brands");
   if (path === "/api/macaron/assist" && method === "POST") {
     // Brioche reads the workspace that is open (its things only) and answers with the changes to make there
     const input = await jsonBody(req, 2 * 1024 * 1024);
@@ -1525,7 +1488,9 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     return json(res, 201, await encodeFrames(data, input.job, { fps: Math.round(num(input.fps, 12, 60, 30)), name: text(input.name, 60) || "motion", sound: input.sound ? { pops, pad: input.sound.pad === true } : undefined, container: input.container === "webm" ? "webm" : input.container === "gif" ? "gif" : "mp4" }));
   }
   // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos, Spice's shots, Toaster's drafts
-  if (path === "/api/spice-shots" && method === "GET") await (seedingShots ??= seedShots().catch((e) => console.warn("spice: the examples were not added:", e.message)));
+  // a store's examples are in before it is first served
+  const store = /^\/api\/([\w-]+)/.exec(path)?.[1];
+  if (store && store in EXAMPLE_KINDS && method === "GET") await seedStore(store);
   for (const kind of ["stories", "cuts", "mixes", "brands", "jams", "spice-shots", "toasts"]) {
     if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {
       const answered = await projectRoute(kind, path, method, req, res);
@@ -2281,6 +2246,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     ["/media/", data],
     ["/presets/", join(root, "presets")],
     ["/samples/", join(root, "samples")],
+    // (a showcase put in by an older version kept its thumb at the examples' old place)
+    ["/brand/jam/projects/", join(root, "examples", "jam")],
   ];
   for (const [prefix, folder] of mounts) {
     if (path.startsWith(prefix)) {
@@ -2303,7 +2270,8 @@ await mkdir(join(data, "audio"), { recursive: true });
 await sweepFrames(data).catch(() => {});
 await reloadPresets();
 await engine.init();
-await seedJams().catch((e) => console.warn("jam: the showcase projects were not added:", e.message));
+// every product's examples are in before the first page asks (examples/, server/examples.ts)
+for (const store of Object.keys(EXAMPLE_KINDS)) await seedStore(store);
 // samples added before images had names get theirs ("chef", "dog")
 for (const f of (await readdir(join(root, "samples")).catch(() => [] as string[])).filter((f) => /\.(jpe?g|png|webp)$/i.test(f))) {
   const bytes = await readFile(join(root, "samples", f));

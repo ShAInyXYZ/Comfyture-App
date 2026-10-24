@@ -28,10 +28,10 @@ const ok = (cond, msg, extra = "") => {
   if (!cond) failures++;
 };
 
-// the footage and its matte, from our own cast (spice/examples): Truffle at his workbench, five seconds at 24 fps pushed in slowly, and
+// the footage and its matte, from our own cast (examples/spice): Truffle at his workbench, five seconds at 24 fps pushed in slowly, and
 // his matte pushed in the same way
 const ff = (...args) => execFileSync("ffmpeg", ["-v", "error", "-y", ...args]);
-const truffle = join(root, "spice", "examples", "sh040-truffle");
+const truffle = join(root, "examples", "spice", "sh040-truffle");
 const push = "scale=1280:-2,crop=1280:720,zoompan=z='1+0.05*on/119':x='iw*0.3*(1-1/zoom)':y='ih*0.5*(1-1/zoom)':d=120:s=640x360:fps=24";
 ff("-loop", "1", "-i", join(truffle, "plate.jpg"), "-vf", `${push},format=yuv420p`, "-frames:v", "120", join(mediaDir, "plate.mp4"));
 ff("-loop", "1", "-i", join(truffle, "roto.png"), "-vf", `${push},format=gray,format=yuv420p`, "-frames:v", "120", join(mediaDir, "matte.mp4"));
@@ -124,7 +124,7 @@ try {
   ok((await js(() => [...document.querySelectorAll(".products .product span")].map((s) => s.textContent))).join() === "Kitchen,Mixer,Jam,Macaron,Spice,Toaster,Utensils", "seven products, Spice between Macaron and Toaster");
   ok((await page.locator(".sp-layer").evaluateAll((l) => l.map((x) => x.dataset.dept))).join() === "comp,fx,light,paint,roto,plate", "the stack is drawn from the top: the comp on top, the plate at the foot");
   ok((await page.locator(".sp-id-text").innerText()).replace(/\s+/g, " ").includes("Paprika · VFX house"), "Paprika and her house are at the top of the panel");
-  // a first visit finds the example shots (spice/examples), the newest open, its passes made
+  // a first visit finds the example shots (examples/spice), the newest open, its passes made
   const examples = await js(async () => {
     const { spice } = await import("/js/spice.js");
     const b = spice.shot.body;

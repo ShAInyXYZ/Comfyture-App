@@ -1,4 +1,4 @@
-// Builds Comfyture's own Macaron project (the flagship) and writes it to brands/comfyture.brand.json, which
+// Builds Comfyture's own Macaron project (the flagship) and writes it to examples/macaron/comfyture.brand.json, which
 // the server puts into data/brands the first time it starts:
 //   node scripts/macaron-comfyture.ts
 // The pictures are in web/brand/macaron/comfyture/ (scripts/macaron-assets.py), the logos in web/brand/.
@@ -49,6 +49,6 @@ const body = {
   exports: baked?.exports ?? [],
 };
 const project = { id: "brand-comfyture", name: "Comfyture", createdAt: "2026-10-16T22:00:00.000Z", updatedAt: now, thumb: `${A}/thumb.webp`, body };
-await mkdir("brands", { recursive: true });
-await writeFile("brands/comfyture.brand.json", JSON.stringify(project, null, 1));
-console.log(`brands/comfyture.brand.json: ${designs.length} designs, ${body.assets.length} pictures, ${body.refs.length} references, ${body.history.length} steps`);
+await mkdir("examples/macaron", { recursive: true });
+await writeFile("examples/macaron/comfyture.brand.json", JSON.stringify(project, null, 1));
+console.log(`examples/macaron/comfyture.brand.json: ${designs.length} designs, ${body.assets.length} pictures, ${body.refs.length} references, ${body.history.length} steps`);

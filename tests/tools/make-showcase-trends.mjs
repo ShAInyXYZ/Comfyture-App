@@ -1,4 +1,4 @@
-// Makes the music-video projects Jam ships from our dance trends: web/brand/jam/projects/jam-<trend>.
+// Makes the music-video projects Jam ships from our dance trends: examples/jam/jam-<trend>.
 // Each is an edit of the trend's own sound and our crew's version of its dance (web/brand/mixer/trends/<trend>/),
 // made the way the editor makes one: the beats heard by Jam's own finder (and nudged onto the picture), the
 // dance cut at its bar lines and moved a little (push in, pull out), effects firing on the beats, stickers from
@@ -127,7 +127,7 @@ async function sound(id) {
 
 async function make(id) {
   const spec = SPECS[id];
-  const folder = join(root, "web", "brand", "jam", "projects", `jam-${id}`);
+  const folder = join(root, "examples", "jam", `jam-${id}`);
   await mkdir(folder, { recursive: true });
   const recipe = JSON.parse(await readFile(join(trends, id, "recipe.json"), "utf8"));
   const probe = JSON.parse(execFileSync("ffprobe", ["-v", "error", "-show_entries", "stream=codec_type,width,height,duration", "-of", "json", join(trends, id, "preview.mp4")]).toString());
@@ -206,7 +206,7 @@ async function make(id) {
   const project = {
     name: spec.name,
     version: VERSION,
-    thumb: `brand/jam/projects/jam-${id}/thumb.jpg`,
+    thumb: "thumb.jpg",
     jam,
     cut: { id: `cut-jam-${id}`, name: spec.name, body },
     media: [

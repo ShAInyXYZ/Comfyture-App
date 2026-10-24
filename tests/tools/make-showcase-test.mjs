@@ -1,4 +1,4 @@
-// Makes the small test project Jam ships to prove the seeding works: web/brand/jam/projects/jam-test-showcase.
+// Makes the small test project Jam ships to prove the seeding works: examples/jam/jam-test-showcase.
 // A made-up track (a kick, a snare, hats and a bass at 124 BPM), four light-show clips, four lines of words, and an
 // edit with a first draft on it. The real showcase projects replace it: same folder layout, see docs-private/goals/overnight/jam-editor.md.
 //   node tests/tools/make-showcase-test.mjs
@@ -13,7 +13,7 @@ import { splitWords } from "../../web/js/lyrics.js";
 const exec = promisify(execFile);
 const root = resolve(import.meta.dirname, "..", "..");
 const id = "jam-test-showcase";
-const dir = join(root, "web", "brand", "jam", "projects", id);
+const dir = join(root, "examples", "jam", id);
 const media = join(dir, "media");
 await rm(dir, { recursive: true, force: true });
 await mkdir(media, { recursive: true });
@@ -80,7 +80,7 @@ const jamBody = {
 };
 const project = {
   name: "Sun in the jar (test)",
-  thumb: `brand/jam/projects/${id}/thumb.jpg`,
+  thumb: "thumb.jpg",
   jam: jamBody,
   cut: { id: "cut-jam-test-showcase", name: "Sun in the jar (test)", body: cutBody },
   media: [

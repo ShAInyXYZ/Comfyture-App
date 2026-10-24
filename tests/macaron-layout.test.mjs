@@ -14,7 +14,7 @@ import { STARTERS, starterById, starterOf } from "../web/js/macaron-families.js"
 import { readMacaronAnswer, macaronPrompt, macaronTool, macaronBrief, spaceOf, SPACES, topUpBrand, keepFrame, encodeFrames, ledgerLine } from "../server/macaron.ts";
 import { BRIOCHE, WORKSPACES, PRESETS, PLACEHOLDER } from "../web/js/macaron-harness.js";
 
-const project = JSON.parse(readFileSync(new URL("../brands/comfyture.brand.json", import.meta.url), "utf8"));
+const project = JSON.parse(readFileSync(new URL("../examples/macaron/comfyture.brand.json", import.meta.url), "utf8"));
 const kit = kitOf(project.body);
 const launch = project.body.designs.find((d) => d.id === "launch");
 
