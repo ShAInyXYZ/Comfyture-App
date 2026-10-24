@@ -321,6 +321,7 @@ try {
   ok(!(await page.locator(".ts-view").isVisible()) && !(await page.locator(".ts-view .ts-tools").isVisible()), "in the Render no viewport is in sight");
   ok(await page.locator(".ts-add-keys").isHidden() && (await page.locator(".ts-parts-card .ts-label").first().innerText()) === "IN THE FRAME", "the parts are 'In the frame', and Add is gone");
   ok(await page.locator(".ts-camera-card").isVisible() && !(await page.locator(".ts-sheet, .ts-model").count()), "on the right: the Recipe starts with the Camera; the Turnaround and the 3D model are not on the Render page");
+  await shot("1a-render");
   {
     const order = await js(() => ["ts-camera-card", "ts-maps-card", "ts-recipe-model", "ts-recipe-toast"].map((c) => document.querySelector(`.ts-right .${c}`)?.getBoundingClientRect().top));
     ok(order.every((y, i) => y > 0 && (i === 0 || y > order[i - 1])) && (await page.locator(".ts-right").getAttribute("aria-label")) === "Recipe", "the Recipe column runs Camera, Sent, Model & strength, Toast it, top to bottom", JSON.stringify(order));
@@ -340,10 +341,10 @@ try {
   ok((await page.locator(".ts-view").boundingBox()).width > 1000 && !(await page.locator(".ts-sheet, .ts-model").count()), "(the whole width, nothing of the render)");
   await page.keyboard.press("t");
   await page.waitForSelector(".toaster.is-render .ts-studio");
-  ok(await page.locator('.ts-studio [aria-label="What it is"]').isVisible() && await page.locator('.ts-studio [aria-label="Scene"]').isVisible(), "the studio has What it is and Scene");
-  await page.locator('.ts-studio [aria-label="What it is"]').click();
+  ok(await page.locator('.ts-brief [aria-label="What it is"]').isVisible() && await page.locator('.ts-brief [aria-label="Scene"]').isVisible(), "the brief has What it is and Scene");
+  await page.locator('.ts-brief [aria-label="What it is"]').click();
   await page.keyboard.type("A retro 1950s toaster, chrome body");
-  await page.locator('.ts-studio [aria-label="Scene"]').click();
+  await page.locator('.ts-brief [aria-label="Scene"]').click();
   await page.keyboard.type("On a marble counter, morning light");
   await page.waitForTimeout(900);
   await page.reload();
@@ -355,7 +356,7 @@ try {
   ok(d.body.parts.length === 5 && d.body.what === "A retro 1950s toaster, chrome body" && d.body.scene.startsWith("On a marble"), "the draft, its parts and its words are kept across a reload");
   ok((await js(() => window.__toaster.mode)) === "render", "and the mode");
   await page.waitForTimeout(500);
-  ok((await page.locator('.ts-studio [aria-label="What it is"]').innerText()) === "A retro 1950s toaster, chrome body", "the words are back in their field");
+  ok((await page.locator('.ts-brief [aria-label="What it is"]').innerText()) === "A retro 1950s toaster, chrome body", "the words are back in their field");
   ok(await page.locator(".ts-studio .ts-pic.is-clay img").isVisible(), "with no render yet the studio shows the clay frame, as Toaster sends it");
   // the 3D page: the same left column; the Turnaround and the 3D model in the middle, no right column
   await page.keyboard.press("d");
@@ -584,7 +585,7 @@ try {
   ok((await page.locator(".ts-maps-card .ts-map-tile").allInnerTexts()).map((t) => t.split("\n")[0]).join() === "Clay frame,Colour ID,Depth,Silhouette" && (await page.locator(".ts-maps-card .ts-map-pic img").count()) === 4, "the Control maps card shows the clay frame and colour ID, the depth and the silhouette as pictures", (await page.locator(".ts-maps-card").innerText()).replace(/\n/g, " | "));
   await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Depth" }).locator(".ts-map-view").click();
   await page.waitForTimeout(300);
-  ok(await page.locator(".ts-studio img.ts-map-big").isVisible() && /^Depth — /i.test(await page.locator(".ts-studio .ts-tag.is-a").innerText()), "a map's picture is shown big in the studio", await page.locator(".ts-studio .ts-tag.is-a").innerText().catch(() => ""));
+  ok(await page.locator(".ts-studio img.ts-map-big").isVisible() && /^Depth · (sent|not sent)$/i.test(await page.locator(".ts-studio .ts-pic-meta").innerText()), "a map's picture is shown big in the studio", await page.locator(".ts-studio .ts-pic-meta").innerText().catch(() => ""));
   await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Depth" }).locator(".ts-map-view").click();
   await page.waitForTimeout(300);
   ok(!(await page.locator(".ts-studio img.ts-map-big").count()) && await page.locator(".ts-clay-live").isVisible(), "and clicked again, the clay is back");
@@ -646,15 +647,17 @@ try {
   await sendKey("Silhouette").click();
   ok(JSON.stringify((await draft()).body.maps) === JSON.stringify(["clay", "id"]), "(the colour ID alone is sent with the clay)");
   // a part's sheet, in Selected: renamed (its tag follows), its words, a picture uploaded to the server's own Library
+  // (on the Render page the sheet's head shows the name and the tag; the part is renamed from its row, double-clicked)
   await page.locator(".ts-part").first().click();
-  await page.locator('.ts-inspector input[aria-label="Name"]').fill("Desk");
-  await page.locator('.ts-inspector input[aria-label="Name"]').press("Enter");
-  await page.waitForFunction(() => document.querySelector(".ts-inspector .ts-at")?.textContent === "@desk", null, { timeout: 3000 }).catch(() => {});
-  ok((await page.locator(".ts-inspector .ts-at").textContent()) === "@desk", "renamed, the part's tag follows its name", await page.locator(".ts-inspector .ts-at").textContent());
+  await page.locator(".ts-part").first().dblclick();
+  await page.locator('.ts-part input.ts-rename').fill("Desk");
+  await page.locator('.ts-part input.ts-rename').press("Enter");
+  await page.waitForFunction(() => document.querySelector(".ts-inspector .ts-sheet-id code")?.textContent === "@desk", null, { timeout: 3000 }).catch(() => {});
+  ok((await page.locator(".ts-inspector .ts-sheet-id code").textContent()) === "@desk" && (await page.locator(".ts-inspector .ts-sheet-id b").textContent()) === "Desk", "renamed, the part's tag follows its name, in the sheet's head", await page.locator(".ts-inspector .ts-sheet-head").innerText());
   ok(await page.locator('.ts-inspector textarea[aria-label="What it is"]').isVisible() && await page.locator(".ts-inspector .ts-pic-add").isVisible(), "Selected holds the part's sheet: what it is, and its pictures");
   ok((await page.locator('.ts-inspector textarea[aria-label="What it is"]').getAttribute("placeholder")).startsWith("brushed chrome"), "a shape's words are asked for by their kind");
   await page.locator('.ts-inspector textarea[aria-label="What it is"]').fill("a walnut mid-century desk with brass handles");
-  await page.locator('.ts-inspector input[aria-label="Name"]').click();
+  await page.locator(".ts-inspector .ts-sheet-head").click();
   // the add tile asks where the pictures come from: the computer, the Library, or made here in the Oven
   await page.locator(".ts-inspector .ts-pic-add").click();
   ok((await page.locator(".ts-add-menu [role=menuitem]").allInnerTexts()).join(" | ") === "From your computer | From the Library | Make it in the Oven", "the add tile asks: the computer, the Library, or made here", (await page.locator(".ts-add-menu [role=menuitem]").allInnerTexts()).join(" | "));
@@ -747,21 +750,21 @@ try {
   // "In the frame" is the left column: the part's row shows its @tag and its picture
   ok(/@desk/.test(await page.locator(".ts-parts .ts-part").first().innerText()) && !(await page.locator(".ts-studio .ts-who").count()), "the part's row says @desk (the composer has no chips)");
   // an @ in the words opens the tags; Enter puts one in as a pill
-  await page.locator('.ts-studio [aria-label="What it is"]').click();
+  await page.locator('.ts-brief [aria-label="What it is"]').click();
   await page.keyboard.press("Control+End");
   await page.keyboard.type(" on @d");
   await page.waitForSelector(".ts-tags:not([hidden])", { timeout: 3000 });
   ok((await page.locator(".ts-tags .ts-tag-row").first().innerText()).includes("@desk"), "typing an @ opens the list of tags, the part first", await page.locator(".ts-tags").innerText());
   await page.keyboard.press("Enter");
-  await page.waitForSelector('.ts-studio [aria-label="What it is"] .pill[data-name="desk"]', { timeout: 3000 }).catch(() => {});
-  ok(await page.locator('.ts-studio [aria-label="What it is"] .pill[data-name="desk"]').isVisible() && (await page.locator(".ts-tags").isHidden()), "Enter puts @desk in as a pill");
+  await page.waitForSelector('.ts-brief [aria-label="What it is"] .pill[data-name="desk"]', { timeout: 3000 }).catch(() => {});
+  ok(await page.locator('.ts-brief [aria-label="What it is"] .pill[data-name="desk"]').isVisible() && (await page.locator(".ts-tags").isHidden()), "Enter puts @desk in as a pill");
   await page.keyboard.type("under a lamp, like @mo");
   ok((await page.locator(".ts-tags .ts-tag-row").first().innerText()).includes("@mood-board"), "the scene's references are in the list too");
   await page.keyboard.press("Tab");
   await page.waitForTimeout(900);
   d = await draft();
   ok(/^A cosy reading corner on @desk under a lamp, like @mood-board $/.test(d.body.what) || /on @desk under a lamp, like @mood-board/.test(d.body.what), "the words keep the tags as plain @names", d.body.what);
-  await page.locator('.ts-studio [aria-label="What it is"] .pill[data-name="desk"]').hover();
+  await page.locator('.ts-brief [aria-label="What it is"] .pill[data-name="desk"]').hover();
   await page.waitForSelector(".peek:not([hidden])", { timeout: 2000 }).catch(() => {});
   ok(/walnut/.test(await page.locator(".peek").innerText()), "hovering a pill shows its sheet");
   await page.mouse.move(700, 500);
@@ -773,10 +776,10 @@ try {
     return { writer: w?.short ?? w?.name, model: modelNow().short ?? modelNow().name };
   });
   const badge = () => page.locator(".ts-prompt-head .ts-badge").textContent();
-  ok((await badge()) === "Not written yet" && (await page.locator(".ts-recipe .ts-improve").getAttribute("aria-label")) === "Write the prompt" && !(await page.locator(".ts-prompt-head .ts-improve").count()), "nothing is written yet: the badge says so and Write sits beside Toast it, not in the prompt", await badge());
+  ok((await badge()) === "Not written yet" && (await page.locator(".ts-prompt-head .ts-write").innerText()).trim() === "Write" && !(await page.locator(".ts-recipe .ts-write, .ts-recipe .ts-improve").count()), "nothing is written yet: the badge says so and Write sits at the prompt's head, Toast it alone at the recipe's foot", await badge());
   // Write, with the writer stood in for: it writes now, from the facts, the frame and a picture of each sheet
   const wroteBefore = writes.length;
-  await page.locator(".ts-improve").click();
+  await page.locator(".ts-prompt-head .ts-write").click();
   await until(() => window.__toaster.draft.body.promptBy === "writer", null, 8000);
   ok((await badge()) === `Written by ${names.writer} for ${names.model}` && names.writer && names.model, "the badge then says who wrote the prompt and for which model", await badge());
   ok(/^Written for /.test(await page.locator(".ts-pills.is-prompt").textContent()), "and the field shows it");
@@ -805,7 +808,7 @@ try {
   ok(/warm photograph/.test(await page.locator(".ts-sent-prompt").innerText()) && (await page.locator(".ts-sent figcaption").allInnerTexts()).join() === "@frame,@colour-id,@mood-board,@desk", "What was sent shows the prompt and the pictures by @name", (await page.locator(".ts-sent figcaption").allInnerTexts()).join());
   await shot("5-studio");
   // back to automatic: nothing is written until the next Toast, which asks the writer again
-  await page.locator('.ts-studio [aria-label="Back to automatic"]').click();
+  await page.locator('.ts-brief [aria-label="Back to automatic"]').click();
   ok((await badge()) === "Not written yet" && (await draft()).body.prompt === "" && (await draft()).body.promptBy === "" && /writes it for .* from its guide when you toast; Write shows it first/.test(await page.locator(".ts-pills.is-prompt").getAttribute("data-placeholder")), "Back to automatic clears the user's own prompt: Not written yet, with its placeholder", await badge());
   writerStub = (ask) => ({ prompt: `Auto for ${ask.facts.model.name}, strength ${ask.facts.strength.percent}, plain ${ask.facts.pictures[0].plain}.` });
   await page.locator(".ts-recipe .ts-toast").click();
@@ -925,6 +928,8 @@ try {
   ok((await draft()).body.maps.length === 1, "the last one on stays on: the render needs a picture to take its layout from", JSON.stringify((await draft()).body.maps));
   // the left column says whether each part's picture goes with the frame (the desk's does, at the start)
   ok(await page.locator(".ts-parts .ts-part", { hasText: "Desk" }).locator(".ts-mini-pic").count() === 1, "a part with a picture has its thumb in the list");
+  // (the list is drawn again a moment after the maps change)
+  await until(() => document.querySelectorAll(".ts-parts .ts-mini-pic .ts-sent-dot").length + document.querySelectorAll(".ts-parts .ts-mini-pic.is-left-out").length === 1, null, 3000);
   ok((await page.locator(".ts-parts .ts-mini-pic .ts-sent-dot").count()) + (await page.locator(".ts-parts .ts-mini-pic.is-left-out").count()) === 1, "and it is marked: a dot when it goes with the frame, dimmed when left out");
   // a mode kept in the browser that nobody knows falls back to the scene
   await js(() => localStorage.setItem("comfyture.toaster.mode", "bogus"));

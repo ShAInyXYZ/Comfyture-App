@@ -306,7 +306,8 @@ button.ts-sheet-pic { cursor: zoom-in; }
 .ts-cam-tiles .ts-cam-pic[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 /* what is sent: the clay frame and the control maps as tiles, the first one on leads */
 .ts-map-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .375rem; }
-.ts-map-tile { position: relative; min-width: 0; }
+.ts-map-tile { position: relative; min-width: 0; container-type: inline-size; }
+@container (max-width: 6rem) { .ts-map-tile .ts-lead { display: none; } .ts-map-tile .ts-map-name { left: .25rem; bottom: .1875rem; font-size: .5625rem; } .ts-map-tile .ts-map-badge { top: .1875rem; right: .1875rem; } }
 /* the picture is the switch: sent is lit, off is dimmed, no room is dashed */
 .ts-map-pic { position: relative; contain: paint; display: grid; place-items: center; width: 100%; padding: 0; overflow: hidden; border: 1px solid transparent; border-radius: .4375rem; background: #000; color: var(--dim); cursor: pointer; transition: border-color var(--t-fast); }
 .ts-map-pic img, .ts-map-pic svg { transition: filter var(--t-fast), opacity var(--t-fast); }
@@ -460,3 +461,154 @@ button.ts-sheet-pic { cursor: zoom-in; }
 .ts-sent-dot { position: absolute; top: -.25rem; right: -.25rem; width: .5625rem; height: .5625rem; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--card); }
 .ts-part.is-on .ts-sent-dot { box-shadow: 0 0 0 2px var(--accent-soft); }
 .ts-mini-pic.is-left-out img { opacity: .35; filter: grayscale(1); }
+
+/* ==== the render page, as designed (docs/brand/products/toaster-v2/toaster-render.png): the middle is the picture card (the render
+   with what made it and its keys on it, the earlier ones right under it), the brief (what it is | the look, the prompt), Crumpet's
+   offers and his bar; the picture keeps its shape and the brief takes the height left, so no band of nothing opens anywhere ==== */
+/* Crumpet's face and name are on his bar, at the foot of every page */
+.ts-id { display: none; }
+.is-render .ts-mid { gap: .625rem; }
+.is-render .ts-studio { flex: 0 1 auto; gap: .5rem; min-height: 15rem; padding: .5rem; }
+.is-render .ts-studio-main { flex: 0 1 auto; min-height: 0; }
+.is-render .ts-render-body { flex: 0 1 auto; gap: .5rem; }
+.ts-pic-box { min-height: 8rem; }
+.ts-pic-box > .ts-pic { border-radius: .875rem; }
+/* on the picture: what made it, top left; its keys, top right */
+.ts-pic-meta { position: absolute; z-index: 3; top: .625rem; left: max(.625rem, calc(50% - var(--ratio, 1.78) * 50cqh + .625rem)); display: inline-flex; align-items: center; gap: .5rem; max-width: 50%; height: 1.875rem; padding: 0 .75rem 0 .625rem; overflow: hidden; border-radius: var(--r-pill); background: rgba(12, 12, 14, .74); backdrop-filter: blur(8px); color: var(--text); font: 500 var(--fs-micro)/1 var(--font-mono); letter-spacing: .02em; white-space: nowrap; pointer-events: none; }
+.ts-pic-meta .lamp:not([data-tone]) { display: none; }
+.ts-pic-keys { position: absolute; z-index: 3; top: .625rem; right: .625rem; display: flex; gap: 1px; padding: .1875rem; border-radius: .75rem; background: rgba(12, 12, 14, .74); backdrop-filter: blur(8px); }
+.ts-pic-keys .ts-iconkey.is-sm { width: 2.125rem; height: 2.125rem; margin: 0; color: #d9d8d4; }
+.ts-pic-keys .ts-iconkey.is-sm:hover:not(:disabled) { background: rgba(255, 255, 255, .1); color: #fff; }
+.ts-pic-keys .ts-iconkey.is-sm[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.ts-pic.is-compare .ts-tag { top: auto; bottom: .625rem; }
+/* the earlier renders, right under the picture, and Use these settings at the end */
+.ts-strip-row { display: flex; flex: none; align-items: stretch; gap: .5rem; }
+.ts-strip-row .ts-strip { flex: 1 1 auto; justify-content: flex-start; gap: .5rem; padding-bottom: 1px; }
+.ts-strip-row .ts-thumb { min-width: 7.25rem; max-width: 7.25rem; gap: .3125rem; }
+.ts-strip-row .ts-thumb-pic { height: 4.0625rem; border-radius: .5625rem; }
+.ts-strip-row .ts-thumb-tag { text-align: left; padding-left: .125rem; }
+.ts-use { display: grid; flex: none; place-content: center; justify-items: center; gap: .375rem; width: 7.25rem; height: 4.0625rem; padding: 0 .5rem; border: 1px solid var(--line); border-radius: .5625rem; background: var(--sunk); color: var(--muted); font: 500 var(--fs-micro)/1.2 var(--font-sans); text-align: center; cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.ts-use:hover:not(:disabled) { border-color: var(--accent-line); color: var(--text); }
+.ts-use:disabled { opacity: .4; cursor: default; }
+.ts-use svg { width: 1.125rem; height: 1.125rem; color: var(--accent); }
+
+/* the brief: what it is | the look, side by side, then the prompt. It keeps --brief (its least) and takes what the picture leaves;
+   inside, the two fields and the prompt share it, each with a least of its own, and the words scroll in their boxes, never over */
+.ts-brief { --brief: 17rem; flex: 1 0 var(--brief); gap: 0; min-height: var(--brief); padding: .625rem; overflow: hidden; }
+.ts-brief .ts-compose { display: flex; flex: 1 1 auto; flex-direction: column; gap: .625rem; min-height: 0; max-height: none; padding: 0; overflow: hidden; }
+.ts-brief .ts-words-row { flex: 3 1 0; grid-template-rows: minmax(0, 1fr); gap: .625rem; min-height: 6rem; max-height: 15rem; }
+.ts-brief .ts-what, .ts-brief .ts-scene { display: flex; flex-direction: column; min-height: 0; }
+.ts-field-box { display: flex; flex: 1 1 auto; flex-direction: column; gap: .375rem; min-width: 0; min-height: 0; padding: .75rem .875rem; overflow: hidden; border: 1px solid var(--line); border-radius: .875rem; background: var(--sunk); cursor: text; transition: border-color var(--t-fast); }
+.ts-field-box:focus-within { border-color: var(--accent-line); }
+.ts-field-box .ts-row-head { flex: none; min-height: 1.25rem; }
+.ts-field-box .ts-pills, .ts-scene-box .ts-pills.is-scene { flex: 1 1 auto; height: auto; min-height: 0; max-height: none; padding: 0 0 .75rem; overflow-y: auto; border: 0; border-radius: 0; background: none; font: 500 var(--fs-title)/1.5 var(--font-sans); scrollbar-width: thin; }
+/* words longer than their box fade out at its foot, and scroll */
+.ts-brief .ts-pills { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - .875rem), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - .875rem), transparent); }
+/* the look's pictures in a column beside its words */
+.ts-scene-box { display: grid; grid-template: auto minmax(0, 1fr) / minmax(0, 1fr) auto; column-gap: .75rem; }
+.ts-scene-box > .ts-row-head { grid-column: 1 / -1; }
+.ts-field-box .ts-refs { display: flex; flex-direction: column; gap: .375rem; min-height: 0; padding: 0; overflow-y: auto; scrollbar-width: none; }
+.ts-field-box .ts-refs .ts-pic-tile, .ts-field-box .ts-refs .ts-pic-add { flex: none; width: 3rem; }
+.ts-field-box .ts-refs .ts-pic-add { height: 3rem; }
+.ts-brief .ts-prompt { display: flex; flex: 2 1 0; flex-direction: column; gap: .375rem; min-height: 5.75rem; padding: 0 .125rem; }
+.ts-brief .ts-prompt-head { flex: none; }
+.ts-brief .ts-prompt-head .ts-badge { max-width: 60%; }
+.ts-write { display: inline-flex; align-items: center; gap: .4375rem; min-height: 2.125rem; margin: -.25rem 0 -.25rem .25rem; padding: 0 .875rem 0 .75rem; border-radius: .75rem; font: 600 var(--fs-small)/1 var(--font-sans); }
+.ts-write svg { width: 1rem; height: 1rem; color: var(--accent); }
+.ts-brief .ts-prompt-box { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; padding: .5rem .25rem 0 .75rem; overflow: hidden; border-radius: .75rem; }
+.ts-brief .ts-prompt-box .ts-pills.is-prompt, .ts-brief .ts-pills.is-prompt:not(.is-open):not(:focus) { display: block; flex: 1 1 auto; min-height: 0; max-height: none; padding: 0 .5rem .625rem 0; overflow-y: auto; -webkit-line-clamp: unset; line-clamp: none; font-size: var(--fs-body); line-height: 1.6; scrollbar-width: thin; }
+
+/* Crumpet's offers, over his bar */
+.ts-chips { display: flex; flex: none; gap: .5rem; overflow-x: auto; scrollbar-width: none; }
+.ts-chips:empty { display: none; }
+.ts-offer { display: inline-flex; flex: none; align-items: center; gap: .5rem; height: 2.25rem; padding: 0 .9375rem 0 .8125rem; border: 1px solid var(--line2); border-radius: var(--r-pill); background: var(--s1); color: var(--muted); font: 500 var(--fs-small)/1 var(--font-sans); white-space: nowrap; cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast); }
+.ts-offer:hover:not(:disabled) { border-color: var(--accent-line); background: var(--s2); color: var(--text); }
+.ts-offer:disabled { opacity: .5; cursor: default; }
+.ts-offer svg { width: 1rem; height: 1rem; color: var(--accent); }
+
+/* the recipe: its title, then the cards in the order things happen, Toast it at the foot, level with Crumpet's bar */
+.ts-recipe-head { flex: none; padding: .5rem .25rem 0; }
+.ts-recipe > .ts-card { padding: .875rem .9375rem .9375rem; }
+.ts-recipe-toast { margin-top: auto; padding-top: .25rem; }
+.ts-recipe-toast .ts-toast { min-height: 3.75rem; border-radius: 1.125rem; font-size: var(--fs-title); }
+.ts-recipe-toast .ts-toast em { font-size: var(--fs-small); }
+.ts-setting { display: grid; gap: .375rem; min-width: 0; }
+.ts-model-row { grid-template-columns: minmax(0, 1fr) 6.75rem; gap: .625rem; }
+.ts-recipe-model { gap: .75rem; }
+.ts-band { display: flex; align-items: flex-start; gap: .4375rem; margin: -.125rem 0 0; font: 400 var(--fs-micro)/1.4 var(--font-sans); color: var(--dim); }
+.ts-band svg { flex: none; width: .875rem; height: .875rem; margin-top: .0625rem; }
+/* the camera's tiles: their names on them */
+.ts-cam-tiles .ts-cam { position: relative; }
+.ts-cam-tiles .ts-cam-pic { border-radius: .625rem; }
+.ts-cam-tiles .ts-cam-name { position: absolute; left: .3125rem; bottom: .3125rem; max-width: calc(100% - .625rem); padding: .1875rem .4375rem; border-radius: .375rem; background: rgba(12, 12, 14, .72); color: #e8e7e3; font-size: var(--fs-micro); text-align: left; pointer-events: none; }
+.ts-cam-tiles .ts-cam.is-on .ts-cam-name { color: var(--accent); }
+
+/* the left column: the parts, then the selected part's sheet with its face, its name and @tag, what it is and its pictures */
+:is(.is-render, .is-3d) .ts-part .ts-chip { width: 1rem; height: 1rem; border-radius: .25rem; }
+.ts-sheet-head { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.ts-sheet-face { display: grid; flex: none; place-items: center; width: 3rem; height: 3rem; overflow: hidden; border-radius: .75rem; background: var(--sunk); box-shadow: inset 0 0 0 2px var(--chip, var(--line2)); color: var(--muted); }
+.ts-sheet-face img { width: 100%; height: 100%; object-fit: cover; }
+.ts-sheet-face svg { width: 1.375rem; height: 1.375rem; }
+.ts-sheet-id { display: grid; gap: .25rem; min-width: 0; }
+.ts-sheet-id b { overflow: hidden; font: 600 var(--fs-title)/1.15 var(--font-sans); color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
+.ts-sheet-id code { font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--accent); }
+:is(.is-render, .is-3d) .ts-inspector .ts-pics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ts-pic-frame { position: absolute; top: 0; left: 50%; height: 100%; max-width: 100%; aspect-ratio: var(--ratio, 1.78); transform: translateX(-50%); }
+.ts-pic-frame > .ts-pic { position: absolute; inset: 0; width: 100%; height: 100%; transform: none; }
+.ts-pic-frame .ts-pic-meta { top: auto; bottom: .625rem; left: .625rem; max-width: calc(100% - 1.25rem); }
+
+/* the camera's tiles two across, the pictures sent with the frame as real thumbnails */
+.ts-recipe .ts-cam-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.ts-sent-refs { gap: .375rem; max-height: none; }
+/* the camera the render uses first, then the other slots; with the room (a tall recipe) it is big, across the card */
+.ts-recipe { container: recipe / size; }
+.ts-cam-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .375rem; }
+.ts-cam-grid .ts-cam-pic { max-height: none; border-radius: .625rem; }
+/* some room: the camera used is two tiles wide and two high, the others beside it */
+@container recipe (min-height: 36rem) {
+  .ts-cam-grid > .is-lit { grid-column: span 2; grid-row: span 2; }
+}
+/* more room: the pictures that go along as thumbnails with their names, when there are few */
+@container recipe (min-height: 55rem) {
+  .ts-sent-refs.is-big { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
+  .ts-sent-refs.is-big .ts-who { display: grid; justify-items: start; gap: .3125rem; height: auto; padding: 0; border: 0; background: none; }
+  .ts-sent-refs.is-big .ts-who img, .ts-sent-refs.is-big .ts-who i { width: 100%; height: auto; aspect-ratio: 1; border-radius: .625rem; box-shadow: 0 0 0 2px var(--accent); }
+  .ts-sent-refs.is-big .ts-who.is-left-out img { box-shadow: 0 0 0 1px var(--line2); opacity: .45; filter: grayscale(1); }
+  .ts-sent-refs.is-big .ts-who span { max-width: 100%; font-size: var(--fs-micro); }
+}
+/* a square or tall frame: its tiles no taller than the recipe's height allows, the picture whole inside */
+.is-upright .ts-cam-grid .ts-cam-pic img { object-fit: contain; }
+.is-upright .ts-cam-grid > .is-lit .ts-cam-pic { max-height: max(5.5rem, 18cqh); }
+.is-upright .ts-cam-grid > :not(.is-lit) .ts-cam-pic { max-height: max(3rem, 9cqh); }
+.is-upright .ts-map-pic { max-height: max(3.5rem, 10cqh); }
+/* a tall recipe: the camera used across the card, the others in a row under it */
+@container recipe (min-height: 62rem) {
+  .ts-cam-grid { gap: .5rem; }
+  .ts-cam-grid > .is-lit { grid-column: 1 / -1; grid-row: auto; }
+  .ts-cam-grid > .is-lit .ts-cam-pic { border-radius: .75rem; }
+  .ts-cam-grid > .is-lit .ts-cam-name { left: .5rem; bottom: .5rem; padding: .25rem .5rem; font-size: var(--fs-small); }
+}
+/* a narrow picture: its keys and what made it stay apart */
+.ts-pic-frame { container-type: inline-size; }
+@container (max-width: 44rem) {
+  .ts-pic-keys .ts-iconkey.is-sm { width: 1.75rem; height: 1.75rem; }
+}
+/* a short screen: the picture first; the brief a little smaller, Crumpet's offers tucked away, his bar on one line */
+@media (max-height: 860px) {
+  .ts-brief { --brief: 12.5rem; padding: .5rem; }
+  .ts-brief .ts-compose { gap: .5rem; }
+  .ts-brief .ts-words-row { min-height: 5rem; gap: .5rem; }
+  .ts-brief .ts-prompt { min-height: 4.75rem; gap: .25rem; }
+  .ts-field-box { gap: .25rem; padding: .5rem .75rem; border-radius: .75rem; }
+  .ts-field-box .ts-pills, .ts-scene-box .ts-pills.is-scene { font-size: var(--fs-body); }
+  .ts-scene-box { column-gap: .5rem; }
+  .ts-field-box .ts-refs { gap: .25rem; }
+  .ts-field-box .ts-refs .ts-pic-tile, .ts-field-box .ts-refs .ts-pic-add { width: 2.25rem; }
+  .ts-field-box .ts-refs .ts-pic-add { height: 2.25rem; }
+  .is-render .ts-chips { display: none; }
+  .is-render .ts-studio { min-height: 14rem; }
+  .ts-strip-row .ts-thumb { min-width: 5.5rem; max-width: 5.5rem; }
+  .ts-strip-row .ts-thumb-pic, .ts-use { height: 3.125rem; }
+  .ts-use { width: 5.5rem; }
+  .ts-use span { display: none; }
+}

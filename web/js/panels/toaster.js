@@ -30,6 +30,7 @@ import {
 } from "../toaster.js";
 import { SHAPES, PALETTE, RATIOS, MAPS, POSE_SLIDERS, roundLabel, hasSides, colorName, shapeOf, tagsOf, describeOf, isAsset, isCharacter, plainFrame } from "../toaster-model.js";
 import { CRUMPET } from "../toaster-harness.js";
+import { chat as toasterChat, askToaster, addToasterPictures, tagHooks } from "../toaster-assist.js";
 import { projectBar, drawProjectBar } from "./toaster-projects.js";
 
 let shell = null;
@@ -113,6 +114,7 @@ function build(el) {
   s.sheet = h("section.ts-card.ts-sheet", { "aria-label": "Turnaround" });
   s.model = h("section.ts-card.ts-model", { "aria-label": "3D model" });
   s.right = h("aside.ts-col.ts-right.ts-recipe", { "aria-label": "Recipe" });
+  s.recipeHead = h("h2.ts-label.ts-recipe-head", {}, "Recipe");
   buildStudio(s);
 
   modesEl ??= h("div.ts-modes", { role: "group", "aria-label": "Page" }, ...MODES.map(([id, glyph, label, about, keyName]) =>
@@ -145,8 +147,8 @@ function layout() {
   s.partsLabel.textContent = mode === "scene" ? "Parts" : "In the frame";
   if (mode !== "scene" && drawer) openDrawer(null);
   if (mode === "render") {
-    s.mid.replaceChildren(s.studio, chatSlot);
-    s.right.replaceChildren(s.cameraCard, s.mapsCard, s.modelCard, s.toastBar, s.viewport);
+    s.mid.replaceChildren(s.studio, s.brief, s.chips, chatSlot);
+    s.right.replaceChildren(s.recipeHead, s.cameraCard, s.mapsCard, s.modelCard, s.toastBar, s.viewport);
     s.root.replaceChildren(s.left, s.mid, s.right);
   } else if (mode === "3d") {
     s.mid.replaceChildren(s.sheet, s.model, s.viewport, chatSlot);
@@ -402,8 +404,14 @@ function drawInspector() {
     h("label.ts-stack", {}, h("span.ts-label", {}, "What it is"), made),
   ];
   if (sheetOnly) {
-    if (!many) rows.push(sheetPictures(p));
-    return shell.inspector.replaceChildren(...rows);
+    // the part's sheet: its face (its first picture, or what it is), its name and @tag, what it is, its pictures
+    if (many) return shell.inspector.replaceChildren(h("p.ts-many", {}, `${sel.length} parts`), rows[1]);
+    const face = p.refs?.[0] ? h("img", { src: p.refs[0].url, alt: "", draggable: false })
+      : sprite(p.shape === "asset" ? pieceOf(p.asset)?.icon ?? "asset-library" : p.shape === "character" ? (p.rig ? "character-import" : `body-${p.body}`) : `shape-${p.shape}`);
+    return shell.inspector.replaceChildren(
+      h("div.ts-sheet-head", {}, h("span.ts-sheet-face", { style: { "--chip": p.color } }, face),
+        h("div.ts-sheet-id", {}, h("b", { title: "Double-click its row to rename it" }, p.name), tag ? h("code", {}, `@${tag}`) : null)),
+      rows[1], sheetPictures(p));
   }
   rows.push(swatches);
   if (!many) {
@@ -683,15 +691,16 @@ function drawCameras() {
 function drawCameraCard() {
   const b = body();
   const on = b.cameras.find((k) => onCamera(k.id));
-  const tile = (name, thumb, lit, run, title) => h(`div.ts-cam${lit ? ".is-on" : ""}`, {},
+  const tile = (name, thumb, lit, run, title) => h(`div.ts-cam${lit ? ".is-on.is-lit" : ""}`, {},
     h("button.ts-cam-pic", { type: "button", title, "aria-label": title, "aria-pressed": String(lit), style: { aspectRatio: b.ratio.replace(":", " / ") }, on: { click: run } }, thumb ? h("img", { src: thumb, alt: "", draggable: false }) : sprite("scene-camera")),
     h("span.ts-cam-name", {}, name));
   const now = on ? null : stills.camera;
+  const lit = on ? tile(on.name, stills.camera ?? on.thumb, true, () => {}, `${on.name} — ${on.focal} mm, ${on.ratio}: the render uses it`) : tile("Current view", now, true, () => {}, "The view as you left it in the Scene: the render will use it");
+  const others = b.cameras.filter((k) => k !== on).map((k) => tile(k.name, k.thumb, false, () => recallCamera(k.id), `${k.name} — ${k.focal} mm, ${k.ratio}: render from it`));
   shell.cameraCard.replaceChildren(
-    h("header.ts-head", {}, h("h2.ts-label", {}, "Camera"), h("span.spacer"), h("span.ts-note", {}, on ? on.name : "The view as you left it")),
-    h("div.ts-cam-tiles", {},
-      ...(!on ? [tile("Current view", now, true, () => {}, "The view as you left it in the Scene: the render will use it")] : []),
-      ...b.cameras.map((k) => tile(k.name, k.thumb, on === k, () => recallCamera(k.id), `${k.name} — ${k.focal} mm, ${k.ratio}: render from it`))),
+    h("header.ts-head", {}, h("h2.ts-label", {}, "Camera"), h("span.spacer"), h("span.ts-note", {}, on ? `${on.focal} mm` : "The view as you left it")),
+    // (the camera the render uses first, big when the column has the room; the others to pick from, small, after it)
+    h("div.ts-cam-grid", {}, lit, ...others),
     ...(b.cameras.length ? [] : [h("p.ts-empty", {}, "Keep cameras in the Scene: they show here to pick from.")]));
 }
 
@@ -709,6 +718,7 @@ function drawMaps() {
   const count = plan.maps.length + plan.refs.length;
   const chip = (r, left) => h(`span.ts-who${left ? ".is-left-out" : ""}`, { title: left ? `@${r.name} is left out: ${out.why}` : `@${r.name} goes with the frame` },
     r.url ? h("img", { src: r.url, alt: "", draggable: false }) : h("i", { style: { background: r.color } }), h("span", {}, `@${r.name}`));
+  // (as thumbnails when there are few, as chips when there are many)
   // (the pictures asked for and not sent: a sheet's first picture and the scene's references the room did not take)
   const sentFiles = new Set(plan.refs.map((r) => r.file));
   const tags = tagsOf(b.parts, b.refs.map((r) => r.name));
@@ -731,7 +741,7 @@ function drawMaps() {
         lead === m.id ? h("em.ts-lead", { title: "It leads: the render takes its layout from this picture" }, "Leads") : null);
     })),
     plan.refs.length || left.length
-      ? h("div.ts-sent-refs", { role: "list", "aria-label": "Pictures that go with the frame" }, ...plan.refs.map((r) => chip(r, false)), ...left.map((r) => chip(r, true)))
+      ? h(`div.ts-sent-refs${plan.refs.length + left.length <= 4 ? ".is-big" : ""}`, { role: "list", "aria-label": "Pictures that go with the frame" }, ...plan.refs.map((r) => chip(r, false)), ...left.map((r) => chip(r, true)))
       : h("p.ts-empty", {}, "No sheet pictures or references go with it: put pictures on a part or in the Scene."));
 }
 /** A control map shown big in the studio, or (null) the clay or the render again. */
@@ -806,10 +816,14 @@ function tagItems() {
   const b = body();
   const tags = tagsOf(b.parts, b.refs.map((r) => r.name));
   return [
-    ...b.parts.filter((p) => tags.has(p.id)).map((p) => ({ name: tags.get(p.id), url: p.refs?.[0]?.url, color: p.color, about: kindWord(p) })),
+    ...b.parts.filter((p) => tags.has(p.id)).map((p) => ({ name: tags.get(p.id), title: p.name, url: p.refs?.[0]?.url, color: p.color, about: kindWord(p) })),
     ...b.refs.map((r) => ({ name: r.name, url: r.url, about: "reference" })),
   ];
 }
+
+// Crumpet's bar names the same things
+tagHooks.items = () => (body() ? tagItems() : []);
+tagHooks.lookup = (name) => lookupTag(name);
 
 let tagMenu = null;
 function hideTags() {
@@ -878,12 +892,15 @@ function buildStudio(s) {
   // (the prompt and the scene sit in boxes of their own: the box has the border and the room around the words, so the words fold at a whole line)
   s.compose = h("div.ts-compose", {},
     h("div.ts-words-row", {},
-      h("div.ts-stack.ts-what", {}, h("div.ts-row-head", {}, h("span.ts-label", {}, "What it is")), s.what.el),
-      h("div.ts-stack.ts-scene", {}, s.sceneHead, h("div.ts-scene-box", { on: { click: (e) => e.target === e.currentTarget && s.scene.focus() } }, s.scene.el, s.refsBox))),
+      h("div.ts-stack.ts-what", {}, h("div.ts-field-box", { on: { click: (e) => e.target === e.currentTarget && s.what.focus() } }, h("div.ts-row-head", {}, h("span.ts-label", {}, "What it is")), s.what.el)),
+      h("div.ts-stack.ts-scene", {}, h("div.ts-scene-box.ts-field-box", { on: { click: (e) => e.target === e.currentTarget && s.scene.focus() } }, s.sceneHead, s.scene.el, s.refsBox))),
     h("div.ts-stack.ts-prompt", {}, s.promptHead, h("div.ts-prompt-box", { on: { click: (e) => e.target === e.currentTarget && s.prompt.focus() } }, s.prompt.el)));
   // pictures dropped or pasted on the composer are references for the whole render
   dropFiles(s.compose, (files) => addReferences(files));
-  s.studio = h("section.ts-card.ts-studio", { "aria-label": "Render studio" }, s.studioHead, s.studioMain, s.sent, s.compose);
+  s.studio = h("section.ts-card.ts-studio", { "aria-label": "Render" }, s.studioMain, s.sent);
+  s.brief = h("section.ts-card.ts-brief", { "aria-label": "What it is and the look" }, s.compose);
+  // Crumpet's offers for this page, over his bar
+  s.chips = h("div.ts-chips", { role: "group", "aria-label": "Crumpet can" });
 }
 
 /** A field's words, set only while it is not in use (what is typed is never drawn over). */
@@ -920,6 +937,7 @@ function drawPromptHead() {
     h("span.spacer"),
     own || wrote ? keyIcon(icon("remix"), "Back to automatic", () => (setPrompt(""), drawLook()), { small: true }) : null,
     keyIcon(icon("chevron"), promptOpen ? "Show it short" : "Show it whole", () => ((promptOpen = !promptOpen), drawPromptHead()), { pressed: promptOpen, small: true }),
+    h("button.key.ts-write", { type: "button", disabled: toaster.writing || !hasClay() || !m, title: toaster.writing ? "Writing the prompt…" : `Write — ${writerName()} writes the prompt for ${forModel} from the model's guide, your words, the sheets and their pictures (a small writer call)`, on: { click: writeWords } }, sprite("prompt-enhance"), h("span", {}, toaster.writing ? "Writing…" : "Write")),
   ].filter(Boolean));
 }
 
@@ -935,7 +953,7 @@ function drawLook() {
 
   // the references: pictures for the whole render (a style, a mood, a material, a place), each called by an @name, in the scene's box
   const full = b.refs.length >= MOST_PICTURES;
-  shell.sceneHead.replaceChildren(h("span.ts-label", {}, "Scene"), h("span.ts-count", {}, b.refs.length ? `${b.refs.length}/${MOST_PICTURES} pictures` : ""), h("span.spacer"), libraryKey("scene", "From the Library", drawLook));
+  shell.sceneHead.replaceChildren(h("span.ts-label", {}, "The look"), h("span.ts-count", {}, b.refs.length ? `${b.refs.length}/${MOST_PICTURES} pictures` : ""), h("span.spacer"), libraryKey("scene", "From the Library", drawLook));
   const refs = [h("div.ts-pics", {}, ...b.refs.map((r) => pictureTile(r, () => removeSceneRef(r.name), r.name)), full ? null : addTile("Add reference pictures — a style, a mood, a place — or drop or paste them on the composer", {
     files: (files) => addReferences(files),
     library: openLibrary("scene", drawLook),
@@ -972,15 +990,33 @@ function drawRecipe() {
   const m = modelNow();
   const busy = b.renders.some((r) => r.status === "running");
   const models = modelItems();
+  // a square or tall frame makes tall tiles: the recipe keeps them within its height
+  const [rw, rh] = b.ratio.split(":").map(Number);
+  shell.right.classList.toggle("is-upright", rw / rh < 1.3);
   shell.modelCard.replaceChildren(
     h("div.ts-model-row", {},
-      models.length ? h("div.ts-pick.ts-image-model", {}, dropdown({ label: "Image model", value: m?.id, items: models, onChange: setModel, note: "What renders the clay: a partner model's credits, or Comfy Cloud's GPU time" })) : h("span.ts-note", {}, "No image model yet"),
-      h("div.ts-pick.ts-frame-ratio", {}, dropdown({ label: "Frame", value: b.ratio, items: Object.keys(RATIOS).map((r) => ({ value: r, label: r, glyph: () => sprite(r === "4:5" ? "ratio-3-4" : `ratio-${r.replace(":", "-")}`) })), onChange: setRatio }))),
-    strengthSlider(b));
-  const writeTip = `Write — ${writerName()} writes the prompt for ${m?.short ?? m?.name ?? "the image model"} from the model's guide, your words, the sheets and their pictures (a small writer call)`;
-  shell.toastBar.replaceChildren(
-    h("button.key.is-icon.ts-improve", { type: "button", disabled: toaster.writing || !hasClay() || !m, title: toaster.writing ? "Writing the prompt…" : writeTip, "aria-label": "Write the prompt", on: { click: writeWords } }, sprite("prompt-enhance")),
-    toastKey(m, busy));
+      h("div.ts-setting", {}, h("div.ts-row-head", {}, h("span.ts-label", {}, "Model")),
+        models.length ? h("div.ts-pick.ts-image-model", {}, dropdown({ label: "Image model", value: m?.id, items: models, onChange: setModel, note: "What renders the clay: a partner model's credits, or Comfy Cloud's GPU time" })) : h("span.ts-note", {}, "No image model yet")),
+      h("div.ts-setting", {}, h("div.ts-row-head", {}, h("span.ts-label", {}, "Frame")),
+        h("div.ts-pick.ts-frame-ratio", {}, dropdown({ label: "Frame", value: b.ratio, items: Object.keys(RATIOS).map((r) => ({ value: r, label: r, glyph: () => sprite(r === "4:5" ? "ratio-3-4" : `ratio-${r.replace(":", "-")}`) })), onChange: setRatio })))),
+    strengthSlider(b),
+    h("p.ts-band", {}, icon("info"), h("span", {}, BAND(b.strength))));
+  shell.toastBar.replaceChildren(toastKey(m, busy));
+  drawChips();
+}
+
+/** Crumpet's offers over his bar: dress the frame, write the prompt for the model picked, rebuild the scene from a photo. */
+function drawChips() {
+  const m = modelNow();
+  const busy = !!toasterChat.busy;
+  const chip = (glyph, label, title, run) => h("button.ts-offer", { type: "button", title, disabled: busy, on: { click: run } }, sprite(glyph), h("span", {}, label));
+  shell.chips.replaceChildren(
+    chip("camera-framing", "Dress the frame", "Crumpet places pieces around what the camera looks at, so the picture reads well (a small writer call)", () => askToaster("Dress the frame for a hero shot of what the camera looks at: put pieces around it so the picture reads well, and keep the camera's axis clear.")),
+    chip("prompt-enhance", `Write the prompt for ${m?.short ?? m?.name ?? "the model"}`, "Luna writes the prompt from the model's own guide (a small writer call)", writeWords),
+    chip("image-upload", "Rebuild from a photo", "Pick a photo: Crumpet rebuilds its layout in clay and matches its camera (a small writer call)", () => pickFiles(async (files) => {
+      await addToasterPictures([...files].filter(isImage).slice(0, 1));
+      if (toasterChat.pictures.length) askToaster("Rebuild the layout of the attached photo in clay and match its camera.");
+    })));
 }
 /** How far the render goes from the clay: dragged, its number follows; let go, the prompt and the frame sent follow it. */
 const BAND = (v) => (v < 0.34 ? "keeps the clay's colours" : v < 0.67 ? "real materials, the colours only say who is who" : "only the layout and the forms stay");
@@ -1070,21 +1106,27 @@ function drawRender() {
   let picture;
   const map = studio && mapShown ? MAPS.find((m) => m.id === mapShown) : null;
   if (map) {
-    picture = h("div.ts-pic.is-clay", {}, stills.big ? h("img.ts-map-big", { src: stills.big, alt: `The ${map.label} map`, draggable: false }) : h("span", {}, "…"),
-      h("span.ts-tag.is-a", {}, `${map.label} — ${b.maps.includes(map.id) ? "sent with the frame" : "not sent"}`));
+    picture = h("div.ts-pic.is-clay", {}, stills.big ? h("img.ts-map-big", { src: stills.big, alt: `The ${map.label} map`, draggable: false }) : h("span", {}, "…"));
   } else if (!r) {
-    picture = studio ? h("div.ts-pic.is-clay", {}, clayLive ? h("img.ts-clay-live", { src: clayLive, alt: "The clay frame, as Toaster sends it", draggable: false }) : h("span", {}, "Warming up the clay…"), h("span.ts-tag.is-a", {}, "Clay — what Toaster sends"))
+    picture = studio ? h("div.ts-pic.is-clay", {}, clayLive ? h("img.ts-clay-live", { src: clayLive, alt: "The clay frame, as Toaster sends it", draggable: false }) : h("span", {}, "Warming up the clay…"))
       : h("div.ts-pic.is-empty", {}, sprite("toast-it"), h("span", {}, "Block it out, say what it is, and toast it."));
   } else if (r.status === "running") picture = h("div.ts-pic.is-running", {}, r.frame ? h("img.ts-under", { src: r.frame.url, alt: "", draggable: false }) : null, progress(r, "Toasting the frame"));
   else if (r.status === "failed") picture = h("div.ts-pic.is-failed", {}, icon("close"), h("span", {}, r.error ?? "That didn't work."));
   else if (toaster.compare && r.frame) picture = comparePic(r);
   else picture = h("button.ts-pic", { type: "button", title: "Look at it, full size", on: { click: () => viewImage(r.photo.url) } }, h("img", { src: r.photo.url, alt: "", draggable: false }));
   if (runPeek) (unpeek(), (runPeek = null));
-  const strip = renders.length ? h("div.ts-strip", { role: "list", "aria-label": "Earlier renders", dataset: { scrollKey: "ts-strip" } }, ...renders.map((x) => thumbOf(x, r?.id))) : null;
+  // the strip of earlier renders right under the picture, and the key that puts the shown one's settings back at its end
+  const strip = renders.length ? h("div.ts-strip-row", {},
+    h("div.ts-strip", { role: "list", "aria-label": "Earlier renders", dataset: { scrollKey: "ts-strip" } }, ...renders.map((x) => thumbOf(x, r?.id))),
+    h("button.ts-use", { type: "button", disabled: !r, title: "Use these settings — put back the shown render's image model, strength, maps and prompt", "aria-label": "Use these settings — put back the shown render's image model, strength, maps and prompt", on: { click: () => useSettings(r.id) } }, sprite("image-history"), h("span", {}, "Use these settings"))) : null;
   const ratio = RATIOS[r?.ratio] ?? RATIOS[b.ratio] ?? 1;
-  const pictures = h("div.ts-render-body", {}, h("div.ts-pic-box", { style: { "--ratio": String(ratio) } }, picture), strip);
-  shell.studioHead.replaceChildren(head("Render", renders, ...renderKeys(r, done),
-    keyIcon(sprite("file"), "What was sent — the prompt and the pictures of the render shown", () => ((sentOpen = !sentOpen), drawRender()), { pressed: sentOpen, small: true })));
+  // on the picture: what made it (or what is shown), and its keys
+  const meta = map ? `${map.label} · ${b.maps.includes(map.id) ? "sent" : "not sent"}` : !r ? "Clay · what Toaster sends" : r.status === "done" ? runTag(r).replace(/·/g, " · ") : "";
+  const keys = h("div.ts-pic-keys", {}, ...renderKeys(r, done).slice(1),
+    keyIcon(sprite("file"), "What was sent — the prompt and the pictures of the render shown", () => ((sentOpen = !sentOpen), drawRender()), { pressed: sentOpen, small: true }));
+  // (the picture, what made it and its keys share one frame of the picture's own shape, so they sit on its corners)
+  const pictures = h("div.ts-render-body", {}, h("div.ts-pic-box", { style: { "--ratio": String(ratio) } },
+    h("div.ts-pic-frame", {}, picture, meta ? h("span.ts-pic-meta", {}, lamp(renders), h("span", {}, meta)) : null, studio ? keys : null)), strip);
   shell.studioMain.replaceChildren(pictures);
   drawSent(r);
 }
@@ -1136,7 +1178,7 @@ function stripSoon() {
     // the render: the clay as it is sent, the camera's view and each map, small
     try {
       clayLive = needLive() ? toaster.view.frameStill({ long: 1000, type: "image/jpeg", quality: 0.88 }) : null;
-      stills.camera = toaster.view.frameStill({ long: 320, type: "image/jpeg", quality: 0.82 });
+      stills.camera = toaster.view.frameStill({ long: 640, type: "image/jpeg", quality: 0.84 });
       for (const m of MAPS) stills[m.id] = hasClay() ? mapStill(m.id, 320) : null;
       if (mapShown) stills.big = mapStill(mapShown, 1200);
     } catch {}
