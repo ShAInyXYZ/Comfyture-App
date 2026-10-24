@@ -1,5 +1,5 @@
 // The LoRAs a take can be rolled with on LTX-2.5 (those made for LTX-2.3 work on it too): styles,
-// finishes and moves, stacked up to three like the Image window's, and real sounds for a clip's new
+// finishes and moves, stacked up to three like the Oven's, and real sounds for a clip's new
 // soundtrack. The list is the server's.
 import { h, icon } from "./dom.js";
 import { float, stick } from "./controls.js";

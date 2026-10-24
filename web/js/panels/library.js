@@ -95,7 +95,7 @@ function imageCard(photo) {
     h("div.lib-meta", {}, h("b", {}, photo.name ?? "Image"), h("span.lib-sub", {}, ago(photo.createdAt))),
     h("div.lib-actions", {},
       h("button.key.is-sm", { type: "button", title: "Use as the start frame", on: { click: (e) => (e.stopPropagation(), useImage(photo)) } }, icon("play"), "Use as start"),
-      h("button.key.is-sm.is-icon", { type: "button", title: "Edit it in the Image window", "aria-label": "Edit it", on: { click: (e) => (e.stopPropagation(), openImage({ refs: [photo], template: "edit" })) } }, sprite("image-edit"))),
+      h("button.key.is-sm.is-icon", { type: "button", title: "Edit it in the Oven", "aria-label": "Edit it", on: { click: (e) => (e.stopPropagation(), openImage({ refs: [photo], template: "edit" })) } }, sprite("image-edit"))),
   );
 }
 
@@ -137,7 +137,7 @@ export function renderLibrary(el) {
       h("div.segment", { role: "group", "aria-label": "Show" },
         ...[["takes", "Takes", state.runs.length], ["films", "Films", state.films.length], ["images", "Images", state.photos.length]].map(([id, label, n]) =>
           h("button", { type: "button", "aria-pressed": String(kind === id), on: { click: () => ((kind = id), renderLibrary(el)) } }, label, count(n)))),
-      kind === "images" ? h("button.key", { type: "button", title: "Make a picture in the Image window", on: { click: () => openImage() } }, sprite("image-generate"), "New image") : null,
+      kind === "images" ? h("button.key", { type: "button", title: "Make a picture in the Oven", on: { click: () => openImage() } }, sprite("image-generate"), "New image") : null,
       h("div.lib-selection", { hidden: !picked.size },
         h("b", {}, `${picked.size} selected`),
         h("button.key.is-primary", { type: "button", on: { click: () => (addTakesToCut([...picked]), picked.clear(), renderLibrary(el), go("cut")) } }, icon("scissors"), "Add to Cut"),

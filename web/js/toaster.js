@@ -690,7 +690,7 @@ export function removeSceneRef(name) {
 }
 
 /**
- * A picture made in the Image window for Toaster (makeToasterRef) taken where it was asked for: on its part's sheet, or in the render's
+ * A picture made in the Oven for Toaster (makeToasterRef) taken where it was asked for: on its part's sheet, or in the render's
  * references, of its project; the project open takes it at once (Undo takes a part's back), another is changed where it is kept.
  */
 export async function takeRef(ref, photo) {

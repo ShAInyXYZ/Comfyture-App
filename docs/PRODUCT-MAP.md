@@ -16,7 +16,7 @@ Higgsfield names its products with a Japanese theme (Katana, Cinema Studio, Mark
 
 | Product | For whom | One line |
 |---|---|---|
-| **Kitchen** | Power users | The full-control studio that exists today: Story, Stage, Shot, Cut, Library, the Image window, the assistant. Nothing is removed. |
+| **Kitchen** | Power users | The full-control studio that exists today: Story, Stage, Shot, Cut, Library, the Oven, the assistant. Nothing is removed. |
 | **Mixer** | Casual users, trend followers | Higgsfield's Katana equivalent. Quick, viral-style videos and edits with one command: pick a trend, add your face, photo or clips, and get the result, following trend presets. LTX with references and face/character swap. |
 | **Jam** | Musicians, dancers, TikTok creators | Music-video generation with captions and subtitles. Use a dance video as the reference to make your own music avatar, or recreate a TikTok cover with edits. Starts from a track. |
 | **Macaron** | Brands, studios, social teams | Higgsfield's Marketing Studio equivalent, with a real brand kit: "turn any product into ready-to-post content". Product videos, product photoshoots with studio references, UGC-style videos, TikTok and ad creatives, posters, marketplace visuals and motion graphics, all consistent with the brand. |

@@ -540,7 +540,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
         ...(s.refs?.length ? [el("div.ctl-fact", {}, el("span", {}, "Inputs"), pillText("b", s.refs.map((x) => `@${x.name}`).join(" "), runLookup(r)))] : [])),
       ...(s.prompt ? [el("details.ctl-run-prompt", {}, el("summary", {}, "Prompt"), pillText("p", s.prompt, runLookup(r)))] : []),
       el("div.ctl-row.ctl-run-keys", {},
-        el("button.key.is-sm", { type: "button", title: "Open it in the Image window: change the words or the settings, and make it again", on: { click: () => editRun(r) } }, icon("pencil"), "Edit"),
+        el("button.key.is-sm", { type: "button", title: "Open it in the Oven: change the words or the settings, and make it again", on: { click: () => editRun(r) } }, icon("pencil"), "Edit"),
         key(icon("remix"), "Again — the same, with a new seed", () => again(r)),
         key(icon("video"), "Start a shot from it", () => usePhoto(r.photo)),
         key(icon("expand"), "Look at it, full size", () => viewImage(r.photo.url))));
@@ -560,7 +560,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       return { title: MAP_OF_TAG[name] || name === "frame" ? `@${name}` : ref.title ?? `@${name}`, url: ref.url, pictures: [ref], note: name === "frame" ? "The clay frame it started from" : MAP_OF_TAG[name] ? "A control map of the Stage" : null };
     };
   }
-  /** Into the Image window with everything it was made with; a frame made again from its camera if it has none. */
+  /** Into the Oven with everything it was made with; a frame made again from its camera if it has none. */
   async function editRun(r) {
     try {
       let frame = r.frame;
@@ -642,7 +642,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   let sheet = null;
   /**
    * One's sheet in a window over the app: the words renders say of them, and the pictures that go
-   * with the frame; pictures come from a file, from the Library, or made in the Image window.
+   * with the frame; pictures come from a file, from the Library, or made in the Oven.
    */
   function openSheet(target) {
     sheet?.dialog.close();
@@ -738,7 +738,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
         el("div.ctl-project-keys", {},
           key(sprite("image-upload"), "Import pictures", pick),
           libKey,
-          key(sprite("image-generate"), `Make a sheet of ${nameOf(target)} in the Image window`, make),
+          key(sprite("image-generate"), `Make a sheet of ${nameOf(target)} in the Oven`, make),
           key(icon("close"), "Close", () => d.close()))),
       words, pics, libraryPane);
     draw();

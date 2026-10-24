@@ -323,7 +323,7 @@ function shotInspector(b, x) {
     h("span.row-label", {}, "Actions"),
     h("div.story-ins-keys", {},
       key(icon("remix"), x.photo ? "Draw the frame again" : "Draw the frame", () => drawShot(x.id), { disabled: busy(`shot:${x.id}`) }),
-      key(sprite("image-edit"), "Edit the frame in the Image window", () => x.photo && openImage({ refs: [{ ...x.photo, name: "frame" }], template: "edit" }), { disabled: !x.photo }),
+      key(sprite("image-edit"), "Edit the frame in the Oven", () => x.photo && openImage({ refs: [{ ...x.photo, name: "frame" }], template: "edit" }), { disabled: !x.photo }),
       key(sprite("section-stage"), "Block it on the Stage", () => stageShot(x.id)),
       key(sprite("section-shot"), "Open it in Shot, to craft its prompt there", () => openInShot(x.id), { disabled: busy(`open:${x.id}`) }),
       key(icon("trash"), "Take the shot out", () => removeBlock(x.id))),

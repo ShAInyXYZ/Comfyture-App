@@ -334,7 +334,7 @@ const pictureTile = (r, off, caption) => h("div.ts-pic-tile", {},
   h("button.ts-pic-off", { type: "button", title: "Take it off", "aria-label": "Take it off", on: { click: off } }, icon("close")),
   caption ? h("code", {}, `@${caption}`) : null);
 /**
- * The tile that adds pictures: it asks where from — a file on the computer, the Library, or made here in the Image window (what it makes
+ * The tile that adds pictures: it asks where from — a file on the computer, the Library, or made here in the Oven (what it makes
  * comes back on its own). Files dropped or pasted on the card are taken too.
  */
 let addMenu = null;
@@ -347,7 +347,7 @@ function addTile(label, { files, library, make }) {
     addMenu = h("div.menu.ts-add-menu", { role: "menu", dataset: { for: label } },
       choice("image-upload", "From your computer", () => pickFiles(files)),
       choice("image-library", "From the Library", library),
-      choice("image-generate", "Make it in the Image window", make));
+      choice("image-generate", "Make it in the Oven", make));
     document.body.append(addMenu);
     float(addMenu, tile.getBoundingClientRect(), 240);
     addMenu.querySelector("button")?.focus();

@@ -111,11 +111,11 @@ function card(key, { n, title, hint, set, summary, optional = true, tools = [], 
   return h("section.card", { className: `card${set ? " is-set" : ""}${isOpen ? "" : " is-collapsed"}` }, head, isOpen ? h("div.card-body", {}, ...body) : null);
 }
 
-/** The key that opens the Image window for a slot: a new picture, or (with a photo) an edit of it. */
+/** The key that opens the Oven for a slot: a new picture, or (with a photo) an edit of it. */
 function imageKey({ photo, label = "Generate", small = false } = {}) {
   return h(`button.key.is-accent${small ? ".is-sm" : ""}`, {
     type: "button",
-    title: photo ? "Make it from this picture, in the Image window" : "Make a picture in the Image window",
+    title: photo ? "Make it from this picture, in the Oven" : "Make a picture in the Oven",
     on: { click: () => openImage(photo ? { refs: [photo], template: "edit" } : {}) },
   }, sprite("image-generate"), label);
 }
@@ -131,7 +131,7 @@ function framed(photo, { job, onFile, onRemove }) {
   const key = (ic, label, fn) => h("button.media-key", { type: "button", "aria-label": label, title: label, on: { click: (e) => (e.stopPropagation(), fn()) } }, ic);
   box.append(h("div.media-keys", {},
     key(sprite("image-replace"), "Replace", () => pickImage(onFile)),
-    key(sprite("image-edit"), "Edit — in the Image window", () => openImage({ refs: [photo], template: "edit" })),
+    key(sprite("image-edit"), "Edit — in the Oven", () => openImage({ refs: [photo], template: "edit" })),
     key(icon("trash"), "Remove", onRemove)));
   return box;
 }
@@ -231,7 +231,7 @@ function endCard() {
   } else {
     body.push(
       drop("Drop an end frame", "Or paint it from the start frame below", () => pickImage((f) => setFrame("end", f)), (f) => setFrame("end", f)),
-      // the Image window starts from the start frame, so the end is the same scene changed
+      // the Oven starts from the start frame, so the end is the same scene changed
       d.start ? imageKey({ photo: d.start, label: "Make it from the start frame" }) : imageKey(),
     );
   }
@@ -350,7 +350,7 @@ function soundCard() {
 
 // ---------------------------------------------------------------- 0 · a picture for any input
 
-/** Step 0, optional: the Image window, whose pictures can go to any input below. */
+/** Step 0, optional: the Oven, whose pictures can go to any input below. */
 function generateStep() {
   return h("button.step-zero", {
     type: "button",

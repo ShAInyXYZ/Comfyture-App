@@ -97,7 +97,7 @@ function flush() {
         stale.add(name);
         continue;
       }
-      // the assistant and the Image window keep their composers across redraws, so they can always draw
+      // the assistant and the Oven keep their composers across redraws, so they can always draw
       if (name !== "monitor" && name !== "assistant" && name !== "image" && el.contains(active) && !$("assistant").contains(active) && active.matches("input, textarea, select, [contenteditable]:not([contenteditable=false])")) continue;
       if (press && el.contains(press.target)) {
         held.push(name);
