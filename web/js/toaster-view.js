@@ -43,8 +43,11 @@ const PASS_FRAGMENT = /* glsl */ `
   uniform float uDepth;
   uniform float uNear;
   uniform float uFar;
+  uniform float uMeasure;
   varying float vDepth;
   void main() {
+    // (measuring: how far each pixel is, in a straight line from 0 to uFar)
+    if (uMeasure > 0.5) { gl_FragColor = vec4(vec3(clamp(vDepth / uFar, 0.0, 1.0)), 1.0); return; }
     float d = clamp((1.0 / max(vDepth, 1e-4) - 1.0 / uFar) / (1.0 / uNear - 1.0 / uFar), 0.0, 1.0);
     gl_FragColor = vec4(uDepth > 0.5 ? vec3(d) : uColor, 1.0);
   }`;
@@ -717,32 +720,64 @@ export class ToasterView {
     });
   }
 
+  /**
+   * How near and how far the camera sees the parts: a small picture of each pixel's distance (straight, up to the farthest point of the
+   * parts in front of it), and the nearest and farthest of what is seen in it (a few stray pixels left out), with a little room around.
+   */
+  seenRange(r, cam, parts) {
+    const fwd = cam.getWorldDirection(new THREE.Vector3());
+    const v = new THREE.Vector3();
+    let reach = 0;
+    for (const m of parts) {
+      m.updateWorldMatrix(true, true);
+      m.traverse((o) => {
+        if (!o.isMesh) return;
+        o.isSkinnedMesh && o.skeleton.update();
+        for (let i = 0; i < o.geometry.attributes.position.count; i++) reach = Math.max(reach, o.getVertexPosition(i, v).applyMatrix4(o.matrixWorld).sub(cam.position).dot(fwd));
+      });
+    }
+    reach = Math.max(1, reach + 0.01);
+    const mat = new THREE.ShaderMaterial({ side: THREE.DoubleSide, uniforms: { uColor: { value: new THREE.Vector3() }, uDepth: { value: 0 }, uNear: { value: 1 }, uFar: { value: reach }, uMeasure: { value: 1 } }, vertexShader: PASS_VERTEX, fragmentShader: PASS_FRAGMENT });
+    const [w, h] = [160, Math.max(2, Math.round(160 / cam.aspect))];
+    const target = new THREE.WebGLRenderTarget(w, h, { depthBuffer: true, samples: 0 });
+    const swapped = [];
+    for (const m of parts) m.traverse((o) => o.isMesh && (swapped.push([o, o.material]), (o.material = mat)));
+    const seen = [];
+    const clear = { color: r.getClearColor(new THREE.Color()).getHex(), alpha: r.getClearAlpha() };
+    try {
+      r.setRenderTarget(target);
+      r.setClearColor(0x000000, 0);
+      r.clear();
+      r.render(this.scene, cam);
+      const px = new Uint8Array(w * h * 4);
+      r.readRenderTargetPixels(target, 0, 0, w, h, px);
+      // (a pixel the parts cover has its alpha; the background has none)
+      for (let i = 0; i < px.length; i += 4) if (px[i + 3] > 0) seen.push(px[i] / 255);
+    } finally {
+      r.setRenderTarget(null);
+      r.setClearColor(clear.color, clear.alpha);
+      target.dispose();
+      mat.dispose();
+      for (const [o, m] of swapped) o.material = m;
+    }
+    if (!seen.length) return { near: 1, far: 12 };
+    seen.sort((a, b) => a - b);
+    const at = (q) => seen[Math.min(seen.length - 1, Math.floor(q * seen.length))] * reach;
+    const step = reach / 255;
+    const near = Math.max(cam.near, at(0.005) - step * 2);
+    return { near, far: Math.max(near + 0.1, at(0.995) + step * 2) };
+  }
+
   /** A control map: every visible part drawn with a flat material of its own, into a target without smoothing, so each colour is exact. */
   passStill(r, cam, width, height, channel, type, quality) {
     const parts = [...this.meshes.values()].filter((m) => m.visible);
-    // the depth runs from the nearest to the farthest point of the parts, seen from the camera
-    let near = 1e9, far = 0;
-    if (channel === "depth") {
-      const fwd = cam.getWorldDirection(new THREE.Vector3());
-      const v = new THREE.Vector3();
-      for (const m of parts) {
-        m.updateWorldMatrix(true, true);
-        m.traverse((o) => {
-          if (!o.isMesh) return;
-          o.isSkinnedMesh && o.skeleton.update();
-          for (let i = 0; i < o.geometry.attributes.position.count; i++) {
-            const d = o.getVertexPosition(i, v).applyMatrix4(o.matrixWorld).sub(cam.position).dot(fwd);
-            near = Math.min(near, d);
-            far = Math.max(far, d);
-          }
-        });
-      }
-      near = Math.max(0.05, near - 0.01);
-      far = Math.max(near + 0.01, far + 0.01);
-    }
-    const make = (color, depth) => new THREE.ShaderMaterial({
+    // the depth runs from the nearest to the farthest surface the camera SEES (not every point of every part: a floor or a wall reaching
+    // under or behind the camera would put "near" at a few centimetres, and everything in the room would come out black)
+    let near = 1, far = 12;
+    if (channel === "depth") ({ near, far } = this.seenRange(r, cam, parts));
+    const make = (color, depth, measure = false) => new THREE.ShaderMaterial({
       side: THREE.DoubleSide,
-      uniforms: { uColor: { value: new THREE.Vector3(...color) }, uDepth: { value: depth ? 1 : 0 }, uNear: { value: near }, uFar: { value: far } },
+      uniforms: { uColor: { value: new THREE.Vector3(...color) }, uDepth: { value: depth ? 1 : 0 }, uNear: { value: near }, uFar: { value: far }, uMeasure: { value: measure ? 1 : 0 } },
       vertexShader: PASS_VERTEX,
       fragmentShader: PASS_FRAGMENT,
     });

@@ -538,6 +538,26 @@ try {
   await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Depth" }).locator(".ts-map-pic").click();
   await page.waitForTimeout(300);
   ok(!(await page.locator(".ts-studio img.ts-map-big").count()) && await page.locator(".ts-clay-live").isVisible(), "and clicked again, the clay is back");
+  // a floor reaching under the camera does not put "near" at its feet: the depth of the room keeps its greys
+  const depthSpread = await js(async () => {
+    const t = await import("/js/toaster.js");
+    t.editParts((list) => void list.push({ ...list[0], id: "p-floor-test", shape: "box", name: "Floor test", size: [40, 0.1, 40], pos: [0, -0.05, 0], rot: [0, 0, 0], refs: undefined, made: "" }));
+    await new Promise((r) => setTimeout(r, 300));
+    const url = t.toaster.view.frameStill({ long: 200, channel: "depth" });
+    t.undoParts();
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const c = Object.assign(document.createElement("canvas"), { width: img.width, height: img.height });
+    const ctx = c.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    const px = ctx.getImageData(0, 0, c.width, c.height).data;
+    const v = [];
+    for (let i = 0; i < px.length; i += 4) v.push(px[i]);
+    v.sort((a, b) => a - b);
+    return { median: v[v.length >> 1], top: v[Math.floor(v.length * 0.99)] };
+  });
+  ok(depthSpread.top > 200 && depthSpread.median > 25, "with a floor running under the camera, the depth still goes from white near to dark far (not all black)", JSON.stringify(depthSpread));
   const sentBefore = (await draft()).body.maps;
   await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Silhouette" }).locator(".ts-map-send").click();
   await page.waitForTimeout(400);
