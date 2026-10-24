@@ -11,7 +11,7 @@ import { ASPECTS, tagRefs } from "./images.ts";
 /** A reference picture as the makers take it: its type and its bytes in base64. */
 export type RouterRef = { mime: string; data: string };
 // size, quality and resolution are for a caller that knows better than the aspect's 1 MP (Macaron asks for a post's own pixels)
-type Ask = { prompt: string; aspect: string; refs: RouterRef[]; seed: number; size?: string; quality?: string; resolution?: string };
+type Ask = { prompt: string; aspect: string; refs: RouterRef[]; seed: number; size?: string; quality?: string; resolution?: string; tags?: string[] };
 type Picture = { base64: string } | { url: string } | null;
 type Model = {
   id: string;
@@ -24,7 +24,7 @@ type Model = {
   credits: number;
   /** how many reference pictures it takes (0: words only) */
   refs: number;
-  /** how its prompt names the nth reference ("" keeps the names) */
+  /** how its prompt names the nth reference ("" keeps the names; "@" sends each picture with a tag of its own, which the prompt calls by @tag) */
   tag: string;
   body: (a: Ask) => unknown;
   picture: (out: any) => Picture;
@@ -122,8 +122,9 @@ const MODELS: Model[] = [
     picture: (out) => (out?.output?.find?.((o: any) => o?.url)?.url ? { url: out.output.find((o: any) => o?.url).url } : null),
   },
   {
-    id: "gen4_image", path: "runway/gen4_image", name: "Runway Gen-4 Image", short: "Runway Gen-4", about: "Keeps a face from up to three references", maker: "runway", credits: 24, refs: 3, tag: "image {n}",
-    body: (a) => ({ promptText: a.prompt.slice(0, 1000), ratio: nearest(a.aspect, RUNWAY), ...(a.refs.length ? { referenceImages: a.refs.slice(0, 3).map((r) => ({ uri: dataUri(r) })) } : {}) }),
+    // (Runway's references each carry a tag, and its prompt calls them by @tag: "@giorno sits behind the desk")
+    id: "gen4_image", path: "runway/gen4_image", name: "Runway Gen-4 Image", short: "Runway Gen-4", about: "Keeps a face from up to three references", maker: "runway", credits: 24, refs: 3, tag: "@",
+    body: (a) => ({ promptText: a.prompt.slice(0, 1000), ratio: nearest(a.aspect, RUNWAY), ...(a.refs.length ? { referenceImages: a.refs.slice(0, 3).map((r, i) => ({ uri: dataUri(r), ...(a.tags?.[i] ? { tag: a.tags[i] } : {}) })) } : {}) }),
     picture: (out) => (typeof out?.output?.[0] === "string" ? { url: out.output[0] } : null),
   },
 ];
@@ -147,15 +148,41 @@ export const routerImages = () =>
  * model calls it), the frame's shape, the references. Answers with the picture's bytes and what
  * Comfy says it cost.
  */
+/** A picture's @name as a tag Runway takes: lower case letters, digits and underscores, starting with a letter, 3 to 16 long. */
+export const refTag = (name: string) => {
+  let t = String(name ?? "").toLowerCase().replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "") || "ref";
+  if (!/^[a-z]/.test(t)) t = `r_${t}`;
+  return t.padEnd(3, "_").slice(0, 16);
+};
+
+/**
+ * The prompt as a model reads it, with the @names of its `count` pictures: "image 1"… (or its own tag, <<<image_1>>>), the plain word for
+ * a model without one, or, for a model whose pictures carry tags (Runway), each @name as its tag, which comes back with the pictures.
+ */
+export function routerPrompt(m: Pick<Model, "tag" | "refs">, prompt: string, names: string[], count: number) {
+  if (m.tag !== "@") return { prompt: tagRefs(prompt, names, count && m.tag ? { node: "", input: "", first: 0, max: m.refs, tag: m.tag, tagFirst: 1, single: "the reference image" } : undefined), tags: undefined };
+  const tags: string[] = [];
+  for (const n of names.slice(0, count)) {
+    let t = refTag(n);
+    for (let i = 2; tags.includes(t); i++) t = `${refTag(n).slice(0, 13)}_${i}`;
+    tags.push(t);
+  }
+  const out = prompt.replace(/@([a-z0-9][a-z0-9-]*)/gi, (_, n: string) => {
+    const i = names.indexOf(n.toLowerCase());
+    return i >= 0 && i < tags.length ? `@${tags[i]}` : n.replace(/-/g, " ");
+  });
+  return { prompt: out, tags };
+}
+
 export async function routerDraw(id: string, v: { prompt: string; aspect: string; refs: RouterRef[]; names: string[]; seed: number; size?: string; quality?: string; resolution?: string }) {
   const m = find(id);
   if (!m) throw new Error(`${id} is not on Comfy Router.`);
   const refs = v.refs.slice(0, m.refs);
-  const prompt = tagRefs(v.prompt, v.names, refs.length && m.tag ? { node: "", input: "", first: 0, max: m.refs, tag: m.tag, tagFirst: 1, single: "the reference image" } : undefined);
+  const { prompt, tags } = routerPrompt(m, v.prompt, v.names, refs.length);
   const res = await fetch(`https://api.comfy.org/v2/models/${m.path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-API-Key": process.env.COMFY_API_KEY!.trim(), "Idempotency-Key": randomUUID() },
-    body: JSON.stringify(m.body({ prompt, aspect: v.aspect, refs, seed: v.seed, size: v.size, quality: v.quality, resolution: v.resolution })),
+    body: JSON.stringify(m.body({ prompt, aspect: v.aspect, refs, seed: v.seed, size: v.size, quality: v.quality, resolution: v.resolution, tags })),
   });
   const out: any = await res.json().catch(() => ({}));
   const why = res.headers.get("x-comfy-error-type");
