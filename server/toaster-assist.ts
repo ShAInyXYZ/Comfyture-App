@@ -375,7 +375,7 @@ export const TOASTER_WRITE_BRIEF = `You write the one prompt that a named image-
 
 Follow THE MODEL'S GUIDE (after this brief) for the prompt's structure, order, length, wording and how to refer to the pictures.
 - Refer to every picture by its @name exactly as given (the app turns @names into the model's own references), give each its role as the guide says, and use only the pictures listed. Where the guide's examples write "image 1", "image 2", <image1> or <<<image_1>>>, write the @name instead (@frame, @colour-id, @giorno…): the app numbers them in the order they are really sent.
-- Keep the layout, the camera and every thing's place and size from the clay (@frame).
+- Keep the layout, the camera and every thing's place and size from the picture that leads (the first one sent: the clay @frame, or the map that leads when the frame is left out).
 - The user's look and what it is lead: never a default "photograph" when they asked for a style.
 - The strength says how far to go from the clay. Low: keep the clay's colours. Middle: real materials; the colours only label who is who. High: only the layout and the forms stay; all-new materials and light.
 - Name things by what they are, never by ids or clay colours.
@@ -423,7 +423,8 @@ export function writePrompt(input: WriteInput) {
   lines.push("THE PICTURES SENT, in order:");
   const pics = things<NonNullable<WriteFacts["pictures"]>[number]>(f.pictures, 12).filter((p) => tagName(p.name));
   if (!pics.length) lines.push("(none)");
-  pics.forEach((p, i) => lines.push(`${i + 1}. @${p.name}: ${pictureRole(p)}`));
+  // (the first leads: the clay frame, or the map that leads when the frame is left out)
+  pics.forEach((p, i) => lines.push(`${i + 1}. @${p.name}: ${pictureRole(p)}${i === 0 ? ". It leads: the layout, the camera and every thing's place come from it" : ""}`));
   lines.push("", `WHAT IT IS: ${cut(f.what, 600) || "(not said)"}`, `THE LOOK: ${cut(f.scene, 600) || "(not said)"}`);
   const percent = num(f.strength?.percent, 0, 100);
   const band = oneOf(f.strength?.band, ["low", "middle", "high"] as const) ?? (percent === undefined ? "middle" : percent < 34 ? "low" : percent < 67 ? "middle" : "high");

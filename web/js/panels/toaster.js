@@ -23,7 +23,7 @@ import {
   renderFrame, setStrength, renderSheet, forget, showRender, setCompare, price3d, priceNow, make3d, putOnStage, isArmed, arm, disarm, toggleMap,
   setMode, addPartRef, removePartRef, addSceneRef, removeSceneRef, setPrompt, framePlan, writeWords,
 } from "../toaster.js";
-import { SHAPES, PALETTE, RATIOS, MAPS, POSE_SLIDERS, roundLabel, hasSides, colorName, shapeOf, tagsOf, describeOf, isAsset, isCharacter } from "../toaster-model.js";
+import { SHAPES, PALETTE, RATIOS, MAPS, POSE_SLIDERS, roundLabel, hasSides, colorName, shapeOf, tagsOf, describeOf, isAsset, isCharacter, plainFrame } from "../toaster-model.js";
 import { CRUMPET } from "../toaster-harness.js";
 import { projectBar, drawProjectBar } from "./toaster-projects.js";
 
@@ -689,7 +689,7 @@ function drawMaps() {
   const out = leftOut();
   const sent = MAPS.filter((m) => b.maps.includes(m.id) && !out.ids.includes(m.id)).length;
   shell.mapsCard.replaceChildren(
-    h("header.ts-head", {}, h("h2.ts-label", {}, "Control maps"), h("span.spacer"), h("span.ts-note", {}, sent ? `${sent} sent with the frame` : "None sent")),
+    h("header.ts-head", {}, h("h2.ts-label", {}, "Control maps"), h("span.spacer"), h("span.ts-note", {}, sent ? `${sent} sent` : "None sent")),
     h("div.ts-map-tiles", {}, ...MAPS.map((m) => {
       const on = b.maps.includes(m.id);
       return h(`div.ts-map-tile${mapShown === m.id ? ".is-shown" : ""}`, {},
@@ -707,7 +707,7 @@ function showMap(id) {
   stills.big = null;
   if (id && toaster.view) {
     try {
-      stills.big = toaster.view.frameStill({ long: 1200, channel: id });
+      stills.big = mapStill(id, 1200);
     } catch {}
   }
   drawRender();
@@ -744,7 +744,12 @@ function modelItems() {
 }
 const priceOf = (m) => (!m ? "" : m.router ? `≈ ${m.credits} cr` : "GPU time");
 
-const MAP_ICON = { id: "channel-id", depth: "channel-depth", silhouette: "material-mask" };
+const MAP_ICON = { clay: "view-persp", id: "channel-id", depth: "channel-depth", silhouette: "material-mask" };
+/** One of the maps as the camera sees it now: the clay frame as it would be sent (plain grey clay when strong), or a control map. */
+const mapStill = (id, long) => {
+  const b = body();
+  return id === "clay" ? toaster.view.frameStill({ long, type: "image/jpeg", quality: 0.85, plain: plainFrame(b.strength, b.maps) }) : toaster.view.frameStill({ long, channel: id });
+};
 
 // ---------------------------------------------------------------- the words: @tags as pills, and the list that opens on an @
 
@@ -927,7 +932,7 @@ function leftOut() {
   const sent = plan.maps.map((m) => m.id);
   const ids = b.maps.filter((id) => !sent.includes(id));
   const total = plan.model?.templates?.find((t) => t.id === "edit")?.refs ?? 4;
-  const first = ["the frame", ...plan.maps.map((m) => m.label), ...plan.refs.map((r) => `@${r.name}`)];
+  const first = [...plan.maps.map((m) => (m.id === "clay" ? "the clay frame" : m.label)), ...plan.refs.map((r) => `@${r.name}`)];
   return { ids, why: `${plan.model?.short ?? plan.model?.name ?? "this model"} takes ${total} pictures: ${first.join(", ")} go first` };
 }
 
@@ -1070,8 +1075,8 @@ function stripSoon() {
       strip = hasClay() ? toaster.view.sheetStill({ scale: 0.1, type: "image/jpeg", quality: 0.85 }).url : null;
       clayLive = needLive() ? toaster.view.frameStill({ long: 1000, type: "image/jpeg", quality: 0.88 }) : null;
       stills.camera = toaster.view.frameStill({ long: 320, type: "image/jpeg", quality: 0.82 });
-      for (const m of MAPS) stills[m.id] = hasClay() ? toaster.view.frameStill({ long: 320, channel: m.id }) : null;
-      if (mapShown) stills.big = toaster.view.frameStill({ long: 1200, channel: mapShown });
+      for (const m of MAPS) stills[m.id] = hasClay() ? mapStill(m.id, 320) : null;
+      if (mapShown) stills.big = mapStill(mapShown, 1200);
     } catch {
       strip = null;
     }

@@ -500,7 +500,14 @@ export function cleanDraft(b) {
     camera: cam,
     cameras: (Array.isArray(b.cameras) ? b.cameras : []).filter((k) => k && typeof k === "object").slice(0, 12).map(slot),
     ratio: b.ratio in RATIOS ? b.ratio : "1:1",
-    maps: Array.isArray(b.maps) ? MAPS.map((m) => m.id).filter((id) => b.maps.includes(id)) : ["id", "depth"],
+    maps: (() => {
+      const asked = Array.isArray(b.maps) ? b.maps : ["clay", "id", "depth"];
+      // (before the clay frame was one of the maps it always went: a draft from then keeps sending it)
+      const was = b.mapsV === 2 ? asked : ["clay", ...asked];
+      const ids = MAPS.map((m) => m.id).filter((id) => was.includes(id));
+      return ids.length ? ids : ["clay"];
+    })(),
+    mapsV: 2,
     what: words(b.what, 600),
     scene: words(b.scene, 600),
     refs: sceneRefs,
@@ -663,16 +670,18 @@ export function referencesFor({ parts = [], sceneRefs = [], room = 0, mentioned 
 }
 
 /**
- * Which control maps go, within the model's room for pictures: the colour ID first when the frame is plain grey clay (it alone says who
- * is who then), then each picture put on a part's sheet (`people`: a person's likeness first) keeps its place before the other maps
+ * Which of the clay frame and the control maps go, within the model's room for pictures: the first one on leads (the layout is taken
+ * from it), the colour ID beside it when the frame is plain grey clay (it alone says who is who then), then each picture put on a part's sheet (`people`: a person's likeness first) keeps its place before the other maps
  * (depth, silhouette; the colour ID last, when the frame's own colours already say it) take what is left. In the maps' order.
  */
 export function pickMaps({ wanted = [], strength = STRENGTH, room = 0, people = 0 } = {}) {
   const ids = MAPS.map((m) => m.id).filter((id) => wanted.includes(id));
+  if (!ids.length || room <= 0) return [];
   const plain = plainFrame(strength, ids);
-  const must = plain ? ["id"] : [];
-  // (a frame in its colours already says who is who: then the colour ID is the last map to go, after the depth and the silhouette)
-  const rest = ids.filter((id) => !must.includes(id)).sort((a, b) => Number(!plain && a === "id") - Number(!plain && b === "id")).slice(0, Math.max(0, room - must.length - people));
+  const coloured = ids[0] === "clay" && !plain;
+  const must = [ids[0], ...(plain ? ["id"] : [])];
+  // (a clay frame in its colours already says who is who: then the colour ID is the last map to go, after the depth and the silhouette)
+  const rest = ids.filter((id) => !must.includes(id)).sort((a, b) => Number(coloured && a === "id") - Number(coloured && b === "id")).slice(0, Math.max(0, room - must.length - people));
   const keep = new Set([...must, ...rest].slice(0, room));
   return ids.filter((id) => keep.has(id));
 }
@@ -716,7 +725,7 @@ export function strengthWords(strength = STRENGTH) {
   return "Keep only its camera, framing and layout: every clay shape becomes a finished thing in its very place and at its very size, with all-new materials, colours, textures and light; nothing of the clay, its flat colours or its plastic look remains.";
 }
 /** Whether a render at this strength sends the frame in plain grey clay (its colours would pull the picture to them): only when the colour ID says who is who. */
-export const plainFrame = (strength = STRENGTH, maps = []) => strength >= 0.5 && maps.includes("id");
+export const plainFrame = (strength = STRENGTH, maps = []) => strength >= 0.5 && maps.includes("id") && (maps.includes("clay") || !maps.length);
 /** The keep of an open-weights edit (its denoise) at this strength: the clay's own picture, kept more or less. */
 export const keepOf = (strength = STRENGTH) => Math.round((0.75 + 0.23 * Math.min(1, Math.max(0, strength))) * 1000) / 1000;
 
@@ -727,6 +736,8 @@ const sentence = (s) => {
 
 /** The control maps a render can send beside the clay frame: their reference names, and what each says to the image model. */
 export const MAPS = [
+  // (the clay frame is one of them: off, the next one on leads, so nothing of the clay's colours or shading reaches the model)
+  { id: "clay", name: "frame", label: "Clay frame", says: "@frame is the clay as the camera sees it: the forms, the layout and the camera" },
   { id: "id", name: "colour-id", label: "Colour ID", says: "@colour-id shows each kind of thing as one flat colour, as the clay does" },
   { id: "depth", name: "depth", label: "Depth", says: "@depth shows how far everything is, near light and far dark" },
   { id: "silhouette", name: "silhouette", label: "Silhouette", says: "@silhouette shows the outline of every part in white" },
@@ -754,12 +765,14 @@ export function framePrompt({ parts = [], what = "", scene = "", maps = [], scen
   const legend = legendOf(parts, { tags: tags ?? tagsOf(parts, sceneRefs.map((r) => r.name)), named: named ?? new Map(), pieceOf });
   const look = String(scene ?? "").trim().replace(/\s+/g, " ").replace(/[.;]+$/, "");
   const plain = plainFrame(strength, maps);
-  const where = plain || maps.includes("id") ? "In @colour-id each flat colour is one thing" : "In @frame each clay colour is one thing";
+  const lead = MAPS.find((m) => maps.includes(m.id)) ?? MAPS[0];
+  const what0 = { clay: "a clay blockout", id: "the colour map of a scene laid out in clay", depth: "the depth map of a scene laid out in clay", silhouette: "the silhouettes of a scene laid out in clay" }[lead.id];
+  const where = maps.includes("id") ? "In @colour-id each flat colour is one thing" : maps.includes("clay") ? "In @frame each clay colour is one thing" : "It holds";
   return [
-    look ? `Turn @frame, a clay blockout, into a finished image in this look: ${look}.` : "Turn @frame, a clay blockout, into a finished cinematic photograph, soft natural light.",
+    look ? `Turn @${lead.name}, ${what0}, into a finished image in this look: ${look}.` : `Turn @${lead.name}, ${what0}, into a finished cinematic photograph, soft natural light.`,
     what.trim() ? `It shows: ${sentence(what)}` : "",
     strengthWords(strength),
-    plain ? "@frame is in plain grey clay: it gives the forms only." : "",
+    plain && maps.includes("clay") ? "@frame is in plain grey clay: it gives the forms only." : "",
     legend.length ? `${where}: ${legend.join("; ")}.` : "",
     referenceLine(sceneRefs, named),
     mapsLine(maps),
@@ -777,9 +790,9 @@ export function factsOf({ parts = [], what = "", scene = "", maps = [], sceneRef
   const byName = new Map();
   for (const p of parts) for (const n of named.get(tags.get(p.id)) ?? []) byName.set(n, p);
   const sent = refs ?? [...sceneRefs.filter((r) => named.has(r.name)), ...[...byName.keys()].map((name) => ({ name }))];
+  // (the first of the clay frame and the maps leads: the layout and the camera are taken from it)
   const pictures = [
-    { name: "frame", kind: "frame", plain: !!plain },
-    ...MAPS.filter((m) => maps.includes(m.id)).map((m) => ({ name: m.name, kind: "map", map: m.id })),
+    ...MAPS.filter((m) => maps.includes(m.id)).map((m, i) => ({ name: m.name, ...(m.id === "clay" ? { kind: "frame", plain: !!plain } : { kind: "map", map: m.id }), ...(i ? {} : { lead: true }) })),
     ...sent.map((r) => {
       const part = byName.get(r.name);
       return part ? { name: r.name, kind: "part", of: shortOf(part, pieceOf) || part.name, sheet: kindOf(part) === "character" ? "character" : kindOf(part) === "piece" ? "piece" : "shape" } : { name: r.name, kind: "look" };

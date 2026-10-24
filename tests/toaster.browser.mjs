@@ -546,7 +546,7 @@ try {
   ok((await page.locator(".ts-camera-card .ts-cam").allInnerTexts()).join().endsWith("Wide,Above") && (await page.locator(".ts-camera-card .ts-cam").first().innerText()) === "Current view" && (await page.locator(".ts-camera-card .ts-cam.is-on").innerText()) === "Current view", "the Camera card has a tile per slot and the view as it was left, lit", (await page.locator(".ts-camera-card .ts-cam").allInnerTexts()).join());
   ok(!/\bnull\b/.test(await page.locator(".ts-camera-card").innerText()) && (await page.locator(".ts-camera-card .ts-cam").first().locator("img").count()) === 1, "the view as it was left has its picture (drawn once the clay is there), and nothing reads null", await page.locator(".ts-camera-card").innerText());
   // the control maps on the right: each a picture of what the camera sees; a click shows it big in the studio; its key sends it or not
-  ok((await page.locator(".ts-maps-card .ts-map-tile").allInnerTexts()).map((t) => t.split("\n")[0]).join() === "Colour ID,Depth,Silhouette" && (await page.locator(".ts-maps-card .ts-map-pic img").count()) === 3, "the Control maps card shows the colour ID, the depth and the silhouette as pictures", (await page.locator(".ts-maps-card").innerText()).replace(/\n/g, " | "));
+  ok((await page.locator(".ts-maps-card .ts-map-tile").allInnerTexts()).map((t) => t.split("\n")[0]).join() === "Clay frame,Colour ID,Depth,Silhouette" && (await page.locator(".ts-maps-card .ts-map-pic img").count()) === 4, "the Control maps card shows the clay frame and colour ID, the depth and the silhouette as pictures", (await page.locator(".ts-maps-card").innerText()).replace(/\n/g, " | "));
   await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Depth" }).locator(".ts-map-pic").click();
   await page.waitForTimeout(300);
   ok(await page.locator(".ts-studio img.ts-map-big").isVisible() && /^Depth — /i.test(await page.locator(".ts-studio .ts-tag.is-a").innerText()), "a map's picture is shown big in the studio", await page.locator(".ts-studio .ts-tag.is-a").innerText().catch(() => ""));
@@ -587,9 +587,9 @@ try {
   // the control maps are the draft's choice: the silhouette added, the depth taken away
   await page.locator(".ts-map", { hasText: "Silhouette" }).click();
   await page.locator(".ts-map", { hasText: "Depth" }).click();
-  ok(JSON.stringify((await draft()).body.maps) === JSON.stringify(["id", "silhouette"]), "the Control keys choose the maps sent with the clay");
+  ok(JSON.stringify((await draft()).body.maps) === JSON.stringify(["clay", "id", "silhouette"]), "the Control keys choose the maps sent with the clay");
   await page.locator(".ts-map", { hasText: "Silhouette" }).click();
-  ok(JSON.stringify((await draft()).body.maps) === JSON.stringify(["id"]), "(the colour ID alone is sent)");
+  ok(JSON.stringify((await draft()).body.maps) === JSON.stringify(["clay", "id"]), "(the colour ID alone is sent with the clay)");
   // a part's sheet, in Selected: renamed (its tag follows), its words, a picture uploaded to the server's own Library
   await page.locator(".ts-part").first().click();
   await page.locator('.ts-inspector input[aria-label="Name"]').fill("Desk");
@@ -816,7 +816,22 @@ try {
   const outKeys = await page.locator(".ts-studio .ts-map.is-left-out").allInnerTexts();
   const outKey = page.locator(".ts-studio .ts-map.is-left-out").first();
   const outWhy = ((await outKey.getAttribute("title").catch(() => null)) ?? (await outKey.getAttribute("data-tooltip").catch(() => null))) ?? "";
-  ok(outKeys.join() === "Colour ID,Silhouette" && /takes 3 pictures: the frame, Depth, @mood-board go first/.test(outWhy) && (await page.locator(".ts-maps-card .ts-map-send.is-left-out").count()) === 2, "a map the model has no room for is struck through, and says why", JSON.stringify([outKeys, outWhy]));
+  ok(outKeys.join() === "Colour ID,Silhouette" && /takes 3 pictures: the clay frame, Depth, @mood-board go first/.test(outWhy) && (await page.locator(".ts-maps-card .ts-map-send.is-left-out").count()) === 2, "a map the model has no room for is struck through, and says why", JSON.stringify([outKeys, outWhy]));
+  // the clay frame left out: the next one on leads and is the first picture sent; the last one on cannot be switched off
+  await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Clay frame" }).locator(".ts-map-send").click();
+  await page.waitForTimeout(300);
+  const leadPlan = await js(async () => {
+    const t = await import("/js/toaster.js");
+    const p = t.framePlan();
+    return { maps: p.maps.map((m) => m.id), first: p.facts.pictures[0], auto: p.auto.slice(0, 60) };
+  });
+  ok(!leadPlan.maps.includes("clay") && leadPlan.first.kind === "map" && /^Turn @(depth|colour-id)/.test(leadPlan.auto), "with the clay frame left out, the next map leads: the writer is told so and the template starts with it", JSON.stringify(leadPlan));
+  await js(async () => {
+    const t = await import("/js/toaster.js");
+    const b = t.toaster.draft.body;
+    for (const id of [...b.maps]) t.toggleMap(id);
+  });
+  ok((await draft()).body.maps.length === 1, "the last one on stays on: the render needs a picture to take its layout from", JSON.stringify((await draft()).body.maps));
   ok(outbound.length === 0, "no call left the machine", outbound.join(" "));
   ok(errors.length === 0, "no error on the page", errors.join(" | "));
 } finally {

@@ -668,6 +668,8 @@ export function setStrength(value, { draw = true } = {}) {
 export function toggleMap(id) {
   const b = body();
   if (!b) return;
+  // (one of them must go: the render takes its layout from the first one on)
+  if (b.maps.length === 1 && b.maps[0] === id) return void toast("One of them must stay on: the render takes its layout from the first one.", { tone: "warn" });
   b.maps = b.maps.includes(id) ? b.maps.filter((x) => x !== id) : MAPS.map((m) => m.id).filter((x) => x === id || b.maps.includes(x));
   save();
   changed("toaster");
@@ -748,11 +750,12 @@ export function framePlan() {
   const parts = b.parts;
   // (a model with little room for pictures keeps the pictures put on the parts' sheets before the depth or the silhouette)
   const pictured = parts.filter((p) => !p.hidden && p.refs?.length).length;
-  const picked = pickMaps({ wanted: b.maps, strength: b.strength, room: Math.max(0, total - 1), people: pictured });
+  // (the clay frame is one of them: all share the model's room, the first one on leads)
+  const picked = pickMaps({ wanted: b.maps, strength: b.strength, room: total, people: pictured });
   const maps = MAPS.filter((m) => picked.includes(m.id));
   // (only the user's own prompt picks the pictures: a written one must not change the facts it was written from)
   const mentioned = mentionsIn(`${b.promptBy === "you" ? b.prompt : ""} ${b.what} ${b.scene}`);
-  const { refs, named } = referencesFor({ parts, sceneRefs: b.refs, room: Math.max(0, total - 1 - maps.length), mentioned });
+  const { refs, named } = referencesFor({ parts, sceneRefs: b.refs, room: Math.max(0, total - maps.length), mentioned });
   const tags = tagsOf(parts, b.refs.map((r) => r.name));
   const ids = maps.map((m) => m.id);
   const auto = framePrompt({ parts, what: b.what, scene: b.scene, maps: ids, sceneRefs: b.refs, named, tags, pieceOf: toaster.pieceOf, strength: b.strength });
@@ -769,13 +772,13 @@ export function framePlan() {
 const hasFacts = (f) => !!(f.what || f.scene || f.who.length);
 
 /** The writer (the assistants' model) writes the prompt for the image model from its guide; answers the text. `frame` is the clay frame, kept. */
-async function askWriter(draft, plan, frame) {
+async function askWriter(draft, plan, lead) {
   const b = draft.body;
-  // one picture of each sheet is shown to the writer, after the frame and the scene's references
+  // one picture of each sheet is shown to the writer, after the picture that leads (the clay frame, or the map that leads without it)
   const firsts = [...plan.named].map(([, names]) => plan.refs.find((r) => r.name === names[0])).filter(Boolean);
   const out = await send("api/toaster/write", "POST", {
     model: writer("assistant"), imageModel: plan.model.id, facts: plan.facts, prompt: b.promptBy === "you" ? b.prompt.trim() || undefined : undefined,
-    refs: [{ name: "frame", file: frame.file }, ...firsts.map((r) => ({ name: r.name, file: r.file }))],
+    refs: [{ name: lead.name, file: lead.file }, ...firsts.map((r) => ({ name: r.name, file: r.file }))],
   });
   const text = String(out.prompt ?? "").slice(0, 6000);
   if (!text.trim()) throw new Error("The writer answered nothing.");
@@ -800,8 +803,9 @@ export async function writeWords() {
   changed("toaster-runs");
   try {
     const plan = framePlan();
-    const frame = await keepPicture(v.frameStill({ long: 1536, plain: plan.facts.pictures[0].plain }), `${draft.name} clay`);
-    keepWritten(b, plan, await askWriter(draft, plan, frame));
+    const first = plan.maps[0] ?? MAPS[0];
+    const lead = await keepPicture(first.id === "clay" ? v.frameStill({ long: 1536, plain: plainFrame(b.strength, plan.maps.map((m) => m.id)) }) : v.frameStill({ long: 1536, channel: first.id }), `${draft.name} ${first.id === "clay" ? "clay" : first.name}`);
+    keepWritten(b, plan, await askWriter(draft, plan, { ...lead, name: first.name }));
     save(draft);
   } catch (e) {
     toast(e.message, { tone: "crit" });
@@ -830,18 +834,21 @@ export async function renderFrame() {
   try {
     // the pictures that go (the frame first, the control maps, the references within the room left) and the facts the writer reads
     const plan = framePlan();
-    const maps = plan.maps;
-    // (strong enough, with the colour ID sent to say who is who, the frame goes in plain grey clay: its colours would pull the picture to them)
-    run.frame = await keepPicture(v.frameStill({ long: 1536, plain: plainFrame(b.strength, maps.map((m) => m.id)) }), `${draft.name} clay`);
+    const ids = plan.maps.map((m) => m.id);
+    const sendsClay = ids.includes("clay");
+    // (strong enough, with the colour ID sent to say who is who, the frame goes in plain grey clay: its colours would pull the picture to
+    // them; left out, it is still kept, for the wipe against the clay)
+    run.frame = await keepPicture(v.frameStill({ long: 1536, plain: sendsClay && plainFrame(b.strength, ids) }), `${draft.name} clay`);
     run.maps = [];
-    for (const m of maps) run.maps.push({ ...(await keepPicture(v.frameStill({ long: 1536, channel: m.id }), `${draft.name} ${m.name}`)), name: m.name });
+    for (const m of plan.maps.filter((m) => m.id !== "clay")) run.maps.push({ ...(await keepPicture(v.frameStill({ long: 1536, channel: m.id }), `${draft.name} ${m.name}`)), name: m.name });
+    const lead = sendsClay ? { ...run.frame, name: "frame" } : run.maps[0];
     const sent = plan.refs;
     // the user's own prompt is sent as written; else the writer's, written now when there is none or it is out of date (if the writer fails, the template)
     if (b.promptBy !== "you" && (!b.prompt.trim() || plan.stale) && hasFacts(plan.facts)) {
       toaster.writing = true;
       changed("toaster-runs");
       try {
-        keepWritten(b, plan, await askWriter(draft, plan, run.frame));
+        keepWritten(b, plan, await askWriter(draft, plan, lead));
         save(draft);
       } catch (e) {
         toast(`The writer could not write the prompt (${e.message}): the template is used.`, { tone: "warn" });
@@ -854,7 +861,8 @@ export async function renderFrame() {
     }
     run.prompt ||= b.prompt.trim() || expandPrompt(plan.auto, plan.cast, plan.named);
     run.refs = sent.map((r) => ({ name: r.name, url: r.url }));
-    const done = await picture(run, request(model, run.prompt, [{ ...run.frame, name: "frame" }, ...run.maps, ...sent], b.ratio, draft.name, keepOf(b.strength)));
+    // (an open-weights edit starts from the clay frame, kept as much as the strength says; from a map it would start grey, so it starts new)
+    const done = await picture(run, request(model, run.prompt, [...(sendsClay ? [{ ...run.frame, name: "frame" }] : []), ...run.maps, ...sent], b.ratio, draft.name, sendsClay ? keepOf(b.strength) : undefined));
     run.photo = media(done.photo);
     run.status = "done";
   } catch (e) {

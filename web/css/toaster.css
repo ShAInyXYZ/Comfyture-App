@@ -313,7 +313,7 @@ button.ts-sheet-pic { cursor: zoom-in; }
 .ts-strength .ts-readout { min-width: 2.5rem; font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--text); text-align: right; }
 /* the control maps of the render: three pictures, each with whether it goes with the frame */
 .ts-maps-card { gap: .625rem; }
-.ts-map-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.ts-map-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem .625rem; }
 .ts-map-tile { display: grid; gap: .3125rem; min-width: 0; }
 .ts-map-pic { display: grid; place-items: center; width: 100%; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: .5rem; background: #000; color: var(--dim); cursor: pointer; transition: border-color var(--t-fast); }
 .ts-map-pic img { width: 100%; height: 100%; object-fit: contain; display: block; }

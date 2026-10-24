@@ -111,15 +111,20 @@ test("the words: what each clay colour becomes, the object, the scene; hidden pa
     cleanPart({ shape: "box", name: "Ghost", color: "#d65a5a", made: "glass", hidden: true }),
   ];
   assert.deepEqual(legendOf(parts), ["teal is brushed chrome (×2)", "cream is a knob"], "each part by its description, equal ones counted; a default shape says nothing");
-  const words = framePrompt({ parts, what: "A retro toaster", scene: "on a marble counter", maps: ["id", "depth", "silhouette"] });
+  const words = framePrompt({ parts, what: "A retro toaster", scene: "on a marble counter", maps: ["clay", "id", "depth", "silhouette"] });
   // the operation and the look first, then what it shows, how far it goes, who is who, the maps, what is left of the clay
   assert.match(words, /^Turn @frame, a clay blockout, into a finished image in this look: on a marble counter\. It shows: A retro toaster\. Keep its camera, framing and layout: /);
   assert.match(words, /the flat colours only say which thing is which.*@frame is in plain grey clay: it gives the forms only\. In @colour-id each flat colour is one thing: teal is brushed chrome \(×2\); cream is a knob\. /);
   assert.match(words, /@depth shows how far things are, near light and far dark; @silhouette their outlines; the maps only place things and never colour them\. No mannequin and no clay is left: .*all in the look above\.$/);
   assert.doesNotMatch(words, /glass|Body|Lid|Knob/, "no name of a part is said");
   assert.match(framePrompt({ parts: [] }), /^Turn @frame, a clay blockout, into a finished cinematic photograph, soft natural light\./, "no look said: a photograph");
-  assert.doesNotMatch(framePrompt({ parts, maps: ["depth"] }), /@colour-id|@silhouette|plain grey/, "without the colour ID, the frame keeps its colours and says who is who");
-  assert.match(framePrompt({ parts, maps: ["depth"] }), /In @frame each clay colour is one thing: teal is brushed chrome/);
+  assert.doesNotMatch(framePrompt({ parts, maps: ["clay", "depth"] }), /@colour-id|@silhouette|plain grey/, "without the colour ID, the frame keeps its colours and says who is who");
+  assert.match(framePrompt({ parts, maps: ["clay", "depth"] }), /In @frame each clay colour is one thing: teal is brushed chrome/);
+  // the clay frame left out: the next one on leads, and nothing calls the frame
+  const noClay = framePrompt({ parts, scene: "dusk", maps: ["depth", "silhouette"] });
+  assert.match(noClay, /^Turn @depth, the depth map of a scene laid out in clay, into a finished image in this look: dusk\./);
+  assert.doesNotMatch(noClay, /@frame/);
+  assert.match(framePrompt({ parts, maps: ["id", "depth"], strength: 0.9 }), /^Turn @colour-id, the colour map/);
   const sheet = sheetPrompt({ parts, what: "a toaster" });
   assert.match(sheet, /^Render @sheet as a finished turnaround sheet of one object: four views side by side, the front, the left side, the back and the right side\./);
   assert.match(sheet, /In @sheet, teal is brushed chrome \(×2\); cream is a knob\./);
@@ -321,12 +326,16 @@ test("referencesFor: a person's picture first, then the scene references, then t
 });
 
 test("pickMaps: the colour ID first when the frame is plain clay, then a person's picture keeps its place before the depth or the silhouette", () => {
-  assert.deepEqual(pickMaps({ wanted: ["id", "depth"], strength: 0.6, room: 2, people: 1 }), ["id"], "Qwen 3.0 Pro (three pictures): the frame, the colour ID, the person");
-  assert.deepEqual(pickMaps({ wanted: ["id", "depth"], strength: 0.6, room: 9, people: 1 }), ["id", "depth"], "room enough: all of them");
-  assert.deepEqual(pickMaps({ wanted: ["id", "depth"], strength: 0.4, room: 2, people: 1 }), ["depth"], "a frame in its colours already says who is who: the depth goes before the colour ID");
-  assert.deepEqual(pickMaps({ wanted: ["id", "depth", "silhouette"], strength: 0.2, room: 3, people: 1 }), ["depth", "silhouette"], "the colour ID is the last to go with a coloured frame");
-  assert.deepEqual(pickMaps({ wanted: ["depth", "silhouette"], strength: 0.9, room: 2, people: 0 }), ["depth", "silhouette"]);
-  assert.deepEqual(pickMaps({ wanted: ["id", "depth", "silhouette"], strength: 0.9, room: 1, people: 2 }), ["id"], "the colour ID stays: it alone says who is who over plain clay");
+  assert.deepEqual(pickMaps({ wanted: ["clay", "id", "depth"], strength: 0.6, room: 3, people: 1 }), ["clay", "id"], "Qwen 3.0 Pro (three pictures): the frame, the colour ID, the person");
+  assert.deepEqual(pickMaps({ wanted: ["clay", "id", "depth"], strength: 0.6, room: 9, people: 1 }), ["clay", "id", "depth"], "room enough: all of them");
+  assert.deepEqual(pickMaps({ wanted: ["clay", "id", "depth"], strength: 0.4, room: 3, people: 1 }), ["clay", "depth"], "a frame in its colours already says who is who: the depth goes before the colour ID");
+  assert.deepEqual(pickMaps({ wanted: ["clay", "id", "depth", "silhouette"], strength: 0.2, room: 4, people: 1 }), ["clay", "depth", "silhouette"], "the colour ID is the last to go with a coloured frame");
+  assert.deepEqual(pickMaps({ wanted: ["clay", "depth", "silhouette"], strength: 0.9, room: 3, people: 0 }), ["clay", "depth", "silhouette"]);
+  assert.deepEqual(pickMaps({ wanted: ["clay", "id", "depth", "silhouette"], strength: 0.9, room: 2, people: 2 }), ["clay", "id"], "the colour ID stays: it alone says who is who over plain clay");
+  // the clay frame left out: the next one on leads, whatever the room
+  assert.deepEqual(pickMaps({ wanted: ["id", "depth"], strength: 0.4, room: 3, people: 1 }), ["id", "depth"], "no clay: the colour ID leads, the person keeps a place");
+  assert.deepEqual(pickMaps({ wanted: ["depth", "silhouette"], strength: 0.9, room: 2, people: 1 }), ["depth"], "the depth leads; the person's picture comes before the silhouette");
+  assert.deepEqual(pickMaps({ wanted: [], room: 3 }), [], "nothing asked, nothing sent");
 });
 
 test("castOf: the visible tagged parts with their words and pictures, then the references", () => {
@@ -344,7 +353,7 @@ test("the legend names each thing by what it is (someone by their name), people 
   const parts = [desk(), mia(), cleanPart({ id: "p-box", name: "Box", color: "#e3c35a" }), cleanPart({ id: "p-ch", shape: "asset", asset: "office-chair", name: "Guest_1", color: "#76aef2" }), cleanPart({ id: "p-ch2", shape: "asset", asset: "office-chair", name: "Guest_2", color: "#76aef2" })];
   const sceneRefs = [{ file: "s1.png", url: "/m/s1.png", name: "mood" }];
   const { named } = referencesFor({ parts, sceneRefs, room: 6 });
-  const text = framePrompt({ parts, what: "A study. @mia reads at @desk.", scene: "Late light, like @mood.", maps: ["id", "depth"], sceneRefs, named });
+  const text = framePrompt({ parts, what: "A study. @mia reads at @desk.", scene: "Late light, like @mood.", maps: ["clay", "id", "depth"], sceneRefs, named });
   assert.match(text, /^Turn @frame, a clay blockout/);
   assert.match(text, /In @colour-id each flat colour is one thing: vermilion is Mia, exactly as in @mia; walnut is a walnut mid-century desk with brass handles, exactly as in @desk and @desk-2; sky blue is an office chair \(×2\)\./);
   assert.doesNotMatch(text, /Guest|guest|Box/, "no part name or id in the words");
@@ -419,13 +428,14 @@ test("the strength: how far a render goes from the clay, in its words, the frame
   assert.match(strengthWords(0.1), /Keep its camera, framing, layout and colours/);
   assert.match(strengthWords(0.5), /the flat colours only say which thing is which/);
   assert.match(strengthWords(0.9), /Keep only its camera, framing and layout: .*nothing of the clay, its flat colours or its plastic look remains/);
-  assert.equal(plainFrame(0.6, ["id", "depth"]), true, "strong, with the colour ID to say who is who: the frame in plain clay");
-  assert.equal(plainFrame(0.6, ["depth"]), false, "without the colour ID, the frame's colours say who is who");
-  assert.equal(plainFrame(0.3, ["id"]), false, "weak: the clay's colours are wanted");
+  assert.equal(plainFrame(0.6, ["clay", "id", "depth"]), true, "strong, with the colour ID to say who is who: the frame in plain clay");
+  assert.equal(plainFrame(0.6, ["clay", "depth"]), false, "without the colour ID, the frame's colours say who is who");
+  assert.equal(plainFrame(0.3, ["clay", "id"]), false, "weak: the clay's colours are wanted");
+  assert.equal(plainFrame(0.9, ["id", "depth"]), false, "no clay frame sent: nothing to make plain");
   assert.ok(keepOf(0) < keepOf(0.6) && keepOf(0.6) < keepOf(1) && keepOf(1) <= 0.98 && keepOf(0) >= 0.5, "the edit's keep grows with the strength, within what the server takes");
   const parts = [cleanPart({ shape: "box", name: "Body", color: "#4fb3a9", made: "brushed chrome" })];
-  assert.doesNotMatch(framePrompt({ parts, maps: ["id"], strength: 0.2 }), /plain grey clay/);
-  assert.match(framePrompt({ parts, maps: ["id"], strength: 0.9 }), /@frame is in plain grey clay: it gives the forms only\./);
+  assert.doesNotMatch(framePrompt({ parts, maps: ["clay", "id"], strength: 0.2 }), /plain grey clay/);
+  assert.match(framePrompt({ parts, maps: ["clay", "id"], strength: 0.9 }), /@frame is in plain grey clay: it gives the forms only\./);
   // a short name for the legend: a piece's name in the library, the user's own words whole, someone by their name
   const pieceOf = () => ({ name: "Desk", description: "a rectangular writing desk with a flat top and a shallow drawer" });
   assert.equal(shortOf(cleanPart({ shape: "asset", asset: "desk", made: "a rectangular writing desk with a flat top and a shallow drawer" }), pieceOf), "a desk", "left as the library describes it: its name in the library");
@@ -439,7 +449,7 @@ test("factsOf: the model, the pictures in order with their kinds, the strength, 
   const sceneRefs = [{ file: "s1.png", url: "/m/s1.png", name: "mood" }];
   const { refs, named } = referencesFor({ parts, sceneRefs, room: 6 });
   const model = { id: "qwen-image-3.0-pro", name: "Qwen 3.0 Pro", total: 6 };
-  const f = factsOf({ parts, what: "A study", scene: "Dusk", maps: ["id", "depth"], sceneRefs, refs, named, strength: 0.8, plain: true, model });
+  const f = factsOf({ parts, what: "A study", scene: "Dusk", maps: ["clay", "id", "depth"], sceneRefs, refs, named, strength: 0.8, plain: true, model });
   assert.deepEqual(f.model, { id: "qwen-image-3.0-pro", name: "Qwen 3.0 Pro", pictures: 6 });
   assert.deepEqual(f.pictures.map((p) => `${p.name}:${p.kind}`), ["frame:frame", "colour-id:map", "depth:map", ...refs.map((r) => `${r.name}:${r.name === "mood" ? "look" : "part"}`)]);
   assert.equal(f.pictures[0].plain, true);
@@ -492,4 +502,13 @@ test("factsOf: a piece left as the library describes it goes by its name, with n
   const things = factsOf({ parts, pieceOf }).who.flatMap((g) => g.things);
   assert.deepEqual(things.find((t) => t.name === "a floor"), { name: "a floor", count: 1 }, "no floor slab in the words");
   assert.equal(things.find((t) => t.name === "a mahogany executive desk with brass handles")?.name, "a mahogany executive desk with brass handles");
+});
+
+test("the clay frame is one of the maps: on by default, a draft from before gets it once, and one of them always stays", () => {
+  assert.deepEqual(cleanDraft({}).maps, ["clay", "id", "depth"], "a new draft sends the clay frame, the colour ID and the depth");
+  assert.deepEqual(cleanDraft({ maps: ["id", "depth"] }).maps, ["clay", "id", "depth"], "a draft from before the frame could be left out keeps sending it");
+  const off = cleanDraft({ maps: ["depth"], mapsV: 2 });
+  assert.deepEqual(off.maps, ["depth"], "left out by hand, it stays out");
+  assert.deepEqual(cleanDraft(off).maps, ["depth"], "and stays out when the draft is read again");
+  assert.deepEqual(cleanDraft({ maps: [], mapsV: 2 }).maps, ["clay"], "nothing left: the clay frame comes back");
 });
