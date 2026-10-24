@@ -163,7 +163,7 @@ try {
   ok((await page.locator(".sp-facts").innerText()).includes("0 / 6"), "the facts count the passes done");
   const bar = await js(() => ({ pet: document.getElementById("assistant").dataset.pet, src: document.querySelector("#assistant .pet-face img").getAttribute("src"), docked: document.getElementById("assistant").parentElement.id, ph: document.querySelector("#assistant .chat-input").dataset.placeholder, h: document.querySelector("#assistant .chat-bar").getBoundingClientRect().height }));
   ok(bar.pet === "paprika" && bar.src === "brand/cast/paprika-face.webp" && bar.docked === "spice-chat", "Paprika's bar is docked at the foot of the page");
-  ok(bar.ph.startsWith("Ask Paprika — ") && bar.h >= 56 && bar.h <= 72, "it asks her by name, in one row", bar.ph);
+  ok(bar.ph.startsWith("Ask Paprika — ") && bar.h >= 100 && bar.h <= 140, "it asks her by name, in the tall card: the words on top, the keys under them", `${bar.ph} · ${bar.h} px`);
   await shot("0-empty");
   ok((await page.locator(".sp-stage.is-empty .sp-drop").count()) === 1, "the viewer asks for the footage");
 

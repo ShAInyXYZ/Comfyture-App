@@ -19,7 +19,7 @@ import { harnessOf, barOf, introOf, onRoom, setTeller } from "../harnesses.js";
 import { chat as mixerChat, askMixer, clearMixerChat, confirmMixer, declineMixer } from "../mixer-assist.js";
 import { chat as utensilsChat, roomOfTool, askUtensils, clearUtensilsChat, confirmUtensils, declineUtensils } from "../utensils-assist.js";
 import { chat as spiceChat, roomOfSpice, askSpice, clearSpiceChat, confirmSpice, declineSpice } from "../spice-assist.js";
-import { chat as toasterChat, askToaster, clearToasterChat, confirmToaster, declineToaster, undoToaster, addToasterPictures, addToasterPhoto, removeToasterPicture } from "../toaster-assist.js";
+import { chat as toasterChat, askToaster, clearToasterChat, confirmToaster, declineToaster, undoToaster, addToasterPictures, addToasterPhoto, removeToasterPicture, tagHooks } from "../toaster-assist.js";
 
 // One bar, and a pet in it for every product (web/js/harnesses.js): Ketkout in Kitchen's rooms, Praline in Mixer,
 // Pickle in Jam, Brioche in Macaron, Paprika in Spice, Crumpet in Toaster, Truffle in Utensils. The page the bar is on says whose bar it is, and each
@@ -96,6 +96,7 @@ const MAP_ICON = { id: "channel-id", depth: "channel-depth", pose: "channel-pose
 /** What an @name in the bar stands for, to draw its pill and its card. */
 function lookup(name) {
   if (onStory()) return storyLookup(name);
+  if (onToaster()) return tagHooks.lookup(name);
   if (onStage()) {
     const c = stageApi?.ops.cast?.().find((x) => x.tag === name);
     if (c) return { title: c.name, color: c.color, url: c.pictures[0]?.url, pictures: c.pictures, words: c.words, note: c.pictures.length || c.words ? null : "No sheet yet: the key beside the eye in the Scene list opens one." };
@@ -146,7 +147,7 @@ const describe = (f) =>
 function insertMention(input, name) {
   const at = mentionAt(input);
   if (!at) return;
-  if (!onStage()) adopt(name);
+  if (!onStage() && !onToaster()) adopt(name);
   const after = input.value.slice(input.selectionStart);
   input.value = `${input.value.slice(0, at.from)}@${name} ${after.replace(/^\S*/, "").replace(/^ /, "")}`;
   const caret = at.from + name.length + 2;
@@ -159,7 +160,7 @@ function insertMention(input, name) {
 function updatePicker() {
   const c = composer;
   if (!takesFiles()) return void (c.picker.hidden = true);
-  if (onStage()) return updateStagePicker();
+  if (onStage() || onToaster()) return updateStagePicker();
   const at = mentionAt(c.input);
   // the conversation's files first, then the Library: takes, films, images, presets
   const q = at?.query ?? "";
@@ -193,17 +194,18 @@ function updatePicker() {
   c.list = list;
 }
 
-/** On the Stage: everyone whose name starts with what follows the @, then the maps and pictures. */
+/** On the Stage: everyone whose name starts with what follows the @, then the maps and pictures; on Toaster: the parts, then the references. */
 function updateStagePicker() {
   const c = composer;
   const at = mentionAt(c.input);
   const q = at?.query ?? "";
-  const all = at ? stageMentionables() : [];
+  const all = at ? (onToaster() ? tagHooks.items() : stageMentionables()) : [];
   const list = all.filter((f) => f.name.startsWith(q) || (q && f.title?.toLowerCase().includes(q))).slice(0, 40);
   const exact = list.length === 1 && list[0].name === q;
   c.pick = Math.min(c.pick, Math.max(0, list.length - 1));
   c.picker.hidden = !at || !list.length || exact;
-  c.picker.replaceChildren(h("div.pick-grid.is-cast", {}, ...list.map((f, i) =>
+  c.picker.classList.toggle("is-list", onToaster());
+  c.picker.replaceChildren(h(`div.pick-grid${onToaster() ? ".is-list" : ".is-cast"}`, {}, ...list.map((f, i) =>
     h("button.pick-file", { type: "button", className: i === c.pick ? "is-active" : "", title: f.title, on: { mousedown: (e) => (e.preventDefault(), insertMention(c.input, f.name)) } },
       h("span.pick-thumb", {}, f.url ? h("img", { src: f.url, alt: "", draggable: false }) : f.color ? h("i.pick-swatch", { style: { background: f.color } }) : sprite(MAP_ICON[f.map] ?? "file")),
       h("span.pick-name", {}, h("b", {}, `@${f.name}`), h("span", {}, f.title === f.name ? f.about : [f.title, f.about].filter(Boolean).join(" · ")))))));
@@ -214,7 +216,7 @@ function updateStagePicker() {
 /** The files named in the message being typed get the accent outline, so you see which is which. */
 function markMentioned() {
   const text = composer.input.value;
-  const named = new Set(onStage() ? [...text.matchAll(/@([a-z0-9][a-z0-9-]*)/gi)].map((m) => m[1].toLowerCase()) : mentions(text));
+  const named = new Set(onStage() || onToaster() ? [...text.matchAll(/@([a-z0-9][a-z0-9-]*)/gi)].map((m) => m[1].toLowerCase()) : mentions(text));
   composer.tray.querySelectorAll(".file-chip").forEach((chip) => chip.classList.toggle("is-mentioned", named.has(chip.dataset.name)));
 }
 
@@ -352,12 +354,22 @@ function makeComposer() {
   const status = h("span.bar-status");
   // the pet's face at the left of the composer, its quick actions above it
   const face = h("span.pet-face", {}, h("img", { alt: "", draggable: false }));
+  // its name and what it does, beside its face
+  const who = h("span.pet-id", {}, h("b"), h("small"));
+  // @ starts a name in the words: the list of what can be named opens
+  const at = h("button.composer-key.at-key", { type: "button", title: "Name something — @", "aria-label": "Name something", on: { click: () => {
+    input.focus();
+    const v = input.value;
+    document.execCommand("insertText", false, `${v && !/\s$/.test(v) ? " " : ""}@`);
+    input.dispatchEvent(new Event("input"));
+  } } }, h("b", {}, "@"));
   const chips = h("div.pet-chips", { hidden: true, role: "group", "aria-label": "Quick actions" });
-  const bar = h("div.chat-bar", {}, face, h("div.bar-main", {}, tray, input.el, h("div.bar-row", {}, clip, render, improve, undo, h("span.spacer"), modelSlot, status, toggle, key)));
+  // the words on top and their keys under them; the model and the send key on the right, level with both
+  const bar = h("div.chat-bar", {}, face, who, h("div.bar-main", {}, tray, input.el, h("div.bar-row", {}, clip, at, render, improve, undo, h("span.spacer"), status, toggle)), h("div.bar-actions", {}, modelSlot, key));
   const el = h("div.composer", {}, picker, chips, bar, fileInput);
   // the page keeps room for the bar at its real height, quick actions and files and all
   new ResizeObserver(() => document.documentElement.style.setProperty("--chat-h", `${Math.ceil(el.getBoundingClientRect().height)}px`)).observe(el);
-  composer = { el, input, key, render, modelSlot, improve, tray, picker, toggle, status, face, chips, pick: 0, list: [], filter: "image", improved: false, before: null };
+  composer = { el, input, key, render, modelSlot, improve, tray, picker, toggle, status, face, who, chips, pick: 0, list: [], filter: "image", improved: false, before: null };
   return composer;
 }
 
@@ -518,6 +530,8 @@ export function renderAssistant(el) {
   const look = barOf(s.product, s.room);
   const face = c.face.firstChild;
   if (face.getAttribute("src") !== harness.face) face.setAttribute("src", harness.face);
+  c.who.firstChild.textContent = harness.name ?? "";
+  c.who.lastChild.textContent = harness.tag ?? "";
   c.face.dataset.tooltip = introOf(s.product);
   el.dataset.pet = harness.pet;
   c.input.placeholder = look.placeholder;

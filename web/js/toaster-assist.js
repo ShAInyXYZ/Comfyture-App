@@ -14,6 +14,8 @@ import { tagsOf, cleanPart, newPart, newAssetPart, newCharacterPart, freeSpot, P
 
 /** Crumpet's conversation: Toaster's own, never mixed with another product's. `pictures` is the photo waiting to go with the next words. */
 export const chat = { messages: [], busy: null, pictures: [] };
+/** What an @ can call in Crumpet's bar, and what each name stands for: filled by Toaster's page once it has a project open. */
+export const tagHooks = { items: () => [], lookup: () => null };
 
 const r2 = (v) => Math.round(v * 100) / 100;
 const r3 = (v) => Math.round(v * 1000) / 1000;
