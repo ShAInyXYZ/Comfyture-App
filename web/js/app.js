@@ -123,6 +123,7 @@ onChange((scopes) => {
     if (scope === "all") Object.keys(panels).forEach((p) => pending.add(p));
     else if (scope === "preview") pending.add("monitor").add("takes").add("tabs");
     else if (scope === "paint") pending.add("sources");
+    else if (scope === "account") pending.add("status");
     else if (scope === "director") pending.add("tabs").add("nav");
     else if (panels[scope]) pending.add(scope);
     // the header's keys and status follow the takes, the tabs and any running job

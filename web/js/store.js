@@ -1,7 +1,7 @@
 // App state: the shot being edited (the draft), the library and the takes.
 // Panels call actions and re-render when changed(scope) fires.
 
-import { api, subscribe } from "./api.js";
+import { api, subscribe, STATIC } from "./api.js";
 import { normalize } from "./photo.js";
 import { emptyShot, PANELS, finalPrompt } from "./script.js";
 import { view } from "./viewer.js";
@@ -133,6 +133,8 @@ const opened = loadTabs();
 
 export const state = {
   info: null,
+  /** The Comfy account (api/account): the key's last four, the credits left, where renders go. Null until read. */
+  account: null,
   presets: [],
   samples: [],
   runs: [],
@@ -233,6 +235,7 @@ export function edit(fn, ...scopes) {
 export async function load() {
   const [info, presets, samples, runs, films, photos] = await Promise.all([api.info(), api.presets(), api.samples(), api.runs(), api.films().catch(() => []), api.photos().catch(() => [])]);
   Object.assign(state, { info, presets, samples, runs, films, photos });
+  loadAccount();
   try {
     state.llm = { writer: localStorage.getItem(LLM.writer), assistant: localStorage.getItem(LLM.assistant) };
   } catch {}
@@ -2178,3 +2181,42 @@ export function placePhoto(slot, photo) {
   if (currentPage() !== "shot") go("shot");
   toast(`That picture is ${where} now.`);
 }
+
+// ---------------------------------------------------------------- the Comfy account
+
+/** Reads the account (credits left, key, target) into state; refresh asks Comfy again instead of the 60 s memory. */
+export async function loadAccount(refresh = false) {
+  if (STATIC) return;
+  try {
+    state.account = await api.account(refresh);
+  } catch {
+    state.account = { ...state.account, balance: null, error: "Comfy could not be reached" };
+  }
+  changed("account");
+}
+
+/** Checks a new key with Comfy and keeps it; throws with Comfy's reason when it is refused. */
+export async function saveAccountKey(key) {
+  state.account = await api.saveAccountKey(key);
+  changed("account");
+}
+
+/** Forgets the key saved here and goes back to .env's. */
+export async function clearAccountKey() {
+  state.account = await api.clearAccountKey();
+  changed("account");
+}
+
+// the balance follows the work: a minute and more after a job ends, and every three minutes while the page is on screen
+const jobsRunning = () => state.runs.filter((r) => ["queued", "frame", "shot"].includes(r.status)).length + Object.keys(state.jobs).length;
+let wasRunning = 0;
+let afterJob = 0;
+onChange(() => {
+  const now = jobsRunning();
+  if (wasRunning && !now) {
+    clearTimeout(afterJob);
+    afterJob = setTimeout(() => loadAccount(true), 5000);
+  }
+  wasRunning = now;
+});
+setInterval(() => document.visibilityState === "visible" && state.info && loadAccount(true), 180_000);

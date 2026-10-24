@@ -26,6 +26,9 @@ export const workflowUrl = (id) => (STATIC ? `media/runs/${id}/shot.workflow.jso
 
 export const api = {
   info: () => request("api/info"),
+  account: (refresh) => request(`api/account${refresh ? "?refresh=1" : ""}`),
+  saveAccountKey: (key) => post("api/account/key", { key }),
+  clearAccountKey: () => request("api/account/key", { method: "DELETE" }),
   presets: () => request("api/presets"),
   savePreset: (body) => post("api/presets", body),
   samples: () => request("api/samples"),

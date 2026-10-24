@@ -10,6 +10,7 @@ import { assistantPrompt, fillTransitions, fillUses, readAnswer, wantsNext, want
 import { manual } from "./manual.ts";
 import { LIMITS } from "./limits.ts";
 import { CloudLibrary } from "./cloud.ts";
+import { createAccount } from "./account.ts";
 import { ASPECTS, ImageModels } from "./images.ts";
 import { askClaude, blenderStatus, command, CONTROL_BRIEF, controlConnected, controlEvents, controlPrompt, fromBlender, readControlAnswer, reply, toBlender, type ControlTurn } from "./control.ts";
 import { llms, defaultLlm, pickLlm, onRouter, llmName, routerAsk, imageBlock, takesTools } from "./llm.ts";
@@ -33,7 +34,7 @@ import { normaliseBody as spiceBody, FIRST as SPICE_FIRST } from "../web/js/spic
 import { searchKnowledge, knowledgeById } from "./utensils-knowledge.ts";
 import { createEdit } from "./utensils-edit.ts";
 import { createFx } from "./utensils-fx.ts";
-import { createTemplates, realCloud, fakeRun } from "./comfy-templates.ts";
+import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templates.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
 
 const root = resolve(import.meta.dirname, "..");
@@ -41,6 +42,10 @@ const port = Number(process.env.PORT ?? 5177);
 const host = process.env.HOST ?? "127.0.0.1";
 const data = resolve(root, process.env.COMFYTURE_DATA ?? "data");
 const workflowSet = process.env.COMFYTURE_WORKFLOWS === "dev" ? "workflows/dev" : "workflows";
+
+// A key saved in Settings outranks .env's; read it before anything takes the key.
+const account = createAccount({ data, target: () => ({ kind: target.kind, url: new URL(target.url).origin }), onKey: (key) => followKey(key) });
+await account.init();
 
 // No base URL and no key: talk to a local ComfyUI through comfy-api-proxy's default port.
 if (!process.env.COMFY_BASE_URL?.trim() && !process.env.COMFY_API_KEY?.trim()) {
@@ -77,24 +82,44 @@ const edit = createEdit({ data, root });
 /** Utensils' free effects (green screen, stabilise, slow motion, weather, particles, a spot removed, clean and master a sound, a mix): ffmpeg here. */
 const fx = createFx({ data, root, keepAudio: (bytes, ext, meta) => keepAudio(bytes, ext, meta) });
 /** Utensils' Templates: the official ComfyUI workflows, browsed and run on Comfy Cloud (COMFYTURE_FAKE_TEMPLATES=1 swaps the paid calls for a stand-in). */
-const cloudKey = process.env.COMFY_API_KEY?.trim();
+let cloudFor: { key: string; cloud: Cloud } | null = null;
+/** Templates' Cloud client, made again when the key changes. */
+function currentCloud(): Cloud | null {
+  const key = process.env.COMFY_API_KEY?.trim();
+  if (!key) return null;
+  if (cloudFor?.key !== key) cloudFor = { key, cloud: process.env.COMFYTURE_FAKE_TEMPLATES ? fakeRun(realCloud(key)) : realCloud(key) };
+  return cloudFor.cloud;
+}
 const templates = createTemplates({
   data,
   root,
-  cloud: cloudKey ? (process.env.COMFYTURE_FAKE_TEMPLATES ? fakeRun(realCloud(cloudKey)) : realCloud(cloudKey)) : null,
+  get cloud() {
+    return currentCloud();
+  },
   keepAudio: (bytes, ext, meta) => keepAudio(bytes, ext, meta),
 });
 
-const library = target.kind === "comfy-cloud" && process.env.COMFY_API_KEY?.trim() ? new CloudLibrary(process.env.COMFY_API_KEY.trim()) : null;
+let library: CloudLibrary | null = target.kind === "comfy-cloud" && process.env.COMFY_API_KEY?.trim() ? new CloudLibrary(process.env.COMFY_API_KEY.trim()) : null;
 const engine = new Engine(
   new Comfy({ clientInfo: "comfyture/0.1" }),
   { data, workflows: join(root, workflowSet) },
-  library ? (graph) => library.resolve(graph) : undefined,
+  (graph) => (library ? library.resolve(graph) : Promise.resolve(graph)),
   { black: workflowSet !== "workflows/dev", ffmpeg },
 );
 // the Image window's models are the official templates, in every workflow set
 const images = new ImageModels(join(root, "workflows"));
 engine.images = images;
+
+/** A new key in Settings reaches the render engine and the model library too (the Router and writer read the key on every call). */
+function followKey(key: string) {
+  if (!key) return;
+  try {
+    engine.client = new Comfy({ clientInfo: "comfyture/0.1" });
+  } catch {
+    // the old client stays until a key works
+  }
+  if (target.kind === "comfy-cloud") library = new CloudLibrary(key);
+}
 
 // ---------------------------------------------------------------- helpers
 
@@ -1017,6 +1042,9 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/info" && method === "GET") {
     return json(res, 200, { target: target.kind, url: new URL(target.url).origin, workflows: workflowSet, repository, reels: ffmpeg, llms: { models: llms(), default: defaultLlm("writer"), assistant: defaultLlm("assistant") } });
   }
+  if (path === "/api/account" && method === "GET") return json(res, 200, await account.status(url.searchParams.has("refresh")));
+  if (path === "/api/account/key" && method === "POST") return json(res, 200, await account.saveKey((await jsonBody(req)).key));
+  if (path === "/api/account/key" && method === "DELETE") return json(res, 200, await account.clearKey());
   if (path === "/api/presets" && method === "GET") {
     if (url.searchParams.has("reload")) await reloadPresets();
     return json(res, 200, [...presets.values()]);

@@ -318,7 +318,7 @@ export function unwrapPrompt(text: string) {
 }
 
 export class Engine extends EventEmitter {
-  readonly client: Comfy;
+  client: Comfy;
   private runs = new Map<string, Run>();
   private paints = new Map<string, Paint>();
   private aborts = new Map<string, AbortController>();
