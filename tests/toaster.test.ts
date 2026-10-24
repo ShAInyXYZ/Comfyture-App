@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   SHAPES, PALETTE, RATIOS, SHEET, VIEWS, TO_3D, shapeOf, roundLabel, hasSides, colorName, sheetScale,
-  cleanPart, cleanDraft, newPart, strengthWords, plainFrame, keepOf, STRENGTH, shortOf, mirrorPart, duplicatePart, starterDraft, legendOf, describeOf, described, framePrompt, sheetPrompt, newAssetPart, isAsset, freeSpot, newCharacterPart, isCharacter, tagsOf, castOf, referencesFor, expandPrompt, factsOf, factsKey, promptStale, RESERVED, newSceneRef, addRef, mentionsIn, idColor, familyOf, colourByKind, personColor, FAMILIES, PEOPLE,
+  cleanPart, cleanDraft, newPart, strengthWords, plainFrame, keepOf, STRENGTH, shortOf, pickMaps, mirrorPart, duplicatePart, starterDraft, legendOf, describeOf, described, framePrompt, sheetPrompt, newAssetPart, isAsset, freeSpot, newCharacterPart, isCharacter, tagsOf, castOf, referencesFor, expandPrompt, factsOf, factsKey, promptStale, RESERVED, newSceneRef, addRef, mentionsIn, idColor, familyOf, colourByKind, personColor, FAMILIES, PEOPLE,
 } from "../web/js/toaster-model.js";
 
 test("ten shapes, each with a size; the slider and the sides only where they mean something", () => {
@@ -303,20 +303,29 @@ test("a draft keeps its scene references (named by themselves, never a part's ta
   assert.deepEqual(run.refs, [{ name: "desk", url: "/m/d1.png" }]);
 });
 
-test("referencesFor: scene references first, then the parts' pictures round-robin, the named parts first, never past the room", () => {
+test("referencesFor: a person's picture first, then the scene references, then the parts' pictures round-robin, the named parts first, never past the room", () => {
   const parts = [desk(), mia({ refs: [{ file: "m1.png", url: "/m/m1.png" }, { file: "m2.png", url: "/m/m2.png" }] }), cleanPart({ id: "p-box", name: "Box" })];
   const sceneRefs = [{ file: "s1.png", url: "/m/s1.png", name: "mood" }];
   const all = referencesFor({ parts, sceneRefs, room: 10 });
-  assert.deepEqual(all.refs.map((r) => r.name), ["mood", "desk", "mia", "desk-2", "mia-2"]);
-  assert.deepEqual([...all.named], [["mood", ["mood"]], ["desk", ["desk", "desk-2"]], ["mia", ["mia", "mia-2"]]]);
-  assert.deepEqual(referencesFor({ parts, sceneRefs, room: 3 }).refs.map((r) => r.name), ["mood", "desk", "mia"]);
-  assert.deepEqual(referencesFor({ parts, sceneRefs, room: 3, mentioned: ["mia"] }).refs.map((r) => r.name), ["mood", "mia", "desk"]);
-  assert.deepEqual(referencesFor({ parts, sceneRefs, room: 1 }).refs.map((r) => r.name), ["mood"], "the scene's own pictures come first");
+  assert.deepEqual(all.refs.map((r) => r.name), ["mia", "mood", "desk", "desk-2", "mia-2"]);
+  assert.deepEqual(new Map(all.named), new Map([["mia", ["mia", "mia-2"]], ["mood", ["mood"]], ["desk", ["desk", "desk-2"]]]));
+  assert.deepEqual(referencesFor({ parts, sceneRefs, room: 3 }).refs.map((r) => r.name), ["mia", "mood", "desk"]);
+  assert.deepEqual(referencesFor({ parts, sceneRefs, room: 1 }).refs.map((r) => r.name), ["mia"], "a likeness comes first: a model keeps a face from a picture of it");
+  assert.deepEqual(referencesFor({ parts: [desk(), parts[2]], sceneRefs, room: 1 }).refs.map((r) => r.name), ["mood"], "with no one, the scene's own pictures come first");
+  assert.deepEqual(referencesFor({ parts: [desk(), cleanPart({ id: "p-l", name: "Lamp", refs: [{ file: "l.png", url: "/m/l.png" }] })], room: 1, mentioned: ["lamp"] }).refs.map((r) => r.name), ["lamp"], "the parts named in the words go first");
   assert.deepEqual(referencesFor({ parts, sceneRefs, room: 0 }).refs, []);
   assert.deepEqual(referencesFor({ parts: [{ ...parts[0], hidden: true }], room: 4 }).refs, [], "a hidden part sends nothing");
   // a name taken by a part's tag is skipped for a picture
   const tricky = referencesFor({ parts: [desk(), cleanPart({ id: "p-d2", name: "Desk 2" })], room: 4 });
   assert.deepEqual(tricky.refs.map((r) => r.name), ["desk", "desk-3"]);
+});
+
+test("pickMaps: the colour ID first when the frame is plain clay, then a person's picture keeps its place before the depth or the silhouette", () => {
+  assert.deepEqual(pickMaps({ wanted: ["id", "depth"], strength: 0.6, room: 2, people: 1 }), ["id"], "Qwen 3.0 Pro (three pictures): the frame, the colour ID, the person");
+  assert.deepEqual(pickMaps({ wanted: ["id", "depth"], strength: 0.6, room: 9, people: 1 }), ["id", "depth"], "room enough: all of them");
+  assert.deepEqual(pickMaps({ wanted: ["id", "depth"], strength: 0.2, room: 2, people: 1 }), ["id"], "a coloured frame: the maps are extras, one left for the person");
+  assert.deepEqual(pickMaps({ wanted: ["depth", "silhouette"], strength: 0.9, room: 2, people: 0 }), ["depth", "silhouette"]);
+  assert.deepEqual(pickMaps({ wanted: ["id", "depth", "silhouette"], strength: 0.9, room: 1, people: 2 }), ["id"], "the colour ID stays: it alone says who is who over plain clay");
 });
 
 test("castOf: the visible tagged parts with their words and pictures, then the references", () => {

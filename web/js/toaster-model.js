@@ -622,8 +622,9 @@ export function castOf(parts = [], sceneRefs = [], pieceOf = () => null) {
 }
 
 /**
- * The pictures that go with a render, within the model's `room`: the scene's references first (attached on purpose), then the parts' pictures
- * one each per round (the parts named in the words first). A part's first picture is called by its tag, the next ones tag-2, tag-3.
+ * The pictures that go with a render, within the model's `room`: first each person's first picture (a model keeps a likeness from a
+ * picture of it, so a face matters most), then the scene's references (attached on purpose), then the parts' pictures one each per round
+ * (the parts named in the words first). A part's first picture is called by its tag, the next ones tag-2, tag-3.
  * Answers { refs: [{ file, url, width, height, name }], named: Map(tag -> [names]) }.
  */
 export function referencesFor({ parts = [], sceneRefs = [], room = 0, mentioned = [] } = {}) {
@@ -631,30 +632,45 @@ export function referencesFor({ parts = [], sceneRefs = [], room = 0, mentioned 
   const refs = [];
   const named = new Map();
   const used = new Set([...RESERVED, ...tags.values(), ...sceneRefs.map((r) => r.name)]);
+  const first = new Set(mentioned.map((m) => String(m).toLowerCase()));
+  const order = parts.filter((p) => tags.has(p.id) && p.refs?.length);
+  order.sort((a, b) => Number(first.has(tags.get(b.id))) - Number(first.has(tags.get(a.id))));
+  const put = (p, round) => {
+    const pic = p.refs[round];
+    const tag = tags.get(p.id);
+    let name = tag;
+    if (round) for (let i = round + 1; ; i++) if (!used.has((name = `${tag}-${i}`))) break;
+    used.add(name);
+    refs.push({ file: pic.file, url: pic.url, width: pic.width, height: pic.height, name });
+    named.set(tag, [...(named.get(tag) ?? []), name]);
+  };
+  for (const p of order.filter(isCharacter)) if (refs.length < room) put(p, 0);
   for (const r of sceneRefs) {
     if (refs.length >= room) break;
     refs.push({ file: r.file, url: r.url, width: r.width, height: r.height, name: r.name });
     named.set(r.name, [r.name]);
   }
-  const first = new Set(mentioned.map((m) => String(m).toLowerCase()));
-  const order = parts.filter((p) => tags.has(p.id) && p.refs?.length);
-  order.sort((a, b) => Number(first.has(tags.get(b.id))) - Number(first.has(tags.get(a.id))));
-  for (let round = 0; refs.length < room; round++) {
-    let more = false;
+  const most = Math.max(0, ...order.map((p) => p.refs.length));
+  for (let round = 0; round < most && refs.length < room; round++) {
     for (const p of order) {
-      const pic = p.refs[round];
-      if (!pic || refs.length >= room) continue;
-      const tag = tags.get(p.id);
-      let name = tag;
-      if (round) for (let i = round + 1; ; i++) if (!used.has((name = `${tag}-${i}`))) break;
-      used.add(name);
-      refs.push({ file: pic.file, url: pic.url, width: pic.width, height: pic.height, name });
-      named.set(tag, [...(named.get(tag) ?? []), name]);
-      more = true;
+      if (refs.length >= room) break;
+      if (!p.refs[round] || (round === 0 && isCharacter(p))) continue;
+      put(p, round);
     }
-    if (!more) break;
   }
   return { refs, named };
+}
+
+/**
+ * Which control maps go, within the model's room for pictures: the colour ID first when the frame is plain grey clay (it alone says who
+ * is who then), then each person's picture keeps its place before the other maps (depth, silhouette) take what is left. In the maps' order.
+ */
+export function pickMaps({ wanted = [], strength = STRENGTH, room = 0, people = 0 } = {}) {
+  const ids = MAPS.map((m) => m.id).filter((id) => wanted.includes(id));
+  const must = plainFrame(strength, ids) ? ["id"] : [];
+  const rest = ids.filter((id) => !must.includes(id)).slice(0, Math.max(0, room - must.length - people));
+  const keep = new Set([...must, ...rest].slice(0, room));
+  return ids.filter((id) => keep.has(id));
 }
 
 // ---------------------------------------------------------------- the words sent with the clay

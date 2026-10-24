@@ -5,7 +5,7 @@
 import { changed, toast, waitFor, jobWatchers, writer } from "./store.js";
 import { api } from "./api.js";
 import { keyedSaver } from "./saving.js";
-import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, factsOf, factsKey, promptStale, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS, plainFrame, keepOf, described, tagsOf, castOf, referencesFor, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
+import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, factsOf, factsKey, promptStale, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS, plainFrame, keepOf, described, tagsOf, castOf, referencesFor, pickMaps, isCharacter, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
 
 const KIND = "toasts";
 // where a draft's camera starts: the studio's own view, the floor around the object in sight
@@ -745,8 +745,11 @@ export function framePlan() {
   const b = body();
   const model = modelNow();
   const total = model?.templates?.find((t) => t.id === "edit")?.refs ?? 4;
-  const maps = MAPS.filter((m) => b.maps.includes(m.id)).slice(0, Math.max(0, total - 1));
   const parts = b.parts;
+  // (a model with little room for pictures keeps a person's picture before the depth or the silhouette)
+  const people = parts.filter((p) => !p.hidden && isCharacter(p) && p.refs?.length).length;
+  const picked = pickMaps({ wanted: b.maps, strength: b.strength, room: Math.max(0, total - 1), people });
+  const maps = MAPS.filter((m) => picked.includes(m.id));
   // (only the user's own prompt picks the pictures: a written one must not change the facts it was written from)
   const mentioned = mentionsIn(`${b.promptBy === "you" ? b.prompt : ""} ${b.what} ${b.scene}`);
   const { refs, named } = referencesFor({ parts, sceneRefs: b.refs, room: Math.max(0, total - 1 - maps.length), mentioned });
@@ -825,15 +828,13 @@ export async function renderFrame() {
   b.camera = run.camera;
   update("toaster-runs");
   try {
-    // the control maps beside it, as many as the model takes (the frame is its first picture)
-    const room = Math.max(0, (model.templates?.find((t) => t.id === "edit")?.refs ?? 4) - 1);
-    const maps = MAPS.filter((m) => b.maps.includes(m.id)).slice(0, room);
+    // the pictures that go (the frame first, the control maps, the references within the room left) and the facts the writer reads
+    const plan = framePlan();
+    const maps = plan.maps;
     // (strong enough, with the colour ID sent to say who is who, the frame goes in plain grey clay: its colours would pull the picture to them)
     run.frame = await keepPicture(v.frameStill({ long: 1536, plain: plainFrame(b.strength, maps.map((m) => m.id)) }), `${draft.name} clay`);
     run.maps = [];
     for (const m of maps) run.maps.push({ ...(await keepPicture(v.frameStill({ long: 1536, channel: m.id }), `${draft.name} ${m.name}`)), name: m.name });
-    // the pictures that go with them (the scene's references, then the parts', within the room left) and the words that name them
-    const plan = framePlan();
     const sent = plan.refs;
     // the user's own prompt is sent as written; else the writer's, written now when there is none or it is out of date (if the writer fails, the template)
     if (b.promptBy !== "you" && (!b.prompt.trim() || plan.stale) && hasFacts(plan.facts)) {
