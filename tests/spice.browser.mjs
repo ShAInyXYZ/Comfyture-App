@@ -233,10 +233,12 @@ try {
   const l1 = await lit();
   ok(l1.w > 100 && l1.flame > 200, "the viewer draws the flame live over the footage", JSON.stringify(l1));
   // its handles: moved, scaled by a corner, turned by the knob
+  // (measured again: with a layer, the timeline under the picture is one row, so the picture is taller and wider)
+  const nowStage = await page.locator(".sp-stage").boundingBox();
   const gz = await page.locator(".sp-gizmo").boundingBox();
   await page.mouse.move(gz.x + gz.width / 2, gz.y + gz.height / 2);
   await page.mouse.down();
-  await page.mouse.move(gz.x + gz.width / 2 + fxStage.width * 0.2, gz.y + gz.height / 2, { steps: 6 });
+  await page.mouse.move(gz.x + gz.width / 2 + nowStage.width * 0.2, gz.y + gz.height / 2, { steps: 6 });
   await page.mouse.up();
   await settle();
   const se = await page.locator(".sp-gz-corner.is-se").boundingBox();
