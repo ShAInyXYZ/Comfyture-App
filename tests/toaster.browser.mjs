@@ -113,6 +113,15 @@ try {
     const p = photos.find((x) => x.file === file);
     return route.fulfill({ status: 202, json: [{ id: `pic-${pictures.length}`, status: "done", progress: 1, photo: { file, url: `/media/photos/${file}`, width: p?.width, height: p?.height } }] });
   });
+  // the writer, stood in for: it answers from the facts it was sent (a test can make it fail or say something else); the requests are kept
+  const writes = [];
+  let writerStub = (ask) => ({ prompt: `Written for ${ask.facts.model.name}: ${ask.facts.pictures.map((p) => `@${p.name}`).join(" ")}. ${ask.facts.what} ${ask.facts.scene}`.trim() });
+  await page.route("**/api/toaster/write", (route) => {
+    const ask = route.request().postDataJSON();
+    writes.push(ask);
+    const answer = writerStub(ask);
+    return answer ? route.fulfill({ json: answer }) : route.fulfill({ status: 502, json: { error: "The writer is down." } });
+  });
   // Pixal3D's multi-view template on Comfy Cloud, stood in for: its form, its price, and a run that is over at once with a GLB
   await page.route("**/api/utensils/templates/**", (route) => {
     const url = new URL(route.request().url());
@@ -353,14 +362,19 @@ try {
   const frameAsk = pictures[0];
   ok(frameAsk?.template === "edit" && frameAsk.refs?.[0]?.name === "frame" && frameAsk.aspect === "1:1", "Toast it sends the clay frame to an image edit, at the frame's aspect", JSON.stringify(frameAsk && { template: frameAsk.template, refs: frameAsk.refs, aspect: frameAsk.aspect }));
   ok(JSON.stringify(frameAsk?.refs?.map((r) => r.name)) === JSON.stringify(["frame", "colour-id", "depth"]), "with its control maps: the colour ID and the depth", JSON.stringify(frameAsk?.refs));
-  ok(/In @colour-id each flat colour is one thing/.test(frameAsk?.prompt) && /@depth shows how far things are/.test(frameAsk?.prompt), "the words name the maps and what they say");
-  ok(/@frame is in plain grey clay/.test(frameAsk?.prompt) && frameAsk?.keep === 0.888, "at the middle strength, with the colour ID sent, the frame goes in plain grey clay, and an open-weights edit keeps 0.888", JSON.stringify({ keep: frameAsk?.keep }));
+  const firstWrite = writes[0];
+  ok(writes.length === 1 && typeof firstWrite.imageModel === "string" && firstWrite.facts?.model?.id === firstWrite.imageModel && firstWrite.facts.model.name && firstWrite.model, "Toast it with no prompt asks the writer first, with the image model and the facts", JSON.stringify(firstWrite?.facts?.model));
+  ok(JSON.stringify(firstWrite.facts.pictures.map((p) => p.name)) === JSON.stringify(["frame", "colour-id", "depth"]) && firstWrite.facts.pictures[0].plain === true && firstWrite.facts.pictures[1].map === "id", "the facts list the pictures sent, in order: the frame (plain grey clay), the colour ID, the depth", JSON.stringify(firstWrite.facts.pictures));
+  ok(firstWrite.facts.strength.percent === 60 && firstWrite.facts.strength.band === "middle" && /A retro 1950s toaster/.test(firstWrite.facts.what) && /marble counter/i.test(firstWrite.facts.scene), "and the strength, what it is and the look");
+  ok(firstWrite.facts.who.some((g) => g.colour === "orange" && g.things.some((t) => /walnut/.test(t.name))) && firstWrite.facts.who.some((g) => g.colour === "blue" && g.things.some((t) => /swivel office chair/.test(t.name))) && !/Cylinder|Office chair/.test(JSON.stringify(firstWrite.facts.who)), "and who is what by clay colour (a piece by the head of the library's description, never a part's name)", JSON.stringify(firstWrite.facts.who));
+  ok(frameAsk.prompt === `Written for ${firstWrite.facts.model.name}: @frame @colour-id @depth. ${firstWrite.facts.what} ${firstWrite.facts.scene}`, "the image edit gets exactly the written prompt", frameAsk.prompt);
+  ok(frameAsk?.keep === 0.888, "at the middle strength an open-weights edit keeps 0.888", JSON.stringify({ keep: frameAsk?.keep }));
+  ok((await draft()).body.promptBy === "writer" && (await draft()).body.prompt === frameAsk.prompt && (await draft()).body.promptFor?.model === firstWrite.imageModel, "which is kept as the writer's, with the model it was written for");
   {
     const lib = await (await fetch(`${base}/api/photos`)).json();
     const [fr, id, dp] = frameAsk.refs.map((r) => lib.find((p) => p.file === r.file));
     ok(fr && id && dp && fr.width === id.width && fr.height === dp.height, "the maps are the frame's very size", JSON.stringify([fr, id, dp].map((p) => p && `${p.width}x${p.height}`)));
   }
-  ok(/^Turn @frame, a clay blockout/.test(frameAsk?.prompt) && /orange is walnut/.test(frameAsk?.prompt) && /blue is a swivel office chair[;.]/.test(frameAsk?.prompt) && !/Cylinder|Office chair/.test(frameAsk?.prompt) && /A retro 1950s toaster/.test(frameAsk?.prompt) && /marble counter/i.test(frameAsk?.prompt), "its words tell the clay's colours (a piece by the head of the library's description), the object and the scene", frameAsk?.prompt);
   d = await draft();
   ok(d.body.renders[0]?.status === "done" && d.body.renders[0].photo?.url && d.body.renders[0].camera, "the render is kept with its camera");
   ok(await page.locator(".ts-studio .ts-pic img").isVisible(), "the render shows in the studio");
@@ -696,44 +710,55 @@ try {
   await page.waitForSelector(".peek:not([hidden])", { timeout: 2000 }).catch(() => {});
   ok(/walnut/.test(await page.locator(".peek").innerText()), "hovering a pill shows its sheet");
   await page.mouse.move(700, 500);
-  // the prompt: automatic (dimmed, Auto) until it is written
-  ok((await page.locator(".ts-prompt-head .ts-badge").textContent()) === "Auto" && (await page.locator(".ts-pills.is-prompt.is-auto").count()) === 1, "the prompt is automatic: dimmed, with an Auto badge");
-  const autoText = await page.locator(".ts-pills.is-prompt").textContent();
-  ok(/^Turn @frame, a clay blockout/.test(autoText) && /exactly as in @desk/.test(autoText) && /@mood-board is a reference picture/.test(autoText), "it shows the words with their @tags, unexpanded", autoText);
-  // Improve, with the writer stood in for
-  const improved = [];
-  await page.route("**/api/toaster/improve", (route) => {
-    improved.push(route.request().postDataJSON());
-    return route.fulfill({ json: { prompt: "Render @frame as a warm photograph: @desk is the desk, exactly as in that picture, lit like @mood-board." } });
+  // the prompt the first Toast wrote: the badge says who wrote it and for which model
+  const names = await js(async () => {
+    const { writer, writers } = await import("/js/store.js");
+    const { modelNow } = await import("/js/toaster.js");
+    const w = writers().find((m) => m.id === writer("assistant"));
+    return { writer: w?.short ?? w?.name, model: modelNow().short ?? modelNow().name };
   });
+  const badge = () => page.locator(".ts-prompt-head .ts-badge").textContent();
+  ok((await badge()) === "Not written yet" && (await page.locator(".ts-prompt-head .ts-improve").textContent()).trim() === "Write", "nothing is written yet: the badge says so and the key is Write", await badge());
+  // Write, with the writer stood in for: it writes now, from the facts, the frame and a picture of each sheet
+  const wroteBefore = writes.length;
   await page.locator(".ts-improve").click();
-  await until(() => window.__toaster.draft.body.prompt.startsWith("Render @frame as a warm"), null, 8000);
-  const ask = improved[0];
-  ok(ask?.what.includes("@desk") && ask.cast?.some((c) => c.tag === "desk" && c.kind === "shape" && c.words.startsWith("a walnut") && c.pictures.join() === "desk") && ask.cast.some((c) => c.tag === "mood-board" && c.kind === "reference"), "Improve sends the words and the cast with its sheets", JSON.stringify(ask?.cast));
-  ok(JSON.stringify(ask?.refs?.map((r) => r.name)) === JSON.stringify(["frame", "mood-board", "desk"]) && ask.refs.every((r) => r.file) && typeof ask.model === "string", "and the clay frame, then a picture of each sheet", JSON.stringify(ask?.refs));
-  ok(/^Turn @frame, a clay blockout/.test(ask.prompt), "the draft to improve is the automatic prompt");
-  await page.waitForFunction(() => document.querySelector(".ts-pills.is-prompt")?.textContent.startsWith("Render @frame as a warm"), null, { timeout: 3000 }).catch(() => {});
-  ok((await page.locator(".ts-prompt-head .ts-badge").textContent()) === "Yours" && (await page.locator(".ts-pills.is-prompt.is-auto").count()) === 0 && /sent as written/.test(await page.locator(".ts-prompt-head").textContent()), "the Prompt field holds it as the user's own", await page.locator(".ts-prompt-head").textContent());
+  await until(() => window.__toaster.draft.body.promptBy === "writer", null, 8000);
+  ok((await badge()) === `Written by ${names.writer} for ${names.model}` && names.writer && names.model, "the badge then says who wrote the prompt and for which model", await badge());
+  ok(/^Written for /.test(await page.locator(".ts-pills.is-prompt").textContent()), "and the field shows it");
+  const ask = writes[wroteBefore];
+  ok(writes.length === wroteBefore + 1 && ask.facts.who.some((g) => g.things.some((t) => t.pictures?.join() === "desk")) && ask.facts.pictures.some((p) => p.name === "mood-board" && p.kind === "look") && ask.facts.pictures.some((p) => p.name === "desk" && p.kind === "part" && p.sheet === "shape"), "Write sends the facts: the sheets' pictures by @name and what each is", JSON.stringify(ask?.facts?.pictures));
+  ok(JSON.stringify(ask?.refs?.map((r) => r.name)) === JSON.stringify(["frame", "mood-board", "desk"]) && ask.refs.every((r) => r.file) && typeof ask.model === "string" && ask.prompt === undefined, "and the clay frame, then a picture of each sheet, and no draft when the writer's own is there", JSON.stringify(ask?.refs));
+  ok((await draft()).body.promptBy === "writer" && (await badge()).startsWith("Written by "), "it is the writer's prompt");
+  // typing makes it the user's own
+  await page.locator(".ts-pills.is-prompt").click();
+  await page.keyboard.press("Control+A");
+  await page.keyboard.type("A warm photograph of the desk, lit like the mood board.");
+  await page.waitForTimeout(200);
+  ok((await badge()) === "Yours" && (await draft()).body.promptBy === "you" && (await page.locator(".ts-pills.is-prompt.is-auto").count()) === 0, "typing in the field makes the prompt Yours", await badge());
   // toasted: the own prompt as written, with the pictures by their @names
+  const writtenBefore = writes.length;
   await page.locator(".ts-studio .ts-toast").click();
-  await until(() => window.__toaster.draft.body.renders[0]?.status === "done" && window.__toaster.draft.body.renders[0].prompt.startsWith("Render @frame as a warm"));
+  await until(() => window.__toaster.draft.body.renders[0]?.status === "done" && window.__toaster.draft.body.renders[0].prompt.startsWith("A warm photograph"));
   const own = pictures.at(-1);
-  const names = own.refs.map((r) => r.name);
-  ok(["frame", "colour-id", "desk", "mood-board"].every((n) => names.includes(n)), "Toast it sends the frame, the map, the part's picture and the scene reference", names.join());
-  ok(own.prompt === "Render @frame as a warm photograph: @desk is the desk, exactly as in that picture, lit like @mood-board.", "its prompt is the user's own, as written");
+  const sentNames = own.refs.map((r) => r.name);
+  ok(["frame", "colour-id", "desk", "mood-board"].every((n) => sentNames.includes(n)), "Toast it sends the frame, the map, the part's picture and the scene reference", sentNames.join());
+  ok(own.prompt === "A warm photograph of the desk, lit like the mood board." && writes.length === writtenBefore, "its prompt is the user's own, as written, with no call to the writer");
   d = await draft();
   ok(d.body.renders[0].refs.map((r) => r.name).join() === "mood-board,desk" && d.body.renders[0].prompt === own.prompt, "the render keeps what was sent: its prompt and the pictures by name", JSON.stringify(d.body.renders[0].refs));
   await page.locator('.ts-studio [aria-label^="What was sent"]').click();
   await page.waitForSelector(".ts-sent:not([hidden]) figure", { timeout: 3000 });
   ok(/warm photograph/.test(await page.locator(".ts-sent-prompt").innerText()) && (await page.locator(".ts-sent figcaption").allInnerTexts()).join() === "@frame,@colour-id,@mood-board,@desk", "What was sent shows the prompt and the pictures by @name", (await page.locator(".ts-sent figcaption").allInnerTexts()).join());
   await shot("5-studio");
-  // back to automatic: the next render's words carry the sheet
+  // back to automatic: nothing is written until the next Toast, which asks the writer again
   await page.locator('.ts-studio [aria-label="Back to automatic"]').click();
-  ok((await page.locator(".ts-prompt-head .ts-badge").textContent()) === "Auto" && (await draft()).body.prompt === "", "Back to automatic clears the user's own prompt");
+  ok((await badge()) === "Not written yet" && (await draft()).body.prompt === "" && (await draft()).body.promptBy === "" && /writes it for .* from its guide when you toast; Write shows it first/.test(await page.locator(".ts-pills.is-prompt").getAttribute("data-placeholder")), "Back to automatic clears the user's own prompt: Not written yet, with its placeholder", await badge());
+  writerStub = (ask) => ({ prompt: `Auto for ${ask.facts.model.name}, strength ${ask.facts.strength.percent}, plain ${ask.facts.pictures[0].plain}.` });
   await page.locator(".ts-studio .ts-toast").click();
   await until(() => window.__toaster.draft.body.renders.length === 2 && window.__toaster.draft.body.renders[0].status === "done");
   const auto = pictures.at(-1);
-  ok(/a walnut mid-century desk with brass handles \(exactly as in @desk\)/.test(auto.prompt) && /, exactly as in @desk[;.]/.test(auto.prompt) && /@mood-board is a reference picture/.test(auto.prompt) && /like @mood-board\./.test(auto.prompt), "the automatic prompt names the part by its sheet: exactly as in @desk, its words", auto.prompt);
+  const autoWrite = writes.at(-1);
+  ok(writes.length === writtenBefore + 1 && auto.prompt === `Auto for ${autoWrite.facts.model.name}, strength 60, plain true.`, "the next Toast writes again and renders with exactly that", auto.prompt);
+  ok(autoWrite.facts.who.some((g) => g.things.some((t) => /walnut/.test(t.name + (t.words ?? "")) && t.pictures?.join() === "desk")) && autoWrite.facts.pictures.some((p) => p.name === "mood-board" && p.kind === "look"), "its facts point the part at its pictures and the reference at the look", JSON.stringify(autoWrite.facts.who));
   ok(["frame", "colour-id", "desk", "mood-board"].every((n) => auto.refs.map((r) => r.name).includes(n)), "and sends the same pictures");
   // Crumpet is told the tag and the pictures
   const told = await js(async () => (await import("/js/toaster-assist.js")).summary().parts[0]);
@@ -748,11 +773,37 @@ try {
     el.dispatchEvent(new Event("change", { bubbles: true }));
   });
   await page.waitForTimeout(300);
-  ok((await draft()).body.strength === 0.2 && /Keep its camera, framing, layout and colours/.test(await page.locator(".ts-studio .ts-pills.is-prompt").innerText()), "moved to 20%, it is kept with the project and the automatic prompt keeps the clay's colours", String((await draft()).body.strength));
+  ok((await draft()).body.strength === 0.2 && (await badge()) === "Out of date: rewritten when you toast", "moved to 20%, it is kept with the project and the writer's prompt is out of date", `${(await draft()).body.strength} ${await badge()}`);
   await page.locator(".ts-studio .ts-toast").click();
   await until(() => window.__toaster.draft.body.renders.length === 3 && window.__toaster.draft.body.renders[0].status === "done");
   const weak = pictures.at(-1);
-  ok(!/plain grey clay/.test(weak.prompt) && weak.keep === 0.796 && (await draft()).body.renders[0].strength === 0.2, "a weak render sends the frame in its colours, keeps the edit at 0.796, and remembers its strength", JSON.stringify({ keep: weak.keep }));
+  ok(weak.prompt.endsWith("strength 20, plain false.") && writes.at(-1).facts.strength.band === "low" && weak.keep === 0.796 && (await draft()).body.renders[0].strength === 0.2, "a weak render is written again at low strength with the frame in its colours, keeps the edit at 0.796, and remembers its strength", JSON.stringify({ keep: weak.keep, prompt: weak.prompt }));
+  ok((await badge()).startsWith("Written by "), "and the prompt is the writer's again");
+
+  // the image model changed: the writer's prompt is out of date, nothing is written by itself, and the next Toast writes for the new model
+  const other = await js(async () => {
+    const { toaster, modelNow, setModel } = await import("/js/toaster.js");
+    const now = modelNow();
+    const next = toaster.models.models.find((m) => m.id !== now.id);
+    const at = (await import("/js/toaster.js")).toaster.draft.body.renders.length;
+    setModel(next.id);
+    return { id: next.id, at };
+  });
+  await page.waitForTimeout(300);
+  const countAfterChange = writes.length;
+  ok((await badge()) === "Out of date: rewritten when you toast" && countAfterChange === writes.length, "changing the model makes the writer's prompt Out of date", await badge());
+  await page.locator(".ts-studio .ts-toast").click();
+  await until(() => window.__toaster.draft.body.renders.length === 4 && window.__toaster.draft.body.renders[0].status === "done");
+  ok(writes.length === countAfterChange + 1 && writes.at(-1).imageModel === other.id && pictures.at(-1).prompt.startsWith("Auto for ") && (await draft()).body.promptFor.model === other.id, "the next Toast writes again, for the new model", writes.at(-1)?.imageModel);
+
+  // the writer failing: the template is sent, with a toast saying so
+  await js(async () => (await import("/js/toaster.js")).setPrompt(""));
+  writerStub = () => null;
+  await page.locator(".ts-studio .ts-toast").click();
+  await until(() => window.__toaster.draft.body.renders.length === 5 && window.__toaster.draft.body.renders[0].status === "done");
+  ok(/^Turn @frame, a clay blockout/.test(pictures.at(-1).prompt) && /walnut mid-century desk/.test(pictures.at(-1).prompt), "when the writer fails the template is sent", pictures.at(-1).prompt);
+  ok(/could not write the prompt/.test(await page.locator("#toast").textContent()), "with a toast saying so", await page.locator("#toast").textContent());
+  ok((await draft()).body.prompt === "" && (await badge()) === "Not written yet", "and nothing is kept as written");
 
   ok(outbound.length === 0, "no call left the machine", outbound.join(" "));
   ok(errors.length === 0, "no error on the page", errors.join(" | "));

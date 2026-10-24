@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   SHAPES, PALETTE, RATIOS, SHEET, VIEWS, TO_3D, shapeOf, roundLabel, hasSides, colorName, sheetScale,
-  cleanPart, cleanDraft, newPart, strengthWords, plainFrame, keepOf, STRENGTH, shortOf, mirrorPart, duplicatePart, starterDraft, legendOf, describeOf, described, framePrompt, sheetPrompt, newAssetPart, isAsset, freeSpot, newCharacterPart, isCharacter, tagsOf, castOf, referencesFor, expandPrompt, RESERVED, newSceneRef, addRef, mentionsIn, idColor, familyOf, colourByKind, personColor, FAMILIES, PEOPLE,
+  cleanPart, cleanDraft, newPart, strengthWords, plainFrame, keepOf, STRENGTH, shortOf, mirrorPart, duplicatePart, starterDraft, legendOf, describeOf, described, framePrompt, sheetPrompt, newAssetPart, isAsset, freeSpot, newCharacterPart, isCharacter, tagsOf, castOf, referencesFor, expandPrompt, factsOf, factsKey, promptStale, RESERVED, newSceneRef, addRef, mentionsIn, idColor, familyOf, colourByKind, personColor, FAMILIES, PEOPLE,
 } from "../web/js/toaster-model.js";
 
 test("ten shapes, each with a size; the slider and the sides only where they mean something", () => {
@@ -422,4 +422,53 @@ test("the strength: how far a render goes from the clay, in its words, the frame
   assert.equal(shortOf(cleanPart({ shape: "asset", asset: "desk", made: "a mahogany desk with brass handles" }), pieceOf), "a mahogany desk with brass handles");
   assert.equal(shortOf(cleanPart({ shape: "character", body: "man", name: "Giorno", made: "a slim young man" })), "Giorno");
   assert.equal(shortOf(cleanPart({ shape: "character", body: "man", name: "Man 2", made: "a chef in whites" })), "a chef in whites", "a body's name says nothing: the words do");
+});
+
+test("factsOf: the model, the pictures in order with their kinds, the strength, and who is what by colour with people first", () => {
+  const parts = [desk(), mia(), cleanPart({ id: "p-ch", shape: "asset", asset: "office-chair", name: "Guest_1", color: "#76aef2" }), cleanPart({ id: "p-ch2", shape: "asset", asset: "office-chair", name: "Guest_2", color: "#76aef2" })];
+  const sceneRefs = [{ file: "s1.png", url: "/m/s1.png", name: "mood" }];
+  const { refs, named } = referencesFor({ parts, sceneRefs, room: 6 });
+  const model = { id: "qwen-image-3.0-pro", name: "Qwen 3.0 Pro", total: 6 };
+  const f = factsOf({ parts, what: "A study", scene: "Dusk", maps: ["id", "depth"], sceneRefs, refs, named, strength: 0.8, plain: true, model });
+  assert.deepEqual(f.model, { id: "qwen-image-3.0-pro", name: "Qwen 3.0 Pro", pictures: 6 });
+  assert.deepEqual(f.pictures.map((p) => `${p.name}:${p.kind}`), ["frame:frame", "colour-id:map", "depth:map", ...refs.map((r) => `${r.name}:${r.name === "mood" ? "look" : "part"}`)]);
+  assert.equal(f.pictures[0].plain, true);
+  assert.equal(f.pictures.find((p) => p.name === "mia").sheet, "character");
+  assert.equal(f.pictures.find((p) => p.name === "mia").of, "Mia");
+  assert.deepEqual(f.strength, { percent: 80, band: "high" });
+  assert.equal(f.what, "A study");
+  assert.equal(f.who[0].people, true);
+  assert.deepEqual(f.who[0].things[0], { name: "Mia", words: f.who[0].things[0].words, pictures: ["mia"], count: 1 });
+  const chairs = f.who.find((g) => g.colour === "sky blue");
+  assert.equal(chairs.things.length, 1);
+  assert.equal(chairs.things[0].count, 2, "equal things are counted");
+  assert.ok(!JSON.stringify(f).includes("Guest"), "no part name or id");
+  assert.equal(factsOf({ strength: 0.2 }).strength.band, "low");
+  assert.equal(factsOf({ strength: 0.5 }).strength.band, "middle");
+});
+
+test("a prompt the writer wrote is stale when the image model or the facts changed; the user's is never", () => {
+  const f = factsOf({ parts: [desk()], what: "A study" });
+  const key = factsKey(f);
+  const wrote = { prompt: "Render it.", promptBy: "writer", promptFor: { model: "a", key } };
+  assert.equal(promptStale(wrote, "a", key), false);
+  assert.equal(promptStale(wrote, "b", key), true, "another image model");
+  assert.equal(promptStale(wrote, "a", factsKey(factsOf({ parts: [desk()], what: "A study", scene: "Dusk" }))), true, "other facts");
+  assert.equal(factsKey(factsOf({ parts: [desk()], what: "A study", model: { id: "x", name: "X", total: 3 } })), key, "the model is not in the key: it is checked apart");
+  assert.notEqual(factsKey(factsOf({ parts: [desk()], what: "A study", strength: 0.1 })), key);
+  assert.equal(promptStale({ ...wrote, promptBy: "you" }, "b", "other"), false);
+  assert.equal(promptStale({ prompt: "", promptBy: "", promptFor: null }, "b", key), false, "nothing written is not stale: it is not written");
+});
+
+test("cleanDraft keeps who wrote the prompt and what it was written for", () => {
+  const w = cleanDraft({ prompt: "Render it.", promptBy: "writer", promptFor: { model: "flux-2-pro", key: "k1" } });
+  assert.equal(w.promptBy, "writer");
+  assert.deepEqual(w.promptFor, { model: "flux-2-pro", key: "k1" });
+  const y = cleanDraft({ prompt: "Mine.", promptBy: "you", promptFor: { model: "x", key: "y" } });
+  assert.equal(y.promptBy, "you");
+  assert.equal(y.promptFor, null);
+  assert.equal(cleanDraft({ prompt: "An older own prompt." }).promptBy, "you", "a prompt from before is the user's");
+  const none = cleanDraft({ prompt: "  ", promptBy: "writer", promptFor: { model: "x", key: "y" } });
+  assert.deepEqual([none.promptBy, none.promptFor], ["", null], "no prompt, nobody wrote it");
+  assert.deepEqual([cleanDraft({}).promptBy, cleanDraft({}).promptFor], ["", null]);
 });

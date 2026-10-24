@@ -5,7 +5,7 @@
 import { changed, toast, waitFor, jobWatchers, writer } from "./store.js";
 import { api } from "./api.js";
 import { keyedSaver } from "./saving.js";
-import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS, plainFrame, keepOf, described, tagsOf, castOf, referencesFor, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
+import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, factsOf, factsKey, promptStale, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS, plainFrame, keepOf, described, tagsOf, castOf, referencesFor, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
 
 const KIND = "toasts";
 // where a draft's camera starts: the studio's own view, the floor around the object in sight
@@ -59,8 +59,8 @@ export const toaster = {
   mode: read(MODE) === "render" ? "render" : "scene",
   /** the library's piece of a type (the page sets it once the library is read): what a part is called in words */
   pieceOf: () => null,
-  /** whether Improve is writing the prompt */
-  improving: false,
+  /** whether the writer is writing the prompt */
+  writing: false,
 };
 let undo = [];
 let redo = [];
@@ -727,17 +727,19 @@ export async function takeRef(ref, photo) {
   toast(`The picture is ${where} now.`);
 }
 
-/** The prompt written by hand or by Improve ("" goes back to the automatic one, composed at render time). */
+/** The prompt written by hand (it is then the user's, sent as written); "" gives it back to the writer. */
 export function setPrompt(text) {
   const b = body();
   if (!b) return;
   b.prompt = String(text ?? "").slice(0, 6000);
+  b.promptBy = b.prompt.trim() ? "you" : "";
+  b.promptFor = null;
   save();
 }
 
 /**
  * What a render would send from the draft as it is: the maps (as many as the model's room takes beside the frame), the pictures (the scene's
- * references, then the parts'), the automatic prompt with its @tags, and who is in the frame.
+ * references, then the parts'), the template prompt (the fallback), the facts the writer writes from, and who is in the frame.
  */
 export function framePlan() {
   const b = body();
@@ -745,35 +747,63 @@ export function framePlan() {
   const total = model?.templates?.find((t) => t.id === "edit")?.refs ?? 4;
   const maps = MAPS.filter((m) => b.maps.includes(m.id)).slice(0, Math.max(0, total - 1));
   const parts = b.parts;
-  const mentioned = mentionsIn(`${b.prompt} ${b.what} ${b.scene}`);
+  // (only the user's own prompt picks the pictures: a written one must not change the facts it was written from)
+  const mentioned = mentionsIn(`${b.promptBy === "you" ? b.prompt : ""} ${b.what} ${b.scene}`);
   const { refs, named } = referencesFor({ parts, sceneRefs: b.refs, room: Math.max(0, total - 1 - maps.length), mentioned });
   const tags = tagsOf(parts, b.refs.map((r) => r.name));
-  const auto = framePrompt({ parts, what: b.what, scene: b.scene, maps: maps.map((m) => m.id), sceneRefs: b.refs, named, tags, pieceOf: toaster.pieceOf, strength: b.strength });
-  return { model, maps, refs, named, auto, cast: castOf(parts, b.refs, toaster.pieceOf), prompt: b.prompt.trim() || auto };
+  const ids = maps.map((m) => m.id);
+  const auto = framePrompt({ parts, what: b.what, scene: b.scene, maps: ids, sceneRefs: b.refs, named, tags, pieceOf: toaster.pieceOf, strength: b.strength });
+  const cast = castOf(parts, b.refs, toaster.pieceOf);
+  const facts = factsOf({
+    parts, what: expandPrompt(b.what, cast, named), scene: expandPrompt(b.scene, cast, named), maps: ids, sceneRefs: b.refs, refs, named, tags, pieceOf: toaster.pieceOf,
+    strength: b.strength, plain: plainFrame(b.strength, ids), model: model && { id: model.id, name: model.short ?? model.name, total },
+  });
+  const key = factsKey(facts);
+  return { model, maps, refs, named, auto, cast, facts, key, stale: promptStale(b, model?.id, key), prompt: b.prompt.trim() };
 }
 
-/** Improve: the writer (the assistants' model) writes the prompt again from the words, the sheets and the pictures; it becomes the draft's own. */
-export async function improveWords() {
+/** Whether the writer has anything to write from: some words, or someone named. */
+const hasFacts = (f) => !!(f.what || f.scene || f.who.length);
+
+/** The writer (the assistants' model) writes the prompt for the image model from its guide; answers the text. `frame` is the clay frame, kept. */
+async function askWriter(draft, plan, frame) {
+  const b = draft.body;
+  // one picture of each sheet is shown to the writer, after the frame and the scene's references
+  const firsts = [...plan.named].map(([, names]) => plan.refs.find((r) => r.name === names[0])).filter(Boolean);
+  const out = await send("api/toaster/write", "POST", {
+    model: writer("assistant"), imageModel: plan.model.id, facts: plan.facts, prompt: b.promptBy === "you" ? b.prompt.trim() || undefined : undefined,
+    refs: [{ name: "frame", file: frame.file }, ...firsts.map((r) => ({ name: r.name, file: r.file }))],
+  });
+  const text = String(out.prompt ?? "").slice(0, 6000);
+  if (!text.trim()) throw new Error("The writer answered nothing.");
+  return text;
+}
+/** The writer's prompt kept on the draft, with what it was written for. */
+function keepWritten(b, plan, text) {
+  b.prompt = text;
+  b.promptBy = "writer";
+  b.promptFor = { model: plan.model.id, key: plan.key };
+}
+
+/** Write: the writer writes the prompt now, or again; it becomes the draft's, marked as the writer's. */
+export async function writeWords() {
   const draft = toaster.draft;
   const b = body();
   const v = toaster.view;
-  if (!draft || !b || !v || toaster.improving) return;
+  if (!draft || !b || !v || toaster.writing) return;
   if (!hasClay()) return toast("Block something out first: add a shape.", { tone: "warn" });
-  toaster.improving = true;
+  if (!modelNow()) return toast("No image model can render from the clay: connect Comfy Cloud or a partner key.", { tone: "crit" });
+  toaster.writing = true;
   changed("toaster-runs");
   try {
     const plan = framePlan();
-    const frame = await keepPicture(v.frameStill({ long: 1536 }), `${draft.name} clay`);
-    // one picture of each sheet is shown to the writer, after the frame and the scene's references
-    const firsts = [...plan.named].map(([, names]) => plan.refs.find((r) => r.name === names[0])).filter(Boolean);
-    const cast = plan.cast.map((c) => ({ tag: c.tag, name: c.name ?? c.tag, kind: c.ref ? "reference" : c.kind, color: c.color ? colorName(c.color) : undefined, words: c.words, pictures: plan.named.get(c.tag) ?? [] }));
-    const out = await send("api/toaster/improve", "POST", { model: writer("assistant"), what: b.what, scene: b.scene, prompt: b.prompt.trim() || plan.auto, cast, refs: [{ name: "frame", file: frame.file }, ...firsts.map((r) => ({ name: r.name, file: r.file }))] });
-    if (toaster.draft === draft) b.prompt = String(out.prompt ?? "").slice(0, 6000);
+    const frame = await keepPicture(v.frameStill({ long: 1536, plain: plan.facts.pictures[0].plain }), `${draft.name} clay`);
+    keepWritten(b, plan, await askWriter(draft, plan, frame));
     save(draft);
   } catch (e) {
     toast(e.message, { tone: "crit" });
   } finally {
-    toaster.improving = false;
+    toaster.writing = false;
     changed("toaster-runs");
     changed("toaster");
   }
@@ -805,7 +835,23 @@ export async function renderFrame() {
     // the pictures that go with them (the scene's references, then the parts', within the room left) and the words that name them
     const plan = framePlan();
     const sent = plan.refs;
-    run.prompt = b.prompt.trim() || expandPrompt(plan.auto, plan.cast, plan.named);
+    // the user's own prompt is sent as written; else the writer's, written now when there is none or it is out of date (if the writer fails, the template)
+    if (b.promptBy !== "you" && (!b.prompt.trim() || plan.stale) && hasFacts(plan.facts)) {
+      toaster.writing = true;
+      changed("toaster-runs");
+      try {
+        keepWritten(b, plan, await askWriter(draft, plan, run.frame));
+        save(draft);
+      } catch (e) {
+        toast(`The writer could not write the prompt (${e.message}): the template is used.`, { tone: "warn" });
+        run.prompt = expandPrompt(plan.auto, plan.cast, plan.named);
+      } finally {
+        toaster.writing = false;
+        changed("toaster-runs");
+        changed("toaster");
+      }
+    }
+    run.prompt ||= b.prompt.trim() || expandPrompt(plan.auto, plan.cast, plan.named);
     run.refs = sent.map((r) => ({ name: r.name, url: r.url }));
     const done = await picture(run, request(model, run.prompt, [{ ...run.frame, name: "frame" }, ...run.maps, ...sent], b.ratio, draft.name, keepOf(b.strength)));
     run.photo = media(done.photo);

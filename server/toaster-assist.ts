@@ -368,39 +368,85 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
   return { reply: cut(raw.reply, 600), actions: kept };
 }
 
-// ---------------------------------------------------------------- Improve: the prompt, written for the image model
+// ---------------------------------------------------------------- Write: the prompt, written for the image model from its guide
 
-/** The brief of the writer that improves a render's prompt. */
-export const TOASTER_IMPROVE_BRIEF = `You write the one prompt an image-edit model reads to turn a clay blockout (@frame) into a finished picture. The user gives you their words, the draft prompt, who is in the frame (each by its @name, with its words and pictures), and you may see the pictures, each named by its @name in the text.
+/** The brief of the writer that writes a render's prompt. The model's own guide is added after it, by the route. */
+export const TOASTER_WRITE_BRIEF = `You write the one prompt that a named image-edit model reads to turn a clay blockout into a finished picture. You are given the facts (the model, the pictures sent in order with what each is, what it is, the look, the strength, who is what) and may see the first pictures.
 
-Keep the frame's camera, its framing, its layout and every part's place and size. Keep every @name exactly as given, and say what each picture is for ("@desk is the desk, exactly as in that picture"; a reference picture sets the look, never the layout). The control maps (@colour-id, @depth, @silhouette) only say where things are: the materials, the light, the lens and the mood come from the user's words and the sheets. Invent nothing that is not in the frame or the words.
+Follow THE MODEL'S GUIDE (after this brief) for the prompt's structure, order, length, wording and how to refer to the pictures.
+- Refer to every picture by its @name exactly as given (the app turns @names into the model's own references), give each its role as the guide says, and use only the pictures listed. Where the guide's examples write "image 1", "image 2", <image1> or <<<image_1>>>, write the @name instead (@frame, @colour-id, @giorno…): the app numbers them in the order they are really sent.
+- Keep the layout, the camera and every thing's place and size from the clay (@frame).
+- The user's look and what it is lead: never a default "photograph" when they asked for a style.
+- The strength says how far to go from the clay. Low: keep the clay's colours. Middle: real materials; the colours only label who is who. High: only the layout and the forms stay; all-new materials and light.
+- Name things by what they are, never by ids or clay colours.
+- For a person with a reference picture, point at that picture for their likeness instead of describing their face.
+- Invent nothing outside the facts and the user's words.
+- If a draft prompt is given, improve it; keep what the user said.
+Answer with the prompt only: no title, no quotes, no notes, at most 1400 characters.`;
 
-One paragraph, at most 170 words, no lists, no quotes, no title. Answer with the prompt only.`;
+export interface WriteFacts {
+  model?: { name?: string; pictures?: number };
+  pictures?: { name?: string; kind?: string; map?: string; plain?: boolean; of?: string; sheet?: string }[];
+  what?: string; scene?: string;
+  strength?: { percent?: number; band?: string };
+  who?: { colour?: string; people?: boolean; things?: { name?: string; words?: string; count?: number; pictures?: string[] }[] }[];
+}
+export interface WriteInput { facts?: WriteFacts; prompt?: string; refs?: { name?: string }[] }
 
-export interface ImproveInput {
-  what?: string; scene?: string; prompt?: string;
-  cast?: { tag?: string; name?: string; kind?: string; color?: string; words?: string; pictures?: string[] }[];
-  refs?: { name?: string }[];
+const STRENGTH_MEANS: Record<string, string> = {
+  low: "low: keep the clay's colours; every clay shape becomes the finished thing, its clay colour becoming its real colour",
+  middle: "middle: every thing takes real materials and colours; the clay colours only label who is who",
+  high: "high: only the layout and the forms stay; all-new materials, colours, textures and light, nothing of the clay or its plastic look",
+};
+const MAP_ROLES: Record<string, string> = {
+  id: "the colour ID map: each kind of thing as one flat colour",
+  depth: "the depth map: near light, far dark",
+  silhouette: "the silhouette map: the outline of every part in white",
+};
+const tagName = (v: unknown) => (/^[a-z0-9][a-z0-9-]*$/i.test(String(v ?? "")) ? String(v) : "");
+
+/** What each picture sent is, in a few words. */
+function pictureRole(p: NonNullable<WriteFacts["pictures"]>[number]) {
+  if (p.kind === "frame") return p.plain ? "the clay frame, in plain grey clay (the forms only)" : "the clay frame, in its ID colours";
+  if (p.kind === "map") return MAP_ROLES[String(p.map)] ?? "a control map";
+  if (p.kind === "look") return "a reference for the look";
+  const of = cut(p.of, 40);
+  return `pictures of ${of || "a part"}${p.sheet ? ` (${cut(p.sheet, 20)} sheet)` : ""}`;
 }
 
-/** What the writer is told: the words, the cast with its sheets, the pictures it can see, and the draft prompt to improve. */
-export function improvePrompt(input: ImproveInput) {
-  const cast = things<NonNullable<ImproveInput["cast"]>[number]>(input.cast, 40);
-  const lines = [`WHAT IT IS: ${cut(input.what, 600) || "(not said)"}`, `THE SCENE: ${cut(input.scene, 600) || "(not said)"}`, "", "WHO IS IN THE FRAME"];
-  if (!cast.length) lines.push("(nothing tagged)");
-  for (const c of cast) {
-    const tag = cut(c.tag, 40);
-    if (!/^[a-z0-9][a-z0-9-]*$/i.test(tag)) continue;
-    const pics = list<unknown>(c.pictures, 8).map((n) => cut(n, 40)).filter(Boolean).map((n) => `@${n}`).join(", ");
-    lines.push(`- @${tag}: ${cut(c.name, 40) || tag}${c.kind ? `, ${cut(c.kind, 12)}` : ""}${c.color ? `, ${cut(c.color, 24)} in the clay` : ""}${c.words ? `. Words: ${cut(c.words, 400)}` : ""}${pics ? `. Pictures: ${pics}` : ""}`);
+/** What the writer is told: the image model, the pictures in order with their roles, the words, the strength, who is what, and the draft to improve. */
+export function writePrompt(input: WriteInput) {
+  const f = input.facts && typeof input.facts === "object" ? input.facts : {};
+  const lines: string[] = [];
+  const total = Math.round(Number(f.model?.pictures));
+  lines.push(`THE IMAGE MODEL: ${cut(f.model?.name, 60) || "an image-edit model"}${total > 0 ? `, takes ${total} picture${total === 1 ? "" : "s"}` : ""}.`);
+  lines.push("THE PICTURES SENT, in order:");
+  const pics = things<NonNullable<WriteFacts["pictures"]>[number]>(f.pictures, 12).filter((p) => tagName(p.name));
+  if (!pics.length) lines.push("(none)");
+  pics.forEach((p, i) => lines.push(`${i + 1}. @${p.name}: ${pictureRole(p)}`));
+  lines.push("", `WHAT IT IS: ${cut(f.what, 600) || "(not said)"}`, `THE LOOK: ${cut(f.scene, 600) || "(not said)"}`);
+  const percent = num(f.strength?.percent, 0, 100);
+  const band = oneOf(f.strength?.band, ["low", "middle", "high"] as const) ?? (percent === undefined ? "middle" : percent < 34 ? "low" : percent < 67 ? "middle" : "high");
+  lines.push(`THE STRENGTH: ${percent === undefined ? "" : `${Math.round(percent)}%, `}${STRENGTH_MEANS[band]}.`, "", "WHO IS WHAT");
+  const who = things<NonNullable<WriteFacts["who"]>[number]>(f.who, 40);
+  who.sort((a, b) => Number(!!b.people) - Number(!!a.people));
+  if (!who.length) lines.push("(nothing named)");
+  for (const g of who) {
+    for (const t of things<NonNullable<NonNullable<WriteFacts["who"]>[number]["things"]>[number]>(g.things, 20)) {
+      const pics = list<unknown>(t.pictures, 8).map((n) => tagName(n)).filter(Boolean).map((n) => `@${n}`).join(", ");
+      const n = Math.round(Number(t.count));
+      lines.push(`- ${cut(g.colour, 24) || "coloured"}: ${cut(t.name, 80) || "a thing"}${n > 1 ? ` (x${n})` : ""}${t.words ? `. Their words: ${cut(t.words, 400)}` : ""}${pics ? `. Pictures: ${pics}` : ""}`);
+    }
   }
   const seen = list<{ name?: string }>(input.refs, 8).map((r) => cut(r?.name, 40)).filter(Boolean);
-  lines.push("", seen.length ? `THE PICTURES YOU SEE, in order: ${seen.map((n) => `@${n}`).join(", ")}.` : "You see no pictures: work from the words.", "", `THE DRAFT PROMPT TO IMPROVE:\n${cut(input.prompt, 4000) || "(none: write it from the words and the cast)"}`);
+  lines.push("", seen.length ? `THE PICTURES YOU SEE: ${seen.map((n) => `@${n}`).join(", ")}.` : "You see no pictures: work from the facts.");
+  const own = cut(input.prompt, 4000);
+  if (own) lines.push("", `THE USER'S OWN PROMPT TO IMPROVE:\n${own}`);
   return lines.join("\n");
 }
 
-/** The writer's answer as a prompt: trimmed, without fences or quotes, at most 1500 characters. Empty when it said nothing. */
+/** The writer's answer as a prompt: trimmed, without fences, a leading "Prompt:" or quotes, at most 1500 characters. Empty when it said nothing. */
 export function readImprovedPrompt(reply: string) {
-  const t = String(reply ?? "").trim().replace(/^```[a-z]*\s*/i, "").replace(/\s*```$/, "").trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, "").replace(/\s+/g, " ").trim();
+  const t = String(reply ?? "").trim().replace(/^```[a-z]*\s*/i, "").replace(/\s*```$/, "").trim().replace(/^\**prompt\**\s*:\s*\**\s*/i, "").replace(/^["'“”‘’]+|["'“”‘’]+$/g, "").replace(/\s+/g, " ").trim();
   return t.slice(0, 1500);
 }

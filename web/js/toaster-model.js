@@ -505,6 +505,9 @@ export function cleanDraft(b) {
     scene: words(b.scene, 600),
     refs: sceneRefs,
     prompt: words(b.prompt, 6000),
+    // who wrote the prompt ("writer", or "you"; "" while there is none), and what the writer's was written for: { model, key }
+    promptBy: !words(b.prompt, 6000).trim() ? "" : b.promptBy === "writer" ? "writer" : "you",
+    promptFor: b.promptBy === "writer" && words(b.prompt, 6000).trim() && b.promptFor && typeof b.promptFor === "object" ? { model: words(b.promptFor.model, 60), key: words(b.promptFor.key, 20) } : null,
     // how far a render goes from the clay, 0 (its colours stay) to 1 (only the layout and the forms stay)
     strength: num(b.strength, 0, 1, STRENGTH),
     model: words(b.model, 60) || null,
@@ -743,6 +746,63 @@ export function framePrompt({ parts = [], what = "", scene = "", maps = [], scen
     strength < 0.34 ? "No mannequin is left: the figures become the people named above." : "No mannequin and no clay is left: the figures become the people named above, every piece its finished self, all in the look above.",
   ].filter(Boolean).join(" ");
 }
+
+/**
+ * The facts the writer works from (the page sends them, the server turns them into words): the image model and how many pictures it takes,
+ * the pictures sent in order (the clay frame, the maps, the scene's references, then the parts') with what each is, what it is, the look,
+ * the strength, and who is what by clay colour (people first). `refs` is the list of part and scene pictures as sent; `plain` says the frame is grey clay.
+ */
+export function factsOf({ parts = [], what = "", scene = "", maps = [], sceneRefs = [], refs = null, named = new Map(), tags = null, pieceOf = () => null, strength = STRENGTH, plain = false, model = null }) {
+  tags = tags ?? tagsOf(parts, sceneRefs.map((r) => r.name));
+  const byName = new Map();
+  for (const p of parts) for (const n of named.get(tags.get(p.id)) ?? []) byName.set(n, p);
+  const sent = refs ?? [...sceneRefs.filter((r) => named.has(r.name)), ...[...byName.keys()].map((name) => ({ name }))];
+  const pictures = [
+    { name: "frame", kind: "frame", plain: !!plain },
+    ...MAPS.filter((m) => maps.includes(m.id)).map((m) => ({ name: m.name, kind: "map", map: m.id })),
+    ...sent.map((r) => {
+      const part = byName.get(r.name);
+      return part ? { name: r.name, kind: "part", of: shortOf(part, pieceOf) || part.name, sheet: kindOf(part) === "character" ? "character" : kindOf(part) === "piece" ? "piece" : "shape" } : { name: r.name, kind: "look" };
+    }),
+  ];
+  const by = new Map();
+  for (const p of parts.filter((p) => !p.hidden)) {
+    const name = shortOf(p, pieceOf);
+    if (!name) continue;
+    const own = String(p.made ?? "").trim().replace(/\s+/g, " ").slice(0, 400);
+    const said = own && lowered(own).toLowerCase() !== name.toLowerCase() ? own : "";
+    const pics = named.get(tags.get(p.id)) ?? [];
+    if (!by.has(p.color)) by.set(p.color, { people: false, things: new Map() });
+    const g = by.get(p.color);
+    g.people ||= isCharacter(p);
+    const key = `${name}|${said}|${pics.join(",")}`;
+    g.things.set(key, { name, ...(said ? { words: said } : {}), ...(pics.length ? { pictures: pics } : {}), count: (g.things.get(key)?.count ?? 0) + 1 });
+  }
+  const who = [...by].sort(([, a], [, b]) => Number(b.people) - Number(a.people)).map(([hex, g]) => {
+    const name = colorName(hex);
+    return { colour: name === "coloured" ? hex : name, people: g.people, things: [...g.things.values()] };
+  });
+  const percent = Math.round(Math.min(1, Math.max(0, Number(strength))) * 100);
+  return {
+    model: { id: model?.id ?? "", name: model?.name ?? "", pictures: model?.total ?? pictures.length },
+    pictures,
+    what: String(what ?? "").trim().replace(/\s+/g, " "),
+    scene: String(scene ?? "").trim().replace(/\s+/g, " "),
+    strength: { percent, band: percent < 34 ? "low" : percent < 67 ? "middle" : "high" },
+    who,
+  };
+}
+
+/** A short hash of the facts a prompt was written from: when it changes, the prompt is out of date. */
+export function factsKey(facts) {
+  const s = JSON.stringify({ ...facts, model: undefined });
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
+/** Whether a prompt the writer wrote no longer fits: another image model, or other facts, than it was written for. */
+export const promptStale = (b, modelId, key) => b?.promptBy === "writer" && !!b.prompt?.trim() && (b.promptFor?.model !== modelId || b.promptFor?.key !== key);
 
 /** The words for the turnaround: four views of one object, each kept where and as large as its clay view, the object alone. */
 export function sheetPrompt({ parts = [], what = "", tags = null, named = null, pieceOf = () => null }) {

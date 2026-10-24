@@ -27,7 +27,8 @@ import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
 import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer, utensilsCandidates } from "./utensils-assist.ts";
 import { SPICE_BRIEF, SPICE_TOOL, spicePrompt, readSpiceAnswer } from "./spice-assist.ts";
-import { TOASTER_BRIEF, TOASTER_TOOL, toasterPrompt, readToasterAnswer, TOASTER_IMPROVE_BRIEF, improvePrompt, readImprovedPrompt } from "./toaster-assist.ts";
+import { TOASTER_BRIEF, TOASTER_TOOL, toasterPrompt, readToasterAnswer, TOASTER_WRITE_BRIEF, writePrompt, readImprovedPrompt } from "./toaster-assist.ts";
+import { guideFor } from "./image-guides.ts";
 import { normaliseBody as spiceBody, FIRST as SPICE_FIRST } from "../web/js/spice-model.js";
 import { searchKnowledge, knowledgeById } from "./utensils-knowledge.ts";
 import { createEdit } from "./utensils-edit.ts";
@@ -1547,26 +1548,29 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (process.env.COMFYTURE_DEBUG) console.log(`crumpet answered\n${reply}`);
     return json(res, 200, readToasterAnswer(reply, summary));
   }
-  if (path === "/api/toaster/improve" && method === "POST") {
-    // the prompt of a render written again for the image model: from the words, the cast with its sheets and, on Comfy Router, the clay frame and a picture of each sheet
+  if ((path === "/api/toaster/write" || path === "/api/toaster/improve") && method === "POST") {
+    // the prompt of a render written for the image model, from its guide: the facts, the user's own prompt if any and, on Comfy Router, the clay frame and a picture of each sheet
     const input = await jsonBody(req, 256 * 1024);
-    // nothing said and nothing tagged: there is nothing to improve, and no writer is asked
-    if (![input.what, input.scene, input.prompt].some((v) => typeof v === "string" && v.trim()) && !(Array.isArray(input.cast) && input.cast.length)) throw bad("Nothing to improve yet: say what it is, or tag a part.");
+    const f = input.facts && typeof input.facts === "object" ? input.facts : {};
+    // nothing said and nothing tagged: there is nothing to write from, and no writer is asked
+    if (![f.what, f.scene, input.prompt].some((v) => typeof v === "string" && v.trim()) && !(Array.isArray(f.who) && f.who.length)) throw bad("Nothing to write from yet: say what it is, or tag a part.");
     const model = pickLlm(input.model, "assistant");
+    const guide = guideFor(text(input.imageModel, 80));
+    const system = `${TOASTER_WRITE_BRIEF}\n\n${guide ? `THE MODEL'S GUIDE — ${guide.maker}:\n${guide.text}` : "THE MODEL'S GUIDE: there is none for this model. Write a clear natural-language edit instruction."}`;
     const refs = (Array.isArray(input.refs) ? input.refs : []).slice(0, 12).filter((r: any) => r && typeof r.file === "string" && r.file);
     const seen: { name: string; file: string }[] = [];
     for (const r of refs) {
       if (seen.length >= 5) break;
       if (await photo(r.file).then(() => true, () => false)) seen.push({ name: text(r.name, 40), file: r.file });
     }
-    const asked = improvePrompt({ ...input, refs: onRouter(model) ? seen : [] });
+    const asked = writePrompt({ facts: f, prompt: typeof input.prompt === "string" ? input.prompt : "", refs: onRouter(model) ? seen : [] });
     const images = onRouter(model) ? await Promise.all(seen.map((r) => imageBlock(engine.photoPath(r.file)))) : [];
     const reply = onRouter(model)
-      ? await routerAsk(model, TOASTER_IMPROVE_BRIEF, asked, { maxTokens: 1200, temperature: 0.5, images })
-      : await engine.write(TOASTER_IMPROVE_BRIEF, asked, { maxLength: 1500, temperature: 0.5 });
-    const improved = readImprovedPrompt(reply);
-    if (!improved) throw Object.assign(new Error("The writer answered nothing. Try again?"), { status: 502 });
-    return json(res, 200, { prompt: improved });
+      ? await routerAsk(model, system, asked, { maxTokens: 1200, temperature: 0.5, images })
+      : await engine.write(system, asked, { maxLength: 1500, temperature: 0.5 });
+    const written = readImprovedPrompt(reply);
+    if (!written) throw Object.assign(new Error("The writer answered nothing. Try again?"), { status: 502 });
+    return json(res, 200, { prompt: written, guide: guide?.file ?? null });
   }
   // Utensils' knowledge: what every tool and Library workflow is and how it works, searched (?q=&k=&kind=) or read by id
   if (path === "/api/utensils/knowledge" && method === "GET") {

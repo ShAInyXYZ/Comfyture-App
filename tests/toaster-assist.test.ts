@@ -3,7 +3,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TOASTER_BRIEF, TOASTER_OPS, TOASTER_TOOL, toasterPrompt, readToasterAnswer, TOASTER_IMPROVE_BRIEF, improvePrompt, readImprovedPrompt } from "../server/toaster-assist.ts";
+import { TOASTER_BRIEF, TOASTER_OPS, TOASTER_TOOL, toasterPrompt, readToasterAnswer, TOASTER_WRITE_BRIEF, writePrompt, readImprovedPrompt } from "../server/toaster-assist.ts";
 
 const say = (actions: unknown[], reply = "Done.") => JSON.stringify({ reply, actions });
 
@@ -166,27 +166,49 @@ test("Crumpet is told each part's @tag and its pictures, and that the sheet word
   assert.equal(answer.actions[0].made.length, 400);
 });
 
-test("Improve: the writer is told the words, the cast with its sheets and the pictures it sees, and answers one prompt", () => {
-  const text = improvePrompt({
-    what: "A boss's office", scene: "Dusk, warm lamp",
-    prompt: "Render @frame as a finished photograph. @desk",
-    cast: [{ tag: "desk", name: "Desk", kind: "piece", color: "walnut", words: "a walnut desk with brass handles", pictures: ["desk", "desk-2"] }, { tag: "mood", name: "mood", kind: "reference", pictures: ["mood"] }, { tag: "bad tag", name: "x" }],
-    refs: [{ name: "frame" }, { name: "mood" }, { name: "desk" }],
-  });
-  assert.match(text, /WHAT IT IS: A boss's office/);
-  assert.match(text, /- @desk: Desk, piece, walnut in the clay\. Words: a walnut desk with brass handles\. Pictures: @desk, @desk-2/);
-  assert.match(text, /- @mood: mood, reference/);
-  assert.ok(!text.includes("bad tag"));
-  assert.match(text, /THE PICTURES YOU SEE, in order: @frame, @mood, @desk\./);
-  assert.match(text, /THE DRAFT PROMPT TO IMPROVE:\nRender @frame as a finished photograph\. @desk/);
-  assert.match(improvePrompt({}), /You see no pictures: work from the words/);
-  assert.match(improvePrompt({}), /nothing tagged/);
-  assert.ok(TOASTER_IMPROVE_BRIEF.length > 300 && TOASTER_IMPROVE_BRIEF.length < 1600, "a brief of a paragraph or three");
-  for (const need of [/@frame/, /camera/, /every @name exactly as given/, /170 words/, /colour-id/, /Answer with the prompt only/]) assert.match(TOASTER_IMPROVE_BRIEF, need);
+const FACTS = {
+  model: { name: "Qwen 3.0 Pro", pictures: 6 },
+  pictures: [
+    { name: "frame", kind: "frame", plain: true }, { name: "colour-id", kind: "map", map: "id" }, { name: "depth", kind: "map", map: "depth" },
+    { name: "mood", kind: "look" }, { name: "giorno", kind: "part", of: "Giorno", sheet: "character" }, { name: "bad name", kind: "look" },
+  ],
+  what: "A boss's office", scene: "Dusk, warm lamp, anime style",
+  strength: { percent: 80, band: "high" },
+  who: [
+    { colour: "tan", people: false, things: [{ name: "a mahogany desk", words: "a walnut desk with brass handles", count: 2 }] },
+    { colour: "sky blue", people: true, things: [{ name: "Giorno", words: "a young man, blond", pictures: ["giorno"] }] },
+  ],
+};
+
+test("Write: the writer is told the model, the pictures in order with their roles, the strength and who is what", () => {
+  const text = writePrompt({ facts: FACTS, prompt: "Make it moody.", refs: [{ name: "frame" }, { name: "mood" }] });
+  assert.match(text, /THE IMAGE MODEL: Qwen 3\.0 Pro, takes 6 pictures\./);
+  const order = [...text.matchAll(/^\d\. @([\w-]+): (.*)$/gm)].map((m) => m[1]);
+  assert.deepEqual(order, ["frame", "colour-id", "depth", "mood", "giorno"], "in order; a bad name is left out");
+  assert.match(text, /1\. @frame: the clay frame, in plain grey clay/);
+  assert.match(text, /2\. @colour-id: the colour ID map/);
+  assert.match(text, /4\. @mood: a reference for the look/);
+  assert.match(text, /5\. @giorno: pictures of Giorno \(character sheet\)/);
+  assert.match(text, /THE LOOK: Dusk, warm lamp, anime style/);
+  assert.match(text, /THE STRENGTH: 80%, high: only the layout and the forms stay/);
+  assert.ok(text.indexOf("- sky blue: Giorno") < text.indexOf("- tan: a mahogany desk"), "people first");
+  assert.match(text, /- sky blue: Giorno\. Their words: a young man, blond\. Pictures: @giorno/);
+  assert.match(text, /- tan: a mahogany desk \(x2\)\. Their words: a walnut desk/);
+  assert.match(text, /THE PICTURES YOU SEE: @frame, @mood\./);
+  assert.match(text, /THE USER'S OWN PROMPT TO IMPROVE:\nMake it moody\./);
+  assert.ok(!writePrompt({ facts: FACTS }).includes("OWN PROMPT"));
+  assert.match(writePrompt({}), /You see no pictures: work from the facts/);
+  assert.match(writePrompt({}), /nothing named/);
+  assert.match(writePrompt({ facts: { strength: { percent: 20 } } }), /low: keep the clay's colours/);
+  assert.ok(TOASTER_WRITE_BRIEF.length > 600 && TOASTER_WRITE_BRIEF.length < 2200, "a brief of a few lines");
+  for (const need of [/clay blockout/, /THE MODEL'S GUIDE/, /@name exactly as given/, /only the pictures listed/, /layout, the camera/, /never a default "photograph"/, /Low: keep the clay's colours/, /never by ids/, /likeness/, /Invent nothing/, /Answer with the prompt only/]) assert.match(TOASTER_WRITE_BRIEF, need);
+  assert.ok(TOASTER_BRIEF.length <= 3000, "Crumpet's brief stays under its cap");
 });
 
-test("Improve's reply is trimmed, unfenced, unquoted and capped; nothing is empty", () => {
+test("The writer's reply is trimmed, unfenced, unquoted, without a leading Prompt: and capped; nothing is empty", () => {
   assert.equal(readImprovedPrompt('```text\n"Render @frame as a photo."\n```'), "Render @frame as a photo.");
+  assert.equal(readImprovedPrompt("Prompt: Render @frame."), "Render @frame.");
+  assert.equal(readImprovedPrompt("**Prompt:** \"Render @frame.\""), "Render @frame.");
   assert.equal(readImprovedPrompt("  A  b\n c "), "A b c");
   assert.equal(readImprovedPrompt("x".repeat(3000)).length, 1500);
   assert.equal(readImprovedPrompt("  "), "");

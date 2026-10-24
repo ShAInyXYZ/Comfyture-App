@@ -4,12 +4,12 @@
 // kept) across all the rest, with Crumpet's bar under it. Nothing of the render is in sight.
 // RENDER (rendering): no viewport in sight. On the left "In the frame": the parts, and under them the selected part's SHEET (its @tag, what it
 // is, its pictures). In the middle the studio: a big picture (the render, or the clay as the chosen camera sees it), what it is, the scene,
-// the references and the prompt as pills, and the keys that toast it or improve its words. On the right the CAMERA to render from (the slots
+// the references and the prompt as pills, and the keys that toast it or write its prompt. On the right the CAMERA to render from (the slots
 // kept in the Scene), the TURNAROUND (four clay views, rendered as one sheet) and the 3D MODEL made from it on Comfy Cloud.
 // The parts and the scene are called by @tags in the words (pills.js), as on the Stage. The right column draws itself on "toaster-runs", so
 // a render's progress never redraws a field in use.
 import { h, icon, sprite } from "../dom.js";
-import { onChange, toast, useStageRender, makeToasterRef } from "../store.js";
+import { onChange, toast, useStageRender, makeToasterRef, writer, writers } from "../store.js";
 import { currentPage } from "../router.js";
 import { dropdown, float } from "../controls.js";
 import { view as viewImage } from "../viewer.js";
@@ -21,7 +21,7 @@ import {
   setTool, toggleSnap, addPart, addPiece, addCharacter, reposeCharacter, setProps, colourAllByKind, applyTransforms, removeSelected, removePart, duplicateSelected, mirrorSelected, dropSelected,
   toggleHidden, undoParts, redoParts, canUndo, canRedo, setWords, setRatio, setModel, keepCamera, setFocal, saveCamera, recallCamera, onCamera, removeCamera, renameCamera, loadModels, modelNow, hasClay,
   renderFrame, setStrength, renderSheet, forget, showRender, setCompare, price3d, priceNow, make3d, putOnStage, isArmed, arm, disarm, toggleMap,
-  setMode, addPartRef, removePartRef, addSceneRef, removeSceneRef, setPrompt, framePlan, improveWords,
+  setMode, addPartRef, removePartRef, addSceneRef, removeSceneRef, setPrompt, framePlan, writeWords,
 } from "../toaster.js";
 import { SHAPES, PALETTE, RATIOS, MAPS, POSE_SLIDERS, roundLabel, hasSides, colorName, shapeOf, tagsOf, describeOf, isAsset, isCharacter } from "../toaster-model.js";
 import { CRUMPET } from "../toaster-harness.js";
@@ -822,10 +822,10 @@ function buildStudio(s) {
   const pills = (label, placeholder, className, lookup) => pillField({ label, placeholder, lookup, className: `ts-pills ${className}` });
   s.what = pills("What it is", "A boss's office: a walnut @desk, a leather chair, a window behind", "is-what", lookupTag);
   s.scene = pills("Scene", "Dusk, warm lamp light, a cinematic still", "is-scene", lookupTag);
-  s.prompt = pills("Prompt", "The prompt", "is-prompt", (n) => lookupTag(n, true));
+  s.prompt = pills("Prompt", "", "is-prompt", (n) => lookupTag(n, true));
   for (const f of [s.what, s.scene, s.prompt]) tagging(f);
-  s.what.addEventListener("input", () => (setWords("what", s.what.value), drawAuto()));
-  s.scene.addEventListener("input", () => (setWords("scene", s.scene.value), drawAuto()));
+  s.what.addEventListener("input", () => (setWords("what", s.what.value), drawPromptHead()));
+  s.scene.addEventListener("input", () => (setWords("scene", s.scene.value), drawPromptHead()));
   s.prompt.addEventListener("input", () => (setPrompt(s.prompt.value), drawPromptHead()));
   s.refsBox = h("div.ts-refs");
   s.promptHead = h("div.ts-prompt-head");
@@ -849,25 +849,37 @@ function buildStudio(s) {
 function setField(field, text) {
   if (document.activeElement !== field.el && field.value !== text) field.value = text;
 }
-/** The prompt as it stands: the automatic one, composed from the words, the legend and the sheets (dimmed), or the user's own, as written. */
-function drawAuto() {
-  if (toaster.mode !== "render" || !body()) return;
-  const own = body().prompt.trim();
-  if (!own) setField(shell.prompt, framePlan().auto);
-}
 let promptOpen = false;
+/** The writer's short name, as the badge says it. */
+const writerName = () => {
+  const id = writer("assistant");
+  const m = writers().find((x) => x.id === id);
+  return m?.short ?? m?.name ?? "The writer";
+};
+/** The prompt's head: who wrote it (the writer for a model, you, out of date, or not written yet) and the keys that write it again or give it back. */
 function drawPromptHead() {
-  const own = !!body().prompt.trim();
-  shell.prompt.el.classList.toggle("is-auto", !own);
+  const b = body();
+  if (!b || !shell) return;
+  const m = modelNow();
+  const plan = framePlan();
+  const own = b.promptBy === "you" && !!b.prompt.trim();
+  const wrote = b.promptBy === "writer" && !!b.prompt.trim();
+  const stale = wrote && plan.stale;
+  const forModel = m?.short ?? m?.name ?? "the image model";
+  const [badge, tone, tip] = own ? ["Yours", ".is-own", "Your prompt: sent as written"]
+    : stale ? ["Out of date: rewritten when you toast", ".is-stale", "The image model or the facts changed since it was written: Toast it writes it again (or press Write)"]
+    : wrote ? [`Written by ${writerName()} for ${forModel}`, ".is-written", "Written from the model's own guide: sent as it stands"]
+    : ["Not written yet", "", "Nothing is written until you toast or press Write"];
+  shell.prompt.el.dataset.placeholder = `${writerName()} writes it for ${forModel} from its guide when you toast; Write shows it first`;
+  shell.prompt.el.classList.toggle("is-auto", !own && !wrote);
   shell.prompt.el.classList.toggle("is-open", promptOpen);
   shell.promptHead.replaceChildren(...[
     h("span.ts-label", {}, "Prompt"),
-    h(`span.ts-badge${own ? ".is-own" : ""}`, { title: own ? "Your prompt: sent as written" : "Composed at render time from the words, the legend and the sheets" }, own ? "Yours" : "Auto"),
-    own ? h("span.ts-note", {}, "Your prompt — sent as written") : null,
+    h(`span.ts-badge${tone}`, { title: tip }, badge),
     h("span.spacer"),
-    h("button.key.is-sm.ts-improve", { type: "button", disabled: toaster.improving || !hasClay(), title: "Improve — the writer rewrites the prompt from your words, the sheets and their pictures (a small writer call)", on: { click: improveWords } },
-      sprite("prompt-enhance"), h("span", {}, toaster.improving ? "Improving…" : "Improve")),
-    own ? keyIcon(icon("remix"), "Back to automatic", () => (setPrompt(""), drawLook()), { small: true }) : null,
+    h("button.key.is-sm.ts-improve", { type: "button", disabled: toaster.writing || !hasClay() || !m, title: `Write — ${writerName()} writes the prompt for ${forModel} from the model's guide, your words, the sheets and their pictures (a small writer call)`, on: { click: writeWords } },
+      sprite("prompt-enhance"), h("span", {}, toaster.writing ? "Writing…" : "Write")),
+    own || wrote ? keyIcon(icon("remix"), "Back to automatic", () => (setPrompt(""), drawLook()), { small: true }) : null,
     keyIcon(icon("chevron"), promptOpen ? "Show it short" : "Show it whole", () => ((promptOpen = !promptOpen), drawPromptHead()), { pressed: promptOpen, small: true }),
   ].filter(Boolean));
 }
@@ -878,8 +890,7 @@ function drawLook() {
   if (!b || !shell || toaster.mode !== "render") return;
   setField(shell.what, b.what);
   setField(shell.scene, b.scene);
-  const plan = framePlan();
-  setField(shell.prompt, plan.prompt);
+  setField(shell.prompt, b.prompt);
   for (const f of [shell.what, shell.scene, shell.prompt]) f.refresh();
   drawPromptHead();
 
@@ -903,7 +914,7 @@ function drawLook() {
   drawFoot();
 }
 
-/** The foot of the studio: the control maps, the image model, the frame, Improve and Toast it. */
+/** The foot of the studio: the control maps, the image model, the frame, and Toast it. */
 function drawFoot() {
   const b = body();
   if (!b || !shell || toaster.mode !== "render") return;
@@ -930,7 +941,7 @@ function strengthSlider(b) {
     } }), out);
 }
 const toastKey = (m, busy) => h("button.key.is-primary.ts-toast", { type: "button", disabled: busy || !m || !hasClay(), title: "Render the frame: the clay is the layout, the words what it becomes", on: { click: renderFrame } },
-  sprite("toast-it"), h("span", {}, busy ? "Toasting…" : "Toast it"), m ? h("em", {}, priceOf(m)) : null);
+  sprite("toast-it"), h("span", {}, toaster.writing ? "Writing the prompt…" : busy ? "Toasting…" : "Toast it"), m ? h("em", {}, priceOf(m)) : null);
 
 async function keepClay() {
   try {
