@@ -5,7 +5,7 @@
 import { changed, toast, waitFor, jobWatchers, writer } from "./store.js";
 import { api } from "./api.js";
 import { keyedSaver } from "./saving.js";
-import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS, described, tagsOf, castOf, referencesFor, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
+import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS, plainFrame, keepOf, described, tagsOf, castOf, referencesFor, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
 
 const KIND = "toasts";
 // where a draft's camera starts: the studio's own view, the floor around the object in sight
@@ -651,8 +651,17 @@ async function picture(run, request) {
 }
 
 /** The request every render makes: the model's edit, its first size, the clay kept a little (the layout stays the clay's). */
-function request(model, prompt, refs, aspect, name) {
-  return { model: model.id, template: "edit", prompt, aspect, refs: [refs].flat().map((r) => ({ file: r.file, name: r.name })), count: 1, megapixels: model.megapixels?.[0] ?? 1, keep: 0.97, seed: Math.floor(Math.random() * 2 ** 32), name };
+function request(model, prompt, refs, aspect, name, keep = 0.97) {
+  return { model: model.id, template: "edit", prompt, aspect, refs: [refs].flat().map((r) => ({ file: r.file, name: r.name })), count: 1, megapixels: model.megapixels?.[0] ?? 1, keep, seed: Math.floor(Math.random() * 2 ** 32), name };
+}
+
+/** How far the renders go from the clay (0 to 1): kept with the draft; the automatic prompt and the frame sent follow it. */
+export function setStrength(value, { draw = true } = {}) {
+  const b = body();
+  if (!b) return;
+  b.strength = Math.min(1, Math.max(0, Math.round(Number(value) * 100) / 100));
+  save();
+  if (draw) changed("toaster");
 }
 
 /** Which control maps the renders send beside the clay frame (the colour ID, the depth, the silhouette). */
@@ -739,7 +748,7 @@ export function framePlan() {
   const mentioned = mentionsIn(`${b.prompt} ${b.what} ${b.scene}`);
   const { refs, named } = referencesFor({ parts, sceneRefs: b.refs, room: Math.max(0, total - 1 - maps.length), mentioned });
   const tags = tagsOf(parts, b.refs.map((r) => r.name));
-  const auto = framePrompt({ parts, what: b.what, scene: b.scene, maps: maps.map((m) => m.id), sceneRefs: b.refs, named, tags, pieceOf: toaster.pieceOf });
+  const auto = framePrompt({ parts, what: b.what, scene: b.scene, maps: maps.map((m) => m.id), sceneRefs: b.refs, named, tags, pieceOf: toaster.pieceOf, strength: b.strength });
   return { model, maps, refs, named, auto, cast: castOf(parts, b.refs, toaster.pieceOf), prompt: b.prompt.trim() || auto };
 }
 
@@ -779,17 +788,18 @@ export async function renderFrame() {
   if (!hasClay()) return toast("Block something out first: add a shape.", { tone: "warn" });
   const model = modelNow();
   if (!model) return toast("No image model can render from the clay: connect Comfy Cloud or a partner key.", { tone: "crit" });
-  const run = { id: runId(), status: "running", progress: 0, camera: v.cameraState(), ratio: b.ratio, model: model.id, at: new Date().toISOString() };
+  const run = { id: runId(), status: "running", progress: 0, camera: v.cameraState(), ratio: b.ratio, model: model.id, strength: b.strength, at: new Date().toISOString() };
   b.renders.unshift(run);
   toaster.shown = run.id;
   toaster.compare = false;
   b.camera = run.camera;
   update("toaster-runs");
   try {
-    run.frame = await keepPicture(v.frameStill({ long: 1536 }), `${draft.name} clay`);
     // the control maps beside it, as many as the model takes (the frame is its first picture)
     const room = Math.max(0, (model.templates?.find((t) => t.id === "edit")?.refs ?? 4) - 1);
     const maps = MAPS.filter((m) => b.maps.includes(m.id)).slice(0, room);
+    // (strong enough, with the colour ID sent to say who is who, the frame goes in plain grey clay: its colours would pull the picture to them)
+    run.frame = await keepPicture(v.frameStill({ long: 1536, plain: plainFrame(b.strength, maps.map((m) => m.id)) }), `${draft.name} clay`);
     run.maps = [];
     for (const m of maps) run.maps.push({ ...(await keepPicture(v.frameStill({ long: 1536, channel: m.id }), `${draft.name} ${m.name}`)), name: m.name });
     // the pictures that go with them (the scene's references, then the parts', within the room left) and the words that name them
@@ -797,7 +807,7 @@ export async function renderFrame() {
     const sent = plan.refs;
     run.prompt = b.prompt.trim() || expandPrompt(plan.auto, plan.cast, plan.named);
     run.refs = sent.map((r) => ({ name: r.name, url: r.url }));
-    const done = await picture(run, request(model, run.prompt, [{ ...run.frame, name: "frame" }, ...run.maps, ...sent], b.ratio, draft.name));
+    const done = await picture(run, request(model, run.prompt, [{ ...run.frame, name: "frame" }, ...run.maps, ...sent], b.ratio, draft.name, keepOf(b.strength)));
     run.photo = media(done.photo);
     run.status = "done";
   } catch (e) {

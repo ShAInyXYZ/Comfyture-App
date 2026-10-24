@@ -701,7 +701,7 @@ export class ToasterView {
    * shadows; the others are control maps of the same frame (pixel for pixel): "id" (each part flat in its own colour), "depth" (near is
    * white) and "silhouette" (white on black), on black, with no ground.
    */
-  frameStill({ long = 1024, type = "image/png", quality, channel = "clay" } = {}) {
+  frameStill({ long = 1024, type = "image/png", quality, channel = "clay", plain = false } = {}) {
     const ratio = RATIOS[this.ratio] ?? 1;
     const [w, h] = ratio >= 1 ? [long, Math.round(long / ratio)] : [Math.round(long * ratio), long];
     const width = w - (w % 2), height = h - (h % 2);
@@ -715,8 +715,18 @@ export class ToasterView {
     if (channel !== "clay") return this.capture(true, (r) => this.passStill(r, lens(), width, height, channel, type, quality));
     return this.capture(false, (r) => {
       r.setSize(width, height, false);
-      r.render(this.scene, lens());
-      return r.domElement.toDataURL(type, quality);
+      // plain: every part in one grey clay (a strong render then takes its colours from the words, not from the clay's)
+      const swapped = [];
+      if (plain) {
+        this.plainClay ??= new THREE.MeshStandardMaterial({ color: "#bdb9b2", roughness: 0.72, metalness: 0, side: THREE.DoubleSide });
+        for (const m of this.meshes.values()) if (m.visible) m.traverse((o) => o.isMesh && (swapped.push([o, o.material]), (o.material = this.plainClay)));
+      }
+      try {
+        r.render(this.scene, lens());
+        return r.domElement.toDataURL(type, quality);
+      } finally {
+        for (const [o, mat] of swapped) o.material = mat;
+      }
     });
   }
 

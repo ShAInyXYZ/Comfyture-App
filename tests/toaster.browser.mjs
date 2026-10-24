@@ -353,13 +353,14 @@ try {
   const frameAsk = pictures[0];
   ok(frameAsk?.template === "edit" && frameAsk.refs?.[0]?.name === "frame" && frameAsk.aspect === "1:1", "Toast it sends the clay frame to an image edit, at the frame's aspect", JSON.stringify(frameAsk && { template: frameAsk.template, refs: frameAsk.refs, aspect: frameAsk.aspect }));
   ok(JSON.stringify(frameAsk?.refs?.map((r) => r.name)) === JSON.stringify(["frame", "colour-id", "depth"]), "with its control maps: the colour ID and the depth", JSON.stringify(frameAsk?.refs));
-  ok(/@colour-id shows them flat/.test(frameAsk?.prompt) && /@depth shows how far things are/.test(frameAsk?.prompt), "the words name the maps and what they say");
+  ok(/In @colour-id each flat colour is one thing/.test(frameAsk?.prompt) && /@depth shows how far things are/.test(frameAsk?.prompt), "the words name the maps and what they say");
+  ok(/@frame is in plain grey clay/.test(frameAsk?.prompt) && frameAsk?.keep === 0.888, "at the middle strength, with the colour ID sent, the frame goes in plain grey clay, and an open-weights edit keeps 0.888", JSON.stringify({ keep: frameAsk?.keep }));
   {
     const lib = await (await fetch(`${base}/api/photos`)).json();
     const [fr, id, dp] = frameAsk.refs.map((r) => lib.find((p) => p.file === r.file));
     ok(fr && id && dp && fr.width === id.width && fr.height === dp.height, "the maps are the frame's very size", JSON.stringify([fr, id, dp].map((p) => p && `${p.width}x${p.height}`)));
   }
-  ok(/^Turn @frame, a clay blockout/.test(frameAsk?.prompt) && /orange is walnut/.test(frameAsk?.prompt) && /blue is a swivel office chair with/.test(frameAsk?.prompt) && !/Cylinder|Office chair/.test(frameAsk?.prompt) && /A retro 1950s toaster/.test(frameAsk?.prompt) && /marble counter/i.test(frameAsk?.prompt), "its words tell the clay's colours (a piece by the library's description of it), the object and the scene", frameAsk?.prompt);
+  ok(/^Turn @frame, a clay blockout/.test(frameAsk?.prompt) && /orange is walnut/.test(frameAsk?.prompt) && /blue is a swivel office chair[;.]/.test(frameAsk?.prompt) && !/Cylinder|Office chair/.test(frameAsk?.prompt) && /A retro 1950s toaster/.test(frameAsk?.prompt) && /marble counter/i.test(frameAsk?.prompt), "its words tell the clay's colours (a piece by the head of the library's description), the object and the scene", frameAsk?.prompt);
   d = await draft();
   ok(d.body.renders[0]?.status === "done" && d.body.renders[0].photo?.url && d.body.renders[0].camera, "the render is kept with its camera");
   ok(await page.locator(".ts-studio .ts-pic img").isVisible(), "the render shows in the studio");
@@ -738,6 +739,20 @@ try {
   const told = await js(async () => (await import("/js/toaster-assist.js")).summary().parts[0]);
   ok(told.tag === "desk" && told.pictures === 1 && told.made.startsWith("a walnut"), "Crumpet is told each part's tag and its pictures", JSON.stringify(told));
   await shot("6-studio-auto");
+  // the strength, on the studio's foot: low keeps the clay's colours (the frame in its colours, the edit kept the most)
+  const slider = page.locator('.ts-studio .ts-strength input[type="range"]');
+  ok(await slider.isVisible() && (await slider.inputValue()) === "60", "the studio's foot has the Strength, at 60%", await slider.inputValue().catch(() => ""));
+  await slider.evaluate((el) => {
+    el.value = "20";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await page.waitForTimeout(300);
+  ok((await draft()).body.strength === 0.2 && /Keep its camera, framing, layout and colours/.test(await page.locator(".ts-studio .ts-pills.is-prompt").innerText()), "moved to 20%, it is kept with the project and the automatic prompt keeps the clay's colours", String((await draft()).body.strength));
+  await page.locator(".ts-studio .ts-toast").click();
+  await until(() => window.__toaster.draft.body.renders.length === 3 && window.__toaster.draft.body.renders[0].status === "done");
+  const weak = pictures.at(-1);
+  ok(!/plain grey clay/.test(weak.prompt) && weak.keep === 0.796 && (await draft()).body.renders[0].strength === 0.2, "a weak render sends the frame in its colours, keeps the edit at 0.796, and remembers its strength", JSON.stringify({ keep: weak.keep }));
 
   ok(outbound.length === 0, "no call left the machine", outbound.join(" "));
   ok(errors.length === 0, "no error on the page", errors.join(" | "));

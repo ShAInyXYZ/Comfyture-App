@@ -20,7 +20,7 @@ import {
   toaster, describeParts, body, partsNow, selectedParts, sync, loadDrafts, pick, select, selectAll,
   setTool, toggleSnap, addPart, addPiece, addCharacter, reposeCharacter, setProps, colourAllByKind, applyTransforms, removeSelected, removePart, duplicateSelected, mirrorSelected, dropSelected,
   toggleHidden, undoParts, redoParts, canUndo, canRedo, setWords, setRatio, setModel, keepCamera, setFocal, saveCamera, recallCamera, onCamera, removeCamera, renameCamera, loadModels, modelNow, hasClay,
-  renderFrame, renderSheet, forget, showRender, setCompare, price3d, priceNow, make3d, putOnStage, isArmed, arm, disarm, toggleMap,
+  renderFrame, setStrength, renderSheet, forget, showRender, setCompare, price3d, priceNow, make3d, putOnStage, isArmed, arm, disarm, toggleMap,
   setMode, addPartRef, removePartRef, addSceneRef, removeSceneRef, setPrompt, framePlan, improveWords,
 } from "../toaster.js";
 import { SHAPES, PALETTE, RATIOS, MAPS, POSE_SLIDERS, roundLabel, hasSides, colorName, shapeOf, tagsOf, describeOf, isAsset, isCharacter } from "../toaster-model.js";
@@ -913,10 +913,21 @@ function drawFoot() {
   const maps = h("div.ts-map-keys", { role: "group", "aria-label": "Control maps" }, ...MAPS.map((x) =>
     h("button.ts-map", { type: "button", "aria-pressed": String(b.maps.includes(x.id)), title: `${x.label}: sent with the clay frame — ${x.says.replace(/^@[\w-]+ /, "it ")}`, on: { click: () => toggleMap(x.id) } }, sprite(MAP_ICON[x.id]), h("span", {}, x.label))));
   shell.foot.replaceChildren(
-    maps, h("span.spacer"),
+    maps, strengthSlider(b), h("span.spacer"),
     models.length ? h("div.ts-pick", {}, dropdown({ label: "Image model", value: m?.id, items: models, onChange: setModel, width: "fit", note: "What renders the clay: a partner model's credits, or Comfy Cloud's GPU time" })) : h("span.ts-note", {}, "No image model yet"),
     h("div.ts-pick", {}, dropdown({ label: "Frame", value: b.ratio, items: Object.keys(RATIOS).map((r) => ({ value: r, label: r, glyph: () => sprite(r === "4:5" ? "ratio-3-4" : `ratio-${r.replace(":", "-")}`) })), onChange: setRatio })),
     toastKey(m, busy));
+}
+/** How far the render goes from the clay: dragged, its number follows; let go, the prompt and the frame sent follow it. */
+const BAND = (v) => (v < 0.34 ? "keeps the clay's colours" : v < 0.67 ? "real materials, the colours only say who is who" : "only the layout and the forms stay");
+function strengthSlider(b) {
+  const out = h("output.ts-readout", {}, `${Math.round(b.strength * 100)}%`);
+  return h("label.ts-strength", { title: `Strength: how far the render goes from the clay — now ${BAND(b.strength)}. Low keeps the clay's colours; middle gives every thing its real materials (the colours only say which thing is which); high keeps only the layout and the forms. From 50%, with the colour ID sent, the frame goes in plain grey clay. On Comfy Cloud's open-weights models it is also the edit's own strength.` },
+    h("span.ts-label", {}, "Strength"),
+    h("input", { type: "range", min: 0, max: 100, step: 5, value: Math.round(b.strength * 100), "aria-label": "Strength", on: {
+      input: (e) => ((out.textContent = `${e.target.value}%`), setStrength(Number(e.target.value) / 100, { draw: false })),
+      change: (e) => setStrength(Number(e.target.value) / 100),
+    } }), out);
 }
 const toastKey = (m, busy) => h("button.key.is-primary.ts-toast", { type: "button", disabled: busy || !m || !hasClay(), title: "Render the frame: the clay is the layout, the words what it becomes", on: { click: renderFrame } },
   sprite("toast-it"), h("span", {}, busy ? "Toasting…" : "Toast it"), m ? h("em", {}, priceOf(m)) : null);

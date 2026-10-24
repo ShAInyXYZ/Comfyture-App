@@ -471,6 +471,7 @@ export function cleanDraft(b) {
     ratio: r.ratio in RATIOS || r.ratio === SHEET.aspect ? r.ratio : undefined,
     model: words(r.model, 60) || undefined,
     prompt: words(r.prompt, 6000) || undefined,
+    strength: Number.isFinite(r.strength) ? num(r.strength, 0, 1, STRENGTH) : undefined,
     refs: (Array.isArray(r.refs) ? r.refs : []).slice(0, 12).filter((x) => x && typeof x.url === "string").map((x) => ({ name: words(x.name, 40), url: x.url.slice(0, 400) })),
     error: words(r.error, 300) || undefined,
     at: words(r.at, 40) || undefined,
@@ -504,6 +505,8 @@ export function cleanDraft(b) {
     scene: words(b.scene, 600),
     refs: sceneRefs,
     prompt: words(b.prompt, 6000),
+    // how far a render goes from the clay, 0 (its colours stay) to 1 (only the layout and the forms stay)
+    strength: num(b.strength, 0, 1, STRENGTH),
     model: words(b.model, 60) || null,
     renders: (Array.isArray(b.renders) ? b.renders : []).slice(0, 60).map(run),
     sheets: (Array.isArray(b.sheets) ? b.sheets : []).slice(0, 30).map(run),
@@ -566,6 +569,27 @@ export function describeOf(p, pieceOf = () => null) {
   if (!name || plainShape(name)) return "";
   return /^(floor|ground|ceiling|sky)$/.test(name) ? `the ${name}` : withArticle(name);
 }
+/** The head of a description: its first words, before what it has ("a rectangular writing desk with a flat top…" is a rectangular writing desk). */
+const headOf = (t) => String(t ?? "").split(/,| with | in | holding |:| — /)[0].trim();
+/**
+ * What a part is, in a few words, for the legend: a person by their name when the user said who they are (in words or pictures), else
+ * "a man"; a piece by the user's own words when they wrote some, else the head of the library's description ("a rectangular writing
+ * desk"); a shape by its name.
+ */
+export function shortOf(p, pieceOf = () => null) {
+  if (isCharacter(p)) {
+    // (a real name, "Giorno", says who; a body's name, "Man 2", says nothing: the words do)
+    const generic = /^(man|woman|teen|teenager|child|kid|toddler|elder|person|figure|character|heavy|athletic)( ?\d+)?$/i.test(String(p.name ?? "").trim());
+    return !generic && p.name && (String(p.made ?? "").trim() || p.refs?.length) ? p.name : describeOf(p, pieceOf);
+  }
+  if (isAsset(p)) {
+    const own = lowered(p.made);
+    const lib = lowered(pieceOf(p.asset)?.description);
+    if (!own || own === lib) return headOf(lib) || describeOf({ ...p, made: "" }, pieceOf);
+    return own;
+  }
+  return describeOf(p, pieceOf);
+}
 /**
  * The words a new part starts with in What it is: a piece, its identity as the library describes it, ready to refine; a character nothing
  * (who they are, their face, hair and clothes, is the user's to say); a shape nothing.
@@ -589,7 +613,7 @@ export const described = (parts, pieceOf) => parts.map((p) => {
 export function castOf(parts = [], sceneRefs = [], pieceOf = () => null) {
   const tags = tagsOf(parts, sceneRefs.map((r) => r.name));
   return [
-    ...parts.filter((p) => tags.has(p.id)).map((p) => ({ tag: tags.get(p.id), name: describeOf(p, pieceOf) || p.name, label: p.name, id: p.id, kind: kindOf(p), color: p.color, words: (p.made ?? "").trim(), pictures: p.refs ?? [] })),
+    ...parts.filter((p) => tags.has(p.id)).map((p) => ({ tag: tags.get(p.id), name: (isCharacter(p) ? shortOf(p, pieceOf) : describeOf(p, pieceOf)) || p.name, label: p.name, id: p.id, kind: kindOf(p), color: p.color, words: (p.made ?? "").trim(), pictures: p.refs ?? [] })),
     ...sceneRefs.map((r) => ({ tag: r.name, ref: true, pictures: [r] })),
   ];
 }
@@ -640,19 +664,38 @@ export function referencesFor({ parts = [], sceneRefs = [], room = 0, mentioned 
 export function legendOf(parts, { tags = new Map(), named = new Map(), pieceOf = () => null } = {}) {
   const by = new Map();
   for (const p of parts.filter((p) => !p.hidden)) {
-    const text = describeOf(p, pieceOf);
+    const text = shortOf(p, pieceOf);
     if (!text) continue;
     const pics = named.get(tags.get(p.id)) ?? [];
     const key = pics.length ? `${text}, exactly as in ${pics.map((n) => `@${n}`).join(" and ")}` : text;
-    if (!by.has(p.color)) by.set(p.color, new Map());
-    by.get(p.color).set(key, (by.get(p.color).get(key) ?? 0) + 1);
+    if (!by.has(p.color)) by.set(p.color, { people: false, things: new Map() });
+    const g = by.get(p.color);
+    g.people ||= isCharacter(p);
+    g.things.set(key, (g.things.get(key) ?? 0) + 1);
   }
   const list = (a) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a.at(-1)}`);
-  return [...by].map(([hex, group]) => {
+  // (the people first: they matter most; the floor and the walls come where they come)
+  return [...by].sort(([, a], [, b]) => Number(b.people) - Number(a.people)).map(([hex, g]) => {
     const name = colorName(hex);
-    return `${name === "coloured" ? hex : name} is ${list([...group].map(([t, n]) => (n > 1 ? `${t} (×${n})` : t)))}`;
+    return `${name === "coloured" ? hex : name} is ${list([...g.things].map(([t, n]) => (n > 1 ? `${t} (×${n})` : t)))}`;
   });
 }
+
+/** How far a render goes from the clay when nothing says otherwise. */
+export const STRENGTH = 0.6;
+/**
+ * What the strength asks of the model, in words: low, the clay's colours become the real ones; middle, they only say which thing is which;
+ * high, only the layout and the forms stay. (Most picture models take no number for it: the words, and the frame they are sent, say it.)
+ */
+export function strengthWords(strength = STRENGTH) {
+  if (strength < 0.34) return "Keep its camera, framing, layout and colours: every clay shape becomes the finished thing in its very place and at its very size, its clay colour becoming its real colour.";
+  if (strength < 0.67) return "Keep its camera, framing and layout: every clay shape becomes the finished thing in its very place and at its very size; the flat colours only say which thing is which, so every thing takes its own materials and colours.";
+  return "Keep only its camera, framing and layout: every clay shape becomes a finished thing in its very place and at its very size, with all-new materials, colours, textures and light; nothing of the clay, its flat colours or its plastic look remains.";
+}
+/** Whether a render at this strength sends the frame in plain grey clay (its colours would pull the picture to them): only when the colour ID says who is who. */
+export const plainFrame = (strength = STRENGTH, maps = []) => strength >= 0.5 && maps.includes("id");
+/** The keep of an open-weights edit (its denoise) at this strength: the clay's own picture, kept more or less. */
+export const keepOf = (strength = STRENGTH) => Math.round((0.75 + 0.23 * Math.min(1, Math.max(0, strength))) * 1000) / 1000;
 
 const sentence = (s) => {
   const t = String(s ?? "").trim().replace(/\s+/g, " ");
@@ -684,16 +727,20 @@ const mapsLine = (maps) => {
  * The words for a render of the frame: what it is, who is who by clay colour (each by its description, a part with pictures also by its
  * @tag), the scene, the maps, and that nothing of the clay is left. `named` says which pictures were sent (referencesFor).
  */
-export function framePrompt({ parts = [], what = "", scene = "", maps = [], sceneRefs = [], named = null, tags = null, pieceOf = () => null }) {
+export function framePrompt({ parts = [], what = "", scene = "", maps = [], sceneRefs = [], named = null, tags = null, pieceOf = () => null, strength = STRENGTH }) {
   const legend = legendOf(parts, { tags: tags ?? tagsOf(parts, sceneRefs.map((r) => r.name)), named: named ?? new Map(), pieceOf });
+  const look = String(scene ?? "").trim().replace(/\s+/g, " ").replace(/[.;]+$/, "");
+  const plain = plainFrame(strength, maps);
+  const where = plain || maps.includes("id") ? "In @colour-id each flat colour is one thing" : "In @frame each clay colour is one thing";
   return [
-    "Turn @frame, a clay blockout, into a finished photograph. Keep its camera, framing and layout exactly: every clay shape becomes the real thing, in its very place and at its very size.",
-    what.trim() ? `It is: ${sentence(what)}` : "",
-    legend.length ? `Each clay colour is one kind of thing${maps.includes("id") ? " (@colour-id shows them flat)" : ""}: ${legend.join("; ")}.` : "",
+    look ? `Turn @frame, a clay blockout, into a finished image in this look: ${look}.` : "Turn @frame, a clay blockout, into a finished cinematic photograph, soft natural light.",
+    what.trim() ? `It shows: ${sentence(what)}` : "",
+    strengthWords(strength),
+    plain ? "@frame is in plain grey clay: it gives the forms only." : "",
+    legend.length ? `${where}: ${legend.join("; ")}.` : "",
     referenceLine(sceneRefs, named),
-    sentence(scene) || "Soft natural light.",
     mapsLine(maps),
-    "No clay, no flat colour and no mannequin is left: people are real people, things are real things.",
+    strength < 0.34 ? "No mannequin is left: the figures become the people named above." : "No mannequin and no clay is left: the figures become the people named above, every piece its finished self, all in the look above.",
   ].filter(Boolean).join(" ");
 }
 
@@ -725,6 +772,8 @@ export function expandPrompt(text, cast = [], named = new Map()) {
     if (seen.has(c.tag)) return /^(a|an) /i.test(c.name) ? `the ${c.name.replace(/^(a|an) /i, "")}` : c.name;
     seen.add(c.tag);
     const pics = (named.get(c.tag) ?? []).map((n) => `@${n}`).join(" and ");
-    return pics ? `${c.name} (exactly as in ${pics})` : c.name;
+    // (someone is pointed at in their pictures, the way an edit model keeps a likeness; without pictures, their words say who they are)
+    if (pics) return `${c.name} (exactly as in ${pics})`;
+    return c.kind === "character" && c.words && c.words.toLowerCase() !== c.name.toLowerCase() ? `${c.name} (${lowered(c.words)})` : c.name;
   });
 }

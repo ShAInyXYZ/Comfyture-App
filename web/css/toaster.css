@@ -307,6 +307,10 @@ button.ts-sheet-pic { cursor: zoom-in; }
 /* ---- the render mode: no viewport in sight (it stays in the page, hidden); the camera card on the right ---------------- */
 .is-render .ts-view { display: none; }
 .ts-camera-card { gap: .625rem; }
+/* the strength of a render, beside the map keys */
+.ts-strength { display: inline-flex; align-items: center; gap: .5rem; margin-left: .5rem; padding: 0 .625rem; height: 2.25rem; border: 1px solid var(--line); border-radius: .625rem; cursor: pointer; }
+.ts-strength input { width: 7rem; accent-color: var(--accent); }
+.ts-strength .ts-readout { min-width: 2.5rem; font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--text); text-align: right; }
 /* the control maps of the render: three pictures, each with whether it goes with the frame */
 .ts-maps-card { gap: .625rem; }
 .ts-map-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
