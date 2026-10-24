@@ -201,7 +201,7 @@
 .mc-kwords:hover .mc-sub { color: var(--muted); }
 
 /* the patterns (macaron-patterns.js): four tiles of supporting graphics made from the kit, each named */
-.mc-patterns { display: grid; flex: 1 1 0; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .625rem .75rem; min-height: 9rem; }
+.mc-patterns { display: grid; flex: 1 1 0; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .625rem .75rem; min-height: 6.5rem; }
 .mc-patterns[data-n="1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
 .mc-patterns[data-n="3"] .mc-pattern:first-child { grid-row: span 2; }
 .mc-pattern { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: .375rem; min-width: 0; min-height: 0; margin: 0; }

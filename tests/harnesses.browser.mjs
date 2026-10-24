@@ -114,9 +114,8 @@ try {
     else ok(!info.chipsShown && !info.chips.length, `${p}: ${h.name}'s presets are left to the product's own panel`);
     ok(info.picker, `${p}: the model picker is still there`);
     ok(info.clip === (p === "shot" || p === "stage" || p === "toaster"), `${p}: the attach key is only where the bar takes files (Toaster: a photo for Crumpet)`);
-    // a product with a left panel has its bar on one row (the face, the words, the model, the send key); the others keep the card
-    if (h.tools === "panel") ok(info.bar >= 56 && info.bar <= 72, `${p}: ${h.name}'s bar is one row`, `${Math.round(info.bar)}px`);
-    else ok(info.bar > 100, `${p}: ${h.name}'s bar is the card`, `${Math.round(info.bar)}px`);
+    // every bar is the card: the words on top, at least two lines, the keys on a row under them (Stage adds its maps)
+    ok(info.bar >= 100 && (p === "stage" || info.bar <= 124), `${p}: ${h.name}'s bar is the card, high enough`, `${Math.round(info.bar)}px`);
     ok(Math.abs(info.chatH - info.composer) <= 1, `${p}: the page keeps room for the bar as tall as it is`, `--chat-h ${info.chatH}px, bar and chips ${Math.round(info.composer)}px`);
     if (out) await page.screenshot({ path: join(out, `${p}.png`) });
   }

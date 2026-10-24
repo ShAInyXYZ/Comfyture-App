@@ -353,7 +353,7 @@ function makeComposer() {
   // the pet's face at the left of the composer, its quick actions above it
   const face = h("span.pet-face", {}, h("img", { alt: "", draggable: false }));
   const chips = h("div.pet-chips", { hidden: true, role: "group", "aria-label": "Quick actions" });
-  const bar = h("div.chat-bar", {}, face, h("div.bar-main", {}, tray, input.el, h("div.bar-row", {}, clip, render, modelSlot, improve, undo, h("span.spacer"), status, toggle, key)));
+  const bar = h("div.chat-bar", {}, face, h("div.bar-main", {}, tray, input.el, h("div.bar-row", {}, clip, render, improve, undo, h("span.spacer"), modelSlot, status, toggle, key)));
   const el = h("div.composer", {}, picker, chips, bar, fileInput);
   // the page keeps room for the bar at its real height, quick actions and files and all
   new ResizeObserver(() => document.documentElement.style.setProperty("--chat-h", `${Math.ceil(el.getBoundingClientRect().height)}px`)).observe(el);
@@ -536,8 +536,6 @@ export function renderAssistant(el) {
   c.el.classList.toggle("is-story", storyPage);
   c.el.classList.toggle("is-cut", cutPage);
   c.el.classList.toggle("no-clip", !filesOn);
-  // a product with a left panel of its own (Jam, Macaron, Spice, Utensils) has its bar on one row; the others keep the card
-  c.el.classList.toggle("is-compact", harness.tools === "panel");
   c.input.refresh();
   c.el.classList.toggle("is-stage", stage);
   markMentioned();

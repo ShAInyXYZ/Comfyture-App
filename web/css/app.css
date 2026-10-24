@@ -467,9 +467,9 @@ body[data-product="kitchen"] .rooms { display: block; }
 /* the bar: the conversation's files ride just above it, as in a chat */
 .composer { position: relative; display: grid; gap: .5rem; }
 /* a squircle card: what you write on top, its keys on a row underneath, as in the Oven */
-.chat-bar { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0 .75rem; padding: .875rem .75rem .75rem .75rem; border: 1px solid var(--line2); border-radius: calc(.875rem * var(--corner-k)); background: var(--s2); box-shadow: var(--float); transition: border-color var(--t-fast); }
+.chat-bar { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0 .75rem; padding: .625rem .75rem .5625rem .75rem; border: 1px solid var(--line2); border-radius: calc(.875rem * var(--corner-k)); background: var(--s2); box-shadow: var(--float); transition: border-color var(--t-fast); }
 .chat-bar:has(.file-tray:not([hidden])) { padding-top: .75rem; }
-.bar-main { display: grid; gap: .625rem; min-width: 0; }
+.bar-main { display: grid; gap: .25rem; min-width: 0; }
 /* the pet of the page: its face at the left of the composer, its quick actions above it, its face on its replies */
 .pet-face { display: block; width: 2.5rem; height: 2.5rem; margin-top: .0625rem; border-radius: 50%; overflow: hidden; background: var(--sunk); box-shadow: 0 0 0 1.5px var(--accent-line); }
 .pet-face img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -481,16 +481,6 @@ body[data-product="kitchen"] .rooms { display: block; }
 .pet-chip:hover:not(:disabled) { border-color: var(--accent-line); background: var(--s3); color: var(--text); }
 .pet-chip:disabled { color: var(--faint); cursor: default; }
 .composer.no-clip .clip-key { display: none; }
-/* a product with a left panel of its own (Jam, Macaron, Utensils) has its bar on one row, as its design shows it: the pet's face, the
-   words, the model and the send key inside one composer, 64px tall (a phone keeps the card) */
-@media (min-width: 641px) {
-  .composer.is-compact .chat-bar { align-items: center; padding: .6875rem .75rem; }
-  .composer.is-compact .pet-face { margin-top: 0; }
-  .composer.is-compact .bar-main { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0 .75rem; }
-  .composer.is-compact .file-tray { grid-column: 1 / -1; }
-  .composer.is-compact .chat-input { min-height: 2.5rem; padding: .5rem .25rem; }
-  .composer.is-compact .pill-field:empty::before { display: inline-block; max-width: 100%; overflow: hidden; vertical-align: top; text-overflow: ellipsis; white-space: nowrap; }
-}
 .panel-pet { position: absolute; top: .6875rem; left: .9375rem; display: flex; align-items: center; gap: .5rem; pointer-events: none; }
 .panel-pet img { width: 1.5rem; height: 1.5rem; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 1.5px var(--accent-line); }
 .panel-pet b { font: 600 var(--fs-body)/1 var(--font-sans); color: var(--text); }
@@ -499,7 +489,7 @@ body[data-product="kitchen"] .rooms { display: block; }
 .bar-row [hidden] { display: none; }
 .bar-status { display: inline-flex; align-items: center; padding: 0 .5rem; }
 .chat-bar:focus-within { border-color: var(--accent-line); }
-.chat-input { min-height: 3.375rem; max-height: 10rem; padding: .125rem .25rem 0 .125rem; border: 0; background: transparent; color: var(--text); font: 400 var(--fs-title)/1.5 var(--font-sans); resize: none; outline: 0; }
+.chat-input { min-height: 3.5rem; max-height: 12.5rem; padding: .125rem .25rem 0 .125rem; border: 0; background: transparent; color: var(--text); font: 400 var(--fs-title)/1.5 var(--font-sans); resize: none; outline: 0; }
 .chat-input::placeholder { color: var(--dim); }
 /* a prompt with pills: each @name a reference, a map or someone's sheet */
 .pill-field { overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; cursor: text; -webkit-user-select: text; user-select: text; }
@@ -846,7 +836,7 @@ textarea.field.preset-move { min-height: 2.75rem; font-size: var(--fs-small); }
 
 /* ---- the Oven: a floating window over the dimmed, blurred page ---------- */
 
-.img-layer { position: fixed; inset: 0; z-index: 28; display: grid; place-items: center; padding: 2rem; background: rgba(6, 6, 8, .62); backdrop-filter: blur(10px) saturate(.8); -webkit-backdrop-filter: blur(10px) saturate(.8); animation: img-in 160ms var(--ease-out); }
+.img-layer { position: fixed; inset: 0; z-index: 28; display: grid; place-items: center; padding: 2rem 2rem max(2rem, calc(var(--chat-h, 0px) + 2.75rem)); background: rgba(6, 6, 8, .62); backdrop-filter: blur(10px) saturate(.8); -webkit-backdrop-filter: blur(10px) saturate(.8); animation: img-in 160ms var(--ease-out); }
 .img-layer[hidden] { display: none; }
 body.has-window { overflow: hidden; }
 @keyframes img-in { from { opacity: 0; } to { opacity: 1; } }
