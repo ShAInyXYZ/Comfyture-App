@@ -320,7 +320,13 @@ try {
   ok((await js(() => window.__toaster.mode)) === "render", "the Render key switches the page to the studio");
   ok(!(await page.locator(".ts-view").isVisible()) && !(await page.locator(".ts-view .ts-tools").isVisible()), "in the Render no viewport is in sight");
   ok(await page.locator(".ts-add-keys").isHidden() && (await page.locator(".ts-parts-card .ts-label").first().innerText()) === "IN THE FRAME", "the parts are 'In the frame', and Add is gone");
-  ok(await page.locator(".ts-camera-card").isVisible() && await page.locator(".ts-right .ts-sheet").isVisible() && await page.locator(".ts-right .ts-model").isVisible(), "on the right: Camera, Turnaround and 3D model");
+  ok(await page.locator(".ts-camera-card").isVisible() && !(await page.locator(".ts-sheet, .ts-model").count()), "on the right: the Recipe starts with the Camera; the Turnaround and the 3D model are not on the Render page");
+  {
+    const order = await js(() => ["ts-camera-card", "ts-maps-card", "ts-recipe-model", "ts-recipe-toast"].map((c) => document.querySelector(`.ts-right .${c}`)?.getBoundingClientRect().top));
+    ok(order.every((y, i) => y > 0 && (i === 0 || y > order[i - 1])) && (await page.locator(".ts-right").getAttribute("aria-label")) === "Recipe", "the Recipe column runs Camera, Sent, Model & strength, Toast it, top to bottom", JSON.stringify(order));
+    ok((await page.locator(".ts-recipe .ts-strength input").isVisible()) && (await page.locator(".ts-recipe-model .sel-trigger").count()) === 2 && !(await page.locator(".ts-foot").count()) && !(await page.locator(".ts-refs-row").count()), "the Strength, the image model and the frame are in the Recipe; the foot and the References row are gone");
+    ok(await page.locator(".ts-scene .ts-scene-box .ts-refs .ts-pic-add").isVisible(), "the scene's reference tiles and add tile sit inside the Scene box");
+  }
   await page.waitForTimeout(700);
   ok(await page.locator(".ts-studio .ts-pic.is-clay img").isVisible(), "the studio shows the clay still although the viewport is hidden");
   await page.locator(".ts-part").first().click();
@@ -351,12 +357,26 @@ try {
   await page.waitForTimeout(500);
   ok((await page.locator('.ts-studio [aria-label="What it is"]').innerText()) === "A retro 1950s toaster, chrome body", "the words are back in their field");
   ok(await page.locator(".ts-studio .ts-pic.is-clay img").isVisible(), "with no render yet the studio shows the clay frame, as Toaster sends it");
+  // the 3D page: the same left column; the Turnaround and the 3D model in the middle, no right column
+  await page.keyboard.press("d");
+  await page.waitForSelector(".toaster.is-3d .ts-sheet", { timeout: 5000 });
   await page.waitForSelector("img.ts-clay-strip", { timeout: 5000 }).catch(() => {});
+  ok((await js(() => window.__toaster.mode)) === "3d" && (await page.locator(".ts-mid > .ts-sheet").isVisible()) && (await page.locator(".ts-mid > .ts-model").isVisible()) && !(await page.locator(".ts-studio, .ts-right, .ts-camera-card").count()), "D goes to the 3D page: the Turnaround and the 3D model in the middle, no studio, no right column");
+  ok((await page.locator(".ts-modes .ts-mode[aria-pressed=true]").innerText()) === "3D" && !(await page.locator(".ts-view").isVisible()) && (await page.locator(".ts-parts-card .ts-label").first().innerText()) === "IN THE FRAME" && (await page.locator(".ts-part").count()) === 5, "the switch says 3D, the viewport stays hidden, the left column is the Render's");
   ok(await page.locator("img.ts-clay-strip").isVisible(), "the four clay views are drawn in the Turnaround card");
+  {
+    const m = await page.locator(".ts-mid > .ts-model").boundingBox();
+    const sh = await page.locator(".ts-mid > .ts-sheet").boundingBox();
+    ok(m.height > 150 && sh.width > 600 && (await page.locator(".ts-model-body .ts-well").boundingBox()).width > 300, "both are big: the sheet wide, the model's viewer filling its card", JSON.stringify([m, sh]));
+  }
+  await shot("1b-3d");
+  await page.keyboard.press("d");
+  await page.waitForSelector(".toaster.is-render .ts-studio");
+  ok(!(await page.locator(".ts-sheet, .ts-model").count()), "and D again is the Render, with neither of them");
   await shot("1-blockout");
 
   // ---------------------------------------------------------------- toasting the frame
-  await page.locator(".ts-studio .ts-toast").click();
+  await page.locator(".ts-recipe .ts-toast").click();
   await until(() => window.__toaster.draft.body.renders[0]?.status === "done");
   await page.waitForSelector(".ts-studio .ts-pic img", { timeout: 5000 }).catch(() => {});
   const frameAsk = pictures[0];
@@ -378,6 +398,17 @@ try {
   d = await draft();
   ok(d.body.renders[0]?.status === "done" && d.body.renders[0].photo?.url && d.body.renders[0].camera, "the render is kept with its camera");
   ok(await page.locator(".ts-studio .ts-pic img").isVisible(), "the render shows in the studio");
+  {
+    const pb = await page.locator(".ts-pic-box").boundingBox();
+    const st = await page.locator(".ts-strip").boundingBox();
+    ok(st.y - (pb.y + pb.height) >= 0 && st.y - (pb.y + pb.height) < 16, "the strip of earlier renders sits right under the picture, no band between", String(st.y - (pb.y + pb.height)));
+    const tag = await page.locator(".ts-thumb").first().locator(".ts-thumb-tag").innerText();
+    ok(/^.+·60%·(GPU|\d+cr)$/.test(tag), "each thumbnail carries its model, strength and cost", tag);
+    await page.locator(".ts-thumb").first().hover();
+    await page.waitForSelector(".peek:not([hidden])", { timeout: 2000 }).catch(() => {});
+    ok((await page.locator(".peek").innerText()).includes(frameAsk.prompt.slice(0, 30)), "hovering a thumbnail shows its prompt in the peek card");
+    await page.mouse.move(700, 500);
+  }
   ok(d.body.renders[0].prompt === frameAsk.prompt && Array.isArray(d.body.renders[0].refs), "the render keeps what was sent");
   await page.locator('.ts-studio [aria-label="Compare with the clay"]').click();
   await page.waitForSelector(".ts-pic.is-compare", { timeout: 3000 }).catch(() => {});
@@ -385,6 +416,8 @@ try {
   await shot("2-render");
 
   // ---------------------------------------------------------------- the turnaround
+  await page.keyboard.press("d");
+  await page.waitForSelector(".toaster.is-3d .ts-sheet");
   await page.locator(".ts-sheet .key.is-primary").click();
   await until(() => ["done", "failed"].includes(window.__toaster.draft.body.sheets[0]?.status), null, 30000);
   const sheetAsk = pictures[1];
@@ -413,6 +446,8 @@ try {
   const models = await (await fetch(`${base}/api/control/models`)).json();
   ok(models.models?.some((m) => m.kind === "prop" && m.ext === "glb"), "Put on the Stage keeps it in the Stage's assets, as a prop", JSON.stringify(models.models?.map((m) => m.name)));
   await shot("3-toasted");
+  await page.keyboard.press("d");
+  await page.waitForSelector(".toaster.is-render .ts-studio");
 
   // ---------------------------------------------------------------- drafts (the project bar has the tabs; here a new one is made through the page's state)
   await js(async () => (await import("/js/toaster.js")).newDraft());
@@ -585,10 +620,12 @@ try {
   const clayB = await page.locator(".ts-clay-live").getAttribute("src");
   ok(clayA !== clayB && (await page.locator(".ts-camera-card .ts-cam.is-on .ts-cam-name").innerText()) === "Above" && (await js(() => window.__toaster.view.cameraState().position[1])) > 2, "a click on a tile puts the camera there: the clay still changes and the tile is lit", JSON.stringify([clayA === clayB, await page.locator(".ts-camera-card .ts-cam.is-on .ts-cam-name").allInnerTexts(), await js(() => window.__toaster.view.cameraState().position)]));
   // the control maps are the draft's choice: the silhouette added, the depth taken away
-  await page.locator(".ts-map", { hasText: "Silhouette" }).click();
-  await page.locator(".ts-map", { hasText: "Depth" }).click();
+  const sendKey = (name) => page.locator(".ts-maps-card .ts-map-tile", { hasText: name }).locator(".ts-map-send");
+  ok((await page.locator(".ts-maps-card .ts-map-tile.is-lead .ts-lead").textContent()) === "Leads" && (await page.locator(".ts-maps-card .ts-map-tile.is-lead").innerText()).startsWith("Clay frame") && /of \d+ pictures/.test(await page.locator(".ts-maps-card .ts-note").innerText()), "the first map sent is marked Leads, and the header counts the pictures", await page.locator(".ts-maps-card .ts-note").innerText());
+  await sendKey("Silhouette").click();
+  await sendKey("Depth").click();
   ok(JSON.stringify((await draft()).body.maps) === JSON.stringify(["clay", "id", "silhouette"]), "the Control keys choose the maps sent with the clay");
-  await page.locator(".ts-map", { hasText: "Silhouette" }).click();
+  await sendKey("Silhouette").click();
   ok(JSON.stringify((await draft()).body.maps) === JSON.stringify(["clay", "id"]), "(the colour ID alone is sent with the clay)");
   // a part's sheet, in Selected: renamed (its tag follows), its words, a picture uploaded to the server's own Library
   await page.locator(".ts-part").first().click();
@@ -685,12 +722,12 @@ try {
   await page.locator(".ts-refs .ts-pic-off").nth(1).click();
   ok((await draft()).body.refs.length === 1, "a reference is taken off with its cross");
   // the Library picker: the pictures of this server's Library, lit when on the render
-  await page.locator('.ts-refs [aria-label="From the Library"]').click();
+  await page.locator('.ts-scene [aria-label="From the Library"]').click();
   await page.waitForSelector(".ts-refs .ts-lib-photo", { timeout: 5000 });
   ok((await page.locator(".ts-refs .ts-lib-photo[aria-pressed=true]").count()) === 1 && (await page.locator(".ts-refs .ts-lib-photo").count()) >= 3, "the Library picker lists the pictures, the one on the render lit");
-  await page.locator('.ts-refs [aria-label="From the Library"]').click();
+  await page.locator('.ts-scene [aria-label="From the Library"]').click();
   // "In the frame" is the left column: the part's row shows its @tag and its picture
-  ok(/@desk/.test(await page.locator(".ts-parts .ts-part").first().innerText()) && !(await page.locator(".ts-who").count()), "the part's row says @desk (the composer has no chips)");
+  ok(/@desk/.test(await page.locator(".ts-parts .ts-part").first().innerText()) && !(await page.locator(".ts-studio .ts-who").count()), "the part's row says @desk (the composer has no chips)");
   // an @ in the words opens the tags; Enter puts one in as a pill
   await page.locator('.ts-studio [aria-label="What it is"]').click();
   await page.keyboard.press("Control+End");
@@ -718,7 +755,7 @@ try {
     return { writer: w?.short ?? w?.name, model: modelNow().short ?? modelNow().name };
   });
   const badge = () => page.locator(".ts-prompt-head .ts-badge").textContent();
-  ok((await badge()) === "Not written yet" && (await page.locator(".ts-prompt-head .ts-improve").textContent()).trim() === "Write", "nothing is written yet: the badge says so and the key is Write", await badge());
+  ok((await badge()) === "Not written yet" && (await page.locator(".ts-recipe .ts-improve").getAttribute("aria-label")) === "Write the prompt" && !(await page.locator(".ts-prompt-head .ts-improve").count()), "nothing is written yet: the badge says so and Write sits beside Toast it, not in the prompt", await badge());
   // Write, with the writer stood in for: it writes now, from the facts, the frame and a picture of each sheet
   const wroteBefore = writes.length;
   await page.locator(".ts-improve").click();
@@ -737,7 +774,7 @@ try {
   ok((await badge()) === "Yours" && (await draft()).body.promptBy === "you" && (await page.locator(".ts-pills.is-prompt.is-auto").count()) === 0, "typing in the field makes the prompt Yours", await badge());
   // toasted: the own prompt as written, with the pictures by their @names
   const writtenBefore = writes.length;
-  await page.locator(".ts-studio .ts-toast").click();
+  await page.locator(".ts-recipe .ts-toast").click();
   await until(() => window.__toaster.draft.body.renders[0]?.status === "done" && window.__toaster.draft.body.renders[0].prompt.startsWith("A warm photograph"));
   const own = pictures.at(-1);
   const sentNames = own.refs.map((r) => r.name);
@@ -753,7 +790,7 @@ try {
   await page.locator('.ts-studio [aria-label="Back to automatic"]').click();
   ok((await badge()) === "Not written yet" && (await draft()).body.prompt === "" && (await draft()).body.promptBy === "" && /writes it for .* from its guide when you toast; Write shows it first/.test(await page.locator(".ts-pills.is-prompt").getAttribute("data-placeholder")), "Back to automatic clears the user's own prompt: Not written yet, with its placeholder", await badge());
   writerStub = (ask) => ({ prompt: `Auto for ${ask.facts.model.name}, strength ${ask.facts.strength.percent}, plain ${ask.facts.pictures[0].plain}.` });
-  await page.locator(".ts-studio .ts-toast").click();
+  await page.locator(".ts-recipe .ts-toast").click();
   await until(() => window.__toaster.draft.body.renders.length === 2 && window.__toaster.draft.body.renders[0].status === "done");
   const auto = pictures.at(-1);
   const autoWrite = writes.at(-1);
@@ -765,8 +802,8 @@ try {
   ok(told.tag === "desk" && told.pictures === 1 && told.made.startsWith("a walnut"), "Crumpet is told each part's tag and its pictures", JSON.stringify(told));
   await shot("6-studio-auto");
   // the strength, on the studio's foot: low keeps the clay's colours (the frame in its colours, the edit kept the most)
-  const slider = page.locator('.ts-studio .ts-strength input[type="range"]');
-  ok(await slider.isVisible() && (await slider.inputValue()) === "60", "the studio's foot has the Strength, at 60%", await slider.inputValue().catch(() => ""));
+  const slider = page.locator('.ts-recipe .ts-strength input[type="range"]');
+  ok(await slider.isVisible() && (await slider.inputValue()) === "60", "the Recipe has the Strength, at 60%", await slider.inputValue().catch(() => ""));
   await slider.evaluate((el) => {
     el.value = "20";
     el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -774,7 +811,7 @@ try {
   });
   await page.waitForTimeout(300);
   ok((await draft()).body.strength === 0.2 && (await badge()) === "Out of date: rewritten when you toast", "moved to 20%, it is kept with the project and the writer's prompt is out of date", `${(await draft()).body.strength} ${await badge()}`);
-  await page.locator(".ts-studio .ts-toast").click();
+  await page.locator(".ts-recipe .ts-toast").click();
   await until(() => window.__toaster.draft.body.renders.length === 3 && window.__toaster.draft.body.renders[0].status === "done");
   const weak = pictures.at(-1);
   ok(weak.prompt.endsWith("strength 20, plain false.") && writes.at(-1).facts.strength.band === "low" && weak.keep === 0.796 && (await draft()).body.renders[0].strength === 0.2, "a weak render is written again at low strength with the frame in its colours, keeps the edit at 0.796, and remembers its strength", JSON.stringify({ keep: weak.keep, prompt: weak.prompt }));
@@ -792,14 +829,50 @@ try {
   await page.waitForTimeout(300);
   const countAfterChange = writes.length;
   ok((await badge()) === "Out of date: rewritten when you toast" && countAfterChange === writes.length, "changing the model makes the writer's prompt Out of date", await badge());
-  await page.locator(".ts-studio .ts-toast").click();
+  await page.locator(".ts-recipe .ts-toast").click();
   await until(() => window.__toaster.draft.body.renders.length === 4 && window.__toaster.draft.body.renders[0].status === "done");
   ok(writes.length === countAfterChange + 1 && writes.at(-1).imageModel === other.id && pictures.at(-1).prompt.startsWith("Auto for ") && (await draft()).body.promptFor.model === other.id, "the next Toast writes again, for the new model", writes.at(-1)?.imageModel);
+
+  // "Use these settings": the shown render's model, strength, maps and prompt put back
+  {
+    const shown = (await draft()).body.renders[0];
+    await js(async (id) => {
+      const t = await import("/js/toaster.js");
+      t.setModel(t.toaster.models.models.find((m) => m.id !== id).id);
+      t.setStrength(0.9);
+    }, other.id);
+    await page.waitForTimeout(300);
+    await page.locator('.ts-studio [aria-label^="Use these settings"]').click();
+    await page.waitForTimeout(300);
+    const back = await draft();
+    ok(back.body.model === other.id && back.body.strength === shown.strength && back.body.strength === 0.2 && back.body.prompt === shown.prompt && back.body.promptBy === "you" && JSON.stringify(back.body.maps) === JSON.stringify(shown.sent), "Use these settings puts back the render's model, strength, maps and prompt (as yours)", JSON.stringify({ model: back.body.model, strength: back.body.strength, maps: back.body.maps, sent: shown.sent }));
+    // a run from before has only some of them: the model alone, no prompt
+    await js(async (id) => {
+      const t = await import("/js/toaster.js");
+      const b = t.toaster.draft.body;
+      const old = { id: "old-run", status: "done", model: id, photo: b.renders[0].photo };
+      b.renders.unshift(old);
+      t.toaster.shown = "old-run";
+      t.setStrength(0.5);
+      t.setModel(t.toaster.models.models.find((m) => m.id !== id).id);
+    }, other.id);
+    await page.waitForTimeout(300);
+    await page.locator('.ts-studio [aria-label^="Use these settings"]').click();
+    await page.waitForTimeout(300);
+    const old = await draft();
+    ok(old.body.model === other.id && old.body.strength === 0.5 && old.body.prompt === "" && old.body.promptBy === "", "a run from before gives what it has: its model; its strength and prompt are left or cleared", JSON.stringify({ model: old.body.model, strength: old.body.strength }));
+    await js(async () => {
+      const t = await import("/js/toaster.js");
+      t.toaster.draft.body.renders = t.toaster.draft.body.renders.filter((r) => r.id !== "old-run");
+      t.toaster.shown = t.toaster.draft.body.renders[0].id;
+      t.setStrength(0.2);
+    });
+  }
 
   // the writer failing: the template is sent, with a toast saying so
   await js(async () => (await import("/js/toaster.js")).setPrompt(""));
   writerStub = () => null;
-  await page.locator(".ts-studio .ts-toast").click();
+  await page.locator(".ts-recipe .ts-toast").click();
   await until(() => window.__toaster.draft.body.renders.length === 5 && window.__toaster.draft.body.renders[0].status === "done");
   ok(/^Turn @frame, a clay blockout/.test(pictures.at(-1).prompt) && /walnut mid-century desk/.test(pictures.at(-1).prompt), "when the writer fails the template is sent", pictures.at(-1).prompt);
   ok(/could not write the prompt/.test(await page.locator("#toast").textContent()), "with a toast saying so", await page.locator("#toast").textContent());
@@ -813,10 +886,10 @@ try {
     t.setModel("qwen-image-3.0-pro");
   });
   await page.waitForTimeout(400);
-  const outKeys = await page.locator(".ts-studio .ts-map.is-left-out").allInnerTexts();
-  const outKey = page.locator(".ts-studio .ts-map.is-left-out").first();
+  const outKeys = await page.locator(".ts-maps-card .ts-map-tile:has(.ts-map-send.is-left-out) .ts-map-foot > span").allInnerTexts();
+  const outKey = page.locator(".ts-maps-card .ts-map-send.is-left-out").first();
   const outWhy = ((await outKey.getAttribute("title").catch(() => null)) ?? (await outKey.getAttribute("data-tooltip").catch(() => null))) ?? "";
-  ok(outKeys.join() === "Colour ID,Silhouette" && /takes 3 pictures: the clay frame, Depth, @mood-board go first/.test(outWhy) && (await page.locator(".ts-maps-card .ts-map-send.is-left-out").count()) === 2, "a map the model has no room for is struck through, and says why", JSON.stringify([outKeys, outWhy]));
+  ok(outKeys.join() === "Colour ID,Silhouette" && /takes 3 pictures: the clay frame, Depth, @mood-board go first/.test(outWhy) && (await page.locator(".ts-maps-card .ts-map-send.is-left-out").count()) === 2, "a map the model has no room for is marked Left out, and says why", JSON.stringify([outKeys, outWhy]));
   // the clay frame left out: the next one on leads and is the first picture sent; the last one on cannot be switched off
   await page.locator(".ts-maps-card .ts-map-tile", { hasText: "Clay frame" }).locator(".ts-map-send").click();
   await page.waitForTimeout(300);
@@ -832,6 +905,15 @@ try {
     for (const id of [...b.maps]) t.toggleMap(id);
   });
   ok((await draft()).body.maps.length === 1, "the last one on stays on: the render needs a picture to take its layout from", JSON.stringify((await draft()).body.maps));
+  // the left column says whether each part's picture goes with the frame (the desk's does, at the start)
+  ok(await page.locator(".ts-parts .ts-part", { hasText: "Desk" }).locator(".ts-mini-pic").count() === 1, "a part with a picture has its thumb in the list");
+  ok((await page.locator(".ts-parts .ts-mini-pic .ts-sent-dot").count()) + (await page.locator(".ts-parts .ts-mini-pic.is-left-out").count()) === 1, "and it is marked: a dot when it goes with the frame, dimmed when left out");
+  // a mode kept in the browser that nobody knows falls back to the scene
+  await js(() => localStorage.setItem("comfyture.toaster.mode", "bogus"));
+  await page.reload();
+  await page.waitForSelector(".ts-stage canvas", { state: "attached", timeout: 20000 });
+  await expose();
+  ok((await js(() => window.__toaster.mode)) === "scene", "an unknown stored mode falls back to the scene");
   ok(outbound.length === 0, "no call left the machine", outbound.join(" "));
   ok(errors.length === 0, "no error on the page", errors.join(" | "));
 } finally {

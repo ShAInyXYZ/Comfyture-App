@@ -13,6 +13,8 @@ const HOME = { position: [4.6, 3.4, 6.2], target: [0, 0.8, 0], focal: 50 };
 const OPEN = "comfyture.toaster.open";
 const PREFS = "comfyture.toaster.prefs";
 const MODE = "comfyture.toaster.mode";
+// the three pages: the viewport, the render studio, the turnaround and the 3D model (an unknown stored value is the scene)
+const MODES = ["scene", "render", "3d"];
 
 const read = (k) => {
   try {
@@ -56,7 +58,7 @@ export const toaster = {
   /** the viewport, once the page has made it */
   view: null,
   /** what the page shows: the "scene" (the viewport in the middle) or the "render" studio (the viewport small, on the right) */
-  mode: read(MODE) === "render" ? "render" : "scene",
+  mode: MODES.includes(read(MODE)) ? read(MODE) : "scene",
   /** the library's piece of a type (the page sets it once the library is read): what a part is called in words */
   pieceOf: () => null,
   /** whether the writer is writing the prompt */
@@ -489,9 +491,9 @@ export function removePartRef(id, file) {
   });
 }
 
-/** The page shown: the "scene" or the "render" studio (kept for the next visit). */
+/** The page shown: the "scene", the "render" studio or the "3d" page (kept for the next visit). */
 export function setMode(mode) {
-  const m = mode === "render" ? "render" : "scene";
+  const m = MODES.includes(mode) ? mode : "scene";
   if (toaster.mode === m) return;
   toaster.mode = m;
   write(MODE, m);
@@ -825,7 +827,7 @@ export async function renderFrame() {
   if (!hasClay()) return toast("Block something out first: add a shape.", { tone: "warn" });
   const model = modelNow();
   if (!model) return toast("No image model can render from the clay: connect Comfy Cloud or a partner key.", { tone: "crit" });
-  const run = { id: runId(), status: "running", progress: 0, camera: v.cameraState(), ratio: b.ratio, model: model.id, strength: b.strength, at: new Date().toISOString() };
+  const run = { id: runId(), status: "running", progress: 0, camera: v.cameraState(), ratio: b.ratio, model: model.id, modelName: model.short ?? model.name, cost: model.router ? `${model.credits}cr` : "GPU", strength: b.strength, at: new Date().toISOString() };
   b.renders.unshift(run);
   toaster.shown = run.id;
   toaster.compare = false;
@@ -836,6 +838,7 @@ export async function renderFrame() {
     const plan = framePlan();
     const ids = plan.maps.map((m) => m.id);
     const sendsClay = ids.includes("clay");
+    run.sent = ids;
     // (strong enough, with the colour ID sent to say who is who, the frame goes in plain grey clay: its colours would pull the picture to
     // them; left out, it is still kept, for the wipe against the clay)
     run.frame = await keepPicture(v.frameStill({ long: 1536, plain: sendsClay && plainFrame(b.strength, ids) }), `${draft.name} clay`);
@@ -940,6 +943,26 @@ export function showRender(id) {
   if (r.camera && toaster.view) toaster.view.setCameraState(r.camera);
   if (r.ratio && r.ratio in RATIOS && body().ratio !== r.ratio) setRatio(r.ratio);
   changed("toaster-runs");
+}
+/**
+ * "Use these settings": a render's image model, strength, maps and prompt put back as the draft's. A run from before has only some of
+ * them: what is there is used. The prompt comes back as the user's own; a run with none clears it, so it is written again.
+ */
+export function useSettings(id) {
+  const b = body();
+  const r = b?.renders.find((x) => x.id === id);
+  if (!r) return false;
+  if (r.model && toaster.models?.models.some((m) => m.id === r.model)) b.model = r.model;
+  if (Number.isFinite(r.strength)) b.strength = r.strength;
+  // (a run from before did not say which maps went: its pictures do, and the clay frame was always kept)
+  const ids = r.sent?.length ? r.sent : [...(r.frame ? ["clay"] : []), ...(r.maps ?? []).map((m) => MAPS.find((x) => x.name === m.name)?.id)].filter(Boolean);
+  if (ids.length) b.maps = MAPS.map((m) => m.id).filter((x) => ids.includes(x));
+  b.prompt = String(r.prompt ?? "").slice(0, 6000);
+  b.promptBy = b.prompt.trim() ? "you" : "";
+  b.promptFor = null;
+  save();
+  changed("toaster");
+  return true;
 }
 export function setCompare(on) {
   toaster.compare = !!on;
