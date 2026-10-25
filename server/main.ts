@@ -2302,7 +2302,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   const web = join(root, "web");
   const file = path === "/" ? join(web, "index.html") : inside(web, path.slice(1));
   if (!file) return json(res, 404, { error: "Not found." });
-  return sendFile(req, res, file);
+  // the Stage's models (some 400 files) change with a release, not with a visit: kept a day, the rest checked every time
+  return sendFile(req, res, file, path.startsWith("/models/") ? "public, max-age=86400" : "no-cache");
 }
 
 // ------------------------------------------------------------------- start
