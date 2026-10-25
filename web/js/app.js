@@ -166,7 +166,13 @@ function flush() {
       const lists = new Map([...el.querySelectorAll("[data-scroll-key]")].map((n) => [n.dataset.scrollKey, n.scrollTop]));
       // and the key the focus was on (a menu's, just picked from) would leave it on the page itself
       const focused = el.contains(active) && active.matches(KEYS) ? keyName(active) : null;
-      render(el);
+      // (a panel that fails to draw is reported and left as it was: the panels after it, the chat bar among them, still draw)
+      try {
+        render(el);
+      } catch (e) {
+        console.error(`the ${name} panel could not be drawn:`, e);
+        continue;
+      }
       el.scrollTop = top;
       for (const n of el.querySelectorAll("[data-scroll-key]")) if (lists.has(n.dataset.scrollKey)) n.scrollTop = lists.get(n.dataset.scrollKey);
       if (focused && !el.contains(document.activeElement)) [...el.querySelectorAll(KEYS)].find((n) => keyName(n) === focused)?.focus({ preventScroll: true });
