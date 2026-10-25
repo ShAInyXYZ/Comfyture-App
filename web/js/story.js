@@ -150,10 +150,13 @@ export function commit({ history = true } = {}) {
 /** A save soon; quiet while typing, so the field being written in stays as it is. */
 export function touch({ now = false, quiet = false } = {}) {
   clearTimeout(saveTimer);
+  saveTimer = 0;
   if (!quiet) update();
   if (!story.project) return;
   const p = story.project;
   const keep = async () => {
+    // (a save that has gone is no longer waiting: opening another story does not send it again)
+    saveTimer = 0;
     const b = p.body;
     const thumb = b.blocks.find((x) => x.kind === "shot" && x.photo)?.photo?.url ?? b.look.refs?.[0]?.url ?? b.cast.find((c) => c.refs[0])?.refs[0].url ?? b.places.find((x) => x.refs[0])?.refs[0].url;
     const name = b.idea.title || p.name;
@@ -244,6 +247,8 @@ export function closeStory(id) {
 }
 export async function deleteStory(id = story.project?.id) {
   if (!id) return;
+  // a save still waiting for the story that goes would be sent to nothing ("No such project"): it is dropped
+  if (story.project?.id === id) (clearTimeout(saveTimer), (saveTimer = 0));
   const { stories } = await call(`api/stories/${id}`, { method: "DELETE" });
   story.list = stories;
   return closeStory(id);
