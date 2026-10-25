@@ -500,8 +500,8 @@
   "name": "MOSS-Image: Text to Image",
   "section": "library",
   "category": "Image",
-  "what": "Generate an image from a text prompt with MOSS-Image, an open-weights model that reads a full scene caption and returns one finished image.",
-  "how": "MOSS-Image runs on Comfy Cloud: the workflow takes your words. A language model first expands your words into a detailed prompt, then the model draws the result step by step from noise. It saves a picture (PNG).",
+  "what": "Draws a picture from your words with MOSS-Image, an open-weights text-to-image model that reads a whole scene written in plain sentences.",
+  "how": "MOSS-Image runs on Comfy Cloud: a language model first expands your words into a detailed caption, then the model draws the picture from noise and saves it as a PNG. Describe the scene as you would to a person: who is there, where, and the light.",
   "takes": [
    "words"
   ],
@@ -509,10 +509,15 @@
    "image"
   ],
   "goodFor": [
-   "a picture from words",
-   "generate an image"
+   "a picture from a description",
+   "concept art from a sentence",
+   "a scene with several people or things",
+   "an open-weights picture"
   ],
-  "limits": [],
+  "limits": [
+   "one picture a run",
+   "words written inside the picture can come out wrong"
+  ],
   "use": [
    "Write what you want in the words field",
    "Open More settings for the seed, size or steps if you need them",
@@ -543,7 +548,12 @@
    "words",
    "open weights"
   ],
-  "curated": []
+  "curated": [
+   "what",
+   "how",
+   "goodFor",
+   "limits"
+  ]
  },
  {
   "id": "wf:image_moss_image_base_t2i",
@@ -551,8 +561,8 @@
   "name": "MOSS-Image Base: Text to Image",
   "section": "library",
   "category": "Image",
-  "what": "Generate an image from a text prompt with the MOSS-Image base checkpoint, which reads a full scene caption and returns one finished image.",
-  "how": "MOSS-Image runs on Comfy Cloud: the workflow takes your words. A language model first expands your words into a detailed prompt, then the model draws the result step by step from noise. It saves a picture (PNG).",
+  "what": "Draws a picture from your words with the MOSS-Image base checkpoint, the undistilled model that follows long captions closely.",
+  "how": "MOSS-Image Base runs on Comfy Cloud: a language model expands your words into a detailed caption, then the base model draws the picture from noise over more steps than the distilled one, and saves a PNG. Slower than MOSS-Image, and the one to start from for LoRA work.",
   "takes": [
    "words"
   ],
@@ -560,10 +570,14 @@
    "image"
   ],
   "goodFor": [
-   "a picture from words",
-   "generate an image"
+   "a picture that follows a long description",
+   "a base for LoRA work",
+   "an open-weights picture"
   ],
-  "limits": [],
+  "limits": [
+   "slower than MOSS-Image",
+   "one picture a run"
+  ],
   "use": [
    "Write what you want in the words field",
    "Open More settings for the seed, size or steps if you need them",
@@ -595,7 +609,12 @@
    "words",
    "open weights"
   ],
-  "curated": []
+  "curated": [
+   "what",
+   "how",
+   "goodFor",
+   "limits"
+  ]
  },
  {
   "id": "wf:image_moss_image_t2i_bboxes",
@@ -701,6 +720,61 @@
    "to",
    "words",
    "open weights"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_bria_fibo2_t2i",
+  "kind": "workflow",
+  "name": "Bria: FIBO 2.0 Text to Image",
+  "section": "library",
+  "category": "Image",
+  "what": "Generate an image from a text prompt with Bria FIBO 2.0, one model for both generation and editing.",
+  "how": "This workflow sends your words to Bria through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "words"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "a picture from words",
+   "generate an image"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "BRIA"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [],
+  "after": [
+   "upscale",
+   "cutout",
+   "wf:video_ltx2_3_i2v"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_bria_fibo2_t2i"
+  },
+  "keywords": [
+   "api",
+   "text to image",
+   "bria",
+   "image",
+   "fibo",
+   "2.0",
+   "text",
+   "to",
+   "words",
+   "api partner"
   ],
   "curated": []
  },
@@ -898,8 +972,8 @@
   "name": "FLUX 3 Image Klein Distilled: Text to Image",
   "section": "library",
   "category": "Image",
-  "what": "Generate images from text prompts using the distilled FLUX 3 Image Klein model, which runs efficiently in 15 sampling steps with no classifier-free guidance.",
-  "how": "FLUX 3 Image runs on Comfy Cloud: the workflow takes your words. A language model first expands your words into a detailed prompt, then the model draws the result step by step from noise. It saves a picture (PNG).",
+  "what": "Draws a picture from your words with FLUX 3 Klein, the small distilled FLUX 3 model from Black Forest Labs, in 15 steps.",
+  "how": "FLUX 3 Klein runs on Comfy Cloud: a language model expands your words into a detailed prompt, then the distilled model draws the picture in 15 steps with no guidance pass, which makes it fast, and saves a PNG.",
   "takes": [
    "words"
   ],
@@ -907,10 +981,14 @@
    "image"
   ],
   "goodFor": [
-   "a picture from words",
-   "generate an image"
+   "a quick picture from words",
+   "many drafts of one idea",
+   "product and scene concepts"
   ],
-  "limits": [],
+  "limits": [
+   "a small model: fine detail and lettering are weaker than the full FLUX 3",
+   "one picture a run"
+  ],
   "use": [
    "Write what you want in the words field",
    "Open More settings for the seed, size or steps if you need them",
@@ -944,7 +1022,12 @@
    "words",
    "open weights"
   ],
-  "curated": []
+  "curated": [
+   "what",
+   "how",
+   "goodFor",
+   "limits"
+  ]
  },
  {
   "id": "wf:api_google_nano_banana2_image_edit",
@@ -1887,8 +1970,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.2 Dev"
+   "FLUX",
+   "FLUX.2 Dev"
   ],
   "cost": "gpu",
   "credits": null,
@@ -1954,8 +2037,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.2 Klein"
+   "FLUX",
+   "FLUX.2 Klein"
   ],
   "cost": "gpu",
   "credits": null,
@@ -2979,8 +3062,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.2 Dev"
+   "FLUX",
+   "FLUX.2 Dev"
   ],
   "cost": "gpu",
   "credits": null,
@@ -3043,8 +3126,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.2 Klein"
+   "FLUX",
+   "FLUX.2 Klein"
   ],
   "cost": "gpu",
   "credits": null,
@@ -3106,8 +3189,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.2 Klein"
+   "FLUX",
+   "FLUX.2 Klein"
   ],
   "cost": "gpu",
   "credits": null,
@@ -3169,8 +3252,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.2 Klein"
+   "FLUX",
+   "FLUX.2 Klein"
   ],
   "cost": "gpu",
   "credits": null,
@@ -3241,8 +3324,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.1"
+   "FLUX",
+   "FLUX.1"
   ],
   "cost": "gpu",
   "credits": null,
@@ -3308,8 +3391,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux.1 Kontext",
-   "Flux"
+   "FLUX.1 Kontext",
+   "FLUX"
   ],
   "cost": "gpu",
   "credits": null,
@@ -3372,8 +3455,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.2 Klein"
+   "FLUX",
+   "FLUX.2 Klein"
   ],
   "cost": "gpu",
   "credits": null,
@@ -3724,8 +3807,8 @@
   "name": "GPT Image 2: Text to Image",
   "section": "library",
   "category": "Image",
-  "what": "Create campaign-ready posters, product shots, and multilingual signage using OpenAI's latest model.",
-  "how": "This workflow sends your words to OpenAI (GPT Image 2) through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "what": "Draws posters, product shots and signs with readable text in many languages from your words, with OpenAI's GPT Image 2.",
+  "how": "This workflow sends your words to OpenAI's GPT Image 2 through Comfy's partner nodes; the picture is made on their side and Comfy Cloud brings it back as a PNG. It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "words"
   ],
@@ -3733,11 +3816,14 @@
    "image"
   ],
   "goodFor": [
-   "a picture from words",
-   "generate an image"
+   "a poster with its text",
+   "a product shot for an ad",
+   "signage in another language",
+   "a picture that follows a precise brief"
   ],
   "limits": [
-   "partner credits, priced at the run"
+   "partner credits, priced at the run",
+   "OpenAI's content rules apply"
   ],
   "use": [
    "Write what you want in the words field",
@@ -3771,7 +3857,12 @@
    "api partner",
    "openai"
   ],
-  "curated": []
+  "curated": [
+   "what",
+   "how",
+   "goodFor",
+   "limits"
+  ]
  },
  {
   "id": "wf:api_openai_gpt_image_25_sunburst_t2i",
@@ -4347,8 +4438,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.1"
+   "FLUX",
+   "FLUX.1"
   ],
   "cost": "gpu",
   "credits": null,
@@ -4411,8 +4502,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.1 Krea Dev"
+   "FLUX",
+   "FLUX.1 Krea"
   ],
   "cost": "gpu",
   "credits": null,
@@ -4431,7 +4522,7 @@
    "image",
    "text to image",
    "flux",
-   "flux.1 krea dev",
+   "flux.1 krea",
    "flux.1",
    "krea",
    "dev",
@@ -4452,7 +4543,7 @@
   "section": "library",
   "category": "Image",
   "what": "Generate up to 4MP photorealistic images with multi-reference consistency and professional text rendering.",
-  "how": "This workflow sends a picture and your words to the partner behind Flux.2 through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "how": "This workflow sends a picture and your words to the partner behind FLUX.2 through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "image",
    "words"
@@ -4475,8 +4566,8 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux.2",
-   "Flux"
+   "FLUX.2",
+   "FLUX"
   ],
   "cost": "partner",
   "credits": null,
@@ -4532,8 +4623,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.1"
+   "FLUX",
+   "FLUX.1"
   ],
   "cost": "gpu",
   "credits": null,
@@ -4592,8 +4683,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.2 Klein"
+   "FLUX",
+   "FLUX.2 Klein"
   ],
   "cost": "gpu",
   "credits": null,
@@ -4660,8 +4751,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux.1",
-   "Flux"
+   "FLUX.1",
+   "FLUX"
   ],
   "cost": "gpu",
   "credits": null,
@@ -4721,8 +4812,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux.1",
-   "Flux"
+   "FLUX.1",
+   "FLUX"
   ],
   "cost": "gpu",
   "credits": null,
@@ -4842,8 +4933,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux.2 Dev",
-   "Flux"
+   "FLUX.2 Dev",
+   "FLUX"
   ],
   "cost": "gpu",
   "credits": null,
@@ -4913,8 +5004,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux.1",
-   "Flux"
+   "FLUX.1",
+   "FLUX"
   ],
   "cost": "gpu",
   "credits": null,
@@ -6466,10 +6557,10 @@
  {
   "id": "wf:api_bria_image_edit",
   "kind": "workflow",
-  "name": "Bria: Image Edit",
+  "name": "Bria: FIBO 2.0 Image Edit",
   "section": "library",
   "category": "Image",
-  "what": "FIBO enables precise, predictable image editing through structured JSON control over lighting, composition, and camera settings.",
+  "what": "Edit an image with Bria FIBO 2.0 by describing the change in plain language, with an optional mask to confine it to one region.",
   "how": "This workflow sends a picture and your words to Bria through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "image",
@@ -6515,7 +6606,184 @@
    "image edit",
    "bria",
    "image",
+   "fibo",
+   "2.0",
    "edit",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_bria_guided_remove_background",
+  "kind": "workflow",
+  "name": "Bria: Guided Background Removal",
+  "section": "library",
+  "category": "Image",
+  "what": "Remove the background from an image with Bria while keeping whatever a text prompt describes, so one subject can be cut out of a busy scene instead of losing everything that is not background.",
+  "how": "This workflow sends a picture and your words to Bria through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "remove the background"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop a picture on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "BRIA"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "upscale"
+  ],
+  "after": [
+   "upscale",
+   "wf:video_ltx2_3_i2v"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_bria_guided_remove_background"
+  },
+  "keywords": [
+   "api",
+   "image",
+   "remove background",
+   "bria",
+   "guided",
+   "background",
+   "removal",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_bria_product_holding",
+  "kind": "workflow",
+  "name": "Bria: Product Holding",
+  "section": "library",
+  "category": "Image",
+  "what": "Place a product into the hands of the person in a photo with Bria.",
+  "how": "This workflow sends a picture and your words to Bria through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "edit a picture with words",
+   "change part of a photo"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop a picture on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "BRIA"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "cutout",
+   "upscale",
+   "edit"
+  ],
+  "after": [
+   "upscale",
+   "cutout",
+   "wf:video_ltx2_3_i2v"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_bria_product_holding"
+  },
+  "keywords": [
+   "api",
+   "image",
+   "image edit",
+   "bria",
+   "product",
+   "holding",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_bria_virtual_try_on",
+  "kind": "workflow",
+  "name": "Bria: Virtual Try-On",
+  "section": "library",
+  "category": "Image",
+  "what": "Dress the person in a photo with a garment from a separate product shot using Bria.",
+  "how": "This workflow sends a picture and your words to Bria through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "edit a picture with words",
+   "change part of a photo"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop a picture on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "BRIA"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "cutout",
+   "upscale",
+   "edit"
+  ],
+  "after": [
+   "upscale",
+   "cutout",
+   "wf:video_ltx2_3_i2v"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_bria_virtual_try_on"
+  },
+  "keywords": [
+   "api",
+   "fashion",
+   "image",
+   "image edit",
+   "bria",
+   "virtual",
+   "try-on",
    "words",
    "api partner"
   ],
@@ -7086,8 +7354,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux.1",
-   "Flux"
+   "FLUX.1",
+   "FLUX"
   ],
   "cost": "gpu",
   "credits": null,
@@ -7458,8 +7726,8 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux",
-   "Flux.1 Kontext"
+   "FLUX",
+   "FLUX.1 Kontext"
   ],
   "cost": "partner",
   "credits": null,
@@ -7523,8 +7791,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux.1",
-   "Flux"
+   "FLUX.1",
+   "FLUX"
   ],
   "cost": "gpu",
   "credits": null,
@@ -7565,7 +7833,7 @@
   "section": "library",
   "category": "Image",
   "what": "Chroma - enhanced Flux model with improved image quality and better prompt understanding for stunning text-to-image generation.",
-  "how": "Chroma and Flux run on Comfy Cloud: the workflow takes your words. The model draws the result step by step from noise. It saves a picture (PNG).",
+  "how": "Chroma and FLUX run on Comfy Cloud: the workflow takes your words. The model draws the result step by step from noise. It saves a picture (PNG).",
   "takes": [
    "words"
   ],
@@ -7584,7 +7852,7 @@
   ],
   "models": [
    "Chroma",
-   "Flux"
+   "FLUX"
   ],
   "cost": "gpu",
   "credits": null,
@@ -7639,8 +7907,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux.1",
-   "Flux"
+   "FLUX.1",
+   "FLUX"
   ],
   "cost": "gpu",
   "credits": null,
@@ -7703,8 +7971,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux.1",
-   "Flux"
+   "FLUX.1",
+   "FLUX"
   ],
   "cost": "gpu",
   "credits": null,
@@ -7765,8 +8033,8 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux.1 Kontext",
-   "Flux"
+   "FLUX.1 Kontext",
+   "FLUX"
   ],
   "cost": "partner",
   "credits": null,
@@ -7813,7 +8081,7 @@
   "section": "library",
   "category": "Image",
   "what": "Replace objects in images with unmatched quality using FLUX.2 [max].",
-  "how": "This workflow sends a picture and your words to the partner behind Flux.2 through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "how": "This workflow sends a picture and your words to the partner behind FLUX.2 through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "image",
    "words"
@@ -7834,8 +8102,8 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux",
-   "Flux.2"
+   "FLUX",
+   "FLUX.2"
   ],
   "cost": "partner",
   "credits": null,
@@ -10152,7 +10420,7 @@
   "section": "library",
   "category": "Image",
   "what": "Generate multiple edited images using cached image data for faster processing.",
-  "how": "Flux.2 Klein runs on Comfy Cloud: the workflow takes a picture and your words. Your reference pictures guide the look, then the model draws the result step by step from noise. It saves a picture (PNG).",
+  "how": "FLUX.2 Klein runs on Comfy Cloud: the workflow takes a picture and your words. Your reference pictures guide the look, then the model draws the result step by step from noise. It saves a picture (PNG).",
   "takes": [
    "image",
    "words"
@@ -10172,7 +10440,7 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux.2 Klein"
+   "FLUX.2 Klein"
   ],
   "cost": "gpu",
   "credits": null,
@@ -10211,7 +10479,7 @@
   "section": "library",
   "category": "Image",
   "what": "Upload one input image and select multiple editing models.",
-  "how": "This workflow sends a picture and your words to xAI (Grok), Google, ByteDance and OpenAI (Flux.2 Dev, Flux.2 Klein and GPT-Image-1.5) through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "how": "This workflow sends a picture and your words to xAI (Grok), Google, ByteDance and OpenAI (FLUX.2 Dev, FLUX.2 Klein and GPT-Image-1.5) through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "image",
    "words"
@@ -10233,8 +10501,8 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux.2 Dev",
-   "Flux.2 Klein",
+   "FLUX.2 Dev",
+   "FLUX.2 Klein",
    "GPT-Image-1.5",
    "Grok",
    "Nano Banana Pro",
@@ -10490,8 +10758,8 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux",
-   "Flux.1"
+   "FLUX",
+   "FLUX.1"
   ],
   "cost": "gpu",
   "credits": null,
@@ -10556,8 +10824,8 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux.1 Kontext",
-   "Flux"
+   "FLUX.1 Kontext",
+   "FLUX"
   ],
   "cost": "partner",
   "credits": null,
@@ -10623,8 +10891,8 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux",
-   "Flux.1"
+   "FLUX",
+   "FLUX.1"
   ],
   "cost": "partner",
   "credits": null,
@@ -12953,8 +13221,8 @@
   "name": "Skin Enhancer + Upscaler",
   "section": "library",
   "category": "Image Tools",
-  "what": "One click workflow to generate a character portrait, refine/add skin details, and upscale to 4k.",
-  "how": "Z-Image-Turbo and SDXL run on Comfy Cloud: the workflow takes a picture and your words. LoRAs steer the model toward their specialty, then the model draws the result step by step from noise and a second pass upscales it for detail. It saves a picture (PNG).",
+  "what": "Makes a character portrait, refines its skin detail and upscales it to about 4K, in one run.",
+  "how": "Z-Image Turbo makes the portrait on Comfy Cloud, then SDXL with skin-detail LoRAs refines the face and a second pass upscales the picture; it saves a PNG. A community template made for close-up portraits.",
   "takes": [
    "image",
    "words"
@@ -12963,10 +13231,14 @@
    "image"
   ],
   "goodFor": [
-   "upscale a picture",
-   "make a photo sharper"
+   "a realistic close-up portrait",
+   "skin texture on a face that looks too smooth",
+   "a 4K portrait"
   ],
-  "limits": [],
+  "limits": [
+   "made for faces: other subjects gain little",
+   "a community template, tuned by its author"
+  ],
   "use": [
    "Drop a picture on its well",
    "Write what you want in the words field",
@@ -13004,7 +13276,12 @@
    "words",
    "open weights"
   ],
-  "curated": []
+  "curated": [
+   "what",
+   "how",
+   "goodFor",
+   "limits"
+  ]
  },
  {
   "id": "wf:image_marigold_v2_depth_estimation",
@@ -13012,8 +13289,8 @@
   "name": "Depth Estimation: Marigold V2",
   "section": "library",
   "category": "Image Tools",
-  "what": "Estimate scene depth from an input image using Marigold V2, generating a depth map with brighter areas representing closer objects and darker areas representing farther objects.",
-  "how": "Marigold v2 runs on Comfy Cloud: the workflow takes a picture. A LoRA steers the model toward its specialty, then the model draws the result step by step from noise. It saves a picture (PNG).",
+  "what": "Reads how far away everything in a picture is and gives its depth map: near is bright, far is dark.",
+  "how": "Marigold V2 runs on Comfy Cloud: a diffusion model trained to estimate depth reads your picture and draws its depth map, saved as a PNG. Use it to drive a depth ControlNet, to relight a scene, or to place effects behind the people in it.",
   "takes": [
    "image"
   ],
@@ -13021,9 +13298,14 @@
    "image"
   ],
   "goodFor": [
-   "depth estimation: marigold v2"
+   "a depth map from a picture",
+   "control for a depth ControlNet",
+   "separating the foreground from the background"
   ],
-  "limits": [],
+  "limits": [
+   "relative depth, not metres",
+   "glass and mirrors confuse it"
+  ],
   "use": [
    "Drop a picture on its well",
    "Open More settings for the seed, size or steps if you need them",
@@ -13060,7 +13342,12 @@
    "image",
    "open weights"
   ],
-  "curated": []
+  "curated": [
+   "what",
+   "how",
+   "goodFor",
+   "limits"
+  ]
  },
  {
   "id": "wf:api_topaz_image_enhance_wonder3_5",
@@ -13327,7 +13614,7 @@
    "Press Run on Comfy Cloud and confirm the price (GPU time)"
   ],
   "models": [
-   "Flux.2 Klein"
+   "FLUX.2 Klein"
   ],
   "cost": "gpu",
   "credits": null,
@@ -14724,7 +15011,7 @@
   "section": "library",
   "category": "Image Tools",
   "what": "Generate an outpainted image with extended content.",
-  "how": "This workflow sends a picture and your words to Black Forest Labs (Flux.1) through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "how": "This workflow sends a picture and your words to Black Forest Labs (FLUX.1) through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "image",
    "words"
@@ -14744,8 +15031,8 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux",
-   "Flux.1"
+   "FLUX",
+   "FLUX.1"
   ],
   "cost": "partner",
   "credits": null,
@@ -15829,7 +16116,7 @@
   "section": "library",
   "category": "Image Tools",
   "what": "Upload an image and paint a mask over the object to remove.",
-  "how": "This workflow sends a picture, your words and a mask to the partner behind Flux through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "how": "This workflow sends a picture, your words and a mask to the partner behind FLUX through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "image",
    "words",
@@ -15851,7 +16138,7 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux"
+   "FLUX"
   ],
   "cost": "partner",
   "credits": null,
@@ -16184,6 +16471,70 @@
    "goodFor",
    "limits"
   ]
+ },
+ {
+  "id": "wf:video_fasth3_ominiref_r2v",
+  "kind": "workflow",
+  "name": "FastH3 OmniRef: Reference to Video",
+  "section": "library",
+  "category": "Video",
+  "what": "Generate synchronized video with matching audio from a text prompt plus a reference image using the FastH3 OmniRef eight-step distilled model, which renders both streams in just eight sampling steps.",
+  "how": "MiniMax H3 runs on Comfy Cloud: the workflow takes a picture and your words. The model draws the result step by step from noise. It saves a clip (MP4).",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "a video from reference pictures"
+  ],
+  "limits": [
+   "a few seconds per clip; longer clips cost more GPU time",
+   "a very large model: the first run takes a while to load"
+  ],
+  "use": [
+   "Drop a picture on its well",
+   "Write what you want in the words field",
+   "Open More settings for the seed, size or steps if you need them",
+   "Press Run on Comfy Cloud and confirm the price (GPU time)"
+  ],
+  "models": [
+   "MiniMax H3"
+  ],
+  "cost": "gpu",
+  "credits": null,
+  "before": [
+   "cutout",
+   "upscale",
+   "edit"
+  ],
+  "after": [
+   "upscale-video",
+   "ed-reframe",
+   "ed-captions"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "video_fasth3_ominiref_r2v"
+  },
+  "keywords": [
+   "reference to video",
+   "video",
+   "minimax h3",
+   "fasth3",
+   "omniref",
+   "reference",
+   "to",
+   "minimax",
+   "h3",
+   "image",
+   "words",
+   "open weights"
+  ],
+  "curated": []
  },
  {
   "id": "wf:video_ltx2_3_i2v",
@@ -16846,75 +17197,13 @@
   ]
  },
  {
-  "id": "wf:api_vidu_q4_preview_r2v",
+  "id": "wf:api_flux3_max_i2v",
   "kind": "workflow",
-  "name": "Vidu Q4 Preview: Reference to Video",
+  "name": "FLUX 3 Max: Image to Video",
   "section": "library",
   "category": "Video",
-  "what": "Generate expressive videos from two reference images using Vidu Q4 Preview, a flagship model built for vivid character performance, dynamic camera language, and striking visual effects.",
-  "how": "This workflow sends a picture and your words to Vidu through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
-  "takes": [
-   "image",
-   "words"
-  ],
-  "gives": [
-   "video"
-  ],
-  "goodFor": [
-   "a video from reference pictures"
-  ],
-  "limits": [
-   "partner credits, priced at the run"
-  ],
-  "use": [
-   "Drop a picture on its well",
-   "Write what you want in the words field",
-   "Press Run on Comfy Cloud and confirm the price"
-  ],
-  "models": [
-   "Vidu Q4"
-  ],
-  "cost": "partner",
-  "credits": null,
-  "before": [
-   "cutout",
-   "upscale",
-   "edit"
-  ],
-  "after": [
-   "upscale-video",
-   "ed-reframe",
-   "ed-captions"
-  ],
-  "tutorial": null,
-  "open": {
-   "workspace": "templates",
-   "workflow": "api_vidu_q4_preview_r2v"
-  },
-  "keywords": [
-   "api",
-   "reference to video",
-   "vidu q4",
-   "video",
-   "vidu",
-   "q4",
-   "preview",
-   "reference",
-   "to",
-   "image",
-   "words",
-   "api partner"
-  ],
-  "curated": []
- },
- {
-  "id": "wf:api_vidu_q4_preview_i2v",
-  "kind": "workflow",
-  "name": "Vidu Q4 Preview: Image to Video",
-  "section": "library",
-  "category": "Video",
-  "what": "Generate cinematic videos from a single still image using Vidu Q4 Preview, an expressive flagship model built for lifelike character acting, dramatic camera movement, and striking visual effects.",
-  "how": "This workflow sends a picture and your words to Vidu through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "what": "Animate a single still image into a short video clip using FLUX 3 Max, taking one input image and producing one video output.",
+  "how": "This workflow sends a picture and your words to the partner behind FLUX 3 Video through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "image",
    "words"
@@ -16935,7 +17224,7 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Vidu Q4"
+   "FLUX 3 Video"
   ],
   "cost": "partner",
   "credits": null,
@@ -16952,17 +17241,71 @@
   "tutorial": null,
   "open": {
    "workspace": "templates",
-   "workflow": "api_vidu_q4_preview_i2v"
+   "workflow": "api_flux3_max_i2v"
+  },
+  "keywords": [
+   "image to video",
+   "api",
+   "flux 3 video",
+   "video",
+   "flux",
+   "max",
+   "image",
+   "to",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_flux3_max_t2v",
+  "kind": "workflow",
+  "name": "FLUX 3 Max: Text to Video",
+  "section": "library",
+  "category": "Video",
+  "what": "Generate a video with synchronized audio from a single text prompt with FLUX 3 Max, which reasons about and expands the prompt before rendering.",
+  "how": "This workflow sends your words to the partner behind FLUX 3 Video through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "a video from words",
+   "a short clip from a description"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "FLUX 3 Video"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [],
+  "after": [
+   "upscale-video",
+   "ed-reframe",
+   "ed-captions"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_flux3_max_t2v"
   },
   "keywords": [
    "api",
-   "image to video",
-   "vidu q4",
+   "text to video",
+   "flux 3 video",
    "video",
-   "vidu",
-   "q4",
-   "preview",
-   "image",
+   "flux",
+   "max",
+   "text",
    "to",
    "words",
    "api partner"
@@ -17771,6 +18114,130 @@
    "goodFor",
    "limits"
   ]
+ },
+ {
+  "id": "wf:api_vidu_q4_preview_r2v",
+  "kind": "workflow",
+  "name": "Vidu Q4 Preview: Reference to Video",
+  "section": "library",
+  "category": "Video",
+  "what": "Generate expressive videos from two reference images using Vidu Q4 Preview, a flagship model built for vivid character performance, dynamic camera language, and striking visual effects.",
+  "how": "This workflow sends a picture and your words to Vidu through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "a video from reference pictures"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop a picture on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "Vidu Q4"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "cutout",
+   "upscale",
+   "edit"
+  ],
+  "after": [
+   "upscale-video",
+   "ed-reframe",
+   "ed-captions"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_vidu_q4_preview_r2v"
+  },
+  "keywords": [
+   "api",
+   "reference to video",
+   "vidu q4",
+   "video",
+   "vidu",
+   "q4",
+   "preview",
+   "reference",
+   "to",
+   "image",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_vidu_q4_preview_i2v",
+  "kind": "workflow",
+  "name": "Vidu Q4 Preview: Image to Video",
+  "section": "library",
+  "category": "Video",
+  "what": "Generate cinematic videos from a single still image using Vidu Q4 Preview, an expressive flagship model built for lifelike character acting, dramatic camera movement, and striking visual effects.",
+  "how": "This workflow sends a picture and your words to Vidu through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "animate a picture",
+   "bring a photo to life"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop a picture on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "Vidu Q4"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "cutout",
+   "upscale",
+   "edit"
+  ],
+  "after": [
+   "upscale-video",
+   "ed-reframe",
+   "ed-captions"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_vidu_q4_preview_i2v"
+  },
+  "keywords": [
+   "api",
+   "image to video",
+   "vidu q4",
+   "video",
+   "vidu",
+   "q4",
+   "preview",
+   "image",
+   "to",
+   "words",
+   "api partner"
+  ],
+  "curated": []
  },
  {
   "id": "wf:api_seedance2_0_flf2v",
@@ -20885,7 +21352,7 @@
   "section": "library",
   "category": "Video",
   "what": "Edit and transform images with FLUX using simple text prompts.",
-  "how": "This workflow sends a clip and your words to the partner behind Flux through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "how": "This workflow sends a clip and your words to the partner behind FLUX through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "video",
    "words"
@@ -20905,7 +21372,7 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux"
+   "FLUX"
   ],
   "cost": "partner",
   "credits": null,
@@ -21219,6 +21686,139 @@
    "talking",
    "photo",
    "image",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_veed_fabric_1_0",
+  "kind": "workflow",
+  "name": "VEED Fabric 1.0: Talking Photo",
+  "section": "library",
+  "category": "Video",
+  "what": "Turn a still photo and a speech track into a talking, lip-synced video with VEED Fabric 1.0.",
+  "how": "This workflow sends a picture, a sound and your words to the partner behind VEED through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "image",
+   "audio",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "animate a picture",
+   "bring a photo to life",
+   "make a face talk or sing"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop a picture on its well",
+   "Drop the sound on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "VEED"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "cutout",
+   "upscale",
+   "edit",
+   "au-voice"
+  ],
+  "after": [
+   "upscale-video",
+   "ed-reframe",
+   "ed-captions"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_veed_fabric_1_0"
+  },
+  "keywords": [
+   "api",
+   "image to video",
+   "lip sync",
+   "veed",
+   "video",
+   "fabric",
+   "1.0",
+   "talking",
+   "photo",
+   "image",
+   "audio",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_veed_lipsync_2_0",
+  "kind": "workflow",
+  "name": "VEED Lipsync 2.0: Lip Sync",
+  "section": "library",
+  "category": "Video",
+  "what": "Re-sync a speaker's mouth in footage you already shot to a new speech track with VEED Lipsync 2.0.",
+  "how": "This workflow sends a clip, a sound and your words to the partner behind VEED through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "video",
+   "audio",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "make a face talk or sing",
+   "edit a video with words"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop the clip on its well",
+   "Drop the sound on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "VEED"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "ed-trim",
+   "au-voice",
+   "au-stems"
+  ],
+  "after": [
+   "upscale-video",
+   "ed-reframe",
+   "ed-captions"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_veed_lipsync_2_0"
+  },
+  "keywords": [
+   "api",
+   "lip sync",
+   "video edit",
+   "veed",
+   "video",
+   "lipsync",
+   "2.0",
+   "lip",
+   "sync",
+   "audio",
    "words",
    "api partner"
   ],
@@ -21669,7 +22269,7 @@
   "section": "library",
   "category": "Video",
   "what": "Generate full videos from a single text prompt using FLUX 3, which automatically expands your description into a cohesive scene with synchronized audio, motion, and physics.",
-  "how": "This workflow sends a picture and your words to the partner behind Flux.3 Video through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "how": "This workflow sends a picture and your words to the partner behind FLUX 3 Video through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "image",
    "words"
@@ -21690,7 +22290,7 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux.3 Video"
+   "FLUX 3 Video"
   ],
   "cost": "partner",
   "credits": null,
@@ -21712,12 +22312,11 @@
   "keywords": [
    "api",
    "image to video",
-   "flux.3 video",
+   "flux 3 video",
    "video",
    "flux",
    "image",
    "to",
-   "flux.3",
    "words",
    "api partner"
   ],
@@ -24228,6 +24827,122 @@
    "video",
    "6.0",
    "text",
+   "to",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_pixverse_v6_max_t2v",
+  "kind": "workflow",
+  "name": "PixVerse V6 Max: Text to Video",
+  "section": "library",
+  "category": "Video",
+  "what": "Generate videos up to 15 seconds at 1080p from a text prompt with PixVerse V6 Max, the higher-fidelity tier of PixVerse V6, with native audio and multi-shot direction in a single generation.",
+  "how": "This workflow sends your words to PixVerse through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "a video from words",
+   "a short clip from a description"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "PixVerse"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [],
+  "after": [
+   "upscale-video",
+   "ed-reframe",
+   "ed-captions"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_pixverse_v6_max_t2v"
+  },
+  "keywords": [
+   "api",
+   "text to video",
+   "pixverse",
+   "video",
+   "v6",
+   "max",
+   "text",
+   "to",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_pixverse_v6_max_i2v",
+  "kind": "workflow",
+  "name": "PixVerse V6 Max: Image to Video",
+  "section": "library",
+  "category": "Video",
+  "what": "Animate a still image with PixVerse V6 Max, keeping the aspect ratio of the input image and generating up to 15 seconds at up to 1080p with an optional native audio track.",
+  "how": "This workflow sends a picture and your words to PixVerse through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "animate a picture",
+   "bring a photo to life"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop a picture on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "PixVerse"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "cutout",
+   "upscale",
+   "edit"
+  ],
+  "after": [
+   "upscale-video",
+   "ed-reframe",
+   "ed-captions"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_pixverse_v6_max_i2v"
+  },
+  "keywords": [
+   "api",
+   "image to video",
+   "pixverse",
+   "video",
+   "v6",
+   "max",
+   "image",
    "to",
    "words",
    "api partner"
@@ -26875,7 +27590,7 @@
   "section": "library",
   "category": "Video",
   "what": "Generate full videos from a single text prompt with FLUX 3, which expands natural language into complete scenes with synchronized audio, no reference images or complex settings needed.",
-  "how": "This workflow sends your words to the partner behind Flux.3 Video through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "how": "This workflow sends your words to the partner behind FLUX 3 Video through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "words"
   ],
@@ -26894,7 +27609,7 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux.3 Video"
+   "FLUX 3 Video"
   ],
   "cost": "partner",
   "credits": null,
@@ -26912,12 +27627,11 @@
   "keywords": [
    "api",
    "text to video",
-   "flux.3 video",
+   "flux 3 video",
    "video",
    "flux",
    "text",
    "to",
-   "flux.3",
    "words",
    "api partner"
   ],
@@ -29858,7 +30572,7 @@
   "section": "library",
   "category": "Video Tools",
   "what": "Upscale video clips to 1080p, 2K, or 4K using FLUX 3 super-resolution, with a precise mode that preserves source fidelity and a creative mode that enhances fine detail.",
-  "how": "This workflow sends a clip and your words to the partner behind Flux through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "how": "This workflow sends a clip and your words to the partner behind FLUX through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "video",
    "words"
@@ -29879,7 +30593,7 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux"
+   "FLUX"
   ],
   "cost": "partner",
   "credits": null,
@@ -29904,6 +30618,66 @@
    "upscale",
    "words",
    "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_clarity_ai_crystal_video_upscale",
+  "kind": "workflow",
+  "name": "Clarity AI: Crystal Video Upscaler",
+  "section": "library",
+  "category": "Video Tools",
+  "what": "Upscale a video with Clarity AI's Crystal model, running through the Fal proxy: one video in, one upscaled video out.",
+  "how": "This workflow sends a clip and your words to Clarity AI (Crystal Upscaler) through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "video",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "upscale a video",
+   "a sharper clip"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop the clip on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "Crystal Upscaler"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "ed-reframe",
+   "ed-captions"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_clarity_ai_crystal_video_upscale"
+  },
+  "keywords": [
+   "api",
+   "video upscale",
+   "crystal upscaler",
+   "video tools",
+   "clarity",
+   "ai",
+   "crystal",
+   "video",
+   "upscaler",
+   "words",
+   "api partner",
+   "clarity ai"
   ],
   "curated": []
  },
@@ -30920,6 +31694,124 @@
   "curated": []
  },
  {
+  "id": "wf:api_veed_remove_video_background",
+  "kind": "workflow",
+  "name": "VEED Remove Video Background: Matte Export",
+  "section": "library",
+  "category": "Video Tools",
+  "what": "Cut the subject out of a video with VEED Remove Video Background: the node segments the foreground in every frame and returns the frames plus an alpha mask, and Join Image with Alpha turns that mask into a transparent PN.",
+  "how": "This workflow sends a clip and your words to the partner behind VEED through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "video",
+   "words"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "remove the background"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop the clip on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "VEED"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "upscale",
+   "wf:video_ltx2_3_i2v"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_veed_remove_video_background"
+  },
+  "keywords": [
+   "api",
+   "remove background",
+   "video",
+   "veed",
+   "video tools",
+   "remove",
+   "background",
+   "matte",
+   "export",
+   "image",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_veed_clean_audio_video",
+  "kind": "workflow",
+  "name": "VEED Clean Audio: Video Speech Cleanup",
+  "section": "library",
+  "category": "Video Tools",
+  "what": "Clean the speech inside a video with VEED Clean Audio: background noise, music and effects are stripped from the soundtrack, pauses are cleaned completely, and the clip comes back with 48 kHz mono speech, optionally norm.",
+  "how": "This workflow sends a clip and your words to the partner behind VEED through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "video",
+   "words"
+  ],
+  "gives": [
+   "video"
+  ],
+  "goodFor": [
+   "edit a video with words"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop the clip on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "VEED"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "upscale-video",
+   "ed-reframe",
+   "ed-captions"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_veed_clean_audio_video"
+  },
+  "keywords": [
+   "api",
+   "audio",
+   "video edit",
+   "veed",
+   "video tools",
+   "clean",
+   "video",
+   "speech",
+   "cleanup",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
   "id": "wf:api_bria_video_green_screen",
   "kind": "workflow",
   "name": "Green Screen: Bria",
@@ -31784,6 +32676,174 @@
   "curated": []
  },
  {
+  "id": "wf:api_mirelo_video_to_sfx",
+  "kind": "workflow",
+  "name": "Mirelo SFX 2.0: Video to SFX",
+  "section": "library",
+  "category": "Audio",
+  "what": "Mirelo SFX 2.0: Video to SFX: add picture-locked sound effects to a clip with Mirelo sfx-2.0: the model watches the video and times Foley to on-screen action, keeps speech by default, and saves the SFX track, the speech.",
+  "how": "This workflow sends a clip and your words to the partner behind Mirelo through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a clip (MP4) and a sound. It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "video",
+   "words"
+  ],
+  "gives": [
+   "video",
+   "audio"
+  ],
+  "goodFor": [
+   "mirelo sfx 2.0: video to sfx"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop the clip on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "Mirelo"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "ed-trim"
+  ],
+  "after": [
+   "upscale-video",
+   "ed-reframe",
+   "ed-captions",
+   "au-master"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_mirelo_video_to_sfx"
+  },
+  "keywords": [
+   "video",
+   "audio",
+   "api",
+   "mirelo",
+   "sfx",
+   "2.0",
+   "to",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_mirelo_text_to_sfx",
+  "kind": "workflow",
+  "name": "Mirelo SFX 2.0: Text to SFX",
+  "section": "library",
+  "category": "Audio",
+  "what": "Generate sound effects from a text prompt with Mirelo sfx-2.0: name the sound, its material, space and intensity in one line and get a 48 kHz mono audio file, up to 10 minutes.",
+  "how": "This workflow sends your words to the partner behind Mirelo through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a sound. It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "words"
+  ],
+  "gives": [
+   "audio"
+  ],
+  "goodFor": [
+   "a sound or music from words"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "Mirelo"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [],
+  "after": [
+   "au-master",
+   "ed-audio"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_mirelo_text_to_sfx"
+  },
+  "keywords": [
+   "text to audio",
+   "audio",
+   "api",
+   "mirelo",
+   "sfx",
+   "2.0",
+   "text",
+   "to",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_veed_clean_audio",
+  "kind": "workflow",
+  "name": "VEED Clean Audio: Speech Cleanup",
+  "section": "library",
+  "category": "Audio",
+  "what": "Remove background noise from a speech recording with VEED Clean Audio: music and effects go with the noise, pauses are cleaned completely, and the voice comes back as 48 kHz mono audio, optionally normalized to a target loudness.",
+  "how": "This workflow sends a sound and your words to the partner behind VEED through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a sound. It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "audio",
+   "words"
+  ],
+  "gives": [
+   "audio"
+  ],
+  "goodFor": [
+   "veed clean audio: speech cleanup"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop the sound on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "VEED"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "au-clean"
+  ],
+  "after": [
+   "lipsync",
+   "au-mix"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_veed_clean_audio"
+  },
+  "keywords": [
+   "api",
+   "audio",
+   "audio editing",
+   "veed",
+   "clean",
+   "speech",
+   "cleanup",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
   "id": "wf:api_elevenlabs_v4_text_to_speech",
   "kind": "workflow",
   "name": "Eleven v4: Text to Speech",
@@ -32254,8 +33314,8 @@
   "name": "Stable Audio 3.0 Medium Base",
   "section": "library",
   "category": "Audio",
-  "what": "The workflow expands your prompt with Qwen and generates a stereo audio clip from Stable Audio 3.",
-  "how": "Stable Audio runs on Comfy Cloud: the workflow takes your words. A language model first expands your words into a detailed prompt, then the model generates the sound step by step from noise. It saves a sound.",
+  "what": "Makes a stereo sound or a short piece of music from your words with Stable Audio 3 Medium.",
+  "how": "Stable Audio 3 runs on Comfy Cloud: Qwen first expands your words into a detailed description of the sound, then the model generates the audio from noise and saves it as a stereo file. For music, say the instruments, the mood and the tempo; for an effect, the source and the space it is heard in.",
   "takes": [
    "words"
   ],
@@ -32263,9 +33323,14 @@
    "audio"
   ],
   "goodFor": [
-   "a sound or music from words"
+   "a sound effect from words",
+   "a short music loop",
+   "ambience under a scene"
   ],
-  "limits": [],
+  "limits": [
+   "short clips, not whole songs",
+   "no sung words"
+  ],
   "use": [
    "Write what you want in the words field",
    "Open More settings for the seed, size or steps if you need them",
@@ -32297,7 +33362,12 @@
    "words",
    "open weights"
   ],
-  "curated": []
+  "curated": [
+   "what",
+   "how",
+   "goodFor",
+   "limits"
+  ]
  },
  {
   "id": "wf:audio_stable_audio_3_medium",
@@ -32695,6 +33765,125 @@
    "heygen",
    "audio",
    "text",
+   "to",
+   "speech",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_heygen_voice_1",
+  "kind": "workflow",
+  "name": "HeyGen Voice 1.0: Voice Clone to Speech",
+  "section": "library",
+  "category": "Audio",
+  "what": "Clone a voice from a short recording with HeyGen Voice 1.0, then speak any script in that voice.",
+  "how": "This workflow sends a sound and your words to HeyGen through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a sound. It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "audio",
+   "words"
+  ],
+  "gives": [
+   "audio"
+  ],
+  "goodFor": [
+   "a voice from text"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop the sound on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "HeyGen"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "au-clean"
+  ],
+  "after": [
+   "lipsync",
+   "au-mix"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_heygen_voice_1"
+  },
+  "keywords": [
+   "api",
+   "text to speech",
+   "voice cloning",
+   "heygen",
+   "audio",
+   "voice",
+   "1.0",
+   "clone",
+   "to",
+   "speech",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_heygen_voice_1_turbo",
+  "kind": "workflow",
+  "name": "HeyGen Voice 1.0 Turbo: Voice Clone to Speech",
+  "section": "library",
+  "category": "Audio",
+  "what": "Clone a voice from a short recording with HeyGen Voice 1.0 Turbo, then speak any script in that voice.",
+  "how": "This workflow sends a sound and your words to HeyGen through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a sound. It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "audio",
+   "words"
+  ],
+  "gives": [
+   "audio"
+  ],
+  "goodFor": [
+   "a voice from text"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop the sound on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "HeyGen"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "au-clean"
+  ],
+  "after": [
+   "lipsync",
+   "au-mix"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_heygen_voice_1_turbo"
+  },
+  "keywords": [
+   "api",
+   "text to speech",
+   "voice cloning",
+   "heygen",
+   "audio",
+   "voice",
+   "1.0",
+   "turbo",
+   "clone",
    "to",
    "speech",
    "words",
@@ -34383,13 +35572,13 @@
   "use": [
    "Drop a picture on its well",
    "Write what you want in the words field",
-   "Press Run on Comfy Cloud and confirm the price"
+   "Press Run on Comfy Cloud and confirm the price (about 232 cr)"
   ],
   "models": [
    "Tripo P2"
   ],
   "cost": "partner",
-  "credits": null,
+  "credits": 232,
   "before": [
    "cutout",
    "upscale",
@@ -34518,6 +35707,118 @@
    "7.1",
    "image",
    "to",
+   "3d",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_meshy_t2_5_smart_topology_t2m",
+  "kind": "workflow",
+  "name": "Meshy T2.5: Text to Model (Smart Topology)",
+  "section": "library",
+  "category": "3D Model",
+  "what": "Generate a game-ready 3D model from a text prompt with Meshy T2.5.",
+  "how": "This workflow sends your words to Meshy through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a 3D model (GLB). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "words"
+  ],
+  "gives": [
+   "3d"
+  ],
+  "goodFor": [
+   "a 3d model from words"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "Meshy"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [],
+  "after": [],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_meshy_t2_5_smart_topology_t2m"
+  },
+  "keywords": [
+   "api",
+   "text to 3d",
+   "meshy",
+   "3d model",
+   "t2.5",
+   "text",
+   "to",
+   "model",
+   "smart",
+   "topology",
+   "3d",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_meshy_t2_5_smart_topology_i2m",
+  "kind": "workflow",
+  "name": "Meshy T2.5: Image to Model (Smart Topology)",
+  "section": "library",
+  "category": "3D Model",
+  "what": "Generate a game-ready 3D model from a single image with Meshy T2.5.",
+  "how": "This workflow sends a picture and your words to Meshy through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a 3D model (GLB). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "3d"
+  ],
+  "goodFor": [
+   "a 3d model from a picture"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop a picture on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "Meshy"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "cutout",
+   "upscale",
+   "edit"
+  ],
+  "after": [],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_meshy_t2_5_smart_topology_i2m"
+  },
+  "keywords": [
+   "api",
+   "image to 3d",
+   "meshy",
+   "3d model",
+   "t2.5",
+   "image",
+   "to",
+   "model",
+   "smart",
+   "topology",
    "3d",
    "words",
    "api partner"
@@ -34850,13 +36151,13 @@
   "use": [
    "Drop a picture on its well",
    "Write what you want in the words field",
-   "Press Run on Comfy Cloud and confirm the price"
+   "Press Run on Comfy Cloud and confirm the price (about 158 cr)"
   ],
   "models": [
    "Rodin"
   ],
   "cost": "partner",
-  "credits": null,
+  "credits": 158,
   "before": [
    "cutout",
    "upscale",
@@ -34908,13 +36209,13 @@
   "use": [
    "Drop a picture on its well",
    "Write what you want in the words field",
-   "Press Run on Comfy Cloud and confirm the price"
+   "Press Run on Comfy Cloud and confirm the price (about 127 cr)"
   ],
   "models": [
    "Tripo P1"
   ],
   "cost": "partner",
-  "credits": null,
+  "credits": 127,
   "before": [
    "cutout",
    "upscale",
@@ -35250,13 +36551,13 @@
   "use": [
    "Drop a picture on its well",
    "Write what you want in the words field",
-   "Press Run on Comfy Cloud and confirm the price"
+   "Press Run on Comfy Cloud and confirm the price (about 362 cr)"
   ],
   "models": [
    "Meshy"
   ],
   "cost": "partner",
-  "credits": null,
+  "credits": 362,
   "before": [
    "cutout",
    "upscale",
@@ -35518,13 +36819,13 @@
   "use": [
    "Drop a picture on its well",
    "Write what you want in the words field",
-   "Press Run on Comfy Cloud and confirm the price"
+   "Press Run on Comfy Cloud and confirm the price (about 63 cr)"
   ],
   "models": [
    "Tripo"
   ],
   "cost": "partner",
-  "credits": null,
+  "credits": 63,
   "before": [
    "cutout",
    "upscale",
@@ -35965,8 +37266,8 @@
    "3d"
   ],
   "goodFor": [
-   "a 3d model from a picture",
-   "a 3d asset"
+   "a 3d asset",
+   "a 3d model from a picture"
   ],
   "limits": [
    "partner credits, priced at the run"
@@ -35993,9 +37294,9 @@
    "workflow": "api_rodin_gen2"
   },
   "keywords": [
-   "image to 3d",
    "3d",
    "api",
+   "image to 3d",
    "rodin",
    "3d model",
    "gen-2",
@@ -36127,7 +37428,7 @@
  {
   "id": "wf:3d_hunyuan3d-v2.1",
   "kind": "workflow",
-  "name": "HY 3D 2.1",
+  "name": "HY 3D 2.1: Single View to Model",
   "section": "library",
   "category": "3D Model",
   "what": "Turns one picture of an object into a 3D model (a GLB mesh).",
@@ -36178,6 +37479,10 @@
    "3d model",
    "hy",
    "2.1",
+   "single",
+   "view",
+   "to",
+   "model",
    "image",
    "open weights"
   ],
@@ -36194,7 +37499,7 @@
   "name": "HY 3D 2.0",
   "section": "library",
   "category": "3D Model",
-  "what": "Generate 3D models from single images using Hunyuan3D 2.0.",
+  "what": "Generate a textured-ready 3D mesh from a single image using Hunyuan3D 2.0's shape diffusion pipeline, which aligns geometry to the given image and outputs an untextured white mesh.",
   "how": "Hunyuan3D and Tencent run on Comfy Cloud: the workflow takes a picture. Your reference pictures guide the look, then the model builds the shape step by step. It saves a 3D model (GLB).",
   "takes": [
    "image"
@@ -36573,13 +37878,12 @@
   "section": "library",
   "category": "3D Model",
   "what": "Use one frontal image to generate a consistent and highly detailed 3D model.",
-  "how": "This workflow sends a picture and your words to Tencent (Hunyuan3D and Qwen-Image-Edit) through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a 3D model (GLB) and a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "how": "This workflow sends a picture and your words to Tencent (Hunyuan3D and Qwen-Image-Edit) through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "image",
    "words"
   ],
   "gives": [
-   "3d",
    "image"
   ],
   "goodFor": [
@@ -37014,6 +38318,123 @@
    "to",
    "svg",
    "image",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_ideogram_vector_1_text_to_svg",
+  "kind": "workflow",
+  "name": "Ideogram Vector 1: Text to SVG",
+  "section": "library",
+  "category": "Vector",
+  "what": "Generate a fully editable SVG from a text prompt with Ideogram Vector 1, optionally guided by up to five reference images, and save it as one vector file.",
+  "how": "This workflow sends a picture and your words to Ideogram through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back an SVG vector picture. It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "svg vector art"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop a picture on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "Ideogram"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "cutout",
+   "upscale",
+   "edit"
+  ],
+  "after": [
+   "upscale",
+   "cutout",
+   "wf:video_ltx2_3_i2v"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_ideogram_vector_1_text_to_svg"
+  },
+  "keywords": [
+   "api",
+   "vector",
+   "ideogram",
+   "text",
+   "to",
+   "svg",
+   "image",
+   "words",
+   "api partner"
+  ],
+  "curated": []
+ },
+ {
+  "id": "wf:api_ideogram_vector_1_image_to_svg",
+  "kind": "workflow",
+  "name": "Ideogram Vector 1: Image to SVG",
+  "section": "library",
+  "category": "Vector",
+  "what": "Trace a bitmap into a fully editable SVG with Ideogram Vector 1 and save it as one vector file.",
+  "how": "This workflow sends a picture and your words to Ideogram through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back an SVG vector picture. It is billed in partner credits, at the price Cloud estimates before the run.",
+  "takes": [
+   "image",
+   "words"
+  ],
+  "gives": [
+   "image"
+  ],
+  "goodFor": [
+   "svg vector art"
+  ],
+  "limits": [
+   "partner credits, priced at the run"
+  ],
+  "use": [
+   "Drop a picture on its well",
+   "Write what you want in the words field",
+   "Press Run on Comfy Cloud and confirm the price"
+  ],
+  "models": [
+   "Ideogram"
+  ],
+  "cost": "partner",
+  "credits": null,
+  "before": [
+   "cutout",
+   "upscale",
+   "edit"
+  ],
+  "after": [
+   "upscale",
+   "cutout",
+   "wf:video_ltx2_3_i2v"
+  ],
+  "tutorial": null,
+  "open": {
+   "workspace": "templates",
+   "workflow": "api_ideogram_vector_1_image_to_svg"
+  },
+  "keywords": [
+   "api",
+   "vector",
+   "ideogram",
+   "image",
+   "to",
+   "svg",
    "words",
    "api partner"
   ],
@@ -41638,7 +43059,7 @@
   "section": "library",
   "category": "Character & Fashion",
   "what": "Generate a virtual try-on result with the garment applied to the person while preserving face and pose.",
-  "how": "This workflow sends a picture and your words to the partner behind Flux through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
+  "how": "This workflow sends a picture and your words to the partner behind FLUX through Comfy's partner nodes; their model does the work on their side and Comfy Cloud brings back a picture (PNG). It is billed in partner credits, at the price Cloud estimates before the run.",
   "takes": [
    "image",
    "words"
@@ -41659,7 +43080,7 @@
    "Press Run on Comfy Cloud and confirm the price"
   ],
   "models": [
-   "Flux"
+   "FLUX"
   ],
   "cost": "partner",
   "credits": null,

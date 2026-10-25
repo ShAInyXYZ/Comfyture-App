@@ -2631,5 +2631,98 @@
   "limits": [
    "older model: Wan 2.2, LTX 2.5 or MiniMax H3 are better"
   ]
+ },
+ "wf:image_moss_image_t2i": {
+  "what": "Draws a picture from your words with MOSS-Image, an open-weights text-to-image model that reads a whole scene written in plain sentences.",
+  "how": "MOSS-Image runs on Comfy Cloud: a language model first expands your words into a detailed caption, then the model draws the picture from noise and saves it as a PNG. Describe the scene as you would to a person: who is there, where, and the light.",
+  "goodFor": [
+   "a picture from a description",
+   "concept art from a sentence",
+   "a scene with several people or things",
+   "an open-weights picture"
+  ],
+  "limits": [
+   "one picture a run",
+   "words written inside the picture can come out wrong"
+  ]
+ },
+ "wf:image_moss_image_base_t2i": {
+  "what": "Draws a picture from your words with the MOSS-Image base checkpoint, the undistilled model that follows long captions closely.",
+  "how": "MOSS-Image Base runs on Comfy Cloud: a language model expands your words into a detailed caption, then the base model draws the picture from noise over more steps than the distilled one, and saves a PNG. Slower than MOSS-Image, and the one to start from for LoRA work.",
+  "goodFor": [
+   "a picture that follows a long description",
+   "a base for LoRA work",
+   "an open-weights picture"
+  ],
+  "limits": [
+   "slower than MOSS-Image",
+   "one picture a run"
+  ]
+ },
+ "wf:image_flux3_klein_distilled_t2i": {
+  "what": "Draws a picture from your words with FLUX 3 Klein, the small distilled FLUX 3 model from Black Forest Labs, in 15 steps.",
+  "how": "FLUX 3 Klein runs on Comfy Cloud: a language model expands your words into a detailed prompt, then the distilled model draws the picture in 15 steps with no guidance pass, which makes it fast, and saves a PNG.",
+  "goodFor": [
+   "a quick picture from words",
+   "many drafts of one idea",
+   "product and scene concepts"
+  ],
+  "limits": [
+   "a small model: fine detail and lettering are weaker than the full FLUX 3",
+   "one picture a run"
+  ]
+ },
+ "wf:audio_stable_audio_3_medium_base": {
+  "what": "Makes a stereo sound or a short piece of music from your words with Stable Audio 3 Medium.",
+  "how": "Stable Audio 3 runs on Comfy Cloud: Qwen first expands your words into a detailed description of the sound, then the model generates the audio from noise and saves it as a stereo file. For music, say the instruments, the mood and the tempo; for an effect, the source and the space it is heard in.",
+  "goodFor": [
+   "a sound effect from words",
+   "a short music loop",
+   "ambience under a scene"
+  ],
+  "limits": [
+   "short clips, not whole songs",
+   "no sung words"
+  ]
+ },
+ "wf:api_openai_gpt_image_2_t2i": {
+  "what": "Draws posters, product shots and signs with readable text in many languages from your words, with OpenAI's GPT Image 2.",
+  "how": "This workflow sends your words to OpenAI's GPT Image 2 through Comfy's partner nodes; the picture is made on their side and Comfy Cloud brings it back as a PNG. It is billed in partner credits, at the price Cloud estimates before the run.",
+  "goodFor": [
+   "a poster with its text",
+   "a product shot for an ad",
+   "signage in another language",
+   "a picture that follows a precise brief"
+  ],
+  "limits": [
+   "partner credits, priced at the run",
+   "OpenAI's content rules apply"
+  ]
+ },
+ "wf:templates_hellorob_facegen_skindetail_upscale": {
+  "what": "Makes a character portrait, refines its skin detail and upscales it to about 4K, in one run.",
+  "how": "Z-Image Turbo makes the portrait on Comfy Cloud, then SDXL with skin-detail LoRAs refines the face and a second pass upscales the picture; it saves a PNG. A community template made for close-up portraits.",
+  "goodFor": [
+   "a realistic close-up portrait",
+   "skin texture on a face that looks too smooth",
+   "a 4K portrait"
+  ],
+  "limits": [
+   "made for faces: other subjects gain little",
+   "a community template, tuned by its author"
+  ]
+ },
+ "wf:image_marigold_v2_depth_estimation": {
+  "what": "Reads how far away everything in a picture is and gives its depth map: near is bright, far is dark.",
+  "how": "Marigold V2 runs on Comfy Cloud: a diffusion model trained to estimate depth reads your picture and draws its depth map, saved as a PNG. Use it to drive a depth ControlNet, to relight a scene, or to place effects behind the people in it.",
+  "goodFor": [
+   "a depth map from a picture",
+   "control for a depth ControlNet",
+   "separating the foreground from the background"
+  ],
+  "limits": [
+   "relative depth, not metres",
+   "glass and mirrors confuse it"
+  ]
  }
 }
