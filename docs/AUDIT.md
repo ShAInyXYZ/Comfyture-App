@@ -138,10 +138,10 @@ name now, and the lamps (saved, linked) read their tip.
 1. Fields' edges are 1.0 to 1.4:1 against what is around them (the instrument panel's look); 1.4.11 asks 3:1 where the edge is what says
    "a field". They carry placeholders, and a 4.7:1 edge when focused, so it is a judgement. Proposal: a 1px edge `#6d6c74` (3.4:1 on the
    cards) on `.field`, the prompt, the search and the bar. It changes every field's look, so it is not applied.
-2. The lime ring over a bright picture falls to 1.2 to 2.9:1 on the keys that sit over pictures (Kitchen's delete ×, Try it, Select, Watch
-   our crew's version, the takes' keys). Proposal: a dark halo under it, `box-shadow: 0 0 0 5px rgba(0, 0, 0, .6)` on those keys.
-3. No skip link: the header and the rooms are 11 to 16 Tab stops before a page's own content (landmarks and the `h1` meet 2.4.1 for a
-   screen reader). A link needs a few lines in index.html and app.js, and must not change the hash, where the router lives.
+2. ✅ Applied that evening: the lime ring over a bright picture fell to 1.2 to 2.9:1 on the keys that sit over pictures (Kitchen's
+   delete ×, Try it, the Library's pick, Watch our crew's version, the takes' keys); they wear a dark halo under it when focused.
+3. ✅ Applied that evening: a skip key, the first Tab stop of every page, comes into view and takes the focus to the page open (a button,
+   not a link, so the router's hash is untouched); the next Tab is the page's own first key instead of 11 to 16 stops later.
 4. Mouse-only work: Cut's timeline (clips, ruler, beat lane; the inspector's Start and Length cover moves), the 3D viewports of Stage and
    Toaster (their lists and keys cover most), Jam's waveform seek, the × that closes a tab, the Story bible's pictures. Esc inside a Story
    block leaves the focus on the page, not on the block.

@@ -96,6 +96,9 @@ input, textarea, [contenteditable] { user-select: text; -webkit-user-select: tex
 img, video { -webkit-user-drag: none; user-drag: none; }
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* keys drawn over pictures (Kitchen's delete, the storefront's Try it, the Library's pick, Mixer's Watch, the takes' keys): a dark halo
+   under the ring, so the lime reads on a bright photo too (it fell to 1.2:1 there) */
+:is(.film-delete, .wp-try, .lib-pick, .mx-watch, .take-redraw, .take-actions button):focus-visible { box-shadow: 0 0 0 5px rgba(0, 0, 0, .6); }
 /* a colour picker laid invisibly over its swatch (opacity 0: the swatches of Macaron, Jam, Spice and Utensils): the swatch wears the ring */
 :has(> input[type="color"]:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* the assistant's bar floats over the foot of a page (--chat-h is its height): what takes focus is scrolled clear of it, not left under it */

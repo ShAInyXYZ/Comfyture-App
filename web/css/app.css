@@ -9,6 +9,11 @@ body { padding: 0 0 .875rem; }
 :root { --head: calc(4rem + 1px); }
 body[data-product="kitchen"] { --head: calc(7.25rem + 2px); }
 .top { background: var(--s1); border-bottom: 1px solid var(--line); }
+/* the skip key waits above the window and comes down while it has the keyboard's focus */
+.skip-link { position: fixed; z-index: 1000; left: 1rem; top: .75rem; padding: .75rem 1.125rem; border: 0; border-radius: calc(.75rem * var(--corner-k, 1)); background: var(--accent); color: var(--accent-ink); font: 700 var(--fs-title)/1 var(--font-sans); cursor: pointer; transform: translateY(calc(-100% - 1.5rem)); transition: transform var(--t-fast); }
+.skip-link:focus { transform: none; outline: 2px solid var(--bg); outline-offset: 2px; }
+.page[tabindex="-1"]:focus { outline: none; }
+@media (prefers-reduced-motion: reduce) { .skip-link { transition: none; } }
 .top-in {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;

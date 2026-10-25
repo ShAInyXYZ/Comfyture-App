@@ -302,6 +302,13 @@ document.addEventListener("keydown", (e) => {
 
 listenForPaste();
 installTooltips();
+// the skip key: the focus goes to the page open (its region), so the next Tab is the page's own first key, past the header and its rooms
+document.getElementById("skip-link")?.addEventListener("click", () => {
+  const page = document.querySelector(".page:not([hidden])");
+  if (!page) return;
+  page.setAttribute("tabindex", "-1");
+  page.focus({ preventScroll: true });
+});
 // the header's compass: the tour of the page open (web/js/tour.js, web/js/tours/)
 installTourKey(document.getElementById("tour-key"), currentPage);
 
