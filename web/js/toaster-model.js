@@ -641,8 +641,9 @@ export function castOf(parts = [], sceneRefs = [], pieceOf = () => null) {
  * (the parts named in the words first). A part's first picture is called by its tag, the next ones tag-2, tag-3.
  * Answers { refs: [{ file, url, width, height, name }], named: Map(tag -> [names]) }.
  */
-export function referencesFor({ parts = [], sceneRefs = [], room = 0, mentioned = [] } = {}) {
-  const tags = tagsOf(parts, sceneRefs.map((r) => r.name));
+export function referencesFor({ parts = [], sceneRefs = [], room = 0, mentioned = [], tags = null } = {}) {
+  // (the tags may be the whole draft's, when only some of its parts are given: each keeps its name)
+  tags = tags ?? tagsOf(parts, sceneRefs.map((r) => r.name));
   const refs = [];
   const named = new Map();
   const used = new Set([...RESERVED, ...tags.values(), ...sceneRefs.map((r) => r.name)]);

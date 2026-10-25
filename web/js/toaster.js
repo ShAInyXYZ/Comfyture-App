@@ -753,7 +753,10 @@ export function framePlan() {
   const b = body();
   const model = modelNow();
   const total = model?.templates?.find((t) => t.id === "edit")?.refs ?? 4;
-  const parts = b.parts;
+  // only what the camera takes in is described, and its pictures sent: a part behind the camera, named in the words, gets painted in
+  // (the tags are every part's, so a part keeps its name whatever the camera sees)
+  const seen = toaster.view?.inFrame?.();
+  const parts = seen?.size ? b.parts.filter((p) => seen.has(p.id)) : b.parts;
   // (a model with little room for pictures keeps the pictures put on the parts' sheets before the depth or the silhouette)
   const pictured = parts.filter((p) => !p.hidden && p.refs?.length).length;
   // (the clay frame is one of them: all share the model's room, the first one on leads)
@@ -761,11 +764,12 @@ export function framePlan() {
   const maps = MAPS.filter((m) => picked.includes(m.id));
   // (only the user's own prompt picks the pictures: a written one must not change the facts it was written from)
   const mentioned = mentionsIn(`${b.promptBy === "you" ? b.prompt : ""} ${b.what} ${b.scene}`);
-  const { refs, named } = referencesFor({ parts, sceneRefs: b.refs, room: Math.max(0, total - maps.length), mentioned });
-  const tags = tagsOf(parts, b.refs.map((r) => r.name));
+  const tags = tagsOf(b.parts, b.refs.map((r) => r.name));
+  const { refs, named } = referencesFor({ parts, sceneRefs: b.refs, room: Math.max(0, total - maps.length), mentioned, tags });
   const ids = maps.map((m) => m.id);
   const auto = framePrompt({ parts, what: b.what, scene: b.scene, maps: ids, sceneRefs: b.refs, named, tags, pieceOf: toaster.pieceOf, strength: b.strength });
-  const cast = castOf(parts, b.refs, toaster.pieceOf);
+  // (the words may name any part, seen or not: each @tag in them is expanded from the whole draft)
+  const cast = castOf(b.parts, b.refs, toaster.pieceOf);
   const facts = factsOf({
     parts, what: expandPrompt(b.what, cast, named), scene: expandPrompt(b.scene, cast, named), maps: ids, sceneRefs: b.refs, refs, named, tags, pieceOf: toaster.pieceOf,
     strength: b.strength, plain: plainFrame(b.strength, ids), model: model && { id: model.id, name: model.short ?? model.name, total },

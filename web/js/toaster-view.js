@@ -707,6 +707,24 @@ export class ToasterView {
    * shadows; the others are control maps of the same frame (pixel for pixel): "id" (each part flat in its own colour), "depth" (near is
    * white) and "silhouette" (white on black), on black, with no ground.
    */
+  /** The parts the frame takes in (any of their box inside the camera's frame, at the frame's ratio), by id: what a render can show. */
+  inFrame() {
+    const cam = new THREE.PerspectiveCamera(fovOf(this.focal), RATIOS[this.ratio] ?? 1, 0.05, 200);
+    cam.position.copy(this.camera.position);
+    cam.lookAt(this.orbit.target);
+    cam.updateMatrixWorld();
+    cam.updateProjectionMatrix();
+    const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+    const ids = new Set();
+    const box = new THREE.Box3();
+    for (const [id, m] of this.meshes) {
+      if (!m.visible) continue;
+      box.setFromObject(m);
+      if (!box.isEmpty() && frustum.intersectsBox(box)) ids.add(id);
+    }
+    return ids;
+  }
+
   frameStill({ long = 1024, type = "image/png", quality, channel = "clay", plain = false } = {}) {
     const ratio = RATIOS[this.ratio] ?? 1;
     const [w, h] = ratio >= 1 ? [long, Math.round(long / ratio)] : [Math.round(long * ratio), long];
