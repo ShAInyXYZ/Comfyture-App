@@ -191,21 +191,23 @@ The add-on runs whatever Python it is sent. Keep it on localhost.
 You need **Node.js 22.18 or newer** and **ffmpeg** on the path (the free edits, bakes and exports use it).
 
 ```bash
-git clone https://github.com/ShAInyXYZ/Comfyture comfyture && cd comfyture
+git clone --depth 1 https://github.com/ShAInyXYZ/Comfyture comfyture && cd comfyture   # --depth 1: today's files, not the history
 npm install
 npm start          # then open http://127.0.0.1:5177
 ```
 
 **With no key and no GPU**, every product opens on its examples (examples/: Spice's shots, Jam's music videos, Toaster's sets, the
 Stage's scenes, Macaron's brand, Mixer's trends) and its pet shows you around: **Show me around** above the pet's bar, or the compass
-at the top right. The tours play the paid steps with the example's own results, so nothing is spent. Then pick where real renders
-go: Comfy Cloud with a key, or your own ComfyUI (below).
+at the top right. The tours play the paid steps with the example's own results, so nothing is spent. Until real renders have somewhere to go the
+header says **Your ComfyUI · not running**, and asking a pet or pressing a paid key says what to do: paste a Comfy API key in the
+account window (top right), and the renders go to Comfy Cloud by themselves, or start your own ComfyUI (below).
 
 Judging the challenge? Start with [docs/competition/JUDGES.md](docs/competition/JUDGES.md).
 
 ### On Comfy Cloud
 
-You need a Comfy API key from [platform.comfy.org](https://platform.comfy.org) and a paid Comfy Cloud plan.
+You need a Comfy API key from [platform.comfy.org](https://platform.comfy.org) and a paid Comfy Cloud plan. Paste it in the account
+window (top right) while the app runs, or put it in `.env` before it starts:
 
 ```bash
 echo "COMFY_API_KEY=comfyui-..." > .env

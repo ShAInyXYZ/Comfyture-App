@@ -4,8 +4,9 @@
 
 <!-- Before submitting: fill the three links below, and check every line against the submission build. The last paragraph
      ("no one else's media") is only true once D1 in README.md is done in full (the trends' recordings left the tree on 25 Oct;
-     their derived frames and motion, the reference material and the history are still to do); the Mixer line depends on D1 too; "the compass starts
-     a guided tour" needs every product's tour (only Toaster's exists on 25 Oct). -->
+     their derived frames and motion, the reference material and the history are still to do); the Mixer line depends on D1 too.
+     Checked on 26 Oct from a fresh `--depth 1` clone, no key, empty data folder, 1280x720: every product opens on its example,
+     the eight tours play to the end with no page error and nothing spent. -->
 
 **Comfyture is an open-source Higgsfield**: seven creative studios on one engine, built on the Comfy Developer Platform.
 Each studio has a pet who knows it, does the work for you through checked actions, and never spends a credit without your yes.
@@ -29,8 +30,9 @@ npm start            # then open http://127.0.0.1:5177
 ```
 
 - **No key**: every product opens on its example, and the compass at the top right starts a guided tour. Nothing is spent.
-- **Real runs on Comfy Cloud**: paste a Comfy API key in the account panel (top right), or put `COMFY_API_KEY=…` in `.env`.
-  Add `COMFYTURE_OPEN_WEIGHTS=1` to keep every partner model out.
+  The header says *Your ComfyUI · not running* until real renders have somewhere to go; a pet asked or a paid key pressed says so too.
+- **Real runs on Comfy Cloud**: paste a Comfy API key in the account panel (top right), and the renders go to Comfy Cloud by
+  themselves; or put `COMFY_API_KEY=…` in `.env`. Add `COMFYTURE_OPEN_WEIGHTS=1` to keep every partner model out.
 - **Your own GPU**: ComfyUI with the models (`scripts/get-models.sh`), then `pip install comfy-api-proxy && comfy-api-proxy run`,
   and pick **Renders on → Your ComfyUI** in the account panel. Guide: [docs/guides/LOCAL-COMFYUI.md](../guides/LOCAL-COMFYUI.md).
 
@@ -39,9 +41,9 @@ npm start            # then open http://127.0.0.1:5177
 | Product · pet | Try this | Free? |
 |---|---|---|
 | **Kitchen** · Ketkout the chick | Stage → *Morning kitchen*: keys 1–7 show the clay as colour ID, depth, normal, pose, lines, mask; pose a mannequin; *Render references*. On Kitchen's home, one sentence and *Imagine* writes a film. | Stage free; writing and rolling cost |
-| **Toaster** · Crumpet the beaver | Press the compass for Crumpet's tour. Ask him for *"a cosy reading corner, camera low"* and watch him build it in clay; *Render* shows what is sent; *Toast it* renders it; *3D* makes a GLB. | Building free; toast and 3D cost |
+| **Toaster** · Crumpet the beaver | Press the compass for Crumpet's tour: he builds a set in clay, free. Ask him for *"a cosy reading corner, camera low"* and watch him build it; *Render* shows what is sent; *Toast it* renders it; *3D* makes a GLB. | Building by hand and the tour free; his answers, toast and 3D cost |
 | **Spice** · Paprika the chameleon | *Paprika's portal* → FX: drag a flame or a portal from the library onto the picture, move, scale and turn it; Comp: drag the wipe; Export. | All free; Roto (SAM3), Paint and Light passes cost |
-| **Jam** · Pickle the frog | Open the example video and play the track: the beat and the sections are read in your browser; *The Words*: caption styles; *The Edit*: the cut on the beat. | Free; songs and performances cost |
+| **Jam** · Pickle the frog | Open the example video and play the track: the beat and the sections are read in your browser; *The song*: a shelf of our own songs made with ACE-Step; *The Words*: caption styles; *The Edit*: the cut on the beat. | Free; songs and performances cost |
 | **Mixer** · Praline the cat | Pick a trend, swap the crew around, read its beats; *Make it* rolls it with LTX-2.5. | *Make it* costs |
 | **Macaron** · Brioche the bunny | The Comfyture brand: palette, logos, type, rules, the brand book; ask Brioche for a colourway. | Kit free; pictures and motion cost |
 | **Utensils** · Truffle the raccoon | The shelf of one-job tools; *Library*: the 691 official ComfyUI workflows, each as one form. | Edit tools free; models cost |
