@@ -1418,7 +1418,9 @@ body[data-page="shot"]:not(.has-window) .toast, body[data-page="mixer"] .toast {
 /* ---- narrow panes (after every base rule, so these win) ----------------------- */
 
 @container (max-width: 40rem) {
-  .transport { grid-template-columns: auto auto minmax(0, 1fr) auto auto; }
+  /* (as on a phone) what does not fit on one line wraps under it, the compare keys to the right, never under the loop key */
+  .transport { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .5rem .625rem; }
+  .transport .timecode { margin-right: auto; }
   .transport .readout { display: none; }
   .timecode { font-size: var(--fs-title); }
   .timecode span { display: none; }
