@@ -1,8 +1,8 @@
 {
  "id": "toast-example-woodshop",
- "rev": 1,
+ "rev": 3,
  "name": "Crumpet's workbench",
- "about": "A character set: Crumpet the baby beaver (a posed character, his cast sheet on him) building a toy at his workbench, in a woodshop of 17 parts (library pieces and shapes), with two cameras. Clay frame and depth sent at 55%. Its three renders (the workbench, a close-up and a storybook look) were made for this example with GPT Image from the clay frames kept with them, for free.",
+ "about": "A character set: Crumpet the baby beaver (a posed character, his cast sheet on him) building a toy at his workbench, in a woodshop of 17 parts (library pieces and shapes), with two cameras and the 3D page's object sheets (one per object). Clay frame and depth sent at 55%. Its three renders (the workbench, a close-up and a storybook look) were made for this example with GPT Image from the clay frames kept with them, for free.",
  "thumb": "example:thumb.jpg",
  "body": {
   "parts": [
@@ -107,7 +107,9 @@
      "nod": 18,
      "lean": 8,
      "reach": 45,
-     "elbows": 55
+     "elbows": 55,
+     "crouch": 0.15,
+     "stance": 12
     },
     "name": "Crumpet",
     "color": "#ff6b3d",
@@ -127,13 +129,13 @@
      }
     ],
     "size": [
-     0.33,
-     0.9,
-     0.382
+     0.4,
+     0.85,
+     0.4
     ],
     "pos": [
      0.05,
-     0.45,
+     0.425,
      -1.05
     ],
     "rot": [
@@ -673,7 +675,274 @@
     "note": "Made with GPT Image for this example"
    }
   ],
-  "sheets": [],
+  "sheets": [
+   {
+    "id": "r-sheet-workbench",
+    "part": "p-pdc13hy",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-workbench.webp",
+     "url": "example:sheet-workbench.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Workbench. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a chunky pine workbench scarred with saw cuts and pencil marks, a wooden vice at one end. Its look: a chunky pine workbench scarred with saw cuts and pencil marks, a wooden vice at one end. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-crumpet",
+    "part": "p-p5rqsai",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-crumpet.webp",
+     "url": "example:sheet-crumpet.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE character: Crumpet. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The character is a baby beaver with chestnut fur, a cream tummy, rosy cheeks, two big front teeth and a flat brown tail. Its look: a baby beaver with chestnut fur, a cream tummy, rosy cheeks, two big front teeth and a flat brown tail. It belongs to this setting, so match its style, but draw only the character: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The pictures sent with it show how it really looks: draw it exactly like them. The camera is the same in all four views: a little above his eye level, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-bench-lamp",
+    "part": "p-8wvgdq4",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-bench-lamp.webp",
+     "url": "example:sheet-bench-lamp.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Bench lamp. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is an old green enamel desk lamp, its warm bulb glowing. Its look: an old green enamel desk lamp, its warm bulb glowing. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-wooden-toy",
+    "part": "p-iq2lu1r",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-wooden-toy.webp",
+     "url": "example:sheet-wooden-toy.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Wooden toy. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a little wooden toy of stacked pine blocks, a round peg and a red triangle. Its look: a little wooden toy of stacked pine blocks, a round peg and a red triangle. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-nail-jar",
+    "part": "p-izn5x5q",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-nail-jar.webp",
+     "url": "example:sheet-nail-jar.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Nail jar. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a glass jar of nails and brass screws. Its look: a glass jar of nails and brass screws. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-cocoa",
+    "part": "p-etxvcx1",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-cocoa.webp",
+     "url": "example:sheet-cocoa.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Cocoa. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a chipped blue mug of steaming cocoa. Its look: a chipped blue mug of steaming cocoa. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-tool-board",
+    "part": "p-yug9f0v",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-tool-board.webp",
+     "url": "example:sheet-tool-board.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Tool board. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a pegboard of small hand tools: a saw, a hammer, chisels and a folding ruler. Its look: a pegboard of small hand tools: a saw, a hammer, chisels and a folding ruler. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-plank",
+    "part": "p-3043oq5",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-plank.webp",
+     "url": "example:sheet-plank.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Plank. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a long pine plank leaning on the wall. Its look: a long pine plank leaning on the wall. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The scene has 2 of these. This is a variation of the kind: the same sort of object, with its own wear, grain, small marks and details, not a copy. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-plank-2",
+    "part": "p-de6fqdf",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-plank-2.webp",
+     "url": "example:sheet-plank-2.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Plank 2. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a long pine plank leaning on the wall. Its look: a long pine plank leaning on the wall. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The scene has 2 of these. This is a variation of the kind: the same sort of object, with its own wear, grain, small marks and details, not a copy. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-shelf",
+    "part": "p-iqmahey",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-shelf.webp",
+     "url": "example:sheet-shelf.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Shelf. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is an open plank shelf crowded with tins, pencils, glue pots and little carved wooden animals. Its look: an open plank shelf crowded with tins, pencils, glue pots and little carved wooden animals. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-offcuts-crate",
+    "part": "p-ljsz5ss",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-offcuts-crate.webp",
+     "url": "example:sheet-offcuts-crate.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Offcuts crate. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a wooden crate overflowing with pine offcuts. Its look: a wooden crate overflowing with pine offcuts. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-log",
+    "part": "p-5khcku3",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-log.webp",
+     "url": "example:sheet-log.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Log. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a fresh-cut birch log, gnawed to a point at one end. Its look: a fresh-cut birch log, gnawed to a point at one end. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-stump-stool",
+    "part": "p-wotvn68",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-stump-stool.webp",
+     "url": "example:sheet-stump-stool.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Stump stool. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a tree-stump stool, its top worn smooth. Its look: a tree-stump stool, its top worn smooth. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   },
+   {
+    "id": "r-sheet-clock",
+    "part": "p-f7krq66",
+    "status": "done",
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "photo": {
+     "file": "example:sheet-clock.webp",
+     "url": "example:sheet-clock.webp",
+     "width": 1254,
+     "height": 1254
+    },
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Clock. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a round wooden wall clock with an acorn painted on its face. Its look: a round wooden wall clock with an acorn painted on its face. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "example": true,
+    "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
+    "at": "2026-10-26T00:00:00.000Z"
+   }
+  ],
   "models": []
  }
 }
