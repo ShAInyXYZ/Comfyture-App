@@ -1,7 +1,8 @@
 // Spice on a shot that is a PICTURE, in a real browser, on a server and a folder of its own: every department takes the picture and gives
 // a picture back. The free passes run for real on this machine (a spot painted out, the weather and the grade laid on it, the FX layers
 // baked, an export to WebP); the paid ones ask first and are stood in for, so no credit is ever spent (Roto's cut-out, Paint's object taken
-// out by Qwen, the upscale refused by the browser and counted). The FX compositor's layers go behind the person Roto holds.
+// out by Qwen, the upscale refused by the browser and counted). The FX compositor's layers go behind the person Roto holds; the light a
+// layer casts, the rim it lights on the person and the shot's bloom and vignette are measured in pixels, and their controls are used.
 // Not part of `node --test` (it needs a browser and ffmpeg). From the repo root:
 //   PLAYWRIGHT_MODULE=<playwright's folder> node tests/spice-picture.browser.mjs        (OUT=<folder> keeps screenshots)
 import { spawn, execFileSync } from "node:child_process";
@@ -201,6 +202,204 @@ try {
   st = await state();
   ok(st.passes.fx?.kind === "image" && st.passes.fx.width === 640, "the layers are baked into a picture as big as the footage", JSON.stringify(st.passes.fx));
   await shot("p-fx");
+
+  // ---- FX: the light a layer casts, the rim it lights on the person, the shot's finish. First the pixels, drawn into canvases by the
+  // compositor the viewer and the bake share (render), on the shot's footage and its matte (what the Paint stand-in made is a black and
+  // white picture, so the picture itself is the base here): a layer behind the person with light makes the picture around it brighter
+  // and the person's edge brighter; a bloom and a vignette change the frame
+  const proof = await js(async (from) => {
+    const { spice } = await import("/js/spice.js");
+    const { render } = await import("/js/spice-layers.js");
+    const { cleanLayer } = await import("/js/spice-elements.js");
+    const { loadImage } = await import("/js/spice-bake.js");
+    const b = spice.shot.body;
+    const base = await loadImage(from.picture);
+    const matte = await loadImage(from.matte);
+    const portal = await loadImage("brand/spice/elements/spark-portal.webp");
+    const w = base.naturalWidth;
+    const h = base.naturalHeight;
+    const canvas = () => Object.assign(document.createElement("canvas"), { width: w, height: h });
+    const m = (() => { const c = canvas(); const g = c.getContext("2d"); g.drawImage(matte, 0, 0, w, h); return g.getImageData(0, 0, w, h).data; })();
+    const white = (i) => m[i * 4] > 200;
+    const black = (i) => m[i * 4] < 50;
+    // the person: the middle of what is white, its edge (white with black within 5 pixels), its inside (none within 16), and the picture around it
+    let sx = 0, sy = 0, n = 0;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (white(y * w + x)) (sx += x, sy += y, n++);
+    const cx = sx / n, cy = sy / n;
+    const blackNear = (x, y, r) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && X < w && Y >= 0 && Y < h && black(Y * w + X)) return true; } return false; };
+    const edge = [], inside = [], around = [];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (white(i)) { if (blackNear(x, y, 5)) edge.push(i); else if (!blackNear(x, y, 16)) inside.push(i); }
+      else if (black(i) && Math.hypot(x - cx, y - cy) < 0.3 * w) around.push(i);
+    }
+    const dark = canvas();
+    dark.getContext("2d").fillRect(0, 0, w, h);
+    const draw = (layers, finish, over = base) => {
+      const c = canvas();
+      const g = c.getContext("2d");
+      render(g, w, h, { base: over, matte, layers, frame: 1001, fps: 24, still: true, sourceOf: () => portal, edge: { feather: b.set.roto.feather, choke: b.set.roto.choke }, finish, footageWidth: w });
+      return g.getImageData(0, 0, w, h).data;
+    };
+    const luma = (d, idx) => idx.reduce((s, i) => s + (d[i * 4] + d[i * 4 + 1] + d[i * 4 + 2]) / 3, 0) / idx.length;
+    const layer = (light, behind = true) => cleanLayer({ id: "t1", el: "spark-portal", x: cx / w, y: cy / h, scale: 0.7, behind, light });
+    const same = (a, c) => { for (let i = 0; i < a.length; i++) if (a[i] !== c[i]) return false; return true; };
+    const off = draw([layer(0)]);
+    const lit = draw([layer(0.6)]);
+    // (in front of the person the layer is drawn over them either way: only its light differs)
+    const frontOff = draw([layer(0, false)]);
+    const frontLit = draw([layer(0.6, false)]);
+    const black0 = draw([layer(0)], undefined, dark);
+    const black1 = draw([layer(0.6)], undefined, dark);
+    const none = draw([]);
+    const everything = [...Array(w * h).keys()];
+    const bloom = draw([], { bloom: 0.8, vignette: 0 });
+    const vignette = draw([], { bloom: 0, vignette: 0.8 });
+    let biggest = 0;
+    for (let i = 0; i < none.length; i += 4) biggest = Math.max(biggest, Math.abs(bloom[i] - none[i]), Math.abs(bloom[i + 1] - none[i + 1]), Math.abs(bloom[i + 2] - none[i + 2]));
+    const patch = (d, x0, y0) => { const idx = []; for (let y = y0; y < y0 + 12; y++) for (let x = x0; x < x0 + 12; x++) idx.push(y * w + x); return luma(d, idx); };
+    const corners = (d) => (patch(d, 0, 0) + patch(d, w - 12, 0) + patch(d, 0, h - 12) + patch(d, w - 12, h - 12)) / 4;
+    return {
+      people: { edge: edge.length, inside: inside.length, around: around.length },
+      around: [luma(off, around), luma(lit, around)],
+      edge: [luma(off, edge), luma(lit, edge)],
+      inside: [luma(off, inside), luma(lit, inside)],
+      insideFront: [luma(frontOff, inside), luma(frontLit, inside)],
+      onBlack: { edge: [luma(black0, edge), luma(black1, edge)], inside: [luma(black0, inside), luma(black1, inside)] },
+      pure: same(lit, draw([layer(0.6)])),
+      // (a layer kept before there was any light has none: drawn as a layer with light 0)
+      old: same(off, draw([{ ...layer(0), light: undefined, reach: undefined }])),
+      bloom: { mean: [luma(none, everything), luma(bloom, everything)], biggest },
+      vignette: { corners: [corners(none), corners(vignette)], middle: [patch(none, w / 2 - 6, h / 2 - 6), patch(vignette, w / 2 - 6, h / 2 - 6)] },
+    };
+  }, { picture: pic.url, matte: matte.url });
+  const gain = (pair) => pair[1] - pair[0];
+  ok(proof.people.edge > 500 && proof.people.inside > 500 && proof.people.around > 5000, "the person's edge, its inside and the picture around it are measured", JSON.stringify(proof.people));
+  ok(gain(proof.around) > 10, "a layer behind the person with light makes the picture around it brighter", proof.around.map((v) => v.toFixed(1)).join(" → "));
+  ok(gain(proof.edge) > 10 && gain(proof.edge) > gain(proof.inside), "and the person's edge brighter, more than the person's inside (the rim)", `edge ${proof.edge.map((v) => v.toFixed(1)).join(" → ")}, inside ${proof.inside.map((v) => v.toFixed(1)).join(" → ")}`);
+  ok(gain(proof.onBlack.edge) > 25 && gain(proof.onBlack.edge) > 8 * gain(proof.onBlack.inside), "on a black picture the light behind lights the person's edge and hardly the person's inside", JSON.stringify(proof.onBlack));
+  ok(gain(proof.insideFront) > 1.5 * gain(proof.inside), "the person gets much less of a light behind them on their face than of one in front of them", `behind +${gain(proof.inside).toFixed(1)}, in front +${gain(proof.insideFront).toFixed(1)}`);
+  ok(proof.pure && proof.old, "a frame is the same every time, and a layer with no light is drawn as it was before there was any");
+  ok(gain(proof.bloom.mean) >= 1 && proof.bloom.biggest >= 20, "a bloom brightens the bright parts of the frame and their surroundings", JSON.stringify(proof.bloom));
+  ok(proof.vignette.corners[1] < 0.5 * proof.vignette.corners[0] && Math.abs(gain(proof.vignette.middle)) < 0.5, "a vignette darkens the corners and leaves the middle", JSON.stringify(proof.vignette));
+
+  // Then the controls and the bake: a picture layer has a Light row (and a Reach row once it shines), the shot's Finish is in the library,
+  // each change draws the viewer at once and makes the bake wait to be made again; the baked picture is the one the viewer showed
+  const lookRows = async () => (await page.locator(".sp-b-look .sp-look-row .ut-label").allInnerTexts()).map((t) => t.trim().toLowerCase());
+  const liveSum = () => js(() => {
+    const c = document.querySelector("canvas.sp-live");
+    const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+    let s = 0;
+    for (let i = 0; i < d.length; i += 4) s += d[i] + d[i + 1] + d[i + 2];
+    return s;
+  });
+  /** A slider moved and let go, as a hand does. */
+  const slide = (locator, value) => locator.evaluate((el, v) => { el.value = String(v); el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); }, value);
+  const bakeKey = () => page.locator('.sp-primary[data-key="fx:bake"]');
+  const keyText = async () => (await bakeKey().innerText()).replace(/\s+/g, " ").trim();
+  await page.locator('.sp-lib-tile[data-el="smoke"]').click();
+  await settle(500);
+  let labels = await lookRows();
+  ok(labels.includes("light") && !labels.includes("reach"), "a layer that casts no light (smoke) has a Light row and no Reach row", labels.join());
+  await page.locator('.sp-lib-tile[data-el="rain"]').click();
+  await settle(400);
+  labels = await lookRows();
+  ok(!labels.includes("light") && !labels.includes("reach"), "particles have neither: only a picture shines", labels.join());
+  const portalId = (await state()).set.fx.layers.find((l) => l.el === "spark-portal").id;
+  await js(async (id) => (await import("/js/spice-fx-ops.js")).selectLayer(id), portalId);
+  await settle(500);
+  labels = await lookRows();
+  let portal = (await state()).set.fx.layers.find((l) => l.id === portalId);
+  ok(portal.light === 0.5 && portal.reach === 1.6 && labels.includes("light") && labels.includes("reach"), "a new portal starts with the light of its element, so its Reach row is there", `${portal.light} ${portal.reach} ${labels.join()}`);
+  const lightRange = page.locator('.sp-b-look input.uf-range[aria-label="How much light it casts on the shot"]');
+  const reachRange = page.locator('.sp-b-look input.uf-range[aria-label="How far its light reaches"]');
+  ok((await lightRange.getAttribute("min")) === "0" && (await lightRange.getAttribute("max")) === "1" && (await reachRange.getAttribute("min")) === "0.3" && (await reachRange.getAttribute("max")) === "4", "Light goes from 0 to 1, Reach from 0.3 to 4");
+  // (baked as it stands, then the light is changed: the viewer draws at once and the bake is made of other layers)
+  await bakeKey().click();
+  await waitPass("fx", (p) => p?.note?.includes("baked") && p.file !== st.passes.fx.file);
+  st = await state();
+  const baked1 = st.passes.fx;
+  await settle(500);
+  ok(/Baked/.test(await keyText()) && (await bakeKey().isDisabled()), "baked: the key says so", await keyText());
+  const beforeLight = await liveSum();
+  await slide(lightRange, 0.9);
+  await settle(700);
+  portal = (await state()).set.fx.layers.find((l) => l.id === portalId);
+  ok(portal.light === 0.9, "Light sets the layer's light", String(portal.light));
+  ok((await liveSum()) !== beforeLight, "the viewer draws the layer's new light at once");
+  ok(/Bake again/.test(await keyText()) && !(await bakeKey().isDisabled()), "and the bake is of other layers: the key bakes again", await keyText());
+  await slide(reachRange, 3);
+  await settle(500);
+  portal = (await state()).set.fx.layers.find((l) => l.id === portalId);
+  ok(portal.reach === 3 && portal.light === 0.9, "Reach sets how far it reaches", String(portal.reach));
+  await bakeKey().click();
+  await waitPass("fx", (p) => p?.note?.includes("baked") && p.file !== baked1.file);
+  st = await state();
+  const baked2 = st.passes.fx;
+  await settle(500);
+  ok(/Baked/.test(await keyText()), "baked again", await keyText());
+  // the finish is the shot's own: in the library, whatever layer is held
+  const bloomRange = page.locator('.sp-lib-finish input.uf-range[aria-label="A soft glow around the bright parts of the whole shot"]');
+  const vignetteRange = page.locator('.sp-lib-finish input.uf-range[aria-label="Darker corners over the whole shot"]');
+  ok((await bloomRange.count()) === 1 && (await vignetteRange.count()) === 1 && (await bloomRange.inputValue()) === "0" && (await vignetteRange.inputValue()) === "0", "the shot's Finish has a Bloom and a Vignette, none to begin with");
+  const beforeBloom = await liveSum();
+  await slide(bloomRange, 0.6);
+  await settle(700);
+  st = await state();
+  ok(st.set.fx.finish?.bloom === 0.6 && st.set.fx.finish.vignette === 0, "Bloom sets the shot's bloom", JSON.stringify(st.set.fx.finish));
+  ok((await liveSum()) !== beforeBloom, "the viewer draws the bloom at once");
+  ok(/Bake again/.test(await keyText()), "and the bake waits to be made again", await keyText());
+  const beforeVignette = await liveSum();
+  await slide(vignetteRange, 0.7);
+  await settle(700);
+  st = await state();
+  ok(st.set.fx.finish.bloom === 0.6 && st.set.fx.finish.vignette === 0.7 && (await liveSum()) < beforeVignette, "Vignette sets the shot's vignette, and the viewer is darker for it", JSON.stringify(st.set.fx.finish));
+  // (it can be undone like a layer: one step is the vignette)
+  await page.locator('.sp-fxls-head .sp-iconkey[aria-label="Undo (Ctrl+Z)"]').click();
+  await settle(600);
+  st = await state();
+  ok(st.set.fx.finish.bloom === 0.6 && st.set.fx.finish.vignette === 0, "Undo takes the vignette away and keeps the bloom", JSON.stringify(st.set.fx.finish));
+  await page.locator('.sp-fxls-head .sp-iconkey[aria-label="Redo (Ctrl+Shift+Z)"]').click();
+  await settle(600);
+  st = await state();
+  ok(st.set.fx.finish.vignette === 0.7, "and Redo puts it back", JSON.stringify(st.set.fx.finish));
+  // the bake carries it: the picture baked now has dark corners the one before had not
+  await bakeKey().click();
+  await waitPass("fx", (p) => p?.note?.includes("baked") && p.file !== baked2.file);
+  st = await state();
+  const baked3 = st.passes.fx;
+  const corners = await js(async ([a, c]) => {
+    const { loadImage } = await import("/js/spice-bake.js");
+    const read = async (url) => {
+      const img = await loadImage(url);
+      const cv = document.createElement("canvas");
+      cv.width = img.naturalWidth;
+      cv.height = img.naturalHeight;
+      const g = cv.getContext("2d");
+      g.drawImage(img, 0, 0);
+      const px = (x, y) => [...g.getImageData(x, y, 12, 12).data].reduce((s, v, i) => s + (i % 4 < 3 ? v : 0), 0) / (12 * 12 * 3);
+      return (px(0, 0) + px(cv.width - 12, 0) + px(0, cv.height - 12) + px(cv.width - 12, cv.height - 12)) / 4;
+    };
+    return [await read(a), await read(c)];
+  }, [baked2.url, baked3.url]);
+  ok(corners[1] < 0.75 * corners[0], "the baked picture is the one the viewer showed: its corners are darker once the vignette is on", corners.map((v) => v.toFixed(1)).join(" → "));
+  // a bake made before there was any light or finish is still its layers: signed as it was, nothing to bake again
+  const old = await js(async () => {
+    const ops = await import("/js/spice-fx-ops.js");
+    const { spice } = await import("/js/spice.js");
+    const { fxPending } = await import("/js/spice-fx.js");
+    const { cleanLayer } = await import("/js/spice-elements.js");
+    const { fxGround } = await import("/js/spice-engines.js");
+    const b = spice.shot.body;
+    for (const l of [...ops.layersOf()]) ops.patchLayer(l.id, { light: 0 });
+    ops.setFinish({ bloom: 0, vignette: 0 });
+    const g = fxGround(b);
+    const layers = ops.layersOf().filter((l) => l.eye !== false && (l.el !== "ai" || l.media)).map((l) => { const c = cleanLayer(l); delete c.light; delete c.reach; return c; });
+    b.set.fx.baked = JSON.stringify([layers, g.base?.url, g.matte?.url, b.range, b.set.roto.feather, b.set.roto.choke]);
+    b.set.fx.dirty = false;
+    return fxPending();
+  });
+  ok(old.layers > 0 && old.pending === false, "a bake signed before there was any light or finish is still the layers: nothing to bake again", JSON.stringify(old));
 
   // ---- Comp: no slow motion for a picture; the upscale asks first and is refused here; the export is a WebP
   await open("comp");
