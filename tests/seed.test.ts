@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
-import { mkdtemp, readFile, writeFile, rm, access } from "node:fs/promises";
+import { cp, mkdtemp, readFile, writeFile, rm, access } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { readLedger, ledgerState } from "../server/examples.ts";
@@ -24,10 +24,10 @@ const freePort = () => new Promise<number>((done) => {
   });
 });
 
-/** The server, started on a data folder of its own and stopped when the job is done: its start is what seeds. `send` is a request with a body, `status` the status of one. */
-async function started(data: string, job: (get: (path: string) => Promise<any>, send: (path: string, method: string, body: unknown) => Promise<any>, status: (path: string) => Promise<number>) => Promise<void>) {
+/** The server, started on a data folder of its own and stopped when the job is done: its start is what seeds. `send` is a request with a body, `status` the status of one; `env` adds to the server's. */
+async function started(data: string, job: (get: (path: string) => Promise<any>, send: (path: string, method: string, body: unknown) => Promise<any>, status: (path: string) => Promise<number>) => Promise<void>, env: Record<string, string> = {}) {
   const port = await freePort();
-  const server = spawn(process.execPath, ["server/main.ts"], { cwd: root, env: { ...process.env, PORT: String(port), COMFYTURE_DATA: data, COMFY_API_KEY: "", COMFY_BASE_URL: "http://127.0.0.1:9" }, stdio: "ignore" });
+  const server = spawn(process.execPath, ["server/main.ts"], { cwd: root, env: { ...process.env, PORT: String(port), COMFYTURE_DATA: data, COMFY_API_KEY: "", COMFY_BASE_URL: "http://127.0.0.1:9", ...env }, stdio: "ignore" });
   try {
     for (let i = 0; i < 150; i++) {
       if (await fetch(`http://127.0.0.1:${port}/api/jams`).then((r) => r.ok, () => false)) break;
@@ -147,4 +147,19 @@ test("a video saved with only what Jam measures when it opens one is not changed
     assert.equal((await get("api/jams/jam-three-kittens")).project.body.captions, "pop", "one whose captions were changed is left as it is");
     assert.equal((await get("api/jams/jam-walk-moonlit-oolong")).project.name, "My walk", "and one that was renamed");
   });
+});
+
+test("COMFYTURE_EXAMPLES points the seeder at another folder: what is in it goes in, and nothing of examples/ does", { timeout: 120000 }, async (t) => {
+  const data = await mkdtemp(join(tmpdir(), "seed-"));
+  const examples = await mkdtemp(join(tmpdir(), "seed-examples-"));
+  t.after(() => Promise.all([rm(data, { recursive: true, force: true }), rm(examples, { recursive: true, force: true })]));
+  // one of Spice's own shots, copied (scripts/spice-examples.mjs seeds a copy of a shot's folder this way)
+  await cp(join(root, "examples", "spice", "sh010-ketkout"), join(examples, "spice", "sh010-ketkout"), { recursive: true });
+  await started(data, async (get, _send, status) => {
+    const shots = (await get("api/spice-shots"))["spice-shots"];
+    assert.deepEqual(shots.map((s: any) => s.id), ["spice-example-ketkout"], "the one shot of that folder");
+    const body = (await get("api/spice-shots/spice-example-ketkout")).project.body;
+    assert.equal(await status(body.passes.plate.media.url.slice(1)), 200, "with its media in the library");
+    assert.deepEqual((await get("api/jams")).jams, [], "and none of the other products' examples");
+  }, { COMFYTURE_EXAMPLES: examples });
 });

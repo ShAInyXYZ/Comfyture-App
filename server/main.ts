@@ -894,8 +894,9 @@ async function seedStages() {
 
 // Every product's examples live in examples/<product>/<id>/ and are put into the data folder by server/examples.ts: once, a newer
 // version replacing only an untouched copy, a deleted one staying deleted, a retired one going. A product says here where its examples
-// are, how to put one in and how to take one out.
-const EXAMPLES = join(root, "examples");
+// are, how to put one in and how to take one out. COMFYTURE_EXAMPLES points the seeder at another folder laid out the same way
+// (examples/<product>/<id>/): scripts/spice-examples.mjs seeds a copy of a shot's folder that way, with the passes it is about to make left out.
+const EXAMPLES = resolve(root, process.env.COMFYTURE_EXAMPLES?.trim() || "examples");
 const ledgerOf = (store: string) => join(projectsDir(store), ".seeded");
 const keptIn = (store: string) => (id: string) => readProject(store, id);
 const dropFrom = (store: string) => async (id: string) => void (await rm(join(projectsDir(store), `${id}.json`), { force: true }));

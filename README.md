@@ -342,6 +342,7 @@ Write the action the way LTX-2.5 reads best: present tense, the motion first, on
 | `COMFY_PROXY_TOKEN` | | The token your bridge asks for, when `comfy-api-proxy` was started with `--token` (sent to your bridge only) |
 | `PORT` / `HOST` | `5177` / `127.0.0.1` | Where the app listens |
 | `COMFYTURE_DATA` | `data` | Photos and runs |
+| `COMFYTURE_EXAMPLES` | `examples` | Where the shipped examples are read from, a folder laid out as [`examples/`](examples/) is (`scripts/spice-examples.mjs` seeds a copy of a shot this way) |
 | `COMFYTURE_WORKFLOWS` | | `dev` swaps in tiny stand-in workflows so you can work on the UI without a GPU |
 | `COMFYTURE_URL` | `http://127.0.0.1:5177` | Where `scripts/control-mcp.ts` finds the app |
 | `BLENDER_MCP_HOST` / `BLENDER_MCP_PORT` | `localhost` / `9876` | Where the app finds Blender's MCP add-on |
