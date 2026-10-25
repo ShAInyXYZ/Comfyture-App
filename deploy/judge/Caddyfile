@@ -1,0 +1,17 @@
+# Caddy in front of the judges' copy: HTTPS (Caddy gets the certificate by itself), one user and password, and the progress
+# streams passed on as they come. Replace the address with a name you own, or the server's IP through sslip.io (1-2-3-4.sslip.io).
+# The hash: caddy hash-password --plaintext '<the password you put on the form>'
+judges.example.com {
+	basic_auth {
+		judge $2a$14$replace.with.the.output.of.caddy.hash-password
+	}
+	# uploads (a photo, a clip, a song) up to 200 MB
+	request_body {
+		max_size 200MB
+	}
+	reverse_proxy 127.0.0.1:5177 {
+		# the jobs' progress (api/events) is a stream: hand it on at once
+		flush_interval -1
+	}
+	encode zstd gzip
+}

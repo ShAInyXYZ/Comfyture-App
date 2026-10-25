@@ -76,15 +76,17 @@ RunPod (a partner) is worth one afternoon to film the "your own GPU" beat, not f
    COMFY_API_KEY=comfyui-…            # the judges' key
    COMFYTURE_OPEN_WEIGHTS=1           # no partner models
    COMFYTURE_JUDGE=1                  # the caps below
-   COMFYTURE_JUDGE_PER_VISITOR=8      # runs per visitor per day
-   COMFYTURE_JUDGE_PER_DAY=40         # runs per day, all visitors
-   COMFYTURE_JUDGE_BUDGET=2000        # credits in total (about $9.50)
+   COMFYTURE_JUDGE_RUNS=8             # renders a visitor may start in a day (default 12)
+   COMFYTURE_JUDGE_RUNS_DAY=40        # renders in a day, all visitors (default 80)
+   COMFYTURE_JUDGE_WORDS=60           # pet and writer answers a visitor may get in a day (default 80)
    COMFYTURE_DATA=/var/lib/comfyture/data
    HOST=127.0.0.1
    PORT=5177
    ```
    The data folder starts empty, so the server seeds every product's examples, and nothing of your own `data/` (the Giorno project,
-   the trend runs) ever reaches it.
+   the trend runs) ever reaches it. There is no total in credits in the server: the key's own small balance is that cap.
+   Everything this step and the next ones put on the server is in [deploy/judge/](../../deploy/judge/README.md): this file as
+   `judge.env.example`, the systemd unit, the Caddyfile, the health check and the daily snapshot.
 6. **Start it**: `sudo systemctl enable --now comfyture`, then `curl -s 127.0.0.1:5177/api/info` answers.
 7. **Caddy**, on a subdomain you own (or the server's IP through sslip.io):
    ```

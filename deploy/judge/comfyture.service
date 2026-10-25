@@ -1,0 +1,26 @@
+# The judges' copy of Comfyture, run by systemd (see docs/competition/HOSTING.md, B1).
+# Install: sudo cp deploy/judge/comfyture.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now comfyture
+[Unit]
+Description=Comfyture for the judges (judge mode, open weights)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=comfyture
+Group=comfyture
+WorkingDirectory=/opt/comfyture
+# the key and the caps: /etc/comfyture/judge.env, mode 0600, never in the repo (deploy/judge/judge.env.example lists them)
+EnvironmentFile=/etc/comfyture/judge.env
+ExecStart=/usr/bin/node server/main.ts
+Restart=always
+RestartSec=5
+# it writes only its data folder
+ProtectSystem=strict
+ReadWritePaths=/var/lib/comfyture
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
