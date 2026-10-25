@@ -37,6 +37,7 @@ import { searchKnowledge, knowledgeById } from "./utensils-knowledge.ts";
 import { createEdit } from "./utensils-edit.ts";
 import { createFx, bakeArgs, deadlineOf, selfLimit } from "./utensils-fx.ts";
 import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templates.ts";
+import { createToaster3d } from "./toaster-3d.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
 import { seedExamples, placeMedia, placeThumb, placedName, revOf, type ExampleKind, type Kept } from "./examples.ts";
 import { createTarget, cleanUrl, unreachable, targetOf, CLOUD_URL, LOCAL_URL, type Target } from "./target.ts";
@@ -122,6 +123,8 @@ const engine = new Engine(
   { black: workflowSet !== "workflows/dev", ffmpeg },
 );
 // the Image window's models are the official templates, in every workflow set
+// Toaster's 3D models, made one object at a time on the person's own ComfyUI (Trellis2: workflows/3d/)
+const toaster3d = createToaster3d({ data, root, photoPath: (file) => engine.photoPath(file) });
 const images = new ImageModels(join(root, "workflows"));
 engine.images = images;
 
@@ -1837,6 +1840,10 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/utensils/templates" || path.startsWith("/api/utensils/templates/")) {
     const answer = await templates.handle(method, path.slice("/api/utensils/templates".length), url.searchParams, method === "POST" ? await jsonBody(req, 1024 * 1024) : {});
     if (answer.raw) {
+  if (path.startsWith("/api/toaster/3d/")) {
+    const answer = await toaster3d.handle(method, path.slice("/api/toaster/3d/".length), method === "POST" ? await jsonBody(req, 64 * 1024) : {});
+    return json(res, answer.status, answer.body);
+  }
       res.writeHead(answer.status, { "Content-Type": answer.type ?? "application/octet-stream", "Cache-Control": answer.cache ?? "no-store" });
       return void res.end(answer.raw);
     }
