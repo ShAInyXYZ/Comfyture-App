@@ -53,6 +53,7 @@ export const SPICE_TOOL = {
             glow: { type: "number", description: "For layer and tweak: 0 to 1." },
             light: { type: "number", description: "For layer and tweak (a library element, not particles or an AI effect): how much light it casts on the shot and the people, 0 (none) to 1." },
             reach: { type: "number", description: "For layer and tweak: how far its light reaches, 0.3 to 4, in boxes of the layer's own size." },
+            follow: { type: "boolean", description: "For layer and tweak, on a clip whose subject Roto holds (not an AI effect): true keeps the layer's place on the subject as it moves, placed where it is now." },
             bloom: { type: "number", description: "For polish: a soft glow around the bright parts of the whole shot, 0 (none) to 1." },
             vignette: { type: "number", description: "For polish: darker corners over the whole shot, 0 (none) to 1." },
             tint: { type: "string", description: "For layer and tweak: a colour #rrggbb laid on its light." },
@@ -81,7 +82,7 @@ export const SPICE_TOOL = {
   },
 };
 
-export const SPICE_BRIEF = `You are Paprika, the baby chameleon who runs Comfyture's Spice: a VFX house. A shot (a clip or a picture) goes through six departments, each making its pass: plate (the footage: trim it, read its depth), roto (cut subjects out as mattes), paint (take out an object, a logo, the subtitles), light (relight, a new sky, weather, a grade), fx (a compositor: effects laid as layers the user moves on the picture, from a library or made by an AI model from words) and comp (upscale, slow motion, export). You are warm, quick, a little theatrical, and say one or two short sentences in the user's language, through the spice_answer tool.
+export const SPICE_BRIEF = `You are Paprika, the baby chameleon who runs Comfyture's Spice: a VFX house. A shot (a clip or a picture) goes through six departments, each making its pass: plate (the footage: trim it, read its depth), roto (cut subjects out as mattes), paint (take out an object, a logo, the subtitles), light (relight, a new sky, weather, a grade), fx (a compositor: effects laid as layers the user moves on the picture, from a library or made by an AI model) and comp (upscale, slow motion, export). You are warm, quick, a little theatrical, and say one or two short sentences in the user's language, through the spice_answer tool.
 
 You set things up; the user presses the keys. You cannot click in the viewer, paint a mask or import a file.
 
@@ -89,9 +90,9 @@ Actions:
 - open {department}
 - trim {in, out}: the frames worked on (slate numbers: the footage's first frame is 1001).
 - subject {name}: a subject for Roto to cut out ("the frog on the stage").
-- layer {element, x, y, size, angle, blend, opacity, glow, light, reach, tint, behind, motion, from, to, words}: add an Fx layer and hold it. element: a library id, laid free, or an AI id (ai:portal...), made by a model when run (credits; words say what it is). x, y: its centre, 0 to 1. size: its width as a share of the frame. angle in degrees. opacity, glow 0 to 1. light 0 to 1: how much light it casts on the shot and the people (fires and portals shine, smoke does not). reach 0.3 to 4: how far, in boxes of its own. tint #rrggbb. behind true: behind the people Roto holds. motion (clips) and from, to (frames). Send only what was asked.
+- layer {element, x, y, size, angle, blend, opacity, glow, light, reach, follow, tint, behind, motion, from, to, words}: add an Fx layer and hold it. element: a library id, laid free, or an AI id (ai:portal...), made by a model when run (credits; words say what). x, y: its centre, 0 to 1. size: its width as a share of the frame. angle in degrees. opacity, glow 0 to 1. light 0 to 1: the light it casts on the shot and the people (fires and portals shine, smoke does not). reach 0.3 to 4: how far, in boxes of its own. follow true: stays on Roto's subject as it moves (clips). tint #rrggbb. behind true: behind the people Roto holds. motion (clips) and from, to (frames). Send only what was asked.
 - tweak {same fields, no element}: change the layer held.
-- polish {bloom, vignette}: Fx's finish of the whole shot (not Comp's): bloom, a glow round the bright parts; vignette, darker corners; 0 to 1.
+- polish {bloom, vignette}: Fx's whole-shot finish (not Comp's): bloom, a glow round bright parts; vignette, dark corners; 0 to 1.
 - paint {what, words, after, engine}: object (words name it, short), logo or subtitles; engine void or obscura; after (void): what is left once it is gone.
 - light {tool, words, weather, amount, grade, exposure, saturation}: relight (words), weather (rain, snow, fog; amount 0 to 1) or grade (none, warm, cool, filmic, punchy, faded, noir).
 - finish {tool, height, factor, engine, format}: upscale (720, 1080, 1440), slow (1.5, 2, 3, 4; free or film) or export (mp4, webm, mov, gif).
@@ -107,7 +108,7 @@ interface Summary {
   footage?: { kind?: string; name?: string; width?: number; height?: number; fps?: number; frames?: number; first?: number; last?: number; range?: [number, number] } | null;
   passes?: Pass[];
   subjects?: { name: string; tracked?: boolean; clicks?: number }[];
-  fx?: { layers?: { el?: string; name?: string; x?: number; y?: number; size?: number; blend?: string; behind?: boolean; made?: boolean; from?: number | null; to?: number | null; light?: number; reach?: number }[]; held?: string | null; matte?: boolean; finish?: { bloom?: number; vignette?: number } };
+  fx?: { layers?: { el?: string; name?: string; x?: number; y?: number; size?: number; blend?: string; behind?: boolean; made?: boolean; from?: number | null; to?: number | null; light?: number; reach?: number; follow?: boolean }[]; held?: string | null; matte?: boolean; finish?: { bloom?: number; vignette?: number } };
   paint?: { what?: string; engine?: string; words?: string; after?: string };
   light?: { tool?: string; words?: string; weather?: string; grade?: string };
   comp?: { tool?: string; height?: number; factor?: number; engine?: string; format?: string };
@@ -148,7 +149,7 @@ export function spicePrompt(s: Summary, turns: Turn[]) {
     // (the light a layer casts, told only for one that casts some: the others cast none)
     const shines = (l: { light?: number; reach?: number }) => (typeof l.light === "number" && l.light > 0 ? `, light ${at(l.light)}, reach ${typeof l.reach === "number" ? l.reach.toFixed(1) : "?"}` : "");
     lines.push(layers.length
-      ? `FX LAYERS (bottom first): ${layers.map((l) => `${cut(l.name || l.el, 30)} (${cut(l.el, 16)}, at ${at(l.x)} ${at(l.y)}, size ${at(l.size)}, ${cut(l.blend, 8)}${shines(l)}${l.behind ? ", behind the people" : ""}${l.made === false ? ", not made yet" : ""}${typeof l.from === "number" ? `, frames ${l.from}-${l.to}` : ""})`).join("; ")}. HELD: ${cut(s.fx.held, 30) || "none"}.`
+      ? `FX LAYERS (bottom first): ${layers.map((l) => `${cut(l.name || l.el, 30)} (${cut(l.el, 16)}, at ${at(l.x)} ${at(l.y)}, size ${at(l.size)}, ${cut(l.blend, 8)}${shines(l)}${l.follow ? ", follows the subject" : ""}${l.behind ? ", behind the people" : ""}${l.made === false ? ", not made yet" : ""}${typeof l.from === "number" ? `, frames ${l.from}-${l.to}` : ""})`).join("; ")}. HELD: ${cut(s.fx.held, 30) || "none"}.`
       : "FX LAYERS: none yet.");
     if (s.fx.finish && typeof s.fx.finish === "object") lines.push(`FX FINISH (the whole shot): bloom ${at(s.fx.finish.bloom)}, vignette ${at(s.fx.finish.vignette)}.`);
     if (s.fx.matte === false) lines.push("ROTO HOLDS NOBODY YET: a layer cannot go behind the people until a subject is cut out.");
@@ -220,6 +221,7 @@ export function readSpiceAnswer(reply: string, s: Summary = {}) {
         if (num(a.reach, 0.3, 4) !== undefined) out.reach = r2(num(a.reach, 0.3, 4)!);
         if (typeof a.tint === "string" && /^#[0-9a-f]{6}$/i.test(a.tint)) out.tint = a.tint.toLowerCase();
         if (typeof a.behind === "boolean") out.behind = a.behind;
+        if (typeof a.follow === "boolean") out.follow = a.follow;
         const motion = oneOf(a.motion, MOTION_IDS);
         if (motion) out.motion = motion;
         for (const k of ["from", "to"] as const) if (frame(a[k]) !== undefined) out[k] = frame(a[k]);

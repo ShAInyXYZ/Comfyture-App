@@ -156,7 +156,7 @@ export default {
       title: "The layers",
       get text() {
         const n = layers();
-        return `${n ? `This example has ${n} ${n === 1 ? "layer" : "layers"}, the top first.` : "The layers, the top first."} Pick one to change its **Look** and its **Place**; the person key puts it behind the people, held there by Roto's matte. A fire or a portal can shine: its **Light** falls on the shot around it, and from behind the people it lights their edge.`;
+        return `${n ? `This example has ${n} ${n === 1 ? "layer" : "layers"}, the top first.` : "The layers, the top first."} Pick one to change its **Look** and its **Place**; the person key puts it behind the people, held there by Roto's matte. A fire or a portal can shine: its **Light** falls on the shot around it, and from behind the people it lights their edge. On a clip, **Follows** keeps a layer on the subject Roto cut out as it moves.`;
       },
     },
     {

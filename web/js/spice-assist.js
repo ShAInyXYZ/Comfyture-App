@@ -38,7 +38,7 @@ export function summary() {
     footage: plate ? { kind: plate.media.kind, name: plate.name, width: plate.media.width, height: plate.media.height, fps, first: FIRST, last: lastFrame(plate), range: [r.in, r.out] } : null,
     passes: WORKSPACES.map((d) => d.id).filter((d) => passOf(b, d)?.media).map((d) => ({ dept: d, note: passOf(b, d).note, from: passOf(b, d).from, to: passOf(b, d).to, shown: visible(passOf(b, d)) })),
     subjects: b.set.roto.subjects.map((x) => ({ name: x.name, tracked: !!x.media && !x.stale, clicks: x.points.length })),
-    fx: { layers: f.layers.map((l) => ({ el: l.el, name: layerName(l), x: l.x, y: l.y, size: l.scale, blend: l.blend, behind: l.behind, made: l.el !== "ai" || !!l.media, from: l.from, to: l.to, light: l.light, reach: l.reach })), held: f.layers.find((l) => l.id === f.sel) ? layerName(f.layers.find((l) => l.id === f.sel)) : null, matte: !!fxGround(b).matte, finish: finishOf() },
+    fx: { layers: f.layers.map((l) => ({ el: l.el, name: layerName(l), x: l.x, y: l.y, size: l.scale, blend: l.blend, behind: l.behind, made: l.el !== "ai" || !!l.media, from: l.from, to: l.to, light: l.light, reach: l.reach, follow: l.follow })), held: f.layers.find((l) => l.id === f.sel) ? layerName(f.layers.find((l) => l.id === f.sel)) : null, matte: !!fxGround(b).matte, finish: finishOf() },
     paint: { what: b.set.paint.how === "describe" ? "object" : b.set.paint.how, engine: b.set.paint.engine, words: b.set.paint.words, after: b.set.paint.after },
     light: { tool: spice.tool.light, words: b.set.light.words || b.set.light.look, weather: b.set.light.weather, grade: b.set.light.grade },
     comp: { tool: spice.tool.comp, height: b.set.comp.height, factor: b.set.comp.factor, engine: b.set.comp.engine, format: b.set.comp.format },
@@ -90,10 +90,15 @@ export function apply(a) {
     if (!l) failed.push(a.op === "layer" ? "That effect is not in the library" : "No layer is held: pick one first");
     else {
       const patch = {};
-      for (const [k, to] of [["x", "x"], ["y", "y"], ["size", "scale"], ["angle", "rot"], ["blend", "blend"], ["opacity", "opacity"], ["glow", "glow"], ["light", "light"], ["reach", "reach"], ["tint", "tint"], ["motion", "motion"], ["from", "from"], ["to", "to"], ["words", "words"]]) if (a[k] !== undefined) patch[to] = a[k];
+      for (const [k, to] of [["x", "x"], ["y", "y"], ["size", "scale"], ["angle", "rot"], ["blend", "blend"], ["opacity", "opacity"], ["glow", "glow"], ["light", "light"], ["reach", "reach"], ["follow", "follow"], ["tint", "tint"], ["motion", "motion"], ["from", "from"], ["to", "to"], ["words", "words"]]) if (a[k] !== undefined) patch[to] = a[k];
       if (preset) patch.preset = preset.preset;
       // (only a picture of the library shines: particles and an AI effect cast no light)
       if ((a.light !== undefined || a.reach !== undefined) && elementOf(l.el)?.kind !== "image") failed.push(`${layerName(l)} casts no light: only a library picture does`);
+      // (a layer follows Roto's subject on a clip that has its matte; an AI effect is made for one place)
+      if (a.follow === true && (b.passes.plate?.media.kind === "image" || !fxGround(b).matte)) {
+        failed.push("Follow needs a clip with Roto's matte: cut the subject out first");
+        delete patch.follow;
+      } else if (a.follow !== undefined && elementOf(l.el)?.kind === "ai") failed.push(`${layerName(l)} is made for one place: it does not follow`);
       // (behind the people only when Roto holds someone)
       if (a.behind !== undefined) {
         if (a.behind && !fxGround(b).matte) failed.push("Behind the people: Roto holds nobody yet");
