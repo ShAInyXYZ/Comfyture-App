@@ -1,0 +1,188 @@
+{
+ "12": {
+  "class_type": "Trellis2LoadModel",
+  "inputs": {
+   "modelname": "microsoft/TRELLIS.2-4B",
+   "backend": "flash_attn",
+   "device": "cuda",
+   "low_vram": true,
+   "keep_models_loaded": false,
+   "conv_backend": "flex_gemm",
+   "sparse_backend": "flash_attn",
+   "use_reconviagen": false
+  },
+  "_meta": {
+   "title": "Trellis2LoadModel"
+  }
+ },
+ "20": {
+  "class_type": "OtiaTrellis2FinalizeV21",
+  "inputs": {
+   "mesh": [
+    "19",
+    0
+   ],
+   "reorient_vertices": "90 degrees",
+   "split_conflicts": true,
+   "max_split_percent": 1
+  },
+  "_meta": {
+   "title": "Finalize (orientation)"
+  }
+ },
+ "1": {
+  "class_type": "Trellis2LoadImageWithTransparency",
+  "inputs": {
+   "image": "front.png"
+  },
+  "_meta": {
+   "title": "Front view"
+  }
+ },
+ "32": {
+  "class_type": "RMBG",
+  "inputs": {
+   "image": [
+    "1",
+    2
+   ],
+   "model": "RMBG-2.0",
+   "sensitivity": 1,
+   "process_res": 1024,
+   "mask_blur": 0,
+   "mask_offset": 0,
+   "invert_output": false,
+   "refine_foreground": false,
+   "background": "Alpha",
+   "background_color": "#222222"
+  },
+  "_meta": {
+   "title": "Cut the front view out"
+  }
+ },
+ "26": {
+  "class_type": "OtiaTrellis2CleanupV21",
+  "inputs": {
+   "mesh": [
+    "15",
+    0
+   ],
+   "merge_vertices": false,
+   "merge_distance": 0.0001
+  },
+  "_meta": {
+   "title": "Cleanup"
+  }
+ },
+ "19": {
+  "class_type": "Trellis2SimplifyMesh",
+  "inputs": {
+   "mesh": [
+    "26",
+    0
+   ],
+   "target_face_num": 1000000,
+   "method": "Cumesh"
+  },
+  "_meta": {
+   "title": "Simplify"
+  }
+ },
+ "15": {
+  "class_type": "OtiaTrellis2MeshRefiner",
+  "inputs": {
+   "pipeline": [
+    "12",
+    0
+   ],
+   "trimesh": [
+    "25",
+    0
+   ],
+   "image": [
+    "32",
+    0
+   ],
+   "seed": 12345,
+   "resolution": 1536,
+   "shape_steps": 24,
+   "shape_guidance_strength": 7.5,
+   "shape_guidance_rescale": 0.5,
+   "shape_rescale_t": 3,
+   "texture_steps": 5,
+   "texture_guidance_strength": 3,
+   "texture_guidance_rescale": 0.2,
+   "texture_rescale_t": 3,
+   "max_num_tokens": 98304,
+   "generate_texture_slat": false,
+   "downsampling": 16,
+   "shape_guidance_interval_start": 0.6,
+   "shape_guidance_interval_end": 1,
+   "texture_guidance_interval_start": 0,
+   "texture_guidance_interval_end": 0.9,
+   "use_tiled_decoder": true,
+   "max_views": 4,
+   "sampler": "heun",
+   "verbose": false,
+   "dino_lock": 0,
+   "dino_substeps": 4,
+   "dino_foundation_cap": 1
+  },
+  "_meta": {
+   "title": "Mesh refiner"
+  }
+ },
+ "35": {
+  "class_type": "OtiaTrellis2ExteriorV22",
+  "inputs": {
+   "trimesh": [
+    "20",
+    0
+   ],
+   "views": 64,
+   "confidence": 0.25,
+   "max_flip_percent": 15
+  },
+  "_meta": {
+   "title": "Exterior patches"
+  }
+ },
+ "25": {
+  "class_type": "Trellis2LoadMesh",
+  "inputs": {
+   "glb_path": "/app/output/3D/Comfyture/shape_00001_.glb"
+  },
+  "_meta": {
+   "title": "The shape to refine"
+  }
+ },
+ "36": {
+  "class_type": "OtiaTrellis2SolidRepairV22",
+  "inputs": {
+   "trimesh": [
+    "35",
+    0
+   ],
+   "resolution": 2048,
+   "target_faces": 1000000,
+   "decimation_error_voxels": 0.5
+  },
+  "_meta": {
+   "title": "Close the surface"
+  }
+ },
+ "21": {
+  "class_type": "KAISaveMesh",
+  "inputs": {
+   "trimesh": [
+    "36",
+    0
+   ],
+   "filename_prefix": "3D/Comfyture/refined",
+   "file_format": "glb"
+  },
+  "_meta": {
+   "title": "Save the refined shape"
+  }
+ }
+}

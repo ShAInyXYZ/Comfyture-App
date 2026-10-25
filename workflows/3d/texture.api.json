@@ -1,0 +1,269 @@
+{
+ "1": {
+  "class_type": "Trellis2LoadImageWithTransparency",
+  "inputs": {
+   "image": "front.png"
+  },
+  "_meta": {
+   "title": "Front view"
+  }
+ },
+ "3": {
+  "class_type": "Trellis2LoadImageWithTransparency",
+  "inputs": {
+   "image": "back.png"
+  },
+  "_meta": {
+   "title": "Back view"
+  }
+ },
+ "4": {
+  "class_type": "OtiaTrellis2PrepareImage",
+  "inputs": {
+   "image": [
+    "3",
+    2
+   ],
+   "resolution": 1024,
+   "foreground_ratio": 0.9,
+   "remove_background": true
+  },
+  "_meta": {
+   "title": "OtiaTrellis2PrepareImage"
+  }
+ },
+ "5": {
+  "class_type": "Trellis2LoadImageWithTransparency",
+  "inputs": {
+   "image": "left.png"
+  },
+  "_meta": {
+   "title": "Left view"
+  }
+ },
+ "6": {
+  "class_type": "OtiaTrellis2PrepareImage",
+  "inputs": {
+   "image": [
+    "5",
+    2
+   ],
+   "resolution": 1024,
+   "foreground_ratio": 0.9,
+   "remove_background": true
+  },
+  "_meta": {
+   "title": "OtiaTrellis2PrepareImage"
+  }
+ },
+ "7": {
+  "class_type": "Trellis2LoadImageWithTransparency",
+  "inputs": {
+   "image": "right.png"
+  },
+  "_meta": {
+   "title": "Right view"
+  }
+ },
+ "8": {
+  "class_type": "OtiaTrellis2PrepareImage",
+  "inputs": {
+   "image": [
+    "7",
+    2
+   ],
+   "resolution": 1024,
+   "foreground_ratio": 0.9,
+   "remove_background": true
+  },
+  "_meta": {
+   "title": "OtiaTrellis2PrepareImage"
+  }
+ },
+ "9": {
+  "class_type": "Trellis2LoadModel",
+  "inputs": {
+   "modelname": "microsoft/TRELLIS.2-4B",
+   "backend": "flash_attn",
+   "device": "cuda",
+   "low_vram": true,
+   "keep_models_loaded": false,
+   "conv_backend": "flex_gemm",
+   "sparse_backend": "flash_attn",
+   "use_reconviagen": false
+  },
+  "_meta": {
+   "title": "Trellis2LoadModel"
+  }
+ },
+ "10": {
+  "class_type": "Trellis2LoadMesh",
+  "inputs": {
+   "glb_path": "/app/output/3D/Comfyture/refined_00001_.glb"
+  },
+  "_meta": {
+   "title": "The refined shape"
+  }
+ },
+ "11": {
+  "class_type": "Trellis2SimplifyTrimesh",
+  "inputs": {
+   "trimesh": [
+    "10",
+    0
+   ],
+   "target_face_num": 500000,
+   "method": "Cumesh"
+  },
+  "_meta": {
+   "title": "Trellis2SimplifyTrimesh"
+  }
+ },
+ "14": {
+  "class_type": "Trellis2SmoothNormals",
+  "inputs": {
+   "trimesh": [
+    "13",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Trellis2SmoothNormals"
+  }
+ },
+ "16": {
+  "class_type": "OtiaTrellis2AutoColorMatch",
+  "inputs": {
+   "trimesh": [
+    "14",
+    0
+   ],
+   "front_image": [
+    "2",
+    0
+   ],
+   "front_mask": [
+    "2",
+    1
+   ],
+   "back_image": [
+    "4",
+    0
+   ],
+   "back_mask": [
+    "4",
+    1
+   ],
+   "left_image": [
+    "6",
+    0
+   ],
+   "left_mask": [
+    "6",
+    1
+   ],
+   "right_image": [
+    "8",
+    0
+   ],
+   "right_mask": [
+    "8",
+    1
+   ],
+   "base_color_texture": [
+    "13",
+    1
+   ],
+   "front_axis": "x"
+  },
+  "_meta": {
+   "title": "Colour match"
+  }
+ },
+ "2": {
+  "class_type": "OtiaTrellis2PrepareImage",
+  "inputs": {
+   "image": [
+    "1",
+    2
+   ],
+   "resolution": 1024,
+   "foreground_ratio": 0.9,
+   "remove_background": true
+  },
+  "_meta": {
+   "title": "OtiaTrellis2PrepareImage"
+  }
+ },
+ "13": {
+  "class_type": "OtiaTrellis2MeshTexturingMultiView",
+  "inputs": {
+   "pipeline": [
+    "9",
+    0
+   ],
+   "front_image": [
+    "2",
+    0
+   ],
+   "trimesh": [
+    "11",
+    0
+   ],
+   "back_image": [
+    "4",
+    0
+   ],
+   "left_image": [
+    "6",
+    0
+   ],
+   "right_image": [
+    "8",
+    0
+   ],
+   "seed": 12345,
+   "texture_steps": 32,
+   "texture_guidance_strength": 3,
+   "texture_guidance_rescale": 0,
+   "texture_rescale_t": 3,
+   "resolution": 1536,
+   "texture_size": 2048,
+   "texture_alpha_mode": "OPAQUE",
+   "double_side_material": true,
+   "texture_guidance_interval_start": 0.6,
+   "texture_guidance_interval_end": 0.9,
+   "bake_on_vertices": false,
+   "use_custom_normals": false,
+   "mesh_cluster_threshold_cone_half_angle_rad": 60,
+   "front_axis": "x",
+   "blend_temperature": 1,
+   "sampler": "heun",
+   "inpainting": "telea",
+   "verbose": true,
+   "dino_lock": 0,
+   "dino_substeps": 4,
+   "dino_foundation_cap": 1,
+   "atlas_padding": 4,
+   "preserve_source_transform": true,
+   "view_coordinate_system": "glb"
+  },
+  "_meta": {
+   "title": "Texture from the four views"
+  }
+ },
+ "17": {
+  "class_type": "KAISaveMesh",
+  "inputs": {
+   "trimesh": [
+    "16",
+    0
+   ],
+   "filename_prefix": "3D/Comfyture/textured",
+   "file_format": "glb"
+  },
+  "_meta": {
+   "title": "Save the textured model"
+  }
+ }
+}
