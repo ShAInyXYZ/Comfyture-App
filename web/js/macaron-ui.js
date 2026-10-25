@@ -78,7 +78,7 @@ export const fill = (el, ...kids) => el.replaceChildren(...kids.flat().filter((k
  */
 export function bento(cls, title, open, ...body) {
   return h(`section.mc-bento${cls ? `.${cls}` : ""}`, { role: "group", "aria-label": title, dataset: { open: open ? "1" : "" }, on: { click: (e) => open && !e.target.closest("a, button, input, textarea, select, [data-keep]") && open() } },
-    h("div.mc-b-head", {}, h("span.mc-b-label", {}, title), open ? h("button.mc-expand", { type: "button", title: `Open ${title.toLowerCase()}`, "aria-label": `Open ${title.toLowerCase()}`, on: { click: (e) => (e.stopPropagation(), open()) } }, mcicon("expand")) : null),
+    h("div.mc-b-head", {}, h("span.mc-b-label", { role: "heading", "aria-level": "2" }, title), open ? h("button.mc-expand", { type: "button", title: `Open ${title.toLowerCase()}`, "aria-label": `Open ${title.toLowerCase()}`, on: { click: (e) => (e.stopPropagation(), open()) } }, mcicon("expand")) : null),
     ...body);
 }
 

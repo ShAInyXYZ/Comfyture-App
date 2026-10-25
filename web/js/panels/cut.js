@@ -49,8 +49,8 @@ function renderBin(force = false) {
   const busy = [...cut.busy].filter((k) => /^(music|sound|voice):/.test(k)).length;
   const form = bin.form ? aiForm(bin.form) : null;
   shell.bin.replaceChildren(
-    h("div.cut-panel-head", {}, h("span.card-label", {}, "Media bin"), busy ? h("span.cut-busy", {}, h("span.lamp", { dataset: { tone: "busy" } }), `${busy} making`) : null),
-    h("div.segment.cut-bin-tabs", { role: "tablist" }, ...tabs.map(([id, label, glyph]) => h("button", { type: "button", role: "tab", "aria-pressed": String(bin.tab === id), on: { click: () => ((bin.tab = id), id === "images" && !state.photos?.length && loadPhotos(), renderBin(true)) } }, glyph(), label))),
+    h("div.cut-panel-head", {}, h("span.card-label", { role: "heading", "aria-level": "2" }, "Media bin"), busy ? h("span.cut-busy", {}, h("span.lamp", { dataset: { tone: "busy" } }), `${busy} making`) : null),
+    h("div.segment.cut-bin-tabs", { role: "tablist", "aria-label": "Media" }, ...tabs.map(([id, label, glyph]) => h("button", { type: "button", role: "tab", "aria-selected": String(bin.tab === id), on: { click: () => ((bin.tab = id), id === "images" && !state.photos?.length && loadPhotos(), renderBin(true)) } }, glyph(), label))),
     h("label.ctl-search-row.cut-search", {}, icon("search"), h("input.field.ctl-search", { type: "search", value: bin.query, placeholder: "Search media", "aria-label": "Search media", on: { input: (e) => ((bin.query = e.target.value), renderBinList()) } })),
     h("div.cut-media-grid", { dataset: { scrollKey: "bin" } }, ...(list.length ? list.map(binTile) : [h("p.cut-empty", {}, bin.tab === "voice" ? "Voice lines come here: the Voice key makes one." : bin.tab === "audio" ? "Music and sounds come here: make one below, or drop a file." : "Nothing here yet.")])),
     ...(form ? [form] : []),
@@ -111,7 +111,7 @@ function subbar() {
       cut.tabs.length > 1 ? h("span.tab-close", { role: "button", "aria-label": `Close ${c.name}`, title: "Close the tab — the edit is kept", on: { click: (e) => (e.stopPropagation(), closeCut(id)) } }, icon("close")) : null);
   };
   return h("div.subbar", {}, h("div.subbar-in", {},
-    h("nav.tabs", { role: "tablist", "aria-label": "Edits" }, ...cut.tabs.filter((id) => id === p?.id || inProject("cut", cut.list.find((c) => c.id === id) ?? { id })).map(tab), h("button.tab-add", { type: "button", title: "A new, empty edit", on: { click: () => (stop(), newCut()) } }, icon("plus"), "New edit")),
+    h("nav.tabs", { "aria-label": "Edits" }, h("div.tablist", { role: "tablist", "aria-label": "Edits" }, ...cut.tabs.filter((id) => id === p?.id || inProject("cut", cut.list.find((c) => c.id === id) ?? { id })).map(tab)), h("button.tab-add", { type: "button", title: "A new, empty edit", on: { click: () => (stop(), newCut()) } }, icon("plus"), "New edit")),
     h("div.subbar-actions", {},
       key(sprite("edit-undo"), "Undo — Ctrl Z", undo, { disabled: !cut.history.length }),
       key(sprite("edit-redo"), "Redo — Ctrl Shift Z", redo, { disabled: !cut.future.length }),
@@ -136,7 +136,7 @@ function build(el) {
   const chat = el.querySelector("#cut-chat") ?? h("div.cut-chat", { id: "cut-chat" });
   const top = h("div.cut-top", {}, binEl, monitor, parts.inspector);
   const sub = h("div.cut-sub");
-  el.replaceChildren(sub, h("div.cut-page", {}, top, parts.timeline), chat);
+  el.replaceChildren(h("h1.sr-only", {}, "Cut"), sub, h("div.cut-page", {}, top, parts.timeline), chat);
   shell = { el, sub, bin: binEl, monitor };
 }
 

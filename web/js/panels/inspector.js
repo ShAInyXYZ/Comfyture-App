@@ -35,7 +35,7 @@ export function renderInspector(host, ctx) {
   if (!f) return host.replaceChildren(...editPanel(p, ctx));
   const { track: t, item: it } = f;
   const s = sourceOf(it.src);
-  const head = h("div.cut-panel-head", {}, h("span.card-label", {}, t.kind === "fx" ? "Beat FX" : isPlaced(it) ? "Sticker" : it.lyric ? "Lyrics" : "Inspector"), h("span.spacer"), key(icon("trash"), "Remove it", () => removeItem(it.id)));
+  const head = h("div.cut-panel-head", {}, h("span.card-label", { role: "heading", "aria-level": "2" }, t.kind === "fx" ? "Beat FX" : isPlaced(it) ? "Sticker" : it.lyric ? "Lyrics" : "Inspector"), h("span.spacer"), key(icon("trash"), "Remove it", () => removeItem(it.id)));
   if (t.kind === "fx") return host.replaceChildren(head, ...fxPanel(it, t, ctx));
   if (isPlaced(it)) return host.replaceChildren(head, ...stickerPanel(it, ctx));
   if (t.kind === "title" && it.lyric) return host.replaceChildren(head, ...lyricPanel(it, ctx));
@@ -57,7 +57,7 @@ function editPanel(p, ctx) {
   const out = [];
   if (ctx.mode !== "jam") {
     out.push(
-      h("div.cut-panel-head", {}, h("span.card-label", {}, "Edit")),
+      h("div.cut-panel-head", {}, h("span.card-label", { role: "heading", "aria-level": "2" }, "Edit")),
       h("input.field.cut-name", { value: p.name, "aria-label": "Name", on: { change: (e) => renameCut(e.target.value), keydown: (e) => e.stopPropagation() } }),
       h("div.cut-facts", {}, h("span", {}, "Length"), h("b", {}, tc(filmLength())), h("span", {}, "Clips"), h("b", {}, String(mainTrack()?.items.length ?? 0)),
         h("span", {}, "Sounds"), h("b", {}, String(b.tracks.filter((t) => t.kind === "audio").reduce((n, t) => n + t.items.length, 0)))),

@@ -80,7 +80,7 @@ export function renderPresets(el) {
   });
   el.replaceChildren(
     h("div.card-head", {},
-      h("span.card-label", {}, "Presets"),
+      h("span.card-label", { role: "heading", "aria-level": "2" }, "Presets"),
       h("span.card-hint", {}, `${count} ${GROUPS[state.group].toLowerCase()} moves`),
       h("span.card-tools", {},
         h("button.key.is-sm", { type: "button", title: "Save this script as your own preset", on: { click: saveDialog } }, icon("plus"), "Save")),

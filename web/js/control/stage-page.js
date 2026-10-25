@@ -63,11 +63,11 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   const addEl = el("div.ctl-add");
   const linkLamp = el("span.lamp.ctl-link", { tabindex: "0", role: "status", "data-tooltip": "Agent link — waiting for the server" });
   const libraryEl = el("section.ctl-panel.ctl-grow.ctl-library");
-  const left = el("aside.ctl-col.ctl-left",
+  const left = el("aside.ctl-col.ctl-left", { "aria-label": "The scene and its library" },
     el("section.ctl-panel", el("div.ctl-row", el("h2.ctl-label", {}, "Scene"), linkLamp), outlinerEl, addEl),
     libraryEl);
   // the stages open as tabs on a bar over the desk, as shots do, with the stage's keys at its end
-  const tabsEl = el("nav.tabs.ctl-stage-tabs", { role: "tablist", "aria-label": "Stages" });
+  const tabsEl = el("nav.tabs.ctl-stage-tabs", { "aria-label": "Stages" });
   const actionsEl = el("div.subbar-actions.ctl-stage-actions", { role: "toolbar", "aria-label": "Stage" });
   const subbar = el("div.subbar.ctl-subbar", el("div.subbar-in", tabsEl, actionsEl));
 
@@ -80,7 +80,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   const selectedEl = el("div.ctl-selected");
   const previewsEl = el("div.ctl-previews");
   const renderEl = el("div.ctl-render-keys");
-  const right = el("aside.ctl-col.ctl-right",
+  const right = el("aside.ctl-col.ctl-right", { "aria-label": "Camera, frame and renders" },
     el("section.ctl-panel", el("h2.ctl-label", {}, "Camera"), snapsEl,
       el("div.ctl-focal", el("div.ctl-row", el("span.ctl-label.is-sub", {}, "Focal length"), focalOut), focal),
       el("span.ctl-label.is-sub", {}, "Move"), movesEl),
@@ -88,7 +88,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     el("section.ctl-panel", el("h2.ctl-label", {}, "Selected"), selectedEl),
     el("section.ctl-panel", el("h2.ctl-label", {}, "Channels"), previewsEl, renderEl));
 
-  root.replaceChildren(subbar, el("div.ctl-desk", left, el("div.ctl-mid", view, timelineEl, chatSlot), right));
+  root.replaceChildren(el("h1.sr-only", {}, "Stage"), subbar, el("div.ctl-desk", left, el("div.ctl-mid", view, timelineEl, chatSlot), right));
 
   const stage = new Stage(stageEl, frameEl);
   const { ops, describe } = controlOps(stage);
@@ -1292,7 +1292,7 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
   function render() {
     hidePreview();
     // the open project's stages only (with none open, every stage)
-    tabsEl.replaceChildren(...tabs.filter((id) => id === project?.id || inProject("stage", known.get(id) ?? { id })).map(tabEl),
+    tabsEl.replaceChildren(el("div.tablist", { role: "tablist", "aria-label": "Stages" }, ...tabs.filter((id) => id === project?.id || inProject("stage", known.get(id) ?? { id })).map(tabEl)),
       el("button.tab-add", { type: "button", title: "A new, empty stage in its own tab", on: { click: () => create().catch((e) => toast(e.message, { tone: "crit" })) } }, icon("plus"), "New stage"));
     tabsEl.classList.toggle("is-overflowing", tabsEl.scrollWidth > tabsEl.clientWidth + 1);
     tabsEl.querySelector('.tab[aria-selected="true"]')?.scrollIntoView({ inline: "nearest", block: "nearest" });

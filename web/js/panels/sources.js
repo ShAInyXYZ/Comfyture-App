@@ -369,7 +369,7 @@ export function renderSources(el) {
   const set = [d.startMode === "video" ? d.video : d.start, d.end || d.paint.trim(), d.keyframes.length, hasRefs(), d.audio].filter(Boolean).length;
   el.replaceChildren(
     generateStep(),
-    h("div.col-head", {}, h("span.col-title", {}, "Inputs"), h("span.col-hint", {}, "what the shot is made from"), h("span.col-count", {}, `${set} of 5 set`)),
+    h("div.col-head", {}, h("span.col-title", { role: "heading", "aria-level": "2" }, "Inputs"), h("span.col-hint", {}, "what the shot is made from"), h("span.col-count", {}, `${set} of 5 set`)),
     startCard(), endCard(), keyframesCard(), referencesCard(), soundCard(),
   );
 }

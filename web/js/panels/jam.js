@@ -86,7 +86,7 @@ function buildPage(el) {
   const tag = h("p.jm-tag");
   const grid = h("div.jm-grid");
   const chat = h("div.jm-chat#jam-chat");
-  const root = h("div.jam", {}, sideSlot, h("main.jm-main", {}, h("header.jm-head", {}, title, tag), grid, chat));
+  const root = h("div.jam", {}, sideSlot, h("div.jm-main", {}, h("header.jm-head", {}, title, tag), grid, chat));
   el.replaceChildren(root);
   page = { el, root, side: sideSlot, title, tag, grid, chat, parts };
 }

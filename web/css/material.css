@@ -129,6 +129,9 @@ button { font: inherit; color: inherit; }
 }
 
 .mono { font-family: var(--font-mono); }
+
+/* words for screen readers only (a page's title where the page draws it as its own picture) */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .readout { font: 400 var(--fs-small)/1.2 var(--font-mono); color: var(--muted); }
 
 /* ---- lamps ------------------------------------------------------------- */

@@ -60,7 +60,7 @@ function deleteKey(label, run) {
 export function projectBar(extra = []) {
   if (bar) return bar.el;
   const lampEl = h("span.lamp.ts-saved", { role: "status", "data-tooltip": "Not saved yet" });
-  const tabsEl = h("nav.tabs.ts-tabs", { role: "tablist", "aria-label": "Projects" });
+  const tabsEl = h("nav.tabs.ts-tabs", { "aria-label": "Projects" });
   const del = deleteKey("Delete this project — click twice", () => remove(toaster.draft?.id).catch(fail));
   const keys = h("div.subbar-actions.ts-bar-keys", { role: "toolbar", "aria-label": "Project" }, ...extra,
     key(icon("grid"), "Your projects", () => browse().catch(fail)),
@@ -151,7 +151,7 @@ export function drawProjectBar(force = false) {
   if (!force && sig === shownKey) return;
   shownKey = sig;
   hidePreview();
-  bar.tabsEl.replaceChildren(...rows.map(tabEl),
+  bar.tabsEl.replaceChildren(h("div.tablist", { role: "tablist", "aria-label": "Projects" }, ...rows.map(tabEl)),
     h("button.tab-add", { type: "button", title: "A new, empty project in its own tab", on: { click: () => newDraft().catch(fail) } }, icon("plus"), "New project"));
   bar.tabsEl.classList.toggle("is-overflowing", bar.tabsEl.scrollWidth > bar.tabsEl.clientWidth + 1);
   bar.tabsEl.querySelector('.tab[aria-selected="true"]')?.scrollIntoView({ inline: "nearest", block: "nearest" });

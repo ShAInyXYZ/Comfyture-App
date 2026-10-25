@@ -70,7 +70,7 @@ export function renderSettings(el) {
   const prompt = compose(d.script);
   const frameLocked = refs || !!video;
   el.replaceChildren(
-    h("div.col-head", {}, h("span.col-title", {}, "Shot"), h("span.col-hint", {}, "how it renders"), h("span.col-count", {}, source(d, video))),
+    h("div.col-head", {}, h("span.col-title", { role: "heading", "aria-level": "2" }, "Shot"), h("span.col-hint", {}, "how it renders"), h("span.col-count", {}, source(d, video))),
     h("div.card.settings-card", {},
     h("div.rows", {},
       ...row("Length",

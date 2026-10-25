@@ -9,7 +9,7 @@ import { jicon } from "./jam-ui.js";
 export function card({ id, title, sub = "", win = id, tools = [], cls = "" }, ...body) {
   return h(`section.jt-card.jt-c-${id}${cls ? `.${cls}` : ""}`, { dataset: { card: id } },
     h("header.jt-card-head", {},
-      h("div.jt-card-title", {}, h("h3", {}, title), sub ? h("p", {}, sub) : null),
+      h("div.jt-card-title", {}, h("h3", { "aria-level": "2" }, title), sub ? h("p", {}, sub) : null),
       h("div.jt-card-tools", {}, ...tools,
         win ? h("button.jt-expand", { type: "button", title: `${title.charAt(0)}${title.slice(1).toLowerCase()} in a window`, "aria-label": `${title} in a window`, on: { click: () => openWindow(win) } }, jicon("expand")) : null)),
     h("div.jt-card-body", {}, ...body));

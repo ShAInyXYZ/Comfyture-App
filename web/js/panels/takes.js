@@ -191,7 +191,7 @@ export function renderTakes(el) {
   const scroll = [before?.scrollLeft ?? 0, before?.scrollTop ?? 0];
   el.replaceChildren(
     h("div.card-head", {},
-      h("span.card-label", {}, "Take log"),
+      h("span.card-label", { role: "heading", "aria-level": "2" }, "Take log"),
       h("span.card-hint", {}, runs.length
         ? `${runs.length} take${runs.length > 1 ? "s" : ""}${films.length ? ` · ${films.length} film${films.length > 1 ? "s" : ""}` : ""}`
         : ""),

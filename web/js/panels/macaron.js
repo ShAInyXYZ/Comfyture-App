@@ -54,7 +54,7 @@ function build(el) {
     part.el.inert = false;
   }
   main.append(idea.el, kit.el, studio.el, create.el, book.el, slot);
-  const root = h("div.macaron", {}, side, main, host.el);
+  const root = h("div.macaron", {}, h("h1.sr-only", {}, "Macaron"), side, main, host.el);
   // the app does not draw a page while a field in it is in use: what waited is drawn as soon as the field is left
   root.addEventListener("focusout", (e) => !root.contains(e.relatedTarget) && setTimeout(() => changed("macaron"), 0));
   el.replaceChildren(root);

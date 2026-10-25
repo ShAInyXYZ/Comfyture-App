@@ -125,7 +125,7 @@ function build(el) {
   s.root = h("div.toaster", {}, s.left, s.mid, s.right);
   // a field left: what waited while it was in use is drawn now
   s.root.addEventListener("focusout", (e) => !s.root.contains(e.relatedTarget) && setTimeout(() => (drawLeft(), drawLook()), 0));
-  el.replaceChildren(projectBar([s.modes]), s.root);
+  el.replaceChildren(h("h1.sr-only", {}, "Toaster"), projectBar([s.modes]), s.root);
   shell = s;
   layout();
   mountView();

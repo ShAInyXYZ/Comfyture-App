@@ -58,7 +58,7 @@ function build(el) {
     grid.append(part.el);
   }
   const main = h("div.sp-main", {}, grid, slot);
-  const root = h("div.spice", {}, side, main, host.el);
+  const root = h("div.spice", {}, h("h1.sr-only", {}, "Spice"), side, main, host.el);
   // the app does not draw a page while a field in it is in use: what waited is drawn as soon as the field is left
   root.addEventListener("focusout", (e) => !root.contains(e.relatedTarget) && setTimeout(() => changed("spice"), 0));
   el.replaceChildren(root);

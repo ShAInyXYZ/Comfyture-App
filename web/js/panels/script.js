@@ -174,7 +174,7 @@ export function renderScript(el) {
   toggle(enhancer, { value: d.enhance, label: "Prompt enhancer", onChange: (v) => edit((x) => (x.enhance = v), "settings") });
   el.replaceChildren(
     h("div.card-head", {},
-      h("span.card-label", {}, "Script"),
+      h("span.card-label", { role: "heading", "aria-level": "2" }, "Script"),
       h("input.title-input", {
         "aria-label": "Shot name",
         placeholder: "Name this shot",

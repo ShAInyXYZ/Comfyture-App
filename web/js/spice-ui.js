@@ -71,7 +71,7 @@ export const fill = (el, ...kids) => el.replaceChildren(...kids.flat().filter((k
  */
 export function bento(cls, title, open, ...body) {
   return h(`section.sp-bento${cls ? `.${cls}` : ""}`, { role: "group", "aria-label": title, on: { click: (e) => open && !e.target.closest("a, button, input, textarea, select, canvas, [data-keep]") && open() } },
-    h("div.sp-b-head", {}, h("span.sp-b-label", {}, title), open ? h("button.sp-expand", { type: "button", title: `Open ${title.toLowerCase()}`, "aria-label": `Open ${title.toLowerCase()}`, on: { click: (e) => (e.stopPropagation(), open()) } }, spicon("expand")) : null),
+    h("div.sp-b-head", {}, h("span.sp-b-label", { role: "heading", "aria-level": "2" }, title), open ? h("button.sp-expand", { type: "button", title: `Open ${title.toLowerCase()}`, "aria-label": `Open ${title.toLowerCase()}`, on: { click: (e) => (e.stopPropagation(), open()) } }, spicon("expand")) : null),
     ...body);
 }
 

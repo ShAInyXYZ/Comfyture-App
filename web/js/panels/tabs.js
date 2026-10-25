@@ -112,7 +112,9 @@ export function renderTabs(el) {
     }
   });
   for (const id of built.keys()) if (!state.tabs.some((t) => t.id === id)) built.delete(id);
-  el.replaceChildren(...nodes,
+  // the nav holds the tab list (only tabs: what a tablist may hold) and, after it, the key that adds one
+  el.removeAttribute("role");
+  el.replaceChildren(h("div.tablist", { role: "tablist", "aria-label": "Shots" }, ...nodes),
     h("button.tab-add", { type: "button", title: "A new, empty shot in its own tab", on: { click: newTab } }, icon("plus"), "New shot"));
   // a drop past the last tab moves it to the end
   el.ondragover = (e) => e.dataTransfer.types.includes("text/comfyture-tab") && e.preventDefault();

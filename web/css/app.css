@@ -67,6 +67,7 @@ body[data-product="kitchen"] .rooms { display: block; }
 
 /* the shots: full-height tabs, the open one underlined in yellow on the bar's edge */
 .tabs { display: flex; align-items: stretch; align-self: stretch; gap: .125rem; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.tablist { display: contents; }
 .tabs.is-overflowing { mask-image: linear-gradient(90deg, transparent 0, #000 1rem, #000 calc(100% - 2rem), transparent 100%); }
 .tab {
   position: relative;
@@ -222,8 +223,8 @@ body[data-product="kitchen"] .rooms { display: block; }
   white-space: nowrap;
   cursor: pointer;
 }
-.segment > button:hover:not(:disabled):not([aria-pressed="true"]) { color: var(--text); background: var(--s2); }
-.segment > button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.segment > button:hover:not(:disabled):not([aria-pressed="true"]):not([aria-selected="true"]) { color: var(--text); background: var(--s2); }
+.segment > button[aria-pressed="true"], .segment > button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .segment > button:disabled { opacity: .35; cursor: default; }
 .segment.is-inline { display: inline-flex; }
 .segment.is-inline > button { flex: none; }
