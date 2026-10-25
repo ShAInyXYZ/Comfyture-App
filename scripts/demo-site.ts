@@ -4,6 +4,10 @@
 //
 //   node scripts/demo-site.ts [folder]      (default: site/)
 //
+// It reads the data folder the server would (COMFYTURE_DATA, else data/). To publish only the examples, never your own work, build it
+// from a clean folder the server has seeded: start the server once with COMFYTURE_DATA=/tmp/clean, stop it, then
+//   COMFYTURE_DATA=/tmp/clean node scripts/demo-site.ts
+//
 // Serve the folder from any static host, GitHub Pages included; it works under a sub-path.
 
 import { imageSize } from "../server/media.ts";
@@ -14,7 +18,7 @@ import { loadPresets } from "../server/presets.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const out = resolve(process.argv[2] ?? join(root, "site"));
-const data = join(root, "data");
+const data = resolve(root, process.env.COMFYTURE_DATA ?? "data");
 const MARK = ".comfyture-site";
 
 // only ever clear a folder this script made

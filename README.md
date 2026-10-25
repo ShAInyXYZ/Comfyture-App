@@ -233,7 +233,7 @@ To check the connection without the app, run `npm run check`. It runs a tiny wor
 
 ### A live demo without a server
 
-`npm run demo-site` writes `site/`: the app as static files, with your presets, the sample photos and every finished take in your take log. Presets and takes play, prompts and workflows are all there; rolling is off. Publish the folder on any static host. For GitHub Pages:
+`npm run demo-site` writes `site/`: the app as static files, with your presets, the sample photos and every finished take in your take log. To publish only the examples and never your own work, build it from a clean folder the server has seeded once: `COMFYTURE_DATA=/tmp/clean npm start`, stop it, then `COMFYTURE_DATA=/tmp/clean npm run demo-site`. Presets and takes play, prompts and workflows are all there; rolling is off. Publish the folder on any static host. For GitHub Pages:
 
 ```bash
 npm run demo-site
