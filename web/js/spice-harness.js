@@ -6,7 +6,7 @@
 export const PAPRIKA = {
   id: "paprika",
   name: "Paprika",
-  tag: "VFX house",
+  tag: "AI editor",
   face: "brand/cast/paprika-face.webp",
   portrait: "brand/cast/paprika.png",
 };

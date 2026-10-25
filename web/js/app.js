@@ -110,7 +110,10 @@ const panels = {
   mixer: [$("page-mixer"), product("mixer", () => Promise.all([import("./panels/mixer.js"), import("./mixer-assist.js")]).then(([m]) => m.renderMixer)), "mixer"],
   jam: [$("page-jam"), product("jam", () => import("./panels/jam.js").then((m) => m.renderJam)), "jam"],
   macaron: [$("page-macaron"), product("macaron", () => Promise.all([import("./panels/macaron.js"), import("./macaron-assist.js")]).then(([m]) => m.renderMacaron)), "macaron"],
-  spice: [$("page-spice"), product("spice", () => Promise.all([import("./panels/spice.js"), import("./spice-assist.js")]).then(([m]) => m.renderSpice)), "spice"],
+  // (Spice is the AI edit bay; the first Spice, the VFX house, is still there at #/spice?classic until it is retired)
+  spice: [$("page-spice"), product("spice", () => (location.hash.includes("classic")
+    ? styled("spice1").then(() => Promise.all([import("./panels/spice.js"), import("./spice-assist.js")])).then(([m]) => m.renderSpice)
+    : Promise.all([import("./panels/bay.js"), import("./bay-assist.js")]).then(([m]) => m.renderBay))), "spice"],
   toaster: [$("page-toaster"), product("toaster", () => Promise.all([import("./panels/toaster.js"), import("./toaster-assist.js")]).then(([m]) => m.renderToaster)), "toaster"],
   utensils: [$("page-utensils"), product("utensils", () => Promise.all([import("./panels/utensils.js"), import("./utensils-assist.js")]).then(([m]) => m.renderUtensils)), "utensils"],
 };

@@ -15,7 +15,11 @@
 // the workspaces, the tools), plain data like this module, so the server's tests can read the registry as well as the page.
 import { PICKLE, WORKSPACES, PRESETS as JAM_PRESETS, PLACEHOLDER as JAM_PLACEHOLDER, OFFERS as JAM_OFFERS } from "./jam-harness.js";
 import { BRIOCHE, PRESETS as MACARON_PRESETS, PLACEHOLDER as MACARON_PLACEHOLDER } from "./macaron-harness.js";
-import { PAPRIKA, PLACEHOLDER as SPICE_PLACEHOLDER, OFFERS as SPICE_OFFERS } from "./spice-harness.js";
+import { PAPRIKA, PLACEHOLDER as SPICE1_PLACEHOLDER, OFFERS as SPICE1_OFFERS } from "./spice-harness.js";
+import { PLACEHOLDER as BAY_PLACEHOLDER, OFFERS as BAY_OFFERS } from "./bay-harness.js";
+// (the bay's seven stages and the first Spice's six departments are different rooms of the one bar)
+const SPICE_PLACEHOLDER = { ...SPICE1_PLACEHOLDER, ...BAY_PLACEHOLDER };
+const SPICE_OFFERS = { ...SPICE1_OFFERS, ...BAY_OFFERS };
 import { TRUFFLE, PLACEHOLDER as UTENSILS_PLACEHOLDER, OFFERS as UTENSILS_OFFERS } from "./utensils-harness.js";
 import { CRUMPET, PLACEHOLDER as TOASTER_PLACEHOLDER, OFFERS as TOASTER_OFFERS } from "./toaster-harness.js";
 
@@ -90,7 +94,7 @@ export const HARNESSES = {
     tag: PAPRIKA.tag,
     face: PAPRIKA.face,
     tools: "panel",
-    home: "plate",
+    home: "conform",
     placeholders: SPICE_PLACEHOLDER,
     presets: Object.fromEntries(Object.keys(SPICE_PLACEHOLDER).map((room) => [room, []])),
     offers: SPICE_OFFERS,
