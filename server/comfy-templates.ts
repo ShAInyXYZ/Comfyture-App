@@ -141,6 +141,58 @@ export function flatten(index: any[]): Item[] {
   return [...out.values()];
 }
 
+/**
+ * The first frame of an animated WebP as a still WebP, cut out of its container without decoding anything: a template's picture at
+ * rest in a grid (Cloud's animated previews weigh up to 4 MB; their first frame a fraction of it). Null when the picture is not
+ * animated or its first frame cannot be cut out.
+ */
+export function firstFrame(webp: Buffer): Buffer | null {
+  if (webp.length < 20 || webp.toString("ascii", 0, 4) !== "RIFF" || webp.toString("ascii", 8, 12) !== "WEBP") return null;
+  const chunk = (id: string, payload: Buffer) => {
+    const head = Buffer.alloc(8);
+    head.write(id, 0, "ascii");
+    head.writeUInt32LE(payload.length, 4);
+    return Buffer.concat([head, payload, payload.length & 1 ? Buffer.alloc(1) : Buffer.alloc(0)]);
+  };
+  for (let at = 12; at + 8 <= webp.length; ) {
+    const id = webp.toString("ascii", at, at + 4);
+    const size = webp.readUInt32LE(at + 4);
+    const body = at + 8;
+    if (body + size > webp.length) return null;
+    if (id === "ANMF" && size > 16) {
+      // a frame: where it sits and its size (16 bytes), then its own chunks (ALPH and VP8, or VP8L)
+      const w = 1 + webp.readUIntLE(body + 6, 3);
+      const h = 1 + webp.readUIntLE(body + 9, 3);
+      const parts = new Map<string, Buffer>();
+      for (let p = body + 16; p + 8 <= body + size; ) {
+        const cid = webp.toString("ascii", p, p + 4);
+        const csize = webp.readUInt32LE(p + 4);
+        if (p + 8 + csize > body + size) return null;
+        parts.set(cid, webp.subarray(p + 8, p + 8 + csize));
+        p += 8 + csize + (csize & 1);
+      }
+      const image = parts.get("VP8L") ? chunk("VP8L", parts.get("VP8L")!) : parts.get("VP8 ") ? chunk("VP8 ", parts.get("VP8 ")!) : null;
+      if (!image) return null;
+      // a lossy frame with its own alpha needs the extended header to carry it; a lossless one holds its alpha itself
+      let payload = image;
+      if (parts.get("ALPH") && !parts.get("VP8L")) {
+        const x = Buffer.alloc(10);
+        x[0] = 0x10;
+        x.writeUIntLE(w - 1, 4, 3);
+        x.writeUIntLE(h - 1, 7, 3);
+        payload = Buffer.concat([chunk("VP8X", x), chunk("ALPH", parts.get("ALPH")!), image]);
+      }
+      const riff = Buffer.alloc(12);
+      riff.write("RIFF", 0, "ascii");
+      riff.writeUInt32LE(4 + payload.length, 4);
+      riff.write("WEBP", 8, "ascii");
+      return Buffer.concat([riff, payload]);
+    }
+    at = body + size + (size & 1);
+  }
+  return null;
+}
+
 /** The whole catalogue for the Library's hall, in Cloud's own order: what a book and its card need, without the paging of listing(). */
 export function library(items: Item[]) {
   const order: string[] = [];
@@ -1118,17 +1170,30 @@ export function createTemplates(deps: Deps) {
     return out;
   }
 
-  async function thumb(name: string, n: number): Promise<Answer> {
+  async function thumb(name: string, n: number, still = false): Promise<Answer> {
     const item = await find(name);
     const ext = n === 1 && item.thumbKind === "audio" ? "mp3" : "webp";
     const file = join(dir, "thumbs", `${name}-${n}.${ext}`);
     const type = ext === "mp3" ? "audio/mpeg" : "image/webp";
-    if (await exists(file)) return { status: 200, raw: await readFile(file), type, cache: "public, max-age=86400" };
-    const res = await f(`${CLOUD}/templates/${name}-${n}.${ext}`, { signal: AbortSignal.timeout(20_000) }).catch(() => null);
-    if (!res?.ok) return { status: 404, body: { error: "No picture for that one." } };
-    const bytes = Buffer.from(await res.arrayBuffer());
-    await mkdir(join(dir, "thumbs"), { recursive: true });
-    await writeFile(file, bytes).catch(() => {});
+    // a still: the first frame of an animated picture, cut once and kept beside it (one that does not move is sent as it is)
+    const stillFile = join(dir, "thumbs", `${name}-${n}.still.webp`);
+    if (still && ext === "webp" && (await exists(stillFile))) return { status: 200, raw: await readFile(stillFile), type, cache: "public, max-age=86400" };
+    let bytes: Buffer;
+    if (await exists(file)) bytes = await readFile(file);
+    else {
+      const res = await f(`${CLOUD}/templates/${name}-${n}.${ext}`, { signal: AbortSignal.timeout(20_000) }).catch(() => null);
+      if (!res?.ok) return { status: 404, body: { error: "No picture for that one." } };
+      bytes = Buffer.from(await res.arrayBuffer());
+      await mkdir(join(dir, "thumbs"), { recursive: true });
+      await writeFile(file, bytes).catch(() => {});
+    }
+    if (still && ext === "webp") {
+      const first = firstFrame(bytes);
+      if (first) {
+        await writeFile(stillFile, first).catch(() => {});
+        return { status: 200, raw: first, type, cache: "public, max-age=86400" };
+      }
+    }
     return { status: 200, raw: bytes, type, cache: "public, max-age=86400" };
   }
 
@@ -1393,7 +1458,7 @@ export function createTemplates(deps: Deps) {
         return { status: 200, body: { ...out, items: out.items.map((i) => ({ ...i, credits: credits.get(i.name)?.credits ?? i.credits })) } };
       }
       if (parts[0] === "apps" && !parts[1] && method === "GET") return { status: 200, body: await appsView({ q: query.get("q") ?? "", group: query.get("group") ?? "", limit: Number(query.get("limit")) || undefined, offset: Number(query.get("offset")) || undefined }) };
-      if (parts[0] === "thumb" && parts[1] && method === "GET") return thumb(parts[1], query.get("n") === "2" ? 2 : 1);
+      if (parts[0] === "thumb" && parts[1] && method === "GET") return thumb(parts[1], query.get("n") === "2" ? 2 : 1, query.get("still") === "1");
       if (parts[0] === "job" && parts[1]) {
         const j = jobs.get(parts[1]);
         if (!j) return { status: 404, body: { error: "That job is gone." } };

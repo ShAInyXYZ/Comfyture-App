@@ -1,6 +1,7 @@
 // The parts of a mini app that the Shelf's carousel and the Templates workspace share: what an app asks for as small icons, its price,
 // its picture (with a calm placeholder when the picture does not come), and a viewer for the 3D file an app can make.
 import { h, icon, sprite } from "./dom.js";
+import { stillOf, playsOn } from "./thumbs.js";
 
 const NEED = {
   image: { glyph: () => icon("image"), title: "Takes a picture" },
@@ -25,9 +26,10 @@ export const placeholder = (a) => h("span.ut-app-ph", {}, sprite(MEDIUM_ICON[a.m
 /** The app's picture, filling its frame; the placeholder takes its place if it fails; `after` is the picture it dissolves to on hover. */
 export function appPicture(a, { after = true } = {}) {
   const frame = h("span.ut-app-pic", {});
-  const img = h("img", { src: a.thumb, alt: "", draggable: false, loading: "lazy", decoding: "async" });
+  // (a still until the tile is pointed at: thumbs.js)
+  const img = h("img", { src: stillOf(a.thumb), alt: "", draggable: false, loading: "lazy", decoding: "async" });
   img.addEventListener("error", () => frame.replaceChildren(placeholder(a)), { once: true });
-  frame.append(img);
+  frame.append(playsOn(frame, img, a.thumb));
   if (after && a.after) {
     frame.addEventListener("pointerenter", () => {
       if (frame.querySelector(".is-after") || !frame.contains(img)) return;

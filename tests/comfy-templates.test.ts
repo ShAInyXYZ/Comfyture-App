@@ -7,8 +7,10 @@ import { mkdtemp, readFile, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  flatten, library, listing, search, buildForm, buildRunRequest, withOverrides, parseCredits, explainError, isDone, isOver, jobOutputs, jobError, loaderName, publicSlot, createTemplates, fakeRun, png, type Cloud,
+  flatten, library, listing, search, buildForm, buildRunRequest, withOverrides, parseCredits, explainError, isDone, isOver, jobOutputs, jobError, loaderName, publicSlot, createTemplates, fakeRun, png, firstFrame, type Cloud,
 } from "../server/comfy-templates.ts";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
 const fx = (name: string) => readFile(join(import.meta.dirname, "fixtures", "comfy-templates", name), "utf8").then(JSON.parse);
 const schemaOf = async (t: string) => fx(`schema-${t}.json`);
@@ -368,4 +370,29 @@ test("open weights only (COMFYTURE_OPEN_WEIGHTS): a partner's template is refuse
   t.after(() => (before === undefined ? delete process.env.COMFYTURE_OPEN_WEIGHTS : (process.env.COMFYTURE_OPEN_WEIGHTS = before)));
   await assert.rejects(() => svc.handle("POST", "/api_nano_banana_2_1_image_edit/run", new URLSearchParams(), { inputs: {}, confirm: true }), (e: any) => e.status === 403 && /Open weights only/.test(e.message));
   assert.deepEqual([calls.length, uploads.length], [0, 0], "nothing went to Cloud");
+});
+
+test("a grid shows an animated preview's first frame: cut out of its container, it is a still WebP of the same size, lighter", async () => {
+  const run = promisify(execFile);
+  const dir = await mkdtemp(join(tmpdir(), "first-frame-"));
+  const encoders = (await run("ffmpeg", ["-hide_banner", "-encoders"]).catch(() => ({ stdout: "" }))).stdout;
+  if (!/libwebp_anim/.test(encoders)) return; // (no animated WebP encoder on this machine: nothing to make the fixture with)
+  // an opaque animation and one with alpha, as Comfy Cloud's previews come
+  for (const [name, input] of [["opaque", "testsrc2=s=96x64:r=6:d=1"], ["alpha", "testsrc2=s=96x64:r=6:d=1,format=yuva420p,colorchannelmixer=aa=0.5"]]) {
+    const anim = join(dir, `${name}.webp`);
+    await run("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", input, "-c:v", "libwebp_anim", "-loop", "0", anim]);
+    const bytes = await readFile(anim);
+    const still = firstFrame(bytes);
+    assert.ok(still, `${name}: its first frame is cut out`);
+    assert.ok(still!.length < bytes.length, `${name}: lighter than the animation`);
+    assert.equal(still!.toString("ascii", 0, 4), "RIFF");
+    assert.ok(!still!.includes("ANMF"), `${name}: a still, no frames left`);
+    await writeFile(join(dir, `${name}.still.webp`), still!);
+    const probe = (await run("ffprobe", ["-v", "error", "-show_entries", "stream=width,height", "-of", "csv=p=0", join(dir, `${name}.still.webp`)])).stdout.trim();
+    assert.equal(probe, "96,64", `${name}: it decodes, at the animation's size`);
+  }
+  // a picture that does not move is not cut
+  await run("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=s=96x64:d=1", "-frames:v", "1", "-c:v", "libwebp", join(dir, "still.webp")]);
+  assert.equal(firstFrame(await readFile(join(dir, "still.webp"))), null);
+  assert.equal(firstFrame(Buffer.from("not a picture")), null);
 });

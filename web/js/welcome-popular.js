@@ -6,6 +6,7 @@ import { h, icon } from "./dom.js";
 import { changed } from "./store.js";
 import { setWorkspace, openLibrary } from "./utensils.js";
 import { makerById } from "./utensils-makers.js";
+import { stillOf, playsOn } from "./thumbs.js";
 
 const FILTERS = [
   ["all", "All", () => true],
@@ -56,9 +57,10 @@ function logo(i) {
 
 /** A workflow's preview: its picture, and its "after" when Comfy gives one (a slider for a before/after, a dissolve on hover). */
 function picture(i, big) {
-  const before = h("img.wp-pic", { src: i.thumb, alt: "", draggable: false, loading: "lazy" });
+  // (each a still until its card is pointed at: card() and thumbs.js)
+  const before = h("img.wp-pic", { src: stillOf(i.thumb), alt: "", draggable: false, loading: "lazy", dataset: { play: i.thumb } });
   if (!i.variant || i.thumbKind !== "image") return h("span.wp-art", {}, before);
-  const after = h("img.wp-pic.is-after", { src: `${i.thumb}?n=2`, alt: "", draggable: false, loading: "lazy" });
+  const after = h("img.wp-pic.is-after", { src: stillOf(`${i.thumb}?n=2`), alt: "", draggable: false, loading: "lazy", dataset: { play: `${i.thumb}?n=2` } });
   if (i.variant !== "compareSlider") return h("span.wp-art.is-dissolve", {}, before, after);
   // the slider follows the pointer across the picture, and rests in the middle
   const art = h("span.wp-art.is-compare", { style: { "--at": "50%" } }, before, after, h("span.wp-handle", {}, icon("chevron"), icon("chevron")));
@@ -72,7 +74,7 @@ function picture(i, big) {
 
 function card(i, big) {
   const cost = price(i);
-  return h(`article.wp-card${big ? ".is-big" : ""}`, { dataset: { name: i.name } },
+  const el = h(`article.wp-card${big ? ".is-big" : ""}`, { dataset: { name: i.name } },
     picture(i, big),
     i.medium === "video" ? h("span.wp-kind", { title: "A video workflow" }, icon("play")) : null,
     h("div.wp-foot", {},
@@ -84,6 +86,9 @@ function card(i, big) {
         h("span.wp-runs", {}, runs(i.usage ?? 0)),
         big && cost ? h("span.wp-price", {}, cost) : null)),
     h("button.wp-try", { type: "button", title: `Try ${i.title}${cost ? ` · ${cost}` : ""}: opens it in Utensils`, on: { click: () => tryWorkflow(i.name) } }, icon("play"), h("span", {}, "Try it")));
+  // its pictures start moving the first time the card is pointed at or focused
+  for (const img of el.querySelectorAll("img[data-play]")) playsOn(el, img, img.dataset.play);
+  return el;
 }
 
 export function popularSection() {
