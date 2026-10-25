@@ -11,7 +11,8 @@ import { h } from "./dom.js";
 import { render, layerBox } from "./spice-layers.js";
 import { elementOf, layerName } from "./spice-elements.js";
 import { spicon } from "./spice-ui.js";
-import { addLayer, selectLayer, patchLayer, commit, removeLayer, duplicateLayer, layerById, undo, redo } from "./spice-fx-ops.js";
+import { addLayer, selectLayer, patchLayer, pinLayer, commit, removeLayer, duplicateLayer, layerById, undo, redo } from "./spice-fx-ops.js";
+import { followed, anchorAt, watchPlayhead } from "./spice-follow.js";
 
 /** The kind of drag a library tile carries onto the picture. */
 export const DRAG_TYPE = "application/x-spice-element";
@@ -57,6 +58,18 @@ export function createLive(stage) {
     const r = stage.getBoundingClientRect();
     return { w: r.width || 1, h: r.height || 1, r };
   };
+  const ready = (m) => m && (m.tagName === "VIDEO" ? m.readyState >= 2 : m.complete !== false && (m.naturalWidth ?? 1) > 0);
+  /** What a layer that follows Roto's subject needs: the matte clip and where the playhead is on it (null on a picture, or without a matte). */
+  const matteAt = () => {
+    const e = st.env;
+    return e && !e.still && ready(e.matte) ? { matte: e.matte, frame: e.frame, fps: e.fps, matteFrom: e.matteFrom } : null;
+  };
+  /** A layer as it is seen on the picture now: where the subject has taken it, when it follows. */
+  const seen = (l) => {
+    const at = matteAt();
+    return at ? followed(l, at) : l;
+  };
+  watchPlayhead(matteAt);
   const sourceOf = (l) => {
     const e = elementOf(l.el);
     if (e?.kind === "image") return assetOf(e.src, draw);
@@ -75,12 +88,15 @@ export function createLive(stage) {
     const ch = Math.max(2, Math.round(cw * (hh / w)));
     if (canvas.width !== cw || canvas.height !== ch) ((canvas.width = cw), (canvas.height = ch));
     const base = st.env.base;
-    const ready = (m) => m && (m.tagName === "VIDEO" ? m.readyState >= 2 : m.complete !== false && (m.naturalWidth ?? 1) > 0);
     if (!ready(base)) return;
     render(g, cw, ch, {
-      base, matte: ready(st.env.matte) ? st.env.matte : null, layers: st.comp.layers, frame: st.env.frame, fps: st.env.fps, still: st.env.still,
+      base, matte: ready(st.env.matte) ? st.env.matte : null, matteFrom: st.env.matteFrom, layers: st.comp.layers, frame: st.env.frame, fps: st.env.fps, still: st.env.still,
       sourceOf, edge: st.comp.edge, finish: st.comp.finish, footageWidth: fw,
     });
+    // (a layer that follows and has no pin yet, turned on where no matte was, is pinned where the subject is the first time it is there to read)
+    const at = matteAt();
+    const anchor = at && st.comp.layers.some((l) => l.follow && !l.pin) ? anchorAt(at.matte, at) : null;
+    if (anchor) for (const l of st.comp.layers) if (l.follow && !l.pin) pinLayer(l.id, anchor);
     place();
   }
 
@@ -90,7 +106,7 @@ export function createLive(stage) {
     gizmo.hidden = bar.hidden = !l || l.eye === false;
     if (gizmo.hidden) return;
     const { w, h: hh } = stageSize();
-    const b = layerBox(l, w, hh, srcFor(l));
+    const b = layerBox(seen(l), w, hh, srcFor(l));
     const kind = elementOf(l.el)?.kind;
     Object.assign(gizmo.style, { left: `${b.cx}px`, top: `${b.cy}px`, width: `${b.bw}px`, height: `${b.bh}px`, transform: `translate(-50%, -50%) rotate(${kind === "particles" ? 0 : b.rot}deg)` });
     gizmo.classList.toggle("is-round", kind === "ai");
@@ -124,7 +140,7 @@ export function createLive(stage) {
     const { w, h: hh } = stageSize();
     const shown = st.comp.layers.filter((l) => l.eye !== false).reverse();
     const inside = (l) => {
-      const b = layerBox(l, w, hh, srcFor(l));
+      const b = layerBox(seen(l), w, hh, srcFor(l));
       const a = (-(elementOf(l.el)?.kind === "particles" ? 0 : b.rot) * Math.PI) / 180;
       const dx = p.x - b.cx;
       const dy = p.y - b.cy;
@@ -153,8 +169,10 @@ export function createLive(stage) {
     e.stopPropagation();
     stage.setPointerCapture(e.pointerId);
     const { w, h: hh } = stageSize();
-    const b = layerBox(l, w, hh, srcFor(l));
-    st.drag = { id: l.id, mode: grab ?? "move", p0: p, x0: l.x, y0: l.y, s0: l.scale, r0: l.rot ?? 0, c: { x: b.cx, y: b.cy }, w, h: hh };
+    // (from where it is seen: a layer that follows is moved from where the subject has taken it, and pinned there when it is put down)
+    const there = seen(l);
+    const b = layerBox(there, w, hh, srcFor(l));
+    st.drag = { id: l.id, mode: grab ?? "move", p0: p, x0: there.x, y0: there.y, s0: l.scale, r0: l.rot ?? 0, c: { x: b.cx, y: b.cy }, w, h: hh };
     stage.classList.add("is-handling");
   }, true);
   stage.addEventListener("pointermove", (e) => {
@@ -237,7 +255,8 @@ export function createLive(stage) {
     if (nudge) {
       e.preventDefault();
       e.stopImmediatePropagation();
-      patchLayer(l.id, { x: l.x + nudge[0], y: l.y + nudge[1] }, { live: true });
+      const there = seen(l);
+      patchLayer(l.id, { x: there.x + nudge[0], y: there.y + nudge[1] }, { live: true });
       draw();
       clearTimeout(st.nudged);
       st.nudged = setTimeout(commit, 400);

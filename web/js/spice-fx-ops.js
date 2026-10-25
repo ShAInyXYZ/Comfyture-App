@@ -5,6 +5,7 @@
 import { spice, edit, save } from "./spice.js";
 import { newLayer, cleanLayer, cleanFinish, lookLayers } from "./spice-elements.js";
 import { fxGround } from "./spice-engines.js";
+import { anchorNow, followedNow } from "./spice-follow.js";
 
 const fx = () => spice.shot?.body.set.fx ?? null;
 
@@ -90,7 +91,22 @@ export function selectLayer(id) {
 export function patchLayer(id, patch, { live = false } = {}) {
   const l = layerById(id);
   if (!l) return null;
-  const clean = cleanLayer({ ...l, ...patch, id: l.id });
+  const next = { ...l, ...patch, id: l.id };
+  // a layer that follows Roto's subject is placed where the subject is: turned on, or moved, it is pinned to the subject's anchor at the
+  // playhead and sits where it is seen there (the axis a move does not name too: it keeps the place it is seen in); turned off, it stays
+  // where it is seen. With no subject on that frame it is left as it is, and the viewer pins it when there is (spice-canvas.js)
+  const on = patch.follow ?? !!l.follow;
+  if (l.follow && !on) {
+    const there = followedNow(l);
+    Object.assign(next, { x: patch.x ?? there.x, y: patch.y ?? there.y, pin: null });
+  } else if (on && (!l.follow || "x" in patch || "y" in patch)) {
+    const anchor = anchorNow();
+    if (anchor) {
+      const there = l.follow ? followedNow(l) : l;
+      Object.assign(next, { x: patch.x ?? there.x, y: patch.y ?? there.y, pin: anchor });
+    }
+  }
+  const clean = cleanLayer(next);
   if (!clean) return null;
   remember({ live });
   Object.assign(l, clean);
@@ -101,6 +117,17 @@ export function patchLayer(id, patch, { live = false } = {}) {
 }
 /** Draws the page again after a live change (a handle let go). */
 export const commit = () => ((historyOf().holding = false), edit(() => {}));
+
+/**
+ * Pins a layer that follows and has no pin yet to where the subject is (the viewer does it the first time there is a matte to read it
+ * from): not a change of the person's, so it is kept quietly, with no step of its own to undo and no page to draw again.
+ */
+export function pinLayer(id, anchor) {
+  const l = layerById(id);
+  if (!l?.follow || l.pin || !anchor) return;
+  l.pin = cleanLayer({ ...l, pin: anchor }).pin;
+  save();
+}
 
 /** The finish of the shot (its bloom and its vignette, each 0 to 1), cleaned. */
 export const finishOf = () => cleanFinish(fx()?.finish);

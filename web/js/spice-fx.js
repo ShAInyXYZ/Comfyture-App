@@ -23,7 +23,7 @@ import { stripOf } from "./spice-viewer.js";
 import { DRAG_TYPE } from "./spice-canvas.js";
 import { bake } from "./spice-bake.js";
 import { layersOf, selected, addLayer, addLook, selectLayer, patchLayer, removeLayer, duplicateLayer, moveLayer, toggleLayerEye, finishOf, setFinish, undo, redo, canUndo, canRedo } from "./spice-fx-ops.js";
-import { slider } from "./utensils-fx-controls.js";
+import { slider, switchKey } from "./utensils-fx-controls.js";
 import { registerRunner } from "./spice-runs.js";
 import { runnerReady } from "./utensils-cloud.js";
 
@@ -80,11 +80,12 @@ function bakePlan() {
   const finish = finishOf();
   const finished = finish.bloom > 0 || finish.vignette > 0;
   // (signed as the shot keeps them, keys in one order: a renamed layer read back from the server is the same layers. Light and reach
-  // count only on a layer that shines, and the finish only when it is on: what is signed for a shot that has neither is what was signed
-  // before there were any, so a bake made then is still its layers)
+  // count only on a layer that shines, follow and its pin only on a layer that follows, and the finish only when it is on: what is signed
+  // for a shot that has none of them is what was signed before there were any, so a bake made then is still its layers)
   const signed = (l) => {
     const c = cleanLayer(l);
     if (!(c.light > 0)) (delete c.light, delete c.reach);
+    if (!c.follow) (delete c.follow, delete c.pin);
     return c;
   };
   const sig = JSON.stringify([layers.map(signed), ground.base?.url, ground.matte?.url, b?.range, b?.set.roto.feather, b?.set.roto.choke, ...(finished ? [finish] : [])]);
@@ -250,6 +251,13 @@ function layersBody(big) {
   return h(`div.sp-fxls${big ? ".is-big" : ""}`, { dataset: { keep: "1" } }, history, ...rows);
 }
 
+/** The subject Roto's matte is of: the one its pass was made from. */
+function subjectName() {
+  const b = spice.shot.body;
+  const url = b.passes.roto?.media?.url;
+  return b.set.roto.subjects.find((x) => x.media?.url === url)?.name ?? "the subject";
+}
+
 const segs = (list, value, set, title) => h("div.ut-segs.sp-segs", { role: "group", title }, ...list.map(([v, label]) => h("button.ut-seg", { type: "button", "aria-pressed": String(value === v), on: { click: () => set(v) } }, label)));
 const row = (label, control, title) => h("div.sp-look-row", title ? { title } : {}, h("span.ut-label", {}, label), control);
 const live = (id, key) => (v, quiet) => patchLayer(id, { [key]: v }, { live: quiet });
@@ -299,6 +307,8 @@ function lookBody(big) {
     e.kind === "image" && l.light > 0 ? row("Reach", slider({ value: l.reach, min: 0.3, max: 4, step: 0.1, show: (v) => `${v.toFixed(1)}×`, label: "How far its light reaches", set: live(l.id, "reach") }), "How far its light reaches") : null,
     clip ? row("Motion", h("select.ut-select.sp-motion", { "aria-label": "How it moves", on: { change: (ev) => patchLayer(l.id, { motion: ev.target.value }) } }, ...MOTIONS.map(([v, name]) => h("option", { value: v, selected: l.motion === v }, name)))) : null,
     clip && l.motion !== "still" ? row("Speed", slider({ value: l.speed, min: 0.1, max: 4, step: 0.05, show: (v) => `${v.toFixed(1)}×`, label: "How fast", set: live(l.id, "speed") })) : null,
+    // (a clip with Roto's matte: the layer can keep its place on the subject as it moves, placed where the subject is now)
+    clip && fxGround().matte ? switchKey(`Follows ${subjectName()}`, l.follow, (on) => patchLayer(l.id, { follow: on }), l.follow ? "It keeps its place on the subject as the subject moves: drag it to place it again" : "Keep its place on the subject as the subject moves: it is placed where the subject is now") : null,
     row(e.kind === "particles" ? "Colour" : "Tint", e.kind === "particles" ? swatches(l, "colour", [e.colour, ...TINTS], false) : swatches(l, "tint", TINTS)));
 }
 
