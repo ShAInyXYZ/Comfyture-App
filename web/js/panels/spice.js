@@ -134,6 +134,7 @@ function drawSide() {
     h("div.sp-id", {},
       h("img", { src: PAPRIKA.portrait, alt: "", draggable: false }),
       h("div.sp-id-text", {}, h("b", {}, PAPRIKA.name), h("span", {}, `· ${PAPRIKA.tag}`)),
+      h("button.sp-id-go", { type: "button", title: "Try the AI edit bay: the models of Comfy Cloud edit a clip, stage by stage (new)", "aria-label": "Open the AI edit bay", on: { click: () => (location.hash = "#/spice?bay", location.reload()) } }, spicon("sparkle")),
       h("button.sp-id-go", { type: "button", title: "Ask Paprika", "aria-label": "Ask Paprika", on: { click: () => document.querySelector("#assistant .composer textarea, #assistant textarea")?.focus() } }, spicon("chev"))),
     h("div.sp-shotchip", {}, shotChip()),
     h("nav.sp-stack", { "aria-label": "The comp stack, the last department on top" }, ...STACK.map((d) => {

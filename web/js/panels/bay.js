@@ -27,14 +27,16 @@ function build(el) {
   const side = h("aside.bay-side", { "aria-label": "Paprika, the AI editor" });
   const stageCard = h("div.bay-stage");
   const takesCard = h("div.bay-takes");
+  const heroNote = h("span.bay-card-note.bay-clipfacts");
   const heroCard = card("bay-hero", "Viewer", viewer.el);
+  heroCard.querySelector(".bay-card-head").append(heroNote);
   const grid = h("div.bay-grid", {}, heroCard, stageCard, takesCard);
   const main = h("div.bay-main", {}, grid, slot);
   const root = h("div.bay", {}, h("h1.sr-only", {}, "Spice"), side, main);
   // the app does not draw a page while a field in it is in use: what waited is drawn as soon as the field is left
   root.addEventListener("focusout", (e) => !root.contains(e.relatedTarget) && setTimeout(() => changed("spice"), 0));
   el.replaceChildren(root);
-  shell = { el, root, side, stageCard, takesCard, last: {} };
+  shell = { el, root, side, stageCard, takesCard, heroNote, last: {} };
   document.dispatchEvent(new Event("spice:drawn"));
 }
 
@@ -82,12 +84,10 @@ function drawSide() {
   fill(shell.side,
     h("div.bay-id", {}, h("img", { src: PAPRIKA.face, alt: "", draggable: false }), h("div.bay-id-text", {}, h("b", {}, PAPRIKA.name), h("span", {}, PAPRIKA.tag))),
     h("div.bay-shotchip", {}, shotChip()),
+    h("button.bay-classic", { type: "button", title: "The VFX house: FX's compositor and its free bake, Roto, Light, Paint and Comp", on: { click: () => (location.hash = "#/spice", location.reload()) } }, icon("compass"), h("span", {}, "Classic Spice (FX, Roto)"), icon("next")),
     h("div.bay-rail", { role: "group", "aria-label": "The stages" }, STAGES.map(railRow)),
     b.plan.length ? planList(b) : null,
-    h("div.bay-facts", {},
-      clip ? fact("Clip", `${clip.media.width ?? "?"}×${clip.media.height ?? "?"} · ${clip.fps} fps · ${Math.round((clip.media.seconds ?? 0) * 10) / 10} s`) : fact("Clip", "none yet"),
-      fact("This shot", `${ledger(b).spent} cr`),
-      fact("Today", `${day} cr`)),
+    h("div.bay-facts", {}, fact("This shot", `${ledger(b).spent} cr`), fact("Today", `${day} cr`)),
     h("label.bay-brief", {}, h("span", {}, "What is this shot for?"),
       h("textarea.field", { rows: "3", maxlength: "4000", placeholder: "Taro carries a lantern across the yard at dusk; the van and the sign must go, then rain.", "aria-label": "The brief", on: { input: (e) => setBrief(e.target.value) } }, b.brief)));
 }
@@ -280,6 +280,8 @@ export function renderBay(el) {
     draw("side", drawSide);
     draw("stage", () => fill(shell.stageCard, card("bay-stage-card", `${st.name} · ${st.verb}`, stagePanel(st))));
     draw("takes", () => fill(shell.takesCard, h("section.bay-card.bay-takes-card", {}, ...drawTakes(st))));
+    const c = b.clip;
+    shell.heroNote.textContent = c ? `${c.media.width ?? "?"}×${c.media.height ?? "?"} · ${c.fps} fps · ${Math.round((c.media.seconds ?? 0) * 10) / 10} s` : "no clip yet";
     viewer.update({ ...viewerSides(), onDrop: importClip });
   } catch (e) {
     console.warn("spice:", e);

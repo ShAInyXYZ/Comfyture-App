@@ -9,7 +9,7 @@
 .bay-boot { display: grid; place-items: center; min-height: 40dvh; }
 
 /* ---- the left: Paprika, the shot, the rail ---------------------------------------------------------------- */
-.bay-side { display: flex; flex-direction: column; gap: clamp(.5rem, .3rem + .8dvh, .875rem); min-height: 0; padding: clamp(.75rem, 1.4dvh, 1.125rem); overflow: hidden auto; scrollbar-width: thin; border: 1px solid var(--card-line); border-radius: 1.5rem; background: var(--s1); }
+.bay-side { display: flex; flex-direction: column; gap: clamp(.375rem, .2rem + .7dvh, .875rem); min-height: 0; padding: clamp(.625rem, 1.4dvh, 1.125rem); overflow: hidden auto; scrollbar-width: thin; border: 1px solid var(--card-line); border-radius: 1.5rem; background: var(--s1); }
 .bay-id { display: flex; flex: none; align-items: center; gap: .75rem; }
 .bay-id > img { flex: none; width: clamp(2.75rem, 6dvh, 3.75rem); aspect-ratio: 1; border-radius: 50%; object-fit: cover; background: var(--sunk); box-shadow: 0 0 0 2px var(--line2); }
 .bay-id-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: .125rem .5rem; }
@@ -20,6 +20,10 @@
 .bay-shotchip .sel-trigger:hover { border-color: var(--line2); }
 .bay-shotchip .sel-label { font: 600 .9375rem/1.2 var(--font-sans); }
 
+.bay-classic { display: flex; flex: none; align-items: center; gap: .5rem; width: 100%; min-height: 2.25rem; padding: 0 .75rem; border: 1px dashed var(--line2); border-radius: .875rem; background: transparent; color: var(--muted); font: 600 .8125rem/1 var(--font-sans); text-align: left; cursor: pointer; }
+.bay-classic span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bay-classic:hover { color: var(--text); border-color: var(--text); }
+.bay-classic svg { flex: none; width: 1rem; height: 1rem; }
 .bay-rail { display: flex; flex: none; flex-direction: column; gap: .375rem; }
 .bay-step { position: relative; display: grid; grid-template-columns: 2.75rem minmax(0, 1fr) auto; align-items: center; gap: .625rem; width: 100%; min-height: 3.25rem; padding: .3125rem .75rem .3125rem .375rem; border: 1px solid var(--card-line); border-radius: 1rem; background: var(--sunk); color: var(--text); text-align: left; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
 .bay-step:hover { border-color: var(--line2); }
@@ -38,7 +42,7 @@
 .bay-lamp[data-tone="busy"] { background: var(--warn); box-shadow: none; animation: bay-pulse 1.4s ease-in-out infinite; }
 @keyframes bay-pulse { 50% { opacity: .35; } }
 
-.bay-planlist { display: flex; flex: none; flex-direction: column; gap: .25rem; }
+.bay-planlist { display: flex; flex: 0 1 auto; flex-direction: column; gap: .25rem; min-height: 4.5rem; overflow: hidden auto; scrollbar-width: thin; }
 .bay-planlist-label { color: var(--dim); font: 600 .6875rem/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
 .bay-planstep { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); align-items: center; gap: .5rem; width: 100%; padding: .3125rem .5rem; border: 0; border-radius: .625rem; background: transparent; color: var(--text); text-align: left; cursor: pointer; }
 .bay-planstep:hover { background: var(--s3); }
@@ -48,13 +52,31 @@
 .bay-planstep span { display: flex; flex-direction: column; gap: .125rem; min-width: 0; }
 .bay-planstep b { font: 600 .8125rem/1.1 var(--font-sans); }
 .bay-planstep small { overflow: hidden; color: var(--dim); font: 500 .6875rem/1.1 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
-.bay-facts { display: flex; flex: none; flex-direction: column; gap: .25rem; padding: .625rem .75rem; border: 1px solid var(--card-line); border-radius: 1rem; }
-.bay-fact { display: flex; justify-content: space-between; gap: .75rem; font: 500 .8125rem/1.3 var(--font-sans); }
+.bay-facts { display: grid; flex: none; grid-template-columns: 1fr 1fr; gap: .25rem 1rem; padding: .5rem .75rem; border: 1px solid var(--card-line); border-radius: 1rem; }
+.bay-fact { display: flex; flex-direction: column; gap: .125rem; font: 500 .8125rem/1.3 var(--font-sans); }
 .bay-fact span { color: var(--dim); }
-.bay-fact b { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
-.bay-brief { display: flex; flex: 1 1 auto; flex-direction: column; gap: .375rem; min-height: 5rem; }
+.bay-fact b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.bay-brief { display: flex; flex: 1 1 4rem; flex-direction: column; gap: .375rem; min-height: 3.5rem; }
 .bay-brief > span, .bay-words > span, .bay-source > span, .bay-refs-label { color: var(--dim); font: 600 .75rem/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
-.bay-brief textarea { flex: 1 1 auto; resize: none; min-height: 4rem; }
+.bay-brief textarea { flex: 1 1 auto; resize: none; min-height: 2.25rem; }
+
+@media (max-height: 820px) {
+  .bay-step { grid-template-columns: 2rem minmax(0, 1fr) auto; gap: .5rem; min-height: 2.5rem; padding: .1875rem .625rem .1875rem .25rem; border-radius: .75rem; }
+  .bay-rail { gap: .25rem; }
+  .bay-step-icon, .bay-step .bay-thumb { width: 2rem; height: 1.75rem; border-radius: .375rem; }
+  .bay-step-text { gap: .125rem; }
+  .bay-step-text b { font-size: .75rem; }
+  .bay-step-text small { font-size: .6875rem; }
+  .bay-id > img { width: 2.5rem; }
+  .bay-id-text b { font-size: 1.0625rem; }
+  .bay-shotchip .sel-trigger { min-height: 2.125rem; }
+  .bay-classic { min-height: 2rem; }
+  .bay-facts { padding: .3125rem .625rem; }
+  .bay-planlist { min-height: 3.25rem; }
+  .bay-planstep { padding: .1875rem .375rem; }
+  .bay-planstep small { display: none; }
+  .bay-brief { min-height: 3rem; }
+}
 
 /* ---- the middle -------------------------------------------------------------------------------------------- */
 .bay-main { display: flex; flex-direction: column; gap: var(--bay-gap); min-width: 0; min-height: 0; }

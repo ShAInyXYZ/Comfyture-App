@@ -102,7 +102,7 @@ try {
   const scrolls = () => page.evaluate(() => ({ v: document.documentElement.scrollHeight - innerHeight, h: document.documentElement.scrollWidth - innerWidth }));
   const key = () => page.locator(".bay-stage .bay-primary");
 
-  await page.goto(`${base}/#/spice`);
+  await page.goto(`${base}/#/spice?bay`);
   await page.waitForSelector(".bay .bay-step");
   await settle(500);
 
@@ -119,10 +119,11 @@ try {
   // ---- bringing a clip: the viewer's drop and the key both take a clip; here the key
   const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.locator(".bay-stage .bay-ghost", { hasText: "Bring a clip" }).click()]);
   await chooser.setFiles(join(mediaDir, "yard.mp4"));
-  await page.waitForFunction(() => document.querySelector(".bay-facts")?.textContent.includes("640×360"), null, { timeout: 15000 });
+  await page.waitForFunction(() => document.querySelector(".bay-clipfacts")?.textContent.includes("640×360"), null, { timeout: 15000 });
   await settle(500);
   const facts = await page.locator(".bay-facts").textContent();
-  ok(/640×360/.test(facts) && /\d+ fps/.test(facts) && /12 s/.test(facts), "the clip is read: size, rate, length", facts.replace(/\s+/g, " ").trim());
+  const clipFacts = await page.locator(".bay-clipfacts").textContent();
+  ok(/640×360/.test(clipFacts) && /\d+ fps/.test(clipFacts) && /12 s/.test(clipFacts), "the clip is read: size, rate, length", clipFacts);
   const plan = (await page.locator(".bay-plan-row").allTextContents()).join(" | ");
   ok(/Length.*12 → 10/.test(plan), "Conform says what it would change: the length", plan);
   ok(await page.locator(".bay-shotchip").textContent().then((t) => /yard/i.test(t)), "the shot took the clip's name");
@@ -281,6 +282,12 @@ try {
       await settle(250);
       s = await scrolls();
       ok(s.v <= 1 && s.h <= 1, `${id} fits ${w}×${h} with no page scroll`, JSON.stringify(s));
+      const cut = await page.evaluate(() => {
+        const side = document.querySelector(".bay-side");
+        const brief = document.querySelector(".bay-brief textarea").getBoundingClientRect();
+        return { side: side.scrollHeight - side.clientHeight, brief: Math.round(brief.bottom - innerHeight), briefH: Math.round(brief.height) };
+      });
+      ok(cut.side <= 1 && cut.brief <= 0 && cut.briefH >= 30, `${id} at ${w}×${h}: the left rail shows everything, the brief box too`, JSON.stringify(cut));
     }
     await shot(`10-${w}x${h}`);
   }

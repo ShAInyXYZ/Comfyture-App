@@ -94,7 +94,7 @@ export const HARNESSES = {
     tag: PAPRIKA.tag,
     face: PAPRIKA.face,
     tools: "panel",
-    home: "conform",
+    home: "plate",
     placeholders: SPICE_PLACEHOLDER,
     presets: Object.fromEntries(Object.keys(SPICE_PLACEHOLDER).map((room) => [room, []])),
     offers: SPICE_OFFERS,
