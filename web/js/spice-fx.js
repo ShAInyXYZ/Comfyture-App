@@ -12,7 +12,7 @@ import { h } from "./dom.js";
 import { state, toast, changed } from "./store.js";
 import { spice, edit, setDept, workingOn } from "./spice.js";
 import { ELEMENTS, FIRST, rangeOf, lastFrame, framesIn, ltxCredits, fxPrompt, elementById, TEMPLATES } from "./spice-model.js";
-import { GROUPS, BLENDS, MOTIONS, TINTS, LOOKS, tilesOf, elementOf, layerName, newLayer } from "./spice-elements.js";
+import { GROUPS, BLENDS, MOTIONS, TINTS, LOOKS, tilesOf, elementOf, layerName, newLayer, cleanLayer } from "./spice-elements.js";
 import { render } from "./spice-layers.js";
 import { bento, spicon, primary, fill, iconKey, ghost } from "./spice-ui.js";
 import { openWin, defineWindow } from "./spice-win.js";
@@ -75,7 +75,8 @@ function bakePlan() {
   const b = spice.shot?.body;
   const layers = layersOf().filter((l) => l.eye !== false && (l.el !== "ai" || l.media));
   const ground = fxGround(b);
-  const sig = JSON.stringify([layers, ground.base?.url, ground.matte?.url, b?.range, b?.set.roto.feather, b?.set.roto.choke]);
+  // (signed as the shot keeps them, keys in one order: a renamed layer read back from the server is the same layers)
+  const sig = JSON.stringify([layers.map(cleanLayer), ground.base?.url, ground.matte?.url, b?.range, b?.set.roto.feather, b?.set.roto.choke]);
   const why = !ground.base ? "Bring the footage to the Plate first" : !layers.length ? "Add a layer from the library first" : "";
   // (baked: the FX pass is these layers, nothing changed since; a pass made before the layers were kept is taken as theirs)
   const done = !!b?.passes.fx?.media && !b.set.fx.dirty && (!b.set.fx.baked || b.set.fx.baked === sig);

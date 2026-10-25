@@ -296,6 +296,11 @@ try {
   st = await state();
   ok(st.passes.fx?.kind === "video" && st.passes.fx.from === 1001 && st.passes.fx.to === 1120 && paid.length === 0 && st.log.length === 0, "the layers are baked into the FX pass, on every frame, and nothing was sent", JSON.stringify(st.passes.fx));
   ok(Math.abs((st.passes.fx.seconds ?? 0) - 5) < 0.1, "a clip as long as the footage", String(st.passes.fx.seconds));
+  // read back from the server, the layers (one renamed) are still the ones baked
+  await page.waitForTimeout(1500);
+  await js(async () => { const s = await import("/js/spice.js"); await s.openShot(s.spice.shot.id); });
+  await settle();
+  ok(/Baked/.test(await page.locator('.sp-primary[data-key="fx:bake"]').innerText()), "read back from the server, a renamed layer is still baked", await page.locator('.sp-primary[data-key="fx:bake"]').innerText());
   // an AI layer: placed, described, its key asks first, then one LTX shot goes
   await page.locator('.sp-lib-tile[data-el="ai"]').click();
   await settle();
