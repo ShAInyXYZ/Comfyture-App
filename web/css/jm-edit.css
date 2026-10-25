@@ -111,6 +111,11 @@
 .jm-foot .jm-exportkey { flex: none; min-height: 3rem; padding: 0 1.5rem; }
 .jm-foot .jm-iconkey { flex: none; }
 
+/* a short screen (a laptop): the page scrolls, and the monitor and the timeline keep a height they can be worked at (squeezed into
+   the screen, the timeline showed only its ruler at 1366×768) */
+@media (max-height: 1000px) and (min-width: 1281px) {
+  .jam .jm-grid.is-edit { grid-template-rows: minmax(20rem, .85fr) minmax(26rem, 1.15fr) auto; overflow-y: auto; scrollbar-width: thin; }
+}
 @media (max-width: 1280px) {
   .jam .jm-grid.is-edit { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(24rem, auto) auto; grid-template-areas: "monitor" "selected" "timeline" "foot"; overflow: auto; }
   .jm-monitor { min-height: 22rem; }
