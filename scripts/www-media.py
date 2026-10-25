@@ -132,7 +132,7 @@ for cat in ("praline", "sesame", "mochi", "meringue"):
 # ── the hero reel: real takes of our cast, cross-faded, picture and sound (16:9) ──────────────────────────────────────────────
 REEL = [  # (source, start, seconds, window: where the 16:9 frame sits in a cover fit (x, y), has sound)
     (src("data", "runs", "20261019-db48ff6e", "shot.mp4"), 0.0, 3.0, (0.5, 0.5), True),     # Kitchen: Ketkout, the last jar
-    (src("examples", "spice", "sh020-pickle", "fx.mp4"), 0.4, 3.6, (0.5, 0.45), False),     # Spice: Pickle's storm
+    (dst("spice", "spice-card.mp4"), 1.0, 3.4, (0.5, 0.2), False),                           # Spice: Taro's fireworks and Pickle's spell, wiped
     (src("data", "runs", "20261021-501232c8", "shot.mp4"), 0.0, 4.0, (0.5, 0.28), True),    # Jam: Taro sings his song
     (src("data", "runs", "20261019-32648f63", "shot.mp4"), 0.0, 3.0, (0.5, 0.5), True),     # Kitchen: the jam goes in the pie
     (src("data", "reels", "20261016-37b820.mp4"), 6.4, 3.4, (0.5, 0.5), True),              # Kitchen: Desert Dawn Rescue
@@ -160,8 +160,7 @@ def reel(path, width=1280, crf=27, fade=0.5):
        "-preset", "slow", "-profile:v", "high", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", path)
 
 
-reel(dst("hero", "reel.mp4"))
-poster(dst("hero", "reel.mp4"), dst("hero", "reel.jpg"), 1.2, 1280, 72)
+# (the reel is made at the end: one of its takes is Spice's card, made further down)
 
 # ── Kitchen: The Great Jam Chase (Ketkout), and the Stage's examples, clay and render ─────────────────────────────────────────
 for rid, slug in (("20261019-db48ff6e", "jam-chase-1"), ("20261019-32648f63", "jam-chase-2")):
@@ -294,6 +293,10 @@ if CAPTURES:
     # the Stage's seven passes of one frame, its viewport cropped out of the screens (3200x1900): clay, colour ID, depth, normal…
     slides([os.path.join(CAPTURES, f) for f in PASSES], dst("loops", "stage-passes.mp4"), (894, 368, 1347, 842))
     poster(dst("loops", "stage-passes.mp4"), dst("loops", "stage-passes.jpg"), 0.0, 960, 76)
+
+# ── the hero reel, last (see above) ──
+reel(dst("hero", "reel.mp4"))
+poster(dst("hero", "reel.mp4"), dst("hero", "reel.jpg"), 1.2, 1280, 72)
 
 print(f"{len(made)} files made in www/media" + (f"; skipped, source missing: {', '.join(sorted(set(missing)))}" if missing else ""))
 size = sum(os.path.getsize(os.path.join(d, f)) for d, _, fs in os.walk(OUT) for f in fs)
