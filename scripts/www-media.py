@@ -207,25 +207,32 @@ poster(dst("macaron", "intro.mp4"), dst("macaron", "intro.jpg"), 4.0, 540)
 clip(src(*OT, "logo-sting.mp4"), dst("macaron", "otter-sting.mp4"), 540, 28)
 poster(dst("macaron", "otter-sting.mp4"), dst("macaron", "otter-sting.jpg"), 2.0, 540)
 
-# ── Spice: the five example shots, plate and comp; Pickle's storm with a wipe baked in; the elements ─────────────────────────
+# ── Spice: the example shots, as the app made them (scripts/spice-examples.mjs); the moving shots, take and comp, side by side in
+#    a wipe on the site; the card: two of them side by side, a wipe sweeping across both; the elements ────────────────────────────
+SP = ("examples", "spice")
 for shot, name in (("sh010-ketkout", "ketkout"), ("sh030-brioche", "brioche"), ("sh040-truffle", "truffle"), ("sh050-paprika", "paprika")):
-    for p in ("plate", "fx"):
-        pic(src("examples", "spice", shot, f"{p}.jpg"), dst("spice", f"{name}-{p}.webp"), 1280, 78)
-pic(src("examples", "spice", "sh010-ketkout", "roto.png"), dst("spice", "ketkout-roto.webp"), 1280, 80)
-pic(src("examples", "spice", "sh030-brioche", "light.jpg"), dst("spice", "brioche-light.webp"), 1280, 78)
-PK = ("examples", "spice", "sh020-pickle")
-clip(src(*PK, "fx.mp4"), dst("spice", "pickle-storm.mp4"), 960, 27)
-poster(dst("spice", "pickle-storm.mp4"), dst("spice", "pickle-storm.jpg"), 2.6, 960)
-wipe = dst("spice", "pickle-wipe.mp4")
-if todo(wipe, src(*PK, "plate.mp4"), src(*PK, "fx.mp4")):
-    # the plate on the left of a yellow line that sweeps across and back (one sweep per five-second loop), the comp on the right
-    x = "(0.5+0.42*sin(2*PI*{t}/5))"
-    ff("-i", src(*PK, "plate.mp4"), "-i", src(*PK, "fx.mp4"), "-filter_complex",
-       "[0:v]scale=960:-2,format=yuv420p[p];[1:v]scale=960:-2,format=yuv420p[f];"
-       f"[p][f]blend=all_expr='if(lt(X,W*{x.format(t='T')}),A,B)'[b];color=c=0xF2FF59:s=3x640:r=24[l];"
-       f"[b][l]overlay=x='W*{x.format(t='t')}-1':y=0:eval=frame:shortest=1,format=yuv420p[v]",
-       "-map", "[v]", "-c:v", "libx264", "-crf", "27", "-preset", "slow", "-an", "-movflags", "+faststart", wipe)
-poster(wipe, dst("spice", "pickle-wipe.jpg"), 1.0, 960)
+    pic(src(*SP, shot, "plate.jpg"), dst("spice", f"{name}-plate.webp"), 1280, 80)
+    pic(src(*SP, shot, "comp.webp"), dst("spice", f"{name}-fx.webp"), 1280, 82)
+MOVING = (("sh054-taro-fireworks", "taro-fireworks", 2.6), ("sh052-taro-wish", "taro-wish", 1.4), ("sh020-pickle", "pickle-spell", 1.6))
+for shot, name, at in MOVING:
+    for p, out in (("plate", "plate"), ("fx", "fx")):
+        clip(src(*SP, shot, f"{p}.mp4"), dst("spice", f"{name}-{out}.mp4"), 540, 26)
+        poster(dst("spice", f"{name}-{out}.mp4"), dst("spice", f"{name}-{out}.jpg"), at, 540)
+card = dst("spice", "spice-card.mp4")
+FW, PK = ("sh054-taro-fireworks", "sh020-pickle")
+if todo(card, *(src(*SP, s, f"{p}.mp4") for s in (FW, PK) for p in ("plate", "fx"))):
+    # Taro's fireworks and Pickle's spell side by side (Pickle's 58 frames played twice, so both run 116); the takes on the left of a
+    # yellow line that sweeps across and back once a loop, the comps on its right
+    n, x = 116, "(0.5+0.42*sin(2*PI*{t}/(116/24)))"
+    side = lambda i: f"[{i}:v]scale=540:960,setsar=1,fps=24,format=yuv420p"
+    ff("-i", src(*SP, FW, "plate.mp4"), "-i", src(*SP, PK, "plate.mp4"), "-i", src(*SP, FW, "fx.mp4"), "-i", src(*SP, PK, "fx.mp4"),
+       "-filter_complex",
+       f"{side(0)},trim=end_frame={n}[a];{side(1)},loop=loop=1:size=58:start=0,trim=end_frame={n}[b];"
+       f"{side(2)},trim=end_frame={n}[c];{side(3)},loop=loop=1:size=58:start=0,trim=end_frame={n}[d];"
+       f"[a][b]hstack[p];[c][d]hstack[f];[p][f]blend=all_expr='if(lt(X,W*{x.format(t='T')}),A,B)'[w];color=c=0xF2FF59:s=3x960:r=24[l];"
+       f"[w][l]overlay=x='W*{x.format(t='t')}-1':y=0:eval=frame:shortest=1,format=yuv420p[v]",
+       "-map", "[v]", "-frames:v", str(n), "-c:v", "libx264", "-crf", "27", "-preset", "slow", "-an", "-movflags", "+faststart", card)
+poster(card, dst("spice", "spice-card.jpg"), 3.0, 1080)
 for f in sorted(os.listdir(src("web", "brand", "spice", "elements"))):
     if f.endswith("-t.webp"):
         pic(src("web", "brand", "spice", "elements", f), dst("spice", "elements", f.replace("-t.webp", ".webp")), 256, 80)

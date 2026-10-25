@@ -106,15 +106,30 @@ $$(".wipe").forEach((w) => {
   // a first sweep when it comes into view, so it reads as something to drag
   new IntersectionObserver(([e], o) => {
     if (!e.isIntersecting) return; o.disconnect();
-    const t0 = performance.now();
+    // (around where it rests, read once: a picker may set that, so the effect is in view when it stops)
+    const t0 = performance.now(), rest = Number(w.dataset.rest ?? r.value);
     const step = (t) => {
       if (w.dataset.touched) return;
-      const p = Math.min(1, (t - t0) / 1600), x = 50 + 32 * Math.sin(p * Math.PI * 2) * (1 - p);
+      const p = Math.min(1, (t - t0) / 1600);
+      const x = Math.max(2, Math.min(98, rest + 32 * Math.sin(p * Math.PI * 2) * (1 - p)));
       set(x.toFixed(2)); r.value = x;
       if (p < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
   }, { threshold: 0.5 }).observe(w);
+});
+/* a wipe of two clips: the take (a) is kept on the comp's (b) time, so the line divides one moment; it plays when the comp does */
+$$(".wipe").forEach((w) => {
+  const a = $("video.a", w), b = $("video.b", w);
+  if (!a || !b) return;
+  // (a seek asked before the take knows its length is dropped: it is asked again once it does, and after any jump of the comp's)
+  const sync = () => { if (a.readyState >= 1 && Math.abs(a.currentTime - b.currentTime) > 0.06) a.currentTime = b.currentTime; };
+  b.addEventListener("timeupdate", sync);
+  b.addEventListener("seeked", sync);
+  a.addEventListener("loadedmetadata", sync);
+  a.addEventListener("canplay", sync);
+  b.addEventListener("play", () => { sync(); a.play().catch(() => {}); });
+  b.addEventListener("pause", () => a.pause());
 });
 $$(".picker").forEach((pk) => {
   const box = pk.closest(".compare"), w = $(".wipe", box), cap = $(".cap", box);
@@ -124,6 +139,8 @@ $$(".picker").forEach((pk) => {
     a.src = b.dataset.a; bb.src = b.dataset.b;
     a.alt = `Before: ${b.textContent.trim()}`; bb.alt = `After: ${b.textContent.trim()}`;
     if (cap) cap.textContent = b.dataset.cap;
+    // each example rests where its effect is seen
+    if (b.dataset.x) { const r = $("input", w); w.dataset.rest = b.dataset.x; w.style.setProperty("--x", `${b.dataset.x}%`); if (r) r.value = b.dataset.x; }
   }));
 });
 
@@ -222,28 +239,30 @@ fetch("media/presets.json").then((r) => r.json()).then((P) => {
 const G = [
   { p: "Kitchen", t: "The Great Jam Chase · the last jar", m: "LTX-2.5", v: "media/kitchen/jam-chase-1.mp4", i: "media/kitchen/jam-chase-1.jpg", w: 960, h: 528, sound: true,
     d: "On tiptoe at the counter, the chick lifts the last jar of jam beside the rolled-out dough and pie tin. The jar slips from her wings and falls. The camera pushes in slowly. The chick says, \"Oh no, not the last jar!\"", d2: "Soft morning ambience, a small strained grunt, then a glassy thump as the jar hits the floor." },
-  { p: "Spice", t: "Paprika's portal", m: "FX from the library, baked free", i: "media/spice/paprika-fx.webp", w: 1280, h: 853, d: "Paprika on a rooftop at night: a portal of sparks opens over the city, a magic swirl winds around her, the lamp glints." },
+  { p: "Spice", t: "Paprika's portal", m: "Made in Spice, baked free", i: "media/spice/paprika-fx.webp", w: 1280, h: 853, d: "Paprika on a rooftop at night: a ring of sparks opens right behind her, and its light falls on her, the ledge and the lamp." },
   { p: "Toaster", t: "Crumpet's workbench", m: "From the clay frame", i: "media/toaster/woodshop-workbench.webp", w: 1280, h: 720, d: "Crumpet building a toy at his workbench, in a woodshop of 17 parts. The example's render was made with GPT Image from the clay frame kept with it." },
   { p: "Jam", t: "Moonlit Oolong Walk", m: "ACE-Step 1.5 + LTX-2.5", v: "media/jam/taro.mp4", i: "media/jam/taro.jpg", w: 720, h: 720, sound: true,
     d: "Taro's song, written by Pickle from one sentence and made with ACE-Step 1.5; the six-second video cover rolled with LTX-2.5 from the cover picture, lip-synced to the chorus." },
   { p: "Mixer", t: "Meringue", m: "LTX-2.5 · 9:16", v: "media/mixer/meringue-1.mp4", i: "media/mixer/meringue-1.jpg", w: 540, h: 960, d: "Tight vertical close-up of Meringue, the snowy-white kitten with sky-blue eyes and a coral-pink ribbon, doing a face dance on the beat." },
   { p: "Kitchen", t: "Rainy bus stop", m: "Stage → Qwen Image 2.1", i: "media/kitchen/stage-rainy-bus-stop-render.webp", w: 1376, h: 768, d: "One of the Stage's examples, blocked with three mannequins and rendered from its clay frame with Qwen Image 2.1: a rainy evening at a seaside bus stop, moody blue dusk light." },
   { p: "Toaster", t: "Brioche's perfume launch", m: "From the clay frame", i: "media/toaster/perfume-hero.webp", w: 1024, h: 1280, d: "The Brioche flacon on a travertine plinth with its gift box, a pearl and Brioche the bunny. The example's render was made with GPT Image from its clay frame." },
-  { p: "Spice", t: "Pickle's storm on stage", m: "A clip, every layer moving", v: "media/spice/pickle-storm.mp4", i: "media/spice/pickle-storm.jpg", w: 960, h: 640, d: "Pickle singing on stage, five seconds pushed in slowly: two bolts of lightning strike behind him, violet stage rays pulse, a lamp flares. Baked free." },
+  { p: "Spice", t: "Taro's fireworks", m: "A real take, baked free", v: "media/spice/taro-fireworks-fx.mp4", i: "media/spice/taro-fireworks-fx.jpg", w: 540, h: 960, d: "Taro dancing on the promenade, a take from Moonlit Oolong Walk cut out on every frame: five fireworks go off over the bay, each lighting the fur in its colour." },
   { p: "Macaron", t: "Little Otter Tea", m: "A fictional brand, made end to end", i: "media/macaron/otter-flyer.webp", w: 720, h: 1018, d: "An A4 café flyer from the Little Otter Tea brand kit: deep teal, moon cream, tangerine, Manrope and IBM Plex Mono." },
   { p: "Kitchen", t: "Desert Dawn Rescue", m: "A film from one sentence", v: "media/film/desert-dawn-rescue.mp4", i: "media/film/desert-dawn-rescue.jpg", w: 960, h: 528, sound: true, d: "Four shots written by Story from one sentence, rolled with LTX-2.5 and cut in Cut, picture and sound." },
-  { p: "Spice", t: "Ketkout's flambé", m: "FX from the library, baked free", i: "media/spice/ketkout-fx.webp", w: 1280, h: 853, d: "Ketkout at his stove at night: the flames of a flambé rise out of his pan behind its rim, embers and smoke above, the fire's light on the room." },
+  { p: "Spice", t: "Ketkout's flambé", m: "Made in Spice, baked free", i: "media/spice/ketkout-fx.webp", w: 1280, h: 853, d: "Ketkout pours the liqueur and the pan goes up: the flambé lights his face, the copper ladle and the stove." },
   { p: "Toaster", t: "Pickle's little stage, as a poster", m: "From the clay frame", i: "media/toaster/stage-poster.webp", w: 1280, h: 720, d: "Pickle at the microphone with his band and three fans, a screen-printed poster look. The example's render was made with GPT Image from the clay frame kept with it." },
   { p: "Macaron", t: "Comfyture: the launch post", m: "4:5", i: "media/macaron/launch.webp", w: 720, h: 900, d: "A launch post made in Macaron from the Comfyture brand kit, with Brioche." },
   { p: "Kitchen", t: "Café terrace", m: "Stage → Qwen Image 2.1", i: "media/kitchen/stage-cafe-terrace-render.webp", w: 1376, h: 768, d: "A Stage example rendered from its clay frame: a sunny café terrace in the morning, a striped awning." },
   { p: "Mixer", t: "Meringue, take two", m: "LTX-2.5 · 9:16", v: "media/mixer/meringue-2.mp4", i: "media/mixer/meringue-2.jpg", w: 540, h: 960, d: "A second take of Meringue's face dance." },
-  { p: "Spice", t: "Brioche's first snow", m: "Light, then FX", i: "media/spice/brioche-fx.webp", w: 1280, h: 853, d: "Brioche in the garden at blue hour, given a cool winter grade in Light, then snow, cold light through the branches and the lantern's glint in FX." },
+  { p: "Spice", t: "Brioche's first snow", m: "Light, then FX", i: "media/spice/brioche-fx.webp", w: 1280, h: 853, d: "Brioche in the garden at blue hour: a cool grade in Light, then a moonbeam that rims her ears, the lantern's warm light on her side and snow near and far." },
+  { p: "Spice", t: "Taro's wish", m: "A real take, baked free", v: "media/spice/taro-wish-fx.mp4", i: "media/spice/taro-wish-fx.jpg", w: 540, h: 960, d: "Taro on the pier under the full moon, a take from Moonlit Oolong Walk: a ribbon of golden light rises to the moon, sparks drift up off the sea and the moonlight rims the fur." },
   { p: "Kitchen", t: "The Great Jam Chase · into the pie", m: "LTX-2.5", v: "media/kitchen/jam-chase-2.mp4", i: "media/kitchen/jam-chase-2.jpg", w: 960, h: 528, sound: true,
     d: "The chick trots back to the counter with the jar clutched to her chest and spoons the jam into the pie, ready for the oven. The camera pulls back slowly.", d2: "Happy trotting steps, a squelch of jam spooned onto the pie, a warm cheerful musical ending." },
   { p: "Toaster", t: "Crumpet's workbench, storybook look", m: "From the clay frame", i: "media/toaster/woodshop-storybook.webp", w: 1280, h: 720, d: "The same clay as the workbench, another look. The example's render was made with GPT Image." },
   { p: "Kitchen", t: "Campfire night", m: "Stage → Qwen Image 2.1", i: "media/kitchen/stage-campfire-night-render.webp", w: 1376, h: 590, d: "A Stage example rendered from its clay frame: a summer night in the mountains around a campfire." },
   { p: "Macaron", t: "Comfyture intro", m: "9:16 motion", v: "media/macaron/intro.mp4", i: "media/macaron/intro.jpg", w: 540, h: 960, d: "A logo and product intro made in Macaron's Studio from the Comfyture kit." },
-  { p: "Spice", t: "Truffle's spark of genius", m: "FX from the library, baked free", i: "media/spice/truffle-fx.webp", w: 1280, h: 853, d: "Truffle at his workbench: an energy orb above his paws, an electric arc to his screwdriver, a burst of sparks at its tip." },
+  { p: "Spice", t: "Pickle's spell", m: "A real take, baked free", v: "media/spice/pickle-spell-fx.mp4", i: "media/spice/pickle-spell-fx.jpg", w: 540, h: 960, d: "Pickle dancing in the square with his jack-o'-lantern, a take from La Calabaza cut out on every frame: a purple sigil turns behind the pumpkin and a spell wraps around him, both following him as he dances." },
+  { p: "Spice", t: "Truffle's spark of genius", m: "Made in Spice, baked free", i: "media/spice/truffle-fx.webp", w: 1280, h: 853, d: "Truffle holds up his newest invention: a spark jumps its brass gap and climbs to a ball of energy, and its blue light falls on his face." },
   { p: "Kitchen", t: "Thunder God, extended", m: "Preset + extend", v: "media/takes/thunder-god-extended.mp4", i: "media/takes/thunder-god-extended.jpg", w: 960, h: 528, sound: true, d: "The Thunder God preset, then the clip carried on: its last frames guide the new shot, so it picks up exactly where it ends." },
   { p: "Toaster", t: "After dark", m: "From the clay frame", i: "media/toaster/perfume-after-dark.webp", w: 1024, h: 1280, d: "Brioche's perfume launch, an after-dark look of the same clay. The example's render was made with GPT Image." },
   { p: "Jam", t: "Taro's song cover", m: "The cover row", i: "media/jam/taro-cover.webp", w: 720, h: 720, d: "The cover of Taro's song, and the first frame of its video cover." },

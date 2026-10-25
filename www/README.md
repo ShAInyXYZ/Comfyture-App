@@ -16,7 +16,7 @@ GitHub Pages under the repository's sub-path. `demo/` (the app as static files, 
 | Mixer | the crew, two vertical takes of Meringue | `media/mixer/` |
 | Jam | Taro's video cover (his ACE-Step song, with sound), the five workspaces, the Track screen | `media/jam/`, `media/app/jam.webp` |
 | Macaron | posts and motion from two brands (Comfyture, Little Otter Tea), the brand kit screen | `media/macaron/`, `media/app/macaron.webp` |
-| Spice | plate against comp on four example shots (drag the line), the six departments, the FX screen and library | `media/spice/`, `media/app/spice.webp` |
+| Spice | plate against comp on four example pictures (drag the line; each rests where its effect shows), three real takes as plate and comp clips in sync, the six departments, the FX screen and library; the card plays two takes side by side under a sweeping wipe | `media/spice/`, `media/app/spice.webp` |
 | Toaster | clay frame against render on its three examples, the maps sent, the turnaround, the Scene screen | `media/toaster/`, `media/app/toaster.webp` |
 | Utensils | the shelf of tools, the Picture screen | `media/app/utensils.webp` |
 | Pets | the tour, checked actions, a paid run only on a yes; each pet with what its bar asks (the app's own words) | `media/app/tour.webp` |
@@ -56,7 +56,7 @@ normal, pose, lines, mask), its viewport cropped and cross-faded. Nothing was re
 - **Takes and films**: the app's own take log, made with LTX-2.5 (picture and sound): The Great Jam Chase (Ketkout), Taro's video cover
   (his song made with ACE-Step 1.5), Desert Dawn Rescue, Not tonight, Thunder God. Meringue's two takes come from Mixer's Face Dance
   trend (her picture, its motion copied with LTX-2.5) and are shown without their sound.
-- **Spice**: the five shipped example shots; their comps were baked by Spice's free compositor.
+- **Spice**: the shipped example shots, every pass made by the app itself (`scripts/spice-examples.mjs`): four pictures (two plates drawn with GPT Image from our cast's sheets for the effect) and three takes from Jam's own videos, Taro's and Pickle's, cut out frame by frame on this machine.
 - **Toaster**: the shipped examples' clay frames and maps; their renders were made with GPT Image from those frames for the examples, as
   the page says under them.
 - **Stage renders** (gallery): the shipped example stages, rendered from their clay frames with Qwen Image 2.1.

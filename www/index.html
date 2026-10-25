@@ -133,7 +133,7 @@
         <span class="go" aria-hidden="true"><svg class="i"><use href="#arrow"/></svg></span>
       </a>
       <a class="card c-spice" href="#spice" data-r>
-        <video class="lazy" muted loop playsinline preload="none" poster="media/spice/pickle-wipe.jpg" data-src="media/spice/pickle-wipe.mp4"></video>
+        <video class="lazy" muted loop playsinline preload="none" poster="media/spice/spice-card.jpg" data-src="media/spice/spice-card.mp4"></video>
         <div class="who"><img src="media/pets/paprika.webp" alt="" width="40" height="40"><span><b>Paprika</b> VFX house</span></div>
         <div class="t"><h3>Spice</h3><p>One shot through six VFX departments.</p><span class="makes">Roto · Paint · Light · FX · Comp</span></div>
         <span class="lab l mono" aria-hidden="true">Plate</span><span class="lab r mono" aria-hidden="true">Comp</span>
@@ -304,26 +304,62 @@
         <h2 id="spice-h" data-r>One shot. <em>Six departments.</em></h2>
       </div>
       <div>
-        <p class="lead" data-r>Plate, Roto, Paint, Light, FX and Comp: a visual-effects pipeline for one clip or picture. SAM3 cuts subjects out and follows them; FX is a compositor where you drop fire, portals, lightning and particles from a library onto the picture and move them by hand, behind the people Roto holds or in front. The bake runs free, on your machine.</p>
+        <p class="lead" data-r>Plate, Roto, Paint, Light, FX and Comp: a visual-effects pipeline for one clip or picture. SAM3 cuts subjects out and follows them; FX is a compositor where you drop fire, portals, lightning and particles from a library onto the picture, behind the people Roto holds or in front, and each one lights the shot: a flambé lights the cook's face, a portal behind someone rims them in its colour. The bake runs free, on your machine.</p>
         <div class="acts" data-r><a class="btn" href="demo/#/spice">Open Spice <svg class="i"><use href="#arrow"/></svg></a></div>
       </div>
     </div>
 
     <div class="compare" data-r>
-      <div class="wipe big" id="spice-wipe" style="--x:50%">
-        <img class="b" src="media/spice/paprika-fx.webp" alt="Paprika's portal after FX: a ring of sparks over the city and a swirl around her" width="1280" height="853" loading="lazy" decoding="async">
+      <div class="wipe big" id="spice-wipe" style="--x:14%">
+        <img class="b" src="media/spice/paprika-fx.webp" alt="Paprika's portal after FX: a ring of sparks opens right behind her and lights her up" width="1280" height="853" loading="lazy" decoding="async">
         <img class="a" src="media/spice/paprika-plate.webp" alt="The plate: Paprika on a rooftop at night" width="1280" height="853" loading="lazy" decoding="async">
         <span class="bar"><span class="knob"></span></span>
         <span class="lab l mono">Plate</span><span class="lab r mono">Comp</span>
-        <input type="range" min="0" max="100" value="50" aria-label="Compare the plate and the comp">
+        <input type="range" min="0" max="100" value="14" aria-label="Compare the plate and the comp">
       </div>
       <div class="picker" role="group" aria-label="Example shots">
-        <button type="button" aria-pressed="true" data-a="media/spice/paprika-plate.webp" data-b="media/spice/paprika-fx.webp" data-cap="Paprika's portal: a portal of sparks opens over the city, a magic swirl winds around her."><img src="media/pets/paprika.webp" alt="" width="28" height="28">Paprika's portal</button>
-        <button type="button" aria-pressed="false" data-a="media/spice/ketkout-plate.webp" data-b="media/spice/ketkout-fx.webp" data-cap="Ketkout's flambé: flames rise out of his pan behind its rim, embers and smoke above, the fire's light on the room."><img src="media/pets/ketkout.webp" alt="" width="28" height="28">Ketkout's flambé</button>
-        <button type="button" aria-pressed="false" data-a="media/spice/brioche-plate.webp" data-b="media/spice/brioche-fx.webp" data-cap="Brioche's first snow: a cool winter grade in Light, then snow, cold light through the branches and the lantern's glint in FX."><img src="media/pets/brioche.webp" alt="" width="28" height="28">Brioche's first snow</button>
-        <button type="button" aria-pressed="false" data-a="media/spice/truffle-plate.webp" data-b="media/spice/truffle-fx.webp" data-cap="Truffle's spark of genius: an energy orb above his paws, an electric arc to his screwdriver, sparks at its tip."><img src="media/pets/truffle.webp" alt="" width="28" height="28">Truffle's spark</button>
+        <button type="button" aria-pressed="true" data-x="14" data-a="media/spice/paprika-plate.webp" data-b="media/spice/paprika-fx.webp" data-cap="Paprika's portal: a ring of sparks opens right behind her; its light falls on her, the ledge and the lamp, and sparks spill over the edge."><img src="media/pets/paprika.webp" alt="" width="28" height="28">Paprika's portal</button>
+        <button type="button" aria-pressed="false" data-x="22" data-a="media/spice/ketkout-plate.webp" data-b="media/spice/ketkout-fx.webp" data-cap="Ketkout's flambé: he pours the liqueur and the pan goes up; the fire lights his face, the copper ladle and the stove."><img src="media/pets/ketkout.webp" alt="" width="28" height="28">Ketkout's flambé</button>
+        <button type="button" aria-pressed="false" data-x="30" data-a="media/spice/brioche-plate.webp" data-b="media/spice/brioche-fx.webp" data-cap="Brioche's first snow: a cool grade in Light, then a moonbeam that rims her ears, the lantern's warm light on her side and snow near and far."><img src="media/pets/brioche.webp" alt="" width="28" height="28">Brioche's first snow</button>
+        <button type="button" aria-pressed="false" data-x="30" data-a="media/spice/truffle-plate.webp" data-b="media/spice/truffle-fx.webp" data-cap="Truffle's spark: a spark jumps his brass gap and climbs to a ball of energy, and its blue light falls on his face."><img src="media/pets/truffle.webp" alt="" width="28" height="28">Truffle's spark</button>
       </div>
-      <p class="cap" id="spice-cap">Paprika's portal: a portal of sparks opens over the city, a magic swirl winds around her.</p>
+      <p class="cap" id="spice-cap">Paprika's portal: a ring of sparks opens right behind her; its light falls on her, the ledge and the lamp, and sparks spill over the edge.</p>
+    </div>
+
+    <div class="moving" data-r>
+      <div class="mv-head"><h3>On real footage, frame by frame</h3><p>Takes from our own Jam videos, cut out on every frame and baked free on this machine: the effects follow the action and light the cast. Drag the line to see the take as it was.</p></div>
+      <ul class="mv-row" aria-label="Moving shots">
+        <li class="mv">
+          <div class="wipe tall">
+            <video class="b lazy" muted loop playsinline preload="none" poster="media/spice/taro-fireworks-fx.jpg" data-src="media/spice/taro-fireworks-fx.mp4"></video>
+            <video class="a lazy" muted loop playsinline preload="none" data-held="1" poster="media/spice/taro-fireworks-plate.jpg" data-src="media/spice/taro-fireworks-plate.mp4"></video>
+            <span class="bar"><span class="knob"></span></span>
+            <span class="lab l mono">Plate</span><span class="lab r mono">Comp</span>
+            <input type="range" min="0" max="100" value="50" aria-label="Compare the take and the comp: Taro's fireworks">
+          </div>
+          <p><b>Taro's fireworks</b> Five bursts over the bay, each lighting Taro's fur in its colour.</p>
+        </li>
+        <li class="mv">
+          <div class="wipe tall">
+            <video class="b lazy" muted loop playsinline preload="none" poster="media/spice/taro-wish-fx.jpg" data-src="media/spice/taro-wish-fx.mp4"></video>
+            <video class="a lazy" muted loop playsinline preload="none" data-held="1" poster="media/spice/taro-wish-plate.jpg" data-src="media/spice/taro-wish-plate.mp4"></video>
+            <span class="bar"><span class="knob"></span></span>
+            <span class="lab l mono">Plate</span><span class="lab r mono">Comp</span>
+            <input type="range" min="0" max="100" value="50" aria-label="Compare the take and the comp: Taro's wish">
+          </div>
+          <p><b>Taro's wish</b> A ribbon of light rises to the moon, sparks drift up off the sea, the moonlight rims the fur.</p>
+        </li>
+        <li class="mv">
+          <div class="wipe tall">
+            <video class="b lazy" muted loop playsinline preload="none" poster="media/spice/pickle-spell-fx.jpg" data-src="media/spice/pickle-spell-fx.mp4"></video>
+            <video class="a lazy" muted loop playsinline preload="none" data-held="1" poster="media/spice/pickle-spell-plate.jpg" data-src="media/spice/pickle-spell-plate.mp4"></video>
+            <span class="bar"><span class="knob"></span></span>
+            <span class="lab l mono">Plate</span><span class="lab r mono">Comp</span>
+            <input type="range" min="0" max="100" value="50" aria-label="Compare the take and the comp: Pickle's spell">
+          </div>
+          <p><b>Pickle's spell</b> A purple sigil turns behind his jack-o'-lantern and a spell wraps around him, both following him as he dances.</p>
+        </li>
+      </ul>
     </div>
 
     <ol class="depts" data-r aria-label="The six departments">
