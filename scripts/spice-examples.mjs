@@ -276,12 +276,12 @@ function lightTools(spec) {
 
 // ---------------------------------------------------------------- what the app made
 
-/** A file's pixels and frames, read back (a picture has one). */
+/** A file's pixels, frames and seconds, read back (a picture has one frame). The seconds are the picture's own, not the sound's tail. */
 async function probe(file) {
-  const { stdout } = await exec("ffprobe", ["-v", "error", "-select_streams", "v:0", "-count_frames", "-show_entries", "stream=width,height,nb_read_frames:format=duration", "-of", "json", file]);
+  const { stdout } = await exec("ffprobe", ["-v", "error", "-select_streams", "v:0", "-count_frames", "-show_entries", "stream=width,height,nb_read_frames,duration:format=duration", "-of", "json", file]);
   const j = JSON.parse(stdout);
   const s = j.streams?.[0] ?? {};
-  return { width: s.width, height: s.height, frames: Number(s.nb_read_frames) || 0, seconds: Number(j.format?.duration) || 0 };
+  return { width: s.width, height: s.height, frames: Number(s.nb_read_frames) || 0, seconds: Number(s.duration) || Number(j.format?.duration) || 0 };
 }
 
 /** Copies a file to its place the safe way: to a name beside it, checked byte for byte against the original, then put in place. */
@@ -354,7 +354,8 @@ async function compare(s, made, stage, say) {
     const before = old ? await size(join(s.dir, old)) : null;
     const same = before !== null && old === m.file && (await sha(join(s.dir, old))) === (await sha(now));
     if (!same) changed = true;
-    const seconds = m.media.kind === "video" ? Math.round((m.media.seconds ?? info.seconds) * 1000) / 1000 : undefined;
+    // (a clip's seconds are those of its picture, as the shipped specs say them: 73 frames at 24 are 3.042 for every pass, whatever the sound adds)
+    const seconds = m.media.kind === "video" ? Math.round(info.seconds * 1000) / 1000 : undefined;
     m.entry = madeEntry({ file: m.file, seconds, width: info.width, height: info.height, note: m.note });
     const frames = m.media.kind === "video" ? ` · ${info.frames} frames${plate?.frames ? (info.frames === plate.frames ? ` (the plate's ${plate.frames})` : ` (!) the plate has ${plate.frames}`) : ""}` : "";
     const dims = plate && (info.width !== plate.width || info.height !== plate.height) ? ` (!) the plate is ${plate.width}x${plate.height}` : "";
