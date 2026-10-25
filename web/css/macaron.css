@@ -57,6 +57,7 @@
 .mcb:not(.is-branded) .mcb-chip { background: var(--s3); color: var(--muted); }
 .mcb-card:hover { z-index: 2; transform: rotate(var(--r, 0deg)) translateX(.5rem); }
 .mcb-card:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--accent), 0 .5rem 1.125rem rgba(0, 0, 0, .35); }
+.mcb-card.is-on:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent), 0 1.125rem 2.125rem rgba(0, 0, 0, .55); }
 .mcb-card.is-on { z-index: 3; transform: rotate(0deg) translateX(2rem); box-shadow: 0 0 0 2px var(--accent), 0 1.125rem 2.125rem rgba(0, 0, 0, .55); }
 
 /* the health: a seal (the score as a ring in the brand's liveliest colour, Brioche in it), the lines that need care, each going where it is fixed */

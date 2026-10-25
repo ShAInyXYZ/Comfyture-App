@@ -180,18 +180,24 @@ function blockTools(x) {
     mini(icon("trash"), "Take it out", () => removeBlock(x.id)));
 }
 
+/** What a click picks, Enter or Space picks too: the block is a key in the tab order until it is picked (then its field is). */
+const keyed = (pick) => (e) => (e.key === "Enter" || e.key === " ") && e.target === e.currentTarget && (e.preventDefault(), pick(e));
+const asKey = (sel, name) => (sel ? {} : { tabindex: "0", role: "button", "aria-label": name });
+const snippet = (t) => (t ? String(t).replace(/\s+/g, " ").slice(0, 80) : "empty");
+
 function textBlock(b, x) {
   const sel = selBlock(x.id);
-  const pick = (e) => !sel && ((focusAt = { x: e.clientX, y: e.clientY }), select("block", x.id));
+  // a click puts the caret where it landed, the keyboard at the end
+  const pick = (e) => !sel && ((focusAt = e.type === "keydown" ? "end" : { x: e.clientX, y: e.clientY }), select("block", x.id));
   const set = (field) => (v, done) => ((x[field] = v), typed(done));
   const stop = { keydown: (e) => e.stopPropagation(), click: (e) => e.stopPropagation() };
   if (x.kind === "action") {
-    return h("div.doc-block.doc-action", { className: sel ? "is-selected" : "", on: { click: pick } },
+    return h("div.doc-block.doc-action", { className: sel ? "is-selected" : "", ...asKey(sel, `Edit what we see: ${snippet(x.text)}`), on: { click: pick, keydown: keyed(pick) } },
       sel ? editable(x.text, set("text"), "What we see — call people and places by @tag", "", () => addBlock("action", x.id)) : pillText("p", x.text || "…", storyLookup), sel ? blockTools(x) : null);
   }
   if (x.kind === "line") {
     const who = speaker(b, x.who);
-    return h("div.doc-block.doc-line", { className: sel ? "is-selected" : "", on: { click: pick } },
+    return h("div.doc-block.doc-line", { className: sel ? "is-selected" : "", ...asKey(sel, `Edit the line, ${who?.name ?? (x.who || "someone")}: ${snippet(x.text)}`), on: { click: pick, keydown: keyed(pick) } },
       h("i.story-chip", { style: { background: who?.color ?? "var(--s3)" } }),
       sel ? h("select.chip-select", { "aria-label": "Who says it", on: { change: (e) => ((x.who = e.target.value), commit()), ...stop } }, h("option", { value: "" }, "Who?"), ...b.cast.map((c) => h("option", { value: c.name, selected: who === c }, c.name)))
         : h("span.pill.is-who", { dataset: { name: who?.tag ?? "" } }, who?.refs[0] ? h("img", { src: who.refs[0].url, alt: "" }) : null, `@${who?.tag ?? (x.who || "someone")}`),
@@ -204,7 +210,7 @@ function textBlock(b, x) {
       sel ? h("input.field.is-line.doc-how", { value: x.how ?? "", placeholder: "how", "aria-label": "How it's said", on: { input: (e) => ((x.how = e.target.value), typed(false)), change: () => commit(), ...stop } }) : x.how ? h("span.doc-how-text", {}, x.how) : null,
       sel ? blockTools(x) : null);
   }
-  return h("div.doc-block.doc-note", { className: sel ? "is-selected" : "", on: { click: pick } },
+  return h("div.doc-block.doc-note", { className: sel ? "is-selected" : "", ...asKey(sel, `Edit the note: ${snippet(x.text)}`), on: { click: pick, keydown: keyed(pick) } },
     h("span.doc-note-glyph", {}, sprite("file")), sel ? editable(x.text, set("text"), "A note for yourself", "", () => addBlock("note", x.id)) : pillText("p", x.text || "…", storyLookup), sel ? blockTools(x) : null);
 }
 
@@ -213,7 +219,8 @@ function panel(b, x) {
   const drawing = busy(`shot:${x.id}`) || busy(`roll:${x.id}`) || busy(`open:${x.id}`);
   const tone = take?.status === "done" ? "ok" : take && take.status !== "failed" ? "busy" : take?.status === "failed" ? "crit" : null;
   const pic = take?.status === "done" ? x.still ?? x.photo : x.photo;
-  return h("article.doc-shot", { className: selBlock(x.id) ? "is-selected" : "", on: { click: (e) => (e.stopPropagation(), select("block", x.id)) } },
+  const open = (e) => (e.stopPropagation(), select("block", x.id));
+  return h("div.doc-shot", { className: selBlock(x.id) ? "is-selected" : "", tabindex: "0", role: "button", "aria-pressed": String(selBlock(x.id)), "aria-label": `Shot ${codeOf(x.id)}, ${x.seconds} s`, on: { click: open, keydown: keyed(open) } },
     h("div.story-frame", { className: drawing ? "is-drawing" : "" },
       pic ? h("img", { src: pic.url, alt: "", draggable: false }) : h("span.story-frame-empty", {}, sprite("image-generate")),
       drawing ? h("span.story-drawing", {}, busy(`roll:${x.id}`) ? "Rolling…" : busy(`open:${x.id}`) ? "Film frame…" : "Drawing…") : null),
@@ -230,9 +237,9 @@ function sceneCard(b, sc) {
   const shots = sc.blocks.filter((y) => y.kind === "shot");
   const texts = sc.blocks.filter((y) => y.kind !== "shot");
   const place = x && bible(b).find((r) => r.tag === x.place);
-  const pick = (e) => x && !sel && ((focusAt = { x: e.clientX, y: e.clientY }), select("block", x.id));
+  const pick = (e) => x && !sel && ((focusAt = e.type === "keydown" ? "end" : { x: e.clientX, y: e.clientY }), select("block", x.id));
   const head = x ? h("div.doc-scene-head", { on: { click: pick } },
-    h("b.doc-slug", {}, `SCENE ${sc.n} · `, sel ? h("input.doc-slug-field", { value: x.slug, "aria-label": "Slugline", on: { input: (e) => ((x.slug = e.target.value.toUpperCase()), typed(false)), change: () => commit(), click: (e) => e.stopPropagation(), keydown: (e) => {
+    h("b.doc-slug", { ...asKey(sel, `Edit scene ${sc.n}: ${snippet(x.slug)}`), on: { keydown: keyed(pick) } }, `SCENE ${sc.n} · `, sel ? h("input.doc-slug-field", { value: x.slug, "aria-label": "Slugline", on: { input: (e) => ((x.slug = e.target.value.toUpperCase()), typed(false)), change: () => commit(), click: (e) => e.stopPropagation(), keydown: (e) => {
       e.stopPropagation();
       if (e.key === "Escape") return e.target.blur(), select(null);
       if (e.key === "Enter") return e.preventDefault(), commit(), e.target.closest(".doc-scene")?.querySelector(":scope > .doc-edit")?.focus();

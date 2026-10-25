@@ -46,7 +46,8 @@ function show(i) {
 const mark = (id) => sprite(`product-${id}`);
 
 function hero() {
-  banner = h("section.welcome-hero", { "aria-label": "The products", on: { pointerenter: () => banner.classList.add("is-held"), pointerleave: () => banner.classList.remove("is-held") } },
+  // the banner holds its turn while the pointer is over it, and while the keyboard is in it (a slide that turned under the focus would take the key away)
+  banner = h("section.welcome-hero", { "aria-label": "The products", on: { pointerenter: () => banner.classList.add("is-held"), pointerleave: () => !banner.matches(":focus-within") && banner.classList.remove("is-held"), focusin: () => banner.classList.add("is-held"), focusout: (e) => !banner.contains(e.relatedTarget) && banner.classList.remove("is-held") } },
     ...ids.map((id, n) => {
       const [name, tagline] = PRODUCTS[id];
       return h(`div.welcome-slide${n === at ? ".is-on" : ""}${n < at ? ".is-past" : ""}`, { "aria-hidden": n === at ? "false" : "true" },

@@ -59,8 +59,9 @@ body[data-page="story"] { padding-bottom: 0; overflow: hidden; }
 .story-jump { display: flex; gap: .125rem; margin-right: .25rem; overflow-x: auto; scrollbar-width: none; }
 .story-jump a { padding: .25rem .4375rem; border-radius: .3125rem; font: 500 var(--fs-small)/1 var(--font-mono); color: var(--muted); text-decoration: none; }
 .story-jump a:hover { color: var(--text); background: var(--s2); }
+.story-jump a:focus-visible { outline-offset: -2px; }
 /* the page: on a wide screen its words keep to a centred column of about 1800 px */
-.doc-page { display: flex; flex-direction: column; gap: .375rem; flex: 1 1 0; min-height: 0; overflow: auto; padding: 1rem max(1.25rem, calc((100% - 112rem) / 2)) 9rem; }
+.doc-page { display: flex; flex-direction: column; gap: .375rem; flex: 1 1 0; min-height: 0; overflow: auto; padding: 1rem max(1.25rem, calc((100% - 112rem) / 2)) 9rem; scroll-padding-bottom: calc(var(--chat-h, 0px) + 1rem); }
 .doc-page > * { flex: none; }
 .doc-title { display: grid; gap: .375rem; padding: .625rem .75rem; border: 1px solid transparent; border-radius: calc(.625rem * var(--corner-k)); cursor: pointer; transition: border-color var(--t-fast); }
 .doc-title:hover { border-color: var(--line); }

@@ -348,8 +348,26 @@ function rangeEl(b, id = "card") {
   });
   canvas._in = (p) => p * total >= span.from - 0.2 && p * total <= span.to + 0.2;
   if (canvas._data) drawBars(canvas, canvas._data.peaks, { color: (p) => (canvas._in(p) ? "#F2FF59" : "#8A76E8") });
+  // the handles are sliders for the keyboard too: the arrows move one by a second (Shift: five), and the part is cut again a moment after
+  const least = Math.min(5, total);
+  const handle = (left) => {
+    const at = left ? span.from : span.to;
+    const el = h(`i.jt-h.is-${left ? "l" : "r"}`, { title: `Drag: where the part ${left ? "starts" : "ends"}`, role: "slider", tabindex: "0", "aria-label": `Where the part ${left ? "starts" : "ends"}`,
+      "aria-valuemin": String(left ? 0 : Math.min(total, span.from + least)), "aria-valuemax": String(left ? Math.max(0, span.to - least) : total), "aria-valuenow": String(Math.round(at * 10) / 10), "aria-valuetext": mins(at) });
+    el.addEventListener("keydown", (e) => {
+      const step = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[e.key];
+      if (!step) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const by = step * (e.shiftKey ? 5 : 1);
+      const now = spanOf(b);
+      if (left) setSpan(Math.max(0, Math.min(now.to - least, now.from + by)), now.to);
+      else setSpan(now.from, Math.min(total, Math.max(now.from + least, now.to + by)));
+    });
+    return el;
+  };
   const sel = h("div.jt-sel", { dataset: { from: String(span.from), to: String(span.to) }, style: { left: `${(span.from / total) * 100}%`, width: `${((span.to - span.from) / total) * 100}%` } },
-    h("i.jt-h.is-l", { title: "Drag: where the part starts", role: "slider", "aria-label": "Where the part starts" }), h("i.jt-h.is-r", { title: "Drag: where the part ends", role: "slider", "aria-label": "Where the part ends" }), h("i.jt-rph"));
+    handle(true), handle(false), h("i.jt-rph"));
   const read = h("div.jt-readout", {}, h("span.is-from", {}, mins(span.from)), h("b", {}, `${Math.round(span.to - span.from)} SECONDS`), h("span.is-to", {}, mins(span.to)));
   const box = h("div.jt-range", { dataset: { total: String(total) } }, canvas, sel);
   // a drag changes the range as drawn; the jam is told once it lets go (the part is cut again a moment after)
