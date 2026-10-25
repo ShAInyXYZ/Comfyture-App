@@ -92,7 +92,10 @@ function flush() {
     scheduled = false;
     const active = document.activeElement;
     const held = [];
-    for (const name of pending) {
+    // what this frame draws is taken now: a redraw asked for while it draws waits for the next frame (cleared after the loop, it was lost)
+    const names = [...pending];
+    pending.clear();
+    for (const name of names) {
       const [el, render, page] = panels[name];
       if (page && page !== currentPage()) {
         stale.add(name);
@@ -114,7 +117,6 @@ function flush() {
       for (const n of el.querySelectorAll("[data-scroll-key]")) if (lists.has(n.dataset.scrollKey)) n.scrollTop = lists.get(n.dataset.scrollKey);
       if (focused && !el.contains(document.activeElement)) [...el.querySelectorAll(KEYS)].find((n) => keyName(n) === focused)?.focus({ preventScroll: true });
     }
-    pending.clear();
     for (const name of held) pending.add(name);
   });
 }
