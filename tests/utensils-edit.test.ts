@@ -408,13 +408,16 @@ test("a clip's strip of thumbnails is one picture with its frames side by side",
   assert.deepEqual(probe.body, { duration: 2, width: 320, height: 180, fps: 24, hasAudio: true, hasVideo: true });
 });
 
-test("a picture in, a picture out: the grade is one frame saved as a PNG, the export a PNG, JPG or WebP, and a clip's formats are refused", () => {
+test("a picture in, a picture out: the grade is one frame saved as a PNG (a JPEG for a JPEG), the export a PNG, JPG or WebP, and a clip's formats are refused", () => {
   const still: Probe = { path: "/data/photos/a.png", duration: 0, width: 640, height: 360, fps: 25, hasAudio: false, hasVideo: true } as any;
   const ctx = { work: "/w", videos: [still], still: true } as any;
   const graded = plan("grade", clean("grade", { preset: "filmic" }, { duration: 0 }), ctx);
   assert.equal(graded.steps.length, 1);
   assert.deepEqual([graded.steps[0].kind, graded.steps[0].ext], ["image", "png"]);
   assert.ok(graded.steps[0].args.includes("-frames:v") && !graded.steps[0].args.includes("libx264"), "one frame, no clip");
+  // a JPEG (or any picture that cannot be clear) is graded into a JPEG at its best, not a PNG ten times its size
+  const fromJpg = plan("grade", clean("grade", { preset: "cool" }, { duration: 0 }), { ...ctx, videos: [{ ...still, path: "/data/photos/a.jpg" }] });
+  assert.deepEqual([fromJpg.steps[0].ext, fromJpg.steps[0].out.endsWith("out.jpg"), fromJpg.steps[0].args.includes("-q:v")], ["jpg", true, true]);
   const webp = plan("convert", clean("convert", { format: "webp", quality: "high" }, { duration: 0 }), ctx);
   assert.deepEqual([webp.steps[0].ext, webp.steps[0].args.includes("libwebp")], ["webp", true]);
   const jpg = plan("convert", clean("convert", { format: "jpg", height: "360" }, { duration: 0 }), ctx);

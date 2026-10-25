@@ -172,7 +172,12 @@ export function atempoChain(f: number) {
 /** A picture and its encoding: one frame at a time (a preview), or the whole clip. */
 function finish(inputs: string[], filter: string, label: string | null, ctx: Ctx, audio: string[] = ["-map", "0:a?", ...AENC]): Step[] {
   const graph = label ? ["-filter_complex", filter, "-map", `[${label}]`] : ["-vf", filter, "-map", "0:v"];
-  if (ctx.still) return [{ args: [...inputs, ...graph, "-frames:v", "1", join(ctx.work, "out.png")], out: join(ctx.work, "out.png"), kind: "image", ext: "png" }];
+  // a picture stays what it was: a PNG (it may be clear) a PNG, anything else a JPEG at its best (a graded 1536 x 1024 is 2.5 MB as a PNG)
+  if (ctx.still) {
+    const png = /\.png$/i.test(String(inputs[inputs.indexOf("-i") + 1] ?? ""));
+    const out = join(ctx.work, png ? "out.png" : "out.jpg");
+    return [{ args: [...inputs, ...graph, "-frames:v", "1", ...(png ? [] : ["-q:v", "2"]), out], out, kind: "image", ext: png ? "png" : "jpg" }];
+  }
   if (ctx.preview) return [{ args: [...inputs, ...graph, "-an", "-ss", f3(ctx.preview.at), "-frames:v", "1", "-q:v", "3", join(ctx.work, "out.jpg")], out: join(ctx.work, "out.jpg"), kind: "image", ext: "jpg" }];
   return [{ args: [...inputs, ...graph, ...VENC, ...audio, ...FAST, join(ctx.work, "out.mp4")], out: join(ctx.work, "out.mp4"), kind: "video", ext: "mp4" }];
 }
