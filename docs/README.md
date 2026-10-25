@@ -44,3 +44,7 @@ Shared pieces live once and are used everywhere: the example seeder ([server/exa
 ([web/js/tour.js](../web/js/tour.js), a tour per product in [web/js/tours/](../web/js/tours/)), the pets' harnesses and their chips
 ([web/js/harnesses.js](../web/js/harnesses.js)), where renders go ([server/target.ts](../server/target.ts)), judge mode
 ([server/judge.ts](../server/judge.ts)), and the DOM helpers ([web/js/dom.js](../web/js/dom.js)).
+
+[COMPONENTS.md](COMPONENTS.md) is the full catalogue of those pieces, what is still built more than once (the projects' stores, the
+pets' server plumbing, the two ffmpeg runners, the two-press keys…), the order to merge them with the tests that guard each step, and
+the rules for new code.
