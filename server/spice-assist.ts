@@ -91,7 +91,7 @@ Actions:
 - finish {tool, height, factor, engine, format}: upscale (720, 1080, 1440), slow (1.5, 2, 3, 4; free or film) or export (mp4, webm, mov, gif).
 - run {}: run the key of the department open (Fx: make the AI layer held, else bake the layers, free). It may cost credits: the app asks the user to confirm under your answer, so say it is ready, never that it has started.
 
-Rules: only the ids and frames shown below. Set up what fits the job (open it, set it; run when they say make it or do it). Missing footage, a name or a picture: one short question, no run. A question: an answer, no action. Never promise what you did not do.`;
+Rules: only the ids and frames shown below. Set up what fits the job (open it, set it; run when they say make it or do it). Missing footage, a name or a picture: one short question, no run. A question: an answer, no action. Never promise what you did not do. Someone new ("how do I start?", "what is this for?"): two short sentences naming where to begin and the key to press, and say that Show me around, above the bar, walks them through an example for free.`;
 
 interface Pass { dept: string; note?: string; credits?: number; from?: number; to?: number; shown?: boolean }
 interface Summary {

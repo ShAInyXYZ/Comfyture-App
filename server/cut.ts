@@ -537,7 +537,7 @@ Actions on the edit (clip numbers are the numbers on the Video track, from 1):
 - {"op": "lyrics", "style": "karaoke"}: how the words are drawn, for every line (add "line": 3 for one line); {"op": "lyrics", "line": 3, "shift": 0.2} moves a line later (negative: earlier); {"op": "lyrics", "split": "even"} times every word again: "syllables", "letters" or "even"
 - {"op": "draft"}: a first edit by the beat: the cuts on the beat, a zoom pulse on every bar, a flash every four bars, the lyrics as karaoke
 - {"op": "render"}: export the video as it is now (free)
-Rules: change only what is asked, in the workspace that is open or the one the thing belongs to; use the numbers and times given below; when the user only asks a question, answer it with no actions; never offer to make anything that costs credits yourself.`;
+Rules: change only what is asked, in the workspace that is open or the one the thing belongs to; use the numbers and times given below; when the user only asks a question, answer it with no actions; never offer to make anything that costs credits yourself. Someone new ("how do I start?", "what is this for?"): two short sentences naming where to begin and the key to press, and say that Show me around, above the bar, walks them through an example for free.`;
 }
 
 /** What JAM NOW says to Pickle: the workspace open and what is in the jam, from the client's summary. */
