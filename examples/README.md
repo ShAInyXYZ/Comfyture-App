@@ -5,6 +5,7 @@ What a new user finds in each product the first time they open it. Every example
 
 | Folder | Product | One example is | Put into |
 |---|---|---|---|
+| [`kitchen/`](kitchen/) | Kitchen | a folder: `example.json` (a story, its edit, the takes it names) beside its files and `runs/<take>/` | `data/stories/`, `data/cuts/`, `data/runs/` |
 | [`stage/`](stage/) | Kitchen · Stage | a `<name>.stage.json` file (a scene with its sheets and renders) | `data/control/stages/` |
 | [`spice/`](spice/) | Spice | a folder: `shot.json` beside its passes (pictures or clips) | `data/spice-shots/` |
 | [`jam/`](jam/) | Jam | a folder: `project.json` (the video, its edit, its media) beside its files | `data/jams/`, `data/cuts/` |

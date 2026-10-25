@@ -965,7 +965,37 @@ async function putToast(spec: any, folder: string, id: string) {
   await writeProject("toasts", { id, name: text(spec.name, 60) || id, createdAt: now, updatedAt: now, ...(thumb ? { thumb } : {}), body });
 }
 
-/** The examples of each store: Spice's shots, Jam's showcase videos, Macaron's brands (Comfyture's own), Toaster's drafts. */
+/**
+ * Kitchen's example film (examples/kitchen/<id>/example.json): its takes first (each run's folder as the take log keeps it; a take of that
+ * id already here is left as it is), then the story, its files named "example:<file>", and its edit, the story's own.
+ */
+async function putStory(spec: any, folder: string, id: string) {
+  for (const run of Array.isArray(spec.runs) ? spec.runs : []) {
+    if (typeof run !== "string" || !/^[\w-]+$/.test(run)) continue;
+    const to = join(data, "runs", run);
+    if (await exists(join(to, "run.json"))) continue;
+    await mkdir(to, { recursive: true });
+    for (const file of await readdir(join(folder, "runs", run))) if (/^[\w.-]+$/.test(file)) await copyFile(join(folder, "runs", run, file), join(to, file));
+  }
+  const now = new Date().toISOString();
+  const thumb = await placeThumb(spec.thumb, folder, id, data);
+  const { body } = await placeMedia(spec.story?.body ?? {}, folder, id, data);
+  await writeProject("stories", { id, name: text(spec.name, 60) || id, createdAt: now, updatedAt: now, ...(thumb ? { thumb } : {}), body });
+  if (spec.cut?.id && /^[\w-]+$/.test(spec.cut.id)) {
+    const { body: cut } = await placeMedia(spec.cut.body ?? {}, folder, id, data);
+    await writeProject("cuts", { id: spec.cut.id, name: text(spec.cut.name, 60) || text(spec.name, 60), createdAt: now, updatedAt: now, project: id, ...(thumb ? { thumb } : {}), body: cut });
+  }
+}
+/** A retired example film goes with its edit (an edit someone worked on stays). */
+async function dropStory(id: string) {
+  await dropFrom("stories")(id);
+  for (const file of (await readdir(projectsDir("cuts")).catch(() => [] as string[])).filter((f) => f.endsWith(".json"))) {
+    const cut = await readProject("cuts", file.slice(0, -5));
+    if (cut?.project === id && cut.updatedAt === cut.createdAt) await rm(join(projectsDir("cuts"), file), { force: true });
+  }
+}
+
+/** The examples of each store: Kitchen's film, Spice's shots, Jam's showcase videos, Macaron's brands (Comfyture's own), Toaster's drafts. */
 const EXAMPLE_KINDS: Record<string, ExampleKind> = {
   "spice-shots": { name: "spice", dir: join(EXAMPLES, "spice"), spec: "shot.json", ledger: ledgerOf("spice-shots"), kept: keptIn("spice-shots"), drop: dropFrom("spice-shots"), put: putSpiceShot },
   jams: {
@@ -994,6 +1024,8 @@ const EXAMPLE_KINDS: Record<string, ExampleKind> = {
     },
   },
   toasts: { name: "toaster", dir: join(EXAMPLES, "toaster"), spec: "example.json", ledger: ledgerOf("toasts"), kept: keptIn("toasts"), drop: dropFrom("toasts"), put: putToast },
+  // (last: its edit is then the newest, the one Cut opens first)
+  stories: { name: "kitchen", dir: join(EXAMPLES, "kitchen"), spec: "example.json", ledger: ledgerOf("stories"), kept: keptIn("stories"), drop: dropStory, put: putStory },
 };
 const seedings = new Map<string, Promise<unknown>>();
 /** A store's examples, put in once per start of the server (before anything of that store is first served). */
@@ -2312,9 +2344,9 @@ await mkdir(join(data, "photos"), { recursive: true });
 await mkdir(join(data, "audio"), { recursive: true });
 await sweepFrames(data).catch(() => {});
 await reloadPresets();
-await engine.init();
-// every product's examples are in before the first page asks (examples/, server/examples.ts)
+// every product's examples are in before the first page asks, and before the take log is read (examples/, server/examples.ts)
 for (const store of Object.keys(EXAMPLE_KINDS)) await seedStore(store);
+await engine.init();
 // samples added before images had names get theirs ("chef", "dog")
 for (const f of (await readdir(join(root, "samples")).catch(() => [] as string[])).filter((f) => /\.(jpe?g|png|webp)$/i.test(f))) {
   const bytes = await readFile(join(root, "samples", f));

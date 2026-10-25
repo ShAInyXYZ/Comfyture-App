@@ -37,8 +37,12 @@ async function started(data: string, job: (get: (path: string) => Promise<any>) 
 test("a newer version of a showcase replaces an older copy nobody has touched, and keeps one that was edited", { timeout: 120000 }, async (t) => {
   const data = await mkdtemp(join(tmpdir(), "seed-"));
   t.after(() => rm(data, { recursive: true, force: true }));
-  // the first start puts them in: the trend ones at their version
+  // the first start puts them in: the trend ones at their version, and Kitchen's example film with its takes and its edit
   await started(data, async (get) => {
+    const film = (await get("api/stories")).stories.find((x: any) => x.name === "The Great Jam Chase");
+    assert.ok(film?.thumb?.startsWith("/media/photos/"), "Kitchen's example film is there, with its picture");
+    assert.ok((await get("api/runs")).filter((r: any) => r.status === "done" && r.video).length >= 3, "its three takes are in the take log at once");
+    assert.ok((await get("api/cuts")).cuts.some((c: any) => c.project === film.id), "and its edit, the story's own");
     const ids = (await get("api/jams")).jams.map((j: any) => j.id).sort();
     assert.deepEqual(ids, ["jam-hotel-lobby", "jam-test-showcase", "jam-toc-toc"], "Hotel Lobby and Toc Toc ship; Ramalama is not one of them");
   });
