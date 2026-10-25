@@ -1144,7 +1144,7 @@ export function statusOf(j = jam.jam) {
     song: b.track ? "Song made" : "No song yet",
     track: !b.track ? "No song yet" : busy("part") || jam.starting ? "Cutting…" : b.bpm ? `${Math.round(b.bpm)} BPM` : "Ready",
     words: !b.track ? "No song yet" : busy("listen") ? "Hearing…" : !lines.length ? "No words" : b.vocals ? "Word synced" : "Typed",
-    band: b.artist ? (crewById(b.artist.crew)?.name ?? "Your photo") : "Pick who",
+    band: b.artist ? (crewById(b.artist.crew)?.name ?? b.artist.name ?? "Your photo") : "Pick who",
     edit: !b.part ? "Empty" : busy("make-video") || busy("render") ? "Making…" : b.film ? "Exported" : "Draft",
   };
 }
@@ -1251,8 +1251,8 @@ function context() {
   if (ws === "song") return { ...out, song: songHook.summary(), track: track && { name: track.name, seconds: track.seconds } };
   if (ws === "track") return { ...out, track, costs: { words: costs.words } };
   if (ws === "words") return { ...out, track: track && { name: track.name, from: track.from, to: track.to, bpm: track.bpm }, words: b?.track ? { count: lines.length, heard: !!b.vocals, style: b.captions ?? "karaoke" } : null, costs: { words: costs.words } };
-  if (ws === "band") return { ...out, artist: crew?.name ?? (b?.artist ? "a photo" : null), dance: b?.dance?.duration ?? null, vibe: b?.style || null, shots: (b?.shots ?? []).map((s) => ({ kind: s.kind, from: s.from, to: s.to })), costs: { video: costs.video } };
-  return { ...out, track: track && { name: track.name, bpm: track.bpm, from: track.from, to: track.to }, artist: crew?.name ?? (b?.artist ? "a photo" : null), shots: (b?.shots ?? []).map((s) => ({ kind: s.kind, from: s.from, to: s.to })), costs: { video: costs.video } };
+  if (ws === "band") return { ...out, artist: crew?.name ?? b?.artist?.name ?? (b?.artist ? "a photo" : null), dance: b?.dance?.duration ?? null, vibe: b?.style || null, shots: (b?.shots ?? []).map((s) => ({ kind: s.kind, from: s.from, to: s.to })), costs: { video: costs.video } };
+  return { ...out, track: track && { name: track.name, bpm: track.bpm, from: track.from, to: track.to }, artist: crew?.name ?? b?.artist?.name ?? (b?.artist ? "a photo" : null), shots: (b?.shots ?? []).map((s) => ({ kind: s.kind, from: s.from, to: s.to })), costs: { video: costs.video } };
 }
 
 /** Pickle's own actions (the part, the words, the captions, the artist, the vibe, the shots, a window): what he did, in short. Nothing here costs credits. */

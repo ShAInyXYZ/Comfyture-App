@@ -43,7 +43,7 @@ function leadCard(b) {
   return h("article.jm-cast.is-lead", { dataset: { slot: "lead" } },
     h("button.jm-cast-pic", { type: "button", title: "Change the artist", on: { click: () => open("lead") } }, figure(a)),
     h("div.jm-cast-meta", {},
-      h("div.jm-cast-who", {}, h("b", {}, crew?.name ?? "Your photo"), h("span.jm-role", {}, ROLES.lead[0])),
+      h("div.jm-cast-who", {}, h("b", {}, crew?.name ?? a.name ?? "Your photo"), h("span.jm-role", {}, ROLES.lead[0])),
       toggle(lipsyncOn(b), "Lip-sync", () => setLipsync(!lipsyncOn(b)), "Sung parts are performance shots, the lips following the vocals. Off: they become dance or b-roll shots instead")));
 }
 
@@ -220,7 +220,7 @@ registerWindow("artist", {
     };
     const current = slot === "lead" ? null : cast[slot];
     return [
-      h("div.jm-slots", {}, tab("lead", "The lead", b?.artist ? (crewById(b.artist.crew)?.name ?? "Your photo") : "Pick who"),
+      h("div.jm-slots", {}, tab("lead", "The lead", b?.artist ? (crewById(b.artist.crew)?.name ?? b.artist.name ?? "Your photo") : "Pick who"),
         ...[0, 1].map((i) => tab(i, `Performer ${i + 2}`, cast[i] ? cast[i].name : i === cast.length ? "Add one" : "—")).filter((_, i) => i <= cast.length)),
       crewGrid(b, pick),
       h("div.jm-row", {},
