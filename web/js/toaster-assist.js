@@ -8,9 +8,10 @@ import { changed, toast, writer } from "./store.js";
 import { registerSurface } from "./surfaces.js";
 import { api } from "./api.js";
 import {
-  toaster, body, partsNow, editParts, select, setWords, setRatio, keepCamera, modelNow, hasClay, renderFrame, renderSheet, make3d, price3d, priceNow,
+  toaster, body, partsNow, editParts, select, setWords, setRatio, keepCamera, modelNow, hasClay, renderFrame,
   setFocal, saveCamera, recallCamera, repose,
 } from "./toaster.js";
+import { loadTarget, route, modelPrice, sheetPrice, costOf, objectsNow, modelOf, makeThem } from "./toaster-3d.js";
 import { tagsOf, cleanPart, newPart, newAssetPart, newCharacterPart, freeSpot, PALETTE, colorName, RATIOS, isAsset, isCharacter, roomOf, placeAgainst, placeNear, topOf } from "./toaster-model.js";
 
 /** Crumpet's conversation: Toaster's own, never mixed with another product's. `pictures` is the photo waiting to go with the next words. */
@@ -56,8 +57,8 @@ export function summary() {
     cameras: b.cameras.map((k) => ({ name: k.name, from: k.position.map(r2), at: k.target.map(r2), frame: k.ratio, focal: k.focal })),
     words: { what: b.what, scene: b.scene },
     renders: b.renders.filter((r) => r.status === "done").length,
-    turnaround: b.sheets.some((s) => s.status === "done"),
-    model3d: b.models.some((m) => m.status === "done"),
+    sheets: b.sheets.filter((s) => s.part && s.status === "done").length,
+    models: b.models.filter((m) => m.part && m.status === "done").length,
   };
 }
 
@@ -284,11 +285,15 @@ function offer(op) {
   const m = modelNow();
   const gpu = (c) => (c === 0 ? "GPU time" : typeof c === "number" ? `≈ ${c} cr` : "price at the run");
   if (op === "toast") return hasClay() && m ? { label: "Toast it", cost: m.router ? `≈ ${m.credits} cr` : "GPU time", running: "Toasting the frame", done: "Done: it is in Render", failed: "It didn't toast" } : null;
-  if (op === "turnaround") return hasClay() && m ? { label: "Toast the turnaround", cost: m.router ? `≈ ${m.credits} cr` : "GPU time", running: "Toasting the four views", done: "Done: it is in Turnaround", failed: "It didn't toast" } : null;
-  if (op === "model3d") return body()?.sheets.some((s) => s.status === "done") ? { label: "Make the 3D model", cost: gpu(priceNow()?.credits), running: "Making the 3D model", done: "Done: it is in 3D model", failed: "It didn't finish" } : null;
+  if (op === "model3d") {
+    const todo = objectsNow().filter((p) => !modelOf(p.id));
+    if (!todo.length || !toaster.view) return null;
+    const cost = costOf(todo.map((p) => p.id));
+    return { label: `Make the ${todo.length === 1 ? "object" : `${todo.length} objects`} in 3D`, cost: cost.credits > 0 ? cost.words : route() === "local" ? "your GPU" : "GPU time", running: "Making the objects, one by one", done: "Done: they are in the new scene", failed: "Some did not finish" };
+  }
   return null;
 }
-const why = { toast: "Nothing to toast yet: build something first", turnaround: "Nothing to toast yet: build something first", model3d: "Toast a turnaround first: the model is made from it" };
+const why = { toast: "Nothing to toast yet: build something first", model3d: "Every object is made already, or there is nothing to make" };
 
 /** The bar's words, on Toaster: Crumpet reads the draft (and the photo, when one is attached) and builds. */
 export async function askToaster(text) {
@@ -299,7 +304,7 @@ export async function askToaster(text) {
   chat.pictures = [];
   chat.busy = picture ? "Looking at the photo" : "Thinking";
   changed("assistant");
-  if (!priceNow()) price3d();
+  loadTarget();
   try {
     const out = await post({ model: writer("assistant"), messages: chat.messages.filter((m) => !m.error).slice(-8).map(({ role, text, did }) => ({ role, text, did })), toaster: summary(), ...(picture ? { picture: { file: picture.file } } : {}) });
     const actions = out.actions ?? [];
@@ -311,7 +316,7 @@ export async function askToaster(text) {
     for (const a of actions.filter((x) => x.op === "camera" || x.op === "words")) did.push(...look(a));
     const message = { role: "assistant", text: out.reply || (did.length ? "Done." : "Nothing to change."), did, failed, toaster: true, ...(parts.length ? { undo: true, before } : {}) };
     // a render costs credits: it is only offered, with its price; the key under the answer is the user's yes
-    const ask = actions.find((a) => ["toast", "turnaround", "model3d"].includes(a.op));
+    const ask = actions.find((a) => ["toast", "model3d"].includes(a.op));
     if (ask) {
       const o = offer(ask.op);
       if (!o) failed.push(why[ask.op]);
@@ -329,7 +334,7 @@ export async function askToaster(text) {
   }
 }
 
-/** The user's yes to what Crumpet offered: it runs now (a render, the turnaround, or the 3D model from the last turnaround). */
+/** The user's yes to what Crumpet offered: it runs now (a render, or the scene's objects made in 3D, one by one). */
 export async function confirmToaster(message) {
   const c = message.confirm;
   if (c?.state !== "asking") return;
@@ -337,11 +342,10 @@ export async function confirmToaster(message) {
   changed("assistant");
   try {
     if (c.op === "toast") await renderFrame();
-    else if (c.op === "turnaround") await renderSheet();
-    else if (c.op === "model3d") await make3d(body().sheets.find((s) => s.status === "done")?.id);
+    else if (c.op === "model3d") await makeThem(objectsNow().filter((p) => !modelOf(p.id)).map((p) => p.id));
     const b = body();
-    const last = c.op === "toast" ? b.renders[0] : c.op === "turnaround" ? b.sheets[0] : b.models[0];
-    c.state = last?.status === "failed" ? "failed" : "done";
+    const failed = c.op === "toast" ? b.renders[0]?.status === "failed" : objectsNow().some((p) => !modelOf(p.id));
+    c.state = failed ? "failed" : "done";
   } catch (e) {
     c.state = "failed";
     toast(e.message, { tone: "crit" });

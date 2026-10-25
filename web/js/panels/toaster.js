@@ -9,8 +9,10 @@
 // in the order things happen: the CAMERA to render from (the slots kept in the Scene), what is SENT (the clay frame and the control maps
 // as tiles, the first one leads; under them the pictures that go with them), the image MODEL, the frame and the strength, and Toast it
 // with Write beside it.
-// 3D (turning it into a model): the same left column; in the middle the TURNAROUND (four clay views, rendered as one sheet) above the 3D
-// MODEL made from it on Comfy Cloud, both big, with Crumpet's bar under them. No right column.
+// 3D (making the objects real, ONE AT A TIME): the same left column, each object with where it is (waiting, sheet, model, done) and a
+// switch for being made in 3D; in the middle a bar (the model that draws the sheets, and Make them one by one), then the OBJECT in hand
+// (its four views drawn by an image model, cut for Trellis2) beside the NEW SCENE where the finished models stand where their clay was,
+// with Crumpet's bar under them. No right column. toaster-3d.js does the making.
 // The parts and the scene are called by @tags in the words (pills.js). What is toasted draws on "toaster-runs", so a render's progress
 // never redraws a field in use.
 import { h, icon, sprite } from "../dom.js";
@@ -25,7 +27,7 @@ import {
   toaster, describeParts, body, partsNow, selectedParts, sync, loadDrafts, pick, select, selectAll,
   setTool, toggleSnap, addPart, addPiece, addCharacter, reposeCharacter, setProps, colourAllByKind, applyTransforms, removeSelected, removePart, duplicateSelected, mirrorSelected, dropSelected,
   toggleHidden, undoParts, redoParts, canUndo, canRedo, setWords, setRatio, setModel, keepCamera, setFocal, saveCamera, recallCamera, onCamera, removeCamera, renameCamera, loadModels, modelNow, hasClay,
-  renderFrame, setStrength, renderSheet, forget, showRender, useSettings, setCompare, price3d, priceNow, make3d, putOnStage, isArmed, arm, disarm, toggleMap,
+  renderFrame, setStrength, forget, showRender, useSettings, setCompare, putOnStage, isArmed, arm, disarm, toggleMap,
   setMode, addPartRef, removePartRef, addSceneRef, removeSceneRef, setPrompt, framePlan, writeWords,
 } from "../toaster.js";
 import { SHAPES, PALETTE, RATIOS, MAPS, POSE_SLIDERS, roundLabel, hasSides, colorName, shapeOf, tagsOf, describeOf, isAsset, isCharacter, plainFrame } from "../toaster-model.js";
@@ -33,12 +35,17 @@ import { CRUMPET } from "../toaster-harness.js";
 import { setOffers } from "../harnesses.js";
 import { chat as toasterChat, askToaster, addToasterPictures, tagHooks } from "../toaster-assist.js";
 import { projectBar, drawProjectBar } from "./toaster-projects.js";
+import {
+  gen, sheetOf, sheetRun, modelOf, modelRun, stateOf, objectsNow, sheetModel, setSheetModel, setSolid, loadTarget, loadCloudPrice, route, modelPrice, sheetPrice, costOf,
+  isArmed as askedFor, arm as askFor, disarm as askNot, makeObject, makeThem, stopQueue, forgetObject, makeSheet, makeModel,
+} from "../toaster-3d.js";
+import { wants3d, tiltOf } from "../toaster-model.js";
 
 let shell = null;
 // the slot Crumpet's bar docks in: the same element every time the page is built, so the bar goes with it
 let chatSlot = null;
 let mounting = null;
-let model3d = null;
+let scene3d = null;
 
 const TOOLS = [
   ["select", "web-cursor", "Select", "Q"],
@@ -64,7 +71,7 @@ let modesEl = null;
 const MODES = [
   ["scene", "view-persp", "Scene", "the viewport in the middle: block out, place, aim", "T"],
   ["render", "scene-render", "Render", "the render studio: say what it is, add pictures, toast it", "T"],
-  ["3d", "model-3d", "3D", "the turnaround and the 3D model made from it", "D"],
+  ["3d", "model-3d", "3D", "the objects made real, one at a time, in a new scene", "D"],
 ];
 
 function build(el) {
@@ -112,8 +119,9 @@ function build(el) {
   s.mapsCard = h("section.ts-card.ts-maps-card", { "aria-label": "Sent" });
   s.modelCard = h("section.ts-card.ts-recipe-model", { "aria-label": "Model and strength" });
   s.toastBar = h("div.ts-recipe-toast");
-  s.sheet = h("section.ts-card.ts-sheet", { "aria-label": "Turnaround" });
-  s.model = h("section.ts-card.ts-model", { "aria-label": "3D model" });
+  s.bar3d = h("section.ts-card.ts-bar3d", { "aria-label": "Make the objects" });
+  s.object = h("section.ts-card.ts-object", { "aria-label": "The object in hand" });
+  s.newScene = h("section.ts-card.ts-newscene", { "aria-label": "The new scene" });
   s.right = h("aside.ts-col.ts-right.ts-recipe", { "aria-label": "Recipe" });
   s.recipeHead = h("h2.ts-label.ts-recipe-head", {}, "Recipe");
   buildStudio(s);
@@ -145,14 +153,16 @@ function layout() {
   s.laid = mode;
   for (const m of ["scene", "render", "3d"]) s.root.classList.toggle(`is-${m}`, mode === m);
   s.addCard.hidden = mode !== "scene";
-  s.partsLabel.textContent = mode === "scene" ? "Parts" : "In the frame";
+  s.partsLabel.textContent = mode === "scene" ? "Parts" : mode === "3d" ? "Objects, in order" : "In the frame";
+  // (leaving the 3D page frees its viewer: the scene is built again when it comes back)
+  if (mode !== "3d" && scene3d) (scene3d.handle?.dispose(), (scene3d = null));
   if (mode !== "scene" && drawer) openDrawer(null);
   if (mode === "render") {
     s.mid.replaceChildren(s.studio, s.brief, chatSlot);
     s.right.replaceChildren(s.recipeHead, s.cameraCard, s.mapsCard, s.modelCard, s.toastBar, s.viewport);
     s.root.replaceChildren(s.left, s.mid, s.right);
   } else if (mode === "3d") {
-    s.mid.replaceChildren(s.sheet, s.model, s.viewport, chatSlot);
+    s.mid.replaceChildren(s.bar3d, h("div.ts-3d", {}, s.object, s.newScene), s.viewport, chatSlot);
     s.root.replaceChildren(s.left, s.mid);
   } else {
     s.mid.replaceChildren(s.viewport, chatSlot);
@@ -217,6 +227,16 @@ function nameField(current, done) {
   return input;
 }
 
+/** The 3D page's mark on an object of the list: where it is (waiting, drawing its sheet, its model…), and the switch for making it in 3D or leaving it clay. */
+function solidKey(p) {
+  const on = wants3d(p);
+  const state = on ? stateOf(p.id) : null;
+  return h(`button.ts-solid${on ? ".is-on" : ""}${state ? `.is-${state}` : ""}`, {
+    type: "button", "aria-pressed": String(on), "aria-label": `${p.name}: ${on ? STATE_WORDS[state] : "clay"}`,
+    title: on ? `Made in 3D (${STATE_WORDS[state]}) — press to leave it as clay` : "Left as clay — press to make it in 3D",
+    on: { click: (e) => (e.stopPropagation(), setSolid(p.id, !on)) },
+  }, on ? STATE_WORDS[state] : "clay");
+}
 function drawParts() {
   // (a part being renamed keeps its field, its words and its caret: the list catches up once the name is in)
   const field = shell.parts.querySelector("input.ts-rename");
@@ -244,6 +264,7 @@ function drawParts() {
       renaming === p.id ? nameField(p.name, (v) => setProps({ name: v }, { ids: [p.id] })) : toaster.mode !== "scene"
         ? h("span.ts-name", { title: "Double-click to rename" }, p.name, tags.has(p.id) ? h("code.ts-at-mini", {}, `@${tags.get(p.id)}`) : null)
         : h("span.ts-name", { title: "Double-click to rename" }, p.name),
+      toaster.mode === "3d" ? solidKey(p) : null,
       h("button.ts-mini", { type: "button", "aria-pressed": String(!!p.hidden), title: p.hidden ? "Show" : "Hide", "aria-label": p.hidden ? `Show ${p.name}` : `Hide ${p.name}`, on: { click: (e) => (e.stopPropagation(), toggleHidden(p.id)) } }, sprite("eye")),
       h("button.ts-mini", { type: "button", title: "Remove", "aria-label": `Remove ${p.name}`, on: { click: (e) => (e.stopPropagation(), removePart(p.id)) } }, icon("trash")));
     // a part with a sheet shows it on hover
@@ -1186,19 +1207,22 @@ function comparePic(r) {
 
 // the four clay views as the turnaround will send them, drawn small a moment after the clay changes
 let strip = null;
+let stripOf = null;
 let stripTimer = 0;
 function stripSoon() {
   clearTimeout(stripTimer);
   stripTimer = setTimeout(() => {
     if (!toaster.view || currentPage() !== "toaster" || toaster.mode === "scene") return;
     if (toaster.mode === "3d") {
-      // the 3D page: the four views, as the turnaround will send them
+      // the 3D page: the clay of the object in hand, in the four views its sheet is drawn from
+      const id = focus3d()?.id;
       try {
-        strip = hasClay() ? toaster.view.sheetStill({ scale: 0.25, type: "image/jpeg", quality: 0.88 }).url : null;
+        strip = id && toaster.view.objectSheetStill(id, { cell: 256, type: "image/jpeg", quality: 0.88 })?.url;
       } catch {
         strip = null;
       }
-      const img = shell?.sheet.querySelector("img.ts-clay-strip");
+      stripOf = id;
+      const img = shell?.object.querySelector("img.ts-clay-strip");
       if (img && strip) img.src = strip;
       else drawRuns();
       return;
@@ -1220,89 +1244,149 @@ function stripSoon() {
   }, 450);
 }
 
-/** The turnaround: the sheet last toasted (the clay of that moment under it while it renders), else the four clay views as they are now. */
-let sheetClay = false;
-function drawSheet() {
+// ---------------------------------------------------------------- the 3D page: the objects, one at a time
+
+/** The object in hand on the 3D page: the one being made, else the one selected, else the first not made yet, else the first. */
+function focus3d() {
+  const objs = objectsNow();
+  return objs.find((p) => p.id === gen.active?.id) ?? objs.find((p) => toaster.selected.includes(p.id)) ?? objs.find((p) => !modelOf(p.id)) ?? objs[0] ?? null;
+}
+const STATE_WORDS = { waiting: "to do", sheet: "drawing…", drawn: "sheet", model: "3D…", done: "3D" };
+const sheetLabel = () => sheetModel()?.short ?? sheetModel()?.name ?? "the image model";
+
+/** The bar over the page: the model that draws the sheets, what the whole would cost, and Make them one by one (or Stop). */
+function drawBar3d() {
   const b = body();
-  const s = b.sheets[0];
-  const m = modelNow();
-  const busy = s?.status === "running";
-  const done = s?.status === "done";
-  const clayNow = () => (strip && hasClay() ? h("img.ts-clay-strip", { src: strip, alt: "The four clay views: front, left, back, right", draggable: false }) : h("div.ts-sheet-pic.is-empty", {}, "The four clay views show here."));
-  let pic;
-  if (busy) pic = h("div.ts-sheet-pic.is-running", {}, s.frame ? h("img.ts-under", { src: s.frame.url, alt: "", draggable: false }) : null, progress(s, "Toasting the four views"));
-  else if (s?.status === "failed") pic = h("div.ts-sheet-pic.is-failed", {}, icon("close"), h("span", {}, s.error ?? "That didn't work."));
-  else if (done && !sheetClay) pic = h("button.ts-sheet-pic", { type: "button", title: "Look at it, full size", on: { click: () => viewImage(s.photo.url) } }, h("img", { src: s.photo.url, alt: "", draggable: false }));
-  else pic = clayNow();
-  shell.sheet.replaceChildren(
-    head("Turnaround", b.sheets,
-      keyIcon(sprite("view-persp"), sheetClay ? "Show the toasted sheet" : "Show the clay views as they are now", () => ((sheetClay = !sheetClay), drawSheet()), { pressed: sheetClay, disabled: !done, small: true }),
-      keyIcon(icon("trash"), "Forget this turnaround — it stays in the Library", () => forget("sheets", s.id), { disabled: !s || busy, small: true })),
-    h("div.ts-sheet-body", {}, pic,
-      h("div.ts-model-side", {},
-        h("p.ts-meta", {}, busy ? `${m?.short ?? m?.name ?? "The model"} · ${Math.round((s.progress ?? 0) * 100)}%` : done && s.at ? `The four views · ${new Date(s.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Front, left, back, right: one sheet, so they agree"),
-        h("button.key.is-primary.ts-wide", { type: "button", disabled: busy || !m || !hasClay(), title: "Render the four views as one sheet, so they agree: the 3D model is made from it", on: { click: () => ((sheetClay = false), renderSheet()) } },
-          sprite("sheet-turnaround"), h("span", {}, busy ? "Toasting…" : "Toast the turnaround"), m ? h("em", {}, priceOf(m)) : null))));
+  if (!b || !shell) return;
+  const todo = objectsNow().filter((p) => !modelOf(p.id)).map((p) => p.id);
+  const busy = !!gen.active || gen.queue.length > 0;
+  const cost = costOf(todo);
+  const t = gen.target;
+  const free = cost.credits === 0;
+  const words = free ? (route() === "local" ? "your GPU" : "GPU time") : cost.words;
+  const models = modelItems();
+  const asking = askedFor("queue");
+  const now = gen.active ? partsNow().find((p) => p.id === gen.active.id) : null;
+  const key = busy
+    ? h("button.key.ts-wide", { type: "button", disabled: gen.stopping, on: { click: stopQueue } }, icon("close"), h("span", {}, gen.stopping ? "Stopping after this one…" : "Stop after this one"))
+    : asking
+      ? h("div.ts-armed", {},
+        h("button.key.is-primary.ts-wide", { type: "button", on: { click: () => (askNot(), void makeThem(todo)) } }, h("span", {}, "Yes, make them"), h("em", {}, cost.words)),
+        h("button.key.ts-not-now", { type: "button", on: { click: askNot } }, "Not now"))
+      : h("button.key.is-primary.ts-wide", { type: "button", disabled: !todo.length || !toaster.view, title: todo.length ? "Each object in the list, from its sheet to its model, one after the other" : "Every object is made", on: { click: () => (free ? void makeThem(todo) : askFor("queue")) } },
+        sprite("model-3d"), h("span", {}, todo.length ? `Make ${todo.length === 1 ? "the object" : `the ${todo.length} objects`}, one by one` : "All made"), todo.length ? h("em", {}, words) : null);
+  shell.bar3d.replaceChildren(...[
+    h("div.ts-bar3d-row", {},
+      h("div.ts-setting", {}, h("span.ts-label", {}, "Sheets drawn by"),
+        models.length ? h("div.ts-pick", {}, dropdown({ label: "Image model for the sheets", value: sheetModel()?.id, items: models, onChange: setSheetModel, note: "Draws each object's four views from its clay" })) : h("span.ts-note", {}, "No image model yet")),
+      h("div.ts-setting", {}, h("span.ts-label", {}, "Models made by"),
+        h("p.ts-where", { title: t?.local?.ok ? `ComfyUI at ${t.local.url}` : t?.local?.why ?? "" }, route() === "local" ? "Trellis2 on your ComfyUI" : "Pixal3D on Comfy Cloud", h("em", {}, route() === "local" ? "your GPU" : modelPrice().words))),
+      h("span.spacer"), key),
+    busy ? h("p.ts-queue", {}, h("span.typing", {}, h("i"), h("i"), h("i")), h("span", {}, now ? `${now.name}: ${gen.active.step === "sheet" ? `${sheetLabel()} is drawing its four views` : modelRun(now.id)?.stage ?? "making its model"}` : "Next…"),
+      h("b", {}, `${objectsNow().length - gen.queue.length + 1} of ${objectsNow().length}`)) : null].filter(Boolean));
+  if (route() === "cloud") loadCloudPrice();
 }
 
-/** The 3D model: it turns in its well on the left; what made it, its key and what to do with it on the right. */
-function drawModel() {
+/** The object in hand: its sheet (or its clay in the four views before it has one), the three steps, and the keys. */
+function drawObject3d() {
   const b = body();
-  const m = b.models[0];
-  const sheet = b.sheets.find((s) => s.status === "done");
-  const busy = m?.status === "running";
-  const price = priceNow();
-  const cost = price ? (price.credits > 0 ? `≈ ${price.credits} cr` : price.credits === 0 ? "GPU time" : "") : "";
-  const armed = isArmed("3d");
-  let well;
-  if (busy) well = h("div.ts-well.is-running", {}, progress(m, "On Comfy Cloud"));
-  else if (m?.status === "failed") well = h("div.ts-well.is-failed", { title: m.error ?? "" }, icon("close"), h("span", {}, m.error ?? "That didn't work."));
-  else if (m?.status === "done") well = h("div.ts-well.ts-model-view", { title: "Drag to turn it" });
-  else well = h("div.ts-well.is-empty", {}, sprite("model-3d"));
-  const key = armed
+  if (!b || !shell) return;
+  const p = focus3d();
+  if (!p) return void shell.object.replaceChildren(head("Object", []), h("p.ts-empty", {}, "Add something to the scene: each object is made real here, one at a time."));
+  const state = stateOf(p.id);
+  const s = sheetRun(p.id);
+  const m = modelRun(p.id);
+  const mine = gen.active?.id === p.id;
+  const busy = !!gen.active || gen.queue.length > 0;
+  const sheet = sheetOf(p.id);
+  const twin = objectsNow().filter((q) => q.id !== p.id && q.shape === p.shape && q.asset === p.asset && q.made === p.made).length;
+  if (stripOf !== p.id) stripSoon();
+  let pic;
+  if (s?.status === "running") pic = h("div.ts-obj-pic.is-running", {}, s.frame ? h("img.ts-under", { src: s.frame.url, alt: "", draggable: false }) : null, progress(s, `${s.modelName ?? sheetLabel()} is drawing its four views`));
+  else if (sheet && gen.look !== "clay") pic = h("button.ts-obj-pic", { type: "button", title: "Look at it, full size", on: { click: () => viewImage(sheet.photo.url) } }, h("img", { src: sheet.photo.url, alt: `${p.name}: front, back, left and right`, draggable: false }));
+  else pic = strip && stripOf === p.id ? h("img.ts-obj-pic.ts-clay-strip", { src: strip, alt: `${p.name}'s clay: front, back, left and right`, draggable: false }) : h("div.ts-obj-pic.is-empty", {}, "Its four clay views show here.");
+  const step = (n, label, note, on, doing, fail) => h(`li.ts-step${on ? ".is-done" : ""}${doing ? ".is-doing" : ""}${fail ? ".is-failed" : ""}`, {}, h("i", {}, on ? "✓" : String(n)), h("span", {}, label), h("em", {}, note));
+  const modelNote = m?.status === "running" ? `${m.stage ?? "making"} · ${Math.round((m.progress ?? 0) * 100)}%` : m?.status === "done" ? (m.via === "cloud" ? "Pixal3D" : "Trellis2") : m?.status === "failed" ? "failed" : route() === "local" ? "your GPU" : modelPrice().words;
+  const price = costOf([p.id]);
+  const asking = askedFor(p.id);
+  const go = () => void makeObject(p.id);
+  const key = asking
     ? h("div.ts-armed", {},
-      h("button.key.is-primary.ts-wide", { type: "button", on: { click: () => (disarm(), make3d(sheet.id)) } }, h("span", {}, "Yes, make it"), cost ? h("em", {}, cost) : null),
-      h("button.key.ts-not-now", { type: "button", on: { click: disarm } }, "Not now"))
-    : h("button.key.is-primary.ts-wide", { type: "button", disabled: busy || !sheet, title: sheet ? "Pixal3D, on Comfy Cloud: a textured 3D model from the four views" : "Toast a turnaround first: the model is made from it", on: { click: () => arm("3d") } },
-      sprite("model-3d"), h("span", {}, busy ? "Making…" : "Make the 3D model"), cost ? h("em", {}, cost) : null);
-  const done = m?.status === "done";
-  shell.model.replaceChildren(
-    head("3D model", b.models),
-    h("div.ts-model-body", {},
-      well,
+      h("button.key.is-primary.ts-wide", { type: "button", on: { click: () => (askNot(), go()) } }, h("span", {}, "Yes, make it"), h("em", {}, price.words)),
+      h("button.key.ts-not-now", { type: "button", on: { click: askNot } }, "Not now"))
+    : h("button.key.is-primary.ts-wide", { type: "button", disabled: busy || !toaster.view || state === "done", on: { click: () => (price.credits > 0 ? askFor(p.id) : go()) } },
+      sprite("model-3d"), h("span", {}, state === "done" ? "Made" : sheet ? "Make its model" : "Make this one"), state !== "done" ? h("em", {}, price.credits > 0 ? price.words : route() === "local" ? "your GPU" : "GPU time") : null);
+  shell.object.replaceChildren(
+    head(p.name, [s, m].filter(Boolean),
+      keyIcon(sprite("view-persp"), gen.look === "clay" ? "Show its sheet" : "Show its clay, as the sheet is drawn from it", () => ((gen.look = gen.look === "clay" ? "sheet" : "clay"), drawObject3d()), { pressed: gen.look === "clay", disabled: !sheet, small: true }),
+      keyIcon(sprite("image-history"), "Draw its sheet again, with the model that is chosen", () => void makeObject(p.id, { again: true }), { disabled: busy || !toaster.view || !sheet, small: true }),
+      keyIcon(icon("trash"), "Forget its sheet and model — the files stay in the Library", () => forgetObject(p.id), { disabled: busy || !(s || m), small: true })),
+    h("div.ts-obj-body", {}, pic,
       h("div.ts-model-side", {},
-        h("p.ts-meta", {}, busy ? `Pixal3D · ${Math.round((m.progress ?? 0) * 100)}%` : done ? `Pixal3D · ${new Date(m.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : sheet ? "Pixal3D multi-view, from the turnaround" : "Made from a turnaround"),
+        h("p.ts-meta", {}, STATE_WORDS[state] === "waiting" ? `${tiltOf(p) > 10 ? "Seen from above" : "Seen from the front"}, four views` : sheet ? `${s.modelName ?? "Sheet"} · ${sheet.cost ?? ""}`.trim() : "Drawing…", twin ? ` · one of ${twin + 1} alike: its own variation` : ""),
+        h("ol.ts-steps", {},
+          step(1, "Draw its four views", s?.status === "running" ? `${Math.round((s.progress ?? 0) * 100)}%` : sheet ? sheet.modelName ?? "" : s?.status === "failed" ? "failed" : sheetPrice().words, !!sheet, s?.status === "running", s?.status === "failed"),
+          step(2, "Cut them: front, back, left, right", sheet ? "ready" : "", m?.status === "done", m?.status === "running" && (m.progress ?? 0) < 0.04),
+          step(3, "Make its model", modelNote, m?.status === "done", m?.status === "running", m?.status === "failed")),
+        s?.status === "failed" || m?.status === "failed" ? h("p.ts-err", {}, icon("close"), h("span", {}, (m?.status === "failed" ? m.error : s.error) ?? "That didn't work.")) : null,
         key,
-        h("div.ts-keys", {},
-          keyIcon(icon("download"), "Download the 3D file", null, { href: m?.url, download: done ? fileName(toaster.draft?.name, m.url) : undefined, disabled: !done }),
-          keyIcon(sprite("model-import"), "Put it on the Stage, as a prop", () => putOnStage(m).catch((e) => toast(e.message, { tone: "crit" })), { disabled: !done }),
-          h("span.spacer"),
-          keyIcon(icon("trash"), "Forget this model — its file stays", () => forget("models", m.id), { disabled: !m || busy })))));
-  // the model turns in its well (one viewer, made again only for another file)
-  const host = shell.model.querySelector(".ts-model-view");
-  if (host && done) {
-    if (model3d?.url === m.url) host.replaceWith(model3d.el);
-    else {
-      model3d?.handle?.dispose();
-      model3d = { url: m.url, el: host, handle: null };
-      const mine = model3d;
-      import("../toaster-glb.js").then(({ mountModel }) => {
-        if (model3d !== mine) return;
-        mine.handle = mountModel(host, m.url);
-        mine.handle.ready?.catch((e) => (host.textContent = e.message));
-      });
-    }
-  } else if (model3d && !host) {
-    model3d.handle?.dispose();
-    model3d = null;
+        mine || !m?.url ? null : h("div.ts-keys", {},
+          keyIcon(icon("download"), "Download its 3D file", null, { href: m.url, download: fileName(p.name, m.url) }),
+          keyIcon(sprite("model-import"), "Put it on the Stage, as a prop", () => putOnStage(m, p.name).catch((e) => toast(e.message, { tone: "crit" })))))));
+}
+
+/** The new scene: the finished models where their clay stood, the rest still clay. */
+function drawNewScene3d() {
+  const b = body();
+  if (!b || !shell) return;
+  if (!scene3d) {
+    scene3d = { el: h("div.ts-scene3d", { title: "Drag to turn the scene" }), handle: null };
+    const mine = scene3d;
+    import("../toaster-scene3d.js").then(({ mountScene }) => {
+      if (scene3d !== mine) return;
+      mine.handle = mountScene(mine.el);
+      drawNewScene3d();
+    }).catch((e) => (mine.el.textContent = `The viewer could not start: ${e.message}`));
   }
+  const made = objectsNow().filter((p) => modelOf(p.id)).length;
+  const total = objectsNow().length;
+  const say = h("p.ts-meta", {}, made ? `${made} of ${total} objects are real 3D; the rest stays clay` : "Each model stands here where its clay was");
+  shell.newScene.replaceChildren(
+    head("New scene", b.models,
+      keyIcon(sprite("view-persp"), "Frame the whole scene", () => scene3d?.handle?.reframe(), { small: true }),
+      keyIcon(icon("download"), "Download the scene as one GLB", () => downloadScene(), { disabled: !made, small: true }),
+      keyIcon(sprite("model-import"), "Put every model on the Stage, as props", () => putAllOnStage(), { disabled: !made, small: true })),
+    scene3d.el, say);
+  scene3d.handle?.update(partsNow(), (id) => modelOf(id)?.url);
+}
+async function downloadScene() {
+  try {
+    const blob = await scene3d.handle.exportGlb();
+    const a = h("a", { href: URL.createObjectURL(blob), download: fileName(`${toaster.draft?.name ?? "Toaster"} scene`, "x.glb") });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  } catch (e) {
+    toast(`The scene could not be saved: ${e.message}`, { tone: "crit" });
+  }
+}
+async function putAllOnStage() {
+  for (const p of objectsNow()) {
+    const m = modelOf(p.id);
+    if (m) await putOnStage(m, p.name, { quiet: true }).catch((e) => toast(`${p.name}: ${e.message}`, { tone: "crit" }));
+  }
+  toast("The models are in the Stage's assets.", { action: { label: "Open the Stage", run: () => (location.hash = "#/stage") } });
 }
 
 function drawRight() {
   if (!shell || !body() || toaster.mode === "scene") return;
   if (toaster.mode === "render") return void (drawMaps(), drawRender());
-  drawSheet();
-  drawModel();
+  loadTarget();
+  drawParts();
+  drawBar3d();
+  drawObject3d();
+  drawNewScene3d();
 }
 
 // ---------------------------------------------------------------- the page
@@ -1312,7 +1396,6 @@ export function renderToaster(el) {
   // (after a failure only "Try again" reads the drafts again: a redraw does not, or a failing read would ask over and over)
   if (!toaster.error) loadDrafts();
   if (!toaster.models) loadModels();
-  if (!priceNow()) price3d();
   // the drafts could not be read: say why, and how to put it right, instead of an empty page
   shell.notice.hidden = !!body() || !toaster.error;
   if (toaster.error && !body()) {

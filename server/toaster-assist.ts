@@ -2,15 +2,15 @@
 // is told each time (the scene part by part, what is selected, the camera, the render's words, what has been toasted, whether a photo is
 // attached, the catalogue of pieces, bodies, poses and shapes, the talk so far) and reads his answer, keeping only what he can do: bring
 // shapes, pieces and characters, place, turn, size and colour them, set the camera and the render's words, and offer a paid run. He knows
-// Toaster and nothing else. Building costs nothing, so the page does it at once; a render, a turnaround or a 3D model costs, so his
+// Toaster and nothing else. Building costs nothing, so the page does it at once; a render or a 3D model costs, so his
 // answer only offers it: the page asks the user, with the price, before anything runs.
 import { readFileSync } from "node:fs";
 import { SHAPES, PALETTE, POSE_SLIDERS } from "../web/js/toaster-model.js";
 import { BODY_TYPES } from "../web/js/control/skeleton.js";
 import { POSES, POSE_CATEGORIES } from "../web/js/control/poses.js";
 
-export const TOASTER_OPS = ["add", "set", "remove", "clear", "camera", "words", "toast", "turnaround", "model3d"] as const;
-const RUNS = ["toast", "turnaround", "model3d"] as const;
+export const TOASTER_OPS = ["add", "set", "remove", "clear", "camera", "words", "toast", "model3d"] as const;
+const RUNS = ["toast", "model3d"] as const;
 const KINDS = ["shape", "piece", "character"] as const;
 const VIEWS = ["front", "right", "back", "left", "top", "persp"] as const;
 const FRAMES = ["1:1", "4:5", "4:3", "3:4", "16:9", "9:16"] as const;
@@ -84,7 +84,7 @@ export const TOASTER_TOOL = {
   },
 };
 
-export const TOASTER_BRIEF = `You are Crumpet, the baby beaver who is Comfyture's model maker, in Toaster: a 3D blockout modeller. A scene is made of parts (shapes, pieces of the Stage's library, characters) framed by a camera; Toaster renders the clay with an image model ("toast it"), makes a four-view turnaround and a 3D model. You are warm, handy and proud of a tidy build; say one or two short sentences in the user's language, through the toaster_answer tool.
+export const TOASTER_BRIEF = `You are Crumpet, the baby beaver who is Comfyture's model maker, in Toaster: a 3D blockout modeller. A scene is made of parts (shapes, pieces of the Stage's library, characters) framed by a camera; Toaster renders the clay with an image model ("toast it"), makes each object real in 3D. You are warm, handy and proud of a tidy build; say one or two short sentences in the user's language, through the toaster_answer tool.
 
 You build and arrange; the user presses the paid keys. You see a photo when one is attached.
 
@@ -98,7 +98,7 @@ PLACE is a relation (best) or numbers: against (back, left, right, front: a wall
 - clear {}: every part goes, to build a new scene from scratch. Only as the first action.
 - camera {view | subject + side + height + margin | from, to | slot, frame, lens, save}: view (front, right, back, left, top, persp) frames all from that side; subject: on that side of a part, on its axis, looking at it, margin 1 to 4 (room around it); or from and to, [x, y, z]. frame 1:1, 4:5, 4:3, 3:4, 16:9, 9:16; lens mm. save keeps it as a named slot; slot goes back to one.
 - words {what, scene}: the render's lines: what it is, with its parts' materials; the scene, light and look.
-- toast {}, turnaround {}, model3d {}: offer a paid run. The app asks the user for a yes, with the price, under your answer, so say it is ready, never that it has started. At most one, always last.
+- toast {}, model3d {} (every object real in 3D, one by one): offer a run. The app asks the user for a yes, with the price, under your answer, so say it is ready, never that it has started. At most one, always last.
 
 Rules: real-world sizes; place by relations as COMPOSING below shows; nothing floating, nothing overlapping. Real things are the catalogue's pieces; primitives are for custom shapes. When you build a scene, set a camera that frames it. From a photo, rebuild its layout: what is there, where, at what sizes, and match the photo's camera height and direction. Set words when asked, or when building from a description or a photo. Offer a toast only when asked to render. Only the ids, colours and names shown below. A question: an answer, no action. Never promise what you did not do.`;
 
@@ -128,8 +128,8 @@ export interface Summary {
   cameras?: { name?: string; from?: number[]; at?: number[]; frame?: string; focal?: number }[];
   words?: { what?: string; scene?: string };
   renders?: number;
-  turnaround?: boolean;
-  model3d?: boolean;
+  sheets?: number;
+  models?: number;
 }
 export interface Turn { role: string; text: string; did?: string[] }
 
@@ -169,7 +169,7 @@ export function toasterPrompt(s: Summary, turns: Turn[], { picture = false }: { 
   lines.push(slots.length ? `SAVED CAMERAS: ${slots.map((k) => `${cut(k.name, 30)} (from ${triple(k.from)}, at ${triple(k.at)}, ${cut(k.frame, 5)}, ${Number(k.focal) || 50} mm)`).join("; ")}.` : "SAVED CAMERAS: none.");
   const w = s.words && typeof s.words === "object" ? s.words : {};
   lines.push(`WORDS: what "${cut(w.what, 300)}"; scene "${cut(w.scene, 300)}".`);
-  const made = [Number(s.renders) > 0 ? `${Math.round(Number(s.renders))} render${Number(s.renders) === 1 ? "" : "s"}` : "", s.turnaround ? "a turnaround" : "", s.model3d ? "a 3D model" : ""].filter(Boolean);
+  const made = [Number(s.renders) > 0 ? `${Math.round(Number(s.renders))} render${Number(s.renders) === 1 ? "" : "s"}` : "", Number(s.sheets) > 0 ? `${Math.round(Number(s.sheets))} object sheet${Number(s.sheets) === 1 ? "" : "s"}` : "", Number(s.models) > 0 ? `${Math.round(Number(s.models))} 3D model${Number(s.models) === 1 ? "" : "s"}` : ""].filter(Boolean);
   lines.push(`TOASTED SO FAR: ${made.length ? made.join(", ") : "nothing yet"}.`);
   lines.push(picture ? "A PHOTO IS ATTACHED: the user wants this layout rebuilt. Look at it." : "NO PHOTO is attached, and you cannot see one.");
   lines.push("", COMPOSING, "", "THE CATALOGUE (ids)");
@@ -352,7 +352,6 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
         break;
       }
       case "toast":
-      case "turnaround":
       case "model3d":
         // the first offer stands; a second one is not asked
         run ??= a.op;

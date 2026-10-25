@@ -1,8 +1,10 @@
 // Toaster in a real browser, on a server and a folder of its own: an object is blocked out (shapes added, stacked, sized, coloured,
 // mirrored, undone and done again, removed), its words are kept with the draft across a reload, and it is toasted: a render of the
-// frame, a turnaround sheet brought back to the 6336 x 2688 that Pixal3D's template crops, and a 3D model made from it, shown and put
-// on the Stage. What would spend credits is stood in for (the image model answers with the clay it was sent; the template answers
-// with a small GLB), the 3D model waits for a yes, and every call to Comfy's hosts is refused, so no credit can be spent.
+// frame; then the 3D page makes the objects real ONE AT A TIME: each object's own four-view sheet (drawn by an image model from its clay
+// alone), cut into its four views, sent to Trellis2 (stood in for), and only then the next object; the finished models stand in a new
+// scene and are put on the Stage. What would spend credits is stood in for (the image model answers with the clay it was sent; the 3D
+// server and the template answer with a small GLB), a priced run waits for a yes, and every call to Comfy's hosts is refused, so no
+// credit can be spent.
 // The page has two modes (Scene, Render studio): the viewport moves to the right column in the studio and still draws, a part gets a sheet
 // (words and a picture, uploaded to this server's own Library) and an @tag, the scene gets a reference picture, an @ in the words picks a
 // tag as a pill, Improve (the writer stood in for) writes an own prompt, and the next render sends the pictures by their @names.
@@ -314,7 +316,7 @@ try {
   ok((await js(() => window.__toaster.mode)) === "scene" && (await page.locator(".ts-modes .ts-mode[aria-pressed=true]").innerText()) === "Scene", "the page opens in the Scene");
   ok(!(await page.locator(".ts-look, .ts-draft").count()), "the old look fields and the draft chip are gone from the scene");
   // one view at a time: the scene is two areas, and nothing of the render is in sight
-  ok(!(await page.locator(".ts-render, .ts-sheet, .ts-model, .ts-studio, .ts-camera-card").count()), "in the Scene there is no render card, no turnaround, no 3D model, no studio");
+  ok(!(await page.locator(".ts-render, .ts-object, .ts-newscene, .ts-studio, .ts-camera-card").count()), "in the Scene there is no render card, no object sheet, no new scene, no studio");
   const sceneBox = await page.locator(".ts-view").boundingBox();
   const leftBox = await page.locator(".ts-left").boundingBox();
   ok(sceneBox.x >= leftBox.x + leftBox.width && sceneBox.x + sceneBox.width > 1600 - 40 && sceneBox.width > 1000, "and the viewport fills the width left of the parts", JSON.stringify(sceneBox));
@@ -323,7 +325,7 @@ try {
   ok((await js(() => window.__toaster.mode)) === "render", "the Render key switches the page to the studio");
   ok(!(await page.locator(".ts-view").isVisible()) && !(await page.locator(".ts-view .ts-tools").isVisible()), "in the Render no viewport is in sight");
   ok(await page.locator(".ts-add-keys").isHidden() && (await page.locator(".ts-parts-card .ts-label").first().innerText()) === "IN THE FRAME", "the parts are 'In the frame', and Add is gone");
-  ok(await page.locator(".ts-camera-card").isVisible() && !(await page.locator(".ts-sheet, .ts-model").count()), "on the right: the Recipe starts with the Camera; the Turnaround and the 3D model are not on the Render page");
+  ok(await page.locator(".ts-camera-card").isVisible() && !(await page.locator(".ts-object, .ts-newscene").count()), "on the right: the Recipe starts with the Camera; the object sheets and the new scene are not on the Render page");
   await shot("1a-render");
   {
     const order = await js(() => ["ts-camera-card", "ts-maps-card", "ts-recipe-model", "ts-recipe-toast"].map((c) => document.querySelector(`.ts-right .${c}`)?.getBoundingClientRect().top));
@@ -342,7 +344,7 @@ try {
   await page.waitForTimeout(500);
   ok((await js(() => window.__toaster.mode)) === "scene" && await page.locator(".ts-mid > .ts-view").count() === 1, "T goes back to the scene: the viewport is in the middle again");
   ok(await js(() => { const c = document.querySelector(".ts-stage canvas"); const f = document.querySelector(".ts-frame").getBoundingClientRect(); return c.clientWidth > 600 && c.width > 1 && c.height > 1 && f.width > 200 && f.height > 100; }), "and its canvas is sized and its frame right again");
-  ok((await page.locator(".ts-view").boundingBox()).width > 1000 && !(await page.locator(".ts-sheet, .ts-model").count()), "(the whole width, nothing of the render)");
+  ok((await page.locator(".ts-view").boundingBox()).width > 1000 && !(await page.locator(".ts-object, .ts-newscene").count()), "(the whole width, nothing of the render)");
   await page.keyboard.press("t");
   await page.waitForSelector(".toaster.is-render .ts-studio");
   ok(await page.locator('.ts-brief [aria-label="What it is"]').isVisible() && await page.locator('.ts-brief [aria-label="Scene"]').isVisible(), "the brief has What it is and Scene");
@@ -362,22 +364,23 @@ try {
   await page.waitForTimeout(500);
   ok((await page.locator('.ts-brief [aria-label="What it is"]').innerText()) === "A retro 1950s toaster, chrome body", "the words are back in their field");
   ok(await page.locator(".ts-studio .ts-pic.is-clay img").isVisible(), "with no render yet the studio shows the clay frame, as Toaster sends it");
-  // the 3D page: the same left column; the Turnaround and the 3D model in the middle, no right column
+  // the 3D page: the same left column (each object with where it is), a bar, the object in hand and the new scene in the middle, no right column
   await page.keyboard.press("d");
-  await page.waitForSelector(".toaster.is-3d .ts-sheet", { timeout: 5000 });
+  await page.waitForSelector(".toaster.is-3d .ts-object", { timeout: 5000 });
   await page.waitForSelector("img.ts-clay-strip", { timeout: 5000 }).catch(() => {});
-  ok((await js(() => window.__toaster.mode)) === "3d" && (await page.locator(".ts-mid > .ts-sheet").isVisible()) && (await page.locator(".ts-mid > .ts-model").isVisible()) && !(await page.locator(".ts-studio, .ts-right, .ts-camera-card").count()), "D goes to the 3D page: the Turnaround and the 3D model in the middle, no studio, no right column");
-  ok((await page.locator(".ts-modes .ts-mode[aria-pressed=true]").innerText()) === "3D" && !(await page.locator(".ts-view").isVisible()) && (await page.locator(".ts-parts-card .ts-label").first().innerText()) === "IN THE FRAME" && (await page.locator(".ts-part").count()) === 5, "the switch says 3D, the viewport stays hidden, the left column is the Render's");
-  ok(await page.locator("img.ts-clay-strip").isVisible(), "the four clay views are drawn in the Turnaround card");
+  ok((await js(() => window.__toaster.mode)) === "3d" && (await page.locator(".ts-mid .ts-bar3d").isVisible()) && (await page.locator(".ts-mid .ts-object").isVisible()) && (await page.locator(".ts-mid .ts-newscene").isVisible()) && !(await page.locator(".ts-studio, .ts-right, .ts-camera-card").count()), "D goes to the 3D page: the bar, the object in hand and the new scene in the middle, no studio, no right column");
+  ok((await page.locator(".ts-modes .ts-mode[aria-pressed=true]").innerText()) === "3D" && !(await page.locator(".ts-view").isVisible()) && (await page.locator(".ts-parts-card .ts-label").first().innerText()) === "OBJECTS, IN ORDER" && (await page.locator(".ts-part").count()) === 5, "the switch says 3D, the viewport stays hidden, the left column lists the objects in order");
+  ok((await page.locator(".ts-part .ts-solid").count()) === 5 && (await page.locator(".ts-part .ts-solid.is-on").count()) === 5, "each object says where it is (to do) and can be switched to clay");
+  ok(await page.locator("img.ts-clay-strip").isVisible(), "the object in hand shows its own clay in four views, not the scene's");
   {
-    const m = await page.locator(".ts-mid > .ts-model").boundingBox();
-    const sh = await page.locator(".ts-mid > .ts-sheet").boundingBox();
-    ok(m.height > 150 && sh.width > 600 && (await page.locator(".ts-model-body .ts-well").boundingBox()).width > 300, "both are big: the sheet wide, the model's viewer filling its card", JSON.stringify([m, sh]));
+    const o = await page.locator(".ts-mid .ts-object").boundingBox();
+    const n = await page.locator(".ts-mid .ts-newscene").boundingBox();
+    ok(o.height > 200 && n.height > 200 && o.width > 300 && n.width > 300, "both cards are big", JSON.stringify([o, n]));
   }
   await shot("1b-3d");
   await page.keyboard.press("d");
   await page.waitForSelector(".toaster.is-render .ts-studio");
-  ok(!(await page.locator(".ts-sheet, .ts-model").count()), "and D again is the Render, with neither of them");
+  ok(!(await page.locator(".ts-object, .ts-newscene").count()), "and D again is the Render, with neither of them");
   await shot("1-blockout");
 
   // ---------------------------------------------------------------- toasting the frame
@@ -420,36 +423,87 @@ try {
   ok(await page.locator(".ts-pic.is-compare .ts-wipe").isVisible(), "Compare shows the clay under the render with a wipe");
   await shot("2-render");
 
-  // ---------------------------------------------------------------- the turnaround
+  // ---------------------------------------------------------------- the 3D page: one object at a time
+  // (the 3D server is stood in for: it records what it is sent, in order, with the image model's calls, and answers with a small GLB)
+  const events = [];
+  const made = [];
+  let jobs = 0;
+  await page.route("**/api/toaster/3d/target", (route) => route.fulfill({ json: { local: { ok: true, url: "http://127.0.0.1:8188" } } }));
+  await page.route("**/api/toaster/3d/make", (route) => {
+    const ask = route.request().postDataJSON();
+    events.push("make");
+    made.push(ask);
+    return route.fulfill({ status: 202, json: { id: `job-${++jobs}`, status: "running", progress: 0.1, outputs: [] } });
+  });
+  await page.route("**/api/toaster/3d/job/*", (route) => route.fulfill({ json: { id: "job", status: "done", progress: 1, stages: [], outputs: [{ kind: "model", url: "/media/models/toaster-test.glb", file: "toaster-test.glb", path: "/app/output/3D/Comfyture/test.glb" }] } }));
   await page.keyboard.press("d");
-  await page.waitForSelector(".toaster.is-3d .ts-sheet");
-  await page.locator(".ts-sheet .key.is-primary").click();
-  await until(() => ["done", "failed"].includes(window.__toaster.draft.body.sheets[0]?.status), null, 30000);
-  const sheetAsk = pictures[1];
-  ok(sheetAsk?.aspect === "21:9" && sheetAsk.refs?.[0]?.name === "sheet" && /^Render @sheet as a finished turnaround sheet/.test(sheetAsk.prompt), "the turnaround sends the four clay views as one sheet, at 21:9");
+  await page.waitForSelector(".toaster.is-3d .ts-object");
+  const sheetsBefore = pictures.length;
+  const yes = async () => {
+    await page.waitForTimeout(150);
+    const armed = page.locator(".ts-armed .key.is-primary");
+    if (await armed.count()) await armed.first().click();
+  };
+  // the first object, by its own key: its sheet is asked of the image model, from its clay alone
+  await page.locator(".ts-part").nth(1).click();
+  const first = (await draft()).selected[0];
+  await page.locator(".ts-object .key.is-primary").click();
+  await yes();
+  await until(() => window.__toaster.draft.body.models[0]?.status === "done" || window.__toaster.draft.body.models[0]?.status === "failed" || window.__toaster.draft.body.sheets[0]?.status === "failed", null, 30000);
+  const sheetAsk = pictures[sheetsBefore];
+  ok(sheetAsk?.aspect === "1:1" && sheetAsk.refs?.[0]?.name === "sheet" && /^Render @sheet as a finished multi-view sheet of ONE object/.test(sheetAsk.prompt), "the object's sheet is one object in four views, at 1:1", sheetAsk?.prompt?.slice(0, 120));
+  ok(/camera is the same in all four views/.test(sheetAsk.prompt) && !/Orthographic/i.test(sheetAsk.prompt) && /about 24 degrees above/.test(sheetAsk.prompt), "its camera looks down a little from above, never orthographic");
+  ok(/copy the clay cell by cell/i.test(sheetAsk.prompt), "the words say what each cell shows, cell by cell");
   const photos = await (await fetch(`${base}/api/photos`)).json();
   const clay = photos.find((p) => p.file === sheetAsk?.refs?.[0]?.file);
-  ok(clay?.width === 2112 && clay?.height === 896, "the clay sheet is the template's layout at a third", `${clay?.width}x${clay?.height}`);
+  ok(clay?.width === 1024 && clay?.height === 1024, "the clay sheet of one object is its four views in a square", `${clay?.width}x${clay?.height}`);
   d = await draft();
-  const sheet = d.body.sheets[0];
-  ok(sheet?.status === "done" && sheet.photo?.width === 6336 && sheet.photo?.height === 2688, "the rendered sheet is brought back to 6336 x 2688, the size Pixal3D crops", JSON.stringify(sheet?.photo ?? sheet?.error));
+  const sheet = d.body.sheets.find((x) => x.part === first);
+  ok(sheet?.status === "done" && sheet.photo?.width === 2048 && sheet.photo?.height === 2048, "the object's sheet is kept, a 2 x 2 grid of 1024 cells", JSON.stringify(sheet?.photo ?? sheet?.error));
+  ok(made.length === 1 && Object.keys(made[0].views).sort().join() === "back,front,left,right" && made[0].name === d.body.parts.find((x) => x.id === first).name, "Trellis2 is sent the four views it was cut into, front, back, left, right", JSON.stringify(made[0]));
+  const views = await Promise.all(Object.values(made[0].views).map((f) => photos.length && fetch(`${base}/media/photos/${f}`).then((r) => r.ok)));
+  ok(views.every(Boolean), "each of the four views is a file of the Library");
+  const m1 = d.body.models.find((x) => x.part === first);
+  ok(m1?.status === "done" && m1.via === "local" && m1.url === "/media/models/toaster-test.glb", "its model is kept with the draft, made on the person's ComfyUI", JSON.stringify(m1));
+  ok((await page.locator(".ts-part").nth(1).locator(".ts-solid.is-done").count()) === 1, "its row in the list says 3D");
 
-  // ---------------------------------------------------------------- the 3D model
-  await page.locator(".ts-model .key.is-primary").click();
-  await page.waitForSelector(".ts-model .ts-armed", { timeout: 3000 }).catch(() => {});
-  ok(runs.length === 0 && (await page.locator(".ts-model .ts-armed").isVisible()), "Make the 3D model asks for a yes first, and nothing runs");
-  ok(/GPU time/.test(await page.locator(".ts-model .ts-armed").innerText()), "its price is said", await page.locator(".ts-model .ts-armed").innerText());
-  await page.locator(".ts-model .ts-armed .key.is-primary").click();
-  await until(() => ["done", "failed"].includes(window.__toaster.draft.body.models[0]?.status));
-  ok(runs[0]?.name === "3d_pixal3d_multi_views" && runs[0].body.inputs?.image === sheet?.photo?.file && runs[0].body.confirm === true, "the yes runs Pixal3D's multi-view template on the sheet", JSON.stringify(runs[0]));
+  // the whole list, one by one: each object is finished (sheet, cut, model) before the next starts
+  events.length = 0;
+  const seen = pictures.length;
+  const origCount = made.length;
+  await page.route("**/api/image", async (route, request) => {
+    events.push("sheet");
+    return route.fallback();
+  });
+  await page.locator(".ts-bar3d .key.is-primary").click();
+  await yes();
+  await until(() => !window.__toaster.draft.body.models.some((m) => m.status === "running") && window.__toaster.draft.body.models.filter((m) => m.status === "done").length >= 5, null, 90000);
+  const order = events.join(" ");
+  ok(/^(sheet make )+$/.test(order + " ") && events.length === 2 * (made.length - origCount), "one at a time: sheet, model, sheet, model, never two sheets in a row", order);
   d = await draft();
-  ok(d.body.models[0]?.url === "/media/models/toaster-test.glb", "the 3D file is kept with the draft", JSON.stringify(d.body.models[0]));
-  await page.waitForSelector(".ts-model-view canvas", { timeout: 10000 }).catch(() => {});
-  ok(await page.locator(".ts-model-view canvas").isVisible(), "the model turns in its well");
-  await page.locator('.ts-model [aria-label="Put it on the Stage, as a prop"]').click();
-  await page.waitForTimeout(1500);
+  ok(d.body.models.filter((m) => m.status === "done").length === 5 && d.body.sheets.filter((x) => x.part && x.status === "done").length === 5, "every object has its own sheet and its own model");
+  ok(new Set(d.body.sheets.map((x) => x.part)).size === 5, "one sheet per object");
+  await page.waitForSelector(".ts-scene3d canvas", { timeout: 10000 }).catch(() => {});
+  ok(await page.locator(".ts-scene3d canvas").isVisible(), "the new scene is drawn");
+  await until(() => document.querySelector(".ts-newscene .ts-meta")?.textContent.includes("5 of 5"), null, 20000);
+  ok(/5 of 5 objects are real 3D/.test(await page.locator(".ts-newscene .ts-meta").innerText()), "the new scene says its objects are real 3D", await page.locator(".ts-newscene .ts-meta").innerText());
+  await page.locator('.ts-newscene [aria-label="Put every model on the Stage, as props"]').click();
+  await page.waitForTimeout(2500);
   const models = await (await fetch(`${base}/api/control/models`)).json();
-  ok(models.models?.some((m) => m.kind === "prop" && m.ext === "glb"), "Put on the Stage keeps it in the Stage's assets, as a prop", JSON.stringify(models.models?.map((m) => m.name)));
+  ok(models.models?.filter((m) => m.kind === "prop" && m.ext === "glb").length >= 5, "Put on the Stage keeps each model in the Stage's assets, as a prop", JSON.stringify(models.models?.map((m) => m.name)));
+
+  // with no ComfyUI of the person's own (a hosted copy) the model is made by Pixal3D on Comfy Cloud, from the four views laid on its sheet
+  await page.unroute("**/api/toaster/3d/target");
+  await page.route("**/api/toaster/3d/target", (route) => route.fulfill({ json: { local: { ok: false, why: "No ComfyUI answers." } } }));
+  await js(async () => { const g = await import("/js/toaster-3d.js"); g.gen.target = null; await g.loadTarget(); });
+  await page.locator(".ts-part").nth(2).click();
+  await js(async () => { const t = await import("/js/toaster.js"); const g = await import("/js/toaster-3d.js"); const b = t.body(); b.models = b.models.filter((m) => m.part !== t.toaster.selected[0]); });
+  const toRun = runs.length;
+  await js(async () => { const t = await import("/js/toaster.js"); const g = await import("/js/toaster-3d.js"); await g.makeModel(t.toaster.selected[0]); });
+  const cloud = runs[toRun];
+  ok(cloud?.name === "3d_pixal3d_multi_views" && cloud.body.confirm === true && cloud.body.inputs?.image, "with no ComfyUI of its own it asks Pixal3D's multi-view template on Cloud", JSON.stringify(cloud));
+  const laid = (await (await fetch(`${base}/api/photos`)).json()).find((p) => p.file === cloud?.body.inputs?.image);
+  ok(laid?.width === 6336 && laid?.height === 2688, "with the four views laid on Pixal3D's own 6336 x 2688 sheet", `${laid?.width}x${laid?.height}`);
   await shot("3-toasted");
   await page.keyboard.press("d");
   await page.waitForSelector(".toaster.is-render .ts-studio");
@@ -466,6 +520,7 @@ try {
   // his answer stood in for: a scene from scratch (a sofa, an armchair turned toward it, a woman sitting on the sofa, a lamp on a box),
   // the camera placed low, the words set, and a render offered
   const asked = [];
+  const picturesBefore = pictures.length;
   await page.route("**/api/toaster/assist", (route) => {
     asked.push(route.request().postDataJSON());
     return route.fulfill({ json: { reply: "A cosy corner, ready to toast.", actions: [
@@ -559,7 +614,7 @@ try {
   ok((await draft()).body.cameras.length === 3, "the key keeps the camera as it is in a new slot");
   ok(d.body.what === "A cosy reading corner" && d.body.scene === "Warm lamp light, evening", "the render's words set");
   ok(await page.locator("#assistant .msg-confirm .key.is-primary", { hasText: "Toast it" }).isVisible(), "the render is only offered, with its price");
-  ok(pictures.length === 2, "nothing was rendered without a yes");
+  ok(pictures.length === picturesBefore, "nothing was rendered without a yes");
   await shot("4-crumpet");
   await page.locator("#assistant .undo").click();
   d = await draft();

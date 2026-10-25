@@ -5,7 +5,7 @@
 import { changed, toast, waitFor, jobWatchers, writer } from "./store.js";
 import { api } from "./api.js";
 import { keyedSaver } from "./saving.js";
-import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, factsOf, factsKey, promptStale, sheetPrompt, RATIOS, SHEET, TO_3D, MAPS, plainFrame, keepOf, described, tagsOf, castOf, referencesFor, pickMaps, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
+import { cleanDraft, cleanPart, starterDraft, newPart, newAssetPart, newCharacterPart, freeSpot, colourByKind, mirrorPart, duplicatePart, framePrompt, factsOf, factsKey, promptStale, RATIOS, MAPS, plainFrame, keepOf, described, tagsOf, castOf, referencesFor, pickMaps, expandPrompt, newSceneRef, addRef, mentionsIn, colorName } from "./toaster-model.js";
 
 const KIND = "toasts";
 // where a draft's camera starts: the studio's own view, the floor around the object in sight
@@ -67,7 +67,7 @@ export const toaster = {
 let undo = [];
 let redo = [];
 
-const update = (scope = "toaster") => {
+export const update = (scope = "toaster") => {
   sync();
   changed(scope);
 };
@@ -141,7 +141,7 @@ function opened(project) {
   // a picture that was rendering when the page was left is not followed again (it lands in the Library); a 3D model is
   const b = toaster.draft.body;
   for (const r of [...b.renders, ...b.sheets]) if (r.status === "running") Object.assign(r, { status: "failed", error: "The page was left while it rendered: look for it in the Library." });
-  for (const m of b.models) if (m.status === "running" && m.job) void follow3d(toaster.draft, m);
+  for (const m of b.models) if (m.status === "running" && m.job) void import("./toaster-3d.js").then((x) => x.follow(toaster.draft, m));
   if (toaster.view) toaster.view.setCameraState(b.camera ?? HOME);
 }
 
@@ -631,14 +631,14 @@ export function modelNow() {
 // ---------------------------------------------------------------- toasting: the frame, the turnaround
 
 const media = (p) => (p ? { url: p.url, file: p.file, width: p.width, height: p.height } : null);
-async function keepPicture(dataUrl, name) {
+export async function keepPicture(dataUrl, name) {
   const blob = await (await fetch(dataUrl)).blob();
   return media(await api.upload(blob, name));
 }
-const runId = () => `r-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+export const runId = () => `r-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 /** Follows a picture's job to its end (its progress drawn on the run); answers the job done, or throws. */
-async function picture(run, request) {
+export async function picture(run, request) {
   const [job] = await api.image(request);
   if (!job?.id) throw new Error("The picture was not started.");
   run.job = job.id;
@@ -657,7 +657,7 @@ async function picture(run, request) {
 }
 
 /** The request every render makes: the model's edit, its first size, the clay kept a little (the layout stays the clay's). */
-function request(model, prompt, refs, aspect, name, keep = 0.97) {
+export function request(model, prompt, refs, aspect, name, keep = 0.97) {
   return { model: model.id, template: "edit", prompt, aspect, refs: [refs].flat().map((r) => ({ file: r.file, name: r.name })), count: 1, megapixels: model.megapixels?.[0] ?? 1, keep, seed: Math.floor(Math.random() * 2 ** 32), name };
 }
 
@@ -886,7 +886,7 @@ export async function renderFrame() {
 }
 
 /** A picture stretched (or squeezed) to an exact size, as a JPEG data URL: the rendered sheet back to the template's own size. */
-async function resized(url, width, height) {
+export async function resized(url, width, height) {
   const img = new Image();
   img.crossOrigin = "anonymous";
   img.src = url;
@@ -897,40 +897,6 @@ async function resized(url, width, height) {
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(img, 0, 0, width, height);
   return c.toDataURL("image/jpeg", 0.93);
-}
-
-/**
- * The turnaround: the four clay views on one sheet (front, left, back, right, where Pixal3D's template crops them), rendered in one
- * picture so the four agree, then brought back to the template's size and kept: the sheet a 3D model is made from.
- */
-export async function renderSheet() {
-  const draft = toaster.draft;
-  const b = body();
-  const v = toaster.view;
-  if (!draft || !v) return;
-  if (!hasClay()) return toast("Block something out first: add a shape.", { tone: "warn" });
-  const model = modelNow();
-  if (!model) return toast("No image model can render from the clay: connect Comfy Cloud or a partner key.", { tone: "crit" });
-  const run = { id: runId(), status: "running", progress: 0, ratio: SHEET.aspect, model: model.id, at: new Date().toISOString() };
-  b.sheets.unshift(run);
-  update("toaster-runs");
-  try {
-    run.frame = await keepPicture(v.sheetStill({ scale: 1 / 3 }).url, `${draft.name} turnaround clay`);
-    // the parts' pictures go along (the model's room permitting), and the words call the parts by their tags
-    const room = Math.max(0, (model.templates?.find((t) => t.id === "edit")?.refs ?? 4) - 1);
-    const { refs, named } = referencesFor({ parts: b.parts, room });
-    run.prompt = expandPrompt(sheetPrompt({ ...b, tags: tagsOf(b.parts), named, pieceOf: toaster.pieceOf }), castOf(b.parts, [], toaster.pieceOf), named);
-    run.refs = refs.map((r) => ({ name: r.name, url: r.url }));
-    const done = await picture(run, request(model, run.prompt, [{ ...run.frame, name: "sheet" }, ...refs], SHEET.aspect, `${draft.name} turnaround`));
-    run.photo = await keepPicture(await resized(done.photo.url, SHEET.width, SHEET.height), `${draft.name} turnaround`);
-    run.status = "done";
-  } catch (e) {
-    Object.assign(run, { status: "failed", error: e.message });
-    toast(e.message, { tone: "crit" });
-  } finally {
-    save(draft);
-    update("toaster-runs");
-  }
 }
 
 /** A render, a turnaround or a 3D model forgotten (its files stay in the Library). */
@@ -984,85 +950,18 @@ export function setCompare(on) {
   changed("toaster-runs");
 }
 
-// ---------------------------------------------------------------- the 3D model (Comfy Cloud)
+// ---------------------------------------------------------------- the 3D models (toaster-3d.js makes them, one object at a time)
 
-const TEMPLATES = "api/utensils/templates";
-let price = null;
-/** What a 3D model costs, as Cloud says (free to ask): { credits, note }, read once. */
-export async function price3d() {
-  if (price) return price;
-  try {
-    price = await send(`${TEMPLATES}/${TO_3D}/estimate`, "POST");
-  } catch {
-    price = { credits: null, note: "" };
-  }
-  changed("toaster-runs");
-  return price;
-}
-export const priceNow = () => price;
-
-/**
- * A textured 3D model made from a turnaround, by Pixal3D's multi-view template on Comfy Cloud. The person has said yes to the
- * price (the page asks first). The job is kept with the draft, so it is followed again if the page is left and comes back.
- */
-export async function make3d(sheetId) {
-  const draft = toaster.draft;
-  const b = body();
-  const sheet = b?.sheets.find((s) => s.id === sheetId && s.status === "done" && s.photo?.file);
-  if (!sheet) return toast("Toast a turnaround first: the 3D model is made from it.", { tone: "warn" });
-  const m = { id: runId(), status: "running", progress: 0.02, sheet: sheet.id, at: new Date().toISOString() };
-  b.models.unshift(m);
-  update("toaster-runs");
-  try {
-    // the picture goes to the template's first picture slot (its schema is read once on the server, free)
-    const { schema } = await call(`${TEMPLATES}/${TO_3D}`);
-    const slot = schema?.slots?.find((s) => s.kind === "image")?.id ?? "image";
-    const started = await send(`${TEMPLATES}/${TO_3D}/run`, "POST", { inputs: { [slot]: sheet.photo.file }, confirm: true });
-    m.job = started.id;
-    save(draft);
-    await follow3d(draft, m);
-  } catch (e) {
-    Object.assign(m, { status: "failed", error: e.message });
-    toast(e.message, { tone: "crit" });
-    save(draft);
-    update("toaster-runs");
-  }
-}
-
-/** Follows a 3D job on the server (a poll: Cloud may take minutes) to its end, and keeps what it made. */
-async function follow3d(draft, m) {
-  for (let i = 0; i < 2400 && m.status === "running"; i++) {
-    await new Promise((ok) => setTimeout(ok, i === 0 ? 700 : 2000));
-    let job;
-    try {
-      job = await call(`${TEMPLATES}/job/${m.job}`);
-    } catch (e) {
-      // the server no longer knows the job (it was restarted, or the job is over an hour old)
-      if (/gone|404/i.test(e.message)) Object.assign(m, { status: "failed", error: "The server lost this job: look for the model in Utensils' results." });
-      continue;
-    }
-    m.progress = job.progress ?? m.progress;
-    if (job.status === "done") {
-      const out = job.outputs ?? [];
-      const model = out.find((o) => o.kind === "model");
-      if (!model) Object.assign(m, { status: "failed", error: "The template finished without a 3D file." });
-      else Object.assign(m, { status: "done", url: model.url, file: model.file, views: out.filter((o) => o.kind === "image").slice(0, 4).map(media) });
-    } else if (job.status !== "running") Object.assign(m, { status: "failed", error: job.error ?? "That didn't work." });
-    changed("toaster-runs");
-  }
-  save(draft);
-  update("toaster-runs");
-}
-
-/** A 3D model put in the Stage's asset library, as a prop to stage in Kitchen. */
-export async function putOnStage(m) {
+/** A 3D model put in the Stage's asset library, as a prop to stage in Kitchen (`name`: what it is called there). */
+export async function putOnStage(m, name, { quiet = false } = {}) {
   if (!m?.url) return;
   const blob = await (await fetch(m.url)).blob();
   const ext = (m.file ?? m.url).split(".").pop().toLowerCase();
-  const name = `${toaster.draft?.name ?? "Toaster"}.${["glb", "gltf", "obj", "fbx"].includes(ext) ? ext : "glb"}`;
+  const base = name || toaster.draft?.name || "Toaster";
+  const file = `${base}.${["glb", "gltf", "obj", "fbx"].includes(ext) ? ext : "glb"}`;
   const { importModel } = await import("./control/models.js");
-  const entry = await importModel(new File([blob], name), "prop");
-  toast(`${entry.name} is in the Stage's assets.`, { action: { label: "Open the Stage", run: () => (location.hash = "#/stage") } });
+  const entry = await importModel(new File([blob], file), "prop");
+  if (!quiet) toast(`${entry.name} is in the Stage's assets.`, { action: { label: "Open the Stage", run: () => (location.hash = "#/stage") } });
 }
 
 // ---------------------------------------------------------------- the yes to a price
