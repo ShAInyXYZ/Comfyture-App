@@ -13,7 +13,7 @@ export const judging = (env: NodeJS.ProcessEnv = process.env) => !!env.COMFYTURE
 
 // what a visitor may not delete: the projects, the takes, the reels, the Stage's stages, poses and models
 const KEPT = [
-  /^\/api\/(stories|cuts|mixes|brands|jams|spice-shots|toasts)\/[\w-]+$/,
+  /^\/api\/(stories|cuts|mixes|brands|jams|spice-shots|spice-bays|toasts)\/[\w-]+$/,
   /^\/api\/runs\/[\w-]+$/,
   /^\/api\/reels\/[\w-]+$/,
   /^\/api\/control\/(stages|poses|models)\/[\w-]+$/,

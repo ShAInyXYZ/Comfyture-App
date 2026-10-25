@@ -28,9 +28,11 @@ import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
 import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer, utensilsCandidates } from "./utensils-assist.ts";
 import { SPICE_BRIEF, SPICE_TOOL, spicePrompt, readSpiceAnswer } from "./spice-assist.ts";
+import { BAY_BRIEF, BAY_TOOL, bayPrompt, readBayAnswer } from "./bay-assist.ts";
 import { TOASTER_BRIEF, TOASTER_TOOL, toasterPrompt, readToasterAnswer, TOASTER_WRITE_BRIEF, writePrompt, readImprovedPrompt } from "./toaster-assist.ts";
 import { guideFor } from "./image-guides.ts";
 import { normaliseBody as spiceBody, FIRST as SPICE_FIRST } from "../web/js/spice-model.js";
+import { normaliseBody as bayBody, STAGE_IDS as BAY_STAGES } from "../web/js/spice2-model.js";
 import { searchKnowledge, knowledgeById } from "./utensils-knowledge.ts";
 import { createEdit } from "./utensils-edit.ts";
 import { createFx, bakeArgs, deadlineOf, selfLimit } from "./utensils-fx.ts";
@@ -489,6 +491,12 @@ function summary(kind: string, body: any) {
     const designs: any[] = Array.isArray(body?.designs) ? body.designs.filter((d: any) => !d?.variant) : [];
     return { designs: designs.length, approved: designs.filter((d) => d?.status === "approved").length, motion: Array.isArray(body?.motion) ? body.motion.length : 0, exports: Array.isArray(body?.exports) ? body.exports.length : 0 };
   }
+  if (kind === "spice-bays") {
+    // Spice's bay: how many stages have a pass, how many takes in all, and what each run cost (the panel adds up the day's credits)
+    const stages: any = body?.stages ?? {};
+    const log: any[] = Array.isArray(body?.log) ? body.log : [];
+    return { passes: BAY_STAGES.filter((id) => stages[id]?.mark).length, takes: BAY_STAGES.reduce((n, id) => n + (Array.isArray(stages[id]?.takes) ? stages[id].takes.length : 0), 0), log: log.slice(-60).map((e) => ({ at: String(e?.at ?? ""), credits: Number(e?.credits) || 0 })) };
+  }
   if (kind === "spice-shots") {
     // Spice's shot: how many departments have made their pass, and what each cost (the panel adds up the day's credits)
     const passes: any[] = Object.values(body?.passes ?? {}).filter((p: any) => p?.media);
@@ -635,7 +643,7 @@ async function projectRoute(kind: string, path: string, method: string, req: Inc
     const input = await jsonBody(req, 32 * 1024 * 1024);
     const now = new Date().toISOString();
     const name = text(input.name, 60) || "Untitled";
-    const p: Project = { id: `${kind.slice(0, 5)}-${slug(name) || "new"}-${randomBytes(3).toString("hex")}`, name, createdAt: now, updatedAt: now, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined, body: input.body ?? {}, project: projectId(input.project) };
+    const p: Project = { id: `${kind.slice(0, 5)}-${slug(name) || "new"}-${randomBytes(3).toString("hex")}`, name, createdAt: now, updatedAt: now, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined, body: kind === "spice-bays" ? bayBody(input.body) : input.body ?? {}, project: projectId(input.project) };
     await writeProject(kind, p);
     return json(res, 201, { project: p });
   }
@@ -647,7 +655,7 @@ async function projectRoute(kind: string, path: string, method: string, req: Inc
   if (method === "PUT") {
     const input = await jsonBody(req, 32 * 1024 * 1024);
     if (input.name !== undefined) p.name = text(input.name, 60) || p.name;
-    if (input.body !== undefined) p.body = input.body;
+    if (input.body !== undefined) p.body = kind === "spice-bays" ? bayBody(input.body) : input.body;
     if (typeof input.thumb === "string") p.thumb = input.thumb.slice(0, 400_000);
     p.updatedAt = new Date().toISOString();
     await writeProject(kind, p);
@@ -1669,7 +1677,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   // a store's examples are in before it is first served
   const store = /^\/api\/([\w-]+)/.exec(path)?.[1];
   if (store && store in EXAMPLE_KINDS && method === "GET") await seedStore(store);
-  for (const kind of ["stories", "cuts", "mixes", "brands", "jams", "spice-shots", "toasts"]) {
+  for (const kind of ["stories", "cuts", "mixes", "brands", "jams", "spice-shots", "spice-bays", "toasts"]) {
     if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {
       const answered = await projectRoute(kind, path, method, req, res);
       if (answered !== false) return answered;
@@ -1686,6 +1694,16 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const reply = await petAnswer(pickLlm(input.model, "assistant"), UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt(summary, turns, candidates));
     if (process.env.COMFYTURE_DEBUG) console.log(`truffle answered\n${reply}`);
     return json(res, 200, readUtensilsAnswer(reply, summary, candidates));
+  }
+  if (path === "/api/bay/assist" && method === "POST") {
+    // Paprika reads the shot, its stages and the engines of the stage open, and answers with what to set up; nothing runs here
+    const input = await jsonBody(req, 256 * 1024);
+    const turns = petTurns(input.messages);
+    if (!turns.length) throw bad("Say what to do.");
+    const summary = input.bay && typeof input.bay === "object" ? input.bay : {};
+    const reply = await petAnswer(pickLlm(input.model, "assistant"), BAY_BRIEF, BAY_TOOL, bayPrompt(summary, turns));
+    if (process.env.COMFYTURE_DEBUG) console.log(`paprika answered\n${reply}`);
+    return json(res, 200, readBayAnswer(reply, summary));
   }
   if (path === "/api/spice/assist" && method === "POST") {
     // Paprika reads the shot, its passes and the department open, and answers with what to set up; nothing runs here
