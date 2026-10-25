@@ -5,7 +5,7 @@
 //   env -u COMFY_API_KEY PORT=5421 COMFYTURE_DATA=<scratch>/data COMFY_BASE_URL=http://127.0.0.1:9 node server/main.ts
 //   NODE_PATH=<node_modules with playwright> node scripts/www-capture-spice.mjs http://127.0.0.1:5421 <capture folder>/b
 import { createRequire } from "node:module";
-const { chromium } = createRequire("/tmp/chrysalide-node/node_modules/")("playwright");
+const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const [base, out] = process.argv.slice(2);
 const b = await chromium.launch({ args: ["--disable-gpu"] });
 const ctx = await b.newContext({ viewport: { width: 1600, height: 950 }, deviceScaleFactor: 2 });
