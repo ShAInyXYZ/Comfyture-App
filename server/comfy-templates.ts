@@ -1126,7 +1126,7 @@ export function createTemplates(deps: Deps) {
       forms.set(name, cached);
       return { form: cached.form, linear: cached.linear ?? null };
     }
-    if (!deps.cloud) throw fail("Connect Comfy Cloud to see what this template asks for.", 501);
+    if (!deps.cloud) throw fail("Connect Comfy Cloud to see what this template asks for: paste a Comfy API key in the account window (top right).", 501);
     const text = await deps.cloud.mcp("get_template_schema", { template_id: name });
     let schema: any;
     try {
@@ -1159,7 +1159,7 @@ export function createTemplates(deps: Deps) {
 
   async function estimate(name: string) {
     await find(name);
-    if (!deps.cloud) return { credits: null, perUnit: null, note: "Connect Comfy Cloud to see the price." };
+    if (!deps.cloud) return { credits: null, perUnit: null, note: "Connect Comfy Cloud to see the price: a Comfy API key in the account window." };
     const got = credits.get(name);
     if (got) return got;
     const text = await deps.cloud.mcp("estimate_credits", { template_name: name });
@@ -1257,7 +1257,7 @@ export function createTemplates(deps: Deps) {
     // open weights only (COMFYTURE_OPEN_WEIGHTS): a partner's model never runs, whatever page asks
     if (item.partner && process.env.COMFYTURE_OPEN_WEIGHTS?.trim()) throw fail(`Open weights only is on: ${item.title || name} runs a partner's model.`, 403);
     spend("render");
-    if (!deps.cloud) throw fail("Connect Comfy Cloud to run templates.", 501);
+    if (!deps.cloud) throw fail("Connect Comfy Cloud to run templates: paste a Comfy API key in the account window (top right). The examples and tours work without one.", 501);
     const form = await schemaOf(name);
     const values = body?.inputs && typeof body.inputs === "object" ? body.inputs : {};
     // the pictures, clips and sounds go to Cloud first, each under the name its loader takes

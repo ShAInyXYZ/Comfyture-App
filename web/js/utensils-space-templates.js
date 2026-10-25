@@ -57,7 +57,7 @@ export function templatesSpace() {
       if (d.app) openAsTool(d);
     } catch (e) {
       if (st.picked !== name) return;
-      st.detailError = e.status === 501 ? "Connect Comfy Cloud (a COMFY_API_KEY in .env) to see what this workflow asks for and to run it." : e.message;
+      st.detailError = e.status === 501 ? "Connect Comfy Cloud to see what this workflow asks for and to run it: paste a Comfy API key in the account window (top right)." : e.message;
     } finally {
       if (st.picked === name) {
         st.loadingDetail = false;
