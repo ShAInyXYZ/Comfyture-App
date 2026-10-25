@@ -850,13 +850,15 @@ async function importStage(input: any, when = new Date()) {
 // the first time the Stage opens, the example stages are there to open, change and delete;
 // after that the folder is the user's, and a deleted example stays deleted
 let seeding: Promise<void> | null = null;
+const bootedAt = Date.now();
 async function seedStages() {
   if (await access(stagesDir()).then(() => true, () => false)) return;
   await mkdir(stagesDir(), { recursive: true });
   const dir = join(EXAMPLES, "stage");
   const files = (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith(".stage.json")).sort();
-  // the first example is the newest, so it is the one that opens
-  const start = Date.now();
+  // the first example is the newest, so it is the one that opens; all of them are older than what the server put in when it started,
+  // so on a first visit Kitchen's newest project is its example film, not the example stage put in a moment later
+  const start = bootedAt - 60_000;
   for (const [i, file] of files.entries()) {
     try {
       await importStage(JSON.parse(await readFile(join(dir, file), "utf8")), new Date(start - i * 1000));
