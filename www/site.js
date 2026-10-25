@@ -1,138 +1,289 @@
-/* Comfyture website: a wall of live clips, the player, and the hero film. */
+/* Comfyture's website: the hero reel, clips that play while they are seen, the compare wipes, Kitchen's rooms, the dock,
+   the presets rail, the gallery and its viewer. Plain JavaScript, no build step. */
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const FAM = { camera: "Camera move", vfx: "Effect", transform: "Transformation" };
-const ico = (n) => `<svg class="ico"><use href="media/icons.svg#${n}"/></svg>`;
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const pdir = (id) => `media/presets/${id}/`;
-let presets = [], takes = [];
+const icon = (id) => `<svg class="i"><use href="#${id}"/></svg>`;
+const DEMO = "demo/";
 
-/* ── clips that play while they're on screen (at most a handful at once) ── */
-const playing = [];
-const MAX = 14;
-function started(v) { const i = playing.indexOf(v); if (i >= 0) playing.splice(i, 1); playing.push(v); while (playing.length > MAX) { const o = playing.shift(); o.pause(); o.parentElement?.classList.remove("live"); } }
-const io = new IntersectionObserver((es) => es.forEach((e) => {
-  const host = e.target;
-  if (e.isIntersecting) {
-    if (reduce) return;
-    let v = $("video", host);
-    if (!v) { v = document.createElement("video"); v.muted = true; v.loop = true; v.playsInline = true; v.preload = "metadata"; v.src = host.dataset.clip; host.append(v); }
-    else if (!v.getAttribute("src") && v.dataset.src) v.src = v.dataset.src;
-    v.play().then(() => { host.classList.add("live"); started(v); }).catch(() => {});
-  } else { const v = $("video", host); if (v) { v.pause(); host.classList.remove("live"); } }
-}), { rootMargin: "80px", threshold: 0.2 });
-const live = (el, src) => { el.dataset.clip = src; io.observe(el); };
+/* ── the bar gets a line once the page moves ── */
+const bar = $("#top");
+const onScroll = () => bar.classList.toggle("stuck", scrollY > 8);
+addEventListener("scroll", onScroll, { passive: true }); onScroll();
 
-/* videos written straight into the page (promos, last-frame row) */
-const watch = new IntersectionObserver((es) => es.forEach((e) => {
+/* ── clips that load when near and play while seen ── */
+const clips = new IntersectionObserver((es) => es.forEach((e) => {
   const v = e.target;
-  if (e.isIntersecting) { if (v.dataset.src && !v.getAttribute("src")) v.src = v.dataset.src; if (!reduce) v.play().catch(() => {}); } else v.pause();
-}), { threshold: 0.25 });
-$$("video[data-src]").forEach((v) => watch.observe(v));
+  if (e.isIntersecting) {
+    if (!v.getAttribute("src") && v.dataset.src) v.src = v.dataset.src;
+    if (!reduce && !v.dataset.held) v.play().catch(() => {});
+  } else v.pause();
+}), { rootMargin: "240px 0px", threshold: 0.12 });
+const watch = (v) => clips.observe(v);
+$$("video.lazy").forEach(watch);
 
-/* ── ticker, runway ── */
-const TICK = ["Open source · MIT", "28 presets", "Picture and sound in one pass", "Story · Stage · Shot · Cut", "Runs on your GPU or Comfy Cloud", "Open weights", "372 set pieces", "One photo in, a shot out"];
-$("#ticker").innerHTML = [...TICK, ...TICK].map((t) => `<span>${t}</span>`).join("");
-$("#runway").innerHTML = [..."LTX-2.5|Qwen Image 2.1|FLUX 3 Klein|Krea 2 Turbo|Z-Image Turbo|ACE-Step 1.5|Stable Audio 3|Gemma 4".split("|")].concat("LTX-2.5|Qwen Image 2.1|FLUX 3 Klein|Krea 2 Turbo|Z-Image Turbo|ACE-Step 1.5|Stable Audio 3|Gemma 4".split("|")).map((t) => `<span>${t}</span>`).join("");
-
-/* ── hero film, with a chip per shot ── */
-const film = $("#film-v");
-const SHOTS = [["waking-up", "Waking Up", 0], ["finding-life", "Finding Life", 6], ["observing-sky", "Observing Sky", 11], ["rescue-arrival", "Rescue Arrival", 18]];
-const bar = $("#film-shots");
-for (const [id, name, t] of SHOTS) {
-  const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-label", `Jump to ${name}`);
-  b.innerHTML = `<img src="media/takes/${id}.jpg" alt="" loading="lazy">`;
-  b.addEventListener("click", () => { film.currentTime = t; film.play().catch(() => {}); });
-  bar.append(b);
-}
-const mark = () => { const t = film.currentTime; let k = 0; SHOTS.forEach((s, i) => { if (t >= s[2]) k = i; }); $$("button", bar).forEach((b, i) => b.classList.toggle("on", i === k)); };
-film.addEventListener("timeupdate", mark); mark();
-if (reduce) film.pause();
-$("#film-sound").addEventListener("click", (e) => {
-  const on = film.muted; film.muted = !on; const b = e.currentTarget;
-  b.setAttribute("aria-pressed", String(on)); b.setAttribute("aria-label", on ? "Turn the sound off" : "Turn the sound on");
-  b.innerHTML = ico(on ? "player-volume-high" : "player-volume-off");
-  if (on) film.play().catch(() => {});
+/* ── reveals ── */
+const shown = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); shown.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+$$("[data-r]").forEach((el) => {
+  const sibs = [...el.parentElement.children].filter((c) => c.hasAttribute("data-r"));
+  el.style.setProperty("--d", `${Math.min(sibs.indexOf(el), 5) * 70}ms`);
+  shown.observe(el);
 });
 
-/* ── the player ── */
-const view = $("#view"), vPl = $("#v-pl"), vInfo = $("#v-info");
+/* ── the open-weights ticker ── */
+const MODELS = ["LTX-2.5", "Qwen Image 2.1", "ACE-Step 1.5", "Gemma 4", "SAM3", "Depth Anything 3", "Pixal3D", "FLUX 3 Klein", "Krea 2 Turbo", "Z-Image Turbo",
+  "Stable Audio 3", "Demucs", "Whisper", "BiRefNet", "SeedVR2", "4x-UltraSharp", "FILM", "VOID"];
+$("#ticker").innerHTML = [...MODELS, ...MODELS].map((m) => `<span>${m}</span>`).join("");
+
+/* ── the hero reel: five takes, a caption for each, and its sound on demand ── */
+const reel = $("#reel");
+const REEL = [
+  { at: 0, k: "Kitchen", t: "The Great Jam Chase", m: "Ketkout · LTX-2.5, picture and sound in one pass" },
+  { at: 2.75, k: "Spice", t: "Pickle's storm on stage", m: "Lightning and stage rays laid by hand in FX, baked free" },
+  { at: 5.85, k: "Jam", t: "Moonlit Oolong Walk", m: "Taro sings his ACE-Step 1.5 song, lip-synced by LTX-2.5" },
+  { at: 9.35, k: "Kitchen", t: "The Great Jam Chase", m: "The jam goes in the pie: one of three LTX-2.5 takes" },
+  { at: 11.85, k: "Kitchen", t: "Desert Dawn Rescue", m: "A film from one sentence: four shots, cut in Cut" },
+];
+const segs = $("#segs"), np = $(".np");
+REEL.forEach((r, i) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.setAttribute("aria-label", `${r.k}: ${r.t}`);
+  b.addEventListener("click", () => { reel.currentTime = r.at + 0.35; if (reel.paused) play(true); });
+  segs.append(b);
+});
+let shownSeg = -1;
+function paint() {
+  const t = reel.currentTime, end = reel.duration || 15.04;
+  let k = 0; REEL.forEach((r, i) => { if (t >= r.at) k = i; });
+  $$("button", segs).forEach((b, i) => {
+    const a = REEL[i].at, z = REEL[i + 1]?.at ?? end;
+    b.style.setProperty("--p", `${i < k ? 100 : i > k ? 0 : Math.max(0, Math.min(100, ((t - a) / (z - a)) * 100))}%`);
+    b.toggleAttribute("aria-current", i === k);
+  });
+  if (k !== shownSeg) {
+    shownSeg = k;
+    $("#np-k").textContent = REEL[k].k; $("#np-t").textContent = REEL[k].t; $("#np-m").textContent = REEL[k].m;
+    np.classList.remove("swap"); void np.offsetWidth; np.classList.add("swap");
+  }
+}
+let raf = 0;
+const tick = () => { paint(); raf = reel.paused ? 0 : requestAnimationFrame(tick); };
+reel.addEventListener("play", () => { if (!raf) raf = requestAnimationFrame(tick); setPlay(true); });
+reel.addEventListener("pause", () => setPlay(false));
+reel.addEventListener("timeupdate", () => { if (!raf) paint(); });
+const playBtn = $("#reel-play"), soundBtn = $("#reel-sound");
+function setPlay(on) { playBtn.innerHTML = icon(on ? "pause" : "play"); playBtn.setAttribute("aria-label", on ? "Pause the reel" : "Play the reel"); }
+let held = reduce;
+function play(user) { if (user) held = false; reel.play().catch(() => {}); }
+playBtn.addEventListener("click", () => { if (reel.paused) play(true); else { held = true; reel.pause(); } });
+soundBtn.addEventListener("click", () => {
+  reel.muted = !reel.muted;
+  soundBtn.setAttribute("aria-pressed", String(!reel.muted));
+  soundBtn.setAttribute("aria-label", reel.muted ? "Turn the sound on" : "Turn the sound off");
+  soundBtn.innerHTML = icon(reel.muted ? "sound-off" : "sound-on");
+  if (!reel.muted) play(true);
+});
+new IntersectionObserver(([e]) => { if (e.isIntersecting) { if (!held) play(); } else reel.pause(); }, { threshold: 0.2 }).observe(reel);
+setPlay(false); paint();
+
+/* ── sound on a clip ── */
+$$("[data-sound]").forEach((b) => b.addEventListener("click", () => {
+  const v = document.getElementById(b.dataset.sound);
+  if (!v.getAttribute("src")) v.src = v.dataset.src;
+  v.muted = !v.muted; v.dataset.held = "";
+  if (!v.muted) { v.currentTime = 0; v.play().catch(() => {}); }
+  b.setAttribute("aria-pressed", String(!v.muted));
+  b.innerHTML = `${icon(v.muted ? "sound-off" : "sound-on")}<span>${v.muted ? "Play with sound" : "Sound on"}</span>`;
+}));
+
+/* ── compare wipes: drag (or arrow keys) the line; the pickers change the pictures ── */
+$$(".wipe").forEach((w) => {
+  const r = $("input", w);
+  if (!r) return;
+  const set = (x) => w.style.setProperty("--x", `${x}%`);
+  r.addEventListener("input", () => { w.dataset.touched = "1"; set(r.value); });
+  if (reduce) return;
+  // a first sweep when it comes into view, so it reads as something to drag
+  new IntersectionObserver(([e], o) => {
+    if (!e.isIntersecting) return; o.disconnect();
+    const t0 = performance.now();
+    const step = (t) => {
+      if (w.dataset.touched) return;
+      const p = Math.min(1, (t - t0) / 1600), x = 50 + 32 * Math.sin(p * Math.PI * 2) * (1 - p);
+      set(x.toFixed(2)); r.value = x;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, { threshold: 0.5 }).observe(w);
+});
+$$(".picker").forEach((pk) => {
+  const box = pk.closest(".compare"), w = $(".wipe", box), cap = $(".cap", box);
+  $$("button", pk).forEach((b) => b.addEventListener("click", () => {
+    $$("button", pk).forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    const a = $("img.a", w), bb = $("img.b", w);
+    a.src = b.dataset.a; bb.src = b.dataset.b;
+    a.alt = `Before: ${b.textContent.trim()}`; bb.alt = `After: ${b.textContent.trim()}`;
+    if (cap) cap.textContent = b.dataset.cap;
+  }));
+});
+
+/* ── Kitchen's rooms ── */
+const ROOMS = {
+  story: { img: "media/app/story.webp", cap: "Story: the bible on the left, the film as one document with a storyboard frame per shot, the inspector on the right.", alt: "Story with The Great Jam Chase open: the bible, the script with its storyboard frames, and the inspector" },
+  stage: { img: "media/app/stage.webp", cap: "Stage: block a scene with mannequins and 372 set pieces, then render its frame: the picture laid over the clay, a compare bar between them.", alt: "The Stage: a campfire night blocked with mannequins, its render laid over the clay frame with a compare bar" },
+  shot: { img: "media/app/shot.webp", cap: "Shot: the start frame, the script and its camera, the take log; one to four takes, picture and sound together.", alt: "The Shot desk with a take of The Great Jam Chase open" },
+  cut: { img: "media/app/cut.webp", cap: "Cut: a timeline that makes what is missing: music with ACE-Step, sound effects, voice lines.", alt: "Cut: the media bin, the monitor and the timeline of The Great Jam Chase" },
+  library: { img: "media/app/library.webp", cap: "Library: every take, film and picture, each reopened with the inputs that made it.", alt: "The Library: a grid of pictures made in the app" },
+};
+const tabs = $$(".rooms [role=tab]"), roomImg = $("#room-img");
+function room(b, focus) {
+  const r = ROOMS[b.dataset.room];
+  tabs.forEach((t) => { t.setAttribute("aria-selected", String(t === b)); t.tabIndex = t === b ? 0 : -1; });
+  if (focus) b.focus();
+  roomImg.classList.add("fade");
+  const next = new Image(); next.src = r.img;
+  next.decode().catch(() => {}).finally(() => { roomImg.src = r.img; roomImg.alt = r.alt; roomImg.classList.remove("fade"); });
+  $("#room-url").textContent = `127.0.0.1:5177/#/${b.dataset.room}`; $("#room-cap").textContent = r.cap;
+}
+tabs.forEach((b, i) => {
+  b.tabIndex = i ? -1 : 0;
+  b.addEventListener("click", () => room(b));
+  b.addEventListener("keydown", (e) => {
+    const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if (d) { e.preventDefault(); room(tabs[(i + d + tabs.length) % tabs.length], true); }
+  });
+});
+Object.values(ROOMS).forEach((r, i) => i && setTimeout(() => { new Image().src = r.img; }, 4000 + i * 400));
+
+/* ── the dock and the bar follow the page ── */
+const dockLinks = $$("#dock a"), dk = $("#dock .dk");
+const spyDock = new IntersectionObserver((es) => es.forEach((e) => {
+  if (!e.isIntersecting) return;
+  dockLinks.forEach((a) => {
+    const on = a.getAttribute("href") === `#${e.target.id}`;
+    a.classList.toggle("on", on);
+    if (on) { a.setAttribute("aria-current", "true"); dk.scrollTo({ left: a.offsetLeft - dk.clientWidth / 2 + a.clientWidth / 2, behavior: reduce ? "auto" : "smooth" }); }
+    else a.removeAttribute("aria-current");
+  });
+}), { rootMargin: "-45% 0px -50% 0px" });
+$$(".prod").forEach((s) => spyDock.observe(s));
+const navLinks = $$(".top nav a");
+const spyNav = new IntersectionObserver((es) => es.forEach((e) => {
+  if (e.isIntersecting) navLinks.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === `#${e.target.id === "studio-run" ? "studios" : e.target.id}`));
+}), { rootMargin: "-45% 0px -50% 0px" });
+["studios", "studio-run", "pets", "open", "made", "run"].forEach((id) => document.getElementById(id) && spyNav.observe(document.getElementById(id)));
+
+/* ── the FX library ── */
+const ELEMENTS = ["fireball", "spark-portal", "lightning", "magic-swirl", "energy-orb", "smoke", "embers-cloud", "shockwave", "electric-arc", "fire-wall", "rune-circle",
+  "sparks-burst", "god-rays", "hologram", "flame", "bokeh", "neon-ring", "light-leak", "lens-flare", "muzzle-flash", "starburst"];
+$("#els").innerHTML = ELEMENTS.map((e) => `<li title="${e.replace(/-/g, " ")}"><img src="media/spice/elements/${e}.webp" alt="${e.replace(/-/g, " ")}" width="256" height="256" loading="lazy"></li>`).join("");
+
+/* ── the viewer ── */
+const viewer = $("#viewer"), vMedia = $("#v-media"), vInfo = $("#v-info");
 let list = [], at = 0;
-const field = (label, text, cls = "") => (text ? `<div><div class="lab">${label}</div><p class="txt ${cls}">${esc(text)}</p></div>` : "");
+const field = (lab, txt, cls = "") => (txt ? `<div><div class="lab">${lab}</div><p class="${cls}">${esc(txt)}</p></div>` : "");
 function show(i) {
-  at = (i + list.length) % list.length; const cur = list[at], it = cur.item, isPreset = cur.type === "preset";
-  const src = isPreset ? `${pdir(it.id)}preview.mp4` : `media/takes/${it.id}.mp4`, poster = isPreset ? `${pdir(it.id)}poster.jpg` : `media/takes/${it.id}.jpg`;
-  vPl.innerHTML = `<video controls autoplay loop playsinline muted poster="${poster}" src="${src}"></video>`;
-  const chips = isPreset ? `<span class="chip y">${FAM[it.family] || it.family}</span><span class="chip">${it.seconds} s</span>` : `<span class="chip y">${esc(it.kind)}</span><span class="chip">${it.seconds} s</span>`;
-  const body = isPreset
-    ? field("What happens", it.action, "q") + field("Camera", it.camera) + field("Sound", it.sound) + field("The painted ending", it.paint)
-    : field("The prompt", it.prompt, "q") + (it.dialogue.length ? field("Dialogue", it.dialogue.map((d) => `“${d}”`).join(" ")) : "");
-  vInfo.innerHTML = `<div class="row">${chips}</div><h3>${esc(it.title || it.name)}</h3>${isPreset ? `<p class="txt">${esc(it.blurb)}</p>` : ""}${body}
-    <div class="acts">${isPreset ? `<button class="btn ghost sm" type="button" id="v-end">${ico("frame-last")} Show the ending</button>` : ""}<button class="btn ghost sm" type="button" id="v-prev" aria-label="Previous">${ico("player-skip-back")}</button><button class="btn ghost sm" type="button" id="v-next" aria-label="Next">${ico("player-skip-forward")}</button><a class="btn sm" href="demo/">Open the demo</a></div>`;
-  $("#v-prev").onclick = () => show(at - 1); $("#v-next").onclick = () => show(at + 1);
-  const endBtn = $("#v-end");
-  if (endBtn) { let on = false; endBtn.onclick = () => { on = !on; const v = $("video", vPl); if (on) { v.pause(); v.style.display = "none"; vPl.insertAdjacentHTML("beforeend", `<img id="v-last" alt="The painted last frame" src="${pdir(it.id)}last.jpg">`); endBtn.innerHTML = `${ico("play")} Show the shot`; } else { $("#v-last")?.remove(); v.style.display = ""; v.play().catch(() => {}); endBtn.innerHTML = `${ico("frame-last")} Show the ending`; } }; }
+  at = (i + list.length) % list.length;
+  const it = list[at];
+  vMedia.innerHTML = it.v
+    ? `<video controls autoplay loop playsinline ${it.sound ? "" : "muted"} poster="${it.i}" src="${it.v}"></video>`
+    : `<img src="${it.full || it.i}" alt="${esc(it.alt || it.t)}">`;
+  const v = $("video", vMedia); if (v) v.play().catch(() => { v.muted = true; v.play().catch(() => {}); });
+  const slug = it.p.toLowerCase();
+  vInfo.innerHTML = `<span class="mono">${esc(it.p)}${it.m ? ` · ${esc(it.m)}` : ""}</span><h3>${esc(it.t)}</h3>${field(it.dl || "How it was made", it.d, "q")}${it.d2 ? field(it.d2l || "Sound", it.d2) : ""}
+    <div class="vacts">${list.length > 1 ? `<button class="btn ghost sm" type="button" data-step="-1" aria-label="Previous">←</button><button class="btn ghost sm" type="button" data-step="1" aria-label="Next">→</button>` : ""}
+    <a class="btn sm" href="${slug === "kitchen" ? DEMO : `${DEMO}#/${slug}`}">Open ${esc(it.p)} ${icon("arrow")}</a></div>`;
+  $$("[data-step]", vInfo).forEach((b) => b.addEventListener("click", () => show(at + Number(b.dataset.step))));
 }
-function open(items, id) { list = items; show(Math.max(0, items.findIndex((x) => x.item.id === id))); if (!view.open) view.showModal(); }
-view.addEventListener("close", () => { vPl.innerHTML = ""; });
-view.addEventListener("click", (e) => { if (e.target === view) view.close(); });
-$("#v-x").addEventListener("click", () => view.close());
-view.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") show(at + 1); else if (e.key === "ArrowLeft") show(at - 1); });
-const zoom = $("#zoom");
-$$("[data-zoom]").forEach((b) => b.addEventListener("click", () => { $("#zoom-i").src = b.dataset.zoom; $("#zoom-i").alt = $("img", b).alt; zoom.showModal(); }));
-zoom.addEventListener("click", () => zoom.close());
+function open(items, i) { list = items; show(i); if (!viewer.open) viewer.showModal(); }
+viewer.addEventListener("close", () => { vMedia.innerHTML = ""; });
+viewer.addEventListener("click", (e) => { if (e.target === viewer) viewer.close(); });
+viewer.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") show(at + 1); else if (e.key === "ArrowLeft") show(at - 1); });
+$("#v-close").addEventListener("click", () => viewer.close());
 
-/* ── data ── */
-Promise.all([fetch("media/presets.json").then((r) => r.json()), fetch("media/takes.json").then((r) => r.json())]).then(([P, T]) => {
-  presets = P; takes = T;
-  const asP = (arr) => arr.map((x) => ({ type: "preset", item: x })), asT = (arr) => arr.map((x) => ({ type: "take", item: x }));
-
-  /* two rows of every preset, sliding past, each playing as it comes into view */
-  const marq = $("#marq");
-  const rowOf = (items, rev) => {
-    const row = document.createElement("div"); row.className = "row" + (rev ? " rev" : "");
-    const mk = (p) => { const b = document.createElement("button"); b.type = "button"; b.className = "mq"; b.innerHTML = `<img src="${pdir(p.id)}poster.jpg" alt="" width="720" height="480" loading="lazy"><b>${esc(p.name)}</b>`; live(b, `${pdir(p.id)}preview.mp4`); b.addEventListener("click", () => open(asP(presets), p.id)); return b; };
-    [...items, ...items].forEach((p) => row.append(mk(p)));
-    return row;
+/* ── the presets rail ── */
+fetch("media/presets.json").then((r) => r.json()).then((P) => {
+  const FAM = { camera: "Camera move", vfx: "Effect", transform: "Transformation" };
+  const items = P.map((p) => ({ p: "Kitchen", t: p.name, m: `${FAM[p.family] || p.family} preset`, v: `media/presets/${p.id}/preview.mp4`, i: `media/presets/${p.id}/poster.jpg`,
+    d: p.action, dl: "The script", d2: p.sound, d2l: "Its sound", sound: true }));
+  const rail = $("#presets-rail");
+  const row = (idx, rev) => {
+    const el = document.createElement("div"); el.className = "row" + (rev ? " rev" : "");
+    const mk = (k) => `<button class="pz" type="button" data-k="${k}"><img src="${items[k].i}" alt="" width="150" height="100" loading="lazy"><b>${esc(items[k].t)}</b></button>`;
+    el.innerHTML = [...idx, ...idx].map(mk).join("");
+    return el;
   };
-  marq.append(rowOf(presets.filter((_, i) => i % 2 === 0), false), rowOf(presets.filter((_, i) => i % 2 === 1), true));
+  const all = items.map((_, k) => k);
+  rail.append(row(all.filter((k) => k % 2 === 0), false), row(all.filter((k) => k % 2 === 1), true));
+  rail.addEventListener("click", (e) => { const b = e.target.closest(".pz"); if (b) open(items, Number(b.dataset.k)); });
+}).catch(() => {});
 
-  /* the mosaic */
-  const mosaic = $("#mosaic"); let fam = "", q = "";
-  const BIG = new Set([0, 9, 16, 23]);
-  const tiles = presets.map((p, i) => {
-    const t = document.createElement("button"); t.type = "button"; t.className = "tile" + (BIG.has(i) ? " big" : "");
-    t.innerHTML = `<img src="${pdir(p.id)}poster.jpg" alt="" width="720" height="480" loading="lazy"><span class="chip">${FAM[p.family] || p.family}</span><div class="t"><b>${esc(p.name)}</b><span>${esc(p.blurb)}</span></div>`;
-    live(t, `${pdir(p.id)}preview.mp4`);
-    t.addEventListener("click", () => open(asP(presets.filter(match)), p.id)); mosaic.append(t); return t;
-  });
-  function match(p) { return (!fam || p.family === fam) && (!q || `${p.name} ${p.blurb} ${p.camera} ${p.family}`.toLowerCase().includes(q)); }
-  const apply = () => { mosaic.classList.toggle("flat", !!(fam || q)); tiles.forEach((t, i) => { t.hidden = !match(presets[i]); }); };
-  $$("#p-tabs button").forEach((b) => b.addEventListener("click", () => { fam = b.dataset.f; $$("#p-tabs button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); apply(); }));
-  $("#p-q").addEventListener("input", (e) => { q = e.target.value.trim().toLowerCase(); apply(); });
-
-  /* talking, copying, extending: three big pairs */
-  const byId = Object.fromEntries(takes.map((t) => [t.id, t]));
-  const clip = (host, id, label) => {
-    const t = byId[id]; if (!t) return;
-    host.innerHTML = `<img src="media/takes/${t.id}.jpg" alt=""><div class="t">${esc(label)}</div>`; host.style.cursor = "pointer"; host.setAttribute("role", "button"); host.tabIndex = 0;
-    live(host, `media/takes/${t.id}.mp4`);
-    const go = () => open(asT(takes), t.id); host.addEventListener("click", go); host.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
-  };
-  clip($("#tk-a"), "not-tonight", "Not tonight · she says it"); clip($("#tk-b"), "chef-lip-sync", "Chef · lip sync");
-  clip($("#cp-a"), "chef-copied-motion", "Copied motion"); clip($("#cp-b"), "thunder-god-extended", "Extended clip");
-
-  /* the gallery of real takes */
-  const grid = $("#t-grid"); let kind = "";
-  const cards = takes.map((t) => {
-    const c = document.createElement("button"); c.type = "button"; c.className = "take";
-    c.innerHTML = `<span class="sz" style="aspect-ratio:${t.width} / ${t.height}"></span><img src="media/takes/${t.id}.jpg" alt="" loading="lazy"><span class="chip">${esc(t.kind)}</span><div class="t"><b>${esc(t.title)}</b></div>`;
-    live(c, `media/takes/${t.id}.mp4`); c.addEventListener("click", () => open(asT(takes.filter((x) => !kind || x.kind === kind)), t.id)); grid.append(c); return c;
-  });
-  $$("#t-tabs button").forEach((b) => b.addEventListener("click", () => { kind = b.dataset.k; $$("#t-tabs button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); cards.forEach((c, i) => { c.hidden = !!kind && takes[i].kind !== kind; }); }));
+/* ── the gallery: what the studios made ── */
+const G = [
+  { p: "Kitchen", t: "The Great Jam Chase · the last jar", m: "LTX-2.5", v: "media/kitchen/jam-chase-1.mp4", i: "media/kitchen/jam-chase-1.jpg", w: 960, h: 528, sound: true,
+    d: "On tiptoe at the counter, the chick lifts the last jar of jam beside the rolled-out dough and pie tin. The jar slips from her wings and falls. The camera pushes in slowly. The chick says, \"Oh no, not the last jar!\"", d2: "Soft morning ambience, a small strained grunt, then a glassy thump as the jar hits the floor." },
+  { p: "Spice", t: "Paprika's portal", m: "FX from the library, baked free", i: "media/spice/paprika-fx.webp", w: 1280, h: 853, d: "Paprika on a rooftop at night: a portal of sparks opens over the city, a magic swirl winds around her, the lamp glints." },
+  { p: "Toaster", t: "Crumpet's workbench", m: "From the clay frame", i: "media/toaster/woodshop-workbench.webp", w: 1280, h: 720, d: "Crumpet building a toy at his workbench, in a woodshop of 17 parts. The example's render was made with GPT Image from the clay frame kept with it." },
+  { p: "Jam", t: "Moonlit Oolong Walk", m: "ACE-Step 1.5 + LTX-2.5", v: "media/jam/taro.mp4", i: "media/jam/taro.jpg", w: 720, h: 720, sound: true,
+    d: "Taro's song, written by Pickle from one sentence and made with ACE-Step 1.5; the six-second video cover rolled with LTX-2.5 from the cover picture, lip-synced to the chorus." },
+  { p: "Mixer", t: "Meringue", m: "LTX-2.5 · 9:16", v: "media/mixer/meringue-1.mp4", i: "media/mixer/meringue-1.jpg", w: 540, h: 960, d: "Tight vertical close-up of Meringue, the snowy-white kitten with sky-blue eyes and a coral-pink ribbon, doing a face dance on the beat." },
+  { p: "Kitchen", t: "Rainy bus stop", m: "Stage → Qwen Image 2.1", i: "media/kitchen/stage-rainy-bus-stop-render.webp", w: 1376, h: 768, d: "One of the Stage's examples, blocked with three mannequins and rendered from its clay frame with Qwen Image 2.1: a rainy evening at a seaside bus stop, moody blue dusk light." },
+  { p: "Toaster", t: "Brioche's perfume launch", m: "From the clay frame", i: "media/toaster/perfume-hero.webp", w: 1024, h: 1280, d: "The Brioche flacon on a travertine plinth with its gift box, a pearl and Brioche the bunny. The example's render was made with GPT Image from its clay frame." },
+  { p: "Spice", t: "Pickle's storm on stage", m: "A clip, every layer moving", v: "media/spice/pickle-storm.mp4", i: "media/spice/pickle-storm.jpg", w: 960, h: 640, d: "Pickle singing on stage, five seconds pushed in slowly: two bolts of lightning strike behind him, violet stage rays pulse, a lamp flares. Baked free." },
+  { p: "Macaron", t: "Little Otter Tea", m: "A fictional brand, made end to end", i: "media/macaron/otter-flyer.webp", w: 720, h: 1018, d: "An A4 café flyer from the Little Otter Tea brand kit: deep teal, moon cream, tangerine, Manrope and IBM Plex Mono." },
+  { p: "Kitchen", t: "Desert Dawn Rescue", m: "A film from one sentence", v: "media/film/desert-dawn-rescue.mp4", i: "media/film/desert-dawn-rescue.jpg", w: 960, h: 528, sound: true, d: "Four shots written by Story from one sentence, rolled with LTX-2.5 and cut in Cut, picture and sound." },
+  { p: "Spice", t: "Ketkout's flambé", m: "FX from the library, baked free", i: "media/spice/ketkout-fx.webp", w: 1280, h: 853, d: "Ketkout at his stove at night: the flames of a flambé rise out of his pan behind its rim, embers and smoke above, the fire's light on the room." },
+  { p: "Toaster", t: "Pickle's little stage, as a poster", m: "From the clay frame", i: "media/toaster/stage-poster.webp", w: 1280, h: 720, d: "Pickle at the microphone with his band and three fans, a screen-printed poster look. The example's render was made with GPT Image from the clay frame kept with it." },
+  { p: "Macaron", t: "Comfyture: the launch post", m: "4:5", i: "media/macaron/launch.webp", w: 720, h: 900, d: "A launch post made in Macaron from the Comfyture brand kit, with Brioche." },
+  { p: "Kitchen", t: "Café terrace", m: "Stage → Qwen Image 2.1", i: "media/kitchen/stage-cafe-terrace-render.webp", w: 1376, h: 768, d: "A Stage example rendered from its clay frame: a sunny café terrace in the morning, a striped awning." },
+  { p: "Mixer", t: "Meringue, take two", m: "LTX-2.5 · 9:16", v: "media/mixer/meringue-2.mp4", i: "media/mixer/meringue-2.jpg", w: 540, h: 960, d: "A second take of Meringue's face dance." },
+  { p: "Spice", t: "Brioche's first snow", m: "Light, then FX", i: "media/spice/brioche-fx.webp", w: 1280, h: 853, d: "Brioche in the garden at blue hour, given a cool winter grade in Light, then snow, cold light through the branches and the lantern's glint in FX." },
+  { p: "Kitchen", t: "The Great Jam Chase · into the pie", m: "LTX-2.5", v: "media/kitchen/jam-chase-2.mp4", i: "media/kitchen/jam-chase-2.jpg", w: 960, h: 528, sound: true,
+    d: "The chick trots back to the counter with the jar clutched to her chest and spoons the jam into the pie, ready for the oven. The camera pulls back slowly.", d2: "Happy trotting steps, a squelch of jam spooned onto the pie, a warm cheerful musical ending." },
+  { p: "Toaster", t: "Crumpet's workbench, storybook look", m: "From the clay frame", i: "media/toaster/woodshop-storybook.webp", w: 1280, h: 720, d: "The same clay as the workbench, another look. The example's render was made with GPT Image." },
+  { p: "Kitchen", t: "Campfire night", m: "Stage → Qwen Image 2.1", i: "media/kitchen/stage-campfire-night-render.webp", w: 1376, h: 590, d: "A Stage example rendered from its clay frame: a summer night in the mountains around a campfire." },
+  { p: "Macaron", t: "Comfyture intro", m: "9:16 motion", v: "media/macaron/intro.mp4", i: "media/macaron/intro.jpg", w: 540, h: 960, d: "A logo and product intro made in Macaron's Studio from the Comfyture kit." },
+  { p: "Spice", t: "Truffle's spark of genius", m: "FX from the library, baked free", i: "media/spice/truffle-fx.webp", w: 1280, h: 853, d: "Truffle at his workbench: an energy orb above his paws, an electric arc to his screwdriver, a burst of sparks at its tip." },
+  { p: "Kitchen", t: "Thunder God, extended", m: "Preset + extend", v: "media/takes/thunder-god-extended.mp4", i: "media/takes/thunder-god-extended.jpg", w: 960, h: 528, sound: true, d: "The Thunder God preset, then the clip carried on: its last frames guide the new shot, so it picks up exactly where it ends." },
+  { p: "Toaster", t: "After dark", m: "From the clay frame", i: "media/toaster/perfume-after-dark.webp", w: 1024, h: 1280, d: "Brioche's perfume launch, an after-dark look of the same clay. The example's render was made with GPT Image." },
+  { p: "Jam", t: "Taro's song cover", m: "The cover row", i: "media/jam/taro-cover.webp", w: 720, h: 720, d: "The cover of Taro's song, and the first frame of its video cover." },
+  { p: "Kitchen", t: "Morning kitchen", m: "Stage → Qwen Image 2.1", i: "media/kitchen/stage-morning-kitchen-render.webp", w: 1376, h: 768, d: "A Stage example rendered from its clay frame: a bright kitchen on a sunny morning." },
+  { p: "Macaron", t: "Little Otter Tea: one cup, then the moon", m: "4:5", i: "media/macaron/otter-post.webp", w: 720, h: 900, d: "A 4:5 launch post from the Little Otter Tea kit." },
+  { p: "Kitchen", t: "Not tonight", m: "A talking shot", v: "media/takes/not-tonight.mp4", i: "media/takes/not-tonight.jpg", w: 960, h: 528, sound: true, d: "Write the line and the speaker: the voice and the lip sync come with the shot, made by LTX-2.5 with the picture." },
+  { p: "Kitchen", t: "Film set", m: "Stage → Qwen Image 2.1", i: "media/kitchen/stage-film-set-render.webp", w: 1376, h: 590, d: "A Stage example rendered from its clay frame: behind the scenes on a film set." },
+];
+const grid = $("#gallery");
+const cards = G.map((it, k) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "g"; b.dataset.p = it.p;
+  b.setAttribute("aria-label", `${it.t}, ${it.p}${it.v ? ", video" : ""}`);
+  b.innerHTML = `<img src="${it.i}" alt="" width="${it.w}" height="${it.h}" loading="lazy" decoding="async">${it.v ? `<span class="play">${icon("play")}</span>` : ""}<span class="gt"><span>${esc(it.p)}<span class="m"> · ${esc(it.m)}</span></span><b>${esc(it.t)}</b></span>`;
+  b.addEventListener("click", () => { const vis = G.filter((_, j) => !cards[j].hidden); open(vis, vis.indexOf(it)); });
+  if (it.v && !reduce && matchMedia("(hover: hover)").matches) {
+    b.addEventListener("mouseenter", () => {
+      let v = $("video", b);
+      if (!v) { v = document.createElement("video"); v.muted = true; v.loop = true; v.playsInline = true; v.src = it.v; b.append(v); }
+      v.play().then(() => b.classList.add("live")).catch(() => {});
+    });
+    b.addEventListener("mouseleave", () => { const v = $("video", b); if (v) { v.pause(); b.classList.remove("live"); } });
+  }
+  grid.append(b);
+  return b;
 });
+const moreG = $("#more-g");
+const unclamp = () => { grid.classList.remove("clamp"); moreG.remove(); };
+moreG.textContent = `Show all ${G.length}`;
+moreG.addEventListener("click", unclamp);
+$$("#filters button").forEach((f) => f.addEventListener("click", () => {
+  $$("#filters button").forEach((x) => x.setAttribute("aria-pressed", String(x === f)));
+  cards.forEach((c) => { c.hidden = !!f.dataset.f && c.dataset.p !== f.dataset.f; });
+  if (f.dataset.f && moreG.isConnected) unclamp();
+}));
 
-/* nav follows the page */
-const links = $$(".bar nav a"), secs = links.map((a) => $(a.getAttribute("href")));
-const spy = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) links.forEach((a, i) => a.classList.toggle("on", secs[i] === e.target)); }), { rootMargin: "-40% 0px -55% 0px" });
-secs.forEach((s) => s && spy.observe(s));
+/* ── copy the commands ── */
+$$("[data-copy]").forEach((b) => b.addEventListener("click", () => {
+  navigator.clipboard?.writeText(b.dataset.copy).then(() => {
+    b.innerHTML = `${icon("check")}<span>Copied</span>`;
+    setTimeout(() => { b.innerHTML = `${icon("copy")}<span>Copy</span>`; }, 1800);
+  }).catch(() => {});
+}));

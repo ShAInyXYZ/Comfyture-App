@@ -1,194 +1,594 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Comfyture · Open-source AI filmmaking studio</title>
-<meta name="description" content="Comfyture turns a photo or one sentence into video with sound: 28 presets, a story desk, a staging table and an editing room. Open source, built on ComfyUI and LTX-2.5.">
-<meta name="theme-color" content="#0f0b13">
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Comfyture · Seven AI studios, all open</title>
+<meta name="description" content="Comfyture is an open-source Higgsfield built on ComfyUI: seven creative studios (films, trends, music videos, brand content, VFX, 3D, one-job tools), each run by a pet, open weights by default. MIT.">
+<meta name="theme-color" content="#0e0e10">
 <link rel="icon" href="brand/favicon.svg" type="image/svg+xml"><link rel="icon" href="brand/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
-<meta property="og:title" content="Comfyture"><meta property="og:description" content="One photo in, a cinematic shot with sound out. One sentence in, a short film out. Open source."><meta property="og:image" content="media/film/desert-dawn-rescue.jpg">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Comfyture · Seven AI studios, all open">
+<meta property="og:description" content="An open-source Higgsfield built on ComfyUI. Seven studios, seven pets, open weights by default.">
+<meta property="og:image" content="media/hero/reel.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="fonts/manrope-400-800.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="site.css">
-</head><body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="gh" viewBox="0 0 24 24"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></symbol></svg>
+<script>document.documentElement.classList.add("js")</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="gh" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></symbol>
+  <symbol id="star" viewBox="0 0 24 24"><path fill="currentColor" d="m12 2.6 2.83 6.06 6.64.8-4.9 4.55 1.27 6.57L12 17.3l-5.84 3.28 1.27-6.57-4.9-4.55 6.64-.8z"/></symbol>
+  <symbol id="arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="arrow-ne" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M8 7h9v9"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.52.85l10.4-6.5a1 1 0 0 0 0-1.7L9.52 4.65A1 1 0 0 0 8 5.5z"/></symbol>
+  <symbol id="pause" viewBox="0 0 24 24"><path fill="currentColor" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></symbol>
+  <symbol id="sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></g></symbol>
+  <symbol id="sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></g></symbol>
+  <symbol id="close" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="copy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></g></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="coin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 6.8v10.4M14.6 9.2c-.4-.9-1.4-1.4-2.6-1.4-1.5 0-2.6.8-2.6 2s1.1 1.7 2.6 2.1c1.5.4 2.6.9 2.6 2.1s-1.1 2.1-2.6 2.1c-1.3 0-2.3-.6-2.7-1.5"/></g></symbol>
+  <symbol id="compass" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></g></symbol>
+</svg>
 
-<div class="ticker" aria-hidden="true"><div class="tr" id="ticker"></div></div>
-<header class="bar"><div class="wrap">
-  <a href="#top" aria-label="Comfyture"><span class="wm"></span></a>
-  <nav aria-label="Main"><a href="#presets">Presets</a><a href="#talk">Talk</a><a href="#lff">Last frame</a><a href="#story">Story</a><a href="#stage">Stage</a><a href="#shot">Shot</a><a href="#cut">Cut</a><a href="#library">Library</a><a href="#made">Made with it</a><a href="#models">Models</a><a href="#run">Run it</a><a href="#faq">FAQ</a></nav>
-  <div class="end"><a class="gh" href="https://github.com/ShAInyXYZ/Comfyture"><svg><use href="#gh"/></svg><span>GitHub</span></a><a class="btn sm" href="demo/">Open the demo</a></div>
+<a class="skip" href="#main">Skip to the content</a>
+
+<div class="flag"><div class="wrap">
+  <span class="tag">#OpenSourceHiggsfield</span>
+  <span class="msg">An open-source Higgsfield on ComfyUI: MIT licence, open weights by default.</span>
+  <a href="https://github.com/ShAInyXYZ/Comfyture/blob/main/docs/competition/JUDGES.md">For judges <svg class="i"><use href="#arrow"/></svg></a>
+</div></div>
+
+<header class="top" id="top"><div class="wrap">
+  <a class="brand" href="#main" aria-label="Comfyture, back to the top"><span class="wm"></span></a>
+  <nav aria-label="Sections">
+    <a href="#studios">Studios</a><a href="#pets">Pets</a><a href="#open">Open weights</a><a href="#made">Gallery</a><a href="#run">Run it</a>
+  </nav>
+  <div class="end">
+    <a class="btn ghost sm gh" href="https://github.com/ShAInyXYZ/Comfyture"><svg class="i"><use href="#gh"/></svg><span>Star on GitHub</span></a>
+    <a class="btn sm" href="demo/">Try the demo</a>
+  </div>
 </div></header>
 
-<main id="top">
-<!-- hero: the film is the page -->
-<section class="hero">
-  <video id="film-v" muted loop playsinline autoplay preload="auto" poster="media/film/desert-dawn-rescue.jpg" src="media/film/desert-dawn-rescue.mp4"></video>
-  <div class="in">
+<main id="main">
+
+<!-- ── hero: a reel of real takes, picture and sound ─────────────────────────────────────────────────────────── -->
+<section class="hero" aria-labelledby="hero-h">
+  <div class="reel">
+    <video id="reel" muted loop playsinline preload="metadata" poster="media/hero/reel.jpg" src="media/hero/reel.mp4" aria-label="A reel of takes made in Comfyture"></video>
+    <div class="shade"></div>
+  </div>
+  <div class="wrap in">
+    <div class="copy">
+      <p class="eyebrow"><span class="dot"></span>The open-source Higgsfield, built on ComfyUI</p>
+      <h1 id="hero-h">Seven AI studios.<em>All open.</em></h1>
+      <p class="lead">Films, viral trends, music videos, brand content, VFX, 3D and one-job tools on one engine. Each studio has a pet who knows it and does the work with you. Open weights by default: LTX-2.5 makes picture and sound in one pass, on your GPU or on Comfy Cloud.</p>
+      <div class="cta">
+        <a class="btn lg" href="demo/">Try the live demo <svg class="i"><use href="#arrow"/></svg></a>
+        <a class="btn lg ghost" href="https://github.com/ShAInyXYZ/Comfyture"><svg class="i"><use href="#star"/></svg> Star on GitHub</a>
+      </div>
+      <p class="note">Free to try: every studio opens on its example, and its pet shows you around.</p>
+    </div>
+    <aside class="now" aria-label="Now playing">
+      <div class="np">
+        <span class="mono" id="np-k">Kitchen</span>
+        <b id="np-t">The Great Jam Chase</b>
+        <span id="np-m">Ketkout · LTX-2.5, picture and sound in one pass</span>
+      </div>
+      <div class="segs" id="segs" role="group" aria-label="Jump to a take"></div>
+      <div class="keys">
+        <button class="round" type="button" id="reel-play" aria-label="Pause the reel"><svg class="i"><use href="#pause"/></svg></button>
+        <button class="round" type="button" id="reel-sound" aria-label="Turn the sound on" aria-pressed="false"><svg class="i"><use href="#sound-off"/></svg></button>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ── the models it runs, open weights ──────────────────────────────────────────────────────────────────────── -->
+<div class="ticker" aria-label="Open-weights models Comfyture runs">
+  <span class="lbl mono">Open weights by default</span>
+  <div class="track"><div class="tr" id="ticker"></div></div>
+</div>
+
+<!-- ── seven studios, seven pets ─────────────────────────────────────────────────────────────────────────────── -->
+<section class="sec studios" id="studios" aria-labelledby="studios-h">
+  <div class="wrap">
+    <div class="head split">
+      <div>
+        <p class="eyebrow" data-r>Seven studios · one engine</p>
+        <h2 id="studios-h" data-r>Seven studios.<em>Seven pets.</em></h2>
+      </div>
+      <p class="sub" data-r>Each studio has its own home, its own examples and a pet in its chat bar who knows that studio and nothing else. All seven run on the same server, the same ComfyUI workflows and the same take log.</p>
+    </div>
+    <figure class="lineup" data-r>
+      <img src="media/pets/lineup.webp" srcset="media/pets/lineup-768.webp 768w, media/pets/lineup.webp 1536w" sizes="(max-width: 800px) 100vw, 1200px" width="1536" height="1024" alt="The seven pets together: Ketkout the chick with a clapperboard, Praline the kitten with a phone, Pickle the frog singing, Brioche the bunny with a camera, Paprika the chameleon with sparkles, Crumpet the beaver with a wooden block and Truffle the raccoon with a screwdriver" loading="lazy" decoding="async">
+      <figcaption class="names" aria-hidden="true"><span>Ketkout</span><span>Praline</span><span>Pickle</span><span>Brioche</span><span>Paprika</span><span>Crumpet</span><span>Truffle</span></figcaption>
+    </figure>
+
+    <div class="bento">
+      <a class="card c-kitchen" href="#kitchen" data-r>
+        <video class="lazy" muted loop playsinline preload="none" poster="media/kitchen/jam-chase-1.jpg" data-src="media/kitchen/jam-chase-1.mp4"></video>
+        <div class="who"><img src="media/pets/ketkout.webp" alt="" width="40" height="40"><span><b>Ketkout</b> head chef</span></div>
+        <div class="t"><h3>Kitchen</h3><p>A film from one sentence: story, stage, shot, cut.</p><span class="makes">Films · Shots · Stages · Edits</span></div>
+        <span class="go" aria-hidden="true"><svg class="i"><use href="#arrow"/></svg></span>
+      </a>
+      <a class="card c-mixer" href="#mixer" data-r>
+        <video class="lazy" muted loop playsinline preload="none" poster="media/mixer/meringue-1.jpg" data-src="media/mixer/meringue-1.mp4"></video>
+        <div class="who"><img src="media/pets/praline.webp" alt="" width="40" height="40"><span><b>Praline</b> trend boss</span></div>
+        <div class="t"><h3>Mixer</h3><p>Viral trends, made yours.</p><span class="makes">Trends · Cast swaps</span></div>
+        <span class="go" aria-hidden="true"><svg class="i"><use href="#arrow"/></svg></span>
+      </a>
+      <a class="card c-jam" href="#jam" data-r>
+        <video class="lazy" muted loop playsinline preload="none" poster="media/jam/taro.jpg" data-src="media/jam/taro.mp4"></video>
+        <div class="who"><img src="media/pets/pickle.webp" alt="" width="40" height="40"><span><b>Pickle</b> band leader</span></div>
+        <div class="t"><h3>Jam</h3><p>A music video from a track.</p><span class="makes">Songs · Music videos</span></div>
+        <span class="go" aria-hidden="true"><svg class="i"><use href="#arrow"/></svg></span>
+      </a>
+      <a class="card c-macaron" href="#macaron" data-r>
+        <div class="fan" aria-hidden="true"><img src="media/macaron/otter-post.webp" alt="" loading="lazy" width="720" height="900"><img src="media/macaron/hero.webp" alt="" loading="lazy" width="720" height="900"><img src="media/macaron/board.webp" alt="" loading="lazy" width="720" height="900"></div>
+        <div class="who"><img src="media/pets/brioche.webp" alt="" width="40" height="40"><span><b>Brioche</b> brand keeper</span></div>
+        <div class="t"><h3>Macaron</h3><p>Ready-to-post content for a brand.</p><span class="makes">Brand kits · Posts · Motion</span></div>
+        <span class="go" aria-hidden="true"><svg class="i"><use href="#arrow"/></svg></span>
+      </a>
+      <a class="card c-spice" href="#spice" data-r>
+        <video class="lazy" muted loop playsinline preload="none" poster="media/spice/pickle-wipe.jpg" data-src="media/spice/pickle-wipe.mp4"></video>
+        <div class="who"><img src="media/pets/paprika.webp" alt="" width="40" height="40"><span><b>Paprika</b> VFX house</span></div>
+        <div class="t"><h3>Spice</h3><p>One shot through six VFX departments.</p><span class="makes">Roto · Paint · Light · FX · Comp</span></div>
+        <span class="lab l mono" aria-hidden="true">Plate</span><span class="lab r mono" aria-hidden="true">Comp</span>
+        <span class="go" aria-hidden="true"><svg class="i"><use href="#arrow"/></svg></span>
+      </a>
+      <a class="card c-toaster" href="#toaster" data-r>
+        <div class="wipe auto" aria-hidden="true"><img class="b" src="media/toaster/woodshop-workbench.webp" alt="" loading="lazy" width="1280" height="720"><img class="a" src="media/toaster/woodshop-workbench-clay.webp" alt="" loading="lazy" width="1280" height="720"><span class="bar"></span></div>
+        <div class="who"><img src="media/pets/crumpet.webp" alt="" width="40" height="40"><span><b>Crumpet</b> model maker</span></div>
+        <div class="t"><h3>Toaster</h3><p>Clay in, toast out: a render, then a 3D model.</p><span class="makes">Renders · Maps · GLB</span></div>
+        <span class="go" aria-hidden="true"><svg class="i"><use href="#arrow"/></svg></span>
+      </a>
+      <a class="card c-utensils" href="#utensils" data-r>
+        <div class="big" aria-hidden="true"><b>691</b><span>official ComfyUI workflows, each one a form you can run</span></div>
+        <div class="who"><img src="media/pets/truffle.webp" alt="" width="40" height="40"><span><b>Truffle</b> toolsmith</span></div>
+        <div class="t"><h3>Utensils</h3><p>One tool, one job: a shelf of single tools.</p><span class="makes">Upscale · Cutout · Edit · Sound</span></div>
+        <span class="go" aria-hidden="true"><svg class="i"><use href="#arrow"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+
+
+<div class="studio-run" id="studio-run">
+<!-- the studios one after another, with a dock that sticks while they pass -->
+<nav class="dock" id="dock" aria-label="Studios">
+  <div class="dk">
+    <a href="#kitchen"><img src="media/pets/ketkout.webp" alt="" width="24" height="24">Kitchen</a>
+    <a href="#mixer"><img src="media/pets/praline.webp" alt="" width="24" height="24">Mixer</a>
+    <a href="#jam"><img src="media/pets/pickle.webp" alt="" width="24" height="24">Jam</a>
+    <a href="#macaron"><img src="media/pets/brioche.webp" alt="" width="24" height="24">Macaron</a>
+    <a href="#spice"><img src="media/pets/paprika.webp" alt="" width="24" height="24">Spice</a>
+    <a href="#toaster"><img src="media/pets/crumpet.webp" alt="" width="24" height="24">Toaster</a>
+    <a href="#utensils"><img src="media/pets/truffle.webp" alt="" width="24" height="24">Utensils</a>
+  </div>
+</nav>
+
+<!-- ── 01 Kitchen ────────────────────────────────────────────────────────────────────────────────────────────── -->
+<section class="prod" id="kitchen" aria-labelledby="kitchen-h">
+  <div class="wrap">
+    <div class="phead">
+      <div class="pid" data-r><img src="media/pets/ketkout.webp" alt="" width="56" height="56"><span class="mono">01 · Kitchen</span><span class="pet">with <b>Ketkout</b>, head chef</span></div>
+      <h2 id="kitchen-h" data-r>A film from <em>one sentence.</em></h2>
+      <p class="lead" data-r>The director's studio. Write one sentence and Story writes the film: its bible, its script and a storyboard. Block a shot on the Stage with mannequins and 372 clay pieces, roll it in Shot with LTX-2.5, picture and sound in one pass, then cut the film in Cut.</p>
+    </div>
+
+    <div class="rooms" data-r>
+      <div class="tabs" role="tablist" aria-label="Kitchen's rooms">
+        <button role="tab" type="button" aria-selected="true" aria-controls="room-pane" data-room="story">Story</button>
+        <button role="tab" type="button" aria-selected="false" aria-controls="room-pane" data-room="stage">Stage</button>
+        <button role="tab" type="button" aria-selected="false" aria-controls="room-pane" data-room="shot">Shot</button>
+        <button role="tab" type="button" aria-selected="false" aria-controls="room-pane" data-room="cut">Cut</button>
+        <button role="tab" type="button" aria-selected="false" aria-controls="room-pane" data-room="library">Library</button>
+      </div>
+      <div class="win" id="room-pane" role="tabpanel">
+        <div class="wbar" aria-hidden="true"><i></i><i></i><i></i><span class="url mono" id="room-url">127.0.0.1:5177/#/story</span></div>
+        <img id="room-img" src="media/app/story.webp" width="1800" height="1069" alt="Story with The Great Jam Chase open: the bible with Ketkout and the jar, the script with its storyboard frames, and the inspector" loading="lazy" decoding="async">
+      </div>
+      <p class="cap" id="room-cap">Story: the bible on the left, the film as one document with a storyboard frame per shot, the inspector on the right.</p>
+    </div>
+
+    <div class="trio">
+      <article class="tile" data-r>
+        <div class="media"><video class="lazy" muted loop playsinline preload="none" poster="media/loops/stage-passes.jpg" data-src="media/loops/stage-passes.mp4"></video></div>
+        <div class="tt"><h3>Block it in clay</h3><p>Pose mannequins, dress the set, frame it with a real lens. The Stage renders seven control passes: clay, colour ID, depth, normal, pose, lines and mask.</p></div>
+      </article>
+      <article class="tile" data-r>
+        <div class="media lff">
+          <img src="media/samples/dancer.jpg" alt="The starting photo: a dancer lit red and blue" loading="lazy" width="720" height="480">
+          <img src="media/presets/gold-statue/last.jpg" alt="The painted last frame: the same dancer as a gold statue" loading="lazy" width="720" height="480">
+          <video class="lazy" muted loop playsinline preload="none" poster="media/presets/gold-statue/poster.jpg" data-src="media/presets/gold-statue/preview.mp4"></video>
+        </div>
+        <div class="tt"><h3>Last frame first</h3><p>A transformation paints its ending first with Qwen Image 2.1. You check it, then LTX-2.5 turns your photo toward it, with its sound.</p></div>
+      </article>
+      <article class="tile" data-r>
+        <div class="media presets" id="presets-rail" aria-label="Presets playing"></div>
+        <div class="tt"><h3>28 presets that play</h3><p>Crash zoom, bullet time, set on fire, gold statue… Each preset is a readable file: a script with its camera and its sound.</p></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ── 02 Mixer ──────────────────────────────────────────────────────────────────────────────────────────────── -->
+<section class="prod alt" id="mixer" aria-labelledby="mixer-h">
+  <div class="wrap two">
+    <div class="phead">
+      <div class="pid" data-r><img src="media/pets/praline.webp" alt="" width="56" height="56"><span class="mono">02 · Mixer</span><span class="pet">with <b>Praline</b>, trend boss</span></div>
+      <h2 id="mixer-h" data-r>Trends, <em>made yours.</em></h2>
+      <p class="lead" data-r>A shelf of viral formats, each with its beats over time and the feel of its music. Swap Mixer's crew around, or cast your own photo in any role, your pet or yourself, and Make it: the cover is redrawn with your cast, the beats are rolled with LTX-2.5, an original track in the trend's feel is made with ACE-Step, and it is cut with the trend's caption.</p>
+      <ul class="crew" data-r aria-label="Mixer's crew">
+        <li><img src="media/mixer/crew-praline.webp" alt="" width="64" height="64" loading="lazy"><b>Praline</b></li>
+        <li><img src="media/mixer/crew-sesame.webp" alt="" width="64" height="64" loading="lazy"><b>Sesame</b></li>
+        <li><img src="media/mixer/crew-mochi.webp" alt="" width="64" height="64" loading="lazy"><b>Mochi</b></li>
+        <li><img src="media/mixer/crew-meringue.webp" alt="" width="64" height="64" loading="lazy"><b>Meringue</b></li>
+        <li class="you"><span>+</span><b>You</b></li>
+      </ul>
+      <p class="small" data-r>Or drop any edit you like: it is split at its cuts, each shot redrawn with your cast and rolled copying the original's motion.</p>
+      <div class="acts" data-r><a class="btn" href="demo/#/mixer">Open Mixer <svg class="i"><use href="#arrow"/></svg></a></div>
+    </div>
+    <div class="pmedia phones" data-r>
+      <figure class="phone"><video class="lazy" muted loop playsinline preload="none" poster="media/mixer/meringue-1.jpg" data-src="media/mixer/meringue-1.mp4" aria-label="Meringue the kitten, a vertical take rolled with LTX-2.5"></video></figure>
+      <figure class="phone up"><video class="lazy" muted loop playsinline preload="none" poster="media/mixer/meringue-2.jpg" data-src="media/mixer/meringue-2.mp4" aria-label="A second take of Meringue"></video></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ── 03 Jam ────────────────────────────────────────────────────────────────────────────────────────────────── -->
+<section class="prod" id="jam" aria-labelledby="jam-h">
+  <div class="wrap two rev">
+    <div class="phead">
+      <div class="pid" data-r><img src="media/pets/pickle.webp" alt="" width="56" height="56"><span class="mono">03 · Jam</span><span class="pet">with <b>Pickle</b>, band leader</span></div>
+      <h2 id="jam-h" data-r>A music video <em>from a track.</em></h2>
+      <p class="lead" data-r>Upload a song or make one with ACE-Step 1.5 from a few words. Jam reads the beat in your browser, hears the words (Demucs and Whisper), cuts on the beat, and has your artist sing it lip-synced, or dance where nobody sings. The words go on as captions: pop-in, karaoke, bounce or lower third.</p>
+      <ol class="steps" data-r>
+        <li><b>The song</b><span>made with ACE-Step 1.5, or yours</span></li>
+        <li><b>The track</b><span>its beat and parts, read for free</span></li>
+        <li><b>The words</b><span>heard and timed, as captions</span></li>
+        <li><b>The band</b><span>lip sync where it's sung, dance where it isn't</span></li>
+        <li><b>The edit</b><span>cut on the beat</span></li>
+      </ol>
+      <div class="acts" data-r><a class="btn" href="demo/#/jam">Open Jam <svg class="i"><use href="#arrow"/></svg></a></div>
+    </div>
+    <div class="pmedia" data-r>
+      <figure class="square">
+        <video id="taro" class="lazy" muted loop playsinline preload="none" poster="media/jam/taro.jpg" data-src="media/jam/taro.mp4" aria-label="Taro the otter sings his song under the moon"></video>
+        <button class="pill sound" type="button" data-sound="taro" aria-pressed="false"><svg class="i"><use href="#sound-off"/></svg><span>Play with sound</span></button>
+        <figcaption><b>Moonlit Oolong Walk</b><span>Taro's song, written by Pickle and made with ACE-Step 1.5; the video cover rolled with LTX-2.5, lip-synced to it.</span></figcaption>
+      </figure>
+      <figure class="win"><img src="media/app/jam.webp" width="1800" height="1069" alt="Jam: the track of Sun in the jar, its waveform, its beat at 124 BPM, the stems and the part cut from it" loading="lazy" decoding="async"></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ── 04 Macaron ────────────────────────────────────────────────────────────────────────────────────────────── -->
+<section class="prod alt" id="macaron" aria-labelledby="macaron-h">
+  <div class="wrap">
+    <div class="phead wide">
+      <div>
+        <div class="pid" data-r><img src="media/pets/brioche.webp" alt="" width="56" height="56"><span class="mono">04 · Macaron</span><span class="pet">with <b>Brioche</b>, who keeps the brand</span></div>
+        <h2 id="macaron-h" data-r>Your brand, <em>ready to post.</em></h2>
+      </div>
+      <div>
+        <p class="lead" data-r>A real brand kit (palette, logos and their colourways, type, voice, rules, products) and the content made from it: the week's plan, sixteen templates in seven categories, every format you ask for (1:1, 4:5, 9:16), motion, and a brand guard that reads every design's colours against the palette before export.</p>
+        <div class="acts" data-r><a class="btn" href="demo/#/macaron">Open Macaron <svg class="i"><use href="#arrow"/></svg></a></div>
+      </div>
+    </div>
+    <div class="wall" data-r>
+      <figure class="phone"><video class="lazy" muted loop playsinline preload="none" poster="media/macaron/intro.jpg" data-src="media/macaron/intro.mp4" aria-label="A 9:16 logo and product intro for the Comfyture brand, made in Macaron"></video></figure>
+      <img src="media/macaron/launch.webp" alt="A 4:5 launch post for Comfyture with Brioche: Direct a shot. Or a whole film." loading="lazy" width="720" height="900">
+      <img src="media/macaron/otter-post.webp" alt="A 4:5 post for Little Otter Tea: One cup, then the moon." loading="lazy" width="720" height="900">
+      <img src="media/macaron/board.webp" alt="The Comfyture brand board: yellow, ink, plum and warm white, Manrope and IBM Plex Mono, the marks" loading="lazy" width="720" height="900">
+      <img src="media/macaron/brioche.webp" alt="A post where Brioche explains the assistant: Say it. Brioche does it." loading="lazy" width="720" height="900">
+      <figure class="phone"><video class="lazy" muted loop playsinline preload="none" poster="media/macaron/otter-sting.jpg" data-src="media/macaron/otter-sting.mp4" aria-label="Little Otter Tea's logo sting, a motion graphic made from its kit"></video></figure>
+      <img src="media/macaron/rooms.webp" alt="A 4:5 post listing Kitchen's rooms, in the brand's yellow" loading="lazy" width="720" height="900">
+      <img src="media/macaron/hero.webp" alt="A 4:5 post: Shots worth keeping, with the Comfyture jar" loading="lazy" width="720" height="900">
+    </div>
+    <p class="cap" data-r>Two brands made through Macaron's own screens: Comfyture's, and Little Otter Tea, a fictional cold-brew oolong made end to end as a test.</p>
+    <figure class="win wide" data-r><div class="wbar" aria-hidden="true"><i></i><i></i><i></i><span class="url mono">127.0.0.1:5177/#/macaron</span></div><img src="media/app/macaron.webp" width="1800" height="1069" alt="Macaron's brand kit for Comfyture: palette, logos, type and rules" loading="lazy" decoding="async"></figure>
+  </div>
+</section>
+
+<!-- ── 05 Spice ──────────────────────────────────────────────────────────────────────────────────────────────── -->
+<section class="prod" id="spice" aria-labelledby="spice-h">
+  <div class="wrap">
+    <div class="phead wide">
+      <div>
+        <div class="pid" data-r><img src="media/pets/paprika.webp" alt="" width="56" height="56"><span class="mono">05 · Spice</span><span class="pet">with <b>Paprika</b>, the VFX house</span></div>
+        <h2 id="spice-h" data-r>One shot. <em>Six departments.</em></h2>
+      </div>
+      <div>
+        <p class="lead" data-r>Plate, Roto, Paint, Light, FX and Comp: a visual-effects pipeline for one clip or picture. SAM3 cuts subjects out and follows them; FX is a compositor where you drop fire, portals, lightning and particles from a library onto the picture and move them by hand, behind the people Roto holds or in front. The bake runs free, on your machine.</p>
+        <div class="acts" data-r><a class="btn" href="demo/#/spice">Open Spice <svg class="i"><use href="#arrow"/></svg></a></div>
+      </div>
+    </div>
+
+    <div class="compare" data-r>
+      <div class="wipe big" id="spice-wipe" style="--x:50%">
+        <img class="b" src="media/spice/paprika-fx.webp" alt="Paprika's portal after FX: a ring of sparks over the city and a swirl around her" width="1280" height="853" loading="lazy" decoding="async">
+        <img class="a" src="media/spice/paprika-plate.webp" alt="The plate: Paprika on a rooftop at night" width="1280" height="853" loading="lazy" decoding="async">
+        <span class="bar"><span class="knob"></span></span>
+        <span class="lab l mono">Plate</span><span class="lab r mono">Comp</span>
+        <input type="range" min="0" max="100" value="50" aria-label="Compare the plate and the comp">
+      </div>
+      <div class="picker" role="group" aria-label="Example shots">
+        <button type="button" aria-pressed="true" data-a="media/spice/paprika-plate.webp" data-b="media/spice/paprika-fx.webp" data-cap="Paprika's portal: a portal of sparks opens over the city, a magic swirl winds around her."><img src="media/pets/paprika.webp" alt="" width="28" height="28">Paprika's portal</button>
+        <button type="button" aria-pressed="false" data-a="media/spice/ketkout-plate.webp" data-b="media/spice/ketkout-fx.webp" data-cap="Ketkout's flambé: flames rise out of his pan behind its rim, embers and smoke above, the fire's light on the room."><img src="media/pets/ketkout.webp" alt="" width="28" height="28">Ketkout's flambé</button>
+        <button type="button" aria-pressed="false" data-a="media/spice/brioche-plate.webp" data-b="media/spice/brioche-fx.webp" data-cap="Brioche's first snow: a cool winter grade in Light, then snow, cold light through the branches and the lantern's glint in FX."><img src="media/pets/brioche.webp" alt="" width="28" height="28">Brioche's first snow</button>
+        <button type="button" aria-pressed="false" data-a="media/spice/truffle-plate.webp" data-b="media/spice/truffle-fx.webp" data-cap="Truffle's spark of genius: an energy orb above his paws, an electric arc to his screwdriver, sparks at its tip."><img src="media/pets/truffle.webp" alt="" width="28" height="28">Truffle's spark</button>
+      </div>
+      <p class="cap" id="spice-cap">Paprika's portal: a portal of sparks opens over the city, a magic swirl winds around her.</p>
+    </div>
+
+    <ol class="depts" data-r aria-label="The six departments">
+      <li><span class="mono">01</span><b>Plate</b><span>The footage, a frame range, a depth pass.</span></li>
+      <li><span class="mono">02</span><b>Roto</b><span>Click a subject: SAM3 cuts it out and tracks it.</span></li>
+      <li><span class="mono">03</span><b>Paint</b><span>Remove an object, a logo, subtitles.</span></li>
+      <li><span class="mono">04</span><b>Light</b><span>Relight, a new sky, rain, snow, a grade.</span></li>
+      <li><span class="mono">05</span><b>FX</b><span>21 elements and particles, laid by hand.</span></li>
+      <li><span class="mono">06</span><b>Comp</b><span>Every pass stacked, upscaled, exported.</span></li>
+    </ol>
+
+    <div class="duo">
+      <figure class="win" data-r><div class="wbar" aria-hidden="true"><i></i><i></i><i></i><span class="url mono">127.0.0.1:5177/#/spice</span></div><img src="media/app/spice.webp" width="1800" height="1069" alt="Spice's FX department: layers on the picture with their handles, the element library, the comp stack on the left" loading="lazy" decoding="async"></figure>
+      <div class="elements" data-r>
+        <h3>The FX library</h3>
+        <p>Fire, smoke, flares, light leaks, portals, lightning and shockwaves shot on black, plus particles drawn frame by frame. Drop one on the picture; move, scale and turn it there.</p>
+        <ul class="els" id="els" aria-label="Some of the FX elements"></ul>
+        <p class="fine">Plus particles drawn frame by frame (rain, snow, embers, dust, sparkles), six looks that lay a few layers at once, and an AI layer made from your words.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 06 Toaster ────────────────────────────────────────────────────────────────────────────────────────────── -->
+<section class="prod alt" id="toaster" aria-labelledby="toaster-h">
+  <div class="wrap">
+    <div class="phead wide">
+      <div>
+        <div class="pid" data-r><img src="media/pets/crumpet.webp" alt="" width="56" height="56"><span class="mono">06 · Toaster</span><span class="pet">with <b>Crumpet</b>, model maker</span></div>
+        <h2 id="toaster-h" data-r>Clay in, <em>toast out.</em></h2>
+      </div>
+      <div>
+        <p class="lead" data-r>Block an object or a whole set in 3D from ten shapes and the Stage's 370-odd pieces, or ask Crumpet to build it from a sentence or a photo. Toast it: the clay frame and its control maps become a finished picture. Then the clay's four views become a real 3D model with Pixal3D, a GLB to download or to put on the Stage.</p>
+        <div class="acts" data-r><a class="btn" href="demo/#/toaster">Open Toaster <svg class="i"><use href="#arrow"/></svg></a></div>
+      </div>
+    </div>
+
+    <div class="compare" data-r>
+      <div class="wipe big" id="toast-wipe" style="--x:50%">
+        <img class="b" src="media/toaster/woodshop-workbench.webp" alt="The render: Crumpet the beaver at his workbench in a snowy-night woodshop" width="1280" height="720" loading="lazy" decoding="async">
+        <img class="a" src="media/toaster/woodshop-workbench-clay.webp" alt="The clay frame: a posed figure at a table in a room blocked out with shapes and library pieces" width="1280" height="720" loading="lazy" decoding="async">
+        <span class="bar"><span class="knob"></span></span>
+        <span class="lab l mono">Clay</span><span class="lab r mono">Toast</span>
+        <input type="range" min="0" max="100" value="50" aria-label="Compare the clay frame and the render">
+      </div>
+      <div class="picker" role="group" aria-label="Example sets">
+        <button type="button" aria-pressed="true" data-a="media/toaster/woodshop-workbench-clay.webp" data-b="media/toaster/woodshop-workbench.webp" data-cap="Crumpet's workbench: 17 parts (library pieces and shapes), the clay frame and its depth sent at 55%."><img src="media/pets/crumpet.webp" alt="" width="28" height="28">Crumpet's workbench</button>
+        <button type="button" aria-pressed="false" data-a="media/toaster/woodshop-workbench-clay.webp" data-b="media/toaster/woodshop-storybook.webp" data-cap="The same clay, another look: a storybook painting."><img src="media/pets/crumpet.webp" alt="" width="28" height="28">Storybook look</button>
+        <button type="button" aria-pressed="false" data-a="media/toaster/stage-crowd-clay.webp" data-b="media/toaster/stage-crowd.webp" data-cap="Pickle's little stage: a posed frog at the microphone, a drum kit, amps, lights and three fans; clay frame and colour ID sent at 75%."><img src="media/pets/pickle.webp" alt="" width="28" height="28">Pickle's little stage</button>
+        <button type="button" aria-pressed="false" data-a="media/toaster/stage-crowd-clay.webp" data-b="media/toaster/stage-poster.webp" data-cap="The same stage as a screen-printed poster."><img src="media/pets/pickle.webp" alt="" width="28" height="28">Poster look</button>
+        <button type="button" aria-pressed="false" data-a="media/toaster/perfume-set-clay.webp" data-b="media/toaster/perfume-set.webp" data-cap="Brioche's perfume launch, the Set camera: a paper sweep, two softboxes, a reflector and a camera."><img src="media/pets/brioche.webp" alt="" width="28" height="28">Perfume set</button>
+      </div>
+      <p class="cap" id="toast-cap">Crumpet's workbench: 17 parts (library pieces and shapes), the clay frame and its depth sent at 55%.</p>
+      <p class="fine">The examples' renders were made with GPT Image from these clay frames, for free; in the app, Toast it sends them to the image model you pick.</p>
+    </div>
+
+    <div class="duo">
+      <figure class="win" data-r><div class="wbar" aria-hidden="true"><i></i><i></i><i></i><span class="url mono">127.0.0.1:5177/#/toaster</span></div><img src="media/app/toaster.webp" width="1800" height="1069" alt="Toaster: the parts and the library on the left, the clay set in the viewport, Crumpet's bar under it" loading="lazy" decoding="async"></figure>
+      <div class="maps" data-r>
+        <h3>What toasting sends</h3>
+        <div class="mrow">
+          <figure><img src="media/toaster/woodshop-workbench-clay.webp" alt="Clay frame" loading="lazy" width="1280" height="720"><figcaption class="mono">Clay</figcaption></figure>
+          <figure><img src="media/toaster/woodshop-depth-workbench.webp" alt="Depth map" loading="lazy" width="1280" height="720"><figcaption class="mono">Depth</figcaption></figure>
+          <figure><img src="media/toaster/stage-colour-id-crowd.webp" alt="Colour ID map" loading="lazy" width="1280" height="720"><figcaption class="mono">Colour ID</figcaption></figure>
+        </div>
+        <h3>And the 3D model</h3>
+        <figure class="turn"><img src="media/toaster/woodshop-crumpet-turnaround.webp" alt="A turnaround sheet of Crumpet: front, left, back and right" loading="lazy" width="1280" height="325"></figure>
+        <p>The four clay views, drawn on one sheet and rendered in one picture so they agree, go to Pixal3D on Comfy Cloud: out comes a GLB.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 07 Utensils ───────────────────────────────────────────────────────────────────────────────────────────── -->
+<section class="prod" id="utensils" aria-labelledby="utensils-h">
+  <div class="wrap">
+    <div class="phead wide">
+      <div>
+        <div class="pid" data-r><img src="media/pets/truffle.webp" alt="" width="56" height="56"><span class="mono">07 · Utensils</span><span class="pet">with <b>Truffle</b>, toolsmith</span></div>
+        <h2 id="utensils-h" data-r>One tool, <em>one job.</em></h2>
+      </div>
+      <div>
+        <p class="lead" data-r>A shelf of single tools, one input and one result each: upscale, remove a background, variations, an edit in words, extend a clip, lip-sync a photo to a voice, add sound to any clip, upscale a video, music and sound effects. And the 691 official ComfyUI workflows, each opened as one form you can run.</p>
+        <div class="acts" data-r><a class="btn" href="demo/#/utensils">Open Utensils <svg class="i"><use href="#arrow"/></svg></a></div>
+      </div>
+    </div>
+    <ul class="shelf" aria-label="The tools on the shelf">
+      <li data-r><b>Upscale</b><span>4x-UltraSharp, up to four times larger</span></li>
+      <li data-r><b>Remove the background</b><span>a clear PNG of the subject</span></li>
+      <li data-r><b>Variations</b><span>new takes of the same picture</span></li>
+      <li data-r><b>An edit in words</b><span>"make it night"</span></li>
+      <li data-r><b>Extend a clip</b><span>it carries on where it ends</span></li>
+      <li data-r><b>Lip-sync a photo</b><span>to a voice you give it</span></li>
+      <li data-r><b>Add sound to any clip</b><span>LTX-2.5 writes it for the picture</span></li>
+      <li data-r><b>Upscale a video</b><span>SeedVR2</span></li>
+      <li data-r><b>Music</b><span>from a few words</span></li>
+      <li data-r><b>Sound effects</b><span>from a sentence</span></li>
+    </ul>
+    <figure class="win wide" data-r><div class="wbar" aria-hidden="true"><i></i><i></i><i></i><span class="url mono">127.0.0.1:5177/#/utensils</span></div><img src="media/app/utensils.webp" width="1800" height="1069" alt="Utensils: the 691 official ComfyUI workflows, searchable, each one a form" loading="lazy" decoding="async"></figure>
+  </div>
+</section>
+
+</div><!-- /studio-run -->
+
+<!-- ── the pets ──────────────────────────────────────────────────────────────────────────────────────────────── -->
+<section class="sec pets" id="pets" aria-labelledby="pets-h">
+  <div class="wrap two">
     <div>
-      <span class="chip y">Open source · MIT</span>
-      <h1>Direct a shot.<em>Or a whole film.</em></h1>
-      <p class="lead">One photo in, a cinematic shot with sound out. One sentence in, a short film out. Presets, a story desk, a staging table and an editing room, on your own GPU or in the cloud.</p>
-      <div class="cta"><a class="btn" href="demo/">Open the live demo <svg class="ico"><use href="media/icons.svg#arrow-right"/></svg></a><a class="btn ghost" href="#presets">Browse 28 presets</a></div>
+      <p class="eyebrow" data-r>The pets</p>
+      <h2 id="pets-h" data-r>Pets that <em>do the work.</em></h2>
+      <p class="lead" data-r>Each studio's pet lives in its chat bar and knows that studio and nothing else. Ask in words: they act through the studio's own tools, and every change is listed with an Undo.</p>
+      <ul class="points">
+        <li data-r><svg class="i"><use href="#compass"/></svg><div><b>Show me around</b><span>New here? The chip above the bar, or the compass in the header, starts the pet's tour of its example. Free.</span></div></li>
+        <li data-r><svg class="i"><use href="#check"/></svg><div><b>Checked actions</b><span>A pet answers through a tool call that is checked against what the page holds before anything changes.</span></div></li>
+        <li data-r><svg class="i"><use href="#coin"/></svg><div><b>Your yes, first</b><span>Make it, Run, Toast it: what costs credits is only offered, with its price, and waits for one yes.</span></div></li>
+      </ul>
     </div>
-    <div class="side">
-      <div class="now"><b>Desert Dawn Rescue</b>23 s film · four shots from one story · made in Comfyture</div>
-      <div class="shots" id="film-shots" role="group" aria-label="Jump to a shot"></div>
-      <button class="round" id="film-sound" type="button" aria-label="Turn the sound on" aria-pressed="false"><svg class="ico"><use href="media/icons.svg#player-volume-off"/></svg></button>
+    <figure class="win" data-r><div class="wbar" aria-hidden="true"><i></i><i></i><i></i><span class="url mono">Paprika's tour of Spice</span></div><img src="media/app/tour.webp" width="1800" height="1069" alt="A guided tour: a light on Spice's FX library and Paprika's card beside it, with Back and Next" loading="lazy" decoding="async"></figure>
+  </div>
+  <div class="wrap">
+    <ul class="petrow" aria-label="What each pet's bar asks">
+      <li data-r><img src="media/pets/ketkout.webp" alt="" width="48" height="48" loading="lazy"><div><b>Ketkout</b><span class="mono">Kitchen · head chef</span><q>two people arguing by a wall, low angle</q></div></li>
+      <li data-r><img src="media/pets/praline.webp" alt="" width="48" height="48" loading="lazy"><div><b>Praline</b><span class="mono">Mixer · trend boss</span><q>the hottest trend with Mochi in the lead, then make it</q></div></li>
+      <li data-r><img src="media/pets/pickle.webp" alt="" width="48" height="48" loading="lazy"><div><b>Pickle</b><span class="mono">Jam · band leader</span><q>cut on the beat, zoom on the drop, add a whip</q></div></li>
+      <li data-r><img src="media/pets/brioche.webp" alt="" width="48" height="48" loading="lazy"><div><b>Brioche</b><span class="mono">Macaron · brand keeper</span><q>a new pattern, a colourway that reads on ink, check the contrast</q></div></li>
+      <li data-r><img src="media/pets/paprika.webp" alt="" width="48" height="48" loading="lazy"><div><b>Paprika</b><span class="mono">Spice · VFX house</span><q>a portal behind the chameleon, flames in the pan, make it a storm</q></div></li>
+      <li data-r><img src="media/pets/crumpet.webp" alt="" width="48" height="48" loading="lazy"><div><b>Crumpet</b><span class="mono">Toaster · model maker</span><q>a cosy reading corner with a sofa, two shelves and a lamp, camera low</q></div></li>
+      <li data-r><img src="media/pets/truffle.webp" alt="" width="48" height="48" loading="lazy"><div><b>Truffle</b><span class="mono">Utensils · toolsmith</span><q>upscale my latest picture, cut out its subject, make it night</q></div></li>
+      <li data-r class="every"><span class="at" aria-hidden="true">@</span><div><b>Every bar</b><span class="mono">your words, your files</span><p>Name a file or an earlier take with @, keep a conversation per studio, and pick the model: Gemma 4 inside ComfyUI, or a partner's through Comfy Router.</p></div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ── open weights ──────────────────────────────────────────────────────────────────────────────────────────── -->
+<section class="sec open" id="open" aria-labelledby="open-h">
+  <div class="wrap">
+    <div class="glow" data-r>
+      <p class="eyebrow">Open weights by default</p>
+      <h2 id="open-h">Open models. <em>Your GPU or the cloud.</em></h2>
+      <p class="lead">Every picture, video and sound model Comfyture runs by default is open weights, run as Comfy's own templates. The partners' models (GPT Image, Nano Banana, Veo, Kling and more, through Comfy Router) are one pick away, and one switch keeps them out.</p>
+    </div>
+    <div class="models">
+      <article class="model hi" data-r><span class="mono">Video and sound, one pass</span><b>LTX-2.5</b><p>With Lightricks' IC-LoRAs: references, motion copy, the detail upscaler.</p></article>
+      <article class="model" data-r><span class="mono">Pictures</span><b>Qwen Image 2.1</b><p>The default artist, its Turbo and Edit; FLUX 3 Klein, Krea 2 Turbo, Z-Image Turbo.</p></article>
+      <article class="model" data-r><span class="mono">Music and sound</span><b>ACE-Step 1.5</b><p>Songs from a few words; Stable Audio 3 for sound effects.</p></article>
+      <article class="model" data-r><span class="mono">Words</span><b>Gemma 4</b><p>The writer, the pets, and LTX-2.5's text encoder, inside ComfyUI.</p></article>
+      <article class="model" data-r><span class="mono">VFX and listening</span><b>SAM3 · Depth Anything 3</b><p>Plus VOID, FILM, Demucs, Whisper and BiRefNet.</p></article>
+      <article class="model" data-r><span class="mono">Finishing and 3D</span><b>SeedVR2 · Pixal3D</b><p>4x-UltraSharp for pictures, SeedVR2 for video, Pixal3D for models.</p></article>
+    </div>
+    <div class="switches">
+      <article class="sw" data-r>
+        <h3>Renders on</h3>
+        <div class="seg" aria-hidden="true"><span class="on">Comfy Cloud</span><span>Your ComfyUI</span></div>
+        <p>The account panel's switch sends every render to Comfy Cloud, or to your own ComfyUI through comfy-api-proxy, at once and without a restart. The same code either way, through the official Comfy SDK.</p>
+        <a class="more" href="https://github.com/ShAInyXYZ/Comfyture/blob/main/docs/guides/LOCAL-COMFYUI.md">Run it on your GPU <svg class="i"><use href="#arrow"/></svg></a>
+      </article>
+      <article class="sw" data-r>
+        <h3>Open weights only</h3>
+        <code class="env">COMFYTURE_OPEN_WEIGHTS=1</code>
+        <p>Keeps every partner model off the pickers: Gemma 4 writes, Qwen Image 2.1 draws, LTX-2.5 rolls. Leave it off and the partners' models sit one pick away, billed in Comfy credits with the same key.</p>
+      </article>
+      <article class="sw flow" data-r>
+        <h3>How it runs</h3>
+        <ol class="pipe mono">
+          <li>Your browser</li>
+          <li>Comfyture server <small>Node, no framework</small></li>
+          <li>Comfy SDK</li>
+          <li class="fork"><span>Comfy Cloud</span><span>comfy-api-proxy → your ComfyUI</span></li>
+        </ol>
+      </article>
     </div>
   </div>
 </section>
 
-<!-- every preset, moving -->
-<div class="marq" aria-label="Presets playing" id="marq"></div>
-
-<!-- what's inside -->
-<div class="promos wrap" style="max-width:none">
-  <a class="promo" href="#talk"><video muted loop playsinline preload="none" data-src="media/takes/not-tonight.mp4" poster="media/takes/not-tonight.jpg"></video><span class="chip y">Sound included</span><div class="t"><b>Say a line</b><span>Voice and lip sync come with the shot.</span></div></a>
-  <a class="promo" href="#lff"><video muted loop playsinline preload="none" data-src="media/presets/gold-statue/preview.mp4" poster="media/presets/gold-statue/poster.jpg"></video><span class="chip y">Last frame first</span><div class="t"><b>Paint the ending</b><span>Check where the shot lands before you roll it.</span></div></a>
-  <a class="promo" href="#talk"><video muted loop playsinline preload="none" data-src="media/takes/chef-copied-motion.mp4" poster="media/takes/chef-copied-motion.jpg"></video><span class="chip y">Copy motion</span><div class="t"><b>Copy any move</b><span>A clip’s pose drives your photo.</span></div></a>
-  <a class="promo" href="#story"><video muted loop playsinline preload="none" data-src="media/takes/finding-life.mp4" poster="media/takes/finding-life.jpg"></video><span class="chip y">Story</span><div class="t"><b>A film from a sentence</b><span>Bible, script, storyboard, every shot.</span></div></a>
-</div>
-
-<!-- the shelf -->
-<section class="sec" id="presets"><div class="wrap">
-  <div class="sh"><div><h2>Everything you <em>can make</em></h2><p>28 presets. Each is a starting script: a motion, a camera, the sound that goes with it. Click one to open it.</p></div>
-    <div class="tabs" id="p-tabs"><button type="button" aria-pressed="true" data-f="">All</button><button type="button" aria-pressed="false" data-f="camera">Camera</button><button type="button" aria-pressed="false" data-f="vfx">Effects</button><button type="button" aria-pressed="false" data-f="transform">Transformations</button><label class="find"><svg class="ico"><use href="media/icons.svg#search"/></svg><input id="p-q" type="search" placeholder="Search" aria-label="Search presets" autocomplete="off"></label></div></div>
-  <div class="mosaic" id="mosaic"></div>
-</div></section>
-
-<!-- talking, copying, extending -->
-<section class="banner" id="talk">
-  <div class="talkb">
-    <div class="clip" id="tk-a"></div>
-    <div class="mid"><span class="chip y">Sound included</span><h2 style="margin-top:14px">Say a line.<br><em>Get the voice.</em></h2><p class="lead">Write the line and the speaker. The voice and the lip sync come with the shot, picture and sound made together by LTX-2.5.</p><q>Not tonight. I am going home.</q></div>
-    <div class="clip" id="tk-b"></div>
-  </div>
-</section>
-<section class="banner plum" id="copy">
-  <div class="talkb">
-    <div class="clip" id="cp-a"></div>
-    <div class="mid"><span class="chip y">Video in</span><h2 style="margin-top:14px">Copy any move.<br><em>Carry on any clip.</em></h2><p class="lead">A video’s pose or edges drive your photo while it gives the look. Or extend a clip: its last frames guide the new shot, so it picks up exactly where it ends.</p></div>
-    <div class="clip" id="cp-b"></div>
+<!-- ── made with it ──────────────────────────────────────────────────────────────────────────────────────────── -->
+<section class="sec made" id="made" aria-labelledby="made-h">
+  <div class="wrap">
+    <div class="head split">
+      <div>
+        <p class="eyebrow" data-r>Gallery</p>
+        <h2 id="made-h" data-r>Made with <em>Comfyture.</em></h2>
+      </div>
+      <div class="filters" role="group" aria-label="Filter the gallery" id="filters">
+        <button type="button" aria-pressed="true" data-f="">All</button>
+        <button type="button" aria-pressed="false" data-f="Kitchen">Kitchen</button>
+        <button type="button" aria-pressed="false" data-f="Spice">Spice</button>
+        <button type="button" aria-pressed="false" data-f="Toaster">Toaster</button>
+        <button type="button" aria-pressed="false" data-f="Jam">Jam</button>
+        <button type="button" aria-pressed="false" data-f="Macaron">Macaron</button>
+        <button type="button" aria-pressed="false" data-f="Mixer">Mixer</button>
+      </div>
+    </div>
+    <div class="masonry clamp" id="gallery"></div>
+    <button class="btn ghost more-g" type="button" id="more-g">Show all of it</button>
   </div>
 </section>
 
-<div class="stats">
-  <div class="stat"><b>28</b><span>presets that play</span></div><div class="stat"><b>372</b><span>set pieces to stage</span></div><div class="stat"><b>72</b><span>poses, 8 mannequins</span></div><div class="stat"><b>7</b><span>control maps rendered</span></div><div class="stat"><b>10</b><span>open models named</span></div>
-</div>
-
-<!-- last frame first -->
-<section class="sec" id="lff"><div class="wrap">
-  <div class="sh"><div><h2>Last frame <em>first</em></h2><p>A transformation doesn’t hope the video model gets there. It paints the destination first: Qwen Image 2.1 edits your photo into the final frame, you check it, and LTX-2.5 animates between the two.</p></div><a class="btn ghost sm" href="#presets">All 9 transformations</a></div>
-  <div class="lff">
-    <figure><img src="media/samples/dancer.jpg" alt="The starting photo: a dancer lit red and blue, one arm raised" loading="lazy"><figcaption><b>Your photo</b><span>Any picture you already have.</span></figcaption></figure>
-    <span class="ar"><svg class="ico"><use href="media/icons.svg#arrow-right"/></svg></span>
-    <figure><img src="media/presets/gold-statue/last.jpg" alt="The painted last frame: the same dancer as a gold statue" loading="lazy"><figcaption><b>The painted ending</b><span>Qwen Image 2.1 edits it. Paint again until it’s right.</span></figcaption></figure>
-    <span class="ar"><svg class="ico"><use href="media/icons.svg#arrow-right"/></svg></span>
-    <figure><video muted loop playsinline preload="none" data-src="media/presets/gold-statue/preview.mp4" poster="media/presets/gold-statue/poster.jpg"></video><figcaption><b>The shot</b><span>LTX-2.5 turns toward that frame, with its sound.</span></figcaption></figure>
+<!-- ── run it ────────────────────────────────────────────────────────────────────────────────────────────────── -->
+<section class="sec run" id="run" aria-labelledby="run-h">
+  <div class="wrap two">
+    <div>
+      <p class="eyebrow" data-r>Run it</p>
+      <h2 id="run-h" data-r>Running in <em>two minutes.</em></h2>
+      <p class="lead" data-r>You need Node.js 22.18 or newer and ffmpeg. With no key, every studio opens on its example and its pet's tour; nothing is spent.</p>
+      <div class="term" data-r>
+        <div class="wbar"><i></i><i></i><i></i><span class="url mono">terminal</span><button class="copy" type="button" data-copy="git clone --depth 1 https://github.com/ShAInyXYZ/Comfyture&#10;cd Comfyture && npm install&#10;npm start" aria-label="Copy the commands"><svg class="i"><use href="#copy"/></svg><span>Copy</span></button></div>
+<pre><code><span class="p">$</span> git clone --depth 1 https://github.com/ShAInyXYZ/Comfyture
+<span class="p">$</span> cd Comfyture && npm install
+<span class="p">$</span> npm start   <span class="c"># then open http://127.0.0.1:5177</span></code></pre>
+      </div>
+    </div>
+    <div class="ways">
+      <article class="way" data-r><span class="mono">No key</span><h3>Try everything free</h3><p>Every studio opens on its example. The compass at the top right starts a guided tour.</p></article>
+      <article class="way" data-r><span class="mono">Comfy Cloud</span><h3>Real runs, no GPU</h3><p>Paste a Comfy API key in the account panel, or put <code>COMFY_API_KEY=…</code> in <code>.env</code>. Every paid key shows its price first.</p></article>
+      <article class="way" data-r><span class="mono">Your GPU</span><h3>Everything local</h3><p>ComfyUI with the models (<code>scripts/get-models.sh</code>), then <code>pip install comfy-api-proxy &amp;&amp; comfy-api-proxy run</code>, and pick Renders on → Your ComfyUI.</p></article>
+      <p class="links" data-r><a href="https://github.com/ShAInyXYZ/Comfyture#readme">README</a><a href="https://github.com/ShAInyXYZ/Comfyture/blob/main/docs/competition/JUDGES.md">For judges</a><a href="https://github.com/ShAInyXYZ/Comfyture/blob/main/docs/guides/LOCAL-COMFYUI.md">Local ComfyUI guide</a></p>
+    </div>
   </div>
-</div></section>
-
-<!-- the rooms -->
-<section class="room" id="story">
-  <span class="big" aria-hidden="true">Story</span>
-  <div class="head"><div><span class="chip y">Room 1</span><h2 style="margin-top:14px">A film from <em>one sentence.</em></h2><div class="chips"><span class="chip">Story bible with @tags</span><span class="chip">Script as a document</span><span class="chip">Storyboard</span><span class="chip">Story assistant</span><span class="chip">Board · draw · block · roll</span></div></div>
-    <div class="lead"><p>One screen like a producer’s desk. Write the brief and the writer makes the idea, the script, then how everyone and everything looks. Cast, places and props keep their pictures in every prompt that names them.</p><div class="acts"><a class="btn sm" href="demo/">Open Story in the demo</a></div></div></div>
-  <button class="pic" type="button" data-zoom="media/app/story.jpg" aria-label="Enlarge Story"><img src="media/app/story.jpg" alt="Story: the bible with cast, places and props, the script and storyboard, and the inspector" width="2000" height="1125" loading="lazy"></button>
 </section>
 
-<section class="room y" id="stage">
-  <span class="big" aria-hidden="true">Stage</span>
-  <div class="head"><div><span class="chip y">Room 2</span><h2 style="margin-top:14px">Block the scene <em>before you shoot it.</em></h2><div class="chips"><span class="chip">8 mannequins · 72 poses</span><span class="chip">372 set pieces</span><span class="chip">Real lens and camera snaps</span><span class="chip">7 control maps</span><span class="chip">Stage it with a sentence</span></div></div>
-    <div class="lead"><p>A blocking table for your own control references, for images and for video. Pose figures, dress the set, frame it, and render clay, colour ID, depth, normal, OpenPose, line art and mask. Import your own rigged characters too.</p><div class="acts"><a class="btn sm" href="demo/">Open Stage in the demo</a></div></div></div>
-  <button class="pic" type="button" data-zoom="media/app/stage-bus.jpg" aria-label="Enlarge the Stage"><img src="media/app/stage-bus.jpg" alt="The Stage: a rainy bus stop blocked with three mannequins" width="2000" height="1125" loading="lazy"></button>
-  <div class="more"><button class="pic" type="button" data-zoom="media/app/stage-kitchen.jpg" aria-label="Enlarge the kitchen"><img src="media/app/stage-kitchen.jpg" alt="A morning kitchen staged with three figures" loading="lazy"></button><button class="pic" type="button" data-zoom="media/app/stage-perfume.jpg" aria-label="Enlarge the perfume stage"><img src="media/app/stage-perfume.jpg" alt="A perfume launch staged on a podium" loading="lazy"></button></div>
-</section>
-
-<section class="room" id="shot">
-  <span class="big" aria-hidden="true">Shot</span>
-  <div class="head"><div><span class="chip y">Room 3</span><h2 style="margin-top:14px">The desk where a <em>shot gets made.</em></h2><div class="chips"><span class="chip">Photo, video or generated start</span><span class="chip">End frame · keyframes</span><span class="chip">References: cast, prop, place</span><span class="chip">Multi-shot script</span><span class="chip">1 to 4 takes</span><span class="chip">Next shot from last frame</span></div></div>
-    <div class="lead"><p>Give it the frames, write the script, set the camera, roll takes and keep the good one. The Prompt view shows the exact text sent to the model, and every shot gets a tab.</p><div class="acts"><a class="btn sm" href="demo/">Open Shot in the demo</a></div></div></div>
-  <button class="pic" type="button" data-zoom="media/app/shot.jpg" aria-label="Enlarge the Shot desk"><img src="media/app/shot.jpg" alt="The Shot desk: inputs, monitor, script, presets and the take log" width="2000" height="1125" loading="lazy"></button>
-</section>
-
-<section class="room p" id="cut">
-  <span class="big" aria-hidden="true">Cut</span>
-  <div class="head"><div><span class="chip y">Room 4</span><h2 style="margin-top:14px">An editing room that <em>makes what’s missing.</em></h2><div class="chips"><span class="chip">Music · ACE-Step 1.5</span><span class="chip">Sound effects · Stable Audio 3</span><span class="chip">Voice lines · LTX-2.5</span><span class="chip">Titles and overlays</span><span class="chip">Ask the editor</span><span class="chip">Lip-sync and extend a clip</span></div></div>
-    <div class="lead"><p>A non-linear editor: trim, split, dissolve, speed up, push in, grade and fade, with the program monitor playing the film as it will render. Music ducks under the voices.</p><div class="acts"><a class="btn sm" style="background:var(--ink);color:var(--yellow)" href="demo/">Open Cut in the demo</a></div></div></div>
-  <button class="pic" type="button" data-zoom="media/app/cut.jpg" aria-label="Enlarge Cut"><img src="media/app/cut.jpg" alt="Cut: the media bin, the monitor, the edit panel and the timeline" width="2000" height="1125" loading="lazy"></button>
-</section>
-
-<section class="room y" id="library">
-  <span class="big" aria-hidden="true">Library</span>
-  <div class="head"><div><span class="chip y">Room 5</span><h2 style="margin-top:14px">Everything you’ve made, <em>one grid.</em></h2><div class="chips"><span class="chip">Takes · films · images</span><span class="chip">Searchable</span><span class="chip">Reopen with the inputs</span><span class="chip">@ reaches it all</span></div></div>
-    <div class="lead"><p>Click a take to open it in a tab with the inputs that made it. Name an earlier take, a film or any image in a message: “continue from @finding-life”. Kept on your machine, next to the workflow that made each take.</p></div></div>
-  <button class="pic" type="button" data-zoom="media/app/library.jpg" aria-label="Enlarge the Library"><img src="media/app/library.jpg" alt="The Library: a grid of takes" width="2000" height="1125" loading="lazy"></button>
-</section>
-
-<!-- made with it -->
-<section class="sec" id="made"><div class="wrap">
-  <div class="sh"><div><h2>Made in <em>Comfyture</em></h2><p>Real takes from the app’s own take log. Click one to see the exact prompt behind it.</p></div>
-    <div class="tabs" id="t-tabs"><button type="button" aria-pressed="true" data-k="">All</button><button type="button" aria-pressed="false" data-k="Story shot">Story shots</button><button type="button" aria-pressed="false" data-k="Talking shot">Talking</button><button type="button" aria-pressed="false" data-k="Copy motion">Copy motion</button><button type="button" aria-pressed="false" data-k="From the Stage">From the Stage</button></div></div>
-  <div class="cols" id="t-grid"></div>
-</div></section>
-
-<!-- models -->
-<section class="sec" id="models"><div class="wrap">
-  <div class="sh"><div><h2>Open models, <em>named</em></h2><p>Every picture, video and sound model is open weights. Each runs as Comfy’s own template for it, on your GPU or on Comfy Cloud.</p></div></div>
-  <div class="runway" aria-hidden="true"><div class="tr" id="runway"></div></div>
-  <div class="models">
-    <div class="model"><span class="chip y">Video · sound</span><b>LTX-2.5</b><span>Picture and sound generated together in one pass. References and motion copy use Lightricks’ IC-LoRAs.</span></div>
-    <div class="model"><span class="chip">Image</span><b>Qwen Image 2.1</b><span>Pictures and the painted last frame, up to 2K. Edit with up to 10 references. A Turbo version too.</span></div>
-    <div class="model"><span class="chip">Image</span><b>FLUX 3 Klein</b><span>Text to image and image edit, up to 4 MP.</span></div>
-    <div class="model"><span class="chip">Image</span><b>Krea 2 Turbo</b><span>Text to image and style references, with nine official style LoRAs.</span></div>
-    <div class="model"><span class="chip">Image</span><b>Z-Image Turbo</b><span>Fast text to image, up to 2 MP.</span></div>
-    <div class="model"><span class="chip p">Music</span><b>ACE-Step 1.5</b><span>Music from a few words, in Cut.</span></div>
-    <div class="model"><span class="chip p">Sound</span><b>Stable Audio 3</b><span>Sound effects from a sentence.</span></div>
-    <div class="model"><span class="chip">Writer</span><b>Gemma 4</b><span>Open weights, inside ComfyUI: shot lists, prompt enhancer and assistant.</span></div>
-    <div class="model"><span class="chip">Writer</span><b>Claude Sonnet 5.5</b><span>The default writer through Comfy Router. Claude Haiku 4.5 assists on the bars.</span></div>
-    <div class="model"><span class="chip">Tools</span><b>BiRefNet · DWPose</b><span>Cut cast and props out for references; follow a clip’s pose or edges.</span></div>
+<!-- ── the end ───────────────────────────────────────────────────────────────────────────────────────────────── -->
+<section class="final" aria-labelledby="final-h">
+  <div class="wrap">
+    <div class="box">
+      <div>
+        <h2 id="final-h">Pick a studio.<br>Meet its pet.</h2>
+        <p>Open the live demo and play with every example, or clone it and run it on your own GPU tonight.</p>
+      </div>
+      <div class="acts">
+        <a class="btn ink lg" href="demo/">Try the live demo <svg class="i"><use href="#arrow"/></svg></a>
+        <a class="btn line lg" href="https://github.com/ShAInyXYZ/Comfyture"><svg class="i"><use href="#gh"/></svg> Star on GitHub</a>
+        <a class="btn line lg" href="https://github.com/ShAInyXYZ/Comfyture/blob/main/docs/competition/JUDGES.md">For judges</a>
+      </div>
+      <img class="peek" src="media/pets/ketkout.webp" alt="" width="120" height="120" loading="lazy">
+    </div>
   </div>
-</div></section>
+</section>
 
-<!-- run it -->
-<section class="sec" id="run"><div class="wrap">
-  <div class="sh"><div><h2>Run it <em>your way</em></h2><p>The same code on your own GPU or on Comfy Cloud. Only where the models live changes.</p></div></div>
-  <div class="run">
-    <div class="box"><span class="chip y" style="align-self:flex-start">Comfy Cloud</span><h3>No GPU needed</h3><p>You need a Comfy API key and a paid Comfy Cloud plan. Cloud has the models.</p>
-<pre><b>git</b> clone &lt;this repo&gt; comfyture &amp;&amp; cd comfyture
-<b>npm</b> install
-echo "COMFY_API_KEY=comfyui-..." &gt; .env
-<b>npm</b> start          # http://127.0.0.1:5177</pre></div>
-    <div class="box"><span class="chip" style="align-self:flex-start">Your GPU</span><h3>Everything local</h3><p>A recent ComfyUI with the models, and the official Comfy API v2 proxy next to it.</p>
-<pre>pip install comfy-api-proxy
-comfy-api-proxy run      # Comfy API v2 on 127.0.0.1:8189
-<b>npm</b> start              # http://127.0.0.1:5177</pre></div>
-    <div class="box"><h3>Try it without either</h3><p>The live demo is the app as static files: presets and takes play, and every prompt and workflow is there. Rolling is off. <code>npm run dev</code> starts the app with tiny stand-in workflows, so you can work on the interface without a GPU or credits.</p><a class="btn sm" style="align-self:flex-start" href="demo/">Open the live demo</a></div>
-    <div class="box"><h3>Make your own preset</h3><p>A preset is a readable file: a name, a family, a script of shots with camera and sound, and an optional instruction to paint the last frame. Copy one, change the words, and it appears on the shelf.</p><a class="btn ghost sm" style="align-self:flex-start" href="https://github.com/ShAInyXYZ/Comfyture#make-a-preset">How presets work</a></div>
-  </div>
-</div></section>
-
-<!-- faq -->
-<section class="sec" id="faq"><div class="wrap">
-  <div class="sh"><div><h2>Questions</h2></div></div>
-  <div class="faq">
-    <details><summary>Is it free? <svg class="ico"><use href="media/icons.svg#chevron-down"/></svg></summary><p>The code is MIT licensed and the models are open weights, so running it on your own GPU costs only your hardware. Comfy Cloud needs an API key and a paid Comfy Cloud plan, and the Claude writers are billed in Comfy credits through Comfy Router. Gemma 4 runs inside ComfyUI if you want everything open.</p></details>
-    <details><summary>What do I need to run it locally? <svg class="ico"><use href="media/icons.svg#chevron-down"/></svg></summary><p>Node.js 22.18 or newer, a recent ComfyUI with the models from the README (a script fetches them), and the Comfy API v2 proxy. Accept the model terms on the Lightricks pages before downloading.</p></details>
-    <details><summary>Can I make my own presets? <svg class="ico"><use href="media/icons.svg#chevron-down"/></svg></summary><p>Yes. A preset is a folder with a readable <code>preset.json</code> (and a poster and preview if you want them on the shelf). The 28 that ship are all made this way.</p></details>
-    <details><summary>Does the video have sound? <svg class="ico"><use href="media/icons.svg#chevron-down"/></svg></summary><p>Yes. LTX-2.5 generates the picture and the audio together: the whoosh of a zoom, the crackle of fire, a line of dialogue with lip sync. Cut adds music, effects and voice tracks on top.</p></details>
-    <details><summary>Can I try it without a server? <svg class="ico"><use href="media/icons.svg#chevron-down"/></svg></summary><p>The live demo is the app as static files with the presets, sample photos and a take log. Everything plays; rolling is off. Run <code>npm run demo-site</code> to build your own copy for any static host.</p></details>
-    <details><summary>Is it affiliated with ComfyUI? <svg class="ico"><use href="media/icons.svg#chevron-down"/></svg></summary><p>No. Comfyture is an independent open-source project built on the Comfy Developer Platform. It borrows ComfyUI’s yellow as a nod and does not use its logo.</p></details>
-  </div>
-</div></section>
-
-<a class="roll" href="demo/"><svg class="arr" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 40 40 8M14 8h26v26"/></svg><h2>Roll your<br>first take.</h2><p>Open the live demo and play every preset, or clone it and run it on your own GPU.</p><div class="row"><span class="btn">Open the live demo</span></div></a>
 </main>
 
-<footer><div class="wrap">
-  <div><a href="#top" aria-label="Comfyture"><span class="wm"></span></a><p>One photo in, a shot with sound out. One sentence in, a short film out. Independent and open source, built for Comfy’s #OpenSourceHiggsfield challenge.</p></div>
-  <div><h4>Product</h4><ul><li><a href="#presets">Presets</a></li><li><a href="#story">Story</a></li><li><a href="#stage">Stage</a></li><li><a href="#shot">Shot</a></li><li><a href="#cut">Cut</a></li><li><a href="#library">Library</a></li></ul></div>
-  <div><h4>Build</h4><ul><li><a href="#models">Models</a></li><li><a href="#run">Run it</a></li><li><a href="https://github.com/ShAInyXYZ/Comfyture">GitHub</a></li><li><a href="demo/">Live demo</a></li></ul></div>
-  <div><h4>More</h4><ul><li><a href="#faq">FAQ</a></li><li><a href="brand/index.html">Brand</a></li><li>MIT licence</li></ul></div>
-</div></footer>
+<footer class="foot">
+  <div class="wrap">
+    <div class="fbrand">
+      <span class="wm"></span>
+      <p>Seven AI studios on one engine, built on the Comfy Developer Platform: the Comfy SDK, Comfy Cloud and Comfy Router. Open source and open weights by default.</p>
+    </div>
+    <div><h4>Studios</h4><ul><li><a href="#kitchen">Kitchen</a></li><li><a href="#mixer">Mixer</a></li><li><a href="#jam">Jam</a></li><li><a href="#macaron">Macaron</a></li><li><a href="#spice">Spice</a></li><li><a href="#toaster">Toaster</a></li><li><a href="#utensils">Utensils</a></li></ul></div>
+    <div><h4>Project</h4><ul><li><a href="https://github.com/ShAInyXYZ/Comfyture">GitHub</a></li><li><a href="demo/">Live demo</a></li><li><a href="https://github.com/ShAInyXYZ/Comfyture/blob/main/docs/competition/JUDGES.md">For judges</a></li><li><a href="https://github.com/ShAInyXYZ/Comfyture/blob/main/docs/guides/LOCAL-COMFYUI.md">Your own ComfyUI</a></li><li><a href="brand/index.html">Brand</a></li></ul></div>
+    <div><h4>Credits</h4><ul class="plain"><li>LTX-2.5 by Lightricks</li><li>Qwen Image 2.1, ACE-Step 1.5, Gemma 4, SAM3 and the other open models, through ComfyUI</li><li>three.js · ffmpeg</li><li>Manrope · IBM Plex Mono (SIL OFL)</li></ul></div>
+  </div>
+  <div class="wrap legal">
+    <span>MIT licence · © 2026 Mounir Belahbib (Shiny-Studio OÜ)</span>
+    <span>#OpenSourceHiggsfield · an independent project, not affiliated with Comfy Org or Higgsfield</span>
+    <span>Every character is our own: no real people, no one else's media.</span>
+  </div>
+</footer>
 
-<dialog class="view" id="view" aria-label="Player"><div class="vb"><div class="pl" id="v-pl"></div><div class="info" id="v-info"></div><button class="round x" type="button" id="v-x" aria-label="Close"><svg class="ico"><use href="media/icons.svg#x"/></svg></button></div></dialog>
-<dialog class="zoom" id="zoom"><img alt="" id="zoom-i"></dialog>
-<script src="site.js"></script>
-</body></html>
+<dialog class="viewer" id="viewer" aria-label="Viewer">
+  <div class="vbox">
+    <div class="vmedia" id="v-media"></div>
+    <div class="vinfo" id="v-info"></div>
+    <button class="round x" type="button" id="v-close" aria-label="Close"><svg class="i"><use href="#close"/></svg></button>
+  </div>
+</dialog>
+
+<script src="site.js" defer></script>
+</body>
+</html>
