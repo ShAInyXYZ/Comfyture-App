@@ -37,7 +37,7 @@ import { createFx, bakeArgs, deadlineOf, selfLimit } from "./utensils-fx.ts";
 import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templates.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
 import { seedExamples, placeMedia, placeThumb, placedName, revOf, type ExampleKind, type Kept } from "./examples.ts";
-import { createTarget, cleanUrl, LOCAL_URL, type Target } from "./target.ts";
+import { createTarget, cleanUrl, unreachable, targetOf, CLOUD_URL, LOCAL_URL, type Target } from "./target.ts";
 import { judging, refused, createPace, visitorOf, asVisitor, keepLedger, leftFor } from "./judge.ts";
 
 const root = resolve(import.meta.dirname, "..");
@@ -54,8 +54,10 @@ await account.init();
 const where = createTarget({ data });
 await where.init();
 // No choice, no base URL and no key: talk to a local ComfyUI through comfy-api-proxy's default port.
+let localByDefault = false;
 if (!where.saved() && !process.env.COMFY_BASE_URL?.trim() && !process.env.COMFY_API_KEY?.trim()) {
   process.env.COMFY_BASE_URL = LOCAL_URL;
+  localByDefault = true;
 }
 const base = process.env.COMFY_BASE_URL?.trim() || "https://cloud.comfy.org";
 const target: Target = { kind: new URL(base).hostname === "cloud.comfy.org" ? "comfy-cloud" : "self-hosted", url: base };
@@ -130,6 +132,17 @@ function followKey(key: string) {
     // the old client stays until a key works
   }
   if (target.kind === "comfy-cloud") library = new CloudLibrary(key);
+}
+
+/**
+ * With no key the renders went to a ComfyUI here only by default: a key saved while no choice is made and no ComfyUI answers here is
+ * for Comfy Cloud, so they go there (a judge who pastes a key, as JUDGES.md says, is not left on an address where nothing runs).
+ */
+async function keyMeansCloud() {
+  if (!localByDefault || where.saved() || target.kind !== "self-hosted" || (await where.probe(target.url)).ok) return false;
+  delete process.env.COMFY_BASE_URL;
+  followTarget(targetOf(CLOUD_URL));
+  return true;
 }
 
 /** The renders go elsewhere now (Comfy Cloud, or your ComfyUI through the bridge): a new client there, and Cloud's model library only on Cloud. */
@@ -1147,7 +1160,10 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     // (a judges' copy says what this visitor has left today)
     return json(res, 200, judging() ? { ...status, judge: leftFor(visitorOf(req.socket.remoteAddress, req.headers["x-forwarded-for"])) } : status);
   }
-  if (path === "/api/account/key" && method === "POST") return json(res, 200, await account.saveKey((await jsonBody(req)).key));
+  if (path === "/api/account/key" && method === "POST") {
+    const saved = await account.saveKey((await jsonBody(req)).key);
+    return json(res, 200, (await keyMeansCloud()) ? await account.status() : saved);
+  }
   if (path === "/api/account/key" && method === "DELETE") return json(res, 200, await account.clearKey());
   // where the renders go: Comfy Cloud, or your own ComfyUI through comfy-api-proxy (checked before it is taken)
   if (path === "/api/account/target/test" && method === "POST") {
@@ -2443,7 +2459,9 @@ for (const f of (await readdir(join(root, "samples")).catch(() => [] as string[]
 }
 
 createServer((req, res) => {
-  asVisitor(visitorOf(req.socket.remoteAddress, req.headers["x-forwarded-for"]), () => route(req, res)).catch((error) => {
+  asVisitor(visitorOf(req.socket.remoteAddress, req.headers["x-forwarded-for"]), () => route(req, res)).catch((failed) => {
+    // a request that reached nothing says what to start, or where to go instead
+    const error = unreachable(failed, target) ?? failed;
     const status = (error as { status?: number }).status ?? 400;
     if (!res.headersSent) json(res, status, { error: (error as Error).message });
     else res.end();

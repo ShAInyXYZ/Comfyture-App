@@ -61,6 +61,32 @@ export async function probe(url: string, f: typeof fetch = fetch): Promise<Probe
   return { ok: false, found: "nothing", detail: v2 ? `Something answered with ${v2.status}, but not the Comfy API.` : "Nothing answers at this address." };
 }
 
+/** The ways a request fails before anything answers: nothing listens, no such host, no answer in time. */
+const UNREACHED = /^(ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|EHOSTUNREACH|ENETUNREACH|UND_ERR_CONNECT_TIMEOUT|UND_ERR_SOCKET)$/;
+
+/**
+ * A request that reached nothing (fetch's bare "fetch failed"), said as what to do about it: when it is the ComfyUI the renders go
+ * to, how to start it or go to Comfy Cloud instead (a first visit with no key and no ComfyUI lands here); else which host did not
+ * answer. Null for any other failure.
+ */
+export function unreachable(error: unknown, t: Target): (Error & { status: number }) | null {
+  let e = error as { message?: string; code?: string; cause?: unknown; address?: string; port?: number; hostname?: string } | undefined;
+  let found: typeof e = undefined;
+  for (let i = 0; e && i < 4; i++, e = e.cause as typeof e) {
+    if (UNREACHED.test(e.code ?? "")) found = e;
+    if (found) break;
+  }
+  if (!found && !/^fetch failed$/i.test((error as Error)?.message ?? "")) return null;
+  const at = new URL(t.url);
+  const port = Number(at.port || (at.protocol === "https:" ? 443 : 80));
+  // (a bare "fetch failed" says nothing of where: it is taken to be the target)
+  const isTarget = !found || found.hostname === at.hostname || found.port === port;
+  const message = t.kind === "self-hosted" && isTarget
+    ? `No ComfyUI answers at ${at.host}, where this runs. To run it on Comfy Cloud, paste a Comfy API key in the account window (top right); for your own GPU, start ComfyUI with comfy-api-proxy in front of it. The examples and the tours work without either.`
+    : `${found?.hostname || found?.address || (isTarget ? at.host : "A service")} did not answer${found?.code ? ` (${found.code})` : ""}. Check the connection and try again.`;
+  return Object.assign(new Error(message), { status: 503 });
+}
+
 /** The target in use, the one saved, and how to switch: what the server keeps of it. */
 export function createTarget(deps: { data: string; env?: NodeJS.ProcessEnv; fetch?: typeof fetch }) {
   const env = deps.env ?? process.env;

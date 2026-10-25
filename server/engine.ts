@@ -15,6 +15,7 @@ import { CAMERA } from "../web/js/script.js";
 import { untagRefs, type ImageModels } from "./images.ts";
 import { isRouterVideo, routerVideo, routerVideoName, routerVideoSeconds, routerVideoLength } from "./router-videos.ts";
 import { spend } from "./judge.ts";
+import { unreachable, targetOf, CLOUD_URL } from "./target.ts";
 
 export interface Dialogue { speaker?: string; language?: string; line: string }
 export interface Shot {
@@ -285,6 +286,9 @@ function label(cls: string | null, pass: number, stage: "frame" | "shot"): strin
 
 function describe(error: unknown): string {
   if (error instanceof Canceled) return "Canceled.";
+  // (the SDK goes where COMFY_BASE_URL says, as the account window set it)
+  const far = unreachable(error, targetOf(process.env.COMFY_BASE_URL?.trim() || CLOUD_URL));
+  if (far) return far.message;
   const e = error as { message?: string; details?: unknown; job?: { error?: unknown } };
   const detail = e.job?.error ?? e.details;
   const text = [e.message, detail && JSON.stringify(detail)].filter(Boolean).join(" ");

@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { cleanUrl, probe, createTarget, targetOf, LOCAL_URL } from "../server/target.ts";
+import { cleanUrl, probe, createTarget, targetOf, unreachable, LOCAL_URL } from "../server/target.ts";
 
 /** A fetch that answers as the given addresses do: the bridge (v2 job list), a bare ComfyUI (system stats), nothing. */
 const world = (routes: Record<string, { status: number; body?: unknown }>) =>
@@ -66,4 +66,23 @@ test("the choice is checked, kept, outranks .env's, and Reset goes back to it", 
   assert.equal(again.saved()?.kind, "comfy-cloud");
   assert.deepEqual(await again.reset(), { kind: "self-hosted", url: "http://from-env:8189" }, "Reset goes back to .env's");
   await assert.rejects(again.set("somewhere"), /Comfy Cloud or your ComfyUI/);
+});
+
+test("a request that reached nothing says what to start, or where to go instead", async () => {
+  const local = targetOf(LOCAL_URL);
+  // what fetch throws when nothing listens: a TypeError with the socket's error as its cause
+  const refused = await fetch("http://127.0.0.1:9/").catch((e) => e);
+  const said = unreachable(refused, local);
+  assert.equal(said?.status, 503);
+  assert.match(said!.message, /No ComfyUI answers at 127\.0\.0\.1:8189/);
+  assert.match(said!.message, /Comfy API key in the account window/, "the way to Comfy Cloud");
+  assert.match(said!.message, /comfy-api-proxy/, "the way to your own GPU");
+  assert.match(said!.message, /examples and the tours work without either/);
+  const wrapped = Object.assign(new Error("Request failed"), { cause: { code: "ECONNREFUSED", address: "127.0.0.1", port: 8189 } });
+  assert.match(unreachable(wrapped, local)!.message, /No ComfyUI answers/, "an error the SDK wraps is seen through");
+  const elsewhere = Object.assign(new TypeError("fetch failed"), { cause: { code: "ENOTFOUND", hostname: "api.comfy.org" } });
+  assert.equal(unreachable(elsewhere, local)!.message, "api.comfy.org did not answer (ENOTFOUND). Check the connection and try again.", "another host is named, not the ComfyUI");
+  assert.match(unreachable(new TypeError("fetch failed"), targetOf("https://cloud.comfy.org"))!.message, /^cloud\.comfy\.org did not answer/, "on Comfy Cloud there is no ComfyUI to start");
+  assert.equal(unreachable(new Error("The key was refused"), local), null, "any other failure is left as it was");
+  assert.equal(unreachable(undefined, local), null);
 });

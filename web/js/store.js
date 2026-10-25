@@ -2199,8 +2199,8 @@ export async function loadAccount(refresh = false) {
 
 /** Checks a new key with Comfy and keeps it; throws with Comfy's reason when it is refused. */
 export async function saveAccountKey(key) {
-  state.account = await api.saveAccountKey(key);
-  changed("account");
+  // (a first key may send the renders to Comfy Cloud: the header follows)
+  tookTarget(await api.saveAccountKey(key));
 }
 
 /** Forgets the key saved here and goes back to .env's. */
