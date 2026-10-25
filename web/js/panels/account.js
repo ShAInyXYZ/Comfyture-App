@@ -137,7 +137,9 @@ function draw() {
   // a judges' copy (COMFYTURE_JUDGE): its key and where it renders are its host's, shown but not changed here
   const judge = !!state.info?.judge;
   const renders = judge
-    ? section("Renders on", h("div.account-row", {}, h("b", {}, own ? "Your ComfyUI" : "Comfy Cloud"), h("span.hint", {}, host)), h("p.hint", {}, "A judges' copy: where it renders is set by its host."))
+    ? section("Renders on", h("div.account-row", {}, h("b", {}, own ? "Your ComfyUI" : "Comfy Cloud"), h("span.hint", {}, host)),
+        a.judge && h("div.account-row", {}, h("b", {}, `${a.judge.renders} render${a.judge.renders === 1 ? "" : "s"} left today`), h("span.hint", {}, `${a.judge.words} answers`)),
+        h("p.hint", {}, "A judges' copy: where it renders is set by its host, and renders are counted for each visitor. The examples and the tours are free."))
     : section(
     "Renders on",
     h("div.account-switch", { role: "radiogroup", "aria-label": "Where the renders go" },

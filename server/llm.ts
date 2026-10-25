@@ -8,6 +8,7 @@
 
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
+import { spend } from "./judge.ts";
 
 // provider: how Router is spoken to (Anthropic's Messages, OpenAI's Responses, Google's generateContent);
 // tuned: whether it takes a temperature; forced: whether it can be made to answer through a tool
@@ -62,6 +63,7 @@ const picturesOf = ({ image, images }: Ask) => [...(image ? [image] : []), ...(i
  * It answers with its text; a Claude handed a tool answers with the tool's input, as JSON.
  */
 export async function routerAsk(id: string, system: string, prompt: string, opts: Ask = {}) {
+  spend("words");
   const m = model(id);
   if (!m || m.provider === "comfyui") throw new Error(`${id} is not on Comfy Router.`);
   const { body, read } = m.provider === "openai" ? openai(m, system, prompt, opts) : m.provider === "vertexai" ? vertex(m, system, prompt, opts) : anthropic(m, system, prompt, opts);

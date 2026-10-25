@@ -44,3 +44,29 @@ test("the visitor is the address, or the first one a local proxy names", () => {
   assert.equal(visitorOf("127.0.0.1", "198.51.100.7, 10.0.0.2"), "198.51.100.7");
   assert.equal(visitorOf("203.0.113.9", "198.51.100.7"), "203.0.113.9", "a header from afar is not believed");
 });
+
+test("the spend gate: a visitor's renders and words a day, every visitor's renders a day, kept across a restart", async (t) => {
+  const { mkdtemp, rm, readFile } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { spend, asVisitor, keepLedger, leftFor } = await import("../server/judge.ts");
+  const data = await mkdtemp(join(tmpdir(), "judge-"));
+  t.after(() => rm(data, { recursive: true, force: true }));
+  const env = { COMFYTURE_JUDGE: "1", COMFYTURE_JUDGE_RUNS: "2", COMFYTURE_JUDGE_RUNS_DAY: "3", COMFYTURE_JUDGE_WORDS: "1" } as NodeJS.ProcessEnv;
+  const at = Date.parse("2026-10-28T10:00:00Z");
+  keepLedger(data);
+  assert.doesNotThrow(() => spend("render", {} as NodeJS.ProcessEnv, at), "not a judges' copy: free");
+  asVisitor("ann", () => (spend("render", env, at), spend("render", env, at)));
+  assert.throws(() => asVisitor("ann", () => spend("render", env, at)), (e: any) => e.status === 429 && /2 renders for this visitor/.test(e.message));
+  asVisitor("bob", () => spend("render", env, at));
+  assert.throws(() => asVisitor("cid", () => spend("render", env, at)), /today's 3 renders/, "every visitor's renders a day");
+  asVisitor("bob", () => spend("words", env, at));
+  assert.throws(() => asVisitor("bob", () => spend("words", env, at)), /1 answers/);
+  assert.deepEqual(leftFor("ann", env, at), { renders: 0, words: 1 });
+  // (an answer started in a job keeps its visitor across awaits)
+  await assert.rejects(asVisitor("ann", async () => (await new Promise((r) => setTimeout(r, 5)), spend("render", env, at))), /for this visitor/);
+  assert.equal(JSON.parse(await readFile(join(data, "judge.json"), "utf8")).all.render, 3, "kept on disk");
+  keepLedger(data);
+  assert.deepEqual(leftFor("bob", env, at), { renders: 0, words: 0 }, "a restart gives nothing back");
+  assert.deepEqual(leftFor("bob", env, at + 86_400_000), { renders: 2, words: 1 }, "a new day starts again");
+});

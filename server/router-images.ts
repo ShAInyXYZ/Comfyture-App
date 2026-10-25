@@ -7,6 +7,7 @@
 
 import { randomUUID } from "node:crypto";
 import { ASPECTS, tagRefs } from "./images.ts";
+import { spend } from "./judge.ts";
 
 /** A reference picture as the makers take it: its type and its bytes in base64. */
 export type RouterRef = { mime: string; data: string };
@@ -175,6 +176,7 @@ export function routerPrompt(m: Pick<Model, "tag" | "refs">, prompt: string, nam
 }
 
 export async function routerDraw(id: string, v: { prompt: string; aspect: string; refs: RouterRef[]; names: string[]; seed: number; size?: string; quality?: string; resolution?: string }) {
+  spend("render");
   const m = find(id);
   if (!m) throw new Error(`${id} is not on Comfy Router.`);
   const refs = v.refs.slice(0, m.refs);

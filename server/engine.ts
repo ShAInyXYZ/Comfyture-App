@@ -14,6 +14,7 @@ import {
 import { CAMERA } from "../web/js/script.js";
 import { untagRefs, type ImageModels } from "./images.ts";
 import { isRouterVideo, routerVideo, routerVideoName, routerVideoSeconds, routerVideoLength } from "./router-videos.ts";
+import { spend } from "./judge.ts";
 
 export interface Dialogue { speaker?: string; language?: string; line: string }
 export interface Shot {
@@ -1238,6 +1239,8 @@ export class Engine extends EventEmitter {
       onProgress?: (p: number) => void;
     },
   ) {
+    // (a judges' copy counts it: an answer of the writer or a pet as words, anything else as a render)
+    spend(track.kind === "plan" ? "words" : "render");
     const job = await this.client.submit(this.client.workflows.fromJson(await this.prepare(graph)), { signal });
     const { run, stage = "shot", span = [0, 1] } = track;
     const kind: Kind = track.kind ?? (stage === "frame" ? "paint" : "guided");

@@ -4,6 +4,7 @@
 // none of them is offered.
 
 import { randomUUID } from "node:crypto";
+import { spend } from "./judge.ts";
 
 export type RouterStart = { mime: string; data: string };
 type Ask = { prompt: string; start: RouterStart; seconds: number; aspect: string; seed: number };
@@ -114,6 +115,7 @@ const why = (m: Model, res: Response, out: any) => {
  * billed as listed.
  */
 export async function routerVideo(id: string, v: Ask & { signal?: AbortSignal }) {
+  spend("render");
   const m = find(id);
   if (!m) throw new Error(`${id} is not on Comfy Router.`);
   const base = `https://api.comfy.org/v2/models/${m.path}`;

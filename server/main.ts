@@ -38,7 +38,7 @@ import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templat
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
 import { seedExamples, placeMedia, placeThumb, type ExampleKind, type Kept } from "./examples.ts";
 import { createTarget, cleanUrl, LOCAL_URL, type Target } from "./target.ts";
-import { judging, refused, createPace, visitorOf } from "./judge.ts";
+import { judging, refused, createPace, visitorOf, asVisitor, keepLedger, leftFor } from "./judge.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -1051,8 +1051,9 @@ engine.on("paint", (job) => broadcast("paint", job));
 
 // ------------------------------------------------------------------ routes
 
-// a judges' copy (COMFYTURE_JUDGE, server/judge.ts): each visitor's pace of writing requests
+// a judges' copy (COMFYTURE_JUDGE, server/judge.ts): each visitor's pace of writing requests, and the day's counts of what was spent
 const pace = createPace();
+if (judging()) keepLedger(data);
 
 async function route(req: IncomingMessage, res: ServerResponse) {
   const url = new URL(req.url ?? "/", "http://local");
@@ -1072,7 +1073,11 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/info" && method === "GET") {
     return json(res, 200, { target: target.kind, url: new URL(target.url).origin, workflows: workflowSet, repository, reels: ffmpeg, judge: judging(), llms: { models: llms(), default: defaultLlm("writer"), assistant: defaultLlm("assistant") } });
   }
-  if (path === "/api/account" && method === "GET") return json(res, 200, await account.status(url.searchParams.has("refresh")));
+  if (path === "/api/account" && method === "GET") {
+    const status = await account.status(url.searchParams.has("refresh"));
+    // (a judges' copy says what this visitor has left today)
+    return json(res, 200, judging() ? { ...status, judge: leftFor(visitorOf(req.socket.remoteAddress, req.headers["x-forwarded-for"])) } : status);
+  }
   if (path === "/api/account/key" && method === "POST") return json(res, 200, await account.saveKey((await jsonBody(req)).key));
   if (path === "/api/account/key" && method === "DELETE") return json(res, 200, await account.clearKey());
   // where the renders go: Comfy Cloud, or your own ComfyUI through comfy-api-proxy (checked before it is taken)
@@ -2369,7 +2374,7 @@ for (const f of (await readdir(join(root, "samples")).catch(() => [] as string[]
 }
 
 createServer((req, res) => {
-  route(req, res).catch((error) => {
+  asVisitor(visitorOf(req.socket.remoteAddress, req.headers["x-forwarded-for"]), () => route(req, res)).catch((error) => {
     const status = (error as { status?: number }).status ?? 400;
     if (!res.headersSent) json(res, status, { error: (error as Error).message });
     else res.end();
