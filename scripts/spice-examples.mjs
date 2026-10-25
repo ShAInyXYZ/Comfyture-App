@@ -4,6 +4,9 @@
 //
 //   NODE_PATH=<a node_modules that has playwright> node scripts/spice-examples.mjs [examples/spice/<folder> ...] [--write] [--out <dir>] [--pictures <dir>]
 //
+// (PLAYWRIGHT_MODULE=<its folder> names Playwright another way, CHROME=<binary> another browser. Only the free keys are pressed: Light's
+// relight and sky, and every paid run, are never asked for, and nothing the page sends that would spend credits leaves it.)
+//
 // A spec says what to make with a top-level `"build": ["light", "fx", "comp"]` in its shot.json: the departments whose passes the app
 // makes, in the pipeline's order. The settings are the spec's own `set`: set.light (grade, exposure, contrast, saturation: Light's grade;
 // weather, amount: Light's weather), set.fx (layers) and set.comp (format for a clip, picFormat for a picture). Anything not in `build`
@@ -14,9 +17,10 @@
 // nothing but that server opens Spice, opens the shot and presses each department's own key, in order, as a person does (Grade it / Add
 // the weather, Bake the layers, Export), waiting for the pass to be there and fresh (its lamp green, nothing working). A pass that errors,
 // or takes over ten minutes, stops the build with the shot's name. Then the shot is read back from the server and each made pass's file
-// is copied from the lab's data folder as light.jpg|mp4, fx.<what the app made>|mp4, comp.webp|mp4 (a clip stays the MP4 the server
-// made; a picture stays what the app made), and the spec's `passes` entries for them are written (file, seconds, width, height, note,
-// source "free"), `rev` one higher when any file's bytes changed, in the style the shipped specs are written in (spice-shot-json.mjs).
+// is copied from the lab's data folder as light.jpg|mp4, fx.<jpg|png>|mp4, comp.webp|mp4 (a clip stays the MP4 the server made; a picture
+// stays what the app made: FX's bake of a picture is the PNG the page uploads, so fx.png), and the spec's `passes` entries for them are
+// written (file, seconds, width, height, note, source "free"), `rev` one higher when any file's bytes changed, in the style the shipped
+// specs are written in (spice-shot-json.mjs).
 //
 // Nothing in examples/ is touched without --write: the outputs (each shot's folder: shot.json and the passes made) go to a scratch folder
 // (--out <dir>, else a new one in the system's temp), whose path is printed. Before anything is overwritten, sizes are compared and
@@ -235,7 +239,8 @@ async function make(page, dept, key, say) {
   const button = page.locator(`.sp-primary[data-key="${key}"]`);
   await button.waitFor({ state: "visible" });
   await page.waitForFunction((k) => { const b = document.querySelector(`.sp-primary[data-key="${k}"]`); return b && !b.disabled; }, key, { timeout: 15_000 }).catch(() => {});
-  if (await button.isDisabled()) throw new Error(`${dept}'s key (${key}) is not lit: ${(await button.getAttribute("title")) || "no reason given"}`);
+  // (the app turns a title into its tooltip: the reason the key is out is said there)
+  if (await button.isDisabled()) throw new Error(`${dept}'s key (${key}) is not lit: ${(await button.getAttribute("data-tooltip")) || (await button.getAttribute("title")) || "no reason given"}`);
   const label = (await button.innerText()).replace(/\s+/g, " ").trim();
   const pressed = Date.now();
   await button.click();
@@ -406,8 +411,11 @@ async function main() {
   const lab = tempDir("spice-examples-");
   const data = join(lab, "data");
   const examples = join(lab, "examples");
-  const outRoot = o.write ? tempDir("spice-examples-out-") : o.out ?? (await mkdtemp(join(tmpdir(), "spice-examples-out-")));
-  await mkdir(outRoot, { recursive: true });
+  // where each shot's outputs are made: with --write a temp folder that goes at the end; else the scratch folder (--out, or a new one in the
+  // system's temp, made when there is something to put in it, and not kept if nothing was made)
+  let outRoot = o.write ? tempDir("spice-examples-out-") : o.out;
+  const scratch = async () => (outRoot ??= await mkdtemp(join(tmpdir(), "spice-examples-out-")));
+  const autoScratch = !o.write && !o.out;
 
   // each folder copied without the passes about to be made, its spec to match
   for (const s of specs) {
@@ -424,6 +432,7 @@ async function main() {
   console.log(`The lab: ${server.base} (data ${data}, no Comfy key, nothing behind it)`);
   let browser;
   const results = [];
+  const failed = [];
   try {
     const listed = (await getJson(`${server.base}/api/spice-shots`))["spice-shots"].map((x) => x.id);
     const missing = specs.filter((s) => !listed.includes(s.spec.id));
@@ -432,8 +441,8 @@ async function main() {
     for (const s of specs) {
       const say = (text) => console.log(`[${s.short}] ${text}`);
       const t0 = Date.now();
+      const stage = join(await scratch(), s.name);
       try {
-        const stage = join(outRoot, s.name);
         await rm(stage, { recursive: true, force: true });
         await mkdir(stage, { recursive: true });
         say(`building ${s.build.join(", ")}`);
@@ -448,16 +457,23 @@ async function main() {
         if (o.pictures) await pictures(s, made, o.write ? s.dir : stage, o.pictures, say);
         results.push({ s, took, stage, made });
       } catch (e) {
-        throw new Error(`${s.name} (${s.spec.name}): ${e.message}`);
+        // (the others are still made; the shot that failed is named at the end, and what it half made is not kept)
+        await rm(stage, { recursive: true, force: true }).catch(() => {});
+        failed.push(`${s.name} (${s.spec.name}): ${e.message}`);
+        console.error(`[${s.short}] FAILED: ${e.message}`);
       }
     }
   } finally {
     await browser?.close().catch(() => {});
     await server.stop();
+    if (autoScratch && outRoot && !results.length) await rm(outRoot, { recursive: true, force: true }).catch(() => {});
   }
-  console.log(`\nDone: ${results.map((r) => `${r.s.name} ${secs(r.took)}`).join(", ")} · ${secs(Date.now() - started)} in all`);
-  if (!o.write) console.log(`Nothing in examples/ was changed. The outputs are in ${outRoot} (--write puts them in the example folders).`);
-  if (o.pictures) console.log(`The website's pictures are in ${o.pictures}.`);
+  if (results.length) {
+    console.log(`\nDone: ${results.map((r) => `${r.s.name} ${secs(r.took)}`).join(", ")} · ${secs(Date.now() - started)} in all`);
+    if (!o.write) console.log(`Nothing in examples/ was changed. The outputs are in ${outRoot} (--write puts them in the example folders).`);
+    if (o.pictures) console.log(`The website's pictures are in ${o.pictures}.`);
+  }
+  if (failed.length) throw new Error(failed.length === 1 ? failed[0] : `${failed.length} shots failed:\n  ${failed.join("\n  ")}`);
 }
 
 /** Whether a path is directly in a folder (the folder itself is not). */
