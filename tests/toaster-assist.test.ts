@@ -170,13 +170,13 @@ const FACTS = {
   model: { name: "Qwen 3.0 Pro", pictures: 6 },
   pictures: [
     { name: "frame", kind: "frame", plain: true }, { name: "colour-id", kind: "map", map: "id" }, { name: "depth", kind: "map", map: "depth" },
-    { name: "mood", kind: "look" }, { name: "giorno", kind: "part", of: "Giorno", sheet: "character" }, { name: "bad name", kind: "look" },
+    { name: "mood", kind: "look" }, { name: "crumpet", kind: "part", of: "Crumpet", sheet: "character" }, { name: "bad name", kind: "look" },
   ],
   what: "A boss's office", scene: "Dusk, warm lamp, anime style",
   strength: { percent: 80, band: "high" },
   who: [
     { colour: "tan", people: false, things: [{ name: "a mahogany desk", words: "a walnut desk with brass handles", count: 2 }] },
-    { colour: "sky blue", people: true, things: [{ name: "Giorno", words: "a young man, blond", pictures: ["giorno"] }] },
+    { colour: "sky blue", people: true, things: [{ name: "Crumpet", words: "a baby beaver, brown fur", pictures: ["crumpet"] }] },
   ],
 };
 
@@ -184,15 +184,15 @@ test("Write: the writer is told the model, the pictures in order with their role
   const text = writePrompt({ facts: FACTS, prompt: "Make it moody.", refs: [{ name: "frame" }, { name: "mood" }] });
   assert.match(text, /THE IMAGE MODEL: Qwen 3\.0 Pro, takes 6 pictures\./);
   const order = [...text.matchAll(/^\d\. @([\w-]+): (.*)$/gm)].map((m) => m[1]);
-  assert.deepEqual(order, ["frame", "colour-id", "depth", "mood", "giorno"], "in order; a bad name is left out");
+  assert.deepEqual(order, ["frame", "colour-id", "depth", "mood", "crumpet"], "in order; a bad name is left out");
   assert.match(text, /1\. @frame: the clay frame, in plain grey clay/);
   assert.match(text, /2\. @colour-id: the colour ID map/);
   assert.match(text, /4\. @mood: a reference for the look/);
-  assert.match(text, /5\. @giorno: pictures of Giorno \(character sheet\)/);
+  assert.match(text, /5\. @crumpet: pictures of Crumpet \(character sheet\)/);
   assert.match(text, /THE LOOK: Dusk, warm lamp, anime style/);
   assert.match(text, /THE STRENGTH: 80%, high: only the layout and the forms stay/);
-  assert.ok(text.indexOf("- sky blue: Giorno") < text.indexOf("- tan: a mahogany desk"), "people first");
-  assert.match(text, /- sky blue: Giorno\. Their words: a young man, blond\. Pictures: @giorno/);
+  assert.ok(text.indexOf("- sky blue: Crumpet") < text.indexOf("- tan: a mahogany desk"), "people first");
+  assert.match(text, /- sky blue: Crumpet\. Their words: a baby beaver, brown fur\. Pictures: @crumpet/);
   assert.match(text, /- tan: a mahogany desk \(x2\)\. Their words: a walnut desk/);
   assert.match(text, /THE PICTURES YOU SEE: @frame, @mood\./);
   assert.match(text, /THE USER'S OWN PROMPT TO IMPROVE:\nMake it moody\./);

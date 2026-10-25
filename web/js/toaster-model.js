@@ -591,7 +591,7 @@ const headOf = (t) => String(t ?? "").split(/,| with | in | holding |:| — /)[0
  */
 export function shortOf(p, pieceOf = () => null) {
   if (isCharacter(p)) {
-    // (a real name, "Giorno", says who; a body's name, "Man 2", says nothing: the words do)
+    // (a real name, "Crumpet", says who; a body's name, "Man 2", says nothing: the words do)
     const generic = /^(man|woman|teen|teenager|child|kid|toddler|elder|person|figure|character|heavy|athletic)( ?\d+)?$/i.test(String(p.name ?? "").trim());
     return !generic && p.name && (String(p.made ?? "").trim() || p.refs?.length) ? p.name : describeOf(p, pieceOf);
   }

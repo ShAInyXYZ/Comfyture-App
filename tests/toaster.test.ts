@@ -440,7 +440,7 @@ test("the strength: how far a render goes from the clay, in its words, the frame
   const pieceOf = () => ({ name: "Desk", description: "a rectangular writing desk with a flat top and a shallow drawer" });
   assert.equal(shortOf(cleanPart({ shape: "asset", asset: "desk", made: "a rectangular writing desk with a flat top and a shallow drawer" }), pieceOf), "a desk", "left as the library describes it: its name in the library");
   assert.equal(shortOf(cleanPart({ shape: "asset", asset: "desk", made: "a mahogany desk with brass handles" }), pieceOf), "a mahogany desk with brass handles");
-  assert.equal(shortOf(cleanPart({ shape: "character", body: "man", name: "Giorno", made: "a slim young man" })), "Giorno");
+  assert.equal(shortOf(cleanPart({ shape: "character", body: "man", name: "Crumpet", made: "a round-cheeked baby beaver" })), "Crumpet");
   assert.equal(shortOf(cleanPart({ shape: "character", body: "man", name: "Man 2", made: "a chef in whites" })), "a chef in whites", "a body's name says nothing: the words do");
 });
 

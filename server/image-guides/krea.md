@@ -25,4 +25,4 @@ Don't ask for rendered text (the brief forbids it). Don't push style strength so
 
 ## For Toaster: a clay blockout into a finished picture
 Toaster cannot use Krea 2 for clay renders: its templates are text-to-image and style reference only, so the clay frame, maps and character sheets cannot be sent as the canvas. Use FLUX 3 Klein or another edit model.
-If Krea is used for a plain picture anyway, write one paragraph: subject and setting first, the medium, the light, and the style phrase last. Style-reference template: describe only the content ("a dimly lit executive office with a fireplace, a man behind a desk, bookcases, armchairs, monstera plants") and let "the reference" carry the look; do not describe the reference's style in words that fight it.
+If Krea is used for a plain picture anyway, write one paragraph: subject and setting first, the medium, the light, and the style phrase last. Style-reference template: describe only the content ("a cosy woodworking workshop, a baby beaver at a workbench, a pegboard of tools, shelves of jars, a window") and let "the reference" carry the look; do not describe the reference's style in words that fight it.

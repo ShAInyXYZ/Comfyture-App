@@ -122,7 +122,7 @@ const MODELS: Model[] = [
     picture: (out) => (out?.output?.find?.((o: any) => o?.url)?.url ? { url: out.output.find((o: any) => o?.url).url } : null),
   },
   {
-    // (Runway's references each carry a tag, and its prompt calls them by @tag: "@giorno sits behind the desk")
+    // (Runway's references each carry a tag, and its prompt calls them by @tag: "@crumpet stands at the bench")
     id: "gen4_image", path: "runway/gen4_image", name: "Runway Gen-4 Image", short: "Runway Gen-4", about: "Keeps a face from up to three references", maker: "runway", credits: 24, refs: 3, tag: "@",
     body: (a) => ({ promptText: a.prompt.slice(0, 1000), ratio: nearest(a.aspect, RUNWAY), ...(a.refs.length ? { referenceImages: a.refs.slice(0, 3).map((r, i) => ({ uri: dataUri(r), ...(a.tags?.[i] ? { tag: a.tags[i] } : {}) })) } : {}) }),
     picture: (out) => (typeof out?.output?.[0] === "string" ? { url: out.output[0] } : null),

@@ -374,7 +374,7 @@ export function readToasterAnswer(reply: string, s: Summary = {}) {
 export const TOASTER_WRITE_BRIEF = `You write the one prompt that a named image-edit model reads to turn a clay blockout into a finished picture. You are given the facts (the model, the pictures sent in order with what each is, what it is, the look, the strength, who is what) and may see the first pictures.
 
 Follow THE MODEL'S GUIDE (after this brief) for the prompt's structure, order, length, wording and how to refer to the pictures.
-- Refer to every picture by its @name exactly as given (the app turns @names into the model's own references), give each its role as the guide says, and use only the pictures listed. Where the guide's examples write "image 1", "image 2", <image1> or <<<image_1>>>, write the @name instead (@frame, @colour-id, @giorno…): the app numbers them in the order they are really sent.
+- Refer to every picture by its @name exactly as given (the app turns @names into the model's own references), give each its role as the guide says, and use only the pictures listed. Where the guide's examples write "image 1", "image 2", <image1> or <<<image_1>>>, write the @name instead (@frame, @colour-id, @crumpet…): the app numbers them in the order they are really sent.
 - Keep the layout, the camera and every thing's place and size from the picture that leads (the first one sent: the clay @frame, or the map that leads when the frame is left out).
 - The user's look and what it is lead: never a default "photograph" when they asked for a style.
 - The strength says how far to go from the clay. Low: keep the clay's colours. Middle: real materials; the colours only label who is who. High: only the layout and the forms stay; all-new materials and light.
