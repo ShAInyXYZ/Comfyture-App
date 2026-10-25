@@ -227,7 +227,7 @@ export function editSpace() {
   function drawMade() {
     const list = utensils.results.filter((r) => r.tool === t.id).slice(0, 12);
     const shown = shownResult();
-    made.replaceChildren(
+    made.replaceChildren(...[
       h("span.ut-label", {}, "Made here"),
       ...list.map((r) => {
         const pic = r.kind === "image" ? h("img", { src: r.url, alt: "", draggable: false, loading: "lazy" }) : r.kind === "video" ? h("video", { src: `${r.url}#t=0.1`, muted: true, preload: "metadata", playsInline: true }) : h("span.ue-made-audio", {}, icon("sound"));
@@ -236,7 +236,8 @@ export function editSpace() {
           h("button.ue-made-x", { type: "button", title: "Take it off the list\nThe file stays in the Library", "aria-label": "Take it off the list", on: { click: () => forget(r.id) } }, icon("close")));
       }),
       shown ? h("span.ut-readout.ue-made-note", {}, shown.note ?? "") : null,
-      shown && takersOf(shown).filter((x) => !isEdit(x.id)).length ? h("span.ue-made-hands", {}, ...takersOf(shown).filter((x) => !isEdit(x.id)).slice(0, 5).map((x) => h("button.ut-iconkey.is-quiet", { type: "button", title: `Give it to ${x.name}`, "aria-label": `Give it to ${x.name}`, on: { click: () => handOn(shown, x.id) } }, sprite(x.icon)))) : null);
+      shown && takersOf(shown).filter((x) => !isEdit(x.id)).length ? h("span.ue-made-hands", {}, ...takersOf(shown).filter((x) => !isEdit(x.id)).slice(0, 5).map((x) => h("button.ut-iconkey.is-quiet", { type: "button", title: `Give it to ${x.name}`, "aria-label": `Give it to ${x.name}`, on: { click: () => handOn(shown, x.id) } }, sprite(x.icon)))) : null,
+    ].filter(Boolean));
   }
 
   const bench = h("section.ut-bento.ue-benchwrap", {}, h("div.ue-bench", {}, h("div.ue-main", {}, stage.el), side));

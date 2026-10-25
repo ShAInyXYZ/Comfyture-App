@@ -385,7 +385,7 @@ export function libraryHall({ open, ask }) {
     const filtering = !!(st.found || st.what !== "all" || st.who !== "all");
     found.textContent = filtering ? `${shown} of ${st.data.total}` : `${st.data.total} workflows`;
     empty.hidden = shown > 0;
-    if (!shown) empty.replaceChildren(icon("search"), h("span", {}, st.q ? `No workflow for “${st.q}”. Ask Truffle: she knows what each one does.` : "No workflow passes these filters."), st.q ? h("button.lb-retry", { type: "button", on: { click: () => ask(`Which workflow should I use to ${st.q}?`) } }, "Ask Truffle") : null);
+    if (!shown) empty.replaceChildren(icon("search"), h("span", {}, st.q ? `No workflow for “${st.q}”. Ask Truffle: she knows what each one does.` : "No workflow passes these filters."), ...(st.q ? [h("button.lb-retry", { type: "button", on: { click: () => ask(`Which workflow should I use to ${st.q}?`) } }, "Ask Truffle")] : []));
     layout();
     if (jump) hall.scrollTo({ left: 0 });
     edges();

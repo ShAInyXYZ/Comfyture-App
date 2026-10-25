@@ -656,7 +656,8 @@ function drawStage() {
   page.play.title = m ? "Play or pause" : "Nothing to play yet";
   page.make.disabled = song.making;
   page.make.className = `key is-primary sg-make${song.making ? " is-busy" : ""}`;
-  page.make.replaceChildren(jicon("note"), song.making ? "Making the song…" : "Make the song", cost && !song.making ? h("span.sg-cr", {}, cr(cost)) : null);
+  // (replaceChildren writes a null out as the word "null": the price goes in only when there is one)
+  page.make.replaceChildren(jicon("note"), song.making ? "Making the song…" : "Make the song", ...(cost && !song.making ? [h("span.sg-cr", {}, cr(cost))] : []));
   page.hint.textContent = song.passes === 1 ? "A draft: quicker and cheaper. Make it Full for the final." : "Full songs sound best. Cut your favourite part next.";
   deck.setCover(coverFor(m).picture);
   drawCover(m);

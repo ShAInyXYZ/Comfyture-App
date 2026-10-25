@@ -229,11 +229,12 @@ export function createMixStrip() {
     const made = new Set(mine.map((m) => m.url));
     const lib = (await sounds()).filter((a) => !made.has(a.url)).slice(0, 10).map((a) => ({ file: a.file, url: a.url, name: a.name, seconds: a.seconds, kind: "audio", tag: a.kind ?? "sound" }));
     const row = (s) => h("button.um-pick", { type: "button", on: { click: () => (addTrack(s), closePop()) } }, h("b", {}, s.name), h("em", {}, `${s.tag} · ${clock(s.seconds ?? 0)}`), icon("plus"));
-    pop.replaceChildren(
+    pop.replaceChildren(...[
       h("button.um-pick.is-file", { type: "button", on: { click: () => pickFile("audio/*,video/*", async (f) => { try { const a = await api.uploadAudio(f); addTrack({ file: a.file, url: a.url, name: f.name.replace(/\.\w+$/, ""), seconds: a.seconds, kind: "audio" }); library = null; } catch (e) { toast(e.message, { tone: "crit" }); } closePop(); }) } }, h("b", {}, "From the computer"), h("em", {}, "a sound, or a video's sound"), icon("upload")),
       mine.length ? h("span.ut-label", {}, "Made here") : null, ...mine.map(row),
       lib.length ? h("span.ut-label", {}, "Library") : null, ...lib.map(row),
-      !mine.length && !lib.length ? h("p.ut-hint", {}, "Nothing made yet: make a sound above, or add one from the computer.") : null);
+      !mine.length && !lib.length ? h("p.ut-hint", {}, "Nothing made yet: make a sound above, or add one from the computer.") : null,
+    ].filter(Boolean));
   }
 
   // ---- drawing the tracks

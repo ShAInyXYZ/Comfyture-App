@@ -21,11 +21,12 @@ export function libraryPick({ label, items, value, onChange, preview }) {
   function draw() {
     const it = current();
     if (!it) return trigger.replaceChildren();
-    trigger.replaceChildren(
+    trigger.replaceChildren(...[
       it.glyph ? h("span.lbp-glyph", {}, it.glyph()) : null,
       h("span.sel-text", {}, h("span.sel-label", {}, it.short ?? it.label)),
       typeof it.count === "number" ? h("span.lbp-count", {}, String(it.count)) : null,
-      h("span.lbp-chev", { "aria-hidden": "true" }, icon("chevron")));
+      h("span.lbp-chev", { "aria-hidden": "true" }, icon("chevron")),
+    ].filter(Boolean));
   }
 
   function show(i) {
