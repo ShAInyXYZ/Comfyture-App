@@ -159,8 +159,10 @@ function weatherBody() {
   return h("div.sp-weather", {},
     chipRow(WEATHERS, l.weather, (v) => setSet("light", { weather: v })),
     h("div.sp-mix-row", {}, h("span.ut-label", {}, "Amount"), slider({ value: l.amount, min: 0, max: 1, step: 0.01, show: (v) => v.toFixed(2), label: "Amount", set: (v, quiet) => (quiet ? setQuietly("light", { amount: v }) : setSet("light", { amount: v })) })),
-    h("div.sp-keys", {}, ghost("Preview 1 frame", () => peek("weather"), { icon: spicon("eye"), disabled: !!p.why || ui.asking, title: p.why || "One real frame of it, at the playhead" })),
-    primary({ id: "light:weather", label: "Add the weather", working: !!busy && busy.label === "Weather", disabled: !!p.why, title: p.why || "Free, on this machine", run: addWeather }));
+    // (the preview and the key are a pair: on a narrow card they share a row, the preview as its icon)
+    h("div.sp-keys.is-pair", {},
+      ghost("Preview 1 frame", () => peek("weather"), { icon: spicon("eye"), disabled: !!p.why || ui.asking, title: p.why || "Preview 1 frame: one real frame of it, at the playhead" }),
+      primary({ id: "light:weather", label: "Add the weather", working: !!busy && busy.label === "Weather", disabled: !!p.why, title: p.why || "Free, on this machine", run: addWeather })));
 }
 function gradeBody() {
   const l = set();
@@ -170,8 +172,9 @@ function gradeBody() {
   return h("div.sp-grade", {},
     chipRow(GRADES, l.grade, (v) => setSet("light", { grade: v })),
     row("Exposure", "exposure", -1, 1), row("Saturation", "saturation", 0, 3),
-    h("div.sp-keys", {}, ghost("Preview 1 frame", () => peek("grade"), { icon: spicon("eye"), disabled: !!p.why || ui.asking, title: p.why || "One real frame of it, at the playhead" })),
-    primary({ id: "light:grade", label: "Grade it", working: !!busy && busy.label === "Grade", disabled: !!p.why, title: p.why || "Free, on this machine", run: grade }));
+    h("div.sp-keys.is-pair", {},
+      ghost("Preview 1 frame", () => peek("grade"), { icon: spicon("eye"), disabled: !!p.why || ui.asking, title: p.why || "Preview 1 frame: one real frame of it, at the playhead" }),
+      primary({ id: "light:grade", label: "Grade it", working: !!busy && busy.label === "Grade", disabled: !!p.why, title: p.why || "Free, on this machine", run: grade })));
 }
 
 // ---------------------------------------------------------------- the department

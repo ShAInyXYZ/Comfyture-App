@@ -203,6 +203,8 @@ export function setDept(id) {
   spice.pointer = null;
   spice.armed = null;
   write(DEPT, id);
+  // (a department taller than the screen scrolls its area, one for all of them: the one opened starts at its top)
+  document.querySelector(".spice .sp-grid")?.scrollTo({ top: 0 });
   update();
 }
 

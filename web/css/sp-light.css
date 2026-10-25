@@ -13,3 +13,37 @@
 .sp-sky .ut-well-text b, .sp-ref .ut-well-text b { overflow: hidden; font: 600 .8125rem/1.2 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
 .sp-sky .ut-well-text em, .sp-ref .ut-well-text em { font: 400 .75rem/1.2 var(--font-sans); font-style: normal; color: var(--dim); }
 .sp-sky .sp-primary, .sp-weather .sp-primary, .sp-grade .sp-primary { margin-top: auto; }
+
+/* The preview of one frame and the key of the weather and of the grade are a pair, in one wrapper: where there is room the wrapper is not there
+   and the two keys stand as they always did (the preview under the sliders, the key at the card's foot). On a short screen (up to 1000 high:
+   the grade is the tallest card of the department, and a taller row takes the room of the viewer) the wrapper is a row, the preview as an icon
+   beside the key (its words stay for a screen reader and show as its tooltip), and a slider has its name beside it: 46 px and 14 px for each
+   slider less, which is what the grade needs to fit the row of 27% of the screen. A window has the room and keeps the first. */
+.sp-keys.is-pair { display: contents; }
+.sp-keys.is-pair .sp-ghost { align-self: start; justify-self: start; }
+@media (max-height: 1000px) {
+  .sp-lower .sp-weather, .sp-lower .sp-grade { gap: .4375rem; }
+  .sp-lower .sp-weather .sp-mix-row, .sp-lower .sp-grade .sp-mix-row { grid-template-columns: 5.75rem minmax(0, 1fr); align-items: center; gap: 0 .5rem; }
+  .sp-lower .sp-keys.is-pair { display: flex; align-items: stretch; gap: .5rem; margin-top: auto; }
+  .sp-lower .sp-keys.is-pair .sp-primary { flex: 1 1 0; min-width: 0; margin-top: 0; }
+  .sp-lower .sp-keys.is-pair .sp-ghost { position: relative; flex: none; align-self: stretch; justify-content: center; width: 2.75rem; padding: 0; }
+  .sp-lower .sp-keys.is-pair .sp-ghost span { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+/* Relight is the card beside the viewer, as tall as the viewer's row. On a narrow card its chips stand in two rows and it is 414 px tall; on a
+   wide one (1920) they stand in one and it is 378. From 886 high up the viewer's row is the screen's share (below, it is 480: Relight has the
+   room), and it is shorter than that until 950 high (897 for the wide card): its Start over then shares the row of the key, as its icon. While
+   the key waits for its yes it has its own "Not now" beside it, and Start over keeps its row. */
+.sp-b-relight { container-type: inline-size; }
+@media (min-height: 886px) and (max-height: 896px) {
+  .sp-relight-key:not(:has(.sp-primary-row)) { grid-template-columns: minmax(0, 1fr) auto; }
+  .sp-relight-key:not(:has(.sp-primary-row)) .sp-ghost { position: relative; justify-content: center; width: 2.75rem; padding: 0; }
+  .sp-relight-key:not(:has(.sp-primary-row)) .sp-ghost span { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+@media (min-height: 897px) and (max-height: 949px) {
+  @container (max-width: 22rem) {
+    .sp-relight-key:not(:has(.sp-primary-row)) { grid-template-columns: minmax(0, 1fr) auto; }
+    .sp-relight-key:not(:has(.sp-primary-row)) .sp-ghost { position: relative; justify-content: center; width: 2.75rem; padding: 0; }
+    .sp-relight-key:not(:has(.sp-primary-row)) .sp-ghost span { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  }
+}

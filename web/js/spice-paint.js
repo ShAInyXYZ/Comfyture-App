@@ -137,9 +137,11 @@ function brushBody(viewer) {
 function passBody() {
   const b = spice.shot.body;
   const pass = b.passes.paint;
+  // (what was removed and by which engine: on a narrow card it is kept to four lines, the whole of it is the tooltip)
+  const note = pass ? `${pass.note ?? ""}${pass.credits ? ` · ${pass.credits} cr` : ""}` : "";
   return h("div.sp-pass", {},
     h("div.sp-pass-pic", {}, pass?.media ? thumb(pass.media, { cls: "is-big" }) : h("span.sp-thumb.is-empty.is-big", {}, spicon("film"))),
-    h("div.sp-pass-text", {}, h("b", {}, pass ? "Cleaned" : "Nothing yet"), h("span", {}, pass ? `${pass.note ?? ""}${pass.credits ? ` · ${pass.credits} cr` : ""}` : "What is removed shows on the right of the wipe.")),
+    h("div.sp-pass-text", {}, h("b", {}, pass ? "Cleaned" : "Nothing yet"), h("span", pass ? { title: note } : {}, pass ? note : "What is removed shows on the right of the wipe.")),
     h("div.sp-keys", {},
       pass ? h("button.sp-primary", { type: "button", title: "Hand the clean footage on to Light", on: { click: () => setDept("light") } }, h("span", {}, "Pass to Light"), spicon("arrow")) : null,
       pass ? ghost("Take it away", () => clearPass("paint"), { icon: spicon("trash") }) : null));

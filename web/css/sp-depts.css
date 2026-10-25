@@ -3,7 +3,12 @@
    bento the whole height (Fx, Paint: the key sits at its foot), the "is-wide" ones stop it at the viewer's foot and give the tools the
    whole width (Plate, Roto, Light, Comp). */
 
-.sp-dept { display: grid; grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) clamp(13.5rem, 27dvh, 19rem); gap: var(--sp-gap); min-height: 0; }
+/* The department fills the area under the title. Its viewer is never lower than its timeline needs (23.25rem: the stage at its least and
+   the six rows of a clip), and the row of cards under it is as tall as the tallest card holds, no less than a share of the screen. Where
+   both fit the area nothing changes; where they do not (a laptop), the area scrolls and no card is cut short of its last key. A card's
+   body takes the card's room ("flex: 1 1 0"), which counts as nothing once the row is sized to what its cards hold: in the row of cards
+   it is "1 1 auto" (a list keeps "1 1 0": it scrolls, it does not make the row taller). */
+.sp-dept { display: grid; grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr); grid-template-rows: minmax(23.25rem, 1fr) minmax(clamp(13.5rem, 27dvh, 19rem), auto); gap: var(--sp-gap); min-height: 100%; }
 .sp-dept[hidden] { display: none; }
 .sp-dept > .sp-slot { grid-column: 1; grid-row: 1; display: grid; min-width: 0; min-height: 0; }
 .sp-dept > .sp-slot > .sp-viewer { min-height: 0; }
@@ -19,6 +24,16 @@
 .sp-lower.is-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .sp-lower.is-roto { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, .95fr); }
 .sp-lower.is-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.sp-lower .sp-b-body { flex: 1 1 auto; }
+.sp-lower .sp-edge, .sp-lower .sp-track, .sp-lower .sp-out, .sp-lower .sp-engine, .sp-lower .sp-pass,
+.sp-lower .sp-sky, .sp-lower .sp-weather, .sp-lower .sp-grade, .sp-lower .sp-finish { flex: 1 1 auto; }
+/* a laptop (under 886 high the viewer would be squeezed to its least): the viewer gets a height it can be worked at, a stage to look at,
+   and every card of the row under it (the compositor's look and place too, which scroll in their card on a taller screen) its whole content */
+@media (max-height: 885px) {
+  .sp-dept { grid-template-rows: minmax(30rem, 1fr) minmax(clamp(13.5rem, 27dvh, 19rem), auto); }
+  .sp-lower .sp-look, .sp-lower .sp-place2 { flex: 1 1 auto; overflow: visible; }
+  .sp-lower .sp-b-body > .sp-fxls { max-height: 14rem; }
+}
 
 /* ---- Plate ----------------------------------------------------------------------------------------------- */
 .sp-footage { display: flex; flex: 1 1 0; flex-direction: column; gap: .875rem; min-height: 0; overflow: hidden auto; scrollbar-width: thin; }
@@ -26,9 +41,10 @@
 .sp-well svg { width: 1.5rem; height: 1.5rem; color: var(--accent); }
 .sp-well b { font: 700 1rem/1.2 var(--font-sans); color: var(--text); }
 .sp-well:hover:not(:disabled) { border-color: var(--accent-line); }
-.sp-clip { display: grid; grid-template-columns: minmax(0, 1fr); gap: .625rem; }
-.sp-clip .sp-thumb { max-height: 13rem; }
-.sp-clip-text { display: grid; gap: .25rem; }
+/* the clip's picture gives up height when the card is short (a laptop): it shows less of the frame, and the keys and takes under it keep theirs */
+.sp-clip { display: flex; flex-direction: column; gap: .625rem; min-height: 0; }
+.sp-clip .sp-thumb { flex: 0 1 auto; min-height: 5.5rem; max-height: 13rem; }
+.sp-clip-text { display: grid; flex: none; gap: .25rem; }
 .sp-clip-text b { overflow: hidden; font: 700 1rem/1.2 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
 .sp-clip-text span { font: 500 .8125rem/1.2 var(--font-mono); color: var(--muted); }
 .sp-takes { display: grid; gap: .5rem; }
@@ -44,6 +60,14 @@
 .sp-trim-big span { font: 500 .8125rem/1 var(--font-mono); color: var(--muted); }
 .sp-trim-fields { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; }
 .sp-trim-field { display: grid; grid-template-columns: auto auto auto; align-items: center; gap: .625rem; }
+/* a narrow card (a laptop): the in and the out close up to stay side by side, so the card keeps its hint under them */
+.sp-b-trim { container-type: inline-size; }
+@container (max-width: 31rem) {
+  .sp-trim-fields { gap: .75rem 1rem; }
+  .sp-trim-field { gap: .375rem; }
+  .sp-trim .ut-stepper button { width: 2rem; height: 2rem; }
+  .sp-trim .ut-stepper span { min-width: 3.5rem; }
+}
 .sp-depth { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); align-content: start; gap: .625rem 1rem; }
 .sp-depth-pic { position: relative; }
 .sp-depth-pic .sp-thumb { width: 100%; height: auto; }

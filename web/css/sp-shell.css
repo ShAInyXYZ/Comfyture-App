@@ -1,5 +1,5 @@
 /* Spice: Paprika's comp stack on the left, the open department beside it as a grid of bentos that fills the screen, her bar at the foot.
-   The page is one screen tall: nothing of the main cards scrolls. Mockups: docs/brand/products/spice-v1/spice-fx.png, spice-roto.png.
+   The page is one screen tall: what the department holds fits it, or its area scrolls (the cards are never cut: sp-depts.css). Mockups: docs/brand/products/spice-v1/spice-fx.png, spice-roto.png.
    The parts every department uses (.sp-bento, .sp-primary, .sp-iconkey...) are here; the viewer's are in sp-viewer.css, each department's
    own bentos in sp-depts.css, the windows in sp-win.css. */
 
@@ -12,7 +12,7 @@
 .sp-boot { display: grid; place-items: center; min-height: 40dvh; }
 
 .sp-main { display: flex; flex-direction: column; gap: var(--sp-gap); min-width: 0; min-height: 0; }
-.sp-grid { flex: 1 1 0; min-height: 0; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); }
+.sp-grid { flex: 1 1 0; min-height: 0; display: block; overflow: hidden auto; scrollbar-width: thin; }
 .sp-grid > [hidden] { display: none !important; }
 .sp-chat { flex: none; position: relative; z-index: 29; width: 100%; pointer-events: none; }
 .sp-chat > * { pointer-events: auto; }
