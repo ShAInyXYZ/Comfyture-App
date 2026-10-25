@@ -174,7 +174,7 @@ function libraryBody(big) {
   const n = pl.layers.length;
   const key = primary({
     id: "fx:bake", label: busy ? "Working" : pl.done ? "Baked" : !n && !pl.finished ? "Add a layer to bake" : spice.shot.body.passes.fx?.media && spice.shot.body.set.fx.baked ? "Bake again" : `Bake ${madeOf(n)}`, working: !!busy, disabled: !!pl.why || pl.done,
-    title: pl.why || (pl.done ? "The FX pass is these layers: change one to bake again" : "Makes the layers part of the shot, at its full size: free, on this machine"), run: runBake,
+    title: pl.why || (pl.done ? "The FX pass is these layers and this finish: change one to bake again" : "Makes the layers and the finish part of the shot, at its full size: free, on this machine"), run: runBake,
   });
   if (!busy && !pl.done && !pl.why) key.append(h("em", {}, "· free"));
   return h(`div.sp-lib${big ? ".is-big" : ""}`, {},
