@@ -3,7 +3,7 @@
 // is held is kept quietly (live: the page is not drawn again under the pointer) and drawn when it is let go (commit). Every change can be
 // undone and done again (Ctrl+Z, Ctrl+Shift+Z): the layers as they were before it are kept, per shot, forty deep.
 import { spice, edit, save } from "./spice.js";
-import { newLayer, cleanLayer, lookLayers } from "./spice-elements.js";
+import { newLayer, cleanLayer, cleanFinish, lookLayers } from "./spice-elements.js";
 import { fxGround } from "./spice-engines.js";
 
 const fx = () => spice.shot?.body.set.fx ?? null;
@@ -16,7 +16,7 @@ const historyOf = () => {
   if (!histories.has(id)) histories.set(id, { undo: [], redo: [], holding: false });
   return histories.get(id);
 };
-const snapshot = () => JSON.stringify({ layers: fx()?.layers ?? [], sel: fx()?.sel ?? null });
+const snapshot = () => JSON.stringify({ layers: fx()?.layers ?? [], sel: fx()?.sel ?? null, finish: fx()?.finish ?? null });
 /** Keeps the layers as they are, before a change (a held change is kept once, when it starts). */
 function remember({ live = false } = {}) {
   const h = historyOf();
@@ -38,8 +38,8 @@ function restore(from, to) {
   const back = h[from].pop();
   if (!back) return false;
   h[to].push(snapshot());
-  const { layers, sel } = JSON.parse(back);
-  edit((b) => ((b.set.fx.layers = layers), (b.set.fx.sel = sel), (b.set.fx.dirty = true)));
+  const { layers, sel, finish } = JSON.parse(back);
+  edit((b) => ((b.set.fx.layers = layers), (b.set.fx.sel = sel), (b.set.fx.finish = cleanFinish(finish)), (b.set.fx.dirty = true)));
   return true;
 }
 export const undo = () => restore("undo", "redo");
@@ -101,6 +101,22 @@ export function patchLayer(id, patch, { live = false } = {}) {
 }
 /** Draws the page again after a live change (a handle let go). */
 export const commit = () => ((historyOf().holding = false), edit(() => {}));
+
+/** The finish of the shot (its bloom and its vignette, each 0 to 1), cleaned. */
+export const finishOf = () => cleanFinish(fx()?.finish);
+/**
+ * Changes the shot's finish: { bloom, vignette } or one of them, kept inside 0 to 1. Like a layer's, it can be undone, makes the baked
+ * FX pass wait to be baked again, and `live` keeps it quietly while a slider is held.
+ */
+export function setFinish(patch, { live = false } = {}) {
+  if (!fx()) return null;
+  const clean = cleanFinish({ ...finishOf(), ...patch });
+  remember({ live });
+  fx().finish = clean;
+  if (live) save();
+  else edit(() => {});
+  return clean;
+}
 
 export function removeLayer(id) {
   remember();

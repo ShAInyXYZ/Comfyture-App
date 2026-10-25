@@ -2,10 +2,12 @@
 // scale it by a corner, turn it by its knob), shown live as the bake will make it (spice-layers.js). Its bentos:
 //   LIBRARY  the effects (spice-elements.js) in groups: VFX elements shot on black, particles drawn frame by frame, and "Describe it",
 //            an AI layer a model makes from words; a tile dropped on the picture is a layer where it fell, a click puts one in the middle.
-//            Under them the yellow key bakes the layers into the FX pass, free, on this machine (spice-bake.js).
+//            Under them the shot's Finish (a bloom and a vignette over everything) and the yellow key, which bakes the layers and the finish
+//            into the FX pass, free, on this machine (spice-bake.js).
 //   LAYERS   the stack, top first: select, hide, put behind the people, drag to reorder.
-//   LOOK     the layer's blend, opacity, glow, soft edge and tint (particles: how many, how big, their colour; on a clip, how it moves);
-//            an AI layer's words and the key that makes it (LTX on a clip, Qwen Image Edit on a picture: they cost credits).
+//   LOOK     the layer's blend, opacity, glow, soft edge, the light it casts on the shot and how far it reaches, and tint (particles: how
+//            many, how big, their colour; on a clip, how it moves); an AI layer's words and the key that makes it (LTX on a clip, Qwen
+//            Image Edit on a picture: they cost credits).
 //   PLACE    where it is (X, Y), how big, its angle (a dial), flips, behind the people or in front, and on a clip the frames it plays on.
 // Made once and kept: { el, update, sig, slot, viewer }.
 import { h } from "./dom.js";
@@ -20,7 +22,7 @@ import { work, frameOf, ltx, cloud, priceOf, fxGround } from "./spice-engines.js
 import { stripOf } from "./spice-viewer.js";
 import { DRAG_TYPE } from "./spice-canvas.js";
 import { bake } from "./spice-bake.js";
-import { layersOf, selected, addLayer, addLook, selectLayer, patchLayer, removeLayer, duplicateLayer, moveLayer, toggleLayerEye, undo, redo, canUndo, canRedo } from "./spice-fx-ops.js";
+import { layersOf, selected, addLayer, addLook, selectLayer, patchLayer, removeLayer, duplicateLayer, moveLayer, toggleLayerEye, finishOf, setFinish, undo, redo, canUndo, canRedo } from "./spice-fx-ops.js";
 import { slider } from "./utensils-fx-controls.js";
 import { registerRunner } from "./spice-runs.js";
 import { runnerReady } from "./utensils-cloud.js";
@@ -75,37 +77,48 @@ function bakePlan() {
   const b = spice.shot?.body;
   const layers = layersOf().filter((l) => l.eye !== false && (l.el !== "ai" || l.media));
   const ground = fxGround(b);
-  // (signed as the shot keeps them, keys in one order: a renamed layer read back from the server is the same layers)
-  const sig = JSON.stringify([layers.map(cleanLayer), ground.base?.url, ground.matte?.url, b?.range, b?.set.roto.feather, b?.set.roto.choke]);
-  const why = !ground.base ? "Bring the footage to the Plate first" : !layers.length ? "Add a layer from the library first" : "";
+  const finish = finishOf();
+  const finished = finish.bloom > 0 || finish.vignette > 0;
+  // (signed as the shot keeps them, keys in one order: a renamed layer read back from the server is the same layers. Light and reach
+  // count only on a layer that shines, and the finish only when it is on: what is signed for a shot that has neither is what was signed
+  // before there were any, so a bake made then is still its layers)
+  const signed = (l) => {
+    const c = cleanLayer(l);
+    if (!(c.light > 0)) (delete c.light, delete c.reach);
+    return c;
+  };
+  const sig = JSON.stringify([layers.map(signed), ground.base?.url, ground.matte?.url, b?.range, b?.set.roto.feather, b?.set.roto.choke, ...(finished ? [finish] : [])]);
+  const why = !ground.base ? "Bring the footage to the Plate first" : !layers.length && !finished ? "Add a layer from the library first" : "";
   // (baked: the FX pass is these layers, nothing changed since; a pass with no signature, a shipped example's or one made before the
   // layers were kept, is taken as theirs while no pass under it is newer: a light or a paint made after it must be baked in)
   const under = ["plate", "roto", "paint", "light"].map((d) => b?.passes[d]?.at ?? "").sort().pop();
   const fresh = !under || (b?.passes.fx?.at ?? "") >= under;
   const done = !!b?.passes.fx?.media && !b.set.fx.dirty && (b.set.fx.baked ? b.set.fx.baked === sig : fresh);
-  return { layers, ground, sig, why, done };
+  return { layers, ground, finish, finished, sig, why, done };
 }
-/** Whether FX has layers its pass is not made of yet (the stack's lamp and Comp say so): { layers, pending }. */
+/** Whether FX has layers or a finish its pass is not made of yet (the stack's lamp and Comp say so): { layers, pending }. */
 export function fxPending() {
   const p = bakePlan();
-  return { layers: p.layers.length, pending: p.layers.length > 0 && !p.done };
+  return { layers: p.layers.length, pending: (p.layers.length > 0 || p.finished) && !p.done };
 }
+/** What a bake is made of, in words: "3 layers", or "the finish" when the shot has a finish and no layer. */
+const madeOf = (n) => (n ? `${n} ${n === 1 ? "layer" : "layers"}` : "the finish");
 
 function runBake() {
   const shot = spice.shot;
   const b = shot.body;
-  const { layers, ground, sig } = bakePlan();
+  const { layers, ground, finish, sig } = bakePlan();
   const plate = b.passes.plate;
   const r = rangeOf(b);
   const n = layers.length;
-  return work("fx", `Bake ${n} ${n === 1 ? "layer" : "layers"}`, async (progress) => {
+  return work("fx", `Bake ${madeOf(n)}`, async (progress) => {
     const made = await bake({
-      base: ground.base, baseFrom: ground.baseFrom, matte: ground.matte, matteFrom: ground.matteFrom, layers, edge: { feather: b.set.roto.feather, choke: b.set.roto.choke },
+      base: ground.base, baseFrom: ground.baseFrom, matte: ground.matte, matteFrom: ground.matteFrom, layers, edge: { feather: b.set.roto.feather, choke: b.set.roto.choke }, finish,
       width: plate.media.width, height: plate.media.height, fps: plate.fps ?? 24, range: r, name: `${shot.name} · FX`,
     }, progress);
     edit((x) => ((x.set.fx.baked = sig), (x.set.fx.dirty = false)), shot);
     return { files: made, from: plate.media.kind === "image" ? FIRST : r.in, to: plate.media.kind === "image" ? FIRST : r.out };
-  }, { note: `${n} ${n === 1 ? "layer" : "layers"} baked`, source: "free" });
+  }, { note: `${madeOf(n)} baked`, source: "free" });
 }
 
 // ---------------------------------------------------------------- an AI layer, made
@@ -160,7 +173,7 @@ function libraryBody(big) {
   const busy = workingOn("fx");
   const n = pl.layers.length;
   const key = primary({
-    id: "fx:bake", label: busy ? "Working" : pl.done ? "Baked" : !n ? "Add a layer to bake" : spice.shot.body.passes.fx?.media && spice.shot.body.set.fx.baked ? "Bake again" : `Bake ${n} ${n === 1 ? "layer" : "layers"}`, working: !!busy, disabled: !!pl.why || pl.done,
+    id: "fx:bake", label: busy ? "Working" : pl.done ? "Baked" : !n && !pl.finished ? "Add a layer to bake" : spice.shot.body.passes.fx?.media && spice.shot.body.set.fx.baked ? "Bake again" : `Bake ${madeOf(n)}`, working: !!busy, disabled: !!pl.why || pl.done,
     title: pl.why || (pl.done ? "The FX pass is these layers: change one to bake again" : "Makes the layers part of the shot, at its full size: free, on this machine"), run: runBake,
   });
   if (!busy && !pl.done && !pl.why) key.append(h("em", {}, "· free"));
@@ -170,7 +183,18 @@ function libraryBody(big) {
       h("button.sp-pill", { type: "button", "aria-pressed": String(group === id), on: { click: () => ((group = id), changed("spice")) } }, name))),
     h("p.sp-lib-hint", {}, "Drag onto the picture"),
     h("div.sp-lib-grid", {}, ...tilesOf(group).map((e) => tile(e, used.has(e.id)))),
+    finishGroup(),
     h("div.sp-lib-key", {}, key));
+}
+
+/** The shot's finish, over the whole composite: a bloom and a vignette, a row each. It is the shot's own, so it is there whatever layer is held. */
+function finishGroup() {
+  const f = finishOf();
+  const set = (key) => (v, quiet) => setFinish({ [key]: v }, { live: quiet });
+  return h("div.sp-lib-finish", { role: "group", "aria-label": "Finish", dataset: { keep: "1" } },
+    h("span.ut-label", {}, "Finish · the whole shot"),
+    row("Bloom", slider({ value: f.bloom, min: 0, max: 1, step: 0.01, show: (v) => v.toFixed(2), label: "A soft glow around the bright parts of the whole shot", set: set("bloom") }), "A soft glow around the bright parts of the whole shot"),
+    row("Vignette", slider({ value: f.vignette, min: 0, max: 1, step: 0.01, show: (v) => v.toFixed(2), label: "Darker corners over the whole shot", set: set("vignette") }), "Darker corners over the whole shot"));
 }
 
 /** A layer's name typed in its row (empty: its element's name again). */
@@ -227,7 +251,7 @@ function layersBody(big) {
 }
 
 const segs = (list, value, set, title) => h("div.ut-segs.sp-segs", { role: "group", title }, ...list.map(([v, label]) => h("button.ut-seg", { type: "button", "aria-pressed": String(value === v), on: { click: () => set(v) } }, label)));
-const row = (label, control) => h("div.sp-look-row", {}, h("span.ut-label", {}, label), control);
+const row = (label, control, title) => h("div.sp-look-row", title ? { title } : {}, h("span.ut-label", {}, label), control);
 const live = (id, key) => (v, quiet) => patchLayer(id, { [key]: v }, { live: quiet });
 
 function swatches(l, key, list, none = true) {
@@ -270,6 +294,9 @@ function lookBody(big) {
         row("Size", slider({ value: l.size, min: 0, max: 1, step: 0.01, show: (v) => v.toFixed(2), label: "How big", set: live(l.id, "size") }))]
       : row("Edge", slider({ value: l.soft, min: 0, max: 1, step: 0.01, show: (v) => v.toFixed(2), label: "A soft edge: it fades out towards its box", set: live(l.id, "soft") })),
     row("Glow", slider({ value: l.glow, min: 0, max: 1, step: 0.01, show: (v) => v.toFixed(2), label: "Glow", set: live(l.id, "glow") })),
+    // (a picture shines on the shot around it, the people included; how far its light reaches is asked once it shines)
+    e.kind === "image" ? row("Light", slider({ value: l.light, min: 0, max: 1, step: 0.01, show: (v) => v.toFixed(2), label: "How much light it casts on the shot", set: live(l.id, "light") }), "How much light it casts on the shot") : null,
+    e.kind === "image" && l.light > 0 ? row("Reach", slider({ value: l.reach, min: 0.3, max: 4, step: 0.1, show: (v) => `${v.toFixed(1)}×`, label: "How far its light reaches", set: live(l.id, "reach") }), "How far its light reaches") : null,
     clip ? row("Motion", h("select.ut-select.sp-motion", { "aria-label": "How it moves", on: { change: (ev) => patchLayer(l.id, { motion: ev.target.value }) } }, ...MOTIONS.map(([v, name]) => h("option", { value: v, selected: l.motion === v }, name)))) : null,
     clip && l.motion !== "still" ? row("Speed", slider({ value: l.speed, min: 0.1, max: 4, step: 0.05, show: (v) => `${v.toFixed(1)}×`, label: "How fast", set: live(l.id, "speed") })) : null,
     row(e.kind === "particles" ? "Colour" : "Tint", e.kind === "particles" ? swatches(l, "colour", [e.colour, ...TINTS], false) : swatches(l, "tint", TINTS)));
@@ -378,7 +405,7 @@ const BENTOS = [
   ["look", "LOOK", "sp-b-look", lookBody],
   ["place", "PLACE", "sp-b-place2", placeBody],
 ];
-const sigOf = () => JSON.stringify([spice.shot?.body.set.fx.layers, spice.shot?.body.set.fx.sel, spice.shot?.body.passes, group, state.presets.length, workingOn("fx")?.progress]);
+const sigOf = () => JSON.stringify([spice.shot?.body.set.fx.layers, spice.shot?.body.set.fx.sel, spice.shot?.body.set.fx.finish, spice.shot?.body.passes, group, state.presets.length, workingOn("fx")?.progress]);
 for (const [id, title, , body] of BENTOS) {
   defineWindow(`fx-${id}`, {
     eyebrow: "FX", title, size: id === "library" ? "l" : "m",
@@ -416,7 +443,7 @@ export function fxSpace() {
     viewer: () => {
       const b = spice.shot.body;
       const g = fxGround(b);
-      return { tool: "layers", comp: { layers: b.set.fx.layers, sel: b.set.fx.sel, edge: { feather: b.set.roto.feather, choke: b.set.roto.choke }, base: g.base, baseFrom: g.baseFrom, matte: g.matte, matteFrom: g.matteFrom } };
+      return { tool: "layers", comp: { layers: b.set.fx.layers, sel: b.set.fx.sel, finish: b.set.fx.finish, edge: { feather: b.set.roto.feather, choke: b.set.roto.choke }, base: g.base, baseFrom: g.baseFrom, matte: g.matte, matteFrom: g.matteFrom } };
     },
   };
 }

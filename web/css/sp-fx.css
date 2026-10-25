@@ -58,6 +58,9 @@
 .sp-lib-price { padding: 0 .1875rem; font: 500 .6875rem/1 var(--font-mono); color: var(--muted); font-style: normal; }
 .sp-lib-used { position: absolute; top: .5rem; right: .5rem; width: .4375rem; height: .4375rem; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px #000; }
 .sp-lib-key { display: grid; flex: none; }
+/* the shot's finish, a row each for the bloom and the vignette, above the key that bakes it */
+.sp-lib-finish { display: grid; flex: none; gap: .375rem; }
+.sp-lib-finish .sp-look-row { grid-template-columns: 5.25rem minmax(0, 1fr); }
 .sp-lib-key .sp-primary { min-height: 3.5rem; font-size: 1.125rem; }
 
 /* ---- the layer stack */
