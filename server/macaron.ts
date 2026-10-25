@@ -7,12 +7,12 @@ import { mkdir, open, readdir, readFile, rm, stat, writeFile } from "node:fs/pro
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { SPACES as SPACE_LIST, spaceOf as spaceId, briefOf, toolOf, cleanAnswer, promptOf } from "../web/js/brioche/harness.js";
-import { deadlineOf, LATE } from "./utensils-fx.ts";
+import { deadlineOf, LATE, selfLimit } from "./utensils-fx.ts";
 
 const exec = promisify(execFile);
 /** ffmpeg on a video's frames, killed past its deadline (a minute per second of video, ten at least): an encode never hangs for good. */
 const encode = (args: string[], seconds: number) =>
-  exec("ffmpeg", args, { maxBuffer: 1 << 20, timeout: deadlineOf(seconds), killSignal: "SIGKILL" }).catch((e) => {
+  exec("ffmpeg", [...selfLimit(deadlineOf(seconds)), ...args], { maxBuffer: 1 << 20, timeout: deadlineOf(seconds), killSignal: "SIGKILL" }).catch((e) => {
     throw e?.killed ? Object.assign(new Error(LATE), { status: 500 }) : e;
   });
 

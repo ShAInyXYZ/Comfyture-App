@@ -10,7 +10,7 @@ import { execFile, spawn } from "node:child_process";
 import { once } from "node:events";
 import { promisify } from "node:util";
 import { mkdtemp, mkdir, rm } from "node:fs/promises";
-import { TOOLS, clean, plan, atempoChain, overlayGraph, centre, measureArgs, readMeasured, capabilities, createFx, fileName, FxError, DEADLINE, LATE, deadlineOf, killAfter, bakeArgs, type Ctx, type Probe, type Tool } from "../server/utensils-fx.ts";
+import { TOOLS, clean, plan, atempoChain, overlayGraph, centre, measureArgs, readMeasured, capabilities, createFx, fileName, FxError, DEADLINE, LATE, deadlineOf, killAfter, selfLimit, bakeArgs, type Ctx, type Probe, type Tool } from "../server/utensils-fx.ts";
 
 const exec = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
@@ -505,6 +505,21 @@ test("weather and particles on a real picture end at once, in a preview as in a 
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("an ffmpeg also stops by itself (-timelimit), so one whose server died does not run for ever as an orphan", async () => {
+  // its deadline again, as CPU time for eight cores
+  assert.deepEqual(selfLimit(DEADLINE.frame), ["-timelimit", "480"]);
+  assert.deepEqual(selfLimit(250), ["-timelimit", "2"]);
+  assert.deepEqual(selfLimit(0), ["-timelimit", "1"]);
+  // an endless graph with no timer of the server's around it (as an orphan is) ends on its own
+  const orphan = spawn("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", ...selfLimit(125), "-f", "lavfi", "-i", "nullsrc=s=320x180:r=25,format=gray,loop=loop=-1:size=1:start=0,gblur=sigma=8", "-f", "null", "-"]);
+  const t = Date.now();
+  const stop = setTimeout(() => orphan.kill("SIGKILL"), 30_000);
+  const [code, signal] = await once(orphan, "close");
+  clearTimeout(stop);
+  assert.ok(signal === null && code !== 0, `it ended by itself (code ${code}, signal ${signal})`);
+  assert.ok(Date.now() - t < 30_000, `within its time (${Date.now() - t} ms)`);
 });
 
 test("an ffmpeg past its deadline is killed (SIGKILL: a graph stuck in its filters never hears a TERM), and a job says so", async () => {

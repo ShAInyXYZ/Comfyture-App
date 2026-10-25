@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { cleanCues } from "../web/js/utensils-edit-cues.js";
 import { FORMATS, reframeBox, letterboxFrame, frameOf } from "../web/js/utensils-edit-geometry.js";
-import { DEADLINE, LATE, deadlineOf, killAfter } from "./utensils-fx.ts";
+import { DEADLINE, LATE, deadlineOf, killAfter, selfLimit } from "./utensils-fx.ts";
 
 const exec = promisify(execFile);
 
@@ -573,7 +573,7 @@ export function createEdit({ data, root }: EditDeps) {
 
   function runStep(job: JobState & { child?: ReturnType<typeof spawn>; stop?: boolean }, step: Step, work: string, span: number, base: number, seconds: number, deadline: number) {
     return new Promise<void>((ok, bad) => {
-      const child = spawn("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-y", "-progress", "pipe:1", "-nostats", ...step.args], { cwd: work });
+      const child = spawn("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-y", ...selfLimit(deadline), "-progress", "pipe:1", "-nostats", ...step.args], { cwd: work });
       job.child = child;
       // (killed past its deadline: an encode stuck for ever never holds a slot for good)
       const timer = killAfter(child, deadline);
@@ -640,7 +640,7 @@ export function createEdit({ data, root }: EditDeps) {
       ctx.still = false;
       const made = plan(tool, params, ctx);
       await writeFiles(work, made.files);
-      await exec("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-y", ...made.steps[0].args], { cwd: work, maxBuffer: 1 << 20, timeout: DEADLINE.frame, killSignal: "SIGKILL" }).catch((e) => {
+      await exec("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-y", ...selfLimit(DEADLINE.frame), ...made.steps[0].args], { cwd: work, maxBuffer: 1 << 20, timeout: DEADLINE.frame, killSignal: "SIGKILL" }).catch((e) => {
         throw new EditError(e.killed ? LATE : why(String(e.stderr ?? ""), e.code ?? null));
       });
       const hash = await sha(made.steps[0].out);
@@ -665,7 +665,7 @@ export function createEdit({ data, root }: EditDeps) {
     const target = join(editsDir, "strips", name);
     if (!(await exists(target))) {
       const d = Math.max(0.1, info.duration);
-      await exec("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-y", "-i", path, "-vf", `fps=${n}/${f4(d)},tpad=stop_mode=clone:stop_duration=${f3(d)},scale=${w}:${h},tile=${n}x1:padding=0`, "-frames:v", "1", "-q:v", "5", target], { maxBuffer: 1 << 20, timeout: deadlineOf(d), killSignal: "SIGKILL" }).catch((e) => {
+      await exec("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-y", ...selfLimit(deadlineOf(d)), "-i", path, "-vf", `fps=${n}/${f4(d)},tpad=stop_mode=clone:stop_duration=${f3(d)},scale=${w}:${h},tile=${n}x1:padding=0`, "-frames:v", "1", "-q:v", "5", target], { maxBuffer: 1 << 20, timeout: deadlineOf(d), killSignal: "SIGKILL" }).catch((e) => {
         throw new EditError(e.killed ? LATE : why(String(e.stderr ?? ""), e.code ?? null));
       });
     }

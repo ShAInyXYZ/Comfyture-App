@@ -33,7 +33,7 @@ import { guideFor } from "./image-guides.ts";
 import { normaliseBody as spiceBody, FIRST as SPICE_FIRST } from "../web/js/spice-model.js";
 import { searchKnowledge, knowledgeById } from "./utensils-knowledge.ts";
 import { createEdit } from "./utensils-edit.ts";
-import { createFx, bakeArgs, deadlineOf } from "./utensils-fx.ts";
+import { createFx, bakeArgs, deadlineOf, selfLimit } from "./utensils-fx.ts";
 import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templates.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
 import { seedExamples, placeMedia, placeThumb, placedName, revOf, type ExampleKind, type Kept } from "./examples.ts";
@@ -1811,7 +1811,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       try {
         const out = join(b.dir, "out.mp4");
         // (killed past its deadline, never waited on for ever)
-        await exec("ffmpeg", bakeArgs(b, out), { maxBuffer: 1 << 20, timeout: deadlineOf(b.frames / b.fps), killSignal: "SIGKILL" }).catch((e) => {
+        await exec("ffmpeg", [...selfLimit(deadlineOf(b.frames / b.fps)), ...bakeArgs(b, out)], { maxBuffer: 1 << 20, timeout: deadlineOf(b.frames / b.fps), killSignal: "SIGKILL" }).catch((e) => {
           throw new Error(`The clip could not be made: ${whyFfmpegFailed(e)}`);
         });
         const bytes = await readFile(out);

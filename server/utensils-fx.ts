@@ -542,6 +542,12 @@ export interface JobState {
 export const DEADLINE = { frame: 60_000, perSecond: 60_000, least: 10 * 60_000, most: 3 * 60 * 60_000 } as const;
 export const deadlineOf = (seconds: number, picture = false) => (picture || !(seconds > 0) ? DEADLINE.frame : clamp(Math.ceil(seconds * DEADLINE.perSecond), DEADLINE.least, DEADLINE.most));
 export const LATE = "It did not finish in time and was stopped.";
+/**
+ * ffmpeg's own stop, behind killAfter: the deadline again as CPU time for eight cores (-timelimit counts the seconds of CPU it has used).
+ * killAfter's timer lives in the server, so an ffmpeg whose server died (killed, crashed) went on as an orphan: a preview of fog on a picture
+ * ran for 17 hours on 25 October. With this it ends by itself.
+ */
+export const selfLimit = (ms: number) => ["-timelimit", String(Math.max(1, Math.ceil((ms / 1000) * 8)))];
 /** Kills a child with SIGKILL once `ms` have passed; `.late` says whether it was. */
 export function killAfter(child: ChildProcess, ms: number) {
   const state = { late: false };
@@ -684,7 +690,7 @@ export function createFx({ data, keepAudio, deadline = deadlineOf }: FxDeps) {
 
   function runStep(job: JobState & { child?: ReturnType<typeof spawn>; stop?: boolean }, step: Step, work: string, span: number, base: number, seconds: number, deadline: number, capture?: (stderr: string) => void) {
     return new Promise<void>((ok, bad) => {
-      const child = spawn("ffmpeg", ["-hide_banner", "-v", capture ? "info" : "error", "-nostdin", "-y", "-progress", "pipe:1", "-nostats", ...step.args], { cwd: work });
+      const child = spawn("ffmpeg", ["-hide_banner", "-v", capture ? "info" : "error", "-nostdin", "-y", ...selfLimit(deadline), "-progress", "pipe:1", "-nostats", ...step.args], { cwd: work });
       job.child = child;
       const timer = killAfter(child, deadline);
       let err = "";
@@ -713,7 +719,7 @@ export function createFx({ data, keepAudio, deadline = deadlineOf }: FxDeps) {
   async function measure(job: JobState & { child?: ReturnType<typeof spawn>; stop?: boolean }, params: Params, input: string, work: string, deadline: number) {
     let said = "";
     await new Promise<void>((ok, bad) => {
-      const child = spawn("ffmpeg", measureArgs(params, input), { cwd: work });
+      const child = spawn("ffmpeg", [...selfLimit(deadline), ...measureArgs(params, input)], { cwd: work });
       job.child = child;
       const timer = killAfter(child, deadline);
       child.stderr.on("data", (c: Buffer) => (said = (said + c.toString()).slice(-20000)));
@@ -777,7 +783,7 @@ export function createFx({ data, keepAudio, deadline = deadlineOf }: FxDeps) {
       ctx.still = false;
       const made = plan(tool, params, ctx);
       for (const step of made.steps) {
-        await exec("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-y", ...step.args], { cwd: work, maxBuffer: 1 << 20, timeout: deadline(0, true), killSignal: "SIGKILL" }).catch((e) => {
+        await exec("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-y", ...selfLimit(deadline(0, true)), ...step.args], { cwd: work, maxBuffer: 1 << 20, timeout: deadline(0, true), killSignal: "SIGKILL" }).catch((e) => {
           throw new FxError(e.killed ? LATE : why(String(e.stderr ?? ""), e.code ?? null));
         });
       }
