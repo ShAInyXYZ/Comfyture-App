@@ -6,7 +6,7 @@ What a new user finds in each product the first time they open it. Every example
 | Folder | Product | One example is | Put into |
 |---|---|---|---|
 | [`kitchen/`](kitchen/) | Kitchen | a folder: `example.json` (a story, its edit, the takes it names) beside its files and `runs/<take>/` | `data/stories/`, `data/cuts/`, `data/runs/` |
-| [`stage/`](stage/) | Kitchen · Stage | a `<name>.stage.json` file (a scene with its sheets and renders) | `data/control/stages/` |
+| [`stage/`](stage/) | Kitchen · Stage | a `<nn>-<name>.stage.json` file (a scene with its sheets and renders, as the Stage exports one) | `data/control/stages/`, as `stage-example-<name>` |
 | [`spice/`](spice/) | Spice | a folder: `shot.json` beside its passes (pictures or clips) | `data/spice-shots/` |
 | [`jam/`](jam/) | Jam | a folder: `project.json` (the video, its edit, its media) beside its files | `data/jams/`, `data/cuts/` |
 | [`macaron/`](macaron/) | Macaron | a `<name>.brand.json` file (a whole brand) | `data/brands/` |
@@ -23,7 +23,8 @@ What a new user finds in each product the first time they open it. Every example
 - what went in is noted in the store's ledger (`data/<store>/.seeded`), with its version.
 
 Each product only says where its examples are and how one is put in (`EXAMPLE_KINDS` in [`server/main.ts`](../server/main.ts)).
-The Stage's examples are the exception: they are imported once, the first time the Stage opens, as new stages.
+The Stage's go in by the same rules the first time the Stage opens (`seedStages`); the first file is the newest, so it is the one
+that opens, and an install from before the Stage's ledger keeps the copies it has.
 
 ## Adding one
 

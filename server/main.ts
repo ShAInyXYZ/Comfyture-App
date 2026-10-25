@@ -36,7 +36,7 @@ import { createEdit } from "./utensils-edit.ts";
 import { createFx, bakeArgs, deadlineOf } from "./utensils-fx.ts";
 import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templates.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
-import { seedExamples, placeMedia, placeThumb, type ExampleKind, type Kept } from "./examples.ts";
+import { seedExamples, placeMedia, placeThumb, revOf, type ExampleKind, type Kept } from "./examples.ts";
 import { createTarget, cleanUrl, LOCAL_URL, type Target } from "./target.ts";
 import { judging, refused, createPace, visitorOf, asVisitor, keepLedger, leftFor } from "./judge.ts";
 
@@ -802,8 +802,8 @@ function sheetRefs(scene: any): any[] {
   return refs.filter((r: any) => typeof r?.file === "string" && /^[\w.-]+$/.test(r.file));
 }
 
-/** A stage file someone shared, kept as a new stage: its scene, and the models of theirs it uses. */
-async function importStage(input: any, when = new Date()) {
+/** A stage file someone shared, kept as a new stage: its scene, and the models of theirs it uses (`id`: an example's own id). */
+async function importStage(input: any, when = new Date(), id?: string) {
   if (input?.format !== "comfyture-stage" || !input.scene) throw bad("That is not a Comfyture stage file.");
   const known = await readModels();
   for (const m of Array.isArray(input.models) ? input.models : []) {
@@ -842,30 +842,47 @@ async function importStage(input: any, when = new Date()) {
       renders.push({ ...run, status: "done", photo: { file: photo.file, url: photo.url, width: photo.width, height: photo.height } });
     } catch {}
   }
-  const stage: StageFile = { id: newStageId(name), name, createdAt: now, updatedAt: now, scene: input.scene, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined, renders: renders.length ? renders : undefined };
+  const stage: StageFile = { id: id && stageId(id) ? id : newStageId(name), name, createdAt: now, updatedAt: now, scene: input.scene, thumb: typeof input.thumb === "string" ? input.thumb.slice(0, 400_000) : undefined, renders: renders.length ? renders : undefined };
   await writeStage(stage);
   return { stage, models: known };
 }
 
-// the first time the Stage opens, the example stages are there to open, change and delete;
-// after that the folder is the user's, and a deleted example stays deleted
+// The Stage's examples (examples/stage/<nn>-<name>.stage.json) go in by the same rules as every product's (server/examples.ts): once,
+// a newer `rev` replacing an untouched copy, a deleted one staying deleted, one added to the app later reaching an install that had
+// the others. The first time the Stage opens they are put in; the first file is the newest, so it is the one that opens, and all of
+// them are older than what the server put in when it started (on a first visit Kitchen's newest project is its example film).
 let seeding: Promise<void> | null = null;
 const bootedAt = Date.now();
+const stageExampleId = (file: string) => `stage-example-${file.replace(/^\d+-/, "").replace(/\.stage\.json$/, "").replace(/[^\w-]/g, "-")}`;
 async function seedStages() {
-  if (await access(stagesDir()).then(() => true, () => false)) return;
-  await mkdir(stagesDir(), { recursive: true });
   const dir = join(EXAMPLES, "stage");
   const files = (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith(".stage.json")).sort();
-  // the first example is the newest, so it is the one that opens; all of them are older than what the server put in when it started,
-  // so on a first visit Kitchen's newest project is its example film, not the example stage put in a moment later
-  const start = bootedAt - 60_000;
-  for (const [i, file] of files.entries()) {
-    try {
-      await importStage(JSON.parse(await readFile(join(dir, file), "utf8")), new Date(start - i * 1000));
-    } catch (e) {
-      console.warn(`stages: ${file} was not added:`, (e as Error).message);
+  const ledger = join(stagesDir(), ".seeded");
+  // an install from before the ledger holds the examples under ids of their own: the ones it has (by name) are noted as put in, so
+  // they are not put in twice
+  const had = async (p: string) => access(p).then(() => true, () => false);
+  if (!(await had(ledger)) && (await had(stagesDir()))) {
+    const names = new Set((await listStages()).map((s) => s.name));
+    const noted: string[] = [];
+    for (const file of files) {
+      const spec = JSON.parse(await readFile(join(dir, file), "utf8").catch(() => "{}"));
+      if (names.has(stageName(spec.name, ""))) noted.push(revOf(spec) > 1 ? `${stageExampleId(file)}@${revOf(spec)}` : stageExampleId(file));
     }
+    await writeFile(ledger, JSON.stringify(noted));
   }
+  await seedExamples<any>({
+    name: "stages",
+    dir,
+    spec: "*.stage.json",
+    ledger,
+    idOf: (_spec, file) => stageExampleId(file),
+    kept: (id) => readStage(id),
+    put: async (spec, _folder, id) => {
+      const i = Math.max(0, files.findIndex((f) => stageExampleId(f) === id));
+      await importStage(spec, new Date(bootedAt - 60_000 - i * 1000), id);
+    },
+    drop: async (id) => void (await rm(join(stagesDir(), `${id}.json`), { force: true })),
+  });
 }
 
 // ------------------------------------------------------------------ the examples every product ships
