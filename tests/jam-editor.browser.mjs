@@ -81,11 +81,11 @@ try {
   // ---- the seeded showcase opens as an edit (not an empty one)
   await page.goto(`${base}/#/jam`);
   await page.waitForSelector(".jam .jm-tile", { timeout: 20000 });
-  // (the showcases are several: this one is the small one made for the test)
-  await page.evaluate(() => import("/js/jam.js").then((m) => m.openJam("jam-test-showcase")));
+  // (the showcases are several: this one is La Calabaza, the short one, whose words are call-outs)
+  await page.evaluate(() => import("/js/jam.js").then((m) => m.openJam("jam-la-calabaza")));
   ok(await hasEdit(), "the seeded Jam opens as an edit");
   const b0 = await body();
-  ok(b0.product === "jam" && b0.aspect === "9:16" && b0.tracks.find((t) => t.main).items.length === 4, "the seeded Jam opens as its edit: 9:16, its four clips, product kept");
+  ok(b0.product === "jam" && b0.aspect === "9:16" && b0.tracks.find((t) => t.main).items.length === 8, "the seeded Jam opens as its edit: 9:16, its eight clips, product kept");
 
   // ---- Pickle's panel: his portrait, the jam, the five workspaces with their state, the video's pipeline (no canned tools)
   ok(await page.locator(".jm-pet-face").getAttribute("src") === "brand/cast/pickle-face.webp" && (await page.locator(".jm-pet-text").innerText()).toLowerCase().includes("band leader"), "Pickle's portrait and tag are on the panel");
@@ -95,7 +95,8 @@ try {
   // (a video that has a song opens on its track, not on the page that makes a song)
   ok(tiles.filter((t) => t.on).length === 1 && tiles[1].on && tiles.every((t) => t.status.length > 0), `the open one (the track) is lit, and each says its state (${tiles.map((t) => t.status).join(" | ")})`);
   const steps = await page.locator(".jm-pipe-list li").evaluateAll((els) => els.map((e) => [e.querySelector("span:not(.jm-lamp)").textContent, e.dataset.state]));
-  ok(steps.map((x) => x[0]).join() === "Song made,Words heard,Captions styled,Band cast,Edit cut" && steps[0][1] === "done" && steps.filter((x) => x[1] === "next").length === 1, `the pipeline lists the five steps, the song done and one next (${steps.map((x) => x.join(":")).join(" ")})`);
+  // (a showcase comes finished: its song, its words and their look, its band, and its film)
+  ok(steps.map((x) => x[0]).join() === "Song made,Words heard,Captions styled,Band cast,Edit cut" && steps.every((x) => x[1] === "done"), `the pipeline lists the five steps, every one done (${steps.map((x) => x.join(":")).join(" ")})`);
   ok((await page.locator(".jm-tool").count()) === 0, "there are no canned tools on the panel");
   // (the track and the words are cards since their redesign, data-card; the band and the edit are the grid's bentos)
   const bentoNames = (ws) => ws === "track" || ws === "words"
@@ -152,10 +153,16 @@ try {
   // ---- beats: heard in the browser (the editor's own details, in a window)
   await page.locator('button[aria-label="Beats"]').click();
   await page.waitForSelector(".jm-win .cut-inspector");
+  // (the showcase's beats were heard by the same finder: they are taken away first, so these are heard again here)
+  await page.evaluate(async () => {
+    const c = await import("/js/cut.js");
+    delete c.cut.project.body.beats;
+    c.commit();
+  });
   await page.locator('.jm-win .cut-inspector button:has-text("Detect")').click();
   ok(await until(() => import("/js/cut.js").then((m) => m.cut.project.body.beats.source === "web").catch(() => false)), "the beats are heard");
   const b1 = await body();
-  ok(Math.abs(b1.beats.bpm - 124) < 0.6, `the tempo is 124 (heard ${b1.beats.bpm})`);
+  ok(Math.abs(b1.beats.bpm - 133.1) < 0.6, `the tempo is 133 (heard ${b1.beats.bpm})`);
   await closeWindow();
 
   // ---- an effect, two stickers (one moved), a lyric word retimed
@@ -236,19 +243,20 @@ try {
   const v = probe.streams.find((x) => x.codec_type === "video");
   const a = probe.streams.find((x) => x.codec_type === "audio");
   ok(v.width / v.height < 0.6 && v.width / v.height > 0.5, `the film is 9:16 (${v.width}x${v.height})`);
-  ok(Math.abs(v.duration - 16) < 0.1 && Math.abs(a.duration - 16) < 0.1 && Math.abs(v.start_time) < 0.05 && Math.abs(a.start_time) < 0.05, `picture and sound both run 16 s from 0 (${v.duration}, ${a.duration}; starts ${v.start_time}, ${a.start_time})`);
+  const length = await page.evaluate(async () => (await import("/js/cut.js")).filmLength());
+  ok(Math.abs(v.duration - length) < 0.1 && Math.abs(a.duration - length) < 0.1 && Math.abs(v.start_time) < 0.05 && Math.abs(a.start_time) < 0.05, `picture and sound both run the edit's ${length.toFixed(2)} s from 0 (${v.duration}, ${a.duration}; starts ${v.start_time}, ${a.start_time})`);
   // the frames where something shows: a zoom hit, the sticker, a lit word, the shake; each at the same time in the film and in the preview
-  const picks = await page.evaluate(async () => {
+  const picks = await page.evaluate(async (length) => {
     const { fxAt } = await import("/js/fx.js");
     const c = await import("/js/cut.js");
     const b = c.cut.project.body;
     let zoom = { t: 0, s: -1 };
-    for (let n = 0; n < 16 * 24; n++) {
+    for (let n = 0; n < length * 24; n++) {
       const f = fxAt(n / 24, b);
       if (f.zoom > zoom.s) zoom = { t: n / 24, s: f.zoom };
     }
     return { zoom: zoom.t, sticker: 2.5, word: 3.0 };
-  });
+  }, length);
   for (const [name, t] of Object.entries(picks)) {
     const f = Math.round(t * 24) / 24;
     execFileSync("ffmpeg", ["-v", "error", "-y", "-i", join(out, "film.mp4"), "-vf", `select=eq(n\\,${Math.round(f * 24)}),scale=90:160`, "-vsync", "0", "-frames:v", "1", "-pix_fmt", "gray", "-f", "rawvideo", join(out, `film-${name}.gray`)]);
@@ -276,11 +284,11 @@ try {
   // ---- Kitchen's own cut and a Mixer-built one still open, and render
   const kitchen = await api("api/cuts", "POST", { name: "Kitchen test", body: { aspect: "16:9", duck: true, tracks: [
     { id: "t1", kind: "title", name: "Titles", items: [] }, { id: "v2", kind: "video", name: "Overlays", items: [] },
-    { id: "v1", kind: "video", name: "Video", main: true, items: [{ id: "k1", src: { kind: "video", id: "jamtest-clip-1.mp4", duration: 4.4 }, from: 0, to: 3, speed: 1, volume: 1, sound: true }, { id: "k2", src: { kind: "video", id: "jamtest-clip-2.mp4", duration: 4.4 }, from: 0, to: 3, speed: 1, volume: 1, sound: true, join: "dissolve" }] },
+    { id: "v1", kind: "video", name: "Video", main: true, items: [{ id: "k1", src: { kind: "video", id: "jam-walk-moonlit-oolong-promenade.mp4", duration: 5.17 }, from: 0, to: 3, speed: 1, volume: 1, sound: true }, { id: "k2", src: { kind: "video", id: "jam-walk-moonlit-oolong-dance.mp4", duration: 5.17 }, from: 0, to: 3, speed: 1, volume: 1, sound: true, join: "dissolve" }] },
     { id: "a1", kind: "audio", role: "voice", name: "Voice", items: [] }, { id: "a2", kind: "audio", role: "music", name: "Music", items: [] }, { id: "a3", kind: "audio", role: "effects", name: "Effects", items: [] }], markers: [] } });
   const mixer = await api("api/cuts", "POST", { name: "Mixer test", body: { aspect: "9:16", tracks: [
-    { id: "video", kind: "video", main: true, items: [{ id: "m1", src: { kind: "video", id: "jamtest-clip-3.mp4" }, from: 0, to: 3, speed: 1, sound: false, join: "cut" }, { id: "m2", src: { kind: "video", id: "jamtest-clip-4.mp4" }, from: 0, to: 3, speed: 1, sound: false, join: "cut" }] },
-    { id: "music", kind: "audio", role: "music", items: [{ id: "edit-sound", src: { kind: "audio", id: "jamtest-track.mp3" }, start: 0, from: 0, to: 6 }] },
+    { id: "video", kind: "video", main: true, items: [{ id: "m1", src: { kind: "video", id: "jam-walk-moonlit-oolong-vending.mp4" }, from: 0, to: 3, speed: 1, sound: false, join: "cut" }, { id: "m2", src: { kind: "video", id: "jam-walk-moonlit-oolong-take.mp4" }, from: 0, to: 3, speed: 1, sound: false, join: "cut" }] },
+    { id: "music", kind: "audio", role: "music", items: [{ id: "edit-sound", src: { kind: "audio", id: "jam-walk-moonlit-oolong-part.mp3" }, start: 0, from: 0, to: 6 }] },
     { id: "caption", kind: "title", items: [{ id: "c1", text: "HOTEL LOBBY", start: 0, length: 6, style: "top" }] }], product: "mixer" } });
   await page.evaluate(() => (location.hash = "#/cut"));
   await page.waitForSelector(".cut-page .cut-screen", { timeout: 20000 });
@@ -326,7 +334,7 @@ try {
 
   // ---- a whip into a clip: the film has the same length as a cut would, and the preview shows the same sweep over its last five frames
   const whipped = await api("api/cuts", "POST", { name: "Whip test", body: { aspect: "9:16", fit: "cover", tracks: [
-    { id: "video", kind: "video", main: true, items: [{ id: "w1", src: { kind: "video", id: "jamtest-clip-3.mp4" }, from: 0, to: 3, speed: 1, sound: false, join: "cut" }, { id: "w2", src: { kind: "video", id: "jamtest-clip-4.mp4" }, from: 0, to: 3, speed: 1, sound: false, join: "whip" }] }] } });
+    { id: "video", kind: "video", main: true, items: [{ id: "w1", src: { kind: "video", id: "jam-walk-moonlit-oolong-vending.mp4" }, from: 0, to: 3, speed: 1, sound: false, join: "cut" }, { id: "w2", src: { kind: "video", id: "jam-walk-moonlit-oolong-take.mp4" }, from: 0, to: 3, speed: 1, sound: false, join: "whip" }] }] } });
   const whipFilm = await api(`api/cuts/${whipped.project.id}/render`, "POST", {});
   await writeFile(join(out, "whip.mp4"), Buffer.from(await (await fetch(`${base}${whipFilm.url}`)).arrayBuffer()));
   const frames = Number(execFileSync("ffprobe", ["-v", "error", "-count_frames", "-select_streams", "v:0", "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", join(out, "whip.mp4")]).toString().trim());
@@ -477,7 +485,7 @@ try {
   // ---- Pickle: a tool of his panel says its words to him; he is told it is Jam, which workspace is open, and what the jam holds
   await page.evaluate(() => (location.hash = "#/jam"));
   await page.waitForSelector(".jm-tile", { timeout: 20000 });
-  await openJam("jam-test-showcase");
+  await openJam("jam-la-calabaza");
   await page.waitForTimeout(1500);
   await workspace("words");
   const asked = [];
@@ -527,7 +535,7 @@ try {
   await workspace("track");
   const chooser = page.waitForEvent("filechooser");
   await page.locator(".jm-b-start .jm-way", { hasText: "Your song" }).click();
-  await (await chooser).setFiles(join(root, "web", "brand", "jam", "projects", "jam-test-showcase", "media", "track.mp3"));
+  await (await chooser).setFiles(join(root, "examples", "jam", "jam-la-calabaza", "track.mp3"));
   ok(await until(() => import("/js/jam.js").then((m) => !!m.jam.jam.body.part && !m.jam.busy.has("part") && !m.jam.busy.has("track")).catch(() => false), 60), "a song added is cut, and its beats are found here");
   const own = await page.evaluate(() => import("/js/jam.js").then((m) => ({ kind: m.jam.jam.body.track.kind, bpm: m.jam.jam.body.bpm, name: m.jam.jam.name })));
   ok(own.kind === "upload" && own.name === "track", `the jam is named after the song (${own.name}), ${own.bpm} BPM`);
