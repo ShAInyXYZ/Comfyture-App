@@ -8,7 +8,7 @@
 /* ---- the banner -------------------------------------------------------------------------- */
 .welcome-hero { --strip-h: clamp(5.5rem, 6.6vw, 7.25rem); position: relative; height: clamp(32rem, 40vw, 44rem); overflow: hidden; border-radius: calc(1.25rem * var(--corner-k, 1)); background: var(--sunk); }
 /* a product waits beside the frame (on the right, or on the left once passed) and slides in when it is picked or its turn comes */
-.welcome-slide { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 42%) minmax(0, 1fr); opacity: 0; visibility: hidden; transform: translateX(7%); transition: opacity .7s var(--ease-out), transform .7s var(--ease-out), visibility 0s .7s; }
+.welcome-slide { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 46%) minmax(0, 1fr); opacity: 0; visibility: hidden; transform: translateX(7%); transition: opacity .7s var(--ease-out), transform .7s var(--ease-out), visibility 0s .7s; }
 .welcome-slide.is-past { transform: translateX(-7%); }
 .welcome-slide.is-on { opacity: 1; visibility: visible; transform: none; transition: opacity .7s var(--ease-out), transform .7s var(--ease-out); }
 /* the art fills the right and fades into the dark the words stand on */
@@ -17,9 +17,9 @@
 .welcome-slide-text { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 1.125rem; padding: 0 0 calc(var(--strip-h) + 3rem) clamp(1.5rem, 4vw, 4.5rem); }
 .welcome-eyebrow { display: inline-flex; align-items: center; gap: .625rem; color: var(--accent); font: 600 var(--fs-small)/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
 .welcome-eyebrow svg.icon { width: 2rem; height: 2rem; }
-.welcome-slide h1 { display: grid; margin: 0; font: 800 clamp(2.75rem, 5.2vw, 5.75rem)/.92 var(--font-sans); letter-spacing: -.035em; text-transform: uppercase; }
+.welcome-slide h1 { display: grid; gap: .22em; margin: 0; font: 800 clamp(2.5rem, min(5.2vw, 9vh), 5.75rem)/.92 var(--font-sans); letter-spacing: -.035em; text-transform: uppercase; }
 .welcome-slide h1 span { color: var(--text); }
-.welcome-slide h1 em { font-style: normal; color: var(--accent); }
+.welcome-slide h1 em { max-width: 16em; font-size: .5em; font-style: normal; line-height: 1; letter-spacing: -.02em; color: var(--accent); }
 .welcome-slide p { max-width: 30rem; margin: 0; color: var(--muted); font: 500 var(--fs-heading)/1.45 var(--font-sans); }
 .welcome-go { display: inline-flex; align-items: center; gap: .75rem; height: 3.25rem; padding: 0 1.5rem; border-radius: calc(1rem * var(--corner-k, 1)); background: var(--accent); color: var(--accent-ink); font: 700 var(--fs-title)/1 var(--font-sans); text-decoration: none; transition: filter var(--t-fast), transform var(--t-fast); }
 .welcome-go:hover { filter: brightness(1.06); }
@@ -114,6 +114,11 @@
   .welcome-hero, .welcome-go, .welcome-tile, .welcome-tags span, .welcome-film, .welcome-film img, .wp-card, .wp-tag, .wp-try { corner-shape: squircle; }
 }
 
+/* a short screen (a laptop): the words close up a little so the longest slide stays clear of the strip */
+@media (max-height: 820px) and (min-width: 821px) {
+  .welcome-slide-text { gap: .875rem; }
+  .welcome-slide p { max-width: 34rem; font-size: var(--fs-title); }
+}
 @media (max-width: 1100px) {
   .wp-featured { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .wp-featured .wp-card:nth-child(3) { display: none; }
