@@ -90,6 +90,27 @@ While at it, the rewrite can also drop `docs/brand/` (492 MB of design mockups t
 | D7 | Repo weight | Optional: **drop `docs/brand/` from the public history** during the D1 rewrite (keep it on the NAS) |
 | D8 | Toaster in the video | **The 3D part is reworked (26 Oct): objects are made real one at a time, each from its own four-view sheet, by your Trellis2 workflows (`workflows/3d/`), into a new scene.** The example ships its fourteen sheets (drawn with GPT Image, free); its models are made on the GPU (no credit) and are shipped as they finish. **For the open-weights category, re-toast the three stills with Qwen Image 2.1** (a few credits, your yes), or keep beat 4's labels out of frame ([VIDEO.md](VIDEO.md)) |
 | D9 | Meringue's two takes | Our kitten, our pixels, shown muted, but made in Mixer from the Face Dance trend, so her moves follow another creator's dance. Used on the website, in the storyboard (beat 7) and in Jam's *Three Kittens*. **Keep them muted, or swap them for takes on our own moves** |
+| D10 | Spice's AI edit bay | **Keep classic Spice as `#/spice`** for the submission (the website, the storyboard, the video and the Most Innovative case show it); the bay is a second door at `#/spice?bay` with its own example (*The yard at dusk*) and tour. None of its paid stages has run for real: **one run per stage on a 4-second clip, about 70 credits, all open models** (Obscura Remova for Clean, Bernini-R for Direct, FastH3 OmniRef or LTX IC-LoRA union for Control, LTX 2.5 first and last frame for Extend), your yes, before JUDGES.md sends a judge there |
+| D11 | Shot's presets and samples | The 28 preset previews in Kitchen's Shot room were rolled from eight stock-looking sample photos, two of them the raincoat woman and the rooftop man you turned down for Spice. **Redraw the eight samples with our cast (Codex GPT Image, free) and roll the 28 previews again (about 670 credits, your yes)**, or leave them |
+
+**The night of 25 to 26 October** (a supervisor session judged the app from a fresh `--depth 1` clone, no key, an empty data folder, at
+1280 x 720 and 1366 x 768, and fixed what a judge would hit; each fix is its own commit):
+
+- A first visit with no key answered every pet and *Imagine* with "fetch failed": it now says what to do, the header says *Your ComfyUI ·
+  not running* in red instead of a green lamp, and a key pasted in the account window sends the renders to Comfy Cloud by itself (before,
+  JUDGES.md's own instruction left a judge on an address where nothing ran).
+- Laptop screens: Cut's chat bar is a row under the timeline instead of over it (the main video track is in view at 1280 x 720), Stage's 3D
+  view is a quarter taller and its hint on one line, Shot's preview keys no longer sit on each other at 1366, and the header keeps every
+  product's name down to 1171 px wide. *Imagine* on Kitchen's empty box takes the example idea instead of doing nothing.
+- Open weights (the judges' copy): classic Spice no longer offers Beeble and Bria; their keys say why.
+- All eight tours play to the end at 1280 x 720 with no page error and nothing spent, with and without judge mode and open weights.
+- `deploy/judge/` holds what the live link needs (env file, systemd unit, Caddyfile, health check to your phone, daily snapshot);
+  HOSTING.md's env block named three variables the server does not read.
+- Jam ships eleven new songs of our own on its shelf (ACE-Step XL, 52.8 cents on Comfy Cloud, covers from GPT Image).
+- Still the biggest risk for the rules: **Mixer's shelf** (D1's last rows): trend names that are song titles, and covers redrawn over
+  other creators' opening frames with their motion.
+- A cheap win for D7 without a rewrite: a judge's `git clone --depth 1` takes only today's files, 814 MB, and 520 MB of them are
+  `docs/brand/` (mockups the app never loads); taking that folder out of the tree (kept on the NAS and in the history) makes it about 0.3 GB.
 
 ## The submission checklist
 
