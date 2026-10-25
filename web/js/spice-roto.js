@@ -135,8 +135,9 @@ function subjectsBody(big) {
       const here = busy && (busy.label === `Track ${s.name}` || busy.label === `Cut out ${s.name}`);
       const first = s.points[0];
       const tone = here ? "busy" : s.media && !s.stale ? "done" : "empty";
-      const pic = plate?.media.kind === "image";
-      const word = here ? `${pic ? "Cutting out" : "Tracking"} ${Math.round((busy.progress ?? 0) * 100)}%` : s.media && !s.stale ? (pic ? "Cut out" : "Tracked") : s.stale ? "Clicks changed" : s.points.length ? (pic ? "Not cut out" : "Not tracked") : "No clicks yet";
+      // (a picture is cut out, a clip tracked; the still's address above stays `pic`, which the subject's circle shows)
+      const still = plate?.media.kind === "image";
+      const word = here ? `${still ? "Cutting out" : "Tracking"} ${Math.round((busy.progress ?? 0) * 100)}%` : s.media && !s.stale ? (still ? "Cut out" : "Tracked") : s.stale ? "Clicks changed" : s.points.length ? (still ? "Not cut out" : "Not tracked") : "No clicks yet";
       return h(`div.sp-subject${on ? ".is-on" : ""}`, { dataset: { subject: s.id } },
         h("button.sp-subject-main", { type: "button", "aria-pressed": String(on), title: `${s.name}: ${word}`, on: { click: () => (setSet("roto", { open: s.id }), (spice.pointer = "points")) } },
           // (its face where it was clicked; with no click, its matte; with neither, a plus)

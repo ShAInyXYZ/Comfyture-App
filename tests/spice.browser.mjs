@@ -377,6 +377,8 @@ try {
   const subject = st.set.roto.subjects[0];
   ok(st.set.roto.subjects.length === 1 && subject.points.length === 3 && subject.points.filter((p) => p.neg).length === 1, "clicking the viewer makes a subject, and its clicks: two on it and one that is not", JSON.stringify(subject?.points));
   ok((await page.locator(".sp-point").count()) === 3 && (await page.locator(".sp-point.is-neg").count()) === 1, "its clicks are drawn on the picture: green +, red −");
+  const face = await page.locator(".sp-subject-pic").first().evaluate((e) => e.style.backgroundImage);
+  ok(/url\(/.test(face) && !/url\("?true"?\)/.test(face), "the subject's circle shows the picture where it was clicked", face);
   ok(/Track subject/i.test(await page.locator('.sp-out .sp-primary').innerText()) || /Track/.test(await page.locator('.sp-out .sp-primary').innerText()), "the yellow key tracks it", await page.locator(".sp-out .sp-primary").innerText());
   await page.locator(".sp-subject-name").fill("Truffle");
   await page.locator(".sp-subject-name").dispatchEvent("change");
