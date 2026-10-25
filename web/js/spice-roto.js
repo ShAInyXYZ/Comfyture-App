@@ -10,7 +10,7 @@ import { spice, edit, setSet, setQuietly, setDept, setFrame, setPass, workingOn 
 import { FIRST, lastFrame, rangeOf, framesIn, matteAsk, OUTS, TEMPLATES, secondsAt } from "./spice-model.js";
 import { bento, spicon, iconKey, primary, fill, thumb, svg } from "./spice-ui.js";
 import { openWin, defineWindow } from "./spice-win.js";
-import { work, footage, cloud, serverJob, priceOf } from "./spice-engines.js";
+import { work, footage, cloud, serverJob, priceOf, partnerOff } from "./spice-engines.js";
 import { runnerReady } from "./utensils-cloud.js";
 import { stripOf } from "./spice-viewer.js";
 import { slider } from "./utensils-fx-controls.js";
@@ -65,6 +65,7 @@ function plan() {
   if (r.out === "green" && pic) return { kind: "none", label: "Key the green", why: "A picture's subject is cut out as a matte: pick Alpha or Holdout" };
   if (r.out === "green") {
     if (b.passes.roto?.type === "green") return { kind: "pass", label: "Pass to Paint" };
+    if (partnerOff("green")) return { kind: "none", label: "Key the green", why: partnerOff("green") };
     return { kind: "green", label: "Key the green", cost: priceOf("green", seconds) };
   }
   if (!s) return { kind: "none", label: "Click a subject", why: `Click the subject in the viewer, then ${pic ? "cut it out" : "track it"}` };

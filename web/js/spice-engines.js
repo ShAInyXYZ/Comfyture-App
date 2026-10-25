@@ -5,7 +5,7 @@
 // progress shows while it works, and what it makes becomes the department's pass. A paid job is only sent with the person's yes
 // (spice-ui.js: primary()); the price is the runner's own estimate, or for an open model a guess from the seconds of footage.
 import { api } from "./api.js";
-import { toast, waitFor, jobWatchers, changed } from "./store.js";
+import { state, toast, waitFor, jobWatchers, changed } from "./store.js";
 import { editRun, editStop, editProbe, editPreview } from "./utensils-edit-api.js";
 import { fxRun, fxStop } from "./utensils-fx-api.js";
 import { runnerOf, fillInputs, costOf, priceText } from "./utensils-cloud.js";
@@ -195,6 +195,12 @@ export const freeEdit = (tool, body) => (set, job) => editRun(tool, body, set, (
 
 // ---------------------------------------------------------------- the paid engines
 
+/** Why a partner's template cannot run here: open weights only is on (COMFYTURE_OPEN_WEIGHTS), and the server would refuse it. */
+export const partnerOff = (key) => {
+  const t = TEMPLATES[key];
+  return t?.partner && state.account?.openWeights ? `Open weights only is on, and ${t.title} is ${t.partner}'s model` : "";
+};
+
 const estimates = new Map();
 /**
  * What a template costs, as a number of credits (or null while it is not known): a partner's price is the runner's estimate (the screen is
@@ -204,6 +210,8 @@ export function priceOf(key, seconds = 5) {
   const t = TEMPLATES[key];
   if (!t) return null;
   if (!t.partner) return gpuCredits(t.gpu ?? 8, seconds);
+  // (a partner's template under open weights only is not asked for its price: it cannot run here)
+  if (partnerOff(key)) return null;
   if (!estimates.has(t.name)) {
     estimates.set(t.name, undefined);
     costOf(t.name).then((e) => (estimates.set(t.name, e ?? null), changed("spice")));

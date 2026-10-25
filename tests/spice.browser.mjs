@@ -488,6 +488,13 @@ try {
     ok(st.passes.light?.kind === "video" && /snow/.test(st.passes.light.note) && runs.length === 2, "the weather ran on this machine: the Light pass is there", JSON.stringify(st.passes.light));
   }
   ok(await page.locator('.sp-primary[data-key="light:relight"]').isDisabled(), "a relight of a clip needs a picture of the light: the key waits");
+  // open weights only (as on the judges' copy): a partner's template is not offered, the key says why and no price is asked for
+  const whyOf = () => js(() => { const k = document.querySelector('.sp-primary[data-key="light:relight"]'); return [k.title, k.dataset.tooltip, k.getAttribute("aria-label")].join(" "); });
+  await js(async () => { const s = await import("/js/store.js"); s.state.account = { ...s.state.account, openWeights: true }; s.changed("account"); });
+  await page.waitForTimeout(400);
+  ok(/Open weights only is on, and Beeble SwitchX is Beeble's model/.test(await whyOf()), "with open weights only, the relight of a clip (Beeble's) says why it cannot run", await whyOf());
+  await js(async () => { const s = await import("/js/store.js"); s.state.account = { ...s.state.account, openWeights: false }; s.changed("account"); });
+  await page.waitForTimeout(400);
   await shot("6-light");
 
   // ---- Comp: the ledger, the free slow motion and the export run for real

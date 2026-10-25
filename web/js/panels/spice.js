@@ -6,7 +6,7 @@
 // VIEWER (spice-viewer.js, made once and moved into the open department's grid). Paprika's bar docks at the foot of the page. A bento
 // opens as a window over the screen (spice-win.js). Mockups: docs/brand/products/spice-v1/spice-fx.png and spice-roto.png.
 import { h, icon, sprite } from "../dom.js";
-import { changed, toast, onChange } from "../store.js";
+import { state, changed, toast, onChange } from "../store.js";
 import { currentPage } from "../router.js";
 import { dropdown } from "../controls.js";
 import { hasPending, takePending, spice, loadShots, openShot, newShot, removeShot, rename, setDept, toggleEye, creditsTodayAll, workingOn } from "../spice.js";
@@ -168,6 +168,8 @@ const fact = (k, v) => h("div", {}, h("dt", {}, k), h("dd", {}, v));
 
 // the frame moved (the viewer, the keys): what a department keeps in step with it follows
 onChange((scopes) => scopes.has("spice-frame") && parts && currentPage() === "spice" && parts[spice.dept]?.frame?.());
+// the account comes after the page may have drawn: what it says (open weights only) is drawn too
+onChange((scopes) => scopes.has("account") && !scopes.has("spice") && currentPage() === "spice" && changed("spice"));
 
 export function renderSpice(el) {
   loadShots();
@@ -197,7 +199,8 @@ export function renderSpice(el) {
     if (!on) continue;
     try {
       // a department is drawn again only when what it shows has changed
-      const sig = JSON.stringify([spice.shot.id, spice.shot.body, [...spice.busy].map(([k, v]) => [k, Math.round(v.progress * 20)]), spice.armed?.id, spice.pointer, part.sig?.()]);
+      // (open weights only, read with the account, takes the partners' keys away)
+      const sig = JSON.stringify([spice.shot.id, spice.shot.body, [...spice.busy].map(([k, v]) => [k, Math.round(v.progress * 20)]), spice.armed?.id, spice.pointer, !!state.account?.openWeights, part.sig?.()]);
       if (sig !== shell.last[w.id]) {
         shell.last[w.id] = sig;
         if (part.update() === false) shell.last[w.id] = undefined;

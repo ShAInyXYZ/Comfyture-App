@@ -8,7 +8,7 @@ import { spice, edit, setSet, setQuietly, clearPass, workingOn } from "./spice.j
 import { TEMPLATES, FIRST, framesIn } from "./spice-model.js";
 import { bento, spicon, ghost, primary, fill, lightKey } from "./spice-ui.js";
 import { openWin, defineWindow } from "./spice-win.js";
-import { work, inputFor, cloud, freeFx, freeEdit, priceOf, timeIn } from "./spice-engines.js";
+import { work, inputFor, cloud, freeFx, freeEdit, priceOf, timeIn, partnerOff } from "./spice-engines.js";
 import { fxPreview } from "./utensils-fx-api.js";
 import { editPreview } from "./utensils-edit-api.js";
 import { runnerReady } from "./utensils-cloud.js";
@@ -38,8 +38,8 @@ function plans() {
   const clip = isClip();
   const words = String(l.words || l.look || "").trim();
   return {
-    relight: { why: none || (!words ? "Say what light you want first" : clip && !l.reference?.file ? "Add a picture of the light you want first" : ""), cost: clip ? priceOf("beeble", seconds()) : priceOf("qwen", 1), key: clip ? "beeble" : "qwen" },
-    sky: { why: none || (!l.sky?.file ? "Pick the new sky first" : ""), cost: clip ? priceOf("background", seconds()) : priceOf("qwensky", 1), key: clip ? "background" : "qwensky" },
+    relight: { why: none || partnerOff(clip ? "beeble" : "qwen") || (!words ? "Say what light you want first" : clip && !l.reference?.file ? "Add a picture of the light you want first" : ""), cost: clip ? priceOf("beeble", seconds()) : priceOf("qwen", 1), key: clip ? "beeble" : "qwen" },
+    sky: { why: none || partnerOff(clip ? "background" : "qwensky") || (!l.sky?.file ? "Pick the new sky first" : ""), cost: clip ? priceOf("background", seconds()) : priceOf("qwensky", 1), key: clip ? "background" : "qwensky" },
     weather: { why: none, free: true },
     grade: { why: none, free: true },
   };
