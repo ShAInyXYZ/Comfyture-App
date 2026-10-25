@@ -62,7 +62,7 @@ While at it, the rewrite can also drop `docs/brand/` (492 MB of design mockups t
 | D3 | The live link | **A small VPS running the app in judge mode with a Comfy Cloud key, spending capped**; the static demo as fallback ([HOSTING.md](HOSTING.md)) |
 | D4 | Open weights for the judges | **Run the judge server with `COMFYTURE_OPEN_WEIGHTS=1`**, now that the switch also refuses partner templates (Bria, Beeble, Nano Banana, ElevenLabs…) on the server (done 25 Oct, commit f95e278) |
 | D5 | The video | **Approve the 13 beats** in [VIDEO.md](VIDEO.md), then record on Wednesday 28 |
-| D6 | Kitchen's example | **Ship "The Great Jam Chase"** (our chick, three LTX-2.5 takes, the film) as Kitchen's example, so a judge sees a finished film for free. Kitchen ships stages today, no story or film |
+| D6 | Kitchen's example | ✅ **Shipped 25 Oct** (examples/kitchen/great-jam-chase: the story, three takes, the edit Cut opens first). **Ship "The Great Jam Chase"** (our chick, three LTX-2.5 takes, the film) as Kitchen's example, so a judge sees a finished film for free. Kitchen ships stages today, no story or film |
 | D7 | Repo weight | Optional: **drop `docs/brand/` from the public history** during the D1 rewrite (keep it on the NAS) |
 
 ## The submission checklist
@@ -110,7 +110,7 @@ so at most one main prize and one bonus. The Typeform lets us tick several.
 | Day | What gets done | Who |
 |---|---|---|
 | **Sun 25** (today) | Read these pages and decide D1 to D7. Tonight's work lands: examples, tours, pets' chips, Local/Cloud switch, website. Start the IP sweep: replace or remove the trend media (D1), and fix Jam's two showcases. Ship Kitchen's example film (D6). | You decide, agents do |
-| **Mon 26** | ~~The open-weights switch also blocks partner templates.~~ (done 25 Oct) Judge mode in the server (spend cap, rate limits, no key changes, no deletes) with its tests. ~~README: prerequisites, the free path, a link to JUDGES.md~~ (done 25 Oct); `.env.example` refreshed. If entering Open Weights Only: try each pet on Gemma 4 a few times (GPU time only, ask first). | Agents |
+| **Mon 26** | ~~The open-weights switch also blocks partner templates.~~ (done 25 Oct) Judge mode in the server: ~~no key changes, no deletes, rate limits, with tests~~ (done 25 Oct, server/judge.ts); the spend cap still to do. ~~README: prerequisites, the free path, a link to JUDGES.md~~ (done 25 Oct); `.env.example` refreshed. If entering Open Weights Only: try each pet on Gemma 4 a few times (GPU time only, ask first). | Agents |
 | **Tue 27** | Backup bundle, history rewrite, force-push, **make the repo public**. Static demo on GitHub Pages. Judge server up (VPS, HTTPS, password, capped key). The 5-minute path tried on a clean machine with no key. Re-capture the keyframes marked RE-CAPTURE. | You (rewrite, keys, money), agents |
 | **Wed 28** | **Record the video** after your go: screen captures of each beat, your voice, an ACE-Step music bed, captions, 1:55. (The SF Build Night is that evening: optional, not needed.) | You + agents |
 | **Thu 29** | Publish the video and the social post (#OpenSourceHiggsfield). Freeze `main`, tag the submission, pin the judge server to the tag, top up its budget. **Fill and send the Typeform in the evening.** | You |

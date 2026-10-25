@@ -30,6 +30,17 @@ RunPod (a partner) is worth one afternoon to film the "your own GPU" beat, not f
 
 ### What the app needs first (to-dos, not built yet)
 
+**Done on 25 October** (the rest of this table is still to do):
+- `server/judge.ts` and its hook in `server/main.ts`: with `COMFYTURE_JUDGE=1` the key and where it renders cannot be changed from the
+  page (the account window shows them read-only; no address can be probed: no server-side fetch for visitors), nothing kept can be
+  deleted (projects, takes, reels, the Stage's stages, poses and models), each visitor's writing requests are paced (240 per 10 minutes),
+  and `/api/info` says `judge: true`. Tested in `tests/judge.test.ts`. **Not yet**: the spend gate (runs per visitor and per day, a credit
+  budget): until it lands, the cap is the separate key's small balance.
+- `COMFYTURE_OPEN_WEIGHTS` makes the server refuse partner templates (`server/comfy-templates.ts`, tested); Spice and Utensils do not
+  hide them yet (pressing one says why it is refused).
+- `scripts/demo-site.ts` reads `COMFYTURE_DATA`, so it can be built from a clean folder the server has seeded with the examples
+  (README: "A live demo without a server"). It still snapshots Kitchen's lists only.
+
 | File | What it does |
 |---|---|
 | `server/judge.ts` (new) | Judge mode, on with `COMFYTURE_JUDGE=1`. **One spend gate** that every paid path calls before it submits: Comfy jobs from the engine (shots, pictures, songs, sounds, Gemma answers), the template runner, and Router calls (already off in open-weights mode). Limits from the environment: runs per visitor per day (a visitor is a cookie plus an IP), runs per day, a total credit budget, and a floor on the account's balance (`server/account.ts` already reads it). Judge-sized settings: one take, shots of 6 s at most, no Production quality. A friendly refusal: *"Today's judge runs are used up. Examples and tours still work, and the repo runs locally in five minutes."* |
