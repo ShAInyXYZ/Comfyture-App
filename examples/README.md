@@ -72,3 +72,8 @@ one the app ships under `web/brand/`) is copied to `data/<to>` (`audio/`, `video
   saves them, and a save that changes nothing else keeps the time of the last change (`workOf` in `server/main.ts`).
 - `tests/tools/make-showcase-jam.mjs` writes the three videos of our own (Moonlit Oolong Walk, La Calabaza, Three Kittens) from their
   folders; raise its `REV` when they are made again for good.
+- Jam ships those three and no other. Two more, Toc Toc and Hotel Lobby, were retired on 25 October: they played the Mixer trends'
+  original recordings (commercial songs, which are no longer in the repository), so their folders are gone, and the rules above did
+  the rest: an untouched copy leaves an older data folder at its next start, one that was worked on stays. The sounds and dances they
+  copied into `data/audio/` and `data/videos/` (`trend-*-sound.m4a`, `trend-*-dance.mp4`) stay there: only the video and its edit are
+  taken out, so those files can be deleted by hand from a data folder that is going to be shared or hosted.

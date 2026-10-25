@@ -3,7 +3,8 @@
 *For the #OpenSourceHiggsfield judges: read this first, it takes three minutes.*
 
 <!-- Before submitting: fill the three links below, and check every line against the submission build. The last paragraph
-     ("no one else's media") is only true once D1 in README.md is done; the Mixer line depends on D1 too; "the compass starts
+     ("no one else's media") is only true once D1 in README.md is done in full (the trends' recordings left the tree on 25 Oct;
+     their derived frames and motion, the reference material and the history are still to do); the Mixer line depends on D1 too; "the compass starts
      a guided tour" needs every product's tour (only Toaster's exists on 25 Oct). -->
 
 **Comfyture is an open-source Higgsfield**: seven creative studios on one engine, built on the Comfy Developer Platform.

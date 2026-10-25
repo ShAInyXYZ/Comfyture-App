@@ -54,7 +54,7 @@ folder, no key and a dead render address: no credit was spent. Frames of our cas
 | `k08-toaster-build` | 4 | **Staged**: Crumpet's answer was written by hand (no model called), in a new draft beside the example; the app built the scene from it as from a real answer. With no key, *Toast it* reads "GPU time". |
 | `k09-toaster-render`, `k23-toaster-clay-to-render` | 4 | Toaster's shipped example *Crumpet's workbench*: its Render page, and its clay frame beside the finished still. The stills were drawn with GPT Image (free, through Codex) and the page labels them so: for the open-weights category, re-toast them with Qwen Image 2.1 (a few credits, **your yes**) or keep the labels out of frame. **No turnaround or 3D model exists yet**: one paid run (render, turnaround, 3D), or the voice-over drops "then into a real 3D model". |
 | `k10-spice-fx`, `k11-spice-comp`, `k22-spice-roto` | 5, 10 | The shipped *Paprika's portal* example: FX, Comp's wipe, Roto's SAM3 matte. |
-| `k12-jam-track`, `k13-jam-band` | 6 | *Moonlit Oolong Walk*, Jam's shipped example (our ACE-Step song, Taro the otter), on a fresh install: the track and the band. Never use the Toc Toc or Hotel Lobby showcases: they play commercial recordings. |
+| `k12-jam-track`, `k13-jam-band` | 6 | *Moonlit Oolong Walk*, Jam's shipped example (our ACE-Step song, Taro the otter), on a fresh install: the track and the band. The Toc Toc and Hotel Lobby showcases, which played commercial recordings, were retired on 25 October (D1): Jam ships only our three. |
 | `k14-jam-otter` | 6 | Real output: the otter singing *Moonlit Oolong Walk* (lip-sync, LTX-2.5). |
 | `k15-mixer-shelf` | 7 | **Depends on D1**: the shelf shows song-titled trends. |
 | `k16-mixer-meringue` | 7 | Real output: Meringue's two Face Dance takes. **Their sound is the Face Dance trend's song: always muted**; the music bed plays instead. |
@@ -75,7 +75,7 @@ Beats 11, 12 and 13 also use cards drawn in the storyboard itself (the diagram, 
   playback of *Toast it*. The one exception is beat 4's render, turnaround and 3D model, which come from Toaster's example.
 - **Sound.** Your voice (or an open text-to-speech model) for the voice-over; a music bed made with ACE-Step 1.5 (our own, never a
   licensed track), ducked under the voice; the chick's and the otter's own LTX-2.5 sound where marked. Meringue's takes always muted.
-- **Never on screen**: the Giorno project or anything from `data/toasts`; the Toc Toc and Hotel Lobby showcases; any trend's original
+- **Never on screen**: the Giorno project or anything from `data/toasts`; the Toc Toc and Hotel Lobby showcases (retired 25 October, but an older data folder may still hold them: film on a fresh one); any trend's original
   sound; real people; the account panel with a key in it or the header's balance.
 - **Export**: H.264, 1080p, 1:55, captions burned in. Upload to YouTube (public or unlisted) and link it from the social post and
   the form.

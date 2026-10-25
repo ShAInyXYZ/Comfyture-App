@@ -16,41 +16,62 @@ The other pages of this folder:
 
 - **Enter**: Best Overall (every entry is in it), **Most Innovative** and the **VFX Built with LTX** bonus.
   Add **Open Weights Only** with the judge server run in open-weights mode (D4: the switch now blocks the partner templates too). Most Viral is optional.
-- **Blocks us today**: the repo holds other people's recordings (the Mixer trends' songs, see the blocker below),
-  the repo is private, and there is no live link and no video yet.
+- **Blocks us today**: the repo is private, and there is no live link and no video yet. The Mixer trends' original recordings
+  are out of the tree (done 25 October, D1) but still in older commits until the history is rewritten (see the blocker below).
 - **Ready** (25 October): the code, the MIT licence, the run-locally steps, the workflow files, examples in every product
   (Kitchen's film *The Great Jam Chase* and its stages, Toaster's three sets, Spice's six shots through every department, Jam's
   three videos on our own songs, Macaron's brands) plus Mixer's trend shelf, a guided tour per product (eight, each pet on its
   example), the Local/Cloud switch, judge mode for a hosted copy, the rebuilt website, and the storyboard with its keyframes.
 
-## ⛔ The blocker: the trends' original recordings (your call)
+## ⛔ The blocker: the trends' original recordings (out of the tree on 25 October; the history is left)
 
 The rules say: *"All submissions must be lawful, SFW, and must not contain unlicensed IP or likenesses."*
-The repo breaks that today, in files that are tracked and pushed (the repo is private, so nothing is public yet):
+The repo broke that, in files that were tracked and pushed (the repo is private, so nothing was ever public).
 
-| What | Where | Why it is a problem |
-|---|---|---|
-| 11 original recordings: `sound.m4a` and `vocals.m4a` | `web/brand/mixer/trends/*/` (Toc Toc, Hotel Lobby, Smalltown Boy, State Property, Ramalama, Documentary, Face Dance, Black Cat Clapping) | Commercial songs and, for State Property, a private person's voice. Each trend's own `recipe.json` says: *"it is replaced or removed before the repository is published."* |
-| 8 trend previews with that audio | `web/brand/mixer/trends/*/preview.mp4` | Our crew's version, but the original song plays under it. |
-| Jam's Toc Toc and Hotel Lobby showcases | `examples/jam/jam-toc-toc/`, `examples/jam/jam-hotel-lobby/` | They copy the two recordings and previews above into every new install. |
-| First frames edited from the originals' frames, pose videos and keypoints | `web/brand/mixer/trends/*/look.webp`, `shot-*.look.webp`, `*.pose.mp4`, `*.kps.json` | Derived from other creators' videos (their frame, their motion). Lower risk than the songs, still theirs. |
-| Source screenshots and edits made from them | `docs/brand/mixer-crew/reference-match-v2/` (its README: *"actual screenshots decoded from retrieved source-post videos"*) | Other creators' frames, in the docs. |
-| A `ref-` collage | `docs/brand/products/macaron-v4/scenes/ref-mockups-collage.png` | Tracked although `ref-*` files are meant to stay out. |
-| Trend names that are song titles | Smalltown Boy, Toc Toc, Ramalama, Alors on danse, La Calabaza, Closer, Sway… (`web/js/mixer-trends.js`) | A song's name on a shelf invites the question; descriptive names avoid it. |
+**Done on 25 October (D1, the owner's call: remove the recordings now).** The first three rows below are out of the tree: the eleven
+recordings are deleted, the eight previews play silent (their audio track is cut, the picture is the same bytes), the recipes name no
+sound, and Jam's Toc Toc and Hotel Lobby showcases are retired. Mixer and Jam work without them: a trend's preview plays silent;
+Make it makes a track in the trend's feel with ACE-Step, as it already did for the trends without a recipe (a few credits more, in
+its estimate, and the first thing it does, so a track that fails costs nothing else); Jam starts a dance trend with our version of the
+dance and waits for a track, with Make a track ready in the trend's feel. **Not done: the history.** Every file is still in older
+commits, so the repo cannot be made public yet (the paths a rewrite must cover are below).
 
-**What to do.** Three choices, not exclusive:
+| What | Where | Why it was a problem | Now |
+|---|---|---|---|
+| 11 original recordings: `sound.m4a` and `vocals.m4a` | `web/brand/mixer/trends/*/` (Toc Toc, Hotel Lobby, Smalltown Boy, State Property, Ramalama, Documentary, Face Dance, Black Cat Clapping) | Commercial songs and, for State Property, a private person's voice. Each trend's own `recipe.json` said: *"it is replaced or removed before the repository is published."* | ✅ deleted 25 Oct |
+| 8 trend previews with that audio | `web/brand/mixer/trends/*/preview.mp4` | Our crew's version, but the original song played under it. | ✅ audio cut 25 Oct (`-an -c:v copy`) |
+| Jam's Toc Toc and Hotel Lobby showcases | `examples/jam/jam-toc-toc/`, `examples/jam/jam-hotel-lobby/` | They copied the two recordings and previews above into every new install. | ✅ retired 25 Oct |
+| First frames edited from the originals' frames, pose videos and keypoints | `web/brand/mixer/trends/*/look.webp`, `look-a.webp`, `look-b.webp`, `shot-*.look.webp`, `shot-2b.end.webp`, `*.pose.mp4`, `*.depth.mp4`, `*.kps.json` | Derived from other creators' videos (their frame, their motion). Lower risk than the songs, still theirs. The recipes need the pose and depth videos to make a version, and Jam's dance panel shows a pose over the dance. | ⛔ still in the tree, for you to decide |
+| Source screenshots and edits made from them | `docs/brand/mixer-crew/reference-match-v2/` (its README: *"actual screenshots decoded from retrieved source-post videos"*) | Other creators' frames, in the docs. | ⛔ |
+| A `ref-` collage | `docs/brand/products/macaron-v4/scenes/ref-mockups-collage.png` | Tracked although `ref-*` files are meant to stay out. | ⛔ |
+| Trend names that are song titles | Smalltown Boy, Toc Toc, Ramalama, Alors on danse, La Calabaza, Closer, Sway… (`web/js/mixer-trends.js`) | A song's name on a shelf invites the question; descriptive names avoid it. | ⛔ |
 
-1. **Replace** each kept trend's sound with an original ACE-Step 1.5 track in the same feel (what the README already promises),
-   and mux it into the preview with ffmpeg (free). ACE-Step on Comfy Cloud costs a few credits per track: ask before spending.
-2. **Remove** the trends we do not need for the submission, the reference-match folder and the collage.
-3. **Rewrite the history** so none of it is in any commit, then make the repo public. A new commit that deletes the files is not enough:
+**What is left to do.** Two choices, not exclusive:
+
+1. **Remove or rename** what is still in the tree: the trends we do not need for the submission, the reference-match folder, the
+   collage, the song-titled names, and (your call) the look frames, pose videos and keypoints of the trends we keep.
+2. **Rewrite the history** so none of it is in any commit, then make the repo public. A new commit that deletes the files is not enough:
    a public repo serves every old commit. The rewrite (`git filter-repo --invert-paths --path …`) changes every commit id
    and needs a force-push to `origin` and `nas`, with no other session running, after a backup bundle of today's history
    (copy, check, then rewrite). **This is your call.** The alternative is a fresh public repo with one squashed commit,
    which loses the dated history that shows the work was done during the challenge.
 
-My recommendation: replace the sounds of the trends you want to show, remove the rest and the reference material,
-rename song-titled trends, and do one history rewrite on Tuesday before going public.
+   For the recordings, the rewrite must cover these paths (the `.m4a` files are the only audio files ever committed for a trend; the
+   older versions of the previews carry the song under the picture, so they go too, and today's silent ones go back on top of the
+   rewritten history in one commit):
+
+   ```
+   web/brand/mixer/trends/*/sound.m4a                         8 files
+   web/brand/mixer/trends/*/vocals.m4a                        3 files (hotel-lobby, smalltown-boy, state-property)
+   web/brand/mixer/trends/*/preview.mp4                       8 files, all their versions
+   web/brand/mixer/trends/hotel-lobby/preview-portrait.mp4    an older cut of the Hotel Lobby preview, with the song
+   ```
+
+   Optional, tidiness only (they hold no recording, they just name them): `examples/jam/jam-toc-toc`, `examples/jam/jam-hotel-lobby`, and
+   the older homes of the same showcases, `web/brand/jam/projects/jam-toc-toc`, `jam-hotel-lobby` and `jam-ramalama`.
+
+My recommendation: do one history rewrite on Tuesday before going public, covering the paths above and, with your yes, the rest of the
+table (the reference material, the derived frames and motion of the trends you do not keep, the song-titled names).
 While at it, the rewrite can also drop `docs/brand/` (492 MB of design mockups the app never loads): the clone goes from about
 0.7 GB to about 0.2 GB, which matters for a judge's first five minutes (D7).
 
@@ -58,7 +79,7 @@ While at it, the rewrite can also drop `docs/brand/` (492 MB of design mockups t
 
 | # | Decision | Recommendation |
 |---|---|---|
-| D1 | The recordings and derived media above | **Replace or remove, then one history rewrite before going public** |
+| D1 | The recordings and derived media above | ✅ **The recordings are removed (25 Oct), as you decided.** Still yours: the derived media and the reference material (the table's last four rows), then **one history rewrite before going public** |
 | D2 | Categories to tick on the Typeform | **Most Innovative + VFX Built with LTX Bonus**, plus Open Weights Only (D4 is done in the code; it needs the judge server run with the switch on) |
 | D3 | The live link | **A small VPS running the app in judge mode with a Comfy Cloud key, spending capped**; the static demo as fallback ([HOSTING.md](HOSTING.md)) |
 | D4 | Open weights for the judges | **Run the judge server with `COMFYTURE_OPEN_WEIGHTS=1`**, now that the switch also refuses partner templates (Bria, Beeble, Nano Banana, ElevenLabs…) on the server (done 25 Oct, commit f95e278) |
@@ -75,7 +96,7 @@ What the rules ask, checked against the repo on 25 October. The submission form 
 
 | # | Item | The rule | Status | What is missing |
 |---|---|---|---|---|
-| 1 | No unlicensed IP or likenesses | *"lawful, SFW, and must not contain unlicensed IP or likenesses"* | ⛔ | The blocker above (D1). Also: the judge server and the static site must never be built from your own `data/` folder (it holds the Giorno Toaster project and trend runs). |
+| 1 | No unlicensed IP or likenesses | *"lawful, SFW, and must not contain unlicensed IP or likenesses"* | ⛔ | The recordings are out of the tree (25 Oct, D1) but still in older commits: the history rewrite is what is left, with the rest of the blocker's table. Also: the judge server and the static site must never be built from your own `data/` folder (it holds the Giorno Toaster project and trend runs, and the copies of the retired showcases' recordings an older install made). |
 | 2 | Public GitHub repo | *"must be public with an open-source license and setup instructions"* | ❌ private | After D1. Run a secret scanner first (a quick scan of the history for key patterns found none; `.env` was never committed). |
 | 3 | Open-source licence | *"an open-source license"* | ✅ | MIT in `LICENSE` and `package.json`. |
 | 4 | Setup someone else can follow | *"enough setup detail that someone else can run it on their own machine"* | ✅ | README's Quick start now says Node 22.18+ and ffmpeg up front, the clone, `npm start`, the free no-key path (every product on its examples, the tours) and links [JUDGES.md](JUDGES.md); `.env.example` is refreshed; [docs/guides/LOCAL-COMFYUI.md](../guides/LOCAL-COMFYUI.md) is the own-GPU guide (all 25 Oct). Nice to have: a short `workflows/README.md` mapping each file to the feature that runs it. |
@@ -112,7 +133,7 @@ so at most one main prize and one bonus. The Typeform lets us tick several.
 
 | Day | What gets done | Who |
 |---|---|---|
-| **Sun 25** (today) | Read these pages and decide D1 to D7. Tonight's work lands: examples, tours, pets' chips, Local/Cloud switch, website. Start the IP sweep: replace or remove the trend media (D1), and fix Jam's two showcases. Ship Kitchen's example film (D6). | You decide, agents do |
+| **Sun 25** (today) | Read these pages and decide D1 to D7. Tonight's work lands: examples, tours, pets' chips, Local/Cloud switch, website. ~~Start the IP sweep: replace or remove the trend media (D1), and fix Jam's two showcases~~ (the recordings, the previews' sound and Jam's two showcases done 25 Oct; the rest of the sweep and the history rewrite stay). Ship Kitchen's example film (D6). | You decide, agents do |
 | **Mon 26** | ~~The open-weights switch also blocks partner templates.~~ (done 25 Oct) Judge mode in the server: ~~no key changes, no deletes, rate limits, with tests~~ (done 25 Oct, server/judge.ts); the spend cap still to do. ~~README: prerequisites, the free path, a link to JUDGES.md~~ (done 25 Oct); `.env.example` refreshed. If entering Open Weights Only: try each pet on Gemma 4 a few times (GPU time only, ask first). | Agents |
 | **Tue 27** | Backup bundle, history rewrite, force-push, **make the repo public**. Static demo on GitHub Pages. Judge server up (VPS, HTTPS, password, capped key). The 5-minute path tried on a clean machine with no key. Re-capture the keyframes marked RE-CAPTURE. | You (rewrite, keys, money), agents |
 | **Wed 28** | **Record the video** after your go: screen captures of each beat, your voice, an ACE-Step music bed, captions, 1:55. (The SF Build Night is that evening: optional, not needed.) | You + agents |

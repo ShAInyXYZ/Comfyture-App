@@ -75,7 +75,7 @@ draws ~70 ms later than before (a second round of modules, three.js in its deck)
 ## Errors
 
 None on any of the 12 pages. One request is aborted on a first visit (`trend-toc-toc-dance.mp4`, a video preload cut short when the page
-moves on): harmless.
+moves on): harmless. (That video belonged to Jam's Toc Toc showcase, retired later that day.)
 
 ## Accessibility
 
@@ -167,10 +167,16 @@ dialogs above.
 
 ## Rights and likenesses (the competition forbids unlicensed IP and likenesses)
 
-- **Blocker, for the owner to decide**: Mixer's trend recipes ship the trends' **original sounds**, commercial recordings, tracked in
-  git (`web/brand/mixer/trends/*/sound.m4a`; their `recipe.json` says they are to be replaced or removed before publishing), and Jam's
-  Toc Toc and Hotel Lobby showcases play them. Replace them with ACE-Step originals or remove them; taking them out of the published
-  history needs a history rewrite.
+- ✅ **Done on 25 October (D1, the owner's call)**: Mixer's trend recipes shipped the trends' **original sounds**, commercial
+  recordings, tracked in git (eleven `sound.m4a` and `vocals.m4a` under `web/brand/mixer/trends/*/`; their `recipe.json` said they were
+  to be replaced or removed before publishing), the eight trend previews carried them as their audio, and Jam's Toc Toc and Hotel Lobby
+  showcases played them. The recordings are deleted, the previews' audio track is cut (`-an -c:v copy`: the clips stay, silent, with
+  the same picture), the recipes name no sound, and the two showcases are retired (an untouched copy leaves an older data folder at the
+  next start, one that was worked on stays). Mixer makes a track in the trend's feel instead (ACE-Step, first, so a failure costs
+  nothing else), and Jam starts a dance trend with its dance and a track to make. **Not done**: the history. The files are still in
+  older commits (the paths to cover are in the blocker section of [competition/README.md](competition/README.md)), so the repo is not
+  safe to make public until a rewrite, which needs the owner's go. Also still in the tree, for the owner: the look
+  frames, pose and depth videos and keypoints derived from the original videos (`web/brand/mixer/trends/*/`).
 - The Toaster mockups of 24 October (`docs/brand/products/toaster-v2/`: `r1.txt`, `c1.txt` and `toaster-render.png`) show a character
   from JoJo's Bizarre Adventure: remove them before submitting, or keep them out of anything shown.
 - Fixed tonight: the image guides' worked examples (sent to the writer with every prompt) used that character; they now use Crumpet's
