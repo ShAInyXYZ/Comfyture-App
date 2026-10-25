@@ -50,6 +50,8 @@ for (let i = 0; i < 100; i++) {
 }
 const post = (path, body, type = "application/json") => fetch(`${base}/${path}`, { method: "POST", headers: { "Content-Type": type }, body: type === "application/json" ? JSON.stringify(body) : body });
 const upSong = await (await post("api/audio?name=Moonlit%20Oolong&kind=music", await readFile(join(tmp, "song.mp3")), "audio/mpeg")).json();
+// (its sleeve, by its name: the shelf starts with the song of the video open, then the library newest first)
+const mySleeve = `.sg-sleeve-art[aria-label="${upSong.name}"]`;
 const picA = await (await post("api/photos?name=cover-a", await readFile(join(tmp, "cover-a.png")), "image/png")).json();
 const picB = await (await post("api/photos?name=cover-b", await readFile(join(tmp, "cover-b.png")), "image/png")).json();
 const clip = await (await post("api/videos", await readFile(join(tmp, "clip.mp4")), "video/mp4")).json();
@@ -89,7 +91,7 @@ try {
   const count = (path) => sent.filter((x) => x.url === path).length;
   const spent = () => ["api/image", "api/shots", "api/jam/slice"].map((p) => count(`/${p}`)).reduce((a, b) => a + b, 0);
 
-  await page.locator(".sg-sleeve-art").first().click();
+  await page.locator(mySleeve).click();
   await page.waitForSelector(".sg-cover:not([hidden])", { timeout: 5000 });
   await shot("song-no-cover");
   ok(!(await page.locator(".sg-clip:visible").count()), "no video cover: no loop beside the record");
@@ -160,7 +162,7 @@ try {
   await page.waitForSelector('.jm-tile[data-workspace="song"]', { timeout: 30000 });
   await page.locator('.jm-tile[data-workspace="song"]').click();
   await page.waitForSelector(".sg-sleeve", { timeout: 20000 });
-  await page.locator(".sg-sleeve-art").first().click();
+  await page.locator(mySleeve).click();
   await page.waitForSelector(".sg-clip:not([hidden])", { timeout: 10000 });
   await page.waitForTimeout(1200);
   ok((await page.locator(".sg-clip video").getAttribute("src")) === clip.url, "the video cover plays as a small loop beside the record");
@@ -170,7 +172,7 @@ try {
   ok((await page.locator(".sg-clip").getAttribute("aria-pressed")) === "true" && !(await page.locator(".sg-clip video").evaluate((v) => v.muted)), "a press on the loop turns its sound on");
   await page.locator(".sg-clip").click();
   ok(await page.locator(".sg-clip video").evaluate((v) => v.muted), "another turns it off");
-  await page.locator(".sg-sleeve-art").first().hover();
+  await page.locator(mySleeve).hover();
   await page.waitForTimeout(400);
   ok((await page.locator(".sg-sleeve-clip").getAttribute("src")) === clip.url, "the sleeve plays the video cover while it is pointed at");
   await page.mouse.move(10, 10);

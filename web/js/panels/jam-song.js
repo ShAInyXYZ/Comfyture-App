@@ -50,11 +50,11 @@ const making = { what: null, words: "", file: null }; // a cover being made: "pi
 
 // ---------------------------------------------------------------- what is shown, what is made
 
-/** The songs on the shelf: the ones made or brought in, and the track of the video open when it is not among them. */
+/** The songs on the shelf: the track of the video open first (one of the made or brought in, or its own), then the ones made or brought in. */
 function shelf() {
   const track = jam.jam?.body.track;
-  const own = track && !song.made.some((m) => m.file === track.file) ? [{ file: track.file, url: track.url, name: track.name, seconds: track.seconds, kind: track.kind ?? "upload", bpm: track.bpm ?? (jam.jam.body.bpm ? Math.round(jam.jam.body.bpm) : undefined), lyrics: track.lyrics }] : [];
-  return [...own, ...song.made].slice(0, 14);
+  const own = !track ? [] : [song.made.find((m) => m.file === track.file) ?? { file: track.file, url: track.url, name: track.name, seconds: track.seconds, kind: track.kind ?? "upload", bpm: track.bpm ?? (jam.jam.body.bpm ? Math.round(jam.jam.body.bpm) : undefined), lyrics: track.lyrics }];
+  return [...own, ...song.made.filter((m) => m.file !== track?.file)].slice(0, 26);
 }
 const shownSong = () => shelf().find((m) => m.file === song.shown) ?? null;
 const inJam = (m) => !!m && jam.jam?.body.track?.file === m.file;
@@ -786,7 +786,7 @@ export function songWorkspace() {
     api.songs().then((list) => {
       for (const a of list) if (a.cover || a.coverVideo) covers.set(a.file, { cover: a.cover, coverVideo: a.coverVideo, coverSeconds: a.coverSeconds });
       const have = new Set(song.made.map((m) => m.file));
-      song.made.push(...list.filter((a) => a.kind === "music" && !have.has(a.file)).slice(0, 12));
+      song.made.push(...list.filter((a) => a.kind === "music" && !have.has(a.file)).slice(0, 24));
       // (the covers have come: the record wears the shown song's, as its sleeve does)
       redrawStage();
       redrawShelf();

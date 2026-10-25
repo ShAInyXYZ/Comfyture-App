@@ -1,11 +1,11 @@
-// The showcase projects Jam ships are put into a data folder at start: once, a newer version replaces an older copy
+// The showcase projects and songs Jam ships are put into a data folder at start: once, a newer version replaces an older copy
 // nobody has touched, one that was edited (or that the user made) is left alone, and one the app no longer ships goes.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
-import { cp, mkdtemp, readFile, writeFile, rm, access } from "node:fs/promises";
+import { cp, mkdtemp, readdir, readFile, writeFile, rm, access } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { readLedger, ledgerState } from "../server/examples.ts";
@@ -147,6 +147,77 @@ test("a video saved with only what Jam measures when it opens one is not changed
     assert.equal((await get("api/jams/jam-three-kittens")).project.body.captions, "pop", "one whose captions were changed is left as it is");
     assert.equal((await get("api/jams/jam-walk-moonlit-oolong")).project.name, "My walk", "and one that was renamed");
   });
+});
+
+test("Jam's songs go into the audio library with their covers and what they were made from, the newest of it, and an install that has the other examples gets them too", { timeout: 120000 }, async (t) => {
+  const data = await mkdtemp(join(tmpdir(), "seed-"));
+  t.after(() => rm(data, { recursive: true, force: true }));
+  const dir = join(root, "examples", "songs");
+  const specs = await Promise.all((await readdir(dir)).sort().map(async (id) => JSON.parse(await readFile(join(dir, id, "song.json"), "utf8"))));
+  assert.ok(specs.length >= 10, "Jam ships its songs");
+  const check = async (get: (path: string) => Promise<any>, status: (path: string) => Promise<number>) => {
+    const audio = await get("api/audio");
+    for (const s of specs) {
+      const a = audio.find((x: any) => x.file === `${s.id}.mp3`);
+      assert.ok(a, `${s.name} is in the library`);
+      assert.equal(a.name, s.name);
+      assert.equal(a.kind, "music", `${s.name} is a song of The song's shelf`);
+      assert.ok(a.seconds > 60, `${s.name} is a whole song`);
+      assert.deepEqual([a.tags, a.lyrics, a.bpm, a.key], [s.song.tags, s.song.lyrics, s.song.bpm, s.song.key], `${s.name} says what it was made from`);
+      assert.equal(a.cover, `/media/photos/${s.id}-cover.jpg`, `${s.name} wears its cover`);
+      assert.equal(await status(a.cover.slice(1)), 200, `${s.name}'s cover is served`);
+      assert.equal(await status(a.url.slice(1)), 200, `${s.name}'s track is served`);
+    }
+    // (put in after the videos: the shelf, which shows the library newest first, starts with them)
+    assert.deepEqual(audio.filter((a: any) => a.kind === "music").slice(0, specs.length).map((a: any) => a.file).sort(), specs.map((s) => `${s.id}.mp3`).sort(), "the songs are the newest of the library");
+  };
+  await started(data, (get, _send, status) => check(get, status));
+  const ledger = async (store: string) => readFile(join(data, store, ".seeded"), "utf8");
+  assert.deepEqual([...ledgerState(readLedger(await ledger("audio"))).keys()].sort(), specs.map((s) => s.id).sort(), "the ledger says they went in");
+  // an install from before the songs: the other examples are in (their ledgers say so), the songs never were
+  const videos = await ledger("jams");
+  await rm(join(data, "audio", ".seeded"));
+  const index = JSON.parse(await readFile(join(data, "audio", "index.json"), "utf8"));
+  for (const s of specs) (delete index[`${s.id}.mp3`], await rm(join(data, "audio", `${s.id}.mp3`)));
+  await writeFile(join(data, "audio", "index.json"), JSON.stringify(index));
+  await started(data, (get, _send, status) => check(get, status));
+  assert.equal(await ledger("jams"), videos, "and the videos are not put in again");
+});
+
+test("a newer version of a song replaces an untouched one, a song given a cover of its own is never overwritten, and a song no longer shipped goes unless it was worked on", { timeout: 120000 }, async (t) => {
+  const data = await mkdtemp(join(tmpdir(), "seed-"));
+  const examples = await mkdtemp(join(tmpdir(), "seed-examples-"));
+  t.after(() => Promise.all([rm(data, { recursive: true, force: true }), rm(examples, { recursive: true, force: true })]));
+  const [mine, theirs] = (await readdir(join(root, "examples", "songs"))).sort();
+  for (const id of [mine, theirs]) await cp(join(root, "examples", "songs", id), join(examples, "songs", id), { recursive: true });
+  const song = (get: (path: string) => Promise<any>, id: string) => get("api/audio").then((list) => list.find((a: any) => a.file === `${id}.mp3`));
+  let named: Record<string, string> = {};
+  await started(data, async (get, send) => {
+    named = { [mine]: (await song(get, mine)).name, [theirs]: (await song(get, theirs)).name };
+    // the person gives one of them another cover (a picture the app keeps: the other song's)
+    const set = await send("api/audio/cover", "POST", { file: `${mine}.mp3`, cover: `/media/photos/${theirs}-cover.jpg` });
+    assert.equal(set.cover, `/media/photos/${theirs}-cover.jpg`);
+  }, { COMFYTURE_EXAMPLES: examples });
+  // a newer version of both
+  for (const id of [mine, theirs]) {
+    const path = join(examples, "songs", id, "song.json");
+    const spec = JSON.parse(await readFile(path, "utf8"));
+    await writeFile(path, JSON.stringify({ ...spec, rev: 2, name: `${spec.name} again` }));
+  }
+  await started(data, async (get) => {
+    assert.equal((await song(get, theirs)).name, `${named[theirs]} again`, "the untouched song is the newer version");
+    const kept = await song(get, mine);
+    assert.deepEqual([kept.name, kept.cover], [named[mine], `/media/photos/${theirs}-cover.jpg`], "the one given a cover of its own is left as the person left it");
+  }, { COMFYTURE_EXAMPLES: examples });
+  // neither is shipped any more
+  await rm(join(examples, "songs"), { recursive: true });
+  await started(data, async (get) => {
+    assert.equal(await song(get, theirs), undefined, "the untouched song goes");
+    assert.ok(await song(get, mine), "the one worked on stays");
+  }, { COMFYTURE_EXAMPLES: examples });
+  const gone = (path: string) => access(join(data, path)).then(() => false, () => true);
+  assert.ok((await gone(`audio/${theirs}.mp3`)) && (await gone(`photos/${theirs}-cover.jpg`)), "its track and its cover with it");
+  assert.ok(!(await gone(`audio/${mine}.mp3`)), "and the one worked on keeps its track");
 });
 
 test("COMFYTURE_EXAMPLES points the seeder at another folder: what is in it goes in, and nothing of examples/ does", { timeout: 120000 }, async (t) => {

@@ -1027,6 +1027,52 @@ async function putCover(file: unknown, folder: string, id: string, song: string)
 }
 
 /**
+ * One of Jam's shipped songs (examples/songs/<id>/song.json): its track goes into the audio library as <id>.mp3 with its cover and what
+ * it was made from (its style, words, tempo and key), so a video that takes it as its track has them too.
+ */
+async function putSong(spec: any, folder: string, id: string) {
+  const track = String(spec.track ?? "");
+  if (!/^\w[\w.-]*\.mp3$/i.test(track)) throw new Error("its track is not an .mp3 of its folder");
+  const file = `${id}.mp3`;
+  await mkdir(join(data, "audio"), { recursive: true });
+  await copyFile(join(folder, track), join(data, "audio", file));
+  const cover = await putCover(spec.cover, folder, id, file);
+  const s = spec.song ?? {};
+  await noteAudio({
+    file,
+    url: `/media/audio/${file}`,
+    name: text(spec.name, 60) || id,
+    kind: "music",
+    seconds: Math.round((await probeMedia(join(data, "audio", file))).duration * 100) / 100,
+    prompt: text(s.tags, 800),
+    tags: text(s.tags, 800),
+    lyrics: typeof s.lyrics === "string" ? s.lyrics.slice(0, 3000) : "",
+    ...(Number.isFinite(s.bpm) ? { bpm: s.bpm } : {}),
+    ...(KEYS.includes(s.key) ? { key: s.key } : {}),
+    createdAt: new Date().toISOString(),
+    ...(cover ? { cover } : {}),
+  }, true);
+}
+/** A shipped song is worked on once the person has given it a cover or a video cover of their own. */
+async function keptSong(id: string): Promise<Kept | null> {
+  const song = (await readAudioIndex())[`${id}.mp3`];
+  if (!song) return null;
+  const own = (song.cover && !song.cover.startsWith(`/media/photos/${id}-`)) || !!song.coverVideo;
+  return { createdAt: song.createdAt, updatedAt: own ? undefined : song.createdAt };
+}
+/** A retired song, untouched: out of the index, its track and its cover gone. */
+async function dropSong(id: string) {
+  audioWrite = audioWrite.then(async () => {
+    const index = await readAudioIndex();
+    delete index[`${id}.mp3`];
+    await writeFile(audioIndexPath(), JSON.stringify(index, null, 1));
+  });
+  await audioWrite;
+  await rm(join(data, "audio", `${id}.mp3`), { force: true });
+  for (const f of (await readdir(join(data, "photos")).catch(() => [] as string[])).filter((f) => f.startsWith(`${id}-`))) await rm(join(data, "photos", f), { force: true });
+}
+
+/**
  * Whether a save of a video is a change of its work. Jam measures the drop and the loudest stretch of a song when it opens a video that has
  * none, and saves them; a page also fills in what a body leaves out (an empty list, nothing) when it opens one. Neither is anyone's work,
  * so a save that differs by these alone keeps the time of the video's last real change: a showcase that was only opened is still untouched,
@@ -1086,7 +1132,7 @@ async function dropStory(id: string) {
   }
 }
 
-/** The examples of each store: Kitchen's film, Spice's shots, Jam's showcase videos, Macaron's brands (Comfyture's own), Toaster's drafts. */
+/** The examples of each store: Kitchen's film, Spice's shots, Jam's showcase videos and songs, Macaron's brands (Comfyture's own), Toaster's drafts. */
 const EXAMPLE_KINDS: Record<string, ExampleKind> = {
   "spice-shots": { name: "spice", dir: join(EXAMPLES, "spice"), spec: "shot.json", ledger: ledgerOf("spice-shots"), kept: keptIn("spice-shots"), drop: dropFrom("spice-shots"), put: putSpiceShot },
   jams: {
@@ -1099,6 +1145,8 @@ const EXAMPLE_KINDS: Record<string, ExampleKind> = {
     drop: async (id) => (await dropFrom("jams")(id), await dropFrom("cuts")(`cut-${id}`)),
     put: putJam,
   },
+  // (after the videos: the songs are then the newest of the library, the first on The song's shelf)
+  songs: { name: "jam songs", dir: join(EXAMPLES, "songs"), spec: "song.json", ledger: join(data, "audio", ".seeded"), kept: keptSong, drop: dropSong, put: putSong },
   brands: {
     name: "macaron",
     dir: join(EXAMPLES, "macaron"),
@@ -1272,6 +1320,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   }
   if (path === "/api/audio" && method === "GET") {
     // every sound kept, newest first: those noted, and any file on disk from before the index
+    await seedStore("songs");
     const index = await readAudioIndex();
     const files = (await readdir(join(data, "audio")).catch(() => [] as string[])).filter((f) => /\.(mp3|wav|ogg|flac|m4a)$/i.test(f));
     const list: AudioEntry[] = [];

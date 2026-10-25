@@ -16,6 +16,11 @@ export interface AudioEntry {
   /** The video cover's url (a kept clip) and its length in seconds. */
   coverVideo?: string;
   coverSeconds?: number;
+  /** What a shipped song was made from (its style, words, tempo and key), for a video that takes it as its track. */
+  tags?: string;
+  lyrics?: string;
+  bpm?: number;
+  key?: string;
 }
 
 export interface CoverRequest {
