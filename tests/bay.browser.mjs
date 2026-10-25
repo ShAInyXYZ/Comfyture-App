@@ -259,11 +259,24 @@ try {
   ok((await page.locator(".bay-planstep").count()) === 4, "and Paprika's plan");
   await shot("09-reload");
 
+  // ---- Finish: the export is free and on this machine; the ledger is a file to keep
+  await step("finish").click();
+  await settle();
+  await page.locator(".bay-export select[aria-label=Format]").selectOption("webm");
+  await page.locator(".bay-export .bay-ghost", { hasText: "Export" }).click();
+  await page.waitForSelector('.bay-step[data-stage="finish"] .bay-lamp[data-tone="done"]', { timeout: 60000 });
+  await settle(400);
+  ok(/Export WEBM/.test(await page.locator(".bay-take-text b").first().textContent()) && /free/.test(await page.locator(".bay-take-meta").first().textContent()), "the export is a free take of Finish");
+  const [download] = await Promise.all([page.waitForEvent("download"), page.locator(".bay-export .bay-ghost", { hasText: "Ledger" }).click()]);
+  const ledger = await readFile(await download.path(), "utf8");
+  ok(/Total: 135 credits/.test(ledger) && /Seedance/.test(ledger) && /direct: 135 cr/.test(ledger), "the ledger is a text file with every run and the total", ledger.split("\n").slice(0, 3).join(" / "));
+  await shot("11-finish");
+
   // ---- a laptop
   for (const [w, h] of [[1280, 720], [1366, 768], [1920, 1080]]) {
     await page.setViewportSize({ width: w, height: h });
     await settle(400);
-    for (const id of ["conform", "direct", "control"]) {
+    for (const id of ["conform", "direct", "control", "finish"]) {
       await step(id).click();
       await settle(250);
       s = await scrolls();

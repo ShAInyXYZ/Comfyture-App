@@ -90,7 +90,12 @@ export const ENGINES = [
   e("extend", "bridge", "template_ltx2_3_style_transition", "LTX style transition", "Lightricks", { about: "A transition between two frames in a style", needs: { image: true, images: 2, text: true }, gpu: 18, why: "a styled transition between two scenes" }),
   e("extend", "bridge", "video_minimax_h3_multiframe_reference", "MiniMax H3 multiframe", "MiniMax", { about: "A clip that passes through up to four pictures anywhere in time", needs: { image: true, images: 4, text: true }, gpu: 20, why: "hits several held frames in order" }),
   // Finish
-  e("finish", "picture", "utility_video_frame_interpolation", "FILM frame interpolation", "Google", { about: "Makes the frames between the frames", needs: { video: true }, gpu: 3, why: "smoother motion or slow motion" }),
+  e("finish", "upscale", "utility_seedvr2_video_upscale", "SeedVR2", "ByteDance", { about: "Upscales the clip with a video-aware restorer", needs: { video: true }, gpu: 20, why: "open and faithful: sharper without redrawing" }),
+  e("finish", "upscale", "api_topaz_starlight_precise25", "Topaz Starlight Precise 2.5", "Topaz", { about: "Upscales and restores with Topaz's video model", needs: { video: true }, partner: true, why: "the cleanest upscale of faces and fine detail" }),
+  e("finish", "upscale", "api_topaz_video_enhance", "Topaz Astra Fast", "Topaz", { about: "A quick Topaz upscale", needs: { video: true }, partner: true, why: "fast and cheap for drafts" }),
+  e("finish", "upscale", "utility_video_upscale", "Wan 2.2 Creative upscale", "Alibaba", { about: "Upscales and adds detail a little creatively", needs: { video: true, text: true }, gpu: 22, why: "open; adds texture to soft footage" }),
+  e("finish", "upscale", "api_wavespeed_flshvsr_video_upscale", "WaveSpeed FlashVSR", "WaveSpeed", { about: "A fast video upscale", needs: { video: true }, partner: true, why: "quick and inexpensive" }),
+  e("finish", "picture",  "utility_video_frame_interpolation", "FILM frame interpolation", "Google", { about: "Makes the frames between the frames", needs: { video: true }, gpu: 3, why: "smoother motion or slow motion" }),
   e("finish", "sound", "api_mirelo_video_to_sfx", "Mirelo SFX 2.0", "Mirelo", { about: "Foley timed to the action on screen", needs: { video: true }, partner: true, why: "sound effects locked to the picture" }),
   e("finish", "sound", "api_veed_clean_audio_video", "VEED Clean Audio", "VEED", { about: "Strips noise and music from the speech", needs: { video: true }, partner: true, why: "clean speech, 48 kHz" }),
 ];
@@ -102,7 +107,7 @@ export const DISCOVER = {
   direct: /video_edit(ing)?$|_edit$|motion_transfer|character_replacement|relight/,
   control: /ic_lora|iclora|ltx2_5_(?!i2v|t2v|dfr)|ominiref/,
   extend: /extend|flf2v|multiframe|continuation/,
-  finish: /upscale|interpolation|sfx|clean_audio/,
+  finish: /upscale|enhance|interpolation|sfx|clean_audio/,
 };
 const SKIP = /image_|_image_|t2i|text_to_image|3d|_t2v$|_t2m|_i2m|^api_[a-z_]*_i2v$|speech|voice_clone|svg/;
 
@@ -155,7 +160,7 @@ export const MODES = {
   direct: { words: "Change by words", look: "Relight and look", recast: "Recast a person" },
   control: { union: "Keep the motion", identity: "Hold a character", frame: "Frame and bridge", reference: "From references" },
   extend: { continue: "Continue", bridge: "Bridge two takes" },
-  finish: { picture: "Picture", sound: "Sound" },
+  finish: { upscale: "Upscale", picture: "Motion", sound: "Sound" },
 };
 
 // ---------------------------------------------------------------- the price
@@ -345,6 +350,14 @@ export function ledger(body) {
   const byStage = Object.fromEntries(STAGE_IDS.map((id) => [id, body.log.filter((l) => l.stage === id).reduce((n, l) => n + (l.credits || 0), 0)]));
   return { rows, spent, byStage };
 }
+/** The ledger as a plain text to keep or hand over: every run in time order with its stage, engine, outcome, price and time, and the total. */
+export function ledgerText(body, name = "Shot") {
+  const l = ledger(body);
+  const rows = l.rows.map((r) => [r.at.slice(0, 19).replace("T", " "), r.stage, r.title || r.engine, r.state === "failed" ? "failed" : r.marked ? "pass" : "take", r.credits ? `${r.credits} cr` : "free"]);
+  const widths = [0, 1, 2, 3, 4].map((i) => Math.max(...rows.map((r) => r[i].length), 4));
+  const line = (r) => r.map((c, i) => c.padEnd(widths[i])).join("  ").trimEnd();
+  return [`Spice ledger: ${name}`, "", ...rows.map(line), "", `Total: ${l.spent} credits`, ...STAGE_IDS.filter((id) => l.byStage[id]).map((id) => `  ${id}: ${l.byStage[id]} cr`), ""].join("\n");
+}
 /** The credits spent on the day of `now`, from the logs of the shots given. */
 export function creditsOnDay(bodies, now = new Date()) {
   const day = now.toISOString().slice(0, 10);
@@ -392,6 +405,7 @@ const RULES = [
   { stage: "control", rx: /./, mode: "union", name: "video_ltx2_3_ic_lora" },
   { stage: "extend", rx: /bridge|between|transition|join/i, mode: "bridge", name: "video_ltx2_5_flf2v" },
   { stage: "extend", rx: /./, mode: "continue", name: "api_google_gemini_omni_flash_1_1_extend" },
+  { stage: "finish", rx: /upscal|sharper|4k|1080|1440|resolution|detail|restor/i, mode: "upscale", name: "utility_seedvr2_video_upscale" },
   { stage: "finish", rx: /sound|rain|steps|foley|sfx|noise/i, mode: "sound", name: "api_mirelo_video_to_sfx" },
   { stage: "finish", rx: /speech|voice|clean/i, mode: "sound", name: "api_veed_clean_audio_video" },
   { stage: "finish", rx: /./, mode: "picture", name: "utility_video_frame_interpolation" },

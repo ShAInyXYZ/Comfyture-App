@@ -9,7 +9,7 @@ import { dropdown } from "../controls.js";
 import { setRoom } from "../harnesses.js";
 import {
   bay, loadBays, openShot, newShot, removeShot, rename, setStage, setBrief, setSource, setText, pickEngine, chosen, enginesOfStage, priceNow, problems,
-  pickRef, dropRef, importClip, pickClip, conform, run, stopRun, mark, drop, showTake, workingOn, mediaOfSide, hasPending, takePending, loadCatalog, followStep,
+  pickRef, dropRef, importClip, pickClip, conform, exportClip, downloadLedger, run, stopRun, mark, drop, showTake, workingOn, mediaOfSide, hasPending, takePending, loadCatalog, followStep,
 } from "../bay.js";
 import { STAGES, SAY, PLACEHOLDER, MODES, passOf, takesOf, ledger, creditsOnDay, conformPlan, inputFor, blocked, stageOf, stepDone, engineOf } from "../spice2-model.js";
 import { createViewer } from "../bay-viewer.js";
@@ -153,10 +153,21 @@ function stagePanel(st) {
       h("textarea.field", { rows: "3", maxlength: "2000", placeholder: PLACEHOLDER[st.id].replace(/^Ask Paprika — /, "e.g. "), "aria-label": "Describe the change", dataset: { words: st.id },
         on: { input: (e) => { setText(st.id, e.target.value); recheck(st.id); } } }, f.text)),
     wantsRefs ? refsRow(st, need) : null,
-    h("div.bay-problems", { "aria-live": "polite" }, problemList(ps))),
+    h("div.bay-problems", { "aria-live": "polite" }, problemList(ps)),
+    st.id === "finish" ? exportRow() : null),
     h("div.bay-run", {}, working
       ? h("div.bay-working", {}, h("div.bay-bar", {}, h("i", { style: { width: `${Math.round(working.progress * 100)}%` } })), h("span", {}, `${working.label} · ${Math.round(working.progress * 100)}%`), ghost("Stop", () => stopRun(st.id), { icon: "close" }))
       : yes({ id: `run:${st.id}`, label: picked ? `Run ${picked.title}` : "Pick an engine", price: picked ? price : 0, disabled: !picked || blocked(ps), run: () => run(st.id) })));
+}
+
+/** Finish's export, on this machine (free), and the ledger to keep. */
+function exportRow() {
+  const o = bay.exporting;
+  const pick = (label, key, list) => h("label.bay-export-field", {}, h("span", {}, label), h("select.field", { "aria-label": label, on: { change: (e) => (o[key] = e.target.value) } }, list.map(([v, t]) => h("option", { value: v, selected: o[key] === v }, t))));
+  return h("div.bay-export", {}, h("span.bay-refs-label", {}, "Export (free, on this machine)"),
+    h("div.bay-export-row", {}, pick("Format", "format", [["mp4", "MP4"], ["webm", "WebM"], ["mov", "MOV"]]), pick("Height", "height", [["0", "As it is"], ["720", "720"], ["1080", "1080"], ["1440", "1440"]]),
+      ghost("Export", () => exportClip(), { icon: "download", title: "Write the clip Finish works from as a file of this format" }),
+      ghost("Ledger", downloadLedger, { icon: "key", title: "Save what was run and what it cost as a text file" })));
 }
 
 function refsRow(st, need) {

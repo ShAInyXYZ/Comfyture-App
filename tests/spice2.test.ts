@@ -179,6 +179,7 @@ test("Paprika's pick without a model: the rule of the stage that fits the words,
   assert.equal(m.recommend("control", "make it vertical 9:16").name, "template_ltx2_3_lora_video_outpainting");
   assert.equal(m.recommend("extend", "continue for eight seconds").name, "api_google_gemini_omni_flash_1_1_extend");
   assert.equal(m.recommend("finish", "add rain and steps").name, "api_mirelo_video_to_sfx");
+  assert.equal(m.recommend("finish", "upscale it to 1080").name, "utility_seedvr2_video_upscale");
   assert.equal(m.recommend("conform", "trim it"), null, "Conform is local: no model to pick");
   for (const r of ["clean", "direct", "control", "extend", "finish", "select"]) assert.ok(m.recommend(r, "x"), `${r} always has a pick`);
 });
@@ -230,4 +231,19 @@ test("Paprika's plan: written whole, bounded to eight steps, a step is done when
   assert.equal(m.stepDone(b, { stage: "conform", engine: "" }), true);
   assert.equal(m.stepDone(b, { stage: "direct", engine: "y" }), false);
   assert.deepEqual(m.withPlan(b, null).plan, []);
+});
+
+test("the ledger as text: every run in time order with its price, the total and each stage's share", () => {
+  let b = shot();
+  b = m.addTake(b, "clean", take("/1.mp4", { title: "VOID", credits: 10, at: "2026-10-25T09:00:00.000Z" }));
+  b = m.addTake(b, "direct", { engine: "x", title: "Gemini", state: "failed", credits: 0, at: "2026-10-25T10:00:00.000Z", note: "Refused." });
+  b = m.addTake(b, "direct", take("/2.mp4", { title: "Gemini", credits: 40, at: "2026-10-25T11:00:00.000Z" }));
+  const text = m.ledgerText(b, "yard");
+  const lines = text.split("\n");
+  assert.equal(lines[0], "Spice ledger: yard");
+  assert.match(lines[2], /2026-10-25 09:00:00\s+clean\s+VOID\s+pass\s+10 cr/);
+  assert.match(lines[3], /direct\s+Gemini\s+failed\s+free/);
+  assert.match(lines[4], /direct\s+Gemini\s+pass\s+40 cr/);
+  assert.ok(text.includes("Total: 50 credits") && text.includes("  direct: 40 cr") && text.includes("  clean: 10 cr"));
+  assert.ok(m.ledgerText(m.blankBody()).includes("Total: 0 credits"));
 });

@@ -7,7 +7,7 @@ import { changed, toast } from "./store.js";
 import { keyedSaver } from "./saving.js";
 import { editRun, editStop, editProbe, editPreview } from "./utensils-edit-api.js";
 import { runnerOf, fillInputs, costOf } from "./utensils-cloud.js";
-import { STAGE_IDS, ENGINES, enginesFor, engineOf, priceOf, preflight, blocked, blankBody, normaliseBody, addTake, markTake, removeTake, inputFor, inputInfo, conformPlan, passOf, pickMedia, CONFORM, recommend, mediaOf } from "./spice2-model.js";
+import { STAGE_IDS, ENGINES, ledgerText, enginesFor, engineOf, priceOf, preflight, blocked, blankBody, normaliseBody, addTake, markTake, removeTake, inputFor, inputInfo, conformPlan, passOf, pickMedia, CONFORM, recommend, mediaOf } from "./spice2-model.js";
 
 const KIND = "spice-bays";
 const OPEN = "comfyture.bay.open";
@@ -404,6 +404,49 @@ export async function conform({ maxSeconds = CONFORM.maxSeconds, fps = CONFORM.f
     setBusy(stage, null, shot.id);
     flushShots();
   }
+}
+
+// ---------------------------------------------------------------- Finish: the export, and the ledger to keep
+
+/** What the export has chosen (not kept with the shot): the container and the height (0 is the clip's own). */
+bay.exporting = { format: "mp4", height: "0" };
+
+/** The clip Finish works from, written as a file of the format asked, on this machine (free): a take of Finish. */
+export async function exportClip({ format = bay.exporting.format, height = bay.exporting.height } = {}) {
+  const shot = bay.shot;
+  const stage = "finish";
+  const input = shot && inputFor(shot.body, stage);
+  if (!input) return toast("Bring a clip first.");
+  if (bay.busy.has(`${shot.id}:${stage}`)) return toast("Finish is still working on the last one.");
+  const mark = { label: "Exporting", progress: 0, cancel: null };
+  setBusy(stage, mark, shot.id);
+  const t0 = Date.now();
+  try {
+    const made = await editRun("convert", { video: input.media.file, format, quality: "high", height: String(height), fps: "0", codec: "h264" }, (p) => ((mark.progress = p), update()), (id) => (mark.cancel = () => editStop(id)));
+    const media = pickMedia(made);
+    if (!media) throw new Error("Nothing came back.");
+    media.still = await editPreview("grade", { video: media.file, preset: "none" }, Math.min(0.5, (media.seconds || 1) / 2)).then((x) => x.url).catch(() => undefined);
+    edit((b) => addTake(b, stage, { engine: "local:export", title: `Export ${format.toUpperCase()}${Number(height) ? ` ${height}p` : ""}`, mode: "local", media, from: input.from, fromTake: input.take, credits: 0, source: "local", seconds: (Date.now() - t0) / 1000, note: "Exported on this machine." }), shot);
+    toast(`Exported as ${format.toUpperCase()}.`);
+    return media;
+  } catch (e) {
+    if (!/^Stopped\.?$/.test(e.message)) toast(`Export: ${e.message}`, { tone: "crit" });
+    return null;
+  } finally {
+    setBusy(stage, null, shot.id);
+    flushShots();
+  }
+}
+
+/** The ledger of the open shot as a text file, handed to the browser to save. */
+export function downloadLedger() {
+  if (!bay.shot) return;
+  const url = URL.createObjectURL(new Blob([ledgerText(bay.shot.body, bay.shot.name)], { type: "text/plain" }));
+  const a = Object.assign(document.createElement("a"), { href: url, download: `${bay.shot.name.replace(/[^\w-]+/g, "-").toLowerCase() || "shot"}-ledger.txt` });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 // ---------------------------------------------------------------- a run on Comfy Cloud
