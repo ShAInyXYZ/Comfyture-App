@@ -92,13 +92,13 @@ export function createToaster3d({ data, root, photoPath }: { data: string; root:
   // ---------------------------------------------------------------- is there a ComfyUI to make it on?
   let seen: { at: number; answer: any } | null = null;
   async function target() {
-    if (seen && Date.now() - seen.at < 15_000) return seen.answer;
+    if (seen && Date.now() - seen.at < (seen.answer.local.ok ? 15_000 : 4_000)) return seen.answer;
     const url = base();
     let answer: any;
     try {
       const miss: string[] = [];
       for (const node of NEEDS) {
-        const r = await fetch(`${url}/object_info/${node}`, { signal: AbortSignal.timeout(4000) });
+        const r = await fetch(`${url}/object_info/${node}`, { signal: AbortSignal.timeout(8000) });
         if (!r.ok || !(await r.json())?.[node]) miss.push(node);
       }
       answer = miss.length

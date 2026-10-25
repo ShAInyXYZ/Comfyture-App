@@ -1323,7 +1323,7 @@ function drawObject3d() {
       keyIcon(icon("trash"), "Forget its sheet and model — the files stay in the Library", () => forgetObject(p.id), { disabled: busy || !(s || m), small: true })),
     h("div.ts-obj-body", {}, pic,
       h("div.ts-model-side", {},
-        h("p.ts-meta", {}, STATE_WORDS[state] === "waiting" ? `${tiltOf(p) > 10 ? "Seen from above" : "Seen from the front"}, four views` : sheet ? `${s.modelName ?? "Sheet"} · ${sheet.cost ?? ""}`.trim() : "Drawing…", twin ? ` · one of ${twin + 1} alike: its own variation` : ""),
+        h("p.ts-meta", {}, state === "waiting" ? `${tiltOf(p) > 10 ? "Seen from above" : "Seen from the front"}, four views` : sheet ? `${s.modelName ?? "Sheet"} · ${sheet.cost ?? ""}`.trim() : "Drawing…", twin ? ` · one of ${twin + 1} alike: its own variation` : ""),
         h("ol.ts-steps", {},
           step(1, "Draw its four views", s?.status === "running" ? `${Math.round((s.progress ?? 0) * 100)}%` : sheet ? sheet.modelName ?? "" : s?.status === "failed" ? "failed" : sheetPrice().words, !!sheet, s?.status === "running", s?.status === "failed"),
           step(2, "Cut them: front, back, left, right", sheet ? "ready" : "", m?.status === "done", m?.status === "running" && (m.progress ?? 0) < 0.04),

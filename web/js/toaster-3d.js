@@ -83,9 +83,9 @@ export function setSolid(partId, on) {
   changed("toaster-runs");
 }
 
-/** Where a model can be made, read once (free): the person's own ComfyUI, or Comfy Cloud. */
-export async function loadTarget() {
-  if (gen.target) return gen.target;
+/** Where a model can be made, read once (free): the person's own ComfyUI, or Comfy Cloud. `fresh` asks again (a ComfyUI started since). */
+export async function loadTarget(fresh = false) {
+  if (gen.target && !fresh) return gen.target;
   try {
     gen.target = await call(`${GEN}/target`);
   } catch {
@@ -220,7 +220,7 @@ export async function makeModel(partId, { quality = "web" } = {}) {
   const part = partsNow().find((p) => p.id === partId);
   const sheet = sheetOf(partId);
   if (!draft || !part || !sheet) return null;
-  await loadTarget();
+  await loadTarget(gen.target?.local?.ok === false);
   const via = route();
   const m = { id: runId(), part: partId, sheet: sheet.id, via, quality, status: "running", progress: 0.02, stage: "Cutting the four views", at: new Date().toISOString() };
   b.models.unshift(m);
