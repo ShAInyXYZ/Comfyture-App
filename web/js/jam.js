@@ -1188,6 +1188,8 @@ export function lampsOf(j = jam.jam) {
 export function spentOf(j = jam.jam) {
   const b = j?.body;
   if (!b || !cloud()) return null;
+  // a video Jam ships came made: nothing was spent on it here (its id begins "jam-", a person's own "jams-")
+  if (/^jam-/.test(j.id ?? "")) return 0;
   let n = 0;
   if (b.track?.kind === "made") n += costOfSong(b.track.seconds ?? 30);
   if (b.vocals) n += costOfWords((b.span?.to ?? 0) - (b.span?.from ?? 0)) ?? 0;
