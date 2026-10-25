@@ -5,7 +5,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { loadKnowledge, searchKnowledge, knowledgeById, words, type Entry } from "../server/utensils-knowledge.ts";
@@ -19,7 +19,11 @@ const tools: Entry[] = read("knowledge/utensils/tools.json");
 const workflows: Entry[] = read("knowledge/utensils/workflows.json");
 const all = [...tools, ...workflows];
 const byId = new Map(all.map((e) => [e.id, e]));
-const catalogue: any[] = read("data/templates/index.json").flatMap((c: any) => c.templates ?? []);
+// the catalogue of Comfy Cloud's workflows, as Utensils keeps it on its first visit: a fresh clone has none, and the checks against it
+// wait for one (the knowledge files themselves are checked all the same)
+const CATALOGUE = "data/templates/index.json";
+const catalogue: any[] = existsSync(join(root, CATALOGUE)) ? read(CATALOGUE).flatMap((c: any) => c.templates ?? []) : [];
+const noCatalogue = catalogue.length ? false : `no ${CATALOGUE} yet: Utensils writes it on its first visit, with Comfy Cloud reachable`;
 
 const KINDS = new Set(["image", "video", "audio", "words", "3d", "mask", "none"]);
 const SECTIONS = new Set(["picture", "video", "audio", "vfx", "edit"]);
@@ -48,7 +52,7 @@ function registry() {
 
 test("the files load whole: every entry has every field, of the right shape, and no id twice", () => {
   assert.ok(tools.length >= 40, `${tools.length} tools`);
-  assert.equal(workflows.length, catalogue.length);
+  if (catalogue.length) assert.equal(workflows.length, catalogue.length);
   assert.equal(byId.size, all.length, "no id twice");
   for (const e of all) {
     for (const f of FIELDS) assert.ok(f in e, `${e.id} has ${f}`);
@@ -74,7 +78,7 @@ test("every tool on the shelf has an entry, and every tool entry is a tool on th
   for (const t of tools) assert.equal(t.open.tool, t.id);
 });
 
-test("every workflow of the catalogue has an entry that opens it, and the other way round", () => {
+test("every workflow of the catalogue has an entry that opens it, and the other way round", { skip: noCatalogue }, () => {
   const names = new Set(catalogue.map((t) => t.name));
   for (const t of catalogue) {
     const e = byId.get(`wf:${t.name}`);
@@ -92,7 +96,7 @@ test("every id an entry points at (before, after) exists, and never itself", () 
   }
 });
 
-test("the most used workflows, the mini apps and every workflow with a tutorial are written by hand", () => {
+test("the most used workflows, the mini apps and every workflow with a tutorial are written by hand", { skip: noCatalogue }, () => {
   const hand = (name: string) => ["what", "how", "goodFor", "limits"].every((f) => byId.get(`wf:${name}`)?.curated.includes(f));
   const top = [...catalogue].sort((a, b) => (b.usage ?? 0) - (a.usage ?? 0)).slice(0, 120);
   assert.deepEqual(top.filter((t) => !hand(t.name)).map((t) => t.name), [], "the 120 most used");
