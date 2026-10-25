@@ -138,9 +138,21 @@ const newProject = async () => (await loadStories(), await newStory(), go("story
 
 /** A whole story from one sentence: a new story with the brief, and the writer writing it while Story shows it. */
 /** The prompt as one, two or four variants: each a brief, then its moodboard drawn. */
+/** The idea the empty box shows, and takes when Imagine is pressed with nothing written: run it as it is, or change it first. */
+const IDEA = "an old lighthouse keeper and a girl carry a glowing jellyfish back to the sea";
+
+function takeIdea() {
+  const field = home.field;
+  if (!field) return;
+  field.value = IDEA;
+  field.dispatchEvent(new Event("input"));
+  field.focus();
+  field.setSelectionRange(IDEA.length);
+}
+
 async function imagine() {
   const brief = home.brief.trim() || (home.refs.length ? "A short film built around the attached references." : "");
-  if (!brief) return home.field?.focus();
+  if (!brief) return takeIdea();
   if (home.adding) return toast("A moment: an attachment is still coming in.");
   if (home.ideas?.writing) return;
   const run = { brief, length: home.length, aspect: home.aspect, genre: home.genre, refs: home.refs.slice(0, MAX_REFS), count: home.count, takes: [], writing: true };
@@ -168,7 +180,7 @@ async function imagine() {
 
 /** The prompt made into a whole film: one variant, started, and carried to the rendered film. */
 function makeTheFilm() {
-  if (!home.brief.trim() && !home.refs.length) return home.field?.focus();
+  if (!home.brief.trim() && !home.refs.length) return takeIdea();
   return makeFilm({
     variant: async () => {
       const count = home.count;
@@ -479,7 +491,7 @@ function hero() {
     const r = home.refs.find((x) => x.name === name);
     return r ? { url: refPicture(r) } : null;
   };
-  const field = pillField({ placeholder: "an old lighthouse keeper and a girl carry a glowing jellyfish back to the sea", label: "What the film is about", lookup, className: "home-brief", peek: false });
+  const field = pillField({ placeholder: IDEA, label: "What the film is about", lookup, className: "home-brief", peek: false });
   field.value = home.brief;
   home.field = field;
   field.addEventListener("keydown", (e) => mentionKeys(e) || (e.key === "Enter" && !e.shiftKey && !e.isComposing && (e.preventDefault(), home.full ? makeTheFilm() : imagine())));
