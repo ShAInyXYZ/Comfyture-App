@@ -50,8 +50,8 @@ export function whileSeen(el, start, stop) {
 /** Whether motion is asked for (a person who asked for less gets the still picture). */
 export const calm = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
-/** A drag along an element, in 0..1 of its width (or height), with the keyboard's arrows: `set(fraction)`. */
-export function drag(el, set, { axis = "x", keys = true, start = 0.5 } = {}) {
+/** A drag along an element, in 0..1 of its width (or height), with the keyboard's arrows (on `keyTarget`, the element itself by default): `set(fraction)`. */
+export function drag(el, set, { axis = "x", keys = true, start = 0.5, keyTarget = el } = {}) {
   let value = start;
   const put = (v) => set((value = Math.min(1, Math.max(0, v))));
   const at = (e) => {
@@ -74,7 +74,7 @@ export function drag(el, set, { axis = "x", keys = true, start = 0.5 } = {}) {
     el.addEventListener("pointercancel", up, { once: true });
   });
   if (keys) {
-    el.addEventListener("keydown", (e) => {
+    keyTarget.addEventListener("keydown", (e) => {
       const step = e.shiftKey ? 0.2 : 0.05;
       if (["ArrowLeft", "ArrowDown"].includes(e.key)) (e.preventDefault(), put(value - step));
       else if (["ArrowRight", "ArrowUp"].includes(e.key)) (e.preventDefault(), put(value + step));

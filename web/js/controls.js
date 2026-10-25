@@ -160,13 +160,16 @@ export function stick(panel, trigger, close) {
  * resting on its header, a tap, or the arrows reaching it. Arrows move, Enter picks, Escape or a
  * click elsewhere closes.
  */
+let menus = 0;
 export function dropdown({ items, value, onChange, label, onOpen, onClose, note, width: fit }) {
   const current = () => items.find((i) => i.value === value) ?? items[0];
   const chev = '<svg class="sel-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
   const trigger = document.createElement("button");
   trigger.type = "button";
   trigger.className = "sel-trigger";
+  trigger.setAttribute("role", "combobox");
   trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
   trigger.setAttribute("aria-label", label);
   const face = (item) => {
     const text = document.createElement("span");
@@ -207,6 +210,9 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
     menu.remove();
     menu = null;
     trigger.dataset.state = "closed";
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.removeAttribute("aria-controls");
+    trigger.removeAttribute("aria-activedescendant");
     document.removeEventListener("pointerdown", outside, true);
     onClose?.();
   };
@@ -271,6 +277,8 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
   const highlight = (i, how = "pointer") => {
     at = (i + items.length) % items.length;
     rows.forEach((n, k) => n.toggleAttribute("data-highlighted", k === at));
+    // the focus stays on the trigger, so the row the arrows are on is told to a screen reader by the trigger
+    if (rows[at]) trigger.setAttribute("aria-activedescendant", rows[at].id);
     if (how === "pointer") return;
     const row = rows[at];
     const fold = groups.get(items[at].group)?.fold;
@@ -293,6 +301,10 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
     menu = document.createElement("div");
     menu.className = "sel-menu";
     menu.setAttribute("role", "listbox");
+    menu.id = `sel-menu-${++menus}`;
+    menu.setAttribute("aria-label", label);
+    trigger.setAttribute("aria-expanded", "true");
+    trigger.setAttribute("aria-controls", menu.id);
     if (fit) menu.classList.add("is-fit");
     rows = [];
     groups = new Map();
@@ -303,6 +315,8 @@ export function dropdown({ items, value, onChange, label, onOpen, onClose, note,
       row.type = "button";
       row.className = "sel-item";
       row.setAttribute("role", "option");
+      row.id = `${menu.id}-${i}`;
+      row.setAttribute("aria-selected", String(item.value === value));
       if (item.value === value) row.toggleAttribute("data-selected", true);
       row.append(face(item));
       if (item.meta) {

@@ -23,7 +23,7 @@ export function videoSection() {
   const small = h("button.hv-mini", { type: "button", title: "Play or pause", "aria-label": "Play or pause", on: { click: () => toggle() } }, icon("play"));
   const clockEl = h("span.hv-clock", {}, "00:00 / 00:06");
   const fill = h("i", {});
-  const track = h("div.hv-track", { role: "slider", tabindex: "0", "aria-label": "Position in the sample", on: { pointerdown: (e) => seek(e), keydown: (e) => { if (e.key === "ArrowRight") film.currentTime = Math.min(film.duration || 6, film.currentTime + 1); if (e.key === "ArrowLeft") film.currentTime = Math.max(0, film.currentTime - 1); } } }, fill);
+  const track = h("div.hv-track", { role: "slider", tabindex: "0", "aria-label": "Position in the sample", "aria-valuemin": "0", "aria-valuemax": "6", "aria-valuenow": "0", on: { pointerdown: (e) => seek(e), keydown: (e) => { if (e.key === "ArrowRight") film.currentTime = Math.min(film.duration || 6, film.currentTime + 1); if (e.key === "ArrowLeft") film.currentTime = Math.max(0, film.currentTime - 1); } } }, fill);
   const stage = h("div.hv-stage", { title: "A sample loop: nothing here runs a tool." }, film, h("span.hv-ratio", {}, "21:9"), playKey, h("div.hv-bar", {}, small, clockEl, track));
   let loaded = false;
   function toggle() {
@@ -48,6 +48,8 @@ export function videoSection() {
   film.addEventListener("timeupdate", () => {
     const d = film.duration || 6;
     fill.style.width = `${(film.currentTime / d) * 100}%`;
+    track.setAttribute("aria-valuemax", String(Math.round(d)));
+    track.setAttribute("aria-valuenow", String(Math.round(film.currentTime)));
     clockEl.textContent = `${clock(film.currentTime)} / ${clock(d)}`;
   });
   film.addEventListener("loadedmetadata", () => (clockEl.textContent = `00:00 / ${clock(film.duration || 6)}`));
@@ -55,11 +57,11 @@ export function videoSection() {
   whileSeen(stage, () => {}, () => film.pause());
 
   // ------------------------------------------------------------ the film strip
-  const strip = h("div.hv-film", { role: "list", "aria-label": "Video tools" });
+  const strip = h("div.hv-film", { role: "group", "aria-label": "Video tools" });
   function build() {
     const list = FRAMES.map((f) => ({ ...f, tool: find(f.id) })).filter((f) => f.tool);
     strip.replaceChildren(...list.map((f, i) => h(`button.hv-frame${i === 0 ? ".is-on" : ""}`, {
-      type: "button", role: "listitem", dataset: { tool: f.id }, title: `${f.tool.name}: ${f.tool.hint ?? ""}`,
+      type: "button", dataset: { tool: f.id }, title: `${f.tool.name}: ${f.tool.hint ?? ""}`,
       on: { click: () => openTool(f.tool), pointerenter: () => light(f.id), focus: () => light(f.id) },
     },
     h("img", { src: `${DIR}/${f.img}.webp`, alt: "", draggable: false, loading: "lazy", decoding: "async" }),

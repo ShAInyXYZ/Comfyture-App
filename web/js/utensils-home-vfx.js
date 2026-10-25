@@ -30,8 +30,8 @@ export function vfxSection() {
     const x = (v) => (p.big ? -SLANT + v * (100 + 2 * SLANT) : v * 100);
     const before = photo(art.before);
     const after = photo(art.after);
-    const lineEl = h("span.hx-line", {}, h("i", {}, icon("chevron"), icon("chevron")));
-    const el = h(`figure.hx-panel${p.big ? ".is-big" : ""}`, { dataset: { tool: tool.id }, role: "slider", tabindex: "0", "aria-label": `${tool.name}: before and after (drag the line)`, "aria-valuemin": "0", "aria-valuemax": "100", title: "A sample: drag the line. Nothing here runs a tool." },
+    const lineEl = h("span.hx-line", { role: "slider", tabindex: "0", "aria-label": `${tool.name}: before and after (drag the line, or use the arrow keys)`, "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": "50" }, h("i", {}, icon("chevron"), icon("chevron")));
+    const el = h(`figure.hx-panel${p.big ? ".is-big" : ""}`, { dataset: { tool: tool.id }, title: "A sample: drag the line. Nothing here runs a tool." },
       h("div.hx-pic.is-before", {}, before),
       h("div.hx-pic.is-after", {}, after),
       lineEl,
@@ -41,8 +41,8 @@ export function vfxSection() {
         h(`span.hx-way.is-${way}`, { title: vfxById(tool.id).tag ?? "" }, MARK[way])));
     const slider = drag(el, (v) => {
       el.style.setProperty("--x", `${x(v).toFixed(2)}%`);
-      el.setAttribute("aria-valuenow", String(Math.round(v * 100)));
-    }, { start: p.from });
+      lineEl.setAttribute("aria-valuenow", String(Math.round(v * 100)));
+    }, { start: p.from, keyTarget: lineEl });
     running.push({ el, slider, pace: p.pace, k: back(p.from) });
     return el;
   }
@@ -53,7 +53,7 @@ export function vfxSection() {
     last = now;
     for (const r of running) {
       // a line that is held, or has a hand over it, stays where it is, and goes on from there
-      if (r.el.matches(".is-dragging, :hover, :focus-visible")) {
+      if (r.el.matches(".is-dragging, :hover, :has(:focus-visible)")) {
         r.held = true;
         continue;
       }

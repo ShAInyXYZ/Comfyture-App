@@ -90,7 +90,7 @@ export function headBand() {
   const credits = h("span.hp-st-credits", {});
   const spark = h("span.hp-st-spark", {});
   const status = h("aside.hp-status", { "aria-label": "What is running" },
-    h("div.hp-st-top", {}, thumb, h("div.hp-st-text", {}, h("div.hp-st-row", {}, name, pct), h("span.hp-st-bar", { role: "progressbar" }, bar), sub)),
+    h("div.hp-st-top", {}, thumb, h("div.hp-st-text", {}, h("div.hp-st-row", {}, name, pct), h("span.hp-st-bar", { role: "progressbar", "aria-label": "Progress of what is running", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": "0" }, bar), sub)),
     h("div.hp-st-foot", {}, spark, credits));
 
   const el = h("header.hp-head", {},
@@ -111,6 +111,7 @@ export function headBand() {
       name.textContent = job.label;
       pct.textContent = job.status === "running" ? (p > 1 ? `${p}%` : "…") : job.status === "done" ? "Done" : job.status === "failed" ? "Failed" : "Stopped";
       bar.style.width = `${job.status === "done" ? 100 : p}%`;
+      bar.parentElement.setAttribute("aria-valuenow", String(job.status === "done" ? 100 : p));
       status.dataset.state = job.status;
       sub.textContent = job.status === "running" ? (typeof job.credits === "number" ? `≈ ${Math.round(job.credits)} cr` : "on your machine") : "";
     } else {
@@ -122,6 +123,7 @@ export function headBand() {
       name.textContent = "Nothing running";
       pct.textContent = "";
       bar.style.width = "0%";
+      bar.parentElement.setAttribute("aria-valuenow", "0");
       sub.textContent = r ? `Last: ${toolById(r.tool).name}, ${ago(r.at)}` : "What you run shows here";
     }
     credits.innerHTML = `<b>${total}</b> cr today`;

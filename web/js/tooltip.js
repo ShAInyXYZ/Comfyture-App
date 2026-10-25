@@ -55,6 +55,10 @@ function place(tip, el, pointerX) {
   tip.style.top = `${Math.round(clamp(y, b.height, innerHeight))}px`;
 }
 
+// what a title may name: a control with nothing of its own to be called by (an icon key, a face) is named by its title; a tip is no name
+const NAMEABLE = "button, a[href], input, select, textarea, summary, [role='button'], [role='link'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], [role='slider'], [role='menuitem'], [role='option']";
+const named = (el) => el.hasAttribute("aria-label") || el.hasAttribute("aria-labelledby") || el.textContent.trim() || el.placeholder || el.labels?.length || el.querySelector("img[alt]:not([alt='']), [aria-label]");
+
 /** A title becomes a tip: the browser's own tooltip would show the same words twice. */
 function migrate(root) {
   if (root.nodeType !== 1) return;
@@ -62,9 +66,20 @@ function migrate(root) {
     if (el.hasAttribute("title") && !el.closest("svg") && el.tagName !== "IFRAME") {
       const text = el.getAttribute("title");
       el.removeAttribute("title");
-      if (text) el.dataset.tooltip = text;
-      else delete el.dataset.tooltip;
+      if (text) {
+        el.dataset.tooltip = text;
+        // taking the title away must not take the control's name with it: its label is the words before the hint
+        if (el.matches(NAMEABLE) && !named(el)) el.setAttribute("aria-label", text.split(/\n| — /)[0].trim());
+      } else delete el.dataset.tooltip;
     }
+  }
+}
+
+/** A lamp that says its state only in its tip (saved, linked) is read out by it: its words are its name. */
+function lamps(root) {
+  if (root.nodeType !== 1) return;
+  for (const el of [root, ...root.querySelectorAll("[role='status'][data-tooltip]")]) {
+    if (el.matches?.("[role='status']") && el.dataset.tooltip && !el.textContent.trim()) el.setAttribute("aria-label", el.dataset.tooltip.replace(/\n/g, ". "));
   }
 }
 
@@ -149,10 +164,11 @@ export function installTooltips() {
   document.addEventListener("scroll", hide, true);
   // the panels redraw all the time: every title they add becomes a tip
   migrate(document.body);
+  lamps(document.body);
   new MutationObserver((records) => {
     for (const r of records) {
-      if (r.type === "attributes") migrate(r.target);
-      else r.addedNodes.forEach(migrate);
+      if (r.type === "attributes") r.attributeName === "title" ? migrate(r.target) : lamps(r.target);
+      else r.addedNodes.forEach((n) => (migrate(n), lamps(n)));
     }
-  }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["title"] });
+  }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["title", "data-tooltip"] });
 }

@@ -228,7 +228,7 @@
 .hx-head .hp-open { margin-bottom: .5rem; }
 .hx-wall { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .875rem; padding-bottom: 1.875rem; }
 .hx-panel { --x: 50%; position: relative; aspect-ratio: 16 / 9; min-width: 0; margin: 0; overflow: hidden; border-radius: 1.25rem; background: #000; cursor: ew-resize; touch-action: pan-y; box-shadow: 0 18px 40px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 255, 255, .07); transition: box-shadow var(--t-fast); }
-.hx-panel:hover, .hx-panel:focus-visible { box-shadow: 0 18px 40px rgba(0, 0, 0, .45), 0 0 0 2px var(--accent); }
+.hx-panel:hover, .hx-panel:has(.hx-line:focus-visible) { box-shadow: 0 18px 40px rgba(0, 0, 0, .45), 0 0 0 2px var(--accent); }
 .hx-panel.is-big { grid-column: 1 / 3; grid-row: 1 / 3; aspect-ratio: auto; }
 /* the small ones hang at two heights, so the wall is not a grid */
 .hx-panel:nth-child(3), .hx-panel:nth-child(5) { transform: translateY(1.875rem); }
@@ -236,7 +236,7 @@
 .hx-pic img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; }
 .hx-pic.is-after { clip-path: inset(0 0 0 var(--x)); }
 .is-big .hx-pic.is-after { clip-path: polygon(calc(var(--x) + 9%) 0, 100% 0, 100% 100%, calc(var(--x) - 9%) 100%); }
-.hx-line { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.hx-line { position: absolute; inset: 0; z-index: 3; pointer-events: none; outline: none; }
 .hx-line::before { content: ""; position: absolute; top: 0; bottom: 0; left: var(--x); width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 10px rgba(0, 0, 0, .55); }
 .is-big .hx-line::before { left: 0; width: 100%; margin: 0; clip-path: polygon(calc(var(--x) + 9%) 0, calc(var(--x) + 9% + 2px) 0, calc(var(--x) - 9% + 2px) 100%, calc(var(--x) - 9%) 100%); }
 .hx-line i { position: absolute; top: 50%; left: var(--x); display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; margin: -1.125rem 0 0 -1.125rem; border-radius: 50%; background: rgba(20, 20, 22, .82); backdrop-filter: blur(4px); color: #fff; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .85); }

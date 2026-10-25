@@ -70,7 +70,7 @@ export function pictureSection() {
     tabs.replaceChildren(...list.map((t) => h("button.hpp-tab", { type: "button", role: "tab", dataset: { tool: t.id }, "aria-selected": String(t.id === on), on: { click: () => show(t.id) } }, sprite(t.tool.icon), h("span", {}, t.tab))));
     rows.replaceChildren(...list.map((t) => {
       const n = estimate(t.tool);
-      return h(`li.hpp-row${t.id === on ? ".is-on" : ""}`, { dataset: { tool: t.id }, tabindex: "0", on: { click: () => show(t.id), keydown: (e) => e.key === "Enter" && show(t.id) } },
+      return h(`li.hpp-row${t.id === on ? ".is-on" : ""}`, { dataset: { tool: t.id }, tabindex: "0", "aria-label": `${t.tool.name}: ${t.promise}`, on: { click: () => show(t.id), keydown: (e) => e.key === "Enter" && show(t.id) } },
         h("span.hpp-row-icon", {}, sprite(t.tool.icon)),
         h("div.hpp-row-text", {}, h("button.hpp-row-name", { type: "button", title: `Open ${t.tool.name}`, on: { click: (e) => (e.stopPropagation(), openTool(t.tool)) } }, t.tool.name), h("span", {}, t.promise)),
         h("span.hpp-row-price", {}, typeof n === "number" ? `≈ ${n} cr` : "your GPU"),

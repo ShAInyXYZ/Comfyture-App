@@ -652,7 +652,7 @@ function card(f, featured = false) {
   const made = SECTIONS.filter(([key]) => f.outputs?.[key]?.count > 0);
   const single = !f.story && made.length <= 1;
   const el = h("article.film-card", {
-    className: `${featured ? "is-featured" : ""}${armed ? " is-armed" : ""}`, tabindex: "0",
+    className: `${featured ? "is-featured" : ""}${armed ? " is-armed" : ""}`, tabindex: "0", "aria-label": f.name,
     on: { click: () => openFilm(f), keydown: (e) => e.key === "Enter" && e.target === e.currentTarget && openFilm(f), mouseenter: () => playIn(el, true), mouseleave: () => playIn(el, false) },
   },
     h("div.film-cover", {},
