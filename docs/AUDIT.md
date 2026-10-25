@@ -128,12 +128,14 @@ dialogs above.
 
 - Unit (`node --test tests/*.test.ts tests/*.test.mjs`): **418 of 418**. Three had failed since Comfy Cloud added 23 workflows on
   23 October: Utensils' knowledge base was rebuilt from the new catalogue and the seven now among the most used were written by hand.
-- Browser (`tests/*.browser.mjs`): toaster, spice, spice-picture, harnesses, account, oven, toaster-projects pass.
-  - `jam-editor.browser.mjs` was written for Jam's first layout; the track and words pages were redesigned on 21 October. Tonight its
-    first check follows the new cards; from its windows section on (line 112, about 480 lines) it still targets the old grid and needs
-    a rewrite (effort M).
-  - `macaron-ui.browser.mjs`: two checks of Brioche's tools per workspace fail, as they did before tonight (stale against Macaron's
-    panel, to be looked at).
+- Browser (`tests/*.browser.mjs`), every one passing on the afternoon of 25 October: toaster (207 checks), spice, spice-picture,
+  harnesses (146), account, oven, toaster-projects, song-cover, macaron-create, utensils-apps (27), plus the three repaired that day:
+  - `jam-editor.browser.mjs` (165) follows Jam's five workspaces on our own three videos, with the songs' covers, the films in the
+    Library and opening not being an edit;
+  - `macaron-ui.browser.mjs` (148) follows Macaron's five workspaces (its two failing checks were stale; one real bug, the Brand kit
+    3 px past a 1000-high screen, is fixed);
+  - `utensils-apps.browser.mjs`: its failing check was a real bug (a book scrolled into view lost its card), fixed.
+  - Five waits in harnesses and macaron-create did not wait (`waitForFunction` does not await an async check); they poll now.
   - On a loaded machine (other programs kept the load average near 13 tonight) the 3D pages draw slower under software GL; the Toaster
     test now waits for what it checks instead of a fixed moment.
 
@@ -173,8 +175,7 @@ dialogs above.
 - **Small ones**: "Make the songnull" and four other places that wrote *null* on the page; a redraw asked for during a frame was
   lost (checked quiet on every page at rest); deleting the open story toasted "No such project"; Jam called Taro "Your photo".
 
-**Tests**: unit 429 of 429. Browser: harnesses (146 checks), song-cover (40), spice (118), spice-picture (20) pass;
-`utensils-apps` 23 of 24, its hover-card check failing on the last commit too (not from tonight); `jam-editor` still stale.
+**Tests**: unit 436 of 436 by the afternoon; every browser test passes (see Tests above).
 
 **Found by the agents**: fixed later that morning, each with a check: Spice's FX reading "not baked" after a renamed layer was
 read back (the test fails without the fix), a shipped example's FX reading "Baked" over a newer Light or Paint, Roto's subject
@@ -187,9 +188,7 @@ valuable first):
 
 1. Spice: a slow-motion comp plays only the plate's length; the PASS bento is too narrow at 1600×950; at 1366×768 its Trim and
    Footage cards clip their last row.
-2. Jam: an example's song cannot carry its cover; a film ships as a video, not a reel; opening a video with no stored drop or
-   loudness saves it, which marks Toc Toc and Hotel Lobby as worked on.
-3. Spice's cover art (the home banner) still shows the woman in a raincoat; a cover drawn from Paprika's own shot would match the
+2. Spice's cover art (the home banner) still shows the woman in a raincoat; a cover drawn from Paprika's own shot would match the
    rest of the cast.
 
 ## Next, ranked
@@ -197,5 +196,4 @@ valuable first):
 1. Decide the trend sounds and the Toaster mockups (above), before the submission.
 2. Load the Stage's models per piece and mount the Stage on demand (saves ~6 MB gzipped on every first visit).
 3. Load each product's code and styles on its first visit.
-4. Rewrite `jam-editor.browser.mjs` from its windows section on, and look at the two Macaron checks.
-5. Decide the accessibility proposals (fields' edges, the ring over pictures, a skip link: the list under Accessibility).
+4. Decide the accessibility proposals (fields' edges, the ring over pictures, a skip link: the list under Accessibility).
