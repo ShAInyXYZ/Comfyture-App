@@ -14,7 +14,14 @@ import { harnessOf } from "./harnesses.js";
 
 // the tours there are (a product without one has no compass in the header and no chip on its bar)
 const LOADERS = {
+  home: () => import("./tours/home.js"),
+  kitchen: () => import("./tours/kitchen.js"),
+  mixer: () => import("./tours/mixer.js"),
+  jam: () => import("./tours/jam.js"),
+  macaron: () => import("./tours/macaron.js"),
+  spice: () => import("./tours/spice.js"),
   toaster: () => import("./tours/toaster.js"),
+  utensils: () => import("./tours/utensils.js"),
 };
 const ROOMS = new Set(["story", "stage", "shot", "cut", "library"]);
 const SEEN = "comfyture.tours";
