@@ -103,7 +103,7 @@ export default {
       go: async () => (await onExample(), setMode("3d")),
       target: ".ts-mid",
       title: "The 3D page",
-      text: "Four clay views, front, left, back and right, are rendered on one sheet so they agree; then a real **3D model** is made from it, to download as a GLB or put on the Stage as a prop.",
+      text: "Objects are made real **one at a time**, in the order of the list. Each gets its own four-view sheet, drawn from its clay by an image model, cut into front, back, left and right, and turned into a textured **3D model** (Trellis2, on your own GPU). Then the next. The finished models stand in a **new scene**, each where its clay was.",
     },
     {
       go: scene,
