@@ -11,9 +11,7 @@
  "preview": "preview.mp4",
  "poster": "poster.webp",
  "sound": {
-  "mix": "sound.m4a",
-  "vocals": "vocals.m4a",
-  "note": "The trend's own song: the vocals drive the mouths, the mix goes under the cut. It is the original recording, so it is replaced or removed before the repository is published."
+  "note": "The trend's own song (its vocals drove the mouths, its mix went under the cut) is the original recording and is not shipped: our version's preview plays silent. A version made from this recipe follows a track Mixer makes in the trend's feel. A recipe that names a sound (\"mix\" for the cut, \"vocals\" for the mouths) uses it instead."
  },
  "source": {
   "mirrored": true,

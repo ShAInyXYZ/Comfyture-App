@@ -4,7 +4,8 @@
 // LTX-2.5, a few seconds at a time; an original track in the trend's feel is made with ACE-Step;
 // and the shots are cut together on it, the trend's caption on top. A trend we have made ourselves
 // is made again from its recipe instead: our version's motion, its first frames redrawn with your
-// cast, and the trend's own sound, the mouths following its vocals.
+// cast, and a track in the trend's feel that the takes follow (the mouths, the beat). The trends'
+// original recordings are not in the repository, so that track is made, as for every other trend.
 import { state, changed, toast, waitFor, drawPicture, artistFor, chosenArtist } from "./store.js";
 import { api } from "./api.js";
 import { mixer, save, newMix, whenOpened, mixLoras } from "./mixer.js";
@@ -163,10 +164,10 @@ async function firstFrame(t, cast, picture = trendArt(t)) {
 }
 
 /** An original track in the trend's feel: never the trend's own song. */
-async function music(t) {
+async function music(t, seconds = Math.ceil(t.seconds) + 1) {
   const m = t.music ?? {};
   const prompt = [m.genre, m.mood, ...(m.instruments ?? []).filter((x) => !/original|new /i.test(x)).slice(0, 4), "an original catchy instrumental for a short video"].filter(Boolean).join(", ");
-  const job = await send("api/audio/music", "POST", { prompt, lyrics: "", seconds: Math.ceil(t.seconds) + 1, bpm: m.bpm ?? 110, name: `${t.name} track` });
+  const job = await send("api/audio/music", "POST", { prompt, lyrics: "", seconds, bpm: m.bpm ?? 110, name: `${t.name} track` });
   const done = await waitFor("job", job.id);
   return { file: done.audio.file, url: done.audio.url };
 }
@@ -196,15 +197,30 @@ export function roleWords(recipe, cast) {
 }
 
 /**
+ * The sound a recipe's takes follow (the mouths, the beat) and the cut plays on: the recipe's own when it names one, else a track
+ * made in the trend's feel, as long as its last take reaches. No recipe names one now (an original's recording is not shipped), so
+ * the track is made first, before a frame is drawn or a take rolled: one that doesn't come out costs nothing else.
+ */
+async function recipeSound(t, recipe, files) {
+  const own = files.vocals ?? files.mix;
+  if (own) return own;
+  const seconds = Math.ceil(Math.max(recipe.seconds, ...recipe.shots.map((s) => s.from + s.frames / 24))) + 1;
+  try {
+    return await music(t, seconds);
+  } catch (e) {
+    throw new Error(`The track didn't come out: ${e.message}`);
+  }
+}
+
+/**
  * A trend we have made, made again from its recipe: each take copies our version's motion (its
- * skeleton or depth), starts on its first frame redrawn with your cast, and keeps the trend's sound
- * for the mouths.
+ * skeleton or depth), starts on its first frame redrawn with your cast, and follows the recipe's
+ * sound (see recipeSound) for the mouths.
  */
 async function fromRecipe(t, cast, m) {
   const recipe = await call(t.recipe);
   const files = await send(`api/mixer/trends/${t.id}/files`, "POST");
-  const voice = files.vocals ?? files.mix;
-  if (!voice) throw new Error("The trend's sound is missing.");
+  const voice = await recipeSound(t, recipe, files);
   const words = roleWords(recipe, cast);
   const fill = (text) => text.replace(/\{(\w+)\}/g, (all, k) => words[k] ?? all);
   // our cast rolls our seeds: the same takes again
@@ -317,7 +333,7 @@ export async function makeTrend() {
   }
 }
 
-/** The takes on the trend's own track, its caption on top: a Cut of its own, rendered. */
+/** The takes on the mix's track, the trend's caption on top: a Cut of its own, rendered. */
 async function cutTogether(m, t, seconds = t.seconds) {
   const items = m.body.shots.map((s, i) => {
     const r = take(s);
@@ -346,8 +362,8 @@ export function estimate(t = trendById(pick.trend)) {
   const redraw = cast.some((c) => !(c.who.crew && c.who.crew === c.original));
   const m = (state.image.catalogue?.models ?? []).find((x) => x.id === castArtist());
   const pic = m?.router ? m.credits ?? 8 : (m?.seconds ?? 10) * 0.266;
-  // a recipe's takes: LTX-2.5 dev at full size, about 45 GPU seconds a second, and a redraw per first frame
-  if (t.made) return Math.round((redraw ? pic * t.made.firsts : 0) + t.made.seconds * 45 * 0.266);
+  // a recipe's takes: LTX-2.5 dev at full size, about 45 GPU seconds a second, a redraw per first frame, and its track (ACE-Step)
+  if (t.made) return Math.round((redraw ? pic * t.made.firsts : 0) + t.made.seconds * 45 * 0.266 + t.seconds * 1.3 * 0.266);
   const seconds = takesOf(t).reduce((s, tk) => s + Math.min(10, Math.max(2, Math.ceil(tk.to - tk.from))), 0);
   return Math.round((redraw ? pic : 0) + seconds * 18 * 0.266 + t.seconds * 1.3 * 0.266);
 }

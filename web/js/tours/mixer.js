@@ -84,7 +84,7 @@ export default {
       go: open(".mx-beats"),
       target: ".mx-beats",
       title: "The recipe",
-      text: `**${trend.name}**, open. Its cover is the first frame your version starts from, and its **beats** say what happens when. Yours keeps them, on the trend's **Original sound**.`,
+      text: `**${trend.name}**, open. Its cover is the first frame your version starts from, and its **beats** say what happens when. Yours keeps them, on **a track of its own** made in the trend's feel.`,
     },
     {
       go: open(".mx-cast-col"),
@@ -110,13 +110,13 @@ export default {
       go: open(".mx-made"),
       target: ".mx-made",
       title: "Made with",
-      text: "A **Picture** model redraws the first frame with your cast, and **LTX-2.5** rolls each take on our version's motion; **LoRAs** can add a style. Each says what it costs.",
+      text: "A **Picture** model redraws the first frame with your cast, **LTX-2.5** rolls each take on our version's motion and **ACE-Step** makes the track; **LoRAs** can add a style. Each says what it costs.",
     },
     {
       go: open(".mx-go"),
       target: ".mx-go",
       title: "Make it",
-      text: "**Make it** draws the first frame, rolls every take and cuts them together on the trend's sound. It costs credits, so I'll play it for you for free.",
+      text: "**Make it** makes the track, draws the first frame, rolls every take and cuts them together. It costs credits, so I'll play it for you for free.",
     },
     {
       go: async () => (await onTrend(), await backToCover(), await into(".mx-preview", "start")),

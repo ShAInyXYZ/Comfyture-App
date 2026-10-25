@@ -11,8 +11,7 @@
  "preview": "preview.mp4",
  "poster": "poster.webp",
  "sound": {
-  "mix": "sound.m4a",
-  "note": "The meme's own sound (three claps, then quiet): it times the paws and plays under the cut. It is the original recording, so it is replaced or removed before the repository is published."
+  "note": "The meme's own sound (three claps, then quiet) is the original recording and is not shipped: our version's preview plays silent. A version made from this recipe follows a track Mixer makes in the trend's feel. A recipe that names a sound (\"mix\" for the cut, \"vocals\" for the mouths) uses it instead."
  },
  "roles": [
   {

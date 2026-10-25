@@ -102,15 +102,13 @@ function recipe(t) {
   const busy = making();
   const cost = trendCost(t);
   const head = [
-    h("div.mx-recipe-title", {}, h("span.label", {}, "Trend recipe"), h("h2", {}, t.name), h("span.mx-recipe-meta", {}, `${t.seconds} s · ${KIND_NAME[t.kind]}${t.caption ? ` · “${t.caption}”` : ""}`, t.recipe ? h("span.mx-chip.is-own", { title: "The trend's own sound plays under your version" }, "Original sound") : null)),
+    h("div.mx-recipe-title", {}, h("span.label", {}, "Trend recipe"), h("h2", {}, t.name), h("span.mx-recipe-meta", {}, `${t.seconds} s · ${KIND_NAME[t.kind]}${t.caption ? ` · “${t.caption}”` : ""}`)),
     h("div.mx-beats", {}, ...t.beats.map((b) => h("div.mx-beat", { style: { flexGrow: String(Math.max(0.6, b.to - b.from)) } }, h("i"), h("b", {}, span(b.from, b.to)), h("span", {}, b.text)))),
-    t.recipe ? null : h("div.mx-music", {},
+    // every trend gets a track made in its feel: the original recordings are not shipped, ours or not
+    h("div.mx-music", {},
       m?.body.music ? keep(`music:${m.body.music.url}`, () => h("audio", { src: m.body.music.url, controls: true, preload: "none" })) : h("span.mx-music-icon", {}, sprite("audio-music")),
       ...[t.music?.bpm ? `${t.music.bpm} BPM` : null, t.music?.genre, t.music?.mood].filter(Boolean).map((x) => h("span.mx-chip", {}, x)),
-      // a trend we have made ourselves keeps its own sound: the mouths follow its vocals
-      t.recipe
-        ? h("span.mx-chip.is-own", { title: "The trend's own sound: the mouths follow its vocals" }, "Original sound")
-        : h("span.mx-chip.is-own", { title: "A new track made for your mix in the trend's feel: never the trend's own song" }, "Our own track")),
+      h("span.mx-chip.is-own", { title: "A new track made for your mix in the trend's feel: never the trend's own song" }, "Our own track")),
   ];
   const rest = [
       // who stars in it beside how it is made
@@ -118,9 +116,8 @@ function recipe(t) {
         h("div.mx-cast-col", {},
           h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "The crew by default. Swap them, or pick your own.")),
           h("div.mx-roles", {}, ...cast.map((c) => role(c)))),
-        // a trend we have made keeps its own sound: no music is made for it
-        madeWith({ music: !t.recipe })),
-      h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
+        madeWith({ music: true })),
+      h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, a track of its own, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
         sprite("product-mixer"), h("span", {}, busy ? (m ? makeFeel(m, t).word : "Making it") : m?.body.film ? "Make it again" : "Make it"), cost && !busy ? h("em", {}, `≈ ${cost} cr`) : null),
   ];
   return h("section.mx-work.mx-recipe", {}, preview(t, m), h("div.mx-recipe-body", {}, ...head, ...rest));
@@ -177,7 +174,8 @@ function makeFeel(m, t) {
   const rolledShare = shots.reduce((sum, s, i) => { const st = shotState(s, i); return sum + (st.step === "done" ? 1 : st.step === "rolling" ? st.progress ?? 0 : 0); }, 0);
   const cut = m.body.film ? 1 : 0;
   const pct = Math.min(1, first * 0.08 + (rolledShare / n) * 0.84 + cut * 0.08);
-  const word = !first ? "Drawing the first frame" : cut ? "Done" : rolledShare >= n ? "Cutting it together" : n > 1 ? `Rolling take ${Math.min(n, Math.floor(rolledShare) + 1)} of ${n}` : "Rolling the take";
+  // (a recipe's track is made before its first frame is drawn, and before it has any shot: see recipeSound)
+  const word = !first ? (t.recipe && !shots.length ? "Making the track" : "Drawing the first frame") : cut ? "Done" : rolledShare >= n ? "Cutting it together" : n > 1 ? `Rolling take ${Math.min(n, Math.floor(rolledShare) + 1)} of ${n}` : "Rolling the take";
   return { pct, word };
 }
 const makingHud = (f) => h("div.mx-hud", { role: "status" },

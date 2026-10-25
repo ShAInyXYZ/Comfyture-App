@@ -12,8 +12,7 @@
  "poster": "poster.webp",
  "caption": "documentary on how I survived my cat's first audition",
  "sound": {
-  "mix": "sound.m4a",
-  "note": "The original's own track (a slow, dramatic instrumental, no speech). It is a commercial recording, so it is replaced or removed before the repository is published."
+  "note": "The original's own track (a slow, dramatic instrumental, no speech) is a commercial recording and is not shipped: our version's preview plays silent. A version made from this recipe follows a track Mixer makes in the trend's feel. A recipe that names a sound (\"mix\" for the cut, \"vocals\" for the mouths) uses it instead."
  },
  "source": {
   "from": 2.5,

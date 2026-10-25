@@ -10,8 +10,7 @@
  "fps": 24,
  "poster": "poster.webp",
  "sound": {
-  "mix": "sound.m4a",
-  "note": "The trend's own sound, under the cut. It is a licensed song, so it is replaced or removed before the repository is published."
+  "note": "The trend's own sound is a licensed song and is not shipped: our version's preview plays silent. A version made from this recipe follows a track Mixer makes in the trend's feel. A recipe that names a sound (\"mix\" for the cut, \"vocals\" for the mouths) uses it instead."
  },
  "roles": [
   {

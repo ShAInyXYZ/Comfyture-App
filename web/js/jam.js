@@ -235,8 +235,9 @@ const feelOf = (t) => {
 
 /**
  * A music video started from a dance trend (the Dance trends shelf): a project of its own, named after the trend, its lead
- * dancer the artist. A trend we have made ourselves brings its own sound as the track and our version of the dance as the
- * moves to copy, in step with that sound; any other gets a track made in its feel (and our version's moves, if it has one).
+ * dancer the artist, and our version of the dance as the moves to copy when we have made one. The track is the trend's own sound
+ * when its recipe ships one, and then the dance is in step with it; none does now (an original's recording is not in the
+ * repository), so a trend waits for a track, with "Make a track" ready in its feel.
  */
 export async function startFromTrend(t) {
   if (!t || jam.starting) return;
@@ -252,31 +253,26 @@ export async function startFromTrend(t) {
     const [artist, moves, files] = await Promise.all([
       lead ? onServer(crewPicture(lead.id), lead.name).catch(() => null) : null,
       t.preview ? fetch(t.preview).then((r) => (r.ok ? r.blob() : Promise.reject(new Error("no moves")))).then((blob) => api.uploadVideo(blob)).catch(() => null) : null,
-      t.recipe ? send(`api/mixer/trends/${t.id}/files`, "POST", {}) : null,
+      // (a sound is a bonus: a recipe without one, or a server that cannot read it, starts the trend without)
+      t.recipe ? send(`api/mixer/trends/${t.id}/files`, "POST", {}).catch(() => null) : null,
     ]);
+    const own = files?.mix?.file ? files.mix : null;
     if (artist) b.artist = { file: artist.file, url: artist.url, width: artist.width, height: artist.height, crew: lead.id };
-    if (moves) b.dance = { file: moves.file, url: moves.url, duration: moves.duration, width: moves.width, height: moves.height, synced: !!t.recipe };
-    if (t.recipe) {
-      const mix = files?.mix;
-      if (!mix?.file) throw new Error(`${t.name} has no sound to start from.`);
-      // (the tempo is for the finder to hear: the trend's catalogued tempo is for a new track made in its feel, and its own sound can differ)
-      setTrack(j, { file: mix.file, url: mix.url, seconds: mix.seconds || t.seconds, name: t.name, kind: "trend" });
-    }
+    if (moves) b.dance = { file: moves.file, url: moves.url, duration: moves.duration, width: moves.width, height: moves.height, synced: !!own };
+    // (the tempo is for the finder to hear: the trend's catalogued tempo is for a new track made in its feel, and its own sound can differ)
+    if (own) setTrack(j, { file: own.file, url: own.url, seconds: own.seconds || t.seconds, name: t.name, kind: "trend" });
+    else b.feel = { prompt: feelOf(t), seconds: Math.max(10, Math.ceil(t.seconds) + 1), bpm: t.music?.bpm ?? 110, name: `${t.name} track` };
     if (jam.jam === j) touched();
     else await send(`api/jams/${j.id}`, "PUT", { name: j.name, body: b });
     if (jam.jam !== j) return;
-    // nothing that costs credits starts by itself: the trend's own sound is cut and its beats heard here;
-    // a trend without a sound of ours waits for one, with "Make a track" ready in its feel
-    if (t.recipe) await cutPart(j);
-    else {
-      b.feel = { prompt: feelOf(t), seconds: Math.max(10, Math.ceil(t.seconds) + 1), bpm: t.music?.bpm ?? 110, name: `${t.name} track` };
-      touched();
-      toast("Add a track, or make one in the trend's feel.");
-    }
+    // nothing that costs credits starts by itself: a trend's own sound is cut and its beats heard here;
+    // one without waits for a track
+    if (own) await cutPart(j);
+    else toast("Add a track, or make one in the trend's feel.");
   } catch (e) {
     toast(e.message, { tone: "crit" });
-    // nothing to start from: the empty project is not kept
-    if (j && t.recipe && !j.body.track) await removeJam(j.id).catch(() => {});
+    // nothing came of it: the empty project is not kept
+    if (j && !j.body.track && !j.body.feel) await removeJam(j.id).catch(() => {});
   } finally {
     jam.starting = null;
     update();

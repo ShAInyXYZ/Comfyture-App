@@ -1,6 +1,6 @@
 // The track: the whole song as one waveform (its sections named, its drop flagged, its beats ticked, played from where you
 // click), and under it three cards: the stems taken apart, the beat found, and the cut, the part of the song the video uses.
-// The ways to start (your song, a song made in The song, a dance trend's own sound) are what the screen shows while there is no
+// The ways to start (your song, a song made in The song, a dance trend) are what the screen shows while there is no
 // song. Nothing that costs credits starts by itself: the keys with "≈ cr" on them are pressed.
 import { h, icon, pad2 } from "../dom.js";
 import { changed, toast } from "../store.js";
@@ -15,11 +15,22 @@ import { card, segs } from "./jam-card.js";
 import { analyse, drawBars } from "./jam-track-audio.js";
 import { stemsOf, lanesEl, playKey, stopStems, toggleStems } from "./jam-track-stems.js";
 
-/** The dance-led trends, those we have made ourselves (their own sound, our version of the dance) first. */
+/** The dance-led trends, those we have made ourselves (with our version of the dance to copy) first. */
 export const DANCES = TRENDS.filter((t) => t.home === "jam").sort((a, z) => Number(!!z.recipe) - Number(!!a.recipe));
 
 let making_ = null; // the "make a track" form, what is typed in it (null: none yet)
-const form = (b) => (making_ ??= { prompt: b?.feel?.prompt ?? "", lyrics: "", seconds: b?.feel?.seconds ?? 30, bpm: b?.feel?.bpm ?? 100 });
+let started_ = null; // what the form started from: the open video's feel, when it brings one
+const feelForm = (b) => ({ prompt: b?.feel?.prompt ?? "", lyrics: "", seconds: b?.feel?.seconds ?? 30, bpm: b?.feel?.bpm ?? 100 });
+const same = (a, z) => a.prompt === z.prompt && a.lyrics === z.lyrics && a.seconds === z.seconds && a.bpm === z.bpm;
+/**
+ * The form is first drawn on an empty video, before a trend is picked on its shelf: a form still as it started is started again from
+ * the feel the video has now (a dance trend's, which has no sound of its own), and one that has been typed in is left alone.
+ */
+const form = (b) => {
+  const now = feelForm(b);
+  if (!making_ || (!same(making_, now) && same(making_, started_))) (making_ = { ...now }), (started_ = now);
+  return making_;
+};
 
 const SECTION_COLOUR = { chorus: "#F2FF59", verse: "#8A76E8", bridge: "#B8A9F5", intro: "#A8A5B5", outro: "#A8A5B5", song: "#A8A5B5" };
 
@@ -212,17 +223,17 @@ function waveBox(b, id = "hero") {
 
 function heroEmpty() {
   const own = DANCES.slice(0, 3);
-  const cost = costOfTrack(form(null).seconds);
+  const cost = costOfTrack(form(jam.jam?.body).seconds);
   return h("section.jt-card.jt-hero.is-empty", { dataset: { card: "hero" } },
     h("div.jt-empty", {},
-      h("div.jt-empty-text", {}, h("h3", {}, "Start with a song"), h("p", {}, "An MP3, a WAV, a video with sound. Or make one from a few words, or take a dance trend's own sound.")),
+      h("div.jt-empty-text", {}, h("h3", {}, "Start with a song"), h("p", {}, "An MP3, a WAV, a video with sound. Or make one from a few words, or start from a dance trend.")),
       h("div.jt-ways", {},
         h("button.jt-way", { type: "button", disabled: jam.busy.has("track"), title: "A song of your own: an MP3, a WAV, or a video with sound (drop it anywhere on this page too)", on: { click: () => pickFile("audio/*,video/*", useTrack) } },
           h("i", {}, jicon("cloudup")), h("b", {}, "Your song"), h("span", {}, "Upload audio or a demo")),
         h("button.jt-way", { type: "button", title: "Make a song from an idea, in The song", on: { click: () => setWorkspace("song") } },
           h("i", {}, jicon("note")), h("b", {}, "Make a song"), h("span", {}, "Turn an idea into a song")),
         h("div.jt-way.is-trends", {},
-          h("b", {}, "From a dance trend"), h("span", {}, "Its own sound, its moves"),
+          h("b", {}, "From a dance trend"), h("span", {}, "Its moves, a track in its feel"),
           h("div.jt-strip", {}, ...own.map((t) =>
             h("button.jt-mini", { type: "button", disabled: !!jam.starting, title: `${t.name}: start a jam from it (free)`, on: { click: () => startFromTrend(t) } },
               h("img", { src: trendArt(t), alt: "", draggable: false, loading: "lazy" }), h("em", {}, t.name), jam.starting === t.id ? h("i.jt-mini-busy", {}, lamp("busy")) : null))),
@@ -449,7 +460,7 @@ const trendCards = () => DANCES.map(trendCard);
 export function trendCard(t) {
   const starting = jam.starting === t.id;
   return h(`div.jm-trend${starting ? ".is-starting" : ""}`, {},
-    h("button.jm-trend-open", { type: "button", disabled: !!jam.starting, title: `${t.name}\n${t.recipe ? "A music video from its own sound and our version of the dance" : "A music video to a track made in its feel"} · ${t.seconds} s\nNothing costs credits until you press a key that says so.`, on: { click: () => startFromTrend(t) } },
+    h("button.jm-trend-open", { type: "button", disabled: !!jam.starting, title: `${t.name}\n${t.recipe ? "A music video on our version of the dance, to a track made in its feel" : "A music video to a track made in its feel"} · ${t.seconds} s\nNothing costs credits until you press a key that says so.`, on: { click: () => startFromTrend(t) } },
       h("img", { src: trendArt(t), alt: "", draggable: false, loading: "lazy" }),
       h("span.jm-trend-len", {}, `0:${pad2(Math.round(t.seconds))}`),
       t.recipe ? h("span.jm-trend-own", {}, jicon("dancer")) : null,
@@ -583,7 +594,7 @@ registerWindow("start", {
             makeKey))),
       h("section.jm-sec", {},
         h("h3", {}, "From a dance trend"),
-        h("p.jm-note", {}, "Its own sound, cut and its beats found here, and the dance to copy. Nothing costs credits until you press a key that says so."),
+        h("p.jm-note", {}, "The dance to copy, where we have made one, and a track to make in the trend's feel. Nothing costs credits until you press a key that says so."),
         h("div.jm-trend-cards", { dataset: { scrollKey: "jm-trends" } }, ...trendCards())),
     ];
   },

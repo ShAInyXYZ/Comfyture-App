@@ -964,7 +964,7 @@ async function putSpiceShot(spec: any, folder: string, id: string, version: numb
  * One of Jam's showcase videos (examples/jam/<id>/project.json beside its media): its media into the library, its video into data/jams
  * and its edit into data/cuts. project.json: { name, rev?, thumb?, jam: the Jam body, cut: { id, name, body }, media: [{ file, to,
  * name?, kind?, cover? }] }, where `to` is where the file goes in data (audio/…, videos/…, photos/…, reels/…) and `file` is a file of the
- * example's folder or one the app already ships (web/brand/…: a trend's sound, a crew picture). A thumb that is a file of the folder goes
+ * example's folder or one the app already ships (web/brand/…: a crew picture). A thumb that is a file of the folder goes
  * in as a photo. A sound's `cover` is a picture of the folder, put into photos as the song's cover. A film (an .mp4 that goes to reels/)
  * is kept as the app's own Export keeps one, a reel with its details beside it, so it is a film of the Library and not only a video.
  */
@@ -1949,7 +1949,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   }
   const trendFiles = /^\/api\/mixer\/trends\/([\w-]+)\/files$/.exec(path);
   if (trendFiles && method === "POST") {
-    // a trend we have made ourselves, to make again: its recipe's controls and sound into the library
+    // a trend we have made ourselves, to make again: its recipe's controls into the library, and its sound if the recipe names one
+    // (none does: an original's recording is not shipped, so the answer's vocals and mix are null and the page makes a track)
     if (!ffmpeg) throw bad("Mixer needs ffmpeg on the server.", 501);
     const dir = join(root, "web", "brand", "mixer", "trends", trendFiles[1]);
     const recipe = await readFile(join(dir, "recipe.json"), "utf8").then(JSON.parse).catch(() => null);

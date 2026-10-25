@@ -82,7 +82,7 @@ Our trend presets are previewed by our own characters doing the trend, instead o
    - For another shape there is no source frame to draw over, so draw the new frame's stage instead: the backdrop, the skeleton, the props where they go. Hang the microphone at the characters' eye height. Left where the people had it, it hangs far above small characters.
    - **When the trend's cover already shows the first shot,** it can be that shot's first frame, so the preview starts on the cover. Smalltown Boy's cover is the source's opening mirrored, a beat in. So the source is mirrored, started there, and each kitten's skeleton is scaled and moved once, for the whole shot, until its first frame's eyes and nose sit on that kitten's face in the cover. The other shots are drawn from the cover (same kitchen, light and kittens), at the source frame's camera and placing. The cover's world replaces the source's.
 5. **Takes,** one per shot, in parallel: `node --env-file=.env scripts/try-swap.ts spec.json` with the rebuilt pose video as the clip and `"control": "ready"`, the first frame, the vocals and the start time, `8n + 1` frames covering the shot plus its held frames, the first stage's size (576×1024 for a 9:16 take of 1152×2048), and a prompt in Lightricks' style: one paragraph, present tense, the action first, each character by name and look, who raps, then the sound.
-6. **The cut:** each take trimmed to its shot's frames, joined, the clip's own sound muxed in.
+6. **The cut:** each take trimmed to its shot's frames, joined, the clip's own sound muxed in for review. The preview that ships is silent (`ffmpeg -i preview.mp4 -an -c:v copy`) and the recipe names no sound: an original's recording is never committed (the 25 October clean-up took out the eleven that were).
 7. **Review** side by side with the source. Review copies use Opus audio: VS Code's player has no AAC decoder and plays AAC videos silent.
 
 The source clips stay in `docs/brand/mixer-crew/` and are never committed; the previews replace them in the app.
@@ -105,10 +105,11 @@ Each trend we have made has a `recipe.json` beside its preview (`web/brand/mixer
 
 Mixer's Make it runs the recipe (`fromRecipe()` in `web/js/mixer-trend.js`):
 
-- `POST /api/mixer/trends/<id>/files` brings the controls (kept at their own size) and the sound into the library.
+- `POST /api/mixer/trends/<id>/files` brings the controls (kept at their own size) into the library, and the sound too when the recipe names one (`sound.mix`, and `sound.vocals` for the mouths). None does: the original recordings are not shipped.
+- With no sound, a track is made first in the trend's feel (ACE-Step, from the trend's `music` in `web/js/mixer-trends.js`, as long as the last take reaches), before a frame is drawn or a take rolled, so one that fails costs nothing else. The takes follow it and the cut plays on it.
 - Each first frame, and each drawn last frame (`end`), is redrawn with the new cast; with ours, it is used as it is.
-- The takes are the "swap" video mode (`swapShot()` in `server/engine.ts`): `shot-swap-dev.json`, the control ready-made, the vocals frozen in from the take's start. A black take is rolled again with its words nudged.
-- Chained takes start on `POST /api/runs/<id>/frame`. The cut lays the takes on the trend's own sound, its caption on top.
+- The takes are the "swap" video mode (`swapShot()` in `server/engine.ts`): `shot-swap-dev.json`, the control ready-made, the track frozen in from the take's start (the mouths follow it). A black take is rolled again with its words nudged.
+- Chained takes start on `POST /api/runs/<id>/frame`. The cut lays the takes on the same track, the trend's caption on top.
 
 ## Traps we hit
 

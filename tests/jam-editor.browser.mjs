@@ -5,8 +5,8 @@
 // Library, none worked on by being looked at); Pickle's panel and the five workspaces each in its own right (the song with its cover, the
 // track, the words, the band, the edit) and every card opening in a window; the record played; beats heard, an effect and stickers put on,
 // a lyric word retimed; undo, redo, save, reload; the film exported and its frames held against the preview's at the same times;
-// Kitchen's Cut and a Mixer-built cut still open and render; a whip; a jam started from a dance trend (whichever of ours brings its own
-// sound); the edit kept right; Pickle's words answered; a song of your own added; and that nothing which costs credits is asked for
+// Kitchen's Cut and a Mixer-built cut still open and render; a whip; a jam started from a dance trend (its dance, no sound of its own, a
+// track to make in its feel); the edit kept right; Pickle's words answered; a song of your own added; and that nothing which costs credits is asked for
 // until its own key is pressed and nothing blocks switching jams or workspaces.
 // Not part of `node --test` (it needs a browser). Run it from the repo root:
 //   NODE_PATH=<a node_modules that has playwright> CHROME=<chrome or chromium binary> node tests/jam-editor.browser.mjs
@@ -63,6 +63,9 @@ try {
   // the requests that cost credits (ACE-Step's tracks and songs, the words heard, a look drawn, a shot rolled): none may be made but by their own keys
   const paid = [];
   page.on("request", (r) => r.method() === "POST" && /\/api\/(audio\/music|audio\/song|jam\/listen|image|shots)$/.test(new URL(r.url()).pathname) && paid.push(new URL(r.url()).pathname));
+  // the requests this server refused or could not answer: a feature that asks for a file it no longer has shows here
+  const failed = [];
+  page.on("response", (r) => r.status() >= 400 && failed.push(`${r.status()} ${new URL(r.url()).pathname}`));
   const body = () => page.evaluate(async () => JSON.parse(JSON.stringify((await import("/js/cut.js")).cut.project.body)));
   const until = async (fn, tries = 120, arg) => {
     for (let i = 0; i < tries; i++) {
@@ -646,40 +649,49 @@ try {
     }
   });
 
-  // ---- a jam started from the shelf of dance trends: the trend's own sound, our version of its dance, the lead as the artist, the beats heard here
-  // (whichever trend of ours brings its own sound: none is named here)
+  // ---- a jam started from the shelf of dance trends: the lead as the artist and our version of its dance (silent: an original's recording is not
+  // shipped), no track yet, with "Make a track" ready in the trend's feel (whichever trend of ours has a dance to copy: none is named here)
   const { shelf, trend } = await page.evaluate(async () => {
     const { DANCES } = await import("/js/panels/jam-track.js");
     const { crewById } = await import("/js/mixer-trends.js");
     const t = DANCES.find((x) => x.recipe);
     return { shelf: DANCES.length, trend: t ? { id: t.id, name: t.name, crew: t.cast?.[0]?.crew, lead: crewById(t.cast?.[0]?.crew)?.name } : null };
   });
-  let started = null;
+  let ownId = null;
   await section("a jam started from a dance trend", async () => {
     await page.evaluate(() => (location.hash = "#/jam"));
     await page.waitForSelector(".jam .jm-tile", { timeout: 20000 });
-    // (a video with no song shows the three ways to start: your song, a song made, a dance trend's own sound)
+    // (a video with no song shows the three ways to start: your song, a song made, a dance trend)
     await page.evaluate(() => import("/js/jam.js").then((m) => m.newJam()));
     await workspace("track");
     const empty = await page.evaluate(() => ({ ways: document.querySelectorAll(".jt-ways > .jt-way").length, minis: document.querySelectorAll(".jt-ways .jt-mini").length, names: [...document.querySelectorAll(".jt-ways > .jt-way > b")].map((b) => b.textContent).join() }));
     ok(empty.ways === 3 && empty.minis === Math.min(3, shelf) && empty.names === "Your song,Make a song,From a dance trend", `A video with no song offers three ways in: your song, a song made, a dance trend (${empty.minis} covers of the shelf)`);
     const emptyId = await page.evaluate(() => import("/js/jam.js").then((m) => m.jam.jam.id));
-    if (!trend) return void console.log("SKIP no dance trend of ours brings its own sound: the jam started from one is not tried");
+    if (!trend) return void console.log("SKIP no dance trend of ours has a dance to copy: the jam started from one is not tried");
     const paidBefore = paid.length;
+    const failedBefore = failed.length;
     await page.locator(`.jt-ways .jt-mini:has(em:text-is("${trend.name}"))`).click();
-    ok(await until((t) => import("/js/jam.js").then((m) => m.jam.jam?.body.trend?.id === t && m.jam.jam.id !== undefined && !m.jam.starting && !!m.jam.jam.body.part && m.jam.jam.body.shots.length > 1).catch(() => false), 120, trend.id), `picking ${trend.name} on the shelf starts a jam of its own`);
-    started = await page.evaluate(async () => {
+    ok(await until((t) => import("/js/jam.js").then((m) => m.jam.jam?.body.trend?.id === t && m.jam.jam.id !== undefined && !m.jam.starting && !!m.jam.jam.body.feel).catch(() => false), 120, trend.id), `picking ${trend.name} on the shelf starts a jam of its own`);
+    const started = await page.evaluate(async () => {
       const { jam } = await import("/js/jam.js");
       const b = jam.jam.body;
-      return { id: jam.jam.id, name: jam.jam.name, kind: b.track.kind, artist: b.artist?.crew, synced: b.dance?.synced, beats: b.beats.length, bpm: b.bpm, kinds: [...new Set(b.shots.map((s) => s.kind))] };
+      return { id: jam.jam.id, name: jam.jam.name, track: !!b.track, artist: b.artist?.crew, dance: !!b.dance?.file, synced: b.dance?.synced, feel: b.feel, shots: b.shots.length };
     });
-    ok(started.name === trend.name && started.kind === "trend" && started.artist === trend.crew && started.synced === true, `it has the trend's sound, ${trend.lead} as the artist and the dance in step (${JSON.stringify(started)})`);
-    // (the trend's own sound is heard at its own tempo, which can be twice or half the catalogued one)
-    ok(started.beats > 8 && started.bpm > 50 && started.bpm < 240 && started.kinds.join() === "dance", `its beats were heard here (${started.beats} at ${started.bpm} BPM) and every shot is a dance shot`);
+    ok(started.name === trend.name && started.artist === trend.crew && started.dance && started.synced === false, `it has ${trend.lead} as the artist and our version of the dance, not in step with a sound it does not have (${JSON.stringify({ ...started, feel: undefined })})`);
+    ok(!started.track && started.shots === 0, "and no track: the trend's own recording is not shipped, so there is nothing to cut and no beats to find");
+    ok(/original catchy instrumental/.test(started.feel?.prompt ?? "") && started.feel.bpm > 60 && started.feel.seconds >= 10, `"Make a track" is ready in the trend's feel (${started.feel?.prompt}, ${started.feel?.bpm} BPM)`);
     ok(paid.length === paidBefore, "starting from a trend asked for nothing that costs credits: no track made, no words heard");
+    ok(failed.length === failedBefore, `and no request failed (${failed.slice(failedBefore).join(", ") || "none"})`);
     await page.waitForFunction(() => document.querySelectorAll(".jm-tile em").length === 5);
     const strip = await page.locator(".jm-tile em").allInnerTexts();
-    ok(strip[1].includes("BPM") && strip[3] === trend.lead, `its tiles say so: ${strip.join(" | ")}`);
+    ok(strip[0] === "No song yet" && strip[3] === trend.lead, `its tiles say so: ${strip.join(" | ")}`);
+    // the START window's form carries the feel (the form was first drawn on the empty video that offered the shelf), and its key can be pressed
+    await page.evaluate(() => import("/js/jam.js").then((m) => m.openWindow("start")));
+    await page.waitForSelector(".jm-make input.field");
+    const form = await page.evaluate(() => ({ prompt: document.querySelector(".jm-make input.field").value, key: document.querySelector(".jm-sec .key.is-primary")?.disabled }));
+    ok(/original catchy instrumental/.test(form.prompt) && form.key === false, `the form that makes the track starts from the trend's feel, its key ready (${form.prompt})`);
+    ok(paid.length === paidBefore, "and opening it asked for nothing");
+    await closeWindow();
     // the empty video that offered the shelf is not kept
     await page.evaluate((id) => import("/js/jam.js").then((m) => m.removeJam(id)), emptyId);
   });
@@ -771,7 +783,8 @@ try {
       const c = await import("/js/cut.js");
       c.addFx("shake", { at: 1, length: 2 });
       location.hash = "#/cut";
-      for (let i = 0; i < 60 && (c.cut.quiet || c.cut.project?.id === "cut-jam-la-calabaza"); i++) await new Promise((r) => setTimeout(r, 50));
+      // (Kitchen's Cut puts its own edit back in two steps, the project away and then the edit opened: wait for the second, not the first)
+      for (let i = 0; i < 60 && (c.cut.quiet || !c.cut.project || c.cut.project.id === "cut-jam-la-calabaza"); i++) await new Promise((r) => setTimeout(r, 50));
       c.addTitle("Kept too", 0);
       return c.cut.project.id;
     });
@@ -811,7 +824,7 @@ try {
 
   // ---- nothing blocks: while a dance trend is being started (slowly), the workspaces and the other jams are free
   await section("nothing blocks", async () => {
-    if (!trend) return void console.log("SKIP no dance trend of ours brings its own sound: a jam being started from one is not tried");
+    if (!trend) return void console.log("SKIP no dance trend of ours has a dance to copy: a jam being started from one is not tried");
     await page.route("**/api/mixer/trends/*/files", async (route) => {
       await new Promise((r) => setTimeout(r, 4000));
       await route.continue();
@@ -842,7 +855,8 @@ try {
     await page.locator(".jt-ways .jt-way", { hasText: "Your song" }).click();
     await (await chooser).setFiles(join(root, "examples", "jam", "jam-la-calabaza", "track.mp3"));
     ok(await until(() => import("/js/jam.js").then((m) => !!m.jam.jam.body.part && !m.jam.busy.has("part") && !m.jam.busy.has("track")).catch(() => false), 60), "a song added is cut, and its beats are found here");
-    const own = await page.evaluate(() => import("/js/jam.js").then((m) => ({ kind: m.jam.jam.body.track.kind, bpm: m.jam.jam.body.bpm, name: m.jam.jam.name })));
+    const own = await page.evaluate(() => import("/js/jam.js").then((m) => ({ id: m.jam.jam.id, kind: m.jam.jam.body.track.kind, bpm: m.jam.jam.body.bpm, name: m.jam.jam.name })));
+    ownId = own.id;
     ok(own.kind === "upload" && own.name === "track", `the jam is named after the song (${own.name}), ${own.bpm} BPM`);
     ok(paid.length === 0, `nothing in all of that asked for credits (${paid.join(", ") || "no paid request"})`);
   });
@@ -907,9 +921,11 @@ try {
     await openJam("jam-la-calabaza");
     await workspace("band");
     ok(!/cr/.test(await page.locator(".jm-cast-key").innerText()), "the band of a shipped video has everything made: its key has no price even on Comfy Cloud");
-    // the band of a jam started from a trend has shots to roll: its key says what they cost, and asks twice
-    if (started) {
-      await openJam(started.id);
+    // the band of a jam made on a song of the person's own has shots to roll: its key says what they cost, and asks twice
+    if (ownId) {
+      await openJam(ownId);
+      // (one of the crew as its artist, free: the key needs a lead before it can be pressed)
+      await page.evaluate(() => import("/js/jam.js").then((m) => m.useCrew("praline")));
       await workspace("band");
       await page.waitForFunction(() => /Cast the band\s*≈ \d+ cr/.test(document.querySelector(".jm-cast-key")?.textContent.replace(/\s+/g, " ") ?? ""));
       const sent = paid.join();
@@ -919,7 +935,7 @@ try {
       ok(paid.join() === sent, "the first press of the key that casts the band says what it will cost, and asks for nothing");
       await page.locator(".jm-cast-key").click();
       ok(await asked(`${sent},/api/image`), `the second press asks for the looks of the shots, and only that (${paid.join()})`);
-    } else console.log("SKIP no jam was started from a dance trend: the key that casts its band is not tried");
+    } else console.log("SKIP no jam was made on a song of the person's own: the key that casts its band is not tried");
   });
   ok(errors.length === 0, `no page errors${errors.length ? `: ${errors.slice(0, 3).join(" | ")}` : ""}`);
 
