@@ -215,3 +215,19 @@ test("a body from anywhere is shaped: junk is dropped, a mark that points at not
   assert.equal(b.log[1].credits, 0);
   assert.equal(b.stages.bogus, undefined);
 });
+
+test("Paprika's plan: written whole, bounded to eight steps, a step is done when its stage has a pass by its engine", () => {
+  let b = shot();
+  const steps = [{ stage: "conform" }, { stage: "clean", engine: "utility_void_video_inpainting", text: "the van", why: "shadow too" }, { stage: "nope" }, ...Array.from({ length: 12 }, () => ({ stage: "direct", engine: "x" }))];
+  b = m.withPlan(b, steps);
+  assert.equal(b.plan.length, 8);
+  assert.equal(b.plan[1].why, "shadow too");
+  assert.equal(m.normaliseBody(b).plan.length, 8, "kept across a save");
+  assert.equal(m.stepDone(b, b.plan[1]), false);
+  b = m.addTake(b, "clean", take("/c.mp4", { engine: "utility_void_video_inpainting" }));
+  assert.equal(m.stepDone(b, b.plan[1]), true);
+  b = m.addTake(b, "conform", take("/k.mp4", { engine: "local:conform" }));
+  assert.equal(m.stepDone(b, { stage: "conform", engine: "" }), true);
+  assert.equal(m.stepDone(b, { stage: "direct", engine: "y" }), false);
+  assert.deepEqual(m.withPlan(b, null).plan, []);
+});

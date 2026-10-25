@@ -12,13 +12,13 @@ export const FIRST = 1001;
  * beside its name; `makes` is what it hands on; `clip` says its pass is a clip the next stage can take (Select's is a matte beside).
  */
 export const STAGES = [
-  { id: "conform", name: "Conform", icon: "film-make", verb: "Prepare the clip", makes: "the clip trimmed and set to the size and rate the editors take", clip: true, local: true },
+  { id: "conform", name: "Conform", icon: "tool-edit-trim", verb: "Prepare the clip", makes: "the clip trimmed and set to the size and rate the editors take", clip: true, local: true },
   { id: "select", name: "Select", icon: "tool-cutout", verb: "Pick the subject", makes: "a matte of the subject, tracked through the clip", clip: false },
   { id: "clean", name: "Clean", icon: "tool-fx-remove", verb: "Take something out", makes: "the clip with the object, the subtitles or the logo gone", clip: true },
   { id: "direct", name: "Direct", icon: "tool-vfx", verb: "Change it by words", makes: "the clip edited as described, relit or recast", clip: true },
   { id: "control", name: "Control", icon: "tool-fx-relight", verb: "Redraw it under a guide", makes: "the clip drawn again by LTX under the guide of the source", clip: true },
-  { id: "extend", name: "Extend", icon: "tool-fx-master", verb: "Make it longer", makes: "the clip continued, or a bridge between two takes", clip: true },
-  { id: "finish", name: "Finish", icon: "tool-upscale", verb: "Finish and export", makes: "the clip upscaled, with its sound, ready to deliver", clip: true },
+  { id: "extend", name: "Extend", icon: "tool-edit-merge", verb: "Make it longer", makes: "the clip continued, or a bridge between two takes", clip: true },
+  { id: "finish", name: "Finish", icon: "tool-upscale-video", verb: "Finish and export", makes: "the clip upscaled, with its sound, ready to deliver", clip: true },
 ];
 export const STAGE_IDS = STAGES.map((s) => s.id);
 export const stageOf = (id) => STAGES.find((s) => s.id === id) ?? null;
@@ -34,13 +34,13 @@ export const SAY = {
   finish: "Everything is cut. Ready to finish?",
 };
 export const PLACEHOLDER = {
-  conform: "Ask Paprika: trim to the first eight seconds, which models take this clip?",
-  select: "Ask Paprika: follow the boy with the lantern, the van on the left",
-  clean: "Ask Paprika: take the van out, the sign in the back, the subtitles",
-  direct: "Ask Paprika: make it a rainy blue hour, swap the street sign for a hand-painted one",
-  control: "Ask Paprika: keep his walk and redraw the look, hold his face from the sheet",
-  extend: "Ask Paprika: continue for eight seconds, the lanterns rise",
-  finish: "Ask Paprika: upscale it, add the rain and the steps, export the reel",
+  conform: "Ask Paprika — trim to the first eight seconds, which models take this clip?",
+  select: "Ask Paprika — follow the boy with the lantern, the van on the left",
+  clean: "Ask Paprika — take the van out, the sign in the back, the subtitles",
+  direct: "Ask Paprika — make it a rainy blue hour, swap the street sign for a hand-painted one",
+  control: "Ask Paprika — keep his walk and redraw the look, hold his face from the sheet",
+  extend: "Ask Paprika — continue for eight seconds, the lanterns rise",
+  finish: "Ask Paprika — upscale it, add the rain and the steps, export the reel",
 };
 
 // ---------------------------------------------------------------- the engines
@@ -208,10 +208,29 @@ function take(t, i = 0) {
   };
 }
 
+function planStep(x) {
+  if (!x || typeof x !== "object" || !STAGE_IDS.includes(x.stage)) return null;
+  return { stage: x.stage, engine: str(x.engine, 200), text: str(x.text, 500), why: str(x.why, 140), done: !!x.done };
+}
+
+/** The body with Paprika's plan written (a new plan replaces the old one). */
+export function withPlan(body, steps) {
+  const next = normaliseBody(JSON.parse(JSON.stringify(body)));
+  next.plan = (steps ?? []).slice(0, 40).map(planStep).filter(Boolean).slice(0, 8);
+  return next;
+}
+/** A step of the plan is done once its stage has a pass made by that engine (or any pass, for a step with no engine). */
+export function stepDone(body, step) {
+  const p = passOf(body, step.stage);
+  return !!p && (!step.engine || p.engine === step.engine || p.engine === "local:conform");
+}
+
 export function blankBody() {
   return {
     v: 2,
     brief: "",
+    // Paprika's plan of the edit: [{ stage, engine, text, why, done }], in the order to run it
+    plan: [],
     clip: null,
     range: null,
     stages: Object.fromEntries(STAGE_IDS.map((id) => [id, { takes: [], mark: "", from: "" }])),
@@ -224,6 +243,7 @@ export function normaliseBody(raw) {
   const b = blankBody();
   if (!raw || typeof raw !== "object") return b;
   b.brief = str(raw.brief, 4000);
+  b.plan = (Array.isArray(raw.plan) ? raw.plan : []).slice(0, 40).map(planStep).filter(Boolean).slice(0, 8);
   const c = raw.clip && typeof raw.clip === "object" ? raw.clip : null;
   if (c && media(c.media)) b.clip = { media: media(c.media), fps: num(c.fps, 1, 240, 24), name: str(c.name, 120), at: str(c.at, 40) };
   if (raw.range && typeof raw.range === "object") {
@@ -410,3 +430,22 @@ export function conformPlan(clip, { fps = CONFORM.fps, maxSeconds = CONFORM.maxS
 /** The slate number of the frame at a time of the clip, and back. */
 export const frameAt = (seconds, fps = 24) => FIRST + Math.max(0, Math.round(seconds * fps));
 export const secondsAt = (frame, fps = 24) => Math.max(0, (frame - FIRST) / fps);
+
+// ---------------------------------------------------------------- what a run brings back
+
+/** What a template run brought back, as a take's media. */
+export const mediaOf = (r) => ({
+  kind: r.kind === "image" ? "image" : "video",
+  url: r.url, file: r.file, width: r.width, height: r.height,
+  ...(r.kind === "image" ? {} : { seconds: r.duration ?? r.seconds }),
+});
+/**
+ * The clip of what came back, else its picture. A template that also saves a side-by-side comparison (the LTX clean-ups) or a rough
+ * first pass (VOID) has them told by the name Cloud saved them under, so the comparison and the rough pass are never the take.
+ */
+const rank = (r) => (r.kind === "video" ? 0 : 4) + (/compar/i.test(r.saved ?? "") ? 2 : 0) + (/pass_?1\b|pass1/i.test(r.saved ?? "") ? 1 : 0);
+export const pickMedia = (list) => {
+  const all = (Array.isArray(list) ? list : [list]).filter((r) => r?.url && (r.kind === "video" || r.kind === "image"));
+  const m = all.slice().sort((a, b) => rank(a) - rank(b))[0];
+  return m ? mediaOf(m) : null;
+};
