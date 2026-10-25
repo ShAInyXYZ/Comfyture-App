@@ -46,3 +46,17 @@ export const PLACEHOLDER = {
 };
 
 export const DEPARTMENTS = WORKSPACES.map((w) => w.id);
+
+const o = (label, ask) => ({ label, ask });
+/**
+ * What Paprika offers above her bar in each department: words said to her, as if typed (she sets it up; anything that costs credits still
+ * waits for a yes, with its price).
+ */
+export const OFFERS = {
+  plate: [o("Trim to 4 s", "Trim it to the first four seconds"), o("Read the depth", "Read its depth"), o("What next?", "What should I do next with this shot?")],
+  roto: [o("Cut out the hero", "Cut out the main character"), o("Them and what they hold", "Cut out the main character and what they hold")],
+  paint: [o("Paint out the sign", "Remove the sign"), o("No subtitles", "Take the subtitles off")],
+  light: [o("Golden hour", "Relight it as a warm golden hour"), o("Make it snow", "Make it snow, lightly"), o("Filmic grade", "Give it a filmic grade")],
+  fx: [o("Sparks behind them", "Add sparks behind the main character"), o("A portal", "Put a glowing portal behind them"), o("Make it rain", "Make it rain")],
+  comp: [o("Upscale to 1080p", "Upscale it to 1080p"), o("Slow it down", "Slow it down twice, the free way"), o("Export a WebM", "Export it as a webm")],
+};

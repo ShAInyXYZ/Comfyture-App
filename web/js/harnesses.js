@@ -5,17 +5,19 @@
 // rooms keep the briefs they had), so a pet knows its own product and nothing else.
 //
 // tools: where the pet's presets are shown. "bar": as chips above the composer, for a product with no left
-// panel of its own. "panel": in the product's own left panel (Jam's and Macaron's), which says which of its
-// workspaces is open with setRoom() and sends the words of a tool with tell(); such a product's bar is one
-// row (the face, the words, the model, the send key), where the others' is a card with its keys under the words.
+// panel of its own. "panel": in the product's own left panel (Macaron's), which says which of its workspaces is
+// open with setRoom() and sends the words of a tool with tell().
+// offers: what the pet offers above its bar in each room, whatever its tools: words said to it ({ label, ask }). A page may offer
+// its own instead (setOffers: Toaster's Render page offers to dress the frame, write the prompt, rebuild from a photo), and every pet
+// with a tour (web/js/tours/) offers to show you around.
 //
 // Its only imports are Jam's and Macaron's own harness data (web/js/jam-harness.js, web/js/macaron-harness.js: the pet,
 // the workspaces, the tools), plain data like this module, so the server's tests can read the registry as well as the page.
-import { PICKLE, WORKSPACES, PRESETS as JAM_PRESETS, PLACEHOLDER as JAM_PLACEHOLDER } from "./jam-harness.js";
+import { PICKLE, WORKSPACES, PRESETS as JAM_PRESETS, PLACEHOLDER as JAM_PLACEHOLDER, OFFERS as JAM_OFFERS } from "./jam-harness.js";
 import { BRIOCHE, PRESETS as MACARON_PRESETS, PLACEHOLDER as MACARON_PLACEHOLDER } from "./macaron-harness.js";
-import { PAPRIKA, PLACEHOLDER as SPICE_PLACEHOLDER } from "./spice-harness.js";
-import { TRUFFLE, PLACEHOLDER as UTENSILS_PLACEHOLDER } from "./utensils-harness.js";
-import { CRUMPET, PLACEHOLDER as TOASTER_PLACEHOLDER } from "./toaster-harness.js";
+import { PAPRIKA, PLACEHOLDER as SPICE_PLACEHOLDER, OFFERS as SPICE_OFFERS } from "./spice-harness.js";
+import { TRUFFLE, PLACEHOLDER as UTENSILS_PLACEHOLDER, OFFERS as UTENSILS_OFFERS } from "./utensils-harness.js";
+import { CRUMPET, PLACEHOLDER as TOASTER_PLACEHOLDER, OFFERS as TOASTER_OFFERS } from "./toaster-harness.js";
 
 const p = (label, text) => ({ label, text });
 
@@ -64,6 +66,7 @@ export const HARNESSES = {
     home: WORKSPACES[0].id,
     placeholders: JAM_PLACEHOLDER,
     presets: Object.fromEntries(Object.entries(JAM_PRESETS).map(([room, list]) => [room, list.map((t) => p(t.label, t.ask))])),
+    offers: JAM_OFFERS,
   },
 
   // brand content: Brioche, her three workspaces and her tools are Macaron's own data; the bar offers the tools said to her
@@ -90,6 +93,7 @@ export const HARNESSES = {
     home: "plate",
     placeholders: SPICE_PLACEHOLDER,
     presets: Object.fromEntries(Object.keys(SPICE_PLACEHOLDER).map((room) => [room, []])),
+    offers: SPICE_OFFERS,
   },
 
   // the model maker: Crumpet, the baby beaver who builds the scene with you (web/js/toaster-harness.js); he has no canned tools: Toaster's
@@ -103,6 +107,7 @@ export const HARNESSES = {
     home: "toaster",
     placeholders: TOASTER_PLACEHOLDER,
     presets: { toaster: [] },
+    offers: TOASTER_OFFERS,
   },
 
   // one-tool jobs: Truffle, her seven workspaces and what the bar says in each are Utensils' own data (web/js/utensils-harness.js);
@@ -116,6 +121,7 @@ export const HARNESSES = {
     home: "home",
     placeholders: UTENSILS_PLACEHOLDER,
     presets: Object.fromEntries(Object.keys(UTENSILS_PLACEHOLDER).map((room) => [room, []])),
+    offers: UTENSILS_OFFERS,
   },
 };
 
@@ -149,6 +155,26 @@ let teller = null;
 export const setTeller = (fn) => (teller = fn);
 /** Says something to the pet of the page, as if typed in its bar (a preset chip in a left panel). */
 export const tell = (text) => teller?.(text);
+
+// what a page offers for itself above its pet's bar, when it knows better than the harness (fn(room) → [{ label, ask } | { label, run, icon? }])
+const pageOffers = new Map();
+/** A page's own offers for its product's bar (null gives the harness's back). */
+export function setOffers(product, fn) {
+  if (fn) pageOffers.set(product, fn);
+  else pageOffers.delete(product);
+}
+/**
+ * The chips above a pet's bar in a room: the page's own offers when it gives them, else the room's presets (on a "bar" product) and the
+ * pet's offers for the room. Each is { label, ask } (words said to the pet) or { label, run } (something the page does).
+ */
+export function offersOf(product, room = roomOf(product)) {
+  const h = HARNESSES[product];
+  if (!h) return [];
+  const own = pageOffers.get(product)?.(room);
+  if (own) return own;
+  const presets = h.tools === "bar" ? (h.presets[room] ?? []).map((x) => ({ label: x.label, ask: x.text })) : [];
+  return [...presets, ...(h.offers?.[room] ?? [])];
+}
 
 /** A pet's name and tag, as a face says it: "Praline · trend boss". */
 export const introOf = (product) => (HARNESSES[product] ? `${HARNESSES[product].name} · ${HARNESSES[product].tag}` : "");

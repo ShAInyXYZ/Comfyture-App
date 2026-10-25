@@ -13,3 +13,9 @@ export const CRUMPET = {
 export const PLACEHOLDER = {
   toaster: "Ask Crumpet — a cosy reading corner with a sofa, two shelves and a lamp, camera low · or attach a photo to rebuild",
 };
+
+const o = (label, ask) => ({ label, ask });
+/** What Crumpet offers above his bar on the Scene (the Render page offers its own: dress the frame, write the prompt, rebuild from a photo). */
+export const OFFERS = {
+  toaster: [o("A reading corner", "Build a cosy reading corner: a sofa, two shelves and a lamp, camera low"), o("Add someone", "Add a person sitting on the sofa, reading a book"), o("Frame it closer", "Frame the scene closer, with a 50 mm lens")],
+};

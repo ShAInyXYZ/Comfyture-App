@@ -13,7 +13,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createRequire } from "node:module";
-import { HARNESSES, barOf } from "../web/js/harnesses.js";
+import { HARNESSES, barOf, offersOf } from "../web/js/harnesses.js";
 import { TRENDS, CREW } from "../web/js/mixer-trends.js";
 
 const { chromium } = createRequire(import.meta.url)("playwright");
@@ -110,8 +110,10 @@ try {
     // a product with workspaces asks what fits the one its own panel has open
     const asks = room || h.tools === "bar" ? [look.placeholder] : Object.values(h.placeholders);
     ok(asks.includes(info.placeholder) && info.placeholder.startsWith(`Ask ${h.name} — `), `${p}: the bar asks ${h.name} by name`, info.placeholder);
-    if (h.tools === "bar") ok(info.chipsShown && JSON.stringify(info.chips) === JSON.stringify(look.presets.map((x) => x.label)), `${p}: ${h.name}'s presets are chips above the bar`, info.chips.join(" | "));
-    else ok(!info.chipsShown && !info.chips.length, `${p}: ${h.name}'s presets are left to the product's own panel`);
+    // the chips above the bar: what the pet offers in the room open (its presets on a "bar" product, its offers), and its tour where it has one
+    const open = Object.keys(h.placeholders).find((r) => h.placeholders[r] === info.placeholder) ?? room;
+    const offered = info.chips;
+    ok(JSON.stringify(offered) === JSON.stringify(offersOf(product, open).map((x) => x.label)) && info.chipsShown === info.chips.length > 0, `${p}: ${h.name}'s offers for the ${open} room are chips above the bar`, info.chips.join(" | "));
     ok(info.picker, `${p}: the model picker is still there`);
     ok(info.clip === (p === "shot" || p === "stage" || p === "toaster"), `${p}: the attach key is only where the bar takes files (Toaster: a photo for Crumpet)`);
     // every bar is the card: the words on top, at least two lines, the keys on a row under them (Stage adds its maps)
@@ -237,12 +239,12 @@ try {
   queue.utensils.push({ reply: "Done.", actions: [] });
   await say("upscale my latest picture");
   await answers(3);
-  ok(asked.utensils.at(-1).messages.at(-1).text === "upscale my latest picture", "what is typed is said as it is written (she has no chips)");
-  // her room follows the workspace open: the video one, with its words and no chips
+  ok(asked.utensils.at(-1).messages.at(-1).text === "upscale my latest picture", "what is typed is said as it is written");
+  // her room follows the workspace open: the video one, with its words and its offers
   await js(async () => (await import("/js/utensils.js")).setWorkspace("video"));
   await page.waitForTimeout(400);
   const room = await js(() => ({ chips: [...document.querySelectorAll("#assistant .pet-chip")].map((c) => c.textContent), ask: document.querySelector("#assistant .chat-input").dataset.placeholder }));
-  ok(room.chips.length === 0 && room.ask === HARNESSES.utensils.placeholders.video, "the bar follows the workspace open: the video one's words, and no canned chips", room.ask);
+  ok(JSON.stringify(room.chips) === JSON.stringify(HARNESSES.utensils.offers.video.map((x) => x.label)) && room.ask === HARNESSES.utensils.placeholders.video, "the bar follows the workspace open: the video one's words and offers", `${room.ask} · ${room.chips.join(" | ")}`);
   await js(async () => (await import("/js/utensils.js")).setWorkspace("home"));
 
   // ---- each product keeps its own conversation

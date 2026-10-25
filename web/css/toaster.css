@@ -518,13 +518,7 @@ button.ts-sheet-pic { cursor: zoom-in; }
 .ts-brief .ts-prompt-box { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; padding: .5rem .25rem 0 .75rem; overflow: hidden; border-radius: .75rem; }
 .ts-brief .ts-prompt-box .ts-pills.is-prompt, .ts-brief .ts-pills.is-prompt:not(.is-open):not(:focus) { display: block; flex: 1 1 auto; min-height: 0; max-height: none; padding: 0 .5rem .625rem 0; overflow-y: auto; -webkit-line-clamp: unset; line-clamp: none; font-size: var(--fs-body); line-height: 1.6; scrollbar-width: thin; }
 
-/* Crumpet's offers, over his bar */
-.ts-chips { display: flex; flex: none; gap: .5rem; overflow-x: auto; scrollbar-width: none; }
-.ts-chips:empty { display: none; }
-.ts-offer { display: inline-flex; flex: none; align-items: center; gap: .5rem; height: 2.25rem; padding: 0 .9375rem 0 .8125rem; border: 1px solid var(--line2); border-radius: var(--r-pill); background: var(--s1); color: var(--muted); font: 500 var(--fs-small)/1 var(--font-sans); white-space: nowrap; cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast); }
-.ts-offer:hover:not(:disabled) { border-color: var(--accent-line); background: var(--s2); color: var(--text); }
-.ts-offer:disabled { opacity: .5; cursor: default; }
-.ts-offer svg { width: 1rem; height: 1rem; color: var(--accent); }
+/* Crumpet's offers are the bar's own chips (offersOf in web/js/harnesses.js) */
 
 /* the recipe: its title, then the cards in the order things happen, Toast it at the foot, level with Crumpet's bar */
 .ts-recipe-head { flex: none; padding: .5rem .25rem 0; }
@@ -605,7 +599,7 @@ button.ts-sheet-pic { cursor: zoom-in; }
   .ts-field-box .ts-refs { gap: .25rem; }
   .ts-field-box .ts-refs .ts-pic-tile, .ts-field-box .ts-refs .ts-pic-add { width: 2.25rem; }
   .ts-field-box .ts-refs .ts-pic-add { height: 2.25rem; }
-  .is-render .ts-chips { display: none; }
+  .toaster.is-render .pet-chips { display: none; }
   .is-render .ts-studio { min-height: 14rem; }
   .ts-strip-row .ts-thumb { min-width: 5.5rem; max-width: 5.5rem; }
   .ts-strip-row .ts-thumb-pic, .ts-use { height: 3.125rem; }

@@ -483,7 +483,8 @@ body[data-product="kitchen"] .rooms { display: block; }
 .pet-chips[hidden] { display: none; }
 /* while you write they are out of the way but keep their room, so the page above the bar does not move as you type */
 .pet-chips.is-typing { visibility: hidden; }
-.pet-chip { flex: none; min-height: 2rem; padding: 0 .8125rem; border: 1px solid var(--line2); border-radius: var(--r-pill); background: var(--s1); box-shadow: var(--drop); color: var(--muted); font: 500 var(--fs-small)/1 var(--font-sans); white-space: nowrap; cursor: pointer; pointer-events: auto; transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
+.pet-chip { display: inline-flex; flex: none; align-items: center; gap: .4375rem; min-height: 2.125rem; padding: 0 .875rem; border: 1px solid var(--line2); border-radius: var(--r-pill); background: var(--s1); box-shadow: var(--drop); color: var(--muted); font: 500 var(--fs-small)/1 var(--font-sans); white-space: nowrap; cursor: pointer; pointer-events: auto; transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
+.pet-chip > svg, .pet-chip > .icon { flex: none; width: 1rem; height: 1rem; margin-left: -.125rem; color: var(--accent); }
 .pet-chip:hover:not(:disabled) { border-color: var(--accent-line); background: var(--s3); color: var(--text); }
 .pet-chip:disabled { color: var(--faint); cursor: default; }
 .composer.no-clip .clip-key { display: none; }

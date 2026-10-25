@@ -37,3 +37,16 @@ export const PLACEHOLDER = {
   edit: "Ask Pickle — cut on the beat, zoom on the drop, add a whip",
 };
 export const jamPlaceholder = (workspace) => PLACEHOLDER[workspace] ?? PLACEHOLDER.track;
+
+const o = (label, ask) => ({ label, ask });
+/**
+ * What Pickle offers above his bar in each workspace: words said to him, as if typed, about the workspace open (so they act on what is in
+ * front of you). Making a song, hearing the words and making the video still wait for your key, with their price.
+ */
+export const OFFERS = {
+  song: [o("A sunny pop song", "Write a sunny pop song about a frog band on a summer night, in English"), o("Slower, dreamier", "Make it slower and dreamier"), o("In Japanese", "Make the song in Japanese")],
+  track: [o("Use the chorus", "Start the part at the chorus"), o("15 seconds", "Make the video 15 seconds"), o("From the drop", "Start the part at the drop")],
+  words: [o("Karaoke", "Karaoke captions"), o("Bigger words", "Make the words bigger"), o("Neon", "Neon captions")],
+  band: [o("Who can sing it?", "Who of the crew could perform it?"), o("A cosy vibe", "Set the vibe: a cosy room with fairy lights"), o("A shot every bar", "Cut a shot every bar")],
+  edit: [o("A first edit", "Make a first edit on the beat"), o("Zoom on every bar", "Zoom on every bar"), o("Export it", "Export the video")],
+};

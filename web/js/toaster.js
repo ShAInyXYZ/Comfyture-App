@@ -498,6 +498,8 @@ export function setMode(mode) {
   toaster.mode = m;
   write(MODE, m);
   changed("toaster");
+  // Crumpet's chips follow the page (the Render page offers its own)
+  changed("assistant");
 }
 
 // ---------------------------------------------------------------- the draft's words and frame

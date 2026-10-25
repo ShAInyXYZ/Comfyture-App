@@ -15,7 +15,7 @@ import { currentPage } from "../router.js";
 import { stageReady } from "../control/link.js";
 import { macaron } from "../macaron.js";
 import { askMacaron, undoMacaron, clearMacaronChat } from "../macaron-assist.js";
-import { harnessOf, barOf, introOf, onRoom, setTeller } from "../harnesses.js";
+import { harnessOf, barOf, introOf, onRoom, setTeller, offersOf } from "../harnesses.js";
 import { chat as mixerChat, askMixer, clearMixerChat, confirmMixer, declineMixer } from "../mixer-assist.js";
 import { chat as utensilsChat, roomOfTool, askUtensils, clearUtensilsChat, confirmUtensils, declineUtensils } from "../utensils-assist.js";
 import { chat as spiceChat, roomOfSpice, askSpice, clearSpiceChat, confirmSpice, declineSpice } from "../spice-assist.js";
@@ -535,9 +535,11 @@ export function renderAssistant(el) {
   c.face.dataset.tooltip = introOf(s.product);
   el.dataset.pet = harness.pet;
   c.input.placeholder = look.placeholder;
-  const offered = harness.tools === "bar" ? look.presets : [];
+  // the chips above the bar: what the pet offers in this room (words said to it, or a thing the page does)
+  const offered = offersOf(s.product, s.room).map((o) =>
+    h("button.pet-chip", { type: "button", title: o.ask ?? o.title ?? o.label, disabled: !!blocked(s) && !o.run, on: { click: () => (o.run ? o.run() : tell(o.ask)) } }, o.icon ? sprite(o.icon) : null, o.label));
   c.chips.hidden = !offered.length;
-  c.chips.replaceChildren(...offered.map((p) => h("button.pet-chip", { type: "button", title: p.text, disabled: !!blocked(s), on: { click: () => tell(p.text) } }, p.label)));
+  c.chips.replaceChildren(...offered);
   shownRoom = s.room;
   const inputs = state.stageChat.inputs;
   c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : onToaster() ? toasterChat.pictures.map(toasterPictureChip) : filesOn ? files.map(fileChip) : []), ...(filesOn && !stage && !onToaster() && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));

@@ -30,6 +30,7 @@ import {
 } from "../toaster.js";
 import { SHAPES, PALETTE, RATIOS, MAPS, POSE_SLIDERS, roundLabel, hasSides, colorName, shapeOf, tagsOf, describeOf, isAsset, isCharacter, plainFrame } from "../toaster-model.js";
 import { CRUMPET } from "../toaster-harness.js";
+import { setOffers } from "../harnesses.js";
 import { chat as toasterChat, askToaster, addToasterPictures, tagHooks } from "../toaster-assist.js";
 import { projectBar, drawProjectBar } from "./toaster-projects.js";
 
@@ -147,7 +148,7 @@ function layout() {
   s.partsLabel.textContent = mode === "scene" ? "Parts" : "In the frame";
   if (mode !== "scene" && drawer) openDrawer(null);
   if (mode === "render") {
-    s.mid.replaceChildren(s.studio, s.brief, s.chips, chatSlot);
+    s.mid.replaceChildren(s.studio, s.brief, chatSlot);
     s.right.replaceChildren(s.recipeHead, s.cameraCard, s.mapsCard, s.modelCard, s.toastBar, s.viewport);
     s.root.replaceChildren(s.left, s.mid, s.right);
   } else if (mode === "3d") {
@@ -901,8 +902,6 @@ function buildStudio(s) {
   dropFiles(s.compose, (files) => addReferences(files));
   s.studio = h("section.ts-card.ts-studio", { "aria-label": "Render" }, s.studioMain, s.sent);
   s.brief = h("section.ts-card.ts-brief", { "aria-label": "What it is and the look" }, s.compose);
-  // Crumpet's offers for this page, over his bar
-  s.chips = h("div.ts-chips", { role: "group", "aria-label": "Crumpet can" });
 }
 
 /** A field's words, set only while it is not in use (what is typed is never drawn over). */
@@ -1004,22 +1003,23 @@ function drawRecipe() {
     strengthSlider(b),
     h("p.ts-band", {}, icon("info"), h("span", {}, BAND(b.strength))));
   shell.toastBar.replaceChildren(toastKey(m, busy));
-  drawChips();
 }
 
 /** Crumpet's offers over his bar: dress the frame, write the prompt for the model picked, rebuild the scene from a photo. */
-function drawChips() {
+/** What Crumpet offers above his bar on the Render page (the shared chips of web/js/harnesses.js: the Scene keeps his harness's own). */
+function renderOffers() {
+  if (toaster.mode !== "render") return null;
   const m = modelNow();
-  const busy = !!toasterChat.busy;
-  const chip = (glyph, label, title, run) => h("button.ts-offer", { type: "button", title, disabled: busy, on: { click: run } }, sprite(glyph), h("span", {}, label));
-  shell.chips.replaceChildren(
-    chip("camera-framing", "Dress the frame", "Crumpet places pieces around what the camera looks at, so the picture reads well (a small writer call)", () => askToaster("Dress the frame for a hero shot of what the camera looks at: put pieces around it so the picture reads well, and keep the camera's axis clear.")),
-    chip("prompt-enhance", `Write the prompt for ${m?.short ?? m?.name ?? "the model"}`, "Luna writes the prompt from the model's own guide (a small writer call)", writeWords),
-    chip("image-upload", "Rebuild from a photo", "Pick a photo: Crumpet rebuilds its layout in clay and matches its camera (a small writer call)", () => pickFiles(async (files) => {
+  return [
+    { icon: "camera-framing", label: "Dress the frame", title: "Crumpet places pieces around what the camera looks at, so the picture reads well (a small writer call)", run: () => askToaster("Dress the frame for a hero shot of what the camera looks at: put pieces around it so the picture reads well, and keep the camera's axis clear.") },
+    { icon: "prompt-enhance", label: `Write the prompt for ${m?.short ?? m?.name ?? "the model"}`, title: "Luna writes the prompt from the model's own guide (a small writer call)", run: writeWords },
+    { icon: "image-upload", label: "Rebuild from a photo", title: "Pick a photo: Crumpet rebuilds its layout in clay and matches its camera (a small writer call)", run: () => pickFiles(async (files) => {
       await addToasterPictures([...files].filter(isImage).slice(0, 1));
       if (toasterChat.pictures.length) askToaster("Rebuild the layout of the attached photo in clay and match its camera.");
-    })));
+    }) },
+  ];
 }
+setOffers("toaster", renderOffers);
 /** How far the render goes from the clay: dragged, its number follows; let go, the prompt and the frame sent follow it. */
 const BAND = (v) => (v < 0.34 ? "keeps the clay's colours" : v < 0.67 ? "real materials, the colours only say who is who" : "only the layout and the forms stay");
 function strengthSlider(b) {

@@ -54,3 +54,16 @@ export const PLACEHOLDER = {
   edit: "Ask Truffle — trim the first 3 seconds, crop for social, add captions",
   templates: "Ask Truffle — which workflow animates a photo? one for 3D from an image?",
 };
+
+const o = (label, ask) => ({ label, ask });
+/** What Truffle offers above her bar in each workspace: words said to her, as if typed (a run that costs credits still waits for a yes). */
+export const OFFERS = {
+  home: [o("A better picture", "Upscale my latest picture"), o("Cut it out", "Cut out the subject of my latest picture"), o("Sound for a clip", "Add sound to my latest clip")],
+  shelf: [o("Which book?", "Which book should I read to make a short film?")],
+  picture: [o("Upscale it", "Upscale my latest picture"), o("Cut it out", "Cut out its subject"), o("Make it night", "Make it night")],
+  video: [o("Extend it", "Extend my latest clip"), o("Add sound", "Add sound to my latest clip"), o("Upscale to 1080p", "Upscale my latest clip to 1080p")],
+  audio: [o("Rain on a tin roof", "Heavy rain on a tin roof"), o("A warm acoustic track", "A warm acoustic track, 30 seconds"), o("Split the stems", "Split the stems of my latest song")],
+  vfx: [o("Remove the passer-by", "Remove the passer-by from my latest clip"), o("Relight the face", "Relight the face, warm from the left"), o("Add rain", "Add rain to my latest clip")],
+  edit: [o("Trim to 5 s", "Trim my latest clip to 5 seconds"), o("Make it vertical", "Reframe my latest clip to 9:16"), o("Captions", "Add captions to my latest clip")],
+  templates: [o("Text to video", "Show me the best text to video workflows"), o("Upscale a video", "Which workflow upscales a video?")],
+};
