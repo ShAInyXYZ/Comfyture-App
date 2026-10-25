@@ -14,6 +14,7 @@ import { openStep, hideGuide, foldGuide } from "./utensils-guide.js";
 import { totalOf } from "./utensils-guide-plan.js";
 import { toolMakers } from "./utensils-knowledge.js";
 import { makerById } from "./utensils-makers.js";
+import { modal } from "./modal.js";
 
 let makers = new Map();
 toolMakers().then((m) => (makers = m));
@@ -26,7 +27,7 @@ toolMakers().then((m) => (makers = m));
 export function libraryFrame({ space, slot, home }) {
   const dock = h("div.lbx-dock");
   const table = h("section.lbx-table", { "aria-label": "Truffle's picks", hidden: true });
-  const frame = h("section.lbx-frame", { role: "dialog", "aria-modal": "true", "aria-label": "The Library" }, space.el, table, dock);
+  const frame = h("section.lbx-frame", { role: "dialog", "aria-modal": "true", "aria-label": "The Library", tabindex: "-1" }, space.el, table, dock);
   const el = h("div.lbx", { hidden: true }, h("div.lbx-back", { "aria-hidden": "true", on: { click: () => closeLibrary() } }), frame);
   // an Escape nothing inside took (the panel of a workflow, a card, the search's words: they stop it) closes the frame, wherever the
   // focus is (a key that was pressed and drawn again leaves it on the page); Truffle's bar keeps its own
@@ -124,6 +125,8 @@ export function libraryFrame({ space, slot, home }) {
       // Truffle's bar comes into the frame while it is open, and goes back to the foot of the page after
       if (open) dock.append(slot);
       else home.append(slot);
+      // (the page behind is put away while it is open, the focus goes in, and back to what opened it afterwards)
+      modal(el, open, { focus: () => (!utensils.guide && space.search ? space.search : frame).focus({ preventScroll: true }) });
       document.dispatchEvent(new Event("utensils:drawn"));
       if (open) requestAnimationFrame(() => !utensils.guide && !frame.contains(document.activeElement) && space.search?.focus({ preventScroll: true }));
     }

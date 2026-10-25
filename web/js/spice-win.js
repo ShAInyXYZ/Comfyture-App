@@ -26,10 +26,10 @@ export function closeWin() {
 /** The layer the windows are drawn on, and what keeps them up to date. */
 export function windowHost() {
   const eyebrow = h("span.sp-win-eyebrow");
-  const title = h("h2");
+  const title = h("h2", { id: "sp-win-title" });
   const closeKey = h("button.sp-iconkey", { type: "button", title: "Close (Esc)", "aria-label": "Close", on: { click: closeWin } }, spicon("close"));
   const body = h("div.sp-win-body");
-  const win = h("section.sp-win", { role: "dialog", "aria-modal": "true", tabindex: "-1" }, h("header.sp-win-head", {}, h("div.sp-win-title", {}, eyebrow, title), closeKey), body);
+  const win = h("section.sp-win", { role: "dialog", "aria-modal": "true", "aria-labelledby": "sp-win-title", tabindex: "-1" }, h("header.sp-win-head", {}, h("div.sp-win-title", {}, eyebrow, title), closeKey), body);
   const veil = h("div.sp-veil", { on: { pointerdown: (e) => e.target === veil && closeWin() } });
   const el = h("div.sp-winhost", { hidden: true }, veil, win);
   let shown = null;
@@ -49,7 +49,7 @@ export function windowHost() {
     el.hidden = !def;
     document.body.classList.toggle("sp-has-win", !!def);
     // what is under a window is not reached by Tab, nor read out: only the window and Paprika's bar are
-    for (const under of document.querySelectorAll(".spice > .sp-side, .spice .sp-grid")) under.inert = !!def;
+    for (const under of document.querySelectorAll("header.top, .spice > .sp-side, .spice .sp-grid")) under.inert = !!def;
     if (!def) {
       if (shown) {
         shown = null;

@@ -58,7 +58,9 @@ export async function startTour(product, at = 0) {
   const load = LOADERS[product];
   if (!load) return;
   stopTour(null);
-  const mine = (run = { product, tour: null, at: -1, els: build(product), frame: 0, poll: 0, rect: null });
+  // (where the focus was, so it goes back there when the tour ends)
+  const opener = document.activeElement;
+  const mine = (run = { product, tour: null, at: -1, els: build(product), frame: 0, poll: 0, rect: null, opener });
   document.documentElement.dataset.touring = product;
   tell();
   try {
@@ -74,7 +76,7 @@ export async function startTour(product, at = 0) {
 /** Ends the tour open: "done" when it reached its end, "left" when it was closed; null forgets nothing. */
 export function stopTour(how = "left") {
   if (!run) return;
-  const { product, els, frame, poll, tour } = run;
+  const { product, els, frame, poll, tour, opener } = run;
   cancelAnimationFrame(frame);
   clearInterval(poll);
   if (how) note(product, how);
@@ -91,6 +93,11 @@ export function stopTour(how = "left") {
   removeEventListener("keydown", onKey, true);
   removeEventListener("resize", follow);
   tell();
+  // the card had the focus and is going: it goes back to what had it before (the header's compass, the bar's chip), not to the top of the page
+  if (how && (document.activeElement === document.body || els.root.contains(document.activeElement))) {
+    const back = opener?.isConnected && opener !== document.body ? opener : document.getElementById("tour-key");
+    if (back && !back.hidden) back.focus({ preventScroll: true });
+  }
 }
 
 /** The veil with its light, and the pet's card. */
@@ -101,12 +108,12 @@ function build(product) {
   const who = h("span.tour-who");
   const close = h("button.tour-close", { type: "button", "aria-label": "End the tour — Esc", "data-tooltip": "End the tour — Esc", on: { click: () => stopTour("left") } }, icon("close"));
   const title = h("h2.tour-title", { id: "tour-title" });
-  const text = h("p.tour-text");
+  const text = h("p.tour-text", { id: "tour-text" });
   const show = h("button.tour-show", { type: "button", hidden: true });
   const dots = h("div.tour-dots", { "aria-hidden": "true" });
   const back = h("button.tour-back", { type: "button", on: { click: () => goTo(run.at - 1) } }, "Back");
   const next = h("button.tour-next", { type: "button", on: { click: () => goTo(run.at + 1) } }, "Next");
-  const card = h("section.tour-card", { role: "dialog", "aria-modal": "false", "aria-labelledby": "tour-title", tabindex: "-1" },
+  const card = h("section.tour-card", { role: "dialog", "aria-modal": "false", "aria-labelledby": "tour-title", "aria-describedby": "tour-text", tabindex: "-1" },
     h("div.tour-head", {}, face, who, close),
     title,
     text,

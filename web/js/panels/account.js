@@ -25,7 +25,7 @@ let checking = false;
 export function toggleAccount(button) {
   if (pop) return close();
   trigger = button;
-  pop = h("div.menu.account-pop", { role: "dialog", "aria-label": "Comfy account" });
+  pop = h("div.menu.account-pop", { role: "dialog", "aria-label": "Comfy account", tabindex: "-1" });
   document.body.append(pop);
   button.setAttribute("aria-expanded", "true");
   editing = false;
@@ -34,6 +34,8 @@ export function toggleAccount(button) {
   answer = null;
   draw();
   place();
+  // opened by the keyboard, the window takes the focus: it sits at the end of the page, a whole page of Tab stops away
+  if (button.matches(":focus-visible")) pop.focus({ preventScroll: true });
   unstick = stick(pop, button, close);
   document.addEventListener("pointerdown", outside, true);
   document.addEventListener("keydown", onKey, true);
@@ -65,7 +67,7 @@ const onKey = (e) => {
 
 /** The header draws again: so do the settings, unless a key or an address is being typed. */
 export function redrawAccount() {
-  if (pop && !editing && !pop.contains(document.activeElement)) draw();
+  if (pop && !editing && (!pop.contains(document.activeElement) || document.activeElement === pop)) draw();
 }
 
 const link = (href, label, ...kids) => h("a.account-link", { href, target: "_blank", rel: "noreferrer", title: label, "aria-label": label }, ...kids);

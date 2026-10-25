@@ -42,7 +42,7 @@ export function toggleAdvanced(id = macaron.win) {
 /** The layer the windows are drawn on, and what keeps them up to date. */
 export function windowHost() {
   const eyebrow = h("span.mc-win-eyebrow");
-  const title = h("h2");
+  const title = h("h2", { id: "mc-win-title" });
   const sub = h("span.mc-win-sub");
   // the head's keys are made once: a key that is pressed is not made again under the pointer (the window's own keys, if it has any, when it changes)
   const extra = h("div.mc-win-extra");
@@ -51,7 +51,7 @@ export function windowHost() {
   const tools = h("div.mc-win-tools", {}, extra, toggle, closeKey);
   const body = h("div.mc-win-body");
   const foot = h("footer.mc-win-foot", { hidden: true });
-  const win = h("section.mc-win", { role: "dialog", "aria-modal": "true", tabindex: "-1" }, h("header.mc-win-head", {}, h("div.mc-win-title", {}, eyebrow, title, sub), tools), body, foot);
+  const win = h("section.mc-win", { role: "dialog", "aria-modal": "true", "aria-labelledby": "mc-win-title", tabindex: "-1" }, h("header.mc-win-head", {}, h("div.mc-win-title", {}, eyebrow, title, sub), tools), body, foot);
   const veil = h("div.mc-veil", { on: { pointerdown: (e) => e.target === veil && closeWin() } });
   const el = h("div.mc-winhost", { hidden: true }, veil, win);
   let shown = null;
@@ -71,7 +71,7 @@ export function windowHost() {
     el.hidden = !def;
     document.body.classList.toggle("mc-has-win", !!def);
     // what is under a window is not reached by Tab, nor read out: only the window and Brioche's bar are
-    for (const under of document.querySelectorAll(".macaron > .mc-side, .macaron .mc-grid")) under.inert = !!def;
+    for (const under of document.querySelectorAll("header.top, .macaron > .mc-side, .macaron .mc-grid")) under.inert = !!def;
     if (!def) {
       if (shown) {
         shown = null;

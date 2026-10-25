@@ -6,6 +6,7 @@ import {
   enhanceImage, unenhanceImage, generateImages, placePhoto, addImageLora, removeImageLora, setLoraStrength, addStageMap, removeStageMap,
 } from "../store.js";
 import { view } from "../viewer.js";
+import { modal } from "../modal.js";
 import { imageFrom } from "../photo.js";
 import { dropdown, toggle } from "../controls.js";
 import { pillField } from "../pills.js";
@@ -665,6 +666,8 @@ export function renderImage(el) {
   const im = state.image;
   el.hidden = !im.open;
   document.body.classList.toggle("has-window", im.open);
+  // the page behind is put away while it is open, and the focus goes back to what opened it when it closes
+  modal(el, im.open);
   if (!im.open) return;
   const c = composer ?? makeComposer();
   // building the new window moves the composer, which drops its focus: note the caret first

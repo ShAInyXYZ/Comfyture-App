@@ -3,6 +3,7 @@
 import { h, pad2 } from "../dom.js";
 import { jam, openWindow } from "../jam.js";
 import { currentPage } from "../router.js";
+import { modal } from "../modal.js";
 
 // ---------------------------------------------------------------- icons
 
@@ -126,6 +127,7 @@ export function drawWindow() {
   const def = jam.win && currentPage() === "jam" ? WINDOWS.get(jam.win) : null;
   document.body.classList.toggle("has-jam-window", !!def);
   layer.hidden = !def;
+  modal(layer, !!def, { focus: () => layer.querySelector(".jm-win")?.focus({ preventScroll: true }) });
   if (!def) {
     // put away: what it held (the monitor, the inspector) is for its page to take back
     if (lastWin) layer.replaceChildren();
@@ -145,7 +147,8 @@ export function drawWindow() {
       h("div.jm-win-body", {}, ...nodes));
     layer.replaceChildren(win);
     lastWin = jam.win;
-    win.focus({ preventScroll: true });
+    // (a frame later: the page draws itself again after this and would put the focus back on the key that opened the window)
+    requestAnimationFrame(() => !win.contains(document.activeElement) && win.focus({ preventScroll: true }));
     return;
   }
   // the same window, its contents changed: only they are drawn again, so the window itself keeps still
