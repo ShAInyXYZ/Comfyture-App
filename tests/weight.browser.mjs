@@ -12,10 +12,11 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createRequire } from "node:module";
+import { tempDir } from "./tools/temp.mjs";
 
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const root = resolve(import.meta.dirname, "..");
-const dataDir = await mkdtemp(join(tmpdir(), "weight-data-"));
+const dataDir = tempDir("weight-data-");
 let failures = 0;
 const ok = (cond, msg, extra = "") => {
   console.log(`${cond ? "PASS" : "FAIL"} ${msg}${extra ? `  ${extra}` : ""}`);

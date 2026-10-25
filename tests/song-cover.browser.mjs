@@ -14,12 +14,13 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
+import { tempDir } from "./tools/temp.mjs";
 
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const root = resolve(import.meta.dirname, "..");
-const out = process.env.OUT ? resolve(process.env.OUT) : await mkdtemp(join(tmpdir(), "song-cover-"));
+const out = process.env.OUT ? resolve(process.env.OUT) : tempDir("song-cover-");
 await mkdir(out, { recursive: true });
-const dataDir = await mkdtemp(join(tmpdir(), "song-cover-data-"));
+const dataDir = tempDir("song-cover-data-");
 let failures = 0;
 const ok = (cond, msg, extra = "") => {
   console.log(`${cond ? "PASS" : "FAIL"} ${msg}${extra ? `  ${extra}` : ""}`);
@@ -27,7 +28,7 @@ const ok = (cond, msg, extra = "") => {
 };
 
 // ---- the material: a song of 60 s whose last third is loud, two pictures, a clip
-const tmp = await mkdtemp(join(tmpdir(), "song-cover-media-"));
+const tmp = tempDir("song-cover-media-");
 const ff = (...args) => execFileSync("ffmpeg", ["-v", "error", "-y", ...args]);
 ff("-f", "lavfi", "-i", "sine=f=220:d=40", "-f", "lavfi", "-i", "sine=f=440:d=20", "-filter_complex", "[0]volume=0.08[a];[1]volume=0.9[b];[a][b]concat=n=2:v=0:a=1", join(tmp, "song.mp3"));
 ff("-f", "lavfi", "-i", "color=c=0xC83CA0:s=320x320:d=1", "-frames:v", "1", join(tmp, "cover-a.png"));

@@ -15,12 +15,13 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createRequire } from "node:module";
 import { deflateSync, crc32 } from "node:zlib";
+import { tempDir } from "./tools/temp.mjs";
 
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const root = resolve(import.meta.dirname, "..");
 const out = process.env.OUT ? resolve(process.env.OUT) : null;
 if (out) await mkdir(out, { recursive: true });
-const dataDir = await mkdtemp(join(tmpdir(), "toaster-data-"));
+const dataDir = tempDir("toaster-data-");
 let failures = 0;
 const ok = (cond, msg, extra = "") => {
   console.log(`${cond ? "PASS" : "FAIL"} ${msg}${extra ? `  ${extra}` : ""}`);
