@@ -394,12 +394,12 @@ try {
     for (const l of [...ops.layersOf()]) ops.patchLayer(l.id, { light: 0 });
     ops.setFinish({ bloom: 0, vignette: 0 });
     const g = fxGround(b);
-    const layers = ops.layersOf().filter((l) => l.eye !== false && (l.el !== "ai" || l.media)).map((l) => { const c = cleanLayer(l); delete c.light; delete c.reach; return c; });
+    const layers = ops.layersOf().filter((l) => l.eye !== false && (l.el !== "ai" || l.media)).map((l) => { const c = cleanLayer(l); delete c.light; delete c.reach; delete c.follow; delete c.pin; return c; });
     b.set.fx.baked = JSON.stringify([layers, g.base?.url, g.matte?.url, b.range, b.set.roto.feather, b.set.roto.choke]);
     b.set.fx.dirty = false;
     return fxPending();
   });
-  ok(old.layers > 0 && old.pending === false, "a bake signed before there was any light or finish is still the layers: nothing to bake again", JSON.stringify(old));
+  ok(old.layers > 0 && old.pending === false, "a bake signed before there was any light, finish or follow is still the layers: nothing to bake again", JSON.stringify(old));
 
   // ---- Comp: no slow motion for a picture; the upscale asks first and is refused here; the export is a WebP
   await open("comp");

@@ -5,7 +5,8 @@
 // a bento opening as a window, and the work itself: the free passes run for real on this machine (sparks, weather, grade, a spot painted out,
 // slow motion, an export); the paid ones ask first (the first press only asks, a second one sends, once) and are stood in for here, so no
 // credit is ever spent: Comfy Cloud's templates answer from this test, LTX's shot is refused by the browser and counted. Then Paprika's
-// answers (stood in for: no key), her setting-up and her yes; the shots kept across a reload.
+// answers (stood in for: no key), her setting-up and her yes; the shots kept across a reload. Last, a layer that follows Roto's subject, on a
+// clip whose matte drifts across the frame: its handles and the pixels the compositor draws are on the subject at every frame.
 // Not part of `node --test` (it needs a browser and ffmpeg). From the repo root:
 //   NODE_PATH=<a node_modules that has playwright> CHROME=<chrome or chromium binary> node tests/spice.browser.mjs
 // OUT=<folder> keeps screenshots of every department, to be looked at.
@@ -38,6 +39,11 @@ ff("-loop", "1", "-i", join(truffle, "plate.jpg"), "-vf", `${push},format=yuv420
 ff("-loop", "1", "-i", join(truffle, "roto.png"), "-vf", `${push},format=gray,format=yuv420p`, "-frames:v", "120", join(mediaDir, "matte.mp4"));
 // and a slow motion of the footage as the free one makes it: twice the frames at the same rate (made here, not interpolated, to be quick)
 ff("-i", join(mediaDir, "plate.mp4"), "-vf", "setpts=2*PTS,fps=24,format=yuv420p", join(mediaDir, "slow.mp4"));
+// and a clip whose subject moves a long way, for a layer that follows it: a yellow block drifts across a dark frame (up and down a little
+// too), three seconds at 24 fps, and its matte is the same block in white
+const drift = "overlay=x='60+t*150':y='100+40*sin(t*2)':shortest=1";
+ff("-f", "lavfi", "-i", "color=c=0x203040:s=640x360:r=24:d=3", "-f", "lavfi", "-i", "color=c=0xf2c14e:s=96x150:r=24:d=3", "-filter_complex", `[0][1]${drift},format=yuv420p`, "-frames:v", "72", join(mediaDir, "drift.mp4"));
+ff("-f", "lavfi", "-i", "color=c=black:s=640x360:r=24:d=3", "-f", "lavfi", "-i", "color=c=white:s=96x150:r=24:d=3", "-filter_complex", `[0][1]${drift},format=gray,format=yuv420p`, "-frames:v", "72", join(mediaDir, "drift-matte.mp4"));
 
 const port = await new Promise((done) => {
   const s = createServer().listen(0, () => {
@@ -56,6 +62,8 @@ const caps = await (await fetch(`${base}/api/utensils/fx/capabilities`)).json().
 // the matte as the library keeps it: what a Cloud template would answer with
 const matte = await (await fetch(`${base}/api/videos`, { method: "POST", headers: { "Content-Type": "video/mp4" }, body: await readFile(join(mediaDir, "matte.mp4")) })).json();
 const slowClip = await (await fetch(`${base}/api/videos`, { method: "POST", headers: { "Content-Type": "video/mp4" }, body: await readFile(join(mediaDir, "slow.mp4")) })).json();
+const driftClip = await (await fetch(`${base}/api/videos`, { method: "POST", headers: { "Content-Type": "video/mp4" }, body: await readFile(join(mediaDir, "drift.mp4")) })).json();
+const driftMatte = await (await fetch(`${base}/api/videos`, { method: "POST", headers: { "Content-Type": "video/mp4" }, body: await readFile(join(mediaDir, "drift-matte.mp4")) })).json();
 
 // everything that would spend credits: a request for it is refused by the browser and counted
 const PAID = /\/api\/(image|shots|reels|generate|paint|director|cutout|audio\/(music|sound)|utensils\/(upscale|cutout|upscale-video|sound)|cuts\/[\w-]+\/render|macaron\/(image|motion)|jam\/(listen|slice))(\?|$)/;
@@ -626,6 +634,165 @@ try {
     return { from: first.from, seconds: first.media.seconds, same: again.url === first.media.url, cut: plate.cut && [plate.cut.in, plate.cut.out], whole: plate.media.url !== first.media.url };
   });
   ok(input.from === 1010 && input.whole && input.same && input.cut?.join() === "1010,1100" && Math.abs(input.seconds - 91 / 24) < 0.3, "the footage is cut to the range once, kept with the plate, and its first frame is the range's", JSON.stringify(input));
+
+  // ---- a layer that follows Roto's subject: a clip whose matte drifts a long way (a block, 450 pixels across the frame in three seconds, and
+  // up and down a little). A layer turned to follow at the first frame keeps its place on the block at the others; the same layer left
+  // alone stays where it was placed. Measured on the handles, and in the pixels the compositor draws (the bake draws the same way)
+  await js(async ({ clip, matte }) => {
+    const s = await import("/js/spice.js");
+    // (her talk so far is put away: the thread of it would lie over the foot of the cards)
+    (await import("/js/spice-assist.js")).clearSpiceChat();
+    const m = (x) => ({ kind: "video", url: x.url, file: x.file, width: x.width, height: x.height, seconds: x.duration });
+    await s.newShot("FOLLOW");
+    const at = new Date().toISOString();
+    s.edit((b) => {
+      b.passes.plate = { media: m(clip), eye: true, fps: 24, name: "drift.mp4", from: 1001, to: 1072, at };
+      b.passes.roto = { media: m(matte), eye: true, from: 1001, to: 1072, note: "The drifter · a test matte", credits: 0, at, source: "free", type: "matte" };
+      b.set.roto.subjects = [{ id: "s-drift", name: "The drifter", points: [], media: m(matte), eye: true, from: 1001, to: 1072, stale: false, at, credits: 0 }];
+    });
+    s.setDept("fx");
+  }, { clip: driftClip, matte: driftMatte });
+  await page.waitForSelector(".sp-dept.is-fx:not([hidden])");
+  // (the clips the viewer draws from are there at their frame: none is still seeking)
+  const clipsAt = () => page.waitForFunction(() => { const v = [...document.querySelectorAll("video.sp-media")]; return v.length > 1 && v.every((x) => !x.seeking && x.readyState >= 2); }, null, { timeout: 30000 });
+  await clipsAt();
+  await settle(900);
+  // where the block's middle is at a frame, in shares of the frame, from how it was drawn
+  const block = (frame) => { const t = (frame - 1001) / 24; return { x: (60 + 150 * t + 48) / 640, y: (100 + 40 * Math.sin(2 * t) + 75) / 360 }; };
+  const goto = async (frame) => {
+    const track = await page.locator(".sp-scrub").boundingBox();
+    await page.mouse.click(track.x + Math.min(track.width - 1, (track.width * (frame - 1001)) / 71), track.y + track.height / 2);
+    await clipsAt();
+    await settle(600);
+  };
+  const handles = async () => {
+    const stage = await page.locator(".sp-stage").boundingBox();
+    const g = await page.locator(".sp-gizmo").boundingBox();
+    return { x: (g.x + g.width / 2 - stage.x) / stage.width, y: (g.y + g.height / 2 - stage.y) / stage.height };
+  };
+  const near = (a, b, tol = 0.02) => Math.abs(a.x - b.x) <= tol && Math.abs(a.y - b.y) <= tol;
+  const at2 = (p) => `${p.x.toFixed(3)}, ${p.y.toFixed(3)}`;
+  const lastLayer = async () => (await state()).set.fx.layers.at(-1);
+  await goto(1001);
+  // a layer placed on the block at the first frame, that does not shine and does not move by itself (what is drawn is its own)
+  const placed = block(1001);
+  await page.locator('.sp-lib-tile[data-el="starburst"]').click();
+  await settle(500);
+  await js(async (p) => {
+    const o = await import("/js/spice-fx-ops.js");
+    o.patchLayer(o.selected().id, { x: p.x, y: p.y, light: 0, glow: 0, motion: "still" });
+  }, placed);
+  await settle(600);
+  const sw = page.locator(".sp-b-look .uf-switch");
+  ok((await sw.count()) === 1 && (await sw.innerText()).trim() === "Follows The drifter" && (await sw.getAttribute("aria-checked")) === "false", "on a clip with Roto's matte a layer has a switch, Follows the subject, off to begin with", (await sw.count()) ? (await sw.innerText()).trim() : "no switch");
+  await sw.evaluate((el) => el.click());
+  await settle(700);
+  let layer = await lastLayer();
+  ok(layer.follow === true && layer.pin && near(layer.pin, placed, 0.015) && near(layer, placed, 1e-6) && (await sw.getAttribute("aria-checked")) === "true", "turned on at the first frame, the layer is pinned to the subject's anchor there and has not moved", JSON.stringify(layer.pin));
+  for (const f of [1025, 1049, 1072]) {
+    await goto(f);
+    const on = await handles();
+    ok(near(on, block(f)), `at frame ${f} the layer's handles are on the block`, `${at2(on)} against ${at2(block(f))}`);
+  }
+  // in the pixels: a layer that follows and one that does not, each drawn alone on black, over the frames, with the matte as the bake loads it
+  const drawn = await js(async ({ frames, placed, pin }) => {
+    const bake = await import("/js/spice-bake.js");
+    const { render } = await import("/js/spice-layers.js");
+    const { cleanLayer, elementOf } = await import("/js/spice-elements.js");
+    const { spice } = await import("/js/spice.js");
+    const matte = await bake.loadVideo(spice.shot.body.passes.roto.media.url);
+    const star = await bake.loadImage(elementOf("starburst").src);
+    const W = 640, H = 360;
+    const dark = Object.assign(document.createElement("canvas"), { width: W, height: H });
+    dark.getContext("2d").fillRect(0, 0, W, H);
+    const mk = (follow) => cleanLayer({ id: follow ? "t-follows" : "t-stays", el: "starburst", x: placed.x, y: placed.y, scale: 0.3, light: 0, glow: 0, motion: "still", blend: "add", follow, pin: follow ? pin : null });
+    const middle = (layer, frame) => {
+      const g = Object.assign(document.createElement("canvas"), { width: W, height: H }).getContext("2d", { willReadFrequently: true });
+      render(g, W, H, { base: dark, matte, matteFrom: 1001, layers: [layer], frame, fps: 24, still: false, sourceOf: () => star, edge: { feather: 0, choke: 0 }, footageWidth: W });
+      const d = g.getImageData(0, 0, W, H).data;
+      let n = 0, sx = 0, sy = 0;
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = (y * W + x) * 4; const v = d[i] + d[i + 1] + d[i + 2]; n += v; sx += v * x; sy += v * y; }
+      return n ? { x: sx / n / W, y: sy / n / H } : null;
+    };
+    const rows = [];
+    for (const f of frames) {
+      await bake.seekTo(matte, (f - 1001) / 24);
+      rows.push({ frame: f, stays: middle(mk(false), f), follows: middle(mk(true), f) });
+    }
+    return rows;
+  }, { frames: [1001, 1025, 1049, 1072], placed, pin: layer.pin });
+  // (the star's own middle is a little off its box's: what is compared is where each is against where it was at the first frame)
+  for (const r of drawn) {
+    const moved = { x: r.follows.x - drawn[0].follows.x, y: r.follows.y - drawn[0].follows.y };
+    const onBlock = { x: block(r.frame).x - block(1001).x, y: block(r.frame).y - block(1001).y };
+    ok(r.stays && r.follows && near(r.stays, drawn[0].stays, 0.003) && near(moved, onBlock, 0.02), `drawn at frame ${r.frame}, the layer that does not follow is where it was placed and the one that follows has gone as far as the block`, `stays ${at2(r.stays)}, follows moved ${at2(moved)}, block moved ${at2(onBlock)}`);
+  }
+  // dragged at a frame, it goes where it is put down, pinned to the anchor there; later it keeps that place on the block
+  await goto(1049);
+  const was = await handles();
+  const stageBox = await page.locator(".sp-stage").boundingBox();
+  const gb = await page.locator(".sp-gizmo").boundingBox();
+  await page.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(gb.x + gb.width / 2 + 20, gb.y + gb.height / 2 + 5, { steps: 4 });
+  await page.mouse.move(gb.x + gb.width / 2 + 40, gb.y + gb.height / 2 + 10, { steps: 4 });
+  await page.mouse.up();
+  await settle(700);
+  const put = await handles();
+  layer = await lastLayer();
+  ok(near({ x: put.x - was.x, y: put.y - was.y }, { x: 40 / stageBox.width, y: 10 / stageBox.height }, 0.008), "dragged at a frame, the layer goes where it is put down", `${at2(was)} to ${at2(put)}`);
+  ok(near(layer.pin, block(1049), 0.015) && near(layer, put, 0.01), "and is pinned to the subject's anchor there, its place being where it was put", `pin ${at2(layer.pin)}, place ${at2(layer)}`);
+  await goto(1072);
+  const later = await handles();
+  ok(near(later, { x: put.x + block(1072).x - block(1049).x, y: put.y + block(1072).y - block(1049).y }, 0.02), "later it keeps that place on the block", `${at2(later)}`);
+  // turned off, it stays where it is seen; undone, it follows again
+  await goto(1025);
+  const seen = await handles();
+  await sw.evaluate((el) => el.click());
+  await settle(700);
+  layer = await lastLayer();
+  ok(layer.follow === false && layer.pin === null && near(layer, seen, 0.01), "turned off at a frame, the layer stays where it was seen", JSON.stringify([layer.x, layer.y, layer.pin]));
+  await goto(1072);
+  ok(near(await handles(), seen, 0.01), "and no longer follows");
+  await page.locator('.sp-fxls-head .sp-iconkey[aria-label="Undo (Ctrl+Z)"]').click();
+  await settle(700);
+  layer = await lastLayer();
+  ok(layer.follow === true && near(layer.pin, block(1049), 0.015), "undone, it follows again as it did", JSON.stringify(layer.pin));
+  // the bake is signed with follow and its pin while it follows (and as it was when it does not: nothing to bake again for a layer that never followed)
+  const signed = await js(async () => {
+    const ops = await import("/js/spice-fx-ops.js");
+    const { spice, edit } = await import("/js/spice.js");
+    const { fxPending } = await import("/js/spice-fx.js");
+    const { cleanLayer } = await import("/js/spice-elements.js");
+    const { fxGround } = await import("/js/spice-engines.js");
+    const b = spice.shot.body;
+    const g = fxGround(b);
+    edit((x) => { x.passes.fx = { media: x.passes.plate.media, eye: true, from: 1001, to: 1072, note: "1 layer baked", at: new Date().toISOString() }; x.set.fx.dirty = false; });
+    const sign = (strip) => JSON.stringify([ops.layersOf().filter((l) => l.eye !== false && (l.el !== "ai" || l.media)).map((l) => { const c = cleanLayer(l); if (!(c.light > 0)) (delete c.light, delete c.reach); if (strip || !c.follow) (delete c.follow, delete c.pin); return c; }), g.base?.url, g.matte?.url, b.range, b.set.roto.feather, b.set.roto.choke]);
+    const pending = (baked) => (edit((x) => { x.set.fx.baked = baked; x.set.fx.dirty = false; }), fxPending().pending);
+    const withFollow = sign(false);
+    const out = { with: pending(withFollow), without: pending(sign(true)), keys: /"follow":true,"pin":\{"x":[\d.]+,"y":[\d.]+\}/.test(withFollow) };
+    ops.patchLayer(ops.selected().id, { follow: false });
+    const off = sign(false);
+    out.off = [pending(off), !off.includes('"follow"') && !off.includes('"pin"')];
+    return out;
+  });
+  ok(signed.keys && signed.with === false && signed.without === true, "a layer that follows is in the bake's signature with its pin: a bake made without them is not its layers", JSON.stringify(signed));
+  ok(signed.off[0] === false && signed.off[1], "and one that does not follow is signed as it was before it could", JSON.stringify(signed.off));
+  // a layer turned to follow where no matte could be read is pinned the first time one can (the viewer does it, quietly)
+  await js(async () => { const { spice, edit } = await import("/js/spice.js"); edit((b) => { const l = b.set.fx.layers.at(-1); l.follow = true; l.pin = null; }); });
+  await settle(900);
+  layer = await lastLayer();
+  ok(layer.follow === true && layer.pin && near(layer.pin, block(1072), 0.015), "a layer that follows with no pin takes one from the subject as soon as the viewer can read it", JSON.stringify(layer.pin));
+  // Paprika: follow is a layer's field like light, set where a matte holds a subject, and refused with a reason where none does
+  const hers = await js(async () => (await import("/js/spice-assist.js")).apply({ op: "layer", element: "starburst", x: 0.5, y: 0.5, follow: true }));
+  layer = await lastLayer();
+  ok(hers.failed.length === 0 && layer.follow === true && layer.pin && near(layer.pin, block(1072), 0.015), "Paprika can lay a layer that follows: pinned where the subject is", JSON.stringify([hers, layer.pin]));
+  await js(async () => { await (await import("/js/spice.js")).newShot("NOMATTE"); });
+  await page.waitForSelector(".sp-dept.is-plate:not([hidden])");
+  const refused = await js(async () => (await import("/js/spice-assist.js")).apply({ op: "layer", element: "flame", follow: true }));
+  layer = await lastLayer();
+  ok(refused.failed.some((m) => /Follow needs a clip with Roto's matte/.test(m)) && layer.follow === false, "and where no matte holds a subject she is refused, with the reason", JSON.stringify(refused));
 
   ok(errors.length === 0, "no page errors", errors.join(" | ").slice(0, 300));
   ok(outbound.length === 0, "nothing left this machine", outbound.slice(0, 2).join(" "));
