@@ -11,7 +11,7 @@ import { h } from "./dom.js";
 import { onChange, changed } from "./store.js";
 import { editStrip } from "./utensils-edit-api.js";
 import { spice, setFrame } from "./spice.js";
-import { FIRST, STACK, secondsAt, frameAt, lastFrame, rangeOf, layerAt, barsOf, pairOf } from "./spice-model.js";
+import { FIRST, STACK, secondsAt, frameAt, lastFrame, rangeOf, warpOf, layerAt, barsOf, pairOf } from "./spice-model.js";
 import { WORKSPACES } from "./spice-harness.js";
 import { spicon, fill, svg } from "./spice-ui.js";
 import { createLive } from "./spice-canvas.js";
@@ -34,7 +34,7 @@ const mediaEl = (m) =>
     : h("video.sp-media", { src: m.url, muted: true, playsInline: true, preload: "auto", disablePictureInPicture: true });
 
 export function createViewer(on = {}) {
-  const st = { ctx: null, wipe: 0.5, fps: 24, big: false, loop: 0, key: "" };
+  const st = { ctx: null, wipe: 0.5, fps: 24, big: false, loop: 0, key: "", warp: null, warpKey: "" };
   // the elements of the clips shown, by what they are ("before:url", "after:url", "ruby:url"): kept while they are wanted
   const pool = new Map();
 
@@ -79,8 +79,18 @@ export function createViewer(on = {}) {
   const el = h("section.sp-bento.sp-viewer", { role: "group", "aria-label": "Viewer" }, h("div.sp-b-head", {}, title, compare, expand), host, time, picbar);
 
   const plate = () => st.ctx?.body.passes.plate ?? null;
-  const range = () => (st.ctx ? rangeOf(st.ctx.body) : { in: FIRST, out: FIRST });
-  const last = () => lastFrame(plate());
+  // Comp behind a slow motion has a timeline of its own, the footage's with the range stretched (warpOf): the viewer plays the whole of the slow
+  // motion and holds the footage beside it at the same moments, slowed to match
+  const warp = () => (st.ctx ? warpOf(st.ctx.body, st.ctx.dept) : null);
+  const range = () => {
+    if (!st.ctx) return { in: FIRST, out: FIRST };
+    const w = warp();
+    return w ? { in: w.in, out: w.out } : rangeOf(st.ctx.body);
+  };
+  const last = () => warp()?.last ?? lastFrame(plate());
+  /** The frame of the footage at a frame of the timeline; and the frame a layer is read at (the slow motion is on the timeline's frames, the other passes on the footage's). */
+  const footageAt = (f) => warp()?.toFootage(f) ?? f;
+  const layerFrame = (layer, f) => (layer?.dept === "comp" ? f : footageAt(f));
 
   // ---------------------------------------------------------------- the clips on the stage
 
@@ -165,9 +175,14 @@ export function createViewer(on = {}) {
       } else node.hidden = !(node === baseEl || node === afterEl || node === matteEl || aux.has(node));
     }
     const t = secondsAt(spice.frame, fps);
-    if (baseEl) setTime(baseEl, t);
+    if (baseEl) {
+      setTime(baseEl, secondsAt(footageAt(spice.frame), fps));
+      // (beside a slow motion the footage is slowed too: the same moments, so not the same speed)
+      const w = warp();
+      baseEl.playbackRate = w ? w.n / w.m : 1;
+    }
     if (matteEl) setTime(matteEl, t);
-    if (afterEl) setTime(afterEl, secondsAt(spice.frame - (layer.from - FIRST), fps));
+    if (afterEl) setTime(afterEl, secondsAt(layerFrame(layer, spice.frame) - (layer.from - FIRST), fps));
     if (holdEl) setTime(holdEl, secondsAt(spice.frame - ((comp.matteFrom ?? FIRST) - FIRST), fps));
     for (const l of comp?.layers ?? []) if (st.ai.has(l.id)) setTime(st.ai.get(l.id), secondsAt(spice.frame - ((l.from ?? FIRST) - FIRST), fps));
     // the right of the wipe is the footage again where the layer has not worked (and when there is nothing yet to show)
@@ -223,7 +238,9 @@ export function createViewer(on = {}) {
     cancelAnimationFrame(st.loop);
     const tick = () => {
       if (!spice.playing) return;
-      const f = frameAt(st.baseEl.currentTime, st.fps);
+      // (beside a slow motion the footage plays slowed: the frame it is at is a frame of the footage, and the timeline's is the one it maps to)
+      const w = warp();
+      const f = w ? Math.round(w.toComp(FIRST + st.baseEl.currentTime * st.fps)) : frameAt(st.baseEl.currentTime, st.fps);
       const rr = range();
       if (f >= rr.out || st.baseEl.ended) {
         setFrame(rr.in);
@@ -242,7 +259,7 @@ export function createViewer(on = {}) {
         }
         for (const node of [st.afterEl, st.matteEl]) {
           if (node?.tagName !== "VIDEO") continue;
-          const want = secondsAt(f - ((st.layer?.from ?? FIRST) - FIRST), st.fps);
+          const want = secondsAt(layerFrame(st.layer, f) - ((st.layer?.from ?? FIRST) - FIRST), st.fps);
           if (Math.abs(node.currentTime - want) > 0.12) node.currentTime = want;
           if (node.paused) node.play().catch(() => {});
         }
@@ -419,7 +436,7 @@ export function createViewer(on = {}) {
       }));
       return;
     }
-    const bars = barsOf(body);
+    const bars = barsOf(body, c.dept);
     fill(rows, ...STACK.map((d) => {
       const name = WORKSPACES.find((w) => w.id === d).name;
       const b = bars[d];
@@ -500,6 +517,17 @@ export function createViewer(on = {}) {
   function update(ctx) {
     st.ctx = ctx;
     const { body, dept } = ctx;
+    // a slow motion is longer than the footage: going into Comp or out of it keeps the moment the viewer is on (frame 1060 of the footage is
+    // frame 1119 of a slow motion of 2×), and a slow motion that comes or goes while Comp is open does the same
+    const warpNow = warpOf(body, dept);
+    const warpKey = warpNow ? `${warpNow.in}:${warpNow.n}:${warpNow.m}` : "";
+    if (warpKey !== st.warpKey) {
+      const g = st.warp ? st.warp.toFootage(spice.frame) : spice.frame;
+      pause();
+      setFrame(Math.round(warpNow ? warpNow.toComp(g) : g));
+      st.warp = warpNow;
+      st.warpKey = warpKey;
+    }
     const p = body.passes.plate;
     const info = WORKSPACES.find((w) => w.id === dept);
     fill(title, h("b", {}, info.name.toUpperCase()), h("em", {}, info.verb.toUpperCase()));

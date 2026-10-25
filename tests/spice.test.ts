@@ -116,6 +116,73 @@ test("an effect is a layer on the frames it worked on, and the footage on the ot
   assert.equal(bars.roto, undefined, "a department with nothing made has no bar");
 });
 
+test("a slow motion is longer than the footage: Comp has a timeline of its own, the footage's with the range stretched", () => {
+  const b = shot({ light: { media: media("/light.mp4"), from: 1001, to: 1120 } });
+  assert.equal(m.warpOf(b, "comp"), null, "no comp yet");
+  b.passes.comp = { media: media("/slow.mp4", 10), from: 1001, to: 1240, eye: true };
+  assert.equal(m.warpOf(b, "light"), null, "only Comp has it");
+  const w = m.warpOf(b, "comp")!;
+  assert.deepEqual([w.in, w.out, w.n, w.m, w.last], [1001, 1240, 120, 240, 1240], "a comp of twice the footage's frames is a slow motion of 2×: the whole timeline is its");
+  assert.equal(w.toComp(1061), 1121, "the footage's frame 1061 is at 1121 of the slow motion");
+  assert.equal(w.toFootage(1121), 1061, "and back");
+  assert.equal(w.toFootage(1240), 1120.5, "the end of the slow motion is the end of the footage");
+  assert.equal(w.toComp(1001), 1001);
+  assert.equal(m.layerAt(b, "comp", 1200)!.dept, "comp", "past the footage's last frame the slow motion still shows");
+  assert.equal(m.layerAt(b, "comp", 1200)!.from, 1001);
+  assert.equal(m.layerAt(b, "light", 1100)!.dept, "light", "and the departments before it are the footage's");
+  const bars = m.barsOf(b, "comp");
+  assert.deepEqual(bars.plate, [1001, 1240], "the footage's bar spans the whole of the slow motion");
+  assert.deepEqual(bars.light, [1001, 1240], "so does the light's, made of the whole footage");
+  assert.deepEqual(bars.comp, [1001, 1240], "and the comp's own");
+  assert.deepEqual(m.barsOf(b, "light").plate, [1001, 1120], "elsewhere the bars are the footage's");
+  assert.deepEqual(m.barsOf(b).comp, [1001, 1120], "(asked for no department, the bars stay inside the footage's frames, as they did)");
+  b.passes.comp.eye = false;
+  assert.equal(m.warpOf(b, "comp"), null, "a comp that is not shown is not played");
+  b.passes.comp = { media: media("/slow.mp4", 7.5), from: 1001, eye: true };
+  assert.deepEqual([m.warpOf(b, "comp")!.m, m.warpOf(b, "comp")!.last], [180, 1180], "a slow motion of 1.5×");
+});
+
+test("a slow motion of a part of the footage stretches only that part, and the footage goes on after it", () => {
+  const b = shot({ paint: { media: media("/paint.mp4"), from: 1001, to: 1120 }, light: { media: media("/light.mp4"), from: 1031, to: 1090 } });
+  b.range = { in: 1031, out: 1090 };
+  b.passes.comp = { media: media("/slow4.mp4", 10), from: 1031, to: 1270, eye: true };
+  const w = m.warpOf(b, "comp")!;
+  assert.deepEqual([w.in, w.out, w.n, w.m, w.last], [1031, 1270, 60, 240, 1300], "60 frames of the range are 240 of the slow motion (4×), and the 30 after them follow");
+  assert.equal(w.toComp(1020), 1020, "before the range the timeline is the footage's");
+  assert.equal(w.toComp(1061), 1151, "half way into the range is half way into the slow motion");
+  assert.equal(w.toComp(1091), 1271, "the frames after the range follow the slow motion");
+  assert.equal(w.toFootage(1271), 1091);
+  assert.equal(w.toFootage(1300), 1120, "to the footage's last frame");
+  assert.equal(w.toFootage(w.toComp(1075.5)), 1075.5);
+  assert.equal(m.layerAt(b, "comp", 1100)!.dept, "comp");
+  assert.equal(m.layerAt(b, "comp", 1280)!.dept, "paint", "after it the passes of the footage show, read at the footage's frame (1100): the light was made of the range only");
+  assert.equal(m.layerAt(b, "comp", 1020)!.dept, "paint", "and before it");
+  const bars = m.barsOf(b, "comp");
+  assert.deepEqual(bars.plate, [1001, 1300], "the footage's bar is as long as the timeline");
+  assert.deepEqual(bars.paint, [1001, 1300], "a pass made of the whole footage is as long as the timeline");
+  assert.deepEqual(bars.light, [1031, 1270], "a pass made of the range is on the slow motion");
+  assert.deepEqual(bars.comp, [1031, 1270]);
+  b.range = { in: 1031, out: 1100 };
+  assert.equal(m.warpOf(b, "comp")!.n, 70);
+  assert.equal(m.warpOf(b, "comp")!.m, 240, "the slow motion is as it was made, the range is compared with it");
+  b.range = { in: 1040, out: 1099 };
+  assert.equal(m.warpOf(b, "comp"), null, "a comp that does not start where the range does was made of another range: it is shown as it was");
+});
+
+test("a comp that is no slow motion is not stretched: an export or an upscale, a clip a frame longer, a picture", () => {
+  const b = shot();
+  b.passes.comp = { media: media("/export.mp4", 5), eye: true };
+  assert.equal(m.warpOf(b, "comp"), null, "an upscale or an export is as long as what it was made from");
+  b.passes.comp = { media: media("/almost.mp4", 5.04), eye: true };
+  assert.equal(m.warpOf(b, "comp"), null, "a frame more is not a slow motion");
+  b.passes.comp = { media: media("/shorter.mp4", 4), eye: true };
+  assert.equal(m.warpOf(b, "comp"), null, "nor is a shorter clip");
+  const still = shot();
+  still.passes.plate.media = { kind: "image", url: "/p.png", file: "p.png", width: 1920, height: 1080 };
+  still.passes.comp = { media: media("/slow.mp4", 10), eye: true };
+  assert.equal(m.warpOf(still, "comp"), null, "a picture has no motion to slow");
+});
+
 test("what was spent is kept with its day, and the day's credits are added up over the shots", () => {
   const noon = Date.parse("2026-10-23T12:00:00");
   const b = shot();

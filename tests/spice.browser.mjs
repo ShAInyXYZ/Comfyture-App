@@ -35,6 +35,8 @@ const truffle = join(root, "examples", "spice", "sh040-truffle");
 const push = "scale=1280:-2,crop=1280:720,zoompan=z='1+0.05*on/119':x='iw*0.3*(1-1/zoom)':y='ih*0.5*(1-1/zoom)':d=120:s=640x360:fps=24";
 ff("-loop", "1", "-i", join(truffle, "plate.jpg"), "-vf", `${push},format=yuv420p`, "-frames:v", "120", join(mediaDir, "plate.mp4"));
 ff("-loop", "1", "-i", join(truffle, "roto.png"), "-vf", `${push},format=gray,format=yuv420p`, "-frames:v", "120", join(mediaDir, "matte.mp4"));
+// and a slow motion of the footage as the free one makes it: twice the frames at the same rate (made here, not interpolated, to be quick)
+ff("-i", join(mediaDir, "plate.mp4"), "-vf", "setpts=2*PTS,fps=24,format=yuv420p", join(mediaDir, "slow.mp4"));
 
 const port = await new Promise((done) => {
   const s = createServer().listen(0, () => {
@@ -52,6 +54,7 @@ for (let i = 0; i < 100; i++) {
 const caps = await (await fetch(`${base}/api/utensils/fx/capabilities`)).json().catch(() => ({}));
 // the matte as the library keeps it: what a Cloud template would answer with
 const matte = await (await fetch(`${base}/api/videos`, { method: "POST", headers: { "Content-Type": "video/mp4" }, body: await readFile(join(mediaDir, "matte.mp4")) })).json();
+const slowClip = await (await fetch(`${base}/api/videos`, { method: "POST", headers: { "Content-Type": "video/mp4" }, body: await readFile(join(mediaDir, "slow.mp4")) })).json();
 
 // everything that would spend credits: a request for it is refused by the browser and counted
 const PAID = /\/api\/(image|shots|reels|generate|paint|director|cutout|audio\/(music|sound)|utensils\/(upscale|cutout|upscale-video|sound)|cuts\/[\w-]+\/render|macaron\/(image|motion)|jam\/(listen|slice))(\?|$)/;
@@ -482,6 +485,74 @@ try {
   await open("comp");
   ok((await page.locator(".sp-ledger-row").count()) >= 3, "the comp lists the passes it is made of");
   ok(/37|\d+ cr/.test(await page.locator(".sp-ledger-foot").innerText()), "and what the shot cost");
+
+  // ---- Comp behind a slow motion: the viewer plays the whole of it. It stopped at the footage's last frame (half of a slow motion of 2×),
+  // and the footage beside it ran at its own speed, out of step with the slow motion it is compared with
+  await js(async (m) => {
+    const s = await import("/js/spice.js");
+    s.setPass("comp", { kind: "video", url: m.url, file: m.file, width: m.width, height: m.height, seconds: m.duration }, { from: 1001, to: 1240, note: "2× · ffmpeg", source: "free" });
+  }, slowClip);
+  await settle(900);
+  const clips = () => js(() => {
+    const v = (side) => document.querySelector(`.sp-plane.is-${side} video.sp-media:not([hidden])`);
+    return { frame: Number(document.querySelector(".sp-counter").textContent), footage: v("before")?.currentTime, slow: v("after")?.currentTime, rate: v("before")?.playbackRate, slowRate: v("after")?.playbackRate };
+  });
+  const scrubAt = async (x) => page.locator(".sp-scrub").click({ position: { x: (await page.locator(".sp-scrub").boundingBox()).width * x, y: 5 } });
+  const plateBar = await page.locator('.sp-row[data-dept="plate"] .sp-bar').evaluate((b) => b.getBoundingClientRect().width / b.parentElement.getBoundingClientRect().width);
+  ok((await page.locator(".sp-ruler span").last().innerText()) === "1240" && plateBar > 0.99, "behind a slow motion of 2× the timeline is the slow motion's (to frame 1240, the footage's bar across all of it), not the footage's 1120", `bar ${plateBar.toFixed(2)}`);
+  await page.locator('.sp-transport .sp-iconkey[aria-label="Last frame"]').click();
+  ok(await page.locator(".sp-counter").innerText() === "1240", "the last frame key goes to the end of the slow motion");
+  await scrubAt(0.5);
+  await settle(500);
+  const mid = await clips();
+  ok(mid.frame >= 1118 && mid.frame <= 1124 && Math.abs(mid.slow - (mid.frame - 1001) / 24) < 0.15 && Math.abs(mid.footage - (mid.frame - 1001) / 48) < 0.15, "the footage is held at the moment of the slow motion: half the time into its own clip", JSON.stringify(mid));
+  await page.locator(".sp-transport .is-play").click();
+  await page.waitForFunction(() => Number(document.querySelector(".sp-counter").textContent) > 1135, null, { timeout: 40000 });
+  const going = await clips();
+  ok(going.frame > 1120 && going.rate === 0.5 && going.slowRate === 1 && Math.abs(going.footage * 2 - going.slow) < 0.5, "it plays past the footage's last frame, the footage at half speed beside the slow motion, the two at the same moment", JSON.stringify(going));
+  await page.locator(".sp-transport .is-play").click();
+  await page.evaluate(() => import("/js/spice.js").then((s) => s.setFrame(1228)));
+  await settle(300);
+  await page.locator(".sp-transport .is-play").click();
+  const playing = () => js(() => import("/js/spice.js").then((s) => s.spice.playing));
+  for (let i = 0; i < 160 && (await playing()); i++) await page.waitForTimeout(250);
+  const ended = Number(await page.locator(".sp-counter").innerText());
+  ok(!(await playing()) && ended >= 1236, "it plays to the end of the slow motion and stops there, as a clip does", `stopped at ${ended}`);
+  await scrubAt(0.5);
+  const there = Number(await page.locator(".sp-counter").innerText());
+  await open("light");
+  const lightAt = Number(await page.locator(".sp-counter").innerText());
+  ok(lightAt === 1001 + Math.round((there - 1001) / 2) && (await page.locator(".sp-ruler span").last().innerText()) === "1120", "another department keeps the moment: that frame of the slow motion is that frame of the footage", `${there} -> ${lightAt}`);
+  await open("comp");
+  ok(Math.abs(Number(await page.locator(".sp-counter").innerText()) - there) <= 1, "and Comp gets it back");
+  // ... and a slow motion of a part of the footage (frames 1031 to 1090, four times slower): only the range is stretched, the footage goes on after it
+  await js(async (m) => {
+    const s = await import("/js/spice.js");
+    s.edit((b) => (b.range = { in: 1031, out: 1090 }));
+    s.setPass("comp", { kind: "video", url: m.url, file: m.file, width: m.width, height: m.height, seconds: m.duration }, { from: 1031, to: 1270, note: "4× · ffmpeg", source: "free" });
+  }, slowClip);
+  await settle(900);
+  const rangeBar = await page.locator(".sp-range").evaluate((r) => { const t = r.parentElement.getBoundingClientRect(), b = r.getBoundingClientRect(); return [(b.left - t.left) / t.width, (b.right - t.left) / t.width]; });
+  ok((await page.locator(".sp-ruler span").last().innerText()) === "1300" && Math.abs(rangeBar[0] - 30 / 299) < 0.01 && Math.abs(rangeBar[1] - 270 / 299) < 0.01, "behind a slow motion of a trimmed range the timeline is the footage's with the range stretched (to frame 1300), the range being the slow motion's frames", JSON.stringify(rangeBar));
+  await page.locator('.sp-transport .sp-iconkey[aria-label="First frame"]').click();
+  await page.locator('.sp-transport .sp-iconkey[aria-label="Last frame"]').click();
+  ok(await page.locator(".sp-counter").innerText() === "1270", "the keys go to the ends of the slow motion (1031 and 1270)");
+  await scrubAt(150 / 299);
+  await settle(500);
+  const part = await clips();
+  ok(Math.abs(part.frame - 1151) <= 2 && Math.abs(part.slow - (part.frame - 1031) / 24) < 0.15 && Math.abs(part.footage - (1031 + (part.frame - 1031) / 4 - 1001) / 24) < 0.15, "half way into the slow motion the footage is a quarter of the way into the range (its frame 1061), the two at the same moment", JSON.stringify(part));
+  await page.locator(".sp-transport .is-play").click();
+  await page.waitForFunction(() => Number(document.querySelector(".sp-counter").textContent) > 1175, null, { timeout: 40000 });
+  const partGoing = await clips();
+  ok(partGoing.rate === 0.25 && partGoing.slowRate === 1 && Math.abs(1031 + (partGoing.frame - 1031) / 4 - 1001 - partGoing.footage * 24) < 8, "it plays on, the footage at a quarter of its speed beside the slow motion", JSON.stringify(partGoing));
+  await page.locator(".sp-transport .is-play").click();
+  await js(async () => {
+    const s = await import("/js/spice.js");
+    s.clearPass("comp");
+    s.edit((b) => (b.range = null));
+  });
+  await settle(600);
+  ok((await page.locator(".sp-ruler span").last().innerText()) === "1120" && Number(await page.locator(".sp-counter").innerText()) <= 1120, "with the slow motion gone the timeline is the footage's again");
   await page.locator('.sp-b-export .uf-chip', { hasText: "WebM" }).click();
   await page.locator('.sp-primary[data-key="comp:export"]').click();
   await page.waitForSelector(".sp-download", { timeout: 120000 });

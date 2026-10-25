@@ -40,6 +40,29 @@ export function rangeOf(body) {
 /** "1001 – 1120". */
 export const rangeText = (r) => `${r.in} – ${r.out}`;
 
+/**
+ * Comp behind a slow motion. A slow motion is made of the footage's range, its n frames, and has m of its own: more, being slower. In Comp
+ * the viewer's timeline is the footage's with that part stretched to m frames, so the footage beside the comp is slowed to the same moments
+ * and both play to the comp's end (the viewer played only the footage's frames, half of a slow motion of 2×, the footage out of step with it).
+ * Answers null when there is no such comp: another department, a picture, a comp that is not shown, one that is not longer than the range
+ * (an upscale and an export are as long as what they were made from) or that does not start where the range does (it was made of another
+ * range); else { in, out, n, m, last, toComp(frame), toFootage(frame) }: the stretched part is in..out of the timeline, `last` its last
+ * frame, and the two functions turn a frame of the footage into one of the timeline and back (not rounded: a time between two frames).
+ */
+export function warpOf(body, dept) {
+  const plate = body.passes.plate;
+  const comp = body.passes.comp;
+  if (dept !== "comp" || plate?.media.kind !== "video" || !visible(comp) || comp.media.kind !== "video" || !(comp.media.seconds > 0)) return null;
+  const r = rangeOf(body);
+  const n = r.out - r.in + 1;
+  const m = framesIn(comp.media.seconds, plate.fps ?? 24);
+  // (a clip a frame or two longer than the range is not a slow motion)
+  if ((comp.from ?? FIRST) !== r.in || m / n < 1.05) return null;
+  const toComp = (g) => (g < r.in ? g : g < r.in + n ? r.in + ((g - r.in) * m) / n : g + (m - n));
+  const toFootage = (f) => (f < r.in ? f : f < r.in + m ? r.in + ((f - r.in) * n) / m : f - (m - n));
+  return { in: r.in, out: r.in + m - 1, n, m, last: lastFrame(plate) + (m - n), toComp, toFootage };
+}
+
 // ---------------------------------------------------------------- the shot
 
 export const blankBody = () => ({
@@ -111,10 +134,13 @@ const covers = (pass, frame, last) => frame >= (pass.from ?? FIRST) && frame <= 
  */
 export function layerAt(body, dept, frame) {
   const last = lastFrame(body.passes.plate);
+  // (behind a slow motion the frame is the timeline's: the slow motion covers its own frames, the passes of the footage the footage's)
+  const warp = warpOf(body, dept);
   const list = dept === "roto" ? ["roto"] : dept === "plate" ? ["depth"] : dept === "comp" ? [...PICTURES, "comp"] : PICTURES.slice(0, PICTURES.indexOf(dept) + 1);
   for (const d of [...list].reverse()) {
     const p = passOf(body, d);
-    if (d !== "plate" && visible(p) && covers(p, frame, last)) return { media: p.media, dept: d, from: p.from ?? FIRST };
+    if (d === "plate" || !visible(p)) continue;
+    if (warp && d === "comp" ? covers(p, frame, warp.last) : covers(p, warp ? warp.toFootage(frame) : frame, last)) return { media: p.media, dept: d, from: p.from ?? FIRST };
   }
   return null;
 }
@@ -125,13 +151,19 @@ export function topOf(body) {
   return null;
 }
 
-/** The frames each department has worked on, for the timeline's bars: { dept: [from, to] }. */
-export function barsOf(body) {
-  const r = { in: FIRST, out: lastFrame(body.passes.plate) };
+/**
+ * The frames each department has worked on, for the timeline's bars: { dept: [from, to] }. In Comp, behind a slow motion, the timeline is the
+ * footage's with the range stretched (warpOf): the passes made of the footage are drawn as stretched as it is, the comp's own on its frames.
+ */
+export function barsOf(body, dept) {
+  const warp = warpOf(body, dept);
+  const r = { in: FIRST, out: warp ? warp.last : lastFrame(body.passes.plate) };
   const bars = {};
   for (const d of DEPARTMENTS) {
     const p = body.passes[d];
-    if (p?.media) bars[d] = [clamp(p.from ?? r.in, r.in, r.out), clamp(p.to ?? r.out, r.in, r.out)];
+    if (!p?.media) continue;
+    if (!warp || d === "comp") bars[d] = [clamp(p.from ?? r.in, r.in, r.out), clamp(p.to ?? r.out, r.in, r.out)];
+    else bars[d] = [clamp(Math.round(warp.toComp(p.from ?? FIRST)), r.in, r.out), clamp(Math.round(warp.toComp((p.to ?? lastFrame(body.passes.plate)) + 1)) - 1, r.in, r.out)];
   }
   return bars;
 }
