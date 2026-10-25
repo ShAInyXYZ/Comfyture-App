@@ -44,7 +44,10 @@ for (let i = 0; i < 100; i++) {
 }
 const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ["--no-sandbox"] });
 try {
-  const page = await (await browser.newContext({ viewport: { width: 1600, height: 1000 } })).newPage();
+  const context = await browser.newContext({ viewport: { width: 1600, height: 1000 } });
+  // (the page talks to this server alone: the reads of Comfy Cloud are the server's)
+  await context.route((u) => new URL(u).hostname !== "127.0.0.1", (r) => r.abort());
+  const page = await context.newPage();
   const errors = [];
   const runs = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -129,15 +132,75 @@ try {
   await page.click(".ut-tpl-detail .ut-expand").catch(() => {});
   await page.locator(".lbp-trigger").first().click();
   await page.locator(".lbp-row", { hasText: "All workflows" }).click();
+  // (the Library ignores the pointer for half a second after its filters change: it was choosing a filter, not a book)
+  await page.waitForFunction(() => document.querySelectorAll(".lb-book").length > 600);
   await page.waitForTimeout(600);
   const lib = await page.evaluate(() => ({ books: document.querySelectorAll(".lb-book").length, total: String(parseInt(document.querySelector(".lb-title-count")?.textContent ?? "", 10)), v: (() => { const f = document.querySelector(".lbx-frame"); return f ? f.scrollHeight - f.clientHeight : document.documentElement.scrollHeight - innerHeight; })(), h: document.documentElement.scrollWidth - innerWidth }));
   ok(lib.books > 600 && String(lib.books) === lib.total, "every workflow is a book, and the Library's title counts them", `${lib.books} books, tile ${lib.total}`);
   ok(lib.v <= 1 && lib.h <= 1, "the hall walks sideways: the page does not scroll", `v ${lib.v} h ${lib.h}`);
-  await page.locator('.lb-book[data-workflow="image_z_image_turbo"]').hover();
-  await page.waitForTimeout(500);
-  const card = await page.evaluate(() => ({ on: document.querySelector(".lb-card")?.classList.contains("is-on"), what: !!document.querySelector(".lb-card .lb-what")?.textContent, how: !!document.querySelector(".lb-card .lb-how")?.textContent }));
-  ok(card.on && card.what && card.how, "a book pointed at opens its card: what it does and how it works");
+
+  // the card of a book: what it does and how it works. Pointed at, a book in view opens it; so does one the hall has to be walked to
+  // (the browser brings it into view, and the scroll that does it closes the card, which comes back when the hall stands still), and so
+  // does the book the arrow keys walk to at the edge. Which book it is does not matter (the catalogue and the screen move them about).
+  const cardFor = (title) => page.waitForFunction((t) => {
+    const c = document.querySelector(".lb-card");
+    return !!c?.classList.contains("is-on") && c.getAttribute("aria-label") === t && !!c.querySelector(".lb-what")?.textContent.trim() && !!c.querySelector(".lb-how")?.textContent.trim();
+  }, title, { timeout: 15000 }).then(() => true, () => false);
+  const cardAway = () => page.waitForFunction(() => !document.querySelector(".lb-card")?.classList.contains("is-on"), null, { timeout: 15000 }).then(() => true, () => false);
+  /** The hall stands still: its scroll has not moved for a good moment (the browser's scroll to a book arrives after the pointer or the key that asked for it). */
+  const still = () => page.evaluate(() => new Promise((done) => {
+    const hall = document.querySelector(".lb-hall");
+    let last = hall.scrollLeft;
+    let since = performance.now();
+    const tick = () => {
+      if (hall.scrollLeft !== last) ((last = hall.scrollLeft), (since = performance.now()));
+      if (performance.now() - since > 500) done();
+      else requestAnimationFrame(tick);
+    };
+    tick();
+  }));
+  const bookNamed = (name) => page.locator(`.lb-book[data-workflow="${name}"]`);
+  const titleOf = (name) => bookNamed(name).evaluate((el) => el.textContent.trim());
+  /** The workflow of the first book fully in the hall's view, or of the one standing farthest along it. */
+  const pick = (far) => page.evaluate((far) => {
+    const hall = document.querySelector(".lb-hall").getBoundingClientRect();
+    const books = [...document.querySelectorAll(".lb-book")];
+    const rect = (b) => b.getBoundingClientRect();
+    const chosen = far ? books.reduce((a, b) => (rect(b).left > rect(a).left ? b : a)) : books.find((b) => rect(b).left > hall.left + 40 && rect(b).right < hall.right - 40 && rect(b).top > hall.top && rect(b).bottom < hall.bottom);
+    return chosen?.dataset.workflow ?? null;
+  }, far);
+  const near = await pick(false);
+  await bookNamed(near).hover();
+  ok(await cardFor(await titleOf(near)), "a book pointed at opens its card: what it does and how it works", near);
   await shot("6-library");
+  await page.mouse.move(800, 24);
+  ok(await cardAway(), "the card goes when the pointer leaves");
+  const far = await pick(true);
+  const farTitle = await titleOf(far);
+  const was = await page.locator(".lb-hall").evaluate((el) => el.scrollLeft);
+  await bookNamed(far).hover();
+  await still();
+  ok((await page.locator(".lb-hall").evaluate((el) => el.scrollLeft)) > was + 500 && (await cardFor(farTitle)), "a book far along the hall opens its card too, the hall walked to it", far);
+  await page.mouse.move(800, 24);
+  await cardAway();
+  await page.locator(".lb-hall").evaluate((el) => el.scrollTo({ left: 0 }));
+  await page.waitForFunction(() => document.querySelector(".lb-hall").scrollLeft === 0);
+  // the keys: on the last book of a shelf that is in view, an arrow goes to the next, which the hall scrolls into view
+  const edge = await page.evaluate(() => {
+    const hall = document.querySelector(".lb-hall").getBoundingClientRect();
+    for (const shelf of document.querySelectorAll(".lb-row")) {
+      const list = [...shelf.querySelectorAll(".lb-book")];
+      const at = list.findIndex((b) => b.getBoundingClientRect().right > hall.right - 2);
+      if (at > 0 && list[at - 1].getBoundingClientRect().right < hall.right - 2) return { from: list[at - 1].dataset.workflow, to: list[at].dataset.workflow };
+    }
+    return null;
+  });
+  if (edge) {
+    await bookNamed(edge.from).focus();
+    await page.keyboard.press("ArrowRight");
+    await still();
+    ok((await page.evaluate(() => document.activeElement?.dataset.workflow)) === edge.to && (await cardFor(await titleOf(edge.to))), "the arrow key that walks to a book beyond the edge keeps its card", `${edge.from} to ${edge.to}`);
+  } else ok(false, "a shelf with a book beyond the hall's edge to walk to by keys");
 
   ok(errors.length === 0, "no errors in the page", errors.slice(0, 3).join(" | "));
 } finally {

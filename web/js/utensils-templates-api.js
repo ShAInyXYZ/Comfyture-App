@@ -147,7 +147,7 @@ export const toolIdOfApp = (a) => `app-${a.id}`;
 /** The state of the apps: idle | loading | ready | none (no Cloud, or the server does not answer). */
 export const apps = { state: "idle", list: [], total: 0, settled: false };
 let loading = null;
-let settling = 0;
+let settleBy = 0;
 
 export function listApps(params = {}) {
   const q = new URLSearchParams();
@@ -206,7 +206,7 @@ function registerApps(list) {
 
 /**
  * Reads the apps (once; a second time with `again`). The server reads every app's form in the background after it starts, so the first
- * answer may still hold apps that cannot be driven and lack their prices: it is read again a few times until each app has been read.
+ * answer may still hold apps that cannot be driven and lack their prices: it is read again, every few seconds for a few minutes, until each app has been read.
  */
 export function loadApps(again = false) {
   if (loading && !again) return loading;
@@ -218,10 +218,8 @@ export function loadApps(again = false) {
     apps.settled = out.items.every((a) => a.primary);
     registerApps(out.items);
     changed("utensils");
-    if (!apps.settled && settling < 6) {
-      settling += 1;
-      setTimeout(() => loadApps(true), 7000);
-    }
+    // (on a busy machine the server can take a minute or more: it is asked again every 7 s for three minutes, not a fixed number of times)
+    if (!apps.settled && Date.now() < (settleBy ||= Date.now() + 180_000)) setTimeout(() => loadApps(true), 7000);
     return out;
   }).catch(() => {
     if (apps.state === "loading") apps.state = "none";

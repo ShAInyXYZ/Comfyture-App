@@ -571,11 +571,22 @@ export function libraryHall({ open, ask }) {
     right.disabled = hall.scrollLeft + hall.clientWidth >= hall.scrollWidth - 4;
   }
   let moving = 0;
+  let settling = 0;
   hall.addEventListener("scroll", () => {
     if (showing) hide();
     cancelAnimationFrame(moving);
     moving = requestAnimationFrame(() => edges());
+    // the card went because its book moved: when the hall stands still again the book the keys are on, or the pointer rests on, takes it
+    // back (the scroll that brings a book into view arrives after the focus or the pointer that asked for it, and would leave it without)
+    clearTimeout(settling);
+    settling = setTimeout(retake, 150);
   }, { passive: true });
+  function retake() {
+    if (showing || performance.now() < quietUntil) return;
+    const b = hall.querySelector(".lb-book:focus-visible") ?? (matchMedia("(hover: hover)").matches ? hall.querySelector(".lb-book:hover") : null);
+    const it = b && books.get(b.dataset.workflow)?.it;
+    if (it) show(it, b);
+  }
 
   // ------------------------------------------------------------ the keyboard: along a shelf, up and down, Enter opens
 
