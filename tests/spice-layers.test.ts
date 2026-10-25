@@ -56,6 +56,59 @@ test("a layer as it is kept: every value inside its range, words from lists, and
   assert.equal(e.layerName({ el: "embers" }), "Embers");
 });
 
+test("the light a layer casts: kept from 0 to 1 and how far it reaches from 0.3 to 4, for a picture of the library only, none when it is not said", () => {
+  const l = e.cleanLayer({ id: "l-a", el: "flame", light: 0.456, reach: 2.5 });
+  assert.deepEqual([l.light, l.reach], [0.456, 2.5]);
+  const over = e.cleanLayer({ id: "l-b", el: "flame", light: 9, reach: 99 });
+  assert.deepEqual([over.light, over.reach], [1, 4], "no more light than 1, no more reach than 4");
+  const under = e.cleanLayer({ id: "l-c", el: "flame", light: -3, reach: 0 });
+  assert.deepEqual([under.light, under.reach], [0, 0.3], "no less light than 0, no less reach than 0.3");
+  const odd = e.cleanLayer({ id: "l-d", el: "flame", light: "lots", reach: NaN });
+  assert.deepEqual([odd.light, odd.reach], [0, 1.6], "what is not a number is not said");
+  // (a layer kept before there was any light has none, and its keys are what they were with its light and reach added after them)
+  const old = e.cleanLayer({ id: "l-e", el: "flame", x: 0.2 });
+  assert.deepEqual([old.light, old.reach], [0, 1.6]);
+  const keys = Object.keys(old);
+  assert.deepEqual(keys.slice(-4), ["from", "to", "light", "reach"], "a baked layer's signature is what it was once light and reach are left out");
+  // (particles and an AI layer cast none)
+  for (const el of ["rain", "embers", "ai"]) {
+    const p = e.cleanLayer({ id: "l-f", el, light: 0.9, reach: 3 });
+    assert.ok(!("light" in p) && !("reach" in p), `${el} has no light`);
+  }
+});
+
+test("each element that shines starts with its own light as part of its look, the others with none", () => {
+  const lights: Record<string, number> = {
+    flame: 0.6, "fire-wall": 0.6, "muzzle-flash": 0.6, lightning: 0.6, fireball: 0.8,
+    "sparks-burst": 0.4, "electric-arc": 0.4, "neon-ring": 0.4, "rune-circle": 0.4, hologram: 0.4, shockwave: 0.4,
+    "energy-orb": 0.7, "spark-portal": 0.5, starburst: 0.5, "magic-swirl": 0.3, "lens-flare": 0.2, "embers-cloud": 0.2, "god-rays": 0.1,
+    smoke: 0, "light-leak": 0, bokeh: 0,
+  };
+  const images = e.LIBRARY.filter((x: any) => x.kind === "image");
+  assert.deepEqual(images.map((x: any) => x.id).sort(), Object.keys(lights).sort(), "every picture is told its light, and only pictures");
+  for (const [id, light] of Object.entries(lights)) {
+    assert.equal((e.elementOf(id) as any).light, light, `${id}'s light in the library`);
+    const layer = e.newLayer(id) as any;
+    assert.equal(layer.light, light, `a new ${id} casts ${light}`);
+    assert.equal(layer.reach, 1.6, `and reaches 1.6 boxes`);
+  }
+  for (const id of ["rain", "snow", "embers", "dust", "sparkles", "ai"]) assert.ok(!("light" in (e.newLayer(id) as any)), `a new ${id} casts none`);
+  // (a look's layers are new layers: the portal of Sorcery shines)
+  assert.equal(e.lookLayers("sorcery")[0].light, 0.5);
+});
+
+test("the shot's finish: a bloom and a vignette from 0 to 1, none to begin with, cleaned as it is read", () => {
+  assert.deepEqual(e.cleanFinish(undefined), { bloom: 0, vignette: 0 });
+  assert.deepEqual(e.cleanFinish({ bloom: 0.45, vignette: 0.3, grain: 1 }), { bloom: 0.45, vignette: 0.3 }, "nothing else is kept");
+  assert.deepEqual(e.cleanFinish({ bloom: 4, vignette: -1 }), { bloom: 1, vignette: 0 });
+  assert.deepEqual(e.cleanFinish({ bloom: "x", vignette: null }), { bloom: 0, vignette: 0 });
+  assert.deepEqual(e.cleanFinish({ bloom: 0.2 }), { bloom: 0.2, vignette: 0 }, "one of them said");
+  assert.deepEqual(normaliseBody({}).set.fx.finish, { bloom: 0, vignette: 0 }, "a shot starts with no finish");
+  assert.deepEqual(normaliseBody({ set: { fx: { finish: { bloom: 0.5, vignette: 7 } } } }).set.fx.finish, { bloom: 0.5, vignette: 1 }, "a shot keeps its finish cleaned");
+  assert.deepEqual(normaliseBody({ set: { fx: { finish: "dark" } } }).set.fx.finish, { bloom: 0, vignette: 0 }, "and not what is not one");
+  assert.deepEqual(normaliseBody({ set: { fx: { layers: [{ id: "l-1", el: "flame", light: 0.5 }] } } }).set.fx.layers[0].light, 0.5, "a shot keeps its layers' light");
+});
+
 test("a shot keeps its layers cleaned and one of them selected", () => {
   const b = normaliseBody({ set: { fx: { layers: [{ id: "l-1", el: "flame" }, { el: "unknown" }, { id: "l-2", el: "rain" }], sel: "l-9" } } });
   assert.deepEqual(b.set.fx.layers.map((l: any) => l.id), ["l-1", "l-2"]);

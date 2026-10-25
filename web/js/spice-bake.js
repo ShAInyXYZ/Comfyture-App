@@ -58,8 +58,8 @@ async function sourcesOf(layers) {
 const toBlob = (canvas, type, quality) => new Promise((ok) => canvas.toBlob(ok, type, quality));
 
 /**
- * Bakes the layers. `job`: { base: media, baseFrom, matte: media|null, matteFrom, layers, edge, width, height, fps, range: { in, out },
- * name }. Answers the media made (a picture in photos, a clip in videos); `progress(p)` is told how far it is (0 to 1).
+ * Bakes the layers. `job`: { base: media, baseFrom, matte: media|null, matteFrom, layers, edge, finish, width, height, fps, range: { in,
+ * out }, name }. Answers the media made (a picture in photos, a clip in videos); `progress(p)` is told how far it is (0 to 1).
  */
 export async function bake(job, progress = () => {}) {
   const layers = job.layers.filter((l) => l.eye !== false);
@@ -72,7 +72,7 @@ export async function bake(job, progress = () => {}) {
   canvas.width = w;
   canvas.height = h;
   const g = canvas.getContext("2d");
-  const ctx = (frame, still) => ({ base, matte, layers, frame, fps: job.fps, still, sourceOf: (l) => sources.get(l.id) ?? null, edge: job.edge, footageWidth: job.width });
+  const ctx = (frame, still) => ({ base, matte, layers, frame, fps: job.fps, still, sourceOf: (l) => sources.get(l.id) ?? null, edge: job.edge, finish: job.finish, footageWidth: job.width });
   if (job.base.kind === "image") {
     render(g, w, h, ctx(1001, true));
     progress(0.8);

@@ -4,8 +4,9 @@
 //   particles  drawn here, frame by frame (rain, snow, embers, dust, sparkles): they fall, drift or rise on a clip
 //   ai         made by a model on Comfy Cloud from words (LTX on a clip, Qwen Image Edit on a picture): the whole frame again, kept only
 //              in a soft circle where it was placed, behind the people when Roto holds them
-// Every one starts with the look it is best with (its blend, its size, its motion); the person changes any of it. Pure data and pure
-// functions: the page and the tests read them.
+// Every one starts with the look it is best with (its blend, its size, its motion, the light it casts); the person changes any of it. The
+// shot has a finish of its own, a bloom and a vignette over everything (cleanFinish). Pure data and pure functions: the page and the tests
+// read them.
 
 const SRC = "brand/spice/elements";
 
@@ -43,28 +44,30 @@ export const MOTIONS = [
 const img = (id, name, group, o = {}) => ({ id, name, group, kind: "image", src: `${SRC}/${id}.webp`, thumb: `${SRC}/${id}-t.webp`, w: o.wide ? 1536 : 1024, h: 1024, blend: "screen", scale: 0.4, motion: "still", ...o });
 const parts = (id, name, group, o = {}) => ({ id, name, group, kind: "particles", blend: "screen", scale: 1, motion: "still", amount: 0.5, size: 0.5, ...o });
 
+// (`light`: how much light the element casts on the shot when it is laid, as part of its look: from 0.1 for the rays to 0.8 for the
+// fireball, none for smoke, a leak or bokeh, which shine on nothing)
 export const LIBRARY = [
-  img("flame", "Flame", "fire", { scale: 0.32, motion: "flicker" }),
-  img("fireball", "Fireball", "fire", { scale: 0.55, motion: "grow", blend: "add" }),
-  img("fire-wall", "Fire wall", "fire", { wide: true, scale: 1, y: 0.72, motion: "flicker" }),
-  img("smoke", "Smoke", "fire", { scale: 0.6, motion: "rise", opacity: 0.8 }),
-  img("sparks-burst", "Sparks burst", "fire", { scale: 0.45, motion: "grow", blend: "add" }),
-  img("muzzle-flash", "Flash", "fire", { scale: 0.3, motion: "strobe", blend: "add" }),
-  img("embers-cloud", "Ember cloud", "fire", { wide: true, scale: 1, motion: "rise" }),
-  img("lens-flare", "Lens flare", "light", { wide: true, scale: 0.9, motion: "pulse" }),
-  img("starburst", "Starburst", "light", { scale: 0.35, motion: "pulse" }),
-  img("light-leak", "Light leak", "light", { wide: true, scale: 1, motion: "drift", opacity: 0.85 }),
-  img("god-rays", "God rays", "light", { wide: true, scale: 1, y: 0.4, motion: "pulse", opacity: 0.8 }),
-  img("bokeh", "Bokeh", "light", { wide: true, scale: 1, motion: "drift", opacity: 0.7 }),
-  img("neon-ring", "Neon ring", "light", { scale: 0.4, motion: "pulse" }),
-  img("spark-portal", "Spark portal", "magic", { scale: 0.5, motion: "spin", behind: true }),
-  img("energy-orb", "Energy orb", "magic", { scale: 0.3, motion: "pulse", blend: "add" }),
-  img("lightning", "Lightning", "magic", { scale: 0.5, y: 0.4, motion: "strobe", blend: "add" }),
-  img("magic-swirl", "Magic swirl", "magic", { scale: 0.45, motion: "spin" }),
-  img("rune-circle", "Rune circle", "magic", { scale: 0.45, motion: "spin" }),
-  img("shockwave", "Shockwave", "magic", { scale: 0.7, motion: "grow" }),
-  img("electric-arc", "Electric arc", "magic", { wide: true, scale: 0.7, motion: "strobe", blend: "add" }),
-  img("hologram", "Hologram", "magic", { scale: 0.45, motion: "flicker" }),
+  img("flame", "Flame", "fire", { scale: 0.32, motion: "flicker", light: 0.6 }),
+  img("fireball", "Fireball", "fire", { scale: 0.55, motion: "grow", blend: "add", light: 0.8 }),
+  img("fire-wall", "Fire wall", "fire", { wide: true, scale: 1, y: 0.72, motion: "flicker", light: 0.6 }),
+  img("smoke", "Smoke", "fire", { scale: 0.6, motion: "rise", opacity: 0.8, light: 0 }),
+  img("sparks-burst", "Sparks burst", "fire", { scale: 0.45, motion: "grow", blend: "add", light: 0.4 }),
+  img("muzzle-flash", "Flash", "fire", { scale: 0.3, motion: "strobe", blend: "add", light: 0.6 }),
+  img("embers-cloud", "Ember cloud", "fire", { wide: true, scale: 1, motion: "rise", light: 0.2 }),
+  img("lens-flare", "Lens flare", "light", { wide: true, scale: 0.9, motion: "pulse", light: 0.2 }),
+  img("starburst", "Starburst", "light", { scale: 0.35, motion: "pulse", light: 0.5 }),
+  img("light-leak", "Light leak", "light", { wide: true, scale: 1, motion: "drift", opacity: 0.85, light: 0 }),
+  img("god-rays", "God rays", "light", { wide: true, scale: 1, y: 0.4, motion: "pulse", opacity: 0.8, light: 0.1 }),
+  img("bokeh", "Bokeh", "light", { wide: true, scale: 1, motion: "drift", opacity: 0.7, light: 0 }),
+  img("neon-ring", "Neon ring", "light", { scale: 0.4, motion: "pulse", light: 0.4 }),
+  img("spark-portal", "Spark portal", "magic", { scale: 0.5, motion: "spin", behind: true, light: 0.5 }),
+  img("energy-orb", "Energy orb", "magic", { scale: 0.3, motion: "pulse", blend: "add", light: 0.7 }),
+  img("lightning", "Lightning", "magic", { scale: 0.5, y: 0.4, motion: "strobe", blend: "add", light: 0.6 }),
+  img("magic-swirl", "Magic swirl", "magic", { scale: 0.45, motion: "spin", light: 0.3 }),
+  img("rune-circle", "Rune circle", "magic", { scale: 0.45, motion: "spin", light: 0.4 }),
+  img("shockwave", "Shockwave", "magic", { scale: 0.7, motion: "grow", light: 0.4 }),
+  img("electric-arc", "Electric arc", "magic", { wide: true, scale: 0.7, motion: "strobe", blend: "add", light: 0.4 }),
+  img("hologram", "Hologram", "magic", { scale: 0.45, motion: "flicker", light: 0.4 }),
   parts("rain", "Rain", "weather", { amount: 0.55, size: 0.5, rot: 8, colour: "#cfdcff" }),
   parts("snow", "Snow", "weather", { amount: 0.45, size: 0.5, colour: "#ffffff" }),
   parts("embers", "Embers", "particles", { amount: 0.4, size: 0.5, colour: "#ff8a2a", blend: "add" }),
@@ -110,7 +113,7 @@ export function newLayer(id, at = {}, n = Date.now()) {
     id: `l-${n.toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     el: e.id, x: at.x ?? e.x ?? 0.5, y: at.y ?? e.y ?? 0.5, scale: e.scale, rot: e.rot ?? 0,
     blend: e.blend, opacity: e.opacity ?? 1, glow: e.kind === "image" ? 0.15 : 0, soft: e.soft ?? 0, behind: !!e.behind,
-    motion: e.motion, speed: 1, amount: e.amount, size: e.size, colour: e.colour, eye: true,
+    motion: e.motion, speed: 1, amount: e.amount, size: e.size, colour: e.colour, eye: true, light: e.light ?? 0,
   });
 }
 
@@ -131,11 +134,15 @@ export function cleanLayer(raw) {
     behind: raw.behind === true, eye: raw.eye !== false,
     motion: MOTIONS.some(([v]) => v === raw.motion) ? raw.motion : e.motion, speed: num(raw.speed, 0.1, 4, 1),
     from: typeof raw.from === "number" ? Math.round(raw.from) : null, to: typeof raw.to === "number" ? Math.round(raw.to) : null,
+    // (light: how much it casts on the shot, none when a layer has not said; reach: how far, in boxes of its own. Only a picture shines)
+    ...(e.kind === "image" ? { light: num(raw.light, 0, 1, 0), reach: num(raw.reach, 0.3, 4, 1.6) } : {}),
     ...(e.kind === "particles" ? { amount: num(raw.amount, 0, 1, e.amount), size: num(raw.size, 0, 1, e.size), colour: hex(raw.colour) || e.colour } : {}),
     ...(e.kind === "ai" ? { media: m, preset: typeof raw.preset === "string" && /^[\w-]{1,40}$/.test(raw.preset) ? raw.preset : "", words: typeof raw.words === "string" ? raw.words.slice(0, 600) : "", note: typeof raw.note === "string" ? raw.note.slice(0, 120) : "", credits: num(raw.credits, 0, 100000, 0) } : {}),
   };
 }
 /** A shot's layers, cleaned (bottom of the stack first), and the one selected. */
 export const cleanLayers = (list) => (Array.isArray(list) ? list.map(cleanLayer).filter(Boolean).slice(0, 40) : []);
+/** The shot's finish as it is kept: a bloom (the bright parts glow) and a vignette (the corners darken), each from 0 (none) to 1. */
+export const cleanFinish = (raw) => ({ bloom: num(raw?.bloom, 0, 1, 0), vignette: num(raw?.vignette, 0, 1, 0) });
 /** A layer's name: the one given, else its element's. */
 export const layerName = (l) => l.name ?? (l.el === "ai" ? l.note || (l.words ? `AI · ${l.words.split(/\s+/).slice(0, 3).join(" ")}` : "AI effect") : elementOf(l.el)?.name ?? "Layer");

@@ -4,7 +4,7 @@
 // one before and the top one that is shown is the picture of the shot; Roto's pass is a matte beside them (what Fx and Comp may use as
 // a holdout), and Comp's is the finished composite. The frames are numbered as a slate numbers them: the first is 1001.
 import { DEPARTMENTS } from "./spice-harness.js";
-import { cleanLayers } from "./spice-elements.js";
+import { cleanLayers, cleanFinish } from "./spice-elements.js";
 
 export const FIRST = 1001;
 /** The passes that are the picture of the shot, from the footage up: each is made from the one below it. */
@@ -74,9 +74,9 @@ export const blankBody = () => ({
     roto: { subjects: [], open: null, feather: 2.4, choke: -0.8, out: "alpha" },
     paint: { how: "describe", words: "", after: "", engine: "void" },
     light: { look: "warm golden light from the left", words: "", reference: null, sky: null, weather: "rain", amount: 0.55, grade: "warm", exposure: 0, contrast: 1, saturation: 1 },
-    // (layers: the effects laid on the shot by hand, bottom of the stack first; sel: the one being worked on. The rest is what an AI
-    // effect is asked for: its element, words, place and frames)
-    fx: { element: "portal", words: "", place: { x: 0.62, y: 0.4, size: 0.6 }, when: null, ease: "inout", intensity: 0.8, spill: 0.65, depth: "behind", layers: [], sel: null },
+    // (layers: the effects laid on the shot by hand, bottom of the stack first; sel: the one being worked on; finish: the bloom and the
+    // vignette over the whole composite. The rest is what an AI effect is asked for: its element, words, place and frames)
+    fx: { element: "portal", words: "", place: { x: 0.62, y: 0.4, size: 0.6 }, when: null, ease: "inout", intensity: 0.8, spill: 0.65, depth: "behind", layers: [], sel: null, finish: { bloom: 0, vignette: 0 } },
     comp: { height: 1080, factor: 2, engine: "free", format: "mp4", scale: 2, picFormat: "png", exports: [] },
   },
   log: [],
@@ -91,6 +91,7 @@ export function normaliseBody(raw) {
   set.fx.place = { ...blank.set.fx.place, ...(b.set?.fx?.place ?? {}) };
   set.roto.subjects = Array.isArray(set.roto.subjects) ? set.roto.subjects : [];
   set.fx.layers = cleanLayers(set.fx.layers);
+  set.fx.finish = cleanFinish(set.fx.finish);
   // (a shot opens clean: no layer held unless the one held is still there)
   if (!set.fx.layers.some((l) => l.id === set.fx.sel)) set.fx.sel = null;
   return { ...blank, ...b, passes: { ...blank.passes, ...(b.passes ?? {}) }, set, log: Array.isArray(b.log) ? b.log.slice(-200) : [] };

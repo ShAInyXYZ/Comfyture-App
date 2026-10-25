@@ -4,7 +4,7 @@
 // selects it, a click on nothing lets go of it. The arrows nudge the layer held (Shift: ten times more), Delete removes it, Esc lets go.
 //
 //   const live = createLive(stage)
-//   live.update(comp, env)   comp: { layers, sel, edge, compare } or null (not FX); env: { base, matte, aiOf, frame, fps, still, footageWidth }
+//   live.update(comp, env)   comp: { layers, sel, edge, finish } or null (not FX); env: { base, matte, aiOf, frame, fps, still, footageWidth }
 //   live.draw()              draws the frame again (the viewer plays, a picture loaded)
 //   live.holdsKeys()         whether the arrows are the layer's (not the frames')
 import { h } from "./dom.js";
@@ -79,7 +79,7 @@ export function createLive(stage) {
     if (!ready(base)) return;
     render(g, cw, ch, {
       base, matte: ready(st.env.matte) ? st.env.matte : null, layers: st.comp.layers, frame: st.env.frame, fps: st.env.fps, still: st.env.still,
-      sourceOf, edge: st.comp.edge, footageWidth: fw,
+      sourceOf, edge: st.comp.edge, finish: st.comp.finish, footageWidth: fw,
     });
     place();
   }
