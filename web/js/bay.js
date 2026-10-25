@@ -6,8 +6,8 @@ import { api } from "./api.js";
 import { changed, toast, state } from "./store.js";
 import { keyedSaver } from "./saving.js";
 import { editRun, editStop, editProbe, editPreview } from "./utensils-edit-api.js";
-import { runnerOf, fillInputs, costOf } from "./utensils-cloud.js";
-import { STAGE_IDS, ENGINES, ledgerText, enginesFor, engineOf, priceOf, preflight, blocked, blankBody, normaliseBody, addTake, markTake, removeTake, inputFor, inputInfo, conformPlan, passOf, pickMedia, CONFORM, recommend, mediaOf } from "./spice2-model.js";
+import { runnerOf, costOf } from "./utensils-cloud.js";
+import { STAGE_IDS, ENGINES, ledgerText, enginesFor, engineOf, priceOf, preflight, blocked, blankBody, normaliseBody, addTake, markTake, removeTake, inputFor, inputInfo, conformPlan, passOf, pickMedia, CONFORM, recommend, mediaOf, fillSlots } from "./spice2-model.js";
 
 const KIND = "spice-bays";
 const OPEN = "comfyture.bay.open";
@@ -40,6 +40,8 @@ export const bay = {
   catalogError: "",
   /** what the person has set up for each stage: { engine: template name, text, refs: [media], mode } */
   form: Object.fromEntries(STAGE_IDS.map((id) => [id, { engine: "", text: "", refs: [], mode: "" }])),
+  /** the real forms of the templates, as Comfy Cloud's schema gives them (read when an engine is chosen): name -> { slots } or null when it could not be read */
+  forms: new Map(),
   /** the price estimates the runner gave, by template name: { credits, perUnit, note }, null when it could not say */
   estimates: new Map(),
   /** the key waiting for its yes: { id, until } */
@@ -148,6 +150,7 @@ export function setStage(id) {
   write(STAGE, id);
   update();
   priceStage(id);
+  ensureForm(chosen(id)?.name);
 }
 
 /** The prices of a stage's partner engines, asked one after the other (free, read-only), so each card says what it costs. */
@@ -210,6 +213,7 @@ export function loadCatalog() {
     bay.catalogLoading = null;
     update();
     priceStage();
+    ensureForm(chosen(bay.stage)?.name);
   })();
   return bay.catalogLoading;
 }
@@ -238,6 +242,20 @@ export function pickEngine(stage, name) {
   bay.armed = null;
   update();
   pricing(stage);
+  ensureForm(name);
+}
+
+const formWaits = new Map();
+/** Reads a template's real form (what it requires of the shot), once: the guess Spice has of an engine gives way to it. */
+export function ensureForm(name) {
+  if (!name || formWaits.has(name)) return formWaits.get(name) ?? Promise.resolve();
+  const p = runnerOf()
+    .then((api2) => api2?.getTemplate(name))
+    .then((t) => bay.forms.set(name, t?.schema ?? null))
+    .catch(() => bay.forms.set(name, null))
+    .then(update);
+  formWaits.set(name, p);
+  return p;
 }
 
 const waits = new Map();
@@ -268,7 +286,7 @@ export function problems(stage = bay.stage) {
   const eng = chosen(stage);
   if (!eng || !bay.shot) return [];
   const f = bay.form[stage];
-  const out = preflight(eng, bay.shot.body, stage, { text: f.text, images: f.refs.length });
+  const out = preflight(eng, bay.shot.body, stage, { text: f.text, images: f.refs.length }, bay.forms.get(eng.name) ?? null);
   // a template runs on Comfy Cloud: with no key saved (a first visit renders on a ComfyUI here, where templates do not run) it cannot be sent
   if (!eng.local && state.account && state.account.key && !state.account.key.set) out.unshift({ level: "stop", text: "Templates run on Comfy Cloud: save a Comfy key in the account window (top right) to run this. Conform and the export work without one." });
   return out;
@@ -459,17 +477,6 @@ export function downloadLedger() {
 
 // ---------------------------------------------------------------- a run on Comfy Cloud
 
-/** The roles a template's form is filled for, from what the engine needs and what the person gave. */
-export function wantOf(engine, refs) {
-  const n = engine.needs ?? {};
-  const want = {};
-  if (n.video) want.video = true;
-  if (n.text) want.text = true;
-  if (refs.length >= 1 || n.image === true) want.image = true;
-  if (refs.length >= 2 || (n.images ?? 1) >= 2) want.image2 = true;
-  return want;
-}
-
 /**
  * Runs the open stage's chosen engine on the clip the stage works from, with the person's yes (the caller has asked: nothing here asks
  * again). What comes back is a take of the stage, marked when it is the first; a failure is a take too, with what Cloud said.
@@ -491,8 +498,9 @@ export async function run(stage = bay.stage) {
   try {
     const api2 = await runnerOf();
     if (!api2) throw new Error("The template runner is not on this page yet.");
-    const given = { video: input?.media, text: f.text, image: f.refs[0], image2: f.refs[1] };
-    const inputs = await fillInputs(eng.name, wantOf(eng, f.refs), given);
+    const schema = (await api2.getTemplate(eng.name))?.schema;
+    const { inputs, unmet } = fillSlots(schema, { video: input?.media, images: f.refs, text: f.text, special: eng.special, shape: { width: input?.media?.width, height: input?.media?.height, seconds } });
+    if (unmet.images) throw new Error(`${eng.title} needs ${unmet.images} more ${unmet.images === 1 ? "picture" : "pictures"}.`);
     const job = { onCancel: null };
     mark.cancel = () => job.onCancel?.();
     const made = await api2.execTemplate(eng.name, inputs, { setProgress: (p) => ((mark.progress = Math.max(mark.progress, Math.min(1, Number(p) || 0))), update()), queued: job, label: `${eng.title} · ${stage}`, confirmed: true });

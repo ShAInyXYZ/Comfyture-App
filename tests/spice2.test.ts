@@ -250,3 +250,53 @@ test("the ledger as text: every run in time order with its price, the total and 
   assert.ok(text.includes("Total: 50 credits") && text.includes("  direct: 40 cr") && text.includes("  clean: 10 cr"));
   assert.ok(m.ledgerText(m.blankBody()).includes("Total: 0 credits"));
 });
+
+// the forms of real templates, as Comfy Cloud's schema gave them (slot id, kind, required)
+const form = (...slots: [string, string, boolean?][]) => ({ slots: slots.map(([id, kind, required]) => ({ id, kind, required: !!required, label: id })) });
+const FORMS = {
+  beeble: form(["image", "image", true], ["video", "video", true], ["prompt", "text"], ["seed", "seed"]),
+  void: form(["source_video", "video", true], ["seed", "seed"], ["positive_prompt_inpaint_fill_", "text"], ["negative", "text"], ["sam3_object_mask_prompt", "text"], ["width_pass_2_", "number"]),
+  watermark: form(["video", "video", true], ["before_video", "video", true], ["prompt", "text"], ["seed", "seed"]),
+  runway: form(["image", "image", true], ["video", "video", true], ["image6", "image", true], ["prompt", "text"]),
+  ingredients: form(["image", "image", true], ["prompt", "text"]),
+};
+
+test("what a template's form requires wins over Spice's guess: the pictures it needs, whether it takes words", () => {
+  assert.deepEqual(m.needsFromForm(FORMS.beeble), { video: true, images: 1, text: true });
+  assert.deepEqual(m.needsFromForm(FORMS.runway), { video: true, images: 2, text: true });
+  assert.deepEqual(m.needsFromForm(FORMS.watermark), { video: true, images: 0, text: true });
+  const runway = m.engineOf("api_runway_aleph2_video_edit");
+  const b = shot();
+  assert.deepEqual(m.preflight(runway, b, "direct", { text: "x", images: 0 }).map((p: any) => p.level), ["stop"] , "Spice guessed a picture was optional; the form requires two");
+  assert.ok(m.preflight(runway, b, "direct", { text: "x", images: 0 }, FORMS.runway)[0].text.includes("2 pictures"));
+  assert.deepEqual(m.preflight(runway, b, "direct", { text: "x", images: 2 }, FORMS.runway), []);
+  assert.ok(m.blocked(m.preflight(runway, b, "direct", { text: "x", images: 1 }, FORMS.runway)), "one of two is not enough");
+});
+
+test("a form is filled from the shot: the clip where it goes (and into a required 'before'), the pictures in order, the words in the prompt", () => {
+  const vid = { kind: "video", file: "c.mp4" };
+  const pics = [{ kind: "image", file: "a.png" }, { kind: "image", file: "b.png" }];
+  const beeble = m.fillSlots(FORMS.beeble, { video: vid, images: [pics[0]], text: "a rainy blue hour" });
+  assert.deepEqual(beeble.inputs, { video: vid, image: pics[0], prompt: "a rainy blue hour" });
+  assert.deepEqual(beeble.unmet, {});
+  const watermark = m.fillSlots(FORMS.watermark, { video: vid });
+  assert.deepEqual(watermark.inputs, { video: vid, before_video: vid }, "the 'before' of a comparison takes the same clip");
+  const runway = m.fillSlots(FORMS.runway, { video: vid, images: pics, text: "x" });
+  assert.deepEqual(runway.inputs, { video: vid, image: pics[0], image6: pics[1], prompt: "x" });
+  assert.deepEqual(m.fillSlots(FORMS.runway, { video: vid, images: [pics[0]] }).unmet, { images: 1 });
+  assert.deepEqual(m.fillSlots(FORMS.ingredients, { images: pics }).inputs, { image: pics[0] }, "a picture too many has no slot");
+  assert.deepEqual(m.fillSlots(null, { video: vid }).inputs, {});
+});
+
+test("VOID is given its own two sets of words: the object's short name for SAM3, and the place without it; at its own size, over whole seconds", () => {
+  const vid = { kind: "video", file: "c.mp4" };
+  const out = m.fillSlots(FORMS.void, { video: vid, text: "Remove the white delivery van.", special: "void", shape: { width: 1280, height: 720, seconds: 7.2 } });
+  assert.equal(out.inputs.source_video, vid, "the clip goes to the clip slot whatever its id");
+  assert.equal(out.inputs.sam3_object_mask_prompt, "the white delivery van");
+  assert.match(out.inputs.positive_prompt_inpaint_fill_, /nothing there/);
+  assert.ok(!("prompt" in out.inputs));
+  assert.equal(out.inputs.clip_duration_seconds_, 8);
+  assert.deepEqual([out.inputs.width_pass_2_, out.inputs.height_pass_2_], [672, 384]);
+  assert.equal(m.engineOf("utility_void_video_inpainting").special, "void");
+  assert.equal(m.voidInputs("x ".repeat(40), "", {}).sam3_object_mask_prompt.split(" ").length, 12, "a short name: twelve words at most");
+});

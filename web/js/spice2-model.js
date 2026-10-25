@@ -58,14 +58,14 @@ export const ENGINES = [
   e("select", "cut", "api_bria_video_green_screen", "Bria green screen", "Bria", { about: "Puts the subject on a flat green", needs: { video: true }, partner: true, why: "a clean green for a keyer" }),
   e("select", "cut", "api_bria_remove_video_background_transparent", "Bria cut-out", "Bria", { about: "Takes the background out and leaves it clear", needs: { video: true }, partner: true, why: "a clear background in one step" }),
   // Clean
-  e("clean", "object", "utility_void_video_inpainting", "VOID", "Netflix", { about: "Finds the object by name and paints it out, with its shadows", needs: { video: true, text: true }, max: 10, gpu: 26, why: "removes an object together with its shadow and what it did to the scene" }),
+  e("clean", "object", "utility_void_video_inpainting", "VOID", "Netflix", { about: "Finds the object by name and paints it out, with its shadows", needs: { video: true, text: true }, max: 10, gpu: 26, special: "void", why: "removes an object together with its shadow and what it did to the scene" }),
   e("clean", "object", "template_ltx2_3_obscura_remova_lora_remove_object_from_video", "Obscura Remova", "Lightricks", { about: "Removes what you describe, with no mask", needs: { video: true, text: true }, gpu: 18, why: "no mask: say what to remove" }),
   e("clean", "text", "template_ltx2_3_lora_remove_subtitles_from_video", "LTX subtitles", "Lightricks", { about: "Takes the subtitles off the clip", needs: { video: true }, gpu: 18, why: "made for burnt-in text" }),
   e("clean", "text", "template_ltx2_3_remove_watermark_from_video", "LTX watermark", "Lightricks", { about: "Takes a logo or a watermark out", needs: { video: true }, gpu: 18, why: "made for logos and watermarks" }),
   // Direct: by words
   e("direct", "words", "api_google_gemini_omni_flash_1_1_edit", "Gemini Omni 1.1 Flash", "Google", { about: "Edits by describing the change; keeps what you did not mention", needs: { video: true, text: true }, max: 10, partner: true, why: "keeps everything you do not name; ten seconds at most" }),
   e("direct", "words", "api_seedance2_5_video_editing", "Seedance 2.5", "ByteDance", { about: "Edits a clip by natural language: local replacement, style, objects", needs: { video: true, text: true }, partner: true, why: "good at replacing one thing in the shot" }),
-  e("direct", "words", "api_runway_aleph2_video_edit", "Runway Aleph 2", "Runway", { about: "Applies the changes and keeps the original motion and timing", needs: { video: true, text: true, image: "optional" }, partner: true, why: "keeps the motion and the timing exactly" }),
+  e("direct", "words", "api_runway_aleph2_video_edit", "Runway Aleph 2", "Runway", { about: "Applies the changes and keeps the original motion and timing", needs: { video: true, text: true, image: true, images: 2 }, partner: true, why: "keeps the motion and the timing exactly" }),
   e("direct", "words", "api_luma_ray3_2_video_edit", "Luma Ray 3.2", "Luma", { about: "Edits by natural language, one clip in, one clip out", needs: { video: true, text: true }, partner: true, why: "strong on look and mood changes" }),
   e("direct", "words", "api_kling_o3_video_edit", "Kling O3", "Kling", { about: "Edits a clip with a reference picture for what should appear", needs: { video: true, text: true, image: "optional" }, partner: true, why: "takes a reference picture for the new thing" }),
   e("direct", "words", "api_wan2_7_video_edit", "Wan 2.7", "Alibaba", { about: "Replaces characters or scenes with pictures", needs: { video: true, text: true, image: "optional" }, partner: true, why: "replaces a person or a place from a picture" }),
@@ -372,7 +372,7 @@ export function creditsOnDay(bodies, now = new Date()) {
  * longer than the engine takes, a reference it needs and has not got); a "warn" can (words missing, a size the engines round, a rate off 24).
  * `given`: { text, images: n of reference pictures, frames: n of held frames }.
  */
-export function preflight(engine, body, stage, given = {}) {
+export function preflight(engine, body, stage, given = {}, form = null) {
   const out = [];
   if (!engine) return [{ level: "stop", text: "Pick an engine." }];
   if (engine.local) return out;
@@ -381,8 +381,14 @@ export function preflight(engine, body, stage, given = {}) {
   if (n.video && !input) out.push({ level: "stop", text: "Bring a clip first." });
   if (n.video && input && engine.max && seconds > engine.max + 0.05) out.push({ level: "stop", text: `${engine.title} takes ${engine.max} seconds at most; this clip is ${Math.round(seconds * 10) / 10}. Trim it in Conform.` });
   const refs = given.images ?? 0;
-  if (n.image === true && !n.video && refs < Math.max(1, n.images ?? 1)) out.push({ level: "stop", text: n.images > 1 ? `${engine.title} needs ${n.images} pictures; ${refs} given.` : `${engine.title} needs a picture to start from or to keep.` });
-  if (n.image === true && n.video && refs < 1) out.push({ level: "stop", text: `${engine.title} needs a reference picture (what it should look like).` });
+  if (form) {
+    // (the template's own form says how many pictures it requires)
+    const need = needsFromForm(form).images;
+    if (refs < need) out.push({ level: "stop", text: need === 1 ? `${engine.title} needs a picture (${n.video ? "what it should look like" : "to start from or to keep"}).` : `${engine.title} needs ${need} pictures; ${refs} given.` });
+  } else {
+    if (n.image === true && !n.video && refs < Math.max(1, n.images ?? 1)) out.push({ level: "stop", text: n.images > 1 ? `${engine.title} needs ${n.images} pictures; ${refs} given.` : `${engine.title} needs a picture to start from or to keep.` });
+    if (n.image === true && n.video && refs < 1) out.push({ level: "stop", text: `${engine.title} needs a reference picture (what it should look like).` });
+  }
   if (n.text === true && !String(given.text ?? "").trim()) out.push({ level: "warn", text: "No words given: it will run on the template's own." });
   if (input && width && height && (width % 2 || height % 2)) out.push({ level: "warn", text: `The clip is ${width}×${height}: an odd size is rounded by most editors. Conform sets it.` });
   if (input && body.clip?.fps && (body.clip.fps < 20 || body.clip.fps > 31)) out.push({ level: "warn", text: `The clip runs at ${body.clip.fps} fps; the editors expect about 24. Conform sets it.` });
@@ -464,3 +470,60 @@ export const pickMedia = (list) => {
   const m = all.slice().sort((a, b) => rank(a) - rank(b))[0];
   return m ? mediaOf(m) : null;
 };
+
+// ---------------------------------------------------------------- filling a template's form
+
+/**
+ * What a template's real form asks of the shot (its slots, as the runner reads them from Comfy Cloud): how many clips and pictures it
+ * REQUIRES and whether it takes words. The curated `needs` of an engine are Spice's guess; this is what the form says, and wins when it is known.
+ */
+export function needsFromForm(schema) {
+  const slots = schema?.slots ?? [];
+  const req = (kind) => slots.filter((x) => x.kind === kind && x.required).length;
+  return { video: req("video") > 0, images: req("image"), text: slots.some((x) => x.kind === "text" && !/negative/i.test(x.id + x.label)) };
+}
+
+/**
+ * VOID takes two sets of words, not one: SAM3 finds the object by a short name (32 tokens at most), and the hole is filled from words that say
+ * how the place looks without it, never naming what is gone (or it comes back). It works at its model's own size, about 672 x 384 pixels turned
+ * to the clip's shape, over the whole clip in whole seconds (ten at most).
+ */
+export const VOID_AFTER = "The same place with nothing there: what was behind carries on naturally, the same light and colours, a steady camera.";
+export function voidInputs(words, after, { width, height, seconds } = {}) {
+  const what = String(words ?? "").trim().replace(/^(take out|remove)\s+/i, "").replace(/[.!]+$/, "").split(/\s+/).slice(0, 12).join(" ");
+  const shape = width > 0 && height > 0 ? width / height : 16 / 9;
+  const w = Math.max(256, Math.round(Math.sqrt(672 * 384 * shape) / 16) * 16);
+  const h = Math.max(256, Math.round(Math.sqrt((672 * 384) / shape) / 16) * 16);
+  return {
+    sam3_object_mask_prompt: what,
+    positive_prompt_inpaint_fill_: String(after ?? "").trim() || VOID_AFTER,
+    width_pass_2_: w, height_pass_2_: h,
+    start_frame_index: 0, clip_duration_seconds_: Math.max(1, Math.min(10, Math.ceil(seconds || 5))),
+  };
+}
+
+/**
+ * The inputs for a template's real form from what the shot has: { inputs, unmet }. The clip goes to the first clip slot, and to any other
+ * REQUIRED clip slot (a "before" of a comparison takes the same clip); the pictures go to the picture slots in the form's order, the
+ * required ones first; the words go to the "prompt" slot, else the first words slot that is not a negative one. `special: "void"` sends
+ * VOID's own sets of words instead. `unmet` says what the form requires and the shot has not got: { images: n } (pictures short).
+ */
+export function fillSlots(schema, { video = null, images = [], text = "", special = "", shape = {} } = {}) {
+  const slots = schema?.slots ?? [];
+  const inputs = {};
+  const clips = slots.filter((x) => x.kind === "video");
+  if (video) for (const [i, x] of clips.entries()) if (i === 0 || x.required) inputs[x.id] = video;
+  const pics = [...slots.filter((x) => x.kind === "image" && x.required), ...slots.filter((x) => x.kind === "image" && !x.required)];
+  let used = 0;
+  for (const x of pics) {
+    if (used >= images.length) break;
+    inputs[x.id] = images[used++];
+  }
+  if (special === "void") Object.assign(inputs, voidInputs(text, "", shape));
+  else if (String(text).trim()) {
+    const words = slots.find((x) => x.kind === "text" && x.id === "prompt") ?? slots.find((x) => x.kind === "text" && !/negative/i.test(x.id + x.label));
+    if (words) inputs[words.id] = String(text).trim();
+  }
+  const required = slots.filter((x) => x.kind === "image" && x.required).length;
+  return { inputs, unmet: required > images.length ? { images: required - images.length } : {} };
+}

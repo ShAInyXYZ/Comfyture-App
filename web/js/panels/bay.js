@@ -11,7 +11,7 @@ import {
   bay, loadBays, openShot, newShot, removeShot, rename, setStage, setBrief, setSource, setText, pickEngine, chosen, enginesOfStage, priceNow, problems,
   pickRef, dropRef, importClip, pickClip, conform, exportClip, downloadLedger, run, stopRun, mark, drop, showTake, workingOn, mediaOfSide, hasPending, takePending, loadCatalog, followStep,
 } from "../bay.js";
-import { STAGES, SAY, PLACEHOLDER, MODES, passOf, takesOf, ledger, creditsOnDay, conformPlan, inputFor, blocked, stageOf, stepDone, engineOf } from "../spice2-model.js";
+import { STAGES, SAY, PLACEHOLDER, MODES, passOf, takesOf, ledger, creditsOnDay, conformPlan, inputFor, blocked, stageOf, stepDone, engineOf, needsFromForm } from "../spice2-model.js";
 import { createViewer } from "../bay-viewer.js";
 import { yes, ghost, iconKey, danger, lamp, thumb, fill, card, glyph } from "../bay-ui.js";
 
@@ -141,7 +141,10 @@ function stagePanel(st) {
   const ps = problems(st.id);
   const price = priceNow(st.id);
   const need = picked?.needs ?? {};
-  const wantsRefs = need.image || need.images;
+  // (what the template's own form requires, once it is read, wins over Spice's guess)
+  const real = bay.forms.get(picked?.name);
+  const formNeed = real ? needsFromForm(real) : null;
+  const wantsRefs = need.image || need.images || formNeed?.images;
   return h("div.bay-stage-body", {}, h("div.bay-scroll", {},
     h("div.bay-stage-head", {}, h("span.bay-stage-icon", {}, glyph(st.icon)), h("div", {}, h("h2", {}, st.name), h("p", {}, st.makes)), sourcePicker(st)),
     !bay.catalog && !bay.catalogError ? h("p.bay-note", {}, "Reading Comfy Cloud's templates…") : null,
@@ -153,7 +156,7 @@ function stagePanel(st) {
     h("label.bay-words", {}, h("span", {}, need.text ? "In words" : "Words (optional)"),
       h("textarea.field", { rows: "3", maxlength: "2000", placeholder: PLACEHOLDER[st.id].replace(/^Ask Paprika — /, "e.g. "), "aria-label": "Describe the change", dataset: { words: st.id },
         on: { input: (e) => { setText(st.id, e.target.value); recheck(st.id); } } }, f.text)),
-    wantsRefs ? refsRow(st, need) : null,
+    wantsRefs ? refsRow(st, need, formNeed) : null,
     h("div.bay-problems", { "aria-live": "polite" }, problemList(ps)),
     st.id === "finish" ? exportRow() : null),
     h("div.bay-run", {}, working
@@ -171,9 +174,9 @@ function exportRow() {
       ghost("Ledger", downloadLedger, { icon: "key", title: "Save what was run and what it cost as a text file" })));
 }
 
-function refsRow(st, need) {
+function refsRow(st, need, formNeed) {
   const f = bay.form[st.id];
-  const must = need.image === true && !need.video ? Math.max(1, need.images ?? 1) : 0;
+  const must = formNeed ? formNeed.images : need.image === true && !need.video ? Math.max(1, need.images ?? 1) : 0;
   return h("div.bay-refs", {}, h("span.bay-refs-label", {}, need.images > 1 ? `Pictures (${need.images})` : need.image === true ? "A picture it needs" : "A picture it can use"),
     h("div.bay-refs-row", {},
       f.refs.map((m, i) => h("span.bay-ref", {}, thumb(m), h("button", { type: "button", title: "Take it off", "aria-label": "Take the picture off", on: { click: () => dropRef(st.id, i) } }, icon("close")))),
@@ -269,7 +272,7 @@ export function renderBay(el) {
   const b = bay.shot.body;
   const parts = {
     side: sig(b, bay.list.length, bay.shot.name),
-    stage: sig(b.clip, b.stages[bay.stage], b.log.length, state.account?.openWeights, bay.form[bay.stage], bay.catalog?.length, bay.catalogError, [...bay.estimates], b.brief ? 1 : 0),
+    stage: sig(b.clip, b.stages[bay.stage], b.log.length, state.account?.openWeights, bay.form[bay.stage], bay.catalog?.length, bay.catalogError, [...bay.estimates], bay.forms.size, b.brief ? 1 : 0),
     takes: sig(b.stages[bay.stage], bay.wipe),
   };
   const draw = (key, fn) => {

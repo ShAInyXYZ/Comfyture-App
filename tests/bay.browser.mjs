@@ -75,7 +75,7 @@ try {
     api_beeble_switchx_video_edit: [["video", "video", true], ["image", "image", true], ["prompt", "text"]],
     video_ltx2_3_ic_lora: [["video", "video", true], ["image", "image"], ["prompt", "text"]],
     template_ltx2_3_ic_lora_ingredients: [["image", "image", true], ["prompt", "text"]],
-    utility_void_video_inpainting: [["video", "video", true], ["prompt", "text"]],
+    utility_void_video_inpainting: [["source_video", "video", true], ["seed", "seed"], ["positive_prompt_inpaint_fill_", "text"], ["negative", "text"], ["sam3_object_mask_prompt", "text"], ["width_pass_2_", "number"], ["height_pass_2_", "number"], ["clip_duration_seconds_", "number"]],
   };
   const PRICES = { api_google_gemini_omni_flash_1_1_edit: 40, api_seedance2_5_video_editing: 55, api_beeble_switchx_video_edit: 90 };
   let failNext = false;
@@ -305,6 +305,24 @@ try {
   ok(!(await key().isDisabled()), "while Conform, which is local, is not");
   await page.unroute("**/api/account");
   await page.route("**/api/account", (route) => (route.request().method() === "GET" ? route.fulfill({ json: account() }) : route.continue()));
+  await page.reload();
+  await page.waitForSelector(".bay .bay-step");
+  await settle(900);
+
+  // ---- VOID is given its own two sets of words, whatever the form calls its slots
+  await step("clean").click();
+  await settle(400);
+  await page.locator('.bay-engine[data-engine="utility_void_video_inpainting"]').click();
+  await page.locator('textarea[data-words="clean"]').fill("Remove the white delivery van.");
+  await settle(300);
+  const before = runs.length;
+  await key().click();
+  await page.locator(".bay-primary", { hasText: "Yes, spend it" }).click();
+  await page.waitForFunction((n) => document.querySelectorAll(".bay-take").length >= n, 1, { timeout: 20000 });
+  await settle(400);
+  const void_ = runs[before]?.body?.inputs ?? {};
+  ok(runs.length === before + 1 && runs[before].name === "utility_void_video_inpainting", "VOID ran once");
+  ok(void_.sam3_object_mask_prompt === "the white delivery van" && /nothing there/.test(void_.positive_prompt_inpaint_fill_ ?? "") && void_.source_video?.file, "with the object's short name for SAM3, the place without it, and the clip in its own slot", JSON.stringify(void_).slice(0, 200));
 
   // ---- a laptop
   for (const [w, h] of [[1280, 720], [1366, 768], [1920, 1080]]) {
