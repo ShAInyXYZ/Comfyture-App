@@ -12,7 +12,9 @@ Measured on this machine with a headless Chromium at 1600×950, every page opene
 | Opening any page, first visit | **~30 MB**, ~730 requests | **~9 MB**, same requests (gzip) |
 | Opening it again | **~30 MB** every time (no validators, `no-cache`) | **0.3 MB** (304s, the models kept a day) |
 | Page errors on the 12 pages | 0 | 0 |
-| Buttons and links with no name, images with no `alt`, fields with no label | 0 / 0 / 0 | 0 / 0 / 0 |
+| Buttons and links with no name in the browser's own tree, images with no `alt`, fields with no label | 3 / 0 / 0 | 0 / 0 / 0 |
+| Texts under 4.5:1 on the 13 first views | **161** | **0** |
+| Dialogs, tours and menus by keyboard (62 checks) | 43 pass | **62 pass** |
 | Unit tests | 414 of 417 | **418 of 418** |
 | Unlicensed IP in the code (the image guides' examples) | 10 files | 0 |
 
@@ -51,9 +53,76 @@ moves on): harmless.
 
 ## Accessibility
 
-Every visible button and link has a name (text, `aria-label`, `title` or a tooltip), every image an `alt`, every field a label or a
-placeholder, on each page's first view. Not checked tonight: colour contrast, keyboard-only paths through each product, and a screen
-reader's reading order. The tours (web/js/tour.js) are keyboard-driven (arrows, Enter, Esc) and announce themselves as dialogs.
+Checked on the same pages (the first view of each, 1600×950, a new data folder), plus the account window, a tour card and the Oven, with
+a headless Chromium, axe-core 4.13 and real key presses. **Colour** is read off the pixels: each text's colour laid over what it really
+sits on (gradients and see-through layers included), against 4.5:1, or 3:1 for large text; text over a picture is set apart as "needs a
+look". **Keyboard**: Tab from the top of each page, every stop named by the browser's own accessibility tree, its ring compared focused
+and not; then Enter, arrows, Tab and Esc on the account window, the tours, the Oven, a select, the windows of Spice, Macaron and Jam,
+and Utensils' Library. **Reading order** is that same tree: a screen reader itself was not run.
+
+| | Before | After |
+|---|---|---|
+| Texts under 4.5:1, first views of the 13 pages | **161** | **0** |
+| ...in the account window / the Oven / the tours' cards | 9 / 6 / 0 | 0 / 0 / 0 |
+| axe colour contrast, whole pages / keys hovered | 183 / 35 | 0 / 0 |
+| Tab stops with no name in the browser's tree | 19 | 0 |
+| Tab stops hidden under the assistant's bar | 19 | 0 |
+| Tab stops with no ring, or a ring cut to less than half | 124 | 2 |
+| Dialogs, tours and menus by keyboard | 43 of 62 | **62 of 62** |
+| axe findings on structure (landmarks, roles, names, headings) | 25 | 0 |
+
+**Colour.** Nine in ten of the failures (152 of 161) were one token: `--dim`, the labels, hints, times and placeholders, `#77767e`, 3.6 to
+4.3:1 on the dark surfaces. It is `#888790` now, 4.5 to 5.4:1. That is the only change that touches the look: 0.1 to 0.6% of a page's
+pixels, by at most 24 levels, and text, muted and dim stay three steps. Put the old value back in [material.css](../web/css/material.css)
+to take it back (the failures come back with it). The rest were places that did not use the token: placeholders and the Library's
+dates (`--faint`, 2.1 to 2.6:1), its tabs' counts (65% opacity), the Oven's empty-slot label, the picked preset tile's blurb on its
+tinted face, the account key in the header when hovered or open. For a look, not counted: 23 texts over pictures (the home's banner,
+film covers, clip names), the Stage's first tick under its playhead, and two Macaron captions that cross the edge of the brand's yellow
+panel at this height.
+
+**Keyboard.** Every page can be walked and none traps: 1,002 Tab stops on the 13 first views, all reached, the walk ending by leaving
+the page, and each page's main key (Imagine, Roll, Render the film, Read the depth, Open Kitchen…) is one of them. What was wrong:
+
+- The assistant's bar floats over the foot of a page, and what took focus under it stayed there (Story's insert keys, Utensils' shelf):
+  the page scrolls it clear now (`scroll-padding-bottom`, the bar's height).
+- Rings cut by the box they sit in (the chips above every bar lost their top and bottom, so did the rooms' links, the tabs, the preset
+  and media tiles, Story's scene links), and rings that were not there: the colour pickers laid invisibly over a swatch (Macaron, Jam,
+  Spice, Utensils) and Macaron's picked card, which looked the same focused or not.
+- Story's blocks, scene names and shot cards, and Jam's two trim handles, could only be clicked or dragged. They are keys now (Enter or
+  Space picks, the caret goes to the end) and sliders (the arrows move a handle a second, Shift five).
+- The home's banner turns every 8 s and held only for the pointer: it holds for the keyboard too (and does not turn with reduced motion).
+
+**Dialogs.** The account window opened at the end of the page, where Tab never got (the page scrolled and shut it at the 25th press): the
+keyboard lands in it now, Esc shuts it and the focus goes back to its key. The tours' arrows, Enter and Esc already worked; the card now
+reads its words as well as its title, and the focus goes back to the compass when it ends. The Oven let Tab walk out into the dimmed page:
+what is behind a window is put away (`inert`) while it is open, and the focus goes back to what opened it, by a small helper
+([web/js/modal.js](../web/js/modal.js)) that Jam's windows (the focus went nowhere) and Utensils' Library (it went in, but Tab walked out
+and it did not come back) use too. Spice's and Macaron's windows had no name: they are named by their title. A select now says to a screen
+reader if it is open and which row the arrows are on (it is a select-only combobox).
+
+**Reading order and landmarks.** One `main` on every page (Jam's had a second inside the first) and an `h1` (the Stage, Shot, Cut, Macaron,
+Spice and Toaster had none); the cards of Shot, Cut, Macaron and Spice are headings. The five strips of tabs held a button inside their
+tablist, Cut's media tabs said `aria-pressed`, Stage's two side columns had no name, Utensils' sliders had no value or held buttons: fixed.
+And a name was lost: [tooltip.js](../web/js/tooltip.js) removes every `title` to make its tip, which took the only name from controls with
+no text (Kitchen's Library link, Mixer's two faces); the count of 25 October had counted titles. A title with nothing else is kept as the
+name now, and the lamps (saved, linked) read their tip.
+
+**Left, most valuable first.**
+
+1. Fields' edges are 1.0 to 1.4:1 against what is around them (the instrument panel's look); 1.4.11 asks 3:1 where the edge is what says
+   "a field". They carry placeholders, and a 4.7:1 edge when focused, so it is a judgement. Proposal: a 1px edge `#6d6c74` (3.4:1 on the
+   cards) on `.field`, the prompt, the search and the bar. It changes every field's look, so it is not applied.
+2. The lime ring over a bright picture falls to 1.2 to 2.9:1 on the keys that sit over pictures (Kitchen's delete ×, Try it, Select, Watch
+   our crew's version, the takes' keys). Proposal: a dark halo under it, `box-shadow: 0 0 0 5px rgba(0, 0, 0, .6)` on those keys.
+3. No skip link: the header and the rooms are 11 to 16 Tab stops before a page's own content (landmarks and the `h1` meet 2.4.1 for a
+   screen reader). A link needs a few lines in index.html and app.js, and must not change the hash, where the router lives.
+4. Mouse-only work: Cut's timeline (clips, ruler, beat lane; the inspector's Start and Length cover moves), the 3D viewports of Stage and
+   Toaster (their lists and keys cover most), Jam's waveform seek, the × that closes a tab, the Story bible's pictures. Esc inside a Story
+   block leaves the focus on the page, not on the block.
+5. The tour's lit element is not in the card's Tab order, and the tips cannot be hovered (1.4.13).
+
+Not checked: a screen reader speaking, zoom to 200% and reflow, forced colours, and the states below each first view beyond hover and the
+dialogs above.
 
 ## Tests
 
@@ -129,4 +198,4 @@ valuable first):
 2. Load the Stage's models per piece and mount the Stage on demand (saves ~6 MB gzipped on every first visit).
 3. Load each product's code and styles on its first visit.
 4. Rewrite `jam-editor.browser.mjs` from its windows section on, and look at the two Macaron checks.
-5. Contrast and keyboard-path checks on each product.
+5. Decide the accessibility proposals (fields' edges, the ring over pictures, a skip link: the list under Accessibility).
