@@ -1,7 +1,7 @@
 // Jam in a real browser, end to end, on a server of its own and a folder of its own. Jam ships three music videos made with our own songs
 // and cast (Moonlit Oolong Walk, which it opens first, then La Calabaza and Three Kittens), each with its song, stems, words, band, edit
-// and finished film; this test leans on those and never on the two dance-trend videos beside them (Toc Toc and Hotel Lobby play
-// commercial recordings and may go). It holds: the videos Jam ships (each opens as its edit, cut on its beats, its film a film of the
+// and finished film, and no others (the Toc Toc and Hotel Lobby videos, which played commercial recordings, were retired on 25 October);
+// this test leans on those. It holds: the videos Jam ships (each opens as its edit, cut on its beats, its film a film of the
 // Library, none worked on by being looked at); Pickle's panel and the five workspaces each in its own right (the song with its cover, the
 // track, the words, the band, the edit) and every card opening in a window; the record played; beats heard, an effect and stickers put on,
 // a lyric word retimed; undo, redo, save, reload; the film exported and its frames held against the preview's at the same times;
@@ -116,7 +116,7 @@ try {
   // ---- the videos Jam ships: each opens as its edit, cut on its beats, its film a film of the Library; looking at them is not working on them
   await section("the videos Jam ships", async () => {
     const shipped = await page.evaluate(() => import("/js/jam.js").then((m) => m.jam.list.map((j) => j.id).filter((id) => id.startsWith("jam-")).sort()));
-    ok(OURS.every((id) => shipped.includes(id)), `Jam ships our three videos (${shipped.join(", ")})`);
+    ok(shipped.join() === [...OURS].sort().join(), `Jam ships our three videos and no other (${shipped.join(", ")})`);
     ok((await page.evaluate(() => import("/js/jam.js").then((m) => m.jam.list.some((j) => /ramalama/i.test(j.id + j.name))))) === false, "Ramalama is not one of them");
     // (each is opened, and every workspace of it looked at: the song, the track, the words, the band, the edit)
     for (const id of shipped) {

@@ -305,8 +305,8 @@ test("Pickle's brief is Jam's only: its five workspaces and its own actions, no 
   assert.doesNotMatch(cutBrief(), /You are Pickle/);
 });
 
-const JAM = { workspace: "words", steps: "Song made ✓, Words heard (next), Captions styled, Band cast, Edit cut", track: { name: "Toc Toc", seconds: 9.833, bpm: 124.2, from: 0, to: 9.8, drop: 2.4, loud: 4 }, words: { count: 5, heard: false, style: "pop" }, artist: "Josie", dance: 9.8, vibe: "pastel room", shots: [{ kind: "dance", from: 0, to: 2.1 }, { kind: "broll", from: 2.1, to: 4 }], costs: { track: "≈ 8 cr for 30 s", words: "≈ 2 cr", video: "nothing more to make" } };
-const EDIT = { length: 9.8, aspect: "9:16", clips: [{ n: 1, name: "Toc Toc", start: 0, length: 2 }], effects: [{ kind: "zoom", every: 4, intensity: 0.6, start: 0, length: 5 }], stickers: [{ name: "star", start: 1, length: 2 }], titles: [{ text: "TOC TOC", start: 0, length: 2 }], lyrics: [{ n: 1, text: "hello", start: 0, length: 2, style: "pop" }], beats: { count: 20, bpm: 124, first: 0.2, offset: 0.2, source: "found" } };
+const JAM = { workspace: "words", steps: "Song made ✓, Words heard (next), Captions styled, Band cast, Edit cut", track: { name: "Moonlit Oolong Walk", seconds: 9.833, bpm: 124.2, from: 0, to: 9.8, drop: 2.4, loud: 4 }, words: { count: 5, heard: false, style: "pop" }, artist: "Josie", dance: 9.8, vibe: "pastel room", shots: [{ kind: "dance", from: 0, to: 2.1 }, { kind: "broll", from: 2.1, to: 4 }], costs: { track: "≈ 8 cr for 30 s", words: "≈ 2 cr", video: "nothing more to make" } };
+const EDIT = { length: 9.8, aspect: "9:16", clips: [{ n: 1, name: "Moonlit Oolong Walk", start: 0, length: 2 }], effects: [{ kind: "zoom", every: 4, intensity: 0.6, start: 0, length: 5 }], stickers: [{ name: "star", start: 1, length: 2 }], titles: [{ text: "MOONLIT OOLONG", start: 0, length: 2 }], lyrics: [{ n: 1, text: "hello", start: 0, length: 2, style: "pop" }], beats: { count: 20, bpm: 124, first: 0.2, offset: 0.2, source: "found" } };
 const ask = (jam: any, edit: any = {}) => cutPrompt({ jam, ...edit }, [{ role: "user", text: "bigger captions" }]);
 
 test("Pickle is told the video's steps and the open workspace's own things, and where the others are", () => {
@@ -314,7 +314,7 @@ test("Pickle is told the video's steps and the open workspace's own things, and 
   assert.match(words, /^JAM NOW$/m);
   assert.match(words, /workspace open: words/);
   assert.match(words, /the video's steps: Song made ✓, Words heard \(next\)/);
-  assert.match(words, /track: "Toc Toc", 9.8 s, 124.2 bpm\nthe part used runs 0 to 9.8 s/);
+  assert.match(words, /track: "Moonlit Oolong Walk", 9.8 s, 124.2 bpm\nthe part used runs 0 to 9.8 s/);
   assert.match(words, /words: 5 lines, typed; captions pop/);
   assert.match(words, /keys that cost credits: hear the words ≈ 2 cr$/m, "only the key of this workspace");
   assert.match(words, /\(not shown to you: song holds .*track holds .*band holds .*edit holds /);
@@ -322,7 +322,7 @@ test("Pickle is told the video's steps and the open workspace's own things, and 
   assert.match(words, /User: bigger captions/);
   // the track: the part and the drop, its own key; no words, no band
   const track = ask({ ...JAM, workspace: "track" });
-  assert.match(track, /track: "Toc Toc", 9.8 s, 124.2 bpm; the part used runs 0 to 9.8 s; the drop is at 2.4 s; the loudest stretch starts at 4 s/);
+  assert.match(track, /track: "Moonlit Oolong Walk", 9.8 s, 124.2 bpm; the part used runs 0 to 9.8 s; the drop is at 2.4 s; the loudest stretch starts at 4 s/);
   assert.doesNotMatch(track, /words: 5 lines|artist: Josie|shots:/);
   // the band: the artist, the dance, the vibe, the shots, the video's key
   const band = ask({ ...JAM, workspace: "band" });
@@ -351,13 +351,13 @@ test("Pickle is told of the edit only as far as the workspace open works on it",
 });
 
 test("on the song page Pickle is told the form and the shelf, never the edit", () => {
-  const song = { idea: "a cozy winter song", shape: "pop", style: "lo-fi hip hop, dreamy", length: 200, bpm: 76, key: "A minor", time: "4", language: "en", quality: "full", title: "Winter nights", lyrics: "10 sections (Intro, Verse 1), 12 lines of words", shown: { name: "Hotel Lobby sound", seconds: 18 }, shelf: ["Hotel Lobby sound", "Three Kittens track"], busy: null };
-  const text = ask({ workspace: "song", steps: "Song made", song, track: { name: "Hotel Lobby sound", seconds: 18 } }, EDIT);
+  const song = { idea: "a cozy winter song", shape: "pop", style: "lo-fi hip hop, dreamy", length: 200, bpm: 76, key: "A minor", time: "4", language: "en", quality: "full", title: "Winter nights", lyrics: "10 sections (Intro, Verse 1), 12 lines of words", shown: { name: "Moonlit Oolong Walk track", seconds: 18 }, shelf: ["Moonlit Oolong Walk track", "Three Kittens track"], busy: null };
+  const text = ask({ workspace: "song", steps: "Song made", song, track: { name: "Moonlit Oolong Walk track", seconds: 18 } }, EDIT);
   assert.match(text, /workspace open: song/);
   assert.match(text, /idea: a cozy winter song\nshape: pop\nstyle: lo-fi hip hop, dreamy\nlength 200 s, 76 bpm, A minor, time 4, language en, quality full\ntitle: Winter nights\nlyrics: 10 sections/);
-  assert.match(text, /song shown: "Hotel Lobby sound", 18 s/);
-  assert.match(text, /songs on the shelf: "Hotel Lobby sound", "Three Kittens track"/);
-  assert.match(text, /the video's track: "Hotel Lobby sound", 18 s/);
+  assert.match(text, /song shown: "Moonlit Oolong Walk track", 18 s/);
+  assert.match(text, /songs on the shelf: "Moonlit Oolong Walk track", "Three Kittens track"/);
+  assert.match(text, /the video's track: "Moonlit Oolong Walk track", 18 s/);
   assert.doesNotMatch(text, /THE EDIT NOW|Video track|Beats:|Lyrics:|dance to copy|shots:/);
   assert.match(ask({ workspace: "song", song }), /the video has no track yet/);
 });
