@@ -97,10 +97,13 @@ try {
   const steps = await page.locator(".jm-pipe-list li").evaluateAll((els) => els.map((e) => [e.querySelector("span:not(.jm-lamp)").textContent, e.dataset.state]));
   ok(steps.map((x) => x[0]).join() === "Song made,Words heard,Captions styled,Band cast,Edit cut" && steps[0][1] === "done" && steps.filter((x) => x[1] === "next").length === 1, `the pipeline lists the five steps, the song done and one next (${steps.map((x) => x.join(":")).join(" ")})`);
   ok((await page.locator(".jm-tool").count()) === 0, "there are no canned tools on the panel");
-  const bentoNames = () => page.locator(".jm-grid .jm-bento").evaluateAll((els) => els.map((e) => [...e.classList].find((c) => /^jm-b-/.test(c)).slice(5)));
-  for (const [ws, want] of Object.entries({ track: "record,start,hear", words: "lyrics,styles,preview", band: "stage,dance,look", edit: "monitor,selected,timeline,foot" })) {
+  // (the track and the words are cards since their redesign, data-card; the band and the edit are the grid's bentos)
+  const bentoNames = (ws) => ws === "track" || ws === "words"
+    ? page.locator(".jam [data-card]").evaluateAll((els) => els.map((e) => e.dataset.card))
+    : page.locator(".jm-grid .jm-bento").evaluateAll((els) => els.map((e) => [...e.classList].find((c) => /^jm-b-/.test(c)).slice(5)));
+  for (const [ws, want] of Object.entries({ track: "hero,stems,beat,cut", words: "lyrics,preview,styles,controls", band: "stage,dance,look", edit: "monitor,selected,timeline,foot" })) {
     await workspace(ws);
-    ok((await bentoNames()).join() === want, `${ws}: its bentos are ${want}`);
+    ok((await bentoNames(ws)).join() === want, `${ws}: its cards are ${want}`, (await bentoNames(ws)).join());
     ok((await page.locator(".jm-tile.is-on").getAttribute("data-workspace")) === ws, `${ws}: its tile is the lit one`);
     // the editor's monitor is drawn where it is shown, once: in the words' preview and in the edit
     ok((await page.locator(".jam .cut-screen").count()) === (ws === "words" || ws === "edit" ? 1 : 0), `${ws}: the monitor is ${ws === "words" || ws === "edit" ? "there" : "not on this screen"}`);
