@@ -134,7 +134,11 @@ function draw() {
     draw();
   };
   const local = picked === "self-hosted";
-  const renders = section(
+  // a judges' copy (COMFYTURE_JUDGE): its key and where it renders are its host's, shown but not changed here
+  const judge = !!state.info?.judge;
+  const renders = judge
+    ? section("Renders on", h("div.account-row", {}, h("b", {}, own ? "Your ComfyUI" : "Comfy Cloud"), h("span.hint", {}, host)), h("p.hint", {}, "A judges' copy: where it renders is set by its host."))
+    : section(
     "Renders on",
     h("div.account-switch", { role: "radiogroup", "aria-label": "Where the renders go" },
       ...[["comfy-cloud", "Comfy Cloud"], ["self-hosted", "Your ComfyUI"]].map(([kind, label]) =>
@@ -197,14 +201,15 @@ function draw() {
       h("code.account-key", {}, a.key.set ? `•••• ${a.key.last4}` : "none"),
       h("span.hint", {}, a.key.set ? (a.key.source === "settings" ? "saved here" : "from .env") : ""),
       h("span.spacer"),
-      !editing && h("button.key.is-quiet", { type: "button", on: { click: () => ((editing = true), (message = ""), draw(), pop.querySelector("input")?.focus(), place()) } }, a.key.set ? "Change" : "Add"),
+      !editing && !judge && h("button.key.is-quiet", { type: "button", on: { click: () => ((editing = true), (message = ""), draw(), pop.querySelector("input")?.focus(), place()) } }, a.key.set ? "Change" : "Add"),
     ),
+    judge && h("p.hint", {}, "A judges' copy: its key is set by its host and never leaves the server."),
     keyBox,
     message && h("p.account-msg", { role: "status", dataset: { tone: busy ? "" : "crit" } }, message),
     h(
       "div.account-row",
       {},
-      a.key.source === "settings" && a.key.set && h("button.key.is-quiet", { type: "button", on: { click: async () => ((message = ""), await clearAccountKey().catch((e) => (message = e.message)), draw()) } }, "Use the .env key again"),
+      !judge && a.key.source === "settings" && a.key.set && h("button.key.is-quiet", { type: "button", on: { click: async () => ((message = ""), await clearAccountKey().catch((e) => (message = e.message)), draw()) } }, "Use the .env key again"),
       h("span.spacer"),
       link("https://platform.comfy.org/profile/api-keys", "Get a key from Comfy", "Get a key"),
     ),

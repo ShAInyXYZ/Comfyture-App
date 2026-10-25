@@ -38,6 +38,7 @@ import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templat
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
 import { seedExamples, placeMedia, placeThumb, type ExampleKind, type Kept } from "./examples.ts";
 import { createTarget, cleanUrl, LOCAL_URL, type Target } from "./target.ts";
+import { judging, refused, createPace, visitorOf } from "./judge.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -1050,13 +1051,26 @@ engine.on("paint", (job) => broadcast("paint", job));
 
 // ------------------------------------------------------------------ routes
 
+// a judges' copy (COMFYTURE_JUDGE, server/judge.ts): each visitor's pace of writing requests
+const pace = createPace();
+
 async function route(req: IncomingMessage, res: ServerResponse) {
   const url = new URL(req.url ?? "/", "http://local");
   const path = url.pathname;
   const method = req.method ?? "GET";
 
+  // a judges' copy keeps its key, its renders' target and everything in it, and paces each visitor's writing requests
+  if (judging() && path.startsWith("/api/")) {
+    const why = refused(method, path);
+    if (why) return json(res, 403, { error: why });
+    if (method !== "GET" && method !== "HEAD" && !pace.take(visitorOf(req.socket.remoteAddress, req.headers["x-forwarded-for"]))) {
+      res.setHeader("Retry-After", "60");
+      return json(res, 429, { error: "A moment, please: this copy takes a few requests at a time from each visitor." });
+    }
+  }
+
   if (path === "/api/info" && method === "GET") {
-    return json(res, 200, { target: target.kind, url: new URL(target.url).origin, workflows: workflowSet, repository, reels: ffmpeg, llms: { models: llms(), default: defaultLlm("writer"), assistant: defaultLlm("assistant") } });
+    return json(res, 200, { target: target.kind, url: new URL(target.url).origin, workflows: workflowSet, repository, reels: ffmpeg, judge: judging(), llms: { models: llms(), default: defaultLlm("writer"), assistant: defaultLlm("assistant") } });
   }
   if (path === "/api/account" && method === "GET") return json(res, 200, await account.status(url.searchParams.has("refresh")));
   if (path === "/api/account/key" && method === "POST") return json(res, 200, await account.saveKey((await jsonBody(req)).key));
