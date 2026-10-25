@@ -791,6 +791,8 @@ export function controlOps(stage) {
    */
   const composeRender = async (a = {}) => {
     if (!stage.characters.length && !stage.props.length) throw new Error("The stage is empty: stage a scene first.");
+    // the frame is drawn from the real pieces, not their stand-ins
+    await stage.settled();
     const model = await modelOf(a.model);
     const look = clean(a.prompt);
     const ratio = RATIOS[stage.ratio];
@@ -881,6 +883,7 @@ export function controlOps(stage) {
 
   /** The stage as one GLB, with ids and joint names in each node's extras, for Blender. */
   const exportGlb = async () => {
+    await stage.settled();
     // Blender shows node names, so a body goes by its name; ids ride along in the extras
     const saved = new Map();
     const tag = (o, extras, name = o.name) => {
@@ -1072,21 +1075,28 @@ export function controlOps(stage) {
   return { ops: OPS, quiet: QUIET, describe, look };
 }
 
-/** Carries out commands the server relays, and answers each one. */
-export function connectRemote(stage, { onActivity } = {}) {
+/**
+ * Carries out commands the server relays, and answers each one. `events` is the stream they come on (the one the app
+ * opened at the start, when the Stage was not there yet) and `early` the commands that came before the Stage was up;
+ * `ready` says when the stage that was open last is open, which they work on.
+ */
+export function connectRemote(stage, { onActivity, events = new EventSource("api/control/events"), early = [], ready = () => null } = {}) {
   const { ops: OPS, quiet: QUIET } = controlOps(stage);
 
   const answer = (body) => fetch("api/control/reply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  const events = new EventSource("api/control/events");
-  events.addEventListener("hello", () => onActivity?.({ connected: true }));
-  events.addEventListener("error", () => onActivity?.({ connected: false }));
-  events.addEventListener("command", async (e) => {
-    const { id, op, args } = JSON.parse(e.data);
+  // the changes to the stage come one at a time, in the order they were sent: one waiting for a model must not have another work on what it left half done
+  let changes = Promise.resolve();
+  const inTurn = (change) => (changes = changes.catch(() => {}).then(change));
+  const carryOut = async (data) => {
+    const { id, op, args } = JSON.parse(data);
     onActivity?.({ connected: true, op });
     try {
       const run = OPS[op];
       if (!run) throw new Error(`Unknown command "${op}". Commands: ${Object.keys(OPS).join(", ")}.`);
-      const result = QUIET.has(op) ? await run(args ?? {}) : stage.batch(() => run(args ?? {}));
+      await ready();
+      // (a picture, an export or a read waits for the models that came after the last change; a change waits for the ones it asks for)
+      if (QUIET.has(op)) await stage.settled();
+      const result = QUIET.has(op) ? await run(args ?? {}) : await inTurn(() => stage.exactly(() => stage.batch(() => run(args ?? {}))));
       stage.render();
       await answer({ id, ok: true, result });
     } catch (error) {
@@ -1094,6 +1104,12 @@ export function connectRemote(stage, { onActivity } = {}) {
     } finally {
       onActivity?.({ connected: true, op: null });
     }
-  });
+  };
+  events.addEventListener("hello", () => onActivity?.({ connected: true }));
+  events.addEventListener("error", () => onActivity?.({ connected: false }));
+  events.addEventListener("command", (e) => carryOut(e.data));
+  // (a stream that was open before the Stage was has said hello already)
+  if (events.readyState === EventSource.OPEN) onActivity?.({ connected: true });
+  for (const data of early.splice(0)) carryOut(data);
   return events;
 }

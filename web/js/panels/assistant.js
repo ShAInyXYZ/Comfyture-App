@@ -12,7 +12,7 @@ import { mentionAt } from "../mentions.js";
 import { writerPicker } from "../writer-menu.js";
 import { view } from "../viewer.js";
 import { currentPage } from "../router.js";
-import { stageReady } from "../control/link.js";
+import { stageReady, needStage } from "../control/link.js";
 import { macaron } from "../macaron.js";
 import { askMacaron, undoMacaron, clearMacaronChat } from "../macaron-assist.js";
 import { harnessOf, barOf, introOf, onRoom, setTeller, offersOf } from "../harnesses.js";
@@ -428,7 +428,7 @@ function renderTile(id) {
       h("span.typing", {}, h("i"), h("i"), h("i")), h("i.msg-render-bar", { style: { width: `${Math.round((r.progress ?? 0) * 100)}%` } }));
   }
   return h("span.msg-render", { style: { aspectRatio: `${r.photo.width} / ${r.photo.height}` } },
-    h("button.msg-render-look", { type: "button", title: onStage() ? "Show it from its camera, over the stage" : "Look at it", "aria-label": "Look at the picture", on: { click: () => (onStage() ? stageReady.then((api) => api.viewRun(id)) : view(r.photo.url)) } }, h("img", { src: r.photo.url, alt: "", draggable: false })),
+    h("button.msg-render-look", { type: "button", title: onStage() ? "Show it from its camera, over the stage" : "Look at it", "aria-label": "Look at the picture", on: { click: () => (onStage() ? needStage().then((api) => api.viewRun(id)) : view(r.photo.url)) } }, h("img", { src: r.photo.url, alt: "", draggable: false })),
     h("button.msg-render-use", { type: "button", title: "Start a shot from it", "aria-label": "Start a shot from it", on: { click: () => useStageRender(r.photo) } }, icon("video")));
 }
 

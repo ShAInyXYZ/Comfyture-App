@@ -6,7 +6,7 @@ import { normalize } from "./photo.js";
 import { emptyShot, PANELS, finalPrompt } from "./script.js";
 import { view } from "./viewer.js";
 import { go, currentPage } from "./router.js";
-import { stageReady } from "./control/link.js";
+import { stageReady, needStage, tellStage } from "./control/link.js";
 import { expandTags } from "./pills.js";
 import { MAP_TAG } from "./attach.js";
 
@@ -1504,7 +1504,8 @@ export const attachStageMap = (channel) =>
   attempt(async () => {
     const name = MAP_TAG[channel];
     if (!name || state.chat.files.some((f) => f.name === name)) return;
-    const { stage } = await stageReady;
+    const { stage } = await needStage();
+    await stage.settled();
     const url = stage.thumbnail({ position: stage.camera.position, target: stage.orbit.target, focal: stage.focal }, { width: 1376, height: Math.round(1376 / (stage.frame?.w && stage.frame?.h ? stage.frame.w / stage.frame.h : 16 / 9)), channel });
     attachPhoto(await api.upload(await (await fetch(url)).blob(), `stage ${name}`), name);
   });
@@ -1631,7 +1632,7 @@ export async function askStage(text) {
   chat.busy = "Staging";
   changed("assistant");
   try {
-    const [{ stageAssist }, api] = await Promise.all([import("./control/assist.js"), stageReady]);
+    const [{ stageAssist }, api] = await Promise.all([import("./control/assist.js"), needStage()]);
     chat.messages.push(adoptRenders(await stageAssist(api, chat.messages, (busy) => ((chat.busy = busy), changed("assistant")), writer("assistant"))));
   } catch (error) {
     chat.messages.push({ role: "assistant", stage: true, text: error.message ?? String(error), error: true });
@@ -1768,7 +1769,7 @@ export function stageModels() {
  * whole request (who is which figure, the frame itself) and writes the prompt that model reads best.
  */
 export async function improveStageLook(words) {
-  const { ops } = await stageReady;
+  const { ops } = await needStage();
   const { maps, pictures } = state.stageChat.inputs;
   const request = await ops.render_prompt({ prompt: words, model: state.stageModel, maps, extra: pictures });
   // the enhancer now and then answers nothing: once more before giving up
@@ -1785,7 +1786,7 @@ export async function renderStageImage(words = "", { raw = false } = {}) {
   chat.busy = "Rendering";
   changed("assistant");
   try {
-    const { ops } = await stageReady;
+    const { ops } = await needStage();
     const { maps, pictures } = chat.inputs;
     const render = await ops.render_image({ prompt: raw ? "" : look, raw: raw ? look : undefined, model: state.stageModel, maps, extra: pictures });
     chat.messages.push(adoptRenders({ role: "assistant", stage: true, text: look ? "Rendering the frame in that look." : "Rendering the frame as a film still. Type a look first to change it (a rainy night, a 90s sitcom, Pixar)…", did: ["Rendering an image"], renders: [render] }));
@@ -1803,7 +1804,7 @@ export const useStageRender = (photo) => placePhoto("start", photo);
 /** Puts the stage back as it was before an answer (one step, or two when it mended itself). */
 export async function undoStage(message) {
   if (!message.undo) return;
-  const { stage } = await stageReady;
+  const { stage } = await needStage();
   for (let i = 0; i < (message.steps ?? 1); i++) stage.undo();
   message.undo = false;
   message.did = [...(message.did ?? []), "Undone"];
@@ -1972,7 +1973,8 @@ export const addStageMap = (channel) =>
     const im = state.image;
     const name = MAP_TAG[channel];
     if (!name || im.refs.some((r) => r.name === name)) return;
-    const { stage } = await stageReady;
+    const { stage } = await needStage();
+    await stage.settled();
     const from = im.origin?.stageRun;
     const choice = imageChoice();
     const size = choice ? imageSize(choice.model, im.aspect, im.megapixels, im.refs[0]) : { width: 1376, height: 768 };
@@ -2058,7 +2060,7 @@ export const generateImages = () =>
     // made again from a Stage render: the new pictures join that stage's renders, from the same camera
     const from = im.origin?.stageRun;
     if (from) {
-      const { stage, projects } = await stageReady;
+      const { stage, projects } = await needStage();
       if (projects.current()?.id === from.stageId) {
         const size = imageSize(choice.model, im.aspect, im.megapixels, im.refs[0]);
         const settings = { model: choice.model.id, modelName: choice.model.name, template: choice.template.id, keep, megapixels: im.megapixels, width: size.width, height: size.height, prompt: im.prompt, sent: request.prompt, cast: im.cast, refs: request.refs.filter((r) => r.name !== "frame").map((r) => ({ ...im.refs.find((x) => x.file === r.file), name: r.name })) };
@@ -2144,7 +2146,7 @@ export const makeToasterRef = ({ kind, draftId, partId, name, words, character, 
 /** A paint event for one of the window's pictures. */
 function imageJob(job) {
   // a picture the Stage asked for is kept with its stage, however it was asked for
-  stageReady.then(({ stage }) => stage.runDone(job));
+  tellStage(job);
   const r = state.image.results.find((x) => x.id === job.id);
   if (!r) return;
   const over = job.status === "done" || job.status === "failed";

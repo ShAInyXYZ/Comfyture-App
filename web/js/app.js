@@ -24,7 +24,7 @@ import { renderToaster } from "./panels/toaster.js";
 import { renderJam } from "./panels/jam.js";
 import { renderAssistant } from "./panels/assistant.js";
 import { renderImage } from "./panels/image.js";
-import { renderStage, mountStage } from "./panels/stage.js";
+import { renderStage, listenForAgents } from "./panels/stage.js";
 import { installTourKey } from "./tour.js";
 // the open film, kept in step with the section on screen
 import "./project.js";
@@ -248,8 +248,9 @@ installTourKey(document.getElementById("tour-key"), currentPage);
 load()
   .then(() => {
     showPage();
-    // the Stage (three.js and all) loads in the background, so the assistant and agents can use it from anywhere
-    (window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1200)))(() => mountStage());
+    // the Stage (three.js and all) loads when it is needed; an outside agent (the control MCP) can stage a scene from anywhere, and
+    // its first command is what loads it, so the page listens for it from the start
+    (window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1200)))(() => listenForAgents());
     const repo = document.getElementById("repo-link");
     if (state.info?.repository) {
       repo.href = state.info.repository;

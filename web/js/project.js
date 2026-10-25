@@ -5,7 +5,7 @@ import { state, inProject, switchTab, newTab, openTake, loadProjects, projectNow
 import { currentPage } from "./router.js";
 import { story, loadStories, openStory } from "./story.js";
 import { cut, loadCuts, openCut, newCut } from "./cut.js";
-import { stageReady } from "./control/link.js";
+import { needStage } from "./control/link.js";
 
 // one at a time, each after the one before (a section opened while another settles is still seen to)
 let queue = Promise.resolve();
@@ -39,7 +39,7 @@ async function alignNow() {
           mine ? await openCut(mine.id) : await newCut(name || "New edit");
         }
       } else if (page === "stage") {
-        const { projects } = await stageReady;
+        const { projects } = await needStage();
         if (!projects) return;
         // the stages it opened first, on its own, are in place
         await projects.settled?.();

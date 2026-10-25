@@ -10,9 +10,10 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { Mannequin } from "./mannequin.js";
 import { CHAINS, JOINT_NAMES, PALETTE, bodyById } from "./skeleton.js";
 import { poseById, holdArm } from "./poses.js";
-import { makeProp, propFromJSON, setPropParams, refillProp, registerUserProp, forgetUserProp, registerModelAssets, registerAnimals, isAnimal, poseAnimal, setAnimalPose, assetByType } from "./assets.js";
-import { loadModels, loadUserModels, onUserModels, MODELS, USER, rigById } from "./models.js";
+import { makeProp, propFromJSON, setPropParams, refillProp, registerUserProp, forgetUserProp, usesModel, isAnimal, poseAnimal, setAnimalPose, assetByType } from "./assets.js";
+import { loadUserModels, onUserModels, onModel, made, watching, modelsSettled, wantHeld, MODELS, USER, rigById } from "./models.js";
 import { Channels } from "./channels.js";
+import { keepJob } from "./link.js";
 
 /** Vertical field of view (degrees) of a lens on a full-frame (36 × 24 mm) sensor. */
 export const fovOf = (mm) => THREE.MathUtils.radToDeg(2 * Math.atan(12 / mm));
@@ -196,14 +197,13 @@ export class Stage {
     this.resize();
     // the pictures rendered from this stage, newest first, each with the camera it was made from
     this.runs = [];
-    // the modelled bodies and pieces load behind the first frames and replace the built ones,
-    // then the user's own: rigged characters and props
-    loadModels().then((m) => {
-      if (m.manifest) (registerModelAssets(m.manifest.assets ?? []), registerAnimals(m.manifest.animals ?? []));
-      this.refreshModels();
-      loadUserModels();
-    });
+    // the modelled bodies and pieces come one at a time, as the scene asks for them, and replace the built
+    // ones (the catalogue is read before the Stage is made: see panels/stage.js); then the user's own:
+    // rigged characters and props
+    this.arrived = new Map();
+    onModel((kind, key) => this.modelIn(kind, key));
     onUserModels((entry) => this.refreshUserModel(entry));
+    loadUserModels();
   }
 
   // ------------------------------------------------------------ events
@@ -641,11 +641,13 @@ export class Stage {
   /** A picture started from the frame, kept with the camera and the moment it was made from. */
   addRun(run) {
     this.runs.unshift(run);
+    if (run.status === "running") keepJob(run.id, true);
     this.emit("runs");
   }
 
   /** A picture's job moved on: its progress, then its picture or what went wrong. */
   runDone(job) {
+    if (job.status === "done" || job.status === "failed" || job.status === "canceled") keepJob(job.id, false);
     const run = this.runs.find((r) => r.id === job.id);
     if (!run) return this.runElsewhere?.(job);
     updateRun(run, job);
@@ -1134,22 +1136,67 @@ export class Stage {
     return canvas.toDataURL("image/png");
   }
 
+  /** A model has come: what is made of it takes it, a moment later, with the others that came meanwhile. */
+  modelIn(kind, key) {
+    this.arrived.set(`${kind}:${key}`, [kind, key]);
+    this.arrivedTimer ??= setTimeout(() => this.refreshModels(), 40);
+  }
+
   /**
-   * The modelled bodies and pieces have loaded: everything on the stage takes them. A body in a
-   * library pose solves its contacts again on its new shape.
+   * The models that came lately are in: the bodies and hands that were drawn without them, and the pieces made of
+   * them, take them. Nothing is moved or posed again: a piece stands where it was put (on the floor, on a platform, on
+   * a bed), as it would have if the model had been there from the start.
    */
   refreshModels() {
-    for (const c of this.characters) {
-      c.build();
-      const preset = poseById(c.posed);
-      if (preset && !preset.quaternions) c.setPreset(preset);
-      if (!c.seatedOn) c.ground();
+    clearTimeout(this.arrivedTimer);
+    this.arrivedTimer = null;
+    const got = [...this.arrived.values()];
+    this.arrived.clear();
+    if (!got.length) return;
+    let changed = false;
+    for (const c of this.characters) changed = c.refit() || changed;
+    for (const p of this.props) {
+      if (!got.some(([kind, key]) => usesModel(p.userData.type, kind, key))) continue;
+      refillProp(p);
+      changed = true;
     }
-    for (const p of this.props) refillProp(p);
-    this.poseModel?.build();
-    this.poseThumbs?.clear();
+    if (!changed) return;
     this.attachGizmo();
-    this.emit("scene");
+    this.render();
+    this.emit("models");
+  }
+
+  /**
+   * Runs a change (as one step of history) on the real pieces. If it asks for models that are not here yet it
+   * is taken back, waits for them and is made again, so the places it works out are those of the models, as
+   * they are once everything has loaded. Answers what the change gives.
+   */
+  async exactly(change) {
+    // (what a character does not keep in the scene's data is kept here: where it sits)
+    const was = { scene: this.toJSON(), history: [...this.history], future: [...this.future], seats: this.characters.map((c) => [c.id, c.seatedOn, c.seatPlace, { ...c.autoHold }]) };
+    const { result, asked } = watching(change);
+    if (!asked.length) return result;
+    const after = this.history.at(-1);
+    await Promise.allSettled(asked);
+    // (a hand on the stage meanwhile keeps what it did: the change stands as it was made)
+    if (this.history.at(-1) !== after) return result;
+    this.load(was.scene, { keepHistory: true });
+    this.history = was.history;
+    this.future = was.future;
+    for (const [id, seatedOn, seatPlace, autoHold] of was.seats) {
+      const c = this.characters.find((x) => x.id === id);
+      if (c) Object.assign(c, { seatedOn, seatPlace, autoHold });
+    }
+    return change();
+  }
+
+  /** Once the models the scene asked for are in and in place: a picture made now shows them. */
+  async settled() {
+    for (let round = 0; round < 4; round++) {
+      await modelsSettled();
+      if (!this.arrived.size) return;
+      this.refreshModels();
+    }
   }
 
   /** An animal's pose: one of its clips. */
@@ -1182,24 +1229,57 @@ export class Stage {
     this.emit("pose");
   }
 
-  /** A hand prop alone, on a clear background. Cached per type. */
-  handThumbnail(type, { width = 64, height = 64 } = {}) {
-    const key = `hand:${type}`;
+  /** A thumbnail's picture, cached by key. It is a promise: the models it shows are fetched first. Nothing drawn is not kept. */
+  thumbOf(key, draw) {
     this.poseThumbs ??= new Map();
-    if (this.poseThumbs.has(key)) return this.poseThumbs.get(key);
-    const model = MODELS.hand.get(type) ?? MODELS.props.get(type);
-    if (!model) return "";
-    this.poseThumbnail(poseById("stand"));
-    const object = model.scene.clone(true);
-    const clay = new THREE.MeshStandardMaterial({ color: "#c9c5be", roughness: 0.8, side: THREE.DoubleSide });
-    object.traverse((o) => o.isMesh && (o.material = clay));
-    this.poseModel.root.visible = false;
-    this.poseScene.add(object);
-    const url = this.stillOf(object, width, height, new THREE.Vector3(0.6, 0.5, 1));
-    this.poseScene.remove(object);
-    this.poseModel.root.visible = true;
-    this.poseThumbs.set(key, url);
-    return url;
+    if (!this.poseThumbs.has(key)) {
+      const job = draw();
+      this.poseThumbs.set(key, job);
+      job.then((url) => url || this.poseThumbs.delete(key));
+    }
+    return this.poseThumbs.get(key);
+  }
+
+  /** The small scene the thumbnails are drawn in, lit like the studio. */
+  thumbScene() {
+    if (this.poseScene) return this.poseScene;
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight("#e4e2de", "#2a2a2e", 0.9));
+    const light = new THREE.DirectionalLight("#ffffff", 2.2);
+    light.position.set(2, 4, 3);
+    scene.add(light);
+    this.poseScene = scene;
+    this.ensureShotRenderer();
+    scene.environment = this.envShot;
+    scene.environmentIntensity = 0.6;
+    this.poseCamera = new THREE.PerspectiveCamera(30, 132 / 156, 0.05, 50);
+    return scene;
+  }
+
+  /** The lone mannequin poses are drawn on (made when the first pose is drawn, with the body it asks for). */
+  thumbMannequin() {
+    if (!this.poseModel) {
+      this.poseModel = new Mannequin({ name: "thumb", color: "#b9b5ae" });
+      this.thumbScene().add(this.poseModel.root);
+    }
+    return this.poseModel;
+  }
+
+  /** A hand prop alone, on a clear background. Cached per type; drawn once its model is in. */
+  handThumbnail(type, { width = 64, height = 64 } = {}) {
+    return this.thumbOf(`hand:${type}`, () => made(() => (wantHeld(type), MODELS.hand.get(type) ?? MODELS.props.get(type)), (model) => {
+      if (!model) return "";
+      const scene = this.thumbScene();
+      const object = model.scene.clone(true);
+      const clay = new THREE.MeshStandardMaterial({ color: "#c9c5be", roughness: 0.8, side: THREE.DoubleSide });
+      object.traverse((o) => o.isMesh && (o.material = clay));
+      if (this.poseModel) this.poseModel.root.visible = false;
+      scene.add(object);
+      const url = this.stillOf(object, width, height, new THREE.Vector3(0.6, 0.5, 1));
+      scene.remove(object);
+      if (this.poseModel) this.poseModel.root.visible = true;
+      return url;
+    }));
   }
 
   /** Frames an object in the thumbnail scene from a direction and renders it. */
@@ -1243,73 +1323,60 @@ export class Stage {
     this.emit("scene");
   }
 
-  /** A piece of the set alone, three-quarter front, on a clear background. Cached per type. */
+  /** A piece of the set alone, three-quarter front, on a clear background. Cached per type; drawn once its model is in. */
   propThumbnail(type, { width = 132, height = 104, pose = null } = {}) {
-    const key = `prop:${type}${pose ? `:${pose}` : ""}`;
-    this.poseThumbs ??= new Map();
-    if (this.poseThumbs.has(key)) return this.poseThumbs.get(key);
-    this.poseThumbnail(poseById("stand"));
-    const object = makeProp(type, "thumb");
-    // an animal in one of its poses (the middle of a loop, so a walk is mid-stride)
-    if (pose && isAnimal(object)) {
-      object.userData.pose = pose;
-      poseAnimal(object, { time: 0.5 });
-    }
-    this.poseModel.root.visible = false;
-    this.poseScene.add(object);
-    const url = this.stillOf(object, width, height, new THREE.Vector3(0.55, 0.42, 1));
-    this.poseScene.remove(object);
-    object.traverse((o) => !o.userData.shared && o.geometry?.dispose());
-    this.poseModel.root.visible = true;
-    this.poseThumbs.set(key, url);
-    return url;
+    return this.thumbOf(`prop:${type}${pose ? `:${pose}` : ""}`, () => made(() => {
+      const object = makeProp(type, "thumb");
+      // an animal in one of its poses (the middle of a loop, so a walk is mid-stride)
+      if (pose && isAnimal(object)) {
+        object.userData.pose = pose;
+        poseAnimal(object, { time: 0.5 });
+      }
+      return object;
+    }, (object) => {
+      const scene = this.thumbScene();
+      if (this.poseModel) this.poseModel.root.visible = false;
+      scene.add(object);
+      const url = this.stillOf(object, width, height, new THREE.Vector3(0.55, 0.42, 1));
+      scene.remove(object);
+      object.traverse((o) => !o.userData.shared && o.geometry?.dispose());
+      if (this.poseModel) this.poseModel.root.visible = true;
+      return url;
+    }));
   }
 
-  /** A preset on a lone mannequin, three-quarter front, on a clear background. Cached per pose. */
+  /** A preset on a lone mannequin, three-quarter front, on a clear background. Cached per pose; drawn once the body and what it holds are in. */
   poseThumbnail(preset, { width = 132, height = 156, body = "man", rig = null } = {}) {
     const key = JSON.stringify([rig ?? body, preset.quaternions ?? [preset.joints, preset.aim, preset.reach]]);
-    this.poseThumbs ??= new Map();
-    if (this.poseThumbs.has(key)) return this.poseThumbs.get(key);
-    if (!this.poseScene) {
-      const scene = new THREE.Scene();
-      scene.add(new THREE.HemisphereLight("#e4e2de", "#2a2a2e", 0.9));
-      const light = new THREE.DirectionalLight("#ffffff", 2.2);
-      light.position.set(2, 4, 3);
-      scene.add(light);
-      this.poseScene = scene;
+    return this.thumbOf(key, () => made(() => {
+      const m = this.thumbMannequin();
+      if (rig && m.rigId !== rig) m.setRig(rig);
+      else if (!rig && (m.body !== body || m.rigId)) m.setBody(body);
+      else m.refit();
+      m.root.position.set(0, 0, 0);
+      m.params = {};
+      m.setPreset(preset);
+      m.ground();
+      return m;
+    }, (m) => {
+      const box = m.bounds();
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const cam = this.poseCamera;
+      cam.aspect = width / height;
+      cam.updateProjectionMatrix();
+      const span = Math.max(size.y, size.x * (height / width), size.z * (height / width));
+      const dist = (span / 2) / Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * 1.12;
+      cam.position.copy(center).add(new THREE.Vector3(0.45, 0.12, 1).normalize().multiplyScalar(dist + size.z / 2));
+      cam.lookAt(center);
       this.ensureShotRenderer();
-      scene.environment = this.envShot;
-      scene.environmentIntensity = 0.6;
-      this.poseModel = new Mannequin({ name: "thumb", color: "#b9b5ae" });
-      scene.add(this.poseModel.root);
-      this.poseCamera = new THREE.PerspectiveCamera(30, width / height, 0.05, 50);
-    }
-    const m = this.poseModel;
-    if (rig && m.rigId !== rig) m.setRig(rig);
-    else if (!rig && (m.body !== body || m.rigId)) m.setBody(body);
-    m.root.position.set(0, 0, 0);
-    m.params = {};
-    m.setPreset(preset);
-    m.ground();
-    const box = m.bounds();
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const cam = this.poseCamera;
-    cam.aspect = width / height;
-    cam.updateProjectionMatrix();
-    const span = Math.max(size.y, size.x * (height / width), size.z * (height / width));
-    const dist = (span / 2) / Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * 1.12;
-    cam.position.copy(center).add(new THREE.Vector3(0.45, 0.12, 1).normalize().multiplyScalar(dist + size.z / 2));
-    cam.lookAt(center);
-    this.ensureShotRenderer();
-    const r = this.shotRenderer;
-    r.setSize(width, height, false);
-    r.setClearColor(0x000000, 0);
-    r.clear();
-    r.render(this.poseScene, cam);
-    const url = r.domElement.toDataURL("image/png");
-    this.poseThumbs.set(key, url);
-    return url;
+      const r = this.shotRenderer;
+      r.setSize(width, height, false);
+      r.setClearColor(0x000000, 0);
+      r.clear();
+      r.render(this.poseScene, cam);
+      return r.domElement.toDataURL("image/png");
+    }));
   }
 
   // ------------------------------------------------------------ the scene as data, and history

@@ -1,18 +1,23 @@
 // The modelled library: the bodies, set pieces and hand props made in Blender, listed in
-// models/manifest.json and loaded once. Until they arrive, or if they cannot, the Stage draws
-// its own procedural ones (body.js, assets.js), so nothing waits on them.
+// models/manifest.json. The manifest is read once; each model is fetched on its own, when something
+// on the Stage (or in Toaster's library) asks for it, so a page that shows no 3D loads none. Until a
+// model arrives, or if it cannot, the Stage draws its own procedural one (body.js, assets.js), so
+// nothing waits on them.
 
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 export const MODELS = { ready: false, manifest: null, bodies: new Map(), props: new Map(), modules: new Map(), hand: new Map(), animals: new Map() };
 
-/** What a hand can hold: the hand props, and every piece of the set with a grip. { type: { name, scene, grips } } */
+// what the manifest says of each model, by kind and key: the file to fetch and the piece's sizes
+const LISTED = { bodies: new Map(), props: new Map(), modules: new Map(), hand: new Map(), animals: new Map() };
+
+/** What a hand can hold: the hand props, and every piece of the set with a grip. { type: { name, grips } } */
 export function holdables(assetByType) {
   const out = new Map();
-  for (const [type, h] of MODELS.hand) out.set(type, { type, name: h.name, scene: h.scene, grips: h.grips, poses: h.poses ?? [], themes: h.themes ?? [], tags: h.tags ?? [] });
-  for (const [type, p] of MODELS.props) {
+  for (const [type, h] of LISTED.hand) out.set(type, { type, name: h.name, grips: h.grips, poses: h.poses ?? [], themes: h.themes ?? [], tags: h.tags ?? [] });
+  for (const type of LISTED.props.keys()) {
     const def = assetByType(type);
-    if (def?.holdable?.grips && !out.has(type)) out.set(type, { type, name: def.name, scene: p.scene, grips: def.holdable.grips, poses: def.holdable.poses ?? [], themes: def.themes ?? [], tags: def.tags ?? [], piece: true });
+    if (def?.holdable?.grips && !out.has(type)) out.set(type, { type, name: def.name, grips: def.holdable.grips, poses: def.holdable.poses ?? [], themes: def.themes ?? [], tags: def.tags ?? [], piece: true });
   }
   return out;
 }
@@ -50,29 +55,25 @@ export function openSurface(geometry) {
   return (geometry.userData.open = border > 0.05 * edges.size);
 }
 
-let loading = null;
+let reading = null;
+let where = "models/";
 
-/** Loads the manifest and every model in it (once); resolves to MODELS either way. */
-export function loadModels(base = "models/") {
-  loading ??= (async () => {
+/** Reads the manifest (once): which model each body, piece, hand prop and animal has. Resolves to MODELS either way. */
+export function loadManifest(base = "models/") {
+  reading ??= (async () => {
     const res = await fetch(`${base}manifest.json`);
     if (!res.ok) throw new Error(`no model manifest (${res.status})`);
     const manifest = await res.json();
     MODELS.manifest = manifest;
-    const loader = new GLTFLoader();
-    const scene = (file) => loader.loadAsync(base + file).then((g) => g.scene);
-    const jobs = [];
-    for (const b of manifest.bodies ?? []) jobs.push(scene(b.file).then((s) => MODELS.bodies.set(b.id, { ...b, scene: s })));
+    where = base;
+    const list = (kind, items, key) => items?.forEach((item) => LISTED[kind].set(item[key], item));
+    list("bodies", manifest.bodies, "id");
+    list("hand", manifest.handProps, "type");
+    list("animals", manifest.animals, "type");
     for (const a of manifest.assets ?? []) {
-      jobs.push(scene(a.file).then((s) => MODELS.props.set(a.type, { ...a, scene: s })));
-      for (const m of a.modules ?? []) jobs.push(scene(m.file).then((s) => MODELS.modules.set(m.type, { ...m, scene: s })));
+      list("props", [a], "type");
+      list("modules", a.modules, "type");
     }
-    for (const h of manifest.handProps ?? []) jobs.push(scene(h.file).then((s) => MODELS.hand.set(h.type, { ...h, scene: s })));
-    // the baby animals: rigged, with their clips
-    for (const a of manifest.animals ?? []) jobs.push(loader.loadAsync(base + a.file).then((g) => MODELS.animals.set(a.type, { ...a, scene: g.scene, clips: g.animations })));
-    const results = await Promise.allSettled(jobs);
-    const failed = results.filter((r) => r.status === "rejected");
-    if (failed.length) console.warn(`models: ${failed.length} of ${results.length} did not load`, failed[0].reason);
     MODELS.ready = true;
     return MODELS;
   })().catch((e) => {
@@ -80,7 +81,84 @@ export function loadModels(base = "models/") {
     MODELS.ready = true;
     return MODELS;
   });
-  return loading;
+  return reading;
+}
+
+// ------------------------------------------------------------------ the models, one at a time
+
+const loader = new GLTFLoader();
+// the models on their way, and the ones that could not come
+const coming = new Map();
+const failed = new Set();
+// what a build is asking for just now (see watching)
+const watchers = [];
+const arrivals = new Set();
+
+/** Called with (kind, key) whenever a model has arrived: the pieces made of it can take it. */
+export const onModel = (fn) => (arrivals.add(fn), () => arrivals.delete(fn));
+
+/**
+ * Asks for one model ("bodies", "props", "modules", "hand" or "animals", and its id or type). It is fetched
+ * once, behind whatever asked, and everyone listening is told when it is in. Returns its promise, or null when
+ * it is here already, has no model, or could not come: what asked then draws its built stand-in.
+ */
+export function wantModel(kind, key) {
+  if (MODELS[kind].has(key)) return null;
+  const entry = LISTED[kind].get(key);
+  const id = `${kind}:${key}`;
+  if (!entry || failed.has(id)) return null;
+  let job = coming.get(id);
+  if (!job) {
+    job = loader.loadAsync(where + entry.file).then((g) => {
+      // the animals come with their clips; the rest are plain scenes
+      MODELS[kind].set(key, kind === "animals" ? { ...entry, scene: g.scene, clips: g.animations } : { ...entry, scene: g.scene });
+      coming.delete(id);
+      arrivals.forEach((fn) => fn(kind, key));
+    }).catch((e) => {
+      console.warn(`models: ${id} did not load:`, e.message);
+      failed.add(id);
+      coming.delete(id);
+    });
+    coming.set(id, job);
+  }
+  for (const w of watchers) w.add(job);
+  return job;
+}
+
+/** A hand prop or a piece of the set held in a hand, asked for by its type. */
+export const wantHeld = (type) => wantModel(LISTED.hand.has(type) ? "hand" : "props", type);
+
+/**
+ * Runs `build` (which makes a piece, a body, a picture's subject) and says which models it asked for that
+ * were not here: it drew its stand-ins for those. { result, asked: [promises] }
+ */
+export function watching(build) {
+  const mine = new Set();
+  watchers.push(mine);
+  try {
+    return { result: build(), asked: [...mine] };
+  } finally {
+    watchers.pop();
+  }
+}
+
+/**
+ * Makes something with the models it needs: `build` runs, and if it asked for models that were not here it
+ * runs again once they have come (a few rounds at most), then `finish(built)` uses what it made, in the
+ * same turn, so nothing else can change what was built meanwhile. Resolves to what `finish` gives.
+ */
+export async function made(build, finish = (built) => built, rounds = 4) {
+  for (let i = 0; ; i++) {
+    const { result, asked } = watching(build);
+    if (!asked.length || i >= rounds) return finish(result);
+    await Promise.allSettled(asked);
+  }
+}
+
+/** Once every model asked for so far has come (or failed); a model that does not come in `wait` ms is not waited for. */
+export async function modelsSettled(wait = 15000) {
+  const until = Date.now() + wait;
+  while (coming.size && Date.now() < until) await Promise.race([Promise.allSettled([...coming.values()]), new Promise((r) => setTimeout(r, Math.max(0, until - Date.now())))]);
 }
 
 // ------------------------------------------------------------------ the models people bring

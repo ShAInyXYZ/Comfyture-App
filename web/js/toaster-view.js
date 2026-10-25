@@ -6,7 +6,7 @@ import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { geometryOf } from "./toaster-shapes.js";
 import { assetByType } from "./control/assets.js";
-import { openSurface, rigById } from "./control/models.js";
+import { openSurface, rigById, onModel, watching } from "./control/models.js";
 import { CHAINS } from "./control/skeleton.js";
 import { assetPiece, characterPiece, libraryNow, loadLibrary, onLibrary, preciseBox } from "./toaster-assets.js";
 import { RATIOS, SHEET, VIEWS, sheetScale } from "./toaster-model.js";
@@ -223,7 +223,8 @@ export class ToasterView {
       m.scale.set(1, 1, 1);
       m.visible = !p.hidden;
       m.userData.color = p.color;
-      if (asset && !hasPiece(p)) this.waitForLibrary();
+      // (a piece waits for the library, then for its own model: a box meanwhile)
+      if (asset && (!hasPiece(p) || m.userData.ghost)) this.waitForLibrary();
     }
     for (const id of [...this.meshes.keys()]) if (!seen.has(id)) this.drop(id);
     this.setSelection(this.selected);
@@ -283,11 +284,12 @@ export class ToasterView {
     const [solid, sheet, ghost] = m.userData.mats;
     m.userData.fit = fit;
     // (measured before it joins the part, so the part's own place does not count)
-    // (a box until the library is there: noted, so the stills drawn meanwhile are drawn again once it is)
-    m.userData.ghost = !hasPiece(p);
-    if (m.userData.ghost) return void (fit.add(new THREE.Mesh(new THREE.BoxGeometry(...p.size), ghost)), m.add(fit));
+    // (a box until the library is there and the models the piece is made of are in: noted, so the stills drawn meanwhile are drawn again once they are)
     const figure = p.shape === "character";
-    const piece = figure ? characterPiece(p) : assetPiece(p.asset);
+    const built = hasPiece(p) ? watching(() => (figure ? characterPiece(p) : assetPiece(p.asset))) : null;
+    m.userData.ghost = !built || built.asked.length > 0;
+    if (m.userData.ghost) return void (fit.add(new THREE.Mesh(new THREE.BoxGeometry(...p.size), ghost)), m.add(fit));
+    const piece = built.result;
     fit.add(piece);
     m.userData.man = figure ? piece.userData.character : null;
     piece.traverse((o) => {
@@ -307,10 +309,12 @@ export class ToasterView {
   /** The library has arrived (or grown): pieces that were boxes become themselves. */
   refreshAssets() {
     if (!this.parts || this.disposed) return;
-    const boxes = [...this.meshes.values()].some((m) => m.userData.ghost);
+    const boxes = [...this.meshes.values()].filter((m) => m.userData.ghost);
+    // (a box is built again: what it waited for may be in)
+    for (const m of boxes) m.userData.key = null;
     this.setParts(this.parts);
     // (the pictures drawn from the clay while pieces were boxes are drawn again; none were: nothing to draw again)
-    if (boxes) this.onAssets();
+    if (boxes.some((m) => !m.userData.ghost)) this.onAssets();
   }
 
   waitForLibrary() {
@@ -318,6 +322,10 @@ export class ToasterView {
     this.waiting = true;
     loadLibrary().then(() => this.refreshAssets(), () => {});
     this.offLibrary = onLibrary(() => this.refreshAssets());
+    // the models come one at a time: the boxes are looked at again a moment after each (with the others that came meanwhile)
+    this.offModels = onModel(() => {
+      this.modelTimer ??= setTimeout(() => ((this.modelTimer = null), this.refreshAssets()), 40);
+    });
   }
 
   // ------------------------------------------------------------ selection and tools
@@ -892,6 +900,8 @@ export class ToasterView {
     this.gizmo.dispose();
     this.orbit.dispose();
     this.offLibrary?.();
+    this.offModels?.();
+    clearTimeout(this.modelTimer);
     this.handles.clear();
     Object.values(this.handleLook).forEach((x) => x.dispose());
     for (const id of [...this.meshes.keys()]) this.drop(id);

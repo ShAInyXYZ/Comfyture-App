@@ -7,7 +7,7 @@
 
 import * as THREE from "three";
 import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
-import { MODELS, openSurface } from "./models.js";
+import { MODELS, openSurface, loadManifest, wantModel } from "./models.js";
 
 const clay = () => new THREE.MeshStandardMaterial({ color: "#a9a59e", roughness: 0.85 });
 // the parts of a model that read apart: glass, a screen, a shade
@@ -348,6 +348,19 @@ export function registerAnimals(list) {
 }
 export const isAnimal = (object) => Boolean(object?.userData?.prop && BY_TYPE.get(object.userData.type)?.animal);
 
+let cataloguing = null;
+/**
+ * Reads the model manifest and lists what it says in the catalogue (once): the pieces that exist only as
+ * models, the animals, and every piece's themes and tags. No model is fetched: each comes when a piece asks.
+ */
+export function loadCatalogue() {
+  cataloguing ??= loadManifest().then((models) => {
+    if (models.manifest) (registerModelAssets(models.manifest.assets ?? []), registerAnimals(models.manifest.animals ?? []));
+    return models;
+  });
+  return cataloguing;
+}
+
 /**
  * An animal in its pose: a held pose is its clip's first frame, a loop plays at `time`, and
  * `walk` (the share of a stride, 0 to 1) walks it whatever its pose.
@@ -572,6 +585,11 @@ function modelPiece(def, model, object) {
   return sizer;
 }
 
+// the models a piece put together from parts needs besides its own (see ASSEMBLE)
+const PARTS = { stairs: [["modules", "stairs.step"]], fence: [["modules", "fence.post"], ["modules", "fence.rail"]], doorway: [["props", "plane"]], window: [["props", "plane"]] };
+/** Whether a prop of this type is made with the model (kind: "props", "animals" or "modules"; key: its type) that has arrived. */
+export const usesModel = (type, kind, key) => ((kind === "props" || kind === "animals") && type === key) || Boolean(PARTS[type]?.some(([k, v]) => k === kind && v === key));
+
 /** (Re)builds the pieces of a prop from its type and sizes, keeping where it stands. */
 function fill(object) {
   const def = assetByType(object.userData.type) ?? assetByType("box");
@@ -579,10 +597,17 @@ function fill(object) {
     child.traverse((o) => !o.userData.shared && o.geometry?.dispose());
     object.remove(child);
   }
+  const params = object.userData.params;
+  // its models are asked for as it is built: until they come it stands in as the built piece
+  const apart = !atDefaults(def, params) && !modelFits(def, params) && ASSEMBLE[def.type];
+  if (def.animal) wantModel("animals", def.type);
+  else {
+    wantModel("props", def.type);
+    if (apart) for (const [kind, key] of PARTS[def.type]) wantModel(kind, key);
+  }
   const model = MODELS.props.get(def.type);
   const animal = def.animal ? MODELS.animals.get(def.type) : null;
-  const params = object.userData.params;
-  const assembled = model && !atDefaults(def, params) && !modelFits(def, params) ? ASSEMBLE[def.type]?.(params, object) : null;
+  const assembled = model && apart ? apart(params, object) : null;
   object.userData.modelled = Boolean(animal || (model && (assembled || modelFits(def, params))));
   if (animal) {
     object.add(animalPiece(def, animal, object));

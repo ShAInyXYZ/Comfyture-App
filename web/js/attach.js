@@ -1,7 +1,7 @@
 // The attach key opens two frames: pictures, from your computer or the Library, and control maps
 // drawn from the Stage's camera. Each composer says what picking one does.
 import { h, sprite } from "./dom.js";
-import { stageReady } from "./control/link.js";
+import { needStage } from "./control/link.js";
 import { view } from "./viewer.js";
 
 /** The maps a picture can take from the Stage: its id, its @name, what it shows. */
@@ -66,7 +66,8 @@ export function attachMenu(anchor, { files, picture, map, chosen = () => false, 
   }, { "aria-pressed": "false" });
   // the maps, each drawn small from the camera, in or out with a click
   const mapTiles = h("div.attach-maps", { role: "group", "aria-label": "Control maps" });
-  if (map) stageReady.then(({ stage }) => {
+  if (map) needStage().then(async ({ stage }) => {
+    await stage.settled();
     const draw = (channel) => {
       try {
         if (camera) return stage.stillFrom(camera, { width: 160, height: 90, channel });

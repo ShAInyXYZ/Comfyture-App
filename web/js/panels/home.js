@@ -6,7 +6,7 @@ import { mentionAt, putMention } from "../mentions.js";
 import { pillField } from "../pills.js";
 import { film, makeFilm } from "../pipeline.js";
 import { go, currentPage } from "../router.js";
-import { stageReady } from "../control/link.js";
+import { needStage } from "../control/link.js";
 import { view } from "../viewer.js";
 import { attachMenu } from "../attach.js";
 import { story, loadStories, openStory, newStory, deleteStory, writeTake, tagOf, commit as commitStory } from "../story.js";
@@ -121,7 +121,7 @@ async function openPart(kind, id) {
       go("cut");
     } else if (kind === "stage") {
       go("stage");
-      await (await stageReady).projects.open(id);
+      await (await needStage()).projects.open(id);
     } else if (kind === "take") {
       openTake(id);
       go("shot");
@@ -271,7 +271,7 @@ async function removeFilm(f) {
     if (f.cuts.length) await loadCuts();
     for (const c of f.cuts) await deleteCut(c.id);
     if (f.stages.length) {
-      const { projects } = await stageReady;
+      const { projects } = await needStage();
       for (const s of f.stages) await projects.remove(s.id);
     }
     toast(`"${f.name}" is deleted. Its takes are still in the Library.`);

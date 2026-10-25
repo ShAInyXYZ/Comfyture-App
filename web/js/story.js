@@ -722,10 +722,10 @@ export async function stageShot(id) {
   const b = body();
   const shot = blockOf(id);
   if (!shot) return;
-  const { stageReady } = await import("./control/link.js");
+  const { needStage } = await import("./control/link.js");
   const { askStage } = await import("./store.js");
   go("stage");
-  const { projects } = await stageReady;
+  const { projects } = await needStage();
   await projects?.newProject(`${b.idea.title || story.project.name} — ${codeOf(id)}`.slice(0, 60), { project: story.project.id }).catch(() => null);
   const names = bible(b).map((x) => ({ tag: x.tag, name: x.name }));
   const who = castOf(b, `${shot.frame} ${shot.action}`).filter((m) => m.person).map((m) => `${m.name} (${m.words || m.about})`).join("; ");

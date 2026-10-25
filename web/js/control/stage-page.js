@@ -43,7 +43,7 @@ const THREE_CLAMP = (v) => Math.min(1, Math.max(0, v));
 // what an animal's clips are called on the Stage
 const ANIMAL_POSES = { stand: "Stand", sit: "Sit", lie: "Lie down", walk: "Walk", hop: "Hop" };
 
-export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = () => {}, usePhoto = () => {}, editRunWith = () => {}, makeRef = () => {} } = {}) {
+export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = () => {}, usePhoto = () => {}, editRunWith = () => {}, makeRef = () => {}, agents, early } = {}) {
   // like h(), and a first child may come where the props would (an element, text or a list)
   const el = (tag, props, ...children) =>
     props instanceof Node || typeof props === "string" || Array.isArray(props) ? h(tag, {}, props, ...children) : h(tag, props ?? {}, ...children);
@@ -197,7 +197,8 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
       if (!e.isIntersecting) continue;
       const img = e.target;
       drawn.unobserve(img);
-      img.src = img._draw();
+      // (a thumbnail of a piece is drawn once its model is in)
+      Promise.resolve(img._draw()).then((src) => (img.src = src));
     }
   }, { rootMargin: "240px" });
   const lazyImg = (draw) => {
@@ -885,6 +886,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     rendering = true;
     renderKeys();
     try {
+      await stage.settled();
       const shot = (stage.characters[0]?.name ?? "stage").toLowerCase();
       const passes = ["clay", ...PASSES];
       for (const id of passes) await upload(stage.frameStill(id, { long: 1536 }), `stage ${shot} ${id}`);
@@ -903,6 +905,7 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     renderKeys();
     const was = stage.time;
     try {
+      await stage.settled();
       const frames = [];
       const count = Math.round(stage.duration * stage.fps) + 1;
       for (let f = 0; f < count; f++) {
@@ -1110,6 +1113,8 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     if (kind === "selection") (outliner(), tools(), selected(), snaps(), library(), timeline());
     else if (kind === "pose") (readouts(), snaps(), previews());
     else if (kind === "scene") (outliner(), tools(), selected(), snaps(), library(), frame(), timeline(), previews(), renderKeys());
+    // (a model came: the pictures of the frame follow it; nothing else about the scene changed)
+    else if (kind === "models") (snaps(), previews());
     else if (kind === "history") (tools(), outliner(), timeline(), previews(), renderKeys(), frame());
     else if (kind === "tool") (tools(), outliner());
     else if (kind === "frame") (frame(), snaps(), previews());
@@ -1129,15 +1134,6 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
     if (kind === "channel" && shown && runMode === "apart") drawRun();
   });
 
-  // an agent can stage the scene through the server; the lamp says whether the link is up and what it is doing
-  connectRemote(stage, {
-    onActivity({ connected, op }) {
-      if (connected) linkLamp.dataset.tone = op ? "busy" : "ok";
-      else delete linkLamp.dataset.tone;
-      linkLamp.dataset.tooltip = !connected ? "Agent link — waiting for the server" : op ? `Agent link — ${op.replace(/_/g, " ")}` : "Agent link — ready for commands";
-    },
-  });
-
   // every stage is a project, kept as it changes; the last one opens again
   const projects = projectsOf(stage, { el, toast, tabsEl, actionsEl });
   channelPill();
@@ -1152,6 +1148,17 @@ export function mountStage(root, { toast = () => {}, go = () => {}, useVideo = (
   renderKeys();
   runsBar();
   projects.openLast();
+  // an agent can stage the scene through the server, once the stage open last is open; the lamp says whether the link is up and what it is doing
+  connectRemote(stage, {
+    events: agents ?? undefined,
+    early,
+    ready: () => projects.settled(),
+    onActivity({ connected, op }) {
+      if (connected) linkLamp.dataset.tone = op ? "busy" : "ok";
+      else delete linkLamp.dataset.tone;
+      linkLamp.dataset.tooltip = !connected ? "Agent link — waiting for the server" : op ? `Agent link — ${op.replace(/_/g, " ")}` : "Agent link — ready for commands";
+    },
+  });
   return { stage, ops, describe, chatSlot, root, projects, viewRun: (id) => viewRun(stage.runs.find((r) => r.id === id)) };
 }
 

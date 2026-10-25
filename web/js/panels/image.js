@@ -1,6 +1,6 @@
 import { h, icon, sprite } from "../dom.js";
 import { currentPage } from "../router.js";
-import { stageReady } from "../control/link.js";
+import { needStage } from "../control/link.js";
 import {
   state, onChange, toast, changed, imageChoice, setImage, setImagePrompt, closeImage, addImageRef, removeImageRef, uploadImageRefs, imageMentionables,
   enhanceImage, unenhanceImage, generateImages, placePhoto, addImageLora, removeImageLora, setLoraStrength, addStageMap, removeStageMap,
@@ -598,7 +598,7 @@ async function targets(photo) {
   } else if (page === "stage" && origin?.stageRef) {
     const ref = origin.stageRef;
     out.push({ key: `stage:${ref.id}`, label: `${ref.name}'s sheet`, icon: "image-reference", note: "asked for", run: async () => {
-      const { stage, projects } = await stageReady;
+      const { stage, projects } = await needStage();
       const target = (!ref.stageId || projects.current()?.id === ref.stageId) && stage.targetById(ref);
       if (!target) return toast(`${ref.name} is not on the open stage: the picture is still here.`);
       stage.addTagRef(target, photo);

@@ -525,22 +525,24 @@ function drawLeft() {
 // ---------------------------------------------------------------- the Stage's library and its characters
 
 // the pieces and the characters (toaster-assets.js, with the Stage's own models and mannequins), once read; the drawer shows one or the
-// other, and its search and category are kept while it is shut
+// other, and its search and category are kept while it is shut. The poses are known with the pieces; the people (their sizes are their
+// bodies', which are fetched) when the characters drawer is first opened.
 let library = null;
 let people = null;
+let peopling = null;
 let drawer = null;
 let pieceQuery = "";
 let pieceGroup = "All";
 let assets = null;
 const pieceOf = (type) => library?.pieces.find((x) => x.type === type) ?? null;
 toaster.pieceOf = pieceOf;
-/** The library module, loaded on first need (it brings three.js and the Stage's models with it). */
+/** The library module, loaded on first need (it brings three.js and the Stage's code with it; a piece's model comes when it is drawn). */
 function assetsModule() {
   assets ??= import("../toaster-assets.js").then((m) => {
     measureNow = m.characterSize;
     const got = (lib) => {
       library = lib;
-      people = m.characterList?.() ?? null;
+      people = people?.people ? m.characterList() : { poses: m.poseList() };
       drawCounts();
       if (drawer) drawDrawer();
       describeParts(pieceOf);
@@ -552,6 +554,14 @@ function assetsModule() {
     return m;
   });
   return assets;
+}
+/** The characters to add, once their bodies are in. */
+function loadPeople() {
+  peopling ??= assetsModule().then((m) => m.loadPeople()).then((list) => {
+    people = list;
+    if (drawer === "characters") drawDrawer();
+  }).catch((e) => console.warn("toaster: the characters did not load:", e.message));
+  return peopling;
 }
 function drawCounts() {
   const em = shell?.libraryKey.querySelector(".ts-library-count");
@@ -567,6 +577,7 @@ export function openDrawer(mode) {
   shell.library.hidden = !drawer;
   if (!drawer) return;
   assetsModule();
+  if (drawer === "characters") loadPeople();
   drawDrawer();
   if (drawer === "library") requestAnimationFrame(() => shell.library.querySelector(".ts-lib-search input")?.focus());
 }
@@ -578,7 +589,8 @@ const thumbs = new IntersectionObserver((seen) => {
     if (!e.isIntersecting) continue;
     thumbs.unobserve(e.target);
     const { type, body, rig } = e.target.dataset;
-    assets?.then((m) => (e.target.src = type ? m.assetThumb(type) : m.characterThumb({ body, rig })));
+    // (drawn once the model of the piece, or the body of the figure, is in)
+    assets?.then((m) => (type ? m.assetThumb(type) : m.characterThumb({ body, rig }))).then((url) => (e.target.src = url)).catch(() => {});
   }
 }, { rootMargin: "200px" });
 const thumb = (data) => {
@@ -625,7 +637,7 @@ function drawLibrary() {
 /** The Stage's characters: the body types, the user's own rigged characters, and the library's animals; each one added standing. */
 function drawCharacters() {
   const results = h("div.ts-lib-results", { dataset: { scrollKey: "ts-people" } });
-  if (!people) results.append(h("p.ts-empty", {}, "Bringing the Stage's characters…"));
+  if (!people?.people) results.append(h("p.ts-empty", {}, "Bringing the Stage's characters…"));
   else {
     const who = (x, data, label) => h("button.ts-piece.is-person", { type: "button", title: `Add ${label.toLowerCase()} — ${x.size[1].toFixed(2)} m`, "aria-label": `Add ${label.toLowerCase()}`, on: { click: () => addCharacter(x) } }, thumb(data), h("span", {}, label));
     results.append(h("span.ts-label.ts-lib-group", {}, "People"), h("div.ts-lib-grid", {}, ...people.people.map((x) => who(x, { body: x.body }, x.name))));

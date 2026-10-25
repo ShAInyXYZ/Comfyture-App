@@ -30,22 +30,27 @@ const AFTER = new Set(["render_image"]);
 
 /** Runs an answer's commands: the stage ones as one undo step, then the trip to Blender. */
 async function apply({ stage, ops }, actions) {
-  const did = [];
-  const failed = [];
+  let did = [];
+  let failed = [];
   const local = actions.filter((a) => ops[a.op] && !AFTER.has(a.op));
   const before = stage.history.length;
   const castBefore = stage.characters.length;
   if (local.length) {
-    stage.batch(() => {
-      for (const { op, args } of local) {
-        try {
-          const result = ops[op](args);
-          const label = LABEL[op] ? LABEL[op](args, result ?? {}) : op;
-          if (label && !did.includes(label)) did.push(label);
-        } catch (error) {
-          failed.push(`${op}: ${error.message}`);
+    // (on the models the commands ask for: if one is not here yet they are made again once it is)
+    await stage.exactly(() => {
+      did = [];
+      failed = [];
+      stage.batch(() => {
+        for (const { op, args } of local) {
+          try {
+            const result = ops[op](args);
+            const label = LABEL[op] ? LABEL[op](args, result ?? {}) : op;
+            if (label && !did.includes(label)) did.push(label);
+          } catch (error) {
+            failed.push(`${op}: ${error.message}`);
+          }
         }
-      }
+      });
     });
     // someone new with no word on the camera: the same angle, framing everyone
     if (stage.characters.length > castBefore && !local.some((a) => a.op === "camera" || a.op === "camera_move" || (a.op === "layout" && a.args?.camera))) stage.snap(stage.lastSnap ?? "three-quarter-left", null);
@@ -79,6 +84,8 @@ async function apply({ stage, ops }, actions) {
 export async function stageAssist(api, messages, onBusy = () => {}, model) {
   const { stage, ops } = api;
   const ask = async (extra = []) => {
+    // the look it is sent is the real pieces, not their stand-ins
+    await stage.settled();
     const res = await fetch("api/control/assist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

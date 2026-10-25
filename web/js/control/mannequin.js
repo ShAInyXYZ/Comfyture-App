@@ -7,7 +7,7 @@
 import * as THREE from "three";
 import { JOINTS, JOINT_NAMES, HINGES, CONES, CHAINS, MIRROR, DEFAULT_PROFILE, bodyById } from "./skeleton.js";
 import { bodyParts, headFrame } from "./body.js";
-import { MODELS, rigById } from "./models.js";
+import { MODELS, rigById, wantModel, wantHeld } from "./models.js";
 import { assetByType } from "./assets.js";
 import { clone as cloneRigged } from "three/addons/utils/SkeletonUtils.js";
 
@@ -51,6 +51,20 @@ export class Mannequin {
     this.build();
   }
 
+  /**
+   * Takes the models that have come since it was built: the modelled body in place of the sculpted one, and what it
+   * holds in its hands. Where it stands and how it is posed stay as they are. Answers whether anything changed.
+   */
+  refit() {
+    if (!this.rigId && this.model !== (MODELS.bodies.get(this.body) ?? null)) return this.build(), true;
+    let changed = false;
+    for (const hand of ["right", "left"]) {
+      const type = this.hold[hand];
+      if (type && !this.held?.[hand] && (MODELS.hand.has(type) || MODELS.props.has(type))) (this.setHold(hand, type), (changed = true));
+    }
+    return changed;
+  }
+
   /** A new colour for the clay and the joints. */
   setColor(color) {
     this.color = new THREE.Color(color);
@@ -90,8 +104,10 @@ export class Mannequin {
     this.parts = [];
     const type = bodyById(this.body);
     const base = { ...DEFAULT_PROFILE, ...(type?.profile ?? {}) };
-    const model = MODELS.bodies.get(this.body);
     const rig = this.rigId ? rigById(this.rigId) : null;
+    // the modelled body is asked for as the body is built: until it comes the sculpted one stands in
+    if (!rig) wantModel("bodies", this.body);
+    const model = MODELS.bodies.get(this.body);
     this.rigScene?.removeFromParent();
     this.rigScene = null;
     this.rigDrive = null;
@@ -262,7 +278,8 @@ export class Mannequin {
     this.parts = this.parts.filter((m) => m.userData.held !== hand);
     this.held[hand] = null;
     this.hold[hand] = type || null;
-    // a hand prop, or a piece of the set that can be held (a bottle, an apple, a book)
+    // a hand prop, or a piece of the set that can be held (a bottle, an apple, a book); asked for, and held once it comes
+    if (type) wantHeld(type);
     const model = type && (MODELS.hand.get(type) ?? (() => {
       const def = assetByType(type);
       const piece = MODELS.props.get(type);

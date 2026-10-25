@@ -62,10 +62,11 @@ export function summary() {
 
 // ---------------------------------------------------------------- what he does
 
-/** The library and the characters, loaded (their sizes are what a new piece or character is made at). */
-async function catalogue() {
+/** The library, listed, and the characters when a figure comes into it (their sizes are what a new piece or character is made at). */
+async function catalogue(figures) {
   const m = await import("./toaster-assets.js");
   const lib = await m.loadLibrary();
+  if (figures) await m.loadPeople();
   return { m, lib };
 }
 
@@ -79,7 +80,18 @@ async function build(actions) {
   const needs = actions.some((a) => a.op === "add" && a.kind !== "shape") || actions.some((a) => a.op === "set" && (a.pose || a.tweak));
   // a figure's own box in its pose, its tweaks and its joints
   const measure = (q) => m.characterSize({ body: q.body, rig: q.rig, pose: q.pose, params: q.params, joints: q.joints });
-  const { m, lib } = needs ? await catalogue() : {};
+  const figures = actions.some((a) => (a.op === "add" && a.kind === "character") || (a.op === "set" && (a.pose || a.tweak)));
+  const { m, lib } = needs ? await catalogue(figures) : {};
+  // (a figure is measured in the pose it takes, with what the pose puts in its hands: those models are in first)
+  if (m) {
+    const same = (x, n) => String(x ?? "").toLowerCase() === String(n ?? "").toLowerCase();
+    // who the action is about: a figure on the floor, or one added earlier in the same answer
+    const figureOf = (a) => (a.op === "add" ? (a.kind === "character" ? a : null) : partsNow().find((p) => same(p.name, a.part) && isCharacter(p)) ?? actions.find((x) => x.op === "add" && x.kind === "character" && same(x.name, a.part)));
+    await Promise.all(actions.filter((a) => a.pose && (a.op === "add" || a.op === "set")).map((a) => {
+      const who = figureOf(a);
+      return who && m.figureReady({ body: who.body, rig: who.rig, pose: a.pose });
+    }));
+  }
   const pieceOf = (type) => lib?.pieces.find((x) => x.type === type);
   const peopleOf = (body) => m?.characterList().people.find((x) => x.body === body);
   // what stands on the floor already, as footprints, for a part set down beside the others (the new ones counted as they come)
