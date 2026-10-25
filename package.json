@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "description": "Open-source cinematic presets: your photo becomes a shot with sound. Built on the Comfy SDK and LTX-2.5.",
   "scripts": {
+    "prestart": "node scripts/preflight.mjs",
     "start": "node --env-file-if-exists=.env server/main.ts",
+    "predev": "node scripts/preflight.mjs",
     "dev": "COMFYTURE_WORKFLOWS=dev node --env-file-if-exists=.env server/main.ts",
     "check": "node --env-file-if-exists=.env scripts/smoke.ts data/smoke.png",
     "check:workflows": "node scripts/check-workflows.ts",
