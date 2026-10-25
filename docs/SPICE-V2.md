@@ -4,6 +4,19 @@ Spice stops being a VFX house that does by hand what ffmpeg and a canvas can do.
 
 The local, self-hosted version comes later. First the AI side, on Comfy Cloud, through the template runner the app already has (`server/comfy-templates.ts`: catalog, form, price estimate, run). Every paid run asks first; development runs on `COMFYTURE_FAKE_TEMPLATES=1`, so nothing here spends credits.
 
+## Status (2026-10-26)
+
+Built and tested, at **#/spice?bay** (the VFX house is still #/spice until the bay covers what the judges' walk shows of it; a key beside Paprika's name in each leads to the other):
+
+- **The rules** (`web/js/spice2-model.js`, `tests/spice2.test.ts`): the seven stages, 41 engines named after templates of the live catalog (checked against it), takes with a marked pass, Paprika's plan, the ledger (and as text), the checks before a paid run, the price, her pick without a model, Conform's plan.
+- **The server** (`server/bay-assist.ts`, `server/bay-example.ts`, the `spice-bays` store in `server/main.ts`): Paprika's brief and the reader of her answers, the examples seeder.
+- **The screen** (`web/js/bay*.js`, `web/js/panels/bay.js`, `web/css/bay.css`): rail, viewer with its wipe, the stage's engines grouped by what they are for, the form, takes, the plan, Finish's free export and ledger, her bar, her tour (`web/js/tours/bay.js`).
+- **Safe on a judges' copy**: runs go through the template runner, so the judge spend gate and `COMFYTURE_OPEN_WEIGHTS` apply (the bay also hides partner engines under open weights, and says before the press when no Comfy key is saved).
+- **The example**: "The yard at dusk" (`examples/bay/lantern/`, pictures drawn with Codex's GPT Image, clips made by `scripts/bay-example-media.sh`): a clip and a take for Conform, Clean, Direct and Finish. Its Clean and Direct takes are **stand-ins drawn to show the result**, and each says so (`source: "example"`); nothing in it was run on Comfy Cloud.
+- Tests: `tests/spice2.test.ts`, `tests/bay-assist.test.ts`, `tests/bay-example.test.ts`; in a browser, `tests/bay.browser.mjs` and `tests/bay-example.browser.mjs`.
+
+**Not yet**: a real run of any engine (no credits were spent; every paid path is stood in for in the tests), Select's matte on the viewer, Control/Extend takes in the example, the website's Spice section and video, and the retirement of the VFX house.
+
 ## What the old Spice was, and why it goes
 
 Six departments (Plate, Roto, Paint, Light, FX, Comp), five of them done mostly on this machine: a canvas compositor for effect layers, ffmpeg grades, a free weather and spark server. That is a compositing tool. It gives no AI edit. The AI parts (SAM3, removers, Beeble, upscale) were attached to it as options. v2 turns this round: the models are the departments' engines, and ffmpeg only conforms and exports.

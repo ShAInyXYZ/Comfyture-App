@@ -20,6 +20,7 @@ const out = process.env.OUT ? resolve(process.env.OUT) : null;
 if (out) await mkdir(out, { recursive: true });
 const dataDir = tempDir("bay-data-");
 const mediaDir = tempDir("bay-media-");
+const noExamples = tempDir("bay-noexamples-");
 let failures = 0;
 const ok = (cond, msg, extra = "") => {
   console.log(`${cond ? "PASS" : "FAIL"} ${msg}${extra ? `  ${extra}` : ""}`);
@@ -37,7 +38,7 @@ const port = await new Promise((done) => {
     s.close(() => done(port));
   });
 });
-const server = spawn(process.execPath, ["server/main.ts"], { cwd: root, env: { ...process.env, PORT: String(port), COMFYTURE_DATA: dataDir, COMFY_API_KEY: "" }, stdio: "ignore" });
+const server = spawn(process.execPath, ["server/main.ts"], { cwd: root, env: { ...process.env, PORT: String(port), COMFYTURE_DATA: dataDir, COMFYTURE_EXAMPLES: noExamples, COMFY_API_KEY: "" }, stdio: "ignore" });
 const base = `http://127.0.0.1:${port}`;
 for (let i = 0; i < 100; i++) {
   if (await fetch(`${base}/api/spice-bays`).then((r) => r.ok, () => false)) break;

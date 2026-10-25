@@ -29,6 +29,7 @@ import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-a
 import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer, utensilsCandidates } from "./utensils-assist.ts";
 import { SPICE_BRIEF, SPICE_TOOL, spicePrompt, readSpiceAnswer } from "./spice-assist.ts";
 import { BAY_BRIEF, BAY_TOOL, bayPrompt, readBayAnswer } from "./bay-assist.ts";
+import { putBayExample } from "./bay-example.ts";
 import { TOASTER_BRIEF, TOASTER_TOOL, toasterPrompt, readToasterAnswer, TOASTER_WRITE_BRIEF, writePrompt, readImprovedPrompt } from "./toaster-assist.ts";
 import { guideFor } from "./image-guides.ts";
 import { normaliseBody as spiceBody, FIRST as SPICE_FIRST } from "../web/js/spice-model.js";
@@ -1137,6 +1138,8 @@ async function dropStory(id: string) {
 
 /** The examples of each store: Kitchen's film, Spice's shots, Jam's showcase videos and songs, Macaron's brands (Comfyture's own), Toaster's drafts. */
 const EXAMPLE_KINDS: Record<string, ExampleKind> = {
+  // (the AI edit bay's examples: its clip and the takes it ships, as results the example stands in for)
+  "spice-bays": { name: "bay", dir: join(EXAMPLES, "bay"), spec: "bay.json", ledger: ledgerOf("spice-bays"), kept: keptIn("spice-bays"), drop: dropFrom("spice-bays"), put: (spec, folder, id, rev) => putBayExample(spec, folder, id, rev, { data, stamp, write: (p) => writeProject("spice-bays", p as Project) }) },
   "spice-shots": { name: "spice", dir: join(EXAMPLES, "spice"), spec: "shot.json", ledger: ledgerOf("spice-shots"), kept: keptIn("spice-shots"), drop: dropFrom("spice-shots"), put: putSpiceShot },
   jams: {
     name: "jam",

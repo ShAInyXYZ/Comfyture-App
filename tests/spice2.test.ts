@@ -57,6 +57,9 @@ test("a stage's engines from a catalog: the curated ones present come first, tho
     { name: "api_pixverse_v6_max_i2v", title: "PixVerse", partner: true, medium: "video", group: "partner", inputs: ["image"] },
   ];
   const { engines, missing } = m.enginesFor("direct", cat);
+  // (a background remover is Select's, not Clean's)
+  assert.ok(!m.enginesFor("clean", [{ name: "api_veed_remove_video_background", title: "VEED", medium: "video", group: "partner", partner: true, inputs: ["video"] }]).engines.some((x: any) => x.found), "a background remover is not a clean-up");
+  assert.ok(m.enginesFor("select", [{ name: "api_veed_remove_video_background", title: "VEED", medium: "video", group: "partner", partner: true, inputs: ["video"] }]).engines.some((x: any) => x.found), "it is Select's");
   assert.deepEqual(engines.slice(0, 2).map((x: any) => x.name), ["api_google_gemini_omni_flash_1_1_edit", "api_seedance2_5_video_editing"]);
   const added = engines.find((x: any) => x.name === "api_newmaker_video_edit");
   assert.ok(added?.found && added.mode === "other" && added.needs.video && added.needs.image, "a new edit template is an engine of Direct");

@@ -102,8 +102,8 @@ export const ENGINES = [
 
 /** How a stage finds the engines it does not list: a template of the live catalog whose name matches, and that is a video one. */
 export const DISCOVER = {
-  select: /segment|matte|green_screen|remove_video_background/,
-  clean: /remove_.*video|video_inpaint|remova/,
+  select: /segment|matte|green_screen|(remove|replace)_.*background/,
+  clean: /remove_(object|subtitle|watermark|text|logo)|video_inpaint|remova/,
   direct: /video_edit(ing)?$|_edit$|motion_transfer|character_replacement|relight/,
   control: /ic_lora|iclora|ltx2_5_(?!i2v|t2v|dfr)|ominiref/,
   extend: /extend|flf2v|multiframe|continuation/,
@@ -203,7 +203,8 @@ function take(t, i = 0) {
     from: str(t.from, 20) || "clip",
     fromTake: str(t.fromTake, 40),
     credits: num(t.credits, 0, 1e6, 0),
-    source: ["local", "open", "partner"].includes(t.source) ? t.source : "local",
+    // ("example": a result an example ships to stand in for a run, drawn another way and said so)
+    source: ["local", "open", "partner", "example"].includes(t.source) ? t.source : "local",
     seconds: num(t.seconds, 0, 7200, 0),
     at: str(t.at, 40) || new Date(0).toISOString(),
     note: str(t.note, 300),

@@ -213,7 +213,7 @@ function takeRow(st, t) {
   return h(`div.bay-take${marked ? ".is-marked" : ""}${on ? ".is-shown" : ""}${t.state === "failed" ? ".is-failed" : ""}`, { dataset: { take: t.id } },
     h("button.bay-take-pic", { type: "button", title: "Show it on the right of the wipe", disabled: t.state === "failed", on: { click: () => showTake(st.id, t.id) } }, thumb(t.media)),
     h("div.bay-take-text", {}, h("b", {}, t.title || t.engine), h("small", {}, t.state === "failed" ? t.note || "It did not work." : (t.prompt || t.note || "No words").slice(0, 90)),
-      h("small.bay-take-meta", {}, `${t.credits ? `${t.credits} cr` : "free"}${t.seconds ? ` · ${Math.round(t.seconds)} s` : ""}`)),
+      h("small.bay-take-meta", {}, `${t.source === "example" ? "example result" : t.credits ? `${t.credits} cr` : "free"}${t.seconds && t.source !== "example" ? ` · ${Math.round(t.seconds)} s` : ""}`)),
     h("div.bay-take-keys", {},
       t.state === "failed" ? null : iconKey("check", marked ? "This is the stage's pass" : "Make it the stage's pass", () => mark(st.id, t.id), { pressed: marked, cls: marked ? "is-lit" : "" }),
       danger({ id: `drop:${t.id}`, label: "Delete the take", again: "Delete it", compact: true, run: () => drop(st.id, t.id) })));
