@@ -18,9 +18,10 @@ The other pages of this folder:
   Add **Open Weights Only** with the judge server run in open-weights mode (D4: the switch now blocks the partner templates too). Most Viral is optional.
 - **Blocks us today**: the repo holds other people's recordings (the Mixer trends' songs, see the blocker below),
   the repo is private, and there is no live link and no video yet.
-- **Ready**: the code, the MIT licence, the run-locally steps, the workflow files, examples in four products
-  (Kitchen's stages, Spice, Jam, Macaron) plus Mixer's trend shelf, the first guided tour (Toaster), the Local/Cloud switch
-  in the account panel (landing tonight), and the storyboard.
+- **Ready** (25 October): the code, the MIT licence, the run-locally steps, the workflow files, examples in every product
+  (Kitchen's film *The Great Jam Chase* and its stages, Toaster's three sets, Spice's six shots through every department, Jam's
+  three videos on our own songs, Macaron's brands) plus Mixer's trend shelf, a guided tour per product (eight, each pet on its
+  example), the Local/Cloud switch, judge mode for a hosted copy, the rebuilt website, and the storyboard with its keyframes.
 
 ## ⛔ The blocker: the trends' original recordings (your call)
 
@@ -62,8 +63,10 @@ While at it, the rewrite can also drop `docs/brand/` (492 MB of design mockups t
 | D3 | The live link | **A small VPS running the app in judge mode with a Comfy Cloud key, spending capped**; the static demo as fallback ([HOSTING.md](HOSTING.md)) |
 | D4 | Open weights for the judges | **Run the judge server with `COMFYTURE_OPEN_WEIGHTS=1`**, now that the switch also refuses partner templates (Bria, Beeble, Nano Banana, ElevenLabs…) on the server (done 25 Oct, commit f95e278) |
 | D5 | The video | **Approve the 13 beats** in [VIDEO.md](VIDEO.md), then record on Wednesday 28 |
-| D6 | Kitchen's example | ✅ **Shipped 25 Oct** (examples/kitchen/great-jam-chase: the story, three takes, the edit Cut opens first). **Ship "The Great Jam Chase"** (our chick, three LTX-2.5 takes, the film) as Kitchen's example, so a judge sees a finished film for free. Kitchen ships stages today, no story or film |
+| D6 | Kitchen's example | ✅ **Shipped 25 Oct** (examples/kitchen/great-jam-chase): the story, three LTX-2.5 takes and the edit; Kitchen's home features it on a first visit, and *Render the film* makes the film for free |
 | D7 | Repo weight | Optional: **drop `docs/brand/` from the public history** during the D1 rewrite (keep it on the NAS) |
+| D8 | Toaster in the video | Its examples' stills were drawn with GPT Image (free, through Codex) and the page says so, and no turnaround or 3D model exists yet. **For the open-weights category, re-toast the three stills with Qwen Image 2.1 and make one 3D model (a few credits, your yes)**, or keep beat 4 to clay → still and keep the labels out of frame ([VIDEO.md](VIDEO.md)) |
+| D9 | Meringue's two takes | Our kitten, our pixels, shown muted, but made in Mixer from the Face Dance trend, so her moves follow another creator's dance. Used on the website, in the storyboard (beat 7) and in Jam's *Three Kittens*. **Keep them muted, or swap them for takes on our own moves** |
 
 ## The submission checklist
 
@@ -81,14 +84,14 @@ What the rules ask, checked against the repo on 25 October. The submission form 
 | 7 | Demo video, 2 minutes max | *"Two minutes max, in case we can't get it running ourselves"*; Typeform: *"show us your build in action and how you built it"* | ❌ | Storyboard ready (1:55). Record after your go: the video is the last step, as you asked. |
 | 8 | Other tools explained in the video | *"Any other tools, models, or techniques … must be explained in your demo video"* | 🟡 | Beat 11 names them: three.js, ffmpeg, the Blender MCP round trip, our MCP server, and that the cast art was drawn with GPT Image at development time. |
 | 9 | Most Innovative | *"Demo video must explain why the submission is innovative"* | 🟡 | Beat 10 does it in 14 seconds. |
-| 10 | A link to try it | *"Optional, but strongly encouraged"*; Typeform: *"Will NOT be shared publicly. Expect 5-10 runs … Feel free to rate-limit or cap spending."* | ❌ | Judge mode and the server ([HOSTING.md](HOSTING.md)). |
+| 10 | A link to try it | *"Optional, but strongly encouraged"*; Typeform: *"Will NOT be shared publicly. Expect 5-10 runs … Feel free to rate-limit or cap spending."* | 🟡 | Judge mode is built (no key or address changes, no deletes, a pace per visitor, renders and answers capped per visitor and per day; 25 Oct). It needs a host (D3, [HOSTING.md](HOSTING.md)). |
 | 11 | Social post | *"Link to your demo video on Reddit, X, IG, LI, YT, or TikTok tagging #OpenSourceHiggsfield"* | ❌ | After the video. Draft below. |
 | 12 | The Typeform | name, Comfy account email, country, project name, one line (≤ 100 characters), links, parts of ComfyUI used, models, other tools, categories, "Is your stack fully open?", agreements | ❌ | Drafts below. |
 | 13 | Signup | *"The first 200 signups get free credits"* ([form.typeform.com/to/Ayn9Cwfj](https://form.typeform.com/to/Ayn9Cwfj)) | ❓ | Check that you signed up. |
 | 14 | One submission per person | *"One submission per person"* | ✅ | |
 
-Also missing, not required but felt by judges: Toaster's examples and the tours of the other six products (in progress tonight),
-and Kitchen's example film (D6).
+Done on 25 October, not required but felt by judges: Toaster's three examples, a tour for every product, Kitchen's example film
+(D6), Jam's three videos on our own songs, Spice's examples through every department, and the rebuilt website.
 
 ## The categories, and the case for each
 

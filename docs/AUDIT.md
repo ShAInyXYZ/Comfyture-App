@@ -87,6 +87,44 @@ reader's reading order. The tours (web/js/tour.js) are keyboard-driven (arrows, 
 - The server listens on 127.0.0.1 by default and sends no CORS headers: a hosted copy needs a reverse proxy with its own auth and a
   spending cap (see docs/competition/HOSTING.md).
 
+## The morning after (25 October, 06:00 to 09:00)
+
+**Fixed and pushed**, each with the check that proves it:
+
+- **The home banner** ran its words into the product tiles (Mixer, Macaron and Spice at 1600 wide, every slide on a laptop): the
+  name is the big word and its tagline a half-size line, sized by the screen's height too; measured clear from 1280×720 to 2560×1440.
+- **Jam's Words page**: the style controls spilled over *Style the captions* at 1600×950, and below 820 high the styles' second row
+  slid under the controls; measured clear at eight sizes from 1366×768 to 2560×1440.
+- **Kitchen's first visit** featured the *Rainy bus stop* stage instead of the example film (the stages were put in after it); the
+  film's references showed a garbled picture.
+- **Stuck ffmpeg**: Spice's fog preview on a still never ended (two ran for 3.5 hours at full CPU); every preview, job step and bake
+  now has a deadline and is killed past it, and Spice's bake keeps its whole sound (it was cut to a fifth of a second).
+- **Small ones**: "Make the songnull" and four other places that wrote *null* on the page; a redraw asked for during a frame was
+  lost (checked quiet on every page at rest); deleting the open story toasted "No such project"; Jam called Taro "Your photo".
+
+**Tests**: unit 429 of 429. Browser: harnesses (146 checks), song-cover (40), spice (118), spice-picture (20) pass;
+`utensils-apps` 23 of 24, its hover-card check failing on the last commit too (not from tonight); `jam-editor` still stale.
+
+**Found by the agents, not fixed yet** (most valuable first):
+
+1. Spice: FX says "not baked" after a reload once a layer was renamed (`bakePlan` signs layers whose keys come in a different order:
+   sign the cleaned layers); a seeded example has no bake signature, so a Light or Paint pass added under it still reads "Baked".
+2. Spice: a free spot touching the frame's edge comes out as a flat magenta block (`removelogo` has no border: keep the mask a few
+   pixels inside); `spice-roto.js` `subjectsBody` shadows the still's URL (`url(true)`); a slow-motion comp plays only the plate's
+   length; a shipped example's comp has no download link (`putSpiceShot` leaves `set.comp.exports` empty); the PASS bento is too
+   narrow at 1600×950.
+3. `server/macaron.ts` encodes its frames with no deadline.
+4. Jam: an example's song cannot carry its cover; `spentOf` would count a showcase as credits spent; a film ships as a video, not
+   a reel; opening a video with no stored drop or loudness saves it, which marks Toc Toc and Hotel Lobby as worked on.
+5. At 1366×768 Jam's edit shows only its ruler and Spice's viewer is too short for its timeline rows; at 1180 wide and under, Jam's
+   Words still overlaps.
+6. The Stage's examples are put in only when its folder is first made, so an example added later never reaches an existing install
+   (move the Stage onto `server/examples.ts`, [COMPONENTS.md](COMPONENTS.md) finding 10).
+7. Spice's cover art (the home banner, the website's tile) still shows the woman in a raincoat; a cover drawn from Paprika's own
+   shot would match the rest of the cast.
+8. The tour engine: scroll a step's element into view itself, let a tour close what it opened when it is left with Esc, and hide
+   the app's tooltips while a step changes.
+
 ## Next, ranked
 
 1. Decide the trend sounds and the Toaster mockups (above), before the submission.
