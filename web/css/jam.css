@@ -238,7 +238,12 @@ button.jm-way:disabled { opacity: .55; cursor: progress; }
 .jm-phone.is-empty span { position: relative; text-shadow: 0 .0625rem .25rem rgba(0, 0, 0, .7); }
 .jm-ratio { position: absolute; top: .875rem; right: .875rem; z-index: 3; padding: .3125rem .5rem; border: 1px solid var(--line2); border-radius: .5rem; background: rgba(18, 18, 20, .82); color: var(--text); font: 500 .75rem/1 var(--font-mono); letter-spacing: .04em; }
 .jm-phone-transport { flex: none; }
-.jm-phone-transport .cut-transport { grid-template-columns: auto 1fr auto; gap: .375rem; }
+/* the phone's card is narrow: the times and the screen keys on one line, the play keys centred on the next (on one line they ran out
+   of the card, the play key on its edge and the last keys cut off) */
+.jm-phone-transport .cut-transport { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "times end" "keys keys"; gap: .375rem; }
+.jm-phone-transport .cut-times { grid-area: times; min-width: 0; }
+.jm-phone-transport .cut-transport-end { grid-area: end; }
+.jm-phone-transport .cut-transport-keys { grid-area: keys; }
 .jm-phone-transport .cut-timecode { font-size: .8125rem; letter-spacing: 0; color: var(--text); }
 .jm-phone-transport .cut-timecode-total { font-size: .75rem; }
 .jm-phone-transport .cut-transport-keys { justify-content: center; }
