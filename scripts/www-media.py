@@ -7,7 +7,7 @@
 
 Only our own media goes in, each file named here: the presets, the shipped examples (examples/), the brand folders (web/brand,
 docs/brand) and a few named takes of the take log (data/runs, data/reels; skipped when this machine does not have them).
-Never a whole folder: a Mixer trend's sound (web/brand/mixer/trends/*/sound.m4a, vocals.m4a), its look frames and pose videos, and
+Never a whole folder: a Mixer trend's look frames and pose videos (and the original recordings it held until 25 October), and
 anything of another creator must never reach the site. Pictures become WebP, clips H.264 MP4 with faststart and a poster;
 loops carry no sound. ffmpeg and Pillow are needed."""
 import json, os, shutil, subprocess, sys

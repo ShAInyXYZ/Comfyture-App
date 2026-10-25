@@ -34,8 +34,8 @@ CAPTURES=<capture folder> npm run www           # also brings in the app's scree
 
 `scripts/www-media.py` names every file it takes: the presets, the shipped examples (`examples/`), the brand folders, and a few takes of
 the take log (`data/runs`, `data/reels`; skipped on a machine without them). Pictures become WebP, clips H.264 MP4 with faststart and a
-poster; loops have no sound. It never copies a whole folder, so nothing of a Mixer trend (its `sound.m4a` and `vocals.m4a`, its look
-frames, its pose videos) can reach the site.
+poster; loops have no sound. It never copies a whole folder, so nothing of a Mixer trend (its look frames, its pose videos; the
+original recordings it held are out of the repository since 25 October) can reach the site.
 
 ### The app's screens
 
