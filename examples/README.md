@@ -58,6 +58,8 @@ that opens, and an install from before the Stage's ledger keeps the copies it ha
 set: { roto, fx, ... } }`: each pass's file goes into the library as `<id>-<dept>.<ext>`, and the shot is written with its passes made.
 See [`spice/sh010-ketkout/shot.json`](spice/sh010-ketkout/shot.json).
 
+An example says which passes the app makes with `"build": ["light", "fx", "comp"]`: [`scripts/spice-examples.mjs`](../scripts/spice-examples.mjs) bakes them in the app itself (a headless browser on a lab server of its own, free, no key) and writes them back here, and [`scripts/spice-roto.py`](../scripts/spice-roto.py) cuts the mattes out on this machine. FX's layers can cast their light on the shot (`light`, `reach`) and follow Roto's subject on a clip (`follow`, `pin`); the shot can have a finish (`set.fx.finish: { bloom, vignette }`). The plates of the pictures were drawn with GPT Image from our cast's sheets ([`docs/brand/products/spice-v4/plates.txt`](../docs/brand/products/spice-v4/plates.txt)); the clips are takes from Jam's own videos.
+
 ### Jam: `project.json`
 
 `{ name, rev, thumb, jam, cut: { id, name, body }, media: [{ file, to, name?, kind?, cover? }] }`: each media file (one of the folder's, or

@@ -144,10 +144,10 @@ try {
     return { names: spice.list.map((x) => x.name), open: spice.shot.name, kind: b.passes.plate?.media.kind, done: Object.values(b.passes).filter((p) => p?.media).length, roto: b.passes.roto?.type, subject: !!b.set.roto.subjects[0]?.media, fx: b.passes.fx?.to - b.passes.fx?.from + 1, plate: b.passes.plate?.to - b.passes.plate?.from + 1, exported: (b.set.comp.exports ?? []).map((e) => `${e.format} ${e.url === b.passes.comp?.media.url}`) };
   });
   ok(examples.exported.join() === "mp4 true", "a shipped comp is its export too: Comp offers it to download", JSON.stringify(examples.exported));
-  ok(["Ketkout's flambé", "Pickle's storm on stage", "Brioche's first snow", "Truffle's spark of genius", "Paprika's portal", "The great jam chase"].every((n) => examples.names.includes(n)), "the example shots are there on a first visit", JSON.stringify(examples.names));
+  ok(["Ketkout's flambé", "Pickle's spell", "Brioche's first snow", "Truffle's spark of genius", "Paprika's portal", "Taro's wish", "Taro's fireworks", "The great jam chase"].every((n) => examples.names.includes(n)), "the example shots are there on a first visit", JSON.stringify(examples.names));
   ok(examples.open === "The great jam chase" && examples.kind === "video" && examples.done === 6, "the newest is open: a real take with a pass made in each of the six departments", JSON.stringify(examples));
   ok(examples.roto === "matte" && examples.subject && examples.fx === examples.plate, "its Roto pass is its subject's matte, and its effect is laid into every frame of the shot", JSON.stringify(examples));
-  // Paprika's example: in FX its layers are drawn live, the portal of sparks bright over the night sky where the plate is dark
+  // Paprika's example: in FX its layers are drawn live, the portal of sparks behind her bright over the night sky above her head, where the plate is dark
   const glow = await js(async () => {
     const s = await import("/js/spice.js");
     await s.openShot("spice-example-paprika");
@@ -161,7 +161,7 @@ try {
       t.height = h;
       const g = t.getContext("2d");
       g.drawImage(src, 0, 0, w, h);
-      const d = g.getImageData(Math.round(w * 0.52), Math.round(h * 0.12), Math.round(w * 0.36), Math.round(h * 0.48)).data;
+      const d = g.getImageData(Math.round(w * 0.14), Math.round(h * 0.06), Math.round(w * 0.26), Math.round(h * 0.16)).data;
       let n = 0;
       for (let i = 0; i < d.length; i += 4) n += d[i];
       return n / (d.length / 4);
