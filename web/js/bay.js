@@ -3,7 +3,7 @@
 // (spice2-model.js holds the rules). Every change to the open shot is kept a moment after the last one. A paid run is only sent with the
 // person's yes to its price (bay-ui.js: yes()); a run is a TAKE of its stage, kept whether it worked or not, so what was tried is on record.
 import { api } from "./api.js";
-import { changed, toast } from "./store.js";
+import { changed, toast, state } from "./store.js";
 import { keyedSaver } from "./saving.js";
 import { editRun, editStop, editProbe, editPreview } from "./utensils-edit-api.js";
 import { runnerOf, fillInputs, costOf } from "./utensils-cloud.js";
@@ -215,7 +215,12 @@ export function loadCatalog() {
 }
 
 /** The engines of a stage with what the catalog says of each, and the curated ones it no longer has. */
-export const enginesOfStage = (stage) => enginesFor(stage, bay.catalog);
+export function enginesOfStage(stage) {
+  const found = enginesFor(stage, bay.catalog);
+  // with open weights only (COMFYTURE_OPEN_WEIGHTS) a partner's model never runs: it is not offered
+  if (!state.account?.openWeights) return { ...found, hidden: 0 };
+  return { engines: found.engines.filter((x) => !x.partner), missing: found.missing, hidden: found.engines.filter((x) => x.partner).length };
+}
 
 /** The engine chosen for a stage: the one the person picked, else Paprika's pick for the words typed (or the stage's first). */
 export function chosen(stage) {
@@ -263,7 +268,10 @@ export function problems(stage = bay.stage) {
   const eng = chosen(stage);
   if (!eng || !bay.shot) return [];
   const f = bay.form[stage];
-  return preflight(eng, bay.shot.body, stage, { text: f.text, images: f.refs.length });
+  const out = preflight(eng, bay.shot.body, stage, { text: f.text, images: f.refs.length });
+  // a template runs on Comfy Cloud: with no key saved (a first visit renders on a ComfyUI here, where templates do not run) it cannot be sent
+  if (!eng.local && state.account && state.account.key && !state.account.key.set) out.unshift({ level: "stop", text: "Templates run on Comfy Cloud: save a Comfy key in the account window (top right) to run this. Conform and the export work without one." });
+  return out;
 }
 
 export function setText(stage, text) {

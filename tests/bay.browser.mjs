@@ -96,6 +96,8 @@ try {
   const queue = [];
   await page.route("**/api/bay/assist", (route) => (asked.push(route.request().postDataJSON()), route.fulfill({ json: queue.shift() ?? { reply: "Fine.", actions: [] } })));
 
+  const account = (extra = {}) => ({ target: { kind: "comfy-cloud", url: "https://cloud.comfy.org" }, key: { set: true, last4: "abcd", source: "env" }, openWeights: false, balance: { credits: 5000, usd: 25 }, ...extra });
+  await page.route("**/api/account", (route) => (route.request().method() === "GET" ? route.fulfill({ json: account() }) : route.continue()));
   const settle = (ms = 350) => page.waitForTimeout(ms);
   const shot = (name) => out && page.screenshot({ path: join(out, `${name}.png`) });
   const step = (id) => page.locator(`.bay-step[data-stage="${id}"]`);
@@ -272,6 +274,36 @@ try {
   const ledger = await readFile(await download.path(), "utf8");
   ok(/Total: 135 credits/.test(ledger) && /Seedance/.test(ledger) && /direct: 135 cr/.test(ledger), "the ledger is a text file with every run and the total", ledger.split("\n").slice(0, 3).join(" / "));
   await shot("11-finish");
+
+  // ---- open weights only: a partner's engine is never offered, whatever the catalog has
+  await page.unroute("**/api/account");
+  await page.route("**/api/account", (route) => (route.request().method() === "GET" ? route.fulfill({ json: account({ openWeights: true, balance: null, error: "Open weights only is on, so no Comfy credits are spent" }) }) : route.continue()));
+  await page.reload();
+  await page.waitForSelector(".bay .bay-step");
+  await settle(900);
+  await step("direct").click();
+  await settle(500);
+  const open = await page.locator(".bay-engine b").allTextContents();
+  ok(!open.some((n) => /Gemini|Seedance|Beeble|NewMaker/.test(n)), "with open weights only no partner engine is offered", open.join(" | "));
+  ok(/Open weights only is on: 4 partner engines are left out/.test(await page.locator('.bay-note[data-open-weights]').textContent().catch(() => "")), "and it is said");
+  await step("control").click();
+  await settle(400);
+  ok((await page.locator(".bay-engine b").allTextContents()).some((n) => /IC-LoRA/.test(n)), "the open ones (the LTX IC-LoRAs) are still there");
+
+  // ---- no key: a template cannot be sent (a first visit renders on a ComfyUI here), and it is said before, not after
+  await page.unroute("**/api/account");
+  await page.route("**/api/account", (route) => (route.request().method() === "GET" ? route.fulfill({ json: account({ key: { set: false, last4: "", source: "env" }, balance: null, error: "No API key is set", target: { kind: "self-hosted", url: "http://127.0.0.1:8188" }, reach: false }) }) : route.continue()));
+  await page.reload();
+  await page.waitForSelector(".bay .bay-step");
+  await settle(900);
+  await step("control").click();
+  await settle(400);
+  ok(/save a Comfy key/.test(await page.locator(".bay-problems").textContent()) && (await key().isDisabled()), "with no key a template run is stopped before the press, in words");
+  await step("conform").click();
+  await settle(300);
+  ok(!(await key().isDisabled()), "while Conform, which is local, is not");
+  await page.unroute("**/api/account");
+  await page.route("**/api/account", (route) => (route.request().method() === "GET" ? route.fulfill({ json: account() }) : route.continue()));
 
   // ---- a laptop
   for (const [w, h] of [[1280, 720], [1366, 768], [1920, 1080]]) {

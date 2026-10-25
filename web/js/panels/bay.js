@@ -4,7 +4,7 @@
 // Cloud's models, grouped by what they are for, with their price and their limit), and the form of the one chosen; then the TAKES of the
 // stage and the LEDGER. Paprika's bar docks at the foot. Every paid run asks for its price first (bay-ui.js).
 import { h, icon } from "../dom.js";
-import { changed } from "../store.js";
+import { changed, state } from "../store.js";
 import { dropdown } from "../controls.js";
 import { setRoom } from "../harnesses.js";
 import {
@@ -132,7 +132,7 @@ function stagePanel(st) {
   const b = bay.shot.body;
   const working = workingOn(st.id);
   if (st.local) return conformPanel(st, working);
-  const { engines, missing } = enginesOfStage(st.id);
+  const { engines, missing, hidden } = enginesOfStage(st.id);
   const f = bay.form[st.id];
   const picked = chosen(st.id);
   const byPaprika = !!picked && !engines.some((x) => x.name === f.engine);
@@ -147,6 +147,7 @@ function stagePanel(st) {
     !bay.catalog && !bay.catalogError ? h("p.bay-note", {}, "Reading Comfy Cloud's templates…") : null,
     bay.catalogError ? h("p.bay-note.is-warn", {}, `Comfy Cloud's catalog could not be read (${bay.catalogError}); the engines shown are the ones Spice knows.`, " ", ghost("Try again", () => ((bay.catalogError = ""), loadCatalog()))) : null,
     h("div.bay-engines", {}, groups.map(([mode, label, list]) => h("div.bay-group", { dataset: { mode } }, h("span.bay-group-label", {}, label), h("div.bay-group-cards", {}, list.map((x) => engineCard(x, picked, byPaprika)))))),
+    hidden ? h("p.bay-note", { dataset: { openWeights: "1" } }, `Open weights only is on: ${hidden} partner ${hidden === 1 ? "engine is" : "engines are"} left out, and no credits are spent.`) : null,
     missing.length ? h("p.bay-note", {}, `Not in the catalog now: ${missing.map((x) => x.title).join(", ")}.`) : null,
     picked ? h("p.bay-why", {}, h("b", {}, picked.title), ` ${picked.about}. `, h("em", {}, byPaprika ? `Paprika picks it: ${picked.why}.` : picked.why)) : null,
     h("label.bay-words", {}, h("span", {}, need.text ? "In words" : "Words (optional)"),
@@ -268,7 +269,7 @@ export function renderBay(el) {
   const b = bay.shot.body;
   const parts = {
     side: sig(b, bay.list.length, bay.shot.name),
-    stage: sig(b.clip, b.stages[bay.stage], b.log.length, bay.form[bay.stage], bay.catalog?.length, bay.catalogError, [...bay.estimates], b.brief ? 1 : 0),
+    stage: sig(b.clip, b.stages[bay.stage], b.log.length, state.account?.openWeights, bay.form[bay.stage], bay.catalog?.length, bay.catalogError, [...bay.estimates], b.brief ? 1 : 0),
     takes: sig(b.stages[bay.stage], bay.wipe),
   };
   const draw = (key, fn) => {
