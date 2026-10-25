@@ -16,7 +16,7 @@
 // The parts and the scene are called by @tags in the words (pills.js). What is toasted draws on "toaster-runs", so a render's progress
 // never redraws a field in use.
 import { h, icon, sprite } from "../dom.js";
-import { onChange, toast, useStageRender, makeToasterRef, writer, writers } from "../store.js";
+import { onChange, toast, useStageRender, makeToasterRef, writer, writers, state } from "../store.js";
 import { currentPage } from "../router.js";
 import { dropdown, float } from "../controls.js";
 import { view as viewImage } from "../viewer.js";
@@ -1278,7 +1278,8 @@ function drawBar3d() {
   shell.bar3d.replaceChildren(...[
     h("div.ts-bar3d-row", {},
       h("div.ts-setting", {}, h("span.ts-label", {}, "Sheets drawn by"),
-        models.length ? h("div.ts-pick", {}, dropdown({ label: "Image model for the sheets", value: sheetModel()?.id, items: models, onChange: setSheetModel, note: "Draws each object's four views from its clay" })) : h("span.ts-note", {}, "No image model yet")),
+        models.length ? h("div.ts-pick", { title: state.account?.openWeights ? "Open weights only is on: no partner model (Nano Banana, GPT Image…) is offered, so the sheets are drawn on open weights and cost no credits" : "" }, dropdown({ label: "Image model for the sheets", value: sheetModel()?.id, items: models, onChange: setSheetModel, note: state.account?.openWeights ? "Open weights only: no partner model draws the sheets" : "Draws each object's four views from its clay" })) : h("span.ts-note", {}, "No image model yet"),
+        state.account?.openWeights ? h("span.ts-note", {}, "Open weights only: no partner model, no credits") : null),
       h("div.ts-setting", {}, h("span.ts-label", {}, "Models made by"),
         h("p.ts-where", { title: t?.local?.ok ? `ComfyUI at ${t.local.url}` : t?.local?.why ?? "" }, route() === "local" ? "Trellis2 on your ComfyUI" : "Pixal3D on Comfy Cloud", h("em", {}, route() === "local" ? "your GPU" : modelPrice().words))),
       h("span.spacer"), key),
