@@ -189,6 +189,8 @@ export function save(draft = toaster.draft) {
 export async function saveNow() {
   const d = toaster.draft;
   if (!d) return false;
+  // (nothing waiting and kept already: saving it again would only mark it as worked on; a save that failed is tried again)
+  if (!saver.has(d.id) && toaster.saving.tone === "ok") return true;
   lamp("busy");
   if (saver.has(d.id)) await saver.flush(d.id);
   else await keep(d.id, d);
@@ -939,11 +941,18 @@ export function forget(kind, id) {
 
 /** A render shown, and the viewport put back where it was made from. */
 export function showRender(id) {
-  const r = body()?.renders.find((x) => x.id === id);
+  const b = body();
+  const r = b?.renders.find((x) => x.id === id);
   if (!r) return;
   toaster.shown = id;
-  if (r.camera && toaster.view) toaster.view.setCameraState(r.camera);
-  if (r.ratio && r.ratio in RATIOS && body().ratio !== r.ratio) setRatio(r.ratio);
+  // (looking at a render puts the view and the frame where it was made from: a look, not an edit, so nothing is saved and an example
+  // looked at stays untouched, for a newer version of it to replace)
+  const r3 = (a) => a.map((v) => Math.round(v * 1000) / 1000);
+  if (r.ratio && r.ratio in RATIOS && b.ratio !== r.ratio) (b.ratio = r.ratio), update();
+  if (r.camera && toaster.view) {
+    b.camera = { position: r3(r.camera.position), target: r3(r.camera.target), focal: r.camera.focal };
+    toaster.view.setCameraState(r.camera);
+  }
   changed("toaster-runs");
 }
 /**

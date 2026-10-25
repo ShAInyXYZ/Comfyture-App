@@ -478,6 +478,9 @@ export function cleanDraft(b) {
     refs: (Array.isArray(r.refs) ? r.refs : []).slice(0, 12).filter((x) => x && typeof x.url === "string").map((x) => ({ name: words(x.name, 40), url: x.url.slice(0, 400) })),
     error: words(r.error, 300) || undefined,
     at: words(r.at, 40) || undefined,
+    // an example's render says how it was made ("Made with GPT Image for this example")
+    example: r.example === true || undefined,
+    note: words(r.note, 160) || undefined,
   });
   const model3d = (m) => ({
     id: String(m.id ?? partId()).slice(0, 60),

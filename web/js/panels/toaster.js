@@ -218,6 +218,9 @@ function nameField(current, done) {
 }
 
 function drawParts() {
+  // (a part being renamed keeps its field, its words and its caret: the list catches up once the name is in)
+  const field = shell.parts.querySelector("input.ts-rename");
+  if (renaming && field && document.activeElement === field) return;
   const parts = partsNow();
   unpeek();
   shell.partsCount.textContent = parts.length ? String(parts.length) : "";
@@ -807,6 +810,11 @@ function lookupTag(name, withFrame = false) {
   const tags = tagsOf(b.parts, b.refs.map((r) => r.name));
   const p = b.parts.find((x) => tags.get(x.id) === name);
   if (p) return { title: p.name, color: p.color, url: p.refs?.[0]?.url, pictures: p.refs, words: p.made, note: `@${name} · ${kindWord(p)}` };
+  // a part's later pictures go to the model as @tag-2, @tag-3…: the n-th picture of its sheet
+  const nth = /^(.+)-(\d+)$/.exec(name);
+  const q = nth && b.parts.find((x) => tags.get(x.id) === nth[1]);
+  const pic = q?.refs?.[Number(nth?.[2]) - 1];
+  if (pic && Number(nth[2]) > 1) return { title: `${q.name}, picture ${nth[2]}`, color: q.color, url: pic.url, pictures: [pic], words: q.made, note: `@${name} · picture ${nth[2]} of ${q.name}'s sheet` };
   const r = b.refs.find((x) => x.name === name);
   if (r) return { title: `@${r.name}`, url: r.url, pictures: [r], note: "A reference picture for the whole render" };
   if (!withFrame) return null;
@@ -925,7 +933,13 @@ function drawPromptHead() {
   const wrote = b.promptBy === "writer" && !!b.prompt.trim();
   const stale = wrote && plan.stale;
   const forModel = m?.short ?? m?.name ?? "the image model";
+  // written for a model this machine does not offer (an example's prompt, written for a partner's model, opened with no key): the facts
+  // are the same, so it says whom it was written for rather than calling itself out of date
+  const writtenFor = b.promptFor?.model;
+  const elsewhere = stale && b.promptFor?.key === plan.key && writtenFor && !(toaster.models?.models ?? []).some((x) => x.id === writtenFor);
+  const otherName = elsewhere ? b.renders.find((r) => r.model === writtenFor)?.modelName ?? writtenFor : "";
   const [badge, tone, tip] = own ? ["Yours", ".is-own", "Your prompt: sent as written"]
+    : elsewhere ? [`Written for ${otherName}`, ".is-written", `Written for ${otherName}, which is not on offer here: Toast it writes it again for ${forModel}`]
     : stale ? ["Out of date: rewritten when you toast", ".is-stale", "The image model or the facts changed since it was written: Toast it writes it again (or press Write)"]
     : wrote ? [`Written by ${writerName()} for ${forModel}`, ".is-written", "Written from the model's own guide: sent as it stands"]
     : ["Not written yet", "", "Nothing is written until you toast or press Write"];
@@ -1088,7 +1102,7 @@ let runPeek = null;
 /** An earlier render in the strip: its picture, its tag under it, and its prompt in the peek card as the pointer rests on it. */
 function thumbOf(x, shown) {
   const tag = runTag(x);
-  const what = { title: tag || "Render", words: x.status === "failed" ? x.error : x.prompt ? (x.prompt.length > 700 ? `${x.prompt.slice(0, 700)}…` : x.prompt) : "No prompt was kept for this one.", note: x.status === "failed" ? "" : "Click: show it, from its camera" };
+  const what = { title: tag || "Render", words: x.status === "failed" ? x.error : x.prompt ? (x.prompt.length > 700 ? `${x.prompt.slice(0, 700)}…` : x.prompt) : "No prompt was kept for this one.", note: x.status === "failed" ? "" : x.note ? `${x.note} · Click: show it, from its camera` : "Click: show it, from its camera" };
   return h(`button.ts-thumb${x.id === shown ? ".is-on" : ""}`, { type: "button", role: "listitem", "aria-label": `${what.title}: show it, from its camera`, on: {
     click: () => (unpeek(), (runPeek = null), (mapShown = null), drawMaps(), showRender(x.id)),
     pointerenter: (e) => ((runPeek = x.id), peek(`run:${x.id}`, what, e.currentTarget, "above")),

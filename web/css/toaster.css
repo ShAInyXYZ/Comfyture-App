@@ -606,3 +606,6 @@ button.ts-sheet-pic { cursor: zoom-in; }
   .ts-use { width: 5.5rem; }
   .ts-use span { display: none; }
 }
+/* a portrait frame's camera and map tiles show the whole still, letterboxed, never its top half */
+.ts-cam-pic, .ts-map-pic { position: relative; }
+.ts-cam-pic img, .ts-map-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
