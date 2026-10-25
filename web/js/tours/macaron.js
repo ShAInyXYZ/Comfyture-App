@@ -53,6 +53,8 @@ async function shootOpen() {
 
 export default {
   title: "Macaron",
+  // left before its end, the tour closes the window it opened (the new shoot)
+  end: () => closeAll(),
   steps: [
     {
       go: at("kit"),

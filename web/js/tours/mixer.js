@@ -64,6 +64,8 @@ const starsPanel = () => $(".mx-stars")?.closest(".mx-panel");
 
 export default {
   title: "Mixer",
+  // left before its end, the tour stops the preview it played
+  end: () => document.querySelectorAll("#page-mixer video").forEach((v) => v.pause()),
   steps: [
     {
       go: open("#page-mixer", "top"),

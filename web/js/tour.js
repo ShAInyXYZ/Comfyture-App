@@ -59,6 +59,7 @@ export async function startTour(product, at = 0) {
   if (!load) return;
   stopTour(null);
   const mine = (run = { product, tour: null, at: -1, els: build(product), frame: 0, poll: 0, rect: null });
+  document.documentElement.dataset.touring = product;
   tell();
   try {
     mine.tour = (await load()).default;
@@ -73,11 +74,18 @@ export async function startTour(product, at = 0) {
 /** Ends the tour open: "done" when it reached its end, "left" when it was closed; null forgets nothing. */
 export function stopTour(how = "left") {
   if (!run) return;
-  const { product, els, frame, poll } = run;
+  const { product, els, frame, poll, tour } = run;
   cancelAnimationFrame(frame);
   clearInterval(poll);
   if (how) note(product, how);
   run = null;
+  delete document.documentElement.dataset.touring;
+  // (what the tour opened for its steps, a window or a preview playing, is closed by the tour itself)
+  try {
+    tour?.end?.();
+  } catch (e) {
+    console.warn("tour: it could not tidy up:", e);
+  }
   els.root.classList.add("is-going");
   setTimeout(() => els.root.remove(), reduced() ? 0 : 160);
   removeEventListener("keydown", onKey, true);
@@ -138,6 +146,7 @@ async function goTo(at) {
   const step = steps[at];
   mine.at = at;
   clearInterval(mine.poll);
+  dispatchEvent(new Event("comfyture:tips-hide"));
   const els = mine.els;
   els.card.classList.add("is-busy");
   try {
@@ -148,6 +157,8 @@ async function goTo(at) {
   if (run !== mine || mine.at !== at) return;
   const target = await targetOf(step);
   if (run !== mine || mine.at !== at) return;
+  // (a step's element below the fold or in a panel scrolled away is brought into view, as little as it takes)
+  if (target?.getClientRects().length) target.scrollIntoView({ block: "nearest", inline: "nearest" });
   mine.target = target;
   // the card says it
   els.who.textContent = `${els.name} · ${at + 1} of ${steps.length}`;

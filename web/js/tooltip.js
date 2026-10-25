@@ -75,6 +75,8 @@ export function installTooltips() {
   tip.setAttribute("role", "tooltip");
   tip.popover = "manual";
   document.body.append(tip);
+  // (a tour moving on to its next step clears what was showing)
+  addEventListener("comfyture:tips-hide", () => hide());
   let target = null, timer, pointerX = null;
   const describe = (el, on) => {
     const ids = new Set((el.getAttribute("aria-describedby") || "").split(" ").filter(Boolean));
@@ -89,8 +91,9 @@ export function installTooltips() {
   };
   const show = (el, delay, x = null) => {
     hide();
-    // nor over the menu it has just opened
+    // nor over the menu it has just opened, nor (while a tour is on) anywhere but on the tour's own card
     if (!el?.dataset.tooltip || el.matches(":disabled, [data-state='open']")) return;
+    if (document.documentElement.dataset.touring && !el.closest(".tour")) return;
     pointerX = x;
     timer = setTimeout(() => {
       if (!el.isConnected) return;
