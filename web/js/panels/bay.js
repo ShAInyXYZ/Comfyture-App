@@ -4,9 +4,10 @@
 // Cloud's models, grouped by what they are for, with their price and their limit), and the form of the one chosen; then the TAKES of the
 // stage and the LEDGER. Paprika's bar docks at the foot. Every paid run asks for its price first (bay-ui.js).
 import { h, icon } from "../dom.js";
-import { changed, state } from "../store.js";
+import { changed, state, onChange } from "../store.js";
 import { dropdown } from "../controls.js";
 import { setRoom } from "../harnesses.js";
+import { currentPage } from "../router.js";
 import {
   bay, loadBays, openShot, newShot, removeShot, rename, setStage, setBrief, setSource, setText, pickEngine, chosen, enginesOfStage, priceNow, problems,
   pickRef, dropRef, importClip, pickClip, conform, exportClip, downloadLedger, run, stopRun, mark, drop, showTake, workingOn, mediaOfSide, hasPending, takePending, loadCatalog, followStep,
@@ -14,6 +15,9 @@ import {
 import { STAGES, SAY, PLACEHOLDER, MODES, passOf, takesOf, ledger, creditsOnDay, conformPlan, inputFor, blocked, stageOf, stepDone, engineOf, needsFromForm } from "../spice2-model.js";
 import { createViewer } from "../bay-viewer.js";
 import { yes, ghost, iconKey, danger, lamp, thumb, fill, card, glyph } from "../bay-ui.js";
+
+// the account comes after the page may have drawn: what it says (a key saved or not, open weights only) is drawn too
+onChange((scopes) => scopes.has("account") && !scopes.has("spice") && currentPage() === "spice" && changed("spice"));
 
 const PAPRIKA = { name: "Paprika", tag: "AI editor", face: "brand/cast/paprika-face.webp" };
 
@@ -272,7 +276,7 @@ export function renderBay(el) {
   const b = bay.shot.body;
   const parts = {
     side: sig(b, bay.list.length, bay.shot.name),
-    stage: sig(b.clip, b.stages[bay.stage], b.log.length, state.account?.openWeights, bay.form[bay.stage], bay.catalog?.length, bay.catalogError, [...bay.estimates], bay.forms.size, b.brief ? 1 : 0),
+    stage: sig(b.clip, b.stages[bay.stage], b.log.length, state.account?.openWeights, state.account?.key?.set, bay.form[bay.stage], bay.catalog?.length, bay.catalogError, [...bay.estimates], bay.forms.size, b.brief ? 1 : 0),
     takes: sig(b.stages[bay.stage], bay.wipe),
   };
   const draw = (key, fn) => {

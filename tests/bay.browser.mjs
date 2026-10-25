@@ -293,10 +293,18 @@ try {
 
   // ---- no key: a template cannot be sent (a first visit renders on a ComfyUI here), and it is said before, not after
   await page.unroute("**/api/account");
-  await page.route("**/api/account", (route) => (route.request().method() === "GET" ? route.fulfill({ json: account({ key: { set: false, last4: "", source: "env" }, balance: null, error: "No API key is set", target: { kind: "self-hosted", url: "http://127.0.0.1:8188" }, reach: false }) }) : route.continue()));
+  // (the account answers late, after the bay has drawn: the page is drawn again with it)
+  await page.route("**/api/account", async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    await new Promise((r) => setTimeout(r, 1500));
+    return route.fulfill({ json: account({ key: { set: false, last4: "", source: "env" }, balance: null, error: "No API key is set", target: { kind: "self-hosted", url: "http://127.0.0.1:8188" }, reach: false }) });
+  });
   await page.reload();
   await page.waitForSelector(".bay .bay-step");
-  await settle(900);
+  await step("control").click();
+  await settle(400);
+  ok(!/save a Comfy key/.test(await page.locator(".bay-problems").textContent()), "before the account has answered nothing is claimed of the key");
+  await page.waitForFunction(() => /save a Comfy key/.test(document.querySelector(".bay-problems")?.textContent ?? ""), null, { timeout: 8000 });
   await step("control").click();
   await settle(400);
   ok(/save a Comfy key/.test(await page.locator(".bay-problems").textContent()) && (await key().isDisabled()), "with no key a template run is stopped before the press, in words");
