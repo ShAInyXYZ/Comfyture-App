@@ -191,6 +191,12 @@ function follow() {
   if (!run?.tour) return;
   const step = run.tour.steps[run.at];
   if (!step) return;
+  // a page that draws itself again replaces the element lit: the light goes to the one in its place (and stays put until there is one)
+  if (step.target && run.target && !run.target.isConnected) {
+    const el = typeof step.target === "function" ? step.target() : document.querySelector(step.target);
+    if (!el?.getClientRects().length) return;
+    run.target = el;
+  }
   const r = run.target?.isConnected ? run.target.getBoundingClientRect() : null;
   const key = r ? `${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.width)},${Math.round(r.height)}` : "none";
   if (key !== run.rect) place(step);
