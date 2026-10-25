@@ -34,8 +34,11 @@ RunPod (a partner) is worth one afternoon to film the "your own GPU" beat, not f
 - `server/judge.ts` and its hook in `server/main.ts`: with `COMFYTURE_JUDGE=1` the key and where it renders cannot be changed from the
   page (the account window shows them read-only; no address can be probed: no server-side fetch for visitors), nothing kept can be
   deleted (projects, takes, reels, the Stage's stages, poses and models), each visitor's writing requests are paced (240 per 10 minutes),
-  and `/api/info` says `judge: true`. Tested in `tests/judge.test.ts`. **Not yet**: the spend gate (runs per visitor and per day, a credit
-  budget): until it lands, the cap is the separate key's small balance.
+  and `/api/info` says `judge: true`. **The spend gate** counts what costs credits where it leaves the server (the engine's ComfyUI jobs,
+  the template runner, the partners' pictures, clips and words), against the visitor who started it, and refuses it past
+  `COMFYTURE_JUDGE_RUNS` renders a visitor a day (12), `COMFYTURE_JUDGE_RUNS_DAY` for everyone (80) and `COMFYTURE_JUDGE_WORDS`
+  answers a visitor a day (80); the account window says what is left. Tested in `tests/judge.test.ts`. Behind it, the separate key's
+  small balance is the last cap. Not yet: a cap in credits rather than in runs, and the per-visitor cookie (a visitor is an address).
 - `COMFYTURE_OPEN_WEIGHTS` makes the server refuse partner templates (`server/comfy-templates.ts`, tested); Spice and Utensils do not
   hide them yet (pressing one says why it is refused).
 - `scripts/demo-site.ts` reads `COMFYTURE_DATA`, so it can be built from a clean folder the server has seeded with the examples

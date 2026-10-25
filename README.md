@@ -349,6 +349,7 @@ Write the action the way LTX-2.5 reads best: present tense, the motion first, on
 | `COMFYTURE_LLM_ASSISTANT` | `gpt-6-luna` with a Comfy key, else `gemma-4` | The quick assistants' default (Shot, the Stage, Mixer's Praline and Utensils' Truffle), from the same three |
 | `COMFYTURE_OPEN_WEIGHTS` | | Set to offer only open-weights models: no partner writers or artists through Comfy Router |
 | `COMFYTURE_DEBUG` | | Set to log the Stage assistant's raw answers (and what each Router picture cost) |
+| `COMFYTURE_JUDGE` | | A hosted copy for others to try (the challenge's judges): the key and the renders' target are the host's, nothing can be deleted, each visitor is paced and their renders and answers are capped a day (`COMFYTURE_JUDGE_RUNS` 12, `COMFYTURE_JUDGE_RUNS_DAY` 80 for everyone, `COMFYTURE_JUDGE_WORDS` 80). See [docs/competition/HOSTING.md](docs/competition/HOSTING.md). |
 
 ## Credits
 
