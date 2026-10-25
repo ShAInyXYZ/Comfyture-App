@@ -39,8 +39,10 @@ compressed once and kept in memory (96 MB at most). Tested by [tests/send-file.t
 2. **Every product's code and styles load on every page**: 226 ES modules (4.7 MB, 1.5 MB gzipped) and 51 stylesheets (1 MB) whatever
    the product open. Fix: load each product's panel and CSS when its route is first shown (`import()` per product in app.js, `<link>`
    added on first visit). Effort M, risk M.
-3. **Pictures**: Utensils' template thumbnails are up to 1.9 MB each (they are Comfy Cloud's own previews). A resized copy cached by the
-   server would save ~8 MB on Utensils' home. Effort S.
+3. **Pictures**: ✅ done the same day. Comfy Cloud's template previews are animations of up to 4 MB (171 of them, 222 MB); a grid now
+   shows each one's first frame, cut out of the WebP's container by the server (no decoding, 4.4 MB for all 171), and plays the
+   animation when its card is pointed at or focused. The home's storefront went from 7.1 MB of pictures to 0.5 MB, Utensils' tiles
+   from 2.9 MB to 0.16 MB.
 
 ## Errors
 
@@ -108,20 +110,18 @@ reader's reading order. The tours (web/js/tour.js) are keyboard-driven (arrows, 
 **Found by the agents**: fixed later that morning, each with a check: Spice's FX reading "not baked" after a renamed layer was
 read back (the test fails without the fix), a shipped example's FX reading "Baked" over a newer Light or Paint, Roto's subject
 circle (`url(true)`), a shipped comp with no download, Macaron's encodes with no deadline, Jam counting a shipped video as credits
-spent, a Paint spot against the frame's edge coming out magenta, and Jam's edit showing only its ruler on a laptop. **Still open**
-(most valuable first):
+spent, a Paint spot against the frame's edge coming out magenta, Jam's edit showing only its ruler on a laptop, Jam's Words at 1180
+wide and under, the Stage's examples now going in by the examples' rules (an example added later reaches an install that had the
+others), the tours tidying up after themselves (a step's element brought into view, no tooltip over the card, Macaron's window and
+Mixer's preview closed when a tour is left), and the header fitting all seven products at 1300 wide and under. **Still open** (most
+valuable first):
 
 1. Spice: a slow-motion comp plays only the plate's length; the PASS bento is too narrow at 1600×950; at 1366×768 its Trim and
    Footage cards clip their last row.
 2. Jam: an example's song cannot carry its cover; a film ships as a video, not a reel; opening a video with no stored drop or
    loudness saves it, which marks Toc Toc and Hotel Lobby as worked on.
-3. At 1180 wide and under, Jam's Words still overlaps.
-4. The Stage's examples are put in only when its folder is first made, so an example added later never reaches an existing install
-   (move the Stage onto `server/examples.ts`, [COMPONENTS.md](COMPONENTS.md) finding 10).
-5. Spice's cover art (the home banner, the website's tile) still shows the woman in a raincoat; a cover drawn from Paprika's own
-   shot would match the rest of the cast.
-6. The tour engine: scroll a step's element into view itself, let a tour close what it opened when it is left with Esc, and hide
-   the app's tooltips while a step changes.
+3. Spice's cover art (the home banner) still shows the woman in a raincoat; a cover drawn from Paprika's own shot would match the
+   rest of the cast.
 
 ## Next, ranked
 
