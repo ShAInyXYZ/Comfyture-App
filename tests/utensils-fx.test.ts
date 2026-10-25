@@ -6,10 +6,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
+import { once } from "node:events";
 import { promisify } from "node:util";
 import { mkdtemp, mkdir, rm } from "node:fs/promises";
-import { TOOLS, clean, plan, atempoChain, overlayGraph, centre, measureArgs, readMeasured, capabilities, createFx, fileName, FxError, type Ctx, type Probe, type Tool } from "../server/utensils-fx.ts";
+import { TOOLS, clean, plan, atempoChain, overlayGraph, centre, measureArgs, readMeasured, capabilities, createFx, fileName, FxError, DEADLINE, LATE, deadlineOf, killAfter, bakeArgs, type Ctx, type Probe, type Tool } from "../server/utensils-fx.ts";
 
 const exec = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
@@ -445,5 +446,120 @@ test("a picture in, a picture out: weather, particles and a spot removed are one
     const last = made.steps.at(-1)!;
     assert.deepEqual([last.kind, last.ext], ["image", "png"], `${tool}: a picture back`);
     assert.ok(last.args.includes("-frames:v") && !last.args.includes("libx264"), `${tool}: one frame, no clip`);
+  }
+});
+
+// ---------------------------------------------------------------- what always ends: a picture under weather, a deadline, Spice's bake
+
+test("a picture under weather or particles is looped and never sought, and the overlay itself ends: the graph always ends", () => {
+  const pic: Probe = { path: "/data/photos/a.jpg", duration: 0.04, width: 1536, height: 1024, fps: 25, hasAudio: false, hasVideo: true };
+  for (const [tool, kind] of [["weather", "rain"], ["weather", "snow"], ["weather", "fog"], ["sparks", "embers"]] as [Tool, string][]) {
+    // a job on a picture, and a preview of one (a preview is not a still: it is a picture all the same)
+    for (const c of [{ work: "/w", input: pic, still: true, picture: true }, { work: "/w", input: pic, picture: true, preview: { at: 0 } }] as Ctx[]) {
+      const args = plan(tool, clean(tool, { kind }, { duration: 0.04 }), c).steps.at(-1)!.args;
+      const i = args.indexOf("-i");
+      assert.deepEqual(args.slice(i - 2, i + 2), ["-loop", "1", "-i", pic.path], `${tool} ${kind}: the picture is given again and again`);
+      assert.ok(!args.includes("-ss") && !args.includes("-t"), `${tool} ${kind}: a picture is never sought nor timed`);
+      assert.equal(arg(args, "-frames:v"), "1", `${tool} ${kind}: its one frame ends it`);
+      assert.match(arg(args, "-filter_complex"), /,trim=duration=5\[fx\]/, `${tool} ${kind}: the overlay ends a second after its four`);
+    }
+  }
+  // a clip's preview is sought, never looped, and a clip's overlay ends a second after the clip
+  const frame = plan("weather", clean("weather", { kind: "fog" }), ctx({ preview: { at: 3 } })).steps[0].args;
+  assert.equal(arg(frame, "-ss"), "3");
+  assert.ok(!frame.includes("-loop"));
+  assert.match(arg(planOf("weather", { kind: "rain" }).steps[0].args, "-filter_complex"), /trim=duration=11\[fx\]/);
+});
+
+test("weather and particles on a real picture end at once, in a preview as in a job, and give a picture back", async () => {
+  const caps = await capabilities();
+  if (!caps.weather) return;
+  const dir = await mkdtemp(join(tmpdir(), "fx-still-"));
+  try {
+    await mkdir(join(dir, "photos"), { recursive: true });
+    // (a JPEG like the ones that never ended: one frame, nothing to loop it)
+    await make(["-f", "lavfi", "-i", "color=c=0x334455:s=1536x1024:d=1", "-frames:v", "1", join(dir, "photos", "still.jpg")]);
+    const fx = createFx({ data: dir, root });
+    for (const [tool, kind] of [["weather", "rain"], ["weather", "snow"], ["weather", "fog"], ["sparks", "embers"]] as [Tool, string][]) {
+      const t = Date.now();
+      const frame = await fx.preview(tool, { video: "still.jpg", kind, at: 0 });
+      assert.match(frame.url, /^\/media\/edits\/preview\/[0-9a-f]+\.jpg$/, `${tool} ${kind}: a preview`);
+      let job = await fx.start(tool, { video: "still.jpg", kind });
+      for (let i = 0; i < 300 && !["done", "failed", "canceled"].includes(job.status); i++) {
+        await new Promise((r) => setTimeout(r, 100));
+        job = fx.get(job.id)!;
+      }
+      assert.equal(job.status, "done", `${tool} ${kind}: ${job.error}`);
+      assert.deepEqual([job.results[0].kind, job.results[0].ext, job.results[0].width, job.results[0].height], ["image", "png", 1536, 1024], `${tool} ${kind}: a picture back`);
+      assert.ok(Date.now() - t < 20_000, `${tool} ${kind} ends at once (${Date.now() - t} ms)`);
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("an ffmpeg past its deadline is killed (SIGKILL: a graph stuck in its filters never hears a TERM), and a job says so", async () => {
+  // a source that never ends, killed at its deadline
+  const endless = spawn("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-f", "lavfi", "-i", "nullsrc=s=64x64:r=25", "-f", "null", "-"]);
+  const t = Date.now();
+  const late = killAfter(endless, 400);
+  const [, signal] = await once(endless, "close");
+  assert.equal(signal, "SIGKILL");
+  assert.ok(late.late && Date.now() - t < 5000, `killed at its deadline (${Date.now() - t} ms)`);
+  // one that ends in time is let be
+  const quick = spawn("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-f", "lavfi", "-i", "nullsrc=s=64x64:r=25:d=0.2", "-f", "null", "-"]);
+  const inTime = killAfter(quick, 20_000);
+  const [code] = await once(quick, "close");
+  assert.ok(code === 0 && !inTime.late);
+  // a frame (a preview, a picture) has a minute; a clip a minute a second, within its bounds
+  assert.equal(deadlineOf(0.04, true), DEADLINE.frame);
+  assert.equal(deadlineOf(0), DEADLINE.frame);
+  assert.equal(deadlineOf(3), DEADLINE.least);
+  assert.equal(deadlineOf(30), 30 * DEADLINE.perSecond);
+  assert.equal(deadlineOf(1e6), DEADLINE.most);
+  // a job's steps are given the deadline: one that runs past it fails, saying so
+  const caps = await capabilities();
+  if (!caps.slowmo) return;
+  const dir = await mkdtemp(join(tmpdir(), "fx-late-"));
+  try {
+    await mkdir(join(dir, "videos"), { recursive: true });
+    await make(["-f", "lavfi", "-i", "testsrc2=s=640x360:r=24:d=4", "-c:v", "libx264", "-pix_fmt", "yuv420p", join(dir, "videos", "long.mp4")]);
+    const fx = createFx({ data: dir, root, deadline: () => 300 });
+    let job = await fx.start("slowmo", { video: "long.mp4", factor: 4, mode: "mci" });
+    for (let i = 0; i < 200 && !["done", "failed", "canceled"].includes(job.status); i++) {
+      await new Promise((r) => setTimeout(r, 50));
+      job = fx.get(job.id)!;
+    }
+    assert.deepEqual([job.status, job.error], ["failed", LATE]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("Spice's bake is as long as its frames, with the sound of the clip they were drawn over all along (never cut by -frames:v)", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "spice-bake-"));
+  try {
+    // 36 frames (a second and a half at 24 fps), a clip with three seconds of sound, a clip with none
+    await make(["-f", "lavfi", "-i", "testsrc2=s=320x180:r=24:d=1.5", "-start_number", "0", "-q:v", "3", join(dir, "f%05d.jpg")]);
+    await make(["-f", "lavfi", "-i", "testsrc2=s=320x180:r=24:d=3", "-f", "lavfi", "-i", "sine=frequency=330:duration=3", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", join(dir, "sound.mp4")]);
+    await make(["-f", "lavfi", "-i", "testsrc2=s=320x180:r=24:d=3", "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p", join(dir, "silent.mp4")]);
+    const bake = async (audio: string, audioFrom: number) => {
+      const args = bakeArgs({ dir, fps: 24, frames: 36, audio, audioFrom }, join(dir, "out.mp4"));
+      assert.ok(!args.includes("-frames:v") && arg(args, "-t") === "1.500000", "as long as its frames");
+      await exec("ffmpeg", args, { maxBuffer: 1 << 20 });
+      const { stdout } = await exec("ffprobe", ["-v", "error", "-show_entries", "stream=codec_type,nb_frames,duration", "-of", "json", join(dir, "out.mp4")]);
+      const streams = JSON.parse(stdout).streams as { codec_type: string; nb_frames: string; duration: string }[];
+      return { frames: Number(streams.find((x) => x.codec_type === "video")?.nb_frames), sound: Number(streams.find((x) => x.codec_type === "audio")?.duration ?? 0) };
+    };
+    const whole = await bake(join(dir, "sound.mp4"), 0);
+    assert.equal(whole.frames, 36);
+    assert.ok(Math.abs(whole.sound - 1.5) < 0.06, `the sound runs as long as the frames (${whole.sound} s), not a fifth of a second`);
+    const late = await bake(join(dir, "sound.mp4"), 2.5);
+    assert.ok(late.frames === 36 && Math.abs(late.sound - 1.5) < 0.06, `a sound that ends first is padded, and no frame is lost to it (${JSON.stringify(late)})`);
+    const quiet = await bake(join(dir, "silent.mp4"), 0);
+    assert.deepEqual(quiet, { frames: 36, sound: 0 }, "a clip with no sound gives a clip with none");
+    assert.ok(!bakeArgs({ dir, fps: 24, frames: 36 }, "out.mp4").includes("-af"), "no sound asked, none mapped");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 });

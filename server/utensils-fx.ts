@@ -9,7 +9,7 @@
 // tests can read every argument), and createFx() runs the steps as jobs with progress and cancel and keeps what they make in the
 // library (a clip in videos/, a sound in audio/, the rest in edits/).
 
-import { spawn, execFile } from "node:child_process";
+import { spawn, execFile, type ChildProcess } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { access, copyFile, mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -62,6 +62,9 @@ export interface Ctx {
   preview?: { at: number };
   /** the input is a picture: the tool makes a picture of it */
   still?: boolean;
+  /** the input is a picture of the library, in a preview as in a job: it is looped, never sought (a single frame that ends before an
+   * endless overlay has given its first leaves the blend with nothing to make, and ffmpeg runs for ever) */
+  picture?: boolean;
 }
 export interface Measured {
   input_i: number;
@@ -204,8 +207,9 @@ function finishVideo(inputs: string[], graph: string[], ctx: Ctx, audio: string[
   if (ctx.preview) return [{ args: [...inputs, ...graph, "-an", "-frames:v", "1", "-q:v", "3", out(ctx, "out.jpg")], out: out(ctx, "out.jpg"), kind: "image", ext: "jpg" }];
   return [{ args: [...inputs, ...graph, ...VENC, ...audio, ...FAST, out(ctx, "out.mp4")], out: out(ctx, "out.mp4"), kind: "video", ext: "mp4", note }];
 }
-/** Where a preview looks: the clip's own frame at a time (input seeking), before any filter. */
-const seek = (ctx: Ctx) => (ctx.preview ? ["-ss", f3(ctx.preview.at)] : []);
+/** Where a preview looks: the clip's own frame at a time (input seeking), before any filter. A picture has one frame: it is never sought. */
+const seek = (ctx: Ctx) => (ctx.preview && !isPicture(ctx) ? ["-ss", f3(ctx.preview.at)] : []);
+const isPicture = (ctx: Ctx) => !!(ctx.picture || ctx.still);
 
 /** The checkerboard a cutout is shown on, as a lavfi source (grey squares 16 pixels wide). */
 const checker = (w: number, h: number) => `nullsrc=s=${w}x${h}:r=1,format=gray,geq=lum='if(eq(mod(floor(X/16)+floor(Y/16),2),0),52,34)',format=yuv420p`;
@@ -265,6 +269,8 @@ export function overlayGraph(kind: string, p: { amount: number; speed: number; a
   const look = LOOKS[kind];
   if (!look) throw new FxError("No such effect.");
   const diag = even(Math.ceil(Math.hypot(w, h)) + 8);
+  // its sources loop for ever: it ends a second after what it is laid over, so a graph whose picture ended first still ends
+  const end = `trim=duration=${f3(seconds + 1)}`;
   const dirs: string[] = [];
   const labels: string[] = [];
   if (look.cloud) {
@@ -273,7 +279,7 @@ export function overlayGraph(kind: string, p: { amount: number; speed: number; a
     const wide = even(w + Math.ceil(drift * seconds) + 40);
     const lw = Math.max(4, Math.round(wide / 120));
     const lh = Math.max(4, Math.round(h / 120));
-    dirs.push(`nullsrc=s=${lw}x${lh}:r=${f3(fps)},format=gray,${clouds(p.seed ?? 7)},loop=loop=-1:size=1:start=0,scale=${wide}:${h}:flags=bicubic,gblur=sigma=${Math.max(16, Math.round(h / 9))}:steps=3,lut=y='clip((val-104)*2.6,0,255)',format=gray,crop=${w}:${h}:'min(t*${f3(drift)},${wide - w})':0,fps=${f3(fps)}[fx]`);
+    dirs.push(`nullsrc=s=${lw}x${lh}:r=${f3(fps)},format=gray,${clouds(p.seed ?? 7)},loop=loop=-1:size=1:start=0,scale=${wide}:${h}:flags=bicubic,gblur=sigma=${Math.max(16, Math.round(h / 9))}:steps=3,lut=y='clip((val-104)*2.6,0,255)',format=gray,crop=${w}:${h}:'min(t*${f3(drift)},${wide - w})':0,fps=${f3(fps)},${end}[fx]`);
     return dirs.join(";");
   }
   look.layers.forEach((l, i) => {
@@ -296,7 +302,7 @@ export function overlayGraph(kind: string, p: { amount: number; speed: number; a
   const merged = labels.length > 1 ? `${labels.join("")}blend=all_mode=lighten` : `${labels[0]}null`;
   // (rotated as packed RGB: the filter bends the colours of planar and YUV pictures it is given)
   const rot = Math.abs(angle) > 0.002 ? `format=rgb24,rotate=${f4(angle)}:ow=iw:oh=ih:c=black,format=gray,` : "";
-  dirs.push(`${merged},${rot}crop=${w}:${h},fps=${f3(fps)}[fx]`);
+  dirs.push(`${merged},${rot}crop=${w}:${h},fps=${f3(fps)},${end}[fx]`);
   return dirs.join(";");
 }
 
@@ -307,9 +313,10 @@ function overlayOver(kind: string, p: Params, ctx: Ctx): { inputs: string[]; gra
   const look = LOOKS[kind];
   const opacity = clamp(look.strength * (0.2 + p.amount * 0.8), 0.05, 1);
   const [r, g, b] = look.tint;
-  const fx = overlayGraph(kind, p as any, w, h, v.fps || 24, ctx.preview || ctx.still ? 4 : v.duration);
+  const fx = overlayGraph(kind, p as any, w, h, v.fps || 24, ctx.preview || isPicture(ctx) ? 4 : v.duration);
   const filter = `${fx};[0:v]${EVEN},format=gbrp[v];[fx]format=gbrp,colorchannelmixer=rr=${f3(r)}:gg=${f3(g)}:bb=${f3(b)}[o];[v][o]blend=all_mode=screen:all_opacity=${f3(opacity)}:shortest=1,format=yuv420p[out]`;
-  return { inputs: [...seek(ctx), "-i", v.path], graph: ["-filter_complex", filter, "-map", "[out]"] };
+  // (a picture is given again and again, so the blend always has its frame; the one frame made ends it)
+  return { inputs: [...(isPicture(ctx) ? ["-loop", "1"] : seek(ctx)), "-i", v.path], graph: ["-filter_complex", filter, "-map", "[out]"] };
 }
 
 /** The ffmpeg steps of a tool: from safe parameters and the files probed. Pure: nothing is run or read here. */
@@ -364,7 +371,8 @@ export function plan(tool: Tool, p: Params, ctx: Ctx): Plan {
     case "sparks": {
       const v = clip(ctx);
       const { inputs, graph } = overlayOver(p.kind, p, ctx);
-      const steps = finishVideo(inputs, [...graph, "-t", f3(v.duration)], ctx, v.hasAudio ? ["-map", "0:a?", ...AENC] : ["-an"], `${p.kind[0].toUpperCase()}${p.kind.slice(1)} over the clip`);
+      // (a clip is as long as it is; a picture, looped, is its one frame)
+      const steps = finishVideo(inputs, [...graph, ...(isPicture(ctx) ? [] : ["-t", f3(v.duration)])], ctx, v.hasAudio ? ["-map", "0:a?", ...AENC] : ["-an"], `${p.kind[0].toUpperCase()}${p.kind.slice(1)} over the clip`);
       return { steps, seconds: v.duration };
     }
     case "unlogo": {
@@ -523,6 +531,40 @@ export interface JobState {
   at: number;
 }
 
+// ------------------------------------------------------------------ how long ffmpeg may run
+
+/**
+ * How long one ffmpeg may run before it is killed: a frame (a preview, a picture) a minute; a clip a minute for each second it makes,
+ * ten minutes at least and three hours at most. It is killed with SIGKILL: a graph stuck in its filters never hears a TERM.
+ */
+export const DEADLINE = { frame: 60_000, perSecond: 60_000, least: 10 * 60_000, most: 3 * 60 * 60_000 } as const;
+export const deadlineOf = (seconds: number, picture = false) => (picture || !(seconds > 0) ? DEADLINE.frame : clamp(Math.ceil(seconds * DEADLINE.perSecond), DEADLINE.least, DEADLINE.most));
+export const LATE = "It did not finish in time and was stopped.";
+/** Kills a child with SIGKILL once `ms` have passed; `.late` says whether it was. */
+export function killAfter(child: ChildProcess, ms: number) {
+  const state = { late: false };
+  const timer = setTimeout(() => ((state.late = true), child.kill("SIGKILL")), ms);
+  timer.unref?.();
+  const done = () => clearTimeout(timer);
+  child.once("close", done);
+  child.once("error", done);
+  return state;
+}
+
+/**
+ * Spice's bake of FX's layers on a clip: the frames the page drew (dir/f00000.jpg...) made a clip, with the sound of the clip they were
+ * drawn over from where they start (audioFrom, in seconds). It is exactly as long as its frames (-t), never -frames:v (ffmpeg stops at
+ * its count of frames before it has read the sound, and cuts the sound to a fifth of a second); a sound that ends first is padded with
+ * silence, so no frame is lost to it.
+ */
+export function bakeArgs(b: { dir: string; fps: number; frames: number; audio?: string; audioFrom?: number }, out: string): string[] {
+  const args = ["-hide_banner", "-v", "error", "-nostdin", "-y", "-framerate", String(b.fps), "-start_number", "0", "-i", join(b.dir, "f%05d.jpg")];
+  if (b.audio) args.push("-ss", (b.audioFrom ?? 0).toFixed(3), "-i", b.audio);
+  args.push("-map", "0:v", ...(b.audio ? ["-map", "1:a?", "-af", "apad", "-c:a", "aac", "-b:a", "192k"] : []),
+    "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p", "-c:v", "libx264", "-preset", "medium", "-crf", "16", "-movflags", "+faststart", "-t", (b.frames / b.fps).toFixed(6), out);
+  return args;
+}
+
 /** What ffmpeg's failure says, in a few words. */
 function why(stderr: string, code: number | null) {
   const said = stderr.split("\n").map((l) => l.trim()).filter(Boolean).slice(-2).join(" ").slice(0, 280);
@@ -547,9 +589,11 @@ export interface FxDeps {
   root: string;
   /** Puts a sound in the library with its name noted (the server's own); without it the file is only kept. */
   keepAudio?: (bytes: Buffer, ext: string, meta: { name: string; kind: string; prompt?: string }) => Promise<{ file: string; url: string; seconds: number }>;
+  /** how long an ffmpeg may run, for the seconds it makes (or a picture): deadlineOf, unless a test says otherwise */
+  deadline?: (seconds: number, picture: boolean) => number;
 }
 
-export function createFx({ data, keepAudio }: FxDeps) {
+export function createFx({ data, keepAudio, deadline = deadlineOf }: FxDeps) {
   const jobs = new Map<string, JobState & { child?: ReturnType<typeof spawn>; stop?: boolean }>();
   const fxDir = join(data, "edits");
   let running = 0;
@@ -610,6 +654,7 @@ export function createFx({ data, keepAudio }: FxDeps) {
       const input = await probe(path);
       // (a picture of the library: the tools that take one make a picture of it)
       ctx.still = STILLS.includes(tool) && path.startsWith(join(data, "photos"));
+      ctx.picture = path.startsWith(join(data, "photos"));
       if (audioTool ? !input.hasAudio : !input.hasVideo) throw new FxError(audioTool ? "That file has no sound." : "That file has no picture.");
       ctx.input = input;
       params = clean(tool, body, { duration: input.duration });
@@ -635,10 +680,11 @@ export function createFx({ data, keepAudio }: FxDeps) {
     return { id, work, ctx, params };
   }
 
-  function runStep(job: JobState & { child?: ReturnType<typeof spawn>; stop?: boolean }, step: Step, work: string, span: number, base: number, seconds: number, capture?: (stderr: string) => void) {
+  function runStep(job: JobState & { child?: ReturnType<typeof spawn>; stop?: boolean }, step: Step, work: string, span: number, base: number, seconds: number, deadline: number, capture?: (stderr: string) => void) {
     return new Promise<void>((ok, bad) => {
       const child = spawn("ffmpeg", ["-hide_banner", "-v", capture ? "info" : "error", "-nostdin", "-y", "-progress", "pipe:1", "-nostats", ...step.args], { cwd: work });
       job.child = child;
+      const timer = killAfter(child, deadline);
       let err = "";
       let buf = "";
       child.stdout.on("data", (c: Buffer) => {
@@ -653,6 +699,7 @@ export function createFx({ data, keepAudio }: FxDeps) {
       child.stderr.on("data", (c: Buffer) => (err = (err + c.toString()).slice(-(capture ? 20000 : 2000))));
       child.on("error", (e) => bad(new Error(e.message)));
       child.on("close", (code) => {
+        if (timer.late) return bad(new Error(LATE));
         if (code !== 0) return bad(new Error(job.stop ? "stopped" : why(err, code)));
         capture?.(err);
         ok();
@@ -661,14 +708,15 @@ export function createFx({ data, keepAudio }: FxDeps) {
   }
 
   /** A loudness job's first pass: measures the sound, answers the numbers. */
-  async function measure(job: JobState & { child?: ReturnType<typeof spawn>; stop?: boolean }, params: Params, input: string, work: string) {
+  async function measure(job: JobState & { child?: ReturnType<typeof spawn>; stop?: boolean }, params: Params, input: string, work: string, deadline: number) {
     let said = "";
     await new Promise<void>((ok, bad) => {
       const child = spawn("ffmpeg", measureArgs(params, input), { cwd: work });
       job.child = child;
+      const timer = killAfter(child, deadline);
       child.stderr.on("data", (c: Buffer) => (said = (said + c.toString()).slice(-20000)));
       child.on("error", (e) => bad(new Error(e.message)));
-      child.on("close", (code) => (code === 0 ? ok() : bad(new Error(job.stop ? "stopped" : why(said, code)))));
+      child.on("close", (code) => (timer.late ? bad(new Error(LATE)) : code === 0 ? ok() : bad(new Error(job.stop ? "stopped" : why(said, code)))));
     });
     return readMeasured(said);
   }
@@ -686,7 +734,7 @@ export function createFx({ data, keepAudio }: FxDeps) {
         if (job.stop) throw new Error("stopped");
         job.status = "running";
         if (tool === "master") {
-          ctx.measured = (await measure(job, params, ctx.input!.path, work)) ?? undefined;
+          ctx.measured = (await measure(job, params, ctx.input!.path, work, deadline(ctx.input!.duration, false))) ?? undefined;
           job.progress = 0.3;
         }
         const made = plan(tool, params, ctx);
@@ -695,7 +743,7 @@ export function createFx({ data, keepAudio }: FxDeps) {
         let done = 0;
         for (const [i, step] of made.steps.entries()) {
           const span = ((step.weight ?? 1) / total) * (1 - first);
-          await runStep(job, step, work, span, first + (done / total) * (1 - first), made.seconds);
+          await runStep(job, step, work, span, first + (done / total) * (1 - first), made.seconds, deadline(made.seconds, isPicture(ctx)));
           done += step.weight ?? 1;
           job.progress = Math.min(0.99, first + (done / total) * (1 - first));
           if (step.keep !== false) job.results.push(await keep(step, label));
@@ -727,8 +775,8 @@ export function createFx({ data, keepAudio }: FxDeps) {
       ctx.still = false;
       const made = plan(tool, params, ctx);
       for (const step of made.steps) {
-        await exec("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-y", ...step.args], { cwd: work, maxBuffer: 1 << 20 }).catch((e) => {
-          throw new FxError(why(String(e.stderr ?? ""), e.code ?? null));
+        await exec("ffmpeg", ["-hide_banner", "-v", "error", "-nostdin", "-y", ...step.args], { cwd: work, maxBuffer: 1 << 20, timeout: deadline(0, true), killSignal: "SIGKILL" }).catch((e) => {
+          throw new FxError(e.killed ? LATE : why(String(e.stderr ?? ""), e.code ?? null));
         });
       }
       const last = made.steps[made.steps.length - 1];

@@ -33,7 +33,7 @@ import { guideFor } from "./image-guides.ts";
 import { normaliseBody as spiceBody, FIRST as SPICE_FIRST } from "../web/js/spice-model.js";
 import { searchKnowledge, knowledgeById } from "./utensils-knowledge.ts";
 import { createEdit } from "./utensils-edit.ts";
-import { createFx } from "./utensils-fx.ts";
+import { createFx, bakeArgs, deadlineOf } from "./utensils-fx.ts";
 import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templates.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
 import { seedExamples, placeMedia, placeThumb, type ExampleKind, type Kept } from "./examples.ts";
@@ -1748,11 +1748,10 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (bakeStep[2] === "done" && method === "POST") {
       try {
         const out = join(b.dir, "out.mp4");
-        const args = ["-v", "error", "-y", "-framerate", String(b.fps), "-start_number", "0", "-i", join(b.dir, "f%05d.jpg")];
-        if (b.audio) args.push("-ss", b.audioFrom.toFixed(3), "-i", b.audio);
-        args.push("-map", "0:v", ...(b.audio ? ["-map", "1:a?", "-c:a", "aac", "-b:a", "192k", "-shortest"] : []),
-          "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p", "-c:v", "libx264", "-preset", "medium", "-crf", "16", "-movflags", "+faststart", "-frames:v", String(b.frames), out);
-        await exec("ffmpeg", args);
+        // (killed past its deadline, never waited on for ever)
+        await exec("ffmpeg", bakeArgs(b, out), { maxBuffer: 1 << 20, timeout: deadlineOf(b.frames / b.fps), killSignal: "SIGKILL" }).catch((e) => {
+          throw new Error(`The clip could not be made: ${whyFfmpegFailed(e)}`);
+        });
         const bytes = await readFile(out);
         const name = `${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}.mp4`;
         const kept = join(data, "videos", name);
