@@ -494,11 +494,14 @@ function castLight(g, w, h, behind, front, ctx, holdOf) {
   let spill = others;
   let rim = null;
   if (nb) {
-    const hold = holdOf();
-    // the rim: the matte (held as the people are), times one minus its blur (only its inner edge is left), times the light behind it
+    // the matte as the people are held by it (its feather and its choke), drawn once for the rim and for the people
+    const held = scratch("matte-held", w, h);
+    held.g.filter = holdOf();
+    held.g.drawImage(ctx.matte, 0, 0, w, h);
+    held.g.filter = "none";
+    // the rim: that matte, times one minus the matte's blur (only its inner edge is left), times the light behind it
     const edge = scratch("rim", w, h);
-    edge.g.filter = hold;
-    edge.g.drawImage(ctx.matte, 0, 0, w, h);
+    edge.g.drawImage(held.c, 0, 0);
     edge.g.globalCompositeOperation = "multiply";
     edge.g.filter = `blur(${RIM_W * w}px) invert(1)`;
     const reach = Math.ceil(RIM_W * w * 3);
@@ -509,8 +512,8 @@ function castLight(g, w, h, behind, front, ctx, holdOf) {
     // the people in front of a light behind them: back x (1 - PEOPLE x matte)
     bg.globalCompositeOperation = "multiply";
     bg.globalAlpha = PEOPLE;
-    bg.filter = hold === "none" ? "invert(1)" : `${hold} invert(1)`;
-    bg.drawImage(ctx.matte, 0, 0, w, h);
+    bg.filter = "invert(1)";
+    bg.drawImage(held.c, 0, 0);
     bg.filter = "none";
     bg.globalAlpha = 1;
     // the spill: what is behind and what is not, added
