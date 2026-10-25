@@ -1188,6 +1188,8 @@ export function createTemplates(deps: Deps) {
 
   async function run(name: string, body: any): Promise<Job> {
     const item = await find(name);
+    // open weights only (COMFYTURE_OPEN_WEIGHTS): a partner's model never runs, whatever page asks
+    if (item.partner && process.env.COMFYTURE_OPEN_WEIGHTS?.trim()) throw fail(`Open weights only is on: ${item.title || name} runs a partner's model.`, 403);
     if (!deps.cloud) throw fail("Connect Comfy Cloud to run templates.", 501);
     const form = await schemaOf(name);
     const values = body?.inputs && typeof body.inputs === "object" ? body.inputs : {};

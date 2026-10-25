@@ -357,3 +357,15 @@ test("a run can set a template's own nodes beyond its form: node ids, input name
   assert.equal(String(req.input_overrides["443"].big).length, 8000);
   assert.equal(withOverrides(req, null), req);
 });
+
+test("open weights only (COMFYTURE_OPEN_WEIGHTS): a partner's template is refused before anything is sent, an open one still runs", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "templates-"));
+  await mkdir(join(dir, "photos"), { recursive: true });
+  await writeFile(join(dir, "photos", "cat.png"), png(16, 16));
+  const { svc, calls, uploads } = await service(dir);
+  const before = process.env.COMFYTURE_OPEN_WEIGHTS;
+  process.env.COMFYTURE_OPEN_WEIGHTS = "1";
+  t.after(() => (before === undefined ? delete process.env.COMFYTURE_OPEN_WEIGHTS : (process.env.COMFYTURE_OPEN_WEIGHTS = before)));
+  await assert.rejects(() => svc.handle("POST", "/api_nano_banana_2_1_image_edit/run", new URLSearchParams(), { inputs: {}, confirm: true }), (e: any) => e.status === 403 && /Open weights only/.test(e.message));
+  assert.deepEqual([calls.length, uploads.length], [0, 0], "nothing went to Cloud");
+});
