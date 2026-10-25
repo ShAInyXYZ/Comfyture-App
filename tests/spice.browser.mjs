@@ -10,7 +10,7 @@
 //   NODE_PATH=<a node_modules that has playwright> CHROME=<chrome or chromium binary> node tests/spice.browser.mjs
 // OUT=<folder> keeps screenshots of every department, to be looked at.
 import { spawn, execFileSync } from "node:child_process";
-import { mkdtemp, mkdir, readFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, readdir } from "node:fs/promises";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -124,13 +124,15 @@ try {
   ok((await js(() => [...document.querySelectorAll(".products .product span")].map((s) => s.textContent))).join() === "Kitchen,Mixer,Jam,Macaron,Spice,Toaster,Utensils", "seven products, Spice between Macaron and Toaster");
   ok((await page.locator(".sp-layer").evaluateAll((l) => l.map((x) => x.dataset.dept))).join() === "comp,fx,light,paint,roto,plate", "the stack is drawn from the top: the comp on top, the plate at the foot");
   ok((await page.locator(".sp-id-text").innerText()).replace(/\s+/g, " ").includes("Paprika · VFX house"), "Paprika and her house are at the top of the panel");
-  // a first visit finds the example shots (examples/spice), the newest open, its passes made
+  // a first visit finds the example shots (examples/spice), the newest open, its passes made: the great jam chase, a real take through
+  // all six departments
   const examples = await js(async () => {
     const { spice } = await import("/js/spice.js");
     const b = spice.shot.body;
-    return { names: spice.list.map((x) => x.name), open: spice.shot.name, done: Object.values(b.passes).filter((p) => p?.media).length, roto: b.passes.roto?.type, subject: !!b.set.roto.subjects[0]?.media, fx: b.passes.fx?.to - b.passes.fx?.from + 1, plate: b.passes.plate?.to - b.passes.plate?.from + 1 };
+    return { names: spice.list.map((x) => x.name), open: spice.shot.name, kind: b.passes.plate?.media.kind, done: Object.values(b.passes).filter((p) => p?.media).length, roto: b.passes.roto?.type, subject: !!b.set.roto.subjects[0]?.media, fx: b.passes.fx?.to - b.passes.fx?.from + 1, plate: b.passes.plate?.to - b.passes.plate?.from + 1 };
   });
-  ok(["Ketkout's flambé", "Pickle's storm on stage", "Brioche's first snow", "Truffle's spark of genius", "Paprika's portal"].every((n) => examples.names.includes(n)) && examples.done >= 3, "the example shots are there on a first visit, one open with its passes", JSON.stringify(examples));
+  ok(["Ketkout's flambé", "Pickle's storm on stage", "Brioche's first snow", "Truffle's spark of genius", "Paprika's portal", "The great jam chase"].every((n) => examples.names.includes(n)), "the example shots are there on a first visit", JSON.stringify(examples.names));
+  ok(examples.open === "The great jam chase" && examples.kind === "video" && examples.done === 6, "the newest is open: a real take with a pass made in each of the six departments", JSON.stringify(examples));
   ok(examples.roto === "matte" && examples.subject && examples.fx === examples.plate, "its Roto pass is its subject's matte, and its effect is laid into every frame of the shot", JSON.stringify(examples));
   // Paprika's example: in FX its layers are drawn live, the portal of sparks bright over the night sky where the plate is dark
   const glow = await js(async () => {
@@ -489,9 +491,10 @@ try {
   ok(kept.name === "SH010" && kept.passes.plate?.kind === "video" && kept.passes.roto?.type === "matte" && kept.passes.light && kept.passes.comp && kept.passes.fx && kept.set.fx.layers.length >= 2, "the shot, its passes, its layers and its settings come back after a reload", JSON.stringify(kept.set.fx.layers.map((l) => l.el)));
   ok((await page.locator(".sp-lamp[data-tone='done']").count()) >= 5, "the lamps are green again");
   const list = await (await fetch(`${base}/api/spice-shots`)).json();
-  // (beside the five example shots, the person's own)
+  // (beside the example shots, the person's own)
   const own = list["spice-shots"].find((x) => x.name === "SH010");
-  ok(list["spice-shots"].length === 6 && own?.info.passes >= 5, "the server keeps it as a shot with its passes counted, beside the examples", JSON.stringify(own?.info));
+  const shipped = (await readdir(join(root, "examples", "spice"), { withFileTypes: true })).filter((d) => d.isDirectory()).length;
+  ok(list["spice-shots"].length === shipped + 1 && own?.info.passes >= 5, "the server keeps it as a shot with its passes counted, beside the examples", JSON.stringify(own?.info));
 
   // ---- a second shot, switched to and back
   await page.locator(".sp-shotchip .sel-trigger").click();

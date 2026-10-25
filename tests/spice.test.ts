@@ -225,13 +225,18 @@ test("Spice's example shots are whole: each has its plate, every clip and still 
   const dir = join(import.meta.dirname, "..", "examples", "spice");
   const ids = new Set<string>();
   const folders = (await readdir(dir)).sort();
+  const specs: any[] = [];
   assert.ok(folders.length >= 2, "at least two example shots");
   for (const folder of folders) {
     const spec = JSON.parse(await readFile(join(dir, folder, "shot.json"), "utf8"));
-    assert.match(spec.id, /^[\w-]+$/);
+    specs.push(spec);
+    // (the tour opens the newest example by its id)
+    assert.match(spec.id, /^spice-example-[\w-]+$/);
     assert.ok(!ids.has(spec.id), `${spec.id} once`);
     ids.add(spec.id);
     assert.ok(spec.name && spec.passes?.plate, `${folder} names itself and has a plate`);
+    assert.ok(String(spec.about ?? "").length > 80, `${folder} says what it shows and how its passes were made`);
+    const clip = spec.passes.plate.file.endsWith(".mp4");
     for (const [dept, p] of Object.entries<any>(spec.passes)) {
       assert.ok(["plate", "roto", "paint", "light", "fx", "comp"].includes(dept), `${folder}: ${dept} is a department`);
       assert.ok((await stat(join(dir, folder, p.file))).size > 10_000, `${folder}/${p.file} is there`);
@@ -239,8 +244,20 @@ test("Spice's example shots are whole: each has its plate, every clip and still 
       if (p.file.endsWith(".mp4")) assert.ok(Number(p.seconds) > 0, `${folder}: ${dept} says how long it is`);
       else assert.ok(Number(p.width) > 0 && Number(p.height) > 0, `${folder}: ${dept} says how big it is`);
       if (p.still) assert.ok((await stat(join(dir, folder, p.still))).size > 1_000, `${folder}/${p.still} is there`);
+      // a clip's passes are clips as long as it (an effect on every frame), a picture's are pictures
+      assert.equal(p.file.endsWith(".mp4"), clip, `${folder}: ${dept} is a ${clip ? "clip" : "picture"} as its plate is`);
+      if (clip) assert.equal(Number(p.seconds), Number(spec.passes.plate.seconds), `${folder}: ${dept} runs as long as the plate`);
+      if (dept !== "plate") assert.ok(String(p.note ?? "").trim(), `${folder}: ${dept} says how it was made`);
     }
+    // every folder is light: pictures and short clips
+    let bytes = 0;
+    for (const f of await readdir(join(dir, folder))) bytes += (await stat(join(dir, folder, f))).size;
+    assert.ok(bytes < 6.2e6, `${folder} is under 6 MB (${(bytes / 1e6).toFixed(1)} MB)`);
   }
+  // together they show every department doing its job, on a picture and on a clip
+  for (const dept of DEPARTMENTS) assert.ok(specs.some((s) => s.passes[dept]), `an example shows ${dept}`);
+  assert.ok(specs.some((s) => s.passes.plate.file.endsWith(".mp4") && DEPARTMENTS.every((d) => s.passes[d])), "a clip goes through all six departments");
+  assert.ok(specs.filter((s) => s.passes.light).length > 1, "Light is shown more than once");
 });
 
 test("a run's pass is its result: never the side-by-side comparison an LTX clean-up also saves, nor VOID's rough first pass", () => {
