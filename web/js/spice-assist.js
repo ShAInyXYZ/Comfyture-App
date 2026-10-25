@@ -6,8 +6,8 @@ import { changed, toast, writer } from "./store.js";
 import { registerSurface } from "./surfaces.js";
 import { spice, edit, setSet, setDept, creditsTodayAll, workingOn } from "./spice.js";
 import { FIRST, lastFrame, rangeOf, ELEMENTS, passOf, visible } from "./spice-model.js";
-import { layerName } from "./spice-elements.js";
-import { addLayer, selected, patchLayer } from "./spice-fx-ops.js";
+import { layerName, elementOf } from "./spice-elements.js";
+import { addLayer, selected, patchLayer, finishOf, setFinish } from "./spice-fx-ops.js";
 import { fxGround } from "./spice-engines.js";
 import { WORKSPACES } from "./spice-harness.js";
 import { runnerFor } from "./spice-runs.js";
@@ -38,7 +38,7 @@ export function summary() {
     footage: plate ? { kind: plate.media.kind, name: plate.name, width: plate.media.width, height: plate.media.height, fps, first: FIRST, last: lastFrame(plate), range: [r.in, r.out] } : null,
     passes: WORKSPACES.map((d) => d.id).filter((d) => passOf(b, d)?.media).map((d) => ({ dept: d, note: passOf(b, d).note, from: passOf(b, d).from, to: passOf(b, d).to, shown: visible(passOf(b, d)) })),
     subjects: b.set.roto.subjects.map((x) => ({ name: x.name, tracked: !!x.media && !x.stale, clicks: x.points.length })),
-    fx: { layers: f.layers.map((l) => ({ el: l.el, name: layerName(l), x: l.x, y: l.y, size: l.scale, blend: l.blend, behind: l.behind, made: l.el !== "ai" || !!l.media, from: l.from, to: l.to })), held: f.layers.find((l) => l.id === f.sel) ? layerName(f.layers.find((l) => l.id === f.sel)) : null, matte: !!fxGround(b).matte },
+    fx: { layers: f.layers.map((l) => ({ el: l.el, name: layerName(l), x: l.x, y: l.y, size: l.scale, blend: l.blend, behind: l.behind, made: l.el !== "ai" || !!l.media, from: l.from, to: l.to, light: l.light, reach: l.reach })), held: f.layers.find((l) => l.id === f.sel) ? layerName(f.layers.find((l) => l.id === f.sel)) : null, matte: !!fxGround(b).matte, finish: finishOf() },
     paint: { what: b.set.paint.how === "describe" ? "object" : b.set.paint.how, engine: b.set.paint.engine, words: b.set.paint.words, after: b.set.paint.after },
     light: { tool: spice.tool.light, words: b.set.light.words || b.set.light.look, weather: b.set.light.weather, grade: b.set.light.grade },
     comp: { tool: spice.tool.comp, height: b.set.comp.height, factor: b.set.comp.factor, engine: b.set.comp.engine, format: b.set.comp.format },
@@ -90,8 +90,10 @@ export function apply(a) {
     if (!l) failed.push(a.op === "layer" ? "That effect is not in the library" : "No layer is held: pick one first");
     else {
       const patch = {};
-      for (const [k, to] of [["x", "x"], ["y", "y"], ["size", "scale"], ["angle", "rot"], ["blend", "blend"], ["opacity", "opacity"], ["glow", "glow"], ["tint", "tint"], ["motion", "motion"], ["from", "from"], ["to", "to"], ["words", "words"]]) if (a[k] !== undefined) patch[to] = a[k];
+      for (const [k, to] of [["x", "x"], ["y", "y"], ["size", "scale"], ["angle", "rot"], ["blend", "blend"], ["opacity", "opacity"], ["glow", "glow"], ["light", "light"], ["reach", "reach"], ["tint", "tint"], ["motion", "motion"], ["from", "from"], ["to", "to"], ["words", "words"]]) if (a[k] !== undefined) patch[to] = a[k];
       if (preset) patch.preset = preset.preset;
+      // (only a picture of the library shines: particles and an AI effect cast no light)
+      if ((a.light !== undefined || a.reach !== undefined) && elementOf(l.el)?.kind !== "image") failed.push(`${layerName(l)} casts no light: only a library picture does`);
       // (behind the people only when Roto holds someone)
       if (a.behind !== undefined) {
         if (a.behind && !fxGround(b).matte) failed.push("Behind the people: Roto holds nobody yet");
@@ -100,6 +102,13 @@ export function apply(a) {
       patchLayer(l.id, patch);
       did.push(a.op === "layer" ? `Layer: ${layerName(l)}` : `Changed: ${layerName(l)}`);
     }
+  } else if (a.op === "polish") {
+    // Fx's finish of the whole shot: its bloom and its vignette
+    setDept("fx");
+    const patch = {};
+    for (const k of ["bloom", "vignette"]) if (a[k] !== undefined) patch[k] = a[k];
+    const now = setFinish(patch);
+    did.push(`Finish: bloom ${now.bloom.toFixed(2)}, vignette ${now.vignette.toFixed(2)}`);
   } else if (a.op === "paint") {
     const patch = { how: a.what === "object" ? "describe" : a.what };
     if (a.words !== undefined) patch.words = a.words;

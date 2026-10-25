@@ -146,7 +146,7 @@ export default {
       title: "FX: lay effects on",
       get text() {
         const baked = body()?.passes.fx?.media && !body().set.fx.dirty;
-        return `Drag an effect onto the picture: fire, light, magic, weather, particles. Each is a layer you move, scale and turn on the picture itself. **Bake** makes them part of the shot, free, on this machine${baked ? ": this example's are baked already" : ""}.`;
+        return `Drag an effect onto the picture: fire, light, magic, weather, particles. Each is a layer you move, scale and turn on the picture itself. **Finish** gives the whole shot a bloom and a vignette, and **Bake** makes it all part of the shot, free, on this machine${baked ? ": this example's are baked already" : ""}.`;
       },
     },
     {
@@ -156,7 +156,7 @@ export default {
       title: "The layers",
       get text() {
         const n = layers();
-        return `${n ? `This example has ${n} ${n === 1 ? "layer" : "layers"}, the top first.` : "The layers, the top first."} Pick one to change its **Look** and its **Place**; the person key puts it behind the people, held there by Roto's matte.`;
+        return `${n ? `This example has ${n} ${n === 1 ? "layer" : "layers"}, the top first.` : "The layers, the top first."} Pick one to change its **Look** and its **Place**; the person key puts it behind the people, held there by Roto's matte. A fire or a portal can shine: its **Light** falls on the shot around it, and from behind the people it lights their edge.`;
       },
     },
     {

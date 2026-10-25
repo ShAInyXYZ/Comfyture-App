@@ -12,21 +12,21 @@ const SPICE = {
   footage: { kind: "video", name: "paprika-rooftop.mp4", width: 1920, height: 1080, fps: 24, first: 1001, last: 1120, range: [1001, 1120] as [number, number] },
   passes: [{ dept: "plate" }, { dept: "roto", note: "Paprika", from: 1001, to: 1120 }, { dept: "paint", note: "Lamp post removed", from: 1001, to: 1120, shown: false }],
   subjects: [{ name: "Paprika", tracked: true, clicks: 3 }],
-  fx: { layers: [{ el: "flame", name: "Flame", x: 0.3, y: 0.7, size: 0.32, blend: "screen", made: true }, { el: "ai", name: "Portal · LTX", x: 0.7, y: 0.3, size: 0.5, blend: "normal", behind: true, made: false, from: 1030, to: 1120 }], held: "Portal · LTX", matte: true },
+  fx: { layers: [{ el: "flame", name: "Flame", x: 0.3, y: 0.7, size: 0.32, blend: "screen", made: true, light: 0.6, reach: 1.6 }, { el: "ai", name: "Portal · LTX", x: 0.7, y: 0.3, size: 0.5, blend: "normal", behind: true, made: false, from: 1030, to: 1120 }, { el: "smoke", name: "Smoke", x: 0.5, y: 0.5, size: 0.6, blend: "screen", light: 0, reach: 1.6 }], held: "Portal · LTX", matte: true, finish: { bloom: 0.45, vignette: 0.2 } },
   run: { label: "Make it", cost: 24, ready: true },
   today: 62, busy: ["light"],
 };
 
 test("Paprika is told the shot, its footage and frames, the passes, the department open and what it holds, the key's price, and the talk so far", () => {
   const text = spicePrompt(SPICE, [{ role: "user", text: "a portal behind her" }, { role: "assistant", text: "Set up.", did: ["Layer: Portal"] }, { role: "user", text: "make it" }]);
-  for (const piece of ["SH050 · Paprika's portal (5 shots in all)", "DEPARTMENT OPEN: fx", "THE FOOTAGE: a clip paprika-rooftop.mp4, 1920 × 1080, 24 fps, frames 1001 to 1120", "paint (Lamp post removed), frames 1001-1120, hidden", "Paprika (cut out, 3 clicks)", "FX LAYERS (bottom first): Flame (flame, at 0.30 0.70, size 0.32, screen); Portal · LTX (ai, at 0.70 0.30, size 0.50, normal, behind the people, not made yet, frames 1030-1120). HELD: Portal · LTX.", "ai:portal", "spark-portal", "\"Make it\"", "about 24 credits", "WORKING NOW: light", "CREDITS SPENT TODAY: 62", "Paprika: Set up. [the app did: Layer: Portal]", "User: make it"]) assert.ok(text.includes(piece), piece);
+  for (const piece of ["SH050 · Paprika's portal (5 shots in all)", "DEPARTMENT OPEN: fx", "THE FOOTAGE: a clip paprika-rooftop.mp4, 1920 × 1080, 24 fps, frames 1001 to 1120", "paint (Lamp post removed), frames 1001-1120, hidden", "Paprika (cut out, 3 clicks)", "FX LAYERS (bottom first): Flame (flame, at 0.30 0.70, size 0.32, screen, light 0.60, reach 1.6); Portal · LTX (ai, at 0.70 0.30, size 0.50, normal, behind the people, not made yet, frames 1030-1120); Smoke (smoke, at 0.50 0.50, size 0.60, screen). HELD: Portal · LTX.", "FX FINISH (the whole shot): bloom 0.45, vignette 0.20.", "ai:portal", "spark-portal", "\"Make it\"", "about 24 credits", "WORKING NOW: light", "CREDITS SPENT TODAY: 62", "Paprika: Set up. [the app did: Layer: Portal]", "User: make it"]) assert.ok(text.includes(piece), piece);
   assert.ok(spicePrompt({}, []).includes("THE FOOTAGE: none yet"), "an empty summary is read as no footage");
   assert.ok(spicePrompt({ ...SPICE, run: { label: "Remove it", ready: false, why: "Say what to remove first" } }, []).includes("missing something: Say what to remove first"));
   assert.ok(spicePrompt({ ...SPICE, run: { label: "Bake the layers", free: true, ready: true } }, []).includes("runs free, on this machine"));
   assert.ok(spicePrompt({ ...SPICE, fx: { layers: [], matte: false } }, []).includes("FX LAYERS: none yet") && spicePrompt({ ...SPICE, fx: { layers: [], matte: false } }, []).includes("ROTO HOLDS NOBODY YET"));
 });
 
-test("Paprika's answer: her nine actions, each with only what it takes, every number within its range, run once and last", () => {
+test("Paprika's answer: her ten actions, each with only what it takes, every number within its range, run once and last", () => {
   const out = readSpiceAnswer(say([
     { op: "run" },
     { op: "open", department: "roto" },
@@ -57,6 +57,17 @@ test("Paprika's answer: her nine actions, each with only what it takes, every nu
     { op: "paint", what: "object", words: "the sign", engine: "obscura" },
   ], "a department that does not exist, an empty subject and an element that is not one are dropped; frames stay inside the footage");
   assert.deepEqual(readSpiceAnswer(say([{ op: "tweak", glow: 0.456, tint: "#FF8800", blend: "add", motion: "spin" }]), SPICE).actions, [{ op: "tweak", glow: 0.46, tint: "#ff8800", blend: "add", motion: "spin" }], "a tweak keeps what it changes");
+  // the light a layer casts and how far it reaches: kept inside their ranges (0 to 1, 0.3 to 4), on a layer or a tweak
+  assert.deepEqual(readSpiceAnswer(say([{ op: "tweak", light: 0.456, reach: 9 }, { op: "tweak", light: 7, reach: 0.1 }, { op: "tweak", light: "lots" }, { op: "layer", element: "fireball", light: 0.8, reach: 2.345 }]), SPICE).actions, [
+    { op: "tweak", light: 0.46, reach: 4 },
+    { op: "tweak", light: 1, reach: 0.3 },
+    { op: "layer", element: "fireball", light: 0.8, reach: 2.35 },
+  ], "a layer's light and reach are kept inside their ranges, and words are not a number");
+  // the finish of the whole shot (hers is `polish`: `finish` is Comp's): its bloom and its vignette, inside 0 to 1, one is enough, none is dropped
+  assert.deepEqual(readSpiceAnswer(say([{ op: "polish", bloom: 0.456, vignette: 3 }, { op: "polish", vignette: -2 }, { op: "polish" }, { op: "polish", bloom: "much", tint: "#fff" }]), SPICE).actions, [
+    { op: "polish", bloom: 0.46, vignette: 1 },
+    { op: "polish", vignette: 0 },
+  ], "the finish keeps only the bloom and the vignette, each from 0 to 1");
   const all = readSpiceAnswer(say([
     { op: "light", tool: "weather", weather: "snow", amount: 2, words: "ignored" }, { op: "light", tool: "grade", grade: "noir", exposure: -3, saturation: 9 }, { op: "light", tool: "relight", words: "golden hour" },
     { op: "finish", tool: "upscale", height: 1440 }, { op: "finish", tool: "upscale", height: 999 }, { op: "finish", tool: "slow", factor: 3, engine: "film" }, { op: "finish", tool: "export", format: "webm" }, { op: "run" },
@@ -84,9 +95,14 @@ test("Paprika's reader accepts only her own actions, and the Cut's trim is not h
   assert.deepEqual(readSpiceAnswer(say([...foreign, { op: "open", department: "paint" }]), SPICE).actions, [{ op: "open", department: "paint" }]);
 });
 
-test("her brief teaches each of her nine actions, tells her what she cannot do, and her tool answers with exactly those", () => {
-  assert.equal(SPICE_OPS.length, 9);
+test("her brief teaches each of her ten actions, tells her what she cannot do, and her tool answers with exactly those", () => {
+  assert.equal(SPICE_OPS.length, 10);
   for (const op of SPICE_OPS) assert.ok(new RegExp(`^- ${op} \\{`, "m").test(SPICE_BRIEF), `${op} is in the brief`);
+  // the light a layer casts, how far it reaches and the shot's own finish (bloom, vignette: Fx's, told apart from Comp's `finish`)
+  assert.ok(/layer \{[^}]*\blight, reach\b/.test(SPICE_BRIEF) && /light 0 to 1: how much light it casts on the shot and the people/.test(SPICE_BRIEF) && /reach 0\.3 to 4/.test(SPICE_BRIEF), "she knows a layer can shine and how far");
+  assert.ok(/^- polish \{bloom, vignette\}: Fx's finish of the whole shot \(not Comp's\)/m.test(SPICE_BRIEF), "she knows the shot has a bloom and a vignette of its own");
+  const fields = SPICE_TOOL.input_schema.properties.actions.items.properties as Record<string, { description?: string }>;
+  for (const k of ["light", "reach", "bloom", "vignette"]) assert.ok(fields[k]?.description, `her tool has ${k}`);
   for (const w of ["plate", "roto", "paint", "light", "fx", "comp", "1001"]) assert.ok(SPICE_BRIEF.includes(w), `she knows ${w}`);
   assert.ok(/cannot click in the viewer, paint a mask or import a file/.test(SPICE_BRIEF), "the user's own hands stay theirs");
   assert.deepEqual(SPICE_TOOL.input_schema.properties.actions.items.properties.op.enum, [...SPICE_OPS]);
