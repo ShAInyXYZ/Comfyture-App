@@ -13,14 +13,9 @@ import { writerPicker } from "../writer-menu.js";
 import { view } from "../viewer.js";
 import { currentPage } from "../router.js";
 import { stageReady, needStage } from "../control/link.js";
-import { macaron } from "../macaron.js";
-import { askMacaron, undoMacaron, clearMacaronChat } from "../macaron-assist.js";
 import { harnessOf, barOf, introOf, onRoom, setTeller, offersOf } from "../harnesses.js";
 import { hasTour, tourTaken, startTour, onTour } from "../tour.js";
-import { chat as mixerChat, askMixer, clearMixerChat, confirmMixer, declineMixer } from "../mixer-assist.js";
-import { chat as utensilsChat, roomOfTool, askUtensils, clearUtensilsChat, confirmUtensils, declineUtensils } from "../utensils-assist.js";
-import { chat as spiceChat, roomOfSpice, askSpice, clearSpiceChat, confirmSpice, declineSpice } from "../spice-assist.js";
-import { chat as toasterChat, askToaster, clearToasterChat, confirmToaster, declineToaster, undoToaster, addToasterPictures, addToasterPhoto, removeToasterPicture, tagHooks } from "../toaster-assist.js";
+import { surfaceOf, extrasOf, surfaceReady } from "../surfaces.js";
 
 // One bar, and a pet in it for every product (web/js/harnesses.js): Ketkout in Kitchen's rooms, Praline in Mixer,
 // Pickle in Jam, Brioche in Macaron, Paprika in Spice, Crumpet in Toaster, Truffle in Utensils. The page the bar is on says whose bar it is, and each
@@ -49,19 +44,19 @@ const editorBusy = () => jamChat.busy || cut.chat.busy;
  * asks and offers, the conversation, how to say something into it, and which model answers (the writer, or the quick assistant).
  */
 function surface() {
-  switch (currentPage()) {
+  const page = currentPage();
+  // a product's own module gives its surface when it has come (app.js loads it with the product's page)
+  const own = surfaceOf(page);
+  if (own) return own;
+  switch (page) {
     case "macaron":
-      return { product: "macaron", chat: macaron.chat, ask: askMacaron, clear: clearMacaronChat, role: "writer" };
+    case "mixer":
+    case "spice":
+    case "toaster":
+    case "utensils":
+      return notYet(page);
     case "jam":
       return { product: "jam", chat: jamChat, ask: askJam, blocked: editorBusy, clear: () => ((jamChat.messages = []), changed("assistant")), role: "writer" };
-    case "mixer":
-      return { product: "mixer", chat: mixerChat, ask: askMixer, clear: clearMixerChat, confirm: confirmMixer, decline: declineMixer, role: "assistant" };
-    case "spice":
-      return { product: "spice", room: roomOfSpice(), chat: spiceChat, ask: askSpice, clear: clearSpiceChat, confirm: confirmSpice, decline: declineSpice, role: "assistant" };
-    case "toaster":
-      return { product: "toaster", room: "toaster", chat: toasterChat, ask: askToaster, clear: clearToasterChat, confirm: confirmToaster, decline: declineToaster, role: "assistant" };
-    case "utensils":
-      return { product: "utensils", room: roomOfTool(), chat: utensilsChat, ask: askUtensils, clear: clearUtensilsChat, confirm: confirmUtensils, decline: declineUtensils, role: "assistant" };
     case "story": {
       const writing = [...story.busy].find((k) => !k.includes(":"));
       return { product: "kitchen", room: "story", chat: { messages: story.chat.messages, busy: story.busy.has("assist") ? "Editing" : writing ? "Writing" : null }, ask: askStory, blocked: () => story.busy.has("assist"), clear: () => ((story.chat.messages = []), changed("assistant")), role: "writer" };
@@ -76,6 +71,16 @@ function surface() {
 }
 const blocked = (s) => (s.blocked ? s.blocked() : s.chat.busy);
 
+/** A product's bar before its module has come: its pet and an empty conversation; what is said meanwhile goes to it once it has. */
+const notYet = (page) => ({
+  product: page,
+  room: page === "toaster" ? "toaster" : undefined,
+  chat: { messages: [], busy: null },
+  ask: (text) => surfaceReady(page).then(() => surfaceOf(page).ask(text)),
+  clear() {},
+  role: page === "macaron" ? "writer" : "assistant",
+});
+
 /** Says something to the pet of the page as if typed in its bar: a preset chip here, or in a product's left panel. */
 function tell(text) {
   const s = surface();
@@ -88,7 +93,7 @@ setTeller(tell);
 onRoom(() => changed("assistant"));
 // on Utensils the room is the group of the tool open (picture, video, sound): the bar follows the shelf
 let shownRoom = null;
-onChange((scopes) => scopes.has("utensils") && currentPage() === "utensils" && roomOfTool() !== shownRoom && changed("assistant"));
+onChange((scopes) => scopes.has("utensils") && currentPage() === "utensils" && surfaceOf("utensils")?.room !== shownRoom && changed("assistant"));
 // the Stage, once it has mounted: who its @names are
 let stageApi = null;
 stageReady.then((a) => (stageApi = a));
@@ -97,7 +102,7 @@ const MAP_ICON = { id: "channel-id", depth: "channel-depth", pose: "channel-pose
 /** What an @name in the bar stands for, to draw its pill and its card. */
 function lookup(name) {
   if (onStory()) return storyLookup(name);
-  if (onToaster()) return tagHooks.lookup(name);
+  if (onToaster()) return extrasOf("toaster").lookup(name);
   if (onStage()) {
     const c = stageApi?.ops.cast?.().find((x) => x.tag === name);
     if (c) return { title: c.name, color: c.color, url: c.pictures[0]?.url, pictures: c.pictures, words: c.words, note: c.pictures.length || c.words ? null : "No sheet yet: the key beside the eye in the Scene list opens one." };
@@ -200,7 +205,7 @@ function updateStagePicker() {
   const c = composer;
   const at = mentionAt(c.input);
   const q = at?.query ?? "";
-  const all = at ? (onToaster() ? tagHooks.items() : stageMentionables()) : [];
+  const all = at ? (onToaster() ? extrasOf("toaster").items() : stageMentionables()) : [];
   const list = all.filter((f) => f.name.startsWith(q) || (q && f.title?.toLowerCase().includes(q))).slice(0, 40);
   const exact = list.length === 1 && list[0].name === q;
   c.pick = Math.min(c.pick, Math.max(0, list.length - 1));
@@ -272,17 +277,20 @@ function makeComposer() {
     if (files.length && takesFiles()) {
       e.preventDefault();
       if (onStage()) attachStagePictures(files);
-      else if (onToaster()) addToasterPictures(files);
+      else if (onToaster()) extrasOf("toaster").addPictures(files);
       else attach(files);
     }
   });
-  fileInput.addEventListener("change", () => ((onToaster() ? addToasterPictures : attach)([...fileInput.files]), (fileInput.value = "")));
+  fileInput.addEventListener("change", () => ((onToaster() ? extrasOf("toaster").addPictures : attach)([...fileInput.files]), (fileInput.value = "")));
   // the paperclip opens its two frames: files (from the computer, or the Library), and the Stage's control maps
   const clip = h("button.composer-key.clip-key", { type: "button", title: "Attach — a file, a picture from the Library, or a control map of the Stage", "aria-label": "Attach", "aria-expanded": "false" }, sprite("paperclip"));
   clip.addEventListener("click", () => {
     const inputs = state.stageChat.inputs;
     // Toaster: one photo, from the computer or the Library, for Crumpet to rebuild
-    if (onToaster()) return attachMenu(clip, { files: addToasterPictures, picture: addToasterPhoto, taken: (photo) => toasterChat.pictures.some((p) => p.file === photo.file) });
+    if (onToaster()) {
+      const toaster = extrasOf("toaster");
+      return attachMenu(clip, { files: toaster.addPictures, picture: toaster.addPhoto, taken: (photo) => toaster.pictures.some((p) => p.file === photo.file) });
+    }
     attachMenu(clip, onStage() ? {
       files: (files) => attachStagePictures(files),
       picture: (photo) => addStagePicture(photo),
@@ -405,7 +413,7 @@ function toasterPictureChip(p) {
   return h("div.file-chip", { title: `${p.name} — Crumpet sees it with your next words` },
     h("button.chip-thumb", { type: "button", "aria-label": "Look at the photo", on: { click: () => view(p.url) } }, h("img", { src: p.url, alt: "", draggable: false })),
     h("span.chip-name", {}, "Photo"),
-    h("button.chip-x", { type: "button", "aria-label": "Take the photo away", title: "Remove", on: { click: removeToasterPicture } }, icon("close")));
+    h("button.chip-x", { type: "button", "aria-label": "Take the photo away", title: "Remove", on: { click: () => extrasOf("toaster").removePicture() } }, icon("close")));
 }
 
 function fileChip(f) {
@@ -483,7 +491,7 @@ function message(m, last, s, harness) {
       m.picture ? h("div.msg-files", {}, h("span.msg-file", { title: "The photo sent with these words" }, h("img", { src: m.picture.url, alt: "", draggable: false }))) : null), m.text);
   }
   // a pet's answer: its face, its words, what it did (and could not), a yes or no for what costs credits, one step back
-  const [undo, back] = m.macaron ? [undoMacaron, "Put the design back as it was"] : m.toaster ? [undoToaster, "Put the draft back as it was"] : m.stage ? [undoStage, "Put the stage back as it was"] : [undoAssistant, "Put the shot back as it was"];
+  const [undo, back] = m.macaron ? [extrasOf("macaron").undo, "Put the design back as it was"] : m.toaster ? [extrasOf("toaster").undo, "Put the draft back as it was"] : m.stage ? [undoStage, "Put the stage back as it was"] : [undoAssistant, "Put the shot back as it was"];
   return copyOnClick(h("div.msg.is-ai", { className: m.error ? "is-error" : "" },
     h("img.msg-face", { src: harness.face, alt: "", draggable: false }),
     h("p", m.detail ? { title: m.detail } : {}, m.text),
@@ -552,13 +560,13 @@ export function renderAssistant(el) {
   c.chips.replaceChildren(...chips);
   shownRoom = s.room;
   const inputs = state.stageChat.inputs;
-  c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : onToaster() ? toasterChat.pictures.map(toasterPictureChip) : filesOn ? files.map(fileChip) : []), ...(filesOn && !stage && !onToaster() && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
+  c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : onToaster() ? extrasOf("toaster").pictures.map(toasterPictureChip) : filesOn ? files.map(fileChip) : []), ...(filesOn && !stage && !onToaster() && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));
   // on Story, what the assistant will edit: the block (or the card) that is picked
   if (storyPage) {
     const label = selectionLabel();
     c.tray.replaceChildren(...(label ? [h("div.file-chip.is-context", { title: "The assistant edits what is picked; it knows the whole story" }, h("span.chip-thumb.is-glyph", {}, sprite("prompt-enhance")), h("span.chip-name", {}, `Editing: ${label}`), h("button.chip-x", { type: "button", "aria-label": "Edit the whole story", title: "The whole story", on: { click: () => selectInStory(null) } }, icon("close")))] : []));
   }
-  c.tray.hidden = storyPage ? !selectionLabel() : !filesOn || (stage ? !inputs.maps.length && !inputs.pictures.length : onToaster() ? !toasterChat.pictures.length : !files.length && !attaching);
+  c.tray.hidden = storyPage ? !selectionLabel() : !filesOn || (stage ? !inputs.maps.length && !inputs.pictures.length : onToaster() ? !extrasOf("toaster").pictures.length : !files.length && !attaching);
   c.el.classList.toggle("is-story", storyPage);
   c.el.classList.toggle("is-cut", cutPage);
   c.el.classList.toggle("no-clip", !filesOn);
@@ -613,7 +621,7 @@ export function renderAssistant(el) {
     e.preventDefault();
     el.classList.remove("is-drop");
     if (onStage()) attachStagePictures([...e.dataTransfer.files]);
-    else if (onToaster()) addToasterPictures([...e.dataTransfer.files]);
+    else if (onToaster()) extrasOf("toaster").addPictures([...e.dataTransfer.files]);
     else attach([...e.dataTransfer.files]);
   };
   el.onkeydown = (e) => {

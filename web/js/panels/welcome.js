@@ -3,7 +3,6 @@
 import { h, icon, sprite } from "../dom.js";
 import { state } from "../store.js";
 import { PRODUCTS, currentPage } from "../router.js";
-import { openFilm } from "./home.js";
 import { popularSection } from "../welcome-popular.js";
 
 const ABOUT = {
@@ -75,7 +74,7 @@ function recent() {
   return h("section.welcome-section", {},
     h("h2", {}, "Continue"),
     h("div.welcome-recent", {}, ...films.map((f) =>
-      h("button.welcome-film", { type: "button", title: `Open ${f.name}`, on: { click: () => openFilm(f) } },
+      h("button.welcome-film", { type: "button", title: `Open ${f.name}`, on: { click: () => import("./home.js").then((m) => m.openFilm(f)) } },
         h("img", { src: f.cover?.pic ?? f.thumb, alt: "", draggable: false, loading: "lazy" }),
         h("span.welcome-film-text", {}, h("b", {}, f.name), h("span", {}, mark("kitchen"), "Kitchen", icon("open")))))));
 }

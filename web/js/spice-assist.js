@@ -3,6 +3,7 @@
 // trimmed, a subject for Roto, an effect, a clean-up, a light or a finish, and "run it". Setting up costs nothing, so it is done at once.
 // Running costs credits (or time): it waits in her answer for one yes from you, with its price, and nothing runs until you give it.
 import { changed, toast, writer } from "./store.js";
+import { registerSurface } from "./surfaces.js";
 import { spice, edit, setSet, setDept, creditsTodayAll, workingOn } from "./spice.js";
 import { FIRST, lastFrame, rangeOf, ELEMENTS, passOf, visible } from "./spice-model.js";
 import { layerName } from "./spice-elements.js";
@@ -202,3 +203,6 @@ export function clearSpiceChat() {
   chat.messages = [];
   changed("assistant");
 }
+
+// Paprika's bar: the bar (panels/assistant.js) takes it from here once this module has come with the page
+registerSurface("spice", () => ({ product: "spice", room: roomOfSpice(), chat, ask: askSpice, clear: clearSpiceChat, confirm: confirmSpice, decline: declineSpice, role: "assistant" }));

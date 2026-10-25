@@ -24,6 +24,9 @@ export const currentPage = () => {
   return name in PAGES || name in PRODUCTS ? name : OLD[name] ?? "home";
 };
 
+/** The page the app was opened on (a product's modules that come when it is first shown learn from it whether the page was started on or arrived at). */
+export const startedOn = typeof location === "undefined" ? "home" : currentPage(); // (the tests import this file in Node)
+
 /** The product a page belongs to (Kitchen's rooms are Kitchen's); none for the app's home. */
 export const productOf = (page) => (page in PRODUCTS ? page : page in PAGES ? "kitchen" : null);
 

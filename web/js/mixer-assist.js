@@ -3,6 +3,7 @@
 // swapped, a mix opened, and "Make it". The picks cost nothing, so they are made at once. Make it costs
 // credits: it waits in her answer for one yes from you, with its price, and nothing is made until you give it.
 import { changed, toast, writer } from "./store.js";
+import { registerSurface } from "./surfaces.js";
 import { TRENDS, CREW, trendById, crewById } from "./mixer-trends.js";
 import { mixer, loadMixes, openMix } from "./mixer.js";
 import { pick, stars, loadStars, castOf, selectTrend, setRole, swapRole, makeTrend, making, estimate } from "./mixer-trend.js";
@@ -159,3 +160,6 @@ export function clearMixerChat() {
   chat.messages = [];
   changed("assistant");
 }
+
+// Praline's bar: the bar (panels/assistant.js) takes it from here once this module has come with the page
+registerSurface("mixer", () => ({ product: "mixer", chat, ask: askMixer, clear: clearMixerChat, confirm: confirmMixer, decline: declineMixer, role: "assistant" }));

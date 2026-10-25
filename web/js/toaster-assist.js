@@ -5,6 +5,7 @@
 // done at once, as one step that Undo takes back; rendering costs credits (or GPU time): it waits in his answer for one yes, with its price.
 // His brief and the reading of his answer are the server's (server/toaster-assist.ts).
 import { changed, toast, writer } from "./store.js";
+import { registerSurface } from "./surfaces.js";
 import { api } from "./api.js";
 import {
   toaster, body, partsNow, editParts, select, setWords, setRatio, keepCamera, modelNow, hasClay, renderFrame, renderSheet, make3d, price3d, priceNow,
@@ -397,3 +398,16 @@ export function removeToasterPicture() {
   chat.pictures = [];
   changed("assistant");
 }
+
+// Crumpet's bar: the bar (panels/assistant.js) takes it from here once this module has come with the page; the photo he is sent and the @names of the draft are his alone
+registerSurface("toaster", () => ({ product: "toaster", room: "toaster", chat, ask: askToaster, clear: clearToasterChat, confirm: confirmToaster, decline: declineToaster, role: "assistant" }), {
+  get pictures() {
+    return chat.pictures;
+  },
+  items: () => tagHooks.items(),
+  lookup: (name) => tagHooks.lookup(name),
+  addPictures: addToasterPictures,
+  addPhoto: addToasterPhoto,
+  removePicture: removeToasterPicture,
+  undo: undoToaster,
+});

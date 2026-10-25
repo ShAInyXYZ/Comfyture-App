@@ -16,6 +16,7 @@ import { api } from "./api.js";
 import { openPicker, pictureOf } from "./picker.js";
 import { h } from "./dom.js";
 import { WORKSPACES } from "./utensils-harness.js";
+import { startedOn } from "./router.js";
 
 export const WORKSPACE_IDS = WORKSPACES.map((w) => w.id);
 /** The Library (its id stays "templates"): not a page of its own but a frame over whichever workspace is open (utensils-library-frame.js). */
@@ -135,7 +136,8 @@ export function closeLibrary() {
  * it is there they go. A page reload keeps the workspace it was on.
  */
 const here = () => location.hash.replace(/^#\/?/, "").split("?")[0] === "utensils";
-export const landing = { away: !here(), intent: false };
+// (Utensils' modules come when it is first shown: a page opened somewhere else was away from it from the start)
+export const landing = { away: !here() || startedOn !== "utensils", intent: false };
 window.addEventListener("hashchange", () => (here() ? arrive() : Object.assign(landing, { away: true, intent: false })));
 /** Arriving from elsewhere with no errand, it is Home (the page is drawn again: it was not asked to change while it was out of sight). */
 export function arrive() {

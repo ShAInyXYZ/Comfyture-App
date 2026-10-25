@@ -4,7 +4,6 @@
 // and what a run costs; "Try it" opens the workflow as a mini app in Utensils, "See the whole library" opens the Library.
 import { h, icon } from "./dom.js";
 import { changed } from "./store.js";
-import { setWorkspace, openLibrary } from "./utensils.js";
 import { makerById } from "./utensils-makers.js";
 import { stillOf, playsOn } from "./thumbs.js";
 
@@ -38,14 +37,17 @@ const title = (t) => String(t).replace(/:\s*/, " · ");
 const job = (i) => i.tags.find((t) => !PLAIN.has(t.toLowerCase())) ?? i.category;
 
 /** Opens a workflow as a mini app in Utensils: the Templates workspace is asked for first, so Utensils lands there, not on its Home. */
-export function tryWorkflow(name) {
+export async function tryWorkflow(name) {
+  // (Utensils' own modules come when one is tried: the home does not carry them)
+  const { setWorkspace } = await import("./utensils.js");
   setWorkspace("templates");
   const open = () => setTimeout(() => document.dispatchEvent(new CustomEvent("utensils:app", { detail: { name } })), 60);
   if (document.querySelector("#page-utensils .ut-main")) requestAnimationFrame(open);
   else document.addEventListener("utensils:drawn", open, { once: true });
   location.hash = "#/utensils";
 }
-function library() {
+async function library() {
+  const { openLibrary } = await import("./utensils.js");
   openLibrary();
   location.hash = "#/utensils";
 }

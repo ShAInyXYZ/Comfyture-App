@@ -7,6 +7,7 @@
 // server too); the page's side of each workspace is brioche/run-*.js (what she is told of it, and how each action is made).
 // This file is what they share: the base she is told, the asking, the step back, and the dispatch of an action to its workspace.
 import { changed, writer } from "./store.js";
+import { registerSurface } from "./surfaces.js";
 import { macaron, kitNow, postJson, batch, undo, setSpace, SPACES } from "./macaron.js";
 import { WORKSPACES } from "./macaron-harness.js";
 import { SPACES as ROOMS, opsOf } from "./brioche/harness.js";
@@ -118,3 +119,6 @@ export function clearMacaronChat() {
   macaron.chat.messages = [];
   changed("assistant");
 }
+
+// Brioche's bar: the bar (panels/assistant.js) takes it from here once this module has come with the page
+registerSurface("macaron", () => ({ product: "macaron", chat: macaron.chat, ask: askMacaron, clear: clearMacaronChat, role: "writer" }), { undo: undoMacaron });

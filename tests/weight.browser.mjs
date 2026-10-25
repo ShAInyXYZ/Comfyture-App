@@ -2,7 +2,8 @@
 // not mount the Stage; the Stage room fetches the models of its scene (and of the tiles in view), never the library's four hundred; an outside
 // agent's first command (the control MCP, through the server) mounts the Stage from any page and is answered, on the one stream the page opened
 // at the start; Toaster's library lists its pieces from the manifest and fetches a model only to draw its piece. Every call to Comfy's hosts is
-// refused, so nothing can be spent.
+// refused, so nothing can be spent. A product's modules and styles come with its page: the first visit to Mixer loads Mixer's and no other
+// product's, a product's page is drawn only once its styles are in, and the next product is loaded when it is first shown.
 // Not part of `node --test` (it needs a browser). From the repo root:
 //   PLAYWRIGHT_MODULE=<playwright's folder> node tests/weight.browser.mjs
 import { spawn } from "node:child_process";
@@ -163,6 +164,32 @@ try {
     ok(!(await staged(other.page)), "a picture the Stage did not ask for leaves it unmounted");
     ok(seen.errors.length === 0 && other.seen.errors.length === 0, "no error on the page", [...seen.errors, ...other.seen.errors].join(" | "));
     await other.context.close();
+  }
+
+  // ---------------------------------------------------------------- a product's code and styles come with its page
+  {
+    const { page, seen, context } = await open("#/mixer");
+    // (what the page had when its first element was drawn: the product's first sheet, loaded or not)
+    await page.waitForFunction(() => document.querySelector("#page-mixer")?.childElementCount > 0, null, { timeout: 60000 });
+    await quiet(2500);
+    const others = /^(ut-|macaron|mc-|sp-|jm-|jam|toaster)/;
+    ok(seen.styles.includes("mixer") && !seen.styles.some((s) => others.test(s)), "Mixer's first visit loads Mixer's styles and no other product's", seen.styles.join(" "));
+    ok(seen.scripts.some((s) => s.endsWith("panels/mixer.js")) && !seen.scripts.some((s) => /(panels\/(utensils|macaron|spice|toaster|jam)|macaron-assist|utensils-assist|spice-assist|toaster-assist)\.js$/.test(s)), "and its modules, none of the other products'");
+    ok(seen.scripts.length < 90 && seen.styles.length < 12, "so a first visit is a few dozen modules and a handful of styles, not two hundred and fifty", `${seen.scripts.length} scripts, ${seen.styles.length} styles`);
+    // the next product is loaded when it is first shown, and drawn once its styles are in
+    await page.evaluate(() => {
+      window.__first = {};
+      new MutationObserver(() => {
+        const el = document.querySelector("#page-jam");
+        if (el?.childElementCount > 0 && window.__first.styled === undefined) window.__first.styled = document.querySelector('link[href="css/jm-shell.css"]')?.sheet != null && document.querySelector('link[href="css/jam.css"]')?.sheet != null;
+      }).observe(document.body, { childList: true, subtree: true });
+      location.hash = "#/jam";
+    });
+    await page.waitForFunction(() => window.__first.styled !== undefined, null, { timeout: 60000 }).catch(() => {});
+    ok(seen.scripts.some((s) => s.endsWith("panels/jam.js")) && seen.styles.includes("jm-shell"), "Jam's modules and styles are loaded when it is first shown");
+    ok(await page.evaluate(() => window.__first.styled === true), "and its page is first drawn with its styles in, not before");
+    ok(seen.errors.length === 0 && seen.outbound.length === 0, "no error on the page, nothing left the machine", [...seen.errors, ...seen.outbound].join(" | "));
+    await context.close();
   }
 
   // ---------------------------------------------------------------- Toaster's library

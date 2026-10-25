@@ -1,6 +1,6 @@
 import { icon } from "./dom.js";
 import { installTooltips } from "./tooltip.js";
-import { state, load, onChange, roll, toast } from "./store.js";
+import { state, load, onChange, roll, toast, changed } from "./store.js";
 import { PAGES, PRODUCTS, currentPage, productOf } from "./router.js";
 import { renderSources, listenForPaste } from "./panels/sources.js";
 import { renderMonitor } from "./panels/monitor.js";
@@ -9,27 +9,80 @@ import { renderPresets } from "./panels/presets.js";
 import { renderSettings } from "./panels/settings.js";
 import { renderTakes } from "./panels/takes.js";
 import { renderTabs, renderActions } from "./panels/tabs.js";
-import { renderStory } from "./panels/story.js";
 import { renderStatus } from "./panels/status.js";
 import { renderNav, renderProducts } from "./panels/nav.js";
 import { renderLibrary } from "./panels/library.js";
-import { renderCut } from "./panels/cut.js";
-import { renderHome } from "./panels/home.js";
 import { renderWelcome } from "./panels/welcome.js";
-import { renderMixer } from "./panels/mixer.js";
-import { renderUtensils } from "./panels/utensils.js";
-import { renderMacaron } from "./panels/macaron.js";
-import { renderSpice } from "./panels/spice.js";
-import { renderToaster } from "./panels/toaster.js";
-import { renderJam } from "./panels/jam.js";
 import { renderAssistant } from "./panels/assistant.js";
-import { renderImage } from "./panels/image.js";
 import { renderStage, listenForAgents } from "./panels/stage.js";
 import { installTourKey } from "./tour.js";
+import { styled } from "./sheets.js";
 // the open film, kept in step with the section on screen
 import "./project.js";
 
 const $ = (id) => document.getElementById(id);
+
+// what starts a page's panel loading before its page is shown, by page (see warmUp)
+const warm = {};
+// the state is loaded and the first page drawn
+let started = false;
+
+/**
+ * A panel loaded with its page and not before: its styles and its modules (a product's assistant module too, which gives the bar its
+ * conversation and its quick actions) come together, then it draws, so nothing shows unstyled. Until then the page is empty.
+ * `load` answers the panel's draw function; the styles are those of the panel's name (sheets.js); `page` is the page it draws for.
+ */
+function product(name, load, page = name) {
+  let loading = null;
+  const start = () =>
+    (loading ??= Promise.all([styled(name), load()])
+      .then(([, render]) => {
+        panels[name][1] = render;
+        panels[name][0].removeAttribute("aria-busy");
+        // (before the state is loaded the page is drawn by showPage, with its panels)
+        if (!started) return;
+        pending.add(name);
+        // (the bar of the page was drawn without the product's part: it is drawn again with it)
+        changed("assistant");
+        flush();
+      })
+      .catch((e) => {
+        loading = null;
+        panels[name][0].removeAttribute("aria-busy");
+        toast(`Can't load ${name}: ${e.message}`, { tone: "crit" });
+      }));
+  warm[page] = start;
+  return (el) => {
+    el.setAttribute("aria-busy", "true");
+    start();
+  };
+}
+
+// a page starts loading when it is pointed at (its mark in the header, its tile on the home), so it is there by the click
+const warmUp = (e) => warm[e.target.closest?.('a[href^="#/"]')?.getAttribute("href").slice(2).split("?")[0]]?.();
+document.addEventListener("pointerover", warmUp, { passive: true });
+document.addEventListener("pointerdown", warmUp, { passive: true });
+
+/** The Oven (the image window) is loaded the first time it opens: the layer stays away until its panel is there to draw it. */
+let ovenLoading = null;
+function oven(el) {
+  if (!state.image.open) {
+    el.hidden = true;
+    document.body.classList.remove("has-window");
+    return;
+  }
+  if (ovenLoading) return;
+  ovenLoading = import("./panels/image.js")
+    .then((m) => {
+      panels.image[1] = m.renderImage;
+      pending.add("image");
+      flush();
+    })
+    .catch((e) => {
+      ovenLoading = null;
+      toast(`Can't load the Oven: ${e.message}`, { tone: "crit" });
+    });
+}
 
 // every panel, the element it draws into, and the section it belongs to (none: always on screen)
 const panels = {
@@ -45,20 +98,21 @@ const panels = {
   // the assistant's bar is the Shot's and the Stage's: it draws wherever it is docked
   assistant: [$("assistant"), renderAssistant],
   stage: [$("page-stage"), renderStage, "stage"],
-  image: [$("image"), renderImage],
+  image: [$("image"), oven],
   tabs: [$("tabs"), renderTabs, "shot"],
   actions: [$("actions"), renderActions, "shot"],
-  story: [$("page-story"), renderStory, "story"],
+  story: [$("page-story"), product("story", () => import("./panels/story.js").then((m) => m.renderStory)), "story"],
   library: [$("page-library"), renderLibrary, "library"],
-  cut: [$("page-cut"), renderCut, "cut"],
+  cut: [$("page-cut"), product("cut", () => import("./panels/cut.js").then((m) => m.renderCut)), "cut"],
   welcome: [$("page-home"), renderWelcome, "home"],
-  home: [$("page-kitchen"), renderHome, "kitchen"],
-  mixer: [$("page-mixer"), renderMixer, "mixer"],
-  jam: [$("page-jam"), renderJam, "jam"],
-  macaron: [$("page-macaron"), renderMacaron, "macaron"],
-  spice: [$("page-spice"), renderSpice, "spice"],
-  toaster: [$("page-toaster"), renderToaster, "toaster"],
-  utensils: [$("page-utensils"), renderUtensils, "utensils"],
+  home: [$("page-kitchen"), product("home", () => import("./panels/home.js").then((m) => m.renderHome), "kitchen"), "kitchen"],
+  // the products come with their page: the first time it is shown, its styles and its modules load, then it draws
+  mixer: [$("page-mixer"), product("mixer", () => Promise.all([import("./panels/mixer.js"), import("./mixer-assist.js")]).then(([m]) => m.renderMixer)), "mixer"],
+  jam: [$("page-jam"), product("jam", () => import("./panels/jam.js").then((m) => m.renderJam)), "jam"],
+  macaron: [$("page-macaron"), product("macaron", () => Promise.all([import("./panels/macaron.js"), import("./macaron-assist.js")]).then(([m]) => m.renderMacaron)), "macaron"],
+  spice: [$("page-spice"), product("spice", () => Promise.all([import("./panels/spice.js"), import("./spice-assist.js")]).then(([m]) => m.renderSpice)), "spice"],
+  toaster: [$("page-toaster"), product("toaster", () => Promise.all([import("./panels/toaster.js"), import("./toaster-assist.js")]).then(([m]) => m.renderToaster)), "toaster"],
+  utensils: [$("page-utensils"), product("utensils", () => Promise.all([import("./panels/utensils.js"), import("./utensils-assist.js")]).then(([m]) => m.renderUtensils)), "utensils"],
 };
 
 // Redraws are batched to one per frame; text fields keep focus because the
@@ -245,8 +299,12 @@ installTooltips();
 // the header's compass: the tour of the page open (web/js/tour.js, web/js/tours/)
 installTourKey(document.getElementById("tour-key"), currentPage);
 
+// the page the app opens on starts loading its panel now, while the state comes from the server
+warm[currentPage()]?.();
+
 load()
   .then(() => {
+    started = true;
     showPage();
     // the Stage (three.js and all) loads when it is needed; an outside agent (the control MCP) can stage a scene from anywhere, and
     // its first command is what loads it, so the page listens for it from the start

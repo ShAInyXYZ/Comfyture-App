@@ -10,6 +10,7 @@
 // For a job she can answer with a GUIDE: a recipe of tools and Library workflows in order, each step with why and how. Its steps are
 // given their knowledge entries and shown by utensils-guide.js (a panel, the books lit); she is told which guide is on show.
 import { state, changed, toast, writer } from "./store.js";
+import { registerSurface } from "./surfaces.js";
 import { api } from "./api.js";
 import { TOOLS, toolById, utensils, inputOf, pickTool, setInput, setWorkspace, runTool, ready, estimate, shelfTools, toolsOf } from "./utensils.js";
 import { WORKSPACES } from "./utensils-harness.js";
@@ -233,3 +234,6 @@ export function clearUtensilsChat() {
   chat.messages = [];
   changed("assistant");
 }
+
+// Truffle's bar: the bar (panels/assistant.js) takes it from here once this module has come with the page
+registerSurface("utensils", () => ({ product: "utensils", room: roomOfTool(), chat, ask: askUtensils, clear: clearUtensilsChat, confirm: confirmUtensils, decline: declineUtensils, role: "assistant" }));
