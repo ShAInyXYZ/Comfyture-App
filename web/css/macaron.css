@@ -138,8 +138,8 @@
 .is-kit .is-rules { grid-column: span 7; }
 
 /* the palette: each swatch as wide as its share of a page; on it its share, the palette's colour that reads best on it (Aa, graded), its hex and name */
-.mc-sw-row { display: flex; flex: 1 1 0; min-height: 5.25rem; gap: .75rem; }
-.mc-sw { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto; justify-items: start; gap: .1875rem; min-width: 8.5rem; min-height: 5.25rem; padding: .625rem .875rem .6875rem; border: 1px solid rgba(255, 255, 255, .1); border-radius: 1.0625rem; background: var(--c); color: var(--ink); text-align: left; cursor: pointer; transition: transform var(--t-fast), box-shadow var(--t-fast); }
+.mc-sw-row { display: flex; flex: 1 1 0; min-height: 4.9rem; gap: .75rem; }
+.mc-sw { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto; justify-items: start; gap: .1875rem; min-width: 8.5rem; min-height: 4.9rem; padding: .625rem .875rem .6875rem; border: 1px solid rgba(255, 255, 255, .1); border-radius: 1.0625rem; background: var(--c); color: var(--ink); text-align: left; cursor: pointer; transition: transform var(--t-fast), box-shadow var(--t-fast); }
 .mc-sw:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, .35); }
 .mc-sw-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; }
 .mc-sw-pct { min-width: 0; overflow: hidden; font: 600 .6875rem/1 var(--font-mono); letter-spacing: .08em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; opacity: .72; }

@@ -1,12 +1,12 @@
 // Macaron in a real browser, end to end, on a server of its own and a folder of its own. The room: Brioche's panel
-// (her portrait, the brand open, the three workspaces with their counts, her tools for the one that is open), and the
-// grids of bentos of Design idea, Brand kit and Content, each fitting one screen; a bento opening as a window over a
+// (her portrait, the brand open, the five workspaces with their counts, the brand's health under them), and the
+// grids of bentos of Brand kit, Design idea and Create, each fitting one screen; a bento opening as a window over a
 // dimmed screen (closed by Esc, by its key and by the veil), windows stacking (the editor, then its variations) and
 // coming back; the Advanced switch; the logos' marquee. Then the work itself, through the windows: the flagship opens
 // from the seed; a layer is picked, moved, retyped, laid out in another format, given a new picture and colour; undo
 // and redo; a variation; save, reload, a PNG export; the kit, the story, the pictures, the layers, the variations and
-// the posts; Download all; Brioche's answers applied as one undo step in each workspace (the model's answer is stood
-// in for, so it needs no key), the workspace she is told about and the tool she was asked through; a new brand with its
+// the posts; Brioche's answers applied as one undo step in each workspace (the model's answer is stood in for, so it
+// needs no key), the workspace she is told about and the key of a window that asks her; a new brand with its
 // colours and a logo as SVG and as PNG; a brand saved by an earlier Macaron; the intro rendered to a video, and a first
 // timing for a new motion piece; then what must hold between brands and pieces: one brand's unfinished edit is never
 // undone into another, a save is not lost when the brand is switched, the motion controls change the piece they show,
@@ -51,7 +51,10 @@ for (let i = 0; i < 100; i++) {
 }
 const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ["--no-sandbox"] });
 try {
-  const page = await (await browser.newContext({ viewport: { width: 1700, height: 1000 } })).newPage();
+  const context = await browser.newContext({ viewport: { width: 1700, height: 1000 } });
+  // (the page talks to this server alone)
+  await context.route((u) => new URL(u).hostname !== "127.0.0.1", (r) => r.abort());
+  const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => m.type() === "error" && !/GL Driver|favicon|Failed to load resource/.test(m.text()) && errors.push(m.text()));
@@ -80,8 +83,18 @@ try {
     }
   };
   const space = async (id) => { await closeAll(); await page.locator(`.mcb-card[data-space="${id}"]`).click(); await page.waitForTimeout(500); };
-  const openBento = async (cls) => { await closeAll(); await page.locator(`.mc-bento.is-${cls} .mc-expand`).click(); await page.locator(".mc-winhost:not([hidden]) .mc-win").waitFor(); await page.waitForTimeout(600); };
-  const openEditor = async (nth = 0) => { await space("content"); await page.locator(".mc-post").nth(nth).click(); await page.waitForSelector('.mc-win[data-win="editor"] .mc-frame:not(.is-motion) canvas', { timeout: 15000 }); await page.waitForTimeout(900); };
+  const openBento = async (cls) => { await closeAll(); await page.locator(`.mc-bento.is-${cls} .mc-expand[aria-label^="Open"]`).click(); await page.locator(".mc-winhost:not([hidden]) .mc-win").waitFor(); await page.waitForTimeout(600); };
+  const openEditor = async (nth = 0) => { await space("create"); await page.locator(".is-soc .mc-fi:not(.is-ghost):not(.is-hollow)").nth(nth).click(); await page.waitForSelector('.mc-win[data-win="editor"] .mc-frame:not(.is-motion) canvas', { timeout: 15000 }); await page.waitForTimeout(900); };
+  /** What Brioche's panel shows under the workspaces: the brand's health (a seal with its score, the few lines that need care), where a row of tools was. */
+  const health = () => page.evaluate(() => ({
+    lit: [...document.querySelectorAll(".mcb-card.is-on .mcb-face b")].map((b) => b.textContent).join(),
+    seal: document.querySelector(".mcb-seal b")?.textContent,
+    label: document.querySelector(".mcb-seal")?.getAttribute("aria-label"),
+    lines: [...document.querySelectorAll(".mcb-line")].map((l) => [l.dataset.line, l.dataset.tone, l.textContent.trim()]),
+    tools: document.querySelectorAll(".mc-tool, .mc-tools-label").length,
+  }));
+  // where each line of the health goes to be fixed: the workspace, and the window over it
+  const WHERE = { brief: ["idea", "brief"], palette: ["kit", "palette"], logos: ["kit", "logos"], voice: ["kit", "voice"], product: ["studio", "product"], review: ["create", "posts"] };
   const winNow = () => page.evaluate(async () => { const m = await import("/js/macaron.js"); return { win: m.macaron.win, stack: [...m.macaron.winStack], space: m.macaron.space }; });
   const store = (fn, arg) => page.evaluate(async ({ src, arg }) => { const m = await import("/js/macaron.js"); return new Function("m", "arg", `return (${src})(m, arg)`)(m, arg); }, { src: fn.toString(), arg });
   const frame = () => page.locator(".mc-frame:not(.is-motion)").boundingBox();
@@ -120,11 +133,14 @@ try {
     pic: (() => { const i = document.querySelector(".mcb-seal img"); return !!i && i.complete && i.naturalWidth > 0; })(),
     round: getComputedStyle(document.querySelector(".mcb-seal img")).borderRadius, project: document.querySelector(".mcb-brand .sel-label")?.textContent,
     spaces: [...document.querySelectorAll(".mcb-card")].map((b) => [b.querySelector(".mcb-face b").textContent, b.querySelector(".mcb-chip span:last-child").textContent, b.classList.contains("is-on"), b.querySelector(".mcb-art svg")?.childElementCount > 0]),
-    label: document.querySelector(".mc-tools-label")?.textContent, tools: [...document.querySelectorAll(".mc-tool .mc-tool-name")].map((t) => t.textContent),
   }));
   ok(side.name === "Brioche" && /brand room/i.test(side.tag) && side.pic && side.round === "50%" && side.project === "Comfyture", "Brioche's panel: her round portrait, her name and room, the brand open", JSON.stringify([side.name, side.tag, side.project]));
   ok(side.spaces.map((x) => x[0]).join() === "Brand kit,Design idea,Studio,Create,Brand book" && side.spaces.every((x) => x[3]) && side.spaces.map((x) => x[1]).join() === "11,12,28,06,03", "five workspaces, each with its graphic and its count", side.spaces.map((x) => `${x[0]} ${x[1]}`).join(", "));
-  ok(side.spaces.filter((x) => x[2]).map((x) => x[0]).join() === "Brand kit" && /brioche's tools/i.test(side.label) && side.tools.join() === "Make a colourway,Check contrast,Export the kit", "the open workspace is lit, and her tools are its own", side.tools.join(", "));
+  // (her panel has no row of tools any more, since the five workspaces: a tool was a sentence sent to her, acting on a post nobody had chosen;
+  // under the workspaces stands the brand's health, and each line of it goes where it is fixed)
+  const kitHealth = await health();
+  ok(side.spaces.filter((x) => x[2]).map((x) => x[0]).join() === "Brand kit" && kitHealth.tools === 0 && /^\d{1,3}%$/.test(kitHealth.seal) && /\d+ percent ready/.test(kitHealth.label) && kitHealth.lines.length >= 1 && kitHealth.lines.length <= 4 && kitHealth.lines.every(([id, tone]) => id in WHERE || id === "guard") && kitHealth.lines.every(([, tone]) => ["ok", "warn", "crit"].includes(tone)),
+    "the open workspace is lit, and under the workspaces is the brand's health: a score and the few lines that need care (no row of tools)", `${kitHealth.seal}: ${kitHealth.lines.map((l) => `${l[0]} ${l[1]}`).join(", ")}`);
   const kitGrid = await page.evaluate(() => {
     const grid = document.querySelector(".mc-grid.is-kit");
     const boxes = [...grid.querySelectorAll(":scope > .mc-bento")].map((b) => ({ label: b.querySelector(".mc-b-label").textContent, rect: b.getBoundingClientRect(), expand: !!b.querySelector(".mc-expand") }));
@@ -165,12 +181,13 @@ try {
     return {
       shown: !grid.hidden, labels: [...grid.querySelectorAll(":scope > .mc-bento .mc-b-label")].map((x) => x.textContent), pitch: grid.querySelector(".mc-pitch")?.textContent, goals: [...grid.querySelectorAll(".mc-chips.is-goals .mc-chip")].map((x) => x.textContent),
       briefPic: !!grid.querySelector(".mc-brief-pic img")?.complete, tiles: grid.querySelectorAll(".mc-mtile").length, steps: [...grid.querySelectorAll(".mc-step b")].map((x) => x.textContent), dirs: [...grid.querySelectorAll(".mc-dir")].map((d) => [d.querySelector("b").textContent, d.classList.contains("is-picked")]),
-      tools: [...document.querySelectorAll(".mc-tool .mc-tool-name")].map((t) => t.textContent), lit: document.querySelector(".mcb-card.is-on .mcb-face b")?.textContent,
     };
   });
   ok(idea.shown && idea.labels.join() === "The brief,Moodboard,The story,Directions" && /warm, playful/i.test(idea.pitch) && idea.goals.length === 3 && idea.briefPic, "Design idea: the brief (its idea in two lines, three goals, a picture), the moodboard, the story, the directions", idea.labels.join(", "));
   ok(idea.tiles === 6 && idea.steps.join() === "The spark,The palette,The mark,The room" && idea.dirs.length === 3 && idea.dirs.filter((d) => d[1]).map((d) => d[0]).join() === "Warm and bold", "a moodboard of six, a story of four chapters, three directions with one picked", `${idea.steps.join(" > ")}`);
-  ok(idea.lit === "Design idea" && idea.tools.join() === "New direction,Add references,Write the brief", "the tools follow the workspace: New direction, Add references, Write the brief", idea.tools.join(", "));
+  // (the health is the brand's, not the workspace's: the same score and lines here, with Design idea the one that is lit)
+  const ideaHealth = await health();
+  ok(ideaHealth.lit === "Design idea" && ideaHealth.tools === 0 && ideaHealth.seal === kitHealth.seal && JSON.stringify(ideaHealth.lines) === JSON.stringify(kitHealth.lines), "the health stays the brand's in every workspace: the same score and lines in Design idea, the one lit now", ideaHealth.seal);
   ok((await page.evaluate(async () => (await import("/js/harnesses.js")).roomOf("macaron"))) === "idea", "the bar is told which workspace is open");
   fit = await fits();
   ok(fit.h <= fit.vh + 2 && fit.w <= fit.vw, "Design idea fits one screen", `${fit.h} of ${fit.vh}`);
@@ -183,32 +200,38 @@ try {
   await page.waitForTimeout(400);
   picked = await store((m) => m.macaron.brand.body.directions.map((d) => d.picked));
   ok(picked.join() === "true,false,false", "and the first again", picked.join());
+  // each line of the health goes where it is fixed: the workspace, and the window over it
+  const line = ideaHealth.lines.find(([id]) => id in WHERE);
+  await page.locator(`.mcb-line[data-line="${line[0]}"]`).click();
+  await page.waitForSelector(`.mc-winhost:not([hidden]) .mc-win[data-win="${WHERE[line[0]][1]}"]`, { timeout: 5000 }).catch(() => {});
+  const went = await winNow();
+  ok(went.space === WHERE[line[0]][0] && went.win === WHERE[line[0]][1], `a line of the health goes where it is fixed: "${line[2]}" opens ${went.win} in ${went.space}`, JSON.stringify(went));
+  await closeAll();
 
-  // Content
-  await space("content");
-  const content = await page.evaluate(() => {
-    const grid = document.querySelector(".mc-grid.is-content");
-    const frameBox = grid.querySelector(".mc-reel-frame").getBoundingClientRect();
-    const pics = [...grid.querySelectorAll(".mc-post-pic")].map((p) => Math.round(p.getBoundingClientRect().height));
+  // Create
+  await space("create");
+  const create = await page.evaluate(() => {
+    const grid = document.querySelector(".mc-grid.is-create");
+    const pics = [...grid.querySelectorAll(".is-soc .mc-fi:not(.is-ghost)")].map((p) => Math.round(p.querySelector(".mc-fi-pic").getBoundingClientRect().height));
     return {
-      labels: [...grid.querySelectorAll(":scope > .mc-bento .mc-b-label")].map((x) => x.textContent),
-      week: [...grid.querySelectorAll(".mc-wk")].map((w) => [w.querySelector("em").textContent, w.querySelector("b").textContent, w.querySelector(".mc-wk-status").textContent.trim()]),
-      ratio: frameBox.width / frameBox.height, time: grid.querySelector(".mc-reel-time")?.textContent, play: !!grid.querySelector(".mc-play-big"), tag: grid.querySelector(".mc-reel-tag")?.textContent.replace(/\s+/g, " ").trim(),
-      posts: [...grid.querySelectorAll(".mc-post .mc-post-foot")].map((f) => `${f.querySelector(".mc-fmtchip").textContent.trim()} ${f.querySelector("b").textContent.trim()}`), pics, chips: [...grid.querySelectorAll(".mc-xchip")].map((c) => [c.textContent.trim(), c.getAttribute("aria-pressed")]), all: grid.querySelector(".mc-dlall")?.textContent.trim(),
-      tools: [...document.querySelectorAll(".mc-tool .mc-tool-name")].map((t) => t.textContent),
+      families: [...document.querySelectorAll(".mc-fambar .mc-seg")].map((b) => `${b.dataset.family}:${b.getAttribute("aria-pressed")}`).join(),
+      labels: [...grid.querySelectorAll(":scope > .mc-bento")].map((b) => b.querySelector(".mc-b-label").childNodes[0].textContent).join(),
+      lead: grid.querySelector(".mc-bento.is-lead .mc-b-label")?.childNodes[0].textContent,
+      counts: [...grid.querySelectorAll(":scope > .mc-bento .mc-b-count")].map((c) => c.textContent).join(),
+      posts: [...grid.querySelectorAll(".is-soc .mc-fi")].map((f) => `${f.dataset.format} ${f.querySelector(".mc-fi-cap b").textContent}`).join(),
+      pics,
+      week: [...grid.querySelectorAll(".mc-wd")].filter((d) => d.dataset.n !== "0").map((d) => `${d.dataset.day}:${d.dataset.n}`).join(),
+      reel: !!grid.querySelector(".is-vid .mc-vreel-play"),
+      reelTime: grid.querySelector(".is-vid .mc-fi-cap b")?.textContent,
+      newKey: document.querySelector(".mc-fambar .mc-primary")?.textContent.trim(),
     };
   });
-  ok(content.labels.join() === "This week,Motion,Posts,Export" && content.week.map((w) => w.join(" ")).join() === "MON Post Ready,WED Story Ready,FRI Reel Scheduled,SUN Post In review", "Content: this week's four posts by day, kind and status", content.week.map((w) => w.join(" ")).join(", "));
-  ok(Math.abs(content.ratio - 9 / 16) < 0.02 && content.time === "0:08" && content.play && /9:16/.test(content.tag), "the motion bento is a 9:16 frame with a play key, its length and its format", `${content.ratio.toFixed(3)} ${content.time} ${content.tag}`);
-  ok(content.posts.join() === "4:5 Post,1:1 Post,9:16 Story,4:5 Post" && Math.max(...content.pics) - Math.min(...content.pics) <= 2, "the posts are shown by format, side by side at one height", `${content.posts.join(", ")} ${content.pics.join("/")} px`);
-  ok(content.chips.map((c) => c[0]).join() === "PNG,JPG,MP4,WEBM" && /Download all/.test(content.all) && content.tools.join() === "A post from a design,A story version,Animate it", "the export bento: PNG, JPG, MP4, WEBM and Download all; the tools are Content's", content.chips.map((c) => c.join("=")).join(" "));
+  ok(create.families === "social:true,ads:false,print:false,web:false,app:false,video:false" && create.labels === "Mockups,Social,Ads,Print,Web,App,Video,This week" && create.lead === "Mockups" && /New design/.test(create.newKey), "Create: a bar of the six families (Social leads), a bento for each, mockups at the head, and the key for a new design", `${create.families} / ${create.labels}`);
+  ok(create.posts === "4:5 Post,1:1 Post,9:16 Story,4:5 Post" && Math.max(...create.pics) - Math.min(...create.pics) <= 2, "the posts are shown by format, side by side at one height", `${create.posts} ${create.pics.join("/")} px`);
+  ok(create.week === "mon:1,sun:1" && create.reel && create.reelTime === "0:08", "this week's plan has its two posts on their days, and the motion bento its 8 s reel with a play key", `${create.week} ${create.reelTime}`);
   fit = await fits();
-  ok(fit.h <= fit.vh + 2 && fit.w <= fit.vw, "Content fits one screen", `${fit.h} of ${fit.vh}`);
-  await shot("room-content");
-  await page.locator(".mc-xchip", { hasText: "JPG" }).first().click();
-  await page.waitForTimeout(300);
-  ok((await store((m) => m.macaron.exportKinds.jpg)) === true, "an export kind is a toggle");
-  await page.locator(".mc-xchip", { hasText: "JPG" }).first().click();
+  ok(fit.h <= fit.vh + 2 && fit.w <= fit.vw, "Create fits one screen", `${fit.h} of ${fit.vh}`);
+  await shot("room-create");
 
   // ---- a bento opens as a window over a dimmed screen
   await space("kit");
@@ -218,15 +241,16 @@ try {
   const win1 = await page.evaluate(() => {
     const w = document.querySelector(".mc-win");
     const veil = getComputedStyle(document.querySelector(".mc-veil"));
-    return { id: w.dataset.win, title: w.querySelector(".mc-win-head h2").textContent, sub: w.querySelector(".mc-win-sub").textContent, adv: w.querySelector(".mc-switch")?.getAttribute("aria-checked"), cards: w.querySelectorAll(".mc-pcard").length, dim: veil.backgroundColor, centred: Math.abs((w.getBoundingClientRect().left + w.getBoundingClientRect().right) / 2 - innerWidth / 2) < 2, bottom: w.getBoundingClientRect().bottom, bar: document.querySelector("#assistant").getBoundingClientRect().top, body: document.body.classList.contains("mc-has-win") };
+    return { id: w.dataset.win, title: w.querySelector(".mc-win-head h2").textContent, sub: w.querySelector(".mc-win-sub").textContent, adv: w.querySelector(".mc-switch")?.getAttribute("aria-checked"), cards: w.querySelectorAll(".kp-card").length, dim: veil.backgroundColor, centred: Math.abs((w.getBoundingClientRect().left + w.getBoundingClientRect().right) / 2 - innerWidth / 2) < 2, bottom: w.getBoundingClientRect().bottom, bar: document.querySelector("#assistant").getBoundingClientRect().top, body: document.body.classList.contains("mc-has-win") };
   });
   ok(win1.id === "palette" && win1.title === "Palette" && win1.sub === "Comfyture" && win1.cards === 4 && win1.adv === "false" && win1.centred && win1.body, "a bento opens as a centred window with its title, the brand's name and an Advanced switch", JSON.stringify([win1.id, win1.title, win1.adv]));
   ok(/rgba\(/.test(win1.dim) && win1.bottom <= win1.bar + 1, "the screen behind is dimmed, and Brioche's bar stays below the window", `window ends ${Math.round(win1.bottom)}, the bar starts ${Math.round(win1.bar)}`);
   await shot("window-palette");
-  ok((await page.locator(".mc-win .mc-hex").count()) === 0, "the finer controls are hidden");
+  ok((await page.locator(".mc-win .kp-adv").count()) === 0 && (await page.locator(".mc-win .kp-pair").count()) === 0, "the finer controls are hidden");
   await page.locator(".mc-switch").click();
-  await page.waitForTimeout(400);
-  ok((await page.locator(".mc-win .mc-hex").count()) === 4 && (await page.locator(".mc-switch").getAttribute("aria-checked")) === "true" && (await page.locator(".mc-pair-chip").count()) === 6, "Advanced shows each colour's hex and how colours read on each other", `${await page.locator(".mc-win .mc-hex").count()} hex fields`);
+  await page.waitForSelector(".mc-win .kp-pair");
+  const hexes = await page.locator('.mc-win .kp-adv .kp-row:has(.label:text-is("Hex")) input').count();
+  ok(hexes === 4 && (await page.locator(".mc-switch").getAttribute("aria-checked")) === "true" && (await page.locator(".mc-win .kp-pair").count()) === 6, "Advanced shows each colour's hex, share and notes, and how colours read on each other", `${hexes} hex fields`);
   await page.locator(".mc-switch").click();
   await page.keyboard.press("Escape");
   await page.waitForTimeout(350);
@@ -234,8 +258,8 @@ try {
   await page.locator(".is-logos .mc-b-label").click();
   await page.locator(".mc-winhost:not([hidden]) .mc-win").waitFor();
   await page.waitForTimeout(500);
-  const lw = await page.evaluate(() => ({ rows: [...document.querySelectorAll(".mc-lrow")].map((r) => [r.querySelector(".mc-lrow-label").textContent, r.querySelectorAll(".mc-lcell:not(.is-empty)").length, r.querySelectorAll(".mc-lcell.is-empty").length]), names: [...document.querySelectorAll(".mc-lrow:first-child .mc-lcell-name")].map((n) => n.textContent), dl: document.querySelectorAll(".mc-lcell-dl").length }));
-  ok(lw.rows.map((r) => r.join(":")).join() === "WORDMARK:4:0,MARK:4:0,APP ICON:3:1" && lw.names.join() === "Yellow on ink,Ink on yellow,White on plum,Plum on white" && lw.dl === 11, "the logos window: wordmark, mark and app icon in their colourways, each with its download", lw.rows.map((r) => r.join(":")).join(" "));
+  const lw = await page.evaluate(() => ({ rows: [...document.querySelectorAll(".kl-row")].map((r) => [r.querySelector(".kl-id b").textContent, r.querySelectorAll(".kl-tile:not(.is-add)").length, r.querySelectorAll(".kl-tile.is-add").length]), names: [...document.querySelectorAll(".kl-row:first-child .kl-cell:has(.kl-tile:not(.is-add)) figcaption")].map((n) => n.textContent.trim()), dl: document.querySelectorAll(".kl-dl").length }));
+  ok(lw.rows.map((r) => r.join(":")).join() === "Wordmark:4:1,Mark:4:1,App icon:3:1" && lw.names.join() === "Yellow on ink,Ink on yellow,White on plum,Plum on white" && lw.dl === 11, "the logos window: wordmark, mark and app icon in their colourways (a tile to add a file to each), each with its download", lw.rows.map((r) => r.join(":")).join(" "));
   await shot("window-logos");
   await page.mouse.click(8, 600);
   await page.waitForTimeout(350);
@@ -250,11 +274,13 @@ try {
   ok((await winNow()).win === "type", "a click anywhere on a bento opens it");
   await closeAll();
 
-  // ---- every bento has its window, and what the seven sections held before is in them
+  // ---- every bento of every workspace has its window, with what the sections held before in it
   const windows = [
-    ["kit", "palette", "Palette", true], ["kit", "logos", "Logos", true], ["kit", "type", "Type", true], ["kit", "voice", "Voice", true], ["kit", "rules", "Rules", true], ["kit", "product", "Product and pictures", false],
+    ["kit", "palette", "Palette", true], ["kit", "logos", "Logos", true], ["kit", "type", "Type", true], ["kit", "patterns", "Patterns", false], ["kit", "rules", "Rules", false],
     ["idea", "brief", "The brief", false], ["idea", "mood", "Moodboard", false], ["idea", "story", "The story", false], ["idea", "dirs", "Directions", false],
-    ["content", "week", "This week", false], ["content", "motion", "Motion", false], ["content", "posts", "Posts", false], ["content", "export", "Export", false],
+    ["studio", "photo", "New shoot", false], ["studio", "ugc", "UGC story", true], ["studio", "gfx", "Motion graphics", false], ["studio", "prod", "Product", false],
+    ["create", "mock", "New mockup", false], ["create", "soc", "Posts", false], ["create", "vid", "Motion", false], ["create", "weekstrip", "This week", false],
+    ["book", "bookview", "Brand guidelines", false], ["book", "audit", "Brand guard audit", false], ["book", "handoff", "Export the kit", false],
   ];
   const wrong = [];
   for (const [sp, cls, title, adv] of windows) {
@@ -264,21 +290,19 @@ try {
     if (w.title !== title || w.adv !== adv || !w.filled) wrong.push(`${cls}: ${JSON.stringify(w)}`);
   }
   await closeAll();
-  ok(wrong.length === 0, "every bento opens its window, with an Advanced switch where there are finer controls: palette, logos, type, voice, rules", wrong.join(" | ") || `${windows.length} windows`);
+  ok(wrong.length === 0, "every bento opens its window, with an Advanced switch where there are finer controls: palette, logos, type, the UGC story", wrong.join(" | ") || `${windows.length} windows`);
   await space("kit");
   await openBento("logos");
   await page.locator(".mc-switch").click();
   await page.waitForTimeout(500);
-  ok((await page.locator(".mc-lfile").count()) === 11 && (await page.locator(".mc-lcell.is-empty").count()) >= 1, "the logos window's Advanced lists the files: name, kind, colour, grounds", `${await page.locator(".mc-lfile").count()} files`);
+  await page.waitForSelector(".kl-file");
+  ok((await page.locator(".kl-file").count()) === 11 && (await page.locator(".kl-file .kl-f-name").count()) === 11 && (await page.locator('.kl-file select[aria-label="What it is"]').count()) === 11 && (await page.locator(".kl-file .kl-f-ground").count()) === 11, "the logos window's Advanced lists the files: name, kind, colour, grounds", `${await page.locator(".kl-file").count()} files`);
   await page.locator(".mc-switch").click();
   await closeAll();
 
   // ---- windows stack: the editor, its variations over it, and back
-  await space("content");
-  await page.locator(".mc-post").first().click();
-  await page.locator('.mc-win[data-win="editor"]').waitFor();
-  await page.waitForTimeout(700);
-  await page.locator(".mc-win-tools button", { hasText: "Variations" }).click();
+  await openEditor();
+  await page.locator(".mc-win .mc-barkey", { hasText: "Variations" }).click();
   await page.waitForTimeout(500);
   let stacked = await winNow();
   ok(stacked.win === "variations" && stacked.stack.join() === "editor", "a window opens over another", JSON.stringify(stacked));
@@ -299,8 +323,8 @@ try {
 
   // ---- the editor: a post opens in it, in a window over the content; pick, retype, move, undo and redo
   await openEditor();
-  const ew = await page.evaluate(() => ({ title: document.querySelector(".mc-win-head h2").textContent, keys: [...document.querySelectorAll(".mc-win-tools .key")].map((k) => k.textContent.trim()), canvas: !!document.querySelector(".mc-win .mc-stage-canvas"), layers: document.querySelectorAll(".mc-win .mc-layer").length }));
-  ok(/launch/i.test(ew.title) && ew.keys.includes("Variations") && ew.keys.includes("Animate") && ew.canvas && ew.layers >= 8, "a post opens in the layered editor, in its window: the post's name, Variations and Animate beside it", `${ew.title} · ${ew.keys.join(", ")} · ${ew.layers} layers`);
+  const ew = await page.evaluate(() => ({ title: document.querySelector(".mc-win-head h2").textContent, name: (document.querySelector(".mc-win .mc-name input") ?? document.querySelector(".mc-win .mc-name"))?.value, keys: [...document.querySelectorAll(".mc-win .mc-barkey")].map((k) => k.textContent.trim()), canvas: !!document.querySelector(".mc-win .mc-stage-canvas"), layers: document.querySelectorAll(".mc-win .mc-layer").length }));
+  ok(ew.title === "Post editor" && /launch/i.test(ew.name) && ew.keys.includes("Variations") && ew.keys.includes("Animate") && ew.canvas && ew.layers >= 8, "a post opens in the layered editor, in its window: the post's name, Variations and Animate beside it", `${ew.title} · ${ew.name} · ${ew.keys.join(", ")} · ${ew.layers} layers`);
   const fitsIn = await page.evaluate(() => { const w = document.querySelector(".mc-win").getBoundingClientRect(); const t = document.querySelector(".mc-win .mc-stage-tools").getBoundingClientRect(); return { tools: Math.round(t.bottom), win: Math.round(w.bottom), bar: Math.round(document.querySelector("#assistant").getBoundingClientRect().top) }; });
   ok(fitsIn.tools <= fitsIn.win && fitsIn.win <= fitsIn.bar, "the whole editor is in its window, above Brioche's bar: the canvas, the layers, the keys under it", JSON.stringify(fitsIn));
   await shot("window-editor");
@@ -335,7 +359,7 @@ try {
   ok(Math.abs((await S()).layers.find((l) => l.id === "headline").y - y1) < 0.001, "Ctrl Shift Z does it again");
 
   // ---- another format: an edit writes that format's own layout
-  await page.locator(".mc-stage-formats .segment button", { hasText: "9:16" }).click();
+  await page.locator(".mc-stage-formats .mc-seg", { hasText: "9:16" }).click();
   await page.waitForTimeout(500);
   f = await frame();
   await page.mouse.click(f.x + f.width * 0.3, f.y + f.height * 0.46);
@@ -346,7 +370,7 @@ try {
   s = await S();
   ok(s.layer === "sub" && s.formats["9:16"].layers.sub.y !== undefined && Math.abs(s.layers.find((l) => l.id === "sub").y - subY) < 0.0001, "an edit in 9:16 writes the 9:16 layout and leaves the portrait's alone");
   await shot("story");
-  await page.locator(".mc-stage-formats .segment button", { hasText: "4:5" }).click();
+  await page.locator(".mc-stage-formats .mc-seg", { hasText: "4:5" }).click();
 
   // ---- a picture and a colour
   await page.locator(".mc-layer", { hasText: "The app" }).first().click();
@@ -373,10 +397,10 @@ try {
   ok((await page.locator(".mc-ptabs button").allInnerTexts()).join() === "Product,Pictures,Make a picture,Shoot", "its tabs: the product, its pictures, making one, the shoot");
   await page.locator(".mc-ptabs button", { hasText: "Pictures" }).click();
   await page.waitForTimeout(400);
-  await page.locator(".mc-filters button", { hasText: "Mascot" }).first().click();
+  await page.locator(".mc-pic-top .mc-fchip", { hasText: "Mascot" }).first().click();
   const n0 = (await S()).layers.length;
-  await page.locator(".mc-asset").first().hover();
-  await page.locator(".mc-asset-keys .key").first().click();
+  await page.locator(".mc-gal").first().hover();
+  await page.locator('.mc-gal-keys [aria-label="Put it in the design open"]').first().click();
   await page.waitForTimeout(600);
   s = await S();
   ok(s.layers.length === n0 + 1, "a picture can be put in the open design", `${n0} -> ${s.layers.length}`);
@@ -384,24 +408,24 @@ try {
   await page.waitForTimeout(500);
   ok((await winNow()).win === "editor" && (await page.locator(".mc-win .mc-stage-canvas").count()) === 1, "closing the product window brings the editor back");
   const added = s.layer;
-  await page.locator(".mc-layer.is-on .mc-layer-keys .key").nth(3).click();
+  await page.locator('.mc-layer.is-on [aria-label="Down one"]').click();
   await page.waitForTimeout(400);
   s = await S();
   ok(s.layers.findIndex((l) => l.id === added) === s.layers.length - 2, "a layer can go down in the stack");
   await page.keyboard.press("Control+d");
   await page.waitForTimeout(500);
   ok((await S()).layers.length === n0 + 2, "Ctrl D duplicates it");
-  await page.locator(".mc-layer.is-on .mc-layer-keys .key").nth(0).click();
+  await page.locator('.mc-layer.is-on [aria-label="Hide in this format"]').click();
   await page.waitForTimeout(400);
   ok((await S()).layers.some((l) => l.hidden), "a layer can be hidden");
   await page.keyboard.press("Delete");
   await page.waitForTimeout(500);
   ok((await S()).layers.length === n0 + 1, "Delete removes the picked layer");
-  await page.locator(".mc-layers .card-tools .key").first().click();
+  await page.locator('.mc-add-tile[aria-label="Add text"]').click();
   await page.waitForTimeout(500);
   const tid = (await S()).layer;
   await page.locator(".mc-inspector textarea.mc-text").first().fill("A new line of words");
-  await page.locator(".mc-align .key").nth(1).click();
+  await page.locator('.mc-inspector [aria-label^="Centre across"]').click();
   await page.waitForTimeout(400);
   const t = (await S()).layers.find((l) => l.id === tid);
   ok(t.type === "text" && Math.abs(t.x + t.w / 2 - 0.5) < 0.2, "a text layer can be added and centred across the safe frame", `x=${t.x} w=${t.w}`);
@@ -417,20 +441,20 @@ try {
   await page.mouse.up();
   await page.waitForTimeout(500);
   ok((await S()).layers.find((l) => l.id === tid).w !== w0, "a corner handle resizes it");
-  ok(/notes?|Nothing to flag/.test(await page.locator(".mc-guard summary").innerText()), "the brand guard reports");
+  ok(/notes?|Nothing to flag/.test(await page.locator(".mc-guard-box .mc-head-sub").innerText()), "the brand guard reports");
   await shot("studio");
 
   // ---- the kit: a colour changed in the palette window, a rule added in the rules window
   await space("kit");
   await openBento("palette");
-  const colour = (hex) => page.locator(".mc-pblock input[type=color]").nth(0).evaluate((el, v) => { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); }, hex);
+  const colour = (hex) => page.locator(".kp-card input[type=color]").nth(0).evaluate((el, v) => { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); }, hex);
   await colour("#f4ff70");
   await page.waitForTimeout(600);
   ok((await S()).palette[0] === "#F4FF70", "a palette colour can be changed");
   await closeAll();
   await openBento("rules");
   const rules = (await S()).rules;
-  await page.locator(".mc-w.is-rules .mc-add").first().click();
+  await page.locator(".mc-w.is-rules .mc-add-prompt").first().click();
   await page.waitForTimeout(500);
   ok((await S()).rules === rules + 1, "a rule can be added");
   await closeAll();
@@ -444,15 +468,15 @@ try {
   await space("idea");
   await openBento("story");
   const e0 = (await S()).entry;
-  await page.locator(".mc-node").nth(2).click();
+  await page.locator(".mc-tl-row").nth(2).click();
   await page.waitForTimeout(500);
   const e1 = (await S()).entry;
   ok(e1 && e1 !== e0, "a story step can be opened", e1);
-  await page.locator(".mc-strip").focus();
-  await page.keyboard.press("ArrowLeft");
+  await page.locator(".mc-tl").focus();
+  await page.keyboard.press("ArrowUp");
   await page.waitForTimeout(400);
   ok((await S()).entry !== e1, "the arrows step back");
-  await page.locator(".mc-story-add input").fill("A note from the test");
+  await page.locator(".mc-compose input").fill("A note from the test");
   await page.keyboard.press("Enter");
   await page.waitForTimeout(500);
   ok(await store((m) => m.macaron.brand.body.history.some((x) => x.title === "A note from the test" && x.kind === "note")), "a note of one's own joins the story");
@@ -460,24 +484,25 @@ try {
 
   // ---- variations: the editor's key opens them over it; make one, revise a copy variation on its card, compare two
   await openEditor();
-  await page.locator(".mc-win-tools button", { hasText: "Variations" }).click();
+  await page.locator(".mc-win .mc-barkey", { hasText: "Variations" }).click();
   await page.locator('.mc-win[data-win="variations"]').waitFor();
   await page.waitForTimeout(700);
   wn = await winNow();
   ok(wn.win === "variations" && wn.stack.join() === "editor", "the Variations key opens them over the editor", JSON.stringify(wn));
   const count0 = (await S()).count;
-  await page.locator(".mc-var-new button", { hasText: "Colour" }).click();
+  await page.locator(".mc-vmake .mc-fchip", { hasText: "Colour" }).click();
   await page.waitForTimeout(900);
   ok((await S()).count === count0 + 1, "making a colour variation adds a design", `${count0} -> ${(await S()).count}`);
   const copyCard = page.locator('.mc-var[data-kind="copy"]');
+  await copyCard.locator('[aria-label^="Revise it"]').click();
   const area = copyCard.locator(".mc-rev", { hasText: "Headline" }).locator("textarea");
   await area.fill("One sentence in.\nA *whole* film out.");
   await area.blur();
   await page.waitForTimeout(700);
   const rev = await page.evaluate(async () => (await import("/js/macaron.js")).macaron.brand.body.designs.find((d) => d.id === "launch-copy").layers.find((l) => l.id === "headline").text);
   ok(rev.includes("whole"), "a variation's copy can be revised on its card", rev.replace(/\n/g, " / "));
-  await copyCard.locator(".mc-var-keys .key").nth(1).click();
-  await page.locator('.mc-var[data-kind="colour"]').first().locator(".mc-var-keys .key").nth(1).click();
+  await copyCard.locator('[aria-label="Compare with another"]').click();
+  await page.locator('.mc-var[data-kind="colour"]').first().locator('[aria-label="Compare with another"]').click();
   await page.waitForTimeout(700);
   ok((await page.locator(".mc-compare figure").count()) === 2, "two variations can be compared side by side");
   await shot("variations");
@@ -487,17 +512,18 @@ try {
   await closeAll();
 
   // ---- the posts: filters, groups, a status
-  await space("content");
-  await openBento("posts");
-  await page.locator(".mc-filter-row", { hasText: "Status" }).locator("button", { hasText: "Review" }).click();
+  await space("create");
+  await openBento("soc");
+  const statusChip = page.locator(".mc-fgroup:not(.is-group)", { hasText: /^Status/ }).locator(".mc-fchip", { hasText: "In review" });
+  await statusChip.click();
   await page.waitForTimeout(500);
-  const shown = await page.locator(".mc-item").count();
-  ok(shown >= 2 && shown <= 5, "content can be filtered by status", `${shown} shown`);
-  await page.locator(".mc-filter-row", { hasText: "Status" }).locator("button", { hasText: "All" }).click();
-  await page.locator(".mc-filter-row", { hasText: "Group by" }).locator("button", { hasText: "Status" }).click();
+  const shown = await page.locator(".mc-pst").count();
+  ok(shown >= 2 && shown <= 5, "posts can be filtered by status", `${shown} shown`);
+  await statusChip.click();
+  await page.locator(".mc-fgroup.is-group").locator("button", { hasText: "Status" }).click();
   await page.waitForTimeout(500);
-  ok((await page.locator(".mc-group").count()) === 4, "content can be grouped by status (a board)");
-  await page.locator(".mc-filter-row", { hasText: "Group by" }).locator("button", { hasText: "Nothing" }).click();
+  ok((await page.locator(".mc-pgroup").count()) === 4, "posts can be grouped by status (a board)");
+  await page.locator(".mc-fgroup.is-group").locator("button", { hasText: "Nothing" }).click();
   await shot("window-posts");
   await closeAll();
 
@@ -510,37 +536,17 @@ try {
   await page.waitForTimeout(2500);
   ok((await S()).count === count0 + 1, "after a reload the work is there");
   wn = await winNow();
-  ok(wn.space === "content" && wn.win === null, "the workspace that was open is open again, with no window over it", JSON.stringify(wn));
+  ok(wn.space === "create" && wn.win === null, "the workspace that was open is open again, with no window over it", JSON.stringify(wn));
   await openEditor();
-  await page.locator(".mc-stage-tools button", { hasText: "PNG 4:5" }).click();
+  await page.locator(".mc-export .mc-primary", { hasText: "Export 4:5" }).click();
   await page.waitForTimeout(3500);
   const exported = await page.evaluate(async () => (await import("/js/macaron.js")).macaron.brand.body.exports[0]);
   const pic = exported ? await png(exported.url) : null;
   ok(exported?.kind === "png" && pic?.w === 1080 && pic?.h === 1350, "a PNG export is kept, 1080×1350", pic ? JSON.stringify(pic) : "none");
   if (exported) await writeFile(join(out, "export-4x5.png"), Buffer.from(await page.evaluate(async (u) => { const b = new Uint8Array(await (await fetch(u)).arrayBuffer()); let x = ""; for (let i = 0; i < b.length; i += 32768) x += String.fromCharCode(...b.subarray(i, i + 32768)); return btoa(x); }, exported.url), "base64"));
 
-  // ---- Download all: this week's plan as pictures, one after the other (MP4 off, the plan's scope on)
-  await space("content");
-  await openBento("export");
-  await page.locator(".mc-w.is-export .mc-xchip", { hasText: "MP4" }).click();
-  await page.locator(".mc-w.is-export .segment button", { hasText: "This week" }).click();
-  await page.waitForTimeout(300);
-  const plan = await page.evaluate(async () => {
-    const m = await import("/js/macaron.js");
-    const { ownFormats } = await import("/js/design.js");
-    const pool = m.macaron.brand.body.designs.filter((d) => !d.variant && d.plan?.day);
-    return { jobs: pool.reduce((n, d) => n + (d.motion ? 1 : ownFormats(d).length), 0), ids: pool.map((d) => d.id), had: m.macaron.brand.body.exports.length, kinds: m.macaron.exportKinds, scope: m.macaron.exportScope };
-  });
-  ok(plan.ids.join() === "launch,brioche,intro" && plan.kinds.png && !plan.kinds.mp4 && plan.scope === "week" && plan.jobs >= 5, "the export window picks the kinds and the posts: pictures only, this week's plan", `${plan.jobs} files from ${plan.ids.join(", ")}`);
-  await page.locator(".mc-w.is-export .mc-dlall").click();
-  const sawProgress = await page.waitForFunction(() => /\d+ \/ \d+/.test(document.querySelector(".mc-w.is-export .mc-dlall")?.textContent ?? ""), null, { timeout: 8000 }).then(() => true, () => false);
-  await page.waitForFunction(async () => { const m = await import("/js/macaron.js"); return !m.macaron.bulk; }, null, { timeout: 90000 });
-  await page.waitForTimeout(1200);
-  const made3 = await store((m) => m.macaron.brand.body.exports.length);
-  ok(made3 === plan.had + plan.jobs, "Download all makes every picture of the plan, in every layout a post has of its own", `${plan.had} -> ${made3} (${plan.jobs} expected)${sawProgress ? ", with its progress on the key" : ""}`);
-  ok((await page.locator(".mc-w.is-export .mc-export").count()) >= Math.min(40, made3), "and the window lists what has left");
-  await closeAll();
-
+  // (Create has an Export window, "Download all", that makes every post of a plan as files (exportWin in macaron-content.js), but no key opens it
+  // since the five workspaces: it is not tried here until one does)
   // ---- the other kinds a post can leave as: a JPG, and a short piece as a WebM
   const jpg = await page.evaluate(async () => {
     const m = await import("/js/macaron.js");
@@ -559,20 +565,29 @@ try {
     return r && { container: r.container, url: r.url, d: r.duration, sound: r.sound, head, type, kind: m.macaron.brand.body.exports[0].kind };
   });
   ok(webm?.container === "webm" && /\.webm$/.test(webm.url) && webm.head.join() === "26,69,223,163" && /video\/webm/.test(webm.type) && Math.abs(webm.d - 2) < 0.1 && webm.kind === "webm", "a motion piece can leave as a WebM: an EBML file of video/webm, its length the piece's", webm && JSON.stringify([webm.container, webm.d, webm.head, webm.type]));
-  await space("content");
-  await openBento("motion");
-  ok((await page.locator(".mc-w.is-motion .is-render .segment button").allInnerTexts()).filter((x) => /MP4|WEBM/.test(x)).join() === "MP4,WEBM", "the motion window renders either kind");
+  await space("create");
+  await openBento("vid");
+  ok((await page.locator(".mc-w.is-motion .mc-mrender-foot button").allInnerTexts()).map((x) => x.trim()).filter((x) => /^(MP4|WEBM)$/.test(x)).join() === "MP4,WEBM", "the motion window renders either kind");
   await closeAll();
 
   // ---- Brioche, through the server: the stand-in writer answers as a careless model would (an action of the open
   // workspace, and one of another). What the server sends the model is the open workspace's brief, tool and things only,
   // and what is answered that does not belong there is dropped, by the server and by the page.
+  // Her answer to the last words said to her, waited for: a message of hers after them, and she is not busy. (Playwright's waitForFunction
+  // answers at its first call when its function is async, whatever that says: the module is taken first, and the function asks about it at once.)
+  const answered = async (words) => {
+    await page.evaluate(async () => { window.__macaron = (await import("/js/macaron.js")).macaron; });
+    await page.waitForFunction((words) => {
+      const { messages, busy } = window.__macaron.chat;
+      const at = messages.findLastIndex((x) => x.role === "user" && (words === null || x.text === words));
+      return at >= 0 && messages.at(-1).role === "assistant" && !busy;
+    }, words ?? null, { timeout: 20000 });
+  };
   const typeIn = async (text) => {
-    const n0 = await store((m) => m.macaron.chat.messages.length);
     await page.locator("#assistant .pill-field, #assistant .chat-input").first().click();
     await page.keyboard.type(text);
     await page.keyboard.press("Enter");
-    await page.waitForFunction(async (n) => { const m = await import("/js/macaron.js"); return m.macaron.chat.messages.length >= n + 2 && !m.macaron.chat.busy; }, n0, { timeout: 20000 });
+    await answered(text);
     return store((m) => m.macaron.chat.messages.at(-1));
   };
   const fold = () => page.locator('#assistant [aria-label="Fold the conversation"]').click({ timeout: 2000 }).catch(() => {});
@@ -590,30 +605,25 @@ try {
   let e2e = await through("idea", "Try a night direction.");
   ok(e2e.count === 1 && e2e.req.tools.length === 1 && e2e.req.tools[0].name === "macaron_answer" && opsIn(e2e.req).includes("write_brief") && !opsIn(e2e.req).some((o) => ["edit_text", "set_layer", "set_colour"].includes(o)), "through the server in Design idea: the model is given Design idea's tool, with its actions and no other workspace's", opsIn(e2e.req).join());
   ok(/THE OPEN WORKSPACE: Design idea/.test(e2e.req.system) && !/edit_text|set_layer|add_colourway/.test(e2e.req.system) && /WORKSPACE OPEN: Design idea/.test(e2e.req.prompt) && /DIRECTIONS \(ids\)/.test(e2e.req.prompt) && !/Layers, bottom to top|Colourways saved/.test(e2e.req.prompt), "its brief and what it is told are the idea's: the directions, no layers, no kit");
-  ok((await store((m) => m.macaron.brand.body.directions.map((d) => d.name).join())) === `${directions0},Stand-in direction` && (e2e.message.did ?? []).join() === "Direction: Stand-in direction" && e2e.message.undo === true && (await store((m) => m.designById("launch").status)) !== "approved-by-leak", "her answer is made, and what belongs to Content is not", JSON.stringify(e2e.message).slice(0, 200));
+  ok((await store((m) => m.macaron.brand.body.directions.map((d) => d.name).join())) === `${directions0},Stand-in direction` && (e2e.message.did ?? []).join() === "Direction: Stand-in direction" && e2e.message.undo === true && (await store((m) => m.designById("launch").status)) !== "approved-by-leak", "her answer is made, and what belongs to Create is not", JSON.stringify(e2e.message).slice(0, 200));
   await undoLast();
   await fold();
   e2e = await through("kit", "A red accent, please.");
   ok(opsIn(e2e.req).includes("add_colourway") && !opsIn(e2e.req).includes("edit_text") && /THE OPEN WORKSPACE: Brand kit/.test(e2e.req.system) && /Palette \(ids\)/.test(e2e.req.prompt) && /Pairs that do not read/.test(e2e.req.prompt) && !/Layers, bottom to top|DIRECTIONS/.test(e2e.req.prompt), "through the server in Brand kit: the kit's tool and the kit's things (palette ids, rules, the pairs that do not read)");
-  ok((await store((m) => m.macaron.brand.body.kit.palette.some((p) => p.name === "Stand-in red" && p.hex === "#C0392B"))) && (await S()).layers.find((l) => l.id === "headline").text !== "leaks", "a colour added; the layer's text, a Content action, is left alone");
+  ok((await store((m) => m.macaron.brand.body.kit.palette.some((p) => p.name === "Stand-in red" && p.hex === "#C0392B"))) && (await S()).layers.find((l) => l.id === "headline").text !== "leaks", "a colour added; the layer's text, a Create action, is left alone");
   await undoLast();
   await fold();
-  e2e = await through("content", "Rename this one.");
-  ok(opsIn(e2e.req).includes("edit_text") && opsIn(e2e.req).includes("plan_design") && !opsIn(e2e.req).includes("write_brief") && /THE OPEN WORKSPACE: Content/.test(e2e.req.system) && /THE DESIGN OPEN: id launch/.test(e2e.req.prompt) && /Layers, bottom to top/.test(e2e.req.prompt), "through the server in Content: the design's tool and the design's layers, and its week and motion", opsIn(e2e.req).length + " actions");
-  ok((await store((m) => m.designById("launch").name)) === "Renamed by the stand-in" && (await store((m) => m.macaron.brand.body.brief.pitch)) !== "leaks", "the design is renamed; the brief, an Design idea action, is left alone");
+  const designs2 = await store((m) => m.macaron.brand.body.designs.length);
+  e2e = await through("create", "A leaderboard for the sale, please.");
+  ok(opsIn(e2e.req).includes("add_design") && opsIn(e2e.req).includes("propose_mockup") && opsIn(e2e.req).includes("plan_design") && !opsIn(e2e.req).includes("write_brief") && !opsIn(e2e.req).includes("set_colour") && /THE OPEN WORKSPACE: Create/.test(e2e.req.system) && /WORKSPACE OPEN: Create/.test(e2e.req.prompt) && /THE DESIGN OPEN: id launch/.test(e2e.req.prompt), "through the server in Create: the model is given Create's tool and brief, and the design that is open", `${opsIn(e2e.req).length} actions`);
+  await page.waitForTimeout(600);
+  const made4 = await store((m) => ({ designs: m.macaron.brand.body.designs.length, win: m.macaron.win, pitch: m.macaron.brand.body.brief.pitch }));
+  ok(made4.designs === designs2 + 1 && made4.win === "mockup" && made4.pitch !== "leaks" && e2e.message.undo === true, "her banner is made and the mockup window is open; the brief, a Design idea action, is left alone", JSON.stringify(made4));
+  await closeAll();
   await undoLast();
-  ok((await store((m) => m.designById("launch").name)) === "Launch · Direct a shot", "and one Undo takes it back");
+  ok((await store((m) => m.macaron.brand.body.designs.length)) === designs2, "and one Undo takes the banner back");
   await fold();
-  // a tool of her panel goes through the server with what it asks of her
-  await space("idea");
-  let nlog = (await writerLog()).length;
-  await page.locator('.mc-tool[data-tool="direction"]').click();
-  await page.waitForFunction(async () => { const m = await import("/js/macaron.js"); return m.macaron.chat.messages.at(-1)?.role === "assistant" && !m.macaron.chat.busy; }, null, { timeout: 20000 });
-  const toolReq = (await writerLog()).slice(nlog).at(-1);
-  ok(/picked the tool New direction/.test(toolReq.prompt) && /Give me a new direction for the mark and the look\./.test(toolReq.prompt), "a tool's own instructions go to the model with its words", toolReq.prompt.slice(-200).replace(/\n/g, " "));
-  await undoLast();
-  await fold();
-  ok((await store((m) => m.macaron.brand.body.directions.map((d) => d.name).join()) === directions0), "Undo leaves the directions as they were");
+  ok((await store((m) => m.macaron.brand.body.directions.map((d) => d.name).join()) === directions0), "the directions are as they were");
 
   // ---- Brioche with the model's answer stood in for at the page: she is told about the workspace that is open, what she
   // does is one step, and one Undo takes it back. The page does not trust her: what belongs to another workspace is left alone.
@@ -622,8 +632,8 @@ try {
   await page.route("**/api/macaron/assist", (route) => { asked.push(route.request().postDataJSON()); route.fulfill({ json: reply }); });
   const say = async (text) => { await typeIn(text); return asked.at(-1); };
 
-  // Content: the design open, as before
-  await space("content");
+  // Create: the design open, as before
+  await space("create");
   await page.evaluate(async () => { const m = await import("/js/macaron.js"); m.openDesign("launch"); m.setFormat("4:5"); });
   await page.waitForTimeout(500);
   const before = await S();
@@ -634,9 +644,9 @@ try {
   s = await S();
   ok(s.layers.find((l) => l.id === "headline").text === "Say it.\n*Done.*" && s.bg === "yellow" && s.status === "review", "Brioche's answer is applied: words, ground, status");
   ok(s.layers.find((l) => l.id === "wordmark").logo === "wordmark-ink" && s.layers.find((l) => l.id === "headline").colorRole === "ink", "and the kit is applied: the logo and the type read on yellow");
-  ok((await store((m) => m.designById("launch").plan?.day)) === "tue" && (await store((m) => m.macaron.brand.body.brief.pitch)) !== "not here", "a day for a post is Content's to give; the brief is not, there");
+  ok((await store((m) => m.designById("launch").plan?.day)) === "tue" && (await store((m) => m.macaron.brand.body.brief.pitch)) !== "not here", "a day for a post is Create's to give; the brief is not, there");
   ok(s.past === before.past + 1, "it is one step in the undo history", `${before.past} -> ${s.past}`);
-  ok(req.space === "content" && req.brand.space === "content" && req.brand.design?.id === "launch" && req.brand.designs.length >= 7 && req.brand.directions === undefined && req.brand.colourways === undefined && req.brand.rules === undefined, "she is told about Content: the design open and the others, not the directions or the kit's colourways", Object.keys(req.brand).join(","));
+  ok(req.space === "create" && req.brand.space === "create" && req.brand.design?.id === "launch" && req.brand.designs.length >= 7 && req.brand.directions === undefined && req.brand.colourways === undefined && req.brand.rules === undefined, "she is told about Create: the design open and the others, not the directions or the kit's colourways", Object.keys(req.brand).join(","));
   await undoLast();
   s = await S();
   ok(s.layers.find((l) => l.id === "headline").text === before.layers.find((l) => l.id === "headline").text && s.bg === before.bg && s.status === before.status && s.past === before.past, "one Undo takes all of it back");
@@ -655,7 +665,7 @@ try {
   let k1 = await kitState();
   ok(k1.palette.length === kit0.palette.length + 1 && k1.palette.includes("plum:Deep plum:#49378B") && k1.palette.at(-1).endsWith(":Jam:#B0305C") && k1.colours === kit0.colours + 1, "Brand kit: a colour added, another renamed", k1.palette.at(-1));
   ok(k1.words === "warm,plain" && k1.summary === "Warm and plain." && k1.rules === kit0.rules + 1 && k1.ways === 1, "the voice, a rule and a colourway", `${k1.words} · ${k1.rules} rules · ${k1.ways} colourway`);
-  ok(k1.status === kit0.status && (await S()).layers.find((l) => l.id === "headline").size === before.layers.find((l) => l.id === "headline").size, "a status and a layer are Content's: left alone in Brand kit");
+  ok(k1.status === kit0.status && (await S()).layers.find((l) => l.id === "headline").size === before.layers.find((l) => l.id === "headline").size, "a status and a layer are Create's: left alone in Brand kit");
   ok(k1.past === kit0.past + 1, "all of it is one step", `${kit0.past} -> ${k1.past}`);
   ok(kreq.space === "kit" && kreq.brand.space === "kit" && kreq.brand.rules.length >= 9 && kreq.brand.kit.palette.length === kit0.palette.length && kreq.brand.design === undefined && kreq.brand.brief === undefined && kreq.brand.lowContrast.length >= 1, "she is told about the kit: its rules, its colourways and the pairs that do not read; not a design or the brief", Object.keys(kreq.brand).join(","));
   await undoLast();
@@ -674,55 +684,49 @@ try {
   const ireq = await say("Write the brief and try a night direction.");
   const idea1 = await ideaState();
   ok(idea1.pitch === "A warm home for films." && idea1.tone === "Plain." && idea1.goals === "Feel welcoming,Make it simple,Stay playful", "Design idea: the brief written, three goals at most, only the brief's own fields", `${idea1.pitch} · ${idea1.goals}`);
-  ok(idea1.dirs === "Warm and bold,Quiet craft*,After hours,Midnight jam" && idea1.history === idea0.history + 3 && idea1.status === idea0.status, "a direction added, another picked (the unknown id left alone), a note in the story; a status is Content's", idea1.dirs);
+  ok(idea1.dirs === "Warm and bold,Quiet craft*,After hours,Midnight jam" && idea1.history === idea0.history + 3 && idea1.status === idea0.status, "a direction added, another picked (the unknown id left alone), a note in the story; a status is Create's", idea1.dirs);
   ok(idea1.past === idea0.past + 1, "all of it is one step", `${idea0.past} -> ${idea1.past}`);
   ok(ireq.space === "idea" && ireq.brand.space === "idea" && ireq.brand.directions.length === 3 && ireq.brand.refs.length >= 6 && ireq.brand.story.length >= 5 && ireq.brand.design === undefined && ireq.brand.rules === undefined, "she is told about the idea: the brief, the directions, the references and the story; not a design or the kit's rules", Object.keys(ireq.brand).join(","));
   await undoLast();
   ok(JSON.stringify(await ideaState()) === JSON.stringify(idea0), "one Undo takes the brief, the direction, the pick and the note back, the story too");
   await fold();
 
-  // her tools: the words go to her with the tool's id, in the workspace they belong to; the others are the page's own
-  await space("kit");
-  reply = { reply: "A colourway.", actions: [{ op: "add_colourway", name: "Plum on white", ground: "white", logo: "wordmark-plum" }] };
+  // the keys of the windows (her panel has no tools any more): a key in a window that has Brioche draft something sends her its words and the
+  // id of what it is for, in the workspace it belongs to; the others are the page's own: the kit's export, the moodboard's pictures
+  await space("idea");
+  await openBento("brief");
+  reply = { reply: "A tone.", actions: [{ op: "write_brief", fields: { tone: "Drafted by her key." } }] };
   let n = asked.length;
-  await page.locator('.mc-tool[data-tool="colourway"]').click();
-  await page.waitForFunction(async () => { const m = await import("/js/macaron.js"); return m.macaron.chat.messages.at(-1)?.role === "assistant" && !m.macaron.chat.busy; }, null, { timeout: 15000 });
+  await page.locator(".mc-win-foot .mc-draft").click();
+  await answered();
   let treq = asked.at(-1);
-  ok(asked.length === n + 1 && treq.space === "kit" && treq.preset === "colourway" && /^Make a colourway/.test(treq.messages.at(-1).text), "a tool sends Brioche its words and its id, in its workspace", `${treq.preset}: ${treq.messages.at(-1).text.slice(0, 40)}`);
-  ok((await kitState()).ways === 1, "and her answer is made");
+  ok(asked.length === n + 1 && treq.space === "idea" && treq.preset === "brief" && /^Write the brief/.test(treq.messages.at(-1).text), "a key in a window sends Brioche its words and the id of what it is for, in its workspace", `${treq.preset}: ${treq.messages.at(-1).text.slice(0, 40)}`);
+  ok((await ideaState()).tone === "Drafted by her key.", "and her answer is made");
+  await closeAll();
   await undoLast();
   await fold();
-  await page.locator('.mc-tool[data-tool="contrast"]').click();
+  ok(JSON.stringify(await ideaState()) === JSON.stringify(idea0), "one Undo takes it back");
+  await space("kit");
+  await page.locator('.is-palette .mc-expand[aria-label="Export the kit"]').click();
   await page.waitForTimeout(600);
-  wn = await winNow();
-  ok(wn.win === "palette" && (await page.locator(".mc-switch").getAttribute("aria-checked")) === "true" && (await page.locator(".mc-pair-chip").count()) === 6, "Check contrast opens the palette with Advanced on: how colours read on each other", JSON.stringify(wn));
-  await closeAll();
-  await page.evaluate(async () => { const m = await import("/js/macaron.js"); m.macaron.adv = { ...m.macaron.adv, palette: false }; });
-  await page.locator('.mc-tool[data-tool="export"]').click();
-  await page.waitForTimeout(600);
-  ok((await winNow()).win === "exportkit" && (await page.locator(".mc-xkey").count()) === 3, "Export the kit opens its window: the palette as CSS, the kit as data, every logo file");
+  ok((await winNow()).win === "exportkit" && (await page.locator(".kx-card").count()) === 3 && (await page.locator(".kx-dl:not([disabled])").count()) >= 2, "the palette's Export the kit key opens its window: the palette as CSS, the kit as data, every logo file, each with its download");
   await closeAll();
   await space("idea");
-  await page.locator('.mc-tool[data-tool="references"]').click();
+  await openBento("mood");
+  await page.locator(".mc-w.is-mood .mc-mood-bar .mc-primary").click();
   await page.locator(".picker").waitFor({ timeout: 5000 });
-  ok(true, "Add references opens the picture picker (the Library, the computer)");
+  ok(true, "Add pictures, in the moodboard, opens the picture picker (the Library, the computer)");
   // (the picker listens for its Escape a moment after it opens)
   await page.waitForTimeout(700);
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
   ok((await page.locator(".picker").count()) === 0, "and Escape closes it");
-  await space("content");
-  reply = { reply: "A story layout.", actions: [{ op: "adapt_format", format: "9:16" }] };
-  n = asked.length;
-  await page.locator('.mc-tool[data-tool="story"]').click();
-  await page.waitForFunction(async () => { const m = await import("/js/macaron.js"); return m.macaron.chat.messages.at(-1)?.role === "assistant" && !m.macaron.chat.busy; }, null, { timeout: 15000 });
-  treq = asked.at(-1);
-  ok(asked.length === n + 1 && treq.space === "content" && treq.preset === "story" && treq.brand.design?.id === "launch", "a Content tool is told about the design it works on", `${treq.preset}`);
-  await fold();
-  // the words typed are not a tool's: no id goes with them
+  await closeAll();
+  await space("create");
+  // the words typed are not a key's: no id goes with them
   reply = { reply: "Nothing to change.", actions: [] };
   treq = await say("What do you think of the headline?");
-  ok(treq.preset === undefined && treq.space === "content", "what is typed goes without a tool's id");
+  ok(treq.preset === undefined && treq.space === "create", "what is typed goes without an id");
   await fold();
   await page.unroute("**/api/macaron/assist");
 
@@ -740,10 +744,10 @@ try {
     const d = m.addDesign({ name: "First", format: "4:5" });
     await new Promise((r) => setTimeout(r, 1500));
     const rec = await m.exportPng(d.id, "4:5", { download: false });
-    return { kit0, tones: kit.logos.map((l) => l.tone), urls: kit.logos.map((l) => l.url), palette: kit.palette.map((p) => p.hex), ground: kit.palette.find((p) => p.id === d.bg.color)?.hex, export: rec && { url: rec.url, w: rec.width, h: rec.height } };
+    return { kit0, read: kit.logos.map((l) => kit.palette.find((p) => p.id === l.tone)?.hex ?? l.tone), urls: kit.logos.map((l) => l.url), palette: kit.palette.map((p) => p.hex), ground: kit.palette.find((p) => p.id === d.bg.color)?.hex, export: rec && { url: rec.url, w: rec.width, h: rec.height } };
   }, { svg, yellowPng });
   ok(made.kit0.palette === 0 && made.kit0.logos === 0 && made.palette.length === 3 && made.urls.length === 2, "a blank brand takes colours and two logo files", JSON.stringify(made.kit0));
-  ok(made.urls[0].endsWith(".png") && made.tones[0] === "#211927" && made.tones[1] === "#F2FF59", "the SVG is kept as a PNG and each file's colour is read", made.tones.join(" "));
+  ok(made.urls[0].endsWith(".png") && made.read[0] === "#101418" && made.read[1] === "#F2FF59", "the SVG is kept as a PNG and each file's colour is read: the ink as the palette's dark colour that is near it, the yellow, with none near, as its own", made.read.join(" "));
   ok(made.ground === "#F7F7F2", "its first design takes the ground its logo reads on", made.ground);
   if (made.export) {
     await writeFile(join(out, "new-brand-export.png"), Buffer.from(await page.evaluate(async (u) => { const b = new Uint8Array(await (await fetch(u)).arrayBuffer()); let x = ""; for (let i = 0; i < b.length; i += 32768) x += String.fromCharCode(...b.subarray(i, i + 32768)); return btoa(x); }, made.export.url), "base64"));
@@ -847,10 +851,11 @@ try {
 
   // ---- the motion controls change the piece they show, not the design that happens to be open in the studio
   await page.evaluate(async () => { const m = await import("/js/macaron.js"); m.openDesign("launch"); m.pickMotion("m-intro"); });
-  await space("content");
-  await openBento("motion");
+  await space("create");
+  await openBento("vid");
   const wm = async () => page.evaluate(async () => { const m = await import("/js/macaron.js"); const get = (id) => m.designById(id).layers.find((l) => l.id === "wordmark").anim; return { intro: get("intro"), launch: get("launch") ?? null }; });
   const wm0 = await wm();
+  await page.locator(".mc-mlane-name", { hasText: "Wordmark" }).first().click();
   await page.getByLabel("Comes in: Wordmark", { exact: true }).selectOption("fade");
   await page.waitForTimeout(500);
   let wm1 = await wm();
@@ -912,7 +917,7 @@ try {
   await page.locator(".mc-welcome .mc-go").click();
   await page.waitForSelector(".mc-side .mcb-card", { timeout: 30000 });
   await page.waitForTimeout(1500);
-  ok(await page.evaluate(() => { const bar = document.getElementById("assistant"); return !!bar && bar.parentElement?.id === "macaron-chat" && !bar.hidden && document.querySelectorAll(".mc-grid").length === 3; }), "and the example opens the room again, Brioche's bar in its slot at the foot");
+  ok(await page.evaluate(() => { const bar = document.getElementById("assistant"); return !!bar && bar.parentElement?.id === "macaron-chat" && !bar.hidden && document.querySelectorAll(".mc-grid").length === 5; }), "and the example opens the room again, Brioche's bar in its slot at the foot");
 
   ok(errors.length === 0, "no errors in the page", errors.slice(0, 3).join(" | "));
 } finally {
