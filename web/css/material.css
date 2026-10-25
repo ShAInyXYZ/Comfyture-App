@@ -28,7 +28,7 @@
   --line2: #38383e;
   --text: #f2f1ee;
   --muted: #a7a6ac;
-  --dim: #77767e;
+  --dim: #888790;   /* was #77767e: 3.6 to 4.3 on the dark surfaces, 4.6 to 5.6 now (4.5 is the least for text) */
   --faint: #55545b;
 
   /* Comfy Yellow: the open thing, the armed action, the playhead. Nothing else. */
@@ -358,5 +358,5 @@ button { font: inherit; color: inherit; }
   font: 400 var(--fs-body)/1.4 var(--font-sans);
   resize: vertical;
 }
-.field::placeholder { color: var(--faint); }
+.field::placeholder { color: var(--dim); }
 .field:focus { outline: none; box-shadow: inset 0 0 0 1px var(--accent-line); }

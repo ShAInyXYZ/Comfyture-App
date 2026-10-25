@@ -100,7 +100,7 @@ body[data-page="toaster"] { padding-bottom: 0; overflow: hidden; }
 .ts-many { margin: 0; font: 600 var(--fs-body)/1.2 var(--font-sans); color: var(--text); }
 .ts-row { display: grid; grid-template-columns: 5rem minmax(0, 1fr); align-items: center; gap: .5rem; }
 .ts-field { width: 100%; min-width: 0; height: 2.125rem; padding: 0 .625rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); color: var(--text); font: 500 var(--fs-body)/1 var(--font-sans); outline: none; transition: border-color var(--t-fast); }
-.ts-field::placeholder { color: var(--faint); }
+.ts-field::placeholder { color: var(--dim); }
 .ts-field:focus { border-color: var(--accent-line); }
 .ts-swatches { display: flex; flex-wrap: wrap; gap: .4375rem; }
 .ts-swatch { width: 1.5rem; height: 1.5rem; padding: 0; border: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .3), 0 1px 2px rgba(0, 0, 0, .4); cursor: pointer; transition: transform var(--t-fast); }

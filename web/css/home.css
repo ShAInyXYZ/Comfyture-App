@@ -163,6 +163,7 @@ button.home-ref-name:hover { color: var(--text); }
 .home-search:focus-within { border-color: var(--accent-line); }
 .home-search svg { width: 1rem; height: 1rem; flex: none; }
 .home-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: 400 var(--fs-body)/1 var(--font-sans); }
+.home-search input::placeholder { color: var(--dim); }
 .home-empty { margin: 0; padding: 3rem 0; color: var(--dim); text-align: center; font: 400 var(--fs-body)/1.5 var(--font-sans); }
 
 /* the projects' cards: the newest one featured, wide, with what each section has made beside it */
