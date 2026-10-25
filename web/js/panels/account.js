@@ -160,7 +160,7 @@ function draw() {
           h("code.account-cmd", {}, "pip install comfy-api-proxy", h("br"), "comfy-api-proxy run"),
           h("div.account-row", {}, h("span.spacer"), link(guide, "How to set up your own ComfyUI", icon("open"), "The setup guide")))
       : h("div.account-row", {}, h("b", {}, "Comfy Cloud"), h("span.hint", {}, own && side ? "" : host)),
-    h("p.hint", {}, jobs ? `${jobs} job${jobs > 1 ? "s" : ""} running: switch once they end` : own && !side ? `Rendering on ${host}` : "Nothing running"),
+    h("p.hint", {}, jobs ? `${jobs} job${jobs > 1 ? "s" : ""} running: switch once they end` : own && !side ? (a.reach === false ? `Nothing answers at ${host} yet: start the bridge, or pick Comfy Cloud and add a key` : `Rendering on ${host}`) : "Nothing running"),
   );
 
   const keyBox = editing

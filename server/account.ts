@@ -5,6 +5,8 @@ import { join } from "node:path";
 export const CREDITS_PER_USD = 211;
 const BALANCE_URL = "https://api.comfy.org/customers/balance";
 const CACHE_MS = 60_000;
+/** how long a check of your own ComfyUI holds */
+const REACH_MS = 15_000;
 
 export interface Balance {
   credits: number;
@@ -59,6 +61,7 @@ export function createAccount(deps: {
   const original = env.COMFY_API_KEY?.trim() ?? "";
   let saved = "";
   let cache: { key: string; at: number; balance: Balance } | null = null;
+  let reach: { url: string; at: number; ok: boolean } | null = null;
 
   const current = () => env.COMFY_API_KEY?.trim() ?? "";
   const apply = (key: string) => {
@@ -94,15 +97,26 @@ export function createAccount(deps: {
     }
   }
 
+  /** On your own ComfyUI: does the bridge answer? (free: its job list, a second and a half at most, read again every 15 s) */
+  async function answers(url: string, refresh: boolean) {
+    if (!refresh && reach?.url === url && Date.now() - reach.at < REACH_MS) return reach.ok;
+    const res = await f(`${url}/api/v2/jobs?limit=1`, { signal: AbortSignal.timeout(1500) }).catch(() => null);
+    reach = { url, at: Date.now(), ok: !!res && (res.ok || res.status === 401 || res.status === 403) };
+    return reach.ok;
+  }
+
   async function status(refresh = false) {
     const key = current();
     const open = !!env.COMFYTURE_OPEN_WEIGHTS?.trim();
+    const target = deps.target();
     const out: any = {
-      target: deps.target(),
+      target,
       key: { set: !!key, last4: key ? last4(key) : "", source: saved && key === saved ? "settings" : "env" },
       openWeights: open,
       balance: null,
     };
+    // (a first visit with no key renders on a ComfyUI here by default: the header says when none is running)
+    if (target.kind === "self-hosted") out.reach = await answers(target.url, refresh);
     if (open) return Object.assign(out, { error: "Open weights only is on, so no Comfy credits are spent" });
     if (!key) return Object.assign(out, { error: "No API key is set" });
     if (!refresh && cache && cache.key === key && Date.now() - cache.at < CACHE_MS) return Object.assign(out, { balance: cache.balance });

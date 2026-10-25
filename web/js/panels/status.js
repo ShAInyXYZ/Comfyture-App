@@ -33,7 +33,7 @@ export function renderStatus(el) {
     tip = `Comfy account: $${a.balance.usd.toFixed(2)} · ${fmt(a.balance.credits)} credits`;
   } else if (!a.key.set) {
     // a ComfyUI of your own needs no key; Comfy Cloud does
-    face = own ? [h("b", {}, "Your ComfyUI"), h("span", {}, "no key")] : [h("span.account-credits", {}, "no key")];
+    face = own ? [h("b", {}, "Your ComfyUI"), h("span", {}, a.reach === false ? "not running" : "no key")] : [h("span.account-credits", {}, "no key")];
     tip = own ? `Your ComfyUI at ${a.target.url}: no Comfy key set` : "Comfy account: no API key set";
     if (!own) tone = "crit";
   } else if (a.openWeights) {
@@ -43,6 +43,11 @@ export function renderStatus(el) {
     face = [h("span.account-credits", {}, a.error === "The key was refused" ? "key refused" : "offline")];
     tip = `Comfy account: ${a.error}`;
     tone = "crit";
+  }
+  // your own ComfyUI, and nothing answers there: nothing can run until it is started, or a key sends the work to Comfy Cloud
+  if (own && a?.reach === false) {
+    tone = "crit";
+    tip = `Nothing answers at ${a.target.url}: start ComfyUI with comfy-api-proxy, or add a Comfy API key here to run on Comfy Cloud. The examples and tours work without either.`;
   }
   el.disabled = false;
   el.replaceChildren(h("span.lamp", { dataset: { tone } }), ...face, ...running);

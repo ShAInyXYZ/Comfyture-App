@@ -85,3 +85,25 @@ test("a key Comfy refuses is not saved; one it takes is saved and used", async (
   assert.equal(s.key.last4, "4321");
   await assert.rejects(takes.saveKey("  "), /Paste the key/);
 });
+
+test("on your own ComfyUI the status says whether the bridge answers, checked again every 15 s", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "acc-"));
+  const own = () => ({ kind: "self-hosted", url: "http://127.0.0.1:8189" });
+  let up = false;
+  let asked = 0;
+  const f = (async (url: string) => {
+    if (String(url).startsWith("http://127.0.0.1:8189")) {
+      asked++;
+      if (!up) throw new TypeError("fetch failed");
+      return new Response("{}", { status: 200 });
+    }
+    return new Response(JSON.stringify(BALANCE));
+  }) as unknown as typeof fetch;
+  const acc = createAccount({ data: dir, target: own, fetch: f, env: {} as any });
+  assert.equal((await acc.status()).reach, false, "nothing listens: not running");
+  up = true;
+  assert.equal((await acc.status()).reach, false, "the answer holds for a while");
+  assert.equal(asked, 1);
+  assert.equal((await acc.status(true)).reach, true, "a refresh asks again");
+  assert.equal((await createAccount({ data: dir, target, fetch: f, env: {} as any }).status()).reach, undefined, "Comfy Cloud is not asked");
+});
