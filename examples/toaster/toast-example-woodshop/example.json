@@ -1,0 +1,679 @@
+{
+ "id": "toast-example-woodshop",
+ "rev": 1,
+ "name": "Crumpet's workbench",
+ "about": "A character set: Crumpet the baby beaver (a posed character, his cast sheet on him) building a toy at his workbench, in a woodshop of 17 parts (library pieces and shapes), with two cameras. Clay frame and depth sent at 55%. Its three renders (the workbench, a close-up and a storybook look) were made for this example with GPT Image from the clay frames kept with them, for free.",
+ "thumb": "example:thumb.jpg",
+ "body": {
+  "parts": [
+   {
+    "id": "p-k8w6dvh",
+    "shape": "asset",
+    "asset": "floor",
+    "name": "Floor",
+    "color": "#6d6a66",
+    "made": "worn wide pine floorboards dusted with wood shavings",
+    "size": [
+     2.8,
+     0.01,
+     2.6
+    ],
+    "pos": [
+     0,
+     0.005,
+     -0.2
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-6zurx2c",
+    "shape": "asset",
+    "asset": "window",
+    "name": "Back wall",
+    "color": "#a3a33a",
+    "made": "a honey-coloured plank wall with a small four-pane window onto snowy pine woods",
+    "size": [
+     2.8,
+     1.85,
+     0.12
+    ],
+    "pos": [
+     0,
+     0.925,
+     -1.44
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-9t79xsr",
+    "shape": "box",
+    "name": "Side wall",
+    "color": "#c9c4bb",
+    "made": "a honey-coloured plank wall",
+    "size": [
+     0.1,
+     1.85,
+     1.6
+    ],
+    "pos": [
+     -1.45,
+     0.925,
+     -0.7
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "round": 0
+   },
+   {
+    "id": "p-pdc13hy",
+    "shape": "asset",
+    "asset": "table",
+    "name": "Workbench",
+    "color": "#c8823e",
+    "made": "a chunky pine workbench scarred with saw cuts and pencil marks, a wooden vice at one end",
+    "size": [
+     1.05,
+     0.46,
+     0.5
+    ],
+    "pos": [
+     0.05,
+     0.23,
+     -0.72
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-p5rqsai",
+    "shape": "character",
+    "body": "toddler",
+    "pose": "stand",
+    "params": {
+     "nod": 18,
+     "lean": 8,
+     "reach": 45,
+     "elbows": 55
+    },
+    "name": "Crumpet",
+    "color": "#ff6b3d",
+    "made": "a baby beaver with chestnut fur, a cream tummy, rosy cheeks, two big front teeth and a flat brown tail",
+    "refs": [
+     {
+      "file": "example:crumpet-turnaround.webp",
+      "url": "example:crumpet-turnaround.webp",
+      "width": 1280,
+      "height": 325
+     },
+     {
+      "file": "example:crumpet-build.webp",
+      "url": "example:crumpet-build.webp",
+      "width": 406,
+      "height": 390
+     }
+    ],
+    "size": [
+     0.33,
+     0.9,
+     0.382
+    ],
+    "pos": [
+     0.05,
+     0.45,
+     -1.05
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-8wvgdq4",
+    "shape": "asset",
+    "asset": "desk-lamp",
+    "name": "Bench lamp",
+    "color": "#f2d23c",
+    "made": "an old green enamel desk lamp, its warm bulb glowing",
+    "size": [
+     0.273,
+     0.364,
+     0.196
+    ],
+    "pos": [
+     -0.33,
+     0.642,
+     -0.86
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-iq2lu1r",
+    "shape": "asset",
+    "asset": "toy-blocks",
+    "name": "Wooden toy",
+    "color": "#9e8fd9",
+    "made": "a little wooden toy of stacked pine blocks, a round peg and a red triangle",
+    "size": [
+     0.267,
+     0.131,
+     0.053
+    ],
+    "pos": [
+     0.06,
+     0.526,
+     -0.8
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-izn5x5q",
+    "shape": "asset",
+    "asset": "jar",
+    "name": "Nail jar",
+    "color": "#f09a3e",
+    "made": "a glass jar of nails and brass screws",
+    "size": [
+     0.084,
+     0.127,
+     0.084
+    ],
+    "pos": [
+     0.42,
+     0.524,
+     -0.82
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-etxvcx1",
+    "shape": "asset",
+    "asset": "mug",
+    "name": "Cocoa",
+    "color": "#f7c48e",
+    "made": "a chipped blue mug of steaming cocoa",
+    "size": [
+     0.131,
+     0.095,
+     0.09
+    ],
+    "pos": [
+     0.38,
+     0.508,
+     -0.56
+    ],
+    "rot": [
+     0,
+     -30,
+     0
+    ]
+   },
+   {
+    "id": "p-yug9f0v",
+    "shape": "box",
+    "name": "Tool board",
+    "color": "#5d5e66",
+    "made": "a pegboard of small hand tools: a saw, a hammer, chisels and a folding ruler",
+    "size": [
+     0.46,
+     0.4,
+     0.02
+    ],
+    "pos": [
+     -0.72,
+     0.92,
+     -1.37
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "round": 0
+   },
+   {
+    "id": "p-3043oq5",
+    "shape": "box",
+    "name": "Plank",
+    "color": "#e3c35a",
+    "made": "a long pine plank leaning on the wall",
+    "size": [
+     0.13,
+     1,
+     0.025
+    ],
+    "pos": [
+     -1.2,
+     0.5,
+     -1.295
+    ],
+    "rot": [
+     -8,
+     0,
+     2
+    ],
+    "round": 0
+   },
+   {
+    "id": "p-de6fqdf",
+    "shape": "box",
+    "name": "Plank 2",
+    "color": "#e3c35a",
+    "made": "a long pine plank leaning on the wall",
+    "size": [
+     0.11,
+     0.9,
+     0.025
+    ],
+    "pos": [
+     -1.04,
+     0.45,
+     -1.3
+    ],
+    "rot": [
+     -8,
+     0,
+     -3
+    ],
+    "round": 0
+   },
+   {
+    "id": "p-iqmahey",
+    "shape": "asset",
+    "asset": "shelf",
+    "name": "Shelf",
+    "color": "#8a5cc9",
+    "made": "an open plank shelf crowded with tins, pencils, glue pots and little carved wooden animals",
+    "size": [
+     0.56,
+     1.05,
+     0.2
+    ],
+    "pos": [
+     1.06,
+     0.525,
+     -1.28
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-ljsz5ss",
+    "shape": "asset",
+    "asset": "crate",
+    "name": "Offcuts crate",
+    "color": "#d99e8f",
+    "made": "a wooden crate overflowing with pine offcuts",
+    "size": [
+     0.254,
+     0.254,
+     0.254
+    ],
+    "pos": [
+     -0.92,
+     0.127,
+     -0.5
+    ],
+    "rot": [
+     0,
+     12,
+     0
+    ]
+   },
+   {
+    "id": "p-5khcku3",
+    "shape": "asset",
+    "asset": "log",
+    "name": "Log",
+    "color": "#8fd9c4",
+    "made": "a fresh-cut birch log, gnawed to a point at one end",
+    "size": [
+     0.196,
+     0.187,
+     0.483
+    ],
+    "pos": [
+     0.78,
+     0.094,
+     -0.3
+    ],
+    "rot": [
+     0,
+     100,
+     0
+    ]
+   },
+   {
+    "id": "p-wotvn68",
+    "shape": "asset",
+    "asset": "tree-stump",
+    "name": "Stump stool",
+    "color": "#4fae4f",
+    "made": "a tree-stump stool, its top worn smooth",
+    "size": [
+     0.279,
+     0.194,
+     0.279
+    ],
+    "pos": [
+     1,
+     0.097,
+     -0.82
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-f7krq66",
+    "shape": "asset",
+    "asset": "wall-clock",
+    "name": "Clock",
+    "color": "#c94fd0",
+    "made": "a round wooden wall clock with an acorn painted on its face",
+    "size": [
+     0.16,
+     0.16,
+     0.034
+    ],
+    "pos": [
+     0.72,
+     1.26,
+     -1.36
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "camera": {
+   "position": [
+    0.45,
+    0.8,
+    0.9
+   ],
+   "target": [
+    0,
+    0.64,
+    -0.95
+   ],
+   "focal": 32
+  },
+  "cameras": [
+   {
+    "id": "r-mvn458pekoq4",
+    "name": "Workbench",
+    "position": [
+     0.45,
+     0.8,
+     0.9
+    ],
+    "target": [
+     0,
+     0.64,
+     -0.95
+    ],
+    "focal": 32,
+    "ratio": "16:9",
+    "thumb": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAB8ANwDASIAAhEBAxEB/8QAHAAAAQQDAQAAAAAAAAAAAAAAAAIDBAUBBgcI/8QATRAAAQMCAwMGCAoGBwkAAAAAAQACAwQRBRIhBjFREyJBYXGxBxQVUnKRocEjMjM0QmKBkrLRFiRTY3PSNTZDdIKT8ERUVmV1g5Siwv/EABsBAAEFAQEAAAAAAAAAAAAAAAUAAQIDBAYH/8QANBEAAgIBAQUDCQkBAAAAAAAAAAECAxEEBRITITFBUWEUIlJxobHB0fAGFRYyM0KBkeE0/9oADAMBAAIRAxEAPwDrCEIUCQIKEHcq7PyP1DoxdZusIXKlxlCwi6cRlCxdF0siK7Gp6mmiM9GyN8kcb3Fr72IFj61x+fw6GNzmsw27hoQ5ltfvldmxHWJ9/wBk/wBy8V4jHyWIVMd75JXNvxsSiGz6K73JTXTBCba6HXavw5Vz/m9Dk7HNHeCoMnhtxx18kDG8Llpt6mBcoQiq0FC/b7yvfZ2vZHb/ABvaabGhPO6DxLDJq2LknuF3sLbB1iLjnHgetaZL4UdqJAR47lF+hzz3uKe8EOtVtSP+Q1XexaCo16aniSW6uWB3J4NmqNudoJ3Fz60Zib35Jp7wVEk2rxt5ucQlHohre4KkQtKoqXSK/ojllr5dxieVrfKdWC42FpnNGvYvZlKxrHThjQ1ucGwFvotXiOk+dQ+m3vXt6HR0vW73BCdqpRcMLv8AgWV9o6o76uJri25JGht0IrpDHTPLd/u6VVD6Lg4gW3FX7H2bVrFKdr6csIJaTTRuTlIu43tkaHMNwlKDhXyb3AgtJAH2BTroZraY6e+VUHlIzXQVc3FdgIRdYusuSoyhYui6WRGUIQusyUAg7ihBUZLMWhzCFi6yuTLgQmqqQxUs0jbZmMLhfqC1B20ded3JDsaten0lmoTcOwjKSj1N0QtIdtDiB3SMHYwJDsfxEnSoA7GN/JaVsm7vX1/A3ERuFdpG/wDhP9y8XYx/S9d/Hf8AiK9aYHW1Neyu8Zl5TJGMugFrh3DsC89Yj4PMemr6uW2Hsa6V7gH18INsx385XaGK0ts4WNZ5EZeck0aIhbjF4PcTe0l2IYHGb2s7EovcSnGeDytJIkxvZuIjoficevqRPyir0iGGSfBD862o/wCg1XexaCuyeDnZCXCqnHjNjOBTCowiohHi9aJMlyznusNGi2p6wtO/QaJhvPtbsu1nSWVjnn1BiohfXxJvPcO08GmIW6fobhgIz7Z4EG31ymQn1ZUfopgH/G2G/wDjTfkr/KIfSfyGwzVsJaH4rRNIBDpmCx9IL200Wv2ry5hOyuzbcVoRFtrSzVHLR5YmUM3PdmFmh27U6XXqNhuCTxI9qD7UsU5Rx49jXvLa1gxIwPbYqAMKjzgkvDB9EPIA1urJYQ+u6ypt1yaz3PBbGcofleDEbGxsaxjQ1rRYACwCUtSxLaOsbW1UNDDCRA9rLSE8+4dc36NwUB+0WPOPMhoWDrcSjNf2f1dsVPks8+b/AMH3G+ZviFz1+ObSE8ySgHUWk+5DMZ2kBu6ow036Cx+nqCtX2Z1XpR9vyH4bOhIWgDGtoD8afDwepj1g4zj/APvNF/luUvwxqfTXt+QuGzoKEIWgyAhCEhEmgpW1PKZnFuW277Umvp200rWsJNxfVS8D+JL2hM4zrWRN6Sz3rl3FcPPaaSrrLGknB3Fjh7Fzddhxilgjwypc2MNdkIB16dFxy6NbJi4qafh8Sm1dBSLpN0C5NgLlGCkvdmZWtZiMZvmdCHDsGa/eF5ax2MQ43iEYJIZUSNuepxXqvDsMrcNlm8ep3RCWndluQe7d2LyvtJ/WLFP71L+MoZRKMtVY4vKaRY1iKyVyELofgT2aw7aLaeU41GJqKliz8iSQHvJs29juGpt02HQtltiqg5y6IemqV01CPVjPgjaTUbUkA28g1Iv13YtCXupjqOCl5GGKKOEAgRtaA2x36bl5f8OmB4bhO0dPUYRC2COsY58kTNGB4IuWjovfch+m1cbLmsdfgbdRs+VNe/nKRzVCEImDi12S/rVg399h/GF7OiN2m3nHvXjfYZodtts+1wBacQpwQen4Rq9i05+DPpu/EUC2u/Pj6i2seuo1XLZuQbzvT0jwxhcVXOcXOJO8oO2WmlZs2KYmbf2wHqzJ1M0uV1bicji4NdUG1hc73dfWpNovOl+4P5l61QsVQXgvcaY9BtCX8F50v3B/MsEx/vT/AIR+atySEoWC9vmTfdb/ADLHKN/Zzepv8yQjpKEIXHgwEIQnEWeC/JynpzBN4gM2K0w6h+JO4MPgZD9ZInGbGofRv3rm5rEcePxNK6DmPa4c9o3uIauW+QK7zWfeXTsdPwELb7339iqlOOss08modpGcU+po3kCu81n3lZ4TgclFIKmtijmkAvDT3uHHoc7q6ulbXTSMilDpGB7eB1TrS2lxBz528rzi49fBPPal847vJZGjXFcxEOzk89H43iNVMcRkjcCwuBjZe9gBbh1rxztRgdbFtLirJojG8VUpLXCxF3Er21JjsPNbyMnONhqOF/ctG2n2WwbH8UdX1VB+sPaA97ZnDNYWFwCBusPsU9JrK6LHKXRrsFOO8uR5K8kVXBvrW7eCQz4TtI/lbBk0Jbp5wIPdddnHg32ftrDUf5xSZPB7gVLyUzGVDHZxkcJyFtu2hp7q5Q58/A0bPqs48ZQWcE+XEmeL3D944riHheMuJ41SRwlrmQQm/U5x/IBduOxMc0mdmJyMj8zk7n71/cmZ/BlgNXUyyPlr3y2zE8s21+HxepD9FOumzfmw9tLN1PCqXV8zy35JqeDfWseSang31r0kPBhgR1zYxb+NF/Ilu8FmAgEibFuzlo/5EW+89N3v+jlHXJPDODbDYXUN20wBxDQG18Djr0CRpXrSnFoz6bvxFaNhng4wzD8RpayCorzLTytlaJC3KSDfWzVvcWjNd9z3oTtHU13zi630ROEWupHrHHMG9CjJ+r+V+xMIYyw0mkvarcfpVDv9e1PJnDg2SOfPNHH+sPN33F/i9SmeLx2v45S/5lvcvYIebFI1R6DKLqQKRzgCyancD0iQJQw+Y7jEeyQKeUORboupXk6e9hkP+MLPk6o4M++E28hzfUIQuQBYIQhOMWmDD4CQ/XPcEEZsaH1Y1nB/mz/TPcEqMXxaZ3CMD2rnJrDx4muPQi46efTj0j3KtU7GzerjHBl/aoKyWvM2MwUiUOlpopQCcg5N2m62o9h9iVRRt5UOnjvHwNwrRzqRkbmMZladSGu3puG8ZZJRfca7IefF1u9xTinVjYZiwRwNjLTmDhfgoxgPEJcKT6Ifhy7iDW1kNFG19Q8NDjlbcgXPDVRaoMxYQQwzWp4mh5lZrdw6FKrKWOTO2saHxFpsLi3tCTh1LFQUzI6ZvJtkNi1g3bzdFNDsyy2UJTXmv4GivVLT1tQWJ94eJ15ztpXxOjbzQZHlpJsDuAPFN4by9HWTtrZoyXNFw29m7yDc7+lS5JJmRS8i8iSEZGA7n3AIvw6OKoGYFUYnVvmxsh928yOJ5Abrx0upbQ0Dosbrj5vUI6XXRnU3a+ftZfwX5Jt7a66JZIAJO4LMULYWMYGZY26WHQFZTYbTvpjZ8wLh1IZDTzsTcQPJb0232shPiLYmvJNjuu0ppSqxrmQRAOzMdYtI6QojA7I3MDe2uipcWnholdWo43SFV/K/YmU7VfLFMSOLY3OG8AlQ6vBQaLhhL6Vzz0yv7mqUjAaOSpw4cjluHEm546e5WBwmq81n3l7I2lyNaxgr0KccLqh9AHsKQcPqgfknJt5D5RESTGwm5Y2/YpniFV+wekOpZ2mzoyD1p8oXI6IhCFx4KBCEJxFtg/zV3plOwt/Xql3UwewprB/mh9NykQj4aoPFwH/qEAu/UfrfxNUehR4vVQR4m9swnJa0DmROcOO8JqPFKAGzXlh3c5jh7krE3ZquoP1gPVZU9PG6SurG3YGjI74tySRY9PUFj4rjJtGypQ3HKS6Fv5XoDb9cgF+LrJ1tdSSfEqoXdjwq0UoHx3C3ULe9V87x47FTiFjs7ywOc7dzS4nd1KXlM2WxdUs4fQ2USxu+LIw9jglbxoQewha/5Mgu0PghBJsLNB6+HUkS0ccWohIANgW2HvTeUMSlW/3Gx5XcCsFpIILTbrC1s0zQA50k7Om3Ku9xWOUEYu2pqWgdJc/3pccklF8lI2F0Md23jbzTcXbuSgB0WVDHJUyNL4cRmyNJBs5pAPDUIjrqgnLHiGdw6CWnuCfjvoS4XsLqVzwCAy44gqxkmYaTKHtzZd19fUtZNTiYOk0NvrQ396UK2ubYnxd5/hW96nDU7nYQnRvFsQwsjY3MWRklpcTrfpWVUnEq0f7NTO/xke5KZidQSc1HEbebKfeFDixZLhtGMRZlqL9DhdQan5vLbzD3KTU1rqktaaYxZSecXAg9Sh1ptRzn927uVEUnasd6B9qSnyNQw85aCnykgkEm3pFSHySPaWukeWnozFGCUMtVh0Torc0EG/pOUx2FVQ6AV682slyawQWue0WbJIB1PP5p9lZUsFmzyW63XSzhtV+zPtSHUNQ3fEUspj5RmSuqntt4w8dYsCkisqgABVS6dYSTTTD+zKTyEv7N3qT4QuR1eCgJI5a4HAWUxsFOLgRetpKh3fe5mk9ayST8Z7j2lcVvmdVJEqVtLCwvlZGxg3lwsFQVmKQyytiooQ1pcAZHDUjqHR/rRRcfv43GC4kBlwCSbam9vYq+I5ZWHgQdVCVj6ItjTHGWbDhuKR0lK2J0TiQbkgqTFjVO10hcyXnOvuHADj1LXQdAglWz0dU3vNcwfxJLkP1k5mqJHNJDHyZgDwuoIlkhr6gxgG7W3BTjnC7bkC7h3qDiT3MrXAaBzBdYbqK1qq4bvLBrqk3p5/XcPzYk4lu7TeLe9Rpqsmso6g2B5bXX6jgohKTWfIUv8X/5cpazSUw3N2OMyS/gjpZNuefRZsfjzXFpy7jfQ36Ey/EI5pmtDHljTqQNFr5KxmI3EjsVstl6d9ntZn32X1ZWxCS5Dg3cDZRZqyIxnk3864I0PFVZlkIsXuI7UqkYJaqNryA0nnXNtOlZ7dlURi5Jvl9dxdp7JK2OO9FpszOD446WRoLpjYE9AAH5pGCyl2LnNlDWU9jbpJcPyKqmv5OR5hu0ZnEfaSpVTeiqiGjnujYX5huOu71rL93xbgs85fIJz1OfKXju9+PcbY5jH2zNa6264ukthiabtjYD1NC1RteRvYL9RspVNWmQkBzmO4ZlN7HfZP2f6CVabDJCyT4wPDRxHcoMDQ2Z9iSTGwm5J4qMKmYbpXfabp6iJcS5xucoHqLlk1Ghnpo70nk26Oxym14CpvjqFipthdYf3L/wlE0k+YmN7T1OCr8QqKmWlmgcxrTI0sB1G8cVdRs25WQnyxlMyua3mVOGVE1NQU7YpHNFi6w63FPitqw4kVMmvRpZLw/DpZ6CBzdLMAt7fenXYVONwv8AYvTcxNawDMWq2gAva63Fqw3FqwEnPGQTcAs3e1ZgwqeWZsbnMjvrd193ULaqxdsxJlBZVRuJGgta/Yst2t01MtyySTKbNTTW92T5kVuOS250TD2EhMDF5tc1LTk8dfyTtTgVZCCWhkoG/IdRpfcbKudBM1xDopARvBaVbVbTcs1tMnCyuznB5OqllxYvd3IEbfrfeP5paQYwTcl32OIXGDlLj7QJYSPNI1N1VjforbHgByIF97t5vwVYwaXSjDflglKe5DeHG6NA4BYJ003rCCiC5AtvLIbw9tXEXuvzhr9qzicbpK6zBf4MH2lOTgF0R6Q8d6XVf0h/2h3lDdT/ANVT9Zso/QmVroJR9App7JLAOa6wNxorYrBRF8+pjXIpTpvSSVdEA7wmzFGd7G+pNkRTkrF1aupoj9AfYm30cXRmH2phFcgm5udSn5YWs3EqOUwgup1LAySC7xqToelV91b0otA1IcbvNB+9j9oVrhpzwh4vlLdL+k5Q1OoPk3dqGbUWaU+5m3QvFmPAh3usHUWOoSIzeNvYEpEI/lRkl1YuNxjBDNATdZEjw6+cnq0smzuVRK53KO5x38Ver7F0kx1OS7SVj87xDA9hyubJoR2FTcGxaeRjWzta+3SDY8P9blr9e5xhjBcSM17E9qtcIaA1tuA7kE1tsp3OTfMAauxy1DZtHjrXC5Lgbbmgfmq2sroTMc1KySwtcmyWdGkjfZVk3yhVdU573mvDGhKefNeD/9k="
+   },
+   {
+    "id": "r-mvn458cvdeh4",
+    "name": "Close-up",
+    "position": [
+     0.62,
+     0.78,
+     0.15
+    ],
+    "target": [
+     0.04,
+     0.64,
+     -1
+    ],
+    "focal": 42,
+    "ratio": "16:9",
+    "thumb": "data:image/jpeg;base64,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"
+   }
+  ],
+  "ratio": "16:9",
+  "maps": [
+   "clay",
+   "depth"
+  ],
+  "mapsV": 2,
+  "what": "Crumpet's woodshop on a snowy evening: @crumpet builds a little wooden toy at @workbench, his desk lamp glowing beside him, planks, tools and a shelf of carved animals all around",
+  "scene": "A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours",
+  "refs": [],
+  "prompt": "Make a finished 3D animated-film still from a 3D clay blockout. @frame is the canvas: keep its layout, proportions, perspective and camera exactly; do not add, move or remove objects. @depth shows distance, near light and far dark: use it only for depth. @crumpet and @crumpet-2 show Crumpet, a baby beaver: he is the figure behind the workbench; keep his chestnut fur, cream tummy, rosy cheeks, big front teeth and flat brown tail as in them. Scene: Crumpet's woodshop on a snowy evening. He builds a little wooden toy of pine blocks, a peg and a red triangle on a chunky pine workbench scarred with saw cuts; an old green enamel desk lamp glows beside him; a jar of nails and a blue mug of cocoa stand on the bench. Around him: a pegboard of hand tools and two pine planks against honey-coloured plank walls, a shelf of tins and carved wooden animals, a crate of offcuts, a stump stool, an acorn wall clock, floorboards dusted with shavings, a four-pane window onto snowy pine woods. Look: cosy 3D animated film, warm lamp light on the bench, cool blue dusk through the window, soft bounce light, gentle depth of field, rich warm colours. The clay colours only tell things apart: give everything its real materials, no clay or mannequin left. No text, logos or watermarks.",
+  "promptBy": "writer",
+  "promptFor": {
+   "model": "gpt-image-2.5-sunburst",
+   "key": "1ca3822"
+  },
+  "strength": 0.55,
+  "model": "gpt-image-2.5-sunburst",
+  "renders": [
+   {
+    "id": "r-crumpet-1",
+    "status": "done",
+    "photo": {
+     "url": "example:render-workbench.jpg",
+     "file": "example:render-workbench.jpg",
+     "width": 1600,
+     "height": 900
+    },
+    "frame": {
+     "url": "example:frame-workbench.jpg",
+     "file": "example:frame-workbench.jpg",
+     "width": 1280,
+     "height": 720
+    },
+    "maps": [
+     {
+      "url": "example:depth-workbench.webp",
+      "file": "example:depth-workbench.webp",
+      "width": 1280,
+      "height": 720,
+      "name": "depth"
+     }
+    ],
+    "camera": {
+     "position": [
+      0.45,
+      0.8,
+      0.9
+     ],
+     "target": [
+      0,
+      0.64,
+      -0.95
+     ],
+     "focal": 32
+    },
+    "ratio": "16:9",
+    "model": "gpt-image-2.5-sunburst",
+    "modelName": "GPT Image",
+    "cost": "0cr",
+    "credits": 0,
+    "sent": [
+     "clay",
+     "depth"
+    ],
+    "prompt": "Make a finished 3D animated-film still from a 3D clay blockout. @frame is the canvas: keep its layout, proportions, perspective and camera exactly; do not add, move or remove objects. @depth shows distance, near light and far dark: use it only for depth. @crumpet and @crumpet-2 show Crumpet, a baby beaver: he is the figure behind the workbench; keep his chestnut fur, cream tummy, rosy cheeks, big front teeth and flat brown tail as in them. Scene: Crumpet's woodshop on a snowy evening. He builds a little wooden toy of pine blocks, a peg and a red triangle on a chunky pine workbench scarred with saw cuts; an old green enamel desk lamp glows beside him; a jar of nails and a blue mug of cocoa stand on the bench. Around him: a pegboard of hand tools and two pine planks against honey-coloured plank walls, a shelf of tins and carved wooden animals, a crate of offcuts, a stump stool, an acorn wall clock, floorboards dusted with shavings, a four-pane window onto snowy pine woods. Look: cosy 3D animated film, warm lamp light on the bench, cool blue dusk through the window, soft bounce light, gentle depth of field, rich warm colours. The clay colours only tell things apart: give everything its real materials, no clay or mannequin left. No text, logos or watermarks.",
+    "strength": 0.55,
+    "refs": [
+     {
+      "name": "crumpet",
+      "url": "example:crumpet-turnaround.webp"
+     },
+     {
+      "name": "crumpet-2",
+      "url": "example:crumpet-build.webp"
+     }
+    ],
+    "at": "2026-10-25T00:55:26.000Z",
+    "example": true,
+    "note": "Made with GPT Image for this example"
+   },
+   {
+    "id": "r-crumpet-2",
+    "status": "done",
+    "photo": {
+     "url": "example:render-close-up.jpg",
+     "file": "example:render-close-up.jpg",
+     "width": 1600,
+     "height": 900
+    },
+    "frame": {
+     "url": "example:frame-close-up.jpg",
+     "file": "example:frame-close-up.jpg",
+     "width": 1280,
+     "height": 720
+    },
+    "maps": [
+     {
+      "url": "example:depth-close-up.webp",
+      "file": "example:depth-close-up.webp",
+      "width": 1280,
+      "height": 720,
+      "name": "depth"
+     }
+    ],
+    "camera": {
+     "position": [
+      0.62,
+      0.78,
+      0.15
+     ],
+     "target": [
+      0.04,
+      0.64,
+      -1
+     ],
+     "focal": 42
+    },
+    "ratio": "16:9",
+    "model": "gpt-image-2.5-sunburst",
+    "modelName": "GPT Image",
+    "cost": "0cr",
+    "credits": 0,
+    "sent": [
+     "clay",
+     "depth"
+    ],
+    "prompt": "Make a finished 3D animated-film still from a 3D clay blockout. @frame is the canvas: keep its layout, proportions, perspective and camera exactly; do not add, move or remove objects. @depth shows distance, near light and far dark: use it only for depth. @crumpet and @crumpet-2 show Crumpet, a baby beaver: he is the figure behind the workbench; keep his chestnut fur, cream tummy, rosy cheeks, big front teeth and flat brown tail as in them. Scene: Crumpet's woodshop on a snowy evening. He builds a little wooden toy of pine blocks, a peg and a red triangle on a chunky pine workbench scarred with saw cuts; an old green enamel desk lamp glows beside him; a jar of nails and a blue mug of cocoa stand on the bench. Around him: a pegboard of hand tools and two pine planks against honey-coloured plank walls, a shelf of tins and carved wooden animals, a crate of offcuts, a stump stool, an acorn wall clock, floorboards dusted with shavings, a four-pane window onto snowy pine woods. Look: cosy 3D animated film, warm lamp light on the bench, cool blue dusk through the window, soft bounce light, gentle depth of field, rich warm colours. The clay colours only tell things apart: give everything its real materials, no clay or mannequin left. No text, logos or watermarks.",
+    "strength": 0.55,
+    "refs": [
+     {
+      "name": "crumpet",
+      "url": "example:crumpet-turnaround.webp"
+     },
+     {
+      "name": "crumpet-2",
+      "url": "example:crumpet-build.webp"
+     }
+    ],
+    "at": "2026-10-25T00:56:38.000Z",
+    "example": true,
+    "note": "Made with GPT Image for this example"
+   },
+   {
+    "id": "r-crumpet-3",
+    "status": "done",
+    "photo": {
+     "url": "example:render-storybook.jpg",
+     "file": "example:render-storybook.jpg",
+     "width": 1600,
+     "height": 900
+    },
+    "frame": {
+     "url": "example:frame-workbench.jpg",
+     "file": "example:frame-workbench.jpg",
+     "width": 1280,
+     "height": 720
+    },
+    "maps": [
+     {
+      "url": "example:depth-workbench.webp",
+      "file": "example:depth-workbench.webp",
+      "width": 1280,
+      "height": 720,
+      "name": "depth"
+     }
+    ],
+    "camera": {
+     "position": [
+      0.45,
+      0.8,
+      0.9
+     ],
+     "target": [
+      0,
+      0.64,
+      -0.95
+     ],
+     "focal": 32
+    },
+    "ratio": "16:9",
+    "model": "gpt-image-2.5-sunburst",
+    "modelName": "GPT Image",
+    "cost": "0cr",
+    "credits": 0,
+    "sent": [
+     "clay",
+     "depth"
+    ],
+    "prompt": "Make a finished storybook illustration from a 3D clay blockout. @frame is the canvas: keep its layout, proportions, perspective and camera exactly; do not add, move or remove objects. @depth shows distance, near light and far dark: use it only for depth. @crumpet and @crumpet-2 show Crumpet, a baby beaver: he is the figure behind the workbench; keep his chestnut fur, cream tummy, rosy cheeks, big front teeth and flat brown tail as in them. Scene: Crumpet's woodshop on a snowy evening. He builds a little wooden toy of pine blocks, a peg and a red triangle on a chunky pine workbench; an old green desk lamp glows beside him; a jar of nails and a blue mug of cocoa stand on the bench. Around him: a pegboard of hand tools, two pine planks, a shelf of tins and carved wooden animals, a crate of offcuts, a stump stool, an acorn wall clock, a four-pane window onto snowy pine woods. Look: a hand-painted children's storybook page, soft watercolour washes and coloured-pencil lines on warm textured paper, lamp-lit ambers against the deep blue of a snowy evening. Only the layout and the forms of the clay stay: all-new materials, colours and light, nothing of the clay left. No text, logos or watermarks.",
+    "strength": 0.7,
+    "refs": [
+     {
+      "name": "crumpet",
+      "url": "example:crumpet-turnaround.webp"
+     },
+     {
+      "name": "crumpet-2",
+      "url": "example:crumpet-build.webp"
+     }
+    ],
+    "at": "2026-10-25T00:57:54.000Z",
+    "example": true,
+    "note": "Made with GPT Image for this example"
+   }
+  ],
+  "sheets": [],
+  "models": []
+ }
+}

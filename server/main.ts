@@ -875,6 +875,10 @@ const EXAMPLES = join(root, "examples");
 const ledgerOf = (store: string) => join(projectsDir(store), ".seeded");
 const keptIn = (store: string) => (id: string) => readProject(store, id);
 const dropFrom = (store: string) => async (id: string) => void (await rm(join(projectsDir(store), `${id}.json`), { force: true }));
+// examples put in one after another get times one after another (a millisecond apart at least): the last one put in, the last folder
+// by name, is the newest, the one a product opens first
+let lastStamp = 0;
+const stamp = () => new Date((lastStamp = Math.max(Date.now(), lastStamp + 1))).toISOString();
 
 /** Spice's bakes on their way: the frames sent so far (a folder under edits), the rate, and the clip whose sound goes with them. */
 const bakes = new Map<string, { dir: string; at: number; fps: number; frames: number; audio: string; audioFrom: number }>();
@@ -886,7 +890,7 @@ const bakes = new Map<string, { dir: string; at: number; fps: number; frames: nu
  */
 async function putSpiceShot(spec: any, folder: string, id: string, version: number) {
   const body: any = spiceBody({ set: spec.set });
-  const at = new Date().toISOString();
+  const at = stamp();
   let thumb: string | undefined;
   const rev = version > 1 ? `-r${version}` : "";
   for (const [dept, p] of Object.entries<any>(spec.passes ?? {})) {
@@ -945,7 +949,7 @@ async function putJam(m: any, folder: string, id: string) {
       await noteAudio({ file: name, url: `/media/audio/${name}`, name: text(f.name, 60) || name, kind: text(f.kind, 20) || "music", seconds: Math.round((await probeMedia(target)).duration * 100) / 100, createdAt: new Date().toISOString() });
     }
   }
-  const now = new Date().toISOString();
+  const now = stamp();
   if (m.cut?.id && /^[\w-]+$/.test(m.cut.id)) await writeProject("cuts", { id: m.cut.id, name: text(m.cut.name, 60) || text(m.name, 60), createdAt: now, updatedAt: now, body: m.cut.body ?? {} });
   const thumb = await placeThumb(m.thumb, folder, id, data);
   await writeProject("jams", { id, name: text(m.name, 60) || id, createdAt: now, updatedAt: now, thumb, body: m.jam ?? {} });
@@ -962,7 +966,7 @@ async function keptJam(id: string): Promise<Kept | null> {
 async function putToast(spec: any, folder: string, id: string) {
   const { body } = await placeMedia(spec.body ?? {}, folder, id, data);
   const thumb = await placeThumb(spec.thumb, folder, id, data);
-  const now = new Date().toISOString();
+  const now = stamp();
   await writeProject("toasts", { id, name: text(spec.name, 60) || id, createdAt: now, updatedAt: now, ...(thumb ? { thumb } : {}), body });
 }
 
@@ -978,7 +982,7 @@ async function putStory(spec: any, folder: string, id: string) {
     await mkdir(to, { recursive: true });
     for (const file of await readdir(join(folder, "runs", run))) if (/^[\w.-]+$/.test(file)) await copyFile(join(folder, "runs", run, file), join(to, file));
   }
-  const now = new Date().toISOString();
+  const now = stamp();
   const thumb = await placeThumb(spec.thumb, folder, id, data);
   const { body } = await placeMedia(spec.story?.body ?? {}, folder, id, data);
   await writeProject("stories", { id, name: text(spec.name, 60) || id, createdAt: now, updatedAt: now, ...(thumb ? { thumb } : {}), body });

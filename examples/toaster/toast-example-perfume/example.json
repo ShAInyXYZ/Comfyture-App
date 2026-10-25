@@ -1,0 +1,559 @@
+{
+ "id": "toast-example-perfume",
+ "rev": 1,
+ "name": "Brioche's perfume launch",
+ "about": "A product shot in Macaron's world: the Brioche flacon (its packshot on its sheet) on a travertine plinth with its gift box, a pearl and Brioche the bunny (her cast sheet on her), in a studio of a paper sweep, two softboxes, a reflector and a camera; a 4:5 Hero camera and a 16:9 Set camera. Clay frame, colour ID and depth sent at 60%. Its three renders (the campaign shot, the set behind the scenes, an after-dark look) and the flacon's packshot were made for this example with GPT Image, for free.",
+ "thumb": "example:thumb.jpg",
+ "body": {
+  "parts": [
+   {
+    "id": "p-y587uwx",
+    "shape": "asset",
+    "asset": "backdrop-sweep",
+    "name": "Sweep",
+    "color": "#f2d23c",
+    "made": "a seamless sweep of blush-pink paper on two stands",
+    "size": [
+     3.2,
+     2.73,
+     2
+    ],
+    "pos": [
+     0,
+     1.365,
+     -0.8
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-6pyykvl",
+    "shape": "asset",
+    "asset": "product-podium-round",
+    "name": "Plinth",
+    "color": "#c8823e",
+    "made": "a round plinth of cream travertine",
+    "size": [
+     0.54,
+     0.2,
+     0.54
+    ],
+    "pos": [
+     0,
+     0.1,
+     -0.15
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-k3azcdf",
+    "shape": "asset",
+    "asset": "perfume-bottle",
+    "name": "Flacon",
+    "color": "#f09a3e",
+    "made": "a rounded glass perfume flacon of pale blush liquid with a gold collar and a cream cap",
+    "refs": [
+     {
+      "file": "example:flacon.webp",
+      "url": "example:flacon.webp",
+      "width": 900,
+      "height": 900
+     }
+    ],
+    "size": [
+     0.105,
+     0.217,
+     0.07
+    ],
+    "pos": [
+     -0.02,
+     0.309,
+     -0.16
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-x2rivaq",
+    "shape": "asset",
+    "asset": "product-box",
+    "name": "Gift box",
+    "color": "#9e8fd9",
+    "made": "the flacon's cream gift box, tied with a blush silk ribbon",
+    "size": [
+     0.118,
+     0.188,
+     0.064
+    ],
+    "pos": [
+     -0.13,
+     0.294,
+     -0.3
+    ],
+    "rot": [
+     0,
+     25,
+     0
+    ]
+   },
+   {
+    "id": "p-kr5kxzq",
+    "shape": "asset",
+    "asset": "bunny",
+    "name": "Brioche",
+    "color": "#e8b48a",
+    "made": "a tiny lop-eared baby bunny with cream fur, honey-beige ears, rosy cheeks and a white tail",
+    "refs": [
+     {
+      "file": "example:brioche-turnaround.webp",
+      "url": "example:brioche-turnaround.webp",
+      "width": 1280,
+      "height": 344
+     }
+    ],
+    "size": [
+     0.075,
+     0.137,
+     0.091
+    ],
+    "pos": [
+     0.12,
+     0.269,
+     -0.07
+    ],
+    "rot": [
+     0,
+     -25,
+     0
+    ]
+   },
+   {
+    "id": "p-nd7z55y",
+    "shape": "sphere",
+    "name": "Pearl",
+    "color": "#e59bb5",
+    "made": "a big glossy blush-pink pearl",
+    "size": [
+     0.06,
+     0.06,
+     0.06
+    ],
+    "pos": [
+     -0.14,
+     0.23,
+     -0.04
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-3rz0n7y",
+    "shape": "sphere",
+    "name": "Gold bead",
+    "color": "#6c8fd6",
+    "made": "a small polished gold bead",
+    "size": [
+     0.03,
+     0.03,
+     0.03
+    ],
+    "pos": [
+     -0.07,
+     0.215,
+     0.02
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-za9ozl8",
+    "shape": "asset",
+    "asset": "softbox",
+    "name": "Key light",
+    "color": "#f7e690",
+    "made": "a large octagonal softbox on a black stand",
+    "size": [
+     0.839,
+     2.212,
+     0.795
+    ],
+    "pos": [
+     -1.05,
+     1.106,
+     0.45
+    ],
+    "rot": [
+     0,
+     120,
+     0
+    ]
+   },
+   {
+    "id": "p-toeqaro",
+    "shape": "asset",
+    "asset": "softbox",
+    "name": "Fill light",
+    "color": "#f7e690",
+    "made": "a large octagonal softbox on a black stand",
+    "size": [
+     0.839,
+     2.212,
+     0.795
+    ],
+    "pos": [
+     1.15,
+     1.106,
+     0.15
+    ],
+    "rot": [
+     0,
+     -105,
+     0
+    ]
+   },
+   {
+    "id": "p-udrh72d",
+    "shape": "asset",
+    "asset": "reflector",
+    "name": "Bounce",
+    "color": "#d9a514",
+    "made": "a round silver reflector on a stand",
+    "size": [
+     0.543,
+     1.439,
+     0.477
+    ],
+    "pos": [
+     0.75,
+     0.72,
+     0.42
+    ],
+    "rot": [
+     0,
+     -127,
+     0
+    ]
+   },
+   {
+    "id": "p-w7z4ez6",
+    "shape": "asset",
+    "asset": "tripod-camera",
+    "name": "Camera",
+    "color": "#2fb8c4",
+    "made": "a photo camera on a black tripod",
+    "size": [
+     0.437,
+     0.872,
+     0.504
+    ],
+    "pos": [
+     0.45,
+     0.436,
+     1.5
+    ],
+    "rot": [
+     0,
+     -165,
+     0
+    ]
+   }
+  ],
+  "camera": {
+   "position": [
+    0.02,
+    0.4,
+    1.15
+   ],
+   "target": [
+    0,
+    0.31,
+    -0.15
+   ],
+   "focal": 55
+  },
+  "cameras": [
+   {
+    "id": "r-mvn4i85ny2li",
+    "name": "Hero",
+    "position": [
+     0.02,
+     0.4,
+     1.15
+    ],
+    "target": [
+     0,
+     0.31,
+     -0.15
+    ],
+    "focal": 55,
+    "ratio": "4:5",
+    "thumb": "data:image/jpeg;base64,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"
+   },
+   {
+    "id": "r-mvn4i7rfi7in",
+    "name": "Set",
+    "position": [
+     -2.3,
+     1.35,
+     2.9
+    ],
+    "target": [
+     0.05,
+     0.6,
+     -0.3
+    ],
+    "focal": 24,
+    "ratio": "16:9",
+    "thumb": "data:image/jpeg;base64,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"
+   }
+  ],
+  "ratio": "4:5",
+  "maps": [
+   "clay",
+   "id",
+   "depth"
+  ],
+  "mapsV": 2,
+  "what": "The launch of Brioche eau de parfum: @flacon stands on @plinth beside its gift box, with @brioche keeping it company, a blush pearl and a gold bead at its foot",
+  "scene": "A clean premium perfume campaign: soft diffused key light from the left, a gentle glow on the blush backdrop, crisp glass reflections, a pastel palette of blush, cream and gold, shallow depth of field, high-end commercial photography",
+  "refs": [],
+  "prompt": "Make a finished high-end perfume campaign photograph from a 3D clay blockout. @frame is the canvas, in plain grey clay: keep its layout, proportions, perspective and camera exactly; do not add, move or remove objects. @colour-id marks which thing each flat colour is: use it only to tell things apart, never for colour. @depth shows distance, near light and far dark: use it only for depth. @flacon is the product: the bottle on the plinth is this flacon; keep its shape, blush perfume, gold collar, faceted cream cap and gold BRIOCHE plaque exactly. @brioche shows Brioche, a lop-eared baby bunny: she is the tiny bunny beside the flacon; keep her long floppy honey-beige ears hanging down by her cheeks, her cream fur and rosy cheeks. Scene: the launch of Brioche eau de parfum: the flacon stands on a round cream travertine plinth beside its cream gift box tied with a blush silk ribbon, a glossy blush pearl and a small gold bead at its foot, against a seamless blush-pink paper sweep; around the set, two octagonal softboxes and a silver reflector on stands and a camera on a tripod. Look: clean premium campaign photography, soft diffused key light from the left, a gentle glow on the backdrop, crisp glass reflections, a pastel palette of blush, cream and gold, shallow depth of field. Give every thing its real materials, no clay left. No text but the plaque, no logos, no watermarks.",
+  "promptBy": "writer",
+  "promptFor": {
+   "model": "gpt-image-2.5-sunburst",
+   "key": "1eq7e8e"
+  },
+  "strength": 0.6,
+  "model": "gpt-image-2.5-sunburst",
+  "renders": [
+   {
+    "id": "r-brioche-1",
+    "status": "done",
+    "photo": {
+     "url": "example:render-hero.jpg",
+     "file": "example:render-hero.jpg",
+     "width": 1024,
+     "height": 1280
+    },
+    "frame": {
+     "url": "example:frame-hero.jpg",
+     "file": "example:frame-hero.jpg",
+     "width": 1024,
+     "height": 1280
+    },
+    "maps": [
+     {
+      "url": "example:colour-id-hero.webp",
+      "file": "example:colour-id-hero.webp",
+      "width": 1024,
+      "height": 1280,
+      "name": "colour-id"
+     },
+     {
+      "url": "example:depth-hero.webp",
+      "file": "example:depth-hero.webp",
+      "width": 1024,
+      "height": 1280,
+      "name": "depth"
+     }
+    ],
+    "camera": {
+     "position": [
+      0.02,
+      0.4,
+      1.15
+     ],
+     "target": [
+      0,
+      0.31,
+      -0.15
+     ],
+     "focal": 55
+    },
+    "ratio": "4:5",
+    "model": "gpt-image-2.5-sunburst",
+    "modelName": "GPT Image",
+    "cost": "0cr",
+    "credits": 0,
+    "sent": [
+     "clay",
+     "id",
+     "depth"
+    ],
+    "prompt": "Make a finished high-end perfume campaign photograph from a 3D clay blockout. @frame is the canvas, in plain grey clay: keep its layout, proportions, perspective and camera exactly; do not add, move or remove objects. @colour-id marks which thing each flat colour is: use it only to tell things apart, never for colour. @depth shows distance, near light and far dark: use it only for depth. @flacon is the product: the bottle on the plinth is this flacon; keep its shape, blush perfume, gold collar, faceted cream cap and gold BRIOCHE plaque exactly. @brioche shows Brioche, a lop-eared baby bunny: she is the tiny bunny beside the flacon; keep her long floppy honey-beige ears hanging down by her cheeks, her cream fur and rosy cheeks. Scene: the launch of Brioche eau de parfum: the flacon stands on a round cream travertine plinth beside its cream gift box tied with a blush silk ribbon, a glossy blush pearl and a small gold bead at its foot, against a seamless blush-pink paper sweep; around the set, two octagonal softboxes and a silver reflector on stands and a camera on a tripod. Look: clean premium campaign photography, soft diffused key light from the left, a gentle glow on the backdrop, crisp glass reflections, a pastel palette of blush, cream and gold, shallow depth of field. Give every thing its real materials, no clay left. No text but the plaque, no logos, no watermarks.",
+    "strength": 0.6,
+    "refs": [
+     {
+      "name": "flacon",
+      "url": "example:flacon.webp"
+     },
+     {
+      "name": "brioche",
+      "url": "example:brioche-turnaround.webp"
+     }
+    ],
+    "at": "2026-10-25T01:11:05.000Z",
+    "example": true,
+    "note": "Made with GPT Image for this example"
+   },
+   {
+    "id": "r-brioche-2",
+    "status": "done",
+    "photo": {
+     "url": "example:render-set.jpg",
+     "file": "example:render-set.jpg",
+     "width": 1600,
+     "height": 900
+    },
+    "frame": {
+     "url": "example:frame-set.jpg",
+     "file": "example:frame-set.jpg",
+     "width": 1280,
+     "height": 720
+    },
+    "maps": [
+     {
+      "url": "example:colour-id-set.webp",
+      "file": "example:colour-id-set.webp",
+      "width": 1280,
+      "height": 720,
+      "name": "colour-id"
+     },
+     {
+      "url": "example:depth-set.webp",
+      "file": "example:depth-set.webp",
+      "width": 1280,
+      "height": 720,
+      "name": "depth"
+     }
+    ],
+    "camera": {
+     "position": [
+      -2.3,
+      1.35,
+      2.9
+     ],
+     "target": [
+      0.05,
+      0.6,
+      -0.3
+     ],
+     "focal": 24
+    },
+    "ratio": "16:9",
+    "model": "gpt-image-2.5-sunburst",
+    "modelName": "GPT Image",
+    "cost": "0cr",
+    "credits": 0,
+    "sent": [
+     "clay",
+     "id",
+     "depth"
+    ],
+    "prompt": "Make a finished high-end perfume campaign photograph from a 3D clay blockout. @frame is the canvas, in plain grey clay: keep its layout, proportions, perspective and camera exactly; do not add, move or remove objects. @colour-id marks which thing each flat colour is: use it only to tell things apart, never for colour. @depth shows distance, near light and far dark: use it only for depth. @flacon is the product: the bottle on the plinth is this flacon; keep its shape, blush perfume, gold collar, faceted cream cap and gold BRIOCHE plaque exactly. @brioche shows Brioche, a lop-eared baby bunny: she is the tiny bunny beside the flacon; keep her long floppy honey-beige ears hanging down by her cheeks, her cream fur and rosy cheeks. Scene: the launch of Brioche eau de parfum: the flacon stands on a round cream travertine plinth beside its cream gift box tied with a blush silk ribbon, a glossy blush pearl and a small gold bead at its foot, against a seamless blush-pink paper sweep; around the set, two octagonal softboxes and a silver reflector on stands and a camera on a tripod. Look: clean premium campaign photography, soft diffused key light from the left, a gentle glow on the backdrop, crisp glass reflections, a pastel palette of blush, cream and gold, shallow depth of field. Give every thing its real materials, no clay left. No text but the plaque, no logos, no watermarks.",
+    "strength": 0.6,
+    "refs": [
+     {
+      "name": "flacon",
+      "url": "example:flacon.webp"
+     },
+     {
+      "name": "brioche",
+      "url": "example:brioche-turnaround.webp"
+     }
+    ],
+    "at": "2026-10-25T01:11:08.000Z",
+    "example": true,
+    "note": "Made with GPT Image for this example"
+   },
+   {
+    "id": "r-brioche-3",
+    "status": "done",
+    "photo": {
+     "url": "example:render-after-dark.jpg",
+     "file": "example:render-after-dark.jpg",
+     "width": 1024,
+     "height": 1280
+    },
+    "frame": {
+     "url": "example:frame-hero.jpg",
+     "file": "example:frame-hero.jpg",
+     "width": 1024,
+     "height": 1280
+    },
+    "maps": [
+     {
+      "url": "example:colour-id-hero.webp",
+      "file": "example:colour-id-hero.webp",
+      "width": 1024,
+      "height": 1280,
+      "name": "colour-id"
+     },
+     {
+      "url": "example:depth-hero.webp",
+      "file": "example:depth-hero.webp",
+      "width": 1024,
+      "height": 1280,
+      "name": "depth"
+     }
+    ],
+    "camera": {
+     "position": [
+      0.02,
+      0.4,
+      1.15
+     ],
+     "target": [
+      0,
+      0.31,
+      -0.15
+     ],
+     "focal": 55
+    },
+    "ratio": "4:5",
+    "model": "gpt-image-2.5-sunburst",
+    "modelName": "GPT Image",
+    "cost": "0cr",
+    "credits": 0,
+    "sent": [
+     "clay",
+     "id",
+     "depth"
+    ],
+    "prompt": "Make a finished luxury fragrance campaign photograph from a 3D clay blockout. @frame is the canvas, in plain grey clay: keep its layout, proportions, perspective and camera exactly; do not add, move or remove objects. @colour-id marks which thing each flat colour is: use it only to tell things apart, never for colour. @depth shows distance, near light and far dark: use it only for depth. @flacon is the product: the bottle on the plinth is this flacon; keep its shape, blush perfume, gold collar, faceted cream cap and gold BRIOCHE plaque exactly. @brioche shows Brioche, a lop-eared baby bunny: she is the tiny bunny beside the flacon; keep her cream fur, honey-beige ears and rosy cheeks. Scene: the launch of Brioche eau de parfum: the flacon stands on a round plinth beside its gift box tied with a silk ribbon, a glossy pearl and a small gold bead at its foot, against a seamless paper sweep. Look: after dark: a deep plum backdrop, one warm gold rim light from behind and a soft key from the left, glossy reflections on a black marble plinth, dramatic shadows, rich plum, gold and blush tones. Only the layout and the forms of the clay stay: new light, colours and materials around the product. No text but the plaque, no logos, no watermarks.",
+    "strength": 0.75,
+    "refs": [
+     {
+      "name": "flacon",
+      "url": "example:flacon.webp"
+     },
+     {
+      "name": "brioche",
+      "url": "example:brioche-turnaround.webp"
+     }
+    ],
+    "at": "2026-10-25T01:08:41.000Z",
+    "example": true,
+    "note": "Made with GPT Image for this example"
+   }
+  ],
+  "sheets": [],
+  "models": []
+ }
+}

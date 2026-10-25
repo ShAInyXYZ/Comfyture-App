@@ -1,0 +1,610 @@
+{
+ "id": "toast-example-stage",
+ "rev": 1,
+ "name": "Pickle's little stage",
+ "about": "A stage with a crowd: Pickle the frog (a posed character, his cast sheet on him) singing at the microphone on a small stage with a drum kit, a synth, amps, spotlights and an LED wall, three little fans cheering in front; a Crowd camera and a Close-up. Clay frame and colour ID sent at 75%, for a bold stylised look. Its three renders (the crowd shot, the close-up and a screen-printed poster look) were made for this example with GPT Image from the clay frames kept with them, for free.",
+ "thumb": "example:thumb.jpg",
+ "body": {
+  "parts": [
+   {
+    "id": "p-i6iqjzj",
+    "shape": "asset",
+    "asset": "platform",
+    "name": "Stage",
+    "color": "#6d6a66",
+    "made": "a small wooden concert stage, its edge lined with tape",
+    "size": [
+     3,
+     0.3,
+     1.8
+    ],
+    "pos": [
+     0,
+     0.15,
+     -0.8
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-u7qqegj",
+    "shape": "box",
+    "name": "LED wall",
+    "color": "#5d5e66",
+    "made": "a glowing LED wall of big lime and pink shapes",
+    "size": [
+     2.4,
+     1.7,
+     0.06
+    ],
+    "pos": [
+     0,
+     1.17,
+     -1.9
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "round": 0
+   },
+   {
+    "id": "p-gcya8lf",
+    "shape": "asset",
+    "asset": "curtains",
+    "name": "Curtain",
+    "color": "#a3a33a",
+    "made": "a heavy curtain of sequins, drawn open",
+    "size": [
+     3.4,
+     2.1,
+     0.14
+    ],
+    "pos": [
+     0,
+     1.05,
+     -1.78
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-n101511",
+    "shape": "character",
+    "body": "toddler",
+    "pose": "dance",
+    "params": {
+     "nod": -8
+    },
+    "name": "Pickle",
+    "color": "#ff6b3d",
+    "made": "a little green frog with big round eyes, a cream belly and rosy cheeks",
+    "refs": [
+     {
+      "file": "example:pickle-turnaround.webp",
+      "url": "example:pickle-turnaround.webp",
+      "width": 1280,
+      "height": 321
+     },
+     {
+      "file": "example:pickle-dance.webp",
+      "url": "example:pickle-dance.webp",
+      "width": 310,
+      "height": 335
+     }
+    ],
+    "size": [
+     0.438,
+     0.9,
+     0.309
+    ],
+    "pos": [
+     0,
+     0.75,
+     -0.62
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "id": "p-fljw53j",
+    "shape": "asset",
+    "asset": "mic-stand",
+    "name": "Mic stand",
+    "color": "#9e8fd9",
+    "made": "a chrome microphone stand",
+    "size": [
+     0.175,
+     0.76,
+     0.465
+    ],
+    "pos": [
+     0,
+     0.68,
+     -0.28
+    ],
+    "rot": [
+     0,
+     180,
+     0
+    ]
+   },
+   {
+    "id": "p-pqwf3rj",
+    "shape": "asset",
+    "asset": "drum-kit",
+    "name": "Drum kit",
+    "color": "#d99e8f",
+    "made": "a sparkly lime-green drum kit",
+    "size": [
+     1.098,
+     0.701,
+     0.911
+    ],
+    "pos": [
+     0.7,
+     0.651,
+     -1.23
+    ],
+    "rot": [
+     0,
+     -12,
+     0
+    ]
+   },
+   {
+    "id": "p-t22tr5x",
+    "shape": "asset",
+    "asset": "keyboard-stand",
+    "name": "Keyboard",
+    "color": "#8fd9c4",
+    "made": "a retro synth keyboard on an X stand",
+    "size": [
+     0.702,
+     0.586,
+     0.398
+    ],
+    "pos": [
+     -0.75,
+     0.593,
+     -1.2
+    ],
+    "rot": [
+     0,
+     18,
+     0
+    ]
+   },
+   {
+    "id": "p-g6e76eo",
+    "shape": "asset",
+    "asset": "pa-speaker",
+    "name": "Amp",
+    "color": "#2fb8c4",
+    "made": "a boxy guitar amp",
+    "size": [
+     0.264,
+     0.445,
+     0.328
+    ],
+    "pos": [
+     -1.12,
+     0.523,
+     -0.35
+    ],
+    "rot": [
+     0,
+     20,
+     0
+    ]
+   },
+   {
+    "id": "p-druvi9j",
+    "shape": "asset",
+    "asset": "pa-speaker",
+    "name": "Amp 2",
+    "color": "#2fb8c4",
+    "made": "a boxy guitar amp",
+    "size": [
+     0.264,
+     0.445,
+     0.328
+    ],
+    "pos": [
+     1.12,
+     0.523,
+     -0.35
+    ],
+    "rot": [
+     0,
+     -20,
+     0
+    ]
+   },
+   {
+    "id": "p-az73dlx",
+    "shape": "asset",
+    "asset": "film-light",
+    "name": "Spotlight",
+    "color": "#f2d23c",
+    "made": "a stage spotlight on a stand",
+    "size": [
+     0.458,
+     1.258,
+     0.488
+    ],
+    "pos": [
+     -1.3,
+     0.929,
+     -1.45
+    ],
+    "rot": [
+     0,
+     57,
+     0
+    ]
+   },
+   {
+    "id": "p-ega4754",
+    "shape": "asset",
+    "asset": "film-light",
+    "name": "Spotlight 2",
+    "color": "#f2d23c",
+    "made": "a stage spotlight on a stand",
+    "size": [
+     0.458,
+     1.258,
+     0.488
+    ],
+    "pos": [
+     1.3,
+     0.929,
+     -1.39
+    ],
+    "rot": [
+     0,
+     -57,
+     0
+    ]
+   },
+   {
+    "id": "p-mrlc779",
+    "shape": "character",
+    "body": "child",
+    "pose": "cheer",
+    "name": "Hedgehog",
+    "color": "#3dd6ff",
+    "made": "a little hedgehog fan seen from behind, cheering with both arms up",
+    "size": [
+     0.41,
+     0.8,
+     0.178
+    ],
+    "pos": [
+     -0.85,
+     0.4,
+     0.8
+    ],
+    "rot": [
+     0,
+     172,
+     0
+    ]
+   },
+   {
+    "id": "p-jt3pxat",
+    "shape": "character",
+    "body": "child",
+    "pose": "cheer",
+    "name": "Mouse",
+    "color": "#b6f03d",
+    "made": "a little mouse fan seen from behind, cheering with both arms up",
+    "size": [
+     0.369,
+     0.72,
+     0.16
+    ],
+    "pos": [
+     -0.32,
+     0.36,
+     1.05
+    ],
+    "rot": [
+     0,
+     186,
+     0
+    ]
+   },
+   {
+    "id": "p-vcd35qe",
+    "shape": "character",
+    "body": "child",
+    "pose": "cheer",
+    "name": "Squirrel",
+    "color": "#ff3dd0",
+    "made": "a little squirrel fan seen from behind, cheering with both arms up",
+    "size": [
+     0.436,
+     0.85,
+     0.189
+    ],
+    "pos": [
+     0.78,
+     0.425,
+     0.85
+    ],
+    "rot": [
+     0,
+     192,
+     0
+    ]
+   }
+  ],
+  "camera": {
+   "position": [
+    0.1,
+    1,
+    2.3
+   ],
+   "target": [
+    0,
+    0.85,
+    -0.6
+   ],
+   "focal": 30
+  },
+  "cameras": [
+   {
+    "id": "r-mvn4pqdwxz0f",
+    "name": "Crowd",
+    "position": [
+     0.1,
+     1,
+     2.3
+    ],
+    "target": [
+     0,
+     0.85,
+     -0.6
+    ],
+    "focal": 30,
+    "ratio": "16:9",
+    "thumb": "data:image/jpeg;base64,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"
+   },
+   {
+    "id": "r-mvn4pq0mcmxo",
+    "name": "Close-up",
+    "position": [
+     0.55,
+     1.02,
+     0.52
+    ],
+    "target": [
+     -0.03,
+     1,
+     -0.62
+    ],
+    "focal": 35,
+    "ratio": "16:9",
+    "thumb": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAB8ANwDASIAAhEBAxEB/8QAHAAAAQQDAQAAAAAAAAAAAAAAAAIEBQYBAwcI/8QASBAAAQMDAAQJCQUFBgcBAAAAAQACAwQFEQYSITEHEyI0QVFxcrEUIzJhc5GhssEVNUJSgTM2ktHhJGKCosLwFiZFU3SDs/H/xAAaAQACAwEBAAAAAAAAAAAAAAAABAIDBgUB/8QANBEAAgEDAwIDBgMJAQAAAAAAAAECAwQREiExBUFRcYEiMjShsdEUM3ITIyRCYZGywfDx/9oADAMBAAIRAxEAPwDzehCF6AIQhAAhCEACEIQBfOBT9/ab2Mvyr0LO/E9O3rcflK888Cn7+03sZflXoSo5zS953ylZvq35/p9y6nwJrnEOph+aULVeSRRHHS4Jdw/aUntQkXvmX+ILmImOK/mU/cKKLmcHcb4LFfzObuFZouZwdxvgjsBCT7wenatWVsqN4WrK2Fj8PDyF5cisrGVhGU0RM5RlYWEAKyjKTlGUAKyo6sPnin+VHVh88UAP9HPvNvdKm7jzuHulQejX3m3uFTdy53D3Ss51T4heRdT4FUh/tDP18E4qTiQdia0fOWfr4JxVnzg7FzZPcsPIKEIWyFgQhCABCF624Doo5eCixCRjHjz5w4Z28fIlLy6/CwU8Z3wTpw1vBDVnARotLniKm6U5ycaszHDf62/VVy88AtNS0FTU0t/mHExuk1ZKYOyGtJxkOHVvXW6GyTUElRJDcbhUCeRz/wC1VLpAwEkhrRsAAzgYHq24Vd0tptJqW5W2akubpbLUVkNLX0UsTHYjllawlj9XW3Oxv2ZyNyz9K+ruelVP7/8AMalTjjODg/Ap+/tN7GX5V6DqOc0vePylRtToFo7ovcrXX2OhdS1D53QOPHyPBaYpHHY5x6Wj3KSqOcUvePylF9cRuKiqQ4x9ypRcdmarl6dJ7ZqTeuZHvBZuXp0ntmrF65ke8Emj0cV3M5u4UUXM4O43wRXczm7hRRczg7jfBHYCDqfSC05W2pPKC0ZWwsfh4eQvPkVlGUnKMpsiKyjKTlGUAKyjKTlGUAKyo2sPnypDKjaw+fK8AkdGvvRvcKnLlzuLuHxUDox96t7jlO3LncXcPis31X4j0L6fBmj21Lf18FurD50di0UPOW9hWyvOJh3VzG9yZ5GQhC2gsCEIQAL1pwGVELOCyxtdLGHZnbguGc8fIcdq8lro1hoqm98FIt1nfE+5U98NU6I1DInMjMDWh+XOH4gR+i5/UqSq0km8LK3LaTwz1aHjA93VtUXeLta4Lhb7ZWzDyysmbxEA9JxZy9bujV37s7PUl2+60slLCDOx0ojBe1sjZHNxgEnVJ6fFKuddBFbKiVsuMxPIc0Hk4G87Nn6rKpYe6HBhph/0j/zT/wDCZRFRzim7x+UrhnBHerrcNNKWnr7nXVUAZJII5p3vaHahGtgnGcEjPrXc6jnFN3z8pTd1bu2mqbedhfVq3NVy9Ok9s1YvIH2e4nOdYYws3L0qX2zVrvMUppHSOke6MbGtwMDbnfn6KiO41a0o1JS1dk38h1Xczm7hRRczg7jfBPYLe+4Mkja4MYRgvIzjPq6VLxWSmgpmM15HarQMk9S9jTlJZRCnbzqLKRzyq9ILTlWO9WEMBfRyF+N7Hb/0KrS1fT5xlQjFPdcitxQnRlia5M5RlYyjKeKDOUZWMoygDOUZWMoygDOVG1h8+VI5UZVnz7kASeiwzdM9TCfBTly55H3D4qD0V+8z7M+IU3cueR9w+KzPVfiPQvp8CqHnLewpVxOJ2936lIoect7Cs3M4qG936lczuTPJSEIW1FgQhCABCEIAvPBrn7I011c/csmf42Kjte5udVxGRg4O8dS6FwS1NNFbtN4qmldO51jleHCXUAaHNBbjG8lzTno1TsOdnPEvT/Nn6fQk+EXrgW/f2l9lL8pXoSo5xTd8/KV564GHBun9GD+KOUD+An6L0LUc4pu+flK4XV/z15fcsp8Gq4+lS+2anVyfD9mBrpYxkHOXDYmtwBL6QAZJmbsUm+gZxbjLTQTTsOQ12S1p35f1n+770pb0JVc9kuX2R0+nVIwnLUstrZeJKUU8Fvp4m1crInSZcA44z/vYnM9wppIiYqiJ2OgO2qstdTVUsnl8EU8oceVI0Ej1eoLRVUtvjkEsVNHG9u7UyB+oGwrpKrYKOnTL5D1O1ulpw12HNxq9XWOVUpHh73OG4klPLpV63Iadrjj9OlMMpjpFN4lUfkL9cnFaKS55M5RlYyjK7RnzOUZWMoygDOUZWMoygDOVG1Z8+5SOVGVZ8+5AEpor95n2Z8Qp2489Z7P6qC0U+9D7M+IU5cees9n9VmOrfEeiL6fAug5wOwpF2OKlvcHiUqg5wOwrVeDipb3B4lc1ck2edvsWHqWfsWHqUtlGVusIVIn7Fh6kfYsPUpbKzlGEBEfYkPUj7Eh6lL5Vj4Pvsk6WUf8AxBxX2fh+uJjhhOqdXP64RhHjeFkODPReplh0lFLSTPFVZpoGODTqvcZI8AHdnkn3FQzeDC+ubkWeqwM7wBuyPoV6kst1sFQDBZJqSVsLc8VSO1hG3P5W7ANpW9l8s8sM7mVlIY4dkrmyjzednKOeTuPuVMUlJyXcpdd8Hnbg40Gu1s0roa2e11cMWq/lyRluMsdjOdy67PQVXlNKOIf6bujYOSd/UrTFdrXJTvqKOpp5oYz5yVk+uGbztOT1qGuN7p61kLaFzHsJzI0nORswCOpUVulRvJqpJ4L6U5NZGs7Jo2RihpzM8vDXVOrkM69TPq/F/Vb7eRTCaGYFhJzh28+vxVobXW/cJIMHZgSbPdlQmlJopWQ1jHjjI3ar+LOsXMOdmO05z2pC8s0qeab2jwv+5Y50u7SuFGfD2KXeJHvqpZKAgyxtPGsOzYNzviFFvdcnwca5sQB3NMoB9xXQLNQ0Dm+WxsBdMzaXHWy3o2bupP5KCknZyogAHZGNm3d0blyFFY25NZ+JnCo017Pzz9jlDGSNIfP+0cN3UOpKyr9WWG0ioZJMJGt1sFgfyT9filV2i1DWR69ITTv6NTa09oXbtb6lThGm/UztzZ3Facqs8ZZz/KMp1c2yWWTUBjkqQS17HxawaOgjO/KZtc9wBlGJD6QxjBTtG6jWqOEOF3Fq9jOhRjVn37CsqWt1Ha5g01l0dAdmWCnJ7duVEZRlMtZE08F1pLdom0Ay3KSU9OsS0e4DKc1dr0Sa7UNW6F2AeTITvGQdoPWqDlSF0Y+Sua2Njnu4mPY0ZPoBVuLzyWKSxwS1XZ7LtNJfYx1NkjJ+I/kqfdoW09Y5sdRFOPzR5x8QFYabRu8VP7O3zD2mI/mwmF00WvdM4ySW6YsO3MeJPlJUk0u5FpvsatEgTc3+qIn4hTlx5832f1ULoi1zbpKHAgiE7D2tUzcefN9n9Vmuq/EPyRZT4Nlv5wOwpvejiqb3B4lOLftqP0KaX04rG9weJXOjyTZxDKzlXHTPRijt9OKqzOqHQtOJGSkOI9YIA2dqpeVvJRcXhnPoV4V466byheUZScoyolwrKMpOUZQB03gVLBUX50hDWMpA4k9GHZUrpRSxaN6J3iRzNZt2uTCWtJGYwA4jfs28YP6bo7gssroLFfrpcZPJ6OooXwswNZ7mk7Xhudw1TjrIPUnHDFSVVJo5YY55xNgB0zmggGRzBjft/C7ekqNRSr1Ip+H0IVoPMH4/+jCwaTvu2klDb6KliobPGHFlLG0AEhh5Tj0n1+O9X2tY1tVRlrQDgbQP7pXHeDg/83Ufdk+QrslftqaPsHyuSnUpt/tf0x/yGYcDW476b2zVuqJTA6CRpLS2Vu0bxtWm4b6b2zUm8Eto8jYQ4ELNwlpkpE5LKaJJlYaWRsEx1GE5aTuIT2W7RtZskbjtUjbIGSQ5kAe07g4ZCcS2+hIOtSUx7Ym/yTtSKlOTg9smloVdNKEaq9pJZKFeb2x7HsaeMP5W7+1bbRpW+l1WVbXFo/ENqsV1ipW0r4WMjY0jADWgALnLxqvcB0EhMWVtTr6ot4aI395KhGMoxTi9mmTOm91bXPgkpHjigzGW78k7fooZzmu1SwY5Iz2rXIwSM1XbW5zjoylAYGAupaWU7eo5N5Ry77qNO5oRpwjhphlZysIXSOOZypK4TTUlwZJTyvik4mM6zHEHawdSjFI33nsfsIvkCi+USXusdRaU3qP0a+Q7McprXeIUlBpfdm6VOpJJWSUwke3ULANgBxtG3oVWgifPMyKJjnvccBrRknsCmJrPXwaWzVT6OdtKJXnjSw6uCCBt/UKuokl6MtpNtrzRf2VMNfqST0MTngekXbfD1BE1ut0p1pba5zsYywgbP4gtNrHmmqTPopFwjPeST9B2UFkhZbbbIy50NJUwvxs5YI+JKpN+x5aMbtQeJV+rnarHHqBKoN956O4PErl31OEHHSsclVSKWMEVdDm21YO0cU/YewrkeV1q6nFsrCN/Ev8AlK5HlbK55Rkuhe7P0FZRlJyjKVO8Kypyw2yA0z7teCW2uBwaGA4dVSb+LZ/qPQPWQo23WuuuTtWgpJ6jGwljCQO07guizaG3i/toW3IUNqp6WIQxwUrS7tdjONYneQdu/trqaniMdvFnqx3LFoNVMulA2G6vZHPfi8saHagZBG5kTI2g7NmtIRjoC36S3imvNy0qt81MyrgoA3UhAwS0N5QaR+IEOx6yFP2TRq2UOkdFM1pkkstFxEcm5ow0hztUbNYue4nfvTZrmyTSOkiizKSX4YOUTvz1pW2t4qMpL+b6dvkQrycn+k5fohZmwaU0NwtFS6ttTxIHOLcSU7tQ4ZIOg9Gdx9WcLptcP7RR9n+ly10tHR2+sdPR0VLBLuLoowzWHrxjP6pzWBr5IHuyC1ocNXA61TcWVaqqmHnKSXpLO5fGccZQxuG+m9s1Lq4TUiCAb5ZmM95wsVkZmEfFnVLHh+3bnCf2pnH3WhbsGpO2Q/4Tn6LjrplxGS1R2z/Qk6iwzbc6ivtV0qoYKd9TA15c0sIJAO0DG9MJr5dZeSy11gz0luApSsuEMdZLPI4hkkjgSfwnOzPVkYWw3Sl1MiVmO1V1tKqSS4ya21c3RhKccvC3K46nu9WQahrKWI7y5wc73BV6oiME8kTjrFriM9frV2NdHcJjBT6zxjluYM6oVD4QrrDYHUrjC+XjC5mzkkAY39e9OdLq6K2nHIt1ek6lvqe2nf8A0KyjKq0Omttf6cdTGfWwEfAp9BpPaJiAKxrSfztc34kYWkMoTeUJlDcqGfHE1lO8k4AEgyt087Y2ZGCTuQBuc4NGScKQvrga6MZ28RF8gVakkdIcuKmL9rC7wjaD5NBkf+tqi+USXuse2KaSC608kLyx4JwR2LoYqJ6ukMU79drgN4wdnZ2LmNJK+CpjkicWvB2Ee5TE+l1Tb7jUQPp4pomSFo2lrsA+74KitCUpeyM0KkYRerxL5Tvjpw1rtbt2ED/fYnflETiGh+HEbi1234KqUt9ZWzwxCme2R8LZxh+d/RuVijibK4cYdVwO1rTktPrO4JRP2nDuhnVGXA0qJYquJ7YHufrNIBbG8jPbhaX2C2VhEs0dxY/GMFv8grBrRMOeLe8nqx/Nbg6BwzsHqLV46MZ+/hkXvycNvRxZ647vMSfKVzq16P3W6EeRUM0jD+MjVZ/EcBdVpwHVULXAOaXtBBGQRlWxd26eGjJdCX7ufmcttfBlVSAOudbHCPyQjXPvOAPirjatCrHbsFtIKiQfjqDr/Dd8FY1kJTJ3AjY2NgZG1rWDcGjAC308roZmSsDS5hyNYZC0hZCGsrDAlo5TFZrhVPALp3hnVnr+ZQ8UeRruyHnbsKkKp2tZ6WMgBvGFxx0nbvTPK9ilFYRCO7bF7MbQsSNaZBloPIG8dqwsyftB3B9VZH3WSSwsIQY4/wAjfcnVoiay4CVoA1I3uP8ACR9VF8a5s7xnYnljle417i4kimdj3hQZCo8RYplTBJQtdNDFI4sAJc0ZKrTqGkrbm4CARxNZktjcWgnIxsH67k5dI7yZwz0lYsm3yhx3lwHw/qsxa0tdzolwsmzuqjo2bqQ2bS+eC0WyWOG1xthYyNgb6LRgKtaQUFHf8Ul0h4+naeMDC4t5Q2ZyCD0lStG4ikeBuDnAe9R8G2olJ3gALy0j/Exj4N/Ijd4VrOfivrgpNz4OLDjMPlkBO4MlBH+YFV+q4NGF2aW5OaM7pIs7O0EeC668Bww4Aj1pu6kiO4EdhWlyZPBxOp4O7vECYZaWYdADy0n3jHxTB2ieklISYqKo2dMDw4/5Tld1kpWNGQXe9OYoWRegNvWjUzzB54mkv9uANS24QAf96NwH+YKzab6SXCg0qmZE6N7RT02A9mcZgjJ3esldeqz5k4UdpFb6Osr3+V0lPMTHGMyRhx9BvWvNW5LHss5volpBdL7eYaKCipnOPLe/XLGxsHpOJOdn9BtUrpXV1FJpFJG6gnmjqqhzKaSnw8SuBwWjqcDsI/8A1XF9lt9voGU1BSspmV0bX1DohqufgkAZ6ANu7rSrPYaWn0mmqGyTPZV1hkkgkLXR64yQ9oIy1w6wdxIUXN5yWKCwl4lu0cs7KKlhknYPKuIZE85zsHR2ePTnZibAAAAGAOhCEq3ncdSxsgQhC8A//9k="
+   }
+  ],
+  "ratio": "16:9",
+  "maps": [
+   "clay",
+   "id"
+  ],
+  "mapsV": 2,
+  "what": "Pickle's first gig: @pickle sings his heart out at @mic-stand on a tiny stage, his band's drum kit, synth and amps around him, the spotlights on, little fans cheering in front",
+  "scene": "Bold stylised 3D animation: saturated lime, hot pink and electric blue stage light, chunky toy-like shapes, glossy highlights, haze and light beams, deep shadows, high contrast",
+  "refs": [],
+  "prompt": "Make a finished bold stylised 3D animated-film frame from a 3D clay blockout. @frame is the canvas, in plain grey clay: keep its layout, proportions, perspective and camera exactly; do not add, move or remove objects. @colour-id marks which thing each flat colour is: use it only to tell things apart, never for colour. @pickle and @pickle-2 show Pickle, a little green frog: he is the singer on the stage; keep his big round eyes, cream belly, rosy cheeks and lime-green skin as in them. Scene: Pickle's first gig on a tiny wooden stage: he sings his heart out into a chrome microphone stand, one arm up; behind him a sparkly lime-green drum kit, a retro synth on an X stand, two boxy guitar amps, two stage spotlights on stands and a sequin curtain drawn open on a glowing LED wall of big lime and pink shapes; in front of the stage three little fans seen from behind cheer with both arms up: a hedgehog, a mouse and a squirrel. Look: bold stylised 3D animation, saturated lime, hot pink and electric blue stage light, chunky toy-like shapes, glossy highlights, haze and light beams, deep shadows, high contrast. Only the layout and the forms of the clay stay: all-new materials, colours and light. No text, logos or watermarks.",
+  "promptBy": "writer",
+  "promptFor": {
+   "model": "gpt-image-2.5-sunburst",
+   "key": "1w6vcz3"
+  },
+  "strength": 0.75,
+  "model": "gpt-image-2.5-sunburst",
+  "renders": [
+   {
+    "id": "r-pickle-1",
+    "status": "done",
+    "photo": {
+     "url": "example:render-crowd.jpg",
+     "file": "example:render-crowd.jpg",
+     "width": 1600,
+     "height": 900
+    },
+    "frame": {
+     "url": "example:frame-crowd.jpg",
+     "file": "example:frame-crowd.jpg",
+     "width": 1280,
+     "height": 720
+    },
+    "maps": [
+     {
+      "url": "example:colour-id-crowd.webp",
+      "file": "example:colour-id-crowd.webp",
+      "width": 1280,
+      "height": 720,
+      "name": "colour-id"
+     }
+    ],
+    "camera": {
+     "position": [
+      0.1,
+      1,
+      2.3
+     ],
+     "target": [
+      0,
+      0.85,
+      -0.6
+     ],
+     "focal": 30
+    },
+    "ratio": "16:9",
+    "model": "gpt-image-2.5-sunburst",
+    "modelName": "GPT Image",
+    "cost": "0cr",
+    "credits": 0,
+    "sent": [
+     "clay",
+     "id"
+    ],
+    "prompt": "Make a finished bold stylised 3D animated-film frame from a 3D clay blockout. @frame is the canvas, in plain grey clay: keep its layout, proportions, perspective and camera exactly; do not add, move or remove objects. @colour-id marks which thing each flat colour is: use it only to tell things apart, never for colour. @pickle and @pickle-2 show Pickle, a little green frog: he is the singer on the stage; keep his big round eyes, cream belly, rosy cheeks and lime-green skin as in them. Scene: Pickle's first gig on a tiny wooden stage: he sings his heart out into a chrome microphone stand, one arm up; behind him a sparkly lime-green drum kit, a retro synth on an X stand, two boxy guitar amps, two stage spotlights on stands and a sequin curtain drawn open on a glowing LED wall of big lime and pink shapes; in front of the stage three little fans seen from behind cheer with both arms up: a hedgehog, a mouse and a squirrel. Look: bold stylised 3D animation, saturated lime, hot pink and electric blue stage light, chunky toy-like shapes, glossy highlights, haze and light beams, deep shadows, high contrast. Only the layout and the forms of the clay stay: all-new materials, colours and light. No text, logos or watermarks.",
+    "strength": 0.75,
+    "refs": [
+     {
+      "name": "pickle",
+      "url": "example:pickle-turnaround.webp"
+     },
+     {
+      "name": "pickle-2",
+      "url": "example:pickle-dance.webp"
+     }
+    ],
+    "at": "2026-10-25T01:10:15.000Z",
+    "example": true,
+    "note": "Made with GPT Image for this example"
+   },
+   {
+    "id": "r-pickle-2",
+    "status": "done",
+    "photo": {
+     "url": "example:render-close-up.jpg",
+     "file": "example:render-close-up.jpg",
+     "width": 1600,
+     "height": 900
+    },
+    "frame": {
+     "url": "example:frame-close-up.jpg",
+     "file": "example:frame-close-up.jpg",
+     "width": 1280,
+     "height": 720
+    },
+    "maps": [
+     {
+      "url": "example:colour-id-close-up.webp",
+      "file": "example:colour-id-close-up.webp",
+      "width": 1280,
+      "height": 720,
+      "name": "colour-id"
+     }
+    ],
+    "camera": {
+     "position": [
+      0.55,
+      1.02,
+      0.52
+     ],
+     "target": [
+      -0.03,
+      1,
+      -0.62
+     ],
+     "focal": 35
+    },
+    "ratio": "16:9",
+    "model": "gpt-image-2.5-sunburst",
+    "modelName": "GPT Image",
+    "cost": "0cr",
+    "credits": 0,
+    "sent": [
+     "clay",
+     "id"
+    ],
+    "prompt": "Make a finished bold stylised 3D animated-film frame from a 3D clay blockout. @frame is the canvas, in plain grey clay: keep its layout, proportions, perspective and camera exactly; do not add, move or remove objects. @colour-id marks which thing each flat colour is: use it only to tell things apart, never for colour. @pickle and @pickle-2 show Pickle, a little green frog: he is the singer on the stage; keep his big round eyes, cream belly, rosy cheeks and lime-green skin as in them. Scene: close on Pickle at his first gig, on a tiny wooden stage: he sings his heart out into a chrome microphone stand, one arm up; behind him a sparkly lime-green drum kit, a retro synth on an X stand, a stage spotlight on a stand and a sequin curtain drawn open on a glowing LED wall of big lime and pink shapes. Look: bold stylised 3D animation, saturated lime, hot pink and electric blue stage light, chunky toy-like shapes, glossy highlights, haze and light beams, deep shadows, high contrast. Only the layout and the forms of the clay stay: all-new materials, colours and light. No text, logos or watermarks.",
+    "strength": 0.75,
+    "refs": [
+     {
+      "name": "pickle",
+      "url": "example:pickle-turnaround.webp"
+     },
+     {
+      "name": "pickle-2",
+      "url": "example:pickle-dance.webp"
+     }
+    ],
+    "at": "2026-10-25T01:17:41.000Z",
+    "example": true,
+    "note": "Made with GPT Image for this example"
+   },
+   {
+    "id": "r-pickle-3",
+    "status": "done",
+    "photo": {
+     "url": "example:render-poster.jpg",
+     "file": "example:render-poster.jpg",
+     "width": 1600,
+     "height": 900
+    },
+    "frame": {
+     "url": "example:frame-crowd.jpg",
+     "file": "example:frame-crowd.jpg",
+     "width": 1280,
+     "height": 720
+    },
+    "maps": [
+     {
+      "url": "example:colour-id-crowd.webp",
+      "file": "example:colour-id-crowd.webp",
+      "width": 1280,
+      "height": 720,
+      "name": "colour-id"
+     }
+    ],
+    "camera": {
+     "position": [
+      0.1,
+      1,
+      2.3
+     ],
+     "target": [
+      0,
+      0.85,
+      -0.6
+     ],
+     "focal": 30
+    },
+    "ratio": "16:9",
+    "model": "gpt-image-2.5-sunburst",
+    "modelName": "GPT Image",
+    "cost": "0cr",
+    "credits": 0,
+    "sent": [
+     "clay",
+     "id"
+    ],
+    "prompt": "Make a finished screen-printed gig poster illustration from a 3D clay blockout. @frame is the canvas, in plain grey clay: keep its layout, proportions, perspective and camera exactly; do not add, move or remove objects. @colour-id marks which thing each flat colour is: use it only to tell things apart, never for colour. @pickle and @pickle-2 show Pickle, a little green frog: he is the singer on the stage; keep his big round eyes, cream belly and rosy cheeks as in them. Scene: Pickle's first gig on a tiny wooden stage: he sings into a microphone stand, one arm up; behind him a drum kit, a synth on an X stand, two amps, two spotlights on stands and a curtain drawn open on a glowing LED wall; in front of the stage three little fans seen from behind cheer with both arms up: a hedgehog, a mouse and a squirrel. Look: a screen-printed gig poster, flat bold shapes, thick ink outlines, halftone dots and a slight misregistration, three inks only: lime, hot pink and ink black on cream paper. Only the layout and the forms of the clay stay: all-new colours and texture. No text, logos or watermarks.",
+    "strength": 0.85,
+    "refs": [
+     {
+      "name": "pickle",
+      "url": "example:pickle-turnaround.webp"
+     },
+     {
+      "name": "pickle-2",
+      "url": "example:pickle-dance.webp"
+     }
+    ],
+    "at": "2026-10-25T01:10:11.000Z",
+    "example": true,
+    "note": "Made with GPT Image for this example"
+   }
+  ],
+  "sheets": [],
+  "models": []
+ }
+}

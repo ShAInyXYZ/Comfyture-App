@@ -144,6 +144,8 @@ try {
   const shot = async (name) => out && (await page.screenshot({ path: join(out, `${name}.png`) }));
 
   // ---------------------------------------------------------------- the page
+  // (Toaster ships examples, examples/toaster/; this test starts from an empty Toaster as someone who deleted them: they stay deleted)
+  for (const { id } of (await fetch(`${base}/api/toasts`).then((r) => r.json())).toasts) await fetch(`${base}/api/toasts/${id}`, { method: "DELETE" });
   await page.goto(`${base}/#/toaster`);
   await page.waitForSelector(".ts-stage canvas", { timeout: 20000 });
   await page.waitForFunction(() => !document.querySelector(".ts-boot"));

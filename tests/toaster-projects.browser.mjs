@@ -48,6 +48,8 @@ try {
   const tone = () => page.locator(".ts-saved").getAttribute("data-tone");
   const toastText = () => js(() => document.getElementById("toast").textContent);
 
+  // (Toaster ships examples, examples/toaster/; this test starts from an empty Toaster as someone who deleted them: they stay deleted)
+  for (const { id } of (await fetch(`${base}/api/toasts`).then((r) => r.json())).toasts) await fetch(`${base}/api/toasts/${id}`, { method: "DELETE" });
   await page.goto(`${base}/#/toaster`);
   await page.waitForSelector(".ts-stage canvas", { timeout: 20000 });
   await page.waitForFunction(() => !document.querySelector(".ts-boot"));
