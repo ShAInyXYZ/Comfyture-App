@@ -2,9 +2,10 @@
 // bake (a picture at its full size, a clip frame by frame), so what is seen is what is made. Canvas 2D only: its blends (screen, add,
 // overlay, soft light), its filters (blur for the glow, the matte's soft edge) and a hidden SVG filter for the matte's choke.
 //
-//   render(g, w, h, { base, matte, layers, frame, fps, still, sourceOf, edge, finish })
+//   render(g, w, h, { base, matte, matteFrom, layers, frame, fps, still, sourceOf, edge, finish })
 //     base      what the layers go over (a video, a picture, a canvas), drawn to the whole frame
-//     matte     Roto's matte (white on the people) or null: the layers marked "behind" go under the people it holds
+//     matte     Roto's matte (white on the people) or null: the layers marked "behind" go under the people it holds, and a layer that
+//               follows keeps its place on them (spice-follow.js); matteFrom the slate frame the matte's first frame is
 //     layers    the shot's layers, bottom of the stack first (spice-elements.js cleanLayer)
 //     frame     the slate frame drawn (a layer plays on its own frames), fps the shot's rate; still: a picture (no motion)
 //     sourceOf  (layer) => what an image or an AI layer is drawn from (loaded by the caller), or null while it loads
@@ -14,6 +15,7 @@
 // in front, the finish. The motion and the particles are pure functions of the time (motionAt, particlesOf): the same frame always looks
 // the same.
 import { elementOf, blendOf } from "./spice-elements.js";
+import { followed } from "./spice-follow.js";
 
 const FIRST = 1001;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -597,7 +599,10 @@ export function render(g, w, h, ctx) {
   g.filter = "none";
   if (ctx.base) g.drawImage(ctx.base, 0, 0, w, h);
   else g.clearRect(0, 0, w, h);
-  const shown = (ctx.layers ?? []).filter((l) => l.eye !== false);
+  // (a layer that follows Roto's subject is where the subject has taken it on this frame: its centre moves with the matte's anchor, and so
+  // do its light and everything else drawn from its place; a picture has nothing to follow)
+  const at = ctx.still || !ctx.matte ? null : { matte: ctx.matte, frame: ctx.frame ?? FIRST, fps: ctx.fps ?? 24, matteFrom: ctx.matteFrom ?? FIRST };
+  const shown = (ctx.layers ?? []).filter((l) => l.eye !== false).map((l) => (at ? followed(l, at) : l));
   const behind = ctx.matte ? shown.filter((l) => l.behind) : [];
   const front = shown.filter((l) => !behind.includes(l));
   // (the matte's edge, as a filter at this size: made once for the people held and the light that falls on them)

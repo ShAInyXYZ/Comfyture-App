@@ -103,6 +103,8 @@ export const TINTS = ["#ff7a1a", "#ffd23f", "#ff3b6b", "#b56bff", "#3fa9ff", "#3
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const num = (v, lo, hi, d) => (typeof v === "number" && Number.isFinite(v) ? clamp(v, lo, hi) : d);
 const hex = (v) => (typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : "");
+/** A pin: { x, y } in shares of the frame, each kept from 0 to 1 and to four places; null when it is not a point. */
+const cleanPin = (v) => (v && typeof v === "object" && Number.isFinite(v.x) && Number.isFinite(v.y) ? { x: Math.round(clamp(v.x, 0, 1) * 1e4) / 1e4, y: Math.round(clamp(v.y, 0, 1) * 1e4) / 1e4 } : null);
 const ids = new Set(LIBRARY.map((e) => e.id));
 
 /** A new layer of an element, where it was dropped (x, y: 0 to 1 of the frame), with the element's own look. */
@@ -136,6 +138,9 @@ export function cleanLayer(raw) {
     from: typeof raw.from === "number" ? Math.round(raw.from) : null, to: typeof raw.to === "number" ? Math.round(raw.to) : null,
     // (light: how much it casts on the shot, none when a layer has not said; reach: how far, in boxes of its own. Only a picture shines)
     ...(e.kind === "image" ? { light: num(raw.light, 0, 1, 0), reach: num(raw.reach, 0.3, 4, 1.6) } : {}),
+    // (follow: it keeps its place on Roto's subject as the subject moves through a clip; pin: where the subject's anchor was, in shares of the
+    // frame, when it was last placed with follow on (spice-follow.js). An AI effect is made for one place and does not follow)
+    ...(e.kind !== "ai" ? { follow: raw.follow === true, pin: cleanPin(raw.pin) } : {}),
     ...(e.kind === "particles" ? { amount: num(raw.amount, 0, 1, e.amount), size: num(raw.size, 0, 1, e.size), colour: hex(raw.colour) || e.colour } : {}),
     ...(e.kind === "ai" ? { media: m, preset: typeof raw.preset === "string" && /^[\w-]{1,40}$/.test(raw.preset) ? raw.preset : "", words: typeof raw.words === "string" ? raw.words.slice(0, 600) : "", note: typeof raw.note === "string" ? raw.note.slice(0, 120) : "", credits: num(raw.credits, 0, 100000, 0) } : {}),
   };

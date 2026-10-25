@@ -214,7 +214,7 @@ export function createViewer(on = {}) {
       chipAfter.textContent = "FX · live";
       live.el.style.clipPath = st.compare ? "inset(0 0 0 var(--wipe))" : "none";
     }
-    live.update(comp, comp ? { base: afterEl ?? baseEl, matte: holdEl, aiOf: (l) => st.ai.get(l.id) ?? null, frame: spice.frame, fps, still: plate()?.media.kind === "image", footageWidth: plate()?.media.width } : null);
+    live.update(comp, comp ? { base: afterEl ?? baseEl, matte: holdEl, matteFrom: comp.matteFrom, aiOf: (l) => st.ai.get(l.id) ?? null, frame: spice.frame, fps, still: plate()?.media.kind === "image", footageWidth: plate()?.media.width } : null);
   }
 
   // ---------------------------------------------------------------- transport

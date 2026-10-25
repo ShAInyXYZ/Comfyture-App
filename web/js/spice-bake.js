@@ -72,7 +72,7 @@ export async function bake(job, progress = () => {}) {
   canvas.width = w;
   canvas.height = h;
   const g = canvas.getContext("2d");
-  const ctx = (frame, still) => ({ base, matte, layers, frame, fps: job.fps, still, sourceOf: (l) => sources.get(l.id) ?? null, edge: job.edge, finish: job.finish, footageWidth: job.width });
+  const ctx = (frame, still) => ({ base, matte, matteFrom: job.matteFrom, layers, frame, fps: job.fps, still, sourceOf: (l) => sources.get(l.id) ?? null, edge: job.edge, finish: job.finish, footageWidth: job.width });
   if (job.base.kind === "image") {
     render(g, w, h, ctx(1001, true));
     progress(0.8);

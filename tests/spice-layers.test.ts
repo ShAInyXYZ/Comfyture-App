@@ -7,6 +7,7 @@ import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import * as e from "../web/js/spice-elements.js";
 import { motionAt, particlesOf, timeOf, rand } from "../web/js/spice-layers.js";
+import { anchorOf, anchorAt, followed } from "../web/js/spice-follow.js";
 import { normaliseBody } from "../web/js/spice-model.js";
 
 const web = join(import.meta.dirname, "..", "web");
@@ -69,7 +70,7 @@ test("the light a layer casts: kept from 0 to 1 and how far it reaches from 0.3 
   const old = e.cleanLayer({ id: "l-e", el: "flame", x: 0.2 });
   assert.deepEqual([old.light, old.reach], [0, 1.6]);
   const keys = Object.keys(old);
-  assert.deepEqual(keys.slice(-4), ["from", "to", "light", "reach"], "a baked layer's signature is what it was once light and reach are left out");
+  assert.deepEqual(keys.slice(-6), ["from", "to", "light", "reach", "follow", "pin"], "a baked layer's signature is what it was once light, reach, follow and its pin are left out");
   // (particles and an AI layer cast none)
   for (const el of ["rain", "embers", "ai"]) {
     const p = e.cleanLayer({ id: "l-f", el, light: 0.9, reach: 3 });
@@ -107,6 +108,110 @@ test("the shot's finish: a bloom and a vignette from 0 to 1, none to begin with,
   assert.deepEqual(normaliseBody({ set: { fx: { finish: { bloom: 0.5, vignette: 7 } } } }).set.fx.finish, { bloom: 0.5, vignette: 1 }, "a shot keeps its finish cleaned");
   assert.deepEqual(normaliseBody({ set: { fx: { finish: "dark" } } }).set.fx.finish, { bloom: 0, vignette: 0 }, "and not what is not one");
   assert.deepEqual(normaliseBody({ set: { fx: { layers: [{ id: "l-1", el: "flame", light: 0.5 }] } } }).set.fx.layers[0].light, 0.5, "a shot keeps its layers' light");
+});
+
+test("a layer that follows: follow and its pin are kept for a picture and for particles, the pin inside the frame, none for an AI effect", () => {
+  const l = e.cleanLayer({ id: "l-a", el: "flame", follow: true, pin: { x: 0.31234567, y: 0.5, z: 9 } }) as any;
+  assert.deepEqual([l.follow, l.pin], [true, { x: 0.3123, y: 0.5 }], "a point, to four places, and nothing else of it");
+  assert.deepEqual((e.cleanLayer({ id: "l-b", el: "flame", follow: true, pin: { x: -3, y: 9 } }) as any).pin, { x: 0, y: 1 }, "a pin is a point of the frame");
+  for (const pin of [null, undefined, 5, "x", {}, { x: 0.5 }, { x: "a", y: 0.2 }, { x: NaN, y: 0.2 }]) assert.equal((e.cleanLayer({ id: "l-c", el: "flame", follow: true, pin }) as any).pin, null, `${JSON.stringify(pin)} is no pin`);
+  const none = e.cleanLayer({ id: "l-d", el: "flame" }) as any;
+  assert.deepEqual([none.follow, none.pin], [false, null], "a layer does not follow until it is told to");
+  assert.equal((e.cleanLayer({ id: "l-e", el: "flame", follow: "yes" }) as any).follow, false, "only true follows");
+  const rain = e.cleanLayer({ id: "l-f", el: "rain", follow: true, pin: { x: 0.4, y: 0.6 } }) as any;
+  assert.deepEqual([rain.follow, rain.pin], [true, { x: 0.4, y: 0.6 }], "particles may follow too");
+  const ai = e.cleanLayer({ id: "l-g", el: "ai", follow: true, pin: { x: 0.4, y: 0.6 } }) as any;
+  assert.ok(!("follow" in ai) && !("pin" in ai), "an AI effect is made for one place");
+});
+
+/** An image as an ImageData has it, painted by a function of the pixel: a colour [r, g, b, a?] or nothing (black). */
+function picture(w: number, h: number, paint: (x: number, y: number) => number[] | null) {
+  const data = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const c = paint(x, y) ?? [0, 0, 0];
+      data.set([c[0], c[1], c[2], c[3] ?? 255], (y * w + x) * 4);
+    }
+  }
+  return { data, width: w, height: h };
+}
+
+test("the anchor of a matte is the middle of its white: the pixels above half the luminance, each as much as another, null with none", () => {
+  const white = [255, 255, 255];
+  const near = (a: any, x: number, y: number) => assert.ok(a && Math.abs(a.x - x) < 1e-9 && Math.abs(a.y - y) < 1e-9, `${JSON.stringify(a)} is not ${x}, ${y}`);
+  // a block of 2 x 2 at columns 1 and 2, rows 3 and 4 of 10 x 6: its middle is (2, 4) of the pixels, a fifth across and two thirds down
+  near(anchorOf(picture(10, 6, (x, y) => (x >= 1 && x <= 2 && y >= 3 && y <= 4 ? white : null))), 0.2, 4 / 6);
+  // the white in the middle of the picture is the picture's middle
+  near(anchorOf(picture(8, 4, (x, y) => (x >= 3 && x <= 4 && y >= 1 && y <= 2 ? white : null))), 0.5, 0.5);
+  // two blocks: 4 pixels with their middle at (2, 4) and 12 with theirs at (8.5, 2): the middle of all of it is (6.875, 2.5), pixels as much as pixels
+  near(anchorOf(picture(10, 6, (x, y) => ((x >= 1 && x <= 2 && y >= 3 && y <= 4) || (x >= 7 && x <= 9 && y <= 3) ? white : null))), 0.6875, 2.5 / 6);
+  // a pixel is white above half: 128 is, 127 is not
+  near(anchorOf(picture(4, 1, (x) => (x % 2 ? [128, 128, 128] : [127, 127, 127]))), 0.625, 0.5);
+  // what is let through counts: white at 100 of 255 of opacity is less than half, at 200 it is more
+  near(anchorOf(picture(2, 1, (x) => (x ? [255, 255, 255, 200] : [255, 255, 255, 100]))), 0.75, 0.5);
+  // as the eye sees it: a pure green is bright, a pure red is not
+  near(anchorOf(picture(2, 1, (x) => (x ? [0, 255, 0] : [255, 0, 0]))), 0.75, 0.5);
+  assert.equal(anchorOf(picture(6, 6, () => null)), null, "no white, no anchor");
+  assert.equal(anchorOf(picture(6, 6, () => [127, 127, 127])), null, "grey below half is no white");
+  assert.equal(anchorOf({ data: new Uint8ClampedArray(0), width: 0, height: 0 }), null, "an empty picture has none");
+});
+
+test("a layer that follows moves with the anchor of the matte on the frame, and stays where it is when there is none; a matte is read once for each frame", () => {
+  // a matte clip that is not one: a white block 6 x 4 that moves a pixel to the right each frame of 24 a second, read 96 columns wide
+  let reads = 0;
+  const frameOf = (m: any) => picture(96, 54, (x, y) => (m.empty || y < 20 || y >= 24 || x < 10 + Math.round(m.currentTime * 24) || x >= 16 + Math.round(m.currentTime * 24) ? null : [255, 255, 255]));
+  let shown: any = null;
+  (globalThis as any).document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ clearRect() {}, drawImage(m: any) { reads++; shown = frameOf(m); }, getImageData: () => shown }) }) };
+  const clip = (over: any = {}) => ({ tagName: "VIDEO", readyState: 4, duration: 3, videoWidth: 960, videoHeight: 540, currentTime: 0, seeking: false, ...over });
+  const at = (m: any, frame: number, matteFrom = 1001) => ({ matte: m, frame, fps: 24, matteFrom });
+  const matte = clip();
+  const first = anchorAt(matte, at(matte, 1001))!;
+  assert.ok(Math.abs(first.x - 13 / 96) < 1e-9 && Math.abs(first.y - 22 / 54) < 1e-9, JSON.stringify(first));
+  matte.currentTime = 1;
+  const later = anchorAt(matte, at(matte, 1025))!;
+  assert.ok(Math.abs(later.x - first.x - 24 / 96) < 1e-9 && later.y === first.y, "the block has moved 24 pixels of 96 in a second");
+  // a layer that follows is pinned where the anchor was, and sits where the anchor has taken it
+  const layer: any = { id: "l-1", el: "flame", x: 0.4, y: 0.5, scale: 0.3, follow: true, pin: first };
+  const there = followed(layer, at(matte, 1025));
+  assert.ok(Math.abs(there.x - (0.4 + 0.25)) < 1e-9 && Math.abs(there.y - 0.5) < 1e-9, `${there.x} ${there.y}`);
+  assert.deepEqual({ ...there, x: 0, y: 0 }, { ...layer, x: 0, y: 0 }, "all else of it is as it was");
+  assert.equal(layer.x, 0.4, "the layer itself is not changed");
+  // the same layer where it was pinned: where it was placed
+  matte.currentTime = 0;
+  const home = followed(layer, at(matte, 1001));
+  assert.ok(Math.abs(home.x - 0.4) < 1e-9 && Math.abs(home.y - 0.5) < 1e-9);
+  // not following, not pinned, or no matte: the layer as it is, not a copy
+  const stay = { ...layer, follow: false };
+  assert.equal(followed(stay, at(matte, 1025)), stay, "a layer that does not follow stays");
+  const loose = { ...layer, pin: null };
+  assert.equal(followed(loose, at(matte, 1025)), loose, "a layer with no pin stays where it was placed");
+  assert.equal(followed(layer, { matte: null, frame: 1025, fps: 24, matteFrom: 1001 }), layer, "no matte, no following");
+  // each frame is read once: the clip is not drawn again for a frame it has been read at
+  reads = 0;
+  const once = clip();
+  for (let i = 0; i < 5; i++) anchorAt(once, at(once, 1001));
+  once.currentTime = 2 / 24;
+  for (let i = 0; i < 5; i++) anchorAt(once, at(once, 1003));
+  assert.equal(reads, 2, "two frames, two reads");
+  // a clip that is seeking shows the frame before: it is read for now, and not kept, so the frame it comes to is read when it is there
+  reads = 0;
+  const seeking = clip({ seeking: true });
+  anchorAt(seeking, at(seeking, 1001));
+  anchorAt(seeking, at(seeking, 1001));
+  assert.equal(reads, 2, "read each time while it seeks");
+  seeking.seeking = false;
+  anchorAt(seeking, at(seeking, 1001));
+  anchorAt(seeking, at(seeking, 1001));
+  assert.equal(reads, 3, "and once more, kept, when it is there");
+  // nothing to follow: a picture's matte, a clip that is not ready, a frame before the matte or after it, a matte with no white
+  const none = (m: any, frame = 1001, from = 1001) => anchorAt(m, at(m, frame, from));
+  assert.equal(none({ ...clip(), tagName: "IMG" }), null, "a picture has no frames to follow over");
+  assert.equal(none(clip({ readyState: 1 })), null, "not ready");
+  assert.equal(none(clip(), 1005, 1010), null, "before the matte");
+  assert.ok(none(clip(), 1010, 1010), "on the matte's first frame");
+  assert.equal(none(clip(), 1001 + 3 * 24 + 2), null, "after the matte (it is three seconds long)");
+  assert.equal(none(clip({ empty: true })), null, "a matte with no white");
+  assert.equal(followed(layer, at(clip({ empty: true }), 1025)), layer, "an empty matte leaves the layer where it is");
 });
 
 test("a shot keeps its layers cleaned and one of them selected", () => {
