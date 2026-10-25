@@ -25,6 +25,7 @@ import { renderJam } from "./panels/jam.js";
 import { renderAssistant } from "./panels/assistant.js";
 import { renderImage } from "./panels/image.js";
 import { renderStage, mountStage } from "./panels/stage.js";
+import { installTourKey } from "./tour.js";
 // the open film, kept in step with the section on screen
 import "./project.js";
 
@@ -239,6 +240,8 @@ document.addEventListener("keydown", (e) => {
 
 listenForPaste();
 installTooltips();
+// the header's compass: the tour of the page open (web/js/tour.js, web/js/tours/)
+installTourKey(document.getElementById("tour-key"), currentPage);
 
 load()
   .then(() => {

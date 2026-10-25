@@ -1,0 +1,100 @@
+/* Tours (web/js/tour.js): the page dims around the thing a step is about, and the pet's card says it beside it. The page stays usable:
+   the veil lets every click through, only the card takes them. */
+.tour { position: fixed; z-index: 1200; inset: 0; pointer-events: none; animation: tour-in 180ms var(--ease-out); }
+.tour.is-going { opacity: 0; transition: opacity 150ms var(--ease-out); }
+@keyframes tour-in { from { opacity: 0; } }
+
+/* the light: a ring around the thing, the rest of the page dimmed by its shadow */
+.tour-spot {
+  position: fixed;
+  border: 2px solid var(--accent);
+  border-radius: .875rem;
+  box-shadow: 0 0 0 200vmax rgba(8, 8, 10, .62), 0 0 0 6px rgba(242, 255, 89, .14);
+  transition: left 260ms var(--ease-out), top 260ms var(--ease-out), width 260ms var(--ease-out), height 260ms var(--ease-out);
+}
+.tour.is-free .tour-spot { border-color: transparent; box-shadow: 0 0 0 200vmax rgba(8, 8, 10, .62); }
+
+/* the pet's card */
+.tour-card {
+  position: fixed;
+  display: grid;
+  gap: .625rem;
+  width: min(23rem, calc(100vw - 2rem));
+  padding: .875rem 1rem 1rem;
+  border: 1px solid var(--line2);
+  border-radius: 1.25rem;
+  background: #1d1d21;
+  box-shadow: var(--float);
+  color: var(--text);
+  pointer-events: auto;
+  outline: 0;
+  transition: left 260ms var(--ease-out), top 260ms var(--ease-out), opacity 120ms;
+}
+.tour-card.is-busy { opacity: .7; }
+.tour-card:focus-visible { box-shadow: var(--float), 0 0 0 2px var(--accent-line); }
+.tour-head { display: flex; align-items: center; gap: .625rem; min-width: 0; }
+.tour-face { flex: none; width: 2.25rem; height: 2.25rem; border-radius: 50%; object-fit: cover; background: var(--sunk); box-shadow: 0 0 0 2px var(--accent); }
+.tour-who { flex: 1 1 auto; min-width: 0; overflow: hidden; font: 500 var(--fs-micro)/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.tour-close { display: grid; flex: none; place-items: center; width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--dim); cursor: pointer; }
+.tour-close:hover { background: var(--s3); color: var(--text); }
+.tour-close svg { width: 1rem; height: 1rem; }
+.tour-title { margin: 0; font: 650 var(--fs-heading)/1.25 var(--font-sans); letter-spacing: -.005em; }
+.tour-text { margin: 0; font: 400 var(--fs-body)/1.6 var(--font-sans); color: #d9d8d3; }
+.tour-text b { font-weight: 650; color: var(--text); }
+.tour-show {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: .5rem;
+  min-height: 2.25rem;
+  padding: 0 .9375rem 0 .75rem;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: 600 var(--fs-small)/1 var(--font-sans);
+  cursor: pointer;
+}
+.tour-show[hidden] { display: none; }
+.tour-show:hover:not(:disabled) { background: rgba(242, 255, 89, .16); }
+.tour-show:disabled { opacity: .55; cursor: progress; }
+.tour-show svg { flex: none; width: .8125rem; height: .8125rem; }
+.tour-show span { white-space: nowrap; }
+.tour-foot { display: flex; align-items: center; gap: .5rem; margin-top: .125rem; }
+.tour-foot .spacer { flex: 1; }
+.tour-dots { display: flex; gap: .3125rem; }
+.tour-dots i { width: .375rem; height: .375rem; border-radius: 50%; background: var(--line2); }
+.tour-dots i.is-done { background: var(--dim); }
+.tour-dots i.is-on { width: 1.125rem; border-radius: var(--r-pill); background: var(--accent); }
+.tour-back, .tour-next { min-height: 2.25rem; padding: 0 1rem; border-radius: var(--r-pill); font: 600 var(--fs-small)/1 var(--font-sans); cursor: pointer; }
+.tour-back { border: 1px solid var(--line2); background: transparent; color: var(--muted); }
+.tour-back:hover { border-color: var(--dim); color: var(--text); }
+.tour-next { border: 0; background: var(--accent); color: var(--accent-ink); }
+.tour-next:hover { filter: brightness(1.06); }
+.tour-next.is-quiet { border: 1px solid var(--line2); background: transparent; color: var(--muted); }
+
+/* a run played for free over the thing it makes: a bar fills, then the example's own result shows */
+.tour-sim { position: fixed; z-index: 1190; display: grid; place-items: center; border-radius: .875rem; background: rgba(12, 12, 14, .66); backdrop-filter: blur(3px); pointer-events: none; animation: tour-in 160ms var(--ease-out); }
+.tour-sim.is-done { opacity: 0; transition: opacity 200ms var(--ease-out); }
+.tour-sim-card { display: grid; justify-items: center; gap: .625rem; width: min(17rem, 80%); padding: 1rem 1.125rem; border: 1px solid var(--line2); border-radius: 1rem; background: #1d1d21; box-shadow: var(--float-sm); text-align: center; }
+.tour-sim-card b { font: 600 var(--fs-title)/1.2 var(--font-sans); color: var(--text); }
+.tour-sim-card small { font: 500 var(--fs-micro)/1.2 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+.tour-sim-bar { width: 100%; height: .375rem; overflow: hidden; border-radius: var(--r-pill); background: var(--sunk); }
+.tour-sim-bar i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--accent); transition: width linear; }
+
+/* the header's key: the tour of the page open */
+.top-tour { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast); }
+.top-tour:hover { border-color: var(--line2); color: var(--text); }
+.top-tour[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.top-tour[hidden] { display: none; }
+.top-tour svg { width: 1.125rem; height: 1.125rem; }
+
+/* the bar's chip that starts the tour: lit until the tour has been taken once */
+.pet-chip.is-tour { border-color: var(--accent-line); color: var(--accent); }
+.pet-chip.is-tour.is-new { animation: tour-glow 2.4s ease-in-out 3; }
+@keyframes tour-glow { 50% { box-shadow: 0 0 0 4px rgba(242, 255, 89, .14); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tour, .tour-spot, .tour-card, .tour-sim, .tour-sim-bar i { animation: none; transition: none; }
+  .pet-chip.is-tour.is-new { animation: none; }
+}

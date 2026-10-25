@@ -16,6 +16,7 @@ import { stageReady } from "../control/link.js";
 import { macaron } from "../macaron.js";
 import { askMacaron, undoMacaron, clearMacaronChat } from "../macaron-assist.js";
 import { harnessOf, barOf, introOf, onRoom, setTeller, offersOf } from "../harnesses.js";
+import { hasTour, tourTaken, startTour, onTour } from "../tour.js";
 import { chat as mixerChat, askMixer, clearMixerChat, confirmMixer, declineMixer } from "../mixer-assist.js";
 import { chat as utensilsChat, roomOfTool, askUtensils, clearUtensilsChat, confirmUtensils, declineUtensils } from "../utensils-assist.js";
 import { chat as spiceChat, roomOfSpice, askSpice, clearSpiceChat, confirmSpice, declineSpice } from "../spice-assist.js";
@@ -503,6 +504,9 @@ document.addEventListener("assistant:fold", () => {
   renderAssistant(document.getElementById("assistant"));
 });
 
+// a tour started or ended: its chip follows
+onTour(() => changed("assistant"));
+
 // how many answers each conversation had when the bar last drew it: a new one opens the thread
 const known = new Map();
 
@@ -535,11 +539,17 @@ export function renderAssistant(el) {
   c.face.dataset.tooltip = introOf(s.product);
   el.dataset.pet = harness.pet;
   c.input.placeholder = look.placeholder;
-  // the chips above the bar: what the pet offers in this room (words said to it, or a thing the page does)
+  // the chips above the bar: what the pet offers in this room (words said to it, or a thing the page does), and its tour: first while
+  // it is new to you, last once taken
   const offered = offersOf(s.product, s.room).map((o) =>
     h("button.pet-chip", { type: "button", title: o.ask ?? o.title ?? o.label, disabled: !!blocked(s) && !o.run, on: { click: () => (o.run ? o.run() : tell(o.ask)) } }, o.icon ? sprite(o.icon) : null, o.label));
-  c.chips.hidden = !offered.length;
-  c.chips.replaceChildren(...offered);
+  const fresh = !tourTaken(s.product);
+  const guide = hasTour(s.product)
+    ? h(`button.pet-chip.is-tour${fresh ? ".is-new" : ""}`, { type: "button", title: `${harness.name} shows you around, on an example: nothing is spent`, on: { click: () => startTour(s.product) } }, icon("compass"), "Show me around")
+    : null;
+  const chips = guide ? (fresh ? [guide, ...offered] : [...offered, guide]) : offered;
+  c.chips.hidden = !chips.length;
+  c.chips.replaceChildren(...chips);
   shownRoom = s.room;
   const inputs = state.stageChat.inputs;
   c.tray.replaceChildren(...(stage ? [...inputs.maps.map(mapChip), ...inputs.pictures.map(stagePictureChip)] : onToaster() ? toasterChat.pictures.map(toasterPictureChip) : filesOn ? files.map(fileChip) : []), ...(filesOn && !stage && !onToaster() && attaching ? [h("div.file-chip.is-loading", {}, h("span.typing", {}, h("i"), h("i"), h("i")))] : []));

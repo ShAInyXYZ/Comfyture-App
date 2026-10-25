@@ -112,8 +112,10 @@ try {
     ok(asks.includes(info.placeholder) && info.placeholder.startsWith(`Ask ${h.name} — `), `${p}: the bar asks ${h.name} by name`, info.placeholder);
     // the chips above the bar: what the pet offers in the room open (its presets on a "bar" product, its offers), and its tour where it has one
     const open = Object.keys(h.placeholders).find((r) => h.placeholders[r] === info.placeholder) ?? room;
-    const offered = info.chips;
+    const tour = await js((product) => import("/js/tour.js").then((t) => t.hasTour(product)), product);
+    const offered = info.chips.filter((c) => c !== "Show me around");
     ok(JSON.stringify(offered) === JSON.stringify(offersOf(product, open).map((x) => x.label)) && info.chipsShown === info.chips.length > 0, `${p}: ${h.name}'s offers for the ${open} room are chips above the bar`, info.chips.join(" | "));
+    ok(info.chips.includes("Show me around") === tour, `${p}: ${h.name} offers the tour where there is one`, String(tour));
     ok(info.picker, `${p}: the model picker is still there`);
     ok(info.clip === (p === "shot" || p === "stage" || p === "toaster"), `${p}: the attach key is only where the bar takes files (Toaster: a photo for Crumpet)`);
     // every bar is the card: the words on top, at least two lines, the keys on a row under them (Stage adds its maps)
@@ -244,7 +246,7 @@ try {
   await js(async () => (await import("/js/utensils.js")).setWorkspace("video"));
   await page.waitForTimeout(400);
   const room = await js(() => ({ chips: [...document.querySelectorAll("#assistant .pet-chip")].map((c) => c.textContent), ask: document.querySelector("#assistant .chat-input").dataset.placeholder }));
-  ok(JSON.stringify(room.chips) === JSON.stringify(HARNESSES.utensils.offers.video.map((x) => x.label)) && room.ask === HARNESSES.utensils.placeholders.video, "the bar follows the workspace open: the video one's words and offers", `${room.ask} · ${room.chips.join(" | ")}`);
+  ok(JSON.stringify(room.chips.filter((c) => c !== "Show me around")) === JSON.stringify(HARNESSES.utensils.offers.video.map((x) => x.label)) && room.ask === HARNESSES.utensils.placeholders.video, "the bar follows the workspace open: the video one's words and offers", `${room.ask} · ${room.chips.join(" | ")}`);
   await js(async () => (await import("/js/utensils.js")).setWorkspace("home"));
 
   // ---- each product keeps its own conversation
