@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import {
   SHAPES, PALETTE, RATIOS, SHEET, VIEWS, TO_3D, shapeOf, roundLabel, hasSides, colorName, sheetScale,
   cleanPart, cleanDraft, newPart, strengthWords, plainFrame, keepOf, STRENGTH, shortOf, pickMaps, mirrorPart, duplicatePart, starterDraft, legendOf, describeOf, described, framePrompt, sheetPrompt, newAssetPart, isAsset, freeSpot, newCharacterPart, isCharacter, tagsOf, castOf, referencesFor, expandPrompt, factsOf, factsKey, promptStale, RESERVED, newSceneRef, addRef, mentionsIn, idColor, familyOf, colourByKind, personColor, FAMILIES, PEOPLE,
+  OBJECT, tiltOf, objectDir, objectDistance, isRoom, wants3d, objectSheetPrompt,
 } from "../web/js/toaster-model.js";
 
 test("ten shapes, each with a size; the slider and the sides only where they mean something", () => {
@@ -511,4 +512,57 @@ test("the clay frame is one of the maps: on by default, a draft from before gets
   assert.deepEqual(off.maps, ["depth"], "left out by hand, it stays out");
   assert.deepEqual(cleanDraft(off).maps, ["depth"], "and stays out when the draft is read again");
   assert.deepEqual(cleanDraft({ maps: [], mapsV: 2 }).maps, ["clay"], "nothing left: the clay frame comes back");
+});
+
+test("an object's sheet: four views of ONE object, from above, each cell said, a twin as a variation", () => {
+  assert.deepEqual(OBJECT.views.map((v) => v.view), ["front", "back", "left", "right"]);
+  assert.deepEqual(OBJECT.views.map((v) => [v.col, v.row]), [[0, 0], [1, 0], [0, 1], [1, 1]], "front and back above, left and right below");
+  const mug = cleanPart({ shape: "asset", asset: "mug", name: "Cocoa", made: "a chipped blue mug of cocoa" });
+  const prompt = objectSheetPrompt({ part: mug, what: mug.made, scene: "a warm woodshop" });
+  assert.match(prompt, /^Render @sheet as a finished multi-view sheet of ONE object: Cocoa\. Four views in a 2 by 2 grid/);
+  assert.match(prompt, /Copy the clay cell by cell/);
+  assert.match(prompt, /a handle, a spout/, "what sticks out on one side shows only where the clay shows it");
+  assert.match(prompt, /about 24 degrees above the object/);
+  assert.doesNotMatch(prompt, /rthographic/);
+  assert.doesNotMatch(prompt, /variation/, "a lone object is no variation");
+  assert.match(objectSheetPrompt({ part: mug, what: mug.made, twin: 1 }), /The scene has 2 of these\. This is a variation of the kind/);
+  const person = cleanPart({ shape: "character", body: "man", name: "Crumpet" });
+  assert.match(objectSheetPrompt({ part: person, what: "a baby beaver" }), /ONE character: Crumpet/);
+  assert.match(objectSheetPrompt({ part: person, what: "a baby beaver" }), /a little above his eye level/);
+  // the camera: raised, never level; a character is met nearly face to face
+  assert.ok(tiltOf(mug) > tiltOf(person) && tiltOf(person) > 0);
+  for (const view of ["front", "back", "left", "right"]) {
+    const d = objectDir(view, 24);
+    assert.ok(Math.abs(Math.hypot(...d) - 1) < 1e-9, "a unit direction");
+    assert.ok(d[1] > 0.4 && d[1] < 0.41, "raised by the tilt");
+  }
+  assert.deepEqual(objectDir("front", 0).map((v) => Math.round(v * 1e6) / 1e6), [0, 0, 1], "level, the front is +Z");
+  assert.ok(objectDistance(1) > 1, "the camera stands back of the object's sphere");
+});
+
+test("which parts are made in 3D: the objects, not the room, unless the person says", () => {
+  const floor = cleanPart({ shape: "asset", asset: "floor", name: "Floor" });
+  const clock = cleanPart({ shape: "asset", asset: "wall-clock", name: "Clock" });
+  const wall = cleanPart({ shape: "box", name: "Side wall" });
+  const lamp = cleanPart({ shape: "asset", asset: "desk-lamp", name: "Bench lamp" });
+  assert.deepEqual([floor, clock, wall, lamp].map(isRoom), [true, false, true, false], "a wall clock is not a wall");
+  assert.deepEqual([floor, clock, wall, lamp].map(wants3d), [false, true, false, true]);
+  assert.equal(wants3d(cleanPart({ ...floor, solid: true })), true, "the person's yes outranks the guess");
+  assert.equal(wants3d(cleanPart({ ...lamp, solid: false })), false, "and so does the person's no");
+  assert.equal(wants3d(cleanPart({ ...lamp, hidden: true })), false, "a hidden part is not made");
+  assert.equal(cleanPart({ shape: "box", solid: "yes" }).solid, undefined, "only a real yes or no is kept");
+});
+
+test("a draft keeps an object's sheet and model with the part they are of", () => {
+  const d = cleanDraft({
+    parts: [{ shape: "box", id: "a1" }],
+    sheets: [{ id: "s1", status: "done", part: "a1", photo: { file: "x.png", url: "/media/photos/x.png", width: 2048, height: 2048 } }, { id: "s2", status: "done", part: "../evil" }],
+    models: [{ id: "m1", status: "done", part: "a1", sheet: "s1", via: "local", quality: "web", stage: "Texturing", path: "/app/output/3D/Comfyture/a.glb", url: "/media/models/a.glb" }],
+    sheetModel: "gemini-nano-banana-2.1",
+  });
+  assert.equal(d.sheets[0].part, "a1");
+  assert.equal(d.sheets[1].part, undefined, "a part id is only ever a plain id");
+  assert.deepEqual([d.models[0].part, d.models[0].via, d.models[0].quality, d.models[0].path], ["a1", "local", "web", "/app/output/3D/Comfyture/a.glb"]);
+  assert.equal(d.sheetModel, "gemini-nano-banana-2.1");
+  assert.equal(cleanDraft({ parts: [{ shape: "box" }] }).sheetModel, null);
 });

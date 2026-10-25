@@ -65,6 +65,48 @@ export const VIEWS = {
 export const TO_3D = "3d_pixal3d_multi_views";
 
 /**
+ * An OBJECT's sheet (the 3D page makes one per object, never one for the whole scene): its four views in a 2 x 2 grid of square cells,
+ * lit alike, on a plain background, front and back above, left and right below. The camera is not orthographic: it looks down a little
+ * from above, as a product photographer would (a table's top, a lamp's shade and a crate's lid all show), at the same angle in the four
+ * views. The page cuts the cells and sends each to Trellis2 as its own view (the local Trellis2 workflows), or lays them in Pixal3D's
+ * sheet (SHEET above) for Comfy Cloud. The "left" view is the object turned to its left (its front faces the right of the picture), the
+ * "right" the other way, as in SHEET.
+ */
+export const OBJECT = {
+  cell: 1024,
+  aspect: "1:1",
+  views: [
+    { view: "front", col: 0, row: 0 },
+    { view: "back", col: 1, row: 0 },
+    { view: "left", col: 0, row: 1 },
+    { view: "right", col: 1, row: 1 },
+  ],
+  // how far the object's bounding sphere may fill its cell (past 1 the sphere overflows, the object itself fills about 80%)
+  fill: 1.1,
+  // the lens (degrees, the vertical field: a long lens, little distortion) and how far above the object the camera stands (degrees):
+  // objects are seen from higher than people, who are met nearly face to face
+  fov: 28,
+  tilt: { object: 24, character: 8 },
+};
+/** How far above the object the camera looks down, in degrees (a character is met nearly face to face). */
+export const tiltOf = (part) => (part?.shape === "character" ? OBJECT.tilt.character : OBJECT.tilt.object);
+/** Where a view's camera stands, as a unit direction from the object's centre: its view's side (VIEWS), raised by `tilt` degrees. */
+export function objectDir(view, tilt) {
+  const [x, , z] = VIEWS[view].dir;
+  const up = (tilt * Math.PI) / 180;
+  return [x * Math.cos(up), Math.sin(up), z * Math.cos(up)];
+}
+/** How far from the object's centre the camera stands so that its bounding sphere (radius `radius`) fills OBJECT.fill of the cell. */
+export const objectDistance = (radius, fov = OBJECT.fov) => radius / (Math.sin((fov * Math.PI) / 360) * OBJECT.fill);
+
+const ROOM_ASSETS = /^(floor|window|wall|door|ceiling|rug|carpet|stage|platform|backdrop)$/;
+const ROOM_NAMES = /\b(floor|wall|walls|ceiling|backdrop|ground|window)\b/i;
+/** Whether a part is the room around the things (a floor, a wall, a window): left as clay in the new scene unless the person says otherwise. */
+export const isRoom = (p) => (p?.shape === "asset" ? ROOM_ASSETS.test(String(p.asset)) : ROOM_NAMES.test(String(p?.name ?? "")));
+/** Whether a part is made in 3D: what the person said (`p.solid`), else every object but the room. */
+export const wants3d = (p) => !p?.hidden && (typeof p?.solid === "boolean" ? p.solid : !isRoom(p));
+
+/**
  * The scale of the sheet, in sheet pixels per world unit: one for all four views (so the views agree), as large as the narrowest
  * window allows. `extent` is the size of what is drawn, [x, y, z] in world units.
  */
@@ -166,6 +208,8 @@ export function cleanPart(p) {
     color: PALETTE.some(([h]) => h === String(p.color).toLowerCase()) ? String(p.color).toLowerCase() : /^#[0-9a-f]{6}$/i.test(p.color) ? String(p.color).toLowerCase() : PALETTE[0][0],
     made: words(p.made, 400),
     ...(refList(p.refs).length ? { refs: refList(p.refs) } : {}),
+    // made in 3D (true) or left as clay (false), when the person chose; else the room is left and the objects are made
+    ...(typeof p.solid === "boolean" ? { solid: p.solid } : {}),
     size: vec(p.size, shape.size, 0.01, 100),
     pos: vec(p.pos, [0, shape.size[1] / 2, 0]),
     rot: vec(p.rot, [0, 0, 0], -360, 360),
@@ -464,6 +508,8 @@ export function cleanDraft(b) {
     id: String(r.id ?? partId()).slice(0, 60),
     status: RUN.test(r.status) ? r.status : "failed",
     job: typeof r.job === "string" ? r.job : undefined,
+    // the object a sheet is of (the 3D page's sheets are one per object)
+    part: typeof r.part === "string" && /^[\w-]{1,40}$/.test(r.part) ? r.part : undefined,
     photo: media(r.photo),
     frame: media(r.frame),
     maps: (Array.isArray(r.maps) ? r.maps : []).slice(0, 4).map((m) => (media(m) ? { ...media(m), name: words(m.name, 20) } : null)).filter(Boolean),
@@ -487,6 +533,13 @@ export function cleanDraft(b) {
     status: RUN.test(m.status) ? m.status : "failed",
     job: typeof m.job === "string" ? m.job : undefined,
     sheet: typeof m.sheet === "string" ? m.sheet : undefined,
+    part: typeof m.part === "string" && /^[\w-]{1,40}$/.test(m.part) ? m.part : undefined,
+    // how it was made: "local" (Trellis2 on the person's own ComfyUI) or "cloud" (Pixal3D), the stage it is at, and where ComfyUI saved it
+    via: m.via === "cloud" ? "cloud" : m.via === "local" ? "local" : undefined,
+    stage: words(m.stage, 60) || undefined,
+    quality: m.quality === "fine" ? "fine" : m.quality === "web" ? "web" : undefined,
+    path: words(m.path, 300) || undefined,
+    example: m.example === true || undefined,
     url: typeof m.url === "string" ? m.url : undefined,
     file: typeof m.file === "string" ? m.file : undefined,
     views: (Array.isArray(m.views) ? m.views : []).map(media).filter(Boolean).slice(0, 8),
@@ -524,9 +577,11 @@ export function cleanDraft(b) {
     // how far a render goes from the clay, 0 (its colours stay) to 1 (only the layout and the forms stay)
     strength: num(b.strength, 0, 1, STRENGTH),
     model: words(b.model, 60) || null,
+    // the image model that draws the 3D page's object sheets (null: Nano Banana 2.1 when there is one)
+    sheetModel: words(b.sheetModel, 60) || null,
     renders: (Array.isArray(b.renders) ? b.renders : []).slice(0, 60).map(run),
-    sheets: (Array.isArray(b.sheets) ? b.sheets : []).slice(0, 30).map(run),
-    models: (Array.isArray(b.models) ? b.models : []).slice(0, 30).map(model3d),
+    sheets: (Array.isArray(b.sheets) ? b.sheets : []).slice(0, 80).map(run),
+    models: (Array.isArray(b.models) ? b.models : []).slice(0, 80).map(model3d),
   };
 }
 
@@ -855,6 +910,28 @@ export function sheetPrompt({ parts = [], what = "", tags = null, named = null, 
     legend.length ? `In @sheet, ${legend.join("; ")}.` : "",
     what.trim() ? `The object: ${sentence(what)}` : "",
     "A plain light grey studio background, soft even light, no floor, no shadow, no text, no labels and nothing else.",
+  ].filter(Boolean).join(" ");
+}
+
+/**
+ * What the image model is told to draw as an object's sheet: ONE object, four views in a 2 x 2 grid, each as large as its clay view.
+ * `part` is the object, `what` its sheet words (the part's own, else its name and colour), `scene` the setting it belongs to (for its style).
+ */
+export function objectSheetPrompt({ part, what = "", scene = "", named = false, twin = 0, pieceOf = () => null }) {
+  const own = sentence(what || part.made || "");
+  const kind = part.shape === "character" ? "character" : "object";
+  const look = describeOf(part, pieceOf);
+  return [
+    `Render @sheet as a finished multi-view sheet of ONE ${kind}: ${part.name}. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right.`,
+    "The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line.",
+    `The ${kind} is ${look}.`,
+    own ? `Its look: ${own}` : "",
+    scene.trim() ? `It belongs to this setting, so match its style, but draw only the ${kind}: ${sentence(scene)}` : "",
+    named ? "The pictures sent with it show how it really looks: draw it exactly like them." : "",
+    // (the same kind of object twice in a scene: each is drawn on its own sheet, as a variation of the other)
+    twin > 0 ? `The scene has ${twin + 1} of these. This is a variation of the kind: the same sort of ${kind}, with its own wear, grain, small marks and details, not a copy.` : "",
+    `The camera is the same in all four views: ${part.shape === "character" ? "a little above his eye level" : "about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows"}, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left.`,
+    "A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
   ].filter(Boolean).join(" ");
 }
 

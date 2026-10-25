@@ -9,7 +9,7 @@ import { assetByType } from "./control/assets.js";
 import { openSurface, rigById, onModel, watching } from "./control/models.js";
 import { CHAINS } from "./control/skeleton.js";
 import { assetPiece, characterPiece, libraryNow, loadLibrary, onLibrary, preciseBox } from "./toaster-assets.js";
-import { RATIOS, SHEET, VIEWS, sheetScale } from "./toaster-model.js";
+import { OBJECT, RATIOS, SHEET, VIEWS, sheetScale, tiltOf, objectDir, objectDistance } from "./toaster-model.js";
 
 // the lens: its focal length on a 24 mm high film gives the frame's vertical field of view (50 mm unless the camera says otherwise)
 const fovOf = (mm) => THREE.MathUtils.radToDeg(2 * Math.atan(12 / mm));
@@ -887,6 +887,47 @@ export class ToasterView {
       return canvas.toDataURL(type, quality);
     });
     return { url, width, height };
+  }
+
+  /**
+   * One object's sheet of clay: its four views (OBJECT.views) in a 2 x 2 grid of square cells, the object alone (everything else hidden for
+   * the capture), seen from a little above (OBJECT.tilt), at one distance, lit alike, on a plain background: what the image model is shown to draw the object's real sheet.
+   * Answers { url, width, height }, or null when the object is not in the scene.
+   */
+  objectSheetStill(id, { cell = 512, type = "image/png", quality, background = "#d6d6d2" } = {}) {
+    const mesh = this.meshes.get(id);
+    const b = mesh && this.bounds([id]);
+    if (!b) return null;
+    const centre = new THREE.Vector3(...b.min.map((v, i) => (v + b.max[i]) / 2));
+    const radius = Math.hypot(...b.max.map((v, i) => v - b.min[i])) / 2;
+    const dist = objectDistance(radius);
+    const tilt = tiltOf(this.parts.find((p) => p.id === id));
+    const size = cell * 2;
+    const canvas = document.createElement("canvas");
+    Object.assign(canvas, { width: size, height: size });
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, size, size);
+    const shown = [...this.meshes].map(([k, m]) => [m, m.visible]);
+    for (const [k, m] of this.meshes) m.visible = k === id;
+    try {
+      const url = this.capture(true, (r) => {
+        for (const cellOf of OBJECT.views) {
+          const v = VIEWS[cellOf.view];
+          const cam = new THREE.PerspectiveCamera(OBJECT.fov, 1, Math.max(0.01, dist - radius * 2), dist + radius * 4);
+          cam.position.copy(centre).addScaledVector(new THREE.Vector3(...objectDir(cellOf.view, tilt)), dist);
+          cam.lookAt(centre);
+          this.rig.rotation.y = v.turn;
+          r.setSize(cell, cell, false);
+          r.render(this.scene, cam);
+          ctx.drawImage(r.domElement, cellOf.col * cell, cellOf.row * cell);
+        }
+        return canvas.toDataURL(type, quality);
+      });
+      return { url, width: size, height: size };
+    } finally {
+      for (const [m, was] of shown) m.visible = was;
+    }
   }
 
   dispose() {
