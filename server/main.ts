@@ -37,6 +37,7 @@ import { createFx } from "./utensils-fx.ts";
 import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templates.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
 import { seedExamples, placeMedia, placeThumb, type ExampleKind, type Kept } from "./examples.ts";
+import { createTarget, cleanUrl, LOCAL_URL, type Target } from "./target.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -48,12 +49,20 @@ const workflowSet = process.env.COMFYTURE_WORKFLOWS === "dev" ? "workflows/dev" 
 const account = createAccount({ data, target: () => ({ kind: target.kind, url: new URL(target.url).origin }), onKey: (key) => followKey(key) });
 await account.init();
 
-// No base URL and no key: talk to a local ComfyUI through comfy-api-proxy's default port.
-if (!process.env.COMFY_BASE_URL?.trim() && !process.env.COMFY_API_KEY?.trim()) {
-  process.env.COMFY_BASE_URL = "http://127.0.0.1:8189";
+// Where the renders go (server/target.ts): the choice saved in the header's account window outranks .env's COMFY_BASE_URL.
+const where = createTarget({ data });
+await where.init();
+// No choice, no base URL and no key: talk to a local ComfyUI through comfy-api-proxy's default port.
+if (!where.saved() && !process.env.COMFY_BASE_URL?.trim() && !process.env.COMFY_API_KEY?.trim()) {
+  process.env.COMFY_BASE_URL = LOCAL_URL;
 }
 const base = process.env.COMFY_BASE_URL?.trim() || "https://cloud.comfy.org";
-const target = { kind: new URL(base).hostname === "cloud.comfy.org" ? "comfy-cloud" : "self-hosted", url: base };
+const target: Target = { kind: new URL(base).hostname === "cloud.comfy.org" ? "comfy-cloud" : "self-hosted", url: base };
+/**
+ * A Comfy client for where the renders go. On your own ComfyUI, the bridge's token when it was started with one
+ * (comfy-api-proxy run --token …, given here as COMFY_PROXY_TOKEN); else the SDK sends COMFY_API_KEY, or nothing.
+ */
+const comfyClient = () => new Comfy({ clientInfo: "comfyture/0.1", apiKey: target.kind === "self-hosted" ? process.env.COMFY_PROXY_TOKEN?.trim() || undefined : undefined });
 
 const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 const repository: string | undefined = typeof pkg.repository === "string" ? pkg.repository : pkg.repository?.url;
@@ -102,7 +111,7 @@ const templates = createTemplates({
 
 let library: CloudLibrary | null = target.kind === "comfy-cloud" && process.env.COMFY_API_KEY?.trim() ? new CloudLibrary(process.env.COMFY_API_KEY.trim()) : null;
 const engine = new Engine(
-  new Comfy({ clientInfo: "comfyture/0.1" }),
+  comfyClient(),
   { data, workflows: join(root, workflowSet) },
   (graph) => (library ? library.resolve(graph) : Promise.resolve(graph)),
   { black: workflowSet !== "workflows/dev", ffmpeg },
@@ -115,11 +124,23 @@ engine.images = images;
 function followKey(key: string) {
   if (!key) return;
   try {
-    engine.client = new Comfy({ clientInfo: "comfyture/0.1" });
+    engine.client = comfyClient();
   } catch {
     // the old client stays until a key works
   }
   if (target.kind === "comfy-cloud") library = new CloudLibrary(key);
+}
+
+/** The renders go elsewhere now (Comfy Cloud, or your ComfyUI through the bridge): a new client there, and Cloud's model library only on Cloud. */
+function followTarget(t: Target) {
+  Object.assign(target, t);
+  try {
+    engine.client = comfyClient();
+  } catch {
+    // Comfy Cloud with no key yet: the old client stays until a key is saved
+  }
+  const key = process.env.COMFY_API_KEY?.trim();
+  library = target.kind === "comfy-cloud" && key ? new CloudLibrary(key) : null;
 }
 
 // ---------------------------------------------------------------- helpers
@@ -1008,6 +1029,27 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/account" && method === "GET") return json(res, 200, await account.status(url.searchParams.has("refresh")));
   if (path === "/api/account/key" && method === "POST") return json(res, 200, await account.saveKey((await jsonBody(req)).key));
   if (path === "/api/account/key" && method === "DELETE") return json(res, 200, await account.clearKey());
+  // where the renders go: Comfy Cloud, or your own ComfyUI through comfy-api-proxy (checked before it is taken)
+  if (path === "/api/account/target/test" && method === "POST") {
+    const url = cleanUrl((await jsonBody(req)).url);
+    if (!url) throw bad("An address like http://127.0.0.1:8189.");
+    return json(res, 200, await where.probe(url));
+  }
+  if (path === "/api/account/target" && method === "POST") {
+    const input = await jsonBody(req);
+    try {
+      const { target: t, probe } = await where.set(input.kind, input.url);
+      followTarget(t);
+      return json(res, 200, { ...(await account.status()), probe });
+    } catch (e: any) {
+      if (e.probe) return json(res, 400, { error: e.message, probe: e.probe });
+      throw e;
+    }
+  }
+  if (path === "/api/account/target" && method === "DELETE") {
+    followTarget(await where.reset());
+    return json(res, 200, await account.status());
+  }
   if (path === "/api/presets" && method === "GET") {
     if (url.searchParams.has("reload")) await reloadPresets();
     return json(res, 200, [...presets.values()]);

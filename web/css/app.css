@@ -1471,6 +1471,17 @@ button.account:disabled { cursor: default; }
 .account-edit .field { width: 100%; min-height: 2rem; padding: 0 .625rem; border-radius: .5rem; }
 .account-msg { font: 500 var(--fs-small)/1.4 var(--font-sans); color: var(--muted); }
 .account-msg[data-tone="crit"] { color: var(--err); }
+.account-msg[data-tone="ok"] { color: var(--ok); }
+/* where the renders go: two sides of one switch, and the bridge's address under "Your ComfyUI" */
+.account-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border-radius: var(--r-pill); background: var(--sunk); }
+.account-switch button { min-height: 2rem; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted); font: 600 var(--fs-small)/1 var(--font-sans); cursor: pointer; }
+.account-switch button:hover:not(:disabled) { color: var(--text); }
+.account-switch button[aria-checked="true"] { background: var(--accent); color: var(--accent-ink); }
+.account-switch button:disabled { opacity: .5; cursor: default; }
+.account-local { display: grid; gap: .5rem; }
+.account-field { display: grid; gap: .3125rem; }
+.account-field .field { font: 500 var(--fs-small)/1 var(--font-mono); }
+.account-cmd { display: block; padding: .5rem .625rem; border-radius: .5rem; background: var(--sunk); font: 500 var(--fs-micro)/1.6 var(--font-mono); color: var(--text); }
 .account-pop a.account-link { color: var(--accent); }
 .account-pop a.account-link:hover { color: var(--text); }
 @media (max-width: 820px) { .account .account-run { display: none; } }

@@ -1,6 +1,10 @@
 import { h, icon, ago } from "../dom.js";
 import { float, stick } from "../controls.js";
-import { state, loadAccount, saveAccountKey, clearAccountKey } from "../store.js";
+import { state, loadAccount, saveAccountKey, clearAccountKey, setRenderTarget, testRenderTarget } from "../store.js";
+
+// comfy-api-proxy's own address: the bridge in front of your ComfyUI
+const LOCAL = "http://127.0.0.1:8189";
+const GUIDE = "docs/guides/LOCAL-COMFYUI.md";
 
 const fmt = (n) => Math.round(n).toLocaleString("en-US");
 const usd = (cents) => `$${(cents / 100).toFixed(2)}`;
@@ -11,6 +15,11 @@ let unstick = null;
 let editing = false;
 let message = "";
 let busy = false;
+// the renders' switch: the side picked (before it is taken), the address typed, and what answered there
+let side = null;
+let address = "";
+let answer = null;
+let checking = false;
 
 /** Opens the account settings under the header's button, or closes them. */
 export function toggleAccount(button) {
@@ -21,6 +30,8 @@ export function toggleAccount(button) {
   button.setAttribute("aria-expanded", "true");
   editing = false;
   message = "";
+  side = null;
+  answer = null;
   draw();
   place();
   unstick = stick(pop, button, close);
@@ -52,9 +63,9 @@ const onKey = (e) => {
   trigger.focus();
 };
 
-/** The header draws again: so do the settings, unless a key is being typed. */
+/** The header draws again: so do the settings, unless a key or an address is being typed. */
 export function redrawAccount() {
-  if (pop && !editing) draw();
+  if (pop && !editing && !pop.contains(document.activeElement)) draw();
 }
 
 const link = (href, label, ...kids) => h("a.account-link", { href, target: "_blank", rel: "noreferrer", title: label, "aria-label": label }, ...kids);
@@ -86,10 +97,62 @@ function draw() {
     ),
   );
 
+  // where the renders go: Comfy Cloud, or your own ComfyUI through comfy-api-proxy (the bridge); a local address is checked before it is taken
+  const picked = side ?? (own ? "self-hosted" : "comfy-cloud");
+  const guide = state.info?.repository ? `${state.info.repository.replace(/\.git$/, "").replace(/^git\+/, "")}/blob/main/${GUIDE}` : GUIDE;
+  const choose = (kind) => {
+    if (busy || jobs) return;
+    side = kind;
+    answer = null;
+    if (kind === "comfy-cloud" && own) go("comfy-cloud");
+    else draw();
+  };
+  const go = async (kind) => {
+    busy = true;
+    answer = kind === "comfy-cloud" ? null : { detail: "Checking the bridge…" };
+    draw();
+    try {
+      await setRenderTarget(kind, kind === "comfy-cloud" ? undefined : address || LOCAL);
+      side = null;
+      answer = kind === "comfy-cloud" ? null : { ok: true, detail: "Renders now go to your ComfyUI." };
+    } catch (e) {
+      answer = { ok: false, detail: e.message };
+    }
+    busy = false;
+    draw();
+  };
+  const test = async () => {
+    checking = true;
+    answer = { detail: "Asking…" };
+    draw();
+    try {
+      answer = await testRenderTarget(address || LOCAL);
+    } catch (e) {
+      answer = { ok: false, detail: e.message };
+    }
+    checking = false;
+    draw();
+  };
+  const local = picked === "self-hosted";
   const renders = section(
     "Renders on",
-    h("div.account-row", {}, h("b", {}, own ? "Your ComfyUI" : "Comfy Cloud"), h("span.hint", {}, host)),
-    h("p.hint", {}, jobs ? `${jobs} job${jobs > 1 ? "s" : ""} running` : "Nothing running"),
+    h("div.account-switch", { role: "radiogroup", "aria-label": "Where the renders go" },
+      ...[["comfy-cloud", "Comfy Cloud"], ["self-hosted", "Your ComfyUI"]].map(([kind, label]) =>
+        h("button", { type: "button", role: "radio", "aria-checked": String(picked === kind), disabled: busy || (!!jobs && picked !== kind), title: jobs ? "Wait for the jobs running to end" : "", on: { click: () => choose(kind) } }, label))),
+    local
+      ? h("div.account-local", {},
+          h("label.account-field", {}, h("span.hint", {}, "The bridge's address (comfy-api-proxy)"),
+            h("input.field", { type: "url", value: address || (own ? a.target.url : LOCAL), spellcheck: "false", autocomplete: "off", placeholder: LOCAL, "aria-label": "The bridge's address", on: { input: (e) => ((address = e.target.value.trim()), (answer = null)) } })),
+          h("div.account-row", {},
+            h("button.key.is-quiet", { type: "button", disabled: checking || busy, on: { click: test } }, checking ? "Asking…" : "Test"),
+            h("span.spacer"),
+            (!own || (address && address !== a.target.url)) && h("button.key.is-primary", { type: "button", disabled: busy, on: { click: () => go("self-hosted") } }, busy ? "Switching…" : "Use it")),
+          answer && h("p.account-msg", { role: "status", dataset: { tone: answer.ok ? "ok" : answer.ok === false ? "crit" : "" } }, answer.detail),
+          h("p.hint", {}, "Run ComfyUI with its models, then the bridge in front of it:"),
+          h("code.account-cmd", {}, "pip install comfy-api-proxy", h("br"), "comfy-api-proxy run"),
+          h("div.account-row", {}, h("span.spacer"), link(guide, "How to set up your own ComfyUI", icon("open"), "The setup guide")))
+      : h("div.account-row", {}, h("b", {}, "Comfy Cloud"), h("span.hint", {}, own && side ? "" : host)),
+    h("p.hint", {}, jobs ? `${jobs} job${jobs > 1 ? "s" : ""} running: switch once they end` : own && !side ? `Rendering on ${host}` : "Nothing running"),
   );
 
   const keyBox = editing

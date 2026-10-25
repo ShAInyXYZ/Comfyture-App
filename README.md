@@ -214,7 +214,10 @@ Open http://127.0.0.1:5177.
    pip install comfy-api-proxy
    comfy-api-proxy run          # serves the Comfy API v2 on 127.0.0.1:8189
    ```
-3. `npm start` and open http://127.0.0.1:5177.
+3. `npm start` and open http://127.0.0.1:5177. Or switch while it runs: the account window (the credits pill, top right) has a
+   **Renders on** switch between Comfy Cloud and **Your ComfyUI**, with the bridge's address and a Test.
+
+The whole setup, a GPU elsewhere and what to do when it does not connect: [docs/guides/LOCAL-COMFYUI.md](docs/guides/LOCAL-COMFYUI.md).
 
 To check the connection without the app, run `npm run check`. It runs a tiny workflow and saves `data/smoke.png`.
 
@@ -327,7 +330,8 @@ Write the action the way LTX-2.5 reads best: present tense, the motion first, on
 | Variable | Default | |
 |---|---|---|
 | `COMFY_API_KEY` | | Comfy Cloud key. Setting it alone targets Comfy Cloud. |
-| `COMFY_BASE_URL` | `http://127.0.0.1:8189` | Any Comfy API v2 endpoint: a proxy, a Comfy API deployment… |
+| `COMFY_BASE_URL` | `http://127.0.0.1:8189` | Any Comfy API v2 endpoint: a proxy, a Comfy API deployment… The account window's **Renders on** switch outranks it (kept in `data/target.json`). |
+| `COMFY_PROXY_TOKEN` | | The token your bridge asks for, when `comfy-api-proxy` was started with `--token` (sent to your bridge only) |
 | `PORT` / `HOST` | `5177` / `127.0.0.1` | Where the app listens |
 | `COMFYTURE_DATA` | `data` | Photos and runs |
 | `COMFYTURE_WORKFLOWS` | | `dev` swaps in tiny stand-in workflows so you can work on the UI without a GPU |

@@ -2207,6 +2207,26 @@ export async function clearAccountKey() {
   changed("account");
 }
 
+/** The account read again, and where the renders go now with it (the header's lamp and every price follow). */
+function tookTarget(account) {
+  state.account = account;
+  if (state.info) Object.assign(state.info, { target: account.target.kind, url: account.target.url });
+  changed("account");
+}
+/**
+ * Where the renders go: "comfy-cloud", or "self-hosted" at an address (your ComfyUI behind comfy-api-proxy, the bridge). A local address
+ * is checked first; throws with what answered there when it is not the bridge.
+ */
+export async function setRenderTarget(kind, url) {
+  tookTarget(await api.setTarget(kind, url));
+}
+/** What answers at an address, without switching: { ok, found: "bridge" | "comfyui" | "nothing", detail }. */
+export const testRenderTarget = (url) => api.testTarget(url);
+/** Forgets the choice made here and goes back to .env's (or Comfy Cloud). */
+export async function resetRenderTarget() {
+  tookTarget(await api.resetTarget());
+}
+
 // the balance follows the work: a minute and more after a job ends, and every three minutes while the page is on screen
 const jobsRunning = () => state.runs.filter((r) => ["queued", "frame", "shot"].includes(r.status)).length + Object.keys(state.jobs).length;
 let wasRunning = 0;
