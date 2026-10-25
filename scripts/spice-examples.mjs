@@ -17,15 +17,15 @@
 // nothing but that server opens Spice, opens the shot and presses each department's own key, in order, as a person does (Grade it / Add
 // the weather, Bake the layers, Export), waiting for the pass to be there and fresh (its lamp green, nothing working). A pass that errors,
 // or takes over ten minutes, stops the build with the shot's name. Then the shot is read back from the server and each made pass's file
-// is copied from the lab's data folder as light.jpg|mp4, fx.<jpg|png>|mp4, comp.webp|mp4 (a clip stays the MP4 the server made; a picture
-// stays what the app made: FX's bake of a picture is the PNG the page uploads, so fx.png), and the spec's `passes` entries for them are
+// is copied from the lab's data folder as light.jpg|mp4, fx.jpg|mp4, comp.webp|mp4 (a clip stays the MP4 the server made; a picture
+// stays what the app made: FX's bake of a picture is the JPEG, quality 0.93, the page uploads, so fx.jpg), and the spec's `passes` entries for them are
 // written (file, seconds, width, height, note, source "free"), `rev` one higher when any file's bytes changed, in the style the shipped
 // specs are written in (spice-shot-json.mjs).
 //
 // Nothing in examples/ is touched without --write: the outputs (each shot's folder: shot.json and the passes made) go to a scratch folder
 // (--out <dir>, else a new one in the system's temp), whose path is printed. Before anything is overwritten, sizes are compared and
 // what changed is printed; every file is copied, checked, and only then put in place. A file that is no longer named by the spec (an
-// fx.jpg that is now an fx.png) goes once the new one is checked.
+// fx.png from before the bake was a JPEG, now an fx.jpg) goes once the new one is checked.
 //
 // --pictures <dir> also saves, for each shot built, the before/after pair the website shows: the plate and the comp (else the FX bake)
 // as WebP 1280 px wide at quality 82, <short>-plate.webp and <short>-fx.webp (<short> is the folder's name without its shNNN-). A clip's

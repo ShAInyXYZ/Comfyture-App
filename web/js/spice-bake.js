@@ -76,7 +76,9 @@ export async function bake(job, progress = () => {}) {
   if (job.base.kind === "image") {
     render(g, w, h, ctx(1001, true));
     progress(0.8);
-    const blob = await toBlob(canvas, "image/png");
+    // (a JPEG, as a clip's frames are: the bake is always the whole frame over the plate, never clear, and a picture of 1536 x 1024 is
+    // some 400 KB that way against 3 MB as a PNG)
+    const blob = await toBlob(canvas, "image/jpeg", 0.93);
     const pic = await api.upload(blob, job.name ?? "Spice FX");
     progress(1);
     return { kind: "image", url: pic.url, file: pic.file, width: pic.width ?? w, height: pic.height ?? h };

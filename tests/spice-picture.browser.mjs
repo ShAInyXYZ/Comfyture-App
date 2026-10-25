@@ -200,7 +200,7 @@ try {
   await page.locator('.sp-primary[data-key="fx:bake"]').click();
   await waitPass("fx", (p) => p?.note?.includes("baked"));
   st = await state();
-  ok(st.passes.fx?.kind === "image" && st.passes.fx.width === 640, "the layers are baked into a picture as big as the footage", JSON.stringify(st.passes.fx));
+  ok(st.passes.fx?.kind === "image" && st.passes.fx.width === 640 && /\.jpg$/.test(st.passes.fx.file), "the layers are baked into a picture as big as the footage, a JPEG (the bake is the whole frame, never clear)", JSON.stringify(st.passes.fx));
   await shot("p-fx");
 
   // ---- FX: the light a layer casts, the rim it lights on the person, the shot's finish. First the pixels, drawn into canvases by the
