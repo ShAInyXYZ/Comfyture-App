@@ -7,8 +7,14 @@ import { mkdir, open, readdir, readFile, rm, stat, writeFile } from "node:fs/pro
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { SPACES as SPACE_LIST, spaceOf as spaceId, briefOf, toolOf, cleanAnswer, promptOf } from "../web/js/brioche/harness.js";
+import { deadlineOf, LATE } from "./utensils-fx.ts";
 
 const exec = promisify(execFile);
+/** ffmpeg on a video's frames, killed past its deadline (a minute per second of video, ten at least): an encode never hangs for good. */
+const encode = (args: string[], seconds: number) =>
+  exec("ffmpeg", args, { maxBuffer: 1 << 20, timeout: deadlineOf(seconds), killSignal: "SIGKILL" }).catch((e) => {
+    throw e?.killed ? Object.assign(new Error(LATE), { status: 500 }) : e;
+  });
 
 // ------------------------------------------------------------------ Brioche, the assistant
 
@@ -171,7 +177,7 @@ export async function encodeFrames(data: string, job: string, v: { fps: number; 
     else args.push("-c:v", "libx264", "-crf", "17", "-preset", "slow", "-movflags", "+faststart");
     if (sound) args.push("-af", `afade=t=in:st=0:d=0.4,afade=t=out:st=${Math.max(0, seconds - 0.8).toFixed(3)}:d=0.8,alimiter=limit=0.8`, ...(webm ? ["-c:a", "libopus", "-b:a", "128k"] : ["-c:a", "aac", "-b:a", "160k"]));
     args.push("-t", seconds.toFixed(3), out);
-    await exec("ffmpeg", args, { maxBuffer: 1 << 20 });
+    await encode(args, seconds);
     const probed = JSON.parse((await exec("ffprobe", ["-v", "error", "-show_entries", "stream=codec_type,width,height,nb_frames,duration:format=duration", "-of", "json", out])).stdout);
     const video = (probed.streams ?? []).find((s: any) => s.codec_type === "video");
     const audio = (probed.streams ?? []).find((s: any) => s.codec_type === "audio");
@@ -198,7 +204,7 @@ async function encodeGif(data: string, dir: string, frames: number, v: { fps: nu
   const out = join(dir, "video.gif");
   const seconds = frames / v.fps;
   const fps = Math.min(15, v.fps);
-  await exec("ffmpeg", ["-v", "error", "-y", "-framerate", String(v.fps), "-start_number", "0", "-i", join(dir, "%05d.png"), "-filter_complex", `fps=${fps},scale='min(720,iw)':-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4`, "-loop", "0", out], { maxBuffer: 1 << 20 });
+  await encode(["-v", "error", "-y", "-framerate", String(v.fps), "-start_number", "0", "-i", join(dir, "%05d.png"), "-filter_complex", `fps=${fps},scale='min(720,iw)':-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4`, "-loop", "0", out], seconds);
   const probed = JSON.parse((await exec("ffprobe", ["-v", "error", "-show_entries", "stream=width,height:format=duration", "-of", "json", out])).stdout);
   const size = (probed.streams ?? [])[0];
   if (!size?.width) throw refuse("The GIF could not be made.");
