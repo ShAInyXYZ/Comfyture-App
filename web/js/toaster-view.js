@@ -283,7 +283,9 @@ export class ToasterView {
     const [solid, sheet, ghost] = m.userData.mats;
     m.userData.fit = fit;
     // (measured before it joins the part, so the part's own place does not count)
-    if (!hasPiece(p)) return void (fit.add(new THREE.Mesh(new THREE.BoxGeometry(...p.size), ghost)), m.add(fit));
+    // (a box until the library is there: noted, so the stills drawn meanwhile are drawn again once it is)
+    m.userData.ghost = !hasPiece(p);
+    if (m.userData.ghost) return void (fit.add(new THREE.Mesh(new THREE.BoxGeometry(...p.size), ghost)), m.add(fit));
     const figure = p.shape === "character";
     const piece = figure ? characterPiece(p) : assetPiece(p.asset);
     fit.add(piece);
@@ -305,9 +307,10 @@ export class ToasterView {
   /** The library has arrived (or grown): pieces that were boxes become themselves. */
   refreshAssets() {
     if (!this.parts || this.disposed) return;
+    const boxes = [...this.meshes.values()].some((m) => m.userData.ghost);
     this.setParts(this.parts);
-    // (the pictures drawn from the clay while the pieces were boxes are drawn again)
-    this.onAssets();
+    // (the pictures drawn from the clay while pieces were boxes are drawn again; none were: nothing to draw again)
+    if (boxes) this.onAssets();
   }
 
   waitForLibrary() {

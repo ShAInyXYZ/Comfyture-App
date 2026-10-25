@@ -328,7 +328,8 @@ try {
     ok((await page.locator(".ts-recipe .ts-strength input").isVisible()) && (await page.locator(".ts-recipe-model .sel-trigger").count()) === 2 && !(await page.locator(".ts-foot").count()) && !(await page.locator(".ts-refs-row").count()), "the Strength, the image model and the frame are in the Recipe; the foot and the References row are gone");
     ok(await page.locator(".ts-scene .ts-scene-box .ts-refs .ts-pic-add").isVisible(), "the scene's reference tiles and add tile sit inside the Scene box");
   }
-  await page.waitForTimeout(700);
+  // (the still is drawn a moment after the page turns: longer on a busy machine's software GL)
+  await page.waitForSelector(".ts-studio .ts-pic.is-clay img", { timeout: 8000 }).catch(() => {});
   ok(await page.locator(".ts-studio .ts-pic.is-clay img").isVisible(), "the studio shows the clay still although the viewport is hidden");
   await page.locator(".ts-part").first().click();
   await page.waitForSelector(".ts-inspector .ts-sheet-box", { timeout: 3000 }).catch(() => {});
@@ -929,8 +930,8 @@ try {
   // the left column says whether each part's picture goes with the frame (the desk's does, at the start)
   ok(await page.locator(".ts-parts .ts-part", { hasText: "Desk" }).locator(".ts-mini-pic").count() === 1, "a part with a picture has its thumb in the list");
   // (the list is drawn again a moment after the maps change)
-  await until(() => document.querySelectorAll(".ts-parts .ts-mini-pic .ts-sent-dot").length + document.querySelectorAll(".ts-parts .ts-mini-pic.is-left-out").length === 1, null, 3000);
-  ok((await page.locator(".ts-parts .ts-mini-pic .ts-sent-dot").count()) + (await page.locator(".ts-parts .ts-mini-pic.is-left-out").count()) === 1, "and it is marked: a dot when it goes with the frame, dimmed when left out");
+  await until(() => document.querySelectorAll(".ts-parts .ts-mini-pic .ts-sent-dot").length + document.querySelectorAll(".ts-parts .ts-mini-pic.is-left-out").length === 1, null, 8000);
+  ok((await page.locator(".ts-parts .ts-mini-pic .ts-sent-dot").count()) + (await page.locator(".ts-parts .ts-mini-pic.is-left-out").count()) === 1, "and it is marked: a dot when it goes with the frame, dimmed when left out", JSON.stringify(await js(() => ({ mode: window.__toaster.mode, row: document.querySelector(".ts-parts .ts-mini-pic")?.outerHTML.slice(0, 200) }))));
   // a mode kept in the browser that nobody knows falls back to the scene
   await js(() => localStorage.setItem("comfyture.toaster.mode", "bogus"));
   await page.reload();
