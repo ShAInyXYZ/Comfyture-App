@@ -9,7 +9,7 @@ Measured on this machine with a headless Chromium at 1600×950, every page opene
 
 | | Before | After tonight |
 |---|---|---|
-| Opening any page, first visit | **~30 MB**, ~730 requests | **~9 MB**, same requests (gzip) |
+| Opening any page, first visit | **~30 MB**, ~730 requests | **0.4–3.9 MB**, 89–188 requests (gzip, then 25 October afternoon: the Stage, its models and each product's code only when needed) |
 | Opening it again | **~30 MB** every time (no validators, `no-cache`) | **0.3 MB** (304s, the models kept a day) |
 | Page errors on the 12 pages | 0 | 0 |
 | Buttons and links with no name in the browser's own tree, images with no `alt`, fields with no label | 3 / 0 / 0 | 0 / 0 / 0 |
@@ -30,17 +30,43 @@ compressed once and kept in memory (96 MB at most). Tested by [tests/send-file.t
 | Toaster | 8.5 MB | 0.3 MB |
 | Spice | 9.4 MB | 0.3 MB |
 
-**What is still heavy**, in order of what it would save:
+**25 October afternoon: the Stage and the products load when needed.** Headless Chromium at 1600×950, a fresh profile per page, the
+median of three runs, no page errors; before is the commit before the change, after is it with the two steps:
 
-1. **The Stage loads every model in the background, on every page** (about 400 GLB files: 375 props, 8 bodies, 6 animals, 10 hand props;
+| Page | Wire MB | Requests | 3D models | JS modules | Stylesheets | First draw, ms | First draw on a slow link (40 ms, 20 Mbit) |
+|---|---|---|---|---|---|---|---|
+| Home | 10.8 → 2.9 | 759 → 110 | 399 → 0 | 228 → 52 | 51 → 8 | 134 → 62 | 2275 → 661 |
+| Kitchen | 9.6 → 1.7 | 737 → 93 | 399 → 0 | 228 → 54 | 51 → 8 | 156 → 103 | 2281 → 680 |
+| Story | 9.7 → 1.8 | 735 → 90 | 399 → 0 | 228 → 53 | 51 → 8 | 130 → 60 | 2251 → 655 |
+| Stage | 8.3 → 2.9 | 751 → 171 | 399 → 22 | 228 → 70 | 51 → 8 | 365 → 260 | 2627 → 1091 |
+| Shot | 10.6 → 2.7 | 752 → 108 | 399 → 0 | 228 → 52 | 51 → 8 | 137 → 85 | 2286 → 661 |
+| Cut | 10.3 → 1.6 | 751 → 114 | 399 → 0 | 228 → 55 | 51 → 10 | 135 → 65 | 2252 → 736 |
+| Library | 11.4 → 0.4 | 727 → 89 | 399 → 0 | 228 → 52 | 51 → 8 | 144 → 66 | 2262 → 651 |
+| Mixer | 8.8 → 1.0 | 744 → 105 | 399 → 0 | 228 → 59 | 51 → 9 | 147 → 82 | 2289 → 806 |
+| Jam | 12.7 → 3.9 | 750 → 148 | 399 → 0 | 228 → 80 | 51 → 17 | 222 → 293 | 2354 → 1651 |
+| Macaron | 9.4 → 1.8 | 754 → 172 | 399 → 0 | 228 → 104 | 51 → 18 | 120 → 135 | 2261 → 1528 |
+| Spice | 10.0 → 2.2 | 738 → 141 | 399 → 0 | 228 → 82 | 51 → 20 | 119 → 131 | 2249 → 1313 |
+| Toaster | 8.5 → 1.3 | 741 → 129 | 399 → 13 | 231 → 73 | 51 → 10 | 144 → 61 | 2257 → 759 |
+| Utensils | 11.0 → 3.4 | 761 → 188 | 399 → 0 | 228 → 110 | 51 → 21 | 174 → 182 | 2284 → 1408 |
+
+What is left on the wire is pictures (the home's 2.35 MB, Utensils' 2.66), Spice's footage and Jam's audio. On the machine itself Jam
+draws ~70 ms later than before (a second round of modules, three.js in its deck); on a slow link every page draws 0.6–1.7 s sooner.
+`tests/weight.browser.mjs` keeps it so (42 checks).
+
+**Was heavy, in order of what it saved:**
+
+1. ✅ **The Stage loaded every model in the background, on every page** (about 400 GLB files: 375 props, 8 bodies, 6 animals, 10 hand props;
    22 MB raw, ~6 MB gzipped). [app.js](../web/js/app.js) mounts the Stage when the browser is idle so the assistants and outside agents
    (the comfyture-control MCP) can stage a scene from anywhere, and [control/models.js](../web/js/control/models.js) `loadModels()` loads
    the whole manifest at once. Fix: load a piece's model when a scene uses it or the library draws it (the Stage already draws a built
    stand-in until a model arrives), and mount the Stage on demand, with a small listener on `api/control/events` that mounts it on an
-   agent's first command. Effort M, risk M (the Stage, Toaster's library and the control MCP all read `MODELS`).
-2. **Every product's code and styles load on every page**: 226 ES modules (4.7 MB, 1.5 MB gzipped) and 51 stylesheets (1 MB) whatever
-   the product open. Fix: load each product's panel and CSS when its route is first shown (`import()` per product in app.js, `<link>`
-   added on first visit). Effort M, risk M.
+   agent's first command. Done: a model loads when a scene or a library draws its piece, and the Stage mounts when something needs it
+   (its room, a thumbnail, the Oven, Toaster's library, the Kitchen tour, an outside agent's first command, which is handed over and
+   answered); a page that shows no 3D fetches 0 of the 399 models, the Stage room 22, Toaster 13.
+2. ✅ **Every product's code and styles loaded on every page**: 226 ES modules (4.7 MB, 1.5 MB gzipped) and 51 stylesheets (1 MB)
+   whatever the product open. Done: each product's modules and stylesheets load on its first visit (`web/js/sheets.js` lists each
+   page's sheets; the shared bar takes each pet from `web/js/surfaces.js` instead of importing every product). A product that borrows
+   another's classes must list that sheet in `STYLES`.
 3. **Pictures**: ✅ done the same day. Comfy Cloud's template previews are animations of up to 4 MB (171 of them, 222 MB); a grid now
    shows each one's first frame, cut out of the WebP's container by the server (no decoding, 4.4 MB for all 171), and plays the
    animation when its card is pointed at or focused. The home's storefront went from 7.1 MB of pictures to 0.5 MB, Utensils' tiles
@@ -195,6 +221,4 @@ the woman in the raincoat is left only in old design boards (`docs/brand/product
 ## Next, ranked
 
 1. Decide the trend sounds and the Toaster mockups (above), before the submission.
-2. Load the Stage's models per piece and mount the Stage on demand (saves ~6 MB gzipped on every first visit).
-3. Load each product's code and styles on its first visit.
-4. Decide the accessibility proposals (fields' edges, the ring over pictures, a skip link: the list under Accessibility).
+2. Decide the accessibility proposals (fields' edges, the ring over pictures, a skip link: the list under Accessibility).
