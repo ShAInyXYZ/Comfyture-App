@@ -183,13 +183,14 @@ circle (`url(true)`), a shipped comp with no download, Macaron's encodes with no
 spent, a Paint spot against the frame's edge coming out magenta, Jam's edit showing only its ruler on a laptop, Jam's Words at 1180
 wide and under, the Stage's examples now going in by the examples' rules (an example added later reaches an install that had the
 others), the tours tidying up after themselves (a step's element brought into view, no tooltip over the card, Macaron's window and
-Mixer's preview closed when a tour is left), and the header fitting all seven products at 1300 wide and under. **Still open** (most
-valuable first):
+Mixer's preview closed when a tour is left), and the header fitting all seven products at 1300 wide and under. That afternoon:
+Spice's cover (Paprika before her portal, the six passes fanned beside her: no person left in the app's art), Spice's cards on a
+laptop (cut in 274 of 540 views measured across 45 window sizes, in none now; `tests/spice-laptop.browser.mjs`), and a slow-motion
+comp played whole in the viewer, the footage beside it at the matching rate.
 
-1. Spice: a slow-motion comp plays only the plate's length; the PASS bento is too narrow at 1600×950; at 1366×768 its Trim and
-   Footage cards clip their last row.
-2. Spice's cover art (the home banner) still shows the woman in a raincoat; a cover drawn from Paprika's own shot would match the
-   rest of the cast.
+**Still open**, small: FX's Look and Place cards scroll inside themselves from 886 high up (as designed); a slow-motion comp made
+from a wider range whose range was later shortened is read as the shorter one's (the pass would need to record its source frames);
+the woman in the raincoat is left only in old design boards (`docs/brand/products/spice-v1/`, `spice-v2/`), which nothing uses.
 
 ## Next, ranked
 
