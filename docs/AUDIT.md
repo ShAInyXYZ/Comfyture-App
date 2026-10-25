@@ -107,15 +107,15 @@ reader's reading order. The tours (web/js/tour.js) are keyboard-driven (arrows, 
 
 **Found by the agents**: fixed later that morning, each with a check: Spice's FX reading "not baked" after a renamed layer was
 read back (the test fails without the fix), a shipped example's FX reading "Baked" over a newer Light or Paint, Roto's subject
-circle (`url(true)`), a shipped comp with no download, Macaron's encodes with no deadline, and Jam counting a shipped video as credits
-spent. **Still open** (most valuable first):
+circle (`url(true)`), a shipped comp with no download, Macaron's encodes with no deadline, Jam counting a shipped video as credits
+spent, a Paint spot against the frame's edge coming out magenta, and Jam's edit showing only its ruler on a laptop. **Still open**
+(most valuable first):
 
-1. Spice: a free spot touching the frame's edge comes out as a flat magenta block (`removelogo` has no border: keep the mask a few
-   pixels inside); a slow-motion comp plays only the plate's length; the PASS bento is too narrow at 1600×950.
+1. Spice: a slow-motion comp plays only the plate's length; the PASS bento is too narrow at 1600×950; at 1366×768 its Trim and
+   Footage cards clip their last row.
 2. Jam: an example's song cannot carry its cover; a film ships as a video, not a reel; opening a video with no stored drop or
    loudness saves it, which marks Toc Toc and Hotel Lobby as worked on.
-3. At 1366×768 Jam's edit shows only its ruler and Spice's viewer is too short for its timeline rows; at 1180 wide and under, Jam's
-   Words still overlaps.
+3. At 1180 wide and under, Jam's Words still overlaps.
 4. The Stage's examples are put in only when its folder is first made, so an example added later never reaches an existing install
    (move the Stage onto `server/examples.ts`, [COMPONENTS.md](COMPONENTS.md) finding 10).
 5. Spice's cover art (the home banner, the website's tile) still shows the woman in a raincoat; a cover drawn from Paprika's own
