@@ -377,9 +377,11 @@ export function plan(tool: Tool, p: Params, ctx: Ctx): Plan {
     }
     case "unlogo": {
       const v = clip(ctx);
-      // the mask drawn on the picture: scaled to the clip, made black and white and grown a little, so the edges of the spot go too
+      // the mask drawn on the picture: scaled to the clip, made black and white and grown a little, so the edges of the spot go too;
+      // and kept a few pixels inside the frame (removelogo fills a spot from the pixels around it: one touching the edge has none
+      // there and came out as a flat magenta block)
       const grown = Array.from({ length: p.grow }, () => "dilation").join(",");
-      const prep: Step = { args: ["-i", "mask-src.png", "-vf", `scale=${v.width}:${v.height}:flags=neighbor,format=gray,lut=y='if(gt(val,40),255,0)'${grown ? `,${grown}` : ""}`, "-frames:v", "1", out(ctx, "mask.png")], out: out(ctx, "mask.png"), kind: "image", ext: "png", keep: false, weight: 0.02 };
+      const prep: Step = { args: ["-i", "mask-src.png", "-vf", `scale=${v.width}:${v.height}:flags=neighbor,format=gray,lut=y='if(gt(val,40),255,0)'${grown ? `,${grown}` : ""},drawbox=x=0:y=0:w=iw:h=ih:color=black:t=4`, "-frames:v", "1", out(ctx, "mask.png")], out: out(ctx, "mask.png"), kind: "image", ext: "png", keep: false, weight: 0.02 };
       const steps = finishVideo(seek(ctx).concat(["-i", v.path]), ["-vf", `removelogo=filename=mask.png,${EVEN}`, "-map", "0:v"], ctx, v.hasAudio ? ["-map", "0:a?", "-c:a", "copy"] : ["-an"], "A spot removed");
       return { steps: [prep, ...steps], seconds: v.duration, files: {} };
     }

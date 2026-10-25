@@ -175,6 +175,7 @@ test("a spot is removed with a mask made black and white, grown and as big as th
   assert.equal(p.steps[0].keep, false);
   const prep = arg(p.steps[0].args, "-vf");
   assert.ok(prep.includes("scale=1280:720:flags=neighbor") && prep.includes("dilation,dilation,dilation") && prep.includes("format=gray"));
+  assert.ok(prep.endsWith("drawbox=x=0:y=0:w=iw:h=ih:color=black:t=4"), "and kept a few pixels inside the frame, where removelogo has pixels to fill from");
   assert.ok(has(p.steps[1].args, "removelogo=filename=mask.png"));
   assert.ok(!planOf("unlogo", { grow: 0, mask: "x" }).steps[0].args.some((a) => a.includes("dilation")));
 });
@@ -335,6 +336,14 @@ test("each tool runs on a real clip and sound and makes a file that plays", asyn
       const mask = `data:image/png;base64,${(await (await import("node:fs/promises")).readFile(join(dir, "mask.png"))).toString("base64")}`;
       const [r] = await run("unlogo", { video: "plain.mp4", mask, grow: 2 });
       assert.deepEqual([r.width, r.height], [320, 180]);
+      // a spot touching the frame's edge is filled from the picture around it, not left as a flat magenta block
+      await make(["-f", "lavfi", "-i", "color=c=black:s=320x180:d=1", "-vf", "drawbox=x=0:y=50:w=50:h=50:color=white:t=fill", "-frames:v", "1", join(dir, "edge.png")]);
+      const edge = `data:image/png;base64,${(await (await import("node:fs/promises")).readFile(join(dir, "edge.png"))).toString("base64")}`;
+      const [e] = await run("unlogo", { video: "plain.mp4", mask: edge, grow: 1 });
+      const raw = (await exec("ffmpeg", ["-v", "error", "-i", path(e), "-vf", "crop=6:40:0:55", "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], { encoding: "buffer", maxBuffer: 1 << 20 })).stdout as unknown as Buffer;
+      let magenta = 0;
+      for (let i = 0; i + 2 < raw.length; i += 3) if (raw[i] > 200 && raw[i + 2] > 200 && raw[i + 1] < 170) magenta++;
+      assert.equal(magenta, 0, "no flat magenta where the spot met the frame's edge");
       await assert.rejects(() => fx.start("unlogo", { video: "plain.mp4", mask: "" }), /Paint over the spot/);
       await assert.rejects(() => fx.start("unlogo", { video: "plain.mp4", mask: "data:image/png;base64,AAAAAAAAAAAA" }), /Paint over the spot/);
     }
