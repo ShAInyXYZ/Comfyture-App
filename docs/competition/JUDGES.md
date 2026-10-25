@@ -41,7 +41,7 @@ npm start            # then open http://127.0.0.1:5177
 | Product · pet | Try this | Free? |
 |---|---|---|
 | **Kitchen** · Ketkout the chick | Stage → *Morning kitchen*: keys 1–7 show the clay as colour ID, depth, normal, pose, lines, mask; pose a mannequin; *Render references*. On Kitchen's home, one sentence and *Imagine* writes a film. | Stage free; writing and rolling cost |
-| **Toaster** · Crumpet the beaver | Press the compass for Crumpet's tour: he builds a set in clay, free. Ask him for *"a cosy reading corner, camera low"* and watch him build it; *Render* shows what is sent; *Toast it* renders it; *3D* makes a GLB. | Building by hand and the tour free; his answers, toast and 3D cost |
+| **Toaster** · Crumpet the beaver | Press the compass for Crumpet's tour: he builds a set in clay, free. Ask him for *"a cosy reading corner, camera low"* and watch him build it; *Render* shows what is sent; *Toast it* renders it; *3D* makes each object real, one at a time (its own four-view sheet, then its own model), into a new scene. | Building by hand and the tour free; his answers, toast and 3D cost |
 | **Spice** · Paprika the chameleon | *Paprika's portal* → FX: drag a flame or a portal from the library onto the picture, move, scale and turn it; Comp: drag the wipe; Export. | All free; Roto (SAM3), Paint and Light passes cost |
 | **Jam** · Pickle the frog | Open the example video and play the track: the beat and the sections are read in your browser; *The song*: a shelf of our own songs made with ACE-Step; *The Words*: caption styles; *The Edit*: the cut on the beat. | Free; songs and performances cost |
 | **Mixer** · Praline the cat | Pick a trend, swap the crew around, read its beats; *Make it* rolls it with LTX-2.5. | *Make it* costs |
@@ -60,7 +60,7 @@ a picture 2–6. Every paid key shows its price, and a pet only *offers* a paid 
 | Talking to ComfyUI through the Comfy SDK, on Comfy Cloud or your GPU | [`server/engine.ts`](../../server/engine.ts), [`server/main.ts`](../../server/main.ts) |
 | The workflows, as readable API-format graphs (LTX-2.5 shots, the Oven, songs) | [`workflows/`](../../workflows/) |
 | Pets that act, checked: the tool, the checks, the actions applied | [`server/toaster-assist.ts`](../../server/toaster-assist.ts), [`web/js/toaster-assist.js`](../../web/js/toaster-assist.js), [`server/spice-assist.ts`](../../server/spice-assist.ts), `petAnswer` in [`server/main.ts`](../../server/main.ts) |
-| Toaster: clay → maps → render → turnaround for Pixal3D → GLB | [`web/js/toaster.js`](../../web/js/toaster.js), [`web/js/toaster-model.js`](../../web/js/toaster-model.js) |
+| Toaster: clay → maps → render; each object → its four-view sheet → Trellis2 → a new scene of GLBs | [`web/js/toaster.js`](../../web/js/toaster.js), [`web/js/toaster-model.js`](../../web/js/toaster-model.js), [`web/js/toaster-3d.js`](../../web/js/toaster-3d.js), [`server/toaster-3d.ts`](../../server/toaster-3d.ts), [`workflows/3d/`](../../workflows/3d/) |
 | Spice's compositor and its free bake | [`web/js/spice-canvas.js`](../../web/js/spice-canvas.js), [`web/js/spice-layers.js`](../../web/js/spice-layers.js), [`web/js/spice-bake.js`](../../web/js/spice-bake.js) |
 | The Stage, its passes, and the MCP server any agent can drive | [`web/js/control/`](../../web/js/control/), [`scripts/control-mcp.ts`](../../scripts/control-mcp.ts) |
 | The beat, read in the browser | [`web/js/beats.js`](../../web/js/beats.js) |
@@ -76,7 +76,7 @@ a picture 2–6. Every paid key shows its price, and a pet only *offers* a paid 
 | Music and sound | ACE-Step 1.5, Stable Audio 3 small |
 | Words (writer, pets, LTX's text encoder) | Gemma 4 |
 | VFX and listening | SAM3, Depth Anything 3, VOID, FILM, Demucs, Whisper, BiRefNet |
-| Finishing and 3D | 4x-UltraSharp, SeedVR2, Pixal3D |
+| Finishing and 3D | 4x-UltraSharp, SeedVR2, TRELLIS.2 (on your ComfyUI), Pixal3D (on Comfy Cloud) |
 
 Partner models (Claude, GPT-6 and Gemini as writers; GPT Image, Nano Banana, Seedream and others as artists; Veo, Kling, Seedance,
 MiniMax H3 and others for video) are opt-in through Comfy Router, billed in Comfy credits, and off with `COMFYTURE_OPEN_WEIGHTS=1`,
