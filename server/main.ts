@@ -921,6 +921,12 @@ async function putSpiceShot(spec: any, folder: string, id: string, version: numb
     const subject = dept === "roto" ? body.set.roto.subjects.find((x: any) => !x.media) : null;
     if (subject) Object.assign(subject, { media, from: SPICE_FIRST, to, stale: false, at, credits: 0 });
   }
+  // a shipped comp is the shot's export too: Comp offers it to download, as it does one exported here
+  const comp = body.passes.comp?.media;
+  if (comp?.url && !body.set.comp.exports?.length) {
+    const format = String(comp.file ?? comp.url).split(".").pop()!.toLowerCase();
+    body.set.comp.exports = [{ url: comp.url, format, at, width: comp.width, height: comp.height, ...(comp.seconds ? { seconds: comp.seconds } : {}) }];
+  }
   // the clips its FX layers hold (an AI layer's clip), kept in the library beside its passes
   for (const [i, l] of (body.set.fx.layers ?? []).entries()) {
     const raw = spec.set?.fx?.layers?.[i]?.media;
