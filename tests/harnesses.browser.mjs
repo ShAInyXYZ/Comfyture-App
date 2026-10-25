@@ -52,6 +52,12 @@ const browser = await chromium.launch({ executablePath: process.env.CHROME || un
 try {
   const context = await browser.newContext({ viewport: { width: 1500, height: 950 } });
   const page = await context.newPage();
+  // waits until `fn` (run in the page, awaited) is true: waitForFunction does not await an async predicate (a Promise is truthy), so it
+  // would not wait at all
+  const until = async (fn, arg, timeout = 30000) => {
+    for (const end = Date.now() + timeout; Date.now() < end; await page.waitForTimeout(150)) if (await page.evaluate(fn, arg)) return;
+    throw new Error(`timed out waiting for ${String(fn).slice(0, 90)}`);
+  };
   const errors = [];
   const paid = [];
   const outbound = [];
@@ -76,7 +82,7 @@ try {
       const a = document.getElementById("assistant");
       const img = a?.querySelector(".pet-face img");
       return a && !a.hidden && a.getBoundingClientRect().height > 0 && img?.complete && img.naturalWidth > 0;
-    }, null, { timeout: 30000 });
+    }, undefined, { timeout: 30000 });
     await page.waitForTimeout(300);
   };
   const say = async (text) => {
@@ -92,7 +98,7 @@ try {
   const PAGES = [["shot", "kitchen", "shot"], ["stage", "kitchen", "stage"], ["story", "kitchen", "story"], ["cut", "kitchen", "cut"], ["jam", "jam"], ["macaron", "macaron"], ["spice", "spice"], ["toaster", "toaster"], ["mixer", "mixer"], ["utensils", "utensils"]];
   for (const [p, product, room] of PAGES) {
     await visit(p);
-    if (p === "stage") await page.waitForFunction(() => document.querySelector("#stage-chat #assistant"), null, { timeout: 30000 });
+    if (p === "stage") await page.waitForFunction(() => document.querySelector("#stage-chat #assistant"), undefined, { timeout: 30000 });
     const h = HARNESSES[product];
     const look = barOf(product, room);
     const info = await js(() => {
@@ -199,7 +205,7 @@ try {
   await again.click();
   // making starts with local work (the mix, the recipe's files); the first thing that costs is refused here
   for (let i = 0; i < 60 && !paid.length; i++) await page.waitForTimeout(500);
-  await page.waitForFunction(async () => !(await import("/js/mixer-trend.js")).making(), null, { timeout: 30000 });
+  await until(async () => !(await import("/js/mixer-trend.js")).making(), undefined, 30000);
   ok(paid.length >= 1 && paid.every((u) => PAID.test(u)), "only the yes makes it: the first paid request is its own (refused here)", paid.slice(0, 2).join(" "));
   const settled = await page.locator("#assistant .chat-thread .msg.is-ai").last().locator(".msg-confirm").textContent();
   ok(/didn't finish|Made|Making/.test(settled), "the answer says how it went", settled.trim());
@@ -269,7 +275,7 @@ try {
 
   // ---- Jam's editor is Cut's, with a conversation of its own
   await visit("jam");
-  await page.waitForFunction(async () => (await import("/js/cut.js")).cut.project, null, { timeout: 30000 });
+  await until(async () => !!(await import("/js/cut.js")).cut.project, undefined, 30000);
   queue.cut.push({ reply: "A zoom on every bar.", actions: [] });
   await say("a zoom on every bar");
   await answers(1);
@@ -278,7 +284,7 @@ try {
   ok((await page.locator("#assistant .chat-thread .msg.is-ai .msg-face").getAttribute("src")) === HARNESSES.jam.face, "Pickle's reply has his face");
   ok(asked.cut.length === 1 && asked.cut[0].messages.length === 1, "and the editor was only told what was said to Pickle");
   await visit("cut");
-  await page.waitForFunction(async () => (await import("/js/cut.js")).cut.project, null, { timeout: 30000 });
+  await until(async () => !!(await import("/js/cut.js")).cut.project, undefined, 30000);
   ok((await page.locator("#assistant .chat-thread .msg").count()) === 0, "on Cut, Ketkout's own conversation is empty");
   queue.cut.push({ reply: "Trimmed.", actions: [] });
   await say("trim the first shot to 3 s");
@@ -290,7 +296,7 @@ try {
   const talk = { shot: ["Slow push-in", { reply: "Camera set.", actions: [{ do: "name", name: "Slow push" }] }], story: ["Add a scene", { reply: "Added.", ops: [] }], stage: ["Low angle", { reply: "Camera low.", actions: [] }] };
   for (const [room, [label, answer]] of Object.entries(talk)) {
     await visit(room);
-    if (room === "story") await page.waitForFunction(async () => (await import("/js/story.js")).story.project, null, { timeout: 30000 });
+    if (room === "story") await until(async () => !!(await import("/js/story.js")).story.project, undefined, 30000);
     queue[room].push(answer);
     const text = HARNESSES.kitchen.presets[room].find((x) => x.label === label).text;
     await page.locator("#assistant .pet-chip", { hasText: label }).click();

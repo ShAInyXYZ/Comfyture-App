@@ -43,6 +43,12 @@ for (let i = 0; i < 100; i++) {
 const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ["--no-sandbox"] });
 try {
   const page = await (await browser.newContext({ viewport: { width: 1600, height: 1000 } })).newPage();
+  // waits until `fn` (run in the page, awaited) is true: waitForFunction does not await an async predicate (a Promise is truthy), so it
+  // would not wait at all
+  const until = async (fn, arg, timeout = 30000) => {
+    for (const end = Date.now() + timeout; Date.now() < end; await page.waitForTimeout(150)) if (await page.evaluate(fn, arg)) return;
+    throw new Error(`timed out waiting for ${String(fn).slice(0, 90)}`);
+  };
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => m.type() === "error" && !/GL Driver|favicon|Failed to load resource/.test(m.text()) && errors.push(m.text()));
@@ -165,7 +171,7 @@ try {
     await page.locator("#assistant .pill-field, #assistant .chat-input").first().click();
     await page.keyboard.type(text);
     await page.keyboard.press("Enter");
-    await page.waitForFunction(async (n) => { const mm = await import("/js/macaron.js"); return mm.macaron.chat.messages.length >= n + 2 && !mm.macaron.chat.busy; }, n0, { timeout: 20000 });
+    await until(async (n) => { const mm = await import("/js/macaron.js"); return mm.macaron.chat.messages.length >= n + 2 && !mm.macaron.chat.busy; }, n0, 20000);
   };
   const writerLog = async () => (await readFile(join(dataDir, "writer-requests.jsonl"), "utf8").catch(() => "")).trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
   const pitch0 = (await brandBody()).brief.pitch;
