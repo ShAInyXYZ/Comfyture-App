@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comfyture demo storyboard</title>
+<meta name="description" content="The 2-minute #OpenSourceHiggsfield demo video for Comfyture, as 13 beats with keyframes, for review before recording.">
+<style>
+  @font-face { font-family: "Manrope"; font-weight: 400 800; font-display: swap; src: url("../../web/fonts/manrope-400-800.woff2") format("woff2"); }
+  @font-face { font-family: "IBM Plex Mono"; font-weight: 400; font-display: swap; src: url("../../web/fonts/ibm-plex-mono-400.woff2") format("woff2"); }
+  @font-face { font-family: "IBM Plex Mono"; font-weight: 500; font-display: swap; src: url("../../web/fonts/ibm-plex-mono-500.woff2") format("woff2"); }
+
+  :root {
+    --bg: #0b0b0c;
+    --surface: #121214;
+    --surface-2: #19191c;
+    --line: #26262b;
+    --line-2: #34343a;
+    --text: #F0EFED;
+    --muted: #a3a29e;
+    --faint: #6f6e6a;
+    --accent: #F2FF59;
+    --accent-ink: #121214;
+    --plum: #8f7be0;
+    --red: #ff7a6b;
+    --green: #67d9a1;
+    --radius: 16px;
+    --sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  .mono { font-family: var(--mono); }
+  .wrap { max-width: 1480px; margin: 0 auto; padding: 0 32px; }
+
+  /* ------------------------------------------------------------ the head of the page */
+  .top { padding: 40px 0 28px; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .brand img { height: 44px; width: auto; display: block; }
+  .brand .kicker { font: 500 12px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); padding-top: 6px; }
+  h1 { font-size: clamp(30px, 4.2vw, 54px); line-height: 1.02; letter-spacing: -.02em; margin: 26px 0 12px; font-weight: 800; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .for { color: var(--muted); max-width: 70ch; margin: 0 0 22px; font-size: 16px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; padding: 0; list-style: none; }
+  .stats li { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; font: 500 13px/1 var(--mono); color: var(--text); }
+  .stats li b { color: var(--accent); font-weight: 500; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 13px; align-items: center; }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+
+  /* the flags, on frames and in the legend */
+  .flag { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 6px; font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  .flag.real { background: rgba(103, 217, 161, .14); color: var(--green); border: 1px solid rgba(103, 217, 161, .45); }
+  .flag.staged { background: rgba(143, 123, 224, .16); color: #b9abff; border: 1px solid rgba(143, 123, 224, .55); }
+  .flag.recap { background: rgba(242, 255, 89, .12); color: var(--accent); border: 1px solid rgba(242, 255, 89, .55); }
+  .flag.d1 { background: rgba(255, 122, 107, .14); color: var(--red); border: 1px solid rgba(255, 122, 107, .55); }
+  .flag.mute { background: rgba(255, 122, 107, .14); color: var(--red); border: 1px solid rgba(255, 122, 107, .55); }
+  .flag.drawn { background: rgba(240, 239, 237, .08); color: var(--muted); border: 1px solid var(--line-2); }
+
+  /* ------------------------------------------------------------ the timeline, kept in view */
+  .rail { position: sticky; top: 0; z-index: 20; background: rgba(11, 11, 12, .9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .rail .wrap { padding-top: 12px; padding-bottom: 10px; }
+  .track { position: relative; display: flex; gap: 3px; height: 34px; }
+  .seg { position: relative; flex: var(--d) 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--muted); text-decoration: none; font: 500 12px/1 var(--mono); overflow: hidden; transition: background .2s, color .2s, border-color .2s; }
+  .seg:hover { border-color: var(--line-2); color: var(--text); }
+  .seg.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .seg .lbl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+  .seg .lbl b { font-weight: 500; }
+  .seg.spare { flex: 5 1 0; background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(240, 239, 237, .06) 6px 12px); border-style: dashed; color: var(--faint); pointer-events: none; }
+  .ticks { position: relative; height: 18px; margin-top: 6px; font: 400 11px/1 var(--mono); color: var(--faint); }
+  .ticks span { position: absolute; top: 4px; transform: translateX(-50%); white-space: nowrap; }
+  .ticks span:first-child { transform: none; }
+  .ticks span:last-child { transform: translateX(-100%); }
+
+  /* ------------------------------------------------------------ one beat */
+  main { padding: 18px 0 40px; }
+  .beat { padding: 34px 0 38px; border-bottom: 1px solid var(--line); }
+  .beat-head { display: flex; align-items: flex-start; gap: 22px; flex-wrap: wrap; margin-bottom: 20px; }
+  .no { font: 800 54px/0.9 var(--sans); letter-spacing: -.03em; color: var(--accent); min-width: 74px; }
+  .titles h2 { margin: 0; font-size: 28px; line-height: 1.1; letter-spacing: -.01em; font-weight: 800; }
+  .titles .time { margin-top: 6px; font: 500 13px/1 var(--mono); color: var(--muted); }
+  .titles .time b { color: var(--text); font-weight: 500; }
+  .pet { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; font-size: 14px; color: var(--muted); }
+  .pet img { width: 34px; height: 34px; border-radius: 50%; display: block; background: var(--surface-2); }
+  .pet b { color: var(--text); font-weight: 700; }
+
+  .body { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  .frames { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .frames.one { grid-template-columns: minmax(0, 1fr); }
+  .frames .wide { grid-column: 1 / -1; }
+
+  figure { margin: 0; }
+  .shot { position: relative; display: block; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #060607; cursor: zoom-in; aspect-ratio: 16 / 9; }
+  .shot.square { aspect-ratio: 16 / 9; }
+  .shot img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .shot.cover img { object-fit: cover; }
+  .shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .shot .flags { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .shot .flags .flag { background-color: rgba(11, 11, 12, .82); }
+  .ost { position: absolute; left: 12px; bottom: 12px; max-width: calc(100% - 24px); padding: 7px 11px; border-radius: 8px; background: rgba(11, 11, 12, .82); border: 1px solid rgba(242, 255, 89, .5); color: var(--accent); font: 800 clamp(10px, 1.05vw, 14px)/1.2 var(--sans); letter-spacing: .04em; text-transform: uppercase; text-align: left; }
+  figcaption { margin-top: 8px; font-size: 13px; color: var(--muted); line-height: 1.45; }
+  figcaption code, .notes code { font: 12.5px var(--mono); color: var(--text); background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+  .drawn { cursor: default; }
+  .drawn .flags { left: auto; right: 10px; }
+  .drawn svg { display: block; width: 100%; height: 100%; }
+
+  .notes { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; display: grid; gap: 14px; }
+  .notes > div { display: grid; gap: 4px; }
+  .notes dt { font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+  .notes dd { margin: 0; color: var(--text); }
+  .notes .vo { font-size: 17px; line-height: 1.45; font-weight: 600; }
+  .notes .vo q { quotes: "\201C" "\201D"; }
+  .notes .meta { display: block; margin-top: 6px; font: 400 12px/1.3 var(--mono); color: var(--muted); }
+  .notes .ostx { display: inline; color: var(--accent); font-weight: 700; letter-spacing: .02em; }
+  .notes .why { color: var(--muted); font-size: 14px; }
+
+  /* ------------------------------------------------------------ the foot of the page */
+  .foot { padding: 34px 0 60px; color: var(--muted); font-size: 14px; }
+  .foot h3 { color: var(--text); font-size: 16px; margin: 0 0 10px; }
+  .foot ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 110ch; }
+
+  /* ------------------------------------------------------------ the big picture */
+  dialog { border: 0; padding: 0; background: transparent; max-width: 96vw; max-height: 94vh; }
+  dialog::backdrop { background: rgba(5, 5, 6, .9); }
+  dialog img { display: block; max-width: 96vw; max-height: 86vh; width: auto; height: auto; border-radius: 10px; border: 1px solid var(--line-2); }
+  dialog p { margin: 10px 2px 0; color: var(--muted); font-size: 14px; }
+  dialog button { position: fixed; top: 16px; right: 18px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--surface); color: var(--text); font-size: 20px; cursor: pointer; }
+
+  @media (max-width: 1080px) {
+    .body { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 760px) {
+    .wrap { padding: 0 16px; }
+    .seg .lbl .nm { display: none; }
+    .track { gap: 2px; height: 30px; }
+    .seg { font-size: 10px; border-radius: 4px; }
+    .seg .lbl { padding: 0 1px; text-overflow: clip; }
+    .seg.spare .lbl { display: none; }
+    .no { font-size: 40px; min-width: 52px; }
+    .titles h2 { font-size: 23px; }
+    .pet { margin-left: 0; }
+    .frames { grid-template-columns: minmax(0, 1fr); }
+    .ticks span:nth-child(even) { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .seg { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <img src="keyframes/wordmark.webp" alt="Comfyture" width="133" height="44">
+      <span class="kicker">#OpenSourceHiggsfield · demo video · storyboard</span>
+    </div>
+    <h1>The 2-minute demo, <em>as keyframes</em></h1>
+    <p class="for">For Mounir to review before anything is recorded (D5 in the <a href="README.md">plan</a>). Thirteen beats, each with its time, what is on screen, the words spoken, the words shown and the cut into the next. The same beats as a table: <a href="VIDEO.md">VIDEO.md</a>. Click any frame to see it big.</p>
+    <ul class="stats">
+      <li><b>1:55</b> of the 2:00 allowed</li>
+      <li><b>13</b> beats</li>
+      <li><b>215</b> spoken words, under 2 a second</li>
+      <li><b>22</b> keyframes + 4 drawn cards</li>
+      <li><b>0</b> credits spent to make them</li>
+    </ul>
+    <div class="legend">
+      <span><i class="flag real">Real output</i> a frame of our cast's LTX-2.5 takes</span>
+      <span><i class="flag staged">Staged</i> the pet's answer was written by hand, the app did the rest</span>
+      <span><i class="flag recap">Re-capture</i> refresh once tonight's examples and tours land</span>
+      <span><i class="flag d1">Depends on D1</i> the trend media decision</span>
+      <span><i class="flag drawn">Drawn</i> a card made for the video</span>
+    </div>
+  </div>
+</header>
+
+<nav class="rail" aria-label="Beats on the timeline">
+  <div class="wrap">
+    <div class="track">
+      <a class="seg" href="#b1" style="--d:5" title="1 · Hook · 0:00–0:05"><span class="lbl"><b>1</b></span></a>
+      <a class="seg" href="#b2" style="--d:8" title="2 · The promise · 0:05–0:13"><span class="lbl"><b>2</b></span></a>
+      <a class="seg" href="#b3" style="--d:14" title="3 · Kitchen · 0:13–0:27"><span class="lbl"><b>3</b> <span class="nm">Kitchen</span></span></a>
+      <a class="seg" href="#b4" style="--d:12" title="4 · Toaster · 0:27–0:39"><span class="lbl"><b>4</b> <span class="nm">Toaster</span></span></a>
+      <a class="seg" href="#b5" style="--d:12" title="5 · Spice · 0:39–0:51"><span class="lbl"><b>5</b> <span class="nm">Spice</span></span></a>
+      <a class="seg" href="#b6" style="--d:10" title="6 · Jam · 0:51–1:01"><span class="lbl"><b>6</b> <span class="nm">Jam</span></span></a>
+      <a class="seg" href="#b7" style="--d:8" title="7 · Mixer · 1:01–1:09"><span class="lbl"><b>7</b> <span class="nm">Mixer</span></span></a>
+      <a class="seg" href="#b8" style="--d:6" title="8 · Macaron · 1:09–1:15"><span class="lbl"><b>8</b></span></a>
+      <a class="seg" href="#b9" style="--d:6" title="9 · Utensils · 1:15–1:21"><span class="lbl"><b>9</b></span></a>
+      <a class="seg" href="#b10" style="--d:14" title="10 · What's new · 1:21–1:35"><span class="lbl"><b>10</b> <span class="nm">New</span></span></a>
+      <a class="seg" href="#b11" style="--d:10" title="11 · How it's built · 1:35–1:45"><span class="lbl"><b>11</b> <span class="nm">Built</span></span></a>
+      <a class="seg" href="#b12" style="--d:6" title="12 · Run it · 1:45–1:51"><span class="lbl"><b>12</b></span></a>
+      <a class="seg" href="#b13" style="--d:4" title="13 · Call to action · 1:51–1:55"><span class="lbl"><b>13</b></span></a>
+      <span class="seg spare" title="5 seconds of margin before 2:00"><span class="lbl">+5 s</span></span>
+    </div>
+    <div class="ticks" aria-hidden="true">
+      <span style="left:0">0:00</span>
+      <span style="left:25%">0:30</span>
+      <span style="left:50%">1:00</span>
+      <span style="left:75%">1:30</span>
+      <span style="left:95.83%">1:55</span>
+      <span style="left:100%">2:00</span>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- 1 -->
+  <section class="beat" id="b1">
+    <div class="beat-head">
+      <div class="no">01</div>
+      <div class="titles"><h2>Hook</h2><div class="time"><b>0:00–0:05</b> · 5 s</div></div>
+      <div class="pet"><img src="keyframes/pets/ketkout.webp" alt=""><span><b>Ketkout</b> · Kitchen</span></div>
+    </div>
+    <div class="body">
+      <div class="frames one">
+        <figure>
+          <button class="shot" data-full="keyframes/k01-hook-ketkout.webp"><img src="keyframes/k01-hook-ketkout.webp" alt="Ketkout the chick, beak open, as the last jar of jam slips from her wings in the Little Barn café"><span class="flags"><i class="flag real">Real output</i></span><span class="ost">Made in one open-source app</span></button>
+          <figcaption>Take 1A of <em>The Great Jam Chase</em>, at 2.9 s. Picture and sound from LTX-2.5 in one pass.</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd>The take full screen, with its own sound: the chick lifts the last jar, it slips, <q>Oh no, not the last jar!</q></dd></div>
+        <div><dt>Voice-over</dt><dd class="vo">(from 0:02.5) <q>Made in one open-source app.</q><span class="meta">5 words · about 2 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">MADE IN ONE OPEN-SOURCE APP</span> · picture and sound: LTX-2.5</dd></div>
+        <div><dt>Into the next</dt><dd>Hard cut on the jar's thump.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="beat" id="b2">
+    <div class="beat-head">
+      <div class="no">02</div>
+      <div class="titles"><h2>The promise</h2><div class="time"><b>0:05–0:13</b> · 8 s</div></div>
+    </div>
+    <div class="body">
+      <div class="frames one">
+        <figure>
+          <button class="shot" data-full="keyframes/k02-home.webp"><img src="keyframes/k02-home.webp" alt="Comfyture's home: the Kitchen banner with the chick, and the seven product tiles under it"><span class="ost">Comfyture · 7 studios · 1 engine · MIT</span></button>
+          <figcaption>The home: the banner turns through the products, the seven tiles under it.</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd>The banner turns; the pointer runs along the seven tiles: Kitchen, Mixer, Jam, Macaron, Spice, Toaster, Utensils.</dd></div>
+        <div><dt>Voice-over</dt><dd class="vo"><q>This is Comfyture, an open-source Higgsfield: seven studios on one engine, built on the Comfy Developer Platform.</q><span class="meta">17 words · about 7 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">COMFYTURE · 7 STUDIOS · 1 ENGINE · MIT</span></dd></div>
+        <div><dt>Into the next</dt><dd>The Kitchen tile zooms in.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="beat" id="b3">
+    <div class="beat-head">
+      <div class="no">03</div>
+      <div class="titles"><h2>Kitchen</h2><div class="time"><b>0:13–0:27</b> · 14 s · four rooms, 3.5 s each</div></div>
+      <div class="pet"><img src="keyframes/pets/ketkout.webp" alt=""><span><b>Ketkout</b> · the head chef</span></div>
+    </div>
+    <div class="body">
+      <div class="frames">
+        <figure>
+          <button class="shot" data-full="keyframes/k03-kitchen-story.webp"><img src="keyframes/k03-kitchen-story.webp" alt="Story: The Great Jam Chase with its bible, its scene and storyboard"><span class="flags"><i class="flag recap">Re-capture</i></span><span class="ost">Story</span></button>
+          <figcaption>Story: the bible (the chick, the café, the jar, the look), the scene, the storyboard.</figcaption>
+        </figure>
+        <figure>
+          <button class="shot" data-full="keyframes/k04-kitchen-stage.webp"><img src="keyframes/k04-kitchen-stage.webp" alt="Stage: the Morning kitchen example in its colour ID pass"><span class="ost">Stage</span></button>
+          <figcaption>Stage: the shipped <em>Morning kitchen</em>, clay then key 2, colour ID.</figcaption>
+        </figure>
+        <figure>
+          <button class="shot" data-full="keyframes/k05-kitchen-shot.webp"><img src="keyframes/k05-kitchen-shot.webp" alt="Shot: take 1A open with its start frame, filmstrip and waveform"><span class="flags"><i class="flag recap">Re-capture</i></span><span class="ost">Shot</span></button>
+          <figcaption>Shot: take 1A, its filmstrip and its waveform. Crop the presets out in the edit.</figcaption>
+        </figure>
+        <figure>
+          <button class="shot" data-full="keyframes/k06-kitchen-cut.webp"><img src="keyframes/k06-kitchen-cut.webp" alt="Cut: the edit of The Great Jam Chase on the timeline"><span class="flags"><i class="flag recap">Re-capture</i></span><span class="ost">Cut</span></button>
+          <figcaption>Cut: the edit, the title, <em>Render the film</em>; then the film plays (<a href="keyframes/k07-film-ketkout.webp">take 1D</a>).</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd><em>The Great Jam Chase</em> through the four rooms in film order, Kitchen's room bar lighting each in turn.</dd></div>
+        <div><dt>Voice-over</dt><dd class="vo"><q>Kitchen writes the story from one sentence, blocks it on a 3D stage, rolls each shot with LTX-2.5, picture and sound together, and cuts the film.</q><span class="meta">26 words · about 10 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">KITCHEN · STORY → STAGE → SHOT → CUT</span></dd></div>
+        <div><dt>Into the next</dt><dd>The header switches to Toaster (its yellow underline slides).</dd></div>
+        <div><dt>Note</dt><dd class="why">The story, its takes and its cut were copied from Mounir's data folder into the lab one. Ship them as Kitchen's example film (D6), then re-capture.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="beat" id="b4">
+    <div class="beat-head">
+      <div class="no">04</div>
+      <div class="titles"><h2>Toaster</h2><div class="time"><b>0:27–0:39</b> · 12 s</div></div>
+      <div class="pet"><img src="keyframes/pets/crumpet.webp" alt=""><span><b>Crumpet</b> · the model maker</span></div>
+    </div>
+    <div class="body">
+      <div class="frames">
+        <figure class="wide">
+          <button class="shot" data-full="keyframes/k08-toaster-build.webp"><img src="keyframes/k08-toaster-build.webp" alt="Toaster: Crumpet has built a reading corner in clay, each of his actions ticked, and offers Toast it with its price"><span class="flags"><i class="flag staged">Staged</i><i class="flag recap">Re-capture</i></span><span class="ost">Toaster · clay → render → 3D model</span></button>
+          <figcaption>Crumpet builds <em>a cosy reading corner</em>: fireplace, bookcase, armchair, lamp, a sleeping kitten, the camera, the words; each action ticked; <em>Toast it</em> waits for a yes.</figcaption>
+        </figure>
+        <figure>
+          <button class="shot" data-full="keyframes/k09-toaster-render.webp"><img src="keyframes/k09-toaster-render.webp" alt="Toaster's Render page: the clay frame, what it is, the look, and what is sent: clay frame, colour ID, depth"><span class="flags"><i class="flag staged">Staged</i></span></button>
+          <figcaption>Render: the clay frame and what goes with it (colour ID, depth), Qwen Image 2.1, <em>Toast it</em>.</figcaption>
+        </figure>
+        <figure>
+          <div class="shot drawn" role="img" aria-label="Missing keyframe: the render, the turnaround and the 3D model, to capture on Toaster's example">
+            <svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+              <rect x="40" y="40" width="1520" height="820" rx="28" fill="#0e0e10" stroke="#F2FF59" stroke-opacity=".55" stroke-width="4" stroke-dasharray="22 16"/>
+              <g fill="none" stroke="#F0EFED" stroke-opacity=".5" stroke-width="5">
+                <rect x="190" y="300" width="300" height="200" rx="18"/>
+                <rect x="650" y="300" width="300" height="200" rx="18"/>
+                <path d="M1240 300 l130 75 v150 l-130 75 l-130 -75 v-150 z M1110 375 l130 75 l130 -75 M1240 450 v150"/>
+              </g>
+              <g fill="#F2FF59"><path d="M515 400 h80 l-16 -14 M595 400 l-16 14"/><path d="M975 400 h80"/></g>
+              <g stroke="#F2FF59" stroke-width="6" stroke-linecap="round"><path d="M520 400 h70 M570 382 l20 18 l-20 18"/><path d="M980 400 h70 M1030 382 l20 18 l-20 18"/></g>
+              <g fill="#F0EFED" font-family="Manrope, system-ui, sans-serif" font-weight="700" font-size="42" text-anchor="middle">
+                <text x="340" y="570">Render</text><text x="800" y="570">Turnaround</text><text x="1240" y="700">3D model</text>
+              </g>
+              <text x="800" y="190" fill="#F2FF59" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="34" text-anchor="middle" letter-spacing="3">TO CAPTURE ON TOASTER'S EXAMPLE</text>
+              <text x="800" y="790" fill="#a3a29e" font-family="Manrope, system-ui, sans-serif" font-size="34" text-anchor="middle">Not shipped yet: no keyframe shows a toasted render or a GLB.</text>
+            </svg>
+            <span class="flags"><i class="flag recap">Re-capture</i></span>
+          </div>
+          <figcaption>The payoff of the beat: the render, the four-view turnaround, the 3D model turning. From Toaster's example once it lands (no new spend).</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd>Typing to Crumpet; the clay set builds itself piece by piece, each action ticked; the Render page; <em>Toast it</em>; the render, the turnaround, the GLB turning in its well.</dd></div>
+        <div><dt>Voice-over</dt><dd class="vo"><q>In Toaster, Crumpet builds a set in clay from one sentence. Toast it into a picture, then into a real 3D model.</q><span class="meta">22 words · about 9 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">TOASTER · CLAY → RENDER → 3D MODEL</span></dd></div>
+        <div><dt>Into the next</dt><dd>The 3D model spins out of frame.</dd></div>
+        <div><dt>Note</dt><dd class="why">Staged: Crumpet's answer was written by hand on a lab server (no model, no credits); the page checked it and built the scene from it as it would from a real one. The price reads as on Comfy Cloud.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="beat" id="b5">
+    <div class="beat-head">
+      <div class="no">05</div>
+      <div class="titles"><h2>Spice</h2><div class="time"><b>0:39–0:51</b> · 12 s</div></div>
+      <div class="pet"><img src="keyframes/pets/paprika.webp" alt=""><span><b>Paprika</b> · the VFX house</span></div>
+    </div>
+    <div class="body">
+      <div class="frames">
+        <figure class="wide">
+          <button class="shot" data-full="keyframes/k10-spice-fx.webp"><img src="keyframes/k10-spice-fx.webp" alt="Spice's FX department: Paprika on a rooftop with a spark portal layered behind, the layers and the library of elements"><span class="ost">Spice · plate · roto · paint · light · FX · comp</span></button>
+          <figcaption>FX on the shipped <em>Paprika's portal</em>: four layers, the library of elements shot on black, dragged onto the picture and placed by their handles.</figcaption>
+        </figure>
+        <figure>
+          <button class="shot" data-full="keyframes/k11-spice-comp.webp"><img src="keyframes/k11-spice-comp.webp" alt="Spice's Comp: a wipe between the plate and the finished shot, and the passes with their costs"><span class="ost">Export · free</span></button>
+          <figcaption>Comp: the wipe from before to after; each pass and what it cost (free).</figcaption>
+        </figure>
+        <figure>
+          <button class="shot" data-full="keyframes/k22-spice-roto.webp"><img src="keyframes/k22-spice-roto.webp" alt="Spice's Roto: Paprika cut out by SAM3, the matte beside the footage, its edge and its outputs"><span class="ost">Roto · SAM3</span></button>
+          <figcaption>Roto: Paprika found and cut out by SAM3; the matte, its edge, alpha, green screen or holdout.</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd>Roto's matte flashes (SAM3); in FX a spark portal is dragged from the library, scaled and turned by its handles; Comp: the wipe slides; <em>Export · free</em>.</dd></div>
+        <div><dt>Voice-over</dt><dd class="vo"><q>Spice is a VFX house in the browser: six departments, SAM3 roto, a layer compositor, and a final bake that costs nothing.</q><span class="meta">22 words · about 9 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">SPICE · PLATE · ROTO · PAINT · LIGHT · FX · COMP</span></dd></div>
+        <div><dt>Into the next</dt><dd>The comp wipe carries across into Jam.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="beat" id="b6">
+    <div class="beat-head">
+      <div class="no">06</div>
+      <div class="titles"><h2>Jam</h2><div class="time"><b>0:51–1:01</b> · 10 s · the otter sings the last 4 s</div></div>
+      <div class="pet"><img src="keyframes/pets/pickle.webp" alt=""><span><b>Pickle</b> · the band leader</span></div>
+    </div>
+    <div class="body">
+      <div class="frames">
+        <figure>
+          <button class="shot" data-full="keyframes/k12-jam-track.webp"><img src="keyframes/k12-jam-track.webp" alt="Jam's track page: Moonlit Oolong Walk with its sections, 105 BPM and the beat grid"><span class="flags"><i class="flag recap">Re-capture</i></span><span class="ost">Jam · song → beat → lip-sync</span></button>
+          <figcaption><em>Moonlit Oolong Walk</em>, our ACE-Step song: sections, 105 BPM, the beat grid, read in the browser.</figcaption>
+        </figure>
+        <figure>
+          <button class="shot cover" data-full="keyframes/k14-jam-otter.webp"><img src="keyframes/k14-jam-otter.webp" alt="The otter singing under the moon, holding a bottle of oolong"><span class="flags"><i class="flag real">Real output</i></span><span class="ost">Lip-synced · LTX-2.5</span></button>
+          <figcaption>The otter sings it, lip-synced to the vocals, with its own sound.</figcaption>
+        </figure>
+        <figure class="wide">
+          <button class="shot" data-full="keyframes/k13-jam-band.webp"><img src="keyframes/k13-jam-band.webp" alt="Jam's band page: the otter cast as the performer, lip-sync on, three looks"><span class="flags"><i class="flag recap">Re-capture</i></span></button>
+          <figcaption>Alternative frame: the band, the otter cast as the performer, lip-sync on, three looks.</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd>The track plays; its sections and beats light up as it goes; then the otter sings, full frame, with her own sound and no voice over her.</dd></div>
+        <div><dt>Voice-over</dt><dd class="vo">(0:51–0:57) <q>Jam turns a song into a music video. The beat is read right in your browser.</q><span class="meta">16 words · about 6 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">JAM · SONG → BEAT → LIP-SYNC</span></dd></div>
+        <div><dt>Into the next</dt><dd>Cut on a beat.</dd></div>
+        <div><dt>Note</dt><dd class="why">Mounir's own <em>Moonlit Oolong</em> project, copied into the lab data folder. Re-capture on the new Jam example. Never the Toc Toc or Hotel Lobby showcases: they play commercial recordings.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="beat" id="b7">
+    <div class="beat-head">
+      <div class="no">07</div>
+      <div class="titles"><h2>Mixer</h2><div class="time"><b>1:01–1:09</b> · 8 s</div></div>
+      <div class="pet"><img src="keyframes/pets/praline.webp" alt=""><span><b>Praline</b> · the trend boss</span></div>
+    </div>
+    <div class="body">
+      <div class="frames">
+        <figure>
+          <button class="shot" data-full="keyframes/k15-mixer-shelf.webp"><img src="keyframes/k15-mixer-shelf.webp" alt="Mixer's trend shelf with the crew"><span class="flags"><i class="flag d1">Depends on D1</i></span><span class="ost">Mixer · a trend, your cast</span></button>
+          <figcaption>The shelf and the crew. Several trends carry song titles: rename them (D1) before this is filmed.</figcaption>
+        </figure>
+        <figure>
+          <button class="shot" data-full="keyframes/k16-mixer-meringue.webp"><img src="keyframes/k16-mixer-meringue.webp" alt="Meringue the kitten in two vertical takes"><span class="flags"><i class="flag real">Real output</i><i class="flag mute">Mute</i></span></button>
+          <figcaption>Meringue's two takes. Their sound is the Face Dance trend's song: always muted, the music bed plays.</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd>The shelf; a role handed to Meringue; Meringue's take, vertical, muted.</dd></div>
+        <div><dt>Voice-over</dt><dd class="vo"><q>Mixer remakes a trend with your cast: the crew, your pet, or you.</q><span class="meta">13 words · about 5 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">MIXER · A TREND, YOUR CAST</span></dd></div>
+        <div><dt>Into the next</dt><dd>A vertical swipe, like a feed.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section class="beat" id="b8">
+    <div class="beat-head">
+      <div class="no">08</div>
+      <div class="titles"><h2>Macaron</h2><div class="time"><b>1:09–1:15</b> · 6 s</div></div>
+      <div class="pet"><img src="keyframes/pets/brioche.webp" alt=""><span><b>Brioche</b> · the brand room</span></div>
+    </div>
+    <div class="body">
+      <div class="frames one">
+        <figure>
+          <button class="shot" data-full="keyframes/k17-macaron.webp"><img src="keyframes/k17-macaron.webp" alt="Macaron's brand kit for Comfyture: palette, logos, type, patterns, rules"><span class="flags"><i class="flag recap">Re-capture</i></span><span class="ost">Macaron · brand kit → posts</span></button>
+          <figcaption>The shipped Comfyture brand kit. Add the Content workspace (posts in 1:1, 4:5, 9:16) when re-capturing.</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd>The kit (palette, logos, rules), then the week's posts in three formats.</dd></div>
+        <div><dt>Voice-over</dt><dd class="vo"><q>Macaron keeps a brand's kit and makes its posts on brand.</q><span class="meta">11 words · about 4 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">MACARON · BRAND KIT → POSTS</span></dd></div>
+        <div><dt>Into the next</dt><dd>The header switches.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="beat" id="b9">
+    <div class="beat-head">
+      <div class="no">09</div>
+      <div class="titles"><h2>Utensils</h2><div class="time"><b>1:15–1:21</b> · 6 s</div></div>
+      <div class="pet"><img src="keyframes/pets/truffle.webp" alt=""><span><b>Truffle</b> · the shelf keeper</span></div>
+    </div>
+    <div class="body">
+      <div class="frames one">
+        <figure>
+          <button class="shot" data-full="keyframes/k18-utensils.webp"><img src="keyframes/k18-utensils.webp" alt="Utensils: Truffle asks what shall we make or fix, with the picture tools"><span class="ost">Utensils · one job each · 691 official workflows</span></button>
+          <figcaption>Truffle's home; then the Library of the 691 official ComfyUI workflows scrolls.</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd>Truffle's shelf; a tool opens; the Library of official workflows scrolls.</dd></div>
+        <div><dt>Voice-over</dt><dd class="vo"><q>Utensils shelves one-job tools and all the official ComfyUI workflows.</q><span class="meta">10 words · about 4 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">UTENSILS · ONE JOB EACH · 691 OFFICIAL WORKFLOWS</span></dd></div>
+        <div><dt>Into the next</dt><dd>Cut to black.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="beat" id="b10">
+    <div class="beat-head">
+      <div class="no">10</div>
+      <div class="titles"><h2>What's new, and why</h2><div class="time"><b>1:21–1:35</b> · 14 s · three hard cuts</div></div>
+    </div>
+    <div class="body">
+      <div class="frames">
+        <figure class="wide">
+          <button class="shot" data-full="keyframes/k19-checked-actions.webp"><img src="keyframes/k19-checked-actions.webp" alt="Crumpet's answer: every action ticked, Toast it with its price, Not now, Undo"><span class="flags"><i class="flag staged">Staged</i></span><span class="ost">Pets act through checked tool calls · nothing paid without a yes</span></button>
+          <figcaption>1 · Every action checked against the page and ticked; the paid run only offered, with its price; one Undo for the build.</figcaption>
+        </figure>
+        <figure>
+          <button class="shot" data-full="keyframes/k04-kitchen-stage.webp"><img src="keyframes/k04-kitchen-stage.webp" alt="The Stage's colour ID pass"><span class="ost">Clay → control maps</span></button>
+          <figcaption>2 · Clay and mannequins become colour ID, depth and pose passes for LTX-2.5's IC-LoRAs.</figcaption>
+        </figure>
+        <figure>
+          <button class="shot" data-full="keyframes/k11-spice-comp.webp"><img src="keyframes/k11-spice-comp.webp" alt="Spice's comp wipe"><span class="ost">The preview is the final render, free</span></button>
+          <figcaption>3 · The compositor's preview is what the free bake writes, at full size.</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd>Three claims, one shot each, the on-screen line changing on each cut.</dd></div>
+        <div><dt>Voice-over</dt><dd class="vo"><q>What's new? Each pet acts through checked tool calls and never spends without your yes. Clay becomes control maps. And what you preview is the free final render.</q><span class="meta">28 words · about 11 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">PETS ACT THROUGH CHECKED TOOL CALLS · NOTHING PAID WITHOUT A YES</span> / <span class="ostx">CLAY → CONTROL MAPS</span> / <span class="ostx">THE PREVIEW IS THE FINAL RENDER, FREE</span></dd></div>
+        <div><dt>Into the next</dt><dd>The diagram builds from the left.</dd></div>
+        <div><dt>Why this beat</dt><dd class="why">Most Innovative: <q>Demo video must explain why the submission is innovative.</q></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section class="beat" id="b11">
+    <div class="beat-head">
+      <div class="no">11</div>
+      <div class="titles"><h2>How it's built</h2><div class="time"><b>1:35–1:45</b> · 10 s · open weights, LTX-2.5 at the core</div></div>
+    </div>
+    <div class="body">
+      <div class="frames">
+        <figure class="wide">
+          <div class="shot drawn" role="img" aria-label="Diagram: the browser talks to the Comfyture server, which talks through the Comfy SDK to Comfy Cloud or, through comfy-api-proxy, to your own ComfyUI; Comfy Router and Comfy Cloud's MCP sit beside; the open-weights models below">
+            <svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+              <rect width="1600" height="900" fill="#0e0e10"/>
+              <g font-family="Manrope, system-ui, sans-serif">
+                <text x="80" y="110" fill="#F2FF59" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="30" letter-spacing="4">HOW IT'S BUILT</text>
+                <!-- boxes -->
+                <g fill="#19191c" stroke="#34343a" stroke-width="3">
+                  <rect x="80" y="180" width="300" height="190" rx="22"/>
+                  <rect x="440" y="180" width="380" height="190" rx="22"/>
+                  <rect x="880" y="180" width="290" height="190" rx="22"/>
+                  <rect x="1240" y="150" width="280" height="120" rx="22"/>
+                  <rect x="1240" y="290" width="280" height="120" rx="22"/>
+                  <rect x="440" y="420" width="380" height="110" rx="22"/>
+                  <rect x="880" y="420" width="290" height="110" rx="22"/>
+                </g>
+                <g fill="#F2FF59" fill-opacity=".12" stroke="#F2FF59" stroke-width="3"><rect x="1240" y="150" width="280" height="120" rx="22"/></g>
+                <g fill="#F0EFED" font-weight="800" font-size="36">
+                  <text x="110" y="240">Browser</text>
+                  <text x="470" y="240">Comfyture server</text>
+                  <text x="910" y="240">Comfy SDK</text>
+                  <text x="1268" y="205">Comfy Cloud</text>
+                  <text x="1268" y="345">Your ComfyUI</text>
+                  <text x="470" y="470">Comfy Router</text>
+                  <text x="910" y="470">Cloud MCP</text>
+                </g>
+                <g fill="#a3a29e" font-size="25">
+                  <text x="110" y="285">7 products, plain JS</text>
+                  <text x="110" y="320">three.js for 3D</text>
+                  <text x="110" y="355">the pets' bars</text>
+                  <text x="470" y="285">Node, no framework</text>
+                  <text x="470" y="320">readable workflows</text>
+                  <text x="470" y="355">ffmpeg for edits, bakes</text>
+                  <text x="910" y="285">@comfyorg/sdk</text>
+                  <text x="910" y="320">one code path</text>
+                  <text x="1268" y="245">rented GPUs</text>
+                  <text x="1268" y="385">comfy-api-proxy</text>
+                  <text x="470" y="508">writers, opt-in partners</text>
+                  <text x="910" y="508">691 templates</text>
+                </g>
+                <!-- arrows -->
+                <g stroke="#F2FF59" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M386 275 H432 M416 261 l16 14 l-16 14"/>
+                  <path d="M826 275 H872 M856 261 l16 14 l-16 14"/>
+                  <path d="M1176 260 C1205 260 1210 210 1232 210 M1216 198 l16 12 l-16 12"/>
+                  <path d="M1176 290 C1205 290 1210 350 1232 350 M1216 338 l16 12 l-16 12"/>
+                </g>
+                <g stroke="#6f6e6a" stroke-width="4" fill="none" stroke-dasharray="10 10"><path d="M630 372 V414"/><path d="M1025 372 V414"/></g>
+                <!-- the model wall -->
+                <text x="80" y="620" fill="#F2FF59" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="26" letter-spacing="3">OPEN WEIGHTS BY DEFAULT</text>
+                <g font-weight="700" font-size="30">
+                  <rect x="80" y="650" width="260" height="70" rx="35" fill="#F2FF59"/><text x="210" y="696" text-anchor="middle" fill="#121214">LTX-2.5</text>
+                  <rect x="360" y="650" width="300" height="70" rx="35" fill="none" stroke="#F0EFED" stroke-opacity=".5" stroke-width="3"/><text x="510" y="696" text-anchor="middle" fill="#F0EFED">Qwen Image 2.1</text>
+                  <rect x="680" y="650" width="260" height="70" rx="35" fill="none" stroke="#F0EFED" stroke-opacity=".5" stroke-width="3"/><text x="810" y="696" text-anchor="middle" fill="#F0EFED">ACE-Step 1.5</text>
+                  <rect x="960" y="650" width="190" height="70" rx="35" fill="none" stroke="#F0EFED" stroke-opacity=".5" stroke-width="3"/><text x="1055" y="696" text-anchor="middle" fill="#F0EFED">Gemma 4</text>
+                  <rect x="1170" y="650" width="160" height="70" rx="35" fill="none" stroke="#F0EFED" stroke-opacity=".5" stroke-width="3"/><text x="1250" y="696" text-anchor="middle" fill="#F0EFED">SAM3</text>
+                  <rect x="1350" y="650" width="170" height="70" rx="35" fill="none" stroke="#F0EFED" stroke-opacity=".5" stroke-width="3"/><text x="1435" y="696" text-anchor="middle" fill="#F0EFED">Pixal3D</text>
+                </g>
+                <text x="80" y="800" fill="#a3a29e" font-size="27">Also used: three.js · ffmpeg · the Blender MCP · built with Claude Code and Codex · cast drawn with GPT Image</text>
+              </g>
+            </svg>
+            <span class="flags"><i class="flag drawn">Drawn</i></span>
+          </div>
+          <figcaption>The diagram, built left to right while the voice speaks; the model wall lights LTX-2.5 first.</figcaption>
+        </figure>
+        <figure class="wide">
+          <button class="shot" data-full="keyframes/k20-open-weights-local.webp"><img src="keyframes/k20-open-weights-local.webp" alt="The account panel: renders on Comfy Cloud or your ComfyUI, the bridge's address, open weights only on"><span class="ost">Open weights only · on</span></button>
+          <figcaption>The account panel: <em>Open weights only · On</em>; renders on Comfy Cloud or your own ComfyUI.</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd>The diagram; the model wall; the account panel with the switch on.</dd></div>
+        <div><dt>Voice-over</dt><dd class="vo"><q>Built on the Comfy SDK, Cloud and Router. Open weights by default, with LTX-2.5 making picture and sound in one pass.</q><span class="meta">21 words · about 8 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">OPEN WEIGHTS BY DEFAULT · LTX-2.5 AT THE CORE</span> · also: three.js, ffmpeg, Blender MCP, Claude Code and Codex, GPT Image for the cast</dd></div>
+        <div><dt>Into the next</dt><dd>A terminal types.</dd></div>
+        <div><dt>Why this beat</dt><dd class="why"><q>Any other tools, models, or techniques … must be explained in your demo video</q>, and the form asks <q>how you built it</q>.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section class="beat" id="b12">
+    <div class="beat-head">
+      <div class="no">12</div>
+      <div class="titles"><h2>Run it yourself</h2><div class="time"><b>1:45–1:51</b> · 6 s</div></div>
+      <div class="pet"><img src="keyframes/pets/crumpet.webp" alt=""><span><b>Crumpet</b> · the tour</span></div>
+    </div>
+    <div class="body">
+      <div class="frames">
+        <figure>
+          <div class="shot drawn" role="img" aria-label="A terminal: git clone, npm install, npm start, and the app's address">
+            <svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+              <rect width="1600" height="900" fill="#0e0e10"/>
+              <rect x="90" y="110" width="1420" height="680" rx="26" fill="#121214" stroke="#34343a" stroke-width="3"/>
+              <g fill="#34343a"><circle cx="150" cy="165" r="12"/><circle cx="190" cy="165" r="12"/><circle cx="230" cy="165" r="12"/></g>
+              <g font-family="IBM Plex Mono, ui-monospace, monospace" font-size="34">
+                <text x="150" y="290" fill="#6f6e6a">$ <tspan fill="#F0EFED">git clone --depth 1 https://github.com/ShAInyXYZ/Comfyture</tspan></text>
+                <text x="150" y="360" fill="#6f6e6a">$ <tspan fill="#F0EFED">cd Comfyture &amp;&amp; npm install</tspan></text>
+                <text x="150" y="430" fill="#6f6e6a">$ <tspan fill="#F2FF59">npm start</tspan></text>
+                <text x="150" y="530" fill="#a3a29e">Comfyture  http://127.0.0.1:5177</text>
+                <text x="150" y="585" fill="#a3a29e">examples and tours: free</text>
+                <text x="150" y="640" fill="#a3a29e">a Comfy key or your own GPU: real runs</text>
+              </g>
+              <rect x="150" y="690" width="24" height="42" fill="#F2FF59"/>
+            </svg>
+            <span class="flags"><i class="flag drawn">Drawn</i></span>
+          </div>
+          <figcaption>Three commands, typed live. Node 22.18+ and ffmpeg are the only prerequisites.</figcaption>
+        </figure>
+        <figure>
+          <button class="shot" data-full="keyframes/k21-tour.webp"><img src="keyframes/k21-tour.webp" alt="Crumpet's tour on Toaster: Toast it, played for free with the example's own renders"><span class="flags"><i class="flag recap">Re-capture</i></span><span class="ost">Every example and tour: free</span></button>
+          <figcaption>The compass starts Crumpet's tour: <em>Toast it, for free</em> with the example's own renders.</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd>The terminal; the app opens; the compass starts the tour; the account panel's <em>Comfy Cloud / Your ComfyUI</em> switch.</dd></div>
+        <div><dt>Voice-over</dt><dd class="vo"><q>Clone it, and every example runs free. Add a key, or your own GPU.</q><span class="meta">14 words · about 6 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">GIT CLONE … · NPM INSTALL · NPM START</span></dd></div>
+        <div><dt>Into the next</dt><dd>The tour card slides away.</dd></div>
+        <div><dt>Note</dt><dd class="why">Tonight only Toaster has a tour, and it ran here on the staged scene. Re-capture on Toaster's example, and show another product's tour if one lands.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 13 -->
+  <section class="beat" id="b13">
+    <div class="beat-head">
+      <div class="no">13</div>
+      <div class="titles"><h2>Call to action</h2><div class="time"><b>1:51–1:55</b> · 4 s</div></div>
+    </div>
+    <div class="body">
+      <div class="frames one">
+        <figure>
+          <div class="shot drawn" role="img" aria-label="The end card: the Comfyture wordmark, the seven pets, the repo address and the hashtag">
+            <svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+              <rect width="1600" height="900" fill="#0e0e10"/>
+              <image href="keyframes/wordmark.webp" xlink:href="keyframes/wordmark.webp" x="455" y="150" width="690" height="228"/>
+              <defs><clipPath id="round" clipPathUnits="objectBoundingBox"><circle cx=".5" cy=".5" r=".5"/></clipPath></defs>
+              <g fill="none" stroke="#34343a" stroke-width="4">
+                <circle cx="420" cy="495" r="59"/><circle cx="550" cy="495" r="59"/><circle cx="680" cy="495" r="59"/><circle cx="810" cy="495" r="59"/>
+                <circle cx="940" cy="495" r="59"/><circle cx="1070" cy="495" r="59"/><circle cx="1200" cy="495" r="59"/>
+              </g>
+              <g>
+                <image href="keyframes/pets/ketkout.webp" xlink:href="keyframes/pets/ketkout.webp" x="365" y="440" width="110" height="110" clip-path="url(#round)"/>
+                <image href="keyframes/pets/praline.webp" xlink:href="keyframes/pets/praline.webp" x="495" y="440" width="110" height="110" clip-path="url(#round)"/>
+                <image href="keyframes/pets/pickle.webp" xlink:href="keyframes/pets/pickle.webp" x="625" y="440" width="110" height="110" clip-path="url(#round)"/>
+                <image href="keyframes/pets/brioche.webp" xlink:href="keyframes/pets/brioche.webp" x="755" y="440" width="110" height="110" clip-path="url(#round)"/>
+                <image href="keyframes/pets/paprika.webp" xlink:href="keyframes/pets/paprika.webp" x="885" y="440" width="110" height="110" clip-path="url(#round)"/>
+                <image href="keyframes/pets/crumpet.webp" xlink:href="keyframes/pets/crumpet.webp" x="1015" y="440" width="110" height="110" clip-path="url(#round)"/>
+                <image href="keyframes/pets/truffle.webp" xlink:href="keyframes/pets/truffle.webp" x="1145" y="440" width="110" height="110" clip-path="url(#round)"/>
+              </g>
+              <text x="800" y="660" text-anchor="middle" fill="#F0EFED" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="44">github.com/ShAInyXYZ/Comfyture</text>
+              <text x="800" y="740" text-anchor="middle" fill="#F2FF59" font-family="Manrope, system-ui, sans-serif" font-weight="800" font-size="46">#OpenSourceHiggsfield</text>
+              <text x="800" y="812" text-anchor="middle" fill="#a3a29e" font-family="Manrope, system-ui, sans-serif" font-size="30">MIT · open weights by default · try it, star it, cook with it</text>
+            </svg>
+            <span class="flags"><i class="flag drawn">Drawn</i></span>
+          </div>
+          <figcaption>The end card: the wordmark, the seven pets, the repo, the hashtag.</figcaption>
+        </figure>
+      </div>
+      <dl class="notes">
+        <div><dt>On screen</dt><dd>The end card holds for the last 4 seconds.</dd></div>
+        <div><dt>Voice-over</dt><dd class="vo"><q>Comfyture. Open source. Come cook.</q><span class="meta">5 words · about 2 s</span></dd></div>
+        <div><dt>On-screen text</dt><dd><span class="ostx">GITHUB.COM/SHAINYXYZ/COMFYTURE · #OPENSOURCEHIGGSFIELD</span></dd></div>
+        <div><dt>Into the next</dt><dd>Fade out.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <h3>How these keyframes were made</h3>
+    <ul>
+      <li>Captured on 25 October in headless Chromium at 1920×1080, on a lab server with a fresh data folder, no Comfy key and a dead render address: no credit was spent and every request outside the machine was blocked.</li>
+      <li>Frames of our cast's real takes (Ketkout, the otter, Meringue) were grabbed with ffmpeg. Everything shown is our own cast: no real people, no other creator's media.</li>
+      <li>Staged frames: Crumpet's answer was written by hand; the page checked and applied it as it would a model's.</li>
+      <li>Refresh the frames marked <i class="flag recap">Re-capture</i> once Toaster's examples, the new Jam example, Kitchen's example film and the other tours land.</li>
+      <li>Never on screen: the Giorno project or anything of <code>data/toasts</code>; the Toc Toc and Hotel Lobby showcases; any trend's original sound; a key or the header's balance.</li>
+    </ul>
+  </div>
+</footer>
+
+<dialog id="big" aria-label="Keyframe">
+  <button type="button" aria-label="Close" data-close>×</button>
+  <img alt="">
+  <p></p>
+</dialog>
+
+<script>
+  // The big picture: a click on a frame shows it at full size; Esc, the cross or a click outside closes it.
+  (() => {
+    const dlg = document.getElementById("big");
+    if (!dlg || typeof dlg.showModal !== "function") return;
+    const img = dlg.querySelector("img");
+    const cap = dlg.querySelector("p");
+    document.querySelectorAll("button.shot").forEach((b) => {
+      b.addEventListener("click", () => {
+        const fig = b.closest("figure");
+        img.src = b.dataset.full;
+        img.alt = b.querySelector("img")?.alt ?? "";
+        cap.textContent = fig?.querySelector("figcaption")?.textContent ?? "";
+        dlg.showModal();
+      });
+    });
+    dlg.addEventListener("click", (e) => { if (e.target === dlg || e.target.hasAttribute("data-close")) dlg.close(); });
+  })();
+
+  // The timeline lights the beat in view.
+  (() => {
+    const segs = new Map([...document.querySelectorAll(".seg[href]")].map((a) => [a.getAttribute("href").slice(1), a]));
+    if (!("IntersectionObserver" in window)) return;
+    const seen = new Map();
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) seen.set(e.target.id, e.isIntersecting ? e.intersectionRatio : 0);
+      let best = null, top = 0;
+      for (const [id, r] of seen) if (r > top) (top = r), (best = id);
+      segs.forEach((a, id) => a.classList.toggle("on", id === best));
+    }, { threshold: [0, 0.15, 0.3, 0.5, 0.7, 1], rootMargin: "-80px 0px -35% 0px" });
+    document.querySelectorAll("section.beat").forEach((s) => io.observe(s));
+  })();
+</script>
+</body>
+</html>
