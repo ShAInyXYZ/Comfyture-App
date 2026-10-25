@@ -49,9 +49,10 @@ folder, no key and a dead render address: no credit was spent. Frames of our cas
 |---|---|---|
 | `k01-hook-ketkout` | 1 | Real output: Ketkout's take 1A (LTX-2.5), at 2.9 s. |
 | `k02-home` | 2 | The home's banner and its seven tiles (cropped above the Comfy Cloud templates row). |
-| `k03` to `k06` | 3 | *The Great Jam Chase* (story, cut, takes) copied from your data folder into the lab one. **Ship it as Kitchen's example (D6)**, then re-capture. |
+| `k03` to `k06` | 3 | *The Great Jam Chase*, Kitchen's shipped example (D6), on a fresh install: Story, the Stage's *Morning kitchen* in colour ID, take 1A in Shot, the edit in Cut. Re-captured 25 October. |
 | `k07-film-ketkout` | 3 | Real output: take 1D. |
-| `k08-toaster-build`, `k09-toaster-render` | 4 | **Staged**: Crumpet's answer was written by hand (no model called); the app built the scene from it as from a real answer. **Re-capture** on Toaster's example once it lands, with its render, turnaround and 3D model, which no keyframe shows yet. |
+| `k08-toaster-build` | 4 | **Staged**: Crumpet's answer was written by hand (no model called), in a new draft beside the example; the app built the scene from it as from a real answer. With no key, *Toast it* reads "GPU time". |
+| `k09-toaster-render`, `k23-toaster-clay-to-render` | 4 | Toaster's shipped example *Crumpet's workbench*: its Render page, and its clay frame beside the finished still. The stills were drawn with GPT Image (free, through Codex) and the page labels them so: for the open-weights category, re-toast them with Qwen Image 2.1 (a few credits, **your yes**) or keep the labels out of frame. **No turnaround or 3D model exists yet**: one paid run (render, turnaround, 3D), or the voice-over drops "then into a real 3D model". |
 | `k10-spice-fx`, `k11-spice-comp`, `k22-spice-roto` | 5, 10 | The shipped *Paprika's portal* example: FX, Comp's wipe, Roto's SAM3 matte. |
 | `k12-jam-track`, `k13-jam-band` | 6 | Your own *Moonlit Oolong* project (ACE-Step song, our otter) copied into the lab. **Re-capture** on the new Jam example. Never use the Toc Toc or Hotel Lobby showcases: they play commercial recordings. |
 | `k14-jam-otter` | 6 | Real output: the otter singing *Moonlit Oolong Walk* (lip-sync, LTX-2.5). |
@@ -61,7 +62,7 @@ folder, no key and a dead render address: no credit was spent. Frames of our cas
 | `k18-utensils` | 9 | Truffle's home. |
 | `k19-checked-actions` | 10 | **Staged** answer, as above. |
 | `k20-open-weights-local` | 11, 12 | The account panel with *Open weights only · On* and the new Comfy Cloud / Your ComfyUI switch. |
-| `k21-tour` | 12 | Crumpet's tour, step 11 of 13: *Toast it, for free*. **Re-capture** on Toaster's example and with the other products' tours. |
+| `k21-tour` | 12 | Crumpet's tour on his example, step 11 of 13: *Toast it, for free*. Every product has its tour now; any can stand in. |
 
 Beats 11, 12 and 13 also use cards drawn in the storyboard itself (the diagram, the terminal, the end card).
 
