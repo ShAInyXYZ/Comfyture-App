@@ -102,7 +102,8 @@ try {
   await page.waitForSelector(".sg-cthumb:not(.is-none)", { timeout: 10000 });
   await page.waitForTimeout(800);
   ok(count("/api/photos") >= 1 && spent() === 0, "the person's own picture is kept and becomes the cover; nothing was asked of a model");
-  ok((await page.locator(".sg-sleeve.has-cover .sg-sleeve-cover").count()) === 1, "the sleeve on the shelf shows the cover");
+  // (the shelf holds the showcase videos' songs too, and one of them, Moonlit Oolong Walk's, comes with a cover of its own: the sleeve looked at is the shown song's)
+  ok((await page.locator(".sg-sleeve.is-on.has-cover .sg-sleeve-cover").count()) === 1, "the sleeve on the shelf shows the cover");
   const a = (await (await fetch(`${base}/api/audio`)).json()).find((x) => x.file === upSong.file);
   ok(/^\/media\/photos\//.test(a.cover ?? ""), "the library holds the cover on the song", a.cover);
   await shot("song-cover-mine");

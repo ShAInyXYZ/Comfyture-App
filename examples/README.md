@@ -60,6 +60,15 @@ See [`spice/sh010-ketkout/shot.json`](spice/sh010-ketkout/shot.json).
 
 ### Jam: `project.json`
 
-`{ name, version, thumb, jam, cut: { id, name, body }, media: [{ file, to, name?, kind? }] }`: each media file (one of the folder's, or
-one the app ships under `web/brand/`) is copied to `data/<to>`, the edit goes into `data/cuts`, the video into `data/jams`. The
-folder's name is the video's id.
+`{ name, rev, thumb, jam, cut: { id, name, body }, media: [{ file, to, name?, kind?, cover? }] }`: each media file (one of the folder's, or
+one the app ships under `web/brand/`) is copied to `data/<to>` (`audio/`, `videos/`, `photos/` or `reels/`), the edit goes into
+`data/cuts`, the video into `data/jams`. The folder's name is the video's id.
+
+- A sound's `cover` is a picture of the folder: it goes into photos as that song's cover, which The song page shows (a song the person
+  gave another cover keeps theirs).
+- An `.mp4` sent to `reels/` is a finished film, kept as the app's own Export keeps one (a film of the Library, its details beside it);
+  `jam.film` names it by that id.
+- A video that was only opened is not worked on: Jam measures its song's drop and loudest stretch when it opens one that has none and
+  saves them, and a save that changes nothing else keeps the time of the last change (`workOf` in `server/main.ts`).
+- `tests/tools/make-showcase-jam.mjs` writes the three videos of our own (Moonlit Oolong Walk, La Calabaza, Three Kittens) from their
+  folders; raise its `REV` when they are made again for good.

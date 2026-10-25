@@ -4,7 +4,8 @@
 // timed (heard by Whisper where they are sung, our own call-outs where the song has none), effects and stickers on the beat.
 //   node tests/tools/make-showcase-jam.mjs              all of them
 //   node tests/tools/make-showcase-jam.mjs <id> ...     some
-// A film.mp4 in a folder (the edit rendered by the app's own Export) becomes the video's finished film. Needs ffmpeg.
+// A film.mp4 in a folder (the edit rendered by the app's own Export) becomes the video's finished film, put in as a reel (a film of the
+// Library, as an Export keeps it). A song's `cover` is a picture of the folder: the song's cover. Needs ffmpeg.
 // Raise REV when a project is made again for good: the seeding then refreshes the copies nobody has touched.
 //
 // The media were made once, before this: the songs cut from our own ACE-Step songs (MP3, 128 kbps; the whole 3-minute song at 80),
@@ -21,7 +22,7 @@ import { newFx } from "../../web/js/fx.js";
 import { splitWords } from "../../web/js/lyrics.js";
 
 const root = resolve(import.meta.dirname, "..", "..");
-const REV = 1;
+const REV = 2;
 const r2 = (v) => Math.round(v * 100) / 100;
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const has = (p) => access(p).then(() => true, () => false);
@@ -73,7 +74,7 @@ const SPECS = {
       "Taro, the baby sea otter who sings for Little Otter Tea, sings the chorus of Moonlit Oolong Walk, our own dreamy city-pop song made in the app with ACE-Step 1.5 (3 minutes; the part used is 86.6 to 111.6 s: the last line of the pre-chorus and the chorus). " +
       "Shot 4 is a real LTX-2.5 take of him, lip-synced to that very stretch of the song (the take made for the song's video cover). The six other shots are still pictures of him (Codex's GPT Image, from the cover) moved with ffmpeg (push-ins, pans, a tilt): animated stills, not footage; Roll a shot with LTX-2.5 to make it real. " +
       "The stems and the words' times were heard the way Jam hears them, with Demucs and Whisper, run on our own machine for free; the cuts and the effects are on the beats Jam's own finder heard. The film is the edit as the app exports it.",
-    track: { file: "track.mp3", name: "Moonlit Oolong Walk", prompt: "dreamy city-pop, indie-pop, nostalgic warm late-night mood, gentle bouncy groove, glossy electric piano, funky clean guitar, round slap bass, soft synth pads, light live drums, soft female-leaning lead vocal, airy harmony backing vocals, no autotune, raw human voice, wide and glossy", lyrics: "[Pre-Chorus]\nTwist the cap, a little sip\nCool and golden on my lip\nAll my worries start to slip\n[Chorus]\nMoonlit oolong, shining bright\nWalking home in silver light\nMoonlit oolong, cold and sweet\nDancing on my tiny feet" },
+    track: { file: "track.mp3", name: "Moonlit Oolong Walk", prompt: "dreamy city-pop, indie-pop, nostalgic warm late-night mood, gentle bouncy groove, glossy electric piano, funky clean guitar, round slap bass, soft synth pads, light live drums, soft female-leaning lead vocal, airy harmony backing vocals, no autotune, raw human voice, wide and glossy", lyrics: "[Pre-Chorus]\nTwist the cap, a little sip\nCool and golden on my lip\nAll my worries start to slip\n[Chorus]\nMoonlit oolong, shining bright\nWalking home in silver light\nMoonlit oolong, cold and sweet\nDancing on my tiny feet", cover: "artist.jpg" },
     span: [86.55, 111.608],
     // the beats of the whole song (the finder hears a part's first bar better with the song before it), and the bar lines it heard there
     beatsFrom: "track",
@@ -233,10 +234,11 @@ async function make(id) {
 
   // the song and the part of it the video uses
   const [A, B] = spec.span;
-  const trackFile = put(spec.track.file, "audio", { name: spec.track.name, kind: "music" });
+  // (a cover is a picture of the folder: the seeding puts it into photos as the song's cover, under the same name the jam's own copy of it has)
+  const trackFile = put(spec.track.file, "audio", { name: spec.track.name, kind: "music", ...(spec.track.cover ? { cover: spec.track.cover } : {}) });
   const trackSeconds = seconds(own(spec.track.file));
   const t8 = pcm(own(spec.track.file), 8000);
-  const track = { ...trackFile, seconds: trackSeconds, name: spec.track.name, kind: "made", prompt: spec.track.prompt, lyrics: spec.track.lyrics, ...(spec.track.bpm ? { bpm: spec.track.bpm } : {}), drop: findDrop(t8, 8000), loud: findLoud(t8, 8000, 15) };
+  const track = { ...trackFile, seconds: trackSeconds, name: spec.track.name, kind: "made", prompt: spec.track.prompt, lyrics: spec.track.lyrics, ...(spec.track.bpm ? { bpm: spec.track.bpm } : {}), drop: findDrop(t8, 8000), loud: findLoud(t8, 8000, 15), ...(spec.track.cover ? { cover: `/media/photos/${named(spec.track.cover)}` } : {}) };
   const partFile = put("part.mp3", "audio", { name: `${spec.track.name} · part`, kind: "part" });
   const part = { ...partFile, seconds: seconds(own("part.mp3")) };
 
@@ -322,9 +324,9 @@ async function make(id) {
   const look = { y, size: em, ...(color ? { color } : {}), ...(hi ? { hi } : {}) };
   body.tracks.find((t) => t.kind === "title").items = lines.map((l, i) => ({ id: `c${i + 1}`, lyric: true, text: l.text, start: l.from, length: r2(l.to - l.from), style: spec.captions.style, words: l.words, ...look }));
 
-  // the finished film, when the edit was rendered (the app's Export) and kept in the folder
+  // the finished film, when the edit was rendered (the app's Export) and kept in the folder: put in as a reel, a film of the Library
   let film = null;
-  if (await has(own("film.mp4"))) film = { ...put("film.mp4", "videos"), seconds: seconds(own("film.mp4")) };
+  if (await has(own("film.mp4"))) film = { ...put("film.mp4", "reels", { name: spec.name }), seconds: seconds(own("film.mp4")) };
 
   const jam = {
     track,
@@ -347,7 +349,7 @@ async function make(id) {
     every: 2,
     shots,
     looks,
-    film: film ? { url: film.url, seconds: film.seconds } : null,
+    film: film ? { id: film.file.replace(/\.mp4$/, ""), url: film.url, seconds: film.seconds } : null,
     cut: `cut-${id}`,
     musicIn: part.file,
     linesInEdit: true,

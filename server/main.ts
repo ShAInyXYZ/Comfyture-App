@@ -36,7 +36,7 @@ import { createEdit } from "./utensils-edit.ts";
 import { createFx, bakeArgs, deadlineOf } from "./utensils-fx.ts";
 import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templates.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
-import { seedExamples, placeMedia, placeThumb, revOf, type ExampleKind, type Kept } from "./examples.ts";
+import { seedExamples, placeMedia, placeThumb, placedName, revOf, type ExampleKind, type Kept } from "./examples.ts";
 import { createTarget, cleanUrl, LOCAL_URL, type Target } from "./target.ts";
 import { judging, refused, createPace, visitorOf, asVisitor, keepLedger, leftFor } from "./judge.ts";
 
@@ -443,6 +443,11 @@ async function readProject(kind: string, id: string): Promise<Project | null> {
   }
 }
 async function writeProject(kind: string, p: Project) {
+  // (a video saved with no change of its work keeps the time of its last change: see workOf)
+  if (kind === "jams") {
+    const before = await readProject(kind, p.id);
+    if (before && before.createdAt === p.createdAt && workOf(before) === workOf(p)) p.updatedAt = before.updatedAt;
+  }
   await mkdir(projectsDir(kind), { recursive: true });
   await writeFile(join(projectsDir(kind), `${p.id}.json`), JSON.stringify(p));
 }
@@ -957,21 +962,28 @@ async function putSpiceShot(spec: any, folder: string, id: string, version: numb
 
 /**
  * One of Jam's showcase videos (examples/jam/<id>/project.json beside its media): its media into the library, its video into data/jams
- * and its edit into data/cuts. project.json: { name, version?, thumb?, jam: the Jam body, cut: { id, name, body }, media: [{ file, to,
- * name?, kind? }] }, where `to` is where the file goes in data (audio/…, videos/…, photos/…) and `file` is a file of the example's folder
- * or one the app already ships (web/brand/…: a trend's sound, a crew picture). A thumb that is a file of the folder goes in as a photo.
+ * and its edit into data/cuts. project.json: { name, rev?, thumb?, jam: the Jam body, cut: { id, name, body }, media: [{ file, to,
+ * name?, kind?, cover? }] }, where `to` is where the file goes in data (audio/…, videos/…, photos/…, reels/…) and `file` is a file of the
+ * example's folder or one the app already ships (web/brand/…: a trend's sound, a crew picture). A thumb that is a file of the folder goes
+ * in as a photo. A sound's `cover` is a picture of the folder, put into photos as the song's cover. A film (an .mp4 that goes to reels/)
+ * is kept as the app's own Export keeps one, a reel with its details beside it, so it is a film of the Library and not only a video.
  */
 async function putJam(m: any, folder: string, id: string) {
   for (const f of Array.isArray(m.media) ? m.media : []) {
-    const to = /^(audio|videos|photos)\/[\w.-]+$/.exec(String(f?.to ?? ""));
+    const to = /^(audio|videos|photos|reels)\/[\w.-]+$/.exec(String(f?.to ?? ""));
     const from = String(f?.file ?? "");
-    if (!to || !/^[\w./-]+$/.test(from) || from.includes("..")) continue;
+    if (!to || !/^[\w./-]+$/.test(from) || from.includes("..") || (to[1] === "reels" && !to[0].endsWith(".mp4"))) continue;
     const target = join(data, to[0]);
+    const name = basename(to[0]);
     await mkdir(join(data, to[1]), { recursive: true });
     await copyFile(/^web\/brand\//.test(from) ? join(root, from) : join(folder, from), target);
     if (to[1] === "audio") {
-      const name = basename(to[0]);
-      await noteAudio({ file: name, url: `/media/audio/${name}`, name: text(f.name, 60) || name, kind: text(f.kind, 20) || "music", seconds: Math.round((await probeMedia(target)).duration * 100) / 100, createdAt: new Date().toISOString() });
+      const cover = await putCover(f.cover, folder, id, name);
+      await noteAudio({ file: name, url: `/media/audio/${name}`, name: text(f.name, 60) || name, kind: text(f.kind, 20) || "music", seconds: Math.round((await probeMedia(target)).duration * 100) / 100, createdAt: new Date().toISOString(), ...(cover ? { cover } : {}) });
+    }
+    if (to[1] === "reels") {
+      const film = name.slice(0, -".mp4".length);
+      await writeFile(join(data, "reels", `${film}.json`), JSON.stringify({ id: film, url: `/media/reels/${name}`, name: text(f.name, 60) || text(m.name, 60) || film, takes: [], cut: m.cut?.id, seconds: Math.round((await probeMedia(target)).duration * 10) / 10, createdAt: new Date().toISOString() }, null, 2));
     }
   }
   const now = stamp();
@@ -979,6 +991,33 @@ async function putJam(m: any, folder: string, id: string) {
   const thumb = await placeThumb(m.thumb, folder, id, data);
   await writeProject("jams", { id, name: text(m.name, 60) || id, createdAt: now, updatedAt: now, thumb, body: m.jam ?? {} });
 }
+/**
+ * A song's cover from an example: a picture of the example's folder, put into photos under the example's name, its url answered for the
+ * song's entry. A song the person has given another cover since keeps it.
+ */
+async function putCover(file: unknown, folder: string, id: string, song: string): Promise<string | undefined> {
+  if (typeof file !== "string" || !/^\w[\w.-]*\.(?:jpe?g|png|webp)$/i.test(file)) return undefined;
+  const had = (await readAudioIndex())[song]?.cover;
+  if (had && !had.startsWith(`/media/photos/${id}-`)) return undefined;
+  await mkdir(join(data, "photos"), { recursive: true });
+  await copyFile(join(folder, file), join(data, "photos", placedName(id, file)));
+  return `/media/photos/${placedName(id, file)}`;
+}
+
+/**
+ * Whether a save of a video is a change of its work. Jam measures the drop and the loudest stretch of a song when it opens a video that has
+ * none, and saves them; a page also fills in what a body leaves out (an empty list, nothing) when it opens one. Neither is anyone's work,
+ * so a save that differs by these alone keeps the time of the video's last real change: a showcase that was only opened is still untouched,
+ * and a newer version of it still replaces it.
+ */
+function workOf(p: Project) {
+  const body = (p.body ?? {}) as any;
+  const { drop: _drop, loud: _loud, ...track } = body.track ?? {};
+  const empty = (v: unknown) => v === null || v === undefined || v === "" || (typeof v === "object" && !Object.keys(v as object).length);
+  const bare = (v: any): any => (Array.isArray(v) ? v.map(bare) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, bare(x)]).filter(([, x]) => !empty(x)).sort(([a], [z]) => (a < z ? -1 : 1))) : v);
+  return JSON.stringify(bare({ name: p.name, body: { ...body, track } }));
+}
+
 /** A showcase is untouched while neither its video nor its edit has been worked on. */
 async function keptJam(id: string): Promise<Kept | null> {
   const jam = await readProject("jams", id);

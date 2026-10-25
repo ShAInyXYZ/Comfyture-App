@@ -787,6 +787,8 @@ export function songWorkspace() {
       for (const a of list) if (a.cover || a.coverVideo) covers.set(a.file, { cover: a.cover, coverVideo: a.coverVideo, coverSeconds: a.coverSeconds });
       const have = new Set(song.made.map((m) => m.file));
       song.made.push(...list.filter((a) => a.kind === "music" && !have.has(a.file)).slice(0, 12));
+      // (the covers have come: the record wears the shown song's, as its sleeve does)
+      redrawStage();
       redrawShelf();
     }, () => {});
   }
