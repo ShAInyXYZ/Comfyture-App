@@ -44,3 +44,28 @@ test("Pickle writes songs by the guide: whole songs of 200 to 300 s in E minor, 
   assert.equal(readSong(reply("lo_fi"), 240, "en").lora, "lo_fi");
   assert.equal(readSong(reply("made-up"), 240, "en").lora, "");
 });
+
+test("the lyrics display's timeline: the song's own words, shared out over its sections, a line current at each moment", async () => {
+  const { lyricTimeline, entryAt, parseSections } = await import("../web/js/song-lyrics.js");
+  const lyrics = "[Intro]\nOne\n\n[Verse 1 - whispered]\nTwo\nThree\n\n[Chorus]\nFour\nFive\n\n[Instrumental]\n\n[Outro]\nSix";
+  assert.deepEqual(parseSections(lyrics).map((s) => [s.label, s.lines.length]), [["Intro", 1], ["Verse 1", 2], ["Chorus", 2], ["Instrumental", 0], ["Outro", 1]]);
+  const tl = lyricTimeline(lyrics, 240);
+  const lines = tl.filter((e) => e.kind === "line");
+  assert.deepEqual(lines.map((e) => e.text), ["One", "Two", "Three", "Four", "Five", "Six"], "every line, in order");
+  assert.equal(tl.filter((e) => e.kind === "tag").length, 5, "a heading for each section");
+  assert.ok(tl.every((e, i) => i === 0 || e.from >= tl[i - 1].from - 1e-9), "in time order");
+  assert.ok(lines.every((e) => e.to > e.from) && tl.at(-1).to <= 240 + 1e-6, "each line has a stretch inside the song");
+  assert.equal(tl.find((e) => e.text === "Verse 1").hint, "whispered", "the hint after the dash is kept");
+  // what is current moves with the time: a heading, then its lines, an instrumental as its own marker
+  const at = (t: number) => tl[entryAt(tl, t)];
+  assert.equal(entryAt(tl, -1), -1);
+  assert.equal(at(0).text, "Intro");
+  const three = lines.find((e) => e.text === "Three")!;
+  assert.equal(at((three.from + three.to) / 2).text, "Three");
+  assert.equal(at(239.9).text, "Six");
+  const mid = tl.find((e) => e.text === "Instrumental")!;
+  assert.equal(at((mid.from + mid.to) / 2).text, "Instrumental", "a section with no words is a marker while it plays");
+  // a song with no words is one marker
+  assert.deepEqual(lyricTimeline("[Instrumental]", 200).map((e) => [e.kind, e.text]), [["tag", "Instrumental"]]);
+  assert.deepEqual(lyricTimeline("", 200), []);
+});

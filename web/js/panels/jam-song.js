@@ -18,6 +18,7 @@ import { jam, useSong, songHook, setWorkspace, save } from "../jam.js";
 import { analyse } from "./jam-track-audio.js";
 import { detectSections, lyricTags, HOP } from "../jam-sections.js";
 import { pay, isArmed } from "./jam-band-pay.js";
+import { KIND, WEIGHT, lyricTimeline, entryAt } from "../song-lyrics.js";
 import { COVER_SECONDS, COVER_VIDEO_PROMPT, bestPart, coverPrompt, costOfCover, costOfCoverVideo, coverOf, fileOfUrl, stepWords } from "../song-cover.js";
 
 const STORE = "comfyture.jam.song.3";
@@ -26,9 +27,9 @@ const song = { idea: "", tags: "", lyrics: "", name: "", ...DEFAULT_SONG, writin
 try {
   Object.assign(song, JSON.parse(localStorage.getItem(STORE) ?? "{}"));
 } catch {}
-const keepDraft = () => {
 /** A style LoRA needs the person's own ComfyUI: Comfy Cloud has none. */
 const onOwnGpu = () => state.info?.target === "self-hosted";
+const keepDraft = () => {
   try {
     localStorage.setItem(STORE, JSON.stringify(Object.fromEntries(MINE.map((k) => [k, song[k]]))));
   } catch {}
@@ -489,8 +490,8 @@ function drawSteps() {
         row("Time", chips(SIGNATURES.map((x) => [x.value, x.label, x.desc]), song.signature, pick("signature"), "Time signature", ".is-seg")),
         row("Language", lang),
         row("Quality", chips(QUALITY, song.passes, pick("passes"), "Quality", ".is-seg")),
-        row("Creativity", range({ min: 0.4, max: 1.1, step: 0.05, value: song.temperature, label: "Creativity", format: (v) => v.toFixed(2), set: (v) => ((song.temperature = v), keepDraft()), ends: ["steady", "wild"] })),
         onOwnGpu() ? row("Style LoRA", chips([["", "None", "No LoRA"], ...STYLE_LORAS.map(([id, name]) => [id, name, `The ${name} LoRA: its trigger word goes in the style for you`])], song.lora ?? "", pick("lora"), "Style LoRA", ".is-seg")) : null,
+        row("Creativity", range({ min: 0.4, max: 1.1, step: 0.05, value: song.temperature, label: "Creativity", format: (v) => v.toFixed(2), set: (v) => ((song.temperature = v), keepDraft()), ends: ["steady", "wild"] })),
         row("Follows the words", range({ min: 1, max: 5, step: 0.5, value: song.adherence, label: "How closely it follows the words and the style", format: (v) => v.toFixed(1), set: (v) => ((song.adherence = v), keepDraft()), ends: ["loose", "strict"] })),
         row("Plans first", h("button.key", { type: "button", "aria-pressed": String(song.thinking), title: "The model plans the song's structure before it sounds it: better built, slower", on: { click: () => pick("thinking")(!song.thinking) } }, song.thinking ? "On" : "Off")),
         h("div.sg-lyrics", {}, h("div.sg-lyrics-head", {}, h("span.sg-field", {}, "Lyrics"), h("span.sg-meta", {}, lines ? `${lines} lines` : "none yet")),
@@ -501,8 +502,6 @@ function drawSteps() {
 
 // ---------------------------------------------------------------- the sections: where each falls
 
-const KIND = (n) => (/pre/i.test(n) ? "pre" : /chorus|hook/i.test(n) ? "chorus" : /verse/i.test(n) ? "verse" : /bridge/i.test(n) ? "bridge" : /intro|outro/i.test(n) ? "edge" : "other");
-const WEIGHT = { edge: 0.55, pre: 0.6, bridge: 0.8, verse: 1, chorus: 1.1, other: 0.8 };
 /** The sections of some lyrics in order ([Verse 1], [Chorus - chant hook]…), else the shape's own. */
 const sectionsOf = (lyrics = song.lyrics) => {
   const tags = [...lyrics.matchAll(/^[ \t]*\[([^\]\n]+)\][ \t]*$/gm)].map((m) => m[1].trim());
@@ -671,6 +670,54 @@ function drawStage() {
     page.use.title = inJam(m) ? "This song is the video's track: go on to it" : jam.jam?.body.track ? "The video open has a song already: a new video is made for this one" : "This song becomes the video's track (free), then the track opens";
   }
   drawWave();
+  drawLyrics();
+}
+
+// ---------------------------------------------------------------- the lyrics display
+
+/** The lyrics under the player: the words the song was made from (the form's own while none is shown), the line sounding lit as it plays. */
+const lyr = { key: null, timeline: [], items: [], at: -2, held: -Infinity };
+function drawLyrics() {
+  if (!page) return;
+  const m = shownSong();
+  const words = m ? m.lyrics ?? "" : song.lyrics;
+  const seconds = m ? m.seconds || 0 : song.seconds;
+  const key = `${m?.file ?? "draft"}|${seconds}|${words}`;
+  if (key === lyr.key) return;
+  const timeline = lyricTimeline(words, seconds);
+  const lines = timeline.filter((e) => e.kind === "line").length;
+  page.lyrBody.replaceChildren(...(timeline.length
+    ? timeline.map((e, i) => (e.kind === "tag"
+      ? h("div.sg-ly-tag", { dataset: { i } }, h("span", {}, e.text), e.hint ? h("em", {}, e.hint) : null)
+      : h("button.sg-ly-line", { type: "button", dataset: { i }, title: `Jump to ${mins(e.from)}`, on: { click: () => lyricSeek(e.from) } }, e.text)))
+    : [h("p.sg-ly-empty", {}, m ? "No lyrics are kept for this song. Write them in the form (Advanced), or ask Pickle to set one up." : "The lyrics appear here once the song has some.")]));
+  Object.assign(lyr, { key, timeline, items: [...page.lyrBody.children], at: -2 });
+  page.lyrMeta.textContent = lines ? `${lines} lines` : timeline.length ? "no words" : "";
+  page.lyrBody.scrollTop = 0;
+  tickLyrics();
+}
+/** The line sounding now is lit, those before it dimmed, and the display follows the song (until the person scrolls it, for a few seconds). */
+function tickLyrics() {
+  if (!page) return;
+  const m = shownSong();
+  const now = m && page.audio.getAttribute("src") === m.url ? page.audio.currentTime : -1;
+  const i = lyr.timeline.length ? entryAt(lyr.timeline, now) : -1;
+  if (i === lyr.at) return;
+  lyr.at = i;
+  lyr.items.forEach((el, k) => (el.classList.toggle("is-now", k === i), el.classList.toggle("is-past", i >= 0 && k < i)));
+  const el = lyr.items[i];
+  const body = page.lyrBody;
+  if (el && performance.now() - lyr.held > 3000) body.scrollTo({ top: el.offsetTop - body.clientHeight / 2 + el.offsetHeight / 2, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches || !m || page.audio.paused ? "auto" : "smooth" });
+}
+/** A press on a line goes to it in the song (and plays it). */
+function lyricSeek(time) {
+  const m = shownSong();
+  if (!m || !page.audio.getAttribute("src")) return;
+  page.audio.currentTime = Math.max(0, time);
+  lyr.held = -Infinity;
+  if (page.audio.paused) toggle(m);
+  tickLyrics();
+  drawWave();
 }
 
 function drawShelf() {
@@ -746,6 +793,7 @@ export function songWorkspace() {
     audio.addEventListener("ended", () => (deck.play(false), drawStage(), redrawShelf()));
     audio.addEventListener("timeupdate", () => {
       drawWave();
+      tickLyrics();
       page.time.textContent = `${clock(audio.currentTime)} / ${clock(audio.duration || shownSong()?.seconds || 0)}`;
     });
     audio.addEventListener("loadedmetadata", () => (page.time.textContent = `${clock(0)} / ${clock(audio.duration || 0)}`));
@@ -777,9 +825,12 @@ export function songWorkspace() {
       h("div.sg-actions", {}, page.make, page.use),
       page.hint,
       audio);
+    page.lyrMeta = h("span.sg-meta", {});
+    page.lyrBody = h("div.sg-ly-body", { tabindex: "0", "aria-label": "Lyrics", on: { wheel: () => (lyr.held = performance.now()), touchmove: () => (lyr.held = performance.now()), pointerdown: () => (lyr.held = performance.now()) } });
+    page.ld = h("section.sg-ld", { "aria-label": "Lyrics display" }, h("div.sg-ly-head", {}, h("span.sg-label", {}, "Lyrics display"), page.lyrMeta), page.lyrBody);
     page.map = h("aside.sg-map", { "aria-label": "The song's sections" });
     page.shelf = h("section.sg-shelf", { "aria-label": "Your songs" });
-    page.root = h("div.sg-work", {}, page.steps, page.stage, page.map, page.shelf);
+    page.root = h("div.sg-work", {}, page.steps, page.stage, page.ld, page.map, page.shelf);
     new ResizeObserver(() => drawWave()).observe(page.wave);
   }
   // (what the video holds changed, or this page has just been shown again: what depends on it is set again)

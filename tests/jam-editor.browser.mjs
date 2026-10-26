@@ -235,6 +235,25 @@ try {
     const shelved = await page.evaluate(() => [...document.querySelectorAll(".sg-sleeve b")].map((b) => b.textContent));
     ok(shelved[0] === "Moonlit Oolong Walk" && !shelved.some((n) => /Three Kittens|La Calabaza/.test(n)) && shelved.length > 1, "the shelf holds only songs, the video's first", shelved.join(", "));
     await shot("song");
+    // ---- the lyrics display under the player: the words the song was made from, the line sounding lit as it plays, a press on a line jumps to it
+    const velvet = (await api("api/audio")).find((a) => a.file === "song-velvet-bell.mp3");
+    await page.locator('.sg-sleeve-art[aria-label="Velvet Bell"]').click();
+    ok(await until(() => document.querySelectorAll(".sg-ld .sg-ly-line").length > 20, 20), "the lyrics display holds the shown song's lines", String(await page.locator(".sg-ld .sg-ly-line").count()));
+    ok((await page.locator(".sg-ld .sg-ly-line").first().textContent()) === velvet.lyrics.split("\n").find((l) => l.trim() && !l.startsWith("[")), "they are the song's own words, the first line first");
+    ok(/lines$/.test(await page.locator(".sg-ld .sg-meta").textContent()), "it says how many lines");
+    // (played muted at a place in the song: the line the timeline says is sounding is the lit one, and it is in view)
+    await page.evaluate(async () => { const a = document.querySelector("audio"); a.muted = true; await a.play().catch(() => {}); a.currentTime = 100; });
+    const want = await page.evaluate(async (lyrics) => { const m = await import("/js/song-lyrics.js"); const tl = m.lyricTimeline(lyrics, document.querySelector("audio").duration); return tl[m.entryAt(tl, 100.2)].text; }, velvet.lyrics);
+    ok(await until((t) => document.querySelector(".sg-ld .is-now")?.textContent.startsWith(t.slice(0, 20)), 40, want), `the line sounding at 1:40 is the lit one (${want})`);
+    ok(await until(() => { const n = document.querySelector(".sg-ld .is-now"), c = document.querySelector(".sg-ld .sg-ly-body"); const b = n.getBoundingClientRect(), r = c.getBoundingClientRect(); return b.top >= r.top - 1 && b.bottom <= r.bottom + 1; }, 10), "and the display has scrolled to it");
+    await page.evaluate(() => document.querySelector("audio").pause());
+    const target = await page.evaluate(() => { const e = [...document.querySelectorAll(".sg-ld .sg-ly-line")][30]; e.click(); return e.textContent; });
+    ok(await until(() => { const a = document.querySelector("audio"); return a.currentTime > 100 && !a.paused; }, 40), `a press on a line jumps the song to it and plays (${target})`);
+    await page.evaluate(() => document.querySelector("audio").pause());
+    const room = await page.evaluate(() => ["sg-stage", "sg-ld", "sg-shelf"].map((c) => { const r = document.querySelector(`.${c}`).getBoundingClientRect(); return [c, Math.round(r.top), Math.round(r.bottom)]; }));
+    ok(room[0][2] <= room[1][1] && room[1][2] <= room[2][1], `the display sits under the player and above the shelf, none over another (${JSON.stringify(room)})`);
+    // (back to the video's own song: its key goes on to the track)
+    await page.locator(".sg-sleeve.is-track .sg-sleeve-art").click();
     await page.locator(".sg-use").click();
     ok(await until(() => import("/js/jam.js").then((m) => m.jam.workspace === "track").catch(() => false), 20), "On to the track goes to the track");
   });
