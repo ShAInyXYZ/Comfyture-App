@@ -40,6 +40,18 @@ try {
     await page.goto(`${base}/#/spice`);
     await page.waitForSelector(".sp-shot");
     await page.waitForTimeout(900);
+    // on arrival, before any scroll: the viewer is the size of the clip (not letterboxed between tall bands), the chain is above the
+    // bar, and on a screen 900 high or more the first tool card is in view too
+    const arrival = await page.evaluate(() => {
+      const r = (sel) => document.querySelector(sel)?.getBoundingClientRect();
+      const bar = r("#spice-chat .chat-bar");
+      const fold = bar ? bar.top : innerHeight;
+      const stage = r(".sp-stage"), host = r(".sp-stage-host"), chain = r(".sp-chain"), card = r(".sp-card");
+      return { bands: host && stage ? Math.round(host.height - stage.height) : null, chain: chain ? Math.round(fold - chain.bottom) : null, card: card ? Math.round(fold - card.top) : null, fold: Math.round(fold) };
+    });
+    ok(arrival.bands !== null && arrival.bands <= 40, `${width}x${height}: the viewer is the size of the clip on arrival`, `${arrival.bands}px of bands`);
+    ok(arrival.chain !== null && arrival.chain >= 0, `${width}x${height}: the chain is above the bar on arrival`, `${arrival.chain}px`);
+    if (height >= 900) ok(arrival.card !== null && arrival.card > 40, `${width}x${height}: the first tool card is in view on arrival`, `${arrival.card}px`);
     await page.locator(".sp-card").first().click();
     await page.waitForTimeout(400);
     // each control scrolled into its area's view and hit-tested: the top-most element at its centre is it (or inside it)

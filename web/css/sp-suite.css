@@ -5,19 +5,25 @@
 /* The suite fills the area under the title. Its viewer is never lower than a stage can be looked at in (26 rem at least, 46% of the window up
    to 40), and the row of cards under it is as tall as the taller card holds, no less than a share of the screen. Where both fit nothing changes;
    where they do not (a laptop), the area scrolls and no card is cut short of its last key. */
-.sp-suite { display: grid; grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr); grid-template-rows: minmax(clamp(26rem, 46dvh, 40rem), 1fr) minmax(clamp(13.5rem, 27dvh, 19rem), auto); gap: var(--sp-gap); min-height: 100%; }
+/* (the suite is as tall as its area, no taller: the rows share the room, the right column's words scroll in their cards and the
+   gallery in its own, so the viewer stays the size of the clip and the chain stays in view on a short screen) */
+.sp-suite { display: grid; grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr); grid-template-rows: minmax(clamp(26rem, 46dvh, 40rem), 1fr) minmax(clamp(13.5rem, 27dvh, 19rem), 1fr); gap: var(--sp-gap); height: 100%; }
 .sp-suite > .sp-slot { grid-column: 1; grid-row: 1; display: grid; min-width: 0; min-height: 0; }
 .sp-suite > .sp-slot > .sp-viewer { min-height: 0; }
 /* the right column: Paprika's read over the tool picked, both scrolling in their card when the screen is short */
 .sp-suite > .sp-right { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; gap: var(--sp-gap); min-width: 0; min-height: 0; }
-.sp-right > .sp-b-guide { flex: 0 1 auto; max-height: 52%; }
-/* (her card is as tall as her words, up to half the column: its body sizes to its content, and scrolls past that) */
-.sp-right > .sp-b-guide > .sp-b-body, .sp-right > .sp-b-guide .sp-guide { flex: 0 1 auto; min-height: 0; }
-.sp-right > .sp-b-tool { flex: 1 1 0; min-height: 16rem; }
+/* (Paprika has the column until a tool is picked: then the tool's card takes its room and her read keeps half at most, scrolling) */
+.sp-right > .sp-b-guide { flex: 1 1 auto; min-height: 0; }
+.sp-right > .sp-b-guide > .sp-b-body, .sp-right > .sp-b-guide .sp-guide { flex: 1 1 auto; min-height: 0; }
+.sp-right > .sp-b-tool { flex: 0 0 auto; min-height: 0; }
+.sp-right:not(.has-tool) > .sp-b-tool > .sp-b-body, .sp-right:not(.has-tool) > .sp-b-tool .sp-tool { flex: 0 0 auto; }
+.sp-right.has-tool > .sp-b-guide { flex: 0 1 auto; max-height: 50%; }
+.sp-right.has-tool > .sp-b-guide > .sp-b-body, .sp-right.has-tool > .sp-b-guide .sp-guide { flex: 0 1 auto; }
+.sp-right.has-tool > .sp-b-tool { flex: 1 1 0; min-height: 16rem; }
 .sp-suite > .sp-lower { grid-column: 1; grid-row: 2; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-gap); min-width: 0; min-height: 0; }
 .sp-lower > .sp-bento { min-height: 0; }
-.sp-lower .sp-b-body { flex: 1 1 auto; }
-@media (max-height: 885px) { .sp-suite { grid-template-rows: minmax(30rem, 1fr) minmax(clamp(13.5rem, 27dvh, 19rem), auto); } }
+.sp-lower .sp-b-body { flex: 1 1 auto; min-height: 0; overflow: hidden auto; scrollbar-width: thin; }
+@media (max-height: 885px) { .sp-suite { grid-template-rows: minmax(30rem, 1fr) minmax(clamp(13.5rem, 27dvh, 19rem), 1fr); } }
 
 /* ---- the tool picked ------------------------------------------------------------------------------------ */
 .sp-tool, .sp-tools, .sp-bin { display: flex; flex: 1 1 0; flex-direction: column; gap: .625rem; min-height: 0; overflow: hidden auto; scrollbar-width: thin; }
@@ -112,10 +118,11 @@
 .sp-chain-steps { display: flex; flex-wrap: wrap; gap: .25rem; }
 .sp-step { display: inline-flex; align-items: center; gap: .3125rem; min-height: 1.5rem; padding: 0 .5rem 0 .25rem; border-radius: 999px; background: var(--s1); color: var(--text); font: 500 .6875rem/1 var(--font-sans); }
 .sp-step i { display: grid; place-items: center; width: 1rem; height: 1rem; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font: 700 .625rem/1 var(--font-mono); font-style: normal; }
-.sp-chain-keys { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .375rem; align-items: stretch; }
-.sp-chain-keys .sp-primary { gap: .375rem; min-height: 2.5rem; padding: 0 .625rem; border-radius: .75rem; font-size: .875rem; }
-.sp-chain-keys .sp-ghost { padding: 0 .625rem; }
-.sp-chain-keys .sp-primary-row { grid-column: 1 / -1; }
+/* (the yellow key and Step by step side by side where the card is wide enough, each on its own row where it is not) */
+.sp-chain-keys { display: flex; flex-wrap: wrap; gap: .375rem; align-items: stretch; }
+.sp-chain-keys .sp-primary { flex: 1 1 9.5rem; gap: .375rem; width: auto; min-height: 2.5rem; padding: 0 .625rem; border-radius: .75rem; font-size: .875rem; }
+.sp-chain-keys .sp-ghost { flex: 1 0 auto; justify-content: center; padding: 0 .625rem; }
+.sp-chain-keys .sp-primary-row { flex: 1 1 100%; }
 .sp-link-bin { display: inline-flex; align-items: center; gap: .375rem; min-height: 1.875rem; margin-left: .25rem; padding: 0 .625rem; border: 1px dashed var(--line2); border-radius: 999px; background: transparent; color: var(--muted); font: 600 .75rem/1 var(--font-sans); cursor: pointer; }
 .sp-link-bin svg { width: .875rem; height: .875rem; }
 .sp-link-bin:hover { color: var(--accent); border-color: var(--accent-line); }

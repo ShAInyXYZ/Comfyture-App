@@ -45,8 +45,8 @@ export function plan() {
   return { why, cost: t ? priceOf(t, { seconds, size: g.size }) : null, seconds, tool: t, input, shot: s };
 }
 
-/** The clip run through the tool picked: kept as a pass of the shot, on the pass looked at. */
-export async function run() {
+/** The clip run through the tool picked: kept as a pass of the shot, on the pass looked at. (rethrow: a failure is thrown, not toasted.) */
+export async function run({ rethrow = false } = {}) {
   const p = plan();
   if (p.why || !p.tool) return null;
   const t = p.tool;
@@ -54,7 +54,7 @@ export async function run() {
   const on = looking_()?.id ?? null;
   const shotId = p.shot.id;
   const body = { video: p.input.file, tool: t.id, words: g.words ?? "", scene: (g.scene ?? "").trim() || sceneOf(p.shot), seconds: p.seconds, size: g.size, ...(g.strength ? { strength: g.strength } : {}), ...(t.takes.includes("aspect") ? { aspect: g.aspect } : {}), ...(t.takes.includes("height") ? { height: g.height } : {}), ...(t.takes.includes("region") && g.region ? { region: g.region } : {}) };
-  const made = await work(shotId, t.name, (progress) => runTool(body, progress));
+  const made = await work(shotId, t.name, (progress) => runTool(body, progress), { rethrow });
   if (!made) return null;
   const { extra, credits, ...media } = made;
   const pass = { id: newId("p"), tool: t.id, name: t.name, words: g.words || "", params: { size: g.size, ...(g.strength ? { strength: g.strength } : {}), seconds: p.seconds, ...(t.takes.includes("aspect") ? { aspect: g.aspect } : {}), ...(t.takes.includes("height") ? { height: g.height } : {}), ...(t.takes.includes("region") && g.region ? { region: g.region } : {}) }, on, input: p.input, media, credits: typeof credits === "number" && credits > 0 ? credits : p.cost ?? 0, at: new Date().toISOString(), note: "", source: "cloud", ...(extra ? { extra } : {}) };
@@ -147,10 +147,13 @@ export function suiteSpace(guide) {
   const bodies = Object.fromEntries(BENTOS.map(([id]) => [id, h("div.sp-b-body")]));
   for (const [id] of BENTOS) bentos[id].append(bodies[id]);
   const paprika = bento("sp-b-guide", "PAPRIKA", null, guide.body);
-  el.append(slot, h("div.sp-right", {}, paprika, bentos.tool), h("div.sp-lower", {}, bentos.tools));
+  const right = h("div.sp-right", {}, paprika, bentos.tool);
+  el.append(slot, right, h("div.sp-lower", {}, bentos.tools));
   function update() {
     // (a field being typed in is not drawn over: its words are kept as they are typed)
     if (el.contains(document.activeElement) && document.activeElement.matches("textarea, input")) return false;
+    // (Paprika has the right column until a tool is picked: then the tool's card takes its room)
+    right.classList.toggle("has-tool", !!current());
     for (const [id, , , body] of BENTOS) fill(bodies[id], body());
     guide.update();
   }
