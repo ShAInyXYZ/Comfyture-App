@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { songGraph } from "../server/engine.ts";
-import { SONG_LORAS } from "../server/song-guide.ts";
+import { SONG_LORAS, LORA_STRENGTH } from "../server/song-guide.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const base = async () => JSON.parse(await readFile(join(root, "workflows", "audio", "song.json"), "utf8"));
@@ -28,7 +28,8 @@ test("a style LoRA is loaded before the shift with its trigger word first, on th
     assert.equal(g.lora.class_type, "LoraLoaderModelOnly");
     assert.match(g.lora.inputs.lora_name, /^ace-step\/[\w.-]+\/[\w.-]+\.safetensors$/, `${l.id}: the file under the LoRAs' folder`);
     assert.deepEqual(g.lora.inputs.model, ["unet", 0], "on the model as loaded");
-    assert.equal(g.lora.inputs.strength_model, 1, "at the strength they were made for");
+    assert.equal(g.lora.inputs.strength_model, LORA_STRENGTH, "at half: full strength cost the sung words their clarity in our tests");
+    assert.equal(LORA_STRENGTH, 0.5);
     assert.deepEqual(g.shift.inputs.model, ["lora", 0], "the shift takes the LoRA's model");
     assert.equal(g.text.inputs.tags, `${l.trigger}, ${song.prompt}`, "the trigger word first");
   }

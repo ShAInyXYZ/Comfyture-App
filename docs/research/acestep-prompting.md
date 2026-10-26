@@ -55,7 +55,7 @@ T = Tutorial, M = Musician's Guide, D = deAPI, O = the owner's own workflow or p
 | One line every 4 to 5 s; instrumental sections instead of padding | **O** (their example: about 38 lines for 200 s), T and D give no rule |
 | Full is three passes, Draft the first alone; roll two or three takes and pick | O (Superior's chain), M (generate 2 to 4) |
 | Language is a field; the words in that language, the tags in English | T, O |
-| One style LoRA at a time, strength 1.0, its trigger word in the tags | M (one at a time), the LoRAs' own metadata (strength, trigger) |
+| One style LoRA at a time, its trigger word in the tags, applied at **0.5** | M (one at a time), the LoRAs' own metadata (trigger; they were made for 1.0), **our own test** (strength) |
 | No artist names in the tags; nothing that names a real person | the owner's rule for the app (no unlicensed IP) |
 
 ## Where they disagree, and what the guide does
@@ -75,12 +75,22 @@ The Superior settings (XL sft, three passes 30/20/15 at denoise 1/0.25/0.15, cfg
 = plain Heun, then their `AudioQualityEnhancer`), the tag style of their example ("... no autotune, raw human voice"), `[Verse 1 - rapid rap]`-style
 hints, 200 s and E minor. Comfy Cloud has neither the sampler nor the enhancer, so Jam's Cloud workflow uses `heun` and no master.
 
-## LoRAs found
+## LoRAs found, and what we measured
 
-Nine, all for the XL (trained on XL turbo, strength 1.0, a trigger word that must appear in the prompt): acoustic, dream pop, electropop,
-experimental, indie, j-pop, jazz, lo-fi, pop (`/app/models/loras/ace-step/`). ComfyUI's own `LoraLoaderModelOnly` lists all nine; the app loads one
-before the shift, with its trigger word first in the tags, **on the owner's own ComfyUI only** (Comfy Cloud has none). The metadata sidecars list no tested range
-beyond 1.0.
+Nine, all for the XL (trained on XL turbo on 12 to 15 synthetic tracks each, a trigger word that must appear in the prompt, recommended strength 1.0, no tested range):
+acoustic, dream pop, electropop, experimental, indie, j-pop, jazz, lo-fi, pop (`/app/models/loras/ace-step/`). ComfyUI's own `LoraLoaderModelOnly`
+lists all nine; the app loads one before the shift, with its trigger word first in the tags, **on the owner's own ComfyUI only** (Comfy Cloud has none).
+
+Our own test (same text, settings and seeds; the share of the written words Whisper recovers from the whole song, a measure of how clearly it is sung):
+
+| Song (LoRA) | plain | LoRA 1.0 | LoRA 0.5 |
+|---|---|---|---|
+| Petit Matin (acoustic) | 92% | 51% | **93%** |
+| Chameleon Lights (electropop) | 84% | 56% | 73% |
+| Blanket Fort Radio (lo-fi) | 55% | 30% | 32% |
+
+So the strength is **0.5**. The lo-fi LoRA's drop is the style itself (its training tracks are sung, instrumental fraction 0): lo-fi buries and softens the voice, which a
+clarity score counts against it, so it is for beats more than for songs whose words must be heard. Whether a LoRA makes a song *better* is a matter of ear, not of this score.
 
 ## Not verified
 

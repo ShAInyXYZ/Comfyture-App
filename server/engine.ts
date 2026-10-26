@@ -16,7 +16,7 @@ import { untagRefs, type ImageModels } from "./images.ts";
 import { isRouterVideo, routerVideo, routerVideoName, routerVideoSeconds, routerVideoLength } from "./router-videos.ts";
 import { spend } from "./judge.ts";
 import { unreachable, targetOf, CLOUD_URL } from "./target.ts";
-import { SONG_LORAS } from "./song-guide.ts";
+import { SONG_LORAS, LORA_STRENGTH } from "./song-guide.ts";
 
 export interface Dialogue { speaker?: string; language?: string; line: string }
 export interface Shot {
@@ -335,7 +335,7 @@ export function songGraph(graph: any, v: { prompt: string; seconds: number; lyri
   // a style LoRA (the person's own ComfyUI: Comfy Cloud has none): loaded on the model before the shift, its trigger word first in the style
   const lora = SONG_LORAS.find((l) => l.id === v.lora);
   if (lora && selfHosted) {
-    graph.lora = { class_type: "LoraLoaderModelOnly", inputs: { model: ["unet", 0], lora_name: `ace-step/${lora.folder}/${lora.folder.replace(/-acestep1\.5-xl-v1$/, "-xl-v1")}.safetensors`, strength_model: 1 } };
+    graph.lora = { class_type: "LoraLoaderModelOnly", inputs: { model: ["unet", 0], lora_name: `ace-step/${lora.folder}/${lora.folder.replace(/-acestep1\.5-xl-v1$/, "-xl-v1")}.safetensors`, strength_model: LORA_STRENGTH } };
     graph.shift.inputs.model = ["lora", 0];
     graph.text.inputs.tags = `${lora.trigger}, ${v.prompt}`;
   }

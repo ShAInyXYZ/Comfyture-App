@@ -3,7 +3,7 @@
 // their AudioQualityEnhancer master between the decode and the save, as they saved it. Neither is on Comfy Cloud, which is why the
 // shipped songs are made here; it costs nothing.
 //
-//   node scripts/jam-songs.mjs [<id> ...] [--lora] [--write] [--raw <dir>]
+//   node scripts/jam-songs.mjs [<id> ...] [--lora [--strength <0 to 1>]] [--write] [--raw <dir>]
 //
 // (--lora makes the song with its style LoRA, the id its `song.lora` names: loaded on the model, its trigger word first in the tags, as the
 // app does on a self-hosted ComfyUI; a song with none is skipped. The result is kept as <id>.lora.mp3, beside the plain one.)
@@ -16,7 +16,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { SONG_LORAS } from "../server/song-guide.ts";
+import { SONG_LORAS, LORA_STRENGTH } from "../server/song-guide.ts";
 
 const exec = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
@@ -24,8 +24,9 @@ const COMFY = process.env.COMFY_LOCAL_URL ?? "http://127.0.0.1:8188";
 const args = process.argv.slice(2);
 const write = args.includes("--write");
 const withLora = args.includes("--lora");
+const strength = args.includes("--strength") ? Number(args[args.indexOf("--strength") + 1]) : LORA_STRENGTH;
 const raw = args.includes("--raw") ? resolve(args[args.indexOf("--raw") + 1]) : join(tmpdir(), "comfyture-jam-songs");
-const only = args.filter((a, i) => !a.startsWith("--") && args[i - 1] !== "--raw");
+const only = args.filter((a, i) => !a.startsWith("--") && args[i - 1] !== "--raw" && args[i - 1] !== "--strength");
 const dir = join(root, "examples", "songs");
 const base = JSON.parse(await readFile(join(root, "workflows", "audio", "song.json"), "utf8"));
 await mkdir(raw, { recursive: true });
@@ -36,7 +37,7 @@ function graphOf(spec) {
   const s = spec.song;
   const lora = withLora ? SONG_LORAS.find((l) => l.id === s.lora) : null;
   if (lora) {
-    g.lora = { class_type: "LoraLoaderModelOnly", inputs: { model: ["unet", 0], lora_name: `ace-step/${lora.folder}/${lora.folder.replace(/-acestep1\.5-xl-v1$/, "-xl-v1")}.safetensors`, strength_model: 1 } };
+    g.lora = { class_type: "LoraLoaderModelOnly", inputs: { model: ["unet", 0], lora_name: `ace-step/${lora.folder}/${lora.folder.replace(/-acestep1\.5-xl-v1$/, "-xl-v1")}.safetensors`, strength_model: strength } };
     g.shift.inputs.model = ["lora", 0];
   }
   Object.assign(g.text.inputs, { tags: lora ? `${lora.trigger}, ${s.tags}` : s.tags, lyrics: s.lyrics, seed: s.seed, duration: s.seconds, bpm: s.bpm, keyscale: s.key, language: s.language, timesignature: s.timesignature, temperature: 0.75, cfg_scale: 2.5, generate_audio_codes: true });
@@ -60,7 +61,7 @@ async function ask(path, init = {}) {
 async function make(id) {
   const spec = JSON.parse(await readFile(join(dir, id, "song.json"), "utf8"));
   if (withLora && !spec.song.lora) return null;
-  const name = `${id}${withLora ? ".lora" : ""}`;
+  const name = `${id}${withLora ? `.lora${strength}` : ""}`;
   const out = join(raw, `${name}.mp3`);
   if (await access(out).then(() => true, () => false)) return out;
   // (a song queued by an earlier run is followed, not queued again)

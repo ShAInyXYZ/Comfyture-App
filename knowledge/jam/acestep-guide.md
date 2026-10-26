@@ -87,8 +87,9 @@ voice]" in the lyrics makes the model pick one at random. A "gentle" style with 
 
 ## Style LoRAs (only on the user's own ComfyUI; Comfy Cloud has none)
 
-Trained on the XL: one at a time, strength 1.0. Each needs its **trigger word placed in the tags** to activate. Pick the one that matches the song's
-genre, or none:
+Trained on the XL: one at a time, applied at **half strength** (0.5: at 1.0 the sung words came through worse in our tests). Each needs its **trigger
+word placed in the tags** to activate, and the server puts it there: never write it. Pick the one that matches the song's genre, or none (a lo-fi LoRA makes
+the voice softer, as the style does: ask for it on a beat, less on a song whose words must be heard):
 
 | Genre | LoRA | Trigger word |
 |---|---|---|
