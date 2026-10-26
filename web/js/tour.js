@@ -321,6 +321,8 @@ export function installTourKey(key, currentPage) {
     const product = tourProductOf(currentPage());
     key.hidden = !hasTour(product);
     key.setAttribute("aria-pressed", String(tourOn() === product));
+    // lit, as the bar's chip is, until the page's tour has been taken once: on the app's home it is the only way in
+    key.classList.toggle("is-new", !tourTaken(product) && tourOn() !== product);
   };
   key.addEventListener("click", () => {
     const product = tourProductOf(currentPage());

@@ -88,6 +88,7 @@
 .top-tour[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
 .top-tour[hidden] { display: none; }
 .top-tour svg { width: 1.125rem; height: 1.125rem; }
+.top-tour.is-new { border-color: var(--accent-line); color: var(--accent); animation: tour-glow 2.4s ease-in-out 3; }
 
 /* the bar's chip that starts the tour: lit until the tour has been taken once */
 .pet-chip.is-tour { border-color: var(--accent-line); color: var(--accent); }
@@ -96,5 +97,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tour, .tour-spot, .tour-card, .tour-sim, .tour-sim-bar i { animation: none; transition: none; }
-  .pet-chip.is-tour.is-new { animation: none; }
+  .pet-chip.is-tour.is-new, .top-tour.is-new { animation: none; }
 }
