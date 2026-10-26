@@ -18,7 +18,7 @@ import { jam, useSong, songHook, setWorkspace, save } from "../jam.js";
 import { analyse } from "./jam-track-audio.js";
 import { detectSections, lyricTags, HOP } from "../jam-sections.js";
 import { pay, isArmed } from "./jam-band-pay.js";
-import { KIND, WEIGHT, lyricTimeline, entryAt } from "../song-lyrics.js";
+import { KIND, WEIGHT, lyricTimeline, entryAt, sectionSpans } from "../song-lyrics.js";
 import { COVER_SECONDS, COVER_VIDEO_PROMPT, bestPart, coverPrompt, costOfCover, costOfCoverVideo, coverOf, fileOfUrl, stepWords } from "../song-cover.js";
 
 const STORE = "comfyture.jam.song.3";
@@ -516,6 +516,11 @@ function sectionTimes() {
   const m = shownSong();
   const own = m?.lyrics && /\[[^\]]+\]/.test(m.lyrics) ? m : null;
   const total = own?.seconds || song.seconds;
+  // (a song whose lyrics were put on the times heard: its sections are where they really are)
+  if (own?.timing) {
+    const spans = sectionSpans(own.lyrics, total, own.timing).filter((x) => x.to > x.from);
+    if (spans.length) return spans.map((x) => ({ name: x.name, label: x.label, kind: KIND(x.name), weight: Math.max(0.3, ((x.to - x.from) / total) * spans.length), from: x.from, to: x.to }));
+  }
   const list = sectionsOf(own ? own.lyrics : song.lyrics).map((s) => ({ ...s, weight: /final/i.test(s.name) ? 1.25 : WEIGHT[s.kind] }));
   const sum = list.reduce((t, s) => t + s.weight, 0) || 1;
   let at = 0;
@@ -682,9 +687,10 @@ function drawLyrics() {
   const m = shownSong();
   const words = m ? m.lyrics ?? "" : song.lyrics;
   const seconds = m ? m.seconds || 0 : song.seconds;
-  const key = `${m?.file ?? "draft"}|${seconds}|${words}`;
+  const timing = m?.timing;
+  const key = `${m?.file ?? "draft"}|${seconds}|${words}|${timing ? "heard" : ""}`;
   if (key === lyr.key) return;
-  const timeline = lyricTimeline(words, seconds);
+  const timeline = lyricTimeline(words, seconds, timing);
   const lines = timeline.filter((e) => e.kind === "line").length;
   page.lyrBody.replaceChildren(...(timeline.length
     ? timeline.map((e, i) => (e.kind === "tag"

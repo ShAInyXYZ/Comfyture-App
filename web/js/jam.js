@@ -188,7 +188,7 @@ export async function useSong(song, { into = null } = {}) {
   update();
   try {
     const made = song.kind !== "upload";
-    setTrack(j, { file: song.file, url: song.url, seconds: song.seconds, name: song.name || "My song", kind: made ? "made" : "upload", ...(song.cover ? { cover: song.cover } : {}), ...(made ? { prompt: song.tags ?? "", lyrics: song.lyrics ?? "", bpm: song.bpm } : {}) });
+    setTrack(j, { file: song.file, url: song.url, seconds: song.seconds, name: song.name || "My song", kind: made ? "made" : "upload", ...(song.cover ? { cover: song.cover } : {}), ...(made ? { prompt: song.tags ?? "", lyrics: song.lyrics ?? "", bpm: song.bpm, ...(song.timing ? { timing: song.timing } : {}) } : {}) });
     if (song.bpm && made) j.body.track.bpm = song.bpm;
     if (j.name === "New music video" && song.name) j.name = song.name;
     touched(j);

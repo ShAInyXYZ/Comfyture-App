@@ -69,3 +69,19 @@ test("the lyrics display's timeline: the song's own words, shared out over its s
   assert.deepEqual(lyricTimeline("[Instrumental]", 200).map((e) => [e.kind, e.text]), [["tag", "Instrumental"]]);
   assert.deepEqual(lyricTimeline("", 200), []);
 });
+
+test("with the lyrics put on the times heard, the sections are where they are really sung, an instrumental takes the stretch between", async () => {
+  const { lyricTimeline, sectionSpans, entryAt } = await import("../web/js/song-lyrics.js");
+  const lyrics = "[Intro]\nOne\n\n[Verse 1]\nTwo\nThree\n\n[Instrumental]\n\n[Chorus]\nFour";
+  const timing = { lines: [[2, 3], [10, 12], [12, 14], [30, 32]] };
+  const spans = sectionSpans(lyrics, 40, timing);
+  assert.deepEqual(spans.map((s) => [s.label, s.from, s.to]), [["Intro", 0, 9], ["Verse 1", 9, 14], ["Instrumental", 14, 29], ["Chorus", 29, 40]], "each begins just before its first line (a second at most) and runs to the next; the instrumental from the last line sung to the chorus' breath");
+  const tl = lyricTimeline(lyrics, 40, timing);
+  assert.deepEqual(tl.filter((e) => e.kind === "line").map((e) => [e.text, e.from, e.to]), [["One", 2, 3], ["Two", 10, 12], ["Three", 12, 14], ["Four", 30, 32]], "the lines on their heard times");
+  assert.equal(tl[entryAt(tl, 20)].text, "Instrumental", "the instrumental while it plays");
+  assert.equal(tl[entryAt(tl, 11)].text, "Two");
+  // a timing with the wrong number of lines is not used: the estimate stays
+  const estimated = lyricTimeline(lyrics, 40, { lines: [[1, 2]] });
+  assert.notDeepEqual(estimated.filter((e) => e.kind === "line").map((e) => e.from), [2, 10, 12, 30]);
+  assert.equal(sectionSpans("", 40, timing).length, 0);
+});

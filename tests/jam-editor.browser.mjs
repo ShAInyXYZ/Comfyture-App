@@ -248,7 +248,8 @@ try {
     ok(/lines$/.test(await page.locator(".sg-ld .sg-meta").textContent()), "it says how many lines");
     // (played muted at a place in the song: the line the timeline says is sounding is the lit one, and it is in view)
     await page.evaluate(async () => { const a = document.querySelector("audio"); a.muted = true; await a.play().catch(() => {}); a.currentTime = 100; });
-    const want = await page.evaluate(async (lyrics) => { const m = await import("/js/song-lyrics.js"); const tl = m.lyricTimeline(lyrics, document.querySelector("audio").duration); return tl[m.entryAt(tl, 100.2)].text; }, velvet.lyrics);
+    const want = await page.evaluate(async ([lyrics, timing]) => { const m = await import("/js/song-lyrics.js"); const tl = m.lyricTimeline(lyrics, document.querySelector("audio").duration, timing); return tl[m.entryAt(tl, 100.2)].text; }, [velvet.lyrics, velvet.timing]);
+    ok(velvet.timing?.lines?.length > 20, "the song has its lyrics on the times heard (from the audio), so the display and the markers are not estimates");
     ok(await until((t) => document.querySelector(".sg-ld .is-now")?.textContent.startsWith(t.slice(0, 20)), 40, want), `the line sounding at 1:40 is the lit one (${want})`);
     ok(await until(() => { const n = document.querySelector(".sg-ld .is-now"), c = document.querySelector(".sg-ld .sg-ly-body"); const b = n.getBoundingClientRect(), r = c.getBoundingClientRect(); return b.top >= r.top - 1 && b.bottom <= r.bottom + 1; }, 10), "and the display has scrolled to it");
     await page.evaluate(() => document.querySelector("audio").pause());

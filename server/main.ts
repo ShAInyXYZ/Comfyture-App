@@ -1036,6 +1036,8 @@ async function putCover(file: unknown, folder: string, id: string, song: string)
  * it was made from (its style, words, tempo and key), and it comes as a jam of its own (same id): the song as its track, its cover as
  * its picture, the rest of the video left to make.
  */
+/** A song's timing as the spec says it, checked: one [from, to] of numbers for each sung line (else none). */
+const timingOf = (t: any) => (Array.isArray(t?.lines) && t.lines.length && t.lines.every((l: unknown) => Array.isArray(l) && l.length === 2 && l.every((n) => Number.isFinite(n))) ? { lines: t.lines.map((l: number[]) => [l[0], l[1]]), ...(Number.isFinite(t.matched) ? { matched: t.matched } : {}) } : undefined);
 async function putSong(spec: any, folder: string, id: string) {
   const track = String(spec.track ?? "");
   if (!/^\w[\w.-]*\.mp3$/i.test(track)) throw new Error("its track is not an .mp3 of its folder");
@@ -1059,8 +1061,9 @@ async function putSong(spec: any, folder: string, id: string) {
     createdAt: new Date().toISOString(),
     ...(cover ? { cover } : {}),
     jam: id,
+    ...(timingOf(spec.timing) ? { timing: timingOf(spec.timing) } : {}),
   }, true);
-  const song = { file, url: `/media/audio/${file}`, seconds, name: text(spec.name, 60) || id, kind: "made", ...(cover ? { cover } : {}), prompt: text(s.tags, 800), lyrics: typeof s.lyrics === "string" ? s.lyrics.slice(0, 3000) : "", ...(Number.isFinite(s.bpm) ? { bpm: s.bpm } : {}) };
+  const song = { file, url: `/media/audio/${file}`, seconds, name: text(spec.name, 60) || id, kind: "made", ...(cover ? { cover } : {}), prompt: text(s.tags, 800), lyrics: typeof s.lyrics === "string" ? s.lyrics.slice(0, 3000) : "", ...(Number.isFinite(s.bpm) ? { bpm: s.bpm } : {}), ...(timingOf(spec.timing) ? { timing: timingOf(spec.timing) } : {}) };
   const now = stamp();
   await writeProject("jams", { id, name: song.name, createdAt: now, updatedAt: now, ...(cover ? { thumb: cover } : {}), body: { track: song, bpm: song.bpm ?? null, captions: "karaoke", every: 2, looks: {} } });
 }

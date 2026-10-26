@@ -23,6 +23,8 @@ export interface AudioEntry {
   key?: string;
   /** The jam a shipped song comes as (its id). */
   jam?: string;
+  /** Its lyrics on the times they are sung at: { lines: [[from, to], ...], matched } (scripts/jam-lyrics.mjs). */
+  timing?: { lines: number[][]; matched?: number };
 }
 
 export interface CoverRequest {
