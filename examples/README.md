@@ -97,7 +97,7 @@ open, then the library.
   short songs, so a part is cut from a whole one later (The track), and The song's shelf only holds songs (a sound under 30 s is a clip).
 - They were made with [`scripts/jam-songs.mjs`](../scripts/jam-songs.mjs) on the owner's own ComfyUI with their AceStep1.5XL-Superior
   graph: the app's workflow (`workflows/audio/song.json`, ACE-Step 1.5 XL sft, three passes) with the `jkass_quality` sampler and their
-  `AudioQualityEnhancer` master, neither of which Comfy Cloud has (there, the same settings make a song with `res_2s` and no master, for
+  `AudioQualityEnhancer` master, neither of which Comfy Cloud has (there, the same settings make a song with `heun` (the same method as jkass_quality) and no master, for
   about 5 cents).
 - The track ships loudness-matched (-14 LUFS) as a 96 kbps MP3; the cover is an 800 px JPEG drawn with GPT Image from the star's cast
   sheet (the prompts: [`docs/brand/songs/`](../docs/brand/songs/)). Titles, lyrics and covers are our own: no real song, artist or person.
