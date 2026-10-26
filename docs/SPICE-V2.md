@@ -17,6 +17,18 @@ Built and tested, at **#/spice?bay** (the VFX house is still #/spice until the b
 
 **Not yet**: a real run of any engine (no credits were spent; every paid path is stood in for in the tests), Select's matte on the viewer, Control/Extend takes in the example, the website's Spice section and video, and the retirement of the VFX house.
 
+## Status (2026-10-26, later): Gen, the IC-LoRA suite, in the VFX house
+
+The owner's call after the first bay: Spice is a VFX section, so it takes **a video** (State Property, Mixer's trend) and shows what the IC-LoRAs can do with it, all of them, up to 300 credits. That is built inside the VFX house at #/spice as its seventh department, **Gen** (`web/js/spice-gen.js`, `server/iclora.ts`, `workflows/ic-lora.json` + `ic-loras.json`, `POST /api/spice/ic`, the flagship `examples/spice/sh070-state-property/`), on the app's own LTX graph, not the template runner:
+
+- 39 tools in nine families, the settings of each from its model card; 31 can run on a clip, 26 of them were run for real and looked at (verified), 4 failed on a real run and say so (clean-plate, edit-anything, upscale-refine, inpaint-masked), 8 need a mask, a reference sheet or a track and are not offered a run.
+- A clip is made ready on this machine when the tool needs it (a canvas to widen, a region to fill), the run is merged back with the footage where the footage stood, and an LTX picture that comes back black is rolled again with another seed (up to three tries).
+- A run counts as a render under the judge spend gate; it is refused before anything is sent. `COMFYTURE_OPEN_WEIGHTS` only refuses partner templates, and Gen runs on the app's own graph.
+- Cost: a draft (shorter side 320) is a few credits, a standard run (544, doubled by the second pass) about six credits a second. About 289 credits of the 300 allowed were spent on the survey and the flagship.
+- Known: VOID through the template runner fails with slot errors (`expected BOOLEAN, got 672`, then `expected INT, got string`): the runner's slot overrides shift. It affects Paint's VOID too.
+
+The bay at #/spice?bay stays a second door until the owner decides whether it is retired.
+
 ## What the old Spice was, and why it goes
 
 Six departments (Plate, Roto, Paint, Light, FX, Comp), five of them done mostly on this machine: a canvas compositor for effect layers, ffmpeg grades, a free weather and spark server. That is a compositing tool. It gives no AI edit. The AI parts (SAM3, removers, Beeble, upscale) were attached to it as options. v2 turns this round: the models are the departments' engines, and ffmpeg only conforms and exports.
