@@ -93,8 +93,11 @@ comes as a jam of its own, same id, in Your jams: the song as its track, its cov
 The songs go in before the videos, so Jam's video is the newest jam, the one it opens on; the shelf starts with the song of the video
 open, then the library.
 
-- `song` holds the settings Jam's song page sends to `/api/audio/song`, its seed with it. The songs are whole, 200 s: ACE-Step makes poor
-  short songs, so a part is cut from a whole one later (The track), and The song's shelf only holds songs (a sound under 30 s is a clip).
+- `song` holds the settings Jam's song page sends to `/api/audio/song`, its seed with it (and `lora`, a style LoRA of the guide's table, used
+  only on the owner's own ComfyUI). The songs are whole, 200 to 300 s: ACE-Step makes poor short songs, so a part is cut from a whole one
+  later (The track), and The song's shelf only holds songs (a sound under 30 s is a clip). Their tags and lyrics were written by Pickle,
+  from [`knowledge/jam/acestep-guide.md`](../knowledge/jam/acestep-guide.md) (how to write tags, lyrics and settings for ACE-Step 1.5 XL),
+  then read against it before anything was made.
 - They were made with [`scripts/jam-songs.mjs`](../scripts/jam-songs.mjs) on the owner's own ComfyUI with their AceStep1.5XL-Superior
   graph: the app's workflow (`workflows/audio/song.json`, ACE-Step 1.5 XL sft, three passes) with the `jkass_quality` sampler and their
   `AudioQualityEnhancer` master, neither of which Comfy Cloud has (there, the same settings make a song with `heun` (the same method as jkass_quality) and no master, for
