@@ -9,6 +9,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { isRoom } from "./toaster-model.js";
 import { geometryOf } from "./toaster-shapes.js";
+import { assetPiece, characterPiece, libraryNow, preciseBox } from "./toaster-assets.js";
 
 const DEG = Math.PI / 180;
 
@@ -36,6 +37,12 @@ export function mountScene(el) {
   Object.assign(key.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 0.5, far: 20 });
   key.shadow.bias = -0.0005;
   scene.add(key, new THREE.HemisphereLight("#dcdad6", "#202024", 0.35));
+  // the floor: only the shadows fall on it, so a character in the air reads as one
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: 0.35 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = 0.001;
+  ground.receiveShadow = true;
+  scene.add(ground, new THREE.GridHelper(12, 24, "#2c2c31", "#222226"));
   const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 200);
   camera.position.set(3.4, 2.4, 4.2);
   const orbit = new OrbitControls(camera, renderer.domElement);
@@ -75,17 +82,39 @@ export function mountScene(el) {
   let framedOnce = false;
   orbit.addEventListener("start", () => (moved = true));
 
-  // what is not made yet stands as clay: the shapes as they are, a library piece or a character as a box of its size. In the blockout view
-  // everything is clay, solid; with the assets in, what is not made yet is a little see-through and the room very faint.
+  // what is not made yet stands as clay: the shapes as they are, a piece of the library or a character as itself (a figure in its pose), as
+  // the viewport draws them; a box of its size until the library is in. In the blockout view everything is clay, solid; with the assets in,
+  // what is not made yet is a little see-through and the room very faint.
+  const pieceOf = (part) => {
+    if (!libraryNow() || (part.shape !== "asset" && part.shape !== "character")) return null;
+    try {
+      const piece = part.shape === "character" ? characterPiece(part) : assetPiece(part.asset);
+      const fitted = new THREE.Group();
+      fitted.add(piece);
+      const box = preciseBox(fitted);
+      const ext = box.getSize(new THREE.Vector3());
+      fitted.scale.set(...part.size.map((v, i) => (ext.getComponent(i) > 1e-6 ? v / ext.getComponent(i) : 1)));
+      fitted.position.copy(box.getCenter(new THREE.Vector3())).multiply(fitted.scale).negate();
+      return fitted;
+    } catch {
+      return null;
+    }
+  };
   const stand = (part, solid) => {
     const room = isRoom(part);
-    const geometry = part.shape === "asset" || part.shape === "character" ? new THREE.BoxGeometry(...part.size) : geometryOf(part);
     const opacity = solid ? (room ? 0.35 : 1) : room ? 0.1 : 0.5;
-    const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: part.color, roughness: 0.62, transparent: opacity < 1, opacity, depthWrite: opacity >= 1 }));
-    mesh.castShadow = mesh.receiveShadow = solid && !room;
-    mesh.userData.clay = true;
-    mesh.userData.room = room;
-    return mesh;
+    const mat = new THREE.MeshStandardMaterial({ color: part.color, roughness: 0.62, transparent: opacity < 1, opacity, depthWrite: opacity >= 1 });
+    const piece = pieceOf(part);
+    const out = piece ?? new THREE.Mesh(part.shape === "asset" || part.shape === "character" ? new THREE.BoxGeometry(...part.size) : geometryOf(part), mat);
+    out.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material = mat;
+      o.castShadow = o.receiveShadow = solid && !room;
+      if (o.isSkinnedMesh) o.frustumCulled = false;
+    });
+    out.userData.clay = true;
+    out.userData.room = room;
+    return out;
   };
   // How well a model's width, height and depth (as proportions of its longest side) say what its clay's did: the sum of the gaps of their logs, a
   // thin side counting no less than a tenth (a plank's clay is two centimetres thin, its model is not)

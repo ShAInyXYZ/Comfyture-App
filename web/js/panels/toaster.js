@@ -1365,7 +1365,7 @@ function drawNewScene3d() {
   }
   const made = objectsNow().filter((p) => modelOf(p.id)).length;
   const total = objectsNow().length;
-  const say = h("p.ts-meta", {}, sceneView() === "blockout" ? `The clay blockout: ${total} objects as placeholders${made ? `. Press Assets to see the ${made} that are made` : ""}` : made ? `${made} of ${total} objects are real 3D; the rest stays clay` : "Each model stands here where its clay was");
+  const say = h("p.ts-meta", {}, sceneView() === "blockout" ? `The clay blockout: ${total === 1 ? "one object as a placeholder" : `${total} objects as placeholders`}${made ? `. Press Assets to see ${made === 1 ? "the one" : `the ${made}`} made in 3D` : ""}` : made === total ? (total === 1 ? "The object is real 3D, where its clay was" : `All ${total} objects are real 3D, each where its clay was`) : made ? `${made} of ${total} objects are real 3D; the rest stays clay` : "Each model stands here where its clay was");
   shell.newScene.replaceChildren(
     head("New scene", b.models,
       h("div.ts-seg", { role: "group", "aria-label": "What the scene shows" }, ...[["blockout", "Blockout", "The clay blockout: every object as the placeholder it was drawn from"], ["assets", "Assets", "The 3D assets that are made, standing where their clay was (the rest stays clay)"]].map(([id, label, about]) =>

@@ -896,8 +896,13 @@ export class ToasterView {
    */
   objectSheetStill(id, { cell = 512, type = "image/png", quality, background = "#d6d6d2" } = {}) {
     const mesh = this.meshes.get(id);
-    const b = mesh && this.bounds([id]);
-    if (!b) return null;
+    if (!mesh) return null;
+    // (the part is drawn in its own upright frame, not turned as the pose turns it: the scene puts its turn back on the model it makes)
+    const turned = mesh.rotation.clone();
+    mesh.rotation.set(0, 0, 0);
+    mesh.updateMatrixWorld(true);
+    const b = this.bounds([id]);
+    if (!b) return (mesh.rotation.copy(turned), mesh.updateMatrixWorld(true), null);
     const centre = new THREE.Vector3(...b.min.map((v, i) => (v + b.max[i]) / 2));
     const radius = Math.hypot(...b.max.map((v, i) => v - b.min[i])) / 2;
     const dist = objectDistance(radius);
@@ -927,6 +932,8 @@ export class ToasterView {
       return { url, width: size, height: size };
     } finally {
       for (const [m, was] of shown) m.visible = was;
+      mesh.rotation.copy(turned);
+      mesh.updateMatrixWorld(true);
     }
   }
 
