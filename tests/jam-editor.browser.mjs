@@ -240,6 +240,9 @@ try {
     const shelved = await page.evaluate(() => [...document.querySelectorAll(".sg-sleeve b")].map((b) => b.textContent));
     ok(shelved[0] === "Moonlit Oolong Walk" && !shelved.some((n) => /Three Kittens|La Calabaza/.test(n)) && shelved.length > 1, "the shelf holds only songs, the video's first", shelved.join(", "));
     await shot("song");
+    // ---- the first thing a visitor sees: the default video's own song shows its words (the library's entry for it holds none; the video's track does)
+    ok(await until(() => document.querySelectorAll(".sg-ld .sg-ly-line").length === 7, 20), "the default video's song shows its seven lines in the lyrics display, not 'no lyrics'", String(await page.locator(".sg-ld .sg-ly-line").count()));
+    ok((await page.locator(".sg-ld .sg-ly-line").first().textContent()) === "Twist the cap, a little sip", "its own words, the first line first");
     // ---- the lyrics display under the player: the words the song was made from, the line sounding lit as it plays, a press on a line jumps to it
     const velvet = (await api("api/audio")).find((a) => a.file === "song-velvet-bell.mp3");
     await page.locator('.sg-sleeve-art[aria-label="Velvet Bell"]').click();

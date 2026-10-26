@@ -18,7 +18,7 @@ const root = resolve(import.meta.dirname, "..");
  * tests/fixtures/jam/): a data folder from before still has them, and the first start takes out an untouched copy.
  */
 const SHIPPED = ["jam-walk-moonlit-oolong"];
-const VERSIONS = { "jam-walk-moonlit-oolong": 2 };
+const VERSIONS = { "jam-walk-moonlit-oolong": 3 };
 const freePort = () => new Promise<number>((done) => {
   const s = createServer().listen(0, () => {
     const { port } = s.address() as { port: number };

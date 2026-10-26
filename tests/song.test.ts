@@ -85,3 +85,12 @@ test("with the lyrics put on the times heard, the sections are where they are re
   assert.notDeepEqual(estimated.filter((e) => e.kind === "line").map((e) => e.from), [2, 10, 12, 30]);
   assert.equal(sectionSpans("", 40, timing).length, 0);
 });
+
+test("lyrics on their heard times place a song's sections only when they cover the song", async () => {
+  const { timingCovers } = await import("../web/js/song-lyrics.js");
+  assert.equal(timingCovers({ lines: [[12, 14], [200, 210]] }, 220), true, "first line in the first quarter, last in the last third");
+  assert.equal(timingCovers({ lines: [[84.4, 86.9], [107.6, 111.6]] }, 180), false, "words for one chorus in the middle of a three-minute song say nothing about the rest");
+  assert.equal(timingCovers({ lines: [[2, 3], [60, 62]] }, 220), false, "ends too early");
+  assert.equal(timingCovers(undefined, 220), false);
+  assert.equal(timingCovers({ lines: [] }, 220), false);
+});

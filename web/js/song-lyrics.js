@@ -83,6 +83,13 @@ function heardTimeline(sections, heard, total) {
   return out;
 }
 
+/**
+ * Whether lyrics on their heard times say where a song's sections are: the first line is sung in the first quarter of the song and the last ends in
+ * its last third. Lyrics that cover only a stretch of it (a song whose words were written for one chorus, sung and played on for minutes) say
+ * nothing about the rest: its sections are then found some other way.
+ */
+export const timingCovers = (timing, seconds) => !!timing?.lines?.length && Number(seconds) > 0 && timing.lines[0][0] <= 0.25 * seconds && timing.lines.at(-1)[1] >= 0.6 * seconds;
+
 /** The sections of a song with the stretch of it each takes: [{ name, label, from, to }] (those with a tag), from its timeline. */
 export const sectionSpans = (lyrics, seconds, timing) => lyricTimeline(lyrics, seconds, timing).filter((e) => e.kind === "tag").map((e) => ({ name: e.hint ? `${e.text} - ${e.hint}` : e.text, label: e.text, from: e.from, to: e.to }));
 

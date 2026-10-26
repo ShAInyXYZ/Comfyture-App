@@ -9,7 +9,7 @@ import { TRENDS, crewFace, crewById, trendArt } from "../mixer-trends.js";
 import { jam, useTrack, makeTrack, setLength, setStart, setSpan, LENGTHS, startFromTrend, listen, costOfTrack, costOfWords, openWindow, setWorkspace, cutPart, save } from "../jam.js";
 import { cut, tempoOctave, select, importBeats } from "../cut.js";
 import { detectSections, lyricTags, kindOf } from "../jam-sections.js";
-import { sectionSpans } from "../song-lyrics.js";
+import { sectionSpans, timingCovers } from "../song-lyrics.js";
 import { editor } from "./editor.js";
 import { jicon, vinyl, clock, mins, pickFile, keep, cr, lamp, registerWindow } from "./jam-ui.js";
 import { card, segs } from "./jam-card.js";
@@ -116,7 +116,7 @@ function seek(b, t) {
  * found (and could name wrongly) only gives each its energy. Else what was found stays.
  */
 function placed(b, found) {
-  const spans = b.track.timing ? sectionSpans(b.track.lyrics, b.track.seconds, b.track.timing).filter((x) => x.to > x.from) : [];
+  const spans = timingCovers(b.track.timing, b.track.seconds) ? sectionSpans(b.track.lyrics, b.track.seconds, b.track.timing).filter((x) => x.to > x.from) : [];
   if (!spans.length) return found;
   const energy = (from, to) => {
     let sum = 0;

@@ -18,7 +18,7 @@ import { jam, useSong, songHook, setWorkspace, save } from "../jam.js";
 import { analyse } from "./jam-track-audio.js";
 import { detectSections, lyricTags, HOP } from "../jam-sections.js";
 import { pay, isArmed } from "./jam-band-pay.js";
-import { KIND, WEIGHT, lyricTimeline, entryAt, sectionSpans } from "../song-lyrics.js";
+import { KIND, WEIGHT, lyricTimeline, entryAt, sectionSpans, timingCovers } from "../song-lyrics.js";
 import { COVER_SECONDS, COVER_VIDEO_PROMPT, bestPart, coverPrompt, costOfCover, costOfCoverVideo, coverOf, fileOfUrl, stepWords } from "../song-cover.js";
 
 const STORE = "comfyture.jam.song.3";
@@ -55,7 +55,11 @@ const making = { what: null, words: "", file: null }; // a cover being made: "pi
 /** The songs on the shelf: the track of the video open first (one of the made or brought in, or its own), then the ones made or brought in. */
 function shelf() {
   const track = jam.jam?.body.track;
-  const own = !track ? [] : [song.made.find((m) => m.file === track.file) ?? { file: track.file, url: track.url, name: track.name, seconds: track.seconds, kind: track.kind ?? "upload", bpm: track.bpm ?? (jam.jam.body.bpm ? Math.round(jam.jam.body.bpm) : undefined), lyrics: track.lyrics }];
+  // (the library's entry for it may hold no words of its own, as a showcase's does: what the video's track says of it fills in)
+  const found = track && song.made.find((m) => m.file === track.file);
+  const own = !track ? [] : [found
+    ? { ...found, lyrics: found.lyrics ?? track.lyrics, timing: found.timing ?? track.timing }
+    : { file: track.file, url: track.url, name: track.name, seconds: track.seconds, kind: track.kind ?? "upload", bpm: track.bpm ?? (jam.jam.body.bpm ? Math.round(jam.jam.body.bpm) : undefined), lyrics: track.lyrics, timing: track.timing }];
   return [...own, ...song.made.filter((m) => m.file !== track?.file)].slice(0, 26);
 }
 const shownSong = () => shelf().find((m) => m.file === song.shown) ?? null;
@@ -517,7 +521,7 @@ function sectionTimes() {
   const own = m?.lyrics && /\[[^\]]+\]/.test(m.lyrics) ? m : null;
   const total = own?.seconds || song.seconds;
   // (a song whose lyrics were put on the times heard: its sections are where they really are)
-  if (own?.timing) {
+  if (timingCovers(own?.timing, total)) {
     const spans = sectionSpans(own.lyrics, total, own.timing).filter((x) => x.to > x.from);
     if (spans.length) return spans.map((x) => ({ name: x.name, label: x.label, kind: KIND(x.name), weight: Math.max(0.3, ((x.to - x.from) / total) * spans.length), from: x.from, to: x.to }));
   }
@@ -696,7 +700,7 @@ function drawLyrics() {
     ? timeline.map((e, i) => (e.kind === "tag"
       ? h("div.sg-ly-tag", { dataset: { i } }, h("span", {}, e.text), e.hint ? h("em", {}, e.hint) : null)
       : h("button.sg-ly-line", { type: "button", dataset: { i }, title: `Jump to ${mins(e.from)}`, on: { click: () => lyricSeek(e.from) } }, e.text)))
-    : [h("p.sg-ly-empty", {}, m ? "No lyrics are kept for this song. Write them in the form (Advanced), or ask Pickle to set one up." : "The lyrics appear here once the song has some.")]));
+    : [h("p.sg-ly-empty", {}, m ? "No lyrics kept for this song." : "Lyrics appear here once the song has some.")]));
   Object.assign(lyr, { key, timeline, items: [...page.lyrBody.children], at: -2 });
   page.lyrMeta.textContent = lines ? `${lines} lines` : timeline.length ? "no words" : "";
   page.lyrBody.scrollTop = 0;
