@@ -83,7 +83,7 @@ export default {
       target: ".sg-steps",
       place: "right",
       title: "The song",
-      text: "Say what it's about and pick a shape and a sound: **Pickle, set it up** fills in the rest, and **Make the song** sings it (on Comfy Cloud it costs credits, so it waits for your key). Or bring your own with **Import a song**.",
+      text: "Say what it's about and pick a shape and a sound: **Pickle, set it up** fills in the rest, and **Make the song** sings it (on Comfy Cloud it costs credits, so it waits for your key). Or bring your own with **Import a song**. Under the player, the **Lyrics display** follows the words as a song plays.",
     },
     {
       go: on("track", ".jt-c-stems"),
