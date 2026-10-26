@@ -48,11 +48,12 @@ test("a newer version of a showcase replaces an older copy nobody has touched, k
   const data = await mkdtemp(join(tmpdir(), "seed-"));
   t.after(() => rm(data, { recursive: true, force: true }));
   // the first start puts them in: our three videos at their version, and Kitchen's example film with its takes and its edit
-  await started(data, async (get, _send, status) => {
+  await started(data, async (get, send, status) => {
     const film = (await get("api/stories")).stories.find((x: any) => x.name === "The Great Jam Chase");
     assert.ok(film?.thumb?.startsWith("/media/photos/"), "Kitchen's example film is there, with its picture");
-    assert.ok((await get("api/runs")).filter((r: any) => r.status === "done" && r.video).length >= 3, "its three takes are in the take log at once");
-    assert.ok((await get("api/cuts")).cuts.some((c: any) => c.project === film.id), "and its edit, the story's own");
+    assert.ok((await get("api/runs")).filter((r: any) => r.status === "done" && r.video).length >= 2, "its two takes are in the take log at once");
+    const edit = (await get("api/cuts")).cuts.find((c: any) => c.project === film.id);
+    assert.ok(edit, "and its edit, the story's own");
     const jams = (await get("api/jams")).jams;
     assert.deepEqual(jams.map((j: any) => j.id).sort(), SHIPPED, "our three music videos ship, and no other: Toc Toc, Hotel Lobby, Ramalama and the old test video are not among them");
     // they go in a moment apart, in the order of their folders: the last one is the newest, the one Jam opens first
@@ -72,6 +73,9 @@ test("a newer version of a showcase replaces an older copy nobody has touched, k
       assert.ok(r.url === `/media/reels/${r.id}.mp4` && r.seconds > 5 && r.cut === `cut-${r.id.replace(/-film$/, "")}` && r.name, `${r.id} has its details`);
       assert.equal((await get(`api/jams/${r.id.replace(/-film$/, "")}`)).project.body.film.id, r.id, `${r.id} is the film its video names`);
     }
+    // Kitchen's Render the film is free (ffmpeg): every clip of the example's edit is on disk, its stills by the names they are put in under
+    const made = await send(`api/cuts/${edit.id}/render`, "POST", {});
+    assert.ok(made.url?.startsWith("/media/reels/") && made.seconds > 10, "Kitchen's example film renders on a fresh install, every clip found", JSON.stringify(made));
   });
   // the ledger says what went in, at which version (server/examples.ts)
   const versions = async () => Object.fromEntries(ledgerState(readLedger(await readFile(join(data, "jams", ".seeded"), "utf8"))));
