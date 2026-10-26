@@ -89,6 +89,8 @@ try {
   await page.locator(".sp-chain-card .sp-primary", { hasText: "Yes, spend it" }).first().click();
   await settle(900);
   ok(asked.length === 1, "the second press runs the chain: its first pass is sent (and refused here, so it stops)", String(asked.length));
+  const stopped = await page.locator("#toast").innerText().catch(() => "");
+  ok(/^The chain stopped at step 1, [^:]+: .+\.$/.test(stopped.trim()), "the chain says which step stopped it, and why", stopped.slice(0, 160));
   asked.length = 0;
 
   // ---- the tools: a gallery of cards by family, each the picture of a real run and its dot; one picked, its card and its price

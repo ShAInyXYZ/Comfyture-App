@@ -61,16 +61,22 @@ export function chainCost(steps, s = shot()) {
 /** The tool picked and set up as a step says. */
 export const setUpStep = (st) => setTool({ tool: st.tool, words: st.words ?? "", strength: null, seconds: null, size: st.size ?? "draft", region: st.region ?? null, ...(st.aspect ? { aspect: st.aspect } : {}) });
 
-/** The chain run with the person's one yes: each step on the pass the one before made; it stops at the first that fails. */
+/** The chain run with the person's one yes: each step on the pass the one before made; it stops at the first that fails, saying why. */
 export async function runChain(steps) {
   for (const [i, st] of steps.entries()) {
     const t = toolOf(st.tool);
     if (!t) continue;
     setUpStep(st);
-    const made = await run();
-    if (!made) {
-      toast(`The chain stopped at step ${i + 1}, ${t.name}${i + 1 < steps.length ? ": the rest was not run" : ""}.`);
+    const stopped = (why) => {
+      toast(`The chain stopped at step ${i + 1}, ${t.name}: ${why.replace(/\.$/, "")}${i + 1 < steps.length ? "; the rest was not run" : ""}.`, { tone: "crit" });
       return null;
+    };
+    const why = plan().why;
+    if (why) return stopped(why);
+    try {
+      if (!(await run({ rethrow: true }))) return stopped("nothing was made");
+    } catch (e) {
+      return stopped(e.message || "the run did not finish");
     }
   }
   return true;

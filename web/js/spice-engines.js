@@ -9,13 +9,15 @@ import { spice, setBusy, addShot, setPlate } from "./spice.js";
 /**
  * Runs `make(progress)` as the work of a shot: the lamp lit with `label`, the progress shown, an error told. Answers what `make` made, or null.
  */
-export async function work(shotId, label, make) {
+export async function work(shotId, label, make, { rethrow = false } = {}) {
   const scenarioId = spice.scenario?.id;
   if (!shotId || !scenarioId) return null;
   setBusy(shotId, { label, progress: 0 }, scenarioId);
   try {
     return await make((p) => setBusy(shotId, { label, progress: Math.min(1, Math.max(0, p)) }, scenarioId));
   } catch (e) {
+    // (a chain says which step failed and why, in one toast of its own)
+    if (rethrow) throw e;
     toast(e.message, { tone: "crit" });
     return null;
   } finally {
