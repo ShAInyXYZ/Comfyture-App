@@ -10,9 +10,10 @@
 import { h } from "./dom.js";
 import { onChange, changed } from "./store.js";
 import { editStrip } from "./utensils-edit-api.js";
-import { spice, setFrame, lookAt, takeOff } from "./spice.js";
+import { spice, setFrame, lookAt, takeOff, setTool } from "./spice.js";
 import { FIRST, secondsAt, frameAt, lastFrame } from "./spice-model.js";
 import { spicon, fill } from "./spice-ui.js";
+import { openWin } from "./spice-win.js";
 
 const strips = new Map();
 /** A clip's thumbnails in one picture (the server makes it once per clip); null while it is made or when it cannot be. */
@@ -40,7 +41,10 @@ export function createViewer(on = {}) {
   const drop = h("button.sp-drop", { type: "button", hidden: true, on: { click: (e) => on.drop?.(e.currentTarget) } }, spicon("film"), h("b", {}, "Add a shot"), h("span", {}, "roll one with LTX-2.5, or drop a clip here"));
   const chipBefore = h("b.sp-chip.is-left", {}, "Before");
   const chipAfter = h("b.sp-chip.is-right", {}, "After");
-  const stage = h("div.sp-stage", {}, beforeBox, afterBox, wipe, drop, chipBefore, chipAfter);
+  // the box of a tool that fills a region (Inpaint): drawn over the stage when that tool is picked, moved by a drag, sized by its corner
+  const grip = h("i.sp-box-grip", { title: "Drag to size the box" });
+  const box = h("div.sp-box", { hidden: true, role: "group", "aria-label": "The region to fill", title: "The region the tool fills: drag it where it should be, its corner to size it" }, h("b", {}, "fill"), grip);
+  const stage = h("div.sp-stage", {}, beforeBox, afterBox, wipe, box, drop, chipBefore, chipAfter);
   const host = h("div.sp-stage-host", {}, stage);
 
   const counter = h("output.sp-counter", { "aria-label": "Frame" }, String(FIRST));
@@ -220,6 +224,57 @@ export function createViewer(on = {}) {
     }
   }
 
+  // ---------------------------------------------------------------- the box
+
+  /** The tool picked, when it takes a region, and the box it would fill: the one set, else the tool's own. */
+  const boxOf = () => {
+    const t = spice.tools?.tools?.find((x) => x.id === spice.set.tool);
+    if (!t?.takes?.includes("region")) return null;
+    const r = spice.set.region ?? t.region ?? { x: 0.35, y: 0.35, w: 0.3, h: 0.3 };
+    return { x: r.x, y: r.y, w: r.w, h: r.h };
+  };
+  const putBox = (r) => {
+    box.style.left = `${(r.x * 100).toFixed(2)}%`;
+    box.style.top = `${(r.y * 100).toFixed(2)}%`;
+    box.style.width = `${(r.w * 100).toFixed(2)}%`;
+    box.style.height = `${(r.h * 100).toFixed(2)}%`;
+  };
+  const r2 = (n) => Math.round(n * 100) / 100;
+  // a drag of the box moves it (of its corner, sizes it); the region is set on the tool when the drag ends
+  for (const [el2, sizing] of [[box, false], [grip, true]]) {
+    el2.addEventListener("pointerdown", (e) => {
+      const r0 = boxOf();
+      if (!r0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      el2.setPointerCapture(e.pointerId);
+      box.classList.add("is-drag");
+      const s = stage.getBoundingClientRect();
+      let r = r0;
+      const move = (ev) => {
+        const dx = (ev.clientX - e.clientX) / s.width;
+        const dy = (ev.clientY - e.clientY) / s.height;
+        r = sizing
+          ? { ...r0, w: Math.min(1 - r0.x, Math.max(0.04, r0.w + dx)), h: Math.min(1 - r0.y, Math.max(0.04, r0.h + dy)) }
+          : { ...r0, x: Math.min(1 - r0.w, Math.max(0, r0.x + dx)), y: Math.min(1 - r0.h, Math.max(0, r0.y + dy)) };
+        putBox(r);
+      };
+      const up = () => {
+        box.classList.remove("is-drag");
+        el2.removeEventListener("pointermove", move);
+        el2.removeEventListener("pointerup", up);
+        if (r !== r0) setTool({ region: { x: r2(r.x), y: r2(r.y), w: r2(r.w), h: r2(r.h) } });
+      };
+      el2.addEventListener("pointermove", move);
+      el2.addEventListener("pointerup", up);
+    });
+  }
+  function drawBox() {
+    const r = st.ctx?.shot?.plate ? boxOf() : null;
+    box.hidden = !r;
+    if (r) putBox(r);
+  }
+
   // ---------------------------------------------------------------- the timeline
 
   const frameUnder = (e) => {
@@ -253,7 +308,7 @@ export function createViewer(on = {}) {
   function drawChain() {
     const { shot, pass } = st.ctx;
     const sel = pass?.id ?? "plate";
-    const sig = JSON.stringify(shot?.plate ? [shot.id, sel, !!shot.made, shot.passes.map((p) => [p.id, p.name, p.words, p.credits, !!p.example])] : null);
+    const sig = JSON.stringify(shot?.plate ? [shot.id, sel, !!shot.made, shot.passes.map((p) => [p.id, p.name, p.words, p.credits, !!p.example]), shot.bin.length] : null);
     if (sig === st.chainSig) return;
     st.chainSig = sig;
     if (!shot?.plate) return void fill(chain);
@@ -262,7 +317,9 @@ export function createViewer(on = {}) {
       canOff ? h("button.sp-link-off", { type: "button", title: "Take this pass off: it waits in the bin, with what was made on top of it", "aria-label": `Take ${label} off`, on: { click: (e) => (e.stopPropagation(), takeOff(id)) } }, spicon("close")) : null);
     fill(chain,
       chip("plate", "Plate", shot.made ? "The plate: rolled by LTX-2.5" : "The plate: the footage as it came", false),
-      ...shot.passes.flatMap((p) => [h("i.sp-link-arrow", {}, spicon("chev")), chip(p.id, p.name || p.tool, `${p.name}${p.words ? ` · ${p.words.slice(0, 80)}` : ""}${p.credits ? ` · ${p.credits} cr` : p.example ? " · example" : ""}`, true)]));
+      ...shot.passes.flatMap((p) => [h("i.sp-link-arrow", {}, spicon("chev")), chip(p.id, p.name || p.tool, `${p.name}${p.words ? ` · ${p.words.slice(0, 80)}` : ""}${p.credits ? ` · ${p.credits} cr` : p.example ? " · example" : ""}`, true)]),
+      // the bin: the passes taken off, waiting to be put back
+      shot.bin.length ? h("button.sp-link-bin", { type: "button", title: "The bin: passes taken off the chain, to put back or forget", on: { click: () => openWin("bin") } }, spicon("undo"), h("span", {}, `Bin · ${shot.bin.length}`)) : null);
   }
 
   // ---------------------------------------------------------------- big
@@ -308,6 +365,7 @@ export function createViewer(on = {}) {
     drop.hidden = !!p;
     if (spice.frame > lastFrame(p, shot?.fps ?? 24)) setFrame(FIRST);
     show();
+    drawBox();
     drawTime();
     drawChain();
   }
