@@ -27,6 +27,9 @@ const familyOf = (id) => spice.tools?.families.find((f) => f.id === id);
 /** The tools of the suite as a shelf: each family with its tools, in the registry's order, empty families left out. */
 export const shelf = () => (spice.tools?.families ?? []).map((f) => ({ ...f, tools: tools().filter((t) => t.family === f.id) })).filter((f) => f.tools.length);
 
+/** The shot described, for a card with a fixed grammar: the words it was rolled from, else what it is about. */
+export const sceneOf = (shot) => (shot?.made?.words || shot?.about || "").trim();
+
 /** Why a partner's template cannot run here: open weights only is on (COMFYTURE_OPEN_WEIGHTS), and the server would refuse it. */
 const partnerOff = (t) => (t?.partner && state.account?.openWeights ? `Open weights only is on, and ${t.name} is ${t.partner}'s model` : "");
 
@@ -50,7 +53,7 @@ export async function run() {
   const g = { ...spice.set };
   const on = looking_()?.id ?? null;
   const shotId = p.shot.id;
-  const body = { video: p.input.file, tool: t.id, words: g.words ?? "", scene: g.scene ?? "", seconds: p.seconds, size: g.size, ...(g.strength ? { strength: g.strength } : {}), ...(t.takes.includes("aspect") ? { aspect: g.aspect } : {}), ...(t.takes.includes("height") ? { height: g.height } : {}), ...(t.takes.includes("region") && g.region ? { region: g.region } : {}) };
+  const body = { video: p.input.file, tool: t.id, words: g.words ?? "", scene: (g.scene ?? "").trim() || sceneOf(p.shot), seconds: p.seconds, size: g.size, ...(g.strength ? { strength: g.strength } : {}), ...(t.takes.includes("aspect") ? { aspect: g.aspect } : {}), ...(t.takes.includes("height") ? { height: g.height } : {}), ...(t.takes.includes("region") && g.region ? { region: g.region } : {}) };
   const made = await work(shotId, t.name, (progress) => runTool(body, progress));
   if (!made) return null;
   const { extra, credits, ...media } = made;
@@ -88,7 +91,7 @@ export function toolBody() {
     on: { input: (e) => setQuietly({ [key]: e.target.value }), change: () => changed("spice") },
   }));
   const fields = [
-    t.grammar ? field("scene", "The shot, described", spice.tools.scene, 2) : null,
+    t.grammar ? field("scene", "The shot, described", sceneOf(p.shot) || "The shot in a sentence: who, where, the light", 2) : null,
     t.takes.includes("words") ? field("words", t.grammar ? "The effect" : t.id === "cutout" ? "Who, or what, to cut out" : t.id === "sound" ? "What is heard" : "What it is told", t.grammar ? t.words || "" : t.prompt || "", t.grammar ? 2 : 3) : null,
   ];
   const seconds = g.seconds ?? Math.round(p.input?.seconds ?? 5);

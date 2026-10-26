@@ -48,7 +48,7 @@ const ENGINES: Tool[] = [
   { id: "cutout", kind: "engine", name: "Cut out", family: "matte", about: "SAM3 finds the subject you name and follows it through every frame: a green screen of it, with its matte kept beside.", takes: ["words"], prompt: "the raccoon", status: "verified", gpu: 6 },
   { id: "upscale", kind: "engine", name: "Upscale", family: "upscale", about: "SeedVR2 draws the clip again larger and sharper, frame by frame: 720, 1080 or 1440 lines.", takes: ["height"], status: "verified", gpu: 10 },
   { id: "sound", kind: "engine", name: "Sound", family: "finish", about: "LTX-2.5 writes the clip's sound from what it sees and your words: footsteps, rain, a jar set down. The IC-LoRAs leave a clip silent; this gives it its sound back.", takes: ["words"], prompt: "footsteps on cobbles, a market yard at dusk, distant chatter", status: "verified", gpu: 7 },
-  { id: "restyle", kind: "template", template: "video_wan_vace_14B_v2v", name: "Restyle", family: "effects", about: "Wan VACE redraws the clip in another look while it keeps the motion: anime, clay, noir, an oil painting.", takes: ["words"], prompt: "a claymation stop-motion film, hand-made clay figures, miniature set", status: "untested", gpu: 30 },
+  { id: "restyle", kind: "template", template: "video_wan_vace_14B_v2v", name: "Restyle", family: "effects", about: "Wan VACE redraws the clip in another look while it keeps the motion: anime, clay, noir, an oil painting.", takes: ["words"], prompt: "a claymation stop-motion film, hand-made clay figures, miniature set", status: "failed", note: "A real run on the dance gave the scene back nearly as it was, squared to 720: the template's own strength keeps the picture, and the runner's form does not reach the setting that would change it.", gpu: 30 },
   { id: "slowmo", kind: "template", template: "utility_video_frame_interpolation", name: "Slow motion", family: "finish", about: "Frames drawn in between the clip's own: it slows down smoothly, twice as long.", takes: [], status: "untested", gpu: 4 },
 ];
 
@@ -203,12 +203,12 @@ export function createSpice(deps: Deps) {
       return keepClip(bytes);
     };
     const strength = input.strength === undefined || input.strength === null ? undefined : num(input.strength, 0, 2.5, ic.strength);
-    const prompt = promptOf(ic, { scene: text(input.scene, 400), words }, suite.scene);
+    const prompt = promptOf(ic, { scene: text(input.scene, 400), words }, suite.scene || "the footage");
     return deps.engine.videoJob("iclora", file, { prompt, frames, seed, ic: { tool: ic, size, strength } }, keep);
   }
 
   /** A template of the catalog on the clip, through the runner: its clip slot and its prompt slot filled, the rest the template's own. */
-  async function runTemplate(tool: Tool, clip: { file: string }, words: string) {
+  async function runTemplate(tool: Tool, clip: { file: string; where: string }, words: string) {
     const t = deps.templates;
     if (!t) throw bad("The template runner is not on this server.", 501);
     const form = await t.schemaOf(tool.template);
@@ -218,6 +218,13 @@ export function createSpice(deps: Deps) {
     const prompt = slots.find((s) => s.kind === "text" && s.id === "prompt") ?? slots.find((s) => s.kind === "text" && !/negative/i.test(`${s.id}${s.label}`));
     const inputs: Record<string, unknown> = { [video.id]: clip.file };
     if (words && prompt) inputs[prompt.id] = words;
+    // a template that asks for a picture beside the clip (a reference for the look) is given the clip's first frame
+    for (const s of slots) {
+      if (s.kind !== "image" || !s.required) continue;
+      const { stdout } = await deps.exec("ffmpeg", ["-nostdin", "-v", "error", "-i", clip.where, "-frames:v", "1", "-f", "image2pipe", "-c:v", "png", "-"], { encoding: "buffer", maxBuffer: 64 << 20 });
+      const still = await deps.engine.storeImage(stdout as Buffer, `${tool.name} · first frame`);
+      inputs[s.id] = still.file;
+    }
     const job = await t.run(tool.template, { inputs, confirm: true });
     return { id: job.id, status: job.status, progress: job.progress, template: true, credits: job.credits ?? null };
   }
