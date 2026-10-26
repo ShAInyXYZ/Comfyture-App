@@ -42,7 +42,7 @@ import { createToaster3d } from "./toaster-3d.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
 import { seedExamples, placeMedia, placeThumb, placedName, revOf, type ExampleKind, type Kept } from "./examples.ts";
 import { createTarget, cleanUrl, unreachable, targetOf, CLOUD_URL, LOCAL_URL, type Target } from "./target.ts";
-import { judging, refused, createPace, visitorOf, asVisitor, keepLedger, leftFor } from "./judge.ts";
+import { judging, refused, createPace, visitorOf, visitorCookie, asVisitor, keepLedger, leftFor } from "./judge.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT ?? 5177);
@@ -1208,7 +1208,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (judging() && path.startsWith("/api/")) {
     const why = refused(method, path);
     if (why) return json(res, 403, { error: why });
-    if (method !== "GET" && method !== "HEAD" && !pace.take(visitorOf(req.socket.remoteAddress, req.headers["x-forwarded-for"]))) {
+    if (method !== "GET" && method !== "HEAD" && !pace.take(visitorOf(req.socket.remoteAddress, req.headers["x-forwarded-for"], req.headers.cookie))) {
       res.setHeader("Retry-After", "60");
       return json(res, 429, { error: "A moment, please: this copy takes a few requests at a time from each visitor." });
     }
@@ -1220,7 +1220,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/account" && method === "GET") {
     const status = await account.status(url.searchParams.has("refresh"));
     // (a judges' copy says what this visitor has left today)
-    return json(res, 200, judging() ? { ...status, judge: leftFor(visitorOf(req.socket.remoteAddress, req.headers["x-forwarded-for"])) } : status);
+    return json(res, 200, judging() ? { ...status, judge: leftFor(visitorOf(req.socket.remoteAddress, req.headers["x-forwarded-for"], req.headers.cookie)) } : status);
   }
   if (path === "/api/account/key" && method === "POST") {
     const saved = await account.saveKey((await jsonBody(req)).key);
@@ -2538,7 +2538,10 @@ for (const f of (await readdir(join(root, "samples")).catch(() => [] as string[]
 }
 
 createServer((req, res) => {
-  asVisitor(visitorOf(req.socket.remoteAddress, req.headers["x-forwarded-for"]), () => route(req, res)).catch((failed) => {
+  // (a judges' copy gives each browser a cookie of its own, so judges behind one address are visitors apart)
+  const cookie = visitorCookie(req.headers.cookie);
+  if (cookie) res.setHeader("Set-Cookie", cookie);
+  asVisitor(visitorOf(req.socket.remoteAddress, req.headers["x-forwarded-for"], req.headers.cookie), () => route(req, res)).catch((failed) => {
     // a request that reached nothing says what to start, or where to go instead
     const error = unreachable(failed, target) ?? failed;
     const status = (error as { status?: number }).status ?? 400;

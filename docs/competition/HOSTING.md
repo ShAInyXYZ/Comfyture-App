@@ -38,7 +38,8 @@ RunPod (a partner) is worth one afternoon to film the "your own GPU" beat, not f
   the template runner, the partners' pictures, clips and words), against the visitor who started it, and refuses it past
   `COMFYTURE_JUDGE_RUNS` renders a visitor a day (12), `COMFYTURE_JUDGE_RUNS_DAY` for everyone (80) and `COMFYTURE_JUDGE_WORDS`
   answers a visitor a day (80); the account window says what is left. Tested in `tests/judge.test.ts`. Behind it, the separate key's
-  small balance is the last cap. Not yet: a cap in credits rather than in runs, and the per-visitor cookie (a visitor is an address).
+  small balance is the last cap. A visitor is a browser (a cookie the copy gives it) behind its address, and an address has a cap of its own (since 26 Oct), so judges
+  behind one office's address do not share one allowance. Not yet: a cap in credits rather than in runs.
 - `COMFYTURE_OPEN_WEIGHTS` makes the server refuse partner templates (`server/comfy-templates.ts`, tested); Spice and Utensils do not
   hide them yet (pressing one says why it is refused).
 - `scripts/demo-site.ts` reads `COMFYTURE_DATA`, so it can be built from a clean folder the server has seeded with the examples
@@ -78,6 +79,7 @@ RunPod (a partner) is worth one afternoon to film the "your own GPU" beat, not f
    COMFYTURE_JUDGE=1                  # the caps below
    COMFYTURE_JUDGE_RUNS=8             # renders a visitor may start in a day (default 12)
    COMFYTURE_JUDGE_RUNS_DAY=40        # renders in a day, all visitors (default 80)
+   COMFYTURE_JUDGE_RUNS_ADDRESS=24    # renders in a day from one address, whoever is behind it (default 3 visitors' worth)
    COMFYTURE_JUDGE_WORDS=60           # pet and writer answers a visitor may get in a day (default 80)
    COMFYTURE_DATA=/var/lib/comfyture/data
    HOST=127.0.0.1

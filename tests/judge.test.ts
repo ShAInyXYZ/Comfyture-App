@@ -1,7 +1,7 @@
 // A judges' copy (COMFYTURE_JUDGE, server/judge.ts) keeps its key, where it renders and everything in it, and paces each visitor.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { judging, refused, createPace, visitorOf } from "../server/judge.ts";
+import { judging, refused, createPace, visitorOf, visitorCookie } from "../server/judge.ts";
 
 const on = { COMFYTURE_JUDGE: "1" } as NodeJS.ProcessEnv;
 const off = {} as NodeJS.ProcessEnv;
@@ -69,4 +69,32 @@ test("the spend gate: a visitor's renders and words a day, every visitor's rende
   keepLedger(data);
   assert.deepEqual(leftFor("bob", env, at), { renders: 0, words: 0 }, "a restart gives nothing back");
   assert.deepEqual(leftFor("bob", env, at + 86_400_000), { renders: 2, words: 1 }, "a new day starts again");
+});
+
+test("judges behind one address are visitors apart by their browser's cookie, and the address keeps a cap of its own", async (t) => {
+  const { mkdtemp, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { spend, asVisitor, keepLedger, leftFor } = await import("../server/judge.ts");
+  const env = { COMFYTURE_JUDGE: "1", COMFYTURE_JUDGE_RUNS: "2", COMFYTURE_JUDGE_RUNS_DAY: "50", COMFYTURE_JUDGE_RUNS_ADDRESS: "3" } as NodeJS.ProcessEnv;
+  // a browser with no cookie is given one on a judges' copy, and only there; one that has it keeps it
+  const given = visitorCookie(undefined, env);
+  assert.match(given!, /^comfyture_visitor=[a-f0-9]{16}; Path=\/; Max-Age=\d+; HttpOnly; SameSite=Lax$/);
+  assert.equal(visitorCookie("comfyture_visitor=0123456789abcdef", env), null);
+  assert.equal(visitorCookie(undefined, {} as NodeJS.ProcessEnv), null, "not a judges' copy: no cookie");
+  const ann = visitorOf("203.0.113.9", undefined, "theme=dark; comfyture_visitor=aaaaaaaaaaaaaaaa");
+  const bob = visitorOf("203.0.113.9", undefined, "comfyture_visitor=bbbbbbbbbbbbbbbb");
+  assert.equal(ann, "203.0.113.9~aaaaaaaaaaaaaaaa");
+  assert.notEqual(ann, bob, "two browsers behind one address are two visitors");
+  assert.equal(visitorOf("203.0.113.9", undefined, "comfyture_visitor=../../x"), "203.0.113.9", "a cookie that is not ours is the address alone");
+  const data = await mkdtemp(join(tmpdir(), "judge-"));
+  t.after(() => rm(data, { recursive: true, force: true }));
+  const at = Date.parse("2026-10-29T10:00:00Z");
+  keepLedger(data);
+  asVisitor(ann, () => (spend("render", env, at), spend("render", env, at)));
+  assert.throws(() => asVisitor(ann, () => spend("render", env, at)), /2 renders for this visitor/);
+  asVisitor(bob, () => spend("render", env, at));
+  assert.equal(leftFor(bob, env, at).renders, 0, "the address has used its 3: bob has none left though his own 2 are not spent");
+  assert.throws(() => asVisitor(visitorOf("203.0.113.9", undefined, "comfyture_visitor=cccccccccccccccc"), () => spend("render", env, at)), (e: any) => e.status === 429 && /3 renders from this address/.test(e.message), "a new cookie is no new allowance");
+  assert.doesNotThrow(() => asVisitor(visitorOf("198.51.100.4", undefined), () => spend("render", env, at)), "another address is not held");
 });

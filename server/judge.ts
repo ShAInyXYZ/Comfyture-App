@@ -5,6 +5,7 @@
 // capped per visitor and per day. Behind it all, the host's key holds a small budget.
 
 import { AsyncLocalStorage } from "node:async_hooks";
+import { randomBytes } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -55,10 +56,20 @@ export function createPace({ limit = 240, windowMs = 10 * 60_000, now = () => Da
 }
 
 /** Who a request comes from: its address, or the first one named by a reverse proxy on this machine. */
-export function visitorOf(remote: string | undefined, forwarded: string | string[] | undefined): string {
+export function visitorOf(remote: string | undefined, forwarded: string | string[] | undefined, cookie?: string): string {
   const local = !remote || remote === "127.0.0.1" || remote === "::1" || remote === "::ffff:127.0.0.1";
   const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(",")[0]?.trim();
-  return local && first ? first : remote ?? "unknown";
+  const address = local && first ? first : remote ?? "unknown";
+  // (judges behind one office's address are each a visitor of their own by the browser's cookie: the address still has a cap, addressCap)
+  const id = new RegExp(`(?:^|;\\s*)${COOKIE}=([a-f0-9]{16})(?:;|$)`).exec(cookie ?? "")?.[1];
+  return id ? `${address}~${id}` : address;
+}
+
+const COOKIE = "comfyture_visitor";
+/** On a judges' copy, the cookie a browser that has none is given, so it is a visitor of its own; null when it has one, or off. */
+export function visitorCookie(cookie: string | undefined, env: NodeJS.ProcessEnv = process.env): string | null {
+  if (!judging(env) || new RegExp(`(?:^|;\\s*)${COOKIE}=[a-f0-9]{16}(?:;|$)`).test(cookie ?? "")) return null;
+  return `${COOKIE}=${randomBytes(8).toString("hex")}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax`;
 }
 
 // ---------------------------------------------------------------- the spend gate
@@ -71,11 +82,17 @@ const visitors = new AsyncLocalStorage<string>();
 /** Runs `fn` as one visitor's: what it spends, even later in a job it started, is counted as theirs. */
 export const asVisitor = <T>(visitor: string, fn: () => T): T => visitors.run(visitor, fn);
 
-/** The caps, from the environment: renders per visitor a day, renders for every visitor a day, words per visitor a day. */
+/**
+ * The caps, from the environment: renders per visitor a day, renders for every visitor a day, words per visitor a day, and renders a day
+ * for one address, whoever is behind it (three visitors' worth unless said: a cookie cleared does not make a new allowance).
+ */
 export function capsOf(env: NodeJS.ProcessEnv = process.env) {
   const n = (v: string | undefined, d: number) => (Number.isFinite(Number(v)) && Number(v) >= 0 && v?.trim() ? Math.floor(Number(v)) : d);
-  return { renders: n(env.COMFYTURE_JUDGE_RUNS, 12), day: n(env.COMFYTURE_JUDGE_RUNS_DAY, 80), words: n(env.COMFYTURE_JUDGE_WORDS, 80) };
+  const renders = n(env.COMFYTURE_JUDGE_RUNS, 12);
+  return { renders, day: n(env.COMFYTURE_JUDGE_RUNS_DAY, 80), words: n(env.COMFYTURE_JUDGE_WORDS, 80), address: n(env.COMFYTURE_JUDGE_RUNS_ADDRESS, renders * 3) };
 }
+/** The address part of a visitor ("203.0.113.9~ab12…" → "203.0.113.9"), the key its address cap is counted under. */
+const addressOf = (visitor: string) => `@${visitor.split("~")[0]}`;
 
 interface Ledger {
   day: string;
@@ -129,6 +146,10 @@ export function spend(kind: Spend, env: NodeJS.ProcessEnv = process.env, now = D
   if (kind === "render" && b.all.render >= caps.day) {
     throw Object.assign(new Error(`The judges' copy has made today's ${caps.day} renders: the examples and the tours stay free, and it opens again tomorrow.`), { status: 429 });
   }
+  if (kind === "render" && (b.render[addressOf(who)] ?? 0) >= caps.address) {
+    throw Object.assign(new Error(`That is today's ${caps.address} renders from this address on the judges' copy: the examples and the tours stay free, and it opens again tomorrow.`), { status: 429 });
+  }
+  if (kind === "render") b.render[addressOf(who)] = (b.render[addressOf(who)] ?? 0) + 1;
   b[kind][who] = mine + 1;
   b.all[kind] += 1;
   save();
@@ -138,5 +159,5 @@ export function spend(kind: Spend, env: NodeJS.ProcessEnv = process.env, now = D
 export function leftFor(visitor: string, env: NodeJS.ProcessEnv = process.env, now = Date.now()) {
   const caps = capsOf(env);
   const b = ledger(now);
-  return { renders: Math.max(0, Math.min(caps.renders - (b.render[visitor] ?? 0), caps.day - b.all.render)), words: Math.max(0, caps.words - (b.words[visitor] ?? 0)) };
+  return { renders: Math.max(0, Math.min(caps.renders - (b.render[visitor] ?? 0), caps.day - b.all.render, caps.address - (b.render[addressOf(visitor)] ?? 0))), words: Math.max(0, caps.words - (b.words[visitor] ?? 0)) };
 }
