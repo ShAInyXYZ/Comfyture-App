@@ -37,7 +37,7 @@ import { chat as toasterChat, askToaster, addToasterPictures, tagHooks } from ".
 import { projectBar, drawProjectBar } from "./toaster-projects.js";
 import {
   gen, sheetOf, sheetRun, modelOf, modelRun, stateOf, objectsNow, sheetModel, setSheetModel, setSolid, loadTarget, loadCloudPrice, route, modelPrice, sheetPrice, costOf,
-  isArmed as askedFor, arm as askFor, disarm as askNot, makeObject, makeThem, stopQueue, forgetObject, makeSheet, makeModel, useFile,
+  isArmed as askedFor, arm as askFor, disarm as askNot, makeObject, makeThem, stopQueue, forgetObject, makeSheet, makeModel, useFile, sceneView, setSceneView,
 } from "../toaster-3d.js";
 import { wants3d, tiltOf } from "../toaster-model.js";
 
@@ -1360,16 +1360,18 @@ function drawNewScene3d() {
   }
   const made = objectsNow().filter((p) => modelOf(p.id)).length;
   const total = objectsNow().length;
-  const say = h("p.ts-meta", {}, made ? `${made} of ${total} objects are real 3D; the rest stays clay` : "Each model stands here where its clay was");
+  const say = h("p.ts-meta", {}, sceneView() === "blockout" ? `The clay blockout: ${total} objects as placeholders${made ? `. Press Assets to see the ${made} that are made` : ""}` : made ? `${made} of ${total} objects are real 3D; the rest stays clay` : "Each model stands here where its clay was");
   shell.newScene.replaceChildren(
     head("New scene", b.models,
+      h("div.ts-seg", { role: "group", "aria-label": "What the scene shows" }, ...[["blockout", "Blockout", "The clay blockout: every object as the placeholder it was drawn from"], ["assets", "Assets", "The 3D assets that are made, standing where their clay was (the rest stays clay)"]].map(([id, label, about]) =>
+        h("button", { type: "button", "aria-pressed": String(sceneView() === id), title: about, on: { click: () => setSceneView(id) } }, label))),
       ...[["persp", "view-persp", "Three-quarter view"], ["front", "view-front", "From the front"], ["right", "view-side", "From the side"], ["top", "view-top", "From above"]].map(([side, glyph, label]) =>
         keyIcon(sprite(glyph), `${label}: the way to see how each object stands`, () => scene3d?.handle?.view(side), { small: true })),
       keyIcon(icon("download"), "Download the scene as one GLB", () => downloadScene(), { disabled: !made, small: true }),
       keyIcon(sprite("model-import"), "Put every model on the Stage, as props", () => putAllOnStage(), { disabled: !made, small: true })),
     scene3d.el, say);
   const focusId = toaster.selected.length === 1 ? toaster.selected[0] : null;
-  scene3d.handle?.update(partsNow(), (id) => modelOf(id)?.url).then(() => {
+  scene3d.handle?.update(partsNow(), (id) => modelOf(id)?.url, sceneView()).then(() => {
     // (the selected object is brought close once, as it is picked; "Frame" keys go back out)
     if (focusId !== scene3d?.focused) (scene3d.focused = focusId), focusId && scene3d.handle?.focus(focusId);
   });

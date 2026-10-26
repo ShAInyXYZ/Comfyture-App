@@ -489,6 +489,13 @@ try {
   ok(await page.locator(".ts-scene3d canvas").isVisible(), "the new scene is drawn");
   await until(() => document.querySelector(".ts-newscene .ts-meta")?.textContent.includes("5 of 5"), null, 20000);
   ok(/5 of 5 objects are real 3D/.test(await page.locator(".ts-newscene .ts-meta").innerText()), "the new scene says its objects are real 3D", await page.locator(".ts-newscene .ts-meta").innerText());
+  // the scene shows the assets that are made, or the clay blockout they stand for
+  await page.locator('.ts-seg button', { hasText: "Blockout" }).click();
+  await until(() => /clay blockout/.test(document.querySelector(".ts-newscene .ts-meta")?.textContent ?? ""), null, 5000);
+  ok(/The clay blockout: 5 objects as placeholders/.test(await page.locator(".ts-newscene .ts-meta").innerText()) && (await page.locator('.ts-seg button[aria-pressed="true"]').innerText()).toLowerCase() === "blockout", "Blockout shows the placeholders of the clay", await page.locator(".ts-newscene .ts-meta").innerText());
+  await page.locator('.ts-seg button', { hasText: "Assets" }).click();
+  await until(() => /real 3D/.test(document.querySelector(".ts-newscene .ts-meta")?.textContent ?? ""), null, 5000);
+  ok(/5 of 5 objects are real 3D/.test(await page.locator(".ts-newscene .ts-meta").innerText()), "and Assets the models that are made");
   await page.locator('.ts-newscene [aria-label="Put every model on the Stage, as props"]').click();
   await page.waitForTimeout(2500);
   const models = await (await fetch(`${base}/api/control/models`)).json();

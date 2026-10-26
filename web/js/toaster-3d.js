@@ -31,7 +31,15 @@ export const gen = {
   armed: null,
   /** the sheet of one object shown beside its clay: "clay" | "sheet" */
   look: "sheet",
+  /** what the new scene shows: "assets" (the models made, clay for the rest) | "blockout" (all clay); null: the assets once there is one */
+  sceneView: null,
 };
+/** What the new scene shows now: the person's pick, else the assets as soon as one is made, else the blockout. */
+export const sceneView = () => gen.sceneView ?? (body()?.models.some((m) => m.part && m.status === "done") ? "assets" : "blockout");
+export function setSceneView(v) {
+  gen.sceneView = v === "blockout" ? "blockout" : "assets";
+  changed("toaster-runs");
+}
 
 const call = async (path, options) => {
   const res = await fetch(path, options);

@@ -8,6 +8,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { isRoom } from "./toaster-model.js";
+import { geometryOf } from "./toaster-shapes.js";
 
 const DEG = Math.PI / 180;
 
@@ -71,10 +72,14 @@ export function mountScene(el) {
   const placed = new Map(); // part id → { group, key }
   let framed = false;
 
-  // what is not made yet stands as clay: the room (a floor, walls) very faint, the objects a little see-through
-  const stand = (part) => {
+  // what is not made yet stands as clay: the shapes as they are, a library piece or a character as a box of its size. In the blockout view
+  // everything is clay, solid; with the assets in, what is not made yet is a little see-through and the room very faint.
+  const stand = (part, solid) => {
     const room = isRoom(part);
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...part.size), new THREE.MeshStandardMaterial({ color: part.color, roughness: 0.7, transparent: true, opacity: room ? 0.1 : 0.5, depthWrite: !room && false }));
+    const geometry = part.shape === "asset" || part.shape === "character" ? new THREE.BoxGeometry(...part.size) : geometryOf(part);
+    const opacity = solid ? (room ? 0.35 : 1) : room ? 0.1 : 0.5;
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: part.color, roughness: 0.62, transparent: opacity < 1, opacity, depthWrite: opacity >= 1 }));
+    mesh.castShadow = mesh.receiveShadow = solid && !room;
     mesh.userData.clay = true;
     mesh.userData.room = room;
     return mesh;
@@ -119,13 +124,13 @@ export function mountScene(el) {
   };
 
   return {
-    /** `parts` (visible ones are drawn) and `modelOf(id)`: the url of a done model, or falsy. Models are loaded as they are first needed. */
-    async update(parts, modelOf) {
+    /** `parts` (visible ones are drawn), `modelOf(id)` (the url of a done model, or falsy; loaded as first needed) and `view`: "assets" or "blockout" (all clay). */
+    async update(parts, modelOf, view = "assets") {
       const seen = new Set();
       await Promise.all(parts.filter((p) => !p.hidden).map(async (p) => {
         seen.add(p.id);
-        const url = modelOf(p.id) || null;
-        const key = `${url}|${p.size}`;
+        const url = view === "assets" ? modelOf(p.id) || null : null;
+        const key = `${url}|${p.size}|${p.shape}|${p.color}|${view}`;
         let entry = placed.get(p.id);
         if (!entry) {
           entry = { group: new THREE.Group(), key: null };
@@ -138,9 +143,9 @@ export function mountScene(el) {
           entry.key = key;
           entry.group.clear();
           try {
-            entry.group.add(url ? fit(await load(url), p.size) : stand(p));
+            entry.group.add(url ? fit(await load(url), p.size) : stand(p, view === "blockout"));
           } catch {
-            entry.group.add(stand(p));
+            entry.group.add(stand(p, view === "blockout"));
           }
         }
       }));
