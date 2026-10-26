@@ -152,8 +152,31 @@ const keep = async (id, shot) => {
 };
 const saver = keyedSaver(500, keep);
 export const flushShots = () => saver.flush();
+let looking = 0;
 export function save(shot = spice.shot) {
-  if (shot) saver.save(shot.id, shot);
+  if (shot && !looking) saver.save(shot.id, shot);
+}
+
+/**
+ * A look at a change (the tour's "Show me"): fn changes the open shot, the page shows it, and nothing is kept; when fn ends the passes are
+ * as they were, the same objects, and the shot was not sent to the server (an example shipped with the app stays as it was shipped).
+ */
+export async function look(fn) {
+  const shot = spice.shot;
+  if (!shot) return;
+  await flushShots();
+  const was = { ...shot.body.passes };
+  const depth = shot.body.depth;
+  looking++;
+  try {
+    await fn();
+  } finally {
+    looking--;
+    for (const k of Object.keys(shot.body.passes)) delete shot.body.passes[k];
+    Object.assign(shot.body.passes, was);
+    shot.body.depth = depth;
+    update();
+  }
 }
 
 export async function removeShot(id) {

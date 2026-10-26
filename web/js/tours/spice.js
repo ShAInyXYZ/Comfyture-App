@@ -1,6 +1,6 @@
 // Spice's tour: Paprika shows a newcomer around, on one of the example shots Spice ships (examples/spice/), up the comp stack from the
 // footage to the finish. Roto's cut-out, which costs credits on Comfy Cloud, is played for free: the example's own matte is what it shows.
-import { spice, loadShots, openShot, setDept } from "../spice.js";
+import { spice, loadShots, openShot, setDept, look } from "../spice.js";
 import { simulate } from "../tour.js";
 
 /**
@@ -81,15 +81,15 @@ export default {
   steps: [
     {
       go: open("plate"),
-      title: "One shot, six departments",
-      text: "Hi, I'm **Paprika**. Spice is my VFX house: a shot goes through six departments, and each one lays its pass on top of the last, so nothing is ever overwritten. We'll look at one of my examples: nothing is spent.",
+      title: "One shot, seven departments",
+      text: "Hi, I'm **Paprika**. Spice is my VFX house: a shot goes through seven departments, and each one lays its pass on top of the last, so nothing is ever overwritten. We'll look at one of my examples: nothing is spent.",
     },
     {
       go: open("plate"),
       target: ".sp-stack",
       place: "right",
       title: "The comp stack",
-      text: "The six departments, stacked like the layers of a comp: the footage at the foot, the finish on top. A green lamp is a pass made; the **eye** shows it in the viewer or hides it. Click a row to open its department.",
+      text: "The seven departments, stacked like the layers of a comp: the footage at the foot, the finish on top. A green lamp is a pass made; the **eye** shows it in the viewer or hides it. Click a row to open its department.",
     },
     {
       go: open("plate"),
@@ -131,6 +131,30 @@ export default {
       place: "left",
       title: "Paint: what is in the way",
       text: "Paint takes out what should not be there: an **Object** you name, a **Spot** you brush over on the viewer (free, on this machine), a **Logo** or the **Subtitles**. What is removed shows on the right of the wipe.",
+    },
+    {
+      go: open("gen"),
+      target: ".sp-dept.is-gen .sp-b-gtools",
+      place: "top",
+      title: "Gen: every IC-LoRA there is",
+      text: "Comfy Cloud has dozens of **IC-LoRAs** for LTX: each draws the clip again **from itself**. Restore it, regrade it, turn day to night, take people out, widen the frame, move the camera, redraw it under its pose. Each tool is here, with the words its model card gives. A **dot** says whether a real run of it looked right.",
+    },
+    {
+      go: open("gen"),
+      target: ".sp-dept.is-gen .sp-b-gtakes",
+      place: "left",
+      title: "What each tool made",
+      text: "These takes are **real runs on this clip**, kept with the example. Press **Use** to put one back as the pass and drag the wipe: the restoring tools show against the damaged copy they were given. A run costs a few credits at draft size, and the key asks first.",
+      show: {
+        label: "Look at one",
+        // (a look: the take is the pass while the wipe sweeps, then the example is as it was shipped, and nothing was saved)
+        run: () =>
+          look(async () => {
+            document.querySelector(".sp-dept.is-gen .sp-gen-take:not(.is-on) .sp-iconkey")?.click();
+            await settle();
+            await sweep();
+          }),
+      },
     },
     {
       go: open("light"),
