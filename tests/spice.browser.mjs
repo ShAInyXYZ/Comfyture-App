@@ -113,11 +113,11 @@ try {
   // ---- the window that adds a shot
   await page.locator(".sp-add").click();
   await settle(800);
-  ok((await page.locator(".sp-win").count()) === 1 && /first frame/i.test(await page.locator(".sp-win").innerText()), "Add a shot opens the window: a first frame, the words, the seconds, the key");
+  ok(!(await page.locator(".sp-winhost").isHidden()) && /first frame/i.test(await page.locator(".sp-win").innerText()), "Add a shot opens the window: a first frame, the words, the seconds, the key");
   ok(await page.locator('.sp-win .sp-primary[data-key="spice:roll"]').isDisabled(), "with no frame and no words the roll key is out");
   await page.keyboard.press("Escape");
   await settle();
-  ok((await page.locator(".sp-win").count()) === 0, "Escape closes it");
+  ok(await page.locator(".sp-winhost").isHidden(), "Escape closes it");
 
   // ---- the tour: every step, nothing paid, nothing saved
   await page.locator("#tour-key").click();
@@ -142,7 +142,7 @@ try {
   await page.keyboard.press("Escape");
   await settle(800);
   ok(asked.length === 1, "the tour sent nothing that spends");
-  ok(puts.length === 0, "opening Spice and the tour saved nothing", puts.join(","));
+  ok(puts.length === 0, "opening Spice, looking around and the tour saved nothing", puts.join(","));
   ok((await stored()) === shipped, "the shipped example is byte for byte as it was");
   ok(errors.length === 0, "no errors on the page", errors.join(" | "));
 } finally {

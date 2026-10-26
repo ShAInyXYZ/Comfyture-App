@@ -17,7 +17,8 @@
 /* ---- the tool picked ------------------------------------------------------------------------------------ */
 .sp-tool, .sp-tools, .sp-bin { display: flex; flex: 1 1 0; flex-direction: column; gap: .625rem; min-height: 0; overflow: hidden auto; scrollbar-width: thin; }
 .sp-tool .sp-words { min-height: 2.75rem; }
-.sp-tool-key { display: grid; gap: .5rem; margin-top: auto; }
+.sp-tool-key { display: grid; gap: .5rem; min-width: 0; margin-top: auto; }
+.sp-tool-key > * { min-width: 0; }
 .sp-tool-name { display: flex; align-items: center; gap: .5rem; min-width: 0; }
 .sp-tool-name b { font: 700 1.0625rem/1.15 var(--font-sans); }
 .sp-tool-name em { color: var(--dim); font: 500 .6875rem/1 var(--font-mono); font-style: normal; letter-spacing: .08em; text-transform: uppercase; }

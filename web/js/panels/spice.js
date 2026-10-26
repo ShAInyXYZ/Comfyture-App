@@ -142,6 +142,27 @@ function shotWin() {
 }
 defineWindow("shot", { eyebrow: "A new shot", title: () => (spice.roll.frame ? "Roll it" : "Add a shot"), size: "l", make: shotWin });
 
+/** The open shot's own window: its name, what it is about, what it was rolled from, its end. */
+function shotInfoWin() {
+  const el = h("div.sp-w.is-shotinfo");
+  function update() {
+    const s = shot();
+    if (!s) return void fill(el, h("p.sp-hint", {}, "No shot is open."));
+    if (el.contains(document.activeElement) && document.activeElement.matches("input, textarea")) return false;
+    fill(el,
+      h("input.field.sp-text", { value: s.name, "aria-label": "The shot's name", placeholder: "SH010 · The yard", on: { input: (e) => renameShot(s.id, e.target.value) } }),
+      h("textarea.ut-words.sp-words", { rows: 2, value: s.about, "aria-label": "What the shot is about", placeholder: "One line on what happens in it", on: { change: (e) => void (s.about = e.target.value.slice(0, 300), changed("spice")) } }),
+      s.made?.words ? h("div.sp-field", {}, h("span.ut-label", {}, `Rolled by LTX-2.5, ${s.made.seconds} s`), h("p.sp-hint", {}, s.made.words)) : null,
+      h("div.sp-stats", {}, stat(s.passes.length, s.passes.length === 1 ? "pass" : "passes"), stat(s.bin.length, s.bin.length === 1 ? "take in the bin" : "takes in the bin"), stat(s.plate ? `${s.plate.width}×${s.plate.height}` : "–", "plate")),
+      h("div.sp-w-foot", {},
+        h("span.spacer"),
+        danger({ id: `shot:${s.id}`, label: "Delete this shot", again: "Click again to delete it", run: () => (closeWin(), removeShot(s.id)) })),
+      h("p.sp-hint", {}, "A shot keeps its plate and every pass made on it. Deleting it leaves the clips in your library."));
+  }
+  return { el, update, sig: () => JSON.stringify([shot()?.id, shot()?.name, shot()?.about, shot()?.passes.length, shot()?.bin.length]) };
+}
+defineWindow("shotinfo", { eyebrow: "Shot", title: () => shot()?.name ?? "The shot", size: "s", make: shotInfoWin });
+
 function drawSide() {
   const sc = spice.scenario;
   const b = sc.body;
@@ -166,7 +187,9 @@ function drawSide() {
         h("button.sp-shot-main", { type: "button", "aria-pressed": String(on), title: s.about || s.name, on: { click: () => openShot(s.id) } },
           thumb(outputOf(s)),
           h("span.sp-shot-text", {}, h("b", {}, s.name), h("span", {}, w ? w.label : s.plate ? `${n} ${n === 1 ? "pass" : "passes"}` : "No plate yet")),
-          h("span.sp-lamp", { dataset: { tone: w ? "busy" : n ? "done" : "" }, title: w ? `Working: ${w.label}` : n ? `${n} passes` : "Nothing yet" })));
+          h("span.sp-lamp", { dataset: { tone: w ? "busy" : n ? "done" : "" }, title: w ? `Working: ${w.label}` : n ? `${n} passes` : "Nothing yet" })),
+        // the open shot's own window: its name, what it is about, its end
+        on ? h("button.sp-shot-more", { type: "button", title: "This shot: its name, what it is about, delete it", "aria-label": `${s.name}: its settings`, on: { click: () => openWin("shotinfo") } }, icon("pencil")) : null);
     }),
     h("button.sp-add", { type: "button", title: "A new shot: rolled by LTX-2.5 from a first frame, or a clip brought in", on: { click: () => openWin("shot") } }, spicon("plus"), h("span", {}, "Add a shot"))),
     h("dl.sp-facts", {},

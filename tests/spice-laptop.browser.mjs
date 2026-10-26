@@ -46,12 +46,12 @@ try {
     const reach = async (sel) => page.locator(sel).first().evaluate((el) => {
       el.scrollIntoView({ block: "nearest", inline: "nearest" });
       const r = el.getBoundingClientRect();
-      if (r.width < 4 || r.height < 4 || r.bottom > innerHeight || r.top < 0 || r.right > innerWidth) return `off screen (${Math.round(r.top)}-${Math.round(r.bottom)} of ${innerHeight})`;
+      if (r.width < 4 || r.height < 4 || r.bottom > innerHeight || r.top < 0 || r.right > innerWidth) return `off screen (x ${Math.round(r.left)}-${Math.round(r.right)} of ${innerWidth}, y ${Math.round(r.top)}-${Math.round(r.bottom)} of ${innerHeight})`;
       const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
       return hit && (hit === el || el.contains(hit)) ? "" : `covered by ${hit?.className ?? hit?.tagName ?? "nothing"}`;
     });
     const results = {};
-    for (const [name, sel] of [["a shot", ".sp-shot-main"], ["Add a shot", ".sp-add"], ["the wipe", ".sp-wipe"], ["play", ".sp-iconkey.is-play"], ["the chain", ".sp-chain .sp-link-main"], ["the tool's key", ".sp-tool-key .sp-primary"], ["the shelf", ".sp-tchip"], ["the bin", ".sp-b-bin"], ["Paprika's bar", "#spice-chat textarea"]]) results[name] = await reach(sel);
+    for (const [name, sel] of [["a shot", ".sp-shot-main"], ["Add a shot", ".sp-add"], ["the wipe", ".sp-wipe i"], ["play", ".sp-iconkey.is-play"], ["the chain", ".sp-chain .sp-link-main"], ["the tool's key", ".sp-tool-key .sp-primary"], ["the shelf", ".sp-tchip"], ["the bin", ".sp-b-bin"], ["Paprika's bar", "#spice-chat .chat-bar"]]) results[name] = await reach(sel);
     const wide = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
     const bad = Object.entries(results).filter(([, v]) => v);
     ok(!wide && !bad.length && !errors.length, `${width}x${height}: everything on screen and reachable`, [wide ? "sideways scroll" : "", ...bad.map(([k, v]) => `${k} ${v}`), ...errors].filter(Boolean).join("; "));
