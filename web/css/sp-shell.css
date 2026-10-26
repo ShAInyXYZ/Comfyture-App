@@ -123,3 +123,14 @@
   .sp-side, .sp-bento, .sp-layer, .sp-primary, .sp-thumb, .sp-win, .sp-facts { corner-shape: squircle; }
 }
 @media (prefers-reduced-motion: reduce) { .sp-lamp[data-tone="busy"], .sp-primary[data-armed="1"] { animation: none; } }
+
+/* a screen under 1000 high (a laptop's, or a window that is not the whole screen): Paprika's bar is one row, her quick keys beside it and her words on one
+   line, so the shot keeps the room (a viewer a stage can be looked at in, and the cards under it) instead of 164 px of the screen's foot */
+@media (max-height: 1000px) and (min-width: 1101px) {
+  .sp-chat .composer { display: flex; align-items: center; gap: .75rem; }
+  .sp-chat .pet-chips { flex: 0 1 auto; max-width: 48%; min-width: 0; margin: 0; }
+  .sp-chat .chat-bar { flex: 1 1 24rem; min-width: 22rem; }
+  .sp-chat .bar-main { grid-template-columns: minmax(0, 1fr) auto; align-items: center; align-self: center; }
+  .sp-chat .file-tray { grid-column: 1 / -1; }
+  .sp-chat .chat-input { min-height: 0; padding-top: 0; }
+}

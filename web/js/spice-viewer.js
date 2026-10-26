@@ -437,7 +437,8 @@ export function createViewer(on = {}) {
       return;
     }
     const bars = barsOf(body, c.dept);
-    fill(rows, ...STACK.map((d) => {
+    // (a row for each department that has worked on the shot, and the one open: with seven departments the empty ones would take the stage's room)
+    fill(rows, ...STACK.filter((d) => bars[d] || d === c.dept).map((d) => {
       const name = WORKSPACES.find((w) => w.id === d).name;
       const b = bars[d];
       return h(`div.sp-row${d === c.dept ? ".is-open" : ""}`, { dataset: { dept: d } },

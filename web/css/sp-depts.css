@@ -8,7 +8,8 @@
    both fit the area nothing changes; where they do not (a laptop), the area scrolls and no card is cut short of its last key. A card's
    body takes the card's room ("flex: 1 1 0"), which counts as nothing once the row is sized to what its cards hold: in the row of cards
    it is "1 1 auto" (a list keeps "1 1 0": it scrolls, it does not make the row taller). */
-.sp-dept { display: grid; grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr); grid-template-rows: minmax(23.25rem, 1fr) minmax(clamp(13.5rem, 27dvh, 19rem), auto); gap: var(--sp-gap); min-height: 100%; }
+/* the viewer's row has a height the stage can be looked at in on every screen (26 rem at least, 46% of the window up to 40): a screen too short for it and the cards under scrolls, nothing is squeezed to a thumbnail */
+.sp-dept { display: grid; grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr); grid-template-rows: minmax(clamp(26rem, 46dvh, 40rem), 1fr) minmax(clamp(13.5rem, 27dvh, 19rem), auto); gap: var(--sp-gap); min-height: 100%; }
 .sp-dept[hidden] { display: none; }
 .sp-dept > .sp-slot { grid-column: 1; grid-row: 1; display: grid; min-width: 0; min-height: 0; }
 .sp-dept > .sp-slot > .sp-viewer { min-height: 0; }

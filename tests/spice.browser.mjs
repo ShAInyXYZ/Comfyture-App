@@ -193,7 +193,8 @@ try {
   ok(facts.includes("1001 – 1120") && facts.includes("640 × 360 · 24 fps") && facts.includes("1 / 6"), "the facts say the frame range, the size and rate, the passes done", facts);
   ok(await page.locator(".sp-counter").innerText() === "1001", "the counter is on the first frame");
   ok((await js(() => document.querySelector(".sp-strip").style.backgroundImage)).includes("/media/edits/strips/"), "the timeline has the footage's frames");
-  ok((await page.locator(".sp-row").count()) === 6 && (await page.locator('.sp-row[data-dept="plate"] .sp-bar').count()) === 1, "one row for each department, and the plate's bar spans the footage");
+  // (a row for each department that has worked on the shot, and the one open: the empty ones would take the stage's room)
+  ok((await page.locator(".sp-row").count()) === 1 && (await page.locator('.sp-row[data-dept="plate"] .sp-bar').count()) === 1, "a row for the plate, the only department that has worked, and its bar spans the footage");
   await shot("1-plate");
 
   // ---- the transport and the wipe
