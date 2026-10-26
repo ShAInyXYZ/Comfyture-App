@@ -197,7 +197,7 @@ export function mountScene(el) {
     const box = objectsBox();
     if (box.isEmpty()) return;
     const sphere = box.getBoundingSphere(new THREE.Sphere());
-    const dist = (sphere.radius / Math.sin((camera.fov * DEG) / 2)) * 0.95;
+    const dist = (sphere.radius / Math.sin((camera.fov * DEG) / 2)) * 1.12;
     orbit.target.copy(sphere.center);
     camera.position.copy(sphere.center).add(new THREE.Vector3(...(SIDES[side] ?? SIDES.persp)).normalize().multiplyScalar(dist));
     camera.near = dist / 100;

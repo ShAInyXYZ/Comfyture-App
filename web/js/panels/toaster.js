@@ -1354,7 +1354,8 @@ function drawNewScene3d() {
   const b = body();
   if (!b || !shell) return;
   if (!scene3d) {
-    scene3d = { el: h("div.ts-scene3d", { title: "Drag to turn the scene" }), handle: null };
+    // (the object selected when the page opens is not zoomed to: the scene opens whole, and zooms only to what is picked after)
+    scene3d = { el: h("div.ts-scene3d", { title: "Drag to turn the scene" }), handle: null, focused: toaster.selected.length === 1 ? toaster.selected[0] : null };
     const mine = scene3d;
     import("../toaster-scene3d.js").then(({ mountScene }) => {
       if (scene3d !== mine) return;
