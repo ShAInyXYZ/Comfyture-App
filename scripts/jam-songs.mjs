@@ -1,6 +1,6 @@
 // Makes the songs Jam ships (examples/songs/<id>/song.json) on the owner's own ComfyUI with their AceStep1.5XL-Superior graph: the
 // app's song workflow (workflows/audio/song.json: ACE-Step 1.5 XL sft, three passes) with the jkass_quality sampler on every pass and
-// their AudioQualityEnhancer master between the decode and the save, as they saved it. Neither is on Comfy Cloud, which is why the
+// their AudioQualityEnhancer master between the decode and the save, at 0.75 as their OtiaFlow flow sets it (the saved graph says 0.5). Neither is on Comfy Cloud, which is why the
 // shipped songs are made here; it costs nothing.
 //
 //   node scripts/jam-songs.mjs [<id> ...] [--lora [--strength <0 to 1>]] [--write] [--raw <dir>]
@@ -43,7 +43,7 @@ function graphOf(spec) {
   Object.assign(g.text.inputs, { tags: lora ? `${lora.trigger}, ${s.tags}` : s.tags, lyrics: s.lyrics, seed: s.seed, duration: s.seconds, bpm: s.bpm, keyscale: s.key, language: s.language, timesignature: s.timesignature, temperature: 0.75, cfg_scale: 2.5, generate_audio_codes: true });
   g.latent.inputs.seconds = s.seconds;
   for (const [k, seed] of [["first", s.seed], ["second", s.seed + 1], ["third", s.seed + 2]]) Object.assign(g[k].inputs, { seed, sampler_name: "jkass_quality" });
-  g.enhance = { class_type: "AudioQualityEnhancer", inputs: { audio: ["decode", 0], enhancement_level: 0.5, use_source_separation: true, demucs_model: "htdemucs", device: "cuda", vocals_enhance: 0.65, drums_enhance: 0.5, bass_enhance: 0.45, other_enhance: 0.25, clarity: 0.6, dynamics: 0.4, warmth: 0.25, air: 0.3, dolby_effect: 0, simple_mode: "Standard", apply_limiter: true } };
+  g.enhance = { class_type: "AudioQualityEnhancer", inputs: { audio: ["decode", 0], enhancement_level: 0.75, use_source_separation: true, demucs_model: "htdemucs", device: "cuda", vocals_enhance: 0.65, drums_enhance: 0.5, bass_enhance: 0.45, other_enhance: 0.25, clarity: 0.6, dynamics: 0.4, warmth: 0.25, air: 0.3, dolby_effect: 0, simple_mode: "Standard", apply_limiter: true } };
   g.out.inputs.audio = ["enhance", 0];
   g.out.inputs.filename_prefix = `comfyture/jam-${spec.id}${lora ? "-lora" : ""}`;
   return g;

@@ -12,7 +12,7 @@
  },
  "negative": { "class_type": "ConditioningZeroOut", "inputs": { "conditioning": ["text", 0] } },
  "latent": { "class_type": "EmptyAceStep1.5LatentAudio", "inputs": { "seconds": 200, "batch_size": 1 } },
- "first": { "class_type": "KSampler", "inputs": { "model": ["shift", 0], "seed": 0, "steps": 30, "cfg": 1, "sampler_name": "heun", "scheduler": "sgm_uniform", "positive": ["text", 0], "negative": ["negative", 0], "latent_image": ["latent", 0], "denoise": 1 } },
+ "first": { "class_type": "KSampler", "inputs": { "model": ["shift", 0], "seed": 0, "steps": 50, "cfg": 3, "sampler_name": "heun", "scheduler": "sgm_uniform", "positive": ["text", 0], "negative": ["negative", 0], "latent_image": ["latent", 0], "denoise": 1 } },
  "second": { "class_type": "KSampler", "inputs": { "model": ["shift", 0], "seed": 1, "steps": 20, "cfg": 1, "sampler_name": "heun", "scheduler": "sgm_uniform", "positive": ["text", 0], "negative": ["negative", 0], "latent_image": ["first", 0], "denoise": 0.25 } },
  "third": { "class_type": "KSampler", "inputs": { "model": ["shift", 0], "seed": 2, "steps": 15, "cfg": 1, "sampler_name": "heun", "scheduler": "sgm_uniform", "positive": ["text", 0], "negative": ["negative", 0], "latent_image": ["second", 0], "denoise": 0.15 } },
  "decode": { "class_type": "VAEDecodeAudio", "inputs": { "samples": ["third", 0], "vae": ["vae", 0] } },

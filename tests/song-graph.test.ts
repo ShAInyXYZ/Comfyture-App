@@ -16,7 +16,7 @@ test("a song sets the text node, the length and the three passes' seeds, and use
   assert.deepEqual([g.text.inputs.tags, g.text.inputs.keyscale, g.text.inputs.bpm, g.text.inputs.duration, g.latent.inputs.seconds], [song.prompt, "E minor", 76, 240, 240]);
   assert.deepEqual([g.first.inputs.seed, g.second.inputs.seed, g.third.inputs.seed], [1000, 1001, 1002]);
   assert.deepEqual([g.first, g.second, g.third].map((k) => k.inputs.sampler_name), ["heun", "heun", "heun"]);
-  assert.deepEqual([g.first, g.second, g.third].map((k) => [k.inputs.steps, k.inputs.denoise]), [[30, 1], [20, 0.25], [15, 0.15]], "the owner's 30, 20 and 15 steps");
+  assert.deepEqual([g.first, g.second, g.third].map((k) => [k.inputs.steps, k.inputs.cfg, k.inputs.denoise]), [[50, 3, 1], [20, 1, 0.25], [15, 1, 0.15]], "the first pass at cfg 3 and 50 steps as the owner's OtiaFlow flow sets it, then the saved graph's 20 and 15");
   assert.equal(g.decode.inputs.samples[0], "third");
   assert.equal(g.lora, undefined, "no LoRA unless asked");
   assert.deepEqual(g.shift.inputs.model, ["unet", 0]);

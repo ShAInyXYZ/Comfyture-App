@@ -63,8 +63,8 @@ export const skeleton = (id) => (STRUCTURES.find((s) => s.id === id)?.sections ?
 /** A line of the lyrics is a section tag. */
 export const isTag = (line) => /^\s*\[[^\]]+\]\s*$/.test(line);
 
-/** What the key that makes the song shows, roughly: Comfy Cloud bills a GPU second at 0.266 credits and the XL takes about a second and a bit of them a second of music (three passes), with a little over for loading. */
-export const costOfSong = (seconds, passes = 3) => Math.max(3, Math.round(((passes === 1 ? 0.55 : 1.1) * seconds + 12) * 0.266));
+/** What the key that makes the song shows, roughly: Comfy Cloud bills a GPU second at 0.266 credits and the XL takes about a second and a half of them a second of music (a first pass of 50 steps, two of 20 and 15), with a little over for loading. */
+export const costOfSong = (seconds, passes = 3) => Math.max(3, Math.round(((passes === 1 ? 0.9 : 1.45) * seconds + 12) * 0.266));
 
 /** The style LoRAs on offer (on the person's own ComfyUI only: Comfy Cloud has none): the id, what it is for. Trigger words are the server's. */
 export const STYLE_LORAS = [["lo_fi", "Lo-fi"], ["jazz", "Jazz"], ["pop", "Pop"], ["indie", "Indie"], ["acoustic", "Acoustic"], ["dream_pop", "Dream pop"], ["electropop", "Electropop"], ["j_pop", "J-pop"], ["experimental", "Experimental"]];

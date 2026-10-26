@@ -71,7 +71,7 @@ Wording notes from the second reading: deAPI's own page says both 4 to 8 syllabl
 
 ## What came only from the owner
 
-The Superior settings (XL sft, three passes 30/20/15 at denoise 1/0.25/0.15, cfg 2.5, temperature 0.75, top_p 0.9, audio codes on, `jkass_quality`
+The Superior settings (XL sft, three passes at denoise 1/0.25/0.15; the saved graph says 30/20/15 steps and cfg 1, but the owner's OtiaFlow flow overrides the first pass to **cfg 3 and 50 steps** and the enhancer to **0.75**, set in July 2026 and kept through every version since: those are the values Jam uses; text node cfg 2.5, temperature 0.75, top_p 0.9, audio codes on, `jkass_quality`
 = plain Heun, then their `AudioQualityEnhancer`), the tag style of their example ("... no autotune, raw human voice"), `[Verse 1 - rapid rap]`-style
 hints, 200 s and E minor. Comfy Cloud has neither the sampler nor the enhancer, so Jam's Cloud workflow uses `heun` and no master.
 
