@@ -163,7 +163,7 @@ function followTarget(t: Target) {
 }
 
 // Spice: the AI VFX suite (server/spice.ts), on the engine's graphs and the template runner
-const spiceSuite = createSpice({ data, root, ffmpeg, engine, templates, probeVideo, exec, inside, exists, readProject, writeProject, stamp: () => stamp() });
+const spiceSuite = createSpice({ data, root, ffmpeg, engine, templates, probeVideo, exec, inside, exists, readProject, writeProject, stamp: () => stamp(), ask: (model, brief, tool, prompt, image) => petAnswer(pickLlm(model, "assistant"), brief, tool as any, prompt, image) });
 
 // ---------------------------------------------------------------- helpers
 
@@ -514,10 +514,18 @@ async function write(model: string, brief: string, prompt: string, opts: { maxLe
 async function petAnswer(model: string, brief: string, tool: { name: string; description: string; input_schema: unknown }, prompt: string, image?: { type: string; data: string }, maxTokens = 3000) {
   const forced = onRouter(model) && takesTools(model);
   // (a model that cannot be made to call the tool, Sonnet among them, is told to: an answer in words alone does nothing)
-  const system = forced ? `${brief}\n\nAnswer only by calling the ${tool.name} tool, never in words alone.` : `${brief}\n\nAnswer with JSON only, no other words: {"reply": "...", "actions": [{"op": "...", ...}]}`;
+  // (the JSON asked of them has the keys of the tool's own input, so a pet with a tool of its own shape, Paprika's read among them, is answered in it)
+  const system = forced ? `${brief}\n\nAnswer only by calling the ${tool.name} tool, never in words alone.` : `${brief}\n\nAnswer with JSON only, no other words, shaped as the input of the ${tool.name} tool: ${toolShape(tool.input_schema)}`;
   return onRouter(model)
     ? routerAsk(model, system, prompt, { maxTokens, temperature: 0.3, ...(forced ? { tool } : {}), ...(image ? { image } : {}) })
     : engine.write(system, prompt, { maxLength: Math.max(1200, Math.round(maxTokens / 2)), temperature: 0.3 });
+}
+/** The keys of a tool's input, with what each holds, for a model that is not made to call it: {"reply": "...", "actions": [...]} (reply: …). */
+function toolShape(schema: unknown) {
+  const props = Object.entries(((schema as any)?.properties ?? {}) as Record<string, any>);
+  const shape = `{${props.map(([k, v]) => `"${k}": ${v?.type === "array" ? "[...]" : v?.type === "object" ? "{...}" : '"..."'}`).join(", ")}}`;
+  const notes = props.filter(([, v]) => v?.description).map(([k, v]) => `${k}: ${String(v.description).trim()}`);
+  return notes.length ? `${shape} (${notes.join(" ")})` : shape;
 }
 /** What a pet's page said to it: the last turns as they were, each with what the app did for it. */
 function petTurns(messages: unknown) {

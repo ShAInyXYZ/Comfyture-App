@@ -5,7 +5,7 @@
 // nothing, so the page does it at once; running costs credits, so her answer only asks for it: the page asks the user, with the price,
 // before anything runs. She cannot pick a first frame or bring a clip in: those are the user's.
 
-export const SPICE_OPS = ["open", "look", "tool", "shot", "run"] as const;
+export const SPICE_OPS = ["open", "look", "tool", "shot", "chain", "run"] as const;
 const SIZES = ["draft", "standard"] as const;
 const HEIGHTS = [720, 1080, 1440];
 
@@ -34,6 +34,8 @@ export const SPICE_TOOL = {
             seconds: { type: "number", description: "For tool: the seconds of the clip to run it on, 1 to 10. For shot: the seconds to roll, 2 to 10." },
             aspect: { type: "number", description: "For tool, a widening tool: the frame's width over its height to widen to (2.39 for scope, 1 for a square)." },
             height: { type: "number", description: "For tool, the upscale: 720, 1080 or 1440." },
+            title: { type: "string", description: "For chain: a name for it, two or three words." },
+            steps: { type: "array", description: "For chain: the passes in order, two to five, each a tool of THE TOOLS and its words.", items: { type: "object", properties: { tool: { type: "string" }, words: { type: "string" }, size: { type: "string", enum: [...SIZES] } }, required: ["tool"] } },
           },
           required: ["op"],
         },
@@ -52,6 +54,7 @@ Actions:
 - look {pass}: look at a pass of the shot open (an id of ITS PASSES), or plate. A new run goes on the pass looked at.
 - tool {tool, words, scene, strength, size, seconds, aspect, height}: pick a tool by an id of THE TOOLS and set it up. words: what it is told (a card with a fixed grammar takes the effect's words; cut-out takes the subject's name; sound takes what is heard). scene: the shot in a sentence, for a card with a fixed grammar. strength 0 to 2, size draft or standard, seconds 1 to 10 (IC-LoRAs). aspect: width over height, for a widening tool. height 720, 1080 or 1440, for the upscale. Send only what was asked.
 - shot {words, seconds}: set a new shot up: what LTX-2.5 is told of the motion, and its seconds (2 to 10). The user picks its first frame and rolls it.
+- chain {title, steps}: when the user says what they want of the shot, or asks what to do with it: two to five passes in order, each {tool: an id of THE TOOLS, words, size, region, aspect} (a card with a fixed grammar takes the effect's words; a tool with no words of its own takes the scene; a tool marked [region] takes the box to fill as {x, y, w, h}, fractions of the frame from its top left; a widening tool takes the aspect). A chain builds on itself: a widening comes late, the sound last. The page shows it with its price; the user runs it.
 - run {}: run the key of the tool picked on the shot open. It costs credits: the app asks the user to confirm, so say it is ready, never that it has started.
 
 Rules: only the ids shown below. A tool that needs more than a clip cannot run: say so. Set up what fits the job (open the shot, pick the tool, set its words; run when they say do it). Chain passes for a job in steps (take the van out, then turn the day to night, then widen). Missing footage or words: one short question, no run. A question: an answer, no action. Never promise what you did not do. Someone new ("how do I start?"): two short sentences on where to begin and the key to press, and that Show me around, above the bar, walks through the example for free.`;
@@ -159,6 +162,11 @@ export function readSpiceAnswer(reply: string, s: Summary = {}) {
         actions.push(out);
         break;
       }
+      case "chain": {
+        const steps = readSteps(a.steps, tools);
+        if (steps.length >= 1) actions.push({ op: "chain", title: cut(a.title, 40) || "A chain", steps });
+        break;
+      }
       case "shot": {
         const out: any = { op: "shot" };
         if (cut(a.words, 1200)) out.words = cut(a.words, 1200);
@@ -176,4 +184,72 @@ export function readSpiceAnswer(reply: string, s: Summary = {}) {
   const needs = tools.find((x) => x.id === picked)?.needs?.length;
   if (run && picked && !needs && s.shot?.plate) actions.push({ op: "run" });
   return { reply: cut(raw.reply, 500), actions };
+}
+
+/** The steps of a chain as the page may run them: only tools listed and runnable, each with its words and size, two to five of them. */
+function readSteps(v: unknown, tools: NonNullable<Summary["tools"]>) {
+  const steps: { tool: string; words?: string; size?: "draft" | "standard"; region?: { x: number; y: number; w: number; h: number }; aspect?: number }[] = [];
+  for (const st of things<any>(v, 8)) {
+    const tool = oneOf(st.tool, tools.map((x) => String(x.id)));
+    if (!tool) continue;
+    const def = tools.find((x) => x.id === tool)!;
+    if (def.needs?.length) continue;
+    const out: (typeof steps)[number] = { tool };
+    if (cut(st.words, 600) && (def.takes?.includes("words") ?? true)) out.words = cut(st.words, 600);
+    const size = oneOf(st.size, SIZES);
+    if (size) out.size = size;
+    const r = st.region;
+    if (def.takes?.includes("region") && r && typeof r === "object" && [r.x, r.y, r.w, r.h].every((n) => num(n, 0, 1) !== undefined) && num(r.w, 0, 1)! >= 0.02 && num(r.h, 0, 1)! >= 0.02) out.region = { x: r2(num(r.x, 0, 1)!), y: r2(num(r.y, 0, 1)!), w: r2(num(r.w, 0, 1)!), h: r2(num(r.h, 0, 1)!) };
+    if (def.takes?.includes("aspect") && num(st.aspect, 0.25, 4) !== undefined) out.aspect = r2(num(st.aspect, 0.25, 4)!);
+    steps.push(out);
+    if (steps.length >= 5) break;
+  }
+  return steps;
+}
+
+// ---------------------------------------------------------------- Paprika's read of a shot: one frame looked at, chains proposed
+
+export const SPICE_READ_BRIEF = `You are Paprika, the baby chameleon who runs Comfyture's Spice, an AI VFX suite. You are shown one frame of a shot and told what it was rolled from. Read it as a VFX supervisor would: what the shot is (where, who, the light, the camera), what looks off or could be better (something out of place, a soft focus, a flat or wrong light, a frame to widen, a look to give, a sound to add), then propose two or three chains of passes, each a few tools of THE TOOLS in order with the words each is told, and ask the user what they want of the shot. Be concrete and short, in the user's language, through the spice_read tool. Prefer tools whose real run did what its card says; never a tool that needs more than a clip. A chain builds on itself: a widening comes late, the sound last.`;
+
+export const SPICE_READ_TOOL = {
+  name: "spice_read",
+  description: "Paprika's read of the frame: what the shot is, what looks off, a question to the user, and two or three chains of passes.",
+  input_schema: {
+    type: "object",
+    properties: {
+      read: { type: "string", description: "Two or three short sentences: what the shot is." },
+      off: { type: "string", description: "One sentence: what looks off or could be better; empty when nothing does." },
+      question: { type: "string", description: "One short question to the user: what they want of this shot." },
+      suggestions: {
+        type: "array",
+        description: 'Two or three chains, each {"title": "...", "why": "...", "steps": [{"tool": "<a tool id of THE TOOLS>", "words": "...", "size": "draft", "region": {"x": 0.6, "y": 0.1, "w": 0.2, "h": 0.3}, "aspect": 2.39}]}, the steps in order, two to five. region: only for a tool marked [region], the box over what to fill, in fractions of the frame from its top left, well inside the frame. aspect: only for a widening tool, width over height (2.39, 1.78, 1, 0.56).',
+        items: { type: "object", properties: { title: { type: "string" }, why: { type: "string" }, steps: { type: "array", items: { type: "object", properties: { tool: { type: "string" }, words: { type: "string" }, size: { type: "string", enum: [...SIZES] }, region: { type: "object", properties: { x: { type: "number" }, y: { type: "number" }, w: { type: "number" }, h: { type: "number" } } }, aspect: { type: "number" } }, required: ["tool"] } } }, required: ["title", "steps"] },
+      },
+    },
+    required: ["read", "suggestions"],
+  },
+};
+
+export interface ReadShot { name?: string; about?: string; words?: string; width?: number; height?: number; seconds?: number }
+/** What Paprika is told with the frame: the shot, its words, and the tools by id. */
+export function readPrompt(shot: ReadShot, tools: NonNullable<Summary["tools"]>) {
+  const lines = [`THE SHOT: ${cut(shot.name, 40) || "untitled"}${shot.about ? ` (${cut(shot.about, 160)})` : ""}, ${Number(shot.width) || "?"} × ${Number(shot.height) || "?"}, ${Number(shot.seconds) || "?"} s. The frame attached is from it.`];
+  if (shot.words) lines.push(`ROLLED BY LTX-2.5 FROM: "${cut(shot.words, 400)}".`);
+  const ts = things<NonNullable<Summary["tools"]>[number]>(tools, 60).filter((t) => !t.needs?.length);
+  lines.push(`THE TOOLS (id = name, family, what it does, and whether a real run did what its card says): ${ts.map((t) => `${cut(t.id, 40)} = ${cut(t.name, 40)}, ${cut(t.family, 16)}, ${cut(t.about, 80)}${t.takes?.includes("words") ? "" : " [no words]"}${t.takes?.includes("region") ? " [region]" : ""}${t.takes?.includes("aspect") ? " [aspect]" : ""} [${cut(t.status, 10) || "untested"}]`).join(" | ")}.`);
+  return lines.join("\n");
+}
+
+/** Paprika's read, read whole: her words cut to size, every chain checked against the tools (an answer in prose alone keeps only the words). */
+export function readReadAnswer(reply: string, tools: NonNullable<Summary["tools"]>) {
+  const from = reply.indexOf("{");
+  const to = reply.lastIndexOf("}");
+  let raw: any;
+  try {
+    raw = JSON.parse(reply.slice(from, to + 1));
+  } catch {
+    return { text: reply.replace(/[{}"]/g, "").trim().slice(0, 500), off: "", question: "", suggestions: [] as { title: string; why: string; steps: ReturnType<typeof readSteps> }[] };
+  }
+  const suggestions = things<any>(raw.suggestions, 4).map((x) => ({ title: cut(x.title, 40) || "A chain", why: cut(x.why, 200), steps: readSteps(x.steps, tools) })).filter((x) => x.steps.length);
+  return { text: cut(raw.read, 500) || cut(raw.reply, 500), off: cut(raw.off, 200), question: cut(raw.question, 160), suggestions };
 }

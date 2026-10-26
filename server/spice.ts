@@ -8,6 +8,8 @@ import { join } from "node:path";
 import { createHash, randomBytes } from "node:crypto";
 import { loadTools, icFrames, promptOf, prepareFilter, compositeGraph, type ICTool, type ICSize } from "./iclora.ts";
 import { normaliseBody, FIRST } from "../web/js/spice-model.js";
+import { imageBlock } from "./llm.ts";
+import { SPICE_READ_BRIEF, SPICE_READ_TOOL, readPrompt, readReadAnswer } from "./spice-assist.ts";
 
 export interface Media { kind: "video" | "image"; url: string; file: string; width: number; height: number; seconds?: number; still?: string }
 type Kept = { file: string; url: string; width: number; height: number; duration: number };
@@ -21,6 +23,8 @@ export interface Tool {
   about: string;
   /** what it takes beside the clip: words (what to do), a region (a rectangle of the frame), an aspect (a wider frame), a height (an upscale) */
   takes: ("words" | "region" | "aspect" | "height")[];
+  /** the box a tool that takes a region fills when none is given (fractions of the frame) */
+  region?: { x: number; y: number; w: number; h: number };
   /** the words its card gives, offered as the placeholder (an IC-LoRA's prompt, a template's) */
   prompt?: string;
   /** what the words should say, for a tool with no words of its own */
@@ -38,6 +42,8 @@ export interface Tool {
   credits?: number | null;
   /** a partner's model: refused under open weights only */
   partner?: string;
+  /** the picture of a real run of it on our own footage (what it was given beside what it made), when there is one */
+  preview?: string;
 }
 
 const FAMILIES_MORE = [
@@ -67,6 +73,8 @@ export interface Deps {
   readProject: (kind: string, id: string) => Promise<any>;
   writeProject: (kind: string, p: any) => Promise<void>;
   stamp: () => string;
+  /** a pet's answer through the app's model (a judges' copy counts it as words): the brief, the tool, the prompt, and a picture */
+  ask: (model: unknown, brief: string, tool: unknown, prompt: string, image?: { type: string; data: string }) => Promise<string>;
 }
 export type Answer = { status: number; body: unknown };
 
@@ -90,14 +98,22 @@ export function createSpice(deps: Deps) {
       id: t.id, kind: "iclora" as const, name: t.name, family: t.family, about: t.about,
       takes: [...(t.template && !t.template.includes("{words}") ? [] : ["words" as const]), ...(t.prepare?.op === "pad" ? ["aspect" as const] : t.prepare?.op === "box" ? ["region" as const] : [])],
       prompt: t.prompt, hint: t.hint, words: t.words, strength: t.strength, status: t.status, note: t.note, needs: t.needs, grammar: !!t.template,
+      ...(t.prepare?.op === "box" ? { region: { x: 0.35, y: 0.35, w: 0.3, h: 0.3, ...(t.prepare.region ?? {}) } } : {}),
     }));
     // a template's price is the runner's, when it has read it
     const engines = ENGINES.map((e) => (e.kind === "template" ? { ...e, credits: deps.templates?.credits?.get?.(e.template)?.credits ?? null, partner: deps.templates?.partnerOf?.(e.template) } : e));
     const families = [...suite.families, ...FAMILIES_MORE];
     // (the engines go after the IC-LoRAs of their family; a family of theirs alone goes last)
-    return { scene: suite.scene, families, tools: [...ic, ...engines] };
+    const tools = [...ic, ...engines];
+    for (const t of tools) if (await previewOf(t.id)) t.preview = `brand/spice/previews/${t.id}.jpg`;
+    return { scene: suite.scene, families, tools };
   }
   const toolOf = async (id: unknown) => (await registry()).tools.find((t) => t.id === id) ?? null;
+  const previews = new Map<string, boolean>();
+  async function previewOf(id: string) {
+    if (!previews.has(id)) previews.set(id, await deps.exists(join(root, "web", "brand", "spice", "previews", `${id}.jpg`)));
+    return previews.get(id)!;
+  }
 
   /** A clip of the library, as a path and what ffprobe reads of it. */
   async function clipOf(file: unknown) {
@@ -231,11 +247,31 @@ export function createSpice(deps: Deps) {
     return { id: job.id, status: job.status, progress: job.progress, template: true, credits: job.credits ?? null };
   }
 
+  // ---------------------------------------------------------------- Paprika's read
+
+  /** POST api/spice/read: Paprika looks at one frame of the clip (a second in), says what it is and what looks off, and proposes chains. */
+  async function read(input: any): Promise<Answer> {
+    if (!deps.ffmpeg) throw bad("Reading a clip needs ffmpeg on the server.", 501);
+    const clip = await clipOf(input.video);
+    const { stdout } = await deps.exec("ffmpeg", ["-nostdin", "-v", "error", "-ss", String(Math.min(1, Math.max(0, clip.info.duration / 2))), "-i", clip.where, "-frames:v", "1", "-vf", "scale=1024:-2", "-f", "image2pipe", "-c:v", "mjpeg", "-q:v", "4", "-"], { encoding: "buffer", maxBuffer: 16 << 20 });
+    const still = join(data, "photos", `read-${createHash("sha256").update(stdout as Buffer).digest("hex").slice(0, 12)}.jpg`);
+    await mkdir(join(data, "photos"), { recursive: true });
+    await writeFile(still, stdout as Buffer);
+    const image = await imageBlock(still);
+    const { tools } = await registry();
+    const shot = { name: text(input.name, 40), about: text(input.about, 300), words: text(input.words, 1200), width: clip.info.width, height: clip.info.height, seconds: clip.info.duration };
+    const reply = await deps.ask(input.model, SPICE_READ_BRIEF, SPICE_READ_TOOL, readPrompt(shot, tools as any), image);
+    if (process.env.COMFYTURE_DEBUG) console.log(`paprika read ${clip.file}:\n${reply.slice(0, 1500)}`);
+    const out = readReadAnswer(reply, tools as any);
+    return { status: 200, body: { at: new Date().toISOString(), ...out } };
+  }
+
   // ---------------------------------------------------------------- the routes
 
   async function route(method: string, path: string, body: () => Promise<any>): Promise<Answer | false> {
     if (path === "/api/spice/tools" && method === "GET") return { status: 200, body: await registry() };
     if (path === "/api/spice/run" && method === "POST") return run(await body());
+    if (path === "/api/spice/read" && method === "POST") return read(await body());
     return false;
   }
 
@@ -293,11 +329,11 @@ export function createSpice(deps: Deps) {
         on = pid;
       }
       const frame = await put(s.made?.frame);
-      shots.push({ id: String(s.id ?? `sh${(i + 1) * 10}`), name: String(s.name ?? `SH${String((i + 1) * 10).padStart(3, "0")}`), about: String(s.about ?? ""), plate, fps: 24, passes, bin: [], made: s.made ? { words: String(s.made.words ?? ""), seconds: Number(s.made.seconds) || 5, frame, run: "" } : null, sel: passes.at(-1)?.id ?? "plate" });
+      shots.push({ id: String(s.id ?? `sh${(i + 1) * 10}`), name: String(s.name ?? `SH${String((i + 1) * 10).padStart(3, "0")}`), about: String(s.about ?? ""), plate, fps: 24, passes, bin: [], made: s.made ? { words: String(s.made.words ?? ""), seconds: Number(s.made.seconds) || 5, frame, run: "" } : null, sel: passes.at(-1)?.id ?? "plate", ...(s.read ? { read: s.read } : {}) });
     }
     const body = normaliseBody({ logline: spec.logline, shots, open: shots[0]?.id ?? null, log: [] });
     await deps.writeProject(STORE, { id, name: String(spec.name ?? "Example"), createdAt: at, updatedAt: at, ...(thumb ? { thumb } : {}), body });
   }
 
-  return { route, info, putExample, registry, run, FIRST };
+  return { route, info, putExample, registry, run, read, FIRST };
 }

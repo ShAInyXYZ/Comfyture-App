@@ -7,6 +7,7 @@ import { registerSurface } from "./surfaces.js";
 import { spice, body, shot, openShot, lookAt, setTool, creditsTodayAll, workingOn } from "./spice.js";
 import { lookingAt, inputFor } from "./spice-model.js";
 import { toolsSummary, plan, run } from "./spice-tools.js";
+import { addSuggestion, guideSummary } from "./spice-guide.js";
 
 /** Paprika's conversation: Spice's own, never mixed with another product's. */
 export const chat = { messages: [], busy: null };
@@ -25,6 +26,7 @@ export function summary() {
     shots: b.shots.map((x) => ({ id: x.id, name: x.name, passes: x.passes.length, plate: !!x.plate })),
     shot: s ? { id: s.id, name: s.name, about: s.about, plate: s.plate ? { width: s.plate.width, height: s.plate.height, seconds: s.plate.seconds } : null, passes: s.passes.map((p) => ({ id: p.id, tool: p.tool, name: p.name, words: p.words, credits: p.credits })), looking: lookingAt(s)?.id ?? "plate", bin: s.bin.length } : null,
     ...toolsSummary(),
+    ...guideSummary(),
     today: creditsTodayAll(),
     busy: b.shots.filter((x) => workingOn(x.id)).map((x) => x.name),
   };
@@ -65,6 +67,10 @@ export function apply(a) {
       setTool({ tool: t.id, words: a.words ?? "", scene: a.scene ?? spice.set.scene, strength: a.strength ?? null, ...(a.size ? { size: a.size } : {}), seconds: a.seconds ?? null, ...(a.aspect ? { aspect: a.aspect } : {}), ...(a.height ? { height: a.height } : {}) });
       did.push(`${t.name}${a.words ? ` · ${a.words.length > 30 ? `${a.words.slice(0, 29)}…` : a.words}` : ""}`);
     }
+  } else if (a.op === "chain") {
+    // a chain she proposes: kept with the shot, shown in her bento with its price, run with one yes there
+    if (!shot()?.plate) failed.push("No plate to run a chain on");
+    else if (addSuggestion({ title: a.title, why: "", steps: a.steps })) did.push(`A chain, ${a.steps.length} passes: ${a.title} (on the right)`);
   } else if (a.op === "shot") {
     spice.roll = { ...spice.roll, ...(a.words ? { words: a.words } : {}), ...(a.seconds ? { seconds: a.seconds } : {}) };
     spice.win = "shot";

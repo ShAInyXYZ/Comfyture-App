@@ -46,7 +46,7 @@ try {
   // a key is saved, so a run can be asked for
   await page.route("**/api/account", (route) => (route.request().method() === "GET" ? route.fulfill({ json: { target: { kind: "comfy-cloud", url: "https://cloud.comfy.org" }, key: { set: true, last4: "abcd", source: "env" }, openWeights: false, balance: { credits: 500, usd: 2 } } }) : route.continue()));
   const settle = (ms = 400) => page.waitForTimeout(ms);
-  const chip = (name) => page.locator(".sp-tchip").filter({ has: page.locator("span", { hasText: new RegExp(`^${name}$`) }) });
+  const chip = (name) => page.locator(".sp-card").filter({ has: page.locator("b", { hasText: new RegExp(`^${name}$`) }) });
   const stored = async () => JSON.stringify((await (await fetch(`${base}/api/spice-scenarios/spice-example-heist`)).json()).project);
   const shipped = await stored();
 
@@ -78,12 +78,26 @@ try {
   ok((await page.locator(".sp-shot.is-on").count()) === 1 && (await page.locator(".sp-shot").nth(1).evaluate((e) => e.classList.contains("is-on"))), "a click opens another shot");
   ok((await page.locator(".sp-viewer-title b").innerText()).startsWith("SH020"), "the viewer says which", await page.locator(".sp-viewer-title").innerText());
 
-  // ---- the tools: by family, each with its dot; one picked, its card and its price
-  const chips = await page.locator(".sp-tchip").count();
-  ok(chips >= 40, `the suite's tools are on the shelf (${chips})`);
+  // ---- Paprika's read of the shot: baked with the example, her chains with their price; a chain runs with one yes
+  ok(/van|yard|raccoon|market/i.test(await page.locator(".sp-b-guide .sp-read").innerText().catch(() => "")), "Paprika's read of the shot is there", (await page.locator(".sp-b-guide .sp-read").innerText().catch(() => "")).slice(0, 80));
+  const chains = await page.locator(".sp-b-guide .sp-chain-card").count();
+  ok(chains >= 2, `she proposes chains (${chains})`);
+  ok((await page.locator(".sp-chain-card .sp-step").count()) >= 4 && /≈ \d+ cr/.test(await page.locator(".sp-chain-card .sp-primary").first().innerText()), "each with its steps and its price");
+  await page.locator(".sp-chain-card .sp-primary").first().click();
+  await settle();
+  ok(asked.length === 0 && /Yes, spend it/.test(await page.locator(".sp-chain-card .sp-primary").first().innerText()), "a chain's key asks first");
+  await page.locator(".sp-chain-card .sp-primary", { hasText: "Yes, spend it" }).first().click();
+  await settle(900);
+  ok(asked.length === 1, "the second press runs the chain: its first pass is sent (and refused here, so it stops)", String(asked.length));
+  asked.length = 0;
+
+  // ---- the tools: a gallery of cards by family, each the picture of a real run and its dot; one picked, its card and its price
+  const chips = await page.locator(".sp-card").count();
+  ok(chips >= 40, `the suite's tools are on the shelf as cards (${chips})`);
+  ok((await page.locator(".sp-card-pic img").count()) >= 12, "most with the picture of a real run on our footage");
   const families = await page.locator(".sp-family > .ut-label").allTextContents();
   ok(["Restore", "Clean", "Frame", "Camera", "Cut out", "Finish"].every((f) => families.includes(f)), "by family", families.join(" | "));
-  ok((await page.locator(".sp-tchip .sp-dot.is-verified").count()) >= 20 && (await page.locator(".sp-tchip .sp-dot.is-failed").count()) >= 1 && (await page.locator(".sp-tchip .sp-dot.is-needs").count()) >= 5, "each with the dot of what a real run showed");
+  ok((await page.locator(".sp-card .sp-dot.is-verified").count()) >= 20 && (await page.locator(".sp-card .sp-dot.is-failed").count()) >= 1 && (await page.locator(".sp-card .sp-dot.is-needs").count()) >= 5, "each with the dot of what a real run showed");
   await chip("Outpaint").click();
   await settle();
   ok((await page.locator(".sp-tool-name b").innerText()) === "Outpaint", "a tool is picked");
@@ -138,7 +152,7 @@ try {
     await next.click();
     if (steps > 20) break;
   }
-  ok(steps === 10 && /AI VFX suite/.test(titles[0]) && /suite/.test(titles.at(-1)), `the tour has its ten steps (${steps})`, titles.join(" | "));
+  ok(steps === 11 && /AI VFX suite/.test(titles[0]) && /suite/.test(titles.at(-1)), `the tour has its eleven steps (${steps})`, titles.join(" | "));
   await page.keyboard.press("Escape");
   await settle(800);
   ok(asked.length === 1, "the tour sent nothing that spends");

@@ -114,7 +114,14 @@ export default {
       target: ".sp-b-tools",
       place: "top",
       title: "The tools",
-      text: "Every tool is a workflow on Comfy Cloud: the **IC-LoRAs** of LTX-2.3 (restore, upscale, grade and light, clean, frame, camera, control, effects), SAM3's **cut-out**, SeedVR2's **upscale**, LTX-2.5's **sound**, Wan's **restyle**. A dot says what a real run of each showed: green did what its card says, red did not, grey needs more than a clip.",
+      text: "Every tool is a card: a real run of it on our own footage, what it was given on the left and what it made on the right. The IC-LoRAs of LTX-2.3 (restore, upscale, grade and light, clean, frame, camera, control, effects), SAM3's **cut-out**, SeedVR2's **upscale**, LTX-2.5's **sound**, and the catalog's templates. The dot says what the run showed: green did what its card says, red did not, grey needs more than a clip.",
+    },
+    {
+      go: onBestShot,
+      target: ".sp-b-guide",
+      place: "left",
+      title: "Paprika's read",
+      text: "I look at a frame of the shot and say what I see and what looks off, then propose a few **chains** of passes, each with its tools, its words and its price. **Run it** runs the whole chain with one yes; **Step by step** sets the first tool up for you. Tell me in the bar what you want instead, and I answer with a chain.",
     },
     {
       go: open,
@@ -134,11 +141,11 @@ export default {
       },
     },
     {
-      go: open,
-      target: ".sp-b-bin",
+      go: onBestShot,
+      target: ".sp-chain",
       place: "top",
       title: "The bin",
-      text: "A pass taken off the chain waits here with what was made on top of it. Put it back and the chain is rebuilt to where it was made; forget it and its clip still stays in your library.",
+      text: "The × on a pass takes it off the chain: it waits in the **bin**, a chip at the end of the chain, with what was made on top of it. Put it back and the chain is rebuilt to where it was made; forget it and its clip still stays in your library.",
     },
     {
       go: open,
@@ -157,7 +164,7 @@ export default {
     {
       go: open,
       title: "That's the suite",
-      text: "A scenario, a few shots, and every pass a real run on Comfy Cloud, kept on its chain with the clip it ran on. Roll a shot of your own, or drop a clip, and we start.",
+      text: "A scenario, a few shots, and every pass a real run on Comfy Cloud, kept on its chain with the clip it ran on. Roll a shot of your own, or drop a clip, I'll have a look, and we start.",
     },
   ],
 };

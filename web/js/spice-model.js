@@ -58,6 +58,25 @@ export function passOf(p) {
   return out;
 }
 
+/** A box of the frame in words: how big it is and where it starts, in percent. */
+/** A box of the frame as given, when it is one: fractions of the frame, at least 2% a side. */
+const boxOf = (r) => (r && typeof r === "object" && [r.x, r.y, r.w, r.h].every((n) => num(n, 0, 1) !== undefined) && num(r.w, 0, 1) >= 0.02 && num(r.h, 0, 1) >= 0.02 ? { x: num(r.x, 0, 1), y: num(r.y, 0, 1), w: num(r.w, 0, 1), h: num(r.h, 0, 1) } : null);
+export const boxWords = (r) => `a box ${Math.round(r.w * 100)}% × ${Math.round(r.h * 100)}%, ${Math.round(r.x * 100)}% from the left, ${Math.round(r.y * 100)}% from the top`;
+
+/** A chain Paprika proposed: its name, why, and its steps (a tool, its words, its size, the box it fills or the aspect it widens to). */
+export function chainOf(c) {
+  if (!c || typeof c !== "object") return null;
+  const steps = (Array.isArray(c.steps) ? c.steps.slice(0, 5) : []).filter((x) => x && typeof x.tool === "string").map((x) => ({ tool: str(x.tool, 40), words: str(x.words, 600), ...(x.size === "standard" ? { size: "standard" } : x.size === "draft" ? { size: "draft" } : {}), ...(boxOf(x.region) ? { region: boxOf(x.region) } : {}), ...(num(x.aspect, 0.25, 4) !== undefined ? { aspect: num(x.aspect, 0.25, 4) } : {}) }));
+  return steps.length ? { title: str(c.title, 40) || "A chain", why: str(c.why, 200), steps } : null;
+}
+/** Paprika's read of a shot: what it is, what looks off, her question, the chains she proposed. */
+export function readOf(r) {
+  if (!r || typeof r !== "object") return null;
+  const suggestions = (Array.isArray(r.suggestions) ? r.suggestions.slice(0, 6) : []).map(chainOf).filter(Boolean);
+  const text = str(r.text, 500);
+  return text || suggestions.length ? { at: str(r.at, 40), text, off: str(r.off, 200), question: str(r.question, 160), suggestions } : null;
+}
+
 export function shotOf(s) {
   if (!s || typeof s !== "object" || typeof s.id !== "string") return null;
   const passes = Array.isArray(s.passes) ? s.passes.slice(0, 40).map(passOf).filter(Boolean) : [];
@@ -74,6 +93,7 @@ export function shotOf(s) {
     made,
     // the pass the viewer looks at (its id, or "plate"): the last one when it says nothing
     sel: typeof s.sel === "string" ? s.sel.slice(0, 40) : "",
+    read: readOf(s.read),
   };
 }
 

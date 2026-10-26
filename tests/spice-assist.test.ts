@@ -1,7 +1,7 @@
 // Paprika's reader (server/spice-assist.ts): what she is told of the scenario, and her answer read whole and checked against it.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SPICE_BRIEF, SPICE_OPS, SPICE_TOOL, spicePrompt, readSpiceAnswer } from "../server/spice-assist.ts";
+import { SPICE_BRIEF, SPICE_OPS, SPICE_TOOL, spicePrompt, readSpiceAnswer, SPICE_READ_BRIEF, SPICE_READ_TOOL, readPrompt, readReadAnswer } from "../server/spice-assist.ts";
 
 const SUMMARY = {
   scenario: "Truffle's Jam Heist",
@@ -13,6 +13,7 @@ const SUMMARY = {
     { id: "outpaint", name: "Outpaint", family: "frame", about: "Widens the frame", takes: ["aspect"], status: "verified" },
     { id: "upscale", name: "Upscale", family: "upscale", about: "SeedVR2", takes: ["height"], status: "verified" },
     { id: "cutout", name: "Cut out", family: "matte", about: "SAM3", takes: ["words"], status: "verified" },
+    { id: "inpaint", name: "Inpaint", family: "frame", about: "Fills a box", takes: ["words", "region"], status: "verified" },
     { id: "ingredients", name: "Ingredients", family: "more", about: "Needs a sheet", takes: ["words"], status: "untested", needs: ["a reference sheet"] },
   ],
   tool: { id: "deblur", words: "", strength: null, size: "draft", seconds: 5 },
@@ -84,4 +85,32 @@ test("prose instead of JSON is answered as words, with no action", () => {
   const out = readSpiceAnswer("I'd widen it first.", SUMMARY as any);
   assert.equal(out.reply, "I'd widen it first.");
   assert.deepEqual(out.actions, []);
+});
+
+test("a chain she answers with: two to five steps, each a tool listed and runnable, with its words and size; a tool that needs more than a clip is dropped", () => {
+  const reply = JSON.stringify({ reply: "Here is a chain.", actions: [{ op: "chain", title: "A night heist", steps: [{ tool: "deblur", words: "x", size: "standard", region: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 } }, { tool: "ingredients", words: "no" }, { tool: "nope" }, { tool: "outpaint", words: "ignored", size: "huge", aspect: 2.39 }, { tool: "upscale" }, { tool: "cutout", words: "the frog" }, { tool: "inpaint", words: "a wall", region: { x: 0.6, y: 0.1, w: 0.25, h: 0.3 } }, { tool: "deblur" }] }, { op: "chain", steps: [{ tool: "ingredients" }] }] });
+  const out = readSpiceAnswer(reply, SUMMARY as any);
+  // (a box only on a tool that takes a region, an aspect only on one that widens)
+  assert.deepEqual(out.actions, [{ op: "chain", title: "A night heist", steps: [{ tool: "deblur", words: "x", size: "standard" }, { tool: "outpaint", aspect: 2.39 }, { tool: "upscale" }, { tool: "cutout", words: "the frog" }, { tool: "inpaint", words: "a wall", region: { x: 0.6, y: 0.1, w: 0.25, h: 0.3 } }] }]);
+  assert.ok(SPICE_BRIEF.includes("- chain {"));
+});
+
+test("Paprika's read: what she is told with the frame, and her answer checked against the tools", () => {
+  const tools = SUMMARY.tools as any;
+  const prompt = readPrompt({ name: "SH010 · The yard", about: "Truffle crosses the yard.", words: "a raccoon tiptoes", width: 1280, height: 704, seconds: 5 }, tools);
+  assert.match(prompt, /THE SHOT: SH010 · The yard \(Truffle crosses the yard\.\), 1280 × 704, 5 s/);
+  assert.match(prompt, /ROLLED BY LTX-2.5 FROM: "a raccoon tiptoes"/);
+  assert.match(prompt, /deblur = Deblur, restore, Sharpens lens blur \[verified\]/);
+  assert.match(prompt, /outpaint = Outpaint, frame, Widens the frame \[no words\] \[aspect\] \[verified\]/);
+  assert.match(prompt, /inpaint = Inpaint, frame, Fills a box \[region\] \[verified\]/);
+  assert.ok(!prompt.includes("ingredients ="), "a tool that needs more than a clip is not offered to her");
+  assert.ok(SPICE_READ_BRIEF.length < 1500 && SPICE_READ_TOOL.input_schema.required.includes("suggestions"));
+  const out = readReadAnswer(JSON.stringify({ read: "A wide shot of a market yard at golden hour; a raccoon with a jar.", off: "A white van is parked in the background.", question: "What do you want of it?", suggestions: [{ title: "Night heist", why: "The story is a heist.", steps: [{ tool: "deblur" }, { tool: "outpaint", size: "standard", aspect: 1 }, { tool: "inpaint", words: "the wall", region: { x: 0.7, y: 0.05, w: 0.2, h: 0.4 } }, { tool: "ingredients" }] }, { title: "Nothing", steps: [{ tool: "nope" }] }] }), tools);
+  assert.equal(out.text, "A wide shot of a market yard at golden hour; a raccoon with a jar.");
+  assert.equal(out.off, "A white van is parked in the background.");
+  assert.equal(out.question, "What do you want of it?");
+  assert.deepEqual(out.suggestions, [{ title: "Night heist", why: "The story is a heist.", steps: [{ tool: "deblur" }, { tool: "outpaint", size: "standard", aspect: 1 }, { tool: "inpaint", words: "the wall", region: { x: 0.7, y: 0.05, w: 0.2, h: 0.4 } }] }]);
+  const prose = readReadAnswer("I see a yard.", tools);
+  assert.equal(prose.text, "I see a yard.");
+  assert.deepEqual(prose.suggestions, []);
 });
