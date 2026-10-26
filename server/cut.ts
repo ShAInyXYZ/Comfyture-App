@@ -9,7 +9,8 @@
 
 import { fxPlan, FX_KINDS, EVERY, WHIP, whipBlur } from "../web/js/fx.js";
 import { lyricAss, ANIMATED, LYRIC_FONT, LOOKS } from "../web/js/lyrics.js";
-import { KEYS, LANGUAGES, STRUCTURES } from "../web/js/song.js";
+import { KEYS, LANGUAGES, STRUCTURES, MAX_SECONDS } from "../web/js/song.js";
+import { SONG_GUIDE_CORE } from "./song-guide.ts";
 
 export type Motion = { from: { scale: number; x: number; y: number }; to: { scale: number; x: number; y: number } };
 export interface CutItem {
@@ -522,6 +523,8 @@ Actions for the track, the words, the band and Jam itself:
 - {"op": "shots", "every": 2}: the video cut every 1, 2 or 4 bars; {"op": "shots", "shot": 3, "kind": "dance"}: shot 3 is a performance, a dance or broll shot
 - {"op": "set_song", "idea": "a cozy winter song about late-night walks", "structure": "pop", "tags": "lo-fi hip hop, dreamy, soft Rhodes, female vocal", "lyrics": "[Verse 1]\nSnow is falling soft and slow\n\n[Chorus]\nKeep a little summer inside", "name": "Winter nights", "seconds": 200, "bpm": 76, "key": "A minor", "language": "en"}: fills the song form (on the song page: it opens it); any field you leave out stays as it is. It makes nothing: Make the song is a key the user presses. structure is one of ${STRUCTURES.map((x) => x.id).join(", ")}; seconds 20 to 240; bpm 40 to 220; key like "A minor" or "C# major"; language a code (${LANGUAGES.slice(0, 8).map((l) => l.value).join(", ")}...); tags are the style in words (genre, mood, instruments, the voice); lyrics go under [Verse 1], [Chorus]... tags, a line each
 - {"op": "open", "workspace": "track", "window": "hear"}: shows a workspace (${JAM_WORKSPACES.join(", ")}) and, with "window", opens a bento's window (${JAM_WINDOWS.join(", ")}): the track's start window has the ways to add a song, record the track's start, hear has the key that hears the words, make (in the edit) has the key that makes the video
+When you write a song with set_song (its tags, lyrics, tempo, key, length), write it by this guide, and make a whole song of 200 to 300 s unless the user asks for another length:
+${SONG_GUIDE_CORE}
 Actions on the edit (clip numbers are the numbers on the Video track, from 1):
 - {"op": "trim", "clip": 1, "seconds": 3}: the clip runs that long (keeping its start)
 - {"op": "move", "clip": 3, "to": 1}, {"op": "remove", "clip": 2}
@@ -636,7 +639,7 @@ function clean(a: any) {
     const structure = STRUCTURES.some((x) => x.id === a.structure) ? a.structure : undefined;
     const key = KEYS.includes(a.key) ? a.key : undefined;
     const language = LANGUAGES.some((l) => l.value === a.language) ? a.language : undefined;
-    const out = pick({ op: "set_song", idea: text(a.idea, 500), structure, tags: text(a.tags, 400), lyrics: text(a.lyrics, 6000), name: text(a.name, 40), seconds: num(a.seconds, 20, 240), bpm: num(a.bpm, 40, 220), key, language });
+    const out = pick({ op: "set_song", idea: text(a.idea, 500), structure, tags: text(a.tags, 400), lyrics: text(a.lyrics, 6000), name: text(a.name, 40), seconds: num(a.seconds, 20, MAX_SECONDS), bpm: num(a.bpm, 40, 220), key, language });
     return Object.keys(out).length > 1 ? out : null;
   }
   if (a.op === "part") return pick({ op: "part", seconds: a.seconds === 0 || a.seconds === "0" ? 0 : num(a.seconds, 5, 600), from: num(a.from, 0, 36000), drop: a.drop === true ? true : undefined, chorus: a.chorus === true ? true : undefined });

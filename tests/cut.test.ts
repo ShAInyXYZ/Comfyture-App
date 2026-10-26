@@ -373,7 +373,7 @@ test("Pickle's actions are checked: Jam's own, fields in range, a workspace or a
     { op: "open", workspace: "edit", window: "make" }, { op: "open", workspace: "stage" }, { op: "open", window: "the-vault" },
     { op: "music", prompt: "a hit" }, { op: "sound", prompt: "a bang" }, { op: "voice", line: "hello" },
     { op: "effect", kind: "zoom", every: 4 },
-    { op: "set_song", idea: "a winter song", structure: "pop", tags: "lo-fi, dreamy", key: "A minor", seconds: 300, bpm: 12, language: "xx", extra: "dropped" },
+    { op: "set_song", idea: "a winter song", structure: "pop", tags: "lo-fi, dreamy", key: "A minor", seconds: 400, bpm: 12, language: "xx", extra: "dropped" },
     { op: "set_song", structure: "opera", key: "H minor" }, { op: "set_song" },
     { op: "open", workspace: "song" },
   ];
@@ -383,7 +383,7 @@ test("Pickle's actions are checked: Jam's own, fields in range, a workspace or a
   assert.equal(ops.includes("effect"), true, "the editor's own actions still are");
   const by = (op: string) => r.actions.filter((a: any) => a.op === op) as any[];
   // the song form: only the fields that are valid, in range; an action with none is not an action
-  assert.deepEqual(by("set_song"), [{ op: "set_song", idea: "a winter song", structure: "pop", tags: "lo-fi, dreamy", seconds: 240, bpm: 40, key: "A minor" }]);
+  assert.deepEqual(by("set_song"), [{ op: "set_song", idea: "a winter song", structure: "pop", tags: "lo-fi, dreamy", seconds: 300, bpm: 40, key: "A minor" }]);
   const [zero, far, drop, chorus] = by("part");
   assert.deepEqual([zero.seconds, far.seconds, far.from, drop.drop, chorus.chorus], [0, 600, 0, true, undefined]);
   assert.deepEqual(by("words").map((a) => a.text), ["one\ntwo"], "empty words are not an action");

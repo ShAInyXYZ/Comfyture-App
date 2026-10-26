@@ -1415,7 +1415,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const input = await jsonBody(req);
     const seconds = num(input.seconds, 10, MAX_SECONDS, DEFAULT_SONG.seconds);
     const language = LANGUAGES.some((l) => l.value === input.language) ? input.language : "en";
-    const reply = await write(pickLlm(input.model), SONG_BRIEF, songPrompt({ ...input, seconds, language }), { maxLength: 2200, temperature: 0.8 });
+    const reply = await write(pickLlm(input.model), SONG_BRIEF, songPrompt({ ...input, seconds, language }), { maxLength: 5000, temperature: 0.8 });
     return json(res, 200, readSong(reply, seconds, language));
   }
   if (path === "/api/audio/from" && method === "POST") {

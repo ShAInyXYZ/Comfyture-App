@@ -11,7 +11,7 @@ import { h } from "../dom.js";
 import { state, toast, waitFor, writer, artistFor, onChange } from "../store.js";
 import { api } from "../api.js";
 import { dropdown } from "../controls.js";
-import { LANGUAGES, SIGNATURES, DEFAULT_SONG, PITCHES, MODES, KEYS, noteOf, modeOf, STYLE_WORDS, QUALITY, lengthLabel, SECTIONS, STRUCTURES, skeleton, costOfSong } from "../song.js";
+import { LANGUAGES, SIGNATURES, DEFAULT_SONG, MAX_SECONDS, PITCHES, MODES, KEYS, noteOf, modeOf, STYLE_WORDS, QUALITY, lengthLabel, SECTIONS, STRUCTURES, skeleton, costOfSong } from "../song.js";
 import { jicon, pickFile, cr, clock, mins } from "./jam-ui.js";
 import { createDeck } from "./jam-deck.js";
 import { jam, useSong, songHook, setWorkspace, save } from "../jam.js";
@@ -33,7 +33,6 @@ const keepDraft = () => {
 };
 
 const MIN_SECONDS = 20;
-const MAX_SECONDS = 240;
 const MIN_BPM = 40;
 const MAX_BPM = 220;
 /** The words each row of the sound shows (one line of the column); the rest are one press away under More (a word picked stays on the row). */

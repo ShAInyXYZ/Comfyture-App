@@ -3,6 +3,7 @@
 // checked against the choices the model takes (web/js/song.js) before the page sees it.
 import { KEYS, LANGUAGES, SIGNATURES, STRUCTURES, MAX_SECONDS, DEFAULT_SONG } from "../web/js/song.js";
 import { loose } from "./story.ts";
+import { SONG_GUIDE, SONG_LORAS } from "./song-guide.ts";
 
 const text = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
 const clamp = (v: unknown, min: number, max: number, fallback: number) => {
@@ -10,21 +11,11 @@ const clamp = (v: unknown, min: number, max: number, fallback: number) => {
   return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : fallback;
 };
 
-export const SONG_BRIEF = `You are Pickle, the little green frog, Jam's band leader. The user gives you an idea for a song; you set up ACE-Step 1.5 XL, the model that makes it. Answer with JSON only, no other words:
-{"name": "2-4 word title", "tags": "...", "lyrics": "...", "bpm": 120, "key": "A minor", "language": "en", "timesignature": "4", "seconds": 30}
+export const SONG_BRIEF = `You are Pickle, the little green frog, Jam's band leader. The user gives you an idea for a song; you set up ACE-Step 1.5 XL, the model that makes it, by the guide below. Answer with JSON only, no other words:
+{"name": "2-4 word title", "tags": "...", "lyrics": "...", "bpm": 120, "key": "E minor", "language": "en", "timesignature": "4", "seconds": 240, "lora": ""}
+tags and lyrics are written as the guide says. key is one of: ${KEYS.join(", ")}. language is the code asked for: ${LANGUAGES.map((l) => l.value).join(", ")}. seconds is the length asked for; keep it. lora is "" or the id of a style LoRA of the guide's table when the song is that genre and the user asked for the best sound (it only works on their own ComfyUI): the server puts the trigger word in the tags for you, so never write it. Never write a line that names a real person or quotes a real song; for a song without words the lyrics are exactly "[Instrumental]". When a CURRENT song is given and the user asks for a change, change only what they asked and keep the rest as it is. When the user gave their own lyrics, keep their words, only laying them out in sections.
 
-TAGS: one line of comma-separated descriptors, English whatever the language of the words, 25 to 60 words:
- - the genre and sub-genre ("warm pop-funk", "lo-fi boom-bap", "Japanese comedy hip-hop"), the mood and energy ("playful high-energy", "melancholic late-night")
- - three to five instruments and the drum feel ("slap bass, bright brass stabs, tight live drums, bouncy breakbeat")
- - the voice: gender and delivery ("clear natural female lead vocal", "rapid-fire male rap", "breathy whisper", "gang vocal chant hooks"); add "no autotune, raw human voice" when it should sound human
- - one production word at most ("dry and close", "wide and glossy"). Never artist names, never lyrics, never a bpm or a key (they are set apart).
-LYRICS: sections, each tag on its own line in square brackets with a blank line between sections. The tags: [Intro], [Verse 1], [Pre-Chorus - building], [Chorus - chant hook], [Verse 2], [Bridge - stripped beat], [Final Chorus - peak energy], [Outro], [Instrumental]. After the dash a short hint of the delivery ("rapid rap", "whispered", "gang vocal chant") is welcome, never more than four words.
- - Each line is short, six to ten syllables, sung or rapped in one breath. Count: about one line for every four seconds of song (one every three for a rap), the rest being the music between, never more. A 200 s song is about 40 lines: an intro of two, verses of eight, a pre-chorus of three, a chorus of four said again each time, a bridge of four, a last chorus and an outro. A short song is a verse and a chorus.
- - A chorus repeats word for word each time it comes. Rhyme the ends of lines in pairs. Say one concrete thing in a line, not an abstraction.
- - Write the words in the language asked for; only the tags stay in English. For a song without words, the lyrics are exactly "[Instrumental]".
- - Never write a line that names a real person or quotes a real song.
-SETTINGS: bpm 60 to 200 to suit the genre (hip-hop 85 to 100 or 130 to 150 double-time, pop 100 to 125, dance 120 to 130, ballad 60 to 80). key is one of: ${KEYS.join(", ")}; minor for dark or driving, major for bright. timesignature "4" unless it is a waltz ("3") or a lilt ("6"). language is the code asked for: ${LANGUAGES.map((l) => l.value).join(", ")}. seconds is the length asked for; keep it.
-When a CURRENT song is given and the user asks for a change, change only what they asked and keep the rest as it is. When the user gave their own lyrics, keep their words, only laying them out in sections.`;
+${SONG_GUIDE}`;
 
 export function songPrompt(v: { idea?: string; seconds?: number; language?: string; structure?: string; current?: { tags?: string; lyrics?: string; bpm?: number; key?: string } }) {
   const lines = [`THE IDEA: ${text(v.idea, 600) || "a catchy song for a short music video"}`, `LENGTH: ${clamp(v.seconds, 10, MAX_SECONDS, DEFAULT_SONG.seconds)} seconds`, `LANGUAGE: ${LANGUAGES.find((l) => l.value === v.language)?.value ?? "en"}`];
@@ -56,5 +47,6 @@ export function readSong(reply: string, seconds: number, language: string) {
     language: LANGUAGES.find((l) => l.value === raw?.language)?.value ?? language,
     timesignature: SIGNATURES.find((s) => s.value === String(raw?.timesignature))?.value ?? "4",
     seconds,
+    lora: SONG_LORAS.find((l) => l.id === raw?.lora)?.id ?? "",
   };
 }

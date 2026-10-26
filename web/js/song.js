@@ -21,9 +21,9 @@ export const SIGNATURES = [
 ];
 
 /** How long the song runs, in seconds: it sets the length of the latent and the duration the text node is told. */
-/** (A short song with a short prompt comes out poorly: a full one is made, 200 s as the Superior workflow's own latent, and the best part is cut from it later.) */
-export const LENGTHS = [30, 60, 120, 200, 240];
-export const DEFAULT_SONG = { seconds: 200, bpm: 140, key: "A minor", signature: "4", language: "en", structure: "pop", passes: 3, temperature: 0.75, adherence: 2.5, thinking: true, seed: 0 };
+/** (A short song with a short prompt comes out poorly: a whole one is made, 200 to 300 s (E minor works great there), and the best part is cut from it later.) */
+export const LENGTHS = [60, 120, 200, 240, 300];
+export const DEFAULT_SONG = { seconds: 240, bpm: 120, key: "E minor", signature: "4", language: "en", structure: "pop", passes: 3, temperature: 0.75, adherence: 2.5, thinking: true, seed: 0 };
 
 /** The twelve notes and the two modes a key is chosen from (the model names them "A minor", "C# major"). */
 export const PITCHES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -41,7 +41,7 @@ export const STYLE_WORDS = [
 
 /** How a song is made: a draft is the first pass alone, the full song the first pass and two refinements of it. */
 export const QUALITY = [[1, "Draft", "the first pass alone: quicker, cheaper"], [3, "Full", "three passes: what the XL is at its best"]];
-export const MAX_SECONDS = 240;
+export const MAX_SECONDS = 300;
 export const lengthLabel = (s) => (s < 60 ? `${s} s` : s % 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : `${s / 60} min`);
 
 /** The section tags a lyric is laid out in, as ACE-Step reads them: the tag on its own line, a short hint after a dash. */
