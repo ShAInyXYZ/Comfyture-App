@@ -246,11 +246,17 @@ export function createViewer(on = {}) {
     fill(ruler, h("span", { style: { left: "0" } }, String(FIRST)), h("span", { style: { right: "0" } }, String(last())));
   }
 
-  /** The chain: the plate, then each pass in order; a click looks at one, its key takes it off (with what was made on top of it). */
+  /**
+   * The chain: the plate, then each pass in order; a click looks at one, its key takes it off (with what was made on top of it). Drawn
+   * again only when it changed: its chips are keys, and a key with the focus that is drawn over loses it (which draws the page again).
+   */
   function drawChain() {
     const { shot, pass } = st.ctx;
-    if (!shot?.plate) return void fill(chain);
     const sel = pass?.id ?? "plate";
+    const sig = JSON.stringify(shot?.plate ? [shot.id, sel, !!shot.made, shot.passes.map((p) => [p.id, p.name, p.words, p.credits, !!p.example])] : null);
+    if (sig === st.chainSig) return;
+    st.chainSig = sig;
+    if (!shot?.plate) return void fill(chain);
     const chip = (id, label, note, canOff) => h(`div.sp-link${sel === id ? ".is-on" : ""}`, { dataset: { pass: id } },
       h("button.sp-link-main", { type: "button", "aria-pressed": String(sel === id), title: note, on: { click: () => lookAt(id) } }, h("b", {}, label)),
       canOff ? h("button.sp-link-off", { type: "button", title: "Take this pass off: it waits in the bin, with what was made on top of it", "aria-label": `Take ${label} off`, on: { click: (e) => (e.stopPropagation(), takeOff(id)) } }, spicon("close")) : null);

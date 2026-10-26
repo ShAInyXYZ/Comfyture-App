@@ -217,13 +217,15 @@ export function setTool(patch) {
   update();
 }
 
+/** Opens a shot of the scenario (a look: which shot is open is not kept, so looking around leaves the scenario as it was). */
 export function openShot(id) {
   const b = body();
   if (!b || !shotIn(b, id) || b.open === id) return;
-  edit((x) => (x.open = id));
+  b.open = id;
   spice.frame = FIRST;
   spice.playing = false;
   spice.armed = null;
+  update();
 }
 
 /** A new shot of the scenario, opened: its plate (a clip of the library), or none yet (a frame to roll). */
@@ -264,13 +266,13 @@ export function setPlate(media, made = null) {
   spice.frame = FIRST;
 }
 
-/** The viewer looks at a pass of the shot open (its id), or at the plate. */
+/** The viewer looks at a pass of the shot open (its id), or at the plate: a look, not kept (see openShot). */
 export function lookAt(passId) {
-  edit((b) => {
-    const s = openShotOf(b);
-    if (s) s.sel = passId;
-  });
+  const s = shot();
+  if (!s) return;
+  s.sel = passId;
   spice.playing = false;
+  update();
 }
 
 /**
