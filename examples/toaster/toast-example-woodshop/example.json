@@ -1,6 +1,6 @@
 {
  "id": "toast-example-woodshop",
- "rev": 7,
+ "rev": 8,
  "name": "Crumpet's workbench",
  "about": "A character set: Crumpet the baby beaver (a posed character, his cast sheet on him) building a toy at his workbench, in a woodshop of 17 parts (library pieces and shapes), with two cameras and the 3D page's work: one sheet and one 3D model per object. Clay frame and depth sent at 55%. Its three renders (the workbench, a close-up and a storybook look) were made for this example with GPT Image from the clay frames kept with them, for free.",
  "thumb": "example:thumb.jpg",
@@ -996,6 +996,20 @@
     "progress": 1,
     "url": "example:model-wooden-toy.glb",
     "file": "example:model-wooden-toy.glb",
+    "example": true,
+    "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-nail-jar",
+    "part": "p-izn5x5q",
+    "sheet": "r-sheet-nail-jar",
+    "via": "local",
+    "quality": "web",
+    "status": "done",
+    "progress": 1,
+    "url": "example:model-nail-jar.glb",
+    "file": "example:model-nail-jar.glb",
     "example": true,
     "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
     "at": "2026-10-26T12:00:00.000Z"

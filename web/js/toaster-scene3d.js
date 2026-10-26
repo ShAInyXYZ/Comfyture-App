@@ -144,7 +144,12 @@ export function mountScene(el) {
     const b2 = new THREE.Box3().setFromObject(m);
     const c = b2.getCenter(new THREE.Vector3());
     m.position.set(-c.x, -size[1] / 2 - b2.min.y, -c.z);
-    m.traverse((o) => o.isMesh && ((o.castShadow = true), (o.receiveShadow = true)));
+    // (a generator's metal and gloss are read from three of its views at once and come out as black glass: the scene tames them)
+    m.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow = o.receiveShadow = true;
+      for (const mat of [o.material].flat()) if (mat?.isMeshStandardMaterial) ((mat.metalness = Math.min(mat.metalness ?? 0, 0.3)), (mat.roughness = Math.max(mat.roughness ?? 1, 0.55)));
+    });
     const g = new THREE.Group();
     g.add(m);
     return g;
