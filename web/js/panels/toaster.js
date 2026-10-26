@@ -37,7 +37,7 @@ import { chat as toasterChat, askToaster, addToasterPictures, tagHooks } from ".
 import { projectBar, drawProjectBar } from "./toaster-projects.js";
 import {
   gen, sheetOf, sheetRun, modelOf, modelRun, stateOf, objectsNow, sheetModel, setSheetModel, setSolid, loadTarget, loadCloudPrice, route, modelPrice, sheetPrice, costOf,
-  isArmed as askedFor, arm as askFor, disarm as askNot, makeObject, makeThem, stopQueue, forgetObject, makeSheet, makeModel, useFile, sceneView, setSceneView,
+  isArmed as askedFor, arm as askFor, disarm as askNot, makeObject, makeThem, stopQueue, forgetObject, makeSheet, makeModel, useFile, sceneView, setSceneView, watchServer,
 } from "../toaster-3d.js";
 import { wants3d, tiltOf } from "../toaster-model.js";
 
@@ -154,6 +154,7 @@ function layout() {
   for (const m of ["scene", "render", "3d"]) s.root.classList.toggle(`is-${m}`, mode === m);
   s.addCard.hidden = mode !== "scene";
   s.partsLabel.textContent = mode === "scene" ? "Parts" : mode === "3d" ? "Objects, in order" : "In the frame";
+  watchServer(mode === "3d");
   // (leaving the 3D page frees its viewer: the scene is built again when it comes back)
   if (mode !== "3d" && scene3d) (scene3d.handle?.dispose(), (scene3d = null));
   if (mode !== "scene" && drawer) openDrawer(null);
@@ -1281,6 +1282,8 @@ function drawBar3d() {
         models.length ? h("div.ts-pick", { title: state.account?.openWeights ? "Open weights only is on: no partner model (Nano Banana, GPT Image…) is offered, so the sheets are drawn on open weights and cost no credits" : "" }, dropdown({ label: "Image model for the sheets", value: sheetModel()?.id, items: models, onChange: setSheetModel, note: state.account?.openWeights ? "Open weights only: no partner model draws the sheets" : "Draws each object's four views from its clay" })) : h("span.ts-note", {}, "No image model yet")),
       h("div.ts-setting", {}, h("span.ts-label", {}, "Models made by"),
         h("p.ts-where", { title: t?.local?.ok ? `ComfyUI at ${t.local.url}` : t?.local?.why ?? "" }, route() === "local" ? "Trellis2 on your ComfyUI" : "Pixal3D on Comfy Cloud", h("em", {}, route() === "local" ? "your GPU" : modelPrice().words))),
+      h("div.ts-setting", {}, h("span.ts-label", {}, "Made so far"),
+        h("p.ts-where", {}, `${objectsNow().filter((p) => modelOf(p.id)).length} of ${objectsNow().length}`, h("em", {}, `${objectsNow().filter((p) => stateOf(p.id) === "model").length ? "one being made" : "3D assets"}`))),
       h("span.spacer"), key),
     // (why the models are not made on your own ComfyUI, and what open weights leaves out: said under the row, so the two pickers never cross)
     [t && !t.local?.ok ? t.local?.why ?? "No ComfyUI of yours answered" : "", state.account?.openWeights ? "Open weights only: no partner model draws the sheets, and nothing costs a credit." : ""].filter(Boolean).map((why) => h("p.ts-hint", {}, icon("info"), h("span", {}, why))),

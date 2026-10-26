@@ -10,7 +10,7 @@
 // object in hand and stops.
 import { changed, toast } from "./store.js";
 import { api } from "./api.js";
-import { OBJECT, SHEET, TO_3D, wants3d, objectSheetPrompt, referencesFor, tagsOf } from "./toaster-model.js";
+import { OBJECT, SHEET, TO_3D, wants3d, objectSheetPrompt, referencesFor, tagsOf, cleanDraft } from "./toaster-model.js";
 import { toaster, body, partsNow, save, modelNow, picture, request, keepPicture, runId, update, hasClay, resized } from "./toaster.js";
 
 const GEN = "api/toaster/3d";
@@ -354,6 +354,33 @@ export async function useFile(partId, file) {
     return null;
   }
 }
+// ---------------------------------------------------------------- the project as the server has it
+
+let watching = 0;
+/**
+ * While the 3D page is open the project is read again every 15 seconds, and the models and sheets another maker has put in it (a batch
+ * running on this machine, another tab) appear in the new scene as they land, without a reload. What this page is itself making is left alone.
+ */
+export function watchServer(on) {
+  clearInterval(watching);
+  watching = 0;
+  if (on) watching = setInterval(refreshFromServer, 15000);
+}
+const stamp = (b) => JSON.stringify([b.models.map((m) => [m.id, m.status, m.url, m.stage, Math.round((m.progress ?? 0) * 25)]), b.sheets.map((x) => [x.id, x.status, x.photo?.file])]);
+async function refreshFromServer() {
+  const draft = toaster.draft;
+  const mine = body();
+  if (!draft || !mine || document.hidden || !location.hash.startsWith("#/toaster") || gen.active || gen.queue.length || mine.models.some((m) => m.status === "running" && m.job)) return;
+  try {
+    const { project } = await call(`api/toasts/${draft.id}`);
+    const theirs = cleanDraft(project.body);
+    if (stamp(theirs) === stamp(mine)) return;
+    mine.models = theirs.models;
+    mine.sheets = theirs.sheets;
+    update("toaster-runs");
+  } catch {}
+}
+
 /** An object's sheet and model forgotten (their files stay in the Library). */
 export function forgetObject(partId) {
   const b = body();
