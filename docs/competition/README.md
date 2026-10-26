@@ -20,7 +20,7 @@ The other pages of this folder:
   are out of the tree (done 25 October, D1) but still in older commits until the history is rewritten (see the blocker below).
 - **Ready** (25 October): the code, the MIT licence, the run-locally steps, the workflow files, examples in every product
   (Kitchen's film *The Great Jam Chase* and its stages, Toaster's three sets, Spice's six shots through every department, Jam's
-  three videos on our own songs, Macaron's brands) plus Mixer's trend shelf, a guided tour per product (eight, each pet on its
+  video on our own song with eleven more songs, each a jam with its cover, Macaron's brands) plus Mixer's trend shelf, a guided tour per product (eight, each pet on its
   example), the Local/Cloud switch, judge mode for a hosted copy, the rebuilt website, and the storyboard with its keyframes.
 
 ## ⛔ The blocker: the trends' original recordings (out of the tree on 25 October; the history is left)
@@ -134,7 +134,7 @@ While at it, the rewrite can also drop `docs/brand/` (492 MB of design mockups t
 | D6 | Kitchen's example | ✅ **Shipped 25 Oct** (examples/kitchen/great-jam-chase): the story, two LTX-2.5 takes and the edit (26 Oct: take 1B was black for its first 2.4 s, the LTX black-start fault, so it is out of the example and the film holds its storyboard frame; *Render the film* failed on a fresh install, "Clip 3 is missing its file", and works again. **Roll 1B again, about 24 credits, your yes**, to have it move); Kitchen's home features it on a first visit, and *Render the film* makes the film for free |
 | D7 | Repo weight | Optional: **drop `docs/brand/` from the public history** during the D1 rewrite (keep it on the NAS) |
 | D8 | Toaster in the video | **The 3D part is reworked (26 Oct): objects are made real one at a time, each from its own four-view sheet, by your Trellis2 workflows (`workflows/3d/`), into a new scene.** The example ships its fourteen sheets (drawn with GPT Image, free); its models are made on the GPU (no credit) and are shipped as they finish. **For the open-weights category, re-toast the three stills with Qwen Image 2.1** (a few credits, your yes), or keep beat 4's labels out of frame ([VIDEO.md](VIDEO.md)) |
-| D9 | Meringue's two takes | Our kitten, our pixels, shown muted, but made in Mixer from the Face Dance trend, so her moves follow another creator's dance. Used on the website, in the storyboard (beat 7) and in Jam's *Three Kittens*. **Keep them muted, or swap them for takes on our own moves** |
+| D9 | Meringue's two takes | Our kitten, our pixels, shown muted, but made in Mixer from the Face Dance trend, so her moves follow another creator's dance. Used on the website and in the storyboard (beat 7); Jam's *Three Kittens*, which also used them, no longer ships (26 October). **Keep them muted, or swap them for takes on our own moves** |
 | D10 | Spice's AI edit bay | **Keep classic Spice as `#/spice`** for the submission (the website, the storyboard, the video and the Most Innovative case show it); the bay is a second door at `#/spice?bay` with its own example (*The yard at dusk*) and tour. None of its paid stages has run for real: **one run per stage on a 4-second clip, about 70 credits, all open models** (Obscura Remova for Clean, Bernini-R for Direct, FastH3 OmniRef or LTX IC-LoRA union for Control, LTX 2.5 first and last frame for Extend), your yes, before JUDGES.md sends a judge there |
 | D11 | Shot's presets and samples | The 28 preset previews in Kitchen's Shot room were rolled from eight stock-looking sample photos, two of them the raincoat woman and the rooftop man you turned down for Spice. **Redraw the eight samples with our cast (Codex GPT Image, free) and roll the 28 previews again (about 670 credits, your yes)**, or leave them |
 
@@ -183,7 +183,7 @@ What the rules ask, checked against the repo on 25 October. The submission form 
 | 14 | One submission per person | *"One submission per person"* | ✅ | |
 
 Done on 25 October, not required but felt by judges: Toaster's three examples, a tour for every product, Kitchen's example film
-(D6), Jam's three videos on our own songs, Spice's examples through every department, and the rebuilt website.
+(D6), Jam's video on our own song (and, on 26 October, eleven songs made on the owner's ACE-Step 1.5 XL workflow, each a jam with its cover, in place of La Calabaza and Three Kittens and their 13 and 15 s songs), Spice's examples through every department, and the rebuilt website.
 
 ## The categories, and the case for each
 
