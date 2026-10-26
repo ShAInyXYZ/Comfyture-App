@@ -1,6 +1,6 @@
 // Spice's two screens for the website (www/media/app/spice.webp and tour.webp), captured from a lab server with the shipped example:
-// Truffle's Jam Heist open on SH010's last pass with Outpaint picked (the chain under the viewer, the tools by family), and Paprika's tour
-// on the chain. 1600x950 at twice the pixels, as www/README.md says; then CAPTURES=<out's parent> python3 scripts/www-media.py.
+// Truffle's Jam Heist open on SH010's Day to night pass, Paprika's read of the shot with her chains, the first chain's first step set up
+// (Inpaint, its box drawn on the viewer over the road sign), the tools as cards under the viewer; and Paprika's tour on the chain. 1600x950 at twice the pixels, as www/README.md says; then CAPTURES=<out's parent> python3 scripts/www-media.py.
 //   NODE_PATH=<a node_modules that has playwright> node scripts/www-capture-spice.mjs <out folder>   (writes <out>/c/spice-01-heist.png, c/spice-02-tour-chain.png)
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
@@ -40,7 +40,8 @@ try {
   // the pass whose wipe shows the most: the day turned to night
   await page.locator(".sp-chain .sp-link", { hasText: /^Day to night$/ }).locator(".sp-link-main").click();
   await page.waitForTimeout(600);
-  await page.locator(".sp-tchip").filter({ has: page.locator("span", { hasText: /^Outpaint$/ }) }).click();
+  // her first chain's first step on the tool card: Inpaint, with the box she placed over the sign
+  await page.locator(".sp-chain-card").first().locator("button", { hasText: "Step by step" }).click();
   await page.mouse.move(8, 700);
   await page.waitForTimeout(1500);
   await page.screenshot({ path: join(out, "c", "spice-01-heist.png") });
