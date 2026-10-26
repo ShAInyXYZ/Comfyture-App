@@ -28,6 +28,36 @@ The result is [`knowledge/jam/acestep-guide.md`](../../knowledge/jam/acestep-gui
 | LoRA | | one at a time (loading another replaces it); scale 0 to 100%; about an hour to train on 8 to 20 songs | |
 | Practice | fix the seed to tune; batch and screen | **generate 2 to 4 takes and pick**; repaint a weak section instead of redoing | |
 
+## From each rule of the guide back to its source
+
+T = Tutorial, M = Musician's Guide, D = deAPI, O = the owner's own workflow or practice (each checked against the pages in the second reading).
+
+| Rule in `knowledge/jam/acestep-guide.md` | From |
+|---|---|
+| Tags are the most important input; keywords, specific, several dimensions | T, M, D |
+| Genre first; one primary genre and at most one modifier; no contradictions | D, T |
+| Instruments specific (3 to 5) and the drum feel; the voice (gender, delivery); one or two production words | M, D, T |
+| "no autotune, raw human voice" in the tags when the voice should sound human | O |
+| BPM, key and time signature never in the tags; they are fields | T, O |
+| The words must agree with the tempo ("slow ballad" with a fast bpm confuses) | T, D |
+| BPM 60 to 180, common keys, 4/4 are the stable choices; the values are anchors | T |
+| BPM ranges by genre (lo-fi 70 to 85, pop 100 to 120, ...) | D, M |
+| Whole songs of 200 to 300 s; the XL holds a long song together | D (XL holds 200 s+), T (2 to 4 min stable), **O (200 to 300 s, E minor)** |
+| E minor as the default key | **O** |
+| Section tags on their own line, a blank line between; the list of tags | T, M, D |
+| One short hint after a dash, never stacked (the model sings the tag) | T, M |
+| Lines of 6 to 10 syllables, the same length in the same place | T, M (D says 4 to 8: the guide keeps 6 to 10) |
+| A chorus repeated word for word; rhyme in pairs | D, O (their example) |
+| UPPERCASE for a shout, (parentheses) for backing vocals, vowel stretches sparingly | T, M |
+| Never an empty `[Chorus]` (silence) | D |
+| Instrumental: `[Instrumental]` and "instrumental, no vocals", not words plus "no vocals" | D |
+| Tags and lyrics must agree (a female vocal with a "deep male voice" hint) | T |
+| One line every 4 to 5 s; instrumental sections instead of padding | **O** (their example: about 38 lines for 200 s), T and D give no rule |
+| Full is three passes, Draft the first alone; roll two or three takes and pick | O (Superior's chain), M (generate 2 to 4) |
+| Language is a field; the words in that language, the tags in English | T, O |
+| One style LoRA at a time, strength 1.0, its trigger word in the tags | M (one at a time), the LoRAs' own metadata (strength, trigger) |
+| No artist names in the tags; nothing that names a real person | the owner's rule for the app (no unlicensed IP) |
+
 ## Where they disagree, and what the guide does
 
 - **BPM in the tags** (deAPI yes, Tutorial no): **no**. The Tutorial and the owner's own saved prompt keep it out; the model reads the field. The words must still agree with it ("slow" with a slow bpm).

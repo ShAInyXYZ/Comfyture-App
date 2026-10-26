@@ -323,6 +323,34 @@ export function unwrapPrompt(text: string) {
   }
 }
 
+/**
+ * The song workflow set for a song (ACE-Step 1.5 XL in three passes: the first from nothing, the two after light refinements of it): the style,
+ * the words, the settings, the seeds; a style LoRA (the person's own ComfyUI only: Comfy Cloud has none) loaded on the model before the shift with its
+ * trigger word first in the style; a draft being the first pass alone. Changes `graph` and answers it.
+ */
+export function songGraph(graph: any, v: { prompt: string; seconds: number; lyrics?: string; bpm?: number; seed: number; key?: string; language?: string; timesignature?: string; passes?: number; temperature?: number; adherence?: number; thinking?: boolean; lora?: string }, selfHosted: boolean) {
+  // ACE-Step 1.5 XL in three passes: the first from nothing, the two after light refinements of it
+  Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 140), keyscale: v.key ?? "A minor", language: v.language ?? "en", timesignature: v.timesignature ?? "4", temperature: v.temperature ?? 0.75, cfg_scale: v.adherence ?? 2.5, generate_audio_codes: v.thinking ?? true });
+  graph.latent.inputs.seconds = v.seconds;
+  // a style LoRA (the person's own ComfyUI: Comfy Cloud has none): loaded on the model before the shift, its trigger word first in the style
+  const lora = SONG_LORAS.find((l) => l.id === v.lora);
+  if (lora && selfHosted) {
+    graph.lora = { class_type: "LoraLoaderModelOnly", inputs: { model: ["unet", 0], lora_name: `ace-step/${lora.folder}/${lora.folder.replace(/-acestep1\.5-xl-v1$/, "-xl-v1")}.safetensors`, strength_model: 1 } };
+    graph.shift.inputs.model = ["lora", 0];
+    graph.text.inputs.tags = `${lora.trigger}, ${v.prompt}`;
+  }
+  graph.first.inputs.seed = v.seed;
+  graph.second.inputs.seed = v.seed + 1;
+  graph.third.inputs.seed = v.seed + 2;
+  // a draft is the first pass alone
+  if (v.passes === 1) {
+    graph.decode.inputs.samples = ["first", 0];
+    delete graph.second;
+    delete graph.third;
+  }
+  return graph;
+}
+
 export class Engine extends EventEmitter {
   client: Comfy;
   private runs = new Map<string, Run>();
@@ -850,25 +878,7 @@ export class Engine extends EventEmitter {
       try {
         const graph = await loadGraph(this.dirs.workflows, kind === "music" ? "audio/music.json" : kind === "song" ? "audio/song.json" : "audio/sfx.json");
         if (kind === "song") {
-          // ACE-Step 1.5 XL in three passes: the first from nothing, the two after light refinements of it
-          Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 140), keyscale: v.key ?? "A minor", language: v.language ?? "en", timesignature: v.timesignature ?? "4", temperature: v.temperature ?? 0.75, cfg_scale: v.adherence ?? 2.5, generate_audio_codes: v.thinking ?? true });
-          graph.latent.inputs.seconds = v.seconds;
-          // a style LoRA (the person's own ComfyUI: Comfy Cloud has none): loaded on the model before the shift, its trigger word first in the style
-          const lora = SONG_LORAS.find((l) => l.id === v.lora);
-          if (lora && targetOf(process.env.COMFY_BASE_URL?.trim() || CLOUD_URL).kind === "self-hosted") {
-            graph.lora = { class_type: "LoraLoaderModelOnly", inputs: { model: ["unet", 0], lora_name: `ace-step/${lora.folder}/${lora.folder.replace(/-acestep1\.5-xl-v1$/, "-xl-v1")}.safetensors`, strength_model: 1 } };
-            graph.shift.inputs.model = ["lora", 0];
-            graph.text.inputs.tags = `${lora.trigger}, ${v.prompt}`;
-          }
-          graph.first.inputs.seed = v.seed;
-          graph.second.inputs.seed = v.seed + 1;
-          graph.third.inputs.seed = v.seed + 2;
-          // a draft is the first pass alone
-          if (v.passes === 1) {
-            graph.decode.inputs.samples = ["first", 0];
-            delete graph.second;
-            delete graph.third;
-          }
+          songGraph(graph, v, targetOf(process.env.COMFY_BASE_URL?.trim() || CLOUD_URL).kind === "self-hosted");
         } else if (kind === "music") {
           Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 100) });
           Object.assign(graph.latent.inputs, { seconds: v.seconds });
