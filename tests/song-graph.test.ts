@@ -28,8 +28,8 @@ test("a style LoRA is loaded before the shift with its trigger word first, on th
     assert.equal(g.lora.class_type, "LoraLoaderModelOnly");
     assert.match(g.lora.inputs.lora_name, /^ace-step\/[\w.-]+\/[\w.-]+\.safetensors$/, `${l.id}: the file under the LoRAs' folder`);
     assert.deepEqual(g.lora.inputs.model, ["unet", 0], "on the model as loaded");
-    assert.equal(g.lora.inputs.strength_model, LORA_STRENGTH, "at half: full strength cost the sung words their clarity in our tests");
-    assert.equal(LORA_STRENGTH, 0.5);
+    assert.equal(g.lora.inputs.strength_model, LORA_STRENGTH, "at the strength the LoRA's documentation gives");
+    assert.equal(LORA_STRENGTH, 1);
     assert.deepEqual(g.shift.inputs.model, ["lora", 0], "the shift takes the LoRA's model");
     assert.equal(g.text.inputs.tags, `${l.trigger}, ${song.prompt}`, "the trigger word first");
   }

@@ -87,9 +87,10 @@ voice]" in the lyrics makes the model pick one at random. A "gentle" style with 
 
 ## Style LoRAs (only on the user's own ComfyUI; Comfy Cloud has none)
 
-Trained on the XL: one at a time, applied at **half strength** (0.5: at 1.0 the sung words came through worse in our tests). Each needs its **trigger
-word placed in the tags** to activate, and the server puts it there: never write it. Pick the one that matches the song's genre, or none (a lo-fi LoRA makes
-the voice softer, as the style does: ask for it on a beat, less on a song whose words must be heard):
+Trained on the XL (synthetic tracks, 12 to 15 each): one at a time, at the strength their documentation gives, **1.0**. Each is used by putting its **trigger
+word first in the caption**, `<trigger>, <description>, <tags>`, and the server does that: never write it. **A LoRA is for a beat or a song with no words.** In our test
+the same Japanese song was clearly sung without the LoRA (413 words heard, 40 of 41 lines) and unintelligible with the j_pop LoRA loaded (99 words, 13 of 41). So never
+choose one for a song whose words must be heard. Pick the one that matches the genre, or none:
 
 | Genre | LoRA | Trigger word |
 |---|---|---|

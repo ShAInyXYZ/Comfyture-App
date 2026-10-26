@@ -494,7 +494,7 @@ function drawSteps() {
         row("Time", chips(SIGNATURES.map((x) => [x.value, x.label, x.desc]), song.signature, pick("signature"), "Time signature", ".is-seg")),
         row("Language", lang),
         row("Quality", chips(QUALITY, song.passes, pick("passes"), "Quality", ".is-seg")),
-        onOwnGpu() ? row("Style LoRA", chips([["", "None", "No LoRA"], ...STYLE_LORAS.map(([id, name]) => [id, name, `The ${name} LoRA: its trigger word goes in the style for you`])], song.lora ?? "", pick("lora"), "Style LoRA", ".is-seg")) : null,
+        onOwnGpu() ? row("Style LoRA", chips([["", "None", "No LoRA"], ...STYLE_LORAS.map(([id, name]) => [id, name, `The ${name} LoRA: its trigger word goes in for you. For a beat or a song with no words: it makes sung words unclear`])], song.lora ?? "", pick("lora"), "Style LoRA", ".is-seg")) : null,
         row("Creativity", range({ min: 0.4, max: 1.1, step: 0.05, value: song.temperature, label: "Creativity", format: (v) => v.toFixed(2), set: (v) => ((song.temperature = v), keepDraft()), ends: ["steady", "wild"] })),
         row("Follows the words", range({ min: 1, max: 5, step: 0.5, value: song.adherence, label: "How closely it follows the words and the style", format: (v) => v.toFixed(1), set: (v) => ((song.adherence = v), keepDraft()), ends: ["loose", "strict"] })),
         row("Plans first", h("button.key", { type: "button", "aria-pressed": String(song.thinking), title: "The model plans the song's structure before it sounds it: better built, slower", on: { click: () => pick("thinking")(!song.thinking) } }, song.thinking ? "On" : "Off")),

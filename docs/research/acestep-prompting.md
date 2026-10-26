@@ -55,7 +55,7 @@ T = Tutorial, M = Musician's Guide, D = deAPI, O = the owner's own workflow or p
 | One line every 4 to 5 s; instrumental sections instead of padding | **O** (their example: about 38 lines for 200 s), T and D give no rule |
 | Full is three passes, Draft the first alone; roll two or three takes and pick | O (Superior's chain), M (generate 2 to 4) |
 | Language is a field; the words in that language, the tags in English | T, O |
-| One style LoRA at a time, its trigger word in the tags, applied at **0.5** | M (one at a time), the LoRAs' own metadata (trigger; they were made for 1.0), **our own test** (strength) |
+| One style LoRA at a time, its trigger word first in the caption (`<trigger>, <description>, <tags>`), at the documented strength 1.0; for beats and wordless songs only | M (one at a time), the LoRAs' own metadata (trigger, template, strength), **our own test** (sung words) |
 | No artist names in the tags; nothing that names a real person | the owner's rule for the app (no unlicensed IP) |
 
 ## Where they disagree, and what the guide does
@@ -75,22 +75,34 @@ The Superior settings (XL sft, three passes 30/20/15 at denoise 1/0.25/0.15, cfg
 = plain Heun, then their `AudioQualityEnhancer`), the tag style of their example ("... no autotune, raw human voice"), `[Verse 1 - rapid rap]`-style
 hints, 200 s and E minor. Comfy Cloud has neither the sampler nor the enhancer, so Jam's Cloud workflow uses `heun` and no master.
 
-## LoRAs found, and what we measured
+## LoRAs found, and what we found out
 
-Nine, all for the XL (trained on XL turbo on 12 to 15 synthetic tracks each, a trigger word that must appear in the prompt, recommended strength 1.0, no tested range):
-acoustic, dream pop, electropop, experimental, indie, j-pop, jazz, lo-fi, pop (`/app/models/loras/ace-step/`). ComfyUI's own `LoraLoaderModelOnly`
-lists all nine; the app loads one before the shift, with its trigger word first in the tags, **on the owner's own ComfyUI only** (Comfy Cloud has none).
+Nine, all for the XL (trained on XL turbo on 12 to 15 synthetic tracks each, instrumental fraction 0 to 0.2): acoustic, dream pop, electropop, experimental, indie, j-pop,
+jazz, lo-fi, pop (`/app/models/loras/ace-step/`). Each one's own documentation (README and metadata sidecar) says: a **trigger word** that must appear in the prompt, the
+caption template **`<trigger>, <description>, <tags>`**, **strength 1.0**, no tested range, and (for the XL turbo they were trained on) 8 steps, guidance 7, shift 3.
+The owner's own LoRA workflow (`AceStep-MusicGen_Lora.json`, the kaola ACE-Step wrapper) runs the XL **sft** with the 4B planner (off), 50 steps, guidance 9, shift 2,
+strength 1, then their enhancer.
 
-Our own test (same text, settings and seeds; the share of the written words Whisper recovers from the whole song, a measure of how clearly it is sung):
+**Two ways the LoRA was not actually applied, found on 26 October:**
+- Through the kaola nodes (the owner's workflow) PEFT needs `adapter_model.safetensors` in the LoRA's folder; the folders hold the weights under a renamed file
+  (`j_pop-xl-v1.safetensors`), PEFT falls through to a Hugging Face hub lookup, fails (`HFValidationError`), and the node goes on **without** the LoRA, silently. A symlink named
+  `adapter_model.safetensors` to the real file (added to `j_pop-xl-v1/`) makes it load (`LoRA adapter 'j_pop-xl-v1' loaded, targets=256, scale 1.0`). The other eight folders
+  have the same naming and would fail the same way.
+- Through ComfyUI's own `LoraLoaderModelOnly` (what the app's engine uses) the LoRA **does** apply: the same song at strength 1 and at strength 0 differs by 36%, while
+  strength 0 against itself differs by 0.0.
 
-| Song (LoRA) | plain | LoRA 1.0 | LoRA 0.5 |
-|---|---|---|---|
-| Petit Matin (acoustic) | 92% | 51% | **93%** |
-| Chameleon Lights (electropop) | 84% | 56% | 73% |
-| Blanket Fort Radio (lo-fi) | 55% | 30% | 32% |
+**What a LoRA does to a sung song.** The same Japanese anime-opening song, same lyrics, tags, key, tempo, length and seed, three ways; the number of words a speech model
+hears in the vocals, and of the 41 written lines how many it finds:
 
-So the strength is **0.5**. The lo-fi LoRA's drop is the style itself (its training tracks are sung, instrumental fraction 0): lo-fi buries and softens the voice, which a
-clarity score counts against it, so it is for beats more than for songs whose words must be heard. Whether a LoRA makes a song *better* is a matter of ear, not of this score.
+| Render | words heard | lines found |
+|---|---|---|
+| kaola graph, LoRA did not load (the first run) | 413 | 40 |
+| the owner's Superior graph, no LoRA | 373 | 38 |
+| kaola graph with the j_pop LoRA loaded, strength 1 | **99** | **13** |
+
+So the LoRA, at its documented strength, makes sung words unintelligible, and the earlier measurements at other strengths (Petit Matin with the acoustic LoRA, Chameleon Lights with
+the electropop one) point the same way. **A LoRA is for beats and wordless songs.** (This is a speech-model reading of how clearly the words are sung, a diagnostic: whether the music is
+good is the owner's ear's call.)
 
 ## Not verified
 
