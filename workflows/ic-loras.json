@@ -55,12 +55,14 @@
    "family": "control",
    "about": "The clip's people (body, hands, face) drive a new picture: the same movement and timing, drawn from the words.",
    "guide": "pose",
-   "prompt": "A grumpy old Texan rancher in a cream straw hat leans out of a yellow pickup truck window and rants, a grey cat sits beside him, warm autumn light.",
+   "prompt": "",
    "strength": 1.0,
    "status": "verified",
    "confidence": "official-workflow",
    "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Union-Control",
-   "note": "Describe the content you want, never the structure. 0.5 to 0.8 is a softer guide."
+   "note": "Describe the content you want, never the structure. 0.5 to 0.8 is a softer guide.",
+   "example": "A grumpy old Texan rancher in a cream straw hat leans out of a yellow pickup truck window and rants, a grey cat sits beside him, warm autumn light.",
+   "hint": "What to draw under the clip's own motion: the people, the place, the light; never the structure"
   },
   {
    "id": "union-canny",
@@ -69,12 +71,14 @@
    "family": "control",
    "about": "The edges of every frame drive a new picture: shapes and the camera stay, the look is drawn from the words.",
    "guide": "canny",
-   "prompt": "A claymation world: a grumpy old rancher in a straw hat leans out of a yellow pickup truck, a grey cat beside him, handmade felt and clay textures, warm autumn light.",
+   "prompt": "",
    "strength": 1.0,
    "status": "verified",
    "confidence": "official-workflow",
    "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Union-Control",
-   "note": "Canny is best for architecture and products."
+   "note": "Canny is best for architecture and products.",
+   "example": "A claymation world: a grumpy old rancher in a straw hat leans out of a yellow pickup truck, a grey cat beside him, handmade felt and clay textures, warm autumn light.",
+   "hint": "What to draw along the clip's own edges: the people, the place, the look"
   },
   {
    "id": "union-depth",
@@ -83,12 +87,14 @@
    "family": "control",
    "about": "The depth of every frame drives a new picture: the space stays, the look is drawn from the words.",
    "guide": "depth",
-   "prompt": "A snowy mountain village at night under a starry sky: a bearded man in a wool hat leans out of a red truck window, a fox sits beside him, deep blue moonlight and warm lantern glow.",
+   "prompt": "",
    "strength": 1.0,
    "status": "verified",
    "confidence": "official-workflow",
    "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Union-Control",
-   "note": "Depth is best for landscapes and interiors."
+   "note": "Depth is best for landscapes and interiors.",
+   "example": "A snowy mountain village at night under a starry sky: a bearded man in a wool hat leans out of a red truck window, a fox sits beside him, deep blue moonlight and warm lantern glow.",
+   "hint": "What to draw over the clip's own depth: the people, the place, the light"
   },
   {
    "id": "deblur",
@@ -306,7 +312,7 @@
    "family": "grade",
    "about": "Adds colour to black and white footage; the prompt says which colours things should be. Work in progress by its card.",
    "guide": "raw",
-   "prompt": "Natural, warm autumn colours: a cream straw hat, a faded blue denim shirt, a plum bandana, a pale yellow pickup truck, a grey cat, red and gold leaves.",
+   "prompt": "",
    "strength": 1.0,
    "status": "verified",
    "confidence": "card",
@@ -315,7 +321,9 @@
    "demo": {
     "damage": "gray",
     "label": "a gray copy"
-   }
+   },
+   "example": "Natural, warm autumn colours: a cream straw hat, a faded blue denim shirt, a plum bandana, a pale yellow pickup truck, a grey cat, red and gold leaves.",
+   "hint": "The colours of the scene, named: the skin, the clothes, the walls, the sky"
   },
   {
    "id": "ungrade",
@@ -377,13 +385,15 @@
    "family": "clean",
    "about": "Removes the people and moving subjects and rebuilds the empty background. No mask.",
    "guide": "raw",
-   "prompt": "An empty clean plate of the exact same location: identical background, environment, structures and lighting as the source video, with no people, no humans, no figures, and no body parts such as arms, hands or legs anywhere in the frame. Static photorealistic footage, natural light, high detail.",
+   "prompt": "",
    "strength": 1.0,
    "status": "failed",
    "confidence": "card",
    "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Clean-Plate",
    "avoid": "person, people, human, figure, limb, arm, hand, leg, body part, shadow of a person, leftover people",
-   "note": "On this clip the person fills the frame, which its card puts out of scope: a different man stayed in the truck. Try it with people small in a wide shot."
+   "note": "On this clip the person fills the frame, which its card puts out of scope: a different man stayed in the truck. Try it with people small in a wide shot.",
+   "example": "An empty clean plate of the exact same location: identical background, environment, structures and lighting as the source video, with no people, no humans, no figures, and no body parts such as arms, hands or legs anywhere in the frame. Static photorealistic footage, natural light, high detail.",
+   "hint": "The place with its subject gone: the same walls, ground and light, nobody there"
   },
   {
    "id": "obscura",
@@ -488,7 +498,7 @@
    "family": "frame",
    "about": "Fills a region of the frame, shown as flat green: remove something (here the cat), or draw something new there.",
    "guide": "raw",
-   "prompt": "The back seat of the truck, empty, with warm autumn trees seen through the window behind it.",
+   "prompt": "",
    "strength": 1.0,
    "status": "verified",
    "confidence": "official-workflow",
@@ -504,7 +514,9 @@
      "h": 0.26
     }
    },
-   "note": "The region was over the cat: it is gone, an empty seat in its place (merged with the footage outside the region)."
+   "note": "The region was over the cat: it is gone, an empty seat in its place (merged with the footage outside the region).",
+   "example": "The back seat of the truck, empty, with warm autumn trees seen through the window behind it.",
+   "hint": "What is in the region once it is painted in: the walls, the ground, what stands there"
   },
   {
    "id": "inpaint-masked",
@@ -513,7 +525,7 @@
    "family": "frame",
    "about": "Text-only masked inpaint: the region shown in magenta is filled from the words.",
    "guide": "raw",
-   "prompt": "An old rancher in a cream straw hat leans out of a yellow pickup truck window; on the door beside him is a hand-painted red lantern sign.",
+   "prompt": "",
    "strength": 1.0,
    "status": "failed",
    "confidence": "card",
@@ -528,7 +540,9 @@
      "h": 0.14
     }
    },
-   "note": "On the distilled settings it left the magenta of the mask in the region instead of filling it."
+   "note": "On the distilled settings it left the magenta of the mask in the region instead of filling it.",
+   "example": "An old rancher in a cream straw hat leans out of a yellow pickup truck window; on the door beside him is a hand-painted red lantern sign.",
+   "hint": "What is in the region once it is painted in"
   },
   {
    "id": "cameraman",
@@ -615,12 +629,14 @@
    "family": "effects",
    "about": "An experimental edit by words: add, remove or replace an object, or convert the style.",
    "guide": "raw",
-   "prompt": "Add a red knitted scarf around the neck of the grey cat on the left.",
+   "prompt": "",
    "strength": 1.3,
    "status": "failed",
    "confidence": "card",
    "source": "https://huggingface.co/Alissonerdx/LTX-LoRAs",
-   "note": "A draft run of 'Convert the video into a watercolor style' changed the people instead of the style. Its card says CFG matters most and calls it experimental."
+   "note": "A draft run of 'Convert the video into a watercolor style' changed the people instead of the style. Its card says CFG matters most and calls it experimental.",
+   "example": "Add a red knitted scarf around the neck of the grey cat on the left.",
+   "hint": "The edit, in a sentence: what to add, change or take away"
   },
   {
    "id": "ingredients",

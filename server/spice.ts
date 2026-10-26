@@ -23,6 +23,8 @@ export interface Tool {
   takes: ("words" | "region" | "aspect" | "height")[];
   /** the words its card gives, offered as the placeholder (an IC-LoRA's prompt, a template's) */
   prompt?: string;
+  /** what the words should say, for a tool with no words of its own */
+  hint?: string;
   words?: string;
   template?: string;
   strength?: number;
@@ -87,7 +89,7 @@ export function createSpice(deps: Deps) {
     const ic: Tool[] = suite.tools.map((t: ICTool) => ({
       id: t.id, kind: "iclora" as const, name: t.name, family: t.family, about: t.about,
       takes: [...(t.template && !t.template.includes("{words}") ? [] : ["words" as const]), ...(t.prepare?.op === "pad" ? ["aspect" as const] : t.prepare?.op === "box" ? ["region" as const] : [])],
-      prompt: t.prompt, words: t.words, strength: t.strength, status: t.status, note: t.note, needs: t.needs, grammar: !!t.template,
+      prompt: t.prompt, hint: t.hint, words: t.words, strength: t.strength, status: t.status, note: t.note, needs: t.needs, grammar: !!t.template,
     }));
     // a template's price is the runner's, when it has read it
     const engines = ENGINES.map((e) => (e.kind === "template" ? { ...e, credits: deps.templates?.credits?.get?.(e.template)?.credits ?? null, partner: deps.templates?.partnerOf?.(e.template) } : e));

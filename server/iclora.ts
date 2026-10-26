@@ -26,8 +26,12 @@ export interface ICTool {
   about: string;
   /** what the clip is shown to the LoRA as */
   guide: Guide;
-  /** the words the card says to use (what the tool is told when the person adds none) */
+  /** the words the card says to use (what the tool is told when the person adds none); empty for a tool whose words are the shot's own */
   prompt: string;
+  /** what the words should say, for a tool with no words of its own (shown where they are typed) */
+  hint?: string;
+  /** the words it was given on the survey's clip (a record; never sent) */
+  example?: string;
   /** a card whose words have a fixed grammar: {scene} is the shot described, {words} what the person says of the effect */
   template?: string;
   /** the words of the effect when the person adds none (the template's {words}) */
@@ -71,7 +75,8 @@ const set = (graph: Graph, node: string, input: string, value: unknown) => {
 export function promptOf(tool: ICTool, v: { scene?: string; words?: string }, scene = "the footage") {
   const words = (v.words ?? "").trim();
   if (tool.template) return tool.template.replaceAll("{scene}", (v.scene ?? "").trim() || scene).replaceAll("{words}", words || tool.words || "");
-  return words || tool.prompt;
+  // (a tool with no words of its own is told the shot: what it was rolled from, or what it is about, as the page sends it)
+  return words || tool.prompt || (v.scene ?? "").trim() || scene;
 }
 
 /**

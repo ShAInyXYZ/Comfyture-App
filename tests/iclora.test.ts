@@ -86,7 +86,8 @@ test("the registry: ids are unique, every tool is in a family, has a LoRA file o
     assert.ok(["raw", "pose", "canny", "depth"].includes(t.guide), `${t.id}: guide`);
     assert.ok(["verified", "untested", "failed"].includes(t.status), `${t.id}: status`);
     assert.ok(t.name && t.about && t.strength > 0 && t.strength <= 2.5, t.id);
-    assert.ok(t.prompt || t.template || t.needs?.length, `${t.id}: words (a prompt or a template), unless it needs more than a clip`);
+    assert.ok(t.prompt || t.template || t.hint || t.needs?.length, `${t.id}: words of its own (a prompt or a template), or a hint for the person's, unless it needs more than a clip`);
+    if (t.hint) assert.ok(!t.prompt && !/rancher|pickup|grey cat/i.test(t.hint), `${t.id}: a hint says what to write, never the survey's clip`);
     if (t.template) assert.ok(/\{scene\}|\{words\}/.test(t.template), `${t.id}: a template says where the scene or the words go`);
     assert.ok(t.source?.startsWith("https://"), `${t.id}: a model card to read`);
     assert.ok(["card", "official-workflow", "inferred"].includes(t.confidence ?? ""), `${t.id}: how sure the settings are`);
@@ -103,6 +104,9 @@ test("what a tool is told: a card's grammar with the shot and the effect put in,
   assert.equal(promptOf(grammar, { scene: "a truck", words: "a flood" }), "Reference shows a truck. ADD WATER a flood. Only water differs.");
   assert.equal(promptOf(tool(), { words: "  mine " }), "mine");
   assert.equal(promptOf(tool(), {}), "The card's words.");
+  // a tool with no words of its own (the survey's words are its `example`, never sent) is told the shot, else the footage
+  assert.equal(promptOf({ ...tool(), prompt: "" }, { scene: "a raccoon in a market yard" }), "a raccoon in a market yard");
+  assert.equal(promptOf({ ...tool(), prompt: "" }, {}, "the footage"), "the footage");
   assert.equal(promptOf(tool({ template: "{scene} and {scene}" }), { scene: "x" }), "x and x", "every place the scene goes");
 });
 

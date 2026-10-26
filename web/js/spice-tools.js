@@ -41,7 +41,7 @@ export function plan() {
   const g = spice.set;
   const seconds = Math.min(10, Math.max(1, g.seconds ?? Math.round(input?.seconds ?? 5)));
   const words = (g.words ?? "").trim();
-  const why = !spice.tools ? "The suite's tools are still coming" : !t ? "Pick a tool" : !s ? "Add a shot first" : !input ? "The shot has no plate yet: roll one or drop a clip" : input.kind !== "video" ? "The tools work on a clip" : t.needs?.length ? `${t.name} needs ${t.needs.join(" and ")}: not offered yet` : partnerOff(t) || ((t.id === "cutout" || t.id === "sound") && !words ? (t.id === "cutout" ? "Name what to cut out" : "Say what the sound is") : "");
+  const why = !spice.tools ? "The suite's tools are still coming" : !t ? "Pick a tool" : !s ? "Add a shot first" : !input ? "The shot has no plate yet: roll one or drop a clip" : input.kind !== "video" ? "The tools work on a clip" : t.needs?.length ? `${t.name} needs ${t.needs.join(" and ")}: not offered yet` : partnerOff(t) || ((t.id === "cutout" || t.id === "sound") && !words ? (t.id === "cutout" ? "Name what to cut out" : "Say what the sound is") : t.kind === "iclora" && !t.grammar && !t.prompt && !words && !sceneOf(s) ? "Say what it is told: this shot has no words of its own" : "");
   return { why, cost: t ? priceOf(t, { seconds, size: g.size }) : null, seconds, tool: t, input, shot: s };
 }
 
@@ -92,7 +92,7 @@ export function toolBody() {
   }));
   const fields = [
     t.grammar ? field("scene", "The shot, described", sceneOf(p.shot) || "The shot in a sentence: who, where, the light", 2) : null,
-    t.takes.includes("words") ? field("words", t.grammar ? "The effect" : t.id === "cutout" ? "Who, or what, to cut out" : t.id === "sound" ? "What is heard" : "What it is told", t.grammar ? t.words || "" : t.prompt || "", t.grammar ? 2 : 3) : null,
+    t.takes.includes("words") ? field("words", t.grammar ? "The effect" : t.id === "cutout" ? "Who, or what, to cut out" : t.id === "sound" ? "What is heard" : "What it is told", t.grammar ? t.words || "" : t.prompt || (t.hint && sceneOf(p.shot) ? `${t.hint}. Left empty: "${sceneOf(p.shot).slice(0, 90)}…"` : t.hint || ""), t.grammar ? 2 : 3) : null,
   ];
   const seconds = g.seconds ?? Math.round(p.input?.seconds ?? 5);
   const ic = t.kind === "iclora";
