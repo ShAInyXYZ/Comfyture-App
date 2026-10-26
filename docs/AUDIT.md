@@ -144,6 +144,8 @@ name now, and the lamps (saved, linked) read their tip.
    workspace scrolls inside itself above its docked bar, Story, Shot and Utensils scroll their page clear of the bar, Spice's controls
    are all reached (`reach` check: every control scrolled into view, then hit-tested), Utensils' before-and-after lines drag. Left:
    on Story at 1280 x 720 the floating bar sits over the storyboard frames until the page is scrolled.
+   **axe-core 4.13 again (26 October, after the night's changes)**, the 13 pages of a fresh install at 1280 x 720: no violation but one,
+   Macaron's type scale collapsed to nothing at that width (its MONO label over the brand's yellow mat, 3.2:1), fixed the same night.
    **Other browsers (26 October)**: the 13 pages walked on a fresh install at 1440 x 900 in Firefox (Playwright's Gecko) and WebKit
    (Safari's engine, Playwright's Linux build): no page error on any, layouts as in Chromium, the Stage's and Toaster's 3D drawn.
    The Linux WebKit build decodes no H.264 picture (Spice's viewer is black there; Safari on a Mac does decode it: every shipped clip is
