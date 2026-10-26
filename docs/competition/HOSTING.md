@@ -117,7 +117,8 @@ To-dos first:
 - ✅ The build fails if any output file contains a key (`comfyui-` followed by 20+ characters).
 - Before publishing it: the site copies all of `web/`, Mixer's trend previews and the frames derived from other creators' videos
   included, so it carries the same risk as the public repo until D1 is settled ([README.md](README.md)).
-- `.github/workflows/pages.yml`: build on the submission tag, publish to Pages.
+- ✅ `.github/workflows/pages.yml` builds the site and publishes it to Pages, run by hand or by the `submission` tag (it never runs by
+  itself on a push to main).
 
 Then: make the repo public (Pages is free for public repos), run the workflow (or `npm run demo-site && npx gh-pages -d site --dotfiles`),
 set Pages to the `gh-pages` branch. The site works under the repository's sub-path, so it will be at

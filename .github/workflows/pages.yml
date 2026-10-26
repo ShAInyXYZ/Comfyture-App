@@ -1,0 +1,49 @@
+# The live demo without a server, on GitHub Pages: `npm run demo-site` (every product open on its example, every tour playable) built
+# and published. It runs only when it is asked to: by hand (Actions → Pages → Run workflow) or when the `submission` tag is pushed.
+# Before the first run: the repo public (Pages is free then), Settings → Pages → Source: GitHub Actions, and D1 settled
+# (docs/competition/README.md): the site copies all of web/, Mixer's trend media included. The build has no key and reaches no Comfy
+# service that needs one; the site it makes is at https://<owner>.github.io/Comfyture/.
+name: Pages
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["submission"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      # (the free edits the pages show, the timeline's frames among them, are made with ffmpeg)
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm ci
+      # (the build plays every page in a headless browser)
+      - run: npm install --no-save playwright@1.64.0 && npx playwright install --with-deps chromium
+      - run: npm run demo-site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
