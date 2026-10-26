@@ -61,5 +61,11 @@ for i, w in enumerate(words):
     elif run == 4:
         kept = kept[:-3]
 words = kept
-json.dump({"language": info.language, "seconds": round(len(mono16) / 16000, 2), "words": words}, open(out, "w", encoding="utf8"), ensure_ascii=False)
+# the voice's loudness every 0.1 s (1 is the loud end of the singing): when the voice is singing, whatever Whisper made of the words
+hop = 1600
+steps = len(mono16) // hop
+level = torch.from_numpy(mono16[: steps * hop]).reshape(-1, hop).pow(2).mean(1).sqrt()
+level = (level / (torch.quantile(level, 0.9) + 1e-8)).clamp(max=3)
+voice = [round(float(v), 2) for v in level]
+json.dump({"language": info.language, "seconds": round(len(mono16) / 16000, 2), "words": words, "voice": voice, "hop": 0.1}, open(out, "w", encoding="utf8"), ensure_ascii=False)
 print(f"{len(words)} words heard in {len(mono16) / 16000:.0f} s")

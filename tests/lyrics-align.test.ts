@@ -1,7 +1,7 @@
 // The lyrics put on the times they are sung at: the written text kept, the heard times used, a wrong or missing word forgiven.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { alignLines, likeness, norm, sungLines } from "../web/js/lyrics-align.js";
+import { alignLines, alignByVoice, likeness, norm, sungLines } from "../web/js/lyrics-align.js";
 
 const say = (text: string, from: number, each = 0.4) => text.split(" ").map((w, i) => ({ w, s: from + i * each, e: from + (i + 1) * each - 0.05 }));
 
@@ -45,4 +45,32 @@ test("a line that was not heard is placed between its neighbours, and no heard w
   const none = alignLines(lines, [], { seconds: 30 });
   assert.equal(none.matched, 0);
   assert.ok(none.lines[0].from === 0 && none.lines[2].to === 30 && none.lines.every((l) => !l.heard), "spread over the whole song");
+});
+
+test("Japanese is matched one character at a time, a heard word's time shared over its characters", () => {
+  const lines = ["朝の台所 ちいさなひよこ", "最後のジャムだ 見つけたんだ"];
+  // Whisper's words for sung Japanese: pieces of any size
+  const words = [{ w: "朝の", s: 10, e: 11 }, { w: "台所", s: 11, e: 12 }, { w: "ちいさな", s: 12, e: 13.2 }, { w: "ひよこ", s: 13.2, e: 14 }, { w: "最後のジャムだ", s: 30, e: 32.1 }, { w: "見つけたんだ", s: 32.1, e: 34 }];
+  const r = alignLines(lines, words, { seconds: 60, chars: true });
+  assert.ok(Math.abs(r.lines[0].from - 10) < 0.3 && Math.abs(r.lines[0].to - 14) < 0.3, JSON.stringify(r.lines[0]));
+  assert.ok(Math.abs(r.lines[1].from - 30) < 0.3 && Math.abs(r.lines[1].to - 34) < 0.3, JSON.stringify(r.lines[1]));
+  assert.ok(r.matched / r.total > 0.9);
+  assert.equal(likeness("朝", "朝"), 1);
+  assert.equal(likeness("朝", "夜"), 0, "a different character is not a near word");
+});
+
+test("with no words heard, the lines are laid over the singing time by their length, the silence falling where the voice is not", () => {
+  // the voice's loudness every 0.1 s: singing 0 to 20 s and 30 to 50 s, silent 20 to 30 s (a solo)
+  const voice = Array.from({ length: 600 }, (_, i) => ((i < 200 || (i >= 300 && i < 500)) ? 0.8 : 0.02));
+  const lines = ["あああああ", "あああああ", "あああああ", "あああああ"];
+  const r = alignByVoice(lines, voice, { hop: 0.1, seconds: 60 });
+  const mid = r.map((l) => Math.round(l.from));
+  assert.deepEqual(mid, [0, 10, 30, 40], "two lines in the first stretch, two in the second, the solo between them empty");
+  assert.ok(r[1].to <= 20.3 && r[2].from >= 29.9, "no line is put in the silence");
+  assert.ok(r.every((l) => l.heard), "the voice was there for each");
+  // a longer line takes longer
+  const long = alignByVoice(["あ", "ああああああああああ"], Array(100).fill(0.8), { hop: 0.1, seconds: 10 });
+  assert.ok(long[1].to - long[1].from > 3 * (long[0].to - long[0].from));
+  // no voice at all: spread over the song
+  assert.deepEqual(alignByVoice(["a", "b"], Array(100).fill(0), { hop: 0.1, seconds: 10 }).map((l) => l.heard), [false, false]);
 });

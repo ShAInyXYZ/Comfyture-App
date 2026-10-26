@@ -13,7 +13,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { alignLines, sungLines } from "../web/js/lyrics-align.js";
+import { alignLines, alignByVoice, sungLines } from "../web/js/lyrics-align.js";
 
 const exec = promisify(execFile);
 const MIN_SHARE = 0.5;
@@ -67,14 +67,18 @@ for (const { id, file, lyrics, language, audio, keep: put } of await targets()) 
   }
   const heard = JSON.parse(await readFile(join(work, `${id}.json`), "utf8"));
   if (keep) await writeFile(join(keep, `${id}.words.json`), JSON.stringify(heard));
-  const timing = alignLines(lines, heard.words, { seconds: heard.seconds });
-  const share = timing.matched / Math.max(1, timing.total);
+  let timing = alignLines(lines, heard.words, { seconds: heard.seconds, chars: ["ja", "zh", "yue"].includes(language) });
+  let share = timing.matched / Math.max(1, timing.total);
+  let method = "words";
+  // (too little was heard to trust the words, as with sung Japanese: the structure of the lyrics laid over the voice's loudness, the lyrics giving the order and the shape)
+  if (share < MIN_SHARE && heard.voice?.length) {
+    timing = { lines: alignByVoice(lines, heard.voice, { hop: heard.hop, seconds: heard.seconds }), matched: 0, total: timing.total };
+    method = "voice";
+  }
   const times = timing.lines.map((l) => [l.from, l.to]);
-  console.log(`${id}: ${heard.words.length} words heard, ${Math.round(share * 100)}% of the written words matched, ${timing.lines.filter((l) => l.heard).length}/${lines.length} lines heard, first ${times[0][0]} s, last ends ${times.at(-1)[1]} s of ${heard.seconds} s (${Math.round((Date.now() - t0) / 1000)} s)`);
+  console.log(`${id}: by the ${method}: ${heard.words.length} words heard, ${Math.round(share * 100)}% of the written words matched, ${timing.lines.filter((l) => l.heard).length}/${lines.length} lines heard, first ${times[0][0]} s, last ends ${times.at(-1)[1]} s of ${heard.seconds} s (${Math.round((Date.now() - t0) / 1000)} s)`);
   if (write) {
-    // (a song of which too little was heard has no timing worth keeping: its lines would be guesses, and the estimate by sections is as good)
-    if (share < MIN_SHARE) console.log(`${id}: only ${Math.round(share * 100)}% matched, under ${MIN_SHARE * 100}%: no timing kept`);
-    await writeFile(file, put(share < MIN_SHARE ? null : { lines: times, matched: Math.round(share * 100) / 100 }));
+    await writeFile(file, put({ lines: times, matched: Math.round(share * 100) / 100, ...(method === "voice" ? { method } : {}) }));
   }
 }
 await rm(work, { recursive: true, force: true });

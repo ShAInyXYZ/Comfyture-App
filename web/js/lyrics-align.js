@@ -11,6 +11,7 @@ export const norm = (w) => String(w).toLowerCase().normalize("NFKD").replace(/[Ì
 export function likeness(a, b) {
   if (!a || !b) return 0;
   if (a === b) return 1;
+  if (a.length === 1 || b.length === 1) return 0;
   if (a.length < 3 || b.length < 3) return 0;
   if ((a.length >= 4 && b.includes(a)) || (b.length >= 4 && a.includes(b))) return 0.8;
   // edit distance, short words only
@@ -30,9 +31,15 @@ export const sungLines = (lyrics) => String(lyrics ?? "").split(/\r?\n/).map((l)
  * The lines on their times. `lines`: the written sung lines; `words`: [{ w, s, e }] heard, in order. Answers { lines: [{ from, to }],
  * matched, total } where `matched` is how many written words found a heard one: the share is how far the times can be trusted.
  */
-export function alignLines(lines, words, { seconds = 0 } = {}) {
-  const written = lines.flatMap((text, line) => text.split(/\s+/).map(norm).filter(Boolean).map((w) => ({ w, line })));
-  const heard = words.map((x) => ({ ...x, n: norm(x.w) })).filter((x) => x.n);
+export function alignLines(lines, words, { seconds = 0, chars = false } = {}) {
+  // (a language written without spaces between words, Japanese or Chinese: the match is made one character at a time, a heard word's time shared out over its characters)
+  const written = lines.flatMap((text, line) => (chars ? [...norm(text)] : text.split(/\s+/).map(norm).filter(Boolean)).map((w) => ({ w, line })));
+  const heard = chars
+    ? words.flatMap((x) => {
+        const cs = [...norm(x.w)];
+        return cs.map((c, i) => ({ w: c, n: c, s: x.s + (i * (x.e - x.s)) / cs.length, e: x.s + ((i + 1) * (x.e - x.s)) / cs.length }));
+      })
+    : words.map((x) => ({ ...x, n: norm(x.w) })).filter((x) => x.n);
   const n = written.length;
   const m = heard.length;
   const out = lines.map(() => ({ from: null, to: null }));
@@ -124,3 +131,52 @@ function spread(out, lines, seconds, firstHeard = Infinity) {
 }
 
 const round = (v) => Math.round(v * 100) / 100;
+
+/**
+ * The lines placed by the structure of the lyrics and the voice's loudness alone, for when the words cannot be heard (Whisper on sung Japanese
+ * hears almost nothing). `voice` is the singing's loudness every `hop` seconds (1 the loud end). The stretches where the voice is singing are found
+ * (a gap under 0.4 s is a breath, a stretch under 0.3 s a click), and the lines, each worth its length in characters and a breath, are laid end to
+ * end over the singing time only: a section with no words, a guitar solo, then falls where the voice is silent, and the order and the shape of the
+ * song come from the lyrics, not from the audio. Answers [{ from, to, heard }] (heard being true: the voice was there).
+ */
+export function alignByVoice(lines, voice, { hop = 0.1, seconds = 0, threshold = 0.12 } = {}) {
+  const total = seconds || voice.length * hop;
+  const smooth = voice.map((_, i) => {
+    let s = 0;
+    let n = 0;
+    for (let j = Math.max(0, i - 1); j <= Math.min(voice.length - 1, i + 1); j++, n++) s += voice[j];
+    return s / n;
+  });
+  // the singing stretches
+  let spans = [];
+  let at = -1;
+  smooth.forEach((v, i) => {
+    if (v >= threshold && at < 0) at = i;
+    if ((v < threshold || i === smooth.length - 1) && at >= 0) (spans.push([at * hop, (v < threshold ? i : i + 1) * hop]), (at = -1));
+  });
+  spans = spans.reduce((out, sp) => (out.length && sp[0] - out.at(-1)[1] < 0.4 ? ((out.at(-1)[1] = sp[1]), out) : (out.push([...sp]), out)), []).filter((sp) => sp[1] - sp[0] >= 0.3);
+  const sung = spans.reduce((t, sp) => t + sp[1] - sp[0], 0);
+  const weights = lines.map((l) => [...norm(l)].length + 2);
+  const sum = weights.reduce((t, w) => t + w, 0) || 1;
+  if (!sung) return lines.map((_, i) => ({ from: round((i / lines.length) * total), to: round(((i + 1) / lines.length) * total), heard: false }));
+  // a point of the singing time (0 to sung) back on the song's clock
+  // (a line that starts or ends within a third of a second of where a stretch ends is taken to start at the next one or end at this one: the edges of
+  // a stretch are not exact, and no line is put in the silence for a few frames)
+  const TOL = 0.35;
+  const clock = (c, start) => {
+    let left = c;
+    for (const [a, b] of spans) {
+      const len = b - a;
+      if (start ? left < len - TOL : left <= len + TOL) return a + Math.min(left, len);
+      left -= len;
+    }
+    return spans.at(-1)[1];
+  };
+  let used = 0;
+  return weights.map((w) => {
+    const from = clock((used / sum) * sung, true);
+    used += w;
+    const to = clock((used / sum) * sung, false);
+    return { from: round(from), to: round(Math.max(to, from + 0.3)), heard: true };
+  });
+}
