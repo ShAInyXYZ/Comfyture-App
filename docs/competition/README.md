@@ -106,6 +106,9 @@ While at it, the rewrite can also drop `docs/brand/` (492 MB of design mockups t
 - All eight tours play to the end at 1280 x 720 with no page error and nothing spent, with and without judge mode and open weights.
 - `deploy/judge/` holds what the live link needs (env file, systemd unit, Caddyfile, health check to your phone, daily snapshot);
   HOSTING.md's env block named three variables the server does not read.
+- The static demo (the fallback when the live link is down) covers the whole app: `npm run demo-site` records every page and tour
+  of a fresh install and the site replays them under any sub-path (`tests/demo-site.browser.mjs`, 145 checks; 211 MB). Publishing it
+  waits on D1: it copies all of `web/`, Mixer's trend media included.
 - Jam ships eleven new songs of our own on its shelf (ACE-Step XL, 52.8 cents on Comfy Cloud, covers from GPT Image).
 - Still the biggest risk for the rules: **Mixer's shelf** (D1's last rows): trend names that are song titles, and covers redrawn over
   other creators' opening frames with their motion.
