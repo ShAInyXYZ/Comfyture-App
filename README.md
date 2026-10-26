@@ -1,14 +1,14 @@
 # Comfyture
 
-**One photo in, a cinematic shot with sound out. One sentence in, a short film out.**
+**An open-source Higgsfield: seven AI studios on one engine, built on ComfyUI.**
 
-Comfyture is an open-source preset studio. Pick a photo, pick a preset (a crash zoom, setting yourself on fire, turning into a gold statue) and get a short video with synchronized sound. Every preset is a readable file. The video and sound models are open weights, and so are the pictures by default (Qwen Image 2.1); the artist picker adds the partners' image models on Comfy Router (GPT Image 2.5, Nano Banana, FLUX.2 and FLUX 3, Seedream 5, Qwen Image 3.0, Kling, Luma, Runway), billed in Comfy credits with the same key. The writers and assistants run on Claude Sonnet 5.5 through Comfy Router by default, or on open-weights Gemma 4 if you pick it. `COMFYTURE_OPEN_WEIGHTS=1` keeps every partner model out. It's built on the [Comfy Developer Platform](https://docs.comfy.org/development/overview), and the same code runs on your own GPU or on Comfy Cloud.
+Comfyture is seven creative studios on the [Comfy Developer Platform](https://docs.comfy.org/development/overview): a film from one sentence (Kitchen), trends with your own cast (Mixer), music videos from a track (Jam), content for a brand (Macaron), a VFX house (Spice), clay to picture to 3D (Toaster) and one-job tools (Utensils). Each studio has a pet who knows it, does the work for you through checked actions, and never spends a credit without your yes. Every picture, video and sound model it runs by default is open weights, and LTX-2.5 makes picture and sound in one pass; the partners' models on Comfy Router (GPT Image 2.5, Nano Banana, FLUX.2 and FLUX 3, Seedream 5, Qwen Image 3.0, Kling, Luma, Runway, and Veo, Kling, Seedance and others for video) are one pick away, billed in Comfy credits with the same key. The writers run on Claude Sonnet 5.5 and the pets on GPT-6 Luna through Comfy Router by default, or all on open-weights Gemma 4. `COMFYTURE_OPEN_WEIGHTS=1` keeps every partner model out. The same code runs on Comfy Cloud or on your own GPU.
 
-> Built for Comfy's #OpenSourceHiggsfield challenge: a preset video studio that is open source, open weights by default for every picture, video and sound, with the partners' models on Comfy Router one pick away.
+> Built for Comfy's #OpenSourceHiggsfield challenge. Judging it? Start with [docs/competition/JUDGES.md](docs/competition/JUDGES.md): it runs in five minutes, and with no key every studio opens on its example and its pet shows you around.
 
-![The Comfyture desk: sources, monitor, script, presets, shot settings and the take log](docs/desk.jpg)
+![Comfyture's home: the seven studios, each with its pet, Kitchen's chick in front](docs/readme/home.jpg)
 
-![Six presets on six photos: Walk Away, Set on Fire, Gold Statue, Thunder God, Earth Zoom Out and Plush Toy](docs/presets.webp)
+![Four studios on their examples: Spice's FX compositor on Paprika's portal, Kitchen's Stage blocking the morning kitchen in clay, Toaster's workbench in clay, and Jam's track with its stems, beat and cut](docs/readme/studios.jpg)
 
 ## Seven products
 
