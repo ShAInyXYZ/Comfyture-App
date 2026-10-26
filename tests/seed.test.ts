@@ -206,7 +206,7 @@ test("a newer version of a song replaces an untouched one, a song given a cover 
   for (const id of [mine, theirs]) {
     const path = join(examples, "songs", id, "song.json");
     const spec = JSON.parse(await readFile(path, "utf8"));
-    await writeFile(path, JSON.stringify({ ...spec, rev: 2, name: `${spec.name} again` }));
+    await writeFile(path, JSON.stringify({ ...spec, rev: spec.rev + 1, name: `${spec.name} again` }));
   }
   await started(data, async (get) => {
     assert.equal((await song(get, theirs)).name, `${named[theirs]} again`, "the untouched song is the newer version");

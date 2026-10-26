@@ -88,8 +88,12 @@ the track goes into the audio library as `<id>.mp3`, a song of The song's shelf,
 and what it was made from (`tags`, `lyrics`, `bpm`, `key`), so a video that takes it as its track has its words and tempo too. The songs
 go in after the videos, so they are the newest of the library; the shelf starts with the song of the video open, then the library.
 
-- `song` is exactly what Jam's song page sends to `/api/audio/song` (ACE-Step 1.5 XL, three passes, `workflows/audio/song.json`), its
-  seed with it: sending it again on Comfy Cloud makes the same song (about 5 cents for 200 s).
+- `song` holds the settings Jam's song page sends to `/api/audio/song`, its seed with it. The songs are whole, 200 s: ACE-Step makes poor
+  short songs, so a part is cut from a whole one later (The track), and The song's shelf only holds songs (a sound under 30 s is a clip).
+- They were made with [`scripts/jam-songs.mjs`](../scripts/jam-songs.mjs) on the owner's own ComfyUI with their AceStep1.5XL-Superior
+  graph: the app's workflow (`workflows/audio/song.json`, ACE-Step 1.5 XL sft, three passes) with the `jkass_quality` sampler and their
+  `AudioQualityEnhancer` master, neither of which Comfy Cloud has (there, the same settings make a song with `res_2s` and no master, for
+  about 5 cents).
 - The track ships loudness-matched (-14 LUFS) as a 96 kbps MP3; the cover is an 800 px JPEG drawn with GPT Image from the star's cast
   sheet (the prompts: [`docs/brand/songs/`](../docs/brand/songs/)). Titles, lyrics and covers are our own: no real song, artist or person.
 - A song is worked on once the person gives it a cover or a video cover of their own: a newer version then leaves it as it is.
