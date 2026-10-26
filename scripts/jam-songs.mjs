@@ -3,7 +3,10 @@
 // their AudioQualityEnhancer master between the decode and the save, as they saved it. Neither is on Comfy Cloud, which is why the
 // shipped songs are made here; it costs nothing.
 //
-//   node scripts/jam-songs.mjs [<id> ...] [--write] [--raw <dir>]
+//   node scripts/jam-songs.mjs [<id> ...] [--lora] [--write] [--raw <dir>]
+//
+// (--lora makes the song with its style LoRA, the id its `song.lora` names: loaded on the model, its trigger word first in the tags, as the
+// app does on a self-hosted ComfyUI; a song with none is skipped. The result is kept as <id>.lora.mp3, beside the plain one.)
 //
 // (COMFY_LOCAL_URL names another ComfyUI, http://127.0.0.1:8188 by default. Each song's whole result is kept in --raw, a folder of the
 // system's temp by default, and a song already there is not made again. With --write, each is put into its example's folder as
@@ -13,12 +16,14 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { SONG_LORAS } from "../server/song-guide.ts";
 
 const exec = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
 const COMFY = process.env.COMFY_LOCAL_URL ?? "http://127.0.0.1:8188";
 const args = process.argv.slice(2);
 const write = args.includes("--write");
+const withLora = args.includes("--lora");
 const raw = args.includes("--raw") ? resolve(args[args.indexOf("--raw") + 1]) : join(tmpdir(), "comfyture-jam-songs");
 const only = args.filter((a, i) => !a.startsWith("--") && args[i - 1] !== "--raw");
 const dir = join(root, "examples", "songs");
@@ -29,12 +34,17 @@ await mkdir(raw, { recursive: true });
 function graphOf(spec) {
   const g = structuredClone(base);
   const s = spec.song;
-  Object.assign(g.text.inputs, { tags: s.tags, lyrics: s.lyrics, seed: s.seed, duration: s.seconds, bpm: s.bpm, keyscale: s.key, language: s.language, timesignature: s.timesignature, temperature: 0.75, cfg_scale: 2.5, generate_audio_codes: true });
+  const lora = withLora ? SONG_LORAS.find((l) => l.id === s.lora) : null;
+  if (lora) {
+    g.lora = { class_type: "LoraLoaderModelOnly", inputs: { model: ["unet", 0], lora_name: `ace-step/${lora.folder}/${lora.folder.replace(/-acestep1\.5-xl-v1$/, "-xl-v1")}.safetensors`, strength_model: 1 } };
+    g.shift.inputs.model = ["lora", 0];
+  }
+  Object.assign(g.text.inputs, { tags: lora ? `${lora.trigger}, ${s.tags}` : s.tags, lyrics: s.lyrics, seed: s.seed, duration: s.seconds, bpm: s.bpm, keyscale: s.key, language: s.language, timesignature: s.timesignature, temperature: 0.75, cfg_scale: 2.5, generate_audio_codes: true });
   g.latent.inputs.seconds = s.seconds;
   for (const [k, seed] of [["first", s.seed], ["second", s.seed + 1], ["third", s.seed + 2]]) Object.assign(g[k].inputs, { seed, sampler_name: "jkass_quality" });
   g.enhance = { class_type: "AudioQualityEnhancer", inputs: { audio: ["decode", 0], enhancement_level: 0.5, use_source_separation: true, demucs_model: "htdemucs", device: "cuda", vocals_enhance: 0.65, drums_enhance: 0.5, bass_enhance: 0.45, other_enhance: 0.25, clarity: 0.6, dynamics: 0.4, warmth: 0.25, air: 0.3, dolby_effect: 0, simple_mode: "Standard", apply_limiter: true } };
   g.out.inputs.audio = ["enhance", 0];
-  g.out.inputs.filename_prefix = `comfyture/jam-${spec.id}`;
+  g.out.inputs.filename_prefix = `comfyture/jam-${spec.id}${lora ? "-lora" : ""}`;
   return g;
 }
 
@@ -48,11 +58,13 @@ async function ask(path, init = {}) {
 }
 
 async function make(id) {
-  const out = join(raw, `${id}.mp3`);
-  if (await access(out).then(() => true, () => false)) return out;
   const spec = JSON.parse(await readFile(join(dir, id, "song.json"), "utf8"));
+  if (withLora && !spec.song.lora) return null;
+  const name = `${id}${withLora ? ".lora" : ""}`;
+  const out = join(raw, `${name}.mp3`);
+  if (await access(out).then(() => true, () => false)) return out;
   // (a song queued by an earlier run is followed, not queued again)
-  const queued = join(raw, `${id}.prompt`);
+  const queued = join(raw, `${name}.prompt`);
   let prompt = (await readFile(queued, "utf8").catch(() => "")).trim();
   if (!prompt) {
     const res = await ask("/prompt", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: graphOf(spec), client_id: "comfyture-jam-songs" }) });
@@ -89,7 +101,7 @@ async function ship(id, from) {
 for (const id of (await readdir(dir)).filter((id) => !only.length || only.includes(id)).sort()) {
   try {
     const made = await make(id);
-    if (write) await ship(id, made);
+    if (made && write) await ship(id, made);
   } catch (e) {
     console.log(`${id}: ${e.message}`);
   }

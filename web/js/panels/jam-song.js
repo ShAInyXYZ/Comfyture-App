@@ -11,7 +11,7 @@ import { h } from "../dom.js";
 import { state, toast, waitFor, writer, artistFor, onChange } from "../store.js";
 import { api } from "../api.js";
 import { dropdown } from "../controls.js";
-import { LANGUAGES, SIGNATURES, DEFAULT_SONG, MAX_SECONDS, PITCHES, MODES, KEYS, noteOf, modeOf, STYLE_WORDS, QUALITY, lengthLabel, SECTIONS, STRUCTURES, skeleton, costOfSong } from "../song.js";
+import { LANGUAGES, SIGNATURES, DEFAULT_SONG, MAX_SECONDS, STYLE_LORAS, PITCHES, MODES, KEYS, noteOf, modeOf, STYLE_WORDS, QUALITY, lengthLabel, SECTIONS, STRUCTURES, skeleton, costOfSong } from "../song.js";
 import { jicon, pickFile, cr, clock, mins } from "./jam-ui.js";
 import { createDeck } from "./jam-deck.js";
 import { jam, useSong, songHook, setWorkspace, save } from "../jam.js";
@@ -21,12 +21,14 @@ import { pay, isArmed } from "./jam-band-pay.js";
 import { COVER_SECONDS, COVER_VIDEO_PROMPT, bestPart, coverPrompt, costOfCover, costOfCoverVideo, coverOf, fileOfUrl, stepWords } from "../song-cover.js";
 
 const STORE = "comfyture.jam.song.3";
-const MINE = ["idea", "structure", "tags", "lyrics", "seconds", "language", "key", "bpm", "signature", "name", "passes", "temperature", "adherence", "thinking"];
+const MINE = ["idea", "structure", "tags", "lyrics", "seconds", "language", "key", "bpm", "signature", "name", "passes", "temperature", "adherence", "thinking", "lora"];
 const song = { idea: "", tags: "", lyrics: "", name: "", ...DEFAULT_SONG, writing: false, making: false, made: [], shown: null, loaded: false, more: false, adv: false };
 try {
   Object.assign(song, JSON.parse(localStorage.getItem(STORE) ?? "{}"));
 } catch {}
 const keepDraft = () => {
+/** A style LoRA needs the person's own ComfyUI: Comfy Cloud has none. */
+const onOwnGpu = () => state.info?.target === "self-hosted";
   try {
     localStorage.setItem(STORE, JSON.stringify(Object.fromEntries(MINE.map((k) => [k, song[k]]))));
   } catch {}
@@ -70,7 +72,7 @@ async function setUp() {
       idea: song.idea, seconds: song.seconds, language: song.language, structure: song.structure, model: writer(),
       current: song.tags || hasWords ? { tags: song.tags, lyrics: song.lyrics, bpm: song.bpm, key: song.key } : undefined,
     });
-    Object.assign(song, { name: got.name, tags: got.tags, lyrics: got.lyrics, bpm: got.bpm, key: got.key, language: got.language, signature: got.timesignature });
+    Object.assign(song, { name: got.name, tags: got.tags, lyrics: got.lyrics, bpm: got.bpm, key: got.key, language: got.language, signature: got.timesignature, lora: got.lora ?? "" });
     keepDraft();
     showDraft();
   } catch (e) {
@@ -88,7 +90,7 @@ async function make() {
   song.making = true;
   redrawAll();
   try {
-    const job = await api.makeSong({ tags: song.tags, lyrics: song.lyrics, seconds: song.seconds, bpm: song.bpm, key: song.key, language: song.language, timesignature: song.signature, passes: song.passes, temperature: song.temperature, adherence: song.adherence, thinking: song.thinking, name: song.name || "New song" });
+    const job = await api.makeSong({ tags: song.tags, lyrics: song.lyrics, seconds: song.seconds, bpm: song.bpm, key: song.key, language: song.language, timesignature: song.signature, passes: song.passes, temperature: song.temperature, adherence: song.adherence, thinking: song.thinking, lora: onOwnGpu() ? song.lora : "", name: song.name || "New song" });
     const done = await waitFor("job", job.id);
     const made = { ...done.audio, tags: song.tags, lyrics: song.lyrics, key: song.key, bpm: song.bpm };
     song.made.unshift(made);
@@ -488,6 +490,7 @@ function drawSteps() {
         row("Language", lang),
         row("Quality", chips(QUALITY, song.passes, pick("passes"), "Quality", ".is-seg")),
         row("Creativity", range({ min: 0.4, max: 1.1, step: 0.05, value: song.temperature, label: "Creativity", format: (v) => v.toFixed(2), set: (v) => ((song.temperature = v), keepDraft()), ends: ["steady", "wild"] })),
+        onOwnGpu() ? row("Style LoRA", chips([["", "None", "No LoRA"], ...STYLE_LORAS.map(([id, name]) => [id, name, `The ${name} LoRA: its trigger word goes in the style for you`])], song.lora ?? "", pick("lora"), "Style LoRA", ".is-seg")) : null,
         row("Follows the words", range({ min: 1, max: 5, step: 0.5, value: song.adherence, label: "How closely it follows the words and the style", format: (v) => v.toFixed(1), set: (v) => ((song.adherence = v), keepDraft()), ends: ["loose", "strict"] })),
         row("Plans first", h("button.key", { type: "button", "aria-pressed": String(song.thinking), title: "The model plans the song's structure before it sounds it: better built, slower", on: { click: () => pick("thinking")(!song.thinking) } }, song.thinking ? "On" : "Off")),
         h("div.sg-lyrics", {}, h("div.sg-lyrics-head", {}, h("span.sg-field", {}, "Lyrics"), h("span.sg-meta", {}, lines ? `${lines} lines` : "none yet")),

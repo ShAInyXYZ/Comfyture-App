@@ -16,6 +16,7 @@ import { untagRefs, type ImageModels } from "./images.ts";
 import { isRouterVideo, routerVideo, routerVideoName, routerVideoSeconds, routerVideoLength } from "./router-videos.ts";
 import { spend } from "./judge.ts";
 import { unreachable, targetOf, CLOUD_URL } from "./target.ts";
+import { SONG_LORAS } from "./song-guide.ts";
 
 export interface Dialogue { speaker?: string; language?: string; line: string }
 export interface Shot {
@@ -841,7 +842,7 @@ export class Engine extends EventEmitter {
    * Music (ACE-Step 1.5) or a sound effect (Stable Audio 3 small SFX) from words, tracked like a
    * paint job; keep() stores what it made in the audio library.
    */
-  audioJob(kind: "music" | "song" | "sfx", v: { prompt: string; seconds: number; lyrics?: string; bpm?: number; seed: number; key?: string; language?: string; timesignature?: string; passes?: number; temperature?: number; adherence?: number; thinking?: boolean }, keep: (bytes: Buffer) => Promise<Paint["audio"]>): Paint {
+  audioJob(kind: "music" | "song" | "sfx", v: { prompt: string; seconds: number; lyrics?: string; bpm?: number; seed: number; key?: string; language?: string; timesignature?: string; passes?: number; temperature?: number; adherence?: number; thinking?: boolean; lora?: string }, keep: (bytes: Buffer) => Promise<Paint["audio"]>): Paint {
     const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
     this.paints.set(job.id, job);
     const emit = () => this.emit("paint", job);
@@ -852,6 +853,13 @@ export class Engine extends EventEmitter {
           // ACE-Step 1.5 XL in three passes: the first from nothing, the two after light refinements of it
           Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 140), keyscale: v.key ?? "A minor", language: v.language ?? "en", timesignature: v.timesignature ?? "4", temperature: v.temperature ?? 0.75, cfg_scale: v.adherence ?? 2.5, generate_audio_codes: v.thinking ?? true });
           graph.latent.inputs.seconds = v.seconds;
+          // a style LoRA (the person's own ComfyUI: Comfy Cloud has none): loaded on the model before the shift, its trigger word first in the style
+          const lora = SONG_LORAS.find((l) => l.id === v.lora);
+          if (lora && targetOf(process.env.COMFY_BASE_URL?.trim() || CLOUD_URL).kind === "self-hosted") {
+            graph.lora = { class_type: "LoraLoaderModelOnly", inputs: { model: ["unet", 0], lora_name: `ace-step/${lora.folder}/${lora.folder.replace(/-acestep1\.5-xl-v1$/, "-xl-v1")}.safetensors`, strength_model: 1 } };
+            graph.shift.inputs.model = ["lora", 0];
+            graph.text.inputs.tags = `${lora.trigger}, ${v.prompt}`;
+          }
           graph.first.inputs.seed = v.seed;
           graph.second.inputs.seed = v.seed + 1;
           graph.third.inputs.seed = v.seed + 2;

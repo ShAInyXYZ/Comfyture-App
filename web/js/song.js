@@ -23,7 +23,7 @@ export const SIGNATURES = [
 /** How long the song runs, in seconds: it sets the length of the latent and the duration the text node is told. */
 /** (A short song with a short prompt comes out poorly: a whole one is made, 200 to 300 s (E minor works great there), and the best part is cut from it later.) */
 export const LENGTHS = [60, 120, 200, 240, 300];
-export const DEFAULT_SONG = { seconds: 240, bpm: 120, key: "E minor", signature: "4", language: "en", structure: "pop", passes: 3, temperature: 0.75, adherence: 2.5, thinking: true, seed: 0 };
+export const DEFAULT_SONG = { seconds: 240, bpm: 120, key: "E minor", signature: "4", language: "en", structure: "pop", passes: 3, temperature: 0.75, adherence: 2.5, thinking: true, seed: 0, lora: "" };
 
 /** The twelve notes and the two modes a key is chosen from (the model names them "A minor", "C# major"). */
 export const PITCHES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -65,3 +65,6 @@ export const isTag = (line) => /^\s*\[[^\]]+\]\s*$/.test(line);
 
 /** What the key that makes the song shows, roughly: Comfy Cloud bills a GPU second at 0.266 credits and the XL takes about a second and a bit of them a second of music (three passes), with a little over for loading. */
 export const costOfSong = (seconds, passes = 3) => Math.max(3, Math.round(((passes === 1 ? 0.55 : 1.1) * seconds + 12) * 0.266));
+
+/** The style LoRAs on offer (on the person's own ComfyUI only: Comfy Cloud has none): the id, what it is for. Trigger words are the server's. */
+export const STYLE_LORAS = [["lo_fi", "Lo-fi"], ["jazz", "Jazz"], ["pop", "Pop"], ["indie", "Indie"], ["acoustic", "Acoustic"], ["dream_pop", "Dream pop"], ["electropop", "Electropop"], ["j_pop", "J-pop"], ["experimental", "Experimental"]];

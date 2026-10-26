@@ -23,6 +23,7 @@ import { planCut, ffmpegArgs, frameSize, cutBrief, jamBrief, cutPrompt, readCutA
 import { splitEdit } from "./mixer.ts";
 import { macaronBrief, macaronTool, spaceOf, macaronPrompt, readMacaronAnswer, topUpBrand, keepExport, keepFrame, encodeFrames, dropFrames, frameJob, validJob, sweepFrames, ledgerLine } from "./macaron.ts";
 import { SONG_BRIEF, songPrompt, readSong } from "./song.ts";
+import { SONG_LORAS } from "./song-guide.ts";
 import { KEYS, LANGUAGES, SIGNATURES, MAX_SECONDS, DEFAULT_SONG } from "../web/js/song.js";
 import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
@@ -1402,6 +1403,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       temperature: Math.min(1.2, Math.max(0.3, Number(input.temperature) || DEFAULT_SONG.temperature)),
       adherence: Math.min(6, Math.max(1, Number(input.adherence) || DEFAULT_SONG.adherence)),
       thinking: input.thinking !== false,
+      // (a style LoRA is the person's own ComfyUI's: Comfy Cloud has none, and the engine leaves it out there)
+      lora: SONG_LORAS.find((l) => l.id === input.lora)?.id,
       // (a seed that is kept makes the same song again from the same words)
       seed: Number.isInteger(input.seed) && input.seed > 0 ? Math.min(input.seed, 2 ** 32 - 4) : randomBytes(4).readUInt32BE(0) % (2 ** 32 - 4),
     }, async (bytes) => {
