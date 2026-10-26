@@ -70,7 +70,10 @@ export function mountScene(el) {
     return files.get(url);
   };
   const placed = new Map(); // part id → { group, key }
-  let framed = false;
+  // the camera is set by the scene (framed again as models land) until the person moves it, picks a view or zooms to an object
+  let moved = false;
+  let framedOnce = false;
+  orbit.addEventListener("start", () => (moved = true));
 
   // what is not made yet stands as clay: the shapes as they are, a library piece or a character as a box of its size. In the blockout view
   // everything is clay, solid; with the assets in, what is not made yet is a little see-through and the room very faint.
@@ -197,7 +200,7 @@ export function mountScene(el) {
     const box = objectsBox();
     if (box.isEmpty()) return;
     const sphere = box.getBoundingSphere(new THREE.Sphere());
-    const dist = (sphere.radius / Math.sin((camera.fov * DEG) / 2)) * 1.12;
+    const dist = (sphere.radius / Math.sin((camera.fov * DEG) / 2)) * 0.8;
     orbit.target.copy(sphere.center);
     camera.position.copy(sphere.center).add(new THREE.Vector3(...(SIDES[side] ?? SIDES.persp)).normalize().multiplyScalar(dist));
     camera.near = dist / 100;
@@ -210,13 +213,14 @@ export function mountScene(el) {
     /** `parts` (visible ones are drawn), `modelOf(id)` (the url of a done model, or falsy; loaded as first needed) and `view`: "assets" or "blockout" (all clay). */
     async update(parts, modelOf, view = "assets") {
       const seen = new Set();
+      let built = false;
       await Promise.all(parts.filter((p) => !p.hidden).map(async (p) => {
         seen.add(p.id);
         const url = view === "assets" ? modelOf(p.id) || null : null;
         const key = `${url}|${p.size}|${p.shape}|${p.color}|${view}`;
         let entry = placed.get(p.id);
         if (!entry) {
-          entry = { group: new THREE.Group(), key: null };
+          entry = { group: new THREE.Group(), key: null, ready: Promise.resolve() };
           scene.add(entry.group);
           placed.set(p.id, entry);
         }
@@ -224,17 +228,25 @@ export function mountScene(el) {
         entry.group.rotation.set(p.rot[0] * DEG, p.rot[1] * DEG, p.rot[2] * DEG, "XYZ");
         if (entry.key !== key) {
           entry.key = key;
-          entry.group.clear();
-          try {
-            entry.group.add(url ? (/\.(png|jpe?g|webp)$/i.test(url) ? await boxOf(url, p) : fit(await load(url), p.size, p.shape !== "character")) : stand(p, view === "blockout"));
-          } catch {
-            entry.group.add(stand(p, view === "blockout"));
-          }
+          built = true;
+          // (the one that is building it is what every later call waits for: a call must not see a group half made as a group done)
+          entry.ready = (async () => {
+            let made;
+            try {
+              made = url ? (/\.(png|jpe?g|webp)$/i.test(url) ? await boxOf(url, p) : fit(await load(url), p.size, p.shape !== "character")) : stand(p, view === "blockout");
+            } catch {
+              made = stand(p, view === "blockout");
+            }
+            entry.group.clear();
+            entry.group.add(made);
+          })();
         }
+        await entry.ready;
       }));
       for (const [id, e] of placed) if (!seen.has(id)) (scene.remove(e.group), placed.delete(id));
       if (disposed) return;
-      if (!framed && placed.size) ((framed = true), frame());
+      // every group is whole now: the scene is framed (and framed again when something was built, until the person has taken the camera)
+      if (!moved && (built || !framedOnce) && placed.size) ((framedOnce = true), frame());
       soon();
     },
     /** The scene as one GLB (the models and the clay left), as a blob. */
@@ -257,6 +269,7 @@ export function mountScene(el) {
       if (!e) return;
       const sphere = new THREE.Box3().setFromObject(e.group).getBoundingSphere(new THREE.Sphere());
       const dist = (Math.max(sphere.radius, 0.05) / Math.sin((camera.fov * DEG) / 2)) * 1.25;
+      moved = true;
       orbit.target.copy(sphere.center);
       camera.position.copy(sphere.center).add(new THREE.Vector3(0.55, 0.4, 1).normalize().multiplyScalar(dist));
       camera.near = dist / 100;
@@ -265,8 +278,8 @@ export function mountScene(el) {
       soon();
     },
     /** The camera put in front of, beside, behind or over the objects ("persp" the three-quarter view), to see how each one stands. */
-    view: (side) => (frame(side), soon()),
-    reframe: () => (frame(), soon()),
+    view: (side) => ((moved = true), frame(side), soon()),
+    reframe: () => ((moved = true), frame(), soon()),
     dispose() {
       disposed = true;
       cancelAnimationFrame(pending);
