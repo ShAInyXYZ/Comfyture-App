@@ -289,7 +289,7 @@ function offer(op) {
     const todo = objectsNow().filter((p) => !modelOf(p.id));
     if (!todo.length || !toaster.view) return null;
     const cost = costOf(todo.map((p) => p.id));
-    return { label: `Make the ${todo.length === 1 ? "object" : `${todo.length} objects`} in 3D`, cost: cost.credits > 0 ? cost.words : route() === "local" ? "your GPU" : "GPU time", running: "Making the objects, one by one", done: "Done: they are in the new scene", failed: "Some did not finish" };
+    return { label: `Make the ${todo.length === 1 ? "object" : `${todo.length} objects`} in 3D`, cost: cost.paid ? cost.words : route() === "local" ? "your GPU" : "GPU time", running: "Making the objects, one by one", done: "Done: they are in the new scene", failed: "Some did not finish" };
   }
   return null;
 }

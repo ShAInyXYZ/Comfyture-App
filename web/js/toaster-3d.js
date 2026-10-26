@@ -115,22 +115,24 @@ export async function loadCloudPrice() {
   return cloudPrice;
 }
 export const route = () => (gen.target?.local?.ok ? "local" : "cloud");
-/** The price of an object's model, for a key: { words, credits }. */
+/** The price of an object's model, for a key: { words, credits, paid }. On Cloud it is paid even when its price is not known yet (no key read). */
 export function modelPrice() {
-  if (route() === "local") return { words: "your GPU", credits: 0 };
+  if (route() === "local") return { words: "your GPU", credits: 0, paid: false };
   const c = cloudPrice?.credits;
-  return c > 0 ? { words: `≈ ${c} cr`, credits: c } : { words: "GPU time", credits: 0 };
+  return c > 0 ? { words: `≈ ${c} cr`, credits: c, paid: true } : { words: c === 0 ? "GPU time" : "priced at the run", credits: 0, paid: true };
 }
 /** What an object's sheet costs: the model's credits, or its GPU time. */
 export function sheetPrice() {
   const m = sheetModel();
-  return m?.router ? { words: `≈ ${m.credits} cr`, credits: m.credits } : { words: "GPU time", credits: 0 };
+  return m?.router ? { words: `≈ ${m.credits} cr`, credits: m.credits, paid: true } : { words: "GPU time", credits: 0, paid: false };
 }
-/** What making the objects named costs, as words: the sheets (those not drawn yet) and the models, in credits. */
+/** What making the objects named costs: the sheets (those not drawn yet) and the models, as credits, and whether anything is paid (so a yes is asked). */
 export function costOf(ids) {
   const sheets = ids.filter((id) => !sheetOf(id)).length;
-  const credits = sheets * sheetPrice().credits + ids.filter((id) => !modelOf(id)).length * modelPrice().credits;
-  return { credits, words: credits > 0 ? `≈ ${credits} cr` : "free", sheets };
+  const models = ids.filter((id) => !modelOf(id)).length;
+  const credits = sheets * sheetPrice().credits + models * modelPrice().credits;
+  const paid = credits > 0 || (sheets > 0 && sheetPrice().paid) || (models > 0 && modelPrice().paid);
+  return { credits, paid, sheets, words: credits > 0 ? `≈ ${credits} cr` : paid ? "priced at the run" : "free" };
 }
 
 // ---------------------------------------------------------------- the yes to a price (one for a key, 8 seconds)

@@ -1262,7 +1262,7 @@ function drawBar3d() {
   const busy = !!gen.active || gen.queue.length > 0;
   const cost = costOf(todo);
   const t = gen.target;
-  const free = cost.credits === 0;
+  const free = !cost.paid;
   const words = free ? (route() === "local" ? "your GPU" : "GPU time") : cost.words;
   const models = modelItems();
   const asking = askedFor("queue");
@@ -1278,14 +1278,14 @@ function drawBar3d() {
   shell.bar3d.replaceChildren(...[
     h("div.ts-bar3d-row", {},
       h("div.ts-setting", {}, h("span.ts-label", {}, "Sheets drawn by"),
-        models.length ? h("div.ts-pick", { title: state.account?.openWeights ? "Open weights only is on: no partner model (Nano Banana, GPT Image…) is offered, so the sheets are drawn on open weights and cost no credits" : "" }, dropdown({ label: "Image model for the sheets", value: sheetModel()?.id, items: models, onChange: setSheetModel, note: state.account?.openWeights ? "Open weights only: no partner model draws the sheets" : "Draws each object's four views from its clay" })) : h("span.ts-note", {}, "No image model yet"),
-        state.account?.openWeights ? h("span.ts-note", {}, "Open weights only: no partner model, no credits") : null),
+        models.length ? h("div.ts-pick", { title: state.account?.openWeights ? "Open weights only is on: no partner model (Nano Banana, GPT Image…) is offered, so the sheets are drawn on open weights and cost no credits" : "" }, dropdown({ label: "Image model for the sheets", value: sheetModel()?.id, items: models, onChange: setSheetModel, note: state.account?.openWeights ? "Open weights only: no partner model draws the sheets" : "Draws each object's four views from its clay" })) : h("span.ts-note", {}, "No image model yet")),
       h("div.ts-setting", {}, h("span.ts-label", {}, "Models made by"),
-        h("p.ts-where", { title: t?.local?.ok ? `ComfyUI at ${t.local.url}` : t?.local?.why ?? "" }, route() === "local" ? "Trellis2 on your ComfyUI" : "Pixal3D on Comfy Cloud", h("em", {}, route() === "local" ? "your GPU" : modelPrice().words)),
-        t && !t.local?.ok ? h("span.ts-note", {}, t.local?.why ?? "No ComfyUI of yours answered") : null),
+        h("p.ts-where", { title: t?.local?.ok ? `ComfyUI at ${t.local.url}` : t?.local?.why ?? "" }, route() === "local" ? "Trellis2 on your ComfyUI" : "Pixal3D on Comfy Cloud", h("em", {}, route() === "local" ? "your GPU" : modelPrice().words))),
       h("span.spacer"), key),
+    // (why the models are not made on your own ComfyUI, and what open weights leaves out: said under the row, so the two pickers never cross)
+    [t && !t.local?.ok ? t.local?.why ?? "No ComfyUI of yours answered" : "", state.account?.openWeights ? "Open weights only: no partner model draws the sheets, and nothing costs a credit." : ""].filter(Boolean).map((why) => h("p.ts-hint", {}, icon("info"), h("span", {}, why))),
     busy ? h("p.ts-queue", {}, h("span.typing", {}, h("i"), h("i"), h("i")), h("span", {}, now ? `${now.name}: ${gen.active.step === "sheet" ? `${sheetLabel()} is drawing its four views` : modelRun(now.id)?.stage ?? "making its model"}` : "Next…"),
-      h("b", {}, `${objectsNow().length - gen.queue.length + 1} of ${objectsNow().length}`)) : null].filter(Boolean));
+      h("b", {}, `${objectsNow().length - gen.queue.length + 1} of ${objectsNow().length}`)) : null].flat().filter(Boolean));
   if (route() === "cloud") loadCloudPrice();
 }
 
@@ -1316,8 +1316,8 @@ function drawObject3d() {
     ? h("div.ts-armed", {},
       h("button.key.is-primary.ts-wide", { type: "button", on: { click: () => (askNot(), go()) } }, h("span", {}, "Yes, make it"), h("em", {}, price.words)),
       h("button.key.ts-not-now", { type: "button", on: { click: askNot } }, "Not now"))
-    : h("button.key.is-primary.ts-wide", { type: "button", disabled: busy || !toaster.view || state === "done", on: { click: () => (price.credits > 0 ? askFor(p.id) : go()) } },
-      sprite("model-3d"), h("span", {}, state === "done" ? "Made" : sheet ? "Make its model" : "Make this one"), state !== "done" ? h("em", {}, price.credits > 0 ? price.words : route() === "local" ? "your GPU" : "GPU time") : null);
+    : h("button.key.is-primary.ts-wide", { type: "button", disabled: busy || !toaster.view || state === "done", on: { click: () => (price.paid ? askFor(p.id) : go()) } },
+      sprite("model-3d"), h("span", {}, state === "done" ? "Made" : sheet ? "Make its model" : "Make this one"), state !== "done" ? h("em", {}, price.paid ? price.words : "your GPU") : null);
   shell.object.replaceChildren(
     head(p.name, [s, m].filter(Boolean),
       keyIcon(sprite("view-persp"), gen.look === "clay" ? "Show its sheet" : "Show its clay, as the sheet is drawn from it", () => ((gen.look = gen.look === "clay" ? "sheet" : "clay"), drawObject3d()), { pressed: gen.look === "clay", disabled: !sheet, small: true }),
