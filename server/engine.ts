@@ -7,6 +7,7 @@ import { promisify } from "node:util";
 import { join } from "node:path";
 import { compose, finalPrompt } from "../web/js/script.js";
 import { imageSize } from "./media.ts";
+import { buildIC, type ICTool, type ICSize } from "./iclora.ts";
 import {
   EXTEND_OVERLAP, FPS, REFERENCE_SIZE, addClipGuide, applyAudio, buildCutout, buildGenerate, buildGuided, buildI2V, buildMotion, buildPaint, buildPlan,
   buildProduction, buildSound, buildSwap, buildMatte, buildMatteImage, loadGraph, outputSize, type Aspect, type Graph, type Guide, type Quality,
@@ -141,9 +142,9 @@ export interface Paint {
 
 const TERMINAL = new Set(["succeeded", "failed", "canceled", "expired"]);
 
-type Kind = "paint" | "cutout" | "generate" | "plan" | "i2v" | "guided" | "references" | "production" | "sound" | "motion" | "swap" | "music" | "sfx" | "upscale" | "restore" | "listen" | "matte";
+type Kind = "paint" | "cutout" | "generate" | "plan" | "i2v" | "guided" | "references" | "production" | "sound" | "motion" | "swap" | "music" | "sfx" | "upscale" | "restore" | "listen" | "matte" | "iclora";
 /** First guesses before any job has finished: seconds per job for paint, per unit otherwise. */
-const DEFAULT_RATE: Record<Kind, number> = { paint: 25, cutout: 8, generate: 25, plan: 30, i2v: 10, guided: 14, references: 140, production: 30, sound: 7, motion: 12, swap: 19, music: 40, sfx: 15, upscale: 10, restore: 20, listen: 2, matte: 6 };
+const DEFAULT_RATE: Record<Kind, number> = { paint: 25, cutout: 8, generate: 25, plan: 30, i2v: 10, guided: 14, references: 140, production: 30, sound: 7, motion: 12, swap: 19, music: 40, sfx: 15, upscale: 10, restore: 20, listen: 2, matte: 6, iclora: 14 };
 /** Kinds timed per job rather than per second of video. */
 const PER_JOB = new Set<Kind>(["paint", "cutout", "generate", "plan", "upscale"]);
 
@@ -800,7 +801,7 @@ export class Engine extends EventEmitter {
    * A video a workflow makes from another one, kept with the uploads: SeedVR2 restoring it larger, LTX-2.5 writing its sound, or
    * SAM3 tracking a subject through it as a matte (Spice's Roto). keep(bytes) stores the result.
    */
-  videoJob(kind: "upscale" | "sound" | "matte", source: string, v: { height?: number; prompt?: string; frames?: number; seed: number; loras?: VideoLora[]; matte?: Parameters<typeof buildMatte>[2] }, keep: (bytes: Buffer) => Promise<NonNullable<Paint["video"]>>): Paint {
+  videoJob(kind: "upscale" | "sound" | "matte" | "iclora", source: string, v: { height?: number; prompt?: string; frames?: number; seed: number; loras?: VideoLora[]; matte?: Parameters<typeof buildMatte>[2]; ic?: { tool: ICTool; size: ICSize; strength?: number } }, keep: (bytes: Buffer) => Promise<NonNullable<Paint["video"]>>): Paint {
     const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
     this.paints.set(job.id, job);
     const emit = () => this.emit("paint", job);
@@ -808,17 +809,37 @@ export class Engine extends EventEmitter {
       try {
         if (!(await exists(this.videoPath(source)))) throw new Error("That video is no longer on disk.");
         const asset = this.assetFor(this.videoPath(source));
-        let graph: Graph;
-        if (kind === "upscale") {
-          graph = await loadGraph(this.dirs.workflows, "upscale-video.json");
-          graph.video_in.inputs.file = asset;
-          Object.assign(graph.up.inputs, { seed: v.seed, resolution: v.height ?? 1080, max_resolution: Math.round(((v.height ?? 1080) * 16) / 9 / 2) * 2 });
-        } else if (kind === "matte") graph = buildMatte(await loadGraph(this.dirs.workflows, "matte.json"), asset, v.matte!);
-        else graph = buildSound(await loadGraph(this.dirs.workflows, "sound.json"), asset, v.prompt ?? "", v.frames ?? 121, v.seed);
-        const result = await this.execute(graph, new AbortController().signal, { kind: kind === "upscale" ? "restore" : kind, stage: "shot", units: (v.frames ?? 121) / FPS, loras: v.loras, onProgress: (p) => ((job.progress = p), emit()) });
-        const [out] = result.getOutputs("video");
-        if (!out) throw new Error("The workflow returned no video.");
-        job.video = await keep(Buffer.from(await out.toBytes()));
+        // (an LTX run now and then comes back black for one mix of words, size and clip: an IC-LoRA run is rolled again with another seed, twice at most)
+        for (let attempt = 0; ; attempt++) {
+          let graph: Graph;
+          if (kind === "upscale") {
+            graph = await loadGraph(this.dirs.workflows, "upscale-video.json");
+            graph.video_in.inputs.file = asset;
+            Object.assign(graph.up.inputs, { seed: v.seed, resolution: v.height ?? 1080, max_resolution: Math.round(((v.height ?? 1080) * 16) / 9 / 2) * 2 });
+          } else if (kind === "iclora") {
+            // an IC-LoRA of the suite on the clip (server/iclora.ts): the generic graph, the tool's guide and words
+            graph = buildIC(await loadGraph(this.dirs.workflows, "ic-lora.json"), v.ic!.tool, { clip: asset, prompt: v.prompt ?? "", frames: v.frames ?? 49, seed: v.seed + attempt * 1000, size: v.ic!.size, strength: v.ic!.strength });
+          } else if (kind === "matte") graph = buildMatte(await loadGraph(this.dirs.workflows, "matte.json"), asset, v.matte!);
+          else graph = buildSound(await loadGraph(this.dirs.workflows, "sound.json"), asset, v.prompt ?? "", v.frames ?? 121, v.seed);
+          const result = await this.execute(graph, new AbortController().signal, { kind: kind === "upscale" ? "restore" : kind, stage: "shot", units: (v.frames ?? 121) / FPS, loras: v.loras, onProgress: (p) => ((job.progress = p), emit()) });
+          const [out] = result.getOutputs("video");
+          if (!out) throw new Error("The workflow returned no video.");
+          const bytes = Buffer.from(await out.toBytes());
+          if (kind === "iclora" && this.checks.ffmpeg) {
+            const tmp = join(this.dirs.data, `black-check-${job.id}.mp4`);
+            await writeFile(tmp, bytes);
+            const black = await looksBlack(tmp, (v.frames ?? 49) / FPS, true).catch(() => false);
+            await rm(tmp, { force: true });
+            if (black) {
+              if (attempt >= 2) throw new Error("LTX returned a black picture three times for this clip and these words. Roll it again or change the words.");
+              job.progress = 0;
+              emit();
+              continue;
+            }
+          }
+          job.video = await keep(bytes);
+          break;
+        }
         job.status = "done";
       } catch (error) {
         job.status = "failed";

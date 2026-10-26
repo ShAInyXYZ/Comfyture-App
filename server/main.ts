@@ -29,6 +29,7 @@ import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
 import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer, utensilsCandidates } from "./utensils-assist.ts";
 import { SPICE_BRIEF, SPICE_TOOL, spicePrompt, readSpiceAnswer } from "./spice-assist.ts";
+import { loadTools, icFrames, promptOf, prepareFilter, compositeGraph, type ICSize } from "./iclora.ts";
 import { BAY_BRIEF, BAY_TOOL, bayPrompt, readBayAnswer } from "./bay-assist.ts";
 import { putBayExample } from "./bay-example.ts";
 import { TOASTER_BRIEF, TOASTER_TOOL, toasterPrompt, readToasterAnswer, TOASTER_WRITE_BRIEF, writePrompt, readImprovedPrompt } from "./toaster-assist.ts";
@@ -1949,6 +1950,63 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const name = text(input.text, 120);
     if (!positive.length && !name) throw bad("Click the subject or name it.");
     return json(res, 202, engine.matteImage(source, { text: name, positive, negative: points(input.negative) }));
+  }
+  // Spice's IC-LoRA suite (server/iclora.ts): the tools there are, and one run of a tool on a clip
+  if (path === "/api/spice/ic" && method === "GET") return json(res, 200, await loadTools(join(root, "workflows")));
+  if (path === "/api/spice/ic" && method === "POST") {
+    if (!ffmpeg) throw bad("Video tools need ffmpeg on the server.", 501);
+    const input = await jsonBody(req);
+    const suite = await loadTools(join(root, "workflows"));
+    const tool = suite.tools.find((t) => t.id === input.tool);
+    if (!tool) throw bad("That tool is not in the suite.");
+    if (tool.needs?.length) throw bad(`${tool.name} needs ${tool.needs.join(" and ")}: not offered yet.`);
+    let file = typeof input.video === "string" ? input.video : "";
+    let where = inside(join(data, "videos"), file);
+    if (!where || !(await exists(where))) throw bad("The video is missing. Add it again.");
+    const info = await probeVideo(where);
+    const size: ICSize = input.size === "standard" ? "standard" : "draft";
+    const seconds = num(input.seconds, 1, 10, 2);
+    const frames = icFrames(seconds, info.frames);
+    // a tool that is shown more than the clip (a canvas to widen, a region to fill) gets the clip made ready first, on this machine
+    const region = input.region && typeof input.region === "object" ? { x: num(input.region.x, 0, 1, 0), y: num(input.region.y, 0, 1, 0), w: num(input.region.w, 0.02, 1, 0.3), h: num(input.region.h, 0.02, 1, 0.3) } : undefined;
+    const vf = prepareFilter(tool, { aspect: input.aspect === undefined ? undefined : num(input.aspect, 0.25, 4, 1), region });
+    if (vf) {
+      const made = `${file.replace(/\.\w+$/, "")}-${createHash("sha256").update(`${tool.id}${vf}`).digest("hex").slice(0, 8)}.mp4`;
+      const out = join(data, "videos", made);
+      if (!(await exists(out))) await exec("ffmpeg", ["-nostdin", "-v", "error", "-y", "-i", where, "-an", "-vf", `${vf},format=yuv420p`, "-c:v", "libx264", "-crf", "12", "-preset", "fast", out]);
+      file = made;
+    }
+    const original = where;
+    const keep = async (made: Buffer) => {
+      let bytes = made;
+      // a widened or filled run is merged with the footage where the footage stood (server/iclora.ts compositeGraph)
+      if (vf) {
+        const tmp = join(data, "videos", `ic-draw-${randomBytes(4).toString("hex")}.mp4`);
+        const merged = `${tmp}.merged.mp4`;
+        try {
+          await writeFile(tmp, made);
+          const drawn = await probeVideo(tmp);
+          const graph = compositeGraph(tool, { w: drawn.width, h: drawn.height }, { w: info.width, h: info.height }, { aspect: input.aspect === undefined ? undefined : num(input.aspect, 0.25, 4, 1), region });
+          if (graph) {
+            await exec("ffmpeg", ["-nostdin", "-v", "error", "-y", "-i", tmp, "-i", original, "-filter_complex", graph, "-map", "[out]", "-frames:v", String(drawn.frames), "-c:v", "libx264", "-crf", "14", "-preset", "fast", "-an", merged]);
+            bytes = await readFile(merged);
+          }
+        } catch (e) {
+          console.warn("the run could not be merged with the footage:", e instanceof Error ? e.message : e);
+        } finally {
+          await rm(tmp, { force: true });
+          await rm(merged, { force: true });
+        }
+      }
+      const name = `${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}.mp4`;
+      const out = join(data, "videos", name);
+      if (!(await exists(out))) await writeFile(out, bytes);
+      const v = await probeVideo(out);
+      return { file: name, url: `/media/videos/${name}`, width: v.width, height: v.height, duration: v.duration };
+    };
+    const strength = input.strength === undefined || input.strength === null ? undefined : num(input.strength, 0, 2.5, tool.strength);
+    const prompt = promptOf(tool, { scene: text(input.scene, 400), words: text(input.words ?? input.prompt, 600) }, suite.scene);
+    return json(res, 202, engine.videoJob("iclora", file, { prompt, frames, seed: randomBytes(4).readUInt32BE(0), ic: { tool, size, strength } }, keep));
   }
   if ((path === "/api/utensils/upscale-video" || path === "/api/utensils/sound" || path === "/api/spice/matte") && method === "POST") {
     if (!ffmpeg) throw bad("Video tools need ffmpeg on the server.", 501);

@@ -1,0 +1,743 @@
+{
+ "families": [
+  {
+   "id": "control",
+   "name": "Control",
+   "about": "Draw the clip again under a control made of it: its pose, its edges or its depth"
+  },
+  {
+   "id": "restore",
+   "name": "Restore",
+   "about": "Bring a damaged clip back: blur, compression, interlacing, old footage"
+  },
+  {
+   "id": "upscale",
+   "name": "Upscale",
+   "about": "More pixels and more detail, drawn rather than stretched"
+  },
+  {
+   "id": "grade",
+   "name": "Grade and light",
+   "about": "Colour, the grade and the time of day"
+  },
+  {
+   "id": "clean",
+   "name": "Clean",
+   "about": "Take something out: a person, an object, subtitles, a watermark"
+  },
+  {
+   "id": "frame",
+   "name": "Frame",
+   "about": "Widen the frame, or fill a region of it"
+  },
+  {
+   "id": "camera",
+   "name": "Camera",
+   "about": "Move the camera, or take the move of another clip"
+  },
+  {
+   "id": "effects",
+   "name": "Effects and edits",
+   "about": "Water, a shave, crossed eyes, an edit by words"
+  },
+  {
+   "id": "more",
+   "name": "Needs more than a clip",
+   "about": "Tools that also need a reference picture, a sound, a track or a mask drawn by hand"
+  }
+ ],
+ "scene": "an old Texan rancher in a cream straw hat leans out of a yellow pickup truck window, a grey cat sits beside him, warm autumn light",
+ "tools": [
+  {
+   "id": "union-pose",
+   "file": "ltx-2.3-22b-ic-lora-union-control-ref0.5.safetensors",
+   "name": "Union control: pose",
+   "family": "control",
+   "about": "The clip's people (body, hands, face) drive a new picture: the same movement and timing, drawn from the words.",
+   "guide": "pose",
+   "prompt": "A grumpy old Texan rancher in a cream straw hat leans out of a yellow pickup truck window and rants, a grey cat sits beside him, warm autumn light.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Union-Control",
+   "note": "Describe the content you want, never the structure. 0.5 to 0.8 is a softer guide."
+  },
+  {
+   "id": "union-canny",
+   "file": "ltx-2.3-22b-ic-lora-union-control-ref0.5.safetensors",
+   "name": "Union control: edges",
+   "family": "control",
+   "about": "The edges of every frame drive a new picture: shapes and the camera stay, the look is drawn from the words.",
+   "guide": "canny",
+   "prompt": "A claymation world: a grumpy old rancher in a straw hat leans out of a yellow pickup truck, a grey cat beside him, handmade felt and clay textures, warm autumn light.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Union-Control",
+   "note": "Canny is best for architecture and products."
+  },
+  {
+   "id": "union-depth",
+   "file": "ltx-2.3-22b-ic-lora-union-control-ref0.5.safetensors",
+   "name": "Union control: depth",
+   "family": "control",
+   "about": "The depth of every frame drives a new picture: the space stays, the look is drawn from the words.",
+   "guide": "depth",
+   "prompt": "A snowy mountain village at night under a starry sky: a bearded man in a wool hat leans out of a red truck window, a fox sits beside him, deep blue moonlight and warm lantern glow.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Union-Control",
+   "note": "Depth is best for landscapes and interiors."
+  },
+  {
+   "id": "deblur",
+   "file": "ltx-2.3-22b-ic-lora-deblur-0.9.safetensors",
+   "name": "Deblur",
+   "family": "restore",
+   "about": "Sharpens out-of-focus (lens) blur. Not motion blur.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Deblur",
+   "template": "Reference shows {scene}, heavily out of focus with soft defocused blur and no fine detail. Edited shows the same scene in sharp focus with crisp detail and clean edges. DEBLUR {scene} Subject identity, framing, and background geometry are identical to the reference; only focus and sharpness differ between reference and edited.",
+   "single": true,
+   "demo": {
+    "damage": "blur",
+    "label": "a soft copy"
+   },
+   "note": "Lower the strength toward 0.8 if edges ring."
+  },
+  {
+   "id": "refocus",
+   "file": "ltx-2.3-22b-ic-lora-refocus.safetensors",
+   "name": "Refocus",
+   "family": "restore",
+   "about": "Turns footage that missed focus sharp again, from lens blur only.",
+   "guide": "raw",
+   "prompt": "The same scene in sharp focus, crisp detail and clean edges.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "inferred",
+   "source": "https://huggingface.co/oumoumad/LTX-2.3-22b-IC-LoRA-ReFocus",
+   "single": true,
+   "demo": {
+    "damage": "blur",
+    "label": "a soft copy"
+   },
+   "note": "The card says lens blur only; its settings are inferred from its siblings."
+  },
+  {
+   "id": "motiondeblur",
+   "file": "ltx-2.3-22b-ic-lora-motiondeblur.safetensors",
+   "name": "Motion deblur",
+   "family": "restore",
+   "about": "Reduces the smear of motion blur (heavy blur is softened, not removed).",
+   "guide": "raw",
+   "prompt": "The same scene, sharp and clear, with no motion blur.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "inferred",
+   "source": "https://huggingface.co/oumoumad/LTX-2.3-22b-IC-LoRA-MotionDeblur",
+   "single": true,
+   "demo": {
+    "damage": "smear",
+    "label": "a smeared copy"
+   }
+  },
+  {
+   "id": "decompression",
+   "file": "ltx-2.3-22b-ic-lora-decompression-0.9.safetensors",
+   "name": "Decompression",
+   "family": "restore",
+   "about": "Removes compression artifacts: macroblocking, chroma bleed, ringing, banding.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "card",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Decompression",
+   "template": "Reference shows {scene}, heavily compressed with visible macroblocking, chroma bleed, and ringing artifacts. Edited shows the same scene restored to high quality with sharp detail, clean edges, and no compression artifacts. ENHANCE QUALITY {scene}. Subject identity, framing, and background geometry are identical to the reference; only compression artifacts and image quality differ between reference and edited.",
+   "single": true,
+   "demo": {
+    "damage": "compress",
+    "label": "a crushed copy"
+   },
+   "note": "Not for blur, noise, upscaling or colour."
+  },
+  {
+   "id": "uncompress",
+   "file": "ltx-2.3-22b-ic-lora-uncompress.safetensors",
+   "name": "Uncompress",
+   "family": "restore",
+   "about": "Recovers cleaner footage from MP4 blocking, banding and mosquito noise.",
+   "guide": "raw",
+   "prompt": "The same scene, clean and sharp, with no compression artifacts.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "inferred",
+   "source": "https://huggingface.co/oumoumad/LTX-2.3-22b-IC-LoRA-Uncompress",
+   "single": true,
+   "demo": {
+    "damage": "compress",
+    "label": "a crushed copy"
+   }
+  },
+  {
+   "id": "deinterlace",
+   "file": "ltx-2.3-22b-ic-lora-deinterlace.safetensors",
+   "name": "Deinterlace",
+   "family": "restore",
+   "about": "Removes interlace combing, field-order judder and frame-blend ghosting.",
+   "guide": "raw",
+   "prompt": "The same scene, clean progressive video with no combing or ghosting.",
+   "strength": 1.0,
+   "status": "untested",
+   "confidence": "inferred",
+   "source": "https://huggingface.co/oumoumad/LTX-2.3-22b-IC-LoRA-Deinterlace",
+   "single": true,
+   "demo": {
+    "damage": "interlace",
+    "label": "an interlaced copy"
+   },
+   "note": "The test copy's ghosting was too mild to judge the result."
+  },
+  {
+   "id": "restoration",
+   "file": "ltx2.3-video-restoration-general.safetensors",
+   "name": "Restoration",
+   "family": "restore",
+   "about": "Cleans artifacts, blur and noise and rebuilds the damaged detail.",
+   "guide": "raw",
+   "prompt": "Convert the video to ultra-high-definition quality while removing artifacts and rebuilding high-frequency details.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "card",
+   "source": "https://huggingface.co/007ILOVEU/LTX2.3-ICEdit-Insight",
+   "single": true,
+   "demo": {
+    "damage": "worn",
+    "label": "a worn copy"
+   }
+  },
+  {
+   "id": "dearchive",
+   "file": "ltx-2.3-dearchive-lora_weights_step_05000.safetensors",
+   "name": "Dearchive",
+   "family": "restore",
+   "about": "Rewrites archive footage (old black and white, low-res web rips) as if shot recently.",
+   "guide": "raw",
+   "prompt": "A modern, high-resolution video shot in vivid color, sharp detail, contemporary cinematography.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/oumoumad/ltx-2.3-dearchive-lora",
+   "avoid": "monochrome, pc game, console game, video game, cartoon, childish, ugly",
+   "single": true,
+   "demo": {
+    "damage": "archive",
+    "label": "an archive copy"
+   },
+   "note": "It colours archive footage as it likes: the cat came out pink on this copy."
+  },
+  {
+   "id": "video-upscale",
+   "file": "ltx2.3-ic-video-upscale-general.safetensors",
+   "name": "Video upscale",
+   "family": "upscale",
+   "about": "Super-resolution and detail recovery, drawn by the model.",
+   "guide": "raw",
+   "prompt": "Convert the video to ultra-high-definition quality, significantly improving clarity, fine detail richness, texture fidelity, and overall perceptual sharpness.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "card",
+   "source": "https://huggingface.co/007ILOVEU/LTX2.3-ICEdit-Insight",
+   "single": true,
+   "demo": {
+    "damage": "lowres",
+    "label": "a low-res copy"
+   }
+  },
+  {
+   "id": "upscale-refine",
+   "file": "ltx2.3_upscale_ic-lora_06250.safetensors",
+   "name": "Refine upscale",
+   "family": "upscale",
+   "about": "A generative second pass for a soft or low-res clip: cleaner and more detailed, not a faithful stretch.",
+   "guide": "raw",
+   "prompt": "upscale",
+   "strength": 1.0,
+   "status": "failed",
+   "confidence": "inferred",
+   "source": "https://huggingface.co/Zlikwid/LTX_2.3_Upscale_IC_Lora",
+   "single": true,
+   "demo": {
+    "damage": "lowres",
+    "label": "a low-res copy"
+   },
+   "note": "A generative pass: it drew a different man where the footage was soft, so it is not a faithful upscale. Use Video upscale for that."
+  },
+  {
+   "id": "colorization",
+   "file": "ltx-2.3-22b-ic-lora-colorization-0.9.safetensors",
+   "name": "Colorization",
+   "family": "grade",
+   "about": "Brings natural colour to grayscale footage, keeping identity and framing.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "card",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Colorization",
+   "template": "Reference shows {scene}, in grayscale. Edited shows the same scene with natural colors restored. COLORIZE {scene}. Subject identity, framing, and background geometry are identical to the reference; only color information differs between reference and edited.",
+   "single": true,
+   "demo": {
+    "damage": "gray",
+    "label": "a gray copy"
+   },
+   "note": "Lower to 0.8 to 0.9 for colour bleed."
+  },
+  {
+   "id": "colorizer",
+   "file": "LTX-2.3-22b-IC-LoRA-Colorizer-0.9.safetensors",
+   "name": "Colorizer",
+   "family": "grade",
+   "about": "Adds colour to black and white footage; the prompt says which colours things should be. Work in progress by its card.",
+   "guide": "raw",
+   "prompt": "Natural, warm autumn colours: a cream straw hat, a faded blue denim shirt, a plum bandana, a pale yellow pickup truck, a grey cat, red and gold leaves.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "card",
+   "source": "https://huggingface.co/DoctorDiffusion/LTX-2.3-IC-LoRA-Colorizer",
+   "single": true,
+   "demo": {
+    "damage": "gray",
+    "label": "a gray copy"
+   }
+  },
+  {
+   "id": "ungrade",
+   "file": "ltx-2.3-22b-ic-lora-ungrade.safetensors",
+   "name": "Ungrade",
+   "family": "grade",
+   "about": "Strips a heavy colour grade (teal and orange, crushed blacks, film looks) toward neutral footage.",
+   "guide": "raw",
+   "prompt": "The same scene with a neutral, ungraded look: natural colours, natural contrast.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "inferred",
+   "source": "https://huggingface.co/oumoumad/LTX-2.3-22b-IC-LoRA-Ungrade",
+   "single": true,
+   "demo": {
+    "damage": "graded",
+    "label": "a graded copy"
+   },
+   "note": "Softens a heavy grade without fully neutralising it."
+  },
+  {
+   "id": "day-to-night",
+   "file": "ltx-2.3-22b-ic-lora-day-to-night-0.9.safetensors",
+   "name": "Day to night",
+   "family": "grade",
+   "about": "The same shot at night, frame for frame: only the light changes.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "card",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Day-To-Night",
+   "template": "A realistic nighttime scene. {scene}, lit by photorealistic moonlight, with deep natural shadows. {words}. Only the lighting changes from day to night; identical composition, framing, camera movement and motion.",
+   "avoid": "daytime, bright sunlight, blue sky, overexposed, worst quality, inconsistent motion, blurry, jittery, distorted",
+   "note": "A draft run gives a convincing dusk (the golden hour turned blue and low), not full night: its card was written for the dev model at guidance 3 to 4, and a standard run with night words came back black three times.",
+   "words": "Deep blue moonlight and long shadows under a dark sky"
+  },
+  {
+   "id": "hdr",
+   "file": "ltx-2.3-22b-ic-lora-hdr-0.9.safetensors",
+   "name": "HDR",
+   "family": "grade",
+   "about": "SDR to 16-bit HDR (it works in LogC3 and needs an inverse transform on the way out).",
+   "guide": "raw",
+   "prompt": "HDR footage",
+   "strength": 1.0,
+   "status": "untested",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-HDR",
+   "needs": [
+    "a LogC3 transform"
+   ],
+   "note": "The output is LogC3-encoded: a custom inverse is needed, so it is not offered yet."
+  },
+  {
+   "id": "clean-plate",
+   "file": "ltx-2.3-22b-ic-lora-clean-plate-1.0.safetensors",
+   "name": "Clean plate",
+   "family": "clean",
+   "about": "Removes the people and moving subjects and rebuilds the empty background. No mask.",
+   "guide": "raw",
+   "prompt": "An empty clean plate of the exact same location: identical background, environment, structures and lighting as the source video, with no people, no humans, no figures, and no body parts such as arms, hands or legs anywhere in the frame. Static photorealistic footage, natural light, high detail.",
+   "strength": 1.0,
+   "status": "failed",
+   "confidence": "card",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Clean-Plate",
+   "avoid": "person, people, human, figure, limb, arm, hand, leg, body part, shadow of a person, leftover people",
+   "note": "On this clip the person fills the frame, which its card puts out of scope: a different man stayed in the truck. Try it with people small in a wide shot."
+  },
+  {
+   "id": "obscura",
+   "file": "ltx23-obscura_remova.safetensors",
+   "name": "Obscura Remova",
+   "family": "clean",
+   "about": "Removes what stands in front of the scene: an object, smoke, a curtain. No mask.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 2.0,
+   "status": "verified",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/WepeNerd/Obscura_Remova",
+   "template": "Remove the {words} from the foreground.",
+   "words": "grey cat",
+   "note": "The cat is gone; the man drifts a little."
+  },
+  {
+   "id": "subtitles",
+   "file": "ltx2.3-ic-subtitles-remove-general.safetensors",
+   "name": "Remove subtitles",
+   "family": "clean",
+   "about": "Removes burnt-in subtitles, captions and text overlays, steadily over time.",
+   "guide": "raw",
+   "prompt": "Remove subtitles, captions, and related text occlusions from the video, restoring a clean and natural underlying image.",
+   "strength": 1.2,
+   "status": "verified",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/007ILOVEU/LTX2.3-ICEdit-Insight",
+   "avoid": "pc game, console game, video game, cartoon, childish, ugly",
+   "single": true,
+   "demo": {
+    "damage": "subtitles",
+    "label": "a subtitled copy"
+   }
+  },
+  {
+   "id": "watermark",
+   "file": "ltx2.3-ic-watermark-remove-general.safetensors",
+   "name": "Remove watermark",
+   "family": "clean",
+   "about": "Removes platform watermarks and semi-transparent logos and rebuilds what they covered.",
+   "guide": "raw",
+   "prompt": "Remove short-video platform watermarks and related occlusions from the video, restoring a clean, clear, and natural original image.",
+   "strength": 1.5,
+   "status": "verified",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/007ILOVEU/LTX2.3-ICEdit-Insight",
+   "avoid": "pc game, console game, video game, cartoon, childish, ugly",
+   "single": true,
+   "demo": {
+    "damage": "watermark",
+    "label": "a watermarked copy"
+   }
+  },
+  {
+   "id": "outpaint",
+   "file": "ltx-2.3-22b-ic-lora-outpaint.safetensors",
+   "name": "Outpaint",
+   "family": "frame",
+   "about": "Widens the frame: the clip is set on a larger canvas with black bars, and the model draws what the bars hide.",
+   "guide": "raw",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/oumoumad/LTX-2.3-22b-IC-LoRA-Outpaint",
+   "avoid": "pc game, console game, video game, ugly, 3d render, photo, still, static, slow",
+   "prepare": {
+    "op": "pad",
+    "color": "000000",
+    "aspect": 1.0
+   },
+   "note": "Merged with the footage where it stood; widened to a square it drew a wing mirror, the truck's side, a tyre and leaves.",
+   "template": "{scene}. The scene continues naturally beyond the frame: the side of the yellow truck, a wing mirror, autumn trees and fallen leaves, warm light.",
+   "prompt": ""
+  },
+  {
+   "id": "in-outpainting",
+   "file": "ltx-2.3-22b-ic-lora-in-outpainting-0.9.safetensors",
+   "name": "In and outpainting: widen",
+   "family": "frame",
+   "about": "Widens the frame with the official in/outpainting LoRA: new canvas shown as flat green, the model fills it.",
+   "guide": "raw",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-In-Outpainting",
+   "avoid": "pc game, console game, video game, cartoon, childish, ugly",
+   "prepare": {
+    "op": "pad",
+    "color": "66FF00",
+    "aspect": 1.0
+   },
+   "note": "Merged with the footage where it stood; widened to a square.",
+   "template": "{scene}. The scene continues naturally beyond the frame: the side of the yellow truck, a wing mirror, autumn trees and fallen leaves, warm light.",
+   "prompt": ""
+  },
+  {
+   "id": "inpaint",
+   "file": "ltx-2.3-22b-ic-lora-in-outpainting-0.9.safetensors",
+   "name": "In and outpainting: fill a region",
+   "family": "frame",
+   "about": "Fills a region of the frame, shown as flat green: remove something (here the cat), or draw something new there.",
+   "guide": "raw",
+   "prompt": "The back seat of the truck, empty, with warm autumn trees seen through the window behind it.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-In-Outpainting",
+   "avoid": "pc game, console game, video game, cartoon, childish, ugly",
+   "prepare": {
+    "op": "box",
+    "color": "66FF00",
+    "region": {
+     "x": 0.03,
+     "y": 0.14,
+     "w": 0.32,
+     "h": 0.26
+    }
+   },
+   "note": "The region was over the cat: it is gone, an empty seat in its place (merged with the footage outside the region)."
+  },
+  {
+   "id": "inpaint-masked",
+   "file": "ltx23_inpaint_masked_t2v_rank128_v1_10000steps.safetensors",
+   "name": "Masked inpaint",
+   "family": "frame",
+   "about": "Text-only masked inpaint: the region shown in magenta is filled from the words.",
+   "guide": "raw",
+   "prompt": "An old rancher in a cream straw hat leans out of a yellow pickup truck window; on the door beside him is a hand-painted red lantern sign.",
+   "strength": 1.0,
+   "status": "failed",
+   "confidence": "card",
+   "source": "https://huggingface.co/Alissonerdx/LTX-LoRAs",
+   "prepare": {
+    "op": "box",
+    "color": "FF00FF",
+    "region": {
+     "x": 0.12,
+     "y": 0.62,
+     "w": 0.34,
+     "h": 0.14
+    }
+   },
+   "note": "On the distilled settings it left the magenta of the mask in the region instead of filling it."
+  },
+  {
+   "id": "cameraman",
+   "file": "LTX2.3-22B_IC-LoRA-Cameraman_v1_10500.safetensors",
+   "name": "Cameraman",
+   "family": "camera",
+   "about": "Takes the camera move of a clip and gives it to new content: the prompt describes the new scene.",
+   "guide": "raw",
+   "prompt": "A quiet harbour town at dawn: fishing boats on calm water, wet cobbles, soft golden light, gulls overhead.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "card",
+   "source": "https://huggingface.co/Cseti/LTX2.3-22B_IC-LoRA-Cameraman_v1",
+   "avoid": "pc game, console game, video game",
+   "single": true,
+   "note": "Only the camera move is copied: the scene is new."
+  },
+  {
+   "id": "crossview",
+   "file": "LTX2.3-22B_IC-LoRA-CrossView-Prompt_v0.9_13700.safetensors",
+   "name": "CrossView",
+   "family": "camera",
+   "about": "A virtual second camera: the scene re-shot from a new angle you ask for.",
+   "guide": "raw",
+   "prompt": "crossview. new camera angle: to the right, lower, closer.",
+   "strength": 1.3,
+   "status": "verified",
+   "confidence": "card",
+   "source": "https://huggingface.co/Cseti/LTX2.3-22B_IC-LoRA-CrossView-Prompt",
+   "avoid": "text, subtitles, logo, watermark, signature",
+   "note": "Its words are fixed: angle (same, slightly/far left or right), height (lower, same, higher) and distance (closer, same, further). Strength 1.2 to 1.5 on the distilled model."
+  },
+  {
+   "id": "water",
+   "file": "ltx-2.3-22b-ic-lora-water-simulation-0.9.safetensors",
+   "name": "Water simulation",
+   "family": "effects",
+   "about": "Adds water to a dry clip: rain, a flood, a splash, wet surfaces.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 1.2,
+   "status": "verified",
+   "confidence": "card",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Water-Simulation",
+   "template": "Reference shows {scene}. Edited shows the same scene with water added. ADD WATER {words}. Subject identity, clothing, framing, and background geometry are identical to the reference; only water-related elements differ between reference and edited.",
+   "words": "heavy rain pours down, streams over the truck's window and door, splashes on the road and runs off the brim of his hat",
+   "single": true,
+   "note": "At draft size the water is subtle: streaks on the door and a wet handle."
+  },
+  {
+   "id": "shave",
+   "file": "ltx-2.3-22b-ic-lora-instant-shave-0.9.safetensors",
+   "name": "Instant shave",
+   "family": "effects",
+   "about": "Removes a beard, a moustache or stubble from a person and keeps their identity and motion.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Instant-Shave",
+   "template": "REMOVEBEARD {scene}, completely smooth and clean-shaven, bare skin, no beard, no moustache, no stubble, no facial hair.",
+   "avoid": "beard, mustache, facial hair, stubble, worst quality, inconsistent motion, blurry, jittery, distorted"
+  },
+  {
+   "id": "cross-eyed",
+   "file": "ltx-2.3-22b-ic-lora-cross-eyed-0.9.safetensors",
+   "name": "Cross-eyed",
+   "family": "effects",
+   "about": "Turns a close-up portrait's straight gaze into crossed eyes, keeping the expression and the head's motion.",
+   "guide": "raw",
+   "prompt": "A close-up portrait video of a man with permanent severe convergent strabismus. Both eyes are continuously turned inward toward the nose throughout the shot. The subject maintains natural facial expression, head movement, lighting, and camera framing.",
+   "strength": 1.0,
+   "status": "verified",
+   "confidence": "card",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Cross-Eyed",
+   "avoid": "worst quality, inconsistent motion, blurry, jittery, distorted, normal eyes, straight eyes, corrected eyes",
+   "note": "Listed by its docs as LTX-2.3 only."
+  },
+  {
+   "id": "edit-anything",
+   "file": "ltx23_edit_anything_global_rank128_v1_9000steps_adamw.safetensors",
+   "name": "Edit anything",
+   "family": "effects",
+   "about": "An experimental edit by words: add, remove or replace an object, or convert the style.",
+   "guide": "raw",
+   "prompt": "Add a red knitted scarf around the neck of the grey cat on the left.",
+   "strength": 1.3,
+   "status": "failed",
+   "confidence": "card",
+   "source": "https://huggingface.co/Alissonerdx/LTX-LoRAs",
+   "note": "A draft run of 'Convert the video into a watercolor style' changed the people instead of the style. Its card says CFG matters most and calls it experimental."
+  },
+  {
+   "id": "ingredients",
+   "file": "ltx-2.3-22b-ic-lora-ingredients-0.9.safetensors",
+   "name": "Ingredients",
+   "family": "more",
+   "about": "Holds characters, props and a location from one reference sheet across a new clip.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 1.0,
+   "status": "untested",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Ingredients",
+   "needs": [
+    "a reference sheet"
+   ],
+   "note": "Kitchen's Shot uses it with its own sheet composer; Spice has no pictures."
+  },
+  {
+   "id": "lipdub",
+   "file": "ltx-2.3-22b-ic-lora-lipdub-0.9.safetensors",
+   "name": "Lip dub",
+   "family": "more",
+   "about": "Speaks new words in the speaker's own voice with matching lips.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 1.0,
+   "status": "untested",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-DubIt",
+   "needs": [
+    "the clip's sound"
+   ],
+   "note": "Needs a clip with its voice: State Property's is silent."
+  },
+  {
+   "id": "motion-track",
+   "file": "ltx-2.3-22b-ic-lora-motion-track-control-ref0.5.safetensors",
+   "name": "Motion track",
+   "family": "more",
+   "about": "Steers things along tracks you draw.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 1.0,
+   "status": "untested",
+   "confidence": "official-workflow",
+   "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Motion-Track-Control",
+   "needs": [
+    "tracks drawn by hand"
+   ]
+  },
+  {
+   "id": "any-trajectory",
+   "file": "ltx-2.3-22b-ic-lora-any-trajectory-instruction-3000.safetensors",
+   "name": "Any trajectory",
+   "family": "more",
+   "about": "Moves a subject along a path you give it.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 1.0,
+   "status": "untested",
+   "confidence": "card",
+   "source": "https://huggingface.co/yuvraj108c/LTX-2.3-22b-IC-LoRA-Any-Trajectory-Instruction",
+   "needs": [
+    "a trajectory drawn by hand"
+   ]
+  },
+  {
+   "id": "head-swap",
+   "file": "ltx23-head_swap_v3_rank_64.safetensors",
+   "name": "Head swap",
+   "family": "more",
+   "about": "Swaps the head of a person in the clip for another from a picture.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 1.0,
+   "status": "untested",
+   "confidence": "card",
+   "source": "https://huggingface.co/Alissonerdx/BFS-Best-Face-Swap-Video",
+   "needs": [
+    "a picture of the head",
+    "a mask",
+    "the rights to that likeness"
+   ],
+   "note": "Its card requires consent and rights for any likeness."
+  },
+  {
+   "id": "inpaint-reference",
+   "file": "ltx23_inpaint_masked_r2v_rank32_v1_3000steps.safetensors",
+   "name": "Masked inpaint from a picture",
+   "family": "more",
+   "about": "Fills the masked region with something shown in a reference picture.",
+   "guide": "raw",
+   "prompt": "",
+   "strength": 1.0,
+   "status": "untested",
+   "confidence": "card",
+   "source": "https://huggingface.co/Alissonerdx/LTX-LoRAs",
+   "needs": [
+    "a reference picture"
+   ]
+  },
+  {
+   "id": "greenscreen-avatar",
+   "file": "ltx23-greenscreen-avatar-ic-lora-vertical-v1-lora_weights_step_05000.safetensors",
+   "name": "Greenscreen avatar",
+   "family": "more",
+   "about": "A vertical talking head on flat chroma-key green.",
+   "guide": "raw",
+   "prompt": "A person talking directly to the camera against a flat green chroma-key background. Natural lip sync, occasional blinks, subtle head movements. Soft natural lighting, photorealistic, sharp focus, stable framing.",
+   "strength": 1.0,
+   "status": "untested",
+   "confidence": "inferred",
+   "source": "https://huggingface.co/OmerHagage/ltx2-greenscreen-avatar-ic-lora-vertical-v1",
+   "needs": [
+    "a talking-head clip (its use as a guide is unconfirmed)"
+   ]
+  }
+ ]
+}
