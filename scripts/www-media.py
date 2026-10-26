@@ -132,7 +132,7 @@ for cat in ("praline", "sesame", "mochi", "meringue"):
 # ── the hero reel: real takes of our cast, cross-faded, picture and sound (16:9) ──────────────────────────────────────────────
 REEL = [  # (source, start, seconds, window: where the 16:9 frame sits in a cover fit (x, y), has sound)
     (src("data", "runs", "20261019-db48ff6e", "shot.mp4"), 0.0, 3.0, (0.5, 0.5), True),     # Kitchen: Ketkout, the last jar
-    (dst("spice", "spice-card.mp4"), 1.0, 3.4, (0.5, 0.2), False),                           # Spice: Taro's fireworks and Pickle's spell, wiped
+    (dst("spice", "spice-card.mp4"), 1.0, 3.4, (0.5, 0.2), False),                           # Spice: the yard and the dance, plate and pass, wiped
     (src("data", "runs", "20261021-501232c8", "shot.mp4"), 0.0, 4.0, (0.5, 0.28), True),    # Jam: Taro sings his song
     (src("data", "runs", "20261019-32648f63", "shot.mp4"), 0.0, 3.0, (0.5, 0.5), True),     # Kitchen: the jam goes in the pie
     (src("data", "reels", "20261016-37b820.mp4"), 6.4, 3.4, (0.5, 0.5), True),              # Kitchen: Desert Dawn Rescue
@@ -206,41 +206,38 @@ poster(dst("macaron", "intro.mp4"), dst("macaron", "intro.jpg"), 4.0, 540)
 clip(src(*OT, "logo-sting.mp4"), dst("macaron", "otter-sting.mp4"), 540, 28)
 poster(dst("macaron", "otter-sting.mp4"), dst("macaron", "otter-sting.jpg"), 2.0, 540)
 
-# ── Spice: the example shots, as the app made them (scripts/spice-examples.mjs); the moving shots, take and comp, side by side in
-#    a wipe on the site; the card: two of them side by side, a wipe sweeping across both; the elements ────────────────────────────
-SP = ("examples", "spice")
-for shot, name in (("sh010-ketkout", "ketkout"), ("sh030-brioche", "brioche"), ("sh040-truffle", "truffle"), ("sh050-paprika", "paprika")):
-    pic(src(*SP, shot, "plate.jpg"), dst("spice", f"{name}-plate.webp"), 1280, 80)
-    pic(src(*SP, shot, "comp.webp"), dst("spice", f"{name}-fx.webp"), 1280, 82)
-MOVING = (("sh054-taro-fireworks", "taro-fireworks", 2.6), ("sh052-taro-wish", "taro-wish", 1.4), ("sh020-pickle", "pickle-spell", 1.6))
-for shot, name, at in MOVING:
-    for p, out in (("plate", "plate"), ("fx", "fx")):
-        clip(src(*SP, shot, f"{p}.mp4"), dst("spice", f"{name}-{out}.mp4"), 540, 26)
-        poster(dst("spice", f"{name}-{out}.mp4"), dst("spice", f"{name}-{out}.jpg"), at, 540)
-# Gen: State Property's IC-LoRA takes, each against the damaged copy of the footage the tool was given (the example's gen-in-*.mp4)
-IC = (("gen-in-blur", "gen-deblur", "ic-deblur", 1.0), ("gen-in-gray", "gen-colorization", "ic-colorization", 1.0), ("gen-in-subtitles", "gen-subtitles", "ic-subtitles", 1.0))
-for before, after, name, at in IC:
-    for p, out in ((before, "in"), (after, "out")):
-        clip(src(*SP, "sh070-state-property", f"{p}.mp4"), dst("spice", f"{name}-{out}.mp4"), 540, 26)
-        poster(dst("spice", f"{name}-{out}.mp4"), dst("spice", f"{name}-{out}.jpg"), at, 540)
+# ── Spice: the example scenario, Truffle's Jam Heist (examples/spice/heist/, every pass a real run): each shot's plate against the clip
+#    its last pass made, side by side in a wipe on the site; the card: two shots side by side, a wipe sweeping across both ───────────
+SP = ("examples", "spice", "heist")
+HEIST = (("sh010", 2.0), ("sh020", 2.0), ("sh030", 2.0), ("sh040", 2.0), ("sh050", 2.0))
+if os.path.exists(src(*SP, "scenario.json")):
+    with open(src(*SP, "scenario.json")) as f:
+        heist = json.load(f)
+    for shot, at in HEIST:
+        spec = next((x for x in heist["shots"] if x["id"] == shot), None)
+        if not spec or not spec["passes"]:
+            continue
+        last = spec["passes"][-1]["media"]["file"]
+        for source, out in ((spec["plate"]["file"], "plate"), (last, "pass")):
+            clip(src(*SP, source), dst("spice", f"{shot}-{out}.mp4"), 960, 26, sound=out == "pass")
+            poster(dst("spice", f"{shot}-{out}.mp4"), dst("spice", f"{shot}-{out}.jpg"), at, 960)
+        # every pass of the chain, small, for the strip of passes under each shot on the site
+        for i, p in enumerate(spec["passes"], 1):
+            poster(src(*SP, p["media"]["file"]), dst("spice", f"{shot}-p{i}.jpg"), at, 480)
 card = dst("spice", "spice-card.mp4")
-FW, PK = ("sh054-taro-fireworks", "sh020-pickle")
-if todo(card, *(src(*SP, s, f"{p}.mp4") for s in (FW, PK) for p in ("plate", "fx"))):
-    # Taro's fireworks and Pickle's spell side by side (Pickle's 58 frames played twice, so both run 116); the takes on the left of a
-    # yellow line that sweeps across and back once a loop, the comps on its right
-    n, x = 116, "(0.5+0.42*sin(2*PI*{t}/(116/24)))"
-    side = lambda i: f"[{i}:v]scale=540:960,setsar=1,fps=24,format=yuv420p"
-    ff("-i", src(*SP, FW, "plate.mp4"), "-i", src(*SP, PK, "plate.mp4"), "-i", src(*SP, FW, "fx.mp4"), "-i", src(*SP, PK, "fx.mp4"),
+A, B = ("sh010", "sh050")
+if todo(card, *(src(*SP, f"{s}-{p}.mp4") for s in (A, B) for p in ("plate",)), *(dst("spice", f"{s}-pass.mp4") for s in (A, B))):
+    # the yard and the dance side by side (five seconds each); the plates on the left of a yellow line that sweeps across and back once
+    # a loop, the passes on its right
+    n, x = 113, "(0.5+0.42*sin(2*PI*{t}/(113/24)))"
+    side = lambda i: f"[{i}:v]scale=960:540,setsar=1,fps=24,format=yuv420p"
+    ff("-i", src(*SP, f"{A}-plate.mp4"), "-i", src(*SP, f"{B}-plate.mp4"), "-i", dst("spice", f"{A}-pass.mp4"), "-i", dst("spice", f"{B}-pass.mp4"),
        "-filter_complex",
-       f"{side(0)},trim=end_frame={n}[a];{side(1)},loop=loop=1:size=58:start=0,trim=end_frame={n}[b];"
-       f"{side(2)},trim=end_frame={n}[c];{side(3)},loop=loop=1:size=58:start=0,trim=end_frame={n}[d];"
-       f"[a][b]hstack[p];[c][d]hstack[f];[p][f]blend=all_expr='if(lt(X,W*{x.format(t='T')}),A,B)'[w];color=c=0xF2FF59:s=3x960:r=24[l];"
+       f"{side(0)},trim=end_frame={n}[a];{side(1)},trim=end_frame={n}[b];{side(2)},trim=end_frame={n}[c];{side(3)},trim=end_frame={n}[d];"
+       f"[a][b]hstack[p];[c][d]hstack[f];[p][f]blend=all_expr='if(lt(X,W*{x.format(t='T')}),A,B)'[w];color=c=0xF2FF59:s=3x540:r=24[l];"
        f"[w][l]overlay=x='W*{x.format(t='t')}-1':y=0:eval=frame:shortest=1,format=yuv420p[v]",
        "-map", "[v]", "-frames:v", str(n), "-c:v", "libx264", "-crf", "27", "-preset", "slow", "-an", "-movflags", "+faststart", card)
 poster(card, dst("spice", "spice-card.jpg"), 3.0, 1080)
-for f in sorted(os.listdir(src("web", "brand", "spice", "elements"))):
-    if f.endswith("-t.webp"):
-        pic(src("web", "brand", "spice", "elements", f), dst("spice", "elements", f.replace("-t.webp", ".webp")), 256, 80)
 
 # ── Toaster: its examples, clay frame and render (renders made with GPT Image for the examples, as each example says) ───────
 TOAST = [("toast-example-woodshop", "workbench", "workbench"), ("toast-example-woodshop", "close-up", "close-up"),
@@ -262,8 +259,8 @@ for ex, f in (("toast-example-woodshop", "depth-workbench.webp"), ("toast-exampl
 APP = {  # www/media/app/<name>.webp ← <capture folder>/<file>
     "story": "a/story-02-storyboard.png", "stage": "a/stage-16-campfire-render-compare.png", "shot": "a/shot-01-desk.png",
     "cut": "a/cut-01-edit-title.png", "library": "a/library-01-images.png", "jam": "c/jam-01-track.png", "macaron": "b/macaron-01-kit.png",
-    "spice": "b/spice-25-paprika-fx-handles.png", "spice-gen": "c/spice-gen-01-deblur.png", "toaster": "c/toaster-01-scene.png",
-    "utensils": "c/utensils-01-picture.png", "tour": "b/spice-35-tour-fx-library.png",
+    "spice": "c/spice-01-heist.png", "toaster": "c/toaster-01-scene.png",
+    "utensils": "c/utensils-01-picture.png", "tour": "c/spice-02-tour-chain.png",
 }
 LOOPS = {  # www/media/loops/<name>.mp4 ← <capture folder>/<file> (a screen recording; no sound)
 }

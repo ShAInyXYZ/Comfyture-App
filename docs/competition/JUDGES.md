@@ -42,14 +42,14 @@ npm start            # then open http://127.0.0.1:5177
 |---|---|---|
 | **Kitchen** · Ketkout the chick | Stage → *Morning kitchen*: keys 1–7 show the clay as colour ID, depth, normal, pose, lines, mask; pose a mannequin; *Render references*. On Kitchen's home, one sentence and *Imagine* writes a film. | Stage free; writing and rolling cost |
 | **Toaster** · Crumpet the beaver | Press the compass for Crumpet's tour: he builds a set in clay, free. Ask him for *"a cosy reading corner, camera low"* and watch him build it; *Render* shows what is sent; *Toast it* renders it; *3D* makes each object real, one at a time (its own four-view sheet, then its own model), into a new scene. | Building by hand and the tour free; his answers, toast and 3D cost |
-| **Spice** · Paprika the chameleon | *Paprika's portal* → FX: drag a flame or a portal from the library onto the picture, move, scale and turn it; Comp: drag the wipe; Export. *State Property* (opens first) → Gen: the IC-LoRA suite, 39 tools by family with a dot for what a real run showed; its takes are real runs, restoring ones shown against the damaged copy they were given (drag the wipe). | All free; Roto (SAM3), Paint, Light and Gen runs cost (a Gen draft is about 2 credits, and the key asks first) |
+| **Spice** · Paprika the chameleon | *Truffle's Jam Heist* (opens first): the five shots on the left, the chain of passes under the viewer (drag the wipe: what each tool ran on against what it made), the tools by family with a dot for what a real run showed; pick one and its price is on the key. **Show me around** walks the scenario for free. | Looking is free; every tool is a paid run on Comfy Cloud (an IC-LoRA draft is a few credits, a standard run about six a second, an LTX-2.5 shot about 24), and the key asks first |
 | **Jam** · Pickle the frog | Open the example video and play the track: the beat and the sections are read in your browser; *The song*: a shelf of our own songs made with ACE-Step; *The Words*: caption styles; *The Edit*: the cut on the beat. | Free; songs and performances cost |
 | **Mixer** · Praline the cat | Pick a trend, swap the crew around, read its beats; *Make it* rolls it with LTX-2.5. | *Make it* costs |
 | **Macaron** · Brioche the bunny | The Comfyture brand: palette, logos, type, rules, the brand book; ask Brioche for a colourway. | Kit free; pictures and motion cost |
 | **Utensils** · Truffle the raccoon | The shelf of one-job tools; *Library*: the 691 official ComfyUI workflows, each as one form. | Edit tools free; models cost |
 
 **Free** (in your browser, or on the server with ffmpeg): examples and tours; the Stage and Toaster in clay and their control passes;
-Spice's compositor and its bake; Jam's beat; Cut's edit and film render; Utensils' edit tools and free effects; Macaron's kit and brand guard.
+Spice's viewer, chain and tour (looking is free; every tool is a paid run); Jam's beat; Cut's edit and film render; Utensils' edit tools and free effects; Macaron's kit and brand guard.
 **Costs Comfy credits** (on Comfy Cloud; free on your own GPU): whatever a model makes. A 5-second LTX-2.5 shot is about 24 credits,
 a picture 2–6. Every paid key shows its price, and a pet only *offers* a paid run: it waits under the answer for your yes.
 
@@ -61,7 +61,7 @@ a picture 2–6. Every paid key shows its price, and a pet only *offers* a paid 
 | The workflows, as readable API-format graphs (LTX-2.5 shots, the Oven, songs) | [`workflows/`](../../workflows/) |
 | Pets that act, checked: the tool, the checks, the actions applied | [`server/toaster-assist.ts`](../../server/toaster-assist.ts), [`web/js/toaster-assist.js`](../../web/js/toaster-assist.js), [`server/spice-assist.ts`](../../server/spice-assist.ts), `petAnswer` in [`server/main.ts`](../../server/main.ts) |
 | Toaster: clay → maps → render; each object → its four-view sheet → Trellis2 → a new scene of GLBs | [`web/js/toaster.js`](../../web/js/toaster.js), [`web/js/toaster-model.js`](../../web/js/toaster-model.js), [`web/js/toaster-3d.js`](../../web/js/toaster-3d.js), [`server/toaster-3d.ts`](../../server/toaster-3d.ts), [`workflows/3d/`](../../workflows/3d/) |
-| Spice's compositor and its free bake | [`web/js/spice-canvas.js`](../../web/js/spice-canvas.js), [`web/js/spice-layers.js`](../../web/js/spice-layers.js), [`web/js/spice-bake.js`](../../web/js/spice-bake.js) |
+| Spice's suite: one route runs any Comfy Cloud workflow on a clip, the IC-LoRAs on the app's own graph, and keeps every pass with the clip it ran on | [`server/spice.ts`](../../server/spice.ts), [`server/iclora.ts`](../../server/iclora.ts), [`web/js/spice-tools.js`](../../web/js/spice-tools.js), [`web/js/spice-model.js`](../../web/js/spice-model.js) |
 | The Stage, its passes, and the MCP server any agent can drive | [`web/js/control/`](../../web/js/control/), [`scripts/control-mcp.ts`](../../scripts/control-mcp.ts) |
 | The beat, read in the browser | [`web/js/beats.js`](../../web/js/beats.js) |
 | The 691 official templates, run through Comfy Cloud's MCP | [`server/comfy-templates.ts`](../../server/comfy-templates.ts) |
