@@ -332,7 +332,7 @@ h2 { font-size: clamp(42px, 6.4vw, 104px); margin-top: 16px; }
 .picker button img { width: 30px; height: 30px; border-radius: 50%; }
 .picker button:hover { color: var(--text); background: var(--s2); }
 .picker button[aria-pressed="true"] { background: var(--y); color: var(--y-ink); box-shadow: none; }
-.depts { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-top: clamp(28px, 3vw, 40px); counter-reset: d; }
+.depts { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; margin-top: clamp(28px, 3vw, 40px); counter-reset: d; }
 .depts li { position: relative; display: grid; gap: 6px; align-content: start; padding: 18px 16px; border-radius: 16px; background: var(--s1); box-shadow: inset 0 0 0 1px var(--line); }
 .depts li:not(:last-child)::after { content: ""; position: absolute; right: -8px; top: 26px; width: 6px; height: 6px; border-top: 2px solid var(--y-line); border-right: 2px solid var(--y-line); transform: rotate(45deg); }
 .depts .mono { color: var(--y); font-size: 11px; }
@@ -511,7 +511,7 @@ dialog.viewer[open] { animation: pop .3s var(--ease); }
   .c-toaster, .c-utensils { grid-column: 1 / 3; grid-row: span 1; }
   .now { width: 300px; }
   .depts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .depts li:nth-child(3)::after { display: none; }
+  .depts li:nth-child(3)::after, .depts li:nth-child(6)::after { display: none; }
   .duo { grid-template-columns: 1fr; }
   .els { grid-template-columns: repeat(11, minmax(0, 1fr)); }
   .shelf { grid-template-columns: repeat(3, minmax(0, 1fr)); }

@@ -135,7 +135,7 @@
       <a class="card c-spice" href="#spice" data-r>
         <video class="lazy" muted loop playsinline preload="none" poster="media/spice/spice-card.jpg" data-src="media/spice/spice-card.mp4"></video>
         <div class="who"><img src="media/pets/paprika.webp" alt="" width="40" height="40"><span><b>Paprika</b> VFX house</span></div>
-        <div class="t"><h3>Spice</h3><p>One shot through six VFX departments.</p><span class="makes">Roto · Paint · Light · FX · Comp</span></div>
+        <div class="t"><h3>Spice</h3><p>One shot through seven VFX departments.</p><span class="makes">Roto · Paint · Gen · Light · FX · Comp</span></div>
         <span class="lab l mono" aria-hidden="true">Plate</span><span class="lab r mono" aria-hidden="true">Comp</span>
         <span class="go" aria-hidden="true"><svg class="i"><use href="#arrow"/></svg></span>
       </a>
@@ -301,10 +301,10 @@
     <div class="phead wide">
       <div>
         <div class="pid" data-r><img src="media/pets/paprika.webp" alt="" width="56" height="56"><span class="mono">05 · Spice</span><span class="pet">with <b>Paprika</b>, the VFX house</span></div>
-        <h2 id="spice-h" data-r>One shot. <em>Six departments.</em></h2>
+        <h2 id="spice-h" data-r>One shot. <em>Seven departments.</em></h2>
       </div>
       <div>
-        <p class="lead" data-r>Plate, Roto, Paint, Light, FX and Comp: a visual-effects pipeline for one clip or picture. SAM3 cuts subjects out and follows them; FX is a compositor where you drop fire, portals, lightning and particles from a library onto the picture, behind the people Roto holds or in front, and each one lights the shot: a flambé lights the cook's face, a portal behind someone rims them in its colour. The bake runs free, on your machine.</p>
+        <p class="lead" data-r>Plate, Roto, Paint, Gen, Light, FX and Comp: a visual-effects pipeline for one clip or picture. SAM3 cuts subjects out and follows them; Gen runs the IC-LoRAs of LTX-2.3 on it, restoring, regrading, cleaning and redrawing the clip itself; FX is a compositor where you drop fire, portals, lightning and particles from a library onto the picture, behind the people Roto holds or in front, and each one lights the shot: a flambé lights the cook's face, a portal behind someone rims them in its colour. The bake runs free, on your machine.</p>
         <div class="acts" data-r><a class="btn" href="demo/#/spice">Open Spice <svg class="i"><use href="#arrow"/></svg></a></div>
       </div>
     </div>
@@ -362,13 +362,50 @@
       </ul>
     </div>
 
-    <ol class="depts" data-r aria-label="The six departments">
+    <div class="moving" data-r>
+      <div class="mv-head"><h3>Gen: the IC-LoRAs, on one clip</h3><p>Every in-context LoRA Comfy Cloud has for LTX-2.3 is a tool, 39 of them in nine families, each with the words its model card gives. State Property, a clip from Mixer, was damaged on purpose and each tool was run on the damage: real runs, kept with the example. Drag the line.</p></div>
+      <ul class="mv-row" aria-label="Gen's takes">
+        <li class="mv">
+          <div class="wipe tall">
+            <video class="b lazy" muted loop playsinline preload="none" poster="media/spice/ic-deblur-out.jpg" data-src="media/spice/ic-deblur-out.mp4"></video>
+            <video class="a lazy" muted loop playsinline preload="none" data-held="1" poster="media/spice/ic-deblur-in.jpg" data-src="media/spice/ic-deblur-in.mp4"></video>
+            <span class="bar"><span class="knob"></span></span>
+            <span class="lab l mono">Given</span><span class="lab r mono">Deblur</span>
+            <input type="range" min="0" max="100" value="50" aria-label="Compare the copy the tool was given and what it made: Deblur">
+          </div>
+          <p><b>Deblur</b> A soft copy, sharp again: the cat's whiskers and the straw of the hat come back.</p>
+        </li>
+        <li class="mv">
+          <div class="wipe tall">
+            <video class="b lazy" muted loop playsinline preload="none" poster="media/spice/ic-colorization-out.jpg" data-src="media/spice/ic-colorization-out.mp4"></video>
+            <video class="a lazy" muted loop playsinline preload="none" data-held="1" poster="media/spice/ic-colorization-in.jpg" data-src="media/spice/ic-colorization-in.mp4"></video>
+            <span class="bar"><span class="knob"></span></span>
+            <span class="lab l mono">Given</span><span class="lab r mono">Colorization</span>
+            <input type="range" min="0" max="100" value="50" aria-label="Compare the copy the tool was given and what it made: Colorization">
+          </div>
+          <p><b>Colorization</b> A gray copy, in colour: the yellow truck, the blue shirt, drawn again from the clip itself.</p>
+        </li>
+        <li class="mv">
+          <div class="wipe tall">
+            <video class="b lazy" muted loop playsinline preload="none" poster="media/spice/ic-subtitles-out.jpg" data-src="media/spice/ic-subtitles-out.mp4"></video>
+            <video class="a lazy" muted loop playsinline preload="none" data-held="1" poster="media/spice/ic-subtitles-in.jpg" data-src="media/spice/ic-subtitles-in.mp4"></video>
+            <span class="bar"><span class="knob"></span></span>
+            <span class="lab l mono">Given</span><span class="lab r mono">Subtitles</span>
+            <input type="range" min="0" max="100" value="50" aria-label="Compare the copy the tool was given and what it made: Subtitles">
+          </div>
+          <p><b>Subtitles</b> The line of subtitles taken off: the frame is drawn again where they were.</p>
+        </li>
+      </ul>
+    </div>
+
+    <ol class="depts" data-r aria-label="The seven departments">
       <li><span class="mono">01</span><b>Plate</b><span>The footage, a frame range, a depth pass.</span></li>
       <li><span class="mono">02</span><b>Roto</b><span>Click a subject: SAM3 cuts it out and tracks it.</span></li>
       <li><span class="mono">03</span><b>Paint</b><span>Remove an object, a logo, subtitles.</span></li>
-      <li><span class="mono">04</span><b>Light</b><span>Relight, a new sky, rain, snow, a grade.</span></li>
-      <li><span class="mono">05</span><b>FX</b><span>21 elements and particles, laid by hand.</span></li>
-      <li><span class="mono">06</span><b>Comp</b><span>Every pass stacked, upscaled, exported.</span></li>
+      <li><span class="mono">04</span><b>Gen</b><span>39 IC-LoRAs: restore, regrade, clean, widen, redraw.</span></li>
+      <li><span class="mono">05</span><b>Light</b><span>Relight, a new sky, rain, snow, a grade.</span></li>
+      <li><span class="mono">06</span><b>FX</b><span>21 elements and particles, laid by hand.</span></li>
+      <li><span class="mono">07</span><b>Comp</b><span>Every pass stacked, upscaled, exported.</span></li>
     </ol>
 
     <div class="duo">
@@ -378,6 +415,15 @@
         <p>Fire, smoke, flares, light leaks, portals, lightning and shockwaves shot on black, plus particles drawn frame by frame. Drop one on the picture; move, scale and turn it there.</p>
         <ul class="els" id="els" aria-label="Some of the FX elements"></ul>
         <p class="fine">Plus particles drawn frame by frame (rain, snow, embers, dust, sparkles), six looks that lay a few layers at once, and an AI layer made from your words.</p>
+      </div>
+    </div>
+
+    <div class="duo">
+      <figure class="win" data-r><div class="wbar" aria-hidden="true"><i></i><i></i><i></i><span class="url mono">127.0.0.1:5177/#/spice</span></div><img src="media/app/spice-gen.webp" width="1800" height="1069" alt="Spice's Gen department on State Property: the viewer wipes the footage against a Deblur take, the tools of the suite are listed by family, each with a dot for what a real run showed, and the takes made are kept on the right" loading="lazy" decoding="async"></figure>
+      <div class="elements" data-r>
+        <h3>The IC-LoRA suite</h3>
+        <p>Control (pose, edges, depth), restore, upscale, grade and light, clean, frame, camera, effects: pick a tool, say what it should do in its card's words, see its price on the yellow key. It runs on Comfy Cloud with the app's own LTX graph, and asks before it spends.</p>
+        <p class="fine">A dot on each tool says what a real run of it showed: 26 did what their card says (each with a note on what to expect), 4 did not (and say so), 8 need a mask, a reference sheet or a track and are not offered a run yet.</p>
       </div>
     </div>
   </div>

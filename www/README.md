@@ -16,7 +16,7 @@ GitHub Pages under the repository's sub-path. `demo/` (the app as static files, 
 | Mixer | the crew, two vertical takes of Meringue | `media/mixer/` |
 | Jam | Taro's video cover (his ACE-Step song, with sound), the five workspaces, the Track screen | `media/jam/`, `media/app/jam.webp` |
 | Macaron | posts and motion from two brands (Comfyture, Little Otter Tea), the brand kit screen | `media/macaron/`, `media/app/macaron.webp` |
-| Spice | plate against comp on four example pictures (drag the line; each rests where its effect shows), three real takes as plate and comp clips in sync, the six departments, the FX screen and library; the card plays two takes side by side under a sweeping wipe | `media/spice/`, `media/app/spice.webp` |
+| Spice | plate against comp on four example pictures (drag the line; each rests where its effect shows), three real takes as plate and comp clips in sync, Gen's three IC-LoRA takes against the damaged copy they were given, the seven departments, the FX screen and library, Gen's screen; the card plays two takes side by side under a sweeping wipe | `media/spice/`, `media/app/spice.webp`, `media/app/spice-gen.webp` |
 | Toaster | clay frame against render on its three examples, the maps sent, the turnaround, the Scene screen | `media/toaster/`, `media/app/toaster.webp` |
 | Utensils | the shelf of tools, the Picture screen | `media/app/utensils.webp` |
 | Pets | the tour, checked actions, a paid run only on a yes; each pet with what its bar asks (the app's own words) | `media/app/tour.webp` |

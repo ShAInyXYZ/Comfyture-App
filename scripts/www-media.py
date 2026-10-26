@@ -217,6 +217,12 @@ for shot, name, at in MOVING:
     for p, out in (("plate", "plate"), ("fx", "fx")):
         clip(src(*SP, shot, f"{p}.mp4"), dst("spice", f"{name}-{out}.mp4"), 540, 26)
         poster(dst("spice", f"{name}-{out}.mp4"), dst("spice", f"{name}-{out}.jpg"), at, 540)
+# Gen: State Property's IC-LoRA takes, each against the damaged copy of the footage the tool was given (the example's gen-in-*.mp4)
+IC = (("gen-in-blur", "gen-deblur", "ic-deblur", 1.0), ("gen-in-gray", "gen-colorization", "ic-colorization", 1.0), ("gen-in-subtitles", "gen-subtitles", "ic-subtitles", 1.0))
+for before, after, name, at in IC:
+    for p, out in ((before, "in"), (after, "out")):
+        clip(src(*SP, "sh070-state-property", f"{p}.mp4"), dst("spice", f"{name}-{out}.mp4"), 540, 26)
+        poster(dst("spice", f"{name}-{out}.mp4"), dst("spice", f"{name}-{out}.jpg"), at, 540)
 card = dst("spice", "spice-card.mp4")
 FW, PK = ("sh054-taro-fireworks", "sh020-pickle")
 if todo(card, *(src(*SP, s, f"{p}.mp4") for s in (FW, PK) for p in ("plate", "fx"))):
@@ -256,7 +262,7 @@ for ex, f in (("toast-example-woodshop", "depth-workbench.webp"), ("toast-exampl
 APP = {  # www/media/app/<name>.webp ← <capture folder>/<file>
     "story": "a/story-02-storyboard.png", "stage": "a/stage-16-campfire-render-compare.png", "shot": "a/shot-01-desk.png",
     "cut": "a/cut-01-edit-title.png", "library": "a/library-01-images.png", "jam": "c/jam-01-track.png", "macaron": "b/macaron-01-kit.png",
-    "spice": "b/spice-25-paprika-fx-handles.png", "toaster": "c/toaster-01-scene.png",
+    "spice": "b/spice-25-paprika-fx-handles.png", "spice-gen": "c/spice-gen-01-deblur.png", "toaster": "c/toaster-01-scene.png",
     "utensils": "c/utensils-01-picture.png", "tour": "b/spice-35-tour-fx-library.png",
 }
 LOOPS = {  # www/media/loops/<name>.mp4 ← <capture folder>/<file> (a screen recording; no sound)
