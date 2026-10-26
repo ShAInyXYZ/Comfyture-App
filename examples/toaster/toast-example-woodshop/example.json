@@ -1,8 +1,8 @@
 {
  "id": "toast-example-woodshop",
- "rev": 3,
+ "rev": 7,
  "name": "Crumpet's workbench",
- "about": "A character set: Crumpet the baby beaver (a posed character, his cast sheet on him) building a toy at his workbench, in a woodshop of 17 parts (library pieces and shapes), with two cameras and the 3D page's object sheets (one per object). Clay frame and depth sent at 55%. Its three renders (the workbench, a close-up and a storybook look) were made for this example with GPT Image from the clay frames kept with them, for free.",
+ "about": "A character set: Crumpet the baby beaver (a posed character, his cast sheet on him) building a toy at his workbench, in a woodshop of 17 parts (library pieces and shapes), with two cameras and the 3D page's work: one sheet and one 3D model per object. Clay frame and depth sent at 55%. Its three renders (the workbench, a close-up and a storybook look) were made for this example with GPT Image from the clay frames kept with them, for free.",
  "thumb": "example:thumb.jpg",
  "body": {
   "parts": [
@@ -196,7 +196,7 @@
     "asset": "jar",
     "name": "Nail jar",
     "color": "#f09a3e",
-    "made": "a glass jar of nails and brass screws",
+    "made": "a clear glass jar with a plain lid, filled to the brim with nails and brass screws, matte and dull, no shine or reflections",
     "size": [
      0.084,
      0.127,
@@ -264,11 +264,11 @@
     "shape": "box",
     "name": "Plank",
     "color": "#e3c35a",
-    "made": "a long pine plank leaning on the wall",
+    "made": "a thick solid pine plank, a board about five centimetres thick with square edges, flat faces and visible end grain, leaning on the wall",
     "size": [
-     0.13,
+     0.17,
      1,
-     0.025
+     0.05
     ],
     "pos": [
      -1.2,
@@ -287,11 +287,11 @@
     "shape": "box",
     "name": "Plank 2",
     "color": "#e3c35a",
-    "made": "a long pine plank leaning on the wall",
+    "made": "a thick solid pine plank, a board about five centimetres thick with square edges, flat faces and visible end grain, leaning on the wall",
     "size": [
-     0.11,
+     0.15,
      0.9,
-     0.025
+     0.05
     ],
     "pos": [
      -1.04,
@@ -311,7 +311,7 @@
     "asset": "shelf",
     "name": "Shelf",
     "color": "#8a5cc9",
-    "made": "an open plank shelf crowded with tins, pencils, glue pots and little carved wooden animals",
+    "made": "an open plank shelf unit: a tall frame with four open shelves you can see into and through, crowded with tins, pencils, glue pots and little carved wooden animals",
     "size": [
      0.56,
      1.05,
@@ -766,7 +766,7 @@
      "width": 1254,
      "height": 1254
     },
-    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Nail jar. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a glass jar of nails and brass screws. Its look: a glass jar of nails and brass screws. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Nail jar. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a clear glass jar with a plain lid, filled to the brim with nails and brass screws, matte and dull, no shine or reflections. Its look: a clear glass jar with a plain lid, filled to the brim with nails and brass screws, matte and dull, no shine or reflections. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
     "example": true,
     "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
     "at": "2026-10-26T00:00:00.000Z"
@@ -823,7 +823,7 @@
      "width": 1254,
      "height": 1254
     },
-    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Plank. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a long pine plank leaning on the wall. Its look: a long pine plank leaning on the wall. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The scene has 2 of these. This is a variation of the kind: the same sort of object, with its own wear, grain, small marks and details, not a copy. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Plank. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a thick solid pine plank, a board about five centimetres thick with square edges, flat faces and visible end grain, leaning on the wall. Its look: a thick solid pine plank, a board about five centimetres thick with square edges, flat faces and visible end grain, leaning on the wall. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The scene has 2 of these. This is a variation of the kind: the same sort of object, with its own wear, grain, small marks and details, not a copy. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
     "example": true,
     "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
     "at": "2026-10-26T00:00:00.000Z"
@@ -842,7 +842,7 @@
      "width": 1254,
      "height": 1254
     },
-    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Plank 2. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a long pine plank leaning on the wall. Its look: a long pine plank leaning on the wall. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The scene has 2 of these. This is a variation of the kind: the same sort of object, with its own wear, grain, small marks and details, not a copy. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Plank 2. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is a thick solid pine plank, a board about five centimetres thick with square edges, flat faces and visible end grain, leaning on the wall. Its look: a thick solid pine plank, a board about five centimetres thick with square edges, flat faces and visible end grain, leaning on the wall. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The scene has 2 of these. This is a variation of the kind: the same sort of object, with its own wear, grain, small marks and details, not a copy. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
     "example": true,
     "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
     "at": "2026-10-26T00:00:00.000Z"
@@ -861,7 +861,7 @@
      "width": 1254,
      "height": 1254
     },
-    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Shelf. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is an open plank shelf crowded with tins, pencils, glue pots and little carved wooden animals. Its look: an open plank shelf crowded with tins, pencils, glue pots and little carved wooden animals. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE object: Shelf. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The object is an open plank shelf unit: a tall frame with four open shelves you can see into and through, crowded with tins, pencils, glue pots and little carved wooden animals. Its look: an open plank shelf unit: a tall frame with four open shelves you can see into and through, crowded with tins, pencils, glue pots and little carved wooden animals. It belongs to this setting, so match its style, but draw only the object: A cosy 3D animated-film still: warm lamp light on the bench, the cool blue of a snowy dusk through the window, soft bounce light, honey-coloured wood, gentle depth of field, rich warm colours. The camera is the same in all four views: about 24 degrees above the object, looking down a little, as a product photographer would, so the top of it shows, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
     "example": true,
     "note": "Drawn with GPT Image from this object's clay views, for this example, for free. In the app the sheet model is Nano Banana 2.1 (or any image model).",
     "at": "2026-10-26T00:00:00.000Z"
@@ -943,6 +943,187 @@
     "at": "2026-10-26T00:00:00.000Z"
    }
   ],
-  "models": []
+  "models": [
+   {
+    "id": "r-model-workbench",
+    "part": "p-pdc13hy",
+    "sheet": "r-sheet-workbench",
+    "via": "local",
+    "quality": "web",
+    "status": "done",
+    "progress": 1,
+    "url": "example:model-workbench.glb",
+    "file": "example:model-workbench.glb",
+    "example": true,
+    "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-crumpet",
+    "part": "p-p5rqsai",
+    "sheet": "r-sheet-crumpet",
+    "via": "local",
+    "quality": "fine",
+    "status": "done",
+    "progress": 1,
+    "url": "example:model-crumpet.glb",
+    "file": "example:model-crumpet.glb",
+    "example": true,
+    "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-bench-lamp",
+    "part": "p-8wvgdq4",
+    "sheet": "r-sheet-bench-lamp",
+    "via": "local",
+    "quality": "web",
+    "status": "done",
+    "progress": 1,
+    "url": "example:model-bench-lamp.glb",
+    "file": "example:model-bench-lamp.glb",
+    "example": true,
+    "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-wooden-toy",
+    "part": "p-iq2lu1r",
+    "sheet": "r-sheet-wooden-toy",
+    "via": "local",
+    "quality": "web",
+    "status": "done",
+    "progress": 1,
+    "url": "example:model-wooden-toy.glb",
+    "file": "example:model-wooden-toy.glb",
+    "example": true,
+    "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-cocoa",
+    "part": "p-etxvcx1",
+    "sheet": "r-sheet-cocoa",
+    "via": "local",
+    "quality": "web",
+    "status": "done",
+    "progress": 1,
+    "url": "example:model-cocoa.glb",
+    "file": "example:model-cocoa.glb",
+    "example": true,
+    "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-tool-board",
+    "part": "p-yug9f0v",
+    "sheet": "r-sheet-tool-board",
+    "via": "local",
+    "quality": "web",
+    "status": "done",
+    "progress": 1,
+    "url": "example:model-tool-board.glb",
+    "file": "example:model-tool-board.glb",
+    "example": true,
+    "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-plank",
+    "part": "p-3043oq5",
+    "sheet": "r-sheet-plank",
+    "via": "sheet",
+    "status": "done",
+    "progress": 1,
+    "url": "example:sheet-plank.webp",
+    "file": "example:sheet-plank.webp",
+    "example": true,
+    "note": "A board five centimetres thick comes out of Trellis2 as a hollow tray: it stands as a box wearing its sheet.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-plank-2",
+    "part": "p-de6fqdf",
+    "sheet": "r-sheet-plank-2",
+    "via": "sheet",
+    "status": "done",
+    "progress": 1,
+    "url": "example:sheet-plank-2.webp",
+    "file": "example:sheet-plank-2.webp",
+    "example": true,
+    "note": "A board five centimetres thick comes out of Trellis2 as a hollow tray: it stands as a box wearing its sheet.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-shelf",
+    "part": "p-iqmahey",
+    "sheet": "r-sheet-shelf",
+    "via": "local",
+    "quality": "web",
+    "status": "done",
+    "progress": 1,
+    "url": "example:model-shelf.glb",
+    "file": "example:model-shelf.glb",
+    "example": true,
+    "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-offcuts-crate",
+    "part": "p-ljsz5ss",
+    "sheet": "r-sheet-offcuts-crate",
+    "via": "local",
+    "quality": "web",
+    "status": "done",
+    "progress": 1,
+    "url": "example:model-offcuts-crate.glb",
+    "file": "example:model-offcuts-crate.glb",
+    "example": true,
+    "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-log",
+    "part": "p-5khcku3",
+    "sheet": "r-sheet-log",
+    "via": "local",
+    "quality": "web",
+    "status": "done",
+    "progress": 1,
+    "url": "example:model-log.glb",
+    "file": "example:model-log.glb",
+    "example": true,
+    "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-stump-stool",
+    "part": "p-wotvn68",
+    "sheet": "r-sheet-stump-stool",
+    "via": "local",
+    "quality": "web",
+    "status": "done",
+    "progress": 1,
+    "url": "example:model-stump-stool.glb",
+    "file": "example:model-stump-stool.glb",
+    "example": true,
+    "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
+    "at": "2026-10-26T12:00:00.000Z"
+   },
+   {
+    "id": "r-model-clock",
+    "part": "p-f7krq66",
+    "sheet": "r-sheet-clock",
+    "via": "local",
+    "quality": "web",
+    "status": "done",
+    "progress": 1,
+    "url": "example:model-clock.glb",
+    "file": "example:model-clock.glb",
+    "example": true,
+    "note": "Made for this example with Trellis2 on the owner's own GPU (shape, refiner v2.2, four-view texturing), then slimmed for the repo.",
+    "at": "2026-10-26T12:00:00.000Z"
+   }
+  ]
  }
 }
