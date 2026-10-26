@@ -100,7 +100,7 @@ none of them has an audio track. History: 1.33 GiB now, 1.22 after D1, 1.00 with
 on disk: 1.5 GB after D1, 0.52 GB with D7. The steps, with no other session running:
 
 ```bash
-git bundle create /media/nas/comfyture-before-rewrite.bundle --all && git bundle verify /media/nas/comfyture-before-rewrite.bundle
+B=<a NAS folder>/comfyture-before-rewrite.bundle; git bundle create "$B" --all && git bundle verify "$B"
 git clone --mirror --no-local ~/Documents/GitHub/ComfyMade /tmp/rewrite.git && cd /tmp/rewrite.git
 python3 -I ~/git-filter-repo --force --prune-empty never --invert-paths \
   --path-glob 'web/brand/mixer/trends/*/sound.m4a' --path-glob 'web/brand/mixer/trends/*/vocals.m4a' \
