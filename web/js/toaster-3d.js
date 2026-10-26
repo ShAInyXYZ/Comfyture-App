@@ -89,7 +89,7 @@ export async function loadTarget(fresh = false) {
   try {
     gen.target = await call(`${GEN}/target`);
   } catch {
-    gen.target = { local: { ok: false, why: "The server could not look for a ComfyUI." } };
+    gen.target = { local: { ok: false, why: "This server did not answer the 3D page: restart it (an older one does not know it), then the models are made on your own ComfyUI." } };
   }
   changed("toaster-runs");
   return gen.target;
@@ -324,6 +324,25 @@ export async function makeThem(ids) {
 export function stopQueue() {
   gen.stopping = true;
   changed("toaster-runs");
+}
+/** A 3D file the person made elsewhere (a GLB), put on an object as its model: kept on the server, then placed in the new scene like the others. */
+export async function useFile(partId, file) {
+  const draft = toaster.draft;
+  const b = body();
+  const part = partsNow().find((p) => p.id === partId);
+  if (!draft || !part || !file) return null;
+  try {
+    const kept = await call(`${GEN}/file`, { method: "POST", headers: { "Content-Type": "model/gltf-binary" }, body: file });
+    b.models = b.models.filter((m) => m.part !== partId);
+    const m = { id: runId(), part: partId, via: "file", status: "done", progress: 1, url: kept.url, file: kept.file, note: file.name, at: new Date().toISOString() };
+    b.models.unshift(m);
+    save(draft);
+    update("toaster-runs");
+    return m;
+  } catch (e) {
+    toast(`${part.name}: ${e.message}`, { tone: "crit" });
+    return null;
+  }
 }
 /** An object's sheet and model forgotten (their files stay in the Library). */
 export function forgetObject(partId) {

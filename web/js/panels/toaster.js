@@ -37,7 +37,7 @@ import { chat as toasterChat, askToaster, addToasterPictures, tagHooks } from ".
 import { projectBar, drawProjectBar } from "./toaster-projects.js";
 import {
   gen, sheetOf, sheetRun, modelOf, modelRun, stateOf, objectsNow, sheetModel, setSheetModel, setSolid, loadTarget, loadCloudPrice, route, modelPrice, sheetPrice, costOf,
-  isArmed as askedFor, arm as askFor, disarm as askNot, makeObject, makeThem, stopQueue, forgetObject, makeSheet, makeModel,
+  isArmed as askedFor, arm as askFor, disarm as askNot, makeObject, makeThem, stopQueue, forgetObject, makeSheet, makeModel, useFile,
 } from "../toaster-3d.js";
 import { wants3d, tiltOf } from "../toaster-model.js";
 
@@ -1281,7 +1281,8 @@ function drawBar3d() {
         models.length ? h("div.ts-pick", { title: state.account?.openWeights ? "Open weights only is on: no partner model (Nano Banana, GPT Image…) is offered, so the sheets are drawn on open weights and cost no credits" : "" }, dropdown({ label: "Image model for the sheets", value: sheetModel()?.id, items: models, onChange: setSheetModel, note: state.account?.openWeights ? "Open weights only: no partner model draws the sheets" : "Draws each object's four views from its clay" })) : h("span.ts-note", {}, "No image model yet"),
         state.account?.openWeights ? h("span.ts-note", {}, "Open weights only: no partner model, no credits") : null),
       h("div.ts-setting", {}, h("span.ts-label", {}, "Models made by"),
-        h("p.ts-where", { title: t?.local?.ok ? `ComfyUI at ${t.local.url}` : t?.local?.why ?? "" }, route() === "local" ? "Trellis2 on your ComfyUI" : "Pixal3D on Comfy Cloud", h("em", {}, route() === "local" ? "your GPU" : modelPrice().words))),
+        h("p.ts-where", { title: t?.local?.ok ? `ComfyUI at ${t.local.url}` : t?.local?.why ?? "" }, route() === "local" ? "Trellis2 on your ComfyUI" : "Pixal3D on Comfy Cloud", h("em", {}, route() === "local" ? "your GPU" : modelPrice().words)),
+        t && !t.local?.ok ? h("span.ts-note", {}, t.local?.why ?? "No ComfyUI of yours answered") : null),
       h("span.spacer"), key),
     busy ? h("p.ts-queue", {}, h("span.typing", {}, h("i"), h("i"), h("i")), h("span", {}, now ? `${now.name}: ${gen.active.step === "sheet" ? `${sheetLabel()} is drawing its four views` : modelRun(now.id)?.stage ?? "making its model"}` : "Next…"),
       h("b", {}, `${objectsNow().length - gen.queue.length + 1} of ${objectsNow().length}`)) : null].filter(Boolean));
@@ -1321,6 +1322,7 @@ function drawObject3d() {
     head(p.name, [s, m].filter(Boolean),
       keyIcon(sprite("view-persp"), gen.look === "clay" ? "Show its sheet" : "Show its clay, as the sheet is drawn from it", () => ((gen.look = gen.look === "clay" ? "sheet" : "clay"), drawObject3d()), { pressed: gen.look === "clay", disabled: !sheet, small: true }),
       keyIcon(sprite("image-history"), "Draw its sheet again, with the model that is chosen", () => void makeObject(p.id, { again: true }), { disabled: busy || !toaster.view || !sheet, small: true }),
+      keyIcon(sprite("model-import"), "Use a 3D file (a GLB) you have as this object's model", () => pickModelFile(p.id), { disabled: busy, small: true }),
       keyIcon(icon("trash"), "Forget its sheet and model — the files stay in the Library", () => forgetObject(p.id), { disabled: busy || !(s || m), small: true })),
     h("div.ts-obj-body", {}, pic,
       h("div.ts-model-side", {},
@@ -1334,6 +1336,13 @@ function drawObject3d() {
         mine || !m?.url ? null : h("div.ts-keys", {},
           keyIcon(icon("download"), "Download its 3D file", null, { href: m.url, download: fileName(p.name, m.url) }),
           keyIcon(sprite("model-import"), "Put it on the Stage, as a prop", () => putOnStage(m, p.name).catch((e) => toast(e.message, { tone: "crit" })))))));
+}
+
+/** A GLB chosen from the person's disk, put on an object as its model. */
+function pickModelFile(partId) {
+  const input = h("input", { type: "file", accept: ".glb,model/gltf-binary", hidden: true, on: { change: async () => { const f = input.files?.[0]; input.remove(); if (f) await useFile(partId, f); } } });
+  document.body.append(input);
+  input.click();
 }
 
 /** The new scene: the finished models where their clay stood, the rest still clay. */
@@ -1354,11 +1363,16 @@ function drawNewScene3d() {
   const say = h("p.ts-meta", {}, made ? `${made} of ${total} objects are real 3D; the rest stays clay` : "Each model stands here where its clay was");
   shell.newScene.replaceChildren(
     head("New scene", b.models,
-      keyIcon(sprite("view-persp"), "Frame the whole scene", () => scene3d?.handle?.reframe(), { small: true }),
+      ...[["persp", "view-persp", "Three-quarter view"], ["front", "view-front", "From the front"], ["right", "view-side", "From the side"], ["top", "view-top", "From above"]].map(([side, glyph, label]) =>
+        keyIcon(sprite(glyph), `${label}: the way to see how each object stands`, () => scene3d?.handle?.view(side), { small: true })),
       keyIcon(icon("download"), "Download the scene as one GLB", () => downloadScene(), { disabled: !made, small: true }),
       keyIcon(sprite("model-import"), "Put every model on the Stage, as props", () => putAllOnStage(), { disabled: !made, small: true })),
     scene3d.el, say);
-  scene3d.handle?.update(partsNow(), (id) => modelOf(id)?.url);
+  const focusId = toaster.selected.length === 1 ? toaster.selected[0] : null;
+  scene3d.handle?.update(partsNow(), (id) => modelOf(id)?.url).then(() => {
+    // (the selected object is brought close once, as it is picked; "Frame" keys go back out)
+    if (focusId !== scene3d?.focused) (scene3d.focused = focusId), focusId && scene3d.handle?.focus(focusId);
+  });
 }
 async function downloadScene() {
   try {

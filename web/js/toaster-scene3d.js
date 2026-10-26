@@ -7,6 +7,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import { isRoom } from "./toaster-model.js";
 
 const DEG = Math.PI / 180;
 
@@ -70,9 +71,12 @@ export function mountScene(el) {
   const placed = new Map(); // part id → { group, key }
   let framed = false;
 
+  // what is not made yet stands as clay: the room (a floor, walls) very faint, the objects a little see-through
   const stand = (part) => {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...part.size), new THREE.MeshStandardMaterial({ color: part.color, roughness: 0.7, transparent: true, opacity: 0.45, depthWrite: false }));
+    const room = isRoom(part);
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...part.size), new THREE.MeshStandardMaterial({ color: part.color, roughness: 0.7, transparent: true, opacity: room ? 0.1 : 0.5, depthWrite: !room && false }));
     mesh.userData.clay = true;
+    mesh.userData.room = room;
     return mesh;
   };
   /** A model fitted in its part's box: as large as fits, centred on the box and standing on its floor. */
@@ -91,13 +95,23 @@ export function mountScene(el) {
     return g;
   };
 
-  const frame = () => {
-    const box = new THREE.Box3().setFromObject(scene);
+  /** The scene's box: the objects only (a made model or an object's clay), so the room around them does not push the camera away. */
+  const objectsBox = () => {
+    const box = new THREE.Box3();
+    for (const { group } of placed.values()) {
+      const first = group.children[0];
+      if (first && !first.userData.room) box.union(new THREE.Box3().setFromObject(group));
+    }
+    return box.isEmpty() ? new THREE.Box3().setFromObject(scene) : box;
+  };
+  const SIDES = { persp: [0.55, 0.4, 1], front: [0, 0.12, 1], right: [1, 0.12, 0], back: [0, 0.12, -1], left: [-1, 0.12, 0], top: [0, 1, 0.001] };
+  const frame = (side = "persp") => {
+    const box = objectsBox();
     if (box.isEmpty()) return;
     const sphere = box.getBoundingSphere(new THREE.Sphere());
-    const dist = (sphere.radius / Math.sin((camera.fov * DEG) / 2)) * 0.8;
+    const dist = (sphere.radius / Math.sin((camera.fov * DEG) / 2)) * 0.95;
     orbit.target.copy(sphere.center);
-    camera.position.copy(sphere.center).add(new THREE.Vector3(0.55, 0.4, 1).normalize().multiplyScalar(dist));
+    camera.position.copy(sphere.center).add(new THREE.Vector3(...(SIDES[side] ?? SIDES.persp)).normalize().multiplyScalar(dist));
     camera.near = dist / 100;
     camera.far = dist * 20;
     camera.updateProjectionMatrix();
@@ -149,6 +163,21 @@ export function mountScene(el) {
       for (const { group } of placed.values()) group.children.length && (group.children[0].userData.clay ? clay++ : real++);
       return { real, clay };
     },
+    /** The camera brought close to one object (by its part's id), in the three-quarter view. */
+    focus(id) {
+      const e = placed.get(id);
+      if (!e) return;
+      const sphere = new THREE.Box3().setFromObject(e.group).getBoundingSphere(new THREE.Sphere());
+      const dist = (Math.max(sphere.radius, 0.05) / Math.sin((camera.fov * DEG) / 2)) * 1.25;
+      orbit.target.copy(sphere.center);
+      camera.position.copy(sphere.center).add(new THREE.Vector3(0.55, 0.4, 1).normalize().multiplyScalar(dist));
+      camera.near = dist / 100;
+      camera.updateProjectionMatrix();
+      orbit.update();
+      soon();
+    },
+    /** The camera put in front of, beside, behind or over the objects ("persp" the three-quarter view), to see how each one stands. */
+    view: (side) => (frame(side), soon()),
     reframe: () => (frame(), soon()),
     dispose() {
       disposed = true;

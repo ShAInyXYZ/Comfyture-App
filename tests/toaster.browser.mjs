@@ -352,7 +352,9 @@ try {
   await page.keyboard.type("A retro 1950s toaster, chrome body");
   await page.locator('.ts-brief [aria-label="Scene"]').click();
   await page.keyboard.type("On a marble counter, morning light");
-  await page.waitForTimeout(900);
+  // (kept now, not after the save's own pause: the machine may be busy)
+  await page.waitForTimeout(300);
+  await js(async () => (await import("/js/toaster.js")).saveNow());
   await page.reload();
   // (the page comes back in the Render, where the viewport is kept hidden)
   await page.waitForSelector(".ts-stage canvas", { state: "attached", timeout: 20000 });
@@ -504,6 +506,20 @@ try {
   ok(cloud?.name === "3d_pixal3d_multi_views" && cloud.body.confirm === true && cloud.body.inputs?.image, "with no ComfyUI of its own it asks Pixal3D's multi-view template on Cloud", JSON.stringify(cloud));
   const laid = (await (await fetch(`${base}/api/photos`)).json()).find((p) => p.file === cloud?.body.inputs?.image);
   ok(laid?.width === 6336 && laid?.height === 2688, "with the four views laid on Pixal3D's own 6336 x 2688 sheet", `${laid?.width}x${laid?.height}`);
+
+  // a 3D file the person already has (a GLB made elsewhere) is put on an object by its key, kept by the server, and placed in the new scene
+  await writeFile(join(dataDir, "mine.glb"), glb());
+  await page.locator(".ts-part").nth(3).click();
+  const mineFor = (await draft()).selected[0];
+  const mineChooser = page.waitForEvent("filechooser");
+  await page.locator('.ts-object [aria-label="Use a 3D file (a GLB) you have as this object\'s model"]').click();
+  (await mineChooser).setFiles(join(dataDir, "mine.glb"));
+  await until(() => window.__toaster.draft.body.models.some((m) => m.via === "file"), null, 15000);
+  const mine = (await draft()).body.models.find((m) => m.via === "file");
+  ok(mine?.part === mineFor && /^\/media\/models\/[0-9a-f]{16}\.glb$/.test(mine.url) && mine.status === "done", "a GLB the person has is the object's model", JSON.stringify(mine));
+  ok((await fetch(`${base}${mine.url}`)).ok, "and it is kept on the server");
+  const notGlb = await fetch(`${base}/api/toaster/3d/file`, { method: "POST", body: Buffer.from("not a model at all, sorry") });
+  ok(notGlb.status === 400, "a file that is not a GLB is refused");
   await shot("3-toasted");
   await page.keyboard.press("d");
   await page.waitForSelector(".toaster.is-render .ts-studio");

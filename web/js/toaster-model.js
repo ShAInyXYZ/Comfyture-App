@@ -534,12 +534,13 @@ export function cleanDraft(b) {
     job: typeof m.job === "string" ? m.job : undefined,
     sheet: typeof m.sheet === "string" ? m.sheet : undefined,
     part: typeof m.part === "string" && /^[\w-]{1,40}$/.test(m.part) ? m.part : undefined,
-    // how it was made: "local" (Trellis2 on the person's own ComfyUI) or "cloud" (Pixal3D), the stage it is at, and where ComfyUI saved it
-    via: m.via === "cloud" ? "cloud" : m.via === "local" ? "local" : undefined,
+    // how it was made: "local" (Trellis2 on the person's own ComfyUI), "cloud" (Pixal3D) or "file" (a GLB the person brought), the stage it is at, and where ComfyUI saved it
+    via: m.via === "cloud" ? "cloud" : m.via === "local" ? "local" : m.via === "file" ? "file" : undefined,
     stage: words(m.stage, 60) || undefined,
     quality: m.quality === "fine" ? "fine" : m.quality === "web" ? "web" : undefined,
     path: words(m.path, 300) || undefined,
     example: m.example === true || undefined,
+    note: words(m.note, 160) || undefined,
     url: typeof m.url === "string" ? m.url : undefined,
     file: typeof m.file === "string" ? m.file : undefined,
     views: (Array.isArray(m.views) ? m.views : []).map(media).filter(Boolean).slice(0, 8),
