@@ -1187,7 +1187,8 @@ export function spentOf(j = jam.jam) {
   // a video Jam ships came made: nothing was spent on it here (its id begins "jam-", a person's own "jams-")
   if (/^jam-/.test(j.id ?? "")) return 0;
   let n = 0;
-  if (b.track?.kind === "made") n += costOfSong(b.track.seconds ?? 30);
+  // (a song Jam ships came made too: its file is "song-<name>.mp3", in its own jam or another)
+  if (b.track?.kind === "made" && !/^song-[\w-]+\.mp3$/.test(b.track.file ?? "")) n += costOfSong(b.track.seconds ?? 30);
   if (b.vocals) n += costOfWords((b.span?.to ?? 0) - (b.span?.from ?? 0)) ?? 0;
   const m = (state.image.catalogue?.models ?? []).find((x) => x.id === artistFor("edit"));
   const pic = m?.router ? m.credits ?? 8 : (m?.seconds ?? 10) * 0.266;

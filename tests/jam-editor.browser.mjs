@@ -124,6 +124,17 @@ try {
     ok(songs.length >= 10 && songs.every((a) => list.some((j) => j.id === a.jam && j.name === a.name && j.thumb === a.cover)), `each song comes as a jam with its cover (${songs.length} songs)`);
     const own = (await api(`api/jams/${songs[0].jam}`)).project.body.track;
     ok(own?.file === songs[0].file && own.cover === songs[0].cover && own.lyrics === songs[0].lyrics, "its track is the song, with its cover and its words");
+    // (a song Jam ships came made: no credits are counted for it, in its own jam or another, while a song made here counts)
+    // (counted as on Comfy Cloud, where the estimate shows; this server renders nowhere)
+    const spent = await page.evaluate(async (file) => {
+      const [m, { state }] = await Promise.all([import("/js/jam.js"), import("/js/store.js")]);
+      const was = state.info.target;
+      state.info.target = "comfy-cloud";
+      const got = [file, "0123abcd.mp3"].map((f) => m.spentOf({ id: "jams-x", body: { track: { kind: "made", file: f, seconds: 200 } } }));
+      state.info.target = was;
+      return got;
+    }, songs[0].file);
+    ok(spent[0] === 0 && spent[1] > 0, `a shipped song is not counted as credits spent, a song made here is (${spent.join(" / ")})`);
     ok((await page.evaluate(() => import("/js/jam.js").then((m) => m.jam.list.some((j) => /ramalama/i.test(j.id + j.name))))) === false, "Ramalama is not one of them");
     // (each is opened, and every workspace of it looked at: the song, the track, the words, the band, the edit)
     for (const id of shipped) {
