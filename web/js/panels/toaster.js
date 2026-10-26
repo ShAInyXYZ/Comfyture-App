@@ -37,7 +37,7 @@ import { chat as toasterChat, askToaster, addToasterPictures, tagHooks } from ".
 import { projectBar, drawProjectBar } from "./toaster-projects.js";
 import {
   gen, sheetOf, sheetRun, modelOf, modelRun, stateOf, objectsNow, sheetModel, setSheetModel, setSolid, loadTarget, loadCloudPrice, route, modelPrice, sheetPrice, costOf,
-  isArmed as askedFor, arm as askFor, disarm as askNot, makeObject, makeThem, stopQueue, forgetObject, makeSheet, makeModel, useFile, sceneView, setSceneView, watchServer,
+  isArmed as askedFor, arm as askFor, disarm as askNot, makeObject, makeThem, stopQueue, forgetObject, makeSheet, makeModel, useFile, useSheetBox, sceneView, setSceneView, watchServer,
 } from "../toaster-3d.js";
 import { wants3d, tiltOf } from "../toaster-model.js";
 
@@ -1311,7 +1311,7 @@ function drawObject3d() {
   else if (sheet && gen.look !== "clay") pic = h("button.ts-obj-pic", { type: "button", title: "Look at it, full size", on: { click: () => viewImage(sheet.photo.url) } }, h("img", { src: sheet.photo.url, alt: `${p.name}: front, back, left and right`, draggable: false }));
   else pic = strip && stripOf === p.id ? h("img.ts-obj-pic.ts-clay-strip", { src: strip, alt: `${p.name}'s clay: front, back, left and right`, draggable: false }) : h("div.ts-obj-pic.is-empty", {}, "Its four clay views show here.");
   const step = (n, label, note, on, doing, fail) => h(`li.ts-step${on ? ".is-done" : ""}${doing ? ".is-doing" : ""}${fail ? ".is-failed" : ""}`, {}, h("i", {}, on ? "✓" : String(n)), h("span", {}, label), h("em", {}, note));
-  const modelNote = m?.status === "running" ? `${m.stage ?? "making"} · ${Math.round((m.progress ?? 0) * 100)}%` : m?.status === "done" ? (m.via === "cloud" ? "Pixal3D" : "Trellis2") : m?.status === "failed" ? "failed" : route() === "local" ? "your GPU" : modelPrice().words;
+  const modelNote = m?.status === "running" ? `${m.stage ?? "making"} · ${Math.round((m.progress ?? 0) * 100)}%` : m?.status === "done" ? (m.via === "cloud" ? "Pixal3D" : m.via === "sheet" ? "a box wearing its sheet" : m.via === "file" ? "your file" : "Trellis2") : m?.status === "failed" ? "failed" : route() === "local" ? "your GPU" : modelPrice().words;
   const price = costOf([p.id]);
   const asking = askedFor(p.id);
   const go = () => void makeObject(p.id);
@@ -1326,6 +1326,7 @@ function drawObject3d() {
       keyIcon(sprite("view-persp"), gen.look === "clay" ? "Show its sheet" : "Show its clay, as the sheet is drawn from it", () => ((gen.look = gen.look === "clay" ? "sheet" : "clay"), drawObject3d()), { pressed: gen.look === "clay", disabled: !sheet, small: true }),
       keyIcon(sprite("image-history"), "Draw its sheet again, with the model that is chosen", () => void makeObject(p.id, { again: true }), { disabled: busy || !toaster.view || !sheet, small: true }),
       keyIcon(sprite("model-import"), "Use a 3D file (a GLB) you have as this object's model", () => pickModelFile(p.id), { disabled: busy, small: true }),
+      keyIcon(sprite("shape-box"), "A thin thing (a board) the generator cannot build: stand it as a box wearing its sheet's front view", () => useSheetBox(p.id), { disabled: busy || !sheet, small: true }),
       keyIcon(icon("trash"), "Forget its sheet and model — the files stay in the Library", () => forgetObject(p.id), { disabled: busy || !(s || m), small: true })),
     h("div.ts-obj-body", {}, pic,
       h("div.ts-model-side", {},
@@ -1336,7 +1337,7 @@ function drawObject3d() {
           step(3, "Make its model", modelNote, m?.status === "done", m?.status === "running", m?.status === "failed")),
         s?.status === "failed" || m?.status === "failed" ? h("p.ts-err", {}, icon("close"), h("span", {}, (m?.status === "failed" ? m.error : s.error) ?? "That didn't work.")) : null,
         key,
-        mine || !m?.url ? null : h("div.ts-keys", {},
+        mine || !m?.url || m.via === "sheet" ? null : h("div.ts-keys", {},
           keyIcon(icon("download"), "Download its 3D file", null, { href: m.url, download: fileName(p.name, m.url) }),
           keyIcon(sprite("model-import"), "Put it on the Stage, as a prop", () => putOnStage(m, p.name).catch((e) => toast(e.message, { tone: "crit" })))))));
 }

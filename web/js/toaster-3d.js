@@ -381,6 +381,22 @@ async function refreshFromServer() {
   } catch {}
 }
 
+/**
+ * A thin thing a generator cannot build (a board five centimetres thick comes out as a hollow tray) stands in the new scene as a box of its
+ * clay's size wearing the front view of its sheet: its "model" is the sheet's picture, and it is marked so ("sheet").
+ */
+export function useSheetBox(partId) {
+  const draft = toaster.draft;
+  const b = body();
+  const sheet = sheetOf(partId);
+  if (!draft || !sheet) return null;
+  b.models = b.models.filter((m) => m.part !== partId);
+  const m = { id: runId(), part: partId, sheet: sheet.id, via: "sheet", status: "done", progress: 1, url: sheet.photo.url, file: sheet.photo.file, note: "a box wearing its sheet", at: new Date().toISOString() };
+  b.models.unshift(m);
+  save(draft);
+  update("toaster-runs");
+  return m;
+}
 /** An object's sheet and model forgotten (their files stay in the Library). */
 export function forgetObject(partId) {
   const b = body();

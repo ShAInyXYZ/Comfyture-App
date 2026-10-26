@@ -101,14 +101,38 @@ export function mountScene(el) {
     const m = model.clone(true);
     m.position.set(0, 0, 0);
     const v = new THREE.Vector3();
-    const dims = (rx, rz) => (m.rotation.set(rx, 0, rz), m.updateMatrixWorld(true), new THREE.Box3().setFromObject(m).getSize(v).toArray());
+    const dims = (rx, ry, rz) => (m.rotation.set(rx, ry, rz), m.updateMatrixWorld(true), new THREE.Box3().setFromObject(m).getSize(v).toArray());
     if (upright) {
-      const turns = [[0, 0], [0, Math.PI / 2], [Math.PI / 2, 0]];
-      const marks = turns.map(([rx, rz]) => unlike(dims(rx, rz), size));
+      // (a quarter turn about the vertical swaps the width and the depth: a flat board a generator made facing the side is turned to face the room)
+      const turns = [[0, 0, 0], [0, 0, Math.PI / 2], [Math.PI / 2, 0, 0], [0, Math.PI / 2, 0]];
+      const marks = turns.map(([rx, ry, rz]) => unlike(dims(rx, ry, rz), size));
       const best = marks.indexOf(Math.min(...marks));
       // (only a clear gain moves a model: a stool a little wider than its clay stays as it came)
-      const [rx, rz] = marks[0] - marks[best] > 0.6 ? turns[best] : turns[0];
-      m.rotation.set(rx, 0, rz);
+      let [rx, ry, rz] = marks[0] - marks[best] > 0.6 ? turns[best] : turns[0];
+      // which way round: the front of a flat thing is the side its details stand out of (its mass sits nearer its back), and that side faces +Z
+      if (ry !== 0) {
+        m.rotation.set(rx, ry, rz);
+        m.updateMatrixWorld(true);
+        let n = 0;
+        let sum = 0;
+        let lo = Infinity;
+        let hi = -Infinity;
+        m.traverse((o) => {
+          if (!o.isMesh) return;
+          const a = o.geometry.attributes.position;
+          const step = Math.max(1, Math.floor(a.count / 20000));
+          for (let i = 0; i < a.count; i += step) {
+            const z = v.fromBufferAttribute(a, i).applyMatrix4(o.matrixWorld).z;
+            sum += z;
+            n++;
+            lo = Math.min(lo, z);
+            hi = Math.max(hi, z);
+          }
+        });
+        const mean = sum / Math.max(1, n);
+        if (hi - mean < mean - lo) ry = -ry;
+      }
+      m.rotation.set(rx, ry, rz);
     } else m.rotation.set(0, 0, 0);
     m.updateMatrixWorld(true);
     const have = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
@@ -120,6 +144,42 @@ export function mountScene(el) {
     m.traverse((o) => o.isMesh && ((o.castShadow = true), (o.receiveShadow = true)));
     const g = new THREE.Group();
     g.add(m);
+    return g;
+  };
+
+  /**
+   * A thin thing a generator cannot build (a board five centimetres thick comes out hollow, as a tray) stands as a box of its clay's size wearing
+   * the front view of its sheet (the sheet's top left cell) on its two wide faces and plain pine on the rest.
+   */
+  const boxOf = async (url, part) => {
+    const img = await new Promise((ok, no) => Object.assign(new Image(), { crossOrigin: "anonymous", onload() { ok(this); }, onerror: no, src: url }));
+    // the front view is the top left cell; its picture is cut to what is drawn in it (a thin board fills a sliver of its white cell)
+    const cell = Math.floor(Math.min(img.naturalWidth, img.naturalHeight) / 2);
+    const c = document.createElement("canvas");
+    Object.assign(c, { width: cell, height: cell });
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, cell, cell, 0, 0, cell, cell);
+    const px = ctx.getImageData(0, 0, cell, cell).data;
+    let x0 = cell, y0 = cell, x1 = 0, y1 = 0;
+    for (let y = 0; y < cell; y += 2) for (let x = 0; x < cell; x += 2) {
+      const i = (y * cell + x) * 4;
+      if (px[i + 3] > 40 && (px[i] < 238 || px[i + 1] < 238 || px[i + 2] < 238)) (x0 = Math.min(x0, x)), (y0 = Math.min(y0, y)), (x1 = Math.max(x1, x)), (y1 = Math.max(y1, y));
+    }
+    const pad = 3;
+    if (x1 <= x0 || y1 <= y0) [x0, y0, x1, y1] = [0, 0, cell, cell];
+    [x0, y0, x1, y1] = [Math.max(0, x0 + pad), Math.max(0, y0 + pad), Math.min(cell, x1 - pad), Math.min(cell, y1 - pad)];
+    const out = document.createElement("canvas");
+    Object.assign(out, { width: Math.max(8, x1 - x0), height: Math.max(8, y1 - y0) });
+    out.getContext("2d").drawImage(c, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+    const tex = new THREE.CanvasTexture(out);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 });
+    const edge = new THREE.MeshStandardMaterial({ color: "#d9b27a", roughness: 0.75 });
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...part.size), [edge, edge, edge, edge, face, face]);
+    mesh.castShadow = mesh.receiveShadow = true;
+    const g = new THREE.Group();
+    g.add(mesh);
     return g;
   };
 
@@ -166,7 +226,7 @@ export function mountScene(el) {
           entry.key = key;
           entry.group.clear();
           try {
-            entry.group.add(url ? fit(await load(url), p.size, p.shape !== "character") : stand(p, view === "blockout"));
+            entry.group.add(url ? (/\.(png|jpe?g|webp)$/i.test(url) ? await boxOf(url, p) : fit(await load(url), p.size, p.shape !== "character")) : stand(p, view === "blockout"));
           } catch {
             entry.group.add(stand(p, view === "blockout"));
           }
