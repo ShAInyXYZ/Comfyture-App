@@ -46,6 +46,28 @@ commits, so the repo cannot be made public yet (the paths a rewrite must cover a
 | A `ref-` collage | `docs/brand/products/macaron-v4/scenes/ref-mockups-collage.png` | Tracked although `ref-*` files are meant to stay out. | ⛔ |
 | Trend names that are song titles | Smalltown Boy, Toc Toc, Ramalama, Alors on danse, La Calabaza, Closer, Sway… (`web/js/mixer-trends.js`) | A song's name on a shelf invites the question; descriptive names avoid it. | ⛔ |
 
+**Ready to apply on your yes: descriptive names for the trends named after a song, an artist or a meme's line** (display names only:
+the trends' ids, folders and recipes stay, so nothing else moves; the website, the storyboard and Jam's third video, *La Calabaza*, would
+follow). Each name says what our crew does in it:
+
+| Now | Proposed | What happens in it |
+|---|---|---|
+| State Property | Window Rant | Earl leans out of the car window and complains |
+| Hotel Lobby | Lobby Rap Duo | Dre and Theo trade raps into a hand mic |
+| Smalltown Boy | Up-Close Sing-Along | Praline and Meringue take turns singing into the lens |
+| Ramalama | Broom Strut | Velvet hems stride at the lens, a broom swings past |
+| La Calabaza | Head-Down Trio | Three kittens snap from head-down to paws-out |
+| Bulin 47 | Tiny Speaker Rap | Praline raps at a tiny speaker, the band cheers |
+| Toc Toc | Knock-Knock Hop | Josie hops and knocks on an invisible door |
+| Alors on Danse | Toy Piano Drop | Praline taps a toy piano until the beat drops |
+| Sway | Confident Sway | Mochi sways with oversized confidence |
+| Scuba | Nose-Pinch Dive | Praline pinches its nose and dives |
+| Closer | Sunglasses Spot | Praline lowers its sunglasses as Sesame hops in |
+| Dance With Me | Dance Invite | A message asks "Dance with me?", two loops answer |
+
+The others (Black Cat Clapping, Tiptoe, Lights Off, Dance Audition, Job Dance, Sea Lion, Face Dance, Documentary, Grand Entrance, Three
+Kittens) already say what they show.
+
 **What is left to do.** Two choices, not exclusive:
 
 1. **Remove or rename** what is still in the tree: the trends we do not need for the submission, the reference-match folder, the
