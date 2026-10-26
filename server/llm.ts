@@ -1,8 +1,8 @@
 // The writers' models: Claude, GPT and Gemini on Comfy Router, billed in Comfy credits with the
 // same Comfy key as everything else, or Gemma 4 running inside ComfyUI (open weights). Two roles,
-// each with its own default: the writer (Story's writers and its assistant, the Cut editor) on
-// Claude Sonnet 5.5, and the quick assistants (the pets, the Shot's and the Stage's) on GPT-6 Luna, the cheapest
-// (answering in JSON, as it cannot be made to call a tool). The pages pick
+// each with its own default: the writer (Story's writers and its assistant, the Cut editor, Pickle's songs) and the
+// quick assistants (the pets, the Shot's and the Stage's), both on GPT-6 Luna, the cheapest (answering in JSON, as it
+// cannot be made to call a tool), until the owner decides otherwise (26 October). The pages pick
 // another; without a Comfy key (or with COMFYTURE_OPEN_WEIGHTS) only Gemma 4 is offered.
 // COMFYTURE_LLM and COMFYTURE_LLM_ASSISTANT set the defaults.
 
@@ -37,7 +37,7 @@ export function defaultLlm(role: Role = "writer") {
   const want = (role === "assistant" ? process.env.COMFYTURE_LLM_ASSISTANT?.trim() : process.env.COMFYTURE_LLM?.trim()) || gemma;
   if (want && llms().some((m) => m.id === want)) return want;
   if (!hasKey()) return "gemma-4";
-  return role === "assistant" ? "gpt-6-luna" : "claude-sonnet-5-5";
+  return "gpt-6-luna";
 }
 /** The model a request asks for, if it may be used; else its role's default. */
 export const pickLlm = (v: unknown, role: Role = "writer") => (typeof v === "string" && llms().some((m) => m.id === v) ? v : defaultLlm(role));

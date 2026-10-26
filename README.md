@@ -348,7 +348,7 @@ Write the action the way LTX-2.5 reads best: present tense, the motion first, on
 | `COMFYTURE_WORKFLOWS` | | `dev` swaps in tiny stand-in workflows so you can work on the UI without a GPU |
 | `COMFYTURE_URL` | `http://127.0.0.1:5177` | Where `scripts/control-mcp.ts` finds the app |
 | `BLENDER_MCP_HOST` / `BLENDER_MCP_PORT` | `localhost` / `9876` | Where the app finds Blender's MCP add-on |
-| `COMFYTURE_LLM` | `claude-sonnet-5-5` with a Comfy key, else `gemma-4` | The writer's default (Story's writers and assistant, the Cut editor): `claude-sonnet-5-5`, `claude-haiku-4-5-20251001`, `gpt-6-sol`, `gpt-6-luna`, `gemini-3.1-pro-preview`, `gemini-3.8-flash` (through Comfy Router) or `gemma-4` (open weights, in ComfyUI). Each bar can pick another. |
+| `COMFYTURE_LLM` | `gpt-6-luna` with a Comfy key, else `gemma-4` | The writer's default (Story's writers and assistant, the Cut editor): `claude-sonnet-5-5`, `claude-haiku-4-5-20251001`, `gpt-6-sol`, `gpt-6-luna`, `gemini-3.1-pro-preview`, `gemini-3.8-flash` (through Comfy Router) or `gemma-4` (open weights, in ComfyUI). Each bar can pick another. |
 | `COMFYTURE_LLM_ASSISTANT` | `gpt-6-luna` with a Comfy key, else `gemma-4` | The quick assistants' default (Shot, the Stage, Mixer's Praline and Utensils' Truffle), from the same three |
 | `COMFYTURE_OPEN_WEIGHTS` | | Set to offer only open-weights models: no partner writers or artists through Comfy Router |
 | `COMFYTURE_DEBUG` | | Set to log the Stage assistant's raw answers (and what each Router picture cost) |

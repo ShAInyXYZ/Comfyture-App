@@ -1670,7 +1670,7 @@ stageReady.then(({ stage }) => (stage.renderModel = state.stageModel));
 
 // two roles, each kept apart: the writer (Story, Cut) and the quick assistants (Shot, Stage)
 const LLM = { writer: "comfyture.llm", assistant: "comfyture.llm.assistant" };
-/** The model a role uses (Sonnet 5.5 writes, GPT-6 Luna assists, unless you pick another), from those the server offers. */
+/** The model a role uses (GPT-6 Luna, for the writer and the assistants alike, unless you pick another), from those the server offers. */
 export function writer(role = "writer") {
   const offered = state.info?.llms?.models ?? [];
   const kept = state.llm?.[role];
