@@ -5,7 +5,7 @@
 import { h } from "./dom.js";
 import { state, changed } from "./store.js";
 import { spice, shot as openShot, inputOf, looking_, setTool, setQuietly, addPass, putBack, forget, workingOn } from "./spice.js";
-import { priceOf, newId } from "./spice-model.js";
+import { priceOf, newId, boxWords } from "./spice-model.js";
 import { bento, spicon, primary, iconKey, fill, thumb } from "./spice-ui.js";
 import { work, runTool } from "./spice-engines.js";
 import { slider, chipRow } from "./utensils-fx-controls.js";
@@ -57,7 +57,7 @@ export async function run() {
   const made = await work(shotId, t.name, (progress) => runTool(body, progress));
   if (!made) return null;
   const { extra, credits, ...media } = made;
-  const pass = { id: newId("p"), tool: t.id, name: t.name, words: g.words || "", params: { size: g.size, ...(g.strength ? { strength: g.strength } : {}), seconds: p.seconds, ...(t.takes.includes("aspect") ? { aspect: g.aspect } : {}), ...(t.takes.includes("height") ? { height: g.height } : {}) }, on, input: p.input, media, credits: typeof credits === "number" && credits > 0 ? credits : p.cost ?? 0, at: new Date().toISOString(), note: "", source: "cloud", ...(extra ? { extra } : {}) };
+  const pass = { id: newId("p"), tool: t.id, name: t.name, words: g.words || "", params: { size: g.size, ...(g.strength ? { strength: g.strength } : {}), seconds: p.seconds, ...(t.takes.includes("aspect") ? { aspect: g.aspect } : {}), ...(t.takes.includes("height") ? { height: g.height } : {}), ...(t.takes.includes("region") && g.region ? { region: g.region } : {}) }, on, input: p.input, media, credits: typeof credits === "number" && credits > 0 ? credits : p.cost ?? 0, at: new Date().toISOString(), note: "", source: "cloud", ...(extra ? { extra } : {}) };
   addPass(shotId, pass);
   return media;
 }
@@ -106,16 +106,20 @@ export function toolBody() {
     ic ? chipRow([["draft", "Draft", "Shorter side 320: a look, a credit or two"], ["standard", "Standard", "Shorter side 544, doubled by the second pass: the one to keep"]], g.size, (v) => setTool({ size: v })) : null,
     t.takes.includes("aspect") ? h("div.sp-field", {}, h("span.ut-label", {}, "Widen to"), chipRow(ASPECTS.map(([v, l, about]) => [String(v), l, about]), String(g.aspect), (v) => setTool({ aspect: Number(v) }))) : null,
     t.takes.includes("height") ? h("div.sp-field", {}, h("span.ut-label", {}, "Lines"), chipRow([["720", "720", ""], ["1080", "1080", ""], ["1440", "1440", ""]], String(g.height), (v) => setTool({ height: Number(v) }))) : null,
+    t.takes.includes("region") ? h("div.sp-field.sp-box-field", {}, h("span.ut-label", {}, "The box"), h("p.sp-hint", {}, `${boxWords(g.region ?? t.region ?? { x: 0.35, y: 0.35, w: 0.3, h: 0.3 })}: drawn green on the viewer, drag it over what to fill, its corner to size it.`, g.region ? h("button.sp-link-ask", { type: "button", on: { click: () => setTool({ region: null }) } }, "Put it back.") : null)) : null,
     h("div.sp-tool-key", {},
       primary({ id: "spice:run", label: p.input && !p.why ? `${t.name} · on ${looking_() ? looking_().name : "the plate"}` : t.name, cost: p.cost, working: !!busy, disabled: !!p.why, title: p.why || `${t.name}: ${t.kind === "iclora" ? "an IC-LoRA of LTX-2.3" : t.kind === "template" ? "a template of Comfy Cloud" : "the app's own graph"} on Comfy Cloud`, run })));
 }
 
+/** The gallery: every tool a card with the picture of a real run of it on our own footage (what it was given beside what it made), by family. */
 export function toolsBody() {
   const cur = current();
   if (!spice.tools) return h("p.sp-hint", {}, "The suite's tools are coming…");
   return h("div.sp-tools", {}, ...shelf().map((f) =>
     h("div.sp-family", {}, h("span.ut-label", { title: f.about }, f.name),
-      h("div.sp-chips", {}, ...f.tools.map((t) => h(`button.sp-tchip${cur?.id === t.id ? ".is-on" : ""}`, { type: "button", "aria-pressed": String(cur?.id === t.id), title: `${t.name}: ${t.about}`, on: { click: () => setTool({ tool: t.id, words: "", strength: null, seconds: null }) } }, dot(t), h("span", {}, t.name)))))));
+      h("div.sp-cards", {}, ...f.tools.map((t) => h(`button.sp-card${cur?.id === t.id ? ".is-on" : ""}${t.needs?.length ? ".is-needs" : ""}`, { type: "button", "aria-pressed": String(cur?.id === t.id), title: t.needs?.length ? `${t.name}: needs ${t.needs.join(" and ")}, not offered yet` : `${t.name}: ${t.about}`, on: { click: () => setTool({ tool: t.id, words: "", strength: null, seconds: null }) } },
+        t.preview ? h("span.sp-card-pic", {}, h("img", { src: t.preview, alt: `${t.name}: what it was given, and what it made`, loading: "lazy", draggable: false })) : h("span.sp-card-pic.is-none", {}, h("span", {}, t.needs?.length ? "Needs more than a clip" : t.status === "failed" ? "Did not work on a real run" : "No run yet")),
+        h("span.sp-card-text", {}, dot(t), h("b", {}, t.name), h("span", {}, t.about))))))));
 }
 
 export function binBody() {
@@ -130,20 +134,25 @@ export function binBody() {
       iconKey(spicon("trash"), "Forget this take (its clip stays in the library)", () => forget(t.id)))));
 }
 
-/** The three bentos of the suite beside the viewer. Made once and kept: { el, update, sig, slot }. */
-export function suiteSpace() {
+/**
+ * The suite beside the viewer: on the right PAPRIKA (her read of the shot and her chains) over TOOL (the one picked), under the viewer
+ * the gallery of TOOLS. Made once and kept: { el, update, sig, slot }. The bin is a window, opened from the chain.
+ */
+export function suiteSpace(guide) {
   loadTools();
   const el = h("div.sp-suite");
   const slot = h("div.sp-slot");
-  const BENTOS = [["tool", "TOOL", "sp-side-b.sp-b-tool", toolBody], ["tools", "TOOLS", "sp-b-tools", toolsBody], ["bin", "BIN", "sp-b-bin", binBody]];
+  const BENTOS = [["tool", "TOOL", "sp-b-tool", toolBody], ["tools", "TOOLS", "sp-b-tools", toolsBody]];
   const bentos = Object.fromEntries(BENTOS.map(([id, title, cls]) => [id, bento(cls, title, null)]));
   const bodies = Object.fromEntries(BENTOS.map(([id]) => [id, h("div.sp-b-body")]));
   for (const [id] of BENTOS) bentos[id].append(bodies[id]);
-  el.append(slot, bentos.tool, h("div.sp-lower", {}, bentos.tools, bentos.bin));
+  const paprika = bento("sp-b-guide", "PAPRIKA", null, guide.body);
+  el.append(slot, h("div.sp-right", {}, paprika, bentos.tool), h("div.sp-lower", {}, bentos.tools));
   function update() {
     // (a field being typed in is not drawn over: its words are kept as they are typed)
     if (el.contains(document.activeElement) && document.activeElement.matches("textarea, input")) return false;
     for (const [id, , , body] of BENTOS) fill(bodies[id], body());
+    guide.update();
   }
-  return { el, update, slot, sig: () => JSON.stringify([!!spice.tools, spice.set, state.account?.target?.kind, !!state.account?.openWeights]) };
+  return { el, update, slot, sig: () => JSON.stringify([!!spice.tools, spice.set, state.account?.target?.kind, !!state.account?.openWeights, guide.sig()]) };
 }

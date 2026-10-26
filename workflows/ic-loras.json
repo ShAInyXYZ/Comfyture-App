@@ -387,11 +387,11 @@
    "guide": "raw",
    "prompt": "",
    "strength": 1.0,
-   "status": "failed",
+   "status": "verified",
    "confidence": "card",
    "source": "https://huggingface.co/Lightricks/LTX-2.3-22b-IC-LoRA-Clean-Plate",
    "avoid": "person, people, human, figure, limb, arm, hand, leg, body part, shadow of a person, leftover people",
-   "note": "On this clip the person fills the frame, which its card puts out of scope: a different man stayed in the truck. Try it with people small in a wide shot.",
+   "note": "On the survey clip the person filled the frame, which its card puts out of scope, and a different man stayed in the truck. On Truffle's Jam Heist the frog on the crate is gone, the crate and the stall drawn whole behind it: it works with the subject small in a wide shot.",
    "example": "An empty clean plate of the exact same location: identical background, environment, structures and lighting as the source video, with no people, no humans, no figures, and no body parts such as arms, hands or legs anywhere in the frame. Static photorealistic footage, natural light, high detail.",
    "hint": "The place with its subject gone: the same walls, ground and light, nobody there"
   },
@@ -400,16 +400,16 @@
    "file": "ltx23-obscura_remova.safetensors",
    "name": "Obscura Remova",
    "family": "clean",
-   "about": "Removes what stands in front of the scene: an object, smoke, a curtain. No mask.",
+   "about": "Removes what stands in front of the scene, the foreground: an object held, smoke, a curtain. No mask. Not for a thing in the background: that is a region of Inpaint.",
    "guide": "raw",
    "prompt": "",
    "strength": 2.0,
-   "status": "verified",
+   "status": "failed",
    "confidence": "official-workflow",
    "source": "https://huggingface.co/WepeNerd/Obscura_Remova",
    "template": "Remove the {words} from the foreground.",
    "words": "grey cat",
-   "note": "The cat is gone; the man drifts a little."
+   "note": "On the survey clip the cat was gone and the man drifted a little. On Truffle's Jam Heist it did not do as asked: the jar between the dancers stayed and the raccoon moved instead; asked for the raccoon itself it drew a bird in its place. For a thing in the scene, use Inpaint's box."
   },
   {
    "id": "subtitles",
@@ -457,7 +457,7 @@
    "about": "Widens the frame: the clip is set on a larger canvas with black bars, and the model draws what the bars hide.",
    "guide": "raw",
    "strength": 1.0,
-   "status": "verified",
+   "status": "failed",
    "confidence": "official-workflow",
    "source": "https://huggingface.co/oumoumad/LTX-2.3-22b-IC-LoRA-Outpaint",
    "avoid": "pc game, console game, video game, ugly, 3d render, photo, still, static, slow",
@@ -466,7 +466,7 @@
     "color": "000000",
     "aspect": 1.0
    },
-   "note": "Merged with the footage where it stood; widened to a square it drew a wing mirror, the truck's side, a tyre and leaves.",
+   "note": "On the survey clip, widened to a square, it drew a wing mirror, the truck's side, a tyre and leaves. On Truffle's Jam Heist the black bars stayed black, at 2.39 and at square: to widen a shot, use In and outpainting (its canvas is green, and it was drawn).",
    "template": "{scene}. The scene continues naturally beyond the frame: the side of the yellow truck, a wing mirror, autumn trees and fallen leaves, warm light.",
    "prompt": ""
   },
@@ -496,7 +496,7 @@
    "file": "ltx-2.3-22b-ic-lora-in-outpainting-0.9.safetensors",
    "name": "In and outpainting: fill a region",
    "family": "frame",
-   "about": "Fills a region of the frame, shown as flat green: remove something (here the cat), or draw something new there.",
+   "about": "Fills a region of the frame, a box shown as flat green: remove what is in it (a van, a sign), or draw something new there.",
    "guide": "raw",
    "prompt": "",
    "strength": 1.0,
@@ -514,7 +514,7 @@
      "h": 0.26
     }
    },
-   "note": "The region was over the cat: it is gone, an empty seat in its place (merged with the footage outside the region).",
+   "note": "The region was over the cat: it is gone, an empty seat in its place (merged with the footage outside the region). On Truffle's Jam Heist a box over the white van painted it out, a market wall in its place; a sign at the frame's edge stayed, three runs out of three: keep the box well inside the frame.",
    "example": "The back seat of the truck, empty, with warm autumn trees seen through the window behind it.",
    "hint": "What is in the region once it is painted in: the walls, the ground, what stands there"
   },
@@ -631,10 +631,10 @@
    "guide": "raw",
    "prompt": "",
    "strength": 1.3,
-   "status": "failed",
+   "status": "verified",
    "confidence": "card",
    "source": "https://huggingface.co/Alissonerdx/LTX-LoRAs",
-   "note": "A draft run of 'Convert the video into a watercolor style' changed the people instead of the style. Its card says CFG matters most and calls it experimental.",
+   "note": "A draft run of 'Convert the video into a watercolor style' changed the people instead of the style. On Truffle's Jam Heist 'Add a red knitted scarf around the raccoon's neck' put the scarf on, and turned the raccoon to the camera with it: it edits the subject as much as the words say, and a little more.",
    "example": "Add a red knitted scarf around the neck of the grey cat on the left.",
    "hint": "The edit, in a sentence: what to add, change or take away"
   },

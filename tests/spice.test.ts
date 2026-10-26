@@ -32,6 +32,14 @@ test("a scenario kept by an earlier Spice, or junk, is filled in and never throw
   assert.equal(m.outputOf(s)?.file, "b.mp4");
 });
 
+test("a shot keeps Paprika's read: her words cut to size, her chains with only real steps, junk dropped", () => {
+  const s = m.shotOf({ id: "sh1", name: "One", plate: clip("plate.mp4", 5), read: { at: "2026-10-26T19:00:00.000Z", text: "x".repeat(600), off: "a van", question: "what?", suggestions: [{ title: "Night", why: "w", steps: [{ tool: "deblur", words: "y", size: "standard" }, { nope: 1 }, { tool: "outpaint", size: "huge" }] }, { title: "Empty", steps: [] }, null] } })!;
+  assert.equal(s.read?.text.length, 500);
+  assert.deepEqual(s.read?.suggestions, [{ title: "Night", why: "w", steps: [{ tool: "deblur", words: "y", size: "standard" }, { tool: "outpaint", words: "" }] }]);
+  assert.equal(m.shotOf({ id: "sh2", name: "Two", read: { text: "" } })!.read, null, "an empty read is none");
+  assert.equal(m.readOf({ suggestions: [{ title: "A", steps: [{ tool: "x" }] }] })?.title, undefined);
+});
+
 test("the chain: a run goes on the pass looked at; a pass taken off waits in the bin with what was on top of it; put back, the chain is rebuilt", () => {
   const s = m.shotOf({ id: "sh1", name: "One", plate: clip("plate.mp4", 5), passes: [
     { id: "p1", tool: "obscura", name: "Obscura", on: null, input: clip("plate.mp4"), media: clip("p1.mp4") },
@@ -108,6 +116,7 @@ test("the registry: every IC-LoRA of the suite, the app's own graphs and the cat
   const kinds = new Set(r.tools.map((t) => t.kind));
   assert.deepEqual([...kinds].sort(), ["engine", "iclora", "template"]);
   for (const id of ["deblur", "day-to-night", "outpaint", "obscura", "cutout", "upscale", "sound", "restyle", "slowmo"]) assert.ok(r.tools.some((t) => t.id === id), id);
+  assert.ok(r.tools.every((t) => t.preview === undefined || /^brand\/spice\/previews\/[\w-]+\.jpg$/.test(t.preview)), "a preview is a picture of ours");
   const outpaint = r.tools.find((t) => t.id === "outpaint")!;
   assert.ok(outpaint.takes.includes("aspect"), "a widening tool takes an aspect");
   assert.ok(r.tools.find((t) => t.id === "upscale")!.takes.includes("height"));

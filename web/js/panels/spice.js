@@ -16,7 +16,8 @@ import { createViewer } from "../spice-viewer.js";
 import { windowHost, defineWindow, openWin, closeWin } from "../spice-win.js";
 import { thumb, spicon, fill, ghost, danger, primary } from "../spice-ui.js";
 import { importFootage, pickFile, rollShot, work } from "../spice-engines.js";
-import { suiteSpace } from "../spice-tools.js";
+import { suiteSpace, binBody } from "../spice-tools.js";
+import { guidePart } from "../spice-guide.js";
 import { slider } from "../utensils-fx-controls.js";
 
 // made once and kept: the suite holds its own state (a clip that plays, a slider being dragged)
@@ -30,7 +31,7 @@ function made() {
   if (!suite) {
     viewer = createViewer({ drop: () => openWin("shot") });
     host = windowHost();
-    suite = suiteSpace();
+    suite = suiteSpace(guidePart());
     suite.slot.append(viewer.el);
   }
   return suite;
@@ -162,6 +163,11 @@ function shotInfoWin() {
   return { el, update, sig: () => JSON.stringify([shot()?.id, shot()?.name, shot()?.about, shot()?.passes.length, shot()?.bin.length]) };
 }
 defineWindow("shotinfo", { eyebrow: "Shot", title: () => shot()?.name ?? "The shot", size: "s", make: shotInfoWin });
+/** The bin: the passes taken off the chain, each to put back (the chain is rebuilt to where it was made) or to forget. */
+defineWindow("bin", { eyebrow: "The chain", title: "The bin", size: "s", make: () => {
+  const el = h("div.sp-w.is-bin");
+  return { el, update: () => fill(el, binBody()), sig: () => JSON.stringify([shot()?.id, shot()?.bin.map((t) => t.id)]) };
+} });
 
 function drawSide() {
   const sc = spice.scenario;

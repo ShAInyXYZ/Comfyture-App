@@ -40,7 +40,7 @@ try {
     await page.goto(`${base}/#/spice`);
     await page.waitForSelector(".sp-shot");
     await page.waitForTimeout(900);
-    await page.locator(".sp-tchip").first().click();
+    await page.locator(".sp-card").first().click();
     await page.waitForTimeout(400);
     // each control scrolled into its area's view and hit-tested: the top-most element at its centre is it (or inside it)
     const reach = async (sel) => page.locator(sel).first().evaluate((el) => {
@@ -51,7 +51,7 @@ try {
       return hit && (hit === el || el.contains(hit)) ? "" : `covered by ${hit?.className ?? hit?.tagName ?? "nothing"}`;
     });
     const results = {};
-    for (const [name, sel] of [["a shot", ".sp-shot-main"], ["Add a shot", ".sp-add"], ["the wipe", ".sp-wipe i"], ["play", ".sp-iconkey.is-play"], ["the chain", ".sp-chain .sp-link-main"], ["the tool's key", ".sp-tool-key .sp-primary"], ["the shelf", ".sp-tchip"], ["the bin", ".sp-b-bin"], ["Paprika's bar", "#spice-chat .chat-bar"]]) results[name] = await reach(sel);
+    for (const [name, sel] of [["a shot", ".sp-shot-main"], ["Add a shot", ".sp-add"], ["the wipe", ".sp-wipe i"], ["play", ".sp-iconkey.is-play"], ["the chain", ".sp-chain .sp-link-main"], ["the tool's key", ".sp-tool-key .sp-primary"], ["the shelf", ".sp-card"], ["Paprika's chains", ".sp-b-guide .sp-primary"], ["Paprika's bar", "#spice-chat .chat-bar"]]) results[name] = await reach(sel);
     const wide = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
     const bad = Object.entries(results).filter(([, v]) => v);
     ok(!wide && !bad.length && !errors.length, `${width}x${height}: everything on screen and reachable`, [wide ? "sideways scroll" : "", ...bad.map(([k, v]) => `${k} ${v}`), ...errors].filter(Boolean).join("; "));

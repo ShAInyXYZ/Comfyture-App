@@ -8,8 +8,13 @@
 .sp-suite { display: grid; grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr); grid-template-rows: minmax(clamp(26rem, 46dvh, 40rem), 1fr) minmax(clamp(13.5rem, 27dvh, 19rem), auto); gap: var(--sp-gap); min-height: 100%; }
 .sp-suite > .sp-slot { grid-column: 1; grid-row: 1; display: grid; min-width: 0; min-height: 0; }
 .sp-suite > .sp-slot > .sp-viewer { min-height: 0; }
-.sp-suite > .sp-side-b { grid-column: 2; grid-row: 1 / span 2; }
-.sp-suite > .sp-lower { grid-column: 1; grid-row: 2; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: var(--sp-gap); min-width: 0; min-height: 0; }
+/* the right column: Paprika's read over the tool picked, both scrolling in their card when the screen is short */
+.sp-suite > .sp-right { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; gap: var(--sp-gap); min-width: 0; min-height: 0; }
+.sp-right > .sp-b-guide { flex: 0 1 auto; max-height: 52%; }
+/* (her card is as tall as her words, up to half the column: its body sizes to its content, and scrolls past that) */
+.sp-right > .sp-b-guide > .sp-b-body, .sp-right > .sp-b-guide .sp-guide { flex: 0 1 auto; min-height: 0; }
+.sp-right > .sp-b-tool { flex: 1 1 0; min-height: 16rem; }
+.sp-suite > .sp-lower { grid-column: 1; grid-row: 2; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-gap); min-width: 0; min-height: 0; }
 .sp-lower > .sp-bento { min-height: 0; }
 .sp-lower .sp-b-body { flex: 1 1 auto; }
 @media (max-height: 885px) { .sp-suite { grid-template-rows: minmax(30rem, 1fr) minmax(clamp(13.5rem, 27dvh, 19rem), auto); } }
@@ -76,3 +81,42 @@
 .sp-roll-words .sp-words { min-height: 6rem; }
 .sp-roll-words .sp-tool-key { margin-top: .25rem; }
 @media (max-width: 900px) { .sp-roll { grid-template-columns: 1fr; } }
+
+/* ---- the gallery of tools ------------------------------------------------------------------------------ */
+.sp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: .5rem; }
+.sp-card { display: grid; grid-template-rows: auto auto; gap: .375rem; padding: .375rem; border: 1px solid var(--card-line); border-radius: .875rem; background: var(--sunk); color: var(--text); text-align: left; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast); }
+.sp-card:hover { border-color: var(--line2); }
+.sp-card.is-on { border-color: var(--accent); background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--sunk); box-shadow: 0 0 0 1px var(--accent) inset; }
+.sp-card.is-needs { opacity: .55; }
+.sp-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sp-card-pic { display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: .5rem; background: var(--bg); box-shadow: 0 0 0 1px rgba(255, 255, 255, .06) inset; }
+.sp-card-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.sp-card-pic.is-none { display: grid; place-items: center; padding: .5rem; background: repeating-linear-gradient(135deg, #17171a 0 .5rem, #1b1b1f .5rem 1rem); color: var(--dim); font: 500 .6875rem/1.3 var(--font-sans); text-align: center; }
+.sp-card-text { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: .375rem; align-items: center; min-width: 0; }
+.sp-card-text b { overflow: hidden; font: 600 .75rem/1.2 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.sp-card-text > span { grid-column: 1 / -1; display: -webkit-box; overflow: hidden; color: var(--dim); font: 400 .6875rem/1.3 var(--font-sans); -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.sp-card.is-on .sp-card-text b { color: var(--accent); }
+@media (max-height: 900px) { .sp-card-text > span { display: none; } }
+
+/* ---- Paprika's read ------------------------------------------------------------------------------------ */
+.sp-guide { display: flex; flex: 1 1 0; flex-direction: column; gap: .625rem; min-height: 0; overflow: hidden auto; scrollbar-width: thin; }
+.sp-read { margin: 0; font: 400 .875rem/1.45 var(--font-sans); color: var(--text); }
+.sp-read-off { display: flex; gap: .5rem; margin: 0; color: var(--muted); font: 400 .8125rem/1.4 var(--font-sans); }
+.sp-read-off svg { flex: none; width: 1rem; height: 1rem; margin-top: .125rem; color: var(--accent); }
+.sp-read-q { margin: 0; font: 500 .8125rem/1.4 var(--font-sans); color: var(--muted); }
+.sp-link-ask { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
+.sp-chain-card { display: grid; gap: .5rem; padding: .625rem; border: 1px solid var(--card-line); border-radius: .875rem; background: var(--sunk); }
+.sp-chain-head { display: grid; gap: .125rem; }
+.sp-chain-head b { font: 700 .875rem/1.2 var(--font-sans); }
+.sp-chain-head span { color: var(--dim); font: 400 .75rem/1.35 var(--font-sans); }
+.sp-chain-steps { display: flex; flex-wrap: wrap; gap: .25rem; }
+.sp-step { display: inline-flex; align-items: center; gap: .3125rem; min-height: 1.5rem; padding: 0 .5rem 0 .25rem; border-radius: 999px; background: var(--s1); color: var(--text); font: 500 .6875rem/1 var(--font-sans); }
+.sp-step i { display: grid; place-items: center; width: 1rem; height: 1rem; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font: 700 .625rem/1 var(--font-mono); font-style: normal; }
+.sp-chain-keys { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .375rem; align-items: stretch; }
+.sp-chain-keys .sp-primary { gap: .375rem; min-height: 2.5rem; padding: 0 .625rem; border-radius: .75rem; font-size: .875rem; }
+.sp-chain-keys .sp-ghost { padding: 0 .625rem; }
+.sp-chain-keys .sp-primary-row { grid-column: 1 / -1; }
+.sp-link-bin { display: inline-flex; align-items: center; gap: .375rem; min-height: 1.875rem; margin-left: .25rem; padding: 0 .625rem; border: 1px dashed var(--line2); border-radius: 999px; background: transparent; color: var(--muted); font: 600 .75rem/1 var(--font-sans); cursor: pointer; }
+.sp-link-bin svg { width: .875rem; height: .875rem; }
+.sp-link-bin:hover { color: var(--accent); border-color: var(--accent-line); }
+.sp-w.is-bin .sp-bin { max-height: 60dvh; overflow: hidden auto; }
