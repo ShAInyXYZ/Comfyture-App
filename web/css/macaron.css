@@ -199,8 +199,9 @@
 .mc-chips.is-small .mc-chip { min-height: 1.875rem; padding: 0 .75rem; font-size: .8125rem; }
 .mc-rules-two { display: grid; flex: 1 1 0; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 1.25rem; min-height: 0; }
 .mc-logo-rules, .mc-kwords { display: flex; flex-direction: column; gap: .625rem; min-width: 0; min-height: 0; }
-/* (where the kit's rows are their content's height, the rules are as tall as what they hold: squeezed, they spilled under their card) */
-@media (max-width: 1280px) { .mc-rules-two { flex: 1 0 auto; } }
+/* (where the kit's rows are their content's height, the rules and the type scale are as tall as what they hold: squeezed, the rules
+   spilled under their card and the scale collapsed to nothing, its rows over the brand's mat) */
+@media (max-width: 1280px) { .mc-rules-two, .mc-scale { flex: 1 0 auto; } }
 .mc-kwords { padding-left: 1.25rem; border-left: 1px solid var(--line); cursor: pointer; }
 .mc-kwords:hover .mc-sub { color: var(--muted); }
 
