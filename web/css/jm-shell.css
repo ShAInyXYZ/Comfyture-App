@@ -20,6 +20,9 @@
 .jm-jam { display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; min-height: 2.375rem; padding: 0 .625rem 0 .875rem; border: 1px solid var(--line2); border-radius: .75rem; background: var(--sunk); color: var(--text); font: 600 .9375rem/1 var(--font-sans); cursor: pointer; transition: border-color var(--t-fast); }
 .jm-jam:hover, .jm-jam[aria-expanded="true"] { border-color: var(--accent-line); }
 .jm-jam span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jm-jam.has-cover { padding-left: .25rem; }
+.jm-jam.has-cover span { flex: 1; text-align: left; }
+.jm-jam-cover { flex: none; width: 1.875rem; height: 1.875rem; border-radius: .5rem; object-fit: cover; }
 .jm-jam svg { width: 1.0625rem; height: 1.0625rem; color: var(--muted); transition: rotate var(--t-fast); }
 .jm-jam[aria-expanded="true"] svg { rotate: 180deg; }
 /* the set list of jams, over the tiles */

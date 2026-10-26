@@ -785,8 +785,10 @@ export function songWorkspace() {
     song.loaded = true;
     api.songs().then((list) => {
       for (const a of list) if (a.cover || a.coverVideo) covers.set(a.file, { cover: a.cover, coverVideo: a.coverVideo, coverSeconds: a.coverSeconds });
+      // (only songs: a sound under the shortest length a song is made at, 30 s, is a clip, and a song kept twice is shown once)
       const have = new Set(song.made.map((m) => m.file));
-      song.made.push(...list.filter((a) => a.kind === "music" && !have.has(a.file)).slice(0, 24));
+      const named = new Set(song.made.map((m) => m.name).filter(Boolean).map((n) => n.toLowerCase()));
+      song.made.push(...list.filter((a) => a.kind === "music" && a.seconds >= 30 && !have.has(a.file) && !named.has(a.name.toLowerCase()) && named.add(a.name.toLowerCase())).slice(0, 24));
       // (the covers have come: the record wears the shown song's, as its sleeve does)
       redrawStage();
       redrawShelf();

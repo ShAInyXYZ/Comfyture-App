@@ -212,6 +212,10 @@ try {
     const cover = (await api("api/audio")).find((a) => a.file === "jam-walk-moonlit-oolong-track.mp3")?.cover;
     ok(cover === "/media/photos/jam-walk-moonlit-oolong-artist.jpg" && f.thumb === cover && f.sleeve === cover, "its song wears Taro's picture as its cover: under the song's name on the stage, and on its sleeve (the record's label is the same picture)", `${f.thumb} ${f.sleeve}`);
     ok(f.keys === "picture,mine,video,none", "with the keys of a song that has one: a new cover, my picture, a video cover, and taking it off", f.keys);
+    ok((await page.locator(".jm-jam .jm-jam-cover").getAttribute("src")) === cover, "the video's song wears its cover in Pickle's panel too, beside the video's name");
+    // (the shelf holds songs: the showcases' short tracks, 13 and 15 s, are clips, shown only as the song of their own video)
+    const shelved = await page.evaluate(() => [...document.querySelectorAll(".sg-sleeve b")].map((b) => b.textContent));
+    ok(shelved[0] === "Moonlit Oolong Walk" && !shelved.some((n) => /Three Kittens|La Calabaza/.test(n)) && shelved.length > 1, "the shelf holds only songs, the video's first", shelved.join(", "));
     await shot("song");
     await page.locator(".sg-use").click();
     ok(await until(() => import("/js/jam.js").then((m) => m.jam.workspace === "track").catch(() => false), 20), "On to the track goes to the track");

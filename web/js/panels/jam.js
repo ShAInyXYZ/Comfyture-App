@@ -42,8 +42,11 @@ function jamMenu(j) {
 }
 
 function jamChip(j) {
+  // (the video's song wears its cover here too, as on the record and the shelf)
+  const cover = j?.body.track?.cover;
   return h("div.jm-chipwrap", {},
-    h("button.jm-jam", { type: "button", "aria-haspopup": "menu", "aria-expanded": String(menu), title: "Your jams", on: { click: () => ((menu = !menu), changed("jam")) } }, h("span", {}, j?.name ?? "No jam yet"), jicon("caret")),
+    h(`button.jm-jam${cover ? ".has-cover" : ""}`, { type: "button", "aria-haspopup": "menu", "aria-expanded": String(menu), title: "Your jams", on: { click: () => ((menu = !menu), changed("jam")) } },
+      cover ? h("img.jm-jam-cover", { src: cover, alt: "", draggable: false }) : null, h("span", {}, j?.name ?? "No jam yet"), jicon("caret")),
     menu ? jamMenu(j) : null);
 }
 
