@@ -1,7 +1,8 @@
 # Writing a song for ACE-Step 1.5 XL (Pickle's guide)
 
 Sources: the ACE-Step 1.5 Tutorial and Musician's Guide (github.com/ace-step/ACE-Step-1.5/docs/en), deAPI's prompting guide, and the
-owner's own AceStep1.5XL-Superior workflow, whose settings are the defaults. Where the sources differ, the owner's practice wins.
+owner's own AceStep1.5XL-Superior workflow, whose settings are the defaults. Where the sources differ, the owner's practice wins
+(what each source says and how the differences were settled: docs/research/acestep-prompting.md).
 
 ## What the model is given
 
