@@ -22,7 +22,7 @@ RunPod (a partner) is worth one afternoon to film the "your own GPU" beat, not f
 |---|---|---|---|---|
 | **What judges can do** | Open every product on its example, play the takes, films and songs, read every prompt and workflow, take the tours. Nothing renders, the pets cannot answer, no uploads. | Everything, within the caps: roll an LTX-2.5 shot, make a picture or a song, toast a clay set, run a Spice pass, ask any pet. Examples and tours are free. | The core renders on open weights (Kitchen, Mixer, Jam, Macaron, the Oven). Not what runs through Comfy Cloud's template runner (Spice's SAM3, depth and VOID passes, Toaster's 3D model, Jam's word listening, Utensils' templates) unless a Cloud key is added too. | Everything. With no key: examples and tours. With their own Comfy key: real runs on their credits. With their own GPU: comfy-api-proxy. |
 | **Cost** | Free (Pages is free once the repo is public). | VPS about €6–8 a month (Hetzner, 2 vCPU, 4 GB, US region). Credits: 211 credits = $1; a 5-second LTX-2.5 shot is about 24 credits ($0.11), a picture 2–6, a Gemma 4 answer a few credits of GPU time. Ten judge runs cost about $1.50; cap the key at $15–20. The Comfy Cloud plan you already have. | A 48 GB GPU: A6000 or A40 $0.59/h, L40S $1.09/h (Secure Cloud). Always on for the judging week (30 Oct to 6 Nov, about 190 h): **$110–210**, plus about $10 of network volume for 100–150 GB of models. | Nothing for us. |
-| **Effort** | Half a day: `scripts/demo-site.ts` only snapshots Kitchen today (see to-dos). | One day of code (judge mode and its tests) and 2–3 hours of server setup. | High: ComfyUI, two custom node packs, 100+ GB of models (`scripts/get-models.sh`), every workflow tested on that GPU. | An hour: README and JUDGES.md clear, one test on a clean machine. |
+| **Effort** | Little: `npm run demo-site` builds every product and tour (needs Playwright); the Pages workflow is left (see to-dos). | One day of code (judge mode and its tests) and 2–3 hours of server setup. | High: ComfyUI, two custom node packs, 100+ GB of models (`scripts/get-models.sh`), every workflow tested on that GPU. | An hour: README and JUDGES.md clear, one test on a clean machine. |
 | **Reliability** | Very high. | Good. Shots take 40–110 s on Cloud; the caps and an alert cover the money; a health check covers downtime. | Medium: one GPU, cold starts, a pod can be lost. | Depends on the judge's machine: Node 22.18+, ffmpeg. |
 | **Open weights story** | Shows it, runs nothing. | Open weights on rented GPUs (*"Rented GPUs still count"*, says the form). | The purest: our own ComfyUI, partner-free. | Their choice. |
 
@@ -42,7 +42,7 @@ RunPod (a partner) is worth one afternoon to film the "your own GPU" beat, not f
 - `COMFYTURE_OPEN_WEIGHTS` makes the server refuse partner templates (`server/comfy-templates.ts`, tested); Spice and Utensils do not
   hide them yet (pressing one says why it is refused).
 - `scripts/demo-site.ts` reads `COMFYTURE_DATA`, so it can be built from a clean folder the server has seeded with the examples
-  (README: "A live demo without a server"). It still snapshots Kitchen's lists only.
+  (README: "A live demo without a server"). It records every product's reads and plays every tour; the build needs Playwright.
 
 | File | What it does |
 |---|---|
@@ -112,12 +112,11 @@ RunPod (a partner) is worth one afternoon to film the "your own GPU" beat, not f
 
 To-dos first:
 
-- `scripts/demo-site.ts` reads your own `data/` folder today and publishes **every finished take in it**. It must build from a clean
-  folder instead: a temporary one seeded with `examples/` through `server/examples.ts`, never `data/`.
-- It only snapshots Kitchen's endpoints (`info`, `presets`, `samples`, `runs`, `reels`, `photos`; see `web/js/api.js`). Add the
-  other products' lists (stages, Spice shots, Jam videos and edits, brands, Toaster projects, songs) so every product opens on its
-  example, and say "Rendering is off in the live demo" wherever a key is pressed.
-- The build fails if any output file contains a key (`comfyui-` followed by 20+ characters).
+- `scripts/demo-site.ts` is done: it builds from a temporary folder seeded with `examples/` (never `data/`), records every product's reads
+  and every tour with a headless browser, and `tests/demo-site.browser.mjs` plays the result under a sub-path.
+- ✅ The build fails if any output file contains a key (`comfyui-` followed by 20+ characters).
+- Before publishing it: the site copies all of `web/`, Mixer's trend previews and the frames derived from other creators' videos
+  included, so it carries the same risk as the public repo until D1 is settled ([README.md](README.md)).
 - `.github/workflows/pages.yml`: build on the submission tag, publish to Pages.
 
 Then: make the repo public (Pages is free for public repos), run the workflow (or `npm run demo-site && npx gh-pages -d site --dotfiles`),

@@ -1,12 +1,10 @@
-// The live demo is the same app as static files: reads come from a snapshot, and
+// The live demo is the same app as static files: reads come from a snapshot (js/static-demo.js), and
 // anything that would render answers that rendering is off there.
 export const STATIC = document.documentElement.hasAttribute("data-static");
-const SNAPSHOT = { "api/info": "api/info.json", "api/presets": "api/presets.json", "api/samples": "api/samples.json", "api/runs": "api/runs.json", "api/reels": "api/reels.json", "api/photos": "api/photos.json" };
 
 async function request(path, init) {
   if (STATIC) {
     if (init?.method && init.method !== "GET") throw new Error("This is the live demo, so rendering is off. Run Comfyture yourself to roll takes: see the README.");
-    path = SNAPSHOT[path] ?? path;
   }
   const res = await fetch(path, init);
   const body = await res.json().catch(() => ({}));

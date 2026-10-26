@@ -35,7 +35,7 @@ const save = () => {
 const update = () => (save(), changed("utensils"));
 
 /** Which library folder a file is in, from where its address says it is. */
-export const folderOf = (url) => (url.startsWith("/media/videos/") ? "videos" : url.startsWith("/media/edits/") ? "edits" : "audio");
+export const folderOf = (url) => (url.includes("media/videos/") ? "videos" : url.includes("media/edits/") ? "edits" : "audio");
 /** The length of the mix: where the last sound ends (at least a few seconds, so the ruler has something to measure). */
 export const mixLength = () => Math.max(8, ...mix.tracks.map((t) => (t.offset || 0) + (t.seconds || 0)));
 

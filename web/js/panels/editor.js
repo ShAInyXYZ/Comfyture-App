@@ -110,7 +110,7 @@ function layerOf(it, kind) {
     else if (kind === "sticker") el = h("img.cut-sticker", { draggable: false, alt: "" });
     else if (s?.color) el = h("div.cut-layer.is-color");
     else if (s?.still) el = h("img.cut-layer", { draggable: false });
-    else el = h("video.cut-layer", { playsInline: true, preload: "auto", ...(poster && !(Number(it.from) > 0.2) ? { poster: `/media/photos/${poster}` } : {}) });
+    else el = h("video.cut-layer", { playsInline: true, preload: "auto", ...(poster && !(Number(it.from) > 0.2) ? { poster: `media/photos/${poster}` } : {}) });
     el.dataset.url = url ?? "";
     el.dataset.id = it.id;
     if (s?.color) el.style.background = s.color;

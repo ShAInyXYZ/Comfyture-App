@@ -110,7 +110,7 @@ export async function runEdit(key, i, set) {
   return made.map((r) => ({
     kind: r.kind,
     // (only a clip kept in the library of clips can be handed on to another tool)
-    ...(r.url.startsWith("/media/videos/") || r.kind !== "video" ? { file: r.file } : {}),
+    ...(r.url.includes("media/videos/") || r.kind !== "video" ? { file: r.file } : {}),
     url: r.url, width: r.width, height: r.height, seconds: r.duration, bytes: r.bytes, ext: r.ext,
     ...(r.animated ? { animated: true } : {}),
     note: noteOf(key, r),

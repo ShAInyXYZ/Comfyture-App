@@ -314,7 +314,7 @@ export function createStage(on) {
     if (showResult) {
       const r = ctx.result;
       out.push(h("a.ut-iconkey.is-over", { href: `${r.url}?download=${r.url.split("/").pop()}`, download: r.url.split("/").pop(), title: "Download", "aria-label": "Download" }, icon("download")));
-      if (r.kind === "video" && r.file && r.url.startsWith("/media/videos/")) out.push(h("button.ut-iconkey.is-over", { type: "button", title: "Use it as the clip to work on", "aria-label": "Use as the clip", on: { click: () => on.open(r) } }, icon("remix")));
+      if (r.kind === "video" && r.file && r.url.includes("media/videos/")) out.push(h("button.ut-iconkey.is-over", { type: "button", title: "Use it as the clip to work on", "aria-label": "Use as the clip", on: { click: () => on.open(r) } }, icon("remix")));
     }
     keys.replaceChildren(...out);
     keys.classList.toggle("is-loading", !!ctx.preview?.busy);

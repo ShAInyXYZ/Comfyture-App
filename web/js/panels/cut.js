@@ -21,7 +21,7 @@ function mediaItems() {
   const q = bin.query.trim().toLowerCase();
   const has = (name) => !q || String(name ?? "").toLowerCase().includes(q);
   if (bin.tab === "video") {
-    const takes = state.runs.filter((r) => r.status === "done" && has(r.request?.name)).map((r) => ({ kind: "video", name: r.request?.name ?? r.id, src: { kind: "take", id: r.id }, poster: r.request?.start ? `/media/photos/${r.request.start}` : null, url: r.video, seconds: r.length ?? r.request?.seconds }));
+    const takes = state.runs.filter((r) => r.status === "done" && has(r.request?.name)).map((r) => ({ kind: "video", name: r.request?.name ?? r.id, src: { kind: "take", id: r.id }, poster: r.request?.start ? `media/photos/${r.request.start}` : null, url: r.video, seconds: r.length ?? r.request?.seconds }));
     const films = state.films.filter((f) => has(f.name)).map((f) => ({ kind: "video", name: f.name, src: { kind: "film", id: f.id }, url: f.url, seconds: f.seconds, film: true }));
     return [...takes, ...films].slice(0, 120);
   }

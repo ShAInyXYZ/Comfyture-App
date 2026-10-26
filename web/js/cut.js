@@ -79,12 +79,12 @@ export function sourceOf(src) {
   }
   if (src.kind === "film") {
     const f = state.films.find((x) => x.id === src.id);
-    return { url: f?.url ?? `/media/reels/${src.id}.mp4`, duration: f?.seconds ?? src.duration ?? 5, name: f?.name ?? src.name };
+    return { url: f?.url ?? `media/reels/${src.id}.mp4`, duration: f?.seconds ?? src.duration ?? 5, name: f?.name ?? src.name };
   }
-  if (src.kind === "video") return { url: `/media/videos/${src.id}`, duration: src.duration ?? 5, name: src.name };
-  if (src.kind === "photo") return { url: src.url ?? `/media/photos/${src.id}`, duration: 3600, name: src.name, still: true, width: src.width, height: src.height };
+  if (src.kind === "video") return { url: `media/videos/${src.id}`, duration: src.duration ?? 5, name: src.name };
+  if (src.kind === "photo") return { url: src.url ?? `media/photos/${src.id}`, duration: 3600, name: src.name, still: true, width: src.width, height: src.height };
   // (a sound named without its length, as Jam's and Mixer's are, runs as long as the library says it does)
-  if (src.kind === "audio") return { url: src.url ?? `/media/audio/${src.id}`, duration: src.duration ?? cut.audio?.find((a) => a.file === src.id)?.seconds ?? 5, name: src.name };
+  if (src.kind === "audio") return { url: src.url ?? `media/audio/${src.id}`, duration: src.duration ?? cut.audio?.find((a) => a.file === src.id)?.seconds ?? 5, name: src.name };
   // a sticker of ours (a picture with its own shape), and a plain colour standing in for a picture not made yet
   if (src.kind === "sticker") return { url: `brand/jam/stickers/${src.id}.png`, duration: 3600, name: src.name ?? STICKERS.list.find((x) => x.id === src.id)?.name ?? "Sticker", still: true };
   if (src.kind === "color") return { url: null, color: `#${String(src.id).replace("#", "")}`, duration: 3600, name: src.name ?? "Colour", still: true };

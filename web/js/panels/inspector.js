@@ -262,7 +262,7 @@ function clipPanel(it, t, s, head, name, ctx) {
         !t.main ? num("Opacity", (it.opacity ?? 1) * 100, (v) => setItem(it.id, { opacity: v / 100 }), { min: 0, max: 100, step: 1, unit: "%" }) : null,
         num("Fade in", it.fadeIn ?? 0, (v) => setItem(it.id, { fadeIn: v }), { max: 5 }), num("Fade out", it.fadeOut ?? 0, (v) => setItem(it.id, { fadeOut: v }), { max: 5 })),
       h("div.cut-grades", { role: "group", "aria-label": "Colour" }, ...GRADES.map(([g, label, css]) => h("button", { type: "button", title: label, "aria-pressed": String((it.grade ?? "natural") === g), on: { click: () => setItem(it.id, { grade: g === "natural" ? undefined : g }) } },
-        s?.still || it.src?.kind !== "take" ? h("i", { style: { filter: css } }) : h("img", { src: state.runs.find((r) => r.id === it.src.id)?.request?.start ? `/media/photos/${state.runs.find((r) => r.id === it.src.id).request.start}` : "", alt: "", style: { filter: css }, draggable: false }),
+        s?.still || it.src?.kind !== "take" ? h("i", { style: { filter: css } }) : h("img", { src: state.runs.find((r) => r.id === it.src.id)?.request?.start ? `media/photos/${state.runs.find((r) => r.id === it.src.id).request.start}` : "", alt: "", style: { filter: css }, draggable: false }),
         h("span", {}, label))))));
     if (t.main && t.items.indexOf(it) > 0) sections.push(h("section.cut-sec", {}, h("span.cut-label", {}, "Into this clip"),
       h("div.segment", { role: "group" }, ...[["cut", "Cut", "A straight cut"], ["dissolve", "Dissolve", "A one-second dissolve"], ["whip", "Whip", "A fast tilt up into the clip, over the last fifth of a second of the one before: for a reveal"]].map(([id, label, tip]) =>

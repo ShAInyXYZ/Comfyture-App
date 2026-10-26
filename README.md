@@ -235,7 +235,7 @@ To check the connection without the app, run `npm run check`. It runs a tiny wor
 
 ### A live demo without a server
 
-`npm run demo-site` writes `site/`: the app as static files, with your presets, the sample photos and every finished take in your take log. To publish only the examples and never your own work, build it from a clean folder the server has seeded once: `COMFYTURE_DATA=/tmp/clean npm start`, stop it, then `COMFYTURE_DATA=/tmp/clean npm run demo-site`. Presets and takes play, prompts and workflows are all there; rolling is off. Publish the folder on any static host. For GitHub Pages:
+`npm run demo-site` writes `site/`: the whole app as static files, every product open on its shipped example and every guided tour playable, with no server, no GPU and no key. The build needs Playwright (`PLAYWRIGHT_MODULE=<its folder>` if it is not installed here). It starts the app's own server on a fresh data folder that holds only the examples (your `data/` is never read) and with no key and no Comfy to reach, opens every page in a headless browser at two sizes, plays each tour to its end, and writes down every read the pages make; those answers and the files they fetch become `site/`. In the browser, the static copy answers the reads from that snapshot, so prompts, workflows, takes, films and songs are all there. Rolling, uploads and the pets' answers are off, and the header says "Live demo · rendering is off". Publish the folder on any static host. For GitHub Pages:
 
 ```bash
 npm run demo-site

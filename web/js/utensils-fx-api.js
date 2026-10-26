@@ -37,6 +37,6 @@ export const fxCaps = () => (caps ??= call("capabilities", "GET").catch(() => ({
 /** What an effect made, in the shape the shelf keeps. Only a clip kept in the library of clips can be handed on to another tool. */
 export const asResult = (r, note, extra = {}) => ({
   kind: r.kind,
-  ...(r.url.startsWith("/media/videos/") || r.url.startsWith("/media/audio/") ? { file: r.file } : {}),
+  ...(r.url.includes("media/videos/") || r.url.includes("media/audio/") ? { file: r.file } : {}),
   url: r.url, width: r.width, height: r.height, seconds: r.duration, bytes: r.bytes, ext: r.ext, note: note ?? r.note, ...(r.kind === "audio" && r.name ? { name: r.name } : {}), ...extra,
 });

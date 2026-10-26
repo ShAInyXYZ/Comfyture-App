@@ -1,3 +1,5 @@
+// (the live demo's replay comes first, before anything asks the API)
+import "./static-demo.js";
 import { icon } from "./dom.js";
 import { installTooltips } from "./tooltip.js";
 import { state, load, onChange, roll, toast, changed } from "./store.js";

@@ -54,7 +54,7 @@ async function library() {
 
 function logo(i) {
   const m = makerById(i.maker);
-  return m ? h("span.wp-maker", { title: m.by ? `${m.name} · ${m.by}` : m.name }, h("i", { style: { "--logo": `url("/brand/makers/mono/${m.id}.svg")` } }), h("span", {}, m.name)) : null;
+  return m ? h("span.wp-maker", { title: m.by ? `${m.name} · ${m.by}` : m.name }, h("i", { style: { "--logo": `url("${new URL(`brand/makers/mono/${m.id}.svg`, document.baseURI)}")` } }), h("span", {}, m.name)) : null;
 }
 
 /** A workflow's preview: its picture, and its "after" when Comfy gives one (a slider for a before/after, a dissolve on hover). */
