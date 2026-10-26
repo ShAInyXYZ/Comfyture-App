@@ -238,14 +238,20 @@ export function createToaster3d({ data, root, photoPath }: { data: string; root:
           g[saver].inputs.filename_prefix = `3D/Comfyture/${job.id}-${s.id}`;
           const onFraction = (f: number) => (job.progress = Math.max(job.progress, Math.min(0.99, before + f * s.weight)));
           let out;
-          try {
-            out = await runGraph(g, onFraction);
-          } catch (e: any) {
-            // the exterior repair refuses to flip more than its limit of the faces, and a lighter shape can ask for more: the surface is
-            // rebuilt as one closed solid right after, so the limit is lifted once and the stage run again
-            if (s.id !== "refine" || !/would flip/.test(String(e?.message)) || !g["35"]) throw e;
-            g["35"].inputs.max_flip_percent = 45;
-            out = await runGraph(g, onFraction);
+          for (let attempt = 0; ; attempt++) {
+            try {
+              out = await runGraph(g, onFraction);
+              break;
+            } catch (e: any) {
+              // the refiner's checks refuse a surface they would have to change too much (a share of the faces flipped, of the faces split) and the
+              // surface is rebuilt as one closed solid right after: its limit is lifted, and the stage run again (twice at most)
+              const why = String(e?.message);
+              const flips = /would flip/.test(why) && g["35"];
+              const seams = /Non-orientable regions/.test(why) && g["20"];
+              if (s.id !== "refine" || attempt >= 2 || !(flips || seams)) throw e;
+              if (flips) g["35"].inputs.max_flip_percent = 45;
+              if (seams) g["20"].inputs.max_split_percent = 5;
+            }
           }
           const o = out[saver];
           mesh = o?.text?.[0];

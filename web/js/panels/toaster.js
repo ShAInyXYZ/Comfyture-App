@@ -1368,7 +1368,7 @@ function drawNewScene3d() {
     head("New scene", b.models,
       h("div.ts-seg", { role: "group", "aria-label": "What the scene shows" }, ...[["blockout", "Blockout", "The clay blockout: every object as the placeholder it was drawn from"], ["assets", "Assets", "The 3D assets that are made, standing where their clay was (the rest stays clay)"]].map(([id, label, about]) =>
         h("button", { type: "button", "aria-pressed": String(sceneView() === id), title: about, on: { click: () => setSceneView(id) } }, label))),
-      ...[["persp", "view-persp", "Three-quarter view"], ["front", "view-front", "From the front"], ["right", "view-side", "From the side"], ["top", "view-top", "From above"]].map(([side, glyph, label]) =>
+      ...[["persp", "view-persp", "Three-quarter view"], ["front", "view-front", "From the front"], ["right", "view-side", "From the right"], ["back", "view-back", "From behind"], ["left", "view-side", "From the left"], ["top", "view-top", "From above"]].map(([side, glyph, label]) =>
         keyIcon(sprite(glyph), `${label}: the way to see how each object stands`, () => scene3d?.handle?.view(side), { small: true })),
       keyIcon(icon("download"), "Download the scene as one GLB", () => downloadScene(), { disabled: !made, small: true }),
       keyIcon(sprite("model-import"), "Put every model on the Stage, as props", () => putAllOnStage(), { disabled: !made, small: true })),

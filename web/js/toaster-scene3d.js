@@ -84,13 +84,36 @@ export function mountScene(el) {
     mesh.userData.room = room;
     return mesh;
   };
-  /** A model fitted in its part's box: as large as fits, centred on the box and standing on its floor. */
-  const fit = (model, size) => {
+  // How well a model's width, height and depth (as proportions of its longest side) say what its clay's did: the sum of the gaps of their logs, a
+  // thin side counting no less than a tenth (a plank's clay is two centimetres thin, its model is not)
+  const unlike = (have, want) => {
+    const norm = (v) => v.map((x) => Math.max(0.1, x / Math.max(...v)));
+    const a = norm(have);
+    const b = norm(want);
+    return a.reduce((n, x, i) => n + Math.abs(Math.log(x / b[i])), 0);
+  };
+  /**
+   * A model fitted to its part: stood up the way its clay stands (a generator may lay a long thing on its side: a plank came out along x where its
+   * clay is tall; it is rolled a quarter turn only when that is clearly the better match), as tall as its clay was (the height says the clay best:
+   * a tail sticks out, a plank is thicker than its clay), centred on the clay in x and z and standing on its floor.
+   */
+  const fit = (model, size, upright = true) => {
     const m = model.clone(true);
-    const box = new THREE.Box3().setFromObject(m);
-    const have = box.getSize(new THREE.Vector3());
-    const k = Math.min(size[0] / Math.max(have.x, 1e-6), size[1] / Math.max(have.y, 1e-6), size[2] / Math.max(have.z, 1e-6));
-    m.scale.multiplyScalar(k);
+    m.position.set(0, 0, 0);
+    const v = new THREE.Vector3();
+    const dims = (rx, rz) => (m.rotation.set(rx, 0, rz), m.updateMatrixWorld(true), new THREE.Box3().setFromObject(m).getSize(v).toArray());
+    if (upright) {
+      const turns = [[0, 0], [0, Math.PI / 2], [Math.PI / 2, 0]];
+      const marks = turns.map(([rx, rz]) => unlike(dims(rx, rz), size));
+      const best = marks.indexOf(Math.min(...marks));
+      // (only a clear gain moves a model: a stool a little wider than its clay stays as it came)
+      const [rx, rz] = marks[0] - marks[best] > 0.6 ? turns[best] : turns[0];
+      m.rotation.set(rx, 0, rz);
+    } else m.rotation.set(0, 0, 0);
+    m.updateMatrixWorld(true);
+    const have = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
+    m.scale.multiplyScalar(size[1] / Math.max(have.y, 1e-6));
+    m.updateMatrixWorld(true);
     const b2 = new THREE.Box3().setFromObject(m);
     const c = b2.getCenter(new THREE.Vector3());
     m.position.set(-c.x, -size[1] / 2 - b2.min.y, -c.z);
@@ -143,7 +166,7 @@ export function mountScene(el) {
           entry.key = key;
           entry.group.clear();
           try {
-            entry.group.add(url ? fit(await load(url), p.size) : stand(p, view === "blockout"));
+            entry.group.add(url ? fit(await load(url), p.size, p.shape !== "character") : stand(p, view === "blockout"));
           } catch {
             entry.group.add(stand(p, view === "blockout"));
           }
