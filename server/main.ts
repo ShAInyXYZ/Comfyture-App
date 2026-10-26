@@ -29,16 +29,13 @@ import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
 import { UTENSILS_BRIEF, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer, utensilsCandidates } from "./utensils-assist.ts";
 import { SPICE_BRIEF, SPICE_TOOL, spicePrompt, readSpiceAnswer } from "./spice-assist.ts";
-import { loadTools, icFrames, promptOf, prepareFilter, compositeGraph, type ICSize } from "./iclora.ts";
-import { BAY_BRIEF, BAY_TOOL, bayPrompt, readBayAnswer } from "./bay-assist.ts";
-import { putBayExample } from "./bay-example.ts";
+import { createSpice, STORE as SPICE_STORE } from "./spice.ts";
 import { TOASTER_BRIEF, TOASTER_TOOL, toasterPrompt, readToasterAnswer, TOASTER_WRITE_BRIEF, writePrompt, readImprovedPrompt } from "./toaster-assist.ts";
 import { guideFor } from "./image-guides.ts";
-import { normaliseBody as spiceBody, FIRST as SPICE_FIRST } from "../web/js/spice-model.js";
-import { normaliseBody as bayBody, STAGE_IDS as BAY_STAGES } from "../web/js/spice2-model.js";
+import { normaliseBody as spiceBody } from "../web/js/spice-model.js";
 import { searchKnowledge, knowledgeById } from "./utensils-knowledge.ts";
 import { createEdit } from "./utensils-edit.ts";
-import { createFx, bakeArgs, deadlineOf, selfLimit } from "./utensils-fx.ts";
+import { createFx, deadlineOf, selfLimit } from "./utensils-fx.ts";
 import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templates.ts";
 import { createToaster3d } from "./toaster-3d.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
@@ -164,6 +161,9 @@ function followTarget(t: Target) {
   const key = process.env.COMFY_API_KEY?.trim();
   library = target.kind === "comfy-cloud" && key ? new CloudLibrary(key) : null;
 }
+
+// Spice: the AI VFX suite (server/spice.ts), on the engine's graphs and the template runner
+const spiceSuite = createSpice({ data, root, ffmpeg, engine, templates, probeVideo, exec, inside, exists, readProject, writeProject, stamp: () => stamp() });
 
 // ---------------------------------------------------------------- helpers
 
@@ -497,18 +497,7 @@ function summary(kind: string, body: any) {
     const designs: any[] = Array.isArray(body?.designs) ? body.designs.filter((d: any) => !d?.variant) : [];
     return { designs: designs.length, approved: designs.filter((d) => d?.status === "approved").length, motion: Array.isArray(body?.motion) ? body.motion.length : 0, exports: Array.isArray(body?.exports) ? body.exports.length : 0 };
   }
-  if (kind === "spice-bays") {
-    // Spice's bay: how many stages have a pass, how many takes in all, and what each run cost (the panel adds up the day's credits)
-    const stages: any = body?.stages ?? {};
-    const log: any[] = Array.isArray(body?.log) ? body.log : [];
-    return { passes: BAY_STAGES.filter((id) => stages[id]?.mark).length, takes: BAY_STAGES.reduce((n, id) => n + (Array.isArray(stages[id]?.takes) ? stages[id].takes.length : 0), 0), log: log.slice(-60).map((e) => ({ at: String(e?.at ?? ""), credits: Number(e?.credits) || 0 })) };
-  }
-  if (kind === "spice-shots") {
-    // Spice's shot: how many departments have made their pass, and what each cost (the panel adds up the day's credits)
-    const passes: any[] = Object.values(body?.passes ?? {}).filter((p: any) => p?.media);
-    const log: any[] = Array.isArray(body?.log) ? body.log : [];
-    return { passes: passes.length, log: log.slice(-60).map((e) => ({ at: String(e?.at ?? ""), credits: Number(e?.credits) || 0 })) };
-  }
+  if (kind === SPICE_STORE) return spiceSuite.info(body);
   return {};
 }
 /** How long a script or a storyboard may run: a five-minute film needs room for fifteen scenes and their shots. */
@@ -661,7 +650,7 @@ async function projectRoute(kind: string, path: string, method: string, req: Inc
   if (method === "PUT") {
     const input = await jsonBody(req, 32 * 1024 * 1024);
     if (input.name !== undefined) p.name = text(input.name, 60) || p.name;
-    if (input.body !== undefined) p.body = kind === "spice-bays" ? bayBody(input.body) : input.body;
+    if (input.body !== undefined) p.body = kind === SPICE_STORE ? spiceBody(input.body) : input.body;
     if (typeof input.thumb === "string") p.thumb = input.thumb.slice(0, 400_000);
     p.updatedAt = new Date().toISOString();
     await writeProject(kind, p);
@@ -932,76 +921,6 @@ const dropFrom = (store: string) => async (id: string) => void (await rm(join(pr
 let lastStamp = 0;
 const stamp = () => new Date((lastStamp = Math.max(Date.now(), lastStamp + 1))).toISOString();
 
-/** Spice's bakes on their way: the frames sent so far (a folder under edits), the rate, and the clip whose sound goes with them. */
-const bakes = new Map<string, { dir: string; at: number; fps: number; frames: number; audio: string; audioFrom: number }>();
-
-/**
- * One of Spice's example shots (examples/spice/<shot>/shot.json beside its pictures and clips): each pass's media goes into the
- * library (data/videos or data/photos) so every department can work on it like footage of the person's own, and the shot is written as
- * Spice keeps one.
- */
-async function putSpiceShot(spec: any, folder: string, id: string, version: number) {
-  const body: any = spiceBody({ set: spec.set });
-  const at = stamp();
-  let thumb: string | undefined;
-  const rev = version > 1 ? `-r${version}` : "";
-  for (const [dept, p] of Object.entries<any>(spec.passes ?? {})) {
-    // a pass is a clip (in videos) or a picture (in photos), at the size its spec says
-    if (!(dept in body.passes) || !/^[\w.-]+\.(mp4|jpg|png|webp)$/.test(p.file)) continue;
-    const ext = p.file.split(".").pop().toLowerCase();
-    const pic = ext !== "mp4";
-    const file = `${id}-${dept}${rev}.${ext}`;
-    await mkdir(join(data, pic ? "photos" : "videos"), { recursive: true });
-    await copyFile(join(folder, p.file), join(data, pic ? "photos" : "videos", file));
-    const size = { width: Number(p.width) || 720, height: Number(p.height) || 480 };
-    const media: any = pic ? { kind: "image", url: `/media/photos/${file}`, file, ...size } : { kind: "video", url: `/media/videos/${file}`, file, ...size, seconds: p.seconds };
-    if (pic && dept === "plate") thumb ??= media.url;
-    if (p.still && /^[\w.-]+\.(jpg|png|webp)$/.test(p.still)) {
-      const still = `${id}-${dept}${rev}.${p.still.split(".").pop()}`;
-      await mkdir(join(data, "photos"), { recursive: true });
-      await copyFile(join(folder, p.still), join(data, "photos", still));
-      media.still = `/media/photos/${still}`;
-      thumb ??= media.still;
-    }
-    const to = pic ? SPICE_FIRST : SPICE_FIRST + Math.max(1, Math.round((Number(p.seconds) || 5) * 24)) - 1;
-    body.passes[dept] = dept === "plate"
-      ? { media, eye: true, fps: 24, name: String(p.name ?? "Plate"), from: SPICE_FIRST, to, at }
-      : { media, eye: true, from: SPICE_FIRST, to, note: String(p.note ?? ""), credits: 0, at, source: p.source === "cloud" ? "cloud" : "free", ...(dept === "roto" ? { type: "matte" } : {}) };
-    // Roto's pass is its subject's matte
-    const subject = dept === "roto" ? body.set.roto.subjects.find((x: any) => !x.media) : null;
-    if (subject) Object.assign(subject, { media, from: SPICE_FIRST, to, stale: false, at, credits: 0 });
-  }
-  // a shipped comp is the shot's export too: Comp offers it to download, as it does one exported here
-  const comp = body.passes.comp?.media;
-  if (comp?.url && !body.set.comp.exports?.length) {
-    const format = String(comp.file ?? comp.url).split(".").pop()!.toLowerCase();
-    body.set.comp.exports = [{ url: comp.url, format, at, width: comp.width, height: comp.height, ...(comp.seconds ? { seconds: comp.seconds } : {}) }];
-  }
-  // the clips its FX layers hold (an AI layer's clip), kept in the library beside its passes
-  for (const [i, l] of (body.set.fx.layers ?? []).entries()) {
-    const raw = spec.set?.fx?.layers?.[i]?.media;
-    if (!raw || !/^[\w.-]+\.mp4$/.test(raw.file ?? "")) continue;
-    const file = `${id}-layer${i}${rev}.mp4`;
-    await copyFile(join(folder, raw.file), join(data, "videos", file));
-    l.media = { kind: "video", url: `/media/videos/${file}`, file, width: Number(raw.width) || 720, height: Number(raw.height) || 480, seconds: Number(raw.seconds) || 5 };
-  }
-  // the takes of the IC-LoRA suite the example ships (each a clip it was made as, and the copy of the footage it was made from), kept in the library
-  const takes: any[] = Array.isArray(spec.set?.gen?.takes) ? spec.set.gen.takes.slice(0, 40) : [];
-  body.set.gen.takes = [];
-  for (const [i, t] of takes.entries()) {
-    const put = async (m: any, tag: string) => {
-      if (!m || !/^[\w.-]+\.mp4$/.test(m.file ?? "")) return null;
-      const file = `${id}-gen${i}${tag}${rev}.mp4`;
-      await copyFile(join(folder, m.file), join(data, "videos", file));
-      return { kind: "video", url: `/media/videos/${file}`, file, width: Number(m.width) || 720, height: Number(m.height) || 1280, seconds: Number(m.seconds) || 2 };
-    };
-    const media = await put(t.media, "");
-    if (!media || !/^[\w-]{1,40}$/.test(String(t.tool ?? ""))) continue;
-    const input = await put(t.input, "in");
-    body.set.gen.takes.push({ id: `g-ex-${i}`, at, tool: t.tool, words: String(t.words ?? "").slice(0, 600), strength: Number(t.strength) || 1, size: t.size === "standard" ? "standard" : "draft", seconds: media.seconds, credits: 0, example: true, media, ...(input ? { input, inputLabel: String(t.inputLabel ?? "").slice(0, 60) } : {}) });
-  }
-  await writeProject("spice-shots", { id, name: String(spec.name ?? "Example"), createdAt: at, updatedAt: at, ...(thumb ? { thumb } : {}), body } as Project);
-}
 
 /**
  * One of Jam's showcase videos (examples/jam/<id>/project.json beside its media): its media into the library, its video into data/jams
@@ -1079,7 +998,7 @@ async function putSong(spec: any, folder: string, id: string) {
     jam: id,
     ...(timingOf(spec.timing) ? { timing: timingOf(spec.timing) } : {}),
   }, true);
-  const song = { file, url: `/media/audio/${file}`, seconds, name: text(spec.name, 60) || id, kind: "made", ...(cover ? { cover } : {}), prompt: text(s.tags, 800), lyrics: typeof s.lyrics === "string" ? s.lyrics.slice(0, 3000) : "", ...(Number.isFinite(s.bpm) ? { bpm: s.bpm } : {}), ...(timingOf(spec.timing) ? { timing: timingOf(spec.timing) } : {}) };
+  const song = { file, url: `/media/audio/${file}`, seconds, name: text(spec.name, 60) || id, kind: "made", ...(cover ? { cover } : {}), prompt: text(s.tags, 2500), lyrics: typeof s.lyrics === "string" ? s.lyrics.slice(0, 3000) : "", ...(Number.isFinite(s.bpm) ? { bpm: s.bpm } : {}), ...(timingOf(spec.timing) ? { timing: timingOf(spec.timing) } : {}) };
   const now = stamp();
   await writeProject("jams", { id, name: song.name, createdAt: now, updatedAt: now, ...(cover ? { thumb: cover } : {}), body: { track: song, bpm: song.bpm ?? null, captions: "karaoke", every: 2, looks: {} } });
 }
@@ -1169,9 +1088,7 @@ async function dropStory(id: string) {
 
 /** The examples of each store: Kitchen's film, Spice's shots, Jam's showcase videos and songs, Macaron's brands (Comfyture's own), Toaster's drafts. */
 const EXAMPLE_KINDS: Record<string, ExampleKind> = {
-  // (the AI edit bay's examples: its clip and the takes it ships, as results the example stands in for)
-  "spice-bays": { name: "bay", dir: join(EXAMPLES, "bay"), spec: "bay.json", ledger: ledgerOf("spice-bays"), kept: keptIn("spice-bays"), drop: dropFrom("spice-bays"), put: (spec, folder, id, rev) => putBayExample(spec, folder, id, rev, { data, stamp, write: (p) => writeProject("spice-bays", p as Project) }) },
-  "spice-shots": { name: "spice", dir: join(EXAMPLES, "spice"), spec: "shot.json", ledger: ledgerOf("spice-shots"), kept: keptIn("spice-shots"), drop: dropFrom("spice-shots"), put: putSpiceShot },
+  [SPICE_STORE]: { name: "spice", dir: join(EXAMPLES, "spice"), spec: "scenario.json", ledger: ledgerOf(SPICE_STORE), kept: keptIn(SPICE_STORE), drop: dropFrom(SPICE_STORE), put: (spec, folder, id, rev) => spiceSuite.putExample(spec, folder, id, rev) },
   // (before the videos: the songs' own jams are then older, and Jam opens on its showcase video first)
   songs: { name: "jam songs", dir: join(EXAMPLES, "songs"), spec: "song.json", ledger: join(data, "audio", ".seeded"), kept: keptSong, drop: dropSong, put: putSong },
   jams: {
@@ -1765,12 +1682,15 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   // a store's examples are in before it is first served
   const store = /^\/api\/([\w-]+)/.exec(path)?.[1];
   if (store && store in EXAMPLE_KINDS && method === "GET") await seedStore(store);
-  for (const kind of ["stories", "cuts", "mixes", "brands", "jams", "spice-shots", "spice-bays", "toasts"]) {
+  for (const kind of ["stories", "cuts", "mixes", "brands", "jams", SPICE_STORE, "toasts"]) {
     if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {
       const answered = await projectRoute(kind, path, method, req, res);
       if (answered !== false) return answered;
     }
   }
+  // Spice's tools, and one run of a tool on a clip (server/spice.ts)
+  const spiced = await spiceSuite.route(method, path, () => jsonBody(req));
+  if (spiced) return json(res, spiced.status, spiced.body);
   if (path === "/api/utensils/assist" && method === "POST") {
     // Truffle reads the shelf, the tool open and the library's newest files, and answers with what to set up; nothing runs here
     const input = await jsonBody(req, 256 * 1024);
@@ -1783,18 +1703,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (process.env.COMFYTURE_DEBUG) console.log(`truffle answered\n${reply}`);
     return json(res, 200, readUtensilsAnswer(reply, summary, candidates));
   }
-  if (path === "/api/bay/assist" && method === "POST") {
-    // Paprika reads the shot, its stages and the engines of the stage open, and answers with what to set up; nothing runs here
-    const input = await jsonBody(req, 256 * 1024);
-    const turns = petTurns(input.messages);
-    if (!turns.length) throw bad("Say what to do.");
-    const summary = input.bay && typeof input.bay === "object" ? input.bay : {};
-    const reply = await petAnswer(pickLlm(input.model, "assistant"), BAY_BRIEF, BAY_TOOL, bayPrompt(summary, turns));
-    if (process.env.COMFYTURE_DEBUG) console.log(`paprika answered\n${reply}`);
-    return json(res, 200, readBayAnswer(reply, summary));
-  }
   if (path === "/api/spice/assist" && method === "POST") {
-    // Paprika reads the shot, its passes and the department open, and answers with what to set up; nothing runs here
+    // Paprika reads the scenario, the shot open, its chain and the tool picked, and answers with what to set up; nothing runs here
     const input = await jsonBody(req, 256 * 1024);
     const turns = petTurns(input.messages);
     if (!turns.length) throw bad("Say what to do.");
@@ -1910,120 +1820,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (!source) throw bad("Add a picture to cut out.");
     return json(res, 202, engine.clearCutout(source));
   }
-  // Spice's bake of FX's layers on a clip: the page draws every frame of the composite (spice-layers.js, what the viewer showed) and sends
-  // it here as a JPEG; ffmpeg makes the clip of them with the sound of the clip they were drawn over, kept in the library
-  if (path === "/api/spice/bake" && method === "POST") {
-    if (!ffmpeg) throw bad("Spice needs ffmpeg on the server.", 501);
-    const input = await jsonBody(req);
-    const audio = typeof input.audio === "string" ? inside(join(data, "videos"), input.audio) : "";
-    const id = randomBytes(6).toString("hex");
-    const dir = join(data, "edits", `bake-${id}`);
-    await mkdir(dir, { recursive: true });
-    for (const [k, b] of bakes) if (Date.now() - b.at > 60 * 60_000) (bakes.delete(k), await rm(b.dir, { recursive: true, force: true }));
-    bakes.set(id, { dir, at: Date.now(), fps: num(input.fps, 1, 120, 24), frames: Math.round(num(input.frames, 1, 24 * 120, 1)), audio: audio && (await exists(audio)) ? audio : "", audioFrom: num(input.audioFrom, 0, 36_000, 0) });
-    return json(res, 200, { id });
-  }
-  const bakeStep = /^\/api\/spice\/bake\/([a-f0-9]{12})\/(\d{1,5}|done)$/.exec(path);
-  if (bakeStep) {
-    const b = bakes.get(bakeStep[1]);
-    if (!b) throw bad("That bake is over. Bake again.", 404);
-    if (bakeStep[2] !== "done" && method === "PUT") {
-      const n = Number(bakeStep[2]);
-      if (n >= b.frames) throw bad("That frame is past the end.");
-      const bytes = await body(req, 40 * 1024 * 1024);
-      if (bytes[0] !== 0xff || bytes[1] !== 0xd8) throw bad("A frame is a JPEG.", 415);
-      await writeFile(join(b.dir, `f${String(n).padStart(5, "0")}.jpg`), bytes);
-      b.at = Date.now();
-      return json(res, 200, { ok: true });
-    }
-    if (bakeStep[2] === "done" && method === "POST") {
-      try {
-        const out = join(b.dir, "out.mp4");
-        // (killed past its deadline, never waited on for ever)
-        await exec("ffmpeg", [...selfLimit(deadlineOf(b.frames / b.fps)), ...bakeArgs(b, out)], { maxBuffer: 1 << 20, timeout: deadlineOf(b.frames / b.fps), killSignal: "SIGKILL" }).catch((e) => {
-          throw new Error(`The clip could not be made: ${whyFfmpegFailed(e)}`);
-        });
-        const bytes = await readFile(out);
-        const name = `${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}.mp4`;
-        const kept = join(data, "videos", name);
-        if (!(await exists(kept))) await writeFile(kept, bytes);
-        const v = await probeVideo(kept);
-        return json(res, 200, { kind: "video", file: name, url: `/media/videos/${name}`, width: v.width, height: v.height, seconds: v.duration });
-      } finally {
-        bakes.delete(bakeStep[1]);
-        await rm(b.dir, { recursive: true, force: true });
-      }
-    }
-  }
-  if (path === "/api/spice/matte-picture" && method === "POST") {
-    // Spice's Roto on a picture: the subject's matte from its clicks (pixels of the picture) or its name
-    const input = await jsonBody(req);
-    const source = await photo(input.picture);
-    if (!source) throw bad("The picture is missing. Add it again.");
-    const points = (list: unknown) => (Array.isArray(list) ? list : []).slice(0, 24).filter((p: any) => Number.isFinite(p?.x) && Number.isFinite(p?.y)).map((p: any) => ({ x: Math.round(Math.max(0, p.x)), y: Math.round(Math.max(0, p.y)) }));
-    const positive = points(input.positive);
-    const name = text(input.text, 120);
-    if (!positive.length && !name) throw bad("Click the subject or name it.");
-    return json(res, 202, engine.matteImage(source, { text: name, positive, negative: points(input.negative) }));
-  }
-  // Spice's IC-LoRA suite (server/iclora.ts): the tools there are, and one run of a tool on a clip
-  if (path === "/api/spice/ic" && method === "GET") return json(res, 200, await loadTools(join(root, "workflows")));
-  if (path === "/api/spice/ic" && method === "POST") {
-    if (!ffmpeg) throw bad("Video tools need ffmpeg on the server.", 501);
-    const input = await jsonBody(req);
-    const suite = await loadTools(join(root, "workflows"));
-    const tool = suite.tools.find((t) => t.id === input.tool);
-    if (!tool) throw bad("That tool is not in the suite.");
-    if (tool.needs?.length) throw bad(`${tool.name} needs ${tool.needs.join(" and ")}: not offered yet.`);
-    let file = typeof input.video === "string" ? input.video : "";
-    let where = inside(join(data, "videos"), file);
-    if (!where || !(await exists(where))) throw bad("The video is missing. Add it again.");
-    const info = await probeVideo(where);
-    const size: ICSize = input.size === "standard" ? "standard" : "draft";
-    const seconds = num(input.seconds, 1, 10, 2);
-    const frames = icFrames(seconds, info.frames);
-    // a tool that is shown more than the clip (a canvas to widen, a region to fill) gets the clip made ready first, on this machine
-    const region = input.region && typeof input.region === "object" ? { x: num(input.region.x, 0, 1, 0), y: num(input.region.y, 0, 1, 0), w: num(input.region.w, 0.02, 1, 0.3), h: num(input.region.h, 0.02, 1, 0.3) } : undefined;
-    const vf = prepareFilter(tool, { aspect: input.aspect === undefined ? undefined : num(input.aspect, 0.25, 4, 1), region });
-    if (vf) {
-      const made = `${file.replace(/\.\w+$/, "")}-${createHash("sha256").update(`${tool.id}${vf}`).digest("hex").slice(0, 8)}.mp4`;
-      const out = join(data, "videos", made);
-      if (!(await exists(out))) await exec("ffmpeg", ["-nostdin", "-v", "error", "-y", "-i", where, "-an", "-vf", `${vf},format=yuv420p`, "-c:v", "libx264", "-crf", "12", "-preset", "fast", out]);
-      file = made;
-    }
-    const original = where;
-    const keep = async (made: Buffer) => {
-      let bytes = made;
-      // a widened or filled run is merged with the footage where the footage stood (server/iclora.ts compositeGraph)
-      if (vf) {
-        const tmp = join(data, "videos", `ic-draw-${randomBytes(4).toString("hex")}.mp4`);
-        const merged = `${tmp}.merged.mp4`;
-        try {
-          await writeFile(tmp, made);
-          const drawn = await probeVideo(tmp);
-          const graph = compositeGraph(tool, { w: drawn.width, h: drawn.height }, { w: info.width, h: info.height }, { aspect: input.aspect === undefined ? undefined : num(input.aspect, 0.25, 4, 1), region });
-          if (graph) {
-            await exec("ffmpeg", ["-nostdin", "-v", "error", "-y", "-i", tmp, "-i", original, "-filter_complex", graph, "-map", "[out]", "-frames:v", String(drawn.frames), "-c:v", "libx264", "-crf", "14", "-preset", "fast", "-an", merged]);
-            bytes = await readFile(merged);
-          }
-        } catch (e) {
-          console.warn("the run could not be merged with the footage:", e instanceof Error ? e.message : e);
-        } finally {
-          await rm(tmp, { force: true });
-          await rm(merged, { force: true });
-        }
-      }
-      const name = `${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}.mp4`;
-      const out = join(data, "videos", name);
-      if (!(await exists(out))) await writeFile(out, bytes);
-      const v = await probeVideo(out);
-      return { file: name, url: `/media/videos/${name}`, width: v.width, height: v.height, duration: v.duration };
-    };
-    const strength = input.strength === undefined || input.strength === null ? undefined : num(input.strength, 0, 2.5, tool.strength);
-    const prompt = promptOf(tool, { scene: text(input.scene, 400), words: text(input.words ?? input.prompt, 600) }, suite.scene);
-    return json(res, 202, engine.videoJob("iclora", file, { prompt, frames, seed: randomBytes(4).readUInt32BE(0), ic: { tool, size, strength } }, keep));
-  }
-  if ((path === "/api/utensils/upscale-video" || path === "/api/utensils/sound" || path === "/api/spice/matte") && method === "POST") {
+  if ((path === "/api/utensils/upscale-video" || path === "/api/utensils/sound") && method === "POST") {
     if (!ffmpeg) throw bad("Video tools need ffmpeg on the server.", 501);
     const input = await jsonBody(req);
     const file = typeof input.video === "string" ? input.video : "";
@@ -2039,16 +1836,6 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       return { file: name, url: `/media/videos/${name}`, width: v.width, height: v.height, duration: v.duration };
     };
     const seed = randomBytes(4).readUInt32BE(0);
-    if (path.endsWith("matte")) {
-      // Spice's Roto: a subject tracked through the clip as a matte, from its clicks (pixels of the frame they were made on) or its name
-      const points = (list: unknown) => (Array.isArray(list) ? list : []).slice(0, 24).filter((p: any) => Number.isFinite(p?.x) && Number.isFinite(p?.y))
-        .map((p: any) => ({ x: Math.round(Math.min(Math.max(p.x, 0), info.width)), y: Math.round(Math.min(Math.max(p.y, 0), info.height)) }));
-      const positive = points(input.positive);
-      const name = text(input.text, 120);
-      if (!positive.length && !name) throw bad("Click the subject or name it.");
-      const key = Math.round(num(input.key, 0, Math.max(0, info.frames - 1), 0));
-      return json(res, 202, engine.videoJob("matte", file, { seed, frames: info.frames, matte: { text: name, positive, negative: points(input.negative), key } }, keep));
-    }
     if (path.endsWith("upscale-video")) {
       if (info.duration > 12) throw bad("Upscale clips of up to 12 seconds.");
       const height = [720, 1080, 1440].includes(input.height) ? input.height : 1080;

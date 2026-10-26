@@ -19,8 +19,7 @@ const LOADERS = {
   mixer: () => import("./tours/mixer.js"),
   jam: () => import("./tours/jam.js"),
   macaron: () => import("./tours/macaron.js"),
-  // (the bay at #/spice?bay has its own tour; the VFX house keeps its)
-  spice: () => (location.hash.includes("bay") ? import("./tours/bay.js") : import("./tours/spice.js")),
+  spice: () => import("./tours/spice.js"),
   toaster: () => import("./tours/toaster.js"),
   utensils: () => import("./tours/utensils.js"),
 };

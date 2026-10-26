@@ -1,241 +1,163 @@
-// Spice's tour: Paprika shows a newcomer around, on one of the example shots Spice ships (examples/spice/), up the comp stack from the
-// footage to the finish. Roto's cut-out, which costs credits on Comfy Cloud, is played for free: the example's own matte is what it shows.
-import { spice, loadShots, openShot, setDept, look } from "../spice.js";
-import { simulate } from "../tour.js";
+// Spice's tour: Paprika shows a newcomer around, on the example scenario Spice ships (examples/spice/), from the shots to the chain of
+// passes, the tools and their key. Every pass of the example is a real run; the tour spends nothing and keeps nothing (a look).
+import { spice, loadScenarios, openScenario, openShot, look, lookAt, setTool, body, shot } from "../spice.js";
+import { lookingAt } from "../spice-model.js";
 
 /**
- * The example the tour runs on: the newest of Spice's own (their ids begin "spice-example") whose footage is a clip, so the timeline has
- * frames to show; else the newest of them; else the shot open. Chosen once a page, then opened whenever a step needs it.
+ * The scenario the tour runs on: the newest of Spice's own (their ids begin "spice-example") that has a shot with passes; else the newest
+ * of them; else the one open. Chosen once a page, then opened whenever a step needs it.
  */
 let chosen = null;
 async function onExample() {
-  await loadShots();
+  await loadScenarios();
   const examples = spice.list.filter((s) => s.id.startsWith("spice-example")).sort((a, b) => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")));
   if (!examples.length) return;
-  if (!examples.some((s) => s.id === chosen)) {
-    chosen = examples[0].id;
-    for (const s of examples) {
-      const kind = await fetch(`api/spice-shots/${s.id}`).then((r) => r.json()).then((j) => j.project?.body?.passes?.plate?.media?.kind, () => null);
-      if (kind === "video") {
-        chosen = s.id;
-        break;
-      }
-    }
-  }
-  if (spice.shot?.id !== chosen) await openShot(chosen);
+  if (!examples.some((s) => s.id === chosen)) chosen = (examples.find((s) => (s.info?.passes ?? 0) > 0) ?? examples[0]).id;
+  if (spice.scenario?.id !== chosen) await openScenario(chosen);
 }
-/** The page drawn again after a change (the stack on the left is made anew when the shot or the department changes). */
+/** The page drawn again after a change. */
 const settle = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-const open = (dept) => async () => {
+const open = async () => {
   await onExample();
-  setDept(dept);
   await settle();
 };
-const body = () => spice.shot?.body ?? null;
-const isClip = () => body()?.passes.plate?.media.kind === "video";
-// (said mid-sentence: an article that starts the name is not capitalized, "the chick and her jar"; a name, "Pickle", stays as it is)
-const subject = () => (body()?.set.roto.subjects.find((s) => s.media)?.name ?? "the subject").replace(/^(The|A|An) /, (a) => a.toLowerCase());
-const layers = () => body()?.set.fx.layers.length ?? 0;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-
-/** The viewer's wipe swept to one side, to the other and back, so its before and its after are both seen (a look: the shot is not changed). */
-async function sweep() {
-  const stage = document.querySelector(".sp-viewer .sp-stage");
-  const wipe = stage?.querySelector(".sp-wipe");
-  if (!stage || !wipe || wipe.hidden) return;
-  const put = (v) => stage.style.setProperty("--wipe", `${v.toFixed(2)}%`);
-  const from = parseFloat(stage.style.getPropertyValue("--wipe")) || 50;
-  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  for (const [a, b] of [[from, 8], [8, 92], [92, from]]) {
-    if (still) {
-      put(b);
-      await wait(700);
-      continue;
-    }
-    await new Promise((done) => {
-      const t0 = performance.now();
-      const tick = (now) => {
-        const u = Math.min(1, (now - t0) / 850);
-        put(a + (b - a) * (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2));
-        if (u < 1) requestAnimationFrame(tick);
-        else done();
-      };
-      requestAnimationFrame(tick);
-    });
-    await wait(300);
+/** The shot of the example with the most passes, opened: the one the chain is best seen on. */
+const onBestShot = async () => {
+  await open();
+  const b = body();
+  const best = b?.shots.slice().sort((a, c) => c.passes.length - a.passes.length)[0];
+  if (best && b.open !== best.id) {
+    openShot(best.id);
+    await settle();
   }
-}
-
-/** The viewer's own play key: the clip plays once through, free (it was made already). */
-async function play() {
-  const key = document.querySelector(".sp-viewer .sp-iconkey.is-play");
-  if (!key || !isClip()) return;
-  if (!spice.playing) key.click();
-  const t0 = Date.now();
-  await wait(400);
-  while (spice.playing && Date.now() - t0 < 8000) await wait(200);
-}
+};
+const viewer = () => document.querySelector(".sp-viewer");
 
 export default {
   title: "Spice",
   steps: [
     {
-      go: open("plate"),
-      title: "One shot, seven departments",
-      text: "Hi, I'm **Paprika**. Spice is my VFX house: a shot goes through seven departments, and each one lays its pass on top of the last, so nothing is ever overwritten. We'll look at one of my examples: nothing is spent.",
+      go: open,
+      title: "The AI VFX suite",
+      text: "Hi, I'm **Paprika**. Spice is my VFX house: a scenario of a few shots, and on each one a chain of passes made by tools that are all workflows on **Comfy Cloud**. We'll look at my example, *Truffle's Jam Heist*: every pass in it is a real run, and nothing is spent here.",
     },
     {
-      go: open("plate"),
-      target: ".sp-stack",
+      go: open,
+      target: ".sp-shots",
       place: "right",
-      title: "The comp stack",
-      text: "The seven departments, stacked like the layers of a comp: the footage at the foot, the finish on top. A green lamp is a pass made; the **eye** shows it in the viewer or hides it. Click a row to open its department.",
+      title: "The shots",
+      text: "The scenario's shots, each with the picture of what it is now and how many passes it has. Click one to open it. **Add a shot** rolls a new one with **LTX-2.5** from a first frame and a few words, or takes a clip as it is.",
     },
     {
-      go: open("plate"),
-      target: ".sp-dept.is-plate .sp-b-footage",
-      place: "left",
-      title: "Plate: the footage",
-      text: "Drop a clip or a picture anywhere on Spice, or start from one of your takes. **Trim** sets the frames every department works on, and **Read the depth** maps how far away everything is.",
-    },
-    {
-      go: open("roto"),
-      target: ".sp-dept.is-roto .sp-b-subjects",
-      place: "left",
-      title: "Roto: who is in it",
-      get text() {
-        return `Roto cuts out who is in the shot: **Click a subject**, then click them on the viewer (Shift or Alt for what is not them). Each subject gets a matte, so an effect can go behind them. Here, ${subject()} is ${isClip() ? "tracked" : "cut out"} already.`;
-      },
-    },
-    {
-      go: open("roto"),
-      target: ".sp-viewer",
+      go: onBestShot,
+      target: ".sp-viewer .sp-stage-host",
       place: "bottom",
       title: "Before and after",
-      get text() {
-        return `In every department the footage is left of the wipe and the department's work is on its right: drag the wipe to compare. **${isClip() ? "Track" : "Cut out"}** makes Roto's matte on Comfy Cloud, for credits; this example's is made, so I'll play it for free.`;
-      },
+      text: "The viewer wipes the clip a pass ran on against the clip it made: drag the line, or press play. The footage stays on the left, so you see exactly what the tool did.",
       show: {
-        get label() {
-          return isClip() ? "Track it, for free" : "Cut it out, for free";
-        },
+        label: "Sweep the wipe",
         run: async () => {
-          await simulate(document.querySelector(".sp-viewer .sp-stage-host") ?? document.querySelector(".sp-viewer"), { label: `${isClip() ? "Tracking" : "Cutting out"} ${subject()}`, seconds: 2.6 });
-          await sweep();
+          const v = viewer();
+          const wipe = v?.querySelector(".sp-wipe");
+          if (!wipe || wipe.hidden) return;
+          const stage = v.querySelector(".sp-stage");
+          const put = (x) => stage.style.setProperty("--wipe", `${(x * 100).toFixed(2)}%`);
+          const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+          for (const [a, b] of [[0.5, 0.08], [0.08, 0.92], [0.92, 0.5]]) {
+            if (still) {
+              put(b);
+              await wait(700);
+              continue;
+            }
+            await new Promise((done) => {
+              const t0 = performance.now();
+              const tick = (now) => {
+                const u = Math.min(1, (now - t0) / 850);
+                put(a + (b - a) * (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2));
+                if (u < 1) requestAnimationFrame(tick);
+                else done();
+              };
+              requestAnimationFrame(tick);
+            });
+            await wait(300);
+          }
         },
       },
     },
     {
-      go: open("paint"),
-      target: ".sp-dept.is-paint .sp-b-target",
-      place: "left",
-      title: "Paint: what is in the way",
-      text: "Paint takes out what should not be there: an **Object** you name, a **Spot** you brush over on the viewer (free, on this machine), a **Logo** or the **Subtitles**. What is removed shows on the right of the wipe.",
-    },
-    {
-      go: open("gen"),
-      target: ".sp-dept.is-gen .sp-b-gtools",
+      go: onBestShot,
+      target: ".sp-chain",
       place: "top",
-      title: "Gen: every IC-LoRA there is",
-      text: "Comfy Cloud has dozens of **IC-LoRAs** for LTX: each draws the clip again **from itself**. Restore it, regrade it, turn day to night, take people out, widen the frame, move the camera, redraw it under its pose. Each tool is here, with the words its model card gives. A **dot** says whether a real run of it looked right.",
-    },
-    {
-      go: open("gen"),
-      target: ".sp-dept.is-gen .sp-b-gtakes",
-      place: "left",
-      title: "What each tool made",
-      text: "These takes are **real runs on this clip**, kept with the example. Press **Use** to put one back as the pass and drag the wipe: the restoring tools show against the damaged copy they were given. A run costs a few credits at draft size, and the key asks first.",
+      title: "The chain",
+      text: "The plate, then every pass in the order it was made, each on the one before: the van taken out, the day turned to night, the frame widened. Click one to look at it; the **×** takes it off (it waits in the bin with what was made on top of it). A new run goes on the pass you are looking at.",
       show: {
-        label: "Look at one",
-        // (a look: the take is the pass while the wipe sweeps, then the example is as it was shipped, and nothing was saved)
+        label: "Walk the chain",
+        // (a look: each pass in turn, then the chain as it was; nothing is saved)
         run: () =>
           look(async () => {
-            document.querySelector(".sp-dept.is-gen .sp-gen-take:not(.is-on) .sp-iconkey")?.click();
+            const s = shot();
+            if (!s) return;
+            const was = lookingAt(s)?.id ?? "plate";
+            for (const id of ["plate", ...s.passes.map((p) => p.id)]) {
+              lookAt(id);
+              await settle();
+              await wait(900);
+            }
+            lookAt(was);
             await settle();
-            await sweep();
           }),
       },
     },
     {
-      go: open("light"),
-      target: ".sp-dept.is-light .sp-b-relight",
-      place: "left",
-      title: "Light: another mood",
-      text: "Say the light you want and **Relight** makes it; **Replace the sky** puts another one behind them. Both run on Comfy Cloud. Under the viewer, **Add the weather** and **Grade it** are free, on this machine.",
-    },
-    {
-      go: open("fx"),
-      target: ".sp-dept.is-fx .sp-b-library",
-      place: "left",
-      title: "FX: lay effects on",
-      get text() {
-        const baked = body()?.passes.fx?.media && !body().set.fx.dirty;
-        return `Drag an effect onto the picture: fire, light, magic, weather, particles. Each is a layer you move, scale and turn on the picture itself. **Finish** gives the whole shot a bloom and a vignette, and **Bake** makes it all part of the shot, free, on this machine${baked ? ": this example's are baked already" : ""}.`;
-      },
-    },
-    {
-      go: open("fx"),
-      target: ".sp-dept.is-fx .sp-b-layers",
+      go: open,
+      target: ".sp-b-tools",
       place: "top",
-      title: "The layers",
-      get text() {
-        const n = layers();
-        return `${n ? `This example has ${n} ${n === 1 ? "layer" : "layers"}, the top first.` : "The layers, the top first."} Pick one to change its **Look** and its **Place**; the person key puts it behind the people, held there by Roto's matte. A fire or a portal can shine: its **Light** falls on the shot around it, and from behind the people it lights their edge. On a clip, **Follows** keeps a layer on the subject Roto cut out as it moves.`;
+      title: "The tools",
+      text: "Every tool is a workflow on Comfy Cloud: the **IC-LoRAs** of LTX-2.3 (restore, upscale, grade and light, clean, frame, camera, control, effects), SAM3's **cut-out**, SeedVR2's **upscale**, LTX-2.5's **sound**, Wan's **restyle**. A dot says what a real run of each showed: green did what its card says, red did not, grey needs more than a clip.",
+    },
+    {
+      go: open,
+      target: ".sp-b-tool",
+      place: "left",
+      title: "The tool picked",
+      text: "Pick one and its card comes here: what it is told, its strength and seconds, draft or standard, and the yellow key with its **price**. The key asks first and spends on the second press. Nothing runs by itself.",
+      show: {
+        label: "Pick Deblur",
+        run: () =>
+          look(async () => {
+            const t = spice.tools?.tools.find((x) => x.id === "deblur");
+            if (t) setTool({ tool: t.id, words: "", strength: null, seconds: null });
+            await settle();
+            await wait(1600);
+          }),
       },
     },
     {
-      go: open("comp"),
-      target: ".sp-viewer",
-      place: "bottom",
-      title: "Comp: the whole stack",
-      text: "Comp shows the footage against everything on the stack, and **Passes** lists what each department made and what it cost. Drag the wipe to see the before and the after.",
-      show: { label: "Move the wipe", run: sweep },
-    },
-    {
-      go: open("comp"),
-      // (on a short screen the timeline runs past the foot of the viewer, which hides what does not fit: the light is the whole viewer then)
-      target: () => {
-        const viewer = document.querySelector(".sp-viewer");
-        const time = viewer?.querySelector(".sp-time:not([hidden])");
-        if (!time) return viewer?.querySelector(".sp-picbar:not([hidden])") ?? viewer;
-        return time.getBoundingClientRect().bottom <= viewer.getBoundingClientRect().bottom ? time : viewer;
-      },
-      get title() {
-        return isClip() ? "The timeline" : "One frame";
-      },
-      get text() {
-        return isClip()
-          ? "Frames count from 1001, as a slate counts them. **Space** plays, the arrows step a frame, and each department has a bar for the frames its pass covers. Drag along the strip to scrub."
-          : "A picture is one frame, so there is no timeline here. A clip gets one: its frames counted from 1001, and a bar for each department's pass.";
-      },
-      get show() {
-        return isClip() ? { label: "Play it", run: play } : undefined;
-      },
-    },
-    {
-      go: open("comp"),
-      target: ".sp-dept.is-comp .sp-lower",
+      go: open,
+      target: ".sp-b-bin",
       place: "top",
-      title: "The finish",
-      get text() {
-        return isClip()
-          ? "**Upscale** restores the shot larger on Comfy Cloud. **Slow it** makes the frames between the frames, free here or with FILM on the Cloud. **Export** gives you the top of the stack as an MP4, a WebM, a MOV or a GIF, free."
-          : "**Upscale** makes the picture larger on Comfy Cloud. A picture has no motion to slow. **Export** gives you the top of the stack as a PNG, a JPG or a WebP, free.";
-      },
+      title: "The bin",
+      text: "A pass taken off the chain waits here with what was made on top of it. Put it back and the chain is rebuilt to where it was made; forget it and its clip still stays in your library.",
     },
     {
-      go: open("comp"),
-      target: "#assistant .chat-bar",
+      go: open,
+      target: ".sp-add",
+      place: "right",
+      title: "A new shot",
+      text: "**Add a shot**: pick a first frame from your pictures (or bring one in), say what happens, and LTX-2.5 rolls five seconds of it with its sound. Or drop a clip anywhere on Spice and it is a shot as it is.",
+    },
+    {
+      go: open,
+      target: "#spice-chat",
       place: "top",
       title: "Ask me",
-      text: "Tell me what you want in words: \"a portal behind her\", \"make it snow\", \"export it as a webm\". I set the department up for you; anything that costs credits waits for your yes, with its price.",
+      text: "Tell me the job and I set it up: *take the van out*, *turn the day to night*, *widen it to scope*, *give it its sound*. I pick the tool and its words; you press the key, and only then is anything spent.",
     },
     {
-      go: open("plate"),
-      target: ".sp-shotchip",
-      place: "right",
-      title: "Your turn",
-      text: "Change this example, it is yours now, or start your own: **A new shot** is in this chip, and a clip dropped anywhere on Spice becomes its footage. I'm in my bar whenever you need me.",
+      go: open,
+      title: "That's the suite",
+      text: "A scenario, a few shots, and every pass a real run on Comfy Cloud, kept on its chain with the clip it ran on. Roll a shot of your own, or drop a clip, and we start.",
     },
   ],
 };

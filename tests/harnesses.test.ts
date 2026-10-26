@@ -87,8 +87,8 @@ test("the bar asks and offers what fits the room that is open", () => {
   assert.equal(roomOf("jam"), Object.keys(HARNESSES.jam.placeholders)[0], "Jam opens on its first workspace");
   assert.equal(roomOf("macaron"), "create");
   assert.deepEqual(Object.keys(HARNESSES.macaron.placeholders), ["kit", "idea", "studio", "create", "book"], "Macaron's five workspaces, the Brand kit first");
-  assert.equal(roomOf("spice"), "plate", "Spice opens on its Plate");
-  assert.deepEqual(Object.keys(HARNESSES.spice.placeholders), ["plate", "roto", "paint", "gen", "light", "fx", "comp", "conform", "select", "clean", "direct", "control", "extend", "finish"], "the first Spice's six departments (until it is retired), then the bay's seven stages in the order a clip goes through them");
+  assert.equal(roomOf("spice"), "suite", "Spice opens on its suite, its one room");
+  assert.deepEqual(Object.keys(HARNESSES.spice.placeholders), ["suite"], "Spice is one room: the suite");
   assert.equal(roomOf("utensils"), "home", "Utensils opens on its Home");
   assert.deepEqual(Object.keys(HARNESSES.utensils.placeholders), ["home", "shelf", "picture", "video", "audio", "vfx", "edit", "templates"], "Utensils' eight workspaces, Home first");
   assert.equal(HARNESSES.utensils.placeholders.home, "Ask Truffle — what do you want to make or fix?");
@@ -355,7 +355,7 @@ test("Truffle's reader accepts only her own actions", () => {
 });
 
 // Paprika's own reader tests are in tests/spice-assist.test.ts; here only what she shares with the others: her op, kept by her reader alone
-const SPICE = { department: "fx", footage: { first: 1001, last: 1120 } };
+const SPICE = { tools: [{ id: "deblur", name: "Deblur", takes: ["words"] }], tool: { id: "deblur" }, shot: { id: "sh1", plate: { width: 1280, height: 704, seconds: 5 }, passes: [] } };
 
 test("a summary with junk in its lists is read as far as it makes sense, and never thrown at", () => {
   const mixer: any = { shelf: [null, 7, "x", ...SHELF], crew: [null, ...CREW], stars: [null, 4, "Luna"], mixes: [null, ...MIXER.mixes], open: { trend: "hotel-lobby", cast: [null, { role: "Lead", who: "Praline" }] } };
@@ -383,7 +383,7 @@ const OWN = {
   jam: { op: "part", seconds: 15 },
   macaron: { op: "edit_text", layer: "headline", text: "Say it." },
   mixer: { op: "pick_trend", trend: "hotel-lobby" },
-  spice: { op: "layer", element: "flame" },
+  spice: { op: "tool", tool: "deblur" },
   utensils: { op: "pick_tool", tool: "cutout" },
 };
 const EVERYONE = Object.values(OWN);

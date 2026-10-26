@@ -1,7 +1,7 @@
-/* Spice: Paprika's comp stack on the left, the open department beside it as a grid of bentos that fills the screen, her bar at the foot.
-   The page is one screen tall: what the department holds fits it, or its area scrolls (the cards are never cut: sp-depts.css). Mockups: docs/brand/products/spice-v1/spice-fx.png, spice-roto.png.
-   The parts every department uses (.sp-bento, .sp-primary, .sp-iconkey...) are here; the viewer's are in sp-viewer.css, each department's
-   own bentos in sp-depts.css, the windows in sp-win.css. */
+/* Spice: Paprika and the scenario's shots on the left, the suite beside them (the viewer and its tools as bentos that fill the screen),
+   her bar at the foot. The page is one screen tall: what the suite holds fits it, or its area scrolls (the cards are never cut:
+   sp-suite.css). The parts every bento uses (.sp-bento, .sp-primary, .sp-iconkey...) are here; the viewer's are in sp-viewer.css, the
+   suite's own bentos in sp-suite.css, the windows in sp-win.css. */
 
 .spice { --sp-gap: clamp(.625rem, .35rem + .6dvh, .875rem); --sp-side: clamp(18.5rem, 21.5vw, 26rem); position: relative; display: grid; grid-template-columns: var(--sp-side) minmax(0, 1fr); gap: var(--sp-gap); align-items: stretch; height: calc(100dvh - var(--head, 4rem) - 1.5rem); min-height: 34rem; user-select: none; -webkit-user-select: none; }
 .spice img, .spice video { -webkit-user-drag: none; }
@@ -13,11 +13,10 @@
 
 .sp-main { display: flex; flex-direction: column; gap: var(--sp-gap); min-width: 0; min-height: 0; }
 .sp-grid { flex: 1 1 0; min-height: 0; display: block; overflow: hidden auto; scrollbar-width: thin; }
-.sp-grid > [hidden] { display: none !important; }
 .sp-chat { flex: none; position: relative; z-index: 29; width: 100%; pointer-events: none; }
 .sp-chat > * { pointer-events: auto; }
 
-/* ---- the comp stack -------------------------------------------------------------------------------------- */
+/* ---- Paprika and the shots ---------------------------------------------------------------------------- */
 .sp-side { display: flex; flex-direction: column; gap: clamp(.625rem, .3rem + 1dvh, 1rem); min-height: 0; padding: clamp(.75rem, 1.4dvh, 1.125rem); overflow: hidden; border: 1px solid var(--card-line); border-radius: 1.625rem; background: linear-gradient(180deg, rgba(255, 255, 255, .02), transparent 30%), var(--s1); }
 .sp-id { display: flex; flex: none; align-items: center; gap: .875rem; padding: .125rem .25rem 0; }
 .sp-id > img { flex: none; width: clamp(3.5rem, 8dvh, 4.75rem); aspect-ratio: 1; border-radius: 50%; object-fit: cover; background: var(--sunk); box-shadow: 0 0 0 2px var(--line2); }
@@ -32,40 +31,31 @@
 .sp-shotchip .sel-trigger:hover { border-color: var(--line2); }
 .sp-shotchip .sel-label { font: 600 .9375rem/1.2 var(--font-sans); }
 .sp-shotchip .sel-glyph { width: 2.25rem; height: 1.375rem; border-radius: .25rem; object-fit: cover; }
-.sp-shotchip .sp-thumb { width: 2.25rem; height: 1.375rem; border-radius: .25rem; }
 
-.sp-stack { display: flex; flex: 1 1 0; flex-direction: column; gap: .5rem; min-height: 0; }
-.sp-layer { position: relative; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr) auto; flex: 1 1 0; min-height: 2.75rem; max-height: 6.5rem; border: 1px solid var(--card-line); border-radius: 1.125rem; background: var(--sunk); transition: border-color var(--t-fast), background var(--t-fast); }
-.sp-layer:hover { border-color: var(--line2); }
-.sp-layer.is-on { border-color: var(--accent); background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--sunk); box-shadow: 0 0 0 1px var(--accent) inset; }
-.sp-layer-main { display: grid; grid-template: minmax(0, 1fr) / auto minmax(0, 1fr) auto; align-items: center; gap: .875rem; min-height: 0; padding: .5rem .25rem .5rem .625rem; border: 0; border-radius: inherit; background: transparent; color: var(--text); text-align: left; cursor: pointer; }
-.sp-layer-main:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.sp-layer-name { font: 500 .875rem/1 var(--font-mono); letter-spacing: .06em; color: var(--text); }
-.sp-layer.is-on .sp-layer-name { color: var(--accent); }
-.sp-layer.is-empty .sp-layer-name { color: var(--muted); }
-.sp-lamp { width: .625rem; height: .625rem; margin-right: .25rem; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 1.5px var(--faint); }
+/* the shots: a card each, the one open lit; the list scrolls when the scenario has more than the screen holds */
+.sp-shots { display: flex; flex: 1 1 0; flex-direction: column; gap: .5rem; min-height: 0; overflow: hidden auto; scrollbar-width: thin; }
+.sp-shot { position: relative; display: grid; flex: none; min-height: 3.75rem; border: 1px solid var(--card-line); border-radius: 1.125rem; background: var(--sunk); transition: border-color var(--t-fast), background var(--t-fast); }
+.sp-shot:hover { border-color: var(--line2); }
+.sp-shot.is-on { border-color: var(--accent); background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--sunk); box-shadow: 0 0 0 1px var(--accent) inset; }
+.sp-shot-main { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .75rem; min-height: 0; padding: .5rem .75rem .5rem .5rem; border: 0; border-radius: inherit; background: transparent; color: var(--text); text-align: left; cursor: pointer; }
+.sp-shot-main:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sp-shot-main .sp-thumb { width: 4.25rem; height: 2.625rem; max-height: none; }
+.sp-shot-text { display: grid; gap: .1875rem; min-width: 0; }
+.sp-shot-text b { overflow: hidden; font: 600 .875rem/1.15 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.sp-shot-text span { overflow: hidden; color: var(--dim); font: 500 .6875rem/1.15 var(--font-mono); letter-spacing: .04em; text-overflow: ellipsis; white-space: nowrap; }
+.sp-shot.is-on .sp-shot-text b { color: var(--accent); }
+.sp-shot.is-empty .sp-shot-text b { color: var(--muted); }
+.sp-lamp { width: .625rem; height: .625rem; border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 1.5px var(--faint); }
 .sp-lamp[data-tone="done"] { background: var(--ok); box-shadow: none; }
 .sp-lamp[data-tone="busy"] { background: var(--warn); box-shadow: none; animation: sp-pulse 1.4s ease-in-out infinite; }
-.sp-lamp[data-tone="stale"] { background: transparent; box-shadow: inset 0 0 0 2px var(--accent); }
 @keyframes sp-pulse { 50% { opacity: .35; } }
-.sp-eye { display: grid; place-items: center; align-self: stretch; width: 2.5rem; padding: 0; border: 0; border-radius: 0 1.125rem 1.125rem 0; background: transparent; color: var(--text); cursor: pointer; }
-.sp-eye svg { width: 1.25rem; height: 1.25rem; }
-.sp-eye[aria-pressed="false"] { color: var(--dim); }
-.sp-eye:disabled { color: var(--faint); cursor: default; opacity: .6; }
-.sp-eye:hover:not(:disabled) { color: var(--accent); }
+.sp-add { display: flex; flex: none; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; border: 1px dashed var(--line2); border-radius: 1.125rem; background: transparent; color: var(--muted); font: 600 .875rem/1 var(--font-sans); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.sp-add svg { width: 1rem; height: 1rem; }
+.sp-add:hover { border-color: var(--accent-line); color: var(--accent); }
 
 .sp-thumb { position: relative; display: block; flex: none; height: 100%; min-height: 0; max-height: 5.5rem; aspect-ratio: 16 / 9; overflow: hidden; border-radius: .625rem; background: var(--bg); box-shadow: 0 0 0 1px rgba(255, 255, 255, .06) inset; }
 .sp-thumb img, .sp-thumb video { display: block; width: 100%; height: 100%; object-fit: cover; }
 .sp-thumb.is-empty { background: repeating-linear-gradient(135deg, #17171a 0 .5rem, #1b1b1f .5rem 1rem); box-shadow: 0 0 0 1px var(--line) inset; }
-.sp-thumb.is-big { width: 100%; height: auto; max-height: none; }
-.sp-thumb.is-chip { width: 2.25rem; height: 1.375rem; border-radius: .25rem; }
-/* Roto's row: the matte tinted red on its left half, plain on its right, as a compositor shows it */
-.sp-thumb.is-matte { display: grid; grid-template-columns: 1fr 1fr; background: #000; }
-.sp-thumb.is-matte .sp-thumb { max-height: none; height: 100%; aspect-ratio: auto; border-radius: 0; box-shadow: none; }
-.sp-thumb.is-matte .is-tint { position: relative; }
-.sp-thumb.is-matte .is-tint::after { content: ""; position: absolute; inset: 0; background: #ff2a2a; mix-blend-mode: multiply; }
-.sp-thumb.is-matte img, .sp-thumb.is-matte video { width: 200%; max-width: none; }
-.sp-thumb.is-matte .is-plain img, .sp-thumb.is-matte .is-plain video { margin-left: -100%; }
 
 .sp-facts { display: grid; flex: none; gap: .625rem; margin: 0; padding: clamp(.75rem, 1.5dvh, 1.125rem) 1.125rem; border-radius: 1.125rem; background: var(--sunk); }
 .sp-facts div { display: grid; gap: .1875rem; }
@@ -79,9 +69,8 @@
 .sp-about-link svg.icon { width: 1.125rem; height: 1.125rem; color: var(--accent); }
 @media (max-height: 900px) { .sp-about p { display: none; } }
 @media (max-height: 980px) { .sp-facts { gap: .4375rem; padding-block: .625rem; } .sp-facts dd { font-size: .9375rem; } }
-@media (max-height: 860px) { .sp-facts div:nth-child(2) { display: none; } }
 
-/* ---- the parts every department uses --------------------------------------------------------------------- */
+/* ---- the parts every bento uses ------------------------------------------------------------------------- */
 .sp-bento { position: relative; display: flex; flex-direction: column; gap: .625rem; min-width: 0; min-height: 0; padding: clamp(.75rem, 1.3dvh, 1.125rem) clamp(.875rem, 1.1vw, 1.25rem) clamp(.875rem, 1.5dvh, 1.25rem); overflow: hidden; border: 1px solid var(--card-line); border-radius: 1.5rem; background: var(--s1); }
 .sp-b-head { display: flex; flex: none; align-items: center; justify-content: space-between; gap: .75rem; min-height: 1.875rem; }
 .sp-b-label { font: 500 .8125rem/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
@@ -90,24 +79,23 @@
 .sp-expand svg { width: .875rem; height: .875rem; }
 .sp-expand:hover { border-color: var(--accent-line); color: var(--accent); }
 .sp-hint { margin: 0; font: 400 var(--fs-small)/1.45 var(--font-sans); color: var(--dim); }
-.sp-readout { font: 500 .8125rem/1 var(--font-mono); color: var(--text); }
-.sp-readout em { font-style: normal; color: var(--dim); }
+.sp-field { display: grid; gap: .25rem; }
+.sp-keys { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; min-width: 0; }
 
 .sp-iconkey { display: grid; place-items: center; flex: none; width: 2.25rem; height: 2.25rem; padding: 0; border: 1px solid transparent; border-radius: .75rem; background: transparent; color: var(--muted); cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast); }
 .sp-iconkey svg { width: 1.125rem; height: 1.125rem; }
 .sp-iconkey:hover:not(:disabled) { color: var(--text); background: var(--s3); }
 .sp-iconkey:disabled { opacity: .35; cursor: default; }
 .sp-iconkey[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
-.sp-iconkey.is-over { background: rgba(14, 14, 16, .72); backdrop-filter: blur(6px); border-color: rgba(255, 255, 255, .12); color: #fff; }
 .sp-ghost { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.25rem; padding: 0 .875rem; border: 1px solid var(--line2); border-radius: .875rem; background: transparent; color: var(--muted); font: 600 .8125rem/1 var(--font-sans); cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast); }
 .sp-ghost svg { width: 1rem; height: 1rem; }
 .sp-ghost:hover:not(:disabled) { color: var(--accent); border-color: var(--accent-line); }
 .sp-ghost:disabled { opacity: .4; cursor: default; }
-.sp-keys { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; min-width: 0; }
 
-/* the yellow key: what the department does, and its price; a paid one turns into the yes for a few seconds */
+/* the yellow key: what the tool does, and its price; a paid one turns into the yes for a few seconds */
 .sp-primary { display: inline-flex; align-items: center; justify-content: center; gap: .625rem; width: 100%; min-height: clamp(3.25rem, 7dvh, 4.5rem); padding: 0 1.25rem; border: 0; border-radius: 1.125rem; background: var(--accent); color: var(--accent-ink); font: 700 clamp(1.0625rem, .8rem + .7dvh, 1.375rem)/1 var(--font-sans); cursor: pointer; transition: filter var(--t-fast), transform var(--t-fast); }
-.sp-primary em { font: 600 .9em/1 var(--font-mono); font-style: normal; opacity: .78; }
+.sp-primary > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-primary em { flex: none; font: 600 .9em/1 var(--font-mono); font-style: normal; opacity: .78; }
 .sp-primary:hover:not(:disabled) { filter: brightness(1.06); }
 .sp-primary:active:not(:disabled) { transform: translateY(1px); }
 .sp-primary:disabled { background: var(--s3); color: var(--dim); cursor: default; }
@@ -120,7 +108,7 @@
 .sp-danger:hover, .sp-danger.is-armed { color: var(--err); border-color: var(--err); }
 
 @supports (corner-shape: squircle) {
-  .sp-side, .sp-bento, .sp-layer, .sp-primary, .sp-thumb, .sp-win, .sp-facts { corner-shape: squircle; }
+  .sp-side, .sp-bento, .sp-shot, .sp-primary, .sp-thumb, .sp-win, .sp-facts { corner-shape: squircle; }
 }
 @media (prefers-reduced-motion: reduce) { .sp-lamp[data-tone="busy"], .sp-primary[data-armed="1"] { animation: none; } }
 

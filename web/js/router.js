@@ -8,7 +8,7 @@ export const PRODUCTS = {
   mixer: ["Mixer", "Trends, in one command"],
   jam: ["Jam", "Music videos from a track"],
   macaron: ["Macaron", "Ready-to-post content for a brand"],
-  spice: ["Spice", "The VFX house: one shot, seven departments"],
+  spice: ["Spice", "The VFX house: a scenario, every tool a Comfy Cloud workflow"],
   toaster: ["Toaster", "Clay in, toast out"],
   utensils: ["Utensils", "One tool, one job"],
 };

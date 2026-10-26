@@ -24,7 +24,7 @@ async function lab(env: Record<string, string>) {
   const server = spawn(process.execPath, ["server/main.ts"], { cwd: root, env: { ...process.env, PORT: String(port), COMFYTURE_DATA: dir, COMFYTURE_EXAMPLES: join(dir, "none"), COMFY_API_KEY: "test-key-not-real", ...env }, stdio: "ignore" });
   const base = `http://127.0.0.1:${port}`;
   for (let i = 0; i < 100; i++) {
-    if (await fetch(`${base}/api/spice/ic`).then((r) => r.ok, () => false)) break;
+    if (await fetch(`${base}/api/spice/tools`).then((r) => r.ok, () => false)) break;
     await new Promise((r) => setTimeout(r, 200));
   }
   return { base, dir, stop: () => (server.kill(), rmSync(dir, { recursive: true, force: true })) };
@@ -38,7 +38,7 @@ async function runOnce(base: string, dir: string, tool = "deblur") {
   // (the events are listened to before the run starts: a refused one ends at once)
   const sse = await fetch(`${base}/api/events`);
   const reader = sse.body!.getReader();
-  const res = await fetch(`${base}/api/spice/ic`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ video: up.file, tool, seconds: 2, size: "draft" }) });
+  const res = await fetch(`${base}/api/spice/run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ video: up.file, tool, seconds: 2, size: "draft" }) });
   const job = await res.json();
   if (!res.ok) return (await reader.cancel().catch(() => {}), { refused: job.error as string });
   const dec = new TextDecoder();

@@ -7,7 +7,26 @@
 import { registerTool, utensils, inputOf, setWorkspace, pickTool } from "./utensils.js";
 import { fxRun, fxStop, asResult } from "./utensils-fx-api.js";
 import { runCloud, runnerOf, costOf, priceText } from "./utensils-cloud.js";
-import { voidExtra } from "./spice-model.js";
+
+/**
+ * VOID's own inputs (it takes two sets of words, not one): SAM3 finds the object by a short name (32 tokens at most), and the hole is
+ * filled from words that say how the place looks without it, never naming what is gone (or it comes back). It works at its model's own
+ * size, about 672 x 384 pixels, turned to the clip's shape, over the whole clip in whole seconds (ten at most).
+ */
+export const VOID_AFTER = "The same place with nothing there: what was behind carries on naturally, the same light and colours, a steady camera.";
+export function voidExtra(words, after, { width, height, seconds } = {}) {
+  const what = String(words ?? "").trim().replace(/^remove\s+/i, "").replace(/[.!]+$/, "").split(/\s+/).slice(0, 12).join(" ");
+  const shape = width > 0 && height > 0 ? width / height : 16 / 9;
+  const w = Math.max(256, Math.round(Math.sqrt(672 * 384 * shape) / 16) * 16);
+  const h = Math.max(256, Math.round(Math.sqrt((672 * 384) / shape) / 16) * 16);
+  return {
+    sam3_object_mask_prompt: what,
+    positive_prompt_inpaint_fill_: String(after ?? "").trim() || VOID_AFTER,
+    width_pass_2_: w, height_pass_2_: h,
+    start_frame_index: 0, clip_duration_seconds_: Math.max(1, Math.min(10, Math.ceil(seconds || 5))),
+  };
+}
+
 
 /** The card art: a before/after pair under web/brand/utensils/vfx/ (made by scripts/utensils-fx-art.ts from the pictures in docs/brand/products/utensils-v2/vfx-art). */
 export const artOf = (id) => ({ before: `brand/utensils/vfx/${id}-before.webp`, after: `brand/utensils/vfx/${id}-after.webp` });

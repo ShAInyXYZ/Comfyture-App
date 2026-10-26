@@ -44,7 +44,7 @@ if (rest.includes("--inputs-only")) {
   process.exit(0);
 }
 const account = async () => (await (await fetch(`${base}/api/account?refresh=1`)).json()).balance?.credits ?? null;
-const { tools, scene } = await (await fetch(`${base}/api/spice/ic`)).json();
+const { tools, scene } = await (await fetch(`${base}/api/spice/tools`)).json();
 const log = existsSync(join(out, "survey.json")) ? JSON.parse(readFileSync(join(out, "survey.json"), "utf8")) : {};
 const started = await account();
 let spent = 0;
@@ -84,7 +84,7 @@ for (const t of tools) {
   const input = t.demo ? damaged(t.demo.damage) : clip;
   const before = await account();
   const up = await (await fetch(`${base}/api/videos`, { method: "POST", headers: { "Content-Type": "video/mp4" }, body: readFileSync(input) })).json();
-  const res = await fetch(`${base}/api/spice/ic`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ video: up.file, tool: t.id, seconds, size, scene }) });
+  const res = await fetch(`${base}/api/spice/run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ video: up.file, tool: t.id, seconds, size, scene }) });
   const job = await res.json();
   if (!res.ok) {
     console.log(`${t.id}: refused: ${job.error}`);

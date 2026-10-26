@@ -16,10 +16,9 @@
 import { PICKLE, WORKSPACES, PRESETS as JAM_PRESETS, PLACEHOLDER as JAM_PLACEHOLDER, OFFERS as JAM_OFFERS } from "./jam-harness.js";
 import { BRIOCHE, PRESETS as MACARON_PRESETS, PLACEHOLDER as MACARON_PLACEHOLDER } from "./macaron-harness.js";
 import { PAPRIKA, PLACEHOLDER as SPICE1_PLACEHOLDER, OFFERS as SPICE1_OFFERS } from "./spice-harness.js";
-import { PLACEHOLDER as BAY_PLACEHOLDER, OFFERS as BAY_OFFERS } from "./bay-harness.js";
-// (the bay's seven stages and the first Spice's six departments are different rooms of the one bar)
-const SPICE_PLACEHOLDER = { ...SPICE1_PLACEHOLDER, ...BAY_PLACEHOLDER };
-const SPICE_OFFERS = { ...SPICE1_OFFERS, ...BAY_OFFERS };
+// (Spice is one room, the suite, of the one bar)
+const SPICE_PLACEHOLDER = SPICE1_PLACEHOLDER;
+const SPICE_OFFERS = SPICE1_OFFERS;
 import { TRUFFLE, PLACEHOLDER as UTENSILS_PLACEHOLDER, OFFERS as UTENSILS_OFFERS } from "./utensils-harness.js";
 import { CRUMPET, PLACEHOLDER as TOASTER_PLACEHOLDER, OFFERS as TOASTER_OFFERS } from "./toaster-harness.js";
 
@@ -86,15 +85,15 @@ export const HARNESSES = {
     presets: Object.fromEntries(Object.entries(MACARON_PRESETS).map(([room, list]) => [room, list.filter((t) => t.ask).map((t) => p(t.label, t.ask))])),
   },
 
-  // the VFX house: Paprika and her six departments (the stack of the left panel) are Spice's own data (web/js/spice-harness.js);
-  // she has no canned tools: her panel shows the stack of passes, and her bar is her words
+  // the VFX house: Paprika and the suite are Spice's own data (web/js/spice-harness.js); she has no canned tools: her panel shows the
+  // scenario's shots, and her bar is her words
   spice: {
     pet: PAPRIKA.id,
     name: PAPRIKA.name,
     tag: PAPRIKA.tag,
     face: PAPRIKA.face,
     tools: "panel",
-    home: "plate",
+    home: "suite",
     placeholders: SPICE_PLACEHOLDER,
     presets: Object.fromEntries(Object.keys(SPICE_PLACEHOLDER).map((room) => [room, []])),
     offers: SPICE_OFFERS,

@@ -1,130 +1,63 @@
-// Spice's departments on a laptop: at six screen sizes, from 1366×768 to 2560×1440, the six departments of a clip (the great jam chase, the
-// first example) and of a picture (Paprika's portal), on a fresh install. Every card (the panel, the viewer, each bento) holds all it has: it
-// scrolls by no more than a pixel, and nothing in it (a key, a line, a field) is cut by a box of its own card; the page itself never
-// scrolls. A department taller than its area scrolls the area, not the cards (web/css/sp-depts.css). Lists that are meant to scroll when
-// they are long (the library, the ledger, the layers, the subjects) and the frames that show part of a picture on purpose are not counted.
-// A pass with a long note (what Paint says it took out) is looked at too: its card keeps its keys. Nothing is spent: no key, no render address.
+// Spice on a laptop: at every common screen the page has no sideways scroll, the shots, the chain, the tool's key and the shelf are on
+// screen or reachable by the scroll of their own area, and nothing of the suite is cut. Each size is measured on the example scenario.
 // Not part of `node --test` (it needs a browser). From the repo root:
 //   NODE_PATH=<a node_modules that has playwright> CHROME=<chrome or chromium binary> node tests/spice-laptop.browser.mjs
-// OUT=<folder> keeps a screenshot of every view that fails.
 import { spawn } from "node:child_process";
-import { mkdtemp, mkdir } from "node:fs/promises";
 import { createServer } from "node:net";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { createRequire } from "node:module";
 import { tempDir } from "./tools/temp.mjs";
 
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const root = resolve(import.meta.dirname, "..");
-const out = process.env.OUT ? resolve(process.env.OUT) : null;
-if (out) await mkdir(out, { recursive: true });
 const dataDir = tempDir("spice-laptop-");
 let failures = 0;
 const ok = (cond, msg, extra = "") => {
   console.log(`${cond ? "PASS" : "FAIL"} ${msg}${extra ? `  ${extra}` : ""}`);
   if (!cond) failures++;
 };
-
 const port = await new Promise((done) => {
   const s = createServer().listen(0, () => {
     const { port } = s.address();
     s.close(() => done(port));
   });
 });
-// no key and a dead render address: nothing can be spent
-const server = spawn(process.execPath, ["server/main.ts"], { cwd: root, env: { ...process.env, PORT: String(port), COMFYTURE_DATA: dataDir, COMFY_API_KEY: "", COMFY_BASE_URL: "http://127.0.0.1:9" }, stdio: "ignore" });
+const server = spawn(process.execPath, ["server/main.ts"], { cwd: root, env: { ...process.env, PORT: String(port), COMFYTURE_DATA: dataDir, COMFY_API_KEY: "" }, stdio: "ignore" });
 const base = `http://127.0.0.1:${port}`;
-for (let i = 0; i < 150; i++) {
-  if (await fetch(`${base}/api/spice-shots`).then((r) => r.ok, () => false)) break;
+for (let i = 0; i < 100; i++) {
+  if (await fetch(`${base}/api/spice/tools`).then((r) => r.ok, () => false)) break;
   await new Promise((r) => setTimeout(r, 200));
 }
-
-const SIZES = [[1366, 768], [1440, 900], [1536, 864], [1600, 950], [1920, 1080], [2560, 1440]];
-const DEPTS = ["plate", "roto", "paint", "gen", "light", "fx", "comp"];
-const SHOTS = { clip: "spice-example-jam-chase", picture: "spice-example-paprika" };
-
-/** In the page: what each card of the open department holds, and what is cut. */
-function measure() {
-  const visible = (el) => {
-    const r = el.getBoundingClientRect();
-    const cs = getComputedStyle(el);
-    return r.width >= 1 && r.height >= 1 && cs.visibility !== "hidden" && cs.display !== "none";
-  };
-  const name = (el) => (typeof el.className === "string" && el.className.trim() ? `.${el.className.trim().split(/\s+/).slice(0, 2).join(".")}` : el.tagName.toLowerCase());
-  // (lists that scroll when long, and the frames that show a part of a picture on purpose)
-  const LISTS = ".sp-lib-grid, .sp-ledger-list, .sp-fxls, .sp-subject-list, .sp-tiles, .sp-gen-tools, .sp-gen-takes";
-  const FRAMES = ".sp-thumb, .sp-tile-pic, .sp-lib-art, .sp-out-art, .sp-stage, .sp-stage-host, .sp-plane, .sp-ruby, .sp-edge-zoom, .sp-subject-pic, .sp-place-frame, .sp-fxl-pic, .sp-cutout, .sp-track-strip, .sp-when-strip, .sp-strip, .sp-curve, .sp-dial";
-  const cut = (card) => {
-    const found = [];
-    for (const el of card.querySelectorAll("*")) {
-      if (!visible(el) || el.closest(FRAMES) || el.closest(LISTS)) continue;
-      const position = getComputedStyle(el).position;
-      if (position === "absolute" || position === "fixed") continue;
-      if (!(el.matches("button, input, textarea, select, a, svg, b, em, p, label, .ut-label") || [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()))) continue;
-      const r = el.getBoundingClientRect();
-      for (let p = el.parentElement; p; p = p.parentElement) {
-        if (getComputedStyle(p).overflowY !== "visible" && r.bottom - p.getBoundingClientRect().bottom > 1) found.push(`${name(el)} by ${name(p)}`);
-        if (p === card) break;
-      }
-    }
-    return found;
-  };
-  const dept = document.querySelector(".sp-dept:not([hidden])");
-  const cards = [document.querySelector(".sp-side"), ...dept.querySelectorAll(".sp-bento")].map((c) => ({ name: name(c), over: c.scrollHeight - c.clientHeight, cut: cut(c) }));
-  return { cards, page: document.documentElement.scrollHeight - innerHeight };
-}
-
-const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ["--no-sandbox", "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+const SIZES = [[1280, 720], [1366, 768], [1440, 900], [1470, 956], [1512, 982], [1536, 864], [1600, 950], [1920, 1080]];
+const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ["--no-sandbox"] });
 try {
-  const outbound = [];
-  const errors = [];
-  for (const [w, h] of SIZES) {
-    const context = await browser.newContext({ viewport: { width: w, height: h } });
-    await context.route((url) => !["127.0.0.1", "localhost"].includes(url.hostname), (route) => (outbound.push(route.request().url()), route.abort()));
-    // what the checks change is not kept
-    await context.route(/\/api\/spice-shots\/[\w-]+$/, (route) => (route.request().method() === "PUT" ? route.fulfill({ json: {} }) : route.continue()));
+  for (const [width, height] of SIZES) {
+    const context = await browser.newContext({ viewport: { width, height } });
     const page = await context.newPage();
+    const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
-    await page.goto(`${base}/#/spice`, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector(".sp-stack .sp-layer", { timeout: 60000 });
-    for (const [kind, id] of Object.entries(SHOTS)) {
-      await page.evaluate(async (shot) => {
-        const s = await import("/js/spice.js");
-        await s.openShot(shot);
-        // a Paint pass with the long note a paid removal leaves: what it took out, which engine, what it cost
-        if (shot === "spice-example-jam-chase") {
-          const b = s.spice.shot.body;
-          s.setPass("paint", b.passes.plate.media, { from: b.passes.plate.from, to: b.passes.plate.to, note: "the sign on the wall and the man in the background · VOID, objects out of a video", credits: 14, source: "cloud" });
-        }
-      }, id);
-      for (const d of DEPTS) {
-        await page.locator(`.sp-layer[data-dept="${d}"] .sp-layer-main`).click();
-        await page.waitForSelector(`.sp-dept.is-${d}:not([hidden])`);
-        // the picture of the shot is there, and the layout has held still for a few frames
-        await page.waitForFunction(() => { const m = document.querySelector(".sp-stage .sp-media:not([hidden])"); return !m || (m.tagName === "VIDEO" ? m.readyState >= 2 : m.complete); }, null, { timeout: 60000 }).catch(() => {});
-        await page.evaluate(async () => {
-          await document.fonts?.ready;
-          const key = () => [".sp-dept:not([hidden])", ".sp-viewer", ".sp-side", ".sp-stage-host"].map((s) => { const r = document.querySelector(s)?.getBoundingClientRect(); return r ? [r.x, r.y, r.width, r.height].map(Math.round).join(",") : "-"; }).join("|");
-          let last = "", same = 0;
-          const t0 = performance.now();
-          while (same < 4 && performance.now() - t0 < 15000) {
-            await new Promise((r) => requestAnimationFrame(() => r()));
-            const k = key();
-            same = k === last ? same + 1 : 0;
-            last = k;
-          }
-        });
-        const m = await page.evaluate(measure);
-        const bad = m.cards.filter((c) => c.over > 1 || c.cut.length);
-        ok(!bad.length && m.page <= 1, `${w}x${h} ${kind} ${d}: every card holds what it has, the page does not scroll`, bad.map((c) => `${c.name} ${c.over > 1 ? `scrolls ${c.over}` : ""} ${c.cut.slice(0, 3).join(", ")}`).join(" | ") + (m.page > 1 ? ` page ${m.page}` : ""));
-        if (out && (bad.length || m.page > 1)) await page.screenshot({ path: join(out, `${w}x${h}-${kind}-${d}.png`) });
-      }
-    }
+    await context.route((url) => !["127.0.0.1", "localhost"].includes(url.hostname), (route) => route.abort());
+    await page.goto(`${base}/#/spice`);
+    await page.waitForSelector(".sp-shot");
+    await page.waitForTimeout(900);
+    await page.locator(".sp-tchip").first().click();
+    await page.waitForTimeout(400);
+    // each control scrolled into its area's view and hit-tested: the top-most element at its centre is it (or inside it)
+    const reach = async (sel) => page.locator(sel).first().evaluate((el) => {
+      el.scrollIntoView({ block: "nearest", inline: "nearest" });
+      const r = el.getBoundingClientRect();
+      if (r.width < 4 || r.height < 4 || r.bottom > innerHeight || r.top < 0 || r.right > innerWidth) return `off screen (${Math.round(r.top)}-${Math.round(r.bottom)} of ${innerHeight})`;
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return hit && (hit === el || el.contains(hit)) ? "" : `covered by ${hit?.className ?? hit?.tagName ?? "nothing"}`;
+    });
+    const results = {};
+    for (const [name, sel] of [["a shot", ".sp-shot-main"], ["Add a shot", ".sp-add"], ["the wipe", ".sp-wipe"], ["play", ".sp-iconkey.is-play"], ["the chain", ".sp-chain .sp-link-main"], ["the tool's key", ".sp-tool-key .sp-primary"], ["the shelf", ".sp-tchip"], ["the bin", ".sp-b-bin"], ["Paprika's bar", "#spice-chat textarea"]]) results[name] = await reach(sel);
+    const wide = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
+    const bad = Object.entries(results).filter(([, v]) => v);
+    ok(!wide && !bad.length && !errors.length, `${width}x${height}: everything on screen and reachable`, [wide ? "sideways scroll" : "", ...bad.map(([k, v]) => `${k} ${v}`), ...errors].filter(Boolean).join("; "));
+    if (width === 1280 || width === 1470) await page.screenshot({ path: tempDir("spice-shot-") + `/spice-${width}.png` }).catch(() => {});
     await context.close();
   }
-  ok(errors.length === 0, "no page errors", errors.join(" | ").slice(0, 300));
-  ok(outbound.length === 0, "nothing left this machine", outbound.slice(0, 2).join(" "));
 } finally {
   await browser.close();
   server.kill();

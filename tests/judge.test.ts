@@ -21,7 +21,7 @@ test("on, the key and where it renders cannot be changed, nor any address probed
 });
 
 test("on, nothing kept can be deleted; making, editing and cancelling stay open", () => {
-  for (const p of ["/api/stories/stori-the-great-jam-chase-39a425", "/api/cuts/cut-x", "/api/jams/jam-x", "/api/spice-shots/spice-example-x", "/api/toasts/toast-example-x", "/api/brands/brand-comfyture", "/api/runs/20261019-32648f63", "/api/reels/r1", "/api/control/stages/stage-x", "/api/control/poses/mine-x", "/api/control/models/obj-x"]) {
+  for (const p of ["/api/stories/stori-the-great-jam-chase-39a425", "/api/cuts/cut-x", "/api/jams/jam-x", "/api/spice-scenarios/spice-example-x", "/api/toasts/toast-example-x", "/api/brands/brand-comfyture", "/api/runs/20261019-32648f63", "/api/reels/r1", "/api/control/stages/stage-x", "/api/control/poses/mine-x", "/api/control/models/obj-x"]) {
     assert.match(refused("DELETE", p, on) ?? "", /nothing can be deleted/, p);
   }
   assert.equal(refused("PUT", "/api/stories/stori-x", on), null, "a project is still saved");

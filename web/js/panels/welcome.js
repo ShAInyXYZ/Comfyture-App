@@ -10,7 +10,7 @@ const ABOUT = {
   mixer: { who: "For trend followers", line: "An edit you like, made yours: drop it in, add your cast, get your version.", does: ["Remix an edit", "Your cast", "Recipes"] },
   jam: { who: "For musicians and dancers", line: "A music video from a track: the singing performed, a dance copied, the words on it.", does: ["Lip-sync", "Dance", "Captions"] },
   macaron: { who: "For brands", line: "Turn any product into ready-to-post content, on brand.", does: ["Product shots", "UGC ads", "Brand kit"] },
-  spice: { who: "For visual effects", line: "One shot through seven departments, every pass kept on top of the last: cut out, cleaned up, relit, an effect added, the comp finished.", does: ["Roto", "Paint", "Light", "FX", "Comp"] },
+  spice: { who: "For visual effects", line: "A scenario of shots, each run through the suite's AI tools pass after pass: the object gone, the day turned to night, the frame widened, the close-up sharpened, its sound back.", does: ["IC-LoRAs", "Cut out", "Upscale", "Sound"] },
   toaster: { who: "For objects in 3D", line: "Block an object out in clay shapes, then toast it: a finished picture, four views that agree, and a textured 3D model.", does: ["Blockout", "Render", "Turnaround", "3D model"] },
   utensils: { who: "For one small job", line: "One small tool, one job, one result: upscale, cut out, vary, lip-sync. A shot that needs pass after pass goes to Spice.", does: ["Upscale", "Cutout", "Variations", "Lip-sync"] },
 };

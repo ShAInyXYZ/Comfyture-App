@@ -15,7 +15,7 @@ const credits = async () => (await (await fetch(`${base}/api/account?refresh=1`)
 const before = await credits();
 const up = await (await fetch(`${base}/api/videos`, { method: "POST", headers: { "Content-Type": "video/mp4" }, body: readFileSync(clip) })).json();
 const body = { video: up.file, tool, seconds: Number(opt("seconds", 2.05)), size: opt("size", "draft"), ...(opt("prompt") ? { prompt: opt("prompt") } : {}), ...(opt("strength") ? { strength: Number(opt("strength")) } : {}) };
-const res = await fetch(`${base}/api/spice/ic`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+const res = await fetch(`${base}/api/spice/run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 const job = await res.json();
 if (!res.ok) throw new Error(job.error ?? `refused (${res.status})`);
 console.log(`started ${tool}: ${JSON.stringify(body)} (credits before: ${before})`);

@@ -119,16 +119,28 @@ async function record() {
   await browser.close();
 }
 
-/** Where a tour may not have gone: Jam's workspaces and Spice's departments, each opened in turn (through the page's own modules). */
+/** Where a tour may not have gone: Jam's workspaces and the shots of Spice's scenario, each opened in turn (through the page's own modules). */
 async function openInside(page: { evaluate(fn: (hash: string) => Promise<void>, arg: string): Promise<void> }, hash: string) {
   if (hash !== "#/jam" && !hash.startsWith("#/spice")) return;
   await page.evaluate(async (h) => {
-    const jam = h === "#/jam";
-    const { WORKSPACES } = await import(jam ? "./js/jam-harness.js" : "./js/spice-harness.js");
-    const open = (await import(jam ? "./js/jam.js" : "./js/spice.js"))[jam ? "setWorkspace" : "setDept"];
-    for (const w of WORKSPACES) {
-      open(w.id);
-      await new Promise((r) => setTimeout(r, 1200));
+    if (h === "#/jam") {
+      const { WORKSPACES } = await import("./js/jam-harness.js");
+      const { setWorkspace } = await import("./js/jam.js");
+      for (const w of WORKSPACES) {
+        setWorkspace(w.id);
+        await new Promise((r) => setTimeout(r, 1200));
+      }
+      return;
+    }
+    // Spice: every shot of the scenario open, and every pass of each (its clips are then fetched)
+    const { spice, openShot, lookAt } = await import("./js/spice.js");
+    for (const s of spice.scenario?.body.shots ?? []) {
+      openShot(s.id);
+      await new Promise((r) => setTimeout(r, 900));
+      for (const id of ["plate", ...s.passes.map((p: { id: string }) => p.id)]) {
+        lookAt(id);
+        await new Promise((r) => setTimeout(r, 500));
+      }
     }
   }, hash);
 }

@@ -1,160 +1,86 @@
-// Paprika, the baby chameleon who runs Spice. She is told the shot open (its footage and frame range, the passes the six departments have
-// made), the department open and what it holds, what its key would cost, and answers with what to set up: a department opened, the shot
-// trimmed, a subject for Roto, an effect, a clean-up, a light or a finish, and "run it". Setting up costs nothing, so it is done at once.
-// Running costs credits (or time): it waits in her answer for one yes from you, with its price, and nothing runs until you give it.
+// Paprika, the baby chameleon who runs Spice. She is told the scenario and its shots, the shot open with its chain of passes, the tool
+// picked and its words, what a run would cost, and answers with what to set up: a shot opened, a pass looked at, a tool picked and set,
+// a new shot set up from words, and "run it". Setting up costs nothing, so it is done at once. Running costs credits: it waits in her
+// answer for one yes from you, with its price, and nothing runs until you give it.
 import { changed, toast, writer } from "./store.js";
 import { registerSurface } from "./surfaces.js";
-import { spice, edit, setSet, setDept, creditsTodayAll, workingOn } from "./spice.js";
-import { FIRST, lastFrame, rangeOf, ELEMENTS, passOf, visible } from "./spice-model.js";
-import { layerName, elementOf } from "./spice-elements.js";
-import { addLayer, selected, patchLayer, finishOf, setFinish } from "./spice-fx-ops.js";
-import { fxGround } from "./spice-engines.js";
-import { WORKSPACES } from "./spice-harness.js";
-import { runnerFor } from "./spice-runs.js";
-import { genSummary } from "./spice-gen.js";
+import { spice, body, shot, openShot, lookAt, setTool, creditsTodayAll, workingOn } from "./spice.js";
+import { lookingAt, inputFor } from "./spice-model.js";
+import { toolsSummary, plan, run } from "./spice-tools.js";
 
 /** Paprika's conversation: Spice's own, never mixed with another product's. */
 export const chat = { messages: [], busy: null };
 
-/** The room of the bar on Spice: the department that is open. */
-export const roomOfSpice = () => spice.dept;
+/** The room of the bar on Spice: the suite, always. */
+export const roomOfSpice = () => "suite";
 
-const noun = { relight: "Relight", weather: "Weather", grade: "Grade", upscale: "Upscale", slow: "Slow motion", export: "Export" };
-
-/** What she is told: the shot, its footage, the passes, the department open and what it holds, the price of its key. */
+/** What she is told: the scenario, the shots, the shot open and its chain, the tools, the one picked, the key's price. */
 export function summary() {
-  const s = spice.shot;
-  if (!s) return {};
-  const b = s.body;
-  const plate = b.passes.plate;
-  const r = rangeOf(b);
-  const f = b.set.fx;
-  const fps = plate?.fps ?? 24;
-  const tool = spice.tool[spice.dept];
-  const key = runnerFor(spice.dept, tool);
+  const b = body();
+  const s = shot();
+  if (!b) return {};
   return {
-    department: spice.dept,
-    shot: s.name,
-    shots: spice.list.length,
-    footage: plate ? { kind: plate.media.kind, name: plate.name, width: plate.media.width, height: plate.media.height, fps, first: FIRST, last: lastFrame(plate), range: [r.in, r.out] } : null,
-    passes: WORKSPACES.map((d) => d.id).filter((d) => passOf(b, d)?.media).map((d) => ({ dept: d, note: passOf(b, d).note, from: passOf(b, d).from, to: passOf(b, d).to, shown: visible(passOf(b, d)) })),
-    subjects: b.set.roto.subjects.map((x) => ({ name: x.name, tracked: !!x.media && !x.stale, clicks: x.points.length })),
-    fx: { layers: f.layers.map((l) => ({ el: l.el, name: layerName(l), x: l.x, y: l.y, size: l.scale, blend: l.blend, behind: l.behind, made: l.el !== "ai" || !!l.media, from: l.from, to: l.to, light: l.light, reach: l.reach, follow: l.follow })), held: f.layers.find((l) => l.id === f.sel) ? layerName(f.layers.find((l) => l.id === f.sel)) : null, matte: !!fxGround(b).matte, finish: finishOf() },
-    gen: genSummary(),
-    paint: { what: b.set.paint.how === "describe" ? "object" : b.set.paint.how, engine: b.set.paint.engine, words: b.set.paint.words, after: b.set.paint.after },
-    light: { tool: spice.tool.light, words: b.set.light.words || b.set.light.look, weather: b.set.light.weather, grade: b.set.light.grade },
-    comp: { tool: spice.tool.comp, height: b.set.comp.height, factor: b.set.comp.factor, engine: b.set.comp.engine, format: b.set.comp.format },
-    run: key ? { label: key.label, cost: key.cost, free: key.free, ready: key.ready, why: key.why } : null,
+    scenario: spice.scenario?.name,
+    logline: b.logline,
+    shots: b.shots.map((x) => ({ id: x.id, name: x.name, passes: x.passes.length, plate: !!x.plate })),
+    shot: s ? { id: s.id, name: s.name, about: s.about, plate: s.plate ? { width: s.plate.width, height: s.plate.height, seconds: s.plate.seconds } : null, passes: s.passes.map((p) => ({ id: p.id, tool: p.tool, name: p.name, words: p.words, credits: p.credits })), looking: lookingAt(s)?.id ?? "plate", bin: s.bin.length } : null,
+    ...toolsSummary(),
     today: creditsTodayAll(),
-    busy: WORKSPACES.map((d) => d.id).filter((d) => workingOn(d)),
+    busy: b.shots.filter((x) => workingOn(x.id)).map((x) => x.name),
   };
 }
 
-async function post(body) {
-  const res = await fetch("api/spice/assist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+async function post(payload) {
+  const res = await fetch("api/spice/assist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   const out = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(out.error ?? `Request failed (${res.status})`);
   return out;
 }
 
-const newId = () => `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
-
 /** One action, made. Answers what to tell the user: what was done, and what could not be. */
 export function apply(a) {
   const did = [];
   const failed = [];
-  const b = spice.shot.body;
-  const name = (id) => WORKSPACES.find((w) => w.id === id)?.name ?? id;
+  const b = body();
+  if (!b) return { did, failed: ["No scenario is open"] };
   if (a.op === "open") {
-    setDept(a.department);
-    did.push(`Opened ${name(a.department)}`);
-  } else if (a.op === "trim") {
-    if (!b.passes.plate) return { did, failed: ["No footage to trim yet"] };
-    const last = lastFrame(b.passes.plate);
-    const r = rangeOf(b);
-    const inn = Math.min(Math.max(FIRST, a.in ?? r.in), last);
-    const out = Math.max(Math.min(last, a.out ?? r.out), inn);
-    edit((x) => (x.range = inn <= FIRST && out >= last ? null : { in: inn, out }));
-    did.push(`Frames ${inn} – ${out}`);
-  } else if (a.op === "subject") {
-    edit((x) => {
-      const id = newId();
-      x.set.roto.subjects.push({ id, name: a.name, points: [], media: null, eye: true });
-      x.set.roto.open = id;
-    });
-    setDept("roto");
-    did.push(`Subject: ${a.name}`);
-  } else if (a.op === "layer" || a.op === "tweak") {
-    // Fx: a layer added (a library element, or an AI effect made when run) and held, or the one held changed
-    setDept("fx");
-    const preset = a.op === "layer" && a.element?.startsWith("ai:") ? ELEMENTS.find((e) => `ai:${e.id}` === a.element) : null;
-    const l = a.op === "layer" ? addLayer(preset ? "ai" : a.element, { ...(a.x !== undefined ? { x: a.x } : {}), ...(a.y !== undefined ? { y: a.y } : {}) }) : selected();
-    if (!l) failed.push(a.op === "layer" ? "That effect is not in the library" : "No layer is held: pick one first");
+    const s = b.shots.find((x) => x.id === a.shot);
+    if (!s) failed.push("No such shot");
     else {
-      const patch = {};
-      for (const [k, to] of [["x", "x"], ["y", "y"], ["size", "scale"], ["angle", "rot"], ["blend", "blend"], ["opacity", "opacity"], ["glow", "glow"], ["light", "light"], ["reach", "reach"], ["follow", "follow"], ["tint", "tint"], ["motion", "motion"], ["from", "from"], ["to", "to"], ["words", "words"]]) if (a[k] !== undefined) patch[to] = a[k];
-      if (preset) patch.preset = preset.preset;
-      // (only a picture of the library shines: particles and an AI effect cast no light)
-      if ((a.light !== undefined || a.reach !== undefined) && elementOf(l.el)?.kind !== "image") failed.push(`${layerName(l)} casts no light: only a library picture does`);
-      // (a layer follows Roto's subject on a clip that has its matte; an AI effect is made for one place)
-      if (a.follow === true && (b.passes.plate?.media.kind === "image" || !fxGround(b).matte)) {
-        failed.push("Follow needs a clip with Roto's matte: cut the subject out first");
-        delete patch.follow;
-      } else if (a.follow !== undefined && elementOf(l.el)?.kind === "ai") failed.push(`${layerName(l)} is made for one place: it does not follow`);
-      // (behind the people only when Roto holds someone)
-      if (a.behind !== undefined) {
-        if (a.behind && !fxGround(b).matte) failed.push("Behind the people: Roto holds nobody yet");
-        else patch.behind = a.behind;
-      }
-      patchLayer(l.id, patch);
-      did.push(a.op === "layer" ? `Layer: ${layerName(l)}` : `Changed: ${layerName(l)}`);
+      openShot(a.shot);
+      did.push(`Opened ${s.name}`);
     }
-  } else if (a.op === "polish") {
-    // Fx's finish of the whole shot: its bloom and its vignette
-    setDept("fx");
-    const patch = {};
-    for (const k of ["bloom", "vignette"]) if (a[k] !== undefined) patch[k] = a[k];
-    const now = setFinish(patch);
-    did.push(`Finish: bloom ${now.bloom.toFixed(2)}, vignette ${now.vignette.toFixed(2)}`);
-  } else if (a.op === "gen") {
-    // a tool of the IC-LoRA suite set up: the one named, its words, strength, size and seconds
-    setSet("gen", { tool: a.tool, words: a.words ?? "", strength: a.strength ?? null, ...(a.size ? { size: a.size } : {}), ...(a.seconds ? { seconds: a.seconds } : {}) });
-    setDept("gen");
-    did.push(`Gen: ${a.tool}`);
-  } else if (a.op === "paint") {
-    const patch = { how: a.what === "object" ? "describe" : a.what };
-    if (a.words !== undefined) patch.words = a.words;
-    if (a.after !== undefined) patch.after = a.after;
-    if (a.engine) patch.engine = a.engine;
-    setSet("paint", patch);
-    setDept("paint");
-    did.push(`Paint: ${a.what}${a.words ? ` · ${a.words.length > 30 ? `${a.words.slice(0, 29)}…` : a.words}` : ""}`);
-  } else if (a.op === "light") {
-    spice.tool.light = a.tool;
-    const patch = {};
-    if (a.words !== undefined) Object.assign(patch, { words: a.words, look: a.words });
-    for (const k of ["weather", "amount", "grade", "exposure", "saturation"]) if (a[k] !== undefined) patch[k] = a[k];
-    setSet("light", patch);
-    setDept("light");
-    did.push(`Light: ${noun[a.tool]}`);
-  } else if (a.op === "finish") {
-    spice.tool.comp = a.tool;
-    const patch = {};
-    for (const k of ["height", "factor", "engine", "format"]) if (a[k] !== undefined) patch[k] = a[k];
-    setSet("comp", patch);
-    setDept("comp");
-    did.push(`Comp: ${noun[a.tool]}`);
+  } else if (a.op === "look") {
+    const s = shot();
+    if (!s) failed.push("No shot is open");
+    else if (a.pass !== "plate" && !s.passes.some((p) => p.id === a.pass)) failed.push("No such pass");
+    else {
+      lookAt(a.pass);
+      did.push(a.pass === "plate" ? "Looking at the plate" : `Looking at ${s.passes.find((p) => p.id === a.pass).name}`);
+    }
+  } else if (a.op === "tool") {
+    const t = spice.tools?.tools.find((x) => x.id === a.tool);
+    if (!t) failed.push("That tool is not in the suite");
+    else {
+      setTool({ tool: t.id, words: a.words ?? "", scene: a.scene ?? spice.set.scene, strength: a.strength ?? null, ...(a.size ? { size: a.size } : {}), seconds: a.seconds ?? null, ...(a.aspect ? { aspect: a.aspect } : {}), ...(a.height ? { height: a.height } : {}) });
+      did.push(`${t.name}${a.words ? ` · ${a.words.length > 30 ? `${a.words.slice(0, 29)}…` : a.words}` : ""}`);
+    }
+  } else if (a.op === "shot") {
+    spice.roll = { ...spice.roll, ...(a.words ? { words: a.words } : {}), ...(a.seconds ? { seconds: a.seconds } : {}) };
+    spice.win = "shot";
+    changed("spice");
+    did.push("A new shot set up: pick its first frame and roll it");
   }
   return { did, failed };
 }
 
-/** The key of the department open, as it stands: what a yes would run. */
-const signature = (k) => JSON.stringify([spice.dept, spice.tool[spice.dept], k?.label, k?.cost, spice.shot?.body.set[spice.dept], spice.shot?.body.passes.plate?.media.url, spice.shot?.body.range]);
+/** The key as it stands: what a yes would run. */
+const signature = () => JSON.stringify([spice.set, shot()?.id, lookingAt(shot())?.id ?? "plate", inputFor(shot())?.url]);
 
-/** The bar's words, on Spice: Paprika reads the shot and sets the department up. */
+/** The bar's words, on Spice: Paprika reads the scenario and sets the suite up. */
 export async function askSpice(text) {
   const words = text.trim();
-  if (!words || chat.busy || !spice.shot) return;
+  if (!words || chat.busy || !spice.scenario) return;
   chat.messages.push({ role: "user", text: words });
   chat.busy = "Thinking";
   changed("assistant");
@@ -176,12 +102,12 @@ export async function askSpice(text) {
     const message = { role: "assistant", text: out.reply || (go ? "Ready when you are." : did.length ? "Done." : "Nothing to change."), did, failed };
     // running costs credits: it is only offered, with its price; the key under the answer is the user's yes
     if (go) {
-      const key = runnerFor(spice.dept, spice.tool[spice.dept]);
-      if (!key) failed.push("Nothing to run here");
-      else if (!key.ready) failed.push(key.why);
+      const p = plan();
+      if (!p.tool) failed.push("Nothing to run: pick a tool");
+      else if (p.why) failed.push(p.why);
       else {
         for (const m of chat.messages) if (m.confirm?.state === "asking") m.confirm.state = "stale";
-        message.confirm = { state: "asking", label: key.label, cost: key.free ? "free" : typeof key.cost === "number" ? `≈ ${key.cost} cr` : "price at the run", sig: signature(key), dept: spice.dept, running: "Working", done: "Done: it is in the stack", failed: "It didn't finish" };
+        message.confirm = { state: "asking", label: p.tool.name, cost: typeof p.cost === "number" ? `≈ ${p.cost} cr` : "price at the run", sig: signature(), running: "Working", done: "Done: it is on the chain", failed: "It didn't finish" };
       }
     }
     chat.messages.push(message);
@@ -193,12 +119,12 @@ export async function askSpice(text) {
   }
 }
 
-/** The user's yes to running the key: it runs now, if it is still the department and the settings that were offered. */
+/** The user's yes to running the key: it runs now, if it is still the tool and the shot that were offered. */
 export async function confirmSpice(message) {
   const c = message.confirm;
   if (c?.state !== "asking") return;
-  const key = runnerFor(spice.dept, spice.tool[spice.dept]);
-  if (!key?.ready || spice.dept !== c.dept || signature(key) !== c.sig) {
+  const p = plan();
+  if (p.why || signature() !== c.sig) {
     c.state = "stale";
     toast("The shot changed since. Ask me again.");
     return changed("assistant");
@@ -206,7 +132,7 @@ export async function confirmSpice(message) {
   c.state = "running";
   changed("assistant");
   try {
-    const made = await key.run();
+    const made = await run();
     c.state = made === null ? "failed" : "done";
   } catch (e) {
     c.state = "failed";

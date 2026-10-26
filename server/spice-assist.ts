@@ -1,32 +1,18 @@
-// Spice's assistant: Paprika, the baby chameleon who runs the VFX house. This module writes her brief, the tool she answers through, what
-// she is told each time (the shot open: its footage and frame range, the passes the six departments have made, the department open and its
-// settings, what a run would cost, the talk so far) and reads her answer, keeping only what she can do: open a department, trim the shot,
-// add a subject to Roto, set up an effect (the light a layer casts on the shot too, and the shot's own bloom and vignette: `polish`), a
-// clean-up, a light or a finish, and ask for it to run. She knows Spice and nothing else. Setting
-// up costs nothing, so the page does it at once; running costs credits (or time), so her answer only asks for it: the page asks the user,
-// with the price, before anything runs. She cannot click in the viewer or paint a mask: those are the user's.
-import { ELEMENTS, REMOVERS } from "../web/js/spice-model.js";
-import { LIBRARY, BLENDS, MOTIONS } from "../web/js/spice-elements.js";
-import { DEPARTMENTS } from "../web/js/spice-harness.js";
+// Spice's assistant: Paprika, the baby chameleon who runs the AI VFX suite. This module writes her brief, the tool she answers through,
+// what she is told each time (the scenario and its shots, the shot open with its chain of passes, the tool picked and its words, what a
+// run would cost, the talk so far) and reads her answer, keeping only what she can do: open a shot, look at a pass, set a tool up with its
+// words and settings, set a new shot up from words, and ask for the key to run. She knows Spice and nothing else. Setting up costs
+// nothing, so the page does it at once; running costs credits, so her answer only asks for it: the page asks the user, with the price,
+// before anything runs. She cannot pick a first frame or bring a clip in: those are the user's.
 
-export const SPICE_OPS = ["open", "trim", "subject", "layer", "tweak", "polish", "paint", "gen", "light", "finish", "run"] as const;
-export const SPICE_DEPARTMENTS = DEPARTMENTS as readonly string[];
-// Fx: the library's elements (laid free) and the AI effects (Kitchen's presets: made by a model, they cost credits)
-const LIBRARY_IDS = LIBRARY.filter((e) => e.kind !== "ai").map((e) => e.id);
-export const AI_IDS = ELEMENTS.filter((e) => e.preset).map((e) => `ai:${e.id}`);
-const BLEND_IDS = BLENDS.map((b) => b.id);
-const MOTION_IDS = MOTIONS.map(([id]) => id);
-const LIGHT_TOOLS = ["relight", "weather", "grade"] as const;
-const FINISH_TOOLS = ["upscale", "slow", "export"] as const;
-const PAINT_WHAT = ["object", "logo", "subtitles"] as const;
-const WEATHERS = ["rain", "snow", "fog"] as const;
-const GRADES = ["none", "warm", "cool", "filmic", "punchy", "faded", "noir"] as const;
-const FORMATS = ["mp4", "webm", "mov", "gif"] as const;
+export const SPICE_OPS = ["open", "look", "tool", "shot", "run"] as const;
+const SIZES = ["draft", "standard"] as const;
+const HEIGHTS = [720, 1080, 1440];
 
 /** How Paprika answers: the tool she is made to call, so her answer is data and never prose to be guessed at. */
 export const SPICE_TOOL = {
   name: "spice_answer",
-  description: "Answer the user: one or two short sentences, and the actions to take on the shot (none when they only ask a question).",
+  description: "Answer the user: one or two short sentences, and the actions to take on the scenario (none when they only ask a question).",
   input_schema: {
     type: "object",
     properties: {
@@ -38,45 +24,16 @@ export const SPICE_TOOL = {
           type: "object",
           properties: {
             op: { type: "string", enum: [...SPICE_OPS] },
-            department: { type: "string", enum: [...SPICE_DEPARTMENTS], description: "For open: the department to open." },
-            tool: { type: "string", description: "For gen: the id of the IC-LoRA tool to set up, one of those listed under THE IC-LORA TOOLS." },
-            strength: { type: "number", description: "For gen: the LoRA's strength, 0 to 2 (the card's when you leave it out)." },
-            seconds: { type: "number", description: "For gen: the seconds of the footage to run it on, 1 to 10." },
-            size: { type: "string", enum: ["draft", "standard"], description: "For gen: draft (a look, a few credits) or standard (the one to keep)." },
-            in: { type: "number", description: "For trim: the first frame to work on." },
-            out: { type: "number", description: "For trim: the last frame to work on." },
-            name: { type: "string", description: "For subject: what to cut out, by its name." },
-            element: { type: "string", enum: [...LIBRARY_IDS, ...AI_IDS], description: "For layer: a library element (free) or an AI effect (ai:..., made by a model)." },
-            words: { type: "string", description: "In your own words: what an AI layer is (layer), what to remove (paint), the light you want (light)." },
-            x: { type: "number", description: "For layer and tweak: its centre, 0 (left) to 1 (right)." },
-            y: { type: "number", description: "For layer and tweak: its centre, 0 (top) to 1 (bottom)." },
-            size: { type: "number", description: "For layer and tweak: its width as a share of the frame's (1 is the whole width)." },
-            angle: { type: "number", description: "For layer and tweak: its angle in degrees." },
-            blend: { type: "string", enum: BLEND_IDS, description: "For layer and tweak: how it lies on the picture (screen for light and fire)." },
-            opacity: { type: "number", description: "For layer and tweak: 0 to 1." },
-            glow: { type: "number", description: "For layer and tweak: 0 to 1." },
-            light: { type: "number", description: "For layer and tweak (a library element, not particles or an AI effect): how much light it casts on the shot and the people, 0 (none) to 1." },
-            reach: { type: "number", description: "For layer and tweak: how far its light reaches, 0.3 to 4, in boxes of the layer's own size." },
-            follow: { type: "boolean", description: "For layer and tweak, on a clip whose subject Roto holds (not an AI effect): true keeps the layer's place on the subject as it moves, placed where it is now." },
-            bloom: { type: "number", description: "For polish: a soft glow around the bright parts of the whole shot, 0 (none) to 1." },
-            vignette: { type: "number", description: "For polish: darker corners over the whole shot, 0 (none) to 1." },
-            tint: { type: "string", description: "For layer and tweak: a colour #rrggbb laid on its light." },
-            behind: { type: "boolean", description: "For layer and tweak: behind the people Roto holds (true) or in front (false)." },
-            motion: { type: "string", enum: MOTION_IDS, description: "For layer and tweak, on a clip: how it moves." },
-            from: { type: "number", description: "For layer and tweak, on a clip: the first frame it plays on." },
-            to: { type: "number", description: "For layer and tweak, on a clip: the last frame it plays on." },
-            what: { type: "string", enum: [...PAINT_WHAT], description: "For paint: object (words say which), logo or subtitles." },
-            after: { type: "string", description: "For paint with void: the place once the object is gone, what is left there (an empty pavement, a bare wall), never the object." },
-            engine: { type: "string", description: "For paint: void or obscura. For finish slow: free or film." },
-            tool: { type: "string", enum: [...LIGHT_TOOLS, ...FINISH_TOOLS], description: "For light: relight, weather or grade. For finish: upscale, slow or export." },
-            weather: { type: "string", enum: [...WEATHERS] },
-            amount: { type: "number", description: "For light weather: 0 to 1." },
-            grade: { type: "string", enum: [...GRADES] },
-            exposure: { type: "number", description: "For light grade: -1 to 1." },
-            saturation: { type: "number", description: "For light grade: 0 to 3." },
-            height: { type: "number", description: "For finish upscale: 720, 1080 or 1440." },
-            factor: { type: "number", description: "For finish slow: 1.5, 2, 3 or 4." },
-            format: { type: "string", enum: [...FORMATS], description: "For finish export." },
+            shot: { type: "string", description: "For open: the id of the shot to open, one of THE SHOTS." },
+            pass: { type: "string", description: "For look: the id of a pass of the shot open, or plate." },
+            tool: { type: "string", description: "For tool: the id of the tool to set up, one of THE TOOLS." },
+            words: { type: "string", description: "For tool: what the tool is told (the effect, the subject to cut out, the sound). For shot: what LTX-2.5 is told of the motion." },
+            scene: { type: "string", description: "For tool, a card with a fixed grammar: the shot described in a sentence." },
+            strength: { type: "number", description: "For tool, an IC-LoRA: its strength, 0 to 2 (the card's when left out)." },
+            size: { type: "string", enum: [...SIZES], description: "For tool, an IC-LoRA: draft (a look, a few credits) or standard (the one to keep)." },
+            seconds: { type: "number", description: "For tool: the seconds of the clip to run it on, 1 to 10. For shot: the seconds to roll, 2 to 10." },
+            aspect: { type: "number", description: "For tool, a widening tool: the frame's width over its height to widen to (2.39 for scope, 1 for a square)." },
+            height: { type: "number", description: "For tool, the upscale: 720, 1080 or 1440." },
           },
           required: ["op"],
         },
@@ -86,39 +43,29 @@ export const SPICE_TOOL = {
   },
 };
 
-export const SPICE_BRIEF = `You are Paprika, the baby chameleon who runs Comfyture's Spice: a VFX house. A shot (a clip or a picture) goes through seven departments, each making its pass: plate (the footage: trim it, read its depth), roto (cut subjects out as mattes), paint (take out an object, a logo, the subtitles), gen (IC-LoRA tools that redraw the clip), light (relight, a new sky, weather, a grade), fx (a compositor: effects laid as layers the user moves on the picture, from a library or made by an AI model) and comp (upscale, slow motion, export). You are warm, quick, a little theatrical, and say one or two short sentences in the user's language, through the spice_answer tool.
+export const SPICE_BRIEF = `You are Paprika, the baby chameleon who runs Comfyture's Spice: an AI VFX suite. A scenario is a few shots. Each shot is its plate (a clip LTX-2.5 rolled from a first frame and some words, or a clip brought in) and a chain of passes the suite's tools made on it, each on the one before. Every tool is a workflow on Comfy Cloud: the IC-LoRAs of LTX-2.3 (restore, upscale, grade and light, clean, frame, camera, control, effects), SAM3's cut-out, SeedVR2's upscale, LTX-2.5's sound, Wan's restyle. A pass keeps the clip it ran on and the clip it made; the viewer wipes between them. You are warm, quick, a little theatrical, and say one or two short sentences in the user's language, through the spice_answer tool.
 
-You set things up; the user presses the keys. You cannot click in the viewer, paint a mask or import a file.
+You set things up; the user presses the keys. You cannot pick a first frame, bring a clip in or click in the viewer.
 
 Actions:
-- open {department}
-- trim {in, out}: the frames worked on (slate numbers: the first is 1001).
-- subject {name}: a subject for Roto to cut out ("the frog").
-- layer {element, x, y, size, angle, blend, opacity, glow, light, reach, follow, tint, behind, motion, from, to, words}: add an Fx layer and hold it. element: a library id, laid free, or an AI id (ai:portal...), made by a model when run (credits; words say what). x, y: its centre, 0 to 1. size: its width as a share of the frame. angle in degrees. opacity, glow 0 to 1. light 0 to 1: the light it casts on the shot and the people (fires and portals shine, smoke does not). reach 0.3 to 4: how far, in boxes of its own. follow true: stays on Roto's subject as it moves (clips). tint #rrggbb. behind true: behind the people Roto holds. motion (clips) and from, to (frames). Send only what was asked.
-- tweak {same fields, no element}: change the layer held.
-- polish {bloom, vignette}: Fx's whole-shot finish (not Comp's): a glow round bright parts, dark corners; 0 to 1.
-- paint {what, words, after, engine}: object (words name it), logo or subtitles; engine void or obscura; after (void): what is left.
-- gen {tool, words, strength, seconds, size}: an IC-LoRA tool, by an id of THE IC-LORA TOOLS; size draft or standard.
-- light {tool, words, weather, amount, grade, exposure, saturation}: relight (words), weather (rain, snow, fog; amount 0 to 1) or grade (none, warm, cool, filmic, punchy, faded, noir).
-- finish {tool, height, factor, engine, format}: upscale (720, 1080, 1440), slow (1.5, 2, 3, 4; free or film) or export (mp4, webm, mov, gif).
-- run {}: run the key of the department open (Fx: make the AI layer held, else bake, free). It may cost credits: the app asks the user to confirm, so say it is ready, never that it has started.
+- open {shot}: open a shot of the scenario, by an id of THE SHOTS.
+- look {pass}: look at a pass of the shot open (an id of ITS PASSES), or plate. A new run goes on the pass looked at.
+- tool {tool, words, scene, strength, size, seconds, aspect, height}: pick a tool by an id of THE TOOLS and set it up. words: what it is told (a card with a fixed grammar takes the effect's words; cut-out takes the subject's name; sound takes what is heard). scene: the shot in a sentence, for a card with a fixed grammar. strength 0 to 2, size draft or standard, seconds 1 to 10 (IC-LoRAs). aspect: width over height, for a widening tool. height 720, 1080 or 1440, for the upscale. Send only what was asked.
+- shot {words, seconds}: set a new shot up: what LTX-2.5 is told of the motion, and its seconds (2 to 10). The user picks its first frame and rolls it.
+- run {}: run the key of the tool picked on the shot open. It costs credits: the app asks the user to confirm, so say it is ready, never that it has started.
 
-Rules: only the ids and frames shown below. Set up what fits the job (open it, set it; run when they say do it). Missing footage or a name: one short question, no run. A question: an answer, no action. Never promise what you did not do. Someone new ("how do I start?"): two short sentences on where to begin and the key to press, and that Show me around, above the bar, walks through an example for free.`;
+Rules: only the ids shown below. A tool that needs more than a clip cannot run: say so. Set up what fits the job (open the shot, pick the tool, set its words; run when they say do it). Chain passes for a job in steps (take the van out, then turn the day to night, then widen). Missing footage or words: one short question, no run. A question: an answer, no action. Never promise what you did not do. Someone new ("how do I start?"): two short sentences on where to begin and the key to press, and that Show me around, above the bar, walks through the example for free.`;
 
-interface Pass { dept: string; note?: string; credits?: number; from?: number; to?: number; shown?: boolean }
+interface Pass { id: string; tool?: string; name?: string; words?: string; credits?: number }
+interface ShotSummary { id: string; name?: string; passes?: number; plate?: boolean }
 interface Summary {
-  gen?: { tool?: string; tools?: { id: string; name: string; family?: string; about?: string; needs?: string[] }[]; words?: string; strength?: number | null; size?: string; seconds?: number; takes?: number };
-  department?: string;
-  shot?: string;
-  shots?: number;
-  footage?: { kind?: string; name?: string; width?: number; height?: number; fps?: number; frames?: number; first?: number; last?: number; range?: [number, number] } | null;
-  passes?: Pass[];
-  subjects?: { name: string; tracked?: boolean; clicks?: number }[];
-  fx?: { layers?: { el?: string; name?: string; x?: number; y?: number; size?: number; blend?: string; behind?: boolean; made?: boolean; from?: number | null; to?: number | null; light?: number; reach?: number; follow?: boolean }[]; held?: string | null; matte?: boolean; finish?: { bloom?: number; vignette?: number } };
-  paint?: { what?: string; engine?: string; words?: string; after?: string };
-  light?: { tool?: string; words?: string; weather?: string; grade?: string };
-  comp?: { tool?: string; height?: number; factor?: number; engine?: string; format?: string };
-  run?: { label?: string; cost?: number | null; free?: boolean; ready?: boolean; why?: string };
+  scenario?: string;
+  logline?: string;
+  shots?: ShotSummary[];
+  shot?: { id?: string; name?: string; about?: string; plate?: { width?: number; height?: number; seconds?: number } | null; passes?: Pass[]; looking?: string; bin?: number } | null;
+  tool?: { id?: string; words?: string; scene?: string; strength?: number | null; size?: string; seconds?: number; aspect?: number | null; height?: number };
+  tools?: { id: string; name: string; family?: string; about?: string; needs?: string[]; status?: string; takes?: string[] }[];
+  run?: { label?: string; cost?: number | null; ready?: boolean; why?: string };
   today?: number;
   busy?: string[];
 }
@@ -134,52 +81,36 @@ const num = (v: unknown, lo: number, hi: number): number | undefined => {
 const oneOf = <T extends string>(v: unknown, values: readonly T[]): T | undefined => (typeof v === "string" && (values as readonly string[]).includes(v) ? (v as T) : undefined);
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
-/** What Paprika is told each time: the shot, its footage, the passes, the department open and what it holds, the key's price, the talk so far. */
+/** What Paprika is told each time: the scenario, the shot open and its chain, the tool picked, the key's price, the talk so far. */
 export function spicePrompt(s: Summary, turns: Turn[]) {
   const lines: string[] = [];
-  const here = cut(s.department, 8);
-  lines.push(`THE SHOT: ${cut(s.shot, 60) || "untitled"}${typeof s.shots === "number" ? ` (${s.shots} shot${s.shots === 1 ? "" : "s"} in all)` : ""}. DEPARTMENT OPEN: ${here || "none"}. THE DEPARTMENTS, in order: ${SPICE_DEPARTMENTS.join(", ")}.`);
-  const f = s.footage;
-  if (f && typeof f === "object") {
-    const r = Array.isArray(f.range) ? `, worked on frames ${Number(f.range[0])} to ${Number(f.range[1])}` : "";
-    lines.push(`THE FOOTAGE: ${cut(f.kind, 8) === "image" ? "a picture" : "a clip"} ${cut(f.name, 60)}, ${Number(f.width) || "?"} × ${Number(f.height) || "?"}${f.kind === "video" ? `, ${Number(f.fps) || 24} fps, frames ${Number(f.first) || 1001} to ${Number(f.last) || "?"}` : ""}${r}.`);
-  } else lines.push("THE FOOTAGE: none yet. The user brings it to the plate; until then nothing can be run.");
-  const passes = things<Pass>(s.passes, 8);
-  lines.push(passes.length ? `THE PASSES MADE: ${passes.map((p) => `${cut(p.dept, 8)}${p.note ? ` (${cut(p.note, 60)})` : ""}${typeof p.from === "number" ? `, frames ${p.from}-${p.to}` : ""}${p.shown === false ? ", hidden" : ""}`).join("; ")}.` : "THE PASSES MADE: none beyond the footage.");
-  const subjects = things<{ name: string; tracked?: boolean; clicks?: number }>(s.subjects, 6);
-  if (subjects.length) lines.push(`ROTO'S SUBJECTS: ${subjects.map((x) => `${cut(x.name, 40)} (${x.tracked ? "cut out" : "not yet"}, ${Number(x.clicks) || 0} clicks)`).join("; ")}.`);
-  lines.push(`FX LIBRARY (ids): ${LIBRARY_IDS.join(", ")}. AI EFFECTS (ids): ${AI_IDS.join(", ")}. BLENDS: ${BLEND_IDS.join(", ")}. MOTIONS: ${MOTION_IDS.join(", ")}.`);
-  if (s.fx && typeof s.fx === "object") {
-    const layers = things<NonNullable<NonNullable<Summary["fx"]>["layers"]>[number]>(s.fx.layers, 12);
-    const at = (v: unknown) => (typeof v === "number" ? v.toFixed(2) : "?");
-    // (the light a layer casts, told only for one that casts some: the others cast none)
-    const shines = (l: { light?: number; reach?: number }) => (typeof l.light === "number" && l.light > 0 ? `, light ${at(l.light)}, reach ${typeof l.reach === "number" ? l.reach.toFixed(1) : "?"}` : "");
-    lines.push(layers.length
-      ? `FX LAYERS (bottom first): ${layers.map((l) => `${cut(l.name || l.el, 30)} (${cut(l.el, 16)}, at ${at(l.x)} ${at(l.y)}, size ${at(l.size)}, ${cut(l.blend, 8)}${shines(l)}${l.follow ? ", follows the subject" : ""}${l.behind ? ", behind the people" : ""}${l.made === false ? ", not made yet" : ""}${typeof l.from === "number" ? `, frames ${l.from}-${l.to}` : ""})`).join("; ")}. HELD: ${cut(s.fx.held, 30) || "none"}.`
-      : "FX LAYERS: none yet.");
-    if (s.fx.finish && typeof s.fx.finish === "object") lines.push(`FX FINISH (the whole shot): bloom ${at(s.fx.finish.bloom)}, vignette ${at(s.fx.finish.vignette)}.`);
-    if (s.fx.matte === false) lines.push("ROTO HOLDS NOBODY YET: a layer cannot go behind the people until a subject is cut out.");
+  lines.push(`THE SCENARIO: ${cut(s.scenario, 60) || "untitled"}${s.logline ? ` (${cut(s.logline, 160)})` : ""}.`);
+  const shots = things<ShotSummary>(s.shots, 24);
+  lines.push(shots.length ? `THE SHOTS (id = name, passes): ${shots.map((x) => `${cut(x.id, 40)} = ${cut(x.name, 40)}, ${Number(x.passes) || 0} pass${Number(x.passes) === 1 ? "" : "es"}${x.plate === false ? ", no plate yet" : ""}`).join("; ")}.` : "THE SHOTS: none yet. The user adds one (a first frame rolled by LTX-2.5, or a clip brought in); until then nothing can be run.");
+  const sh = s.shot;
+  if (sh && typeof sh === "object") {
+    const p = sh.plate;
+    lines.push(`THE SHOT OPEN: ${cut(sh.id, 40)} = ${cut(sh.name, 40)}${sh.about ? ` (${cut(sh.about, 120)})` : ""}. ${p && typeof p === "object" ? `Its plate is ${Number(p.width) || "?"} × ${Number(p.height) || "?"}, ${Number(p.seconds) || "?"} s.` : "It has no plate yet."}`);
+    const passes = things<Pass>(sh.passes, 40);
+    lines.push(passes.length ? `ITS PASSES, in order (id = tool, words): ${passes.map((x) => `${cut(x.id, 40)} = ${cut(x.name || x.tool, 40)}${x.words ? `, "${cut(x.words, 60)}"` : ""}`).join("; ")}. LOOKING AT: ${cut(sh.looking, 40) || "the last"}.` : "ITS PASSES: none yet (the plate as it is).");
+    if (Number(sh.bin) > 0) lines.push(`${Number(sh.bin)} take${Number(sh.bin) === 1 ? " waits" : "s wait"} in the bin.`);
   }
-  if (s.gen && typeof s.gen === "object") {
-    const ts = things<{ id: string; name: string; family?: string; about?: string; needs?: string[] }>(s.gen.tools, 60);
-    lines.push(`THE IC-LORA TOOLS (Gen; id = name, family, what it does${ts.some((t) => t.needs?.length) ? "; a tool that needs more than a clip cannot be run yet" : ""}): ${ts.map((t) => `${cut(t.id, 40)} = ${cut(t.name, 40)}, ${cut(t.family, 16)}, ${cut(t.about, 90)}${t.needs?.length ? ` [needs ${t.needs.map((x) => cut(x, 12)).join(", ")}]` : ""}`).join(" | ")}.`);
-    lines.push(`GEN HOLDS: tool ${cut(s.gen.tool, 40) || "none"}, words "${cut(s.gen.words, 120)}", strength ${typeof s.gen.strength === "number" ? s.gen.strength : "the card's"}, ${cut(s.gen.size, 8) || "draft"}, ${Number(s.gen.seconds) || 2} s, ${Number(s.gen.takes) || 0} takes made.`);
-  }
-  if (s.paint && typeof s.paint === "object") lines.push(`PAINT HOLDS: ${cut(s.paint.what, 12)}${s.paint.words ? ` "${cut(s.paint.words, 80)}"` : ""}${s.paint.after ? `, what is left "${cut(s.paint.after, 80)}"` : ""}, engine ${cut(s.paint.engine, 10)}. ENGINES: ${REMOVERS.join(", ")}.`);
-  if (s.light && typeof s.light === "object") lines.push(`LIGHT HOLDS: ${cut(s.light.tool, 10)}, light "${cut(s.light.words, 80)}", weather ${cut(s.light.weather, 6)}, grade ${cut(s.light.grade, 8)}.`);
-  if (s.comp && typeof s.comp === "object") lines.push(`COMP HOLDS: ${cut(s.comp.tool, 8)}, ${Number(s.comp.height) || "?"}p, ${s.comp.factor ?? "?"}x, ${cut(s.comp.engine, 6)}, ${cut(s.comp.format, 5)}.`);
+  const tools = things<NonNullable<Summary["tools"]>[number]>(s.tools, 60);
+  if (tools.length) lines.push(`THE TOOLS (id = name, family, what it does${tools.some((t) => t.needs?.length) ? "; one that needs more than a clip cannot run yet" : ""}): ${tools.map((t) => `${cut(t.id, 40)} = ${cut(t.name, 40)}, ${cut(t.family, 16)}, ${cut(t.about, 90)}${t.takes?.includes("words") ? "" : " [no words]"}${t.needs?.length ? ` [needs ${t.needs.map((x) => cut(x, 24)).join(", ")}]` : ""}`).join(" | ")}.`);
+  const t = s.tool;
+  if (t && typeof t === "object") lines.push(`THE TOOL PICKED: ${cut(t.id, 40) || "none"}, words "${cut(t.words, 160)}"${t.scene ? `, scene "${cut(t.scene, 120)}"` : ""}, strength ${typeof t.strength === "number" ? t.strength : "the card's"}, ${cut(t.size, 8) || "draft"}, ${Number(t.seconds) || "all"} s${typeof t.aspect === "number" ? `, aspect ${t.aspect}` : ""}${t.height ? `, ${t.height}p` : ""}.`);
   const r = s.run;
-  if (r && typeof r === "object") lines.push(`THE KEY OF THE DEPARTMENT OPEN: "${cut(r.label, 40)}". ${r.ready ? "It has what it needs." : `It is missing something: ${cut(r.why, 80)}.`} ${r.free ? "It runs free, on this machine." : typeof r.cost === "number" ? `Running it costs about ${Math.round(r.cost)} credits.` : "Its price is told when it runs."}`);
-  if (Array.isArray(s.busy) && s.busy.length) lines.push(`WORKING NOW: ${s.busy.map((x) => cut(x, 8)).join(", ")}.`);
+  if (r && typeof r === "object") lines.push(`THE KEY: "${cut(r.label, 40)}". ${r.ready ? "It has what it needs." : `It is missing something: ${cut(r.why, 100)}.`} ${typeof r.cost === "number" ? `Running it costs about ${Math.round(r.cost)} credits.` : "Its price is told when it runs."}`);
+  if (Array.isArray(s.busy) && s.busy.length) lines.push(`WORKING NOW: ${s.busy.map((x) => cut(x, 40)).join(", ")}.`);
   if (typeof s.today === "number") lines.push(`CREDITS SPENT TODAY: ${Math.round(s.today)}.`);
   lines.push("", "THE CONVERSATION");
-  for (const t of turns.slice(-8)) lines.push(`${t.role === "user" ? "User" : "Paprika"}: ${cut(t.text, 600)}${t.did?.length ? ` [the app did: ${t.did.join(", ")}]` : ""}`);
+  for (const turn of turns.slice(-8)) lines.push(`${turn.role === "user" ? "User" : "Paprika"}: ${cut(turn.text, 600)}${turn.did?.length ? ` [the app did: ${turn.did.join(", ")}]` : ""}`);
   return lines.join("\n");
 }
 
 /**
  * Paprika's answer, read whole and checked against what the page told her: only her own actions, each with only what it takes, every
- * choice one of its values, every number within its range (a frame within the footage), and run once, last. Anything else is dropped.
+ * id one the page listed, every number within its range, and run once, last. Anything else is dropped.
  */
 export function readSpiceAnswer(reply: string, s: Summary = {}) {
   const from = reply.indexOf("{");
@@ -190,123 +121,49 @@ export function readSpiceAnswer(reply: string, s: Summary = {}) {
   } catch {
     return { reply: reply.replace(/[{}"]/g, "").trim().slice(0, 400) || "I didn't catch that. Say it again?", actions: [] as any[] };
   }
-  const first = Number(s.footage?.first) || 1001;
-  const last = Number(s.footage?.last) || first;
-  const frame = (v: unknown) => (num(v, first, last) === undefined ? undefined : Math.round(num(v, first, last)!));
+  const shotIds = things<ShotSummary>(s.shots, 24).map((x) => String(x.id));
+  const passIds = ["plate", ...things<Pass>(s.shot?.passes, 40).map((x) => String(x.id))];
+  const tools = things<NonNullable<Summary["tools"]>[number]>(s.tools, 60);
+  const toolIds = tools.map((x) => String(x.id));
   const actions: any[] = [];
   let run = false;
   for (const a of list<any>(raw.actions, 40)) {
     if (actions.length >= 8) break;
     switch (a?.op) {
       case "open": {
-        const department = oneOf(a.department, SPICE_DEPARTMENTS);
-        if (department) actions.push({ op: "open", department });
+        const shot = oneOf(a.shot, shotIds);
+        if (shot) actions.push({ op: "open", shot });
         break;
       }
-      case "trim": {
-        const inn = frame(a.in);
-        const out = frame(a.out);
-        if (inn !== undefined || out !== undefined) actions.push({ op: "trim", ...(inn !== undefined ? { in: inn } : {}), ...(out !== undefined ? { out } : {}) });
+      case "look": {
+        const pass = oneOf(a.pass, passIds);
+        if (pass) actions.push({ op: "look", pass });
         break;
       }
-      case "subject": {
-        const name = cut(a.name, 60);
-        if (name) actions.push({ op: "subject", name });
-        break;
-      }
-      case "layer":
-      case "tweak": {
-        const out: any = { op: a.op };
-        if (a.op === "layer") {
-          const element = oneOf(a.element, [...LIBRARY_IDS, ...AI_IDS]);
-          if (!element) break;
-          out.element = element;
-        }
-        if (typeof a.words === "string" && cut(a.words, 600)) out.words = cut(a.words, 600);
-        for (const k of ["x", "y"] as const) if (num(a[k], -0.5, 1.5) !== undefined) out[k] = r2(num(a[k], -0.5, 1.5)!);
-        if (num(a.size, 0.03, 3) !== undefined) out.size = r2(num(a.size, 0.03, 3)!);
-        if (num(a.angle, -360, 360) !== undefined) out.angle = Math.round(num(a.angle, -360, 360)!);
-        const blend = oneOf(a.blend, BLEND_IDS);
-        if (blend) out.blend = blend;
-        for (const k of ["opacity", "glow", "light"] as const) if (num(a[k], 0, 1) !== undefined) out[k] = r2(num(a[k], 0, 1)!);
-        if (num(a.reach, 0.3, 4) !== undefined) out.reach = r2(num(a.reach, 0.3, 4)!);
-        if (typeof a.tint === "string" && /^#[0-9a-f]{6}$/i.test(a.tint)) out.tint = a.tint.toLowerCase();
-        if (typeof a.behind === "boolean") out.behind = a.behind;
-        if (typeof a.follow === "boolean") out.follow = a.follow;
-        const motion = oneOf(a.motion, MOTION_IDS);
-        if (motion) out.motion = motion;
-        for (const k of ["from", "to"] as const) if (frame(a[k]) !== undefined) out[k] = frame(a[k]);
-        if (a.op === "layer" || Object.keys(out).length > 1) actions.push(out);
-        break;
-      }
-      case "polish": {
-        // the shot's own finish: what it says of the bloom and the vignette, kept inside 0 to 1 (an empty polish is dropped)
-        const out: any = { op: "polish" };
-        for (const k of ["bloom", "vignette"] as const) if (num(a[k], 0, 1) !== undefined) out[k] = r2(num(a[k], 0, 1)!);
-        if (Object.keys(out).length > 1) actions.push(out);
-        break;
-      }
-      case "paint": {
-        const what = oneOf(a.what, PAINT_WHAT);
-        if (!what) break;
-        const out: any = { op: "paint", what };
-        if (what === "object" && cut(a.words, 300)) out.words = cut(a.words, 300);
-        if (what === "object" && cut(a.after, 300)) out.after = cut(a.after, 300);
-        const engine = oneOf(a.engine, REMOVERS as readonly string[]);
-        if (what === "object" && engine) out.engine = engine;
-        actions.push(out);
-        break;
-      }
-      case "gen": {
-        // an IC-LoRA tool of the suite set up: only a tool the page listed, its words, its strength, its size and seconds
-        const ids = things<{ id: string }>(s.gen?.tools, 60).map((t) => String(t.id));
-        const tool = oneOf(a.tool, ids as readonly string[]);
+      case "tool": {
+        const tool = oneOf(a.tool, toolIds);
         if (!tool) break;
-        const out: any = { op: "gen", tool };
-        if (cut(a.words, 600)) out.words = cut(a.words, 600);
+        const def = tools.find((x) => x.id === tool)!;
+        const out: any = { op: "tool", tool };
+        if (cut(a.words, 600) && (def.takes?.includes("words") ?? true)) out.words = cut(a.words, 600);
+        if (cut(a.scene, 400)) out.scene = cut(a.scene, 400);
         if (num(a.strength, 0, 2) !== undefined) out.strength = r2(num(a.strength, 0, 2)!);
-        if (num(a.seconds, 1, 10) !== undefined) out.seconds = Math.round(num(a.seconds, 1, 10)!);
-        const size = oneOf(a.size, ["draft", "standard"] as const);
+        const size = oneOf(a.size, SIZES);
         if (size) out.size = size;
-        actions.push(out);
-        break;
-      }
-      case "light": {
-        const tool = oneOf(a.tool, LIGHT_TOOLS);
-        if (!tool) break;
-        const out: any = { op: "light", tool };
-        if (tool === "relight" && cut(a.words, 300)) out.words = cut(a.words, 300);
-        if (tool === "weather") {
-          const weather = oneOf(a.weather, WEATHERS);
-          if (weather) out.weather = weather;
-          if (num(a.amount, 0, 1) !== undefined) out.amount = Math.round(num(a.amount, 0, 1)! * 100) / 100;
-        }
-        if (tool === "grade") {
-          const grade = oneOf(a.grade, GRADES);
-          if (grade) out.grade = grade;
-          if (num(a.exposure, -1, 1) !== undefined) out.exposure = Math.round(num(a.exposure, -1, 1)! * 100) / 100;
-          if (num(a.saturation, 0, 3) !== undefined) out.saturation = Math.round(num(a.saturation, 0, 3)! * 100) / 100;
-        }
-        actions.push(out);
-        break;
-      }
-      case "finish": {
-        const tool = oneOf(a.tool, FINISH_TOOLS);
-        if (!tool) break;
-        const out: any = { op: "finish", tool };
-        if (tool === "upscale") {
-          const h = [720, 1080, 1440].find((v) => v === Math.round(Number(a.height)));
+        if (num(a.seconds, 1, 10) !== undefined) out.seconds = Math.round(num(a.seconds, 1, 10)!);
+        if (def.takes?.includes("aspect") && num(a.aspect, 0.25, 4) !== undefined) out.aspect = r2(num(a.aspect, 0.25, 4)!);
+        if (def.takes?.includes("height")) {
+          const h = HEIGHTS.find((v) => v === Math.round(Number(a.height)));
           if (h) out.height = h;
-        } else if (tool === "slow") {
-          const f = [1.5, 2, 3, 4].find((v) => v === Number(a.factor));
-          if (f) out.factor = f;
-          const engine = oneOf(a.engine, ["free", "film"] as const);
-          if (engine) out.engine = engine;
-        } else {
-          const format = oneOf(a.format, FORMATS);
-          if (format) out.format = format;
         }
         actions.push(out);
+        break;
+      }
+      case "shot": {
+        const out: any = { op: "shot" };
+        if (cut(a.words, 1200)) out.words = cut(a.words, 1200);
+        if (num(a.seconds, 2, 10) !== undefined) out.seconds = Math.round(num(a.seconds, 2, 10)!);
+        if (out.words || out.seconds) actions.push(out);
         break;
       }
       case "run":
@@ -314,7 +171,9 @@ export function readSpiceAnswer(reply: string, s: Summary = {}) {
         break;
     }
   }
-  // running is asked for once, last, and only when there is a department it could be the key of
-  if (run && (SPICE_DEPARTMENTS.includes(String(s.department)) || actions.some((a) => a.op !== "trim"))) actions.push({ op: "run" });
+  // running is asked for once, last, and only with a tool to run (one picked now, or one set up in this answer) on a shot that has a plate
+  const picked = actions.find((a) => a.op === "tool")?.tool ?? s.tool?.id;
+  const needs = tools.find((x) => x.id === picked)?.needs?.length;
+  if (run && picked && !needs && s.shot?.plate) actions.push({ op: "run" });
   return { reply: cut(raw.reply, 500), actions };
 }
