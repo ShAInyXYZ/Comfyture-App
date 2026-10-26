@@ -9,6 +9,8 @@ import { toolOf, run, plan } from "./spice-tools.js";
 import { primary, ghost, spicon, fill } from "./spice-ui.js";
 
 const reading = new Set();
+// her read is shown short (three lines) until "more" is pressed
+let more = false;
 
 /** Paprika reads the shot open: one frame goes to her, her read and her chains are kept with the shot. */
 export async function readShot() {
@@ -96,8 +98,10 @@ export function guideBody() {
   if (!r) return h("div.sp-guide", {}, h("p.sp-hint", {}, "I look at a frame of the shot, say what I see and what looks off, and propose a few chains of passes. Then tell me what you want of it."), h("div.sp-tool-key", {}, key));
   const p = plan();
   const canRun = !!s.plate && s.plate.kind === "video" && !working;
+  const long = r.text.length > 200;
   return h("div.sp-guide", {},
-    h("p.sp-read", {}, r.text),
+    h(`p.sp-read${long && !more ? ".is-clamped" : ""}`, {}, r.text),
+    long ? h("button.sp-link-ask.sp-more", { type: "button", on: { click: () => ((more = !more), changed("spice")) } }, more ? "Less" : "Read the whole of it") : null,
     r.off ? h("p.sp-read-off", {}, spicon("sparkle"), h("span", {}, r.off)) : null,
     ...r.suggestions.map((c, i) => {
       const cost = chainCost(c.steps, s);
@@ -121,5 +125,5 @@ export function guideSummary() {
 /** The PAPRIKA bento, drawn with the suite. */
 export function guidePart() {
   const body = h("div.sp-b-body");
-  return { body, update: () => fill(body, guideBody()), sig: () => JSON.stringify([shot()?.id, shot()?.read, [...reading]]) };
+  return { body, update: () => fill(body, guideBody()), sig: () => JSON.stringify([shot()?.id, shot()?.read, [...reading], more]) };
 }

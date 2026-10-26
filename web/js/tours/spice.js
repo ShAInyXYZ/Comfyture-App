@@ -111,24 +111,24 @@ export default {
     },
     {
       go: open,
-      target: ".sp-b-tools",
-      place: "top",
+      target: ".sp-browse",
+      place: "left",
       title: "The tools",
-      text: "Every tool is a card: a real run of it on our own footage, what it was given on the left and what it made on the right. The IC-LoRAs of LTX-2.3 (restore, upscale, grade and light, clean, frame, camera, control, effects), SAM3's **cut-out**, SeedVR2's **upscale**, LTX-2.5's **sound**, and the catalog's templates. The dot says what the run showed: green did what its card says, red did not, grey needs more than a clip.",
+      text: "**Browse the tools** opens the library: every tool is a card with a real run of it on our own footage, what it was given on the left and what it made on the right. The IC-LoRAs of LTX-2.3 (restore, upscale, grade and light, clean, frame, camera, control, effects), SAM3's **cut-out**, SeedVR2's **upscale**, LTX-2.5's **sound**, and the catalog's templates. The dot says what the run showed: green did what its card says, red did not, grey needs more than a clip. A card picks its tool.",
     },
     {
       go: onBestShot,
-      target: ".sp-b-guide",
+      target: ".sp-b-next",
       place: "left",
       title: "Paprika's read",
       text: "I look at a frame of the shot and say what I see and what looks off, then propose a few **chains** of passes, each with its tools, its words and its price. **Run it** runs the whole chain with one yes; **Step by step** sets the first tool up for you. Tell me in the bar what you want instead, and I answer with a chain.",
     },
     {
       go: open,
-      target: ".sp-b-tool",
+      target: ".sp-b-next",
       place: "left",
       title: "The tool picked",
-      text: "Pick one and its card comes here: what it is told, its strength and seconds, draft or standard, and the yellow key with its **price**. The key asks first and spends on the second press. Nothing runs by itself.",
+      text: "Pick a tool, from my chains or the library, and its card takes my place: what it is told, its strength and seconds, draft or standard, and the yellow key with its **price**. The key asks first and spends on the second press. Nothing runs by itself. **Her chains** brings my read back.",
       show: {
         label: "Pick Deblur",
         run: () =>

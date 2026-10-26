@@ -57,9 +57,11 @@ export function createViewer(on = {}) {
   const scrub = h("div.sp-scrub", {}, playhead);
   const time = h("div.sp-time", {}, h("div.sp-time-head", {}, counter, keys), strip, ruler, scrub);
   const chain = h("div.sp-chain", { role: "group", "aria-label": "The chain of passes" });
+  // what is looked at, in a line: the pass's words, size and price, or where the plate came from
+  const info = h("p.sp-pass-info");
   const title = h("span.sp-b-label.sp-viewer-title");
   const expand = h("button.sp-expand", { type: "button", title: "Make the viewer large", "aria-label": "Make the viewer large", on: { click: () => toggleBig() } }, spicon("expand"));
-  const el = h("section.sp-bento.sp-viewer", { role: "group", "aria-label": "Viewer" }, h("div.sp-b-head", {}, title, expand), host, time, chain);
+  const el = h("section.sp-bento.sp-viewer", { role: "group", "aria-label": "Viewer" }, h("div.sp-b-head", {}, title, expand), host, time, chain, info);
 
   const plate = () => st.ctx?.shot?.plate ?? null;
   const last = () => lastFrame(plate(), st.fps);
@@ -113,11 +115,14 @@ export function createViewer(on = {}) {
     if (afterEl) setTime(afterEl, t);
     st.beforeEl = beforeEl;
     st.afterEl = afterEl;
+    // a sound pass changes nothing of the picture: the clip it made is shown whole, with no wipe to drag
+    const same = !!pass && pass.tool === "sound";
+    stage.classList.toggle("is-same", same);
     afterBox.hidden = !afterEl;
-    wipe.hidden = !afterEl;
-    chipBefore.hidden = !beforeEl || !afterEl;
+    wipe.hidden = !afterEl || same;
+    chipBefore.hidden = !beforeEl || !afterEl || same;
     chipAfter.hidden = !afterEl;
-    chipAfter.textContent = pass ? pass.name || pass.tool : "After";
+    chipAfter.textContent = pass ? (same ? `${pass.name || pass.tool} · the same picture, with its sound` : pass.name || pass.tool) : "After";
     chipBefore.textContent = pass ? (pass.on ? "Before" : "Plate") : "Plate";
     counter.textContent = String(spice.frame);
     const span = Math.max(1, last() - FIRST);
@@ -311,15 +316,21 @@ export function createViewer(on = {}) {
     const sig = JSON.stringify(shot?.plate ? [shot.id, sel, !!shot.made, shot.passes.map((p) => [p.id, p.name, p.words, p.credits, !!p.example]), shot.bin.length] : null);
     if (sig === st.chainSig) return;
     st.chainSig = sig;
-    if (!shot?.plate) return void fill(chain);
-    const chip = (id, label, note, canOff) => h(`div.sp-link${sel === id ? ".is-on" : ""}`, { dataset: { pass: id } },
-      h("button.sp-link-main", { type: "button", "aria-pressed": String(sel === id), title: note, on: { click: () => lookAt(id) } }, h("b", {}, label)),
+    if (!shot?.plate) return void (fill(chain), fill(info));
+    const chip = (id, label, note, canOff, n = 0) => h(`div.sp-link${sel === id ? ".is-on" : ""}`, { dataset: { pass: id } },
+      h("button.sp-link-main", { type: "button", "aria-pressed": String(sel === id), title: note, on: { click: () => lookAt(id) } }, n ? h("i.sp-link-n", {}, String(n)) : null, h("b", {}, label)),
       canOff ? h("button.sp-link-off", { type: "button", title: "Take this pass off: it waits in the bin, with what was made on top of it", "aria-label": `Take ${label} off`, on: { click: (e) => (e.stopPropagation(), takeOff(id)) } }, spicon("close")) : null);
     fill(chain,
+      h("span.sp-chain-label", {}, "Passes"),
       chip("plate", "Plate", shot.made ? "The plate: rolled by LTX-2.5" : "The plate: the footage as it came", false),
-      ...shot.passes.flatMap((p) => [h("i.sp-link-arrow", {}, spicon("chev")), chip(p.id, p.name || p.tool, `${p.name}${p.words ? ` · ${p.words.slice(0, 80)}` : ""}${p.credits ? ` · ${p.credits} cr` : p.example ? " · example" : ""}`, true)]),
+      ...shot.passes.flatMap((p, i) => [h("i.sp-link-arrow", {}, spicon("chev")), chip(p.id, p.name || p.tool, `${p.name}${p.words ? ` · ${p.words.slice(0, 80)}` : ""}${p.credits ? ` · ${p.credits} cr` : p.example ? " · example" : ""}`, true, i + 1)]),
       // the bin: the passes taken off, waiting to be put back
       shot.bin.length ? h("button.sp-link-bin", { type: "button", title: "The bin: passes taken off the chain, to put back or forget", on: { click: () => openWin("bin") } }, spicon("undo"), h("span", {}, `Bin · ${shot.bin.length}`)) : null);
+    const cut = (w, n = 80) => `“${w.slice(0, n)}${w.length > n ? "…" : ""}”`;
+    const seconds = Math.round(shot.plate.seconds ?? 0);
+    fill(info, pass
+      ? `Pass ${shot.passes.indexOf(pass) + 1} · ${pass.name || pass.tool} · ${pass.words ? cut(pass.words) : "its card's own words"}${pass.params?.size ? ` · ${pass.params.size}` : ""} · ${pass.credits ? `${pass.credits} cr` : pass.example ? "shipped with the example" : "free"}`
+      : `The plate · ${shot.made?.words ? `rolled by LTX-2.5 from ${cut(shot.made.words)}` : "the footage as it came"}${seconds ? ` · ${seconds} s` : ""}`);
   }
 
   // ---------------------------------------------------------------- big
@@ -356,8 +367,9 @@ export function createViewer(on = {}) {
     fill(title, h("b", {}, shot ? shot.name.toUpperCase() : "SPICE"), h("em", {}, pass ? `${(pass.name || pass.tool).toUpperCase()} · PASS ${shot.passes.indexOf(pass) + 1} OF ${shot.passes.length}` : p ? "THE PLATE" : "NO PLATE YET"));
     const shown = pass?.media ?? p;
     const ar = shown?.width && shown?.height ? shown.width / shown.height : 16 / 9;
-    stage.style.setProperty("--ar", `${shown?.width || 16} / ${shown?.height || 9}`);
-    stage.style.setProperty("--arn", String(ar));
+    // (on the host, so the host is as tall as the clip is wide and the stage inside takes the same shape)
+    host.style.setProperty("--ar", `${shown?.width || 16} / ${shown?.height || 9}`);
+    host.style.setProperty("--arn", String(ar));
     // the monitor around a stage of another shape is the footage again, blurred and dimmed, not a black bar
     const still = p?.still ?? (p?.kind === "image" ? p.url : null);
     host.style.setProperty("--sp-still", still ? `url("${still}")` : "none");

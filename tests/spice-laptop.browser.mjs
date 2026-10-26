@@ -46,13 +46,27 @@ try {
       const r = (sel) => document.querySelector(sel)?.getBoundingClientRect();
       const bar = r("#spice-chat .chat-bar");
       const fold = bar ? bar.top : innerHeight;
-      const stage = r(".sp-stage"), host = r(".sp-stage-host"), chain = r(".sp-chain"), card = r(".sp-card");
-      return { bands: host && stage ? Math.round(host.height - stage.height) : null, chain: chain ? Math.round(fold - chain.bottom) : null, card: card ? Math.round(fold - card.top) : null, fold: Math.round(fold) };
+      const stage = r(".sp-stage"), host = r(".sp-stage-host"), chain = r(".sp-chain"), key = r(".sp-chain-card .sp-primary");
+      return { bands: host && stage ? Math.round(host.height - stage.height) : null, stageH: stage ? Math.round(stage.height) : 0, chain: chain ? Math.round(fold - chain.bottom) : null, key: key ? Math.round(fold - key.bottom) : null, fold: Math.round(fold) };
     });
-    ok(arrival.bands !== null && arrival.bands <= 40, `${width}x${height}: the viewer is the size of the clip on arrival`, `${arrival.bands}px of bands`);
+    // (the stage may grow into spare room by a fifth, blurred footage above and below it, never more)
+    ok(arrival.bands !== null && arrival.bands <= arrival.stageH * 0.2 + 2, `${width}x${height}: the viewer is the size of the clip on arrival`, `${arrival.bands}px of bands on a stage ${arrival.stageH}px tall`);
     ok(arrival.chain !== null && arrival.chain >= 0, `${width}x${height}: the chain is above the bar on arrival`, `${arrival.chain}px`);
-    if (height >= 900) ok(arrival.card !== null && arrival.card > 40, `${width}x${height}: the first tool card is in view on arrival`, `${arrival.card}px`);
+    ok(arrival.key !== null && arrival.key >= 0, `${width}x${height}: Paprika's first chain and its key are in view on arrival`, `${arrival.key}px`);
+    // the library opened and a tool picked from it
+    await page.locator(".sp-browse").click();
+    await page.waitForTimeout(500);
+    const inLibrary = await page.locator(".sp-card").first().evaluate((el) => {
+      el.scrollIntoView({ block: "nearest" });
+      const r = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return r.width >= 160 && hit && (hit === el || el.contains(hit)) ? "" : `card ${Math.round(r.width)}px wide, ${hit ? "covered by " + (hit.className || hit.tagName) : "off screen"}`;
+    });
+    ok(!inLibrary, `${width}x${height}: the library's cards are wide enough and reachable`, inLibrary);
     await page.locator(".sp-card").first().click();
+    await page.waitForTimeout(400);
+    // a pass that changed the picture looked at, so the wipe is there (the example's last pass is its sound: shown whole, no wipe)
+    await page.locator(".sp-chain .sp-link").nth(1).locator(".sp-link-main").click();
     await page.waitForTimeout(400);
     // each control scrolled into its area's view and hit-tested: the top-most element at its centre is it (or inside it)
     const reach = async (sel) => page.locator(sel).first().evaluate((el) => {
@@ -63,7 +77,7 @@ try {
       return hit && (hit === el || el.contains(hit)) ? "" : `covered by ${hit?.className ?? hit?.tagName ?? "nothing"}`;
     });
     const results = {};
-    for (const [name, sel] of [["a shot", ".sp-shot-main"], ["Add a shot", ".sp-add"], ["the wipe", ".sp-wipe i"], ["play", ".sp-iconkey.is-play"], ["the chain", ".sp-chain .sp-link-main"], ["the tool's key", ".sp-tool-key .sp-primary"], ["the shelf", ".sp-card"], ["Paprika's chains", ".sp-b-guide .sp-primary"], ["Paprika's bar", "#spice-chat .chat-bar"]]) results[name] = await reach(sel);
+    for (const [name, sel] of [["a shot", ".sp-shot-main"], ["Add a shot", ".sp-add"], ["the wipe", ".sp-wipe i"], ["play", ".sp-iconkey.is-play"], ["the chain", ".sp-chain .sp-link-main"], ["the way back to Paprika's chains", ".sp-back"], ["the library's key", ".sp-browse"], ["the tool's key", ".sp-tool-key .sp-primary"], ["Paprika's bar", "#spice-chat .chat-bar"]]) results[name] = await reach(sel);
     const wide = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
     const bad = Object.entries(results).filter(([, v]) => v);
     ok(!wide && !bad.length && !errors.length, `${width}x${height}: everything on screen and reachable`, [wide ? "sideways scroll" : "", ...bad.map(([k, v]) => `${k} ${v}`), ...errors].filter(Boolean).join("; "));

@@ -16,7 +16,7 @@ import { createViewer } from "../spice-viewer.js";
 import { windowHost, defineWindow, openWin, closeWin } from "../spice-win.js";
 import { thumb, spicon, fill, ghost, danger, primary } from "../spice-ui.js";
 import { importFootage, pickFile, rollShot, work } from "../spice-engines.js";
-import { suiteSpace, binBody } from "../spice-tools.js";
+import { suiteSpace, binBody, toolsWindow } from "../spice-tools.js";
 import { guidePart } from "../spice-guide.js";
 import { slider } from "../utensils-fx-controls.js";
 
@@ -164,6 +164,7 @@ function shotInfoWin() {
 }
 defineWindow("shotinfo", { eyebrow: "Shot", title: () => shot()?.name ?? "The shot", size: "s", make: shotInfoWin });
 /** The bin: the passes taken off the chain, each to put back (the chain is rebuilt to where it was made) or to forget. */
+defineWindow("tools", { eyebrow: "The suite", title: () => (spice.tools ? `${spice.tools.tools.length} tools, every one a workflow on Comfy Cloud` : "The tools"), size: "l", make: toolsWindow });
 defineWindow("bin", { eyebrow: "The chain", title: "The bin", size: "s", make: () => {
   const el = h("div.sp-w.is-bin");
   return { el, update: () => fill(el, binBody()), sig: () => JSON.stringify([shot()?.id, shot()?.bin.map((t) => t.id)]) };

@@ -61,6 +61,11 @@ try {
   const links = await page.locator(".sp-chain .sp-link").count();
   ok(links >= 3, `the chain under the viewer: the plate and the passes (${links})`);
   ok((await page.locator(".sp-chain .sp-link.is-on").count()) === 1 && !(await page.locator(".sp-chain .sp-link.is-on").first().innerText()).includes("Plate"), "the last pass is looked at");
+  // (the example's last pass is its sound: the clip whole, no wipe, the chip says so; the pass before it wipes)
+  ok((await page.locator(".sp-wipe").isHidden()) && /same picture/i.test(await page.locator(".sp-chip.is-right").innerText()) && !(await page.locator(".sp-pass-info").isHidden()), "a sound pass shows its clip whole, and says so", await page.locator(".sp-chip.is-right").innerText());
+  ok(/^Pass 4 · Sound/.test(await page.locator(".sp-pass-info").innerText()) && /^passes$/i.test(await page.locator(".sp-chain-label").innerText()), "the pass row is labelled, the pass looked at described under it", await page.locator(".sp-pass-info").innerText());
+  await page.locator(".sp-chain .sp-link", { hasText: /Day to night/ }).locator(".sp-link-main").click();
+  await settle();
   ok(!(await page.locator(".sp-wipe").isHidden()), "the viewer wipes what the pass ran on against what it made");
   const beforeSrc = await page.locator(".sp-plane.is-before video").getAttribute("src");
   const afterSrc = await page.locator(".sp-plane.is-after video").getAttribute("src");
@@ -79,8 +84,8 @@ try {
   ok((await page.locator(".sp-viewer-title b").innerText()).startsWith("SH020"), "the viewer says which", await page.locator(".sp-viewer-title").innerText());
 
   // ---- Paprika's read of the shot: baked with the example, her chains with their price; a chain runs with one yes
-  ok(/van|yard|raccoon|market/i.test(await page.locator(".sp-b-guide .sp-read").innerText().catch(() => "")), "Paprika's read of the shot is there", (await page.locator(".sp-b-guide .sp-read").innerText().catch(() => "")).slice(0, 80));
-  const chains = await page.locator(".sp-b-guide .sp-chain-card").count();
+  ok(/van|yard|raccoon|market/i.test(await page.locator(".sp-b-next .sp-read").innerText().catch(() => "")), "Paprika's read of the shot is there", (await page.locator(".sp-b-next .sp-read").innerText().catch(() => "")).slice(0, 80));
+  const chains = await page.locator(".sp-b-next .sp-chain-card").count();
   ok(chains >= 2, `she proposes chains (${chains})`);
   ok((await page.locator(".sp-chain-card .sp-step").count()) >= 4 && /≈ \d+ cr/.test(await page.locator(".sp-chain-card .sp-primary").first().innerText()), "each with its steps and its price");
   await page.locator(".sp-chain-card .sp-primary").first().click();
@@ -94,22 +99,32 @@ try {
   asked.length = 0;
 
   // ---- the tools: a gallery of cards by family, each the picture of a real run and its dot; one picked, its card and its price
+  // (the library is a window: the key under Paprika's chains opens it, a card picks its tool and closes it)
+  const pick = async (name) => {
+    if (await page.locator(".sp-winhost").isHidden()) {
+      await page.locator(".sp-browse").click();
+      await settle(500);
+    }
+    await chip(name).click();
+    await settle();
+  };
+  await page.locator(".sp-browse").click();
+  await settle(600);
+  ok(!(await page.locator(".sp-winhost").isHidden()) && /tools/.test(await page.locator(".sp-win h2").innerText()), "Browse the tools opens the library");
   const chips = await page.locator(".sp-card").count();
   ok(chips >= 40, `the suite's tools are on the shelf as cards (${chips})`);
   ok((await page.locator(".sp-card-pic img").count()) >= 12, "most with the picture of a real run on our footage");
   const families = await page.locator(".sp-family > .ut-label").allTextContents();
   ok(["Restore", "Clean", "Frame", "Camera", "Cut out", "Finish"].every((f) => families.includes(f)), "by family", families.join(" | "));
   ok((await page.locator(".sp-card .sp-dot.is-verified").count()) >= 20 && (await page.locator(".sp-card .sp-dot.is-failed").count()) >= 1 && (await page.locator(".sp-card .sp-dot.is-needs").count()) >= 5, "each with the dot of what a real run showed");
-  await chip("Outpaint").click();
-  await settle();
-  ok((await page.locator(".sp-tool-name b").innerText()) === "Outpaint", "a tool is picked");
+  await pick("Outpaint");
+  ok((await page.locator(".sp-tool-name b").innerText()) === "Outpaint" && (await page.locator(".sp-winhost").isHidden()), "a card picks its tool and closes the library");
+  await page.locator(".sp-search").count();
   ok((await page.locator(".sp-tool .uf-chip", { hasText: "Scope 2.39" }).count()) === 1, "a widening tool offers the frame to widen to");
   ok(/≈ \d+ cr/.test(await page.locator(".sp-tool-key .sp-primary").innerText()), "the key says what a run costs", (await page.locator(".sp-tool-key .sp-primary").innerText()).replace(/\s+/g, " "));
-  await chip("Ingredients").click();
-  await settle();
+  await pick("Ingredients");
   ok(await page.locator(".sp-tool-key .sp-primary").isDisabled(), "a tool that needs more than a clip has its key out");
-  await chip("Cut out").click();
-  await settle();
+  await pick("Cut out");
   ok(await page.locator(".sp-tool-key .sp-primary").isDisabled(), "a cut-out with nobody named has its key out");
   await page.locator('.sp-tool textarea[aria-label="Who, or what, to cut out"]').fill("the green frog");
   await page.locator('.sp-tool textarea[aria-label="Who, or what, to cut out"]').blur();
@@ -117,8 +132,7 @@ try {
   ok(!(await page.locator(".sp-tool-key .sp-primary").isDisabled()), "named, it is in");
 
   // ---- the key asks first and sends once, on the pass looked at
-  await chip("Deblur").click();
-  await settle();
+  await pick("Deblur");
   await page.locator(".sp-tool-key .sp-primary").click();
   await settle();
   ok(asked.length === 0 && /Yes, spend it/.test(await page.locator(".sp-tool-key .sp-primary").innerText()), "the first press only asks");

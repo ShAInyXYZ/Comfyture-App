@@ -1,12 +1,13 @@
 // The suite's tools on the page: the registry read from the server (api/spice/tools), the one picked and how it is set up, what a run
-// would cost and why it cannot run yet, the run itself (a pass of the shot), and the three bentos: TOOL (the one picked: its words, its
-// dials, the yellow key), TOOLS (all of them by family, each with the dot of what a real run showed) and BIN (the takes taken off the
-// chain, each to put back or forget).
+// would cost and why it cannot run yet, the run itself (a pass of the shot), and what is drawn of them: the one bento beside the viewer
+// (PAPRIKA: what to do next, her chains, or the tool picked with its words, its dials and the yellow key), the library of tools (a window:
+// every tool a card with the picture of a real run, by family, searched), and the bin (the takes taken off the chain, in a window).
 import { h } from "./dom.js";
 import { state, changed } from "./store.js";
 import { spice, shot as openShot, inputOf, looking_, setTool, setQuietly, addPass, putBack, forget, workingOn } from "./spice.js";
 import { priceOf, newId, boxWords } from "./spice-model.js";
-import { bento, spicon, primary, iconKey, fill, thumb } from "./spice-ui.js";
+import { bento, spicon, primary, ghost, iconKey, fill, thumb } from "./spice-ui.js";
+import { openWin, closeWin } from "./spice-win.js";
 import { work, runTool } from "./spice-engines.js";
 import { slider, chipRow } from "./utensils-fx-controls.js";
 
@@ -92,7 +93,9 @@ export function toolBody() {
   }));
   const fields = [
     t.grammar ? field("scene", "The shot, described", sceneOf(p.shot) || "The shot in a sentence: who, where, the light", 2) : null,
-    t.takes.includes("words") ? field("words", t.grammar ? "The effect" : t.id === "cutout" ? "Who, or what, to cut out" : t.id === "sound" ? "What is heard" : "What it is told", t.grammar ? t.words || "" : t.prompt || (t.hint && sceneOf(p.shot) ? `${t.hint}. Left empty: "${sceneOf(p.shot).slice(0, 90)}…"` : t.hint || ""), t.grammar ? 2 : 3) : null,
+    t.takes.includes("words") ? field("words", t.grammar ? "The effect" : t.id === "cutout" ? "Who, or what, to cut out" : t.id === "sound" ? "What is heard" : "What it is told", t.grammar ? t.words || "" : t.prompt || t.hint || "", t.grammar ? 2 : 3) : null,
+    // (a tool with no words of its own is told the shot's, when the field is left empty)
+    t.takes.includes("words") && !t.grammar && !t.prompt && !(g.words ?? "").trim() && sceneOf(p.shot) && t.id !== "cutout" && t.id !== "sound" ? h("p.sp-hint.sp-fine", {}, `Left empty, it is told the shot's own words: “${sceneOf(p.shot).slice(0, 72)}…”`) : null,
   ];
   const seconds = g.seconds ?? Math.round(p.input?.seconds ?? 5);
   const ic = t.kind === "iclora";
@@ -108,18 +111,32 @@ export function toolBody() {
     t.takes.includes("height") ? h("div.sp-field", {}, h("span.ut-label", {}, "Lines"), chipRow([["720", "720", ""], ["1080", "1080", ""], ["1440", "1440", ""]], String(g.height), (v) => setTool({ height: Number(v) }))) : null,
     t.takes.includes("region") ? h("div.sp-field.sp-box-field", {}, h("span.ut-label", {}, "The box"), h("p.sp-hint", {}, `${boxWords(g.region ?? t.region ?? { x: 0.35, y: 0.35, w: 0.3, h: 0.3 })}: drawn green on the viewer, drag it over what to fill, its corner to size it.`, g.region ? h("button.sp-link-ask", { type: "button", on: { click: () => setTool({ region: null }) } }, "Put it back.") : null)) : null,
     h("div.sp-tool-key", {},
-      primary({ id: "spice:run", label: p.input && !p.why ? `${t.name} · on ${looking_() ? looking_().name : "the plate"}` : t.name, cost: p.cost, working: !!busy, disabled: !!p.why, title: p.why || `${t.name}: ${t.kind === "iclora" ? "an IC-LoRA of LTX-2.3" : t.kind === "template" ? "a template of Comfy Cloud" : "the app's own graph"} on Comfy Cloud`, run })));
+      primary({ id: "spice:run", label: "Run it", cost: p.cost, working: !!busy, disabled: !!p.why, title: p.why || `${t.name}: ${t.kind === "iclora" ? "an IC-LoRA of LTX-2.3" : t.kind === "template" ? "a template of Comfy Cloud" : "the app's own graph"} on Comfy Cloud`, run })));
 }
 
-/** The gallery: every tool a card with the picture of a real run of it on our own footage (what it was given beside what it made), by family. */
-export function toolsBody() {
+/** The library: every tool a card with the picture of a real run of it on our own footage (what it was given beside what it made), by family; `q` keeps the ones whose name, family or words have it. A card picks the tool and closes the window. */
+export function toolsBody(q = "") {
   const cur = current();
   if (!spice.tools) return h("p.sp-hint", {}, "The suite's tools are coming…");
-  return h("div.sp-tools", {}, ...shelf().map((f) =>
+  const words = q.trim().toLowerCase();
+  const fits = (t, f) => !words || `${t.name} ${t.id} ${f.name} ${t.about} ${t.status}`.toLowerCase().includes(words);
+  const families = shelf().map((f) => ({ ...f, tools: f.tools.filter((t) => fits(t, f)) })).filter((f) => f.tools.length);
+  if (!families.length) return h("p.sp-hint", {}, `No tool has “${q.trim()}” on its card. Try a word of what you want: sharpen, night, widen, sound.`);
+  return h("div.sp-tools", {}, ...families.map((f) =>
     h("div.sp-family", {}, h("span.ut-label", { title: f.about }, f.name),
-      h("div.sp-cards", {}, ...f.tools.map((t) => h(`button.sp-card${cur?.id === t.id ? ".is-on" : ""}${t.needs?.length ? ".is-needs" : ""}`, { type: "button", "aria-pressed": String(cur?.id === t.id), title: t.needs?.length ? `${t.name}: needs ${t.needs.join(" and ")}, not offered yet` : `${t.name}: ${t.about}`, on: { click: () => setTool({ tool: t.id, words: "", strength: null, seconds: null }) } },
+      h("div.sp-cards", {}, ...f.tools.map((t) => h(`button.sp-card${cur?.id === t.id ? ".is-on" : ""}${t.needs?.length ? ".is-needs" : ""}`, { type: "button", "aria-pressed": String(cur?.id === t.id), title: t.needs?.length ? `${t.name}: needs ${t.needs.join(" and ")}, not offered yet` : `${t.name}: ${t.about}`, on: { click: () => (setTool({ tool: t.id, words: "", strength: null, seconds: null }), closeWin()) } },
         t.preview ? h("span.sp-card-pic", {}, h("img", { src: t.preview, alt: `${t.name}: what it was given, and what it made`, loading: "lazy", draggable: false })) : h("span.sp-card-pic.is-none", {}, h("span", {}, t.needs?.length ? "Needs more than a clip" : t.status === "failed" ? "Did not work on a real run" : "No run yet")),
         h("span.sp-card-text", {}, dot(t), h("b", {}, t.name), h("span", {}, t.about))))))));
+}
+
+/** The library's window: a search field, what the dots mean, and the cards. */
+export function toolsWindow() {
+  let q = "";
+  const list = h("div.sp-tools-list");
+  const field = h("input.sp-search", { type: "search", placeholder: "Find a tool: sharpen, night, widen, sound…", "aria-label": "Find a tool", autocomplete: "off", on: { input: (e) => ((q = e.target.value), fill(list, toolsBody(q))) } });
+  const legend = h("p.sp-hint.sp-legend", {}, h("i.sp-dot.is-verified"), " did what its card says on a real run", h("i.sp-dot.is-failed"), " did not", h("i.sp-dot.is-untested"), " not run yet", h("i.sp-dot.is-needs"), " needs more than a clip");
+  const el = h("div.sp-w.is-tools", {}, h("div.sp-tools-head", {}, field, legend), list);
+  return { el, update: () => fill(list, toolsBody(q)), sig: () => JSON.stringify([!!spice.tools, spice.set.tool]) };
 }
 
 export function binBody() {
@@ -134,28 +151,31 @@ export function binBody() {
       iconKey(spicon("trash"), "Forget this take (its clip stays in the library)", () => forget(t.id)))));
 }
 
+/** The key that opens the library. */
+const browseKey = () => ghost(tools().length ? `Browse the ${tools().length} tools` : "Browse the tools", () => openWin("tools"), { icon: spicon("layers"), title: "Every tool of the suite as a card: what a real run of it was given, and what it made", cls: "sp-browse" });
+
+/** What is next for the shot: Paprika's read and her chains, with the library's key under them; or, once a tool is picked, its card with the way back. */
+function nextBody(guide) {
+  const t = current();
+  if (t) return h("div.sp-next.has-tool", {}, h("div.sp-next-row", {}, ghost("Her chains", () => setTool({ tool: null, words: "", strength: null, seconds: null, region: null }), { icon: spicon("prev"), title: "Back to what Paprika proposes for the shot", cls: "sp-back" }), browseKey()), toolBody());
+  guide.update();
+  return h("div.sp-next", {}, guide.body, h("div.sp-next-foot", {}, h("span.sp-hint", {}, "Or pick a tool yourself:"), browseKey()));
+}
+
 /**
- * The suite beside the viewer: on the right PAPRIKA (her read of the shot and her chains) over TOOL (the one picked), under the viewer
- * the gallery of TOOLS. Made once and kept: { el, update, sig, slot }. The bin is a window, opened from the chain.
+ * The suite beside the viewer: one bento, PAPRIKA, with what is next for the shot (her read and her chains, or the tool picked).
+ * Made once and kept: { el, update, sig, slot }. The library and the bin are windows.
  */
 export function suiteSpace(guide) {
   loadTools();
   const el = h("div.sp-suite");
   const slot = h("div.sp-slot");
-  const BENTOS = [["tool", "TOOL", "sp-b-tool", toolBody], ["tools", "TOOLS", "sp-b-tools", toolsBody]];
-  const bentos = Object.fromEntries(BENTOS.map(([id, title, cls]) => [id, bento(cls, title, null)]));
-  const bodies = Object.fromEntries(BENTOS.map(([id]) => [id, h("div.sp-b-body")]));
-  for (const [id] of BENTOS) bentos[id].append(bodies[id]);
-  const paprika = bento("sp-b-guide", "PAPRIKA", null, guide.body);
-  const right = h("div.sp-right", {}, paprika, bentos.tool);
-  el.append(slot, right, h("div.sp-lower", {}, bentos.tools));
+  const body = h("div.sp-b-body");
+  el.append(slot, h("div.sp-right", {}, bento("sp-b-next", "PAPRIKA", null, body)));
   function update() {
     // (a field being typed in is not drawn over: its words are kept as they are typed)
     if (el.contains(document.activeElement) && document.activeElement.matches("textarea, input")) return false;
-    // (Paprika has the right column until a tool is picked: then the tool's card takes its room)
-    right.classList.toggle("has-tool", !!current());
-    for (const [id, , , body] of BENTOS) fill(bodies[id], body());
-    guide.update();
+    fill(body, nextBody(guide));
   }
   return { el, update, slot, sig: () => JSON.stringify([!!spice.tools, spice.set, state.account?.target?.kind, !!state.account?.openWeights, guide.sig()]) };
 }
