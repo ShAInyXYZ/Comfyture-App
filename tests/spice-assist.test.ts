@@ -101,8 +101,8 @@ test("Paprika's reader accepts only her own actions, and the Cut's trim is not h
   assert.deepEqual(readSpiceAnswer(say([...foreign, { op: "open", department: "paint" }]), SPICE).actions, [{ op: "open", department: "paint" }]);
 });
 
-test("her brief teaches each of her ten actions, tells her what she cannot do, and her tool answers with exactly those", () => {
-  assert.equal(SPICE_OPS.length, 10);
+test("her brief teaches each of her eleven actions, tells her what she cannot do, and her tool answers with exactly those", () => {
+  assert.equal(SPICE_OPS.length, 11);
   for (const op of SPICE_OPS) assert.ok(new RegExp(`^- ${op} \\{`, "m").test(SPICE_BRIEF), `${op} is in the brief`);
   // the light a layer casts, how far it reaches and the shot's own finish (bloom, vignette: Fx's, told apart from Comp's `finish`)
   assert.ok(/layer \{[^}]*\blight, reach\b/.test(SPICE_BRIEF) && /light 0 to 1: the light it casts on the shot and the people/.test(SPICE_BRIEF) && /reach 0\.3 to 4/.test(SPICE_BRIEF), "she knows a layer can shine and how far");
@@ -111,7 +111,7 @@ test("her brief teaches each of her ten actions, tells her what she cannot do, a
   const fields = SPICE_TOOL.input_schema.properties.actions.items.properties as Record<string, { description?: string }>;
   for (const k of ["light", "reach", "follow", "bloom", "vignette"]) assert.ok(fields[k]?.description, `her tool has ${k}`);
   assert.equal((fields.follow as any).type, "boolean", "follow is a yes or a no");
-  for (const w of ["plate", "roto", "paint", "light", "fx", "comp", "1001"]) assert.ok(SPICE_BRIEF.includes(w), `she knows ${w}`);
+  for (const w of ["plate", "roto", "paint", "gen", "light", "fx", "comp", "1001"]) assert.ok(SPICE_BRIEF.includes(w), `she knows ${w}`);
   assert.ok(/cannot click in the viewer, paint a mask or import a file/.test(SPICE_BRIEF), "the user's own hands stay theirs");
   assert.deepEqual(SPICE_TOOL.input_schema.properties.actions.items.properties.op.enum, [...SPICE_OPS]);
   assert.deepEqual(SPICE_TOOL.input_schema.required, ["reply", "actions"]);
@@ -122,4 +122,23 @@ test("a summary with junk in its lists is read as far as it makes sense, and nev
   assert.ok(spicePrompt(junk, [{ role: "user", text: "hi" }]).includes("paint"));
   assert.deepEqual(readSpiceAnswer(say([{ op: "open", department: "light" }, { op: "run" }]), junk).actions, [{ op: "open", department: "light" }, { op: "run" }]);
   for (const nothing of [{}, { passes: 5, footage: 5 }, { department: 7 }]) assert.deepEqual(readSpiceAnswer(say([{ op: "layer", element: "flame", from: 1050 }]), nothing as any).actions.map((a: any) => a.op), ["layer"], "frames are kept inside the footage, which is at least its first frame");
+});
+
+test("Gen: she may set up only a tool the page listed, with its words, a strength in 0 to 2, seconds in 1 to 10 and a size of draft or standard", () => {
+  const gen = { tools: [{ id: "deblur", name: "Deblur", family: "restore", about: "Sharpens a soft clip" }, { id: "outpaint", name: "Outpaint", family: "frame", about: "Widens the frame", needs: ["mask"] }], tool: "deblur" };
+  const out = readSpiceAnswer(say([
+    { op: "gen", tool: "deblur", words: "  Sharpen   the footage ", strength: 9, seconds: 40, size: "standard" },
+    { op: "gen", tool: "not-a-tool", words: "x" },
+    { op: "gen", words: "no tool" },
+    { op: "gen", tool: "outpaint", size: "huge", seconds: 0 },
+    { op: "run" },
+  ]), { department: "gen", gen } as any);
+  assert.deepEqual(out.actions, [
+    { op: "gen", tool: "deblur", words: "Sharpen the footage", strength: 2, seconds: 10, size: "standard" },
+    { op: "gen", tool: "outpaint", seconds: 1 },
+    { op: "run" },
+  ]);
+  const p = spicePrompt({ department: "gen", gen } as any, [{ role: "user", text: "sharpen it" }]);
+  assert.match(p, /THE IC-LORA TOOLS[^:]*: deblur = Deblur, restore, Sharpens a soft clip \| outpaint = Outpaint, frame, Widens the frame \[needs mask\]/);
+  assert.match(p, /GEN HOLDS: tool deblur/);
 });

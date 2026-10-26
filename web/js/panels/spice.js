@@ -10,7 +10,7 @@ import { state, changed, toast, onChange } from "../store.js";
 import { currentPage } from "../router.js";
 import { dropdown } from "../controls.js";
 import { hasPending, takePending, spice, loadShots, openShot, newShot, removeShot, rename, setDept, toggleEye, creditsTodayAll, workingOn } from "../spice.js";
-import { PAPRIKA, WORKSPACES } from "../spice-harness.js";
+import { PAPRIKA, WORKSPACES, DEPARTMENTS } from "../spice-harness.js";
 import { STACK, lampOf, passOf, passesDone, rangeOf, rangeText, topOf, visible } from "../spice-model.js";
 import { setRoom } from "../harnesses.js";
 import { createViewer } from "../spice-viewer.js";
@@ -20,11 +20,12 @@ import { importFootage, pickFile } from "../spice-engines.js";
 import { plateSpace } from "../spice-plate.js";
 import { rotoSpace } from "../spice-roto.js";
 import { paintSpace } from "../spice-paint.js";
+import { genSpace } from "../spice-gen.js";
 import { lightSpace } from "../spice-light.js";
 import { fxSpace, fxPending } from "../spice-fx.js";
 import { compSpace } from "../spice-comp.js";
 
-const MAKERS = { plate: plateSpace, roto: rotoSpace, paint: paintSpace, light: lightSpace, fx: fxSpace, comp: compSpace };
+const MAKERS = { plate: plateSpace, roto: rotoSpace, paint: paintSpace, gen: genSpace, light: lightSpace, fx: fxSpace, comp: compSpace };
 
 // made once and kept: the departments hold their own state (a clip that plays, a slider being dragged)
 let parts = null;
@@ -155,7 +156,7 @@ function drawSide() {
     h("dl.sp-facts", {},
       plate?.media.kind === "image" ? fact("Footage", "A picture") : fact("Frame range", plate ? rangeText(r) : "–"),
       fact(plate?.media.kind === "image" ? "Resolution" : "Resolution · fps", plate ? `${plate.media.width} × ${plate.media.height}${plate.media.kind === "video" ? ` · ${plate.fps ?? 24} fps` : ""}` : "–"),
-      fact("Passes done", `${passesDone(b)} / 6`),
+      fact("Passes done", `${passesDone(b)} / ${DEPARTMENTS.length}`),
       fact("Compute (Comfy Cloud)", `${credits} cr today`)),
     // what Spice is for, beside the other product that does VFX: one shot, every pass kept here; one quick fix, Utensils
     h("div.sp-about", {},

@@ -92,7 +92,7 @@ function bakePlan() {
   const why = !ground.base ? "Bring the footage to the Plate first" : !layers.length && !finished ? "Add a layer from the library first" : "";
   // (baked: the FX pass is these layers, nothing changed since; a pass with no signature, a shipped example's or one made before the
   // layers were kept, is taken as theirs while no pass under it is newer: a light or a paint made after it must be baked in)
-  const under = ["plate", "roto", "paint", "light"].map((d) => b?.passes[d]?.at ?? "").sort().pop();
+  const under = ["plate", "roto", "paint", "gen", "light"].map((d) => b?.passes[d]?.at ?? "").sort().pop();
   const fresh = !under || (b?.passes.fx?.at ?? "") >= under;
   const done = !!b?.passes.fx?.media && !b.set.fx.dirty && (b.set.fx.baked ? b.set.fx.baked === sig : fresh);
   return { layers, ground, finish, finished, sig, why, done };

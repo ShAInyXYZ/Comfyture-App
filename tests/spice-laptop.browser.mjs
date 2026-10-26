@@ -41,7 +41,7 @@ for (let i = 0; i < 150; i++) {
 }
 
 const SIZES = [[1366, 768], [1440, 900], [1536, 864], [1600, 950], [1920, 1080], [2560, 1440]];
-const DEPTS = ["plate", "roto", "paint", "light", "fx", "comp"];
+const DEPTS = ["plate", "roto", "paint", "gen", "light", "fx", "comp"];
 const SHOTS = { clip: "spice-example-jam-chase", picture: "spice-example-paprika" };
 
 /** In the page: what each card of the open department holds, and what is cut. */
@@ -53,7 +53,7 @@ function measure() {
   };
   const name = (el) => (typeof el.className === "string" && el.className.trim() ? `.${el.className.trim().split(/\s+/).slice(0, 2).join(".")}` : el.tagName.toLowerCase());
   // (lists that scroll when long, and the frames that show a part of a picture on purpose)
-  const LISTS = ".sp-lib-grid, .sp-ledger-list, .sp-fxls, .sp-subject-list, .sp-tiles";
+  const LISTS = ".sp-lib-grid, .sp-ledger-list, .sp-fxls, .sp-subject-list, .sp-tiles, .sp-gen-tools, .sp-gen-takes";
   const FRAMES = ".sp-thumb, .sp-tile-pic, .sp-lib-art, .sp-out-art, .sp-stage, .sp-stage-host, .sp-plane, .sp-ruby, .sp-edge-zoom, .sp-subject-pic, .sp-place-frame, .sp-fxl-pic, .sp-cutout, .sp-track-strip, .sp-when-strip, .sp-strip, .sp-curve, .sp-dial";
   const cut = (card) => {
     const found = [];

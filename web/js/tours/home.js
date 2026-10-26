@@ -57,7 +57,7 @@ export default {
     product("mixer", "Mixer, with Praline", "A trend that's going round, made yours. Pick one off her shelf, cast the crew, your pet or yourself in it, and **Make it**. Or drop in an edit you like: she remakes it shot by shot."),
     product("jam", "Jam, with Pickle", "A song becomes a music video. Make the song with him or bring your own, then take it through his workspaces: the track, the words as captions, the band performing it, and the edit, cut on the beat."),
     product("macaron", "Macaron, with Brioche", "A brand's room. It starts with the brand itself, its idea and its kit; from those come shoots of the product, posts and ads in every format, and the brand book, all on brand."),
-    product("spice", "Spice, with Paprika", "Her VFX house. Drop in one shot, a clip or a picture, and it goes through six departments, from the plate to the comp: each lays its pass on top of the last, so nothing is overwritten."),
+    product("spice", "Spice, with Paprika", "Her VFX house. Drop in one shot, a clip or a picture, and it goes through seven departments, one of them the IC-LoRA suite, from the plate to the comp: each lays its pass on top of the last, so nothing is overwritten."),
     product("toaster", "Toaster, with Crumpet", "Clay in, toast out. Block out an object or a whole set in clay shapes, then **Toast it**: a finished picture, four views that agree, and a real 3D model."),
     product("utensils", "Utensils, with Truffle", "Her shelf of small tools, one job each: upscale, cut out, vary, lip-sync and more. Say the job and she finds the tool; her **Library** holds every official ComfyUI workflow."),
     {

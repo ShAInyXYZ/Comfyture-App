@@ -12,7 +12,7 @@ export const PAPRIKA = {
 };
 
 /**
- * The six departments, in the order a shot goes through them (the pipeline: the footage first, the finished composite last). `icon` is a
+ * The seven departments, in the order a shot goes through them (the pipeline: the footage first, the finished composite last). `icon` is a
  * sprite name of the app; `verb` is what the department's label says beside its name in the viewer ("FX · Add elements"); `makes` is what
  * the department hands on, for the tooltips.
  */
@@ -20,6 +20,7 @@ export const WORKSPACES = [
   { id: "plate", name: "Plate", icon: "film-make", verb: "Bring the footage", makes: "the footage and what is read from it" },
   { id: "roto", name: "Roto", icon: "tool-cutout", verb: "Add subjects", makes: "a matte for each subject" },
   { id: "paint", name: "Paint", icon: "tool-fx-remove", verb: "Clean up", makes: "the footage with the object, the logo or the subtitles gone" },
+  { id: "gen", name: "Gen", icon: "tool-fx-restyle", verb: "The IC-LoRA suite", makes: "the clip run through a tool of the IC-LoRA suite: restored, regraded, cleaned, widened, redrawn" },
   { id: "light", name: "Light", icon: "tool-fx-relight", verb: "Change the light", makes: "the footage relit, with another sky, weather or grade" },
   { id: "fx", name: "FX", icon: "tool-vfx", verb: "Add elements", makes: "the effects laid on the shot as layers, baked" },
   { id: "comp", name: "Comp", icon: "tool-fx-master", verb: "Finish", makes: "the stack of every pass, finished and exported" },
@@ -30,6 +31,7 @@ export const SAY = {
   plate: "Show me the footage.",
   roto: "Click who I should cut out.",
   paint: "What is in the way?",
+  gen: "Which tool, and what should it do?",
   light: "Where is the light coming from?",
   fx: "What shall we lay on it?",
   comp: "Everything is on the stack. Ready to finish?",
@@ -40,6 +42,7 @@ export const PLACEHOLDER = {
   plate: "Ask Paprika — trim it to the first four seconds, read its depth, what is in this shot?",
   roto: "Ask Paprika — cut out the chick, track the frog, feather the edge",
   paint: "Ask Paprika — remove the sign, take the subtitles off, paint out the wire",
+  gen: "Ask Paprika — sharpen it, turn day to dusk, take the subtitles off, widen it to a square",
   light: "Ask Paprika — a golden hour, snow on it, a stormy sky behind the frog",
   fx: "Ask Paprika — a portal behind the chameleon, flames in the pan, make it a storm",
   comp: "Ask Paprika — upscale it, slow it down, export it as a webm",
@@ -56,6 +59,7 @@ export const OFFERS = {
   plate: [o("Trim to 4 s", "Trim it to the first four seconds"), o("Read the depth", "Read its depth"), o("What next?", "What should I do next with this shot?")],
   roto: [o("Cut out the hero", "Cut out the main character"), o("Them and what they hold", "Cut out the main character and what they hold")],
   paint: [o("Paint out the sign", "Remove the sign"), o("No subtitles", "Take the subtitles off")],
+  gen: [o("Sharpen it", "Sharpen the footage with the deblur tool"), o("Day to dusk", "Turn the day to dusk with the day to night tool"), o("Widen it", "Widen the frame to a square with the outpaint tool")],
   light: [o("Golden hour", "Relight it as a warm golden hour"), o("Make it snow", "Make it snow, lightly"), o("Filmic grade", "Give it a filmic grade")],
   fx: [o("Sparks behind them", "Add sparks behind the main character"), o("A portal", "Put a glowing portal behind them"), o("Make it rain", "Make it rain")],
   comp: [o("Upscale to 1080p", "Upscale it to 1080p"), o("Slow it down", "Slow it down twice, the free way"), o("Export a WebM", "Export it as a webm")],

@@ -25,7 +25,7 @@ export function fxGround(b = spice.shot?.body) {
   const plate = b?.passes.plate;
   if (!plate) return { base: null, baseFrom: FIRST, matte: null, matteFrom: FIRST };
   const kind = plate.media.kind;
-  const top = ["light", "paint"].map((d) => b.passes[d]).find((p) => p?.media && p.eye !== false && p.media.kind === kind && p.media.file);
+  const top = ["light", "gen", "paint"].map((d) => b.passes[d]).find((p) => p?.media && p.eye !== false && p.media.kind === kind && p.media.file);
   const roto = b.passes.roto;
   const matte = roto?.type === "matte" && roto.eye !== false && roto.media?.url ? roto : null;
   return { base: top?.media ?? plate.media, baseFrom: top?.from ?? FIRST, matte: matte?.media ?? null, matteFrom: matte?.from ?? FIRST };
@@ -96,7 +96,8 @@ export async function footage(shot = spice.shot) {
  */
 export async function inputFor(dept, shot = spice.shot) {
   const b = shot.body;
-  const chain = { roto: [], paint: [], light: ["light", "paint"], fx: ["light", "paint"], comp: ["comp", "fx", "light", "paint"], plate: [] }[dept] ?? [];
+  // (Gen redraws the footage as it is cleaned up, never its own last take: its takes are alternatives; "genNext" is the shot as it stands, to carry on)
+  const chain = { roto: [], paint: [], gen: ["paint"], genNext: ["gen", "paint"], light: ["light", "gen", "paint"], fx: ["light", "gen", "paint"], comp: ["comp", "fx", "light", "gen", "paint"], plate: [] }[dept] ?? [];
   // (a picture's passes are pictures; a clip's are clips)
   const kind = b.passes.plate?.media.kind === "image" ? "image" : "video";
   for (const d of chain) {

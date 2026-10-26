@@ -222,10 +222,10 @@ export function toggleEye(dept) {
 }
 
 /** A department's pass made: the media kept as its pass, with what it cost; the department is no longer working. */
-export function setPass(dept, media, { from, to, note, credits = 0, label, source } = {}, shot = spice.shot) {
+export function setPass(dept, media, { from, to, note, credits = 0, label, source, before } = {}, shot = spice.shot) {
   edit((b) => {
     const eye = passOf(b, dept)?.eye;
-    const pass = { media, eye: eye ?? true, from, to, note, credits, at: new Date().toISOString(), source };
+    const pass = { media, eye: eye ?? true, from, to, note, credits, at: new Date().toISOString(), source, ...(before ? { before } : {}) };
     if (dept === "depth") b.depth = pass;
     else b.passes[dept] = { ...(b.passes[dept] ?? {}), ...pass };
     if (credits > 0) logCredits(b, { dept, label: label ?? note ?? dept, credits });

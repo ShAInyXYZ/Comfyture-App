@@ -19,9 +19,9 @@ const shot = (passes: Record<string, any> = {}) => {
   return b;
 };
 
-test("Paprika and the six departments: the order a shot goes through, one name and one sprite each, a line and a placeholder for every department", () => {
-  assert.deepEqual(DEPARTMENTS, ["plate", "roto", "paint", "light", "fx", "comp"]);
-  assert.deepEqual(m.STACK, ["comp", "fx", "light", "paint", "roto", "plate"], "the stack is drawn from the top: the comp on top, the plate at the foot");
+test("Paprika and the seven departments: the order a shot goes through, one name and one sprite each, a line and a placeholder for every department", () => {
+  assert.deepEqual(DEPARTMENTS, ["plate", "roto", "paint", "gen", "light", "fx", "comp"]);
+  assert.deepEqual(m.STACK, ["comp", "fx", "light", "gen", "paint", "roto", "plate"], "the stack is drawn from the top: the comp on top, the plate at the foot");
   assert.deepEqual(WORKSPACES.map((w) => w.id), DEPARTMENTS);
   assert.deepEqual(Object.keys(SAY), DEPARTMENTS);
   assert.deepEqual(Object.keys(PLACEHOLDER), DEPARTMENTS);
@@ -63,8 +63,8 @@ test("a shot kept by an earlier Spice is filled in, and never thrown at", () => 
   assert.deepEqual(b.set.fx.place, { x: 0.1, y: 0.4, size: 0.6 });
   assert.equal(b.set.fx.depth, "behind", "what the old one did not know has its default");
   assert.deepEqual(b.log, []);
-  assert.deepEqual(Object.keys(b.passes), ["plate", "roto", "paint", "light", "fx", "comp"]);
-  for (const junk of [null, undefined, 5, "x", []]) assert.deepEqual(Object.keys(m.normaliseBody(junk as any).set), ["roto", "paint", "light", "fx", "comp"]);
+  assert.deepEqual(Object.keys(b.passes), ["plate", "roto", "paint", "gen", "light", "fx", "comp"]);
+  for (const junk of [null, undefined, 5, "x", []]) assert.deepEqual(Object.keys(m.normaliseBody(junk as any).set), ["roto", "paint", "gen", "light", "fx", "comp"]);
 });
 
 test("a department's lamp: green when its pass is there, amber while it works, hollow when it is empty; the passes done are counted", () => {
@@ -305,7 +305,7 @@ test("Spice's example shots are whole: each has its plate, every clip and still 
     assert.ok(String(spec.about ?? "").length > 80, `${folder} says what it shows and how its passes were made`);
     const clip = spec.passes.plate.file.endsWith(".mp4");
     for (const [dept, p] of Object.entries<any>(spec.passes)) {
-      assert.ok(["plate", "roto", "paint", "light", "fx", "comp"].includes(dept), `${folder}: ${dept} is a department`);
+      assert.ok(["plate", "roto", "paint", "gen", "light", "fx", "comp"].includes(dept), `${folder}: ${dept} is a department`);
       assert.ok((await stat(join(dir, folder, p.file))).size > 10_000, `${folder}/${p.file} is there`);
       // (a clip says how long it is; a picture how big)
       if (p.file.endsWith(".mp4")) assert.ok(Number(p.seconds) > 0, `${folder}: ${dept} says how long it is`);
@@ -316,14 +316,22 @@ test("Spice's example shots are whole: each has its plate, every clip and still 
       if (clip) assert.equal(Number(p.seconds), Number(spec.passes.plate.seconds), `${folder}: ${dept} runs as long as the plate`);
       if (dept !== "plate") assert.ok(String(p.note ?? "").trim(), `${folder}: ${dept} says how it was made`);
     }
+    // the takes of the IC-LoRA suite an example ships: each a tool of the suite that was run, its clip there, and the damaged copy a restoring tool was given
+    const toolIds = new Set(JSON.parse(await readFile(join(root, "workflows", "ic-loras.json"), "utf8")).tools.map((t: any) => t.id));
+    for (const t of spec.set?.gen?.takes ?? []) {
+      assert.ok(toolIds.has(t.tool), `${folder}: ${t.tool} is a tool of the suite`);
+      assert.ok((await stat(join(dir, folder, t.media.file))).size > 5_000, `${folder}/${t.media.file} is there`);
+      if (t.input) assert.ok((await stat(join(dir, folder, t.input.file))).size > 5_000 && t.inputLabel, `${folder}/${t.input.file} is there and says what it is`);
+    }
     // every folder is light: pictures and short clips
     let bytes = 0;
     for (const f of await readdir(join(dir, folder))) bytes += (await stat(join(dir, folder, f))).size;
-    assert.ok(bytes < 6.2e6, `${folder} is under 6 MB (${(bytes / 1e6).toFixed(1)} MB)`);
+    assert.ok(bytes < 7.2e6, `${folder} is under 7 MB (${(bytes / 1e6).toFixed(1)} MB)`);
   }
   // together they show every department doing its job, on a picture and on a clip
   for (const dept of DEPARTMENTS) assert.ok(specs.some((s) => s.passes[dept]), `an example shows ${dept}`);
-  assert.ok(specs.some((s) => s.passes.plate.file.endsWith(".mp4") && DEPARTMENTS.every((d) => s.passes[d])), "a clip goes through all six departments");
+  assert.ok(specs.some((s) => s.passes.plate.file.endsWith(".mp4") && DEPARTMENTS.filter((d) => d !== "gen").every((d) => s.passes[d])), "a clip goes through every department of the VFX house");
+  assert.ok(specs.some((s) => s.passes.plate.file.endsWith(".mp4") && s.passes.gen && (s.set?.gen?.takes?.length ?? 0) >= 10), "a clip shows the IC-LoRA suite, with a take of each tool that was run");
   assert.ok(specs.filter((s) => s.passes.light).length > 1, "Light is shown more than once");
 });
 

@@ -8,7 +8,7 @@ import { cleanLayers, cleanFinish } from "./spice-elements.js";
 
 export const FIRST = 1001;
 /** The passes that are the picture of the shot, from the footage up: each is made from the one below it. */
-export const PICTURES = ["plate", "paint", "light", "fx"];
+export const PICTURES = ["plate", "paint", "gen", "light", "fx"];
 /** The stack as it is drawn: the last department on top, the footage at the bottom. */
 export const STACK = [...DEPARTMENTS].reverse();
 
@@ -66,13 +66,15 @@ export function warpOf(body, dept) {
 // ---------------------------------------------------------------- the shot
 
 export const blankBody = () => ({
-  passes: { plate: null, roto: null, paint: null, light: null, fx: null, comp: null },
+  passes: { plate: null, roto: null, paint: null, gen: null, light: null, fx: null, comp: null },
   /** the analysis pass of the footage: its depth */
   depth: null,
   range: null,
   set: {
     roto: { subjects: [], open: null, feather: 2.4, choke: -0.8, out: "alpha" },
     paint: { how: "describe", words: "", after: "", engine: "void" },
+    // (Gen: the IC-LoRA suite: the tool in use, the shot described once (scene: a card with a fixed grammar says it twice), the words it is told, its strength, the size and seconds of a run, and what was made, newest last)
+    gen: { tool: "", scene: "", words: "", strength: null, size: "draft", seconds: 2, takes: [] },
     light: { look: "warm golden light from the left", words: "", reference: null, sky: null, weather: "rain", amount: 0.55, grade: "warm", exposure: 0, contrast: 1, saturation: 1 },
     // (layers: the effects laid on the shot by hand, bottom of the stack first; sel: the one being worked on; finish: the bloom and the
     // vignette over the whole composite. The rest is what an AI effect is asked for: its element, words, place and frames)
@@ -104,7 +106,7 @@ export const visible = (pass) => !!pass?.media && pass.eye !== false;
 /** The lamp of a department's row: green when its pass is there, amber while it works, hollow when it is empty. */
 export const lampOf = (body, dept, working = false) => (working ? "busy" : passOf(body, dept)?.media ? "done" : "empty");
 
-/** How many of the six departments have made their pass. */
+/** How many of the seven departments have made their pass. */
 export const passesDone = (body) => DEPARTMENTS.filter((d) => !!passOf(body, d)?.media).length;
 
 /**
@@ -122,7 +124,9 @@ export function pairOf(body, dept) {
   if (dept === "roto") return { before: plate, after: visible(body.passes.roto) ? { media: body.passes.roto.media, dept: "roto" } : null };
   if (dept === "plate") return { before: plate, after: visible(body.depth) ? { media: body.depth.media, dept: "depth" } : plate };
   const upto = dept === "comp" ? [...PICTURES, "comp"] : PICTURES.slice(0, PICTURES.indexOf(dept) + 1);
-  return { before: plate, after: top(upto) ?? plate };
+  // (a Gen pass made of a copy of the footage, a damaged one a restoring tool was tried on, is shown against that copy)
+  const copy = dept === "gen" && visible(body.passes.gen) && body.passes.gen.before?.url ? { media: body.passes.gen.before, dept: "plate" } : null;
+  return { before: copy ?? plate, after: top(upto) ?? plate };
 }
 
 /** Whether a pass covers a frame: a pass has the frames it worked on (all of the footage when it names none). */
@@ -179,6 +183,25 @@ export function logCredits(body, entry, now = Date.now()) {
 }
 /** The credits spent today on the shots given (each shot's body or its list entry). */
 export const creditsToday = (logs, now = Date.now()) => Math.round(logs.flat().filter((e) => e && sameDay(e.at, now)).reduce((n, e) => n + (Number(e.credits) || 0), 0));
+
+// ---------------------------------------------------------------- Gen
+
+/**
+ * Gen is the IC-LoRA suite (server/iclora.ts): a tool of it is run on the footage as it was cleaned up, at a size, for some seconds, with the
+ * words its card says or the person's own. `tool` is its id in workflows/ic-loras.json, `strength` the LoRA's (null: the card's).
+ */
+export const GEN_SIZES = [
+  { id: "draft", name: "Draft", about: "The shorter side at 320 pixels, doubled by the second pass: a look, a few credits" },
+  { id: "standard", name: "Standard", about: "The shorter side at 544, doubled by the second pass: the one to keep" },
+];
+/** The seconds a run can have: 1 to 10 (what LTX holds in a shot), and no more than the footage has. */
+export const genRange = (_tool, footageSeconds = 10) => ({ min: 1, max: Math.max(1, Math.min(10, Math.floor(footageSeconds))) });
+/** About what a run costs, in credits: what real runs on Comfy Cloud cost (a draft is about 1 credit a second, a standard run about 6). */
+export const genCredits = (seconds, size = "draft") => Math.max(1, Math.ceil(seconds * (size === "standard" ? 6 : 1)));
+/** A take added to the takes (the last twelve kept). */
+export function addGenTake(set, take) {
+  return { ...set, takes: [...(set.takes ?? []), take].slice(-12) };
+}
 
 // ---------------------------------------------------------------- what the engines cost
 

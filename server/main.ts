@@ -985,6 +985,21 @@ async function putSpiceShot(spec: any, folder: string, id: string, version: numb
     await copyFile(join(folder, raw.file), join(data, "videos", file));
     l.media = { kind: "video", url: `/media/videos/${file}`, file, width: Number(raw.width) || 720, height: Number(raw.height) || 480, seconds: Number(raw.seconds) || 5 };
   }
+  // the takes of the IC-LoRA suite the example ships (each a clip it was made as, and the copy of the footage it was made from), kept in the library
+  const takes: any[] = Array.isArray(spec.set?.gen?.takes) ? spec.set.gen.takes.slice(0, 40) : [];
+  body.set.gen.takes = [];
+  for (const [i, t] of takes.entries()) {
+    const put = async (m: any, tag: string) => {
+      if (!m || !/^[\w.-]+\.mp4$/.test(m.file ?? "")) return null;
+      const file = `${id}-gen${i}${tag}${rev}.mp4`;
+      await copyFile(join(folder, m.file), join(data, "videos", file));
+      return { kind: "video", url: `/media/videos/${file}`, file, width: Number(m.width) || 720, height: Number(m.height) || 1280, seconds: Number(m.seconds) || 2 };
+    };
+    const media = await put(t.media, "");
+    if (!media || !/^[\w-]{1,40}$/.test(String(t.tool ?? ""))) continue;
+    const input = await put(t.input, "in");
+    body.set.gen.takes.push({ id: `g-ex-${i}`, at, tool: t.tool, words: String(t.words ?? "").slice(0, 600), strength: Number(t.strength) || 1, size: t.size === "standard" ? "standard" : "draft", seconds: media.seconds, credits: 0, example: true, media, ...(input ? { input, inputLabel: String(t.inputLabel ?? "").slice(0, 60) } : {}) });
+  }
   await writeProject("spice-shots", { id, name: String(spec.name ?? "Example"), createdAt: at, updatedAt: at, ...(thumb ? { thumb } : {}), body } as Project);
 }
 

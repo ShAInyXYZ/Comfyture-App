@@ -9,7 +9,7 @@ import { ELEMENTS, REMOVERS } from "../web/js/spice-model.js";
 import { LIBRARY, BLENDS, MOTIONS } from "../web/js/spice-elements.js";
 import { DEPARTMENTS } from "../web/js/spice-harness.js";
 
-export const SPICE_OPS = ["open", "trim", "subject", "layer", "tweak", "polish", "paint", "light", "finish", "run"] as const;
+export const SPICE_OPS = ["open", "trim", "subject", "layer", "tweak", "polish", "paint", "gen", "light", "finish", "run"] as const;
 export const SPICE_DEPARTMENTS = DEPARTMENTS as readonly string[];
 // Fx: the library's elements (laid free) and the AI effects (Kitchen's presets: made by a model, they cost credits)
 const LIBRARY_IDS = LIBRARY.filter((e) => e.kind !== "ai").map((e) => e.id);
@@ -39,6 +39,10 @@ export const SPICE_TOOL = {
           properties: {
             op: { type: "string", enum: [...SPICE_OPS] },
             department: { type: "string", enum: [...SPICE_DEPARTMENTS], description: "For open: the department to open." },
+            tool: { type: "string", description: "For gen: the id of the IC-LoRA tool to set up, one of those listed under THE IC-LORA TOOLS." },
+            strength: { type: "number", description: "For gen: the LoRA's strength, 0 to 2 (the card's when you leave it out)." },
+            seconds: { type: "number", description: "For gen: the seconds of the footage to run it on, 1 to 10." },
+            size: { type: "string", enum: ["draft", "standard"], description: "For gen: draft (a look, a few credits) or standard (the one to keep)." },
             in: { type: "number", description: "For trim: the first frame to work on." },
             out: { type: "number", description: "For trim: the last frame to work on." },
             name: { type: "string", description: "For subject: what to cut out, by its name." },
@@ -82,26 +86,28 @@ export const SPICE_TOOL = {
   },
 };
 
-export const SPICE_BRIEF = `You are Paprika, the baby chameleon who runs Comfyture's Spice: a VFX house. A shot (a clip or a picture) goes through six departments, each making its pass: plate (the footage: trim it, read its depth), roto (cut subjects out as mattes), paint (take out an object, a logo, the subtitles), light (relight, a new sky, weather, a grade), fx (a compositor: effects laid as layers the user moves on the picture, from a library or made by an AI model) and comp (upscale, slow motion, export). You are warm, quick, a little theatrical, and say one or two short sentences in the user's language, through the spice_answer tool.
+export const SPICE_BRIEF = `You are Paprika, the baby chameleon who runs Comfyture's Spice: a VFX house. A shot (a clip or a picture) goes through seven departments, each making its pass: plate (the footage: trim it, read its depth), roto (cut subjects out as mattes), paint (take out an object, a logo, the subtitles), gen (IC-LoRA tools that redraw the clip), light (relight, a new sky, weather, a grade), fx (a compositor: effects laid as layers the user moves on the picture, from a library or made by an AI model) and comp (upscale, slow motion, export). You are warm, quick, a little theatrical, and say one or two short sentences in the user's language, through the spice_answer tool.
 
 You set things up; the user presses the keys. You cannot click in the viewer, paint a mask or import a file.
 
 Actions:
 - open {department}
-- trim {in, out}: the frames worked on (slate numbers: the footage's first frame is 1001).
-- subject {name}: a subject for Roto to cut out ("the frog on the stage").
+- trim {in, out}: the frames worked on (slate numbers: the first is 1001).
+- subject {name}: a subject for Roto to cut out ("the frog").
 - layer {element, x, y, size, angle, blend, opacity, glow, light, reach, follow, tint, behind, motion, from, to, words}: add an Fx layer and hold it. element: a library id, laid free, or an AI id (ai:portal...), made by a model when run (credits; words say what). x, y: its centre, 0 to 1. size: its width as a share of the frame. angle in degrees. opacity, glow 0 to 1. light 0 to 1: the light it casts on the shot and the people (fires and portals shine, smoke does not). reach 0.3 to 4: how far, in boxes of its own. follow true: stays on Roto's subject as it moves (clips). tint #rrggbb. behind true: behind the people Roto holds. motion (clips) and from, to (frames). Send only what was asked.
 - tweak {same fields, no element}: change the layer held.
-- polish {bloom, vignette}: Fx's whole-shot finish (not Comp's): bloom, a glow round bright parts; vignette, dark corners; 0 to 1.
-- paint {what, words, after, engine}: object (words name it, short), logo or subtitles; engine void or obscura; after (void): what is left once it is gone.
+- polish {bloom, vignette}: Fx's whole-shot finish (not Comp's): a glow round bright parts, dark corners; 0 to 1.
+- paint {what, words, after, engine}: object (words name it), logo or subtitles; engine void or obscura; after (void): what is left.
+- gen {tool, words, strength, seconds, size}: an IC-LoRA tool, by an id of THE IC-LORA TOOLS; size draft or standard.
 - light {tool, words, weather, amount, grade, exposure, saturation}: relight (words), weather (rain, snow, fog; amount 0 to 1) or grade (none, warm, cool, filmic, punchy, faded, noir).
 - finish {tool, height, factor, engine, format}: upscale (720, 1080, 1440), slow (1.5, 2, 3, 4; free or film) or export (mp4, webm, mov, gif).
-- run {}: run the key of the department open (Fx: make the AI layer held, else bake the layers, free). It may cost credits: the app asks the user to confirm under your answer, so say it is ready, never that it has started.
+- run {}: run the key of the department open (Fx: make the AI layer held, else bake, free). It may cost credits: the app asks the user to confirm, so say it is ready, never that it has started.
 
-Rules: only the ids and frames shown below. Set up what fits the job (open it, set it; run when they say make it or do it). Missing footage, a name or a picture: one short question, no run. A question: an answer, no action. Never promise what you did not do. Someone new ("how do I start?", "what is this for?"): two short sentences naming where to begin and the key to press, and say that Show me around, above the bar, walks them through an example for free.`;
+Rules: only the ids and frames shown below. Set up what fits the job (open it, set it; run when they say do it). Missing footage or a name: one short question, no run. A question: an answer, no action. Never promise what you did not do. Someone new ("how do I start?"): two short sentences on where to begin and the key to press, and that Show me around, above the bar, walks through an example for free.`;
 
 interface Pass { dept: string; note?: string; credits?: number; from?: number; to?: number; shown?: boolean }
 interface Summary {
+  gen?: { tool?: string; tools?: { id: string; name: string; family?: string; about?: string; needs?: string[] }[]; words?: string; strength?: number | null; size?: string; seconds?: number; takes?: number };
   department?: string;
   shot?: string;
   shots?: number;
@@ -153,6 +159,11 @@ export function spicePrompt(s: Summary, turns: Turn[]) {
       : "FX LAYERS: none yet.");
     if (s.fx.finish && typeof s.fx.finish === "object") lines.push(`FX FINISH (the whole shot): bloom ${at(s.fx.finish.bloom)}, vignette ${at(s.fx.finish.vignette)}.`);
     if (s.fx.matte === false) lines.push("ROTO HOLDS NOBODY YET: a layer cannot go behind the people until a subject is cut out.");
+  }
+  if (s.gen && typeof s.gen === "object") {
+    const ts = things<{ id: string; name: string; family?: string; about?: string; needs?: string[] }>(s.gen.tools, 60);
+    lines.push(`THE IC-LORA TOOLS (Gen; id = name, family, what it does${ts.some((t) => t.needs?.length) ? "; a tool that needs more than a clip cannot be run yet" : ""}): ${ts.map((t) => `${cut(t.id, 40)} = ${cut(t.name, 40)}, ${cut(t.family, 16)}, ${cut(t.about, 90)}${t.needs?.length ? ` [needs ${t.needs.map((x) => cut(x, 12)).join(", ")}]` : ""}`).join(" | ")}.`);
+    lines.push(`GEN HOLDS: tool ${cut(s.gen.tool, 40) || "none"}, words "${cut(s.gen.words, 120)}", strength ${typeof s.gen.strength === "number" ? s.gen.strength : "the card's"}, ${cut(s.gen.size, 8) || "draft"}, ${Number(s.gen.seconds) || 2} s, ${Number(s.gen.takes) || 0} takes made.`);
   }
   if (s.paint && typeof s.paint === "object") lines.push(`PAINT HOLDS: ${cut(s.paint.what, 12)}${s.paint.words ? ` "${cut(s.paint.words, 80)}"` : ""}${s.paint.after ? `, what is left "${cut(s.paint.after, 80)}"` : ""}, engine ${cut(s.paint.engine, 10)}. ENGINES: ${REMOVERS.join(", ")}.`);
   if (s.light && typeof s.light === "object") lines.push(`LIGHT HOLDS: ${cut(s.light.tool, 10)}, light "${cut(s.light.words, 80)}", weather ${cut(s.light.weather, 6)}, grade ${cut(s.light.grade, 8)}.`);
@@ -243,6 +254,20 @@ export function readSpiceAnswer(reply: string, s: Summary = {}) {
         if (what === "object" && cut(a.after, 300)) out.after = cut(a.after, 300);
         const engine = oneOf(a.engine, REMOVERS as readonly string[]);
         if (what === "object" && engine) out.engine = engine;
+        actions.push(out);
+        break;
+      }
+      case "gen": {
+        // an IC-LoRA tool of the suite set up: only a tool the page listed, its words, its strength, its size and seconds
+        const ids = things<{ id: string }>(s.gen?.tools, 60).map((t) => String(t.id));
+        const tool = oneOf(a.tool, ids as readonly string[]);
+        if (!tool) break;
+        const out: any = { op: "gen", tool };
+        if (cut(a.words, 600)) out.words = cut(a.words, 600);
+        if (num(a.strength, 0, 2) !== undefined) out.strength = r2(num(a.strength, 0, 2)!);
+        if (num(a.seconds, 1, 10) !== undefined) out.seconds = Math.round(num(a.seconds, 1, 10)!);
+        const size = oneOf(a.size, ["draft", "standard"] as const);
+        if (size) out.size = size;
         actions.push(out);
         break;
       }

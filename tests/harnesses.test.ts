@@ -88,7 +88,7 @@ test("the bar asks and offers what fits the room that is open", () => {
   assert.equal(roomOf("macaron"), "create");
   assert.deepEqual(Object.keys(HARNESSES.macaron.placeholders), ["kit", "idea", "studio", "create", "book"], "Macaron's five workspaces, the Brand kit first");
   assert.equal(roomOf("spice"), "plate", "Spice opens on its Plate");
-  assert.deepEqual(Object.keys(HARNESSES.spice.placeholders), ["plate", "roto", "paint", "light", "fx", "comp", "conform", "select", "clean", "direct", "control", "extend", "finish"], "the first Spice's six departments (until it is retired), then the bay's seven stages in the order a clip goes through them");
+  assert.deepEqual(Object.keys(HARNESSES.spice.placeholders), ["plate", "roto", "paint", "gen", "light", "fx", "comp", "conform", "select", "clean", "direct", "control", "extend", "finish"], "the first Spice's six departments (until it is retired), then the bay's seven stages in the order a clip goes through them");
   assert.equal(roomOf("utensils"), "home", "Utensils opens on its Home");
   assert.deepEqual(Object.keys(HARNESSES.utensils.placeholders), ["home", "shelf", "picture", "video", "audio", "vfx", "edit", "templates"], "Utensils' eight workspaces, Home first");
   assert.equal(HARNESSES.utensils.placeholders.home, "Ask Truffle — what do you want to make or fix?");

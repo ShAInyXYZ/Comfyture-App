@@ -7,7 +7,7 @@ const ORDER = [
   "material", "app", "control", "story", "cut", "home", "welcome", "mixer",
   "ut-shell", "ut-shelf", "ut-picture", "ut-video", "ut-audio", "ut-vfx", "ut-edit", "ut-templates", "ut-library", "ut-home", "ut-guide", "ut-library-frame", "ut-makers",
   "macaron", "macaron-win", "macaron-win-idea", "macaron-win-kit", "macaron-win-content", "macaron-win-make", "macaron-win-studio", "mc-studio", "mc-create", "mc-book",
-  "sp-shell", "sp-viewer", "sp-depts", "sp-fx", "sp-roto", "sp-paint", "sp-light", "sp-comp", "sp-win",
+  "sp-shell", "sp-viewer", "sp-depts", "sp-fx", "sp-roto", "sp-paint", "sp-gen", "sp-light", "sp-comp", "sp-win",
   "toaster", "toaster-projects", "jam", "jm-shell", "jm-song", "jm-track", "jm-words", "jm-band", "jm-edit", "tour",
 ];
 
@@ -26,7 +26,7 @@ export const STYLES = {
   jam: ["cut", "ut-audio", "jam", "jm-shell", "jm-song", "jm-track", "jm-words", "jm-band", "jm-edit"],
   macaron: ["macaron", "macaron-win", "macaron-win-idea", "macaron-win-kit", "macaron-win-content", "macaron-win-make", "macaron-win-studio", "mc-studio", "mc-create", "mc-book"],
   // (Spice's controls are Utensils': its labels, pills, steppers, wells and sliders)
-  spice: ["ut-shell", "ut-picture", "ut-vfx", "sp-shell", "sp-viewer", "sp-depts", "sp-fx", "sp-roto", "sp-paint", "sp-light", "sp-comp", "sp-win"],
+  spice: ["ut-shell", "ut-picture", "ut-vfx", "sp-shell", "sp-viewer", "sp-depts", "sp-fx", "sp-roto", "sp-paint", "sp-gen", "sp-light", "sp-comp", "sp-win"],
   // (the AI edit bay, at #/spice?bay)
   bay: ["bay"],
   toaster: ["toaster", "toaster-projects"],

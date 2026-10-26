@@ -134,18 +134,18 @@ try {
   await page.waitForTimeout(800);
   ok(await page.locator('.products .product[aria-current="page"] span').innerText() === "Spice", "Spice is lit in the top bar");
   ok((await js(() => [...document.querySelectorAll(".products .product span")].map((s) => s.textContent))).join() === "Kitchen,Mixer,Jam,Macaron,Spice,Toaster,Utensils", "seven products, Spice between Macaron and Toaster");
-  ok((await page.locator(".sp-layer").evaluateAll((l) => l.map((x) => x.dataset.dept))).join() === "comp,fx,light,paint,roto,plate", "the stack is drawn from the top: the comp on top, the plate at the foot");
+  ok((await page.locator(".sp-layer").evaluateAll((l) => l.map((x) => x.dataset.dept))).join() === "comp,fx,light,gen,paint,roto,plate", "the stack is drawn from the top: the comp on top, the plate at the foot");
   ok((await page.locator(".sp-id-text").innerText()).replace(/\s+/g, " ").includes("Paprika · VFX house"), "Paprika and her house are at the top of the panel");
-  // a first visit finds the example shots (examples/spice), the newest open, its passes made: the great jam chase, a real take through
-  // all six departments
+  // a first visit finds the example shots (examples/spice), the newest open, its passes made: State Property, the flagship of the IC-LoRA suite
+  // (the great jam chase goes through the six departments of the VFX house)
   const examples = await js(async () => {
     const { spice } = await import("/js/spice.js");
     const b = spice.shot.body;
     return { names: spice.list.map((x) => x.name), open: spice.shot.name, kind: b.passes.plate?.media.kind, done: Object.values(b.passes).filter((p) => p?.media).length, roto: b.passes.roto?.type, subject: !!b.set.roto.subjects[0]?.media, fx: b.passes.fx?.to - b.passes.fx?.from + 1, plate: b.passes.plate?.to - b.passes.plate?.from + 1, exported: (b.set.comp.exports ?? []).map((e) => `${e.format} ${e.url === b.passes.comp?.media.url}`) };
   });
   ok(examples.exported.join() === "mp4 true", "a shipped comp is its export too: Comp offers it to download", JSON.stringify(examples.exported));
-  ok(["Ketkout's flambé", "Pickle's spell", "Brioche's first snow", "Truffle's spark of genius", "Paprika's portal", "Taro's wish", "Taro's fireworks", "The great jam chase"].every((n) => examples.names.includes(n)), "the example shots are there on a first visit", JSON.stringify(examples.names));
-  ok(examples.open === "The great jam chase" && examples.kind === "video" && examples.done === 6, "the newest is open: a real take with a pass made in each of the six departments", JSON.stringify(examples));
+  ok(["Ketkout's flambé", "Pickle's spell", "Brioche's first snow", "Truffle's spark of genius", "Paprika's portal", "Taro's wish", "Taro's fireworks", "The great jam chase", "State Property: the IC-LoRA suite"].every((n) => examples.names.includes(n)), "the example shots are there on a first visit", JSON.stringify(examples.names));
+  ok(examples.open === "State Property: the IC-LoRA suite" && examples.kind === "video" && examples.done === 6, "the newest is open: the flagship, real runs of Roto and Gen with Light, FX and Comp over them (six of the seven departments)", JSON.stringify(examples));
   ok(examples.roto === "matte" && examples.subject && examples.fx === examples.plate, "its Roto pass is its subject's matte, and its effect is laid into every frame of the shot", JSON.stringify(examples));
   // Paprika's example: in FX its layers are drawn live, the portal of sparks behind her bright over the night sky above her head, where the plate is dark
   const glow = await js(async () => {
@@ -174,8 +174,8 @@ try {
   await js(async () => (await import("/js/spice.js")).newShot());
   await page.waitForTimeout(800);
   ok(/SH010/.test(await page.locator(".sp-shotchip").innerText()), "a new shot is made at once, named SH010");
-  ok((await page.locator(".sp-lamp[data-tone='done']").count()) === 0 && (await page.locator(".sp-lamp[data-tone='empty']").count()) === 6, "six hollow lamps before any footage");
-  ok((await page.locator(".sp-facts").innerText()).includes("0 / 6"), "the facts count the passes done");
+  ok((await page.locator(".sp-lamp[data-tone='done']").count()) === 0 && (await page.locator(".sp-lamp[data-tone='empty']").count()) === 7, "seven hollow lamps before any footage");
+  ok((await page.locator(".sp-facts").innerText()).includes("0 / 7"), "the facts count the passes done");
   const bar = await js(() => ({ pet: document.getElementById("assistant").dataset.pet, src: document.querySelector("#assistant .pet-face img").getAttribute("src"), docked: document.getElementById("assistant").parentElement.id, ph: document.querySelector("#assistant .chat-input").dataset.placeholder, h: document.querySelector("#assistant .chat-bar").getBoundingClientRect().height }));
   ok(bar.pet === "paprika" && bar.src === "brand/cast/paprika-face.webp" && bar.docked === "spice-chat", "Paprika's bar is docked at the foot of the page");
   ok(bar.ph.startsWith("Ask Paprika — ") && bar.h >= 100 && bar.h <= 140, "it asks her by name, in the tall card: the words on top, the keys under them", `${bar.ph} · ${bar.h} px`);
@@ -190,7 +190,7 @@ try {
   let st = await state();
   ok(st.passes.plate?.kind === "video" && st.passes.plate.from === 1001 && st.passes.plate.to === 1120, "the footage is the plate: 120 frames, 1001 to 1120", JSON.stringify(st.passes.plate));
   const facts = (await page.locator(".sp-facts").innerText()).replace(/\s+/g, " ");
-  ok(facts.includes("1001 – 1120") && facts.includes("640 × 360 · 24 fps") && facts.includes("1 / 6"), "the facts say the frame range, the size and rate, the passes done", facts);
+  ok(facts.includes("1001 – 1120") && facts.includes("640 × 360 · 24 fps") && facts.includes("1 / 7"), "the facts say the frame range, the size and rate, the passes done", facts);
   ok(await page.locator(".sp-counter").innerText() === "1001", "the counter is on the first frame");
   ok((await js(() => document.querySelector(".sp-strip").style.backgroundImage)).includes("/media/edits/strips/"), "the timeline has the footage's frames");
   // (a row for each department that has worked on the shot, and the one open: the empty ones would take the stage's room)
