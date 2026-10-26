@@ -1,6 +1,6 @@
 # ACE-Step 1.5 XL: what the three guides say, where they differ, and what Pickle's guide does
 
-Read on 26 October 2026, the pages themselves (not summaries from memory):
+Read on 26 October 2026, the pages themselves (not summaries from memory), and read again the same day, claim by claim, to check this record (nine claims from the Tutorial, eight from the Musician's Guide, eight from deAPI: all hold, with the two wording notes below):
 
 1. [ACE-Step 1.5 Tutorial](https://github.com/ace-step/ACE-Step-1.5/blob/main/docs/en/Tutorial.md)
 2. [ACE-Step 1.5 Musician's Guide](https://github.com/ace-step/ACE-Step-1.5/blob/main/docs/en/ace_step_musicians_guide.md)
@@ -22,8 +22,8 @@ The result is [`knowledge/jam/acestep-guide.md`](../../knowledge/jam/acestep-gui
 | BPM, key, time, length | BPM 30 to 300 (60 to 180 stable); common keys (C, G, D, Am, Em) stable, rare ones ignored; 4/4 most reliable; 30 to 60 s and 2 to 4 min stable; **values are anchors** (120 may land at 118); "slow ballad" with 160 bpm confuses | slow 60 to 80, medium 90 to 120, fast 130 to 180; examples 60, 180, 300 s | per-genre BPM table (ballad 60 to 80, lo-fi 70 to 90, pop 100 to 120, house 120 to 128, techno 128 to 140, trap 130 to 145, d&b 170 to 180); a mismatch confuses |
 | Lyrics vs length | no rule: plan and test | none | none; XL holds a 200 s+ song together, the 3.5B turbo loses coherence after about 3 min |
 | Language | set `vocal_language` if auto-detect is wrong | 50+ languages | `[en] [ja] [fr]...` markers at a section start; without one, non-English words get English phonetics |
-| Instrumental | `[Instrumental]` | | either empty lyrics + "no vocals", or section tags with no text; **never both** (eerie wordless vocals) |
-| Models and steps | turbo 8, **sft 50**, base 32 to 100; sft favours detail, base supports extract/lego/complete; XL needs 12 GB+ | turbo for drafts, **sft or base for finals** | XL turbo: niche genres and long form hold; base 27 steps typical |
+| Instrumental | `[Instrumental]` | | either empty lyrics + "no vocals", or section tags with no text: "pick one approach and commit"; writing "no vocals" **with** lyric text gives eerie wordless vocals |
+| Models and steps | turbo 8 (its default), **sft "more steps (50)"** (not called a default), base 32 to 100; sft favours detail, base supports extract/lego/complete; XL needs 12 GB+ | turbo for drafts, **sft or base for finals** | XL turbo: niche genres and long form hold; base 27 steps typical |
 | Planner (LM) | on by default; infers metadata, rewrites the caption: so keep prompts sane | thinking mode only for text-to-music | |
 | LoRA | | one at a time (loading another replaces it); scale 0 to 100%; about an hour to train on 8 to 20 songs | |
 | Practice | fix the seed to tune; batch and screen | **generate 2 to 4 takes and pick**; repaint a weak section instead of redoing | |
@@ -36,6 +36,8 @@ The result is [`knowledge/jam/acestep-guide.md`](../../knowledge/jam/acestep-gui
 - **Lyrics for a length**: no source gives one. The owner's example is ~38 sung lines for 200 s, so **one line every 4 to 5 s**, and instrumental sections ([Instrumental], [Guitar Solo]) instead of padding, which the sources agree is the failure.
 - **Language markers** (deAPI) vs the language field (Tutorial, the owner's workflow): the **field**; the owner's Japanese example has no marker.
 - **Duration**: stable 2 to 4 min per the Tutorial; the owner finds **200 to 300 s with E minor** works great on the XL: that is the default (240 s, E minor), the maximum 300.
+
+Wording notes from the second reading: deAPI's own page says both 4 to 8 syllables flow and, elsewhere, that lines over 10 break the timing; its "stacking" warning is for five niche genres ("one primary genre plus one modifier is the ceiling"), which the guide rounds to "four or five"; and its instrumental advice is to pick one of two approaches, not a ban on mixing them in every form.
 
 ## What came only from the owner
 
