@@ -136,6 +136,14 @@ name now, and the lamps (saved, linked) read their tip.
 **Left, most valuable first.**
 
 0. Found the evening of 25 October, on a laptop-size window (1280 x 720, the 650 to 860 px of page height most judges' laptops show), and more urgent than anything below: the floating chat bar covers the bottom of every studio (Cut's and Shot's timelines; three of Jam's steps and a Spice link cannot be reached), Stage's and Cut's tab rows run under their toolbars (the last tab and the + off the screen), Stage's 3D view is squeezed to a strip, labels are cut in half (Macaron's swatches, Jam's song sections, Utensils' tools, Shot's preset lines, the Story bible's notes), and Cut's bin keys sit on the clips.
+   **The night of 25 to 26 October**, measured again at 1280 x 720, 1366 x 768, a MacBook's 1470 x 956 and 1512 x 982, and 1920 x 1080:
+   ✅ Cut's bar is a row under the timeline at every height (the main video track is in view at 1280 x 720); ✅ Stage's 3D view is a
+   quarter taller on a short screen and its hint on one line; ✅ a strip with more tabs than room keeps its New key at its right edge;
+   ✅ Shot's preview keys wrap instead of sitting on each other at 1366; ✅ Macaron's swatches hold their names whole and its rules card
+   stays inside itself from 1280 to 2560; ✅ the header keeps every product's name down to 1171 px wide. Checked and not a fault: Jam's
+   workspace scrolls inside itself above its docked bar, Story, Shot and Utensils scroll their page clear of the bar, Spice's controls
+   are all reached (`reach` check: every control scrolled into view, then hit-tested), Utensils' before-and-after lines drag. Left:
+   on Story at 1280 x 720 the floating bar sits over the storyboard frames until the page is scrolled.
 1. Tried on 25 October and taken back at the owner's word ("useless"): fields' edges are 1.0 to 1.4:1 against what is around them (the instrument panel's look); 1.4.11 asks 3:1 where the edge is what says
    "a field". They carry placeholders, and a 4.7:1 edge when focused, so it is a judgement. Proposal: a 1px edge `#6d6c74` (3.4:1 on the
    cards) on `.field`, the prompt, the search and the bar. It changes every field's look, so it is not applied.
