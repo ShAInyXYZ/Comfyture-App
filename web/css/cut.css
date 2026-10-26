@@ -82,6 +82,16 @@ body[data-page="cut"] { padding-bottom: 0; overflow: hidden; }
 .cut-transport-end { justify-self: end; display: flex; align-items: center; gap: .25rem; }
 .cut-transport-extras { display: contents; }
 .cut-transport-keys { display: flex; align-items: center; gap: .25rem; }
+/* a narrow monitor (Cut on a laptop: 443 px at 1280 wide) keeps every key in it: the length goes, the time and the keys a size smaller
+   (the full-screen key was pushed out under the inspector) */
+#page-cut .cut-monitor { container-type: inline-size; }
+@container (max-width: 34rem) {
+  #page-cut .cut-timecode-total { display: none; }
+  #page-cut .cut-timecode { font-size: var(--fs-title); }
+  #page-cut .cut-transport { gap: .25rem; }
+  #page-cut .cut-transport .ctl-tool { width: 2.25rem; height: 2.25rem; }
+  #page-cut .cut-play { width: 2.5rem; height: 2.5rem; }
+}
 .cut-play { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border: 0; border-radius: 50%; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
 .cut-play svg { width: 1.125rem; height: 1.125rem; }
 .ctl-tool.is-flip svg { transform: scaleX(-1); }

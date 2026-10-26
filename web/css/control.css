@@ -342,9 +342,10 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 .ctl-preview span { font: 500 var(--fs-micro)/1 var(--font-sans); }
 .ctl-render-keys { display: grid; gap: .5rem; }
 .ctl-render-refs { width: 100%; justify-content: center; min-height: 2.75rem; font: 700 var(--fs-small)/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
-.ctl-video-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .375rem; }
-.ctl-video-row .segment { min-width: 0; }
-.ctl-render-video { white-space: nowrap; }
+/* the video's channels and its key on one line where they fit, the key under them where they do not (it sat on Clay at 1280 wide) */
+.ctl-video-row { display: flex; flex-wrap: wrap; gap: .375rem; }
+.ctl-video-row .segment { flex: 1 1 auto; }
+.ctl-render-video { flex: 1 0 auto; justify-content: center; white-space: nowrap; }
 
 /* smaller desks: tighter columns, icon-only channels */
 @media (max-width: 1400px) {
