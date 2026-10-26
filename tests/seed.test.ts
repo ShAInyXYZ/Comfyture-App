@@ -252,13 +252,14 @@ test("COMFYTURE_EXAMPLES points the seeder at another folder: what is in it goes
   const data = await mkdtemp(join(tmpdir(), "seed-"));
   const examples = await mkdtemp(join(tmpdir(), "seed-examples-"));
   t.after(() => Promise.all([rm(data, { recursive: true, force: true }), rm(examples, { recursive: true, force: true })]));
-  // one of Spice's own shots, copied (scripts/spice-examples.mjs seeds a copy of a shot's folder this way)
-  await cp(join(root, "examples", "spice", "sh010-ketkout"), join(examples, "spice", "sh010-ketkout"), { recursive: true });
+  // Spice's own scenario, copied
+  await cp(join(root, "examples", "spice", "heist"), join(examples, "spice", "heist"), { recursive: true });
   await started(data, async (get, _send, status) => {
-    const shots = (await get("api/spice-shots"))["spice-shots"];
-    assert.deepEqual(shots.map((s: any) => s.id), ["spice-example-ketkout"], "the one shot of that folder");
-    const body = (await get("api/spice-shots/spice-example-ketkout")).project.body;
-    assert.equal(await status(body.passes.plate.media.url.slice(1)), 200, "with its media in the library");
+    const scenarios = (await get("api/spice-scenarios"))["spice-scenarios"];
+    assert.deepEqual(scenarios.map((s: any) => s.id), ["spice-example-heist"], "the one scenario of that folder");
+    const body = (await get("api/spice-scenarios/spice-example-heist")).project.body;
+    assert.equal(await status(body.shots[0].plate.url.slice(1)), 200, "with its clips in the library");
+    assert.equal(await status(body.shots[0].passes[0].media.url.slice(1)), 200);
     assert.deepEqual((await get("api/jams")).jams, [], "and none of the other products' examples");
   }, { COMFYTURE_EXAMPLES: examples });
 });

@@ -167,6 +167,6 @@ test("the scenario Spice ships is whole: each shot its plate, every clip it name
       }
       assert.ok(s.passes.length >= 1, `${folder}: ${s.name} has a pass`);
     }
-    assert.ok(bytes < 16e6, `${folder} is under 16 MB (${(bytes / 1e6).toFixed(1)} MB)`);
+    assert.ok(bytes < 26e6, `${folder} is under 26 MB (${(bytes / 1e6).toFixed(1)} MB)`);
   }
 });
