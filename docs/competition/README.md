@@ -92,6 +92,29 @@ Kittens) already say what they show.
    Optional, tidiness only (they hold no recording, they just name them): `examples/jam/jam-toc-toc`, `examples/jam/jam-hotel-lobby`, and
    the older homes of the same showcases, `web/brand/jam/projects/jam-toc-toc`, `jam-hotel-lobby` and `jam-ramalama`.
 
+**Rehearsed on 26 October on a scratch copy** (never pushed): git-filter-repo v2.47.0, one Python file
+(`curl -LO https://raw.githubusercontent.com/newren/git-filter-repo/v2.47.0/git-filter-repo`), runs the rewrite below in 4 seconds. It
+keeps every commit and its dates and messages (with `--prune-empty never`; without it the 26 commits that only touched `docs/brand/`
+vanish), and leaves no `.m4a` and no version of a trend preview anywhere; putting today's eight silent previews back is one commit, and
+none of them has an audio track. History: 1.33 GiB now, 1.22 after D1, 1.00 with `docs/brand/` too (D7). A judge's `--depth 1` clone
+on disk: 1.5 GB after D1, 0.52 GB with D7. The steps, with no other session running:
+
+```bash
+git bundle create /media/nas/comfyture-before-rewrite.bundle --all && git bundle verify /media/nas/comfyture-before-rewrite.bundle
+git clone --mirror --no-local ~/Documents/GitHub/ComfyMade /tmp/rewrite.git && cd /tmp/rewrite.git
+python3 -I ~/git-filter-repo --force --prune-empty never --invert-paths \
+  --path-glob 'web/brand/mixer/trends/*/sound.m4a' --path-glob 'web/brand/mixer/trends/*/vocals.m4a' \
+  --path-glob 'web/brand/mixer/trends/*/preview.mp4' --path web/brand/mixer/trends/hotel-lobby/preview-portrait.mp4 \
+  --path examples/jam/jam-toc-toc --path examples/jam/jam-hotel-lobby --path web/brand/jam/projects/jam-toc-toc \
+  --path web/brand/jam/projects/jam-hotel-lobby --path web/brand/jam/projects/jam-ramalama \
+  --path docs/brand/          # D7, only once docs/brand/ is kept on the NAS
+git log --all --name-only --format= | grep -c '\.m4a$'     # 0
+# then: a clone of it, today's eight silent previews copied back in one commit, a force-push to origin and nas, and every
+# session's clone made again (old clones still hold the files)
+```
+
+(The bundle goes on the NAS or `/`, not `/home`: `/home` had 3 GB free on 26 October.)
+
 My recommendation: do one history rewrite on Tuesday before going public, covering the paths above and, with your yes, the rest of the
 table (the reference material, the derived frames and motion of the trends you do not keep, the song-titled names).
 While at it, the rewrite can also drop `docs/brand/` (492 MB of design mockups the app never loads): the clone goes from about
