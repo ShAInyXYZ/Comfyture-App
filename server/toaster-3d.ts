@@ -171,16 +171,25 @@ export function createToaster3d({ data, root, photoPath }: { data: string; root:
     }
   }
 
-  const keepGlb = async (file: { filename: string; subfolder?: string; type?: string }) => {
-    const q = new URLSearchParams({ filename: file.filename, subfolder: file.subfolder ?? "", type: file.type ?? "output" });
-    const r = await fetch(`${base()}/view?${q}`);
-    if (!r.ok) throw new Error(`The model is saved by ComfyUI but could not be read back (${r.status}).`);
-    const bytes = Buffer.from(await r.arrayBuffer());
+  /** A GLB's bytes put in the library's models folder, named by what they are (the same file is kept once). */
+  const storeGlb = async (bytes: Buffer) => {
     const name = `${createHash("sha1").update(bytes).digest("hex").slice(0, 16)}.glb`;
     await mkdir(join(data, "models"), { recursive: true });
     await writeFile(join(data, "models", name), bytes);
     return name;
   };
+  const keepGlb = async (file: { filename: string; subfolder?: string; type?: string }) => {
+    const q = new URLSearchParams({ filename: file.filename, subfolder: file.subfolder ?? "", type: file.type ?? "output" });
+    const r = await fetch(`${base()}/view?${q}`);
+    if (!r.ok) throw new Error(`The model is saved by ComfyUI but could not be read back (${r.status}).`);
+    return storeGlb(Buffer.from(await r.arrayBuffer()));
+  };
+  /** A 3D file the person brings (made on another machine, or by hand): kept like a model made here. Only a GLB is taken. */
+  async function keep(bytes: Buffer) {
+    if (bytes.length < 20 || bytes.toString("latin1", 0, 4) !== "glTF") throw Object.assign(new Error("That is not a GLB file."), { status: 400 });
+    const file = await storeGlb(bytes);
+    return { kind: "model", url: `/media/models/${file}`, file };
+  }
 
   // ---------------------------------------------------------------- a job: the three workflows, one after the other
   async function make(body: any): Promise<Job> {
@@ -227,7 +236,17 @@ export function createToaster3d({ data, root, photoPath }: { data: string; root:
           if (s.id === "texture") g["10"].inputs.glb_path = mesh;
           const saver = Object.keys(g).find((k) => g[k].class_type === "KAISaveMesh" && !Object.values(g).some((n) => Object.values(n.inputs).some((v) => Array.isArray(v) && v[0] === k)))!;
           g[saver].inputs.filename_prefix = `3D/Comfyture/${job.id}-${s.id}`;
-          const out = await runGraph(g, (f) => (job.progress = Math.max(job.progress, Math.min(0.99, before + f * s.weight))));
+          const onFraction = (f: number) => (job.progress = Math.max(job.progress, Math.min(0.99, before + f * s.weight)));
+          let out;
+          try {
+            out = await runGraph(g, onFraction);
+          } catch (e: any) {
+            // the exterior repair refuses to flip more than its limit of the faces, and a lighter shape can ask for more: the surface is
+            // rebuilt as one closed solid right after, so the limit is lifted once and the stage run again
+            if (s.id !== "refine" || !/would flip/.test(String(e?.message)) || !g["35"]) throw e;
+            g["35"].inputs.max_flip_percent = 45;
+            out = await runGraph(g, onFraction);
+          }
           const o = out[saver];
           mesh = o?.text?.[0];
           last = o?.model_file?.[0] ?? null;
@@ -267,5 +286,5 @@ export function createToaster3d({ data, root, photoPath }: { data: string; root:
       return { status: e.status ?? 500, body: { error: String(e?.message ?? e) } };
     }
   }
-  return { handle, target, make, jobs };
+  return { handle, keep, target, make, jobs };
 }

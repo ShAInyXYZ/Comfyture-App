@@ -1840,13 +1840,15 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     await writeFile(join(data, "utensils.json"), JSON.stringify(list.slice(0, 200)));
     return json(res, 200, { ok: true });
   }
-  if (path === "/api/utensils/templates" || path.startsWith("/api/utensils/templates/")) {
-    const answer = await templates.handle(method, path.slice("/api/utensils/templates".length), url.searchParams, method === "POST" ? await jsonBody(req, 1024 * 1024) : {});
-    if (answer.raw) {
+  // a 3D file the person made elsewhere, put on an object (a GLB, the raw bytes)
+  if (path === "/api/toaster/3d/file" && method === "POST") return json(res, 200, await toaster3d.keep(await body(req, 400 * 1024 * 1024)));
   if (path.startsWith("/api/toaster/3d/")) {
     const answer = await toaster3d.handle(method, path.slice("/api/toaster/3d/".length), method === "POST" ? await jsonBody(req, 64 * 1024) : {});
     return json(res, answer.status, answer.body);
   }
+  if (path === "/api/utensils/templates" || path.startsWith("/api/utensils/templates/")) {
+    const answer = await templates.handle(method, path.slice("/api/utensils/templates".length), url.searchParams, method === "POST" ? await jsonBody(req, 1024 * 1024) : {});
+    if (answer.raw) {
       res.writeHead(answer.status, { "Content-Type": answer.type ?? "application/octet-stream", "Cache-Control": answer.cache ?? "no-store" });
       return void res.end(answer.raw);
     }
