@@ -1032,7 +1032,8 @@ async function putCover(file: unknown, folder: string, id: string, song: string)
 
 /**
  * One of Jam's shipped songs (examples/songs/<id>/song.json): its track goes into the audio library as <id>.mp3 with its cover and what
- * it was made from (its style, words, tempo and key), so a video that takes it as its track has them too.
+ * it was made from (its style, words, tempo and key), and it comes as a jam of its own (same id): the song as its track, its cover as
+ * its picture, the rest of the video left to make.
  */
 async function putSong(spec: any, folder: string, id: string) {
   const track = String(spec.track ?? "");
@@ -1042,12 +1043,13 @@ async function putSong(spec: any, folder: string, id: string) {
   await copyFile(join(folder, track), join(data, "audio", file));
   const cover = await putCover(spec.cover, folder, id, file);
   const s = spec.song ?? {};
+  const seconds = Math.round((await probeMedia(join(data, "audio", file))).duration * 100) / 100;
   await noteAudio({
     file,
     url: `/media/audio/${file}`,
     name: text(spec.name, 60) || id,
     kind: "music",
-    seconds: Math.round((await probeMedia(join(data, "audio", file))).duration * 100) / 100,
+    seconds,
     prompt: text(s.tags, 800),
     tags: text(s.tags, 800),
     lyrics: typeof s.lyrics === "string" ? s.lyrics.slice(0, 3000) : "",
@@ -1055,17 +1057,26 @@ async function putSong(spec: any, folder: string, id: string) {
     ...(KEYS.includes(s.key) ? { key: s.key } : {}),
     createdAt: new Date().toISOString(),
     ...(cover ? { cover } : {}),
+    jam: id,
   }, true);
+  const song = { file, url: `/media/audio/${file}`, seconds, name: text(spec.name, 60) || id, kind: "made", ...(cover ? { cover } : {}), prompt: text(s.tags, 800), lyrics: typeof s.lyrics === "string" ? s.lyrics.slice(0, 3000) : "", ...(Number.isFinite(s.bpm) ? { bpm: s.bpm } : {}) };
+  const now = stamp();
+  await writeProject("jams", { id, name: song.name, createdAt: now, updatedAt: now, ...(cover ? { thumb: cover } : {}), body: { track: song, bpm: song.bpm ?? null, captions: "karaoke", every: 2, looks: {} } });
 }
-/** A shipped song is worked on once the person has given it a cover or a video cover of their own. */
+/**
+ * A shipped song is worked on once the person has given it a cover or a video cover of their own, or worked on its jam, or deleted it
+ * (a song put in before its jam was shipped has none, and is not worked on for that).
+ */
 async function keptSong(id: string): Promise<Kept | null> {
   const song = (await readAudioIndex())[`${id}.mp3`];
   if (!song) return null;
-  const own = (song.cover && !song.cover.startsWith(`/media/photos/${id}-`)) || !!song.coverVideo;
+  const jam = await readProject("jams", id);
+  const own = (song.cover && !song.cover.startsWith(`/media/photos/${id}-`)) || !!song.coverVideo || (jam ? jam.updatedAt !== jam.createdAt : !!song.jam);
   return { createdAt: song.createdAt, updatedAt: own ? undefined : song.createdAt };
 }
-/** A retired song, untouched: out of the index, its track and its cover gone. */
+/** A retired song, untouched: out of the index, its track, its cover and its jam gone. */
 async function dropSong(id: string) {
+  await dropFrom("jams")(id);
   audioWrite = audioWrite.then(async () => {
     const index = await readAudioIndex();
     delete index[`${id}.mp3`];
@@ -1141,6 +1152,8 @@ const EXAMPLE_KINDS: Record<string, ExampleKind> = {
   // (the AI edit bay's examples: its clip and the takes it ships, as results the example stands in for)
   "spice-bays": { name: "bay", dir: join(EXAMPLES, "bay"), spec: "bay.json", ledger: ledgerOf("spice-bays"), kept: keptIn("spice-bays"), drop: dropFrom("spice-bays"), put: (spec, folder, id, rev) => putBayExample(spec, folder, id, rev, { data, stamp, write: (p) => writeProject("spice-bays", p as Project) }) },
   "spice-shots": { name: "spice", dir: join(EXAMPLES, "spice"), spec: "shot.json", ledger: ledgerOf("spice-shots"), kept: keptIn("spice-shots"), drop: dropFrom("spice-shots"), put: putSpiceShot },
+  // (before the videos: the songs' own jams are then older, and Jam opens on its showcase video first)
+  songs: { name: "jam songs", dir: join(EXAMPLES, "songs"), spec: "song.json", ledger: join(data, "audio", ".seeded"), kept: keptSong, drop: dropSong, put: putSong },
   jams: {
     name: "jam",
     dir: join(EXAMPLES, "jam"),
@@ -1151,8 +1164,6 @@ const EXAMPLE_KINDS: Record<string, ExampleKind> = {
     drop: async (id) => (await dropFrom("jams")(id), await dropFrom("cuts")(`cut-${id}`)),
     put: putJam,
   },
-  // (after the videos: the songs are then the newest of the library, the first on The song's shelf)
-  songs: { name: "jam songs", dir: join(EXAMPLES, "songs"), spec: "song.json", ledger: join(data, "audio", ".seeded"), kept: keptSong, drop: dropSong, put: putSong },
   brands: {
     name: "macaron",
     dir: join(EXAMPLES, "macaron"),

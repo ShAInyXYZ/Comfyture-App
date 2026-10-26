@@ -1,0 +1,799 @@
+{
+ "name": "La Calabaza",
+ "rev": 2,
+ "about": "Pickle, Jam's band leader, leads a night parade with a glowing pumpkin (la calabaza), Praline on the maracas and Sesame on the drum (Mochi tags along with a cowbell). La Calabaza track is our own guaracha-style instrumental made in the app with ACE-Step 1.5 (its music runs 13 s; the part stops where it does). Every shot is a still picture of our cast (Codex's GPT Image, from their pictures) moved with ffmpeg: animated stills, not footage; Roll a shot with LTX-2.5 to make it real. A cut on every bar Jam's finder heard (the bar line set on the kick), faster cuts in the last bars, our own call-outs as bold stacked captions, a zoom on every beat, a flash on every bar, a shake on ¡Vamos! and a colour hit at the end. The film is the edit as the app exports it.",
+ "thumb": "thumb.jpg",
+ "jam": {
+  "track": {
+   "file": "jam-la-calabaza-track.mp3",
+   "url": "/media/audio/jam-la-calabaza-track.mp3",
+   "seconds": 15.05,
+   "name": "La Calabaza track",
+   "kind": "made",
+   "prompt": "guaracha-inspired dance, playful night parade, four-on-floor kick, Latin hand percussion, bright synth stab, an original catchy instrumental for a short video",
+   "lyrics": "",
+   "bpm": 132,
+   "drop": null,
+   "loud": null
+  },
+  "span": {
+   "from": 0,
+   "to": 13.104
+  },
+  "part": {
+   "file": "jam-la-calabaza-part.mp3",
+   "url": "/media/audio/jam-la-calabaza-part.mp3",
+   "seconds": 13.14
+  },
+  "vocals": null,
+  "stems": null,
+  "sung": [],
+  "lines": [
+   {
+    "from": 0.48,
+    "to": 2.22,
+    "text": "¡LA CALABAZA!"
+   },
+   {
+    "from": 2.29,
+    "to": 4.02,
+    "text": "PICKLE LEADS"
+   },
+   {
+    "from": 4.09,
+    "to": 5.82,
+    "text": "THE BAND"
+   },
+   {
+    "from": 5.89,
+    "to": 7.62,
+    "text": "¡VAMOS!"
+   },
+   {
+    "from": 7.7,
+    "to": 9.43,
+    "text": "SIDE STEP"
+   },
+   {
+    "from": 9.5,
+    "to": 11.23,
+    "text": "¡OTRA VEZ!"
+   },
+   {
+    "from": 11.3,
+    "to": 13.1,
+    "text": "¡CALABAZA!"
+   }
+  ],
+  "bpm": 133.073,
+  "down": 1,
+  "sure": 0.74,
+  "beats": [
+   0.032,
+   0.483,
+   0.934,
+   1.385,
+   1.835,
+   2.286,
+   2.737,
+   3.188,
+   3.639,
+   4.09,
+   4.541,
+   4.992,
+   5.442,
+   5.893,
+   6.344,
+   6.795,
+   7.246,
+   7.697,
+   8.148,
+   8.599,
+   9.049,
+   9.5,
+   9.951,
+   10.402,
+   10.853,
+   11.304,
+   11.755,
+   12.206,
+   12.657
+  ],
+  "captions": "stack",
+  "captionsSet": true,
+  "artist": {
+   "file": "cast-pickle.png",
+   "url": "/media/photos/cast-pickle.png",
+   "width": 277,
+   "height": 327,
+   "name": "Pickle"
+  },
+  "band": [
+   {
+    "file": "crew-praline.png",
+    "url": "/media/photos/crew-praline.png",
+    "width": 369,
+    "height": 389,
+    "name": "Praline",
+    "crew": "praline",
+    "role": "dancer",
+    "show": true
+   },
+   {
+    "file": "crew-sesame.png",
+    "url": "/media/photos/crew-sesame.png",
+    "width": 369,
+    "height": 389,
+    "name": "Sesame",
+    "crew": "sesame",
+    "role": "drummer",
+    "show": true
+   }
+  ],
+  "dance": null,
+  "style": "a night parade through an old town square: strings of warm lights, paper flags, glowing pumpkin lanterns, confetti, a full moon",
+  "every": 2,
+  "shots": [
+   {
+    "from": 0,
+    "to": 2.286,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-la-calabaza-square.mp4",
+     "url": "/media/videos/jam-la-calabaza-square.mp4",
+     "duration": 2.88,
+     "name": "The square",
+     "from": 0
+    }
+   },
+   {
+    "from": 2.286,
+    "to": 4.089,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-la-calabaza-pickle.mp4",
+     "url": "/media/videos/jam-la-calabaza-pickle.mp4",
+     "duration": 2.42,
+     "name": "Pickle leads",
+     "from": 0
+    }
+   },
+   {
+    "from": 4.089,
+    "to": 5.892,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-la-calabaza-band.mp4",
+     "url": "/media/videos/jam-la-calabaza-band.mp4",
+     "duration": 2.42,
+     "name": "The band",
+     "from": 0
+    }
+   },
+   {
+    "from": 5.892,
+    "to": 7.695,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-la-calabaza-face.mp4",
+     "url": "/media/videos/jam-la-calabaza-face.mp4",
+     "duration": 2.42,
+     "name": "Pickle and the pumpkin",
+     "from": 0
+    }
+   },
+   {
+    "from": 7.695,
+    "to": 9.498,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-la-calabaza-step.mp4",
+     "url": "/media/videos/jam-la-calabaza-step.mp4",
+     "duration": 2.42,
+     "name": "The side step",
+     "from": 0
+    }
+   },
+   {
+    "from": 9.498,
+    "to": 10.4,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-la-calabaza-pickle-close.mp4",
+     "url": "/media/videos/jam-la-calabaza-pickle-close.mp4",
+     "duration": 1.5,
+     "name": "Pickle, closer",
+     "from": 0
+    }
+   },
+   {
+    "from": 10.4,
+    "to": 11.301,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-la-calabaza-band-close.mp4",
+     "url": "/media/videos/jam-la-calabaza-band-close.mp4",
+     "duration": 1.5,
+     "name": "The band, closer",
+     "from": 0
+    }
+   },
+   {
+    "from": 11.301,
+    "to": 13.104,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-la-calabaza-finale.mp4",
+     "url": "/media/videos/jam-la-calabaza-finale.mp4",
+     "duration": 2.42,
+     "name": "The leap",
+     "from": 0
+    }
+   }
+  ],
+  "looks": {
+   "broll": {
+    "file": "jam-la-calabaza-look.jpg",
+    "url": "/media/photos/jam-la-calabaza-look.jpg"
+   }
+  },
+  "film": {
+   "id": "jam-la-calabaza-film",
+   "url": "/media/reels/jam-la-calabaza-film.mp4",
+   "seconds": 13.13
+  },
+  "cut": "cut-jam-la-calabaza",
+  "musicIn": "jam-la-calabaza-part.mp3",
+  "linesInEdit": true
+ },
+ "cut": {
+  "id": "cut-jam-la-calabaza",
+  "name": "La Calabaza",
+  "body": {
+   "aspect": "9:16",
+   "duck": false,
+   "fit": "cover",
+   "product": "jam",
+   "beats": {
+    "bpm": 133.073,
+    "offset": 0,
+    "times": [
+     0.032,
+     0.483,
+     0.934,
+     1.385,
+     1.835,
+     2.286,
+     2.737,
+     3.188,
+     3.639,
+     4.09,
+     4.541,
+     4.992,
+     5.442,
+     5.893,
+     6.344,
+     6.795,
+     7.246,
+     7.697,
+     8.148,
+     8.599,
+     9.049,
+     9.5,
+     9.951,
+     10.402,
+     10.853,
+     11.304,
+     11.755,
+     12.206,
+     12.657
+    ],
+    "down": 1,
+    "source": "web",
+    "sure": 0.74
+   },
+   "tracks": [
+    {
+     "id": "t1",
+     "kind": "title",
+     "name": "Titles",
+     "items": [
+      {
+       "id": "c1",
+       "lyric": true,
+       "text": "¡LA CALABAZA!",
+       "start": 0.48,
+       "length": 1.74,
+       "style": "stack",
+       "words": [
+        {
+         "text": "¡LA",
+         "from": 0,
+         "to": 0.35
+        },
+        {
+         "text": "CALABAZA!",
+         "from": 0.35,
+         "to": 1.74
+        }
+       ],
+       "y": 0.78,
+       "size": 0.095
+      },
+      {
+       "id": "c2",
+       "lyric": true,
+       "text": "PICKLE LEADS",
+       "start": 2.29,
+       "length": 1.73,
+       "style": "stack",
+       "words": [
+        {
+         "text": "PICKLE",
+         "from": 0,
+         "to": 1.15
+        },
+        {
+         "text": "LEADS",
+         "from": 1.15,
+         "to": 1.73
+        }
+       ],
+       "y": 0.78,
+       "size": 0.095
+      },
+      {
+       "id": "c3",
+       "lyric": true,
+       "text": "THE BAND",
+       "start": 4.09,
+       "length": 1.73,
+       "style": "stack",
+       "words": [
+        {
+         "text": "THE",
+         "from": 0,
+         "to": 0.87
+        },
+        {
+         "text": "BAND",
+         "from": 0.87,
+         "to": 1.73
+        }
+       ],
+       "y": 0.78,
+       "size": 0.095
+      },
+      {
+       "id": "c4",
+       "lyric": true,
+       "text": "¡VAMOS!",
+       "start": 5.89,
+       "length": 1.73,
+       "style": "stack",
+       "words": [
+        {
+         "text": "¡VAMOS!",
+         "from": 0,
+         "to": 1.73
+        }
+       ],
+       "y": 0.78,
+       "size": 0.095
+      },
+      {
+       "id": "c5",
+       "lyric": true,
+       "text": "SIDE STEP",
+       "start": 7.7,
+       "length": 1.73,
+       "style": "stack",
+       "words": [
+        {
+         "text": "SIDE",
+         "from": 0,
+         "to": 0.87
+        },
+        {
+         "text": "STEP",
+         "from": 0.87,
+         "to": 1.73
+        }
+       ],
+       "y": 0.78,
+       "size": 0.095
+      },
+      {
+       "id": "c6",
+       "lyric": true,
+       "text": "¡OTRA VEZ!",
+       "start": 9.5,
+       "length": 1.73,
+       "style": "stack",
+       "words": [
+        {
+         "text": "¡OTRA",
+         "from": 0,
+         "to": 1.15
+        },
+        {
+         "text": "VEZ!",
+         "from": 1.15,
+         "to": 1.73
+        }
+       ],
+       "y": 0.78,
+       "size": 0.095
+      },
+      {
+       "id": "c7",
+       "lyric": true,
+       "text": "¡CALABAZA!",
+       "start": 11.3,
+       "length": 1.8,
+       "style": "stack",
+       "words": [
+        {
+         "text": "¡CALABAZA!",
+         "from": 0,
+         "to": 1.8
+        }
+       ],
+       "y": 0.78,
+       "size": 0.095
+      }
+     ]
+    },
+    {
+     "id": "fx",
+     "kind": "fx",
+     "name": "Beat FX",
+     "items": [
+      {
+       "id": "fx1",
+       "kind": "zoom",
+       "on": true,
+       "every": 1,
+       "intensity": 0.35,
+       "dur": 0.2,
+       "start": 0.483,
+       "length": 12.621
+      },
+      {
+       "id": "fx2",
+       "kind": "flash",
+       "on": true,
+       "every": 4,
+       "intensity": 0.4,
+       "dur": 0.14,
+       "start": 2.286,
+       "length": 10.818
+      },
+      {
+       "id": "fx3",
+       "kind": "shake",
+       "on": true,
+       "every": 1,
+       "intensity": 0.6,
+       "dur": 0.3,
+       "start": 5.892,
+       "length": 0.908
+      },
+      {
+       "id": "fx4",
+       "kind": "hue",
+       "on": true,
+       "every": 2,
+       "intensity": 0.3,
+       "dur": 0.4,
+       "start": 11.301,
+       "length": 1.803
+      }
+     ]
+    },
+    {
+     "id": "v2",
+     "kind": "video",
+     "name": "Overlays",
+     "items": [
+      {
+       "id": "st1",
+       "src": {
+        "kind": "sticker",
+        "id": "notes"
+       },
+       "start": 0.3,
+       "length": 1.9,
+       "x": 0.2,
+       "y": 0.2,
+       "w": 0.2,
+       "rot": -10,
+       "z": 1
+      },
+      {
+       "id": "st2",
+       "src": {
+        "kind": "sticker",
+        "id": "star"
+       },
+       "start": 5.9,
+       "length": 1.7,
+       "x": 0.8,
+       "y": 0.2,
+       "w": 0.16,
+       "rot": 12,
+       "z": 2
+      },
+      {
+       "id": "st3",
+       "src": {
+        "kind": "sticker",
+        "id": "sparkles"
+       },
+       "start": 9.5,
+       "length": 1.7,
+       "x": 0.22,
+       "y": 0.24,
+       "w": 0.24,
+       "rot": -8,
+       "z": 3
+      },
+      {
+       "id": "st4",
+       "src": {
+        "kind": "sticker",
+        "id": "wow"
+       },
+       "start": 11.4,
+       "length": 1.6,
+       "x": 0.76,
+       "y": 0.17,
+       "w": 0.3,
+       "rot": 8,
+       "z": 4
+      }
+     ]
+    },
+    {
+     "id": "v1",
+     "kind": "video",
+     "name": "Video",
+     "main": true,
+     "items": [
+      {
+       "id": "j1",
+       "shot": 0,
+       "src": {
+        "kind": "video",
+        "id": "jam-la-calabaza-square.mp4",
+        "duration": 2.88,
+        "name": "The square"
+       },
+       "from": 0,
+       "to": 2.286,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j2",
+       "shot": 1,
+       "src": {
+        "kind": "video",
+        "id": "jam-la-calabaza-pickle.mp4",
+        "duration": 2.42,
+        "name": "Pickle leads"
+       },
+       "from": 0,
+       "to": 1.803,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j3",
+       "shot": 2,
+       "src": {
+        "kind": "video",
+        "id": "jam-la-calabaza-band.mp4",
+        "duration": 2.42,
+        "name": "The band"
+       },
+       "from": 0,
+       "to": 1.803,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j4",
+       "shot": 3,
+       "src": {
+        "kind": "video",
+        "id": "jam-la-calabaza-face.mp4",
+        "duration": 2.42,
+        "name": "Pickle and the pumpkin"
+       },
+       "from": 0,
+       "to": 1.803,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j5",
+       "shot": 4,
+       "src": {
+        "kind": "video",
+        "id": "jam-la-calabaza-step.mp4",
+        "duration": 2.42,
+        "name": "The side step"
+       },
+       "from": 0,
+       "to": 1.803,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j6",
+       "shot": 5,
+       "src": {
+        "kind": "video",
+        "id": "jam-la-calabaza-pickle-close.mp4",
+        "duration": 1.5,
+        "name": "Pickle, closer"
+       },
+       "from": 0,
+       "to": 0.902,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j7",
+       "shot": 6,
+       "src": {
+        "kind": "video",
+        "id": "jam-la-calabaza-band-close.mp4",
+        "duration": 1.5,
+        "name": "The band, closer"
+       },
+       "from": 0,
+       "to": 0.901,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j8",
+       "shot": 7,
+       "src": {
+        "kind": "video",
+        "id": "jam-la-calabaza-finale.mp4",
+        "duration": 2.42,
+        "name": "The leap"
+       },
+       "from": 0,
+       "to": 1.803,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      }
+     ]
+    },
+    {
+     "id": "a1",
+     "kind": "audio",
+     "role": "voice",
+     "name": "Voice",
+     "items": []
+    },
+    {
+     "id": "a2",
+     "kind": "audio",
+     "role": "music",
+     "name": "Music",
+     "items": [
+      {
+       "id": "track",
+       "src": {
+        "kind": "audio",
+        "id": "jam-la-calabaza-part.mp3",
+        "duration": 13.14,
+        "name": "La Calabaza track"
+       },
+       "start": 0,
+       "from": 0,
+       "to": 13.14,
+       "fadeOut": 0.3
+      }
+     ]
+    },
+    {
+     "id": "a3",
+     "kind": "audio",
+     "role": "effects",
+     "name": "Effects",
+     "items": []
+    }
+   ],
+   "markers": []
+  }
+ },
+ "media": [
+  {
+   "file": "track.mp3",
+   "to": "audio/jam-la-calabaza-track.mp3",
+   "name": "La Calabaza track",
+   "kind": "music"
+  },
+  {
+   "file": "part.mp3",
+   "to": "audio/jam-la-calabaza-part.mp3",
+   "name": "La Calabaza track · part",
+   "kind": "part"
+  },
+  {
+   "file": "web/brand/cast/pickle.png",
+   "to": "photos/cast-pickle.png"
+  },
+  {
+   "file": "web/brand/mixer/crew/praline.png",
+   "to": "photos/crew-praline.png"
+  },
+  {
+   "file": "web/brand/mixer/crew/sesame.png",
+   "to": "photos/crew-sesame.png"
+  },
+  {
+   "file": "look.jpg",
+   "to": "photos/jam-la-calabaza-look.jpg"
+  },
+  {
+   "file": "square.mp4",
+   "to": "videos/jam-la-calabaza-square.mp4"
+  },
+  {
+   "file": "pickle.mp4",
+   "to": "videos/jam-la-calabaza-pickle.mp4"
+  },
+  {
+   "file": "band.mp4",
+   "to": "videos/jam-la-calabaza-band.mp4"
+  },
+  {
+   "file": "face.mp4",
+   "to": "videos/jam-la-calabaza-face.mp4"
+  },
+  {
+   "file": "step.mp4",
+   "to": "videos/jam-la-calabaza-step.mp4"
+  },
+  {
+   "file": "pickle-close.mp4",
+   "to": "videos/jam-la-calabaza-pickle-close.mp4"
+  },
+  {
+   "file": "band-close.mp4",
+   "to": "videos/jam-la-calabaza-band-close.mp4"
+  },
+  {
+   "file": "finale.mp4",
+   "to": "videos/jam-la-calabaza-finale.mp4"
+  },
+  {
+   "file": "film.mp4",
+   "to": "reels/jam-la-calabaza-film.mp4",
+   "name": "La Calabaza"
+  }
+ ]
+}

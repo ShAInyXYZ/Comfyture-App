@@ -1,4 +1,5 @@
-// Makes the project.json of the music videos Jam ships (examples/jam/<id>/), from the media already in each folder: our own songs
+// Makes the project.json of the music videos Jam ships (examples/jam/<id>/) and of the two kept for the tests (tests/fixtures/jam/<id>/),
+// from the media already in each folder: our own songs
 // (ACE-Step, made in the app), our cast's own LTX-2.5 takes, and still pictures of our cast (Codex's GPT Image) moved as clips
 // with ffmpeg. Each is made the way the editor makes one: the beats heard by Jam's own finder, the shots cut on them, the words
 // timed (heard by Whisper where they are sung, our own call-outs where the song has none), effects and stickers on the beat.
@@ -226,7 +227,8 @@ const CREW_SIZE = { width: 369, height: 389 };
 
 async function make(id) {
   const spec = SPECS[id];
-  const folder = join(root, "examples", "jam", id);
+  // (La Calabaza and Three Kittens, no longer shipped since 26 October, are kept for the tests in tests/fixtures/jam/)
+  const folder = join(root, ...(id === "jam-walk-moonlit-oolong" ? ["examples"] : ["tests", "fixtures"]), "jam", id);
   const own = (f) => join(folder, f);
   const named = (f) => `${id}-${f}`;
   const media = [];

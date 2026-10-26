@@ -21,6 +21,8 @@ export interface AudioEntry {
   lyrics?: string;
   bpm?: number;
   key?: string;
+  /** The jam a shipped song comes as (its id). */
+  jam?: string;
 }
 
 export interface CoverRequest {

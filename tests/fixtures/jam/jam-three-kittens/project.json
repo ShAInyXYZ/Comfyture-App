@@ -1,0 +1,792 @@
+{
+ "name": "Three Kittens",
+ "rev": 2,
+ "about": "Praline, Sesame and Meringue, Mixer's cats, as a very serious street crew for seven seconds: Three Kittens track is our own punchy electronic instrumental made in the app with ACE-Step 1.5 (its music runs 7 s, then the song is silent, so the part is its first 7.5 s). Shots 4 and 7 are real LTX-2.5 takes of Meringue, made in Mixer for the Face Dance trend (her face keeps that trend's beat; their sound is left out); the others are still pictures of the three (Codex's GPT Image, from their pictures) moved with ffmpeg: animated stills, not footage; Roll a shot with LTX-2.5 to make it real. A cut on every other beat Jam's finder heard (the bar line set on the kick), our own call-outs as comic captions, a zoom on every beat, a flash on every bar, shakes and a colour hit at the end. The film is the edit as the app exports it.",
+ "thumb": "thumb.jpg",
+ "jam": {
+  "track": {
+   "file": "jam-three-kittens-track.mp3",
+   "url": "/media/audio/jam-three-kittens-track.mp3",
+   "seconds": 13.04,
+   "name": "Three Kittens track",
+   "kind": "made",
+   "prompt": "punchy electronic dance, mock-serious street crew, kick, clap, rubbery synth bass, short synth accents, an original catchy instrumental for a short video",
+   "lyrics": "",
+   "bpm": 128,
+   "drop": null,
+   "loud": null
+  },
+  "span": {
+   "from": 0,
+   "to": 7.552
+  },
+  "part": {
+   "file": "jam-three-kittens-part.mp3",
+   "url": "/media/audio/jam-three-kittens-part.mp3",
+   "seconds": 7.6
+  },
+  "vocals": null,
+  "stems": null,
+  "sung": [],
+  "lines": [
+   {
+    "from": 0.06,
+    "to": 0.96,
+    "text": "THREE KITTENS"
+   },
+   {
+    "from": 0.99,
+    "to": 1.9,
+    "text": "THE BOSS"
+   },
+   {
+    "from": 1.93,
+    "to": 2.84,
+    "text": "THE SIDE-EYE"
+   },
+   {
+    "from": 2.87,
+    "to": 3.78,
+    "text": "THE BABY"
+   },
+   {
+    "from": 3.8,
+    "to": 4.72,
+    "text": "PAWS UP"
+   },
+   {
+    "from": 4.74,
+    "to": 6.12,
+    "text": "THE CREW"
+   },
+   {
+    "from": 6.15,
+    "to": 7.55,
+    "text": "OKAY. CUTE."
+   }
+  ],
+  "bpm": 127.976,
+  "down": 0,
+  "sure": 1,
+  "beats": [
+   0.052,
+   0.521,
+   0.99,
+   1.459,
+   1.927,
+   2.396,
+   2.865,
+   3.334,
+   3.803,
+   4.272,
+   4.74,
+   5.209,
+   5.678,
+   6.147,
+   6.616,
+   7.085
+  ],
+  "captions": "comic",
+  "captionsSet": true,
+  "artist": {
+   "file": "crew-praline.png",
+   "url": "/media/photos/crew-praline.png",
+   "width": 369,
+   "height": 389,
+   "crew": "praline"
+  },
+  "band": [
+   {
+    "file": "crew-sesame.png",
+    "url": "/media/photos/crew-sesame.png",
+    "width": 369,
+    "height": 389,
+    "name": "Sesame",
+    "crew": "sesame",
+    "role": "dancer",
+    "show": true
+   },
+   {
+    "file": "crew-meringue.png",
+    "url": "/media/photos/crew-meringue.png",
+    "width": 369,
+    "height": 389,
+    "name": "Meringue",
+    "crew": "meringue",
+    "role": "dancer",
+    "show": true
+   }
+  ],
+  "dance": null,
+  "style": "a lilac music-video studio, a glossy pale floor, soft light and haze: a mock-serious street crew",
+  "every": 2,
+  "shots": [
+   {
+    "from": 0,
+    "to": 0.989,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-three-kittens-pose.mp4",
+     "url": "/media/videos/jam-three-kittens-pose.mp4",
+     "duration": 1.54,
+     "name": "The pose",
+     "from": 0
+    }
+   },
+   {
+    "from": 0.989,
+    "to": 1.927,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-three-kittens-praline.mp4",
+     "url": "/media/videos/jam-three-kittens-praline.mp4",
+     "duration": 1.54,
+     "name": "Praline",
+     "from": 0
+    }
+   },
+   {
+    "from": 1.927,
+    "to": 2.864,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-three-kittens-sesame.mp4",
+     "url": "/media/videos/jam-three-kittens-sesame.mp4",
+     "duration": 1.54,
+     "name": "Sesame",
+     "from": 0
+    }
+   },
+   {
+    "from": 2.864,
+    "to": 3.802,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-three-kittens-meringue-1.mp4",
+     "url": "/media/videos/jam-three-kittens-meringue-1.mp4",
+     "duration": 2.5,
+     "name": "Meringue (LTX-2.5)",
+     "from": 0
+    }
+   },
+   {
+    "from": 3.802,
+    "to": 4.74,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-three-kittens-paws.mp4",
+     "url": "/media/videos/jam-three-kittens-paws.mp4",
+     "duration": 1.54,
+     "name": "Paws up",
+     "from": 0
+    }
+   },
+   {
+    "from": 4.74,
+    "to": 5.677,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-three-kittens-walk.mp4",
+     "url": "/media/videos/jam-three-kittens-walk.mp4",
+     "duration": 1.54,
+     "name": "The walk",
+     "from": 0
+    }
+   },
+   {
+    "from": 5.677,
+    "to": 6.146,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-three-kittens-meringue-2.mp4",
+     "url": "/media/videos/jam-three-kittens-meringue-2.mp4",
+     "duration": 2.5,
+     "name": "Meringue keeps the beat (LTX-2.5)",
+     "from": 0
+    }
+   },
+   {
+    "from": 6.146,
+    "to": 7.552,
+    "kind": "broll",
+    "run": null,
+    "clip": {
+     "file": "jam-three-kittens-finale.mp4",
+     "url": "/media/videos/jam-three-kittens-finale.mp4",
+     "duration": 2,
+     "name": "The final pose",
+     "from": 0
+    }
+   }
+  ],
+  "looks": {
+   "broll": {
+    "file": "jam-three-kittens-look.jpg",
+    "url": "/media/photos/jam-three-kittens-look.jpg"
+   }
+  },
+  "film": {
+   "id": "jam-three-kittens-film",
+   "url": "/media/reels/jam-three-kittens-film.mp4",
+   "seconds": 7.58
+  },
+  "cut": "cut-jam-three-kittens",
+  "musicIn": "jam-three-kittens-part.mp3",
+  "linesInEdit": true
+ },
+ "cut": {
+  "id": "cut-jam-three-kittens",
+  "name": "Three Kittens",
+  "body": {
+   "aspect": "9:16",
+   "duck": false,
+   "fit": "cover",
+   "product": "jam",
+   "beats": {
+    "bpm": 127.976,
+    "offset": 0,
+    "times": [
+     0.052,
+     0.521,
+     0.99,
+     1.459,
+     1.927,
+     2.396,
+     2.865,
+     3.334,
+     3.803,
+     4.272,
+     4.74,
+     5.209,
+     5.678,
+     6.147,
+     6.616,
+     7.085
+    ],
+    "down": 0,
+    "source": "web",
+    "sure": 1
+   },
+   "tracks": [
+    {
+     "id": "t1",
+     "kind": "title",
+     "name": "Titles",
+     "items": [
+      {
+       "id": "c1",
+       "lyric": true,
+       "text": "THREE KITTENS",
+       "start": 0.06,
+       "length": 0.9,
+       "style": "comic",
+       "words": [
+        {
+         "text": "THREE",
+         "from": 0,
+         "to": 0.3
+        },
+        {
+         "text": "KITTENS",
+         "from": 0.3,
+         "to": 0.9
+        }
+       ],
+       "y": 0.8,
+       "size": 0.1
+      },
+      {
+       "id": "c2",
+       "lyric": true,
+       "text": "THE BOSS",
+       "start": 0.99,
+       "length": 0.91,
+       "style": "comic",
+       "words": [
+        {
+         "text": "THE",
+         "from": 0,
+         "to": 0.46
+        },
+        {
+         "text": "BOSS",
+         "from": 0.46,
+         "to": 0.91
+        }
+       ],
+       "y": 0.8,
+       "size": 0.1
+      },
+      {
+       "id": "c3",
+       "lyric": true,
+       "text": "THE SIDE-EYE",
+       "start": 1.93,
+       "length": 0.91,
+       "style": "comic",
+       "words": [
+        {
+         "text": "THE",
+         "from": 0,
+         "to": 0.3
+        },
+        {
+         "text": "SIDE-EYE",
+         "from": 0.3,
+         "to": 0.91
+        }
+       ],
+       "y": 0.8,
+       "size": 0.1
+      },
+      {
+       "id": "c4",
+       "lyric": true,
+       "text": "THE BABY",
+       "start": 2.87,
+       "length": 0.91,
+       "style": "comic",
+       "words": [
+        {
+         "text": "THE",
+         "from": 0,
+         "to": 0.3
+        },
+        {
+         "text": "BABY",
+         "from": 0.3,
+         "to": 0.91
+        }
+       ],
+       "y": 0.8,
+       "size": 0.1
+      },
+      {
+       "id": "c5",
+       "lyric": true,
+       "text": "PAWS UP",
+       "start": 3.8,
+       "length": 0.92,
+       "style": "comic",
+       "words": [
+        {
+         "text": "PAWS",
+         "from": 0,
+         "to": 0.46
+        },
+        {
+         "text": "UP",
+         "from": 0.46,
+         "to": 0.92
+        }
+       ],
+       "y": 0.8,
+       "size": 0.1
+      },
+      {
+       "id": "c6",
+       "lyric": true,
+       "text": "THE CREW",
+       "start": 4.74,
+       "length": 1.38,
+       "style": "comic",
+       "words": [
+        {
+         "text": "THE",
+         "from": 0,
+         "to": 0.69
+        },
+        {
+         "text": "CREW",
+         "from": 0.69,
+         "to": 1.38
+        }
+       ],
+       "y": 0.8,
+       "size": 0.1
+      },
+      {
+       "id": "c7",
+       "lyric": true,
+       "text": "OKAY. CUTE.",
+       "start": 6.15,
+       "length": 1.4,
+       "style": "comic",
+       "words": [
+        {
+         "text": "OKAY.",
+         "from": 0,
+         "to": 0.93
+        },
+        {
+         "text": "CUTE.",
+         "from": 0.93,
+         "to": 1.4
+        }
+       ],
+       "y": 0.8,
+       "size": 0.1
+      }
+     ]
+    },
+    {
+     "id": "fx",
+     "kind": "fx",
+     "name": "Beat FX",
+     "items": [
+      {
+       "id": "fx1",
+       "kind": "zoom",
+       "on": true,
+       "every": 1,
+       "intensity": 0.4,
+       "dur": 0.18,
+       "start": 0,
+       "length": 6.146
+      },
+      {
+       "id": "fx2",
+       "kind": "flash",
+       "on": true,
+       "every": 4,
+       "intensity": 0.5,
+       "dur": 0.14,
+       "start": 1.927,
+       "length": 4.219
+      },
+      {
+       "id": "fx3",
+       "kind": "shake",
+       "on": true,
+       "every": 1,
+       "intensity": 0.6,
+       "dur": 0.3,
+       "start": 1.927,
+       "length": 0.5
+      },
+      {
+       "id": "fx4",
+       "kind": "shake",
+       "on": true,
+       "every": 1,
+       "intensity": 0.7,
+       "dur": 0.3,
+       "start": 3.802,
+       "length": 0.5
+      },
+      {
+       "id": "fx5",
+       "kind": "hue",
+       "on": true,
+       "every": 2,
+       "intensity": 0.3,
+       "dur": 0.4,
+       "start": 6.146,
+       "length": 1.406
+      }
+     ]
+    },
+    {
+     "id": "v2",
+     "kind": "video",
+     "name": "Overlays",
+     "items": [
+      {
+       "id": "st1",
+       "src": {
+        "kind": "sticker",
+        "id": "crown"
+       },
+       "start": 0.99,
+       "length": 0.93,
+       "x": 0.5,
+       "y": 0.1,
+       "w": 0.22,
+       "rot": -6,
+       "z": 1
+      },
+      {
+       "id": "st2",
+       "src": {
+        "kind": "sticker",
+        "id": "heart"
+       },
+       "start": 2.87,
+       "length": 0.91,
+       "x": 0.78,
+       "y": 0.2,
+       "w": 0.16,
+       "rot": 10,
+       "z": 2
+      },
+      {
+       "id": "st3",
+       "src": {
+        "kind": "sticker",
+        "id": "bolt"
+       },
+       "start": 3.8,
+       "length": 0.92,
+       "x": 0.8,
+       "y": 0.3,
+       "w": 0.17,
+       "rot": 12,
+       "z": 3
+      },
+      {
+       "id": "st4",
+       "src": {
+        "kind": "sticker",
+        "id": "wow"
+       },
+       "start": 6.2,
+       "length": 1.3,
+       "x": 0.76,
+       "y": 0.16,
+       "w": 0.3,
+       "rot": 8,
+       "z": 4
+      }
+     ]
+    },
+    {
+     "id": "v1",
+     "kind": "video",
+     "name": "Video",
+     "main": true,
+     "items": [
+      {
+       "id": "j1",
+       "shot": 0,
+       "src": {
+        "kind": "video",
+        "id": "jam-three-kittens-pose.mp4",
+        "duration": 1.54,
+        "name": "The pose"
+       },
+       "from": 0,
+       "to": 0.989,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j2",
+       "shot": 1,
+       "src": {
+        "kind": "video",
+        "id": "jam-three-kittens-praline.mp4",
+        "duration": 1.54,
+        "name": "Praline"
+       },
+       "from": 0,
+       "to": 0.938,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j3",
+       "shot": 2,
+       "src": {
+        "kind": "video",
+        "id": "jam-three-kittens-sesame.mp4",
+        "duration": 1.54,
+        "name": "Sesame"
+       },
+       "from": 0,
+       "to": 0.937,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j4",
+       "shot": 3,
+       "src": {
+        "kind": "video",
+        "id": "jam-three-kittens-meringue-1.mp4",
+        "duration": 2.5,
+        "name": "Meringue (LTX-2.5)"
+       },
+       "from": 0,
+       "to": 0.938,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j5",
+       "shot": 4,
+       "src": {
+        "kind": "video",
+        "id": "jam-three-kittens-paws.mp4",
+        "duration": 1.54,
+        "name": "Paws up"
+       },
+       "from": 0,
+       "to": 0.938,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j6",
+       "shot": 5,
+       "src": {
+        "kind": "video",
+        "id": "jam-three-kittens-walk.mp4",
+        "duration": 1.54,
+        "name": "The walk"
+       },
+       "from": 0,
+       "to": 0.937,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j7",
+       "shot": 6,
+       "src": {
+        "kind": "video",
+        "id": "jam-three-kittens-meringue-2.mp4",
+        "duration": 2.5,
+        "name": "Meringue keeps the beat (LTX-2.5)"
+       },
+       "from": 0,
+       "to": 0.469,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      },
+      {
+       "id": "j8",
+       "shot": 7,
+       "src": {
+        "kind": "video",
+        "id": "jam-three-kittens-finale.mp4",
+        "duration": 2,
+        "name": "The final pose"
+       },
+       "from": 0,
+       "to": 1.406,
+       "speed": 1,
+       "sound": false,
+       "join": "cut"
+      }
+     ]
+    },
+    {
+     "id": "a1",
+     "kind": "audio",
+     "role": "voice",
+     "name": "Voice",
+     "items": []
+    },
+    {
+     "id": "a2",
+     "kind": "audio",
+     "role": "music",
+     "name": "Music",
+     "items": [
+      {
+       "id": "track",
+       "src": {
+        "kind": "audio",
+        "id": "jam-three-kittens-part.mp3",
+        "duration": 7.6,
+        "name": "Three Kittens track"
+       },
+       "start": 0,
+       "from": 0,
+       "to": 7.6
+      }
+     ]
+    },
+    {
+     "id": "a3",
+     "kind": "audio",
+     "role": "effects",
+     "name": "Effects",
+     "items": []
+    }
+   ],
+   "markers": []
+  }
+ },
+ "media": [
+  {
+   "file": "track.mp3",
+   "to": "audio/jam-three-kittens-track.mp3",
+   "name": "Three Kittens track",
+   "kind": "music"
+  },
+  {
+   "file": "part.mp3",
+   "to": "audio/jam-three-kittens-part.mp3",
+   "name": "Three Kittens track · part",
+   "kind": "part"
+  },
+  {
+   "file": "web/brand/mixer/crew/praline.png",
+   "to": "photos/crew-praline.png"
+  },
+  {
+   "file": "web/brand/mixer/crew/sesame.png",
+   "to": "photos/crew-sesame.png"
+  },
+  {
+   "file": "web/brand/mixer/crew/meringue.png",
+   "to": "photos/crew-meringue.png"
+  },
+  {
+   "file": "look.jpg",
+   "to": "photos/jam-three-kittens-look.jpg"
+  },
+  {
+   "file": "pose.mp4",
+   "to": "videos/jam-three-kittens-pose.mp4"
+  },
+  {
+   "file": "praline.mp4",
+   "to": "videos/jam-three-kittens-praline.mp4"
+  },
+  {
+   "file": "sesame.mp4",
+   "to": "videos/jam-three-kittens-sesame.mp4"
+  },
+  {
+   "file": "meringue-1.mp4",
+   "to": "videos/jam-three-kittens-meringue-1.mp4"
+  },
+  {
+   "file": "paws.mp4",
+   "to": "videos/jam-three-kittens-paws.mp4"
+  },
+  {
+   "file": "walk.mp4",
+   "to": "videos/jam-three-kittens-walk.mp4"
+  },
+  {
+   "file": "meringue-2.mp4",
+   "to": "videos/jam-three-kittens-meringue-2.mp4"
+  },
+  {
+   "file": "finale.mp4",
+   "to": "videos/jam-three-kittens-finale.mp4"
+  },
+  {
+   "file": "film.mp4",
+   "to": "reels/jam-three-kittens-film.mp4",
+   "name": "Three Kittens"
+  }
+ ]
+}

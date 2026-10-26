@@ -1,7 +1,7 @@
-// Jam in a real browser, end to end, on a server of its own and a folder of its own. Jam ships three music videos made with our own songs
-// and cast (Moonlit Oolong Walk, which it opens first, then La Calabaza and Three Kittens), each with its song, stems, words, band, edit
-// and finished film, and no others (the Toc Toc and Hotel Lobby videos, which played commercial recordings, were retired on 25 October);
-// this test leans on those. It holds: the videos Jam ships (each opens as its edit, cut on its beats, its film a film of the
+// Jam in a real browser, end to end, on a server of its own and a folder of its own. Jam ships one music video made with our own song and
+// cast, Moonlit Oolong Walk, which it opens first, and its eleven songs, each as a jam of its own; this test also puts back the two it
+// shipped until 26 October (La Calabaza and Three Kittens, kept in tests/fixtures/jam/ for their short songs), each with its song, stems,
+// words, band, edit and finished film, and leans on the three. It holds: the videos Jam ships (each opens as its edit, cut on its beats, its film a film of the
 // Library, none worked on by being looked at); Pickle's panel and the five workspaces each in its own right (the song with its cover, the
 // track, the words, the band, the edit) and every card opening in a window; the record played; beats heard, an effect and stickers put on,
 // a lyric word retimed; undo, redo, save, reload; the film exported and its frames held against the preview's at the same times;
@@ -17,6 +17,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createRequire } from "node:module";
+import { examplesWithFixtures } from "./tools/examples-with-fixtures.mjs";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
@@ -45,7 +46,7 @@ const port = await new Promise((done) => {
     s.close(() => done(port));
   });
 });
-const server = spawn(process.execPath, ["server/main.ts"], { cwd: root, env: { ...process.env, PORT: String(port), COMFYTURE_DATA: dataDir, COMFY_API_KEY: "", COMFY_BASE_URL: "http://127.0.0.1:9" }, stdio: "ignore" });
+const server = spawn(process.execPath, ["server/main.ts"], { cwd: root, env: { ...process.env, PORT: String(port), COMFYTURE_DATA: dataDir, COMFYTURE_EXAMPLES: await examplesWithFixtures(), COMFY_API_KEY: "", COMFY_BASE_URL: "http://127.0.0.1:9" }, stdio: "ignore" });
 const base = `http://127.0.0.1:${port}`;
 for (let i = 0; i < 100; i++) {
   if (await fetch(`${base}/api/jams`).then((r) => r.ok, () => false)) break;
@@ -111,12 +112,18 @@ try {
   // ---- Jam opens on the first of the videos it ships, our Moonlit Oolong Walk, on its track (a video that has a song)
   await page.goto(`${base}/#/jam`);
   await page.waitForSelector(".jam .jm-tile", { timeout: 20000 });
-  ok(await until(() => import("/js/jam.js").then((m) => m.jam.jam?.id === "jam-walk-moonlit-oolong" && m.jam.jam.name === "Moonlit Oolong Walk" && m.jam.workspace === "track").catch(() => false), 60), "Jam opens on Moonlit Oolong Walk, the first of our three videos, on its track");
+  ok(await until(() => import("/js/jam.js").then((m) => m.jam.jam?.id === "jam-walk-moonlit-oolong" && m.jam.jam.name === "Moonlit Oolong Walk" && m.jam.workspace === "track").catch(() => false), 60), "Jam opens on Moonlit Oolong Walk, the video it ships, on its track");
 
   // ---- the videos Jam ships: each opens as its edit, cut on its beats, its film a film of the Library; looking at them is not working on them
   await section("the videos Jam ships", async () => {
     const shipped = await page.evaluate(() => import("/js/jam.js").then((m) => m.jam.list.map((j) => j.id).filter((id) => id.startsWith("jam-")).sort()));
-    ok(shipped.join() === [...OURS].sort().join(), `Jam ships our three videos and no other (${shipped.join(", ")})`);
+    ok(shipped.join() === [...OURS].sort().join(), `the three videos of this test are in, and no other (${shipped.join(", ")})`);
+    // (and each of the songs Jam ships comes as a jam of its own: the song as its track, its cover as its picture in the set list)
+    const songs = (await api("api/audio")).filter((a) => a.jam);
+    const list = await page.evaluate(() => import("/js/jam.js").then((m) => m.jam.list.map((j) => ({ id: j.id, name: j.name, thumb: j.thumb }))));
+    ok(songs.length >= 10 && songs.every((a) => list.some((j) => j.id === a.jam && j.name === a.name && j.thumb === a.cover)), `each song comes as a jam with its cover (${songs.length} songs)`);
+    const own = (await api(`api/jams/${songs[0].jam}`)).project.body.track;
+    ok(own?.file === songs[0].file && own.cover === songs[0].cover && own.lyrics === songs[0].lyrics, "its track is the song, with its cover and its words");
     ok((await page.evaluate(() => import("/js/jam.js").then((m) => m.jam.list.some((j) => /ramalama/i.test(j.id + j.name))))) === false, "Ramalama is not one of them");
     // (each is opened, and every workspace of it looked at: the song, the track, the words, the band, the edit)
     for (const id of shipped) {
@@ -857,7 +864,7 @@ try {
     await workspace("track");
     const chooser = page.waitForEvent("filechooser");
     await page.locator(".jt-ways .jt-way", { hasText: "Your song" }).click();
-    await (await chooser).setFiles(join(root, "examples", "jam", "jam-la-calabaza", "track.mp3"));
+    await (await chooser).setFiles(join(root, "tests", "fixtures", "jam", "jam-la-calabaza", "track.mp3"));
     ok(await until(() => import("/js/jam.js").then((m) => !!m.jam.jam.body.part && !m.jam.busy.has("part") && !m.jam.busy.has("track")).catch(() => false), 60), "a song added is cut, and its beats are found here");
     const own = await page.evaluate(() => import("/js/jam.js").then((m) => ({ id: m.jam.jam.id, kind: m.jam.jam.body.track.kind, bpm: m.jam.jam.body.bpm, name: m.jam.jam.name })));
     ownId = own.id;

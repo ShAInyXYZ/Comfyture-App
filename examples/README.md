@@ -73,9 +73,12 @@ one the app ships under `web/brand/`) is copied to `data/<to>` (`audio/`, `video
   `jam.film` names it by that id.
 - A video that was only opened is not worked on: Jam measures its song's drop and loudest stretch when it opens one that has none and
   saves them, and a save that changes nothing else keeps the time of the last change (`workOf` in `server/main.ts`).
-- `tests/tools/make-showcase-jam.mjs` writes the three videos of our own (Moonlit Oolong Walk, La Calabaza, Three Kittens) from their
-  folders; raise its `REV` when they are made again for good.
-- Jam ships those three and no other. Two more, Toc Toc and Hotel Lobby, were retired on 25 October: they played the Mixer trends'
+- `tests/tools/make-showcase-jam.mjs` writes the videos of our own from their folders (Moonlit Oolong Walk here, La Calabaza and Three
+  Kittens in `tests/fixtures/jam/`); raise its `REV` when they are made again for good.
+- Jam ships Moonlit Oolong Walk and no other video; its songs (below) each come as a jam of their own. La Calabaza and Three Kittens
+  were retired on 26 October for their 13 and 15 s songs (ACE-Step makes poor short songs): they are kept in `tests/fixtures/jam/` for
+  the browser and seeding tests (`tests/tools/examples-with-fixtures.mjs` puts them back beside the examples). Two more, Toc Toc and
+  Hotel Lobby, were retired on 25 October: they played the Mixer trends'
   original recordings (commercial songs, which are no longer in the repository), so their folders are gone, and the rules above did
   the rest: an untouched copy leaves an older data folder at its next start, one that was worked on stays. The sounds and dances they
   copied into `data/audio/` and `data/videos/` (`trend-*-sound.m4a`, `trend-*-dance.mp4`) stay there: only the video and its edit are
@@ -85,8 +88,10 @@ one the app ships under `web/brand/`) is copied to `data/<to>` (`audio/`, `video
 
 `{ id, rev, name, genre, star, about, track, cover, song: { tags, lyrics, bpm, key, language, timesignature, seconds, passes, seed } }`:
 the track goes into the audio library as `<id>.mp3`, a song of The song's shelf, with its cover (put into photos as `<id>-cover.jpg`)
-and what it was made from (`tags`, `lyrics`, `bpm`, `key`), so a video that takes it as its track has its words and tempo too. The songs
-go in after the videos, so they are the newest of the library; the shelf starts with the song of the video open, then the library.
+and what it was made from (`tags`, `lyrics`, `bpm`, `key`), so a video that takes it as its track has its words and tempo too. Each also
+comes as a jam of its own, same id, in Your jams: the song as its track, its cover as its picture, the rest of the video left to make.
+The songs go in before the videos, so Jam's video is the newest jam, the one it opens on; the shelf starts with the song of the video
+open, then the library.
 
 - `song` holds the settings Jam's song page sends to `/api/audio/song`, its seed with it. The songs are whole, 200 s: ACE-Step makes poor
   short songs, so a part is cut from a whole one later (The track), and The song's shelf only holds songs (a sound under 30 s is a clip).
@@ -96,5 +101,6 @@ go in after the videos, so they are the newest of the library; the shelf starts 
   about 5 cents).
 - The track ships loudness-matched (-14 LUFS) as a 96 kbps MP3; the cover is an 800 px JPEG drawn with GPT Image from the star's cast
   sheet (the prompts: [`docs/brand/songs/`](../docs/brand/songs/)). Titles, lyrics and covers are our own: no real song, artist or person.
-- A song is worked on once the person gives it a cover or a video cover of their own: a newer version then leaves it as it is.
+- A song is worked on once the person gives it a cover or a video cover of their own, works on its jam or deletes it: a newer version
+  then leaves it as it is.
 
