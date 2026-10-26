@@ -32,7 +32,7 @@ test("the shared choices are the model's own", () => {
 
 test("Pickle writes songs by the guide: whole songs of 200 to 300 s in E minor, tags and lyrics that agree, the LoRAs with their trigger words", () => {
   assert.deepEqual([DEFAULT_SONG.key, DEFAULT_SONG.seconds, MAX_SECONDS], ["E minor", 240, 300]);
-  for (const fact of [/200 to 300 s/, /E minor works great/, /Never write the BPM in the tags/, /6 to 10 syllables/, /word for word/, /Never an empty \[Chorus\]/, /must agree/]) assert.match(SONG_GUIDE, fact);
+  for (const fact of [/200 to 300 s/, /E minor works great/, /never the BPM, the key or the time signature/, /6 to 10 syllables/, /word for word/, /under it is silence: write \[inst\]/, /must agree/]) assert.match(SONG_GUIDE, fact);
   assert.ok(SONG_GUIDE_CORE.length > 3000 && !/## Recipes|## Style LoRAs/.test(SONG_GUIDE_CORE), "the core is the rules, without the recipes and the LoRAs");
   // both Pickles have it: the one that sets a song up (all of it), the one in the chat bar (the core)
   assert.ok(SONG_BRIEF.includes(SONG_GUIDE) && SONG_BRIEF.includes("roti-l0f1y"), "the setup brief holds the guide, the recipes and the LoRAs");
@@ -93,4 +93,21 @@ test("lyrics on their heard times place a song's sections only when they cover t
   assert.equal(timingCovers({ lines: [[2, 3], [60, 62]] }, 220), false, "ends too early");
   assert.equal(timingCovers(undefined, 220), false);
   assert.equal(timingCovers({ lines: [] }, 220), false);
+});
+
+test("the style can be a whole paragraph, as the owner writes it: nothing cuts it short on its way to the model", () => {
+  const paragraph = "Neo-classical darkwave and operatic gothic symphony anchored by mournful cellos and a delicate plucked harp performing sparse, open-fifth Phrygian dominant chord progressions. ".repeat(10).trim();
+  assert.ok(paragraph.length > 1500 && paragraph.length < 2500, String(paragraph.length));
+  const song = readSong(JSON.stringify({ name: "Opera", tags: paragraph, lyrics: "[inst]\n[SOLEMN CHURCH ORGAN BEGINS]\n\n[chorus]\nO lux in tenebris" }), 200, "la");
+  assert.equal(song.tags, paragraph, "Pickle's whole paragraph is kept");
+  assert.match(songPrompt({ idea: "x", current: { tags: paragraph } }), new RegExp(paragraph.slice(-60).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "and shown back to him whole when he is asked for a change");
+  for (const rule of [/one dense prose paragraph/, /cfg 3 and 50 steps/, /direction lines/, /\[SOLEMN CHURCH ORGAN/]) assert.match(SONG_GUIDE, rule);
+  assert.match(SONG_BRIEF, /not a list of keywords/);
+});
+
+test("a stray CJK character in the words of a song that is not in a CJK language is dropped, as the owner's pipeline does; a Japanese song keeps its own", () => {
+  const fr = readSong(JSON.stringify({ name: "x", tags: "chanson", lyrics: "[Verse 1]\nLes周三 soirs au Balajo\nTon rire dans la 投射 fumée" }), 200, "fr");
+  assert.equal(fr.lyrics, "[Verse 1]\nLes soirs au Balajo\nTon rire dans la  fumée".replace("la  fumée", "la  fumée"));
+  const ja = readSong(JSON.stringify({ name: "x", tags: "j-pop", lyrics: "[Verse 1]\n朝の台所 ちいさなひよこ" }), 200, "ja");
+  assert.equal(ja.lyrics, "[Verse 1]\n朝の台所 ちいさなひよこ");
 });

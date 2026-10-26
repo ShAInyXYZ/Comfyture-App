@@ -639,7 +639,7 @@ function clean(a: any) {
     const structure = STRUCTURES.some((x) => x.id === a.structure) ? a.structure : undefined;
     const key = KEYS.includes(a.key) ? a.key : undefined;
     const language = LANGUAGES.some((l) => l.value === a.language) ? a.language : undefined;
-    const out = pick({ op: "set_song", idea: text(a.idea, 500), structure, tags: text(a.tags, 400), lyrics: text(a.lyrics, 6000), name: text(a.name, 40), seconds: num(a.seconds, 20, MAX_SECONDS), bpm: num(a.bpm, 40, 220), key, language });
+    const out = pick({ op: "set_song", idea: text(a.idea, 500), structure, tags: text(a.tags, 2500), lyrics: text(a.lyrics, 6000), name: text(a.name, 40), seconds: num(a.seconds, 20, MAX_SECONDS), bpm: num(a.bpm, 40, 220), key, language });
     return Object.keys(out).length > 1 ? out : null;
   }
   if (a.op === "part") return pick({ op: "part", seconds: a.seconds === 0 || a.seconds === "0" ? 0 : num(a.seconds, 5, 600), from: num(a.from, 0, 36000), drop: a.drop === true ? true : undefined, chorus: a.chorus === true ? true : undefined });

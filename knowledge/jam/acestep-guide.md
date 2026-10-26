@@ -27,50 +27,62 @@ Nothing else is needed. The model reads tags and lyrics together and plans the s
 - **Language: set it** (en, fr, ja...). The words are in that language; the tags and section tags stay in English.
 - **Lines of words for a length:** one sung line for every 4 to 5 seconds (a rap line every 3), the rest being the music between. A 240 s song is
   about 45 lines. Never pad: to fill a long song, add instrumental sections ([Instrumental], [Guitar Solo], [Piano Interlude]) rather than more verses.
-- **Quality:** Full is the XL in three passes (the first from nothing, two light refinements). Draft is the first pass alone, for trying an idea.
-- **Roll more than one take.** A new seed gives a new performance of the same words; pick the best of two or three.
+- **Quality:** Full is the XL in three passes (the first from nothing, two light refinements). The owner runs the first pass at **cfg 3 and 50 steps** and
+  the enhancer at 0.75 (OtiaFlow's overrides on the Superior graph). Draft is the first pass alone, for trying an idea.
+- **Roll more than one take.** A new seed gives a new performance of the same words; the owner makes three to five of one idea and picks by ear.
 
-## Tags
+## The style: a paragraph, not a tag list
 
-One comma-separated line of keywords, not a sentence. About 10 to 18 descriptors; far more dilutes them. In this order:
+The owner's own pipeline (OtiaFlow, flow "ACE STEP 1.5xl Music Generation", the songs they rate far above anything made from tag lists) writes the style as
+**one dense prose paragraph of about 1,500 to 2,000 characters**, which the XL reads well. deAPI's "keywords, not prose" is for the small models; here the
+owner's practice wins. Five layers, in this order, each concrete and sensory:
 
-1. **Genre first** (the anchor): one primary genre and at most one modifier ("lo-fi hip hop", "pop-punk anthem", "90s R&B slow jam").
-   Stacking four or five genres collapses into mush.
-2. **Mood and energy**: "late-night, tender", "rebellious, high-energy".
-3. **Instruments, specific**: three to five ("warm Rhodes electric piano" beats "keys"; "fingerpicked nylon guitar" beats "guitar"), and the **drum feel**
-   ("laid-back swung boom-bap drums", "tight live drums with a double-time snare").
-4. **The voice**: gender and delivery ("breathy intimate female lead vocal", "raspy male lead with gang shouts"), or "instrumental, no vocals".
-   Add "no autotune, raw human voice" when it should sound human.
-5. **Production**, one or two words ("dusty vinyl crackle, warm tape saturation", "wide and glossy", "raw and loud").
+1. **The genre and its primary harmonic instrument**, with the instrument's chord character or playing style ("anchored by mournful cellos and a delicate
+   plucked harp performing sparse, open-fifth Phrygian dominant chord progressions").
+2. **The rhythm section's feel**: how the drums and bass groove (ghost notes, swing, pocket, "cavernous timpani rolls and booming taiko drums struck with heavy
+   felt mallets"), not just that they exist.
+3. **The lead vocal's identity**: gender, register, how the voice moves (chest to falsetto), its technique (runs, bends, legato, vibrato); "no autotune, raw human
+   voice" when it should sound human. For an instrumental, leave this out and expand the arrangement instead.
+4. **Arrangement events placed in named sections**: every distinctive instrument or textural event is tied to a section ("intricate pizzicato strings trace the
+   melody during the first verse", "a towering choral harmony stack fills out the chorus", "a weeping cello cadenza closes the outro").
+5. **Production and sonic texture**: the overall finish (analog, lo-fi, polished, cathedral reverb, pristine high end, crushing low end).
 
-Rules: no artist names, no lyrics, no BPM, no key in the tags. No contradictions ("aggressive, serene"; "lo-fi, hi-fi"). To favour one of two
-styles, repeat its word; to move between styles, say so over time ("starts as a ballad, builds to anthemic rock"). If a song is instrumental,
-write "instrumental, no vocals" in the tags and only `[Instrumental]` in the lyrics, never both words and "no vocals".
+Rules: no artist names, no lyrics, never the BPM, the key or the time signature (they are fields; written in the style they conflict). No empty adjectives
+("beautiful", "amazing", "epic"): say what is heard. Fill what the idea leaves out with choices that fit its genre and mood. One primary genre, a second only as
+a fusion. For a song without words, say "instrumental" and describe the arrangement.
 
-## Lyrics
+(A short comma line of 10 to 18 descriptors, genre first, is the fallback for a quick draft: it works, but it sounds generic next to the paragraph.)
 
-- **Layout:** each section tag on its own line in square brackets, a blank line between sections. Tags: [Intro], [Verse 1], [Pre-Chorus],
-  [Chorus], [Verse 2], [Bridge], [Final Chorus], [Outro], [Instrumental], [Guitar Solo], [Piano Interlude], [Build], [Drop], [Breakdown], [Fade Out].
-- **One short hint after a dash**, at most four words: [Chorus - chant hook], [Verse 1 - rapid rap], [Bridge - stripped beat], [Final Chorus - peak energy].
-  Never stack several hints: the model sings the tag or gets lost. Vocal hints that work: whispered, raspy, falsetto, belting, spoken, harmonies,
-  call and response, gang vocal chant, soft hums.
-- **Lines of 6 to 10 syllables** (a rap can run tighter), the same length in the same place of each verse (within 1 or 2 syllables). A line over 12
-  breaks the rhythm. Short, singable, one idea each.
-- **A chorus repeats word for word** each time it comes: that is what makes the melody lock in. Rhyme in pairs (AABB) or alternately (ABAB).
-- **UPPERCASE** for a shouted word, **(parentheses)** for backing vocals or echoes. Use vowel stretches ("ooh-oooh") sparingly: unstable.
-- **Never an empty [Chorus]**: a section tag with no words under it is silence or an instrumental. Say [Instrumental] on purpose.
-- **Say concrete things** (a place, an object, a gesture), not abstractions; no stacked adjectives or mixed metaphors. Avoid the cliches that
-  make a song sound generated: neon, moonlight, hold on tight, dreams, tonight, fire, "feel the beat".
-- **Shape of a full song, 200 to 300 s:** [Intro] (instrumental or two lines) / [Verse 1] 8 lines / [Pre-Chorus] 3 to 4 / [Chorus] 4 / [Verse 2] 8 /
-  [Pre-Chorus] / [Chorus] / [Instrumental or solo] / [Bridge] 4 / [Final Chorus] / [Outro]. Even with placeholder words, the sequence of tags is a
-  map of the song's energy and dynamics.
+## Lyrics: the structure with direction lines
 
-## Tags and lyrics must agree
+- **Layout:** each section tag on its own line in square brackets, lowercase, a blank line between sections: [intro], [verse], [pre-chorus], [chorus], [bridge],
+  [inst], [outro] ([verse 2] is fine). Meta brackets may open the song: [STYLE: …] and [MOOD: two to four words].
+- **Instrumental stretches are written as direction lines**, one bracket per event, in CAPS, in performance order, naming instruments and texture as they
+  enter and leave: `[SOLEMN CHURCH ORGAN AND DEEP CELLOS BEGIN A SLOW, MOURNFUL SONATA]`, `[A LONE VIOLIN SWELLS, ECHOING OVER DESOLATE RUINS]`. An intro, an
+  instrumental break and an outro each get two or three. A whole instrumental is six to twelve of them telling a beginning, a peak and an end. Never a tempo or
+  key bracket.
+- **Sung lines are short**, 6 to 10 syllables (a rap tighter), the same length in the same place of each verse; one concrete image a line, a real emotional
+  arc across the verses. A chorus repeats word for word. UPPERCASE a shouted word; (parentheses) for backing vocals; vowel stretches sparingly.
+- **In the language the idea asks for** (Latin, Norwegian, Japanese, French in the owner's own runs): the words straight in that language, never transliterated,
+  no stray characters from another; the tags and the direction lines stay in English.
+- **Count:** about one sung line every 4 to 5 seconds; a long song is filled with direction-line sections, never padded with verses. A section tag with no words
+  under it is silence: write [inst] with direction lines on purpose.
+- **Shape of a full song:** [intro] (direction lines) / [verse] / [pre-chorus] / [chorus] / [verse] / [chorus] / [inst] (direction lines) / [bridge] / [chorus] / [outro]
+  (direction lines). The user can steer one generation with a line of their own ("full inst and chorus only").
+- **The owner's other form, for a sung song:** capitalised section tags with the arrangement after an em dash where it changes, the sung sections plain:
+  `[Intro — low cellos and slow timpani roll, distant choir humming, single bell toll]`, `[Verse 1]`, `[Pre-Chorus]`, `[Chorus]`, `[Instrumental Bridge — mournful
+  cello solo over swelling strings, choir rises in layered harmonies]`, `[Final Chorus — full orchestra enters, soprano soars above choir]`, `[Outro — solo piano
+  traces a slow melody, lone soprano dissolves into silence]`. An instrument named in a tag must be one the style paragraph gave that section.
+- **Only the language asked for:** a writer sometimes drops a stray character of another script into the words ("Les周三 soirs" in a French song): never let one
+  through. (The owner's pipeline strips CJK characters from non-CJK lyrics.)
+- Avoid the cliches that mark a song as generated: neon, moonlight, hold on tight, burning flame, falling apart.
 
-The instruments, the mood and the voice in the tags must match what the section tags ask for. A female vocal in the tags with "[Verse - deep male
+## The style and the lyrics must agree
+
+The instruments, the mood and the voice in the style paragraph must match what the sections and direction lines ask for. A female vocal in the tags with "[Verse - deep male
 voice]" in the lyrics makes the model pick one at random. A "gentle" style with "[Chorus - screaming]" fights itself.
 
-## Recipes (starting points; change the details, keep the shape)
+## Recipes (starting points for a quick draft's tag line; a real song gets the paragraph)
 
 | Song | Tags (start of the line) | BPM | Key | Length |
 |---|---|---|---|---|

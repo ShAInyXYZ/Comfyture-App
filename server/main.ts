@@ -1069,8 +1069,8 @@ async function putSong(spec: any, folder: string, id: string) {
     name: text(spec.name, 60) || id,
     kind: "music",
     seconds,
-    prompt: text(s.tags, 800),
-    tags: text(s.tags, 800),
+    prompt: text(s.tags, 2500),
+    tags: text(s.tags, 2500),
     lyrics: typeof s.lyrics === "string" ? s.lyrics.slice(0, 3000) : "",
     ...(Number.isFinite(s.bpm) ? { bpm: s.bpm } : {}),
     ...(KEYS.includes(s.key) ? { key: s.key } : {}),
@@ -1406,7 +1406,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/audio/song" && method === "POST") {
     // a song from ACE-Step 1.5 XL (three passes): its style as tags, its lyrics in sections, its tempo, key, language and time signature
     const input = await jsonBody(req);
-    const tags = text(input.tags, 800);
+    const tags = text(input.tags, 2500);
     if (!tags) throw bad("Say what the song is like.");
     const seconds = num(input.seconds, 10, MAX_SECONDS, DEFAULT_SONG.seconds);
     const name = text(input.name, 60) || tags.slice(0, 40);

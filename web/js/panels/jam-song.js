@@ -790,7 +790,7 @@ export function songWorkspace() {
     page = {
       idea: area("idea", 2, "What is the song about?", "", { maxLength: 500 }),
       count: h("span.sg-count", {}, "0/500"),
-      tags: area("tags", 3, "Its style: genre, mood, instruments, the voice", ".is-mono"),
+      tags: area("tags", 6, "Its style, as a paragraph: the genre and its main instrument, the groove, the voice, each instrument tied to a section, the finish", ".is-mono"),
       lyrics: area("lyrics", 12, "Its lyrics, in sections: [Verse 1], [Chorus]…", ".is-mono"),
       name: h("input.field.sg-name-field", { type: "text", maxlength: 40, placeholder: "A title", "aria-label": "Title", on: { input: set("name") } }),
       audio,
