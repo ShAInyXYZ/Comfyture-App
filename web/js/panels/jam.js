@@ -53,6 +53,19 @@ function jamChip(j) {
 /** A lamp: done (a tick), next (a ring lit), waiting (a ring). */
 const lamp = (state) => h("span.jm-lamp", { dataset: { state }, "aria-hidden": "true" }, state === "done" ? jicon("check") : null);
 
+/**
+ * The album cover in the free space of the panel, between the workspaces and the status: the video's song's cover (else the picture the
+ * video wears in the set list), as large as the space is, square. A short screen has no space for it and shows none.
+ */
+function coverCard(j) {
+  const src = j?.body.track?.cover ?? j?.thumb;
+  if (!src) return null;
+  const name = j.body.track?.name ?? j.name;
+  return h("div.jm-cover", {},
+    h("button.jm-cover-art", { type: "button", title: `${name}: the album cover. Open The song`, "aria-label": `${name}, the album cover: open The song`, on: { click: () => setWorkspace("song") } },
+      h("img", { src, alt: "", draggable: false })));
+}
+
 function side(j) {
   const status = statusOf(j);
   const lamps = lampsOf(j);
@@ -68,6 +81,7 @@ function side(j) {
         h("span.jm-tile-ic", {}, jicon(TILE_ICON[w.id])),
         h("span.jm-tile-text", {}, h("b", {}, w.name), h("em", {}, status[w.id])),
         jam.workspace === w.id ? jicon("next") : lamp(lamps[w.id])))),
+    coverCard(j),
     h("section.jm-pipe", { "aria-label": "Jam status" },
       h("span.jm-pipe-label", {}, "Jam status"),
       h("ol.jm-pipe-list", {}, ...steps.map((st) =>

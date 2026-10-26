@@ -71,6 +71,12 @@
 .jm-tile[data-lamp="next"] .jm-lamp { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(242, 255, 89, .14); }
 
 /* the video's pipeline: what is done, what is next, each line a way to its workspace */
+/* the album cover: the free space between the workspaces and the status, a square as large as the space is (none when there is no room) */
+.jm-cover { flex: 1 1 0; min-height: 0; container-type: size; display: grid; place-items: center; }
+.jm-cover-art { display: block; width: min(100cqw, 100cqh); aspect-ratio: 1; padding: 0; overflow: hidden; border: 1px solid var(--line2); border-radius: 1.25rem; background: var(--sunk); box-shadow: 0 .75rem 2rem rgba(0, 0, 0, .35); cursor: pointer; transition: border-color var(--t-fast), transform var(--t-fast); }
+.jm-cover-art:hover { border-color: var(--accent-line); transform: translateY(-2px); }
+.jm-cover-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+@container (max-height: 4.5rem) { .jm-cover-art { display: none; } }
 .jm-pipe { display: grid; gap: .625rem; flex: none; margin-top: auto; padding: 1rem .75rem .625rem 1rem; border: 1px solid var(--card-line); border-radius: 1.25rem; background: var(--s2); }
 .jm-pipe-label { font: 500 .75rem/1 var(--font-mono); letter-spacing: .24em; text-transform: uppercase; color: var(--dim); }
 .jm-pipe-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
@@ -102,6 +108,7 @@
   .jm-side { height: auto; }
   .jm-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .jm-pipe { margin-top: 0; }
+  .jm-cover { flex: none; height: 14rem; }
 }
 @supports (corner-shape: squircle) {
   .jm-pipe, .jm-tile { corner-shape: squircle; }

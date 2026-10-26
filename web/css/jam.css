@@ -458,7 +458,7 @@ button.jm-way:disabled { opacity: .55; cursor: progress; }
 .jm-win .jm-phone { height: min(70dvh, 44rem); flex: none; }
 
 @supports (corner-shape: squircle) {
-  .jm-side, .jm-bento, .jm-tile, .jm-tool, .jm-jam, .jm-menu, .jm-menu-row, .jm-menu-new, .jm-turntable, .jm-wave, .jm-way, .jm-way-ic, .jm-mini, .jm-keybig, .jm-makebig, .jm-exportkey, .jm-chip, .jm-line-row, .jm-word, .jm-capstyle, .jm-cap-pic, .jm-phone, .jm-phone .cut-screen, .jm-set, .jm-set .cut-screen, .jm-artist-stage, .jm-move, .jm-look, .jm-vibe, .jm-shot, .jm-fxkey, .jm-sticker, .jm-win, .jm-fxrow, .jm-shot-row, .jm-trend, .jm-trend-len, .jm-trend-own, .jm-empty, .jm-ed-timeline .cut-timeline, .jm-make, .jm-film, .jm-name-chip { corner-shape: squircle; }
+  .jm-side, .jm-cover-art, .jm-bento, .jm-tile, .jm-tool, .jm-jam, .jm-menu, .jm-menu-row, .jm-menu-new, .jm-turntable, .jm-wave, .jm-way, .jm-way-ic, .jm-mini, .jm-keybig, .jm-makebig, .jm-exportkey, .jm-chip, .jm-line-row, .jm-word, .jm-capstyle, .jm-cap-pic, .jm-phone, .jm-phone .cut-screen, .jm-set, .jm-set .cut-screen, .jm-artist-stage, .jm-move, .jm-look, .jm-vibe, .jm-shot, .jm-fxkey, .jm-sticker, .jm-win, .jm-fxrow, .jm-shot-row, .jm-trend, .jm-trend-len, .jm-trend-own, .jm-empty, .jm-ed-timeline .cut-timeline, .jm-make, .jm-film, .jm-name-chip { corner-shape: squircle; }
 }
 
 @media (max-height: 820px) {

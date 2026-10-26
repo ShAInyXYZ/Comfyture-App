@@ -231,6 +231,11 @@ try {
     ok(cover === "/media/photos/jam-walk-moonlit-oolong-artist.jpg" && f.thumb === cover && f.sleeve === cover, "its song wears Taro's picture as its cover: under the song's name on the stage, and on its sleeve (the record's label is the same picture)", `${f.thumb} ${f.sleeve}`);
     ok(f.keys === "picture,mine,video,none", "with the keys of a song that has one: a new cover, my picture, a video cover, and taking it off", f.keys);
     ok((await page.locator(".jm-jam .jm-jam-cover").getAttribute("src")) === cover, "the video's song wears its cover in Pickle's panel too, beside the video's name");
+    // (and, where the panel has free room, as the album cover: a tall screen shows it large and square between the workspaces and the status)
+    await page.setViewportSize({ width: 1440, height: 1600 });
+    ok(await until(() => { const a = document.querySelector(".jm-cover-art"); if (!a) return false; const r = a.getBoundingClientRect(); return r.width > 200 && Math.abs(r.width - r.height) < 2; }, 20), "on a tall screen the album cover fills the free room of Pickle's panel, square");
+    ok((await page.locator(".jm-cover-art img").getAttribute("src")) === cover, "and it is the song's cover");
+    await page.setViewportSize({ width: 1500, height: 1100 });
     // (the shelf holds songs: the showcases' short tracks, 13 and 15 s, are clips, shown only as the song of their own video)
     const shelved = await page.evaluate(() => [...document.querySelectorAll(".sg-sleeve b")].map((b) => b.textContent));
     ok(shelved[0] === "Moonlit Oolong Walk" && !shelved.some((n) => /Three Kittens|La Calabaza/.test(n)) && shelved.length > 1, "the shelf holds only songs, the video's first", shelved.join(", "));
