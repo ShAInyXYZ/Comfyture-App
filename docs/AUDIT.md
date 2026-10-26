@@ -144,6 +144,12 @@ name now, and the lamps (saved, linked) read their tip.
    workspace scrolls inside itself above its docked bar, Story, Shot and Utensils scroll their page clear of the bar, Spice's controls
    are all reached (`reach` check: every control scrolled into view, then hit-tested), Utensils' before-and-after lines drag. Left:
    on Story at 1280 x 720 the floating bar sits over the storyboard frames until the page is scrolled.
+   **Other browsers (26 October)**: the 13 pages walked on a fresh install at 1440 x 900 in Firefox (Playwright's Gecko) and WebKit
+   (Safari's engine, Playwright's Linux build): no page error on any, layouts as in Chromium, the Stage's and Toaster's 3D drawn.
+   The Linux WebKit build decodes no H.264 picture (Spice's viewer is black there; Safari on a Mac does decode it: every shipped clip is
+   H.264 High 4:2:0). Left: Mixer's 20 pose videos (`web/brand/mixer/trends/*/*.pose.mp4`) are H.264 4:4:4, which Safari and Firefox do
+   not play; the page shows them only as the skeleton laid over a trend's dance in Jam's Band, which then stays empty (re-encoding them
+   to 4:2:0 is part of D1's trend media).
 1. Tried on 25 October and taken back at the owner's word ("useless"): fields' edges are 1.0 to 1.4:1 against what is around them (the instrument panel's look); 1.4.11 asks 3:1 where the edge is what says
    "a field". They carry placeholders, and a 4.7:1 edge when focused, so it is a judgement. Proposal: a 1px edge `#6d6c74` (3.4:1 on the
    cards) on `.field`, the prompt, the search and the bar. It changes every field's look, so it is not applied.
