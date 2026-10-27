@@ -114,7 +114,7 @@ export default {
       target: ".sp-browse",
       place: "left",
       title: "The tools",
-      text: "**Browse the tools** opens the library: every tool is a card with a real run of it on our own footage, what it was given on the left and what it made on the right. The IC-LoRAs of LTX-2.3 (restore, upscale, grade and light, clean, frame, camera, control, effects), SAM3's **cut-out**, SeedVR2's **upscale**, LTX-2.5's **sound**, and the catalog's templates. The dot says what the run showed: green did what its card says, red did not, grey needs more than a clip. A card picks its tool.",
+      text: "The **tools** key beside my name opens the library: every tool is a card with a real run of it on our own footage, what it was given on the left and what it made on the right. The IC-LoRAs of LTX-2.3 (restore, upscale, grade and light, clean, frame, camera, control, effects), SAM3's **cut-out**, SeedVR2's **upscale**, LTX-2.5's **sound**, and the catalog's templates. The dot says what the run showed: green did what its card says, red did not, grey needs more than a clip. A card picks its tool.",
     },
     {
       go: onBestShot,

@@ -151,30 +151,32 @@ export function binBody() {
       iconKey(spicon("trash"), "Forget this take (its clip stays in the library)", () => forget(t.id)))));
 }
 
-/** The key that opens the library. */
-const browseKey = () => ghost(tools().length ? `Browse the ${tools().length} tools` : "Browse the tools", () => openWin("tools"), { icon: spicon("layers"), title: "Every tool of the suite as a card: what a real run of it was given, and what it made", cls: "sp-browse" });
-
-/** What is next for the shot: Paprika's read and her chains, with the library's key under them; or, once a tool is picked, its card with the way back. */
+/** What is next for the shot: Paprika's read and her chains; or, once a tool is picked, its card with the way back to them. */
 function nextBody(guide) {
   const t = current();
-  if (t) return h("div.sp-next.has-tool", {}, h("div.sp-next-row", {}, ghost("Her chains", () => setTool({ tool: null, words: "", strength: null, seconds: null, region: null }), { icon: spicon("prev"), title: "Back to what Paprika proposes for the shot", cls: "sp-back" }), browseKey()), toolBody());
+  if (t) return h("div.sp-next.has-tool", {}, h("div.sp-next-row", {}, ghost("Her chains", () => setTool({ tool: null, words: "", strength: null, seconds: null, region: null }), { icon: spicon("prev"), title: "Back to what Paprika proposes for the shot", cls: "sp-back" })), toolBody());
   guide.update();
-  return h("div.sp-next", {}, guide.body, h("div.sp-next-foot", {}, h("span.sp-hint", {}, "Or pick a tool yourself:"), browseKey()));
+  return h("div.sp-next", {}, guide.body);
 }
 
 /**
- * The suite beside the viewer: one bento, PAPRIKA, with what is next for the shot (her read and her chains, or the tool picked).
- * Made once and kept: { el, update, sig, slot }. The library and the bin are windows.
+ * The suite beside the viewer: one bento, PAPRIKA, with what is next for the shot (her read and her chains, or the tool picked) and, in
+ * its head, the key that opens the library. Made once and kept: { el, update, sig, slot }. The library and the bin are windows.
  */
 export function suiteSpace(guide) {
   loadTools();
   const el = h("div.sp-suite");
   const slot = h("div.sp-slot");
   const body = h("div.sp-b-body");
-  el.append(slot, h("div.sp-right", {}, bento("sp-b-next", "PAPRIKA", null, body)));
+  const next = bento("sp-b-next", "PAPRIKA", null, body);
+  // the library's key, in the head beside her name: seen at a glance whatever the panel scrolls to
+  const browse = ghost("Tools", () => openWin("tools"), { icon: spicon("layers"), title: "The library: every tool of the suite as a card, what a real run of it was given and what it made", cls: "sp-browse" });
+  next.querySelector(".sp-b-head").append(browse);
+  el.append(slot, h("div.sp-right", {}, next));
   function update() {
     // (a field being typed in is not drawn over: its words are kept as they are typed)
     if (el.contains(document.activeElement) && document.activeElement.matches("textarea, input")) return false;
+    browse.querySelector("span").textContent = tools().length ? `${tools().length} tools` : "Tools";
     fill(body, nextBody(guide));
   }
   return { el, update, slot, sig: () => JSON.stringify([!!spice.tools, spice.set, state.account?.target?.kind, !!state.account?.openWeights, guide.sig()]) };

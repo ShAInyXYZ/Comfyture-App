@@ -16,8 +16,9 @@
 .sp-next > .sp-tool .sp-tool-key { margin-top: .25rem; }
 .sp-next-row { display: flex; flex: none; flex-wrap: wrap; gap: .375rem; }
 .sp-next-row .sp-ghost { padding: 0 .625rem; }
-.sp-next-foot { display: grid; flex: none; gap: .375rem; margin-top: auto; padding-top: .625rem; border-top: 1px solid var(--card-line); }
-.sp-next-foot .sp-ghost { justify-content: center; }
+/* the library's key in the panel's head: small, beside her name */
+.sp-b-next > .sp-b-head .sp-browse { min-height: 1.875rem; padding: 0 .625rem; border-radius: .625rem; font-size: .75rem; }
+.sp-b-next > .sp-b-head .sp-browse svg { width: .875rem; height: .875rem; }
 .sp-fine { font-size: .75rem; }
 
 /* ---- the tool picked ------------------------------------------------------------------------------------ */
