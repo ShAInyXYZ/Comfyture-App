@@ -1137,14 +1137,14 @@ export const TRENDS = [
     "cast": [
       {
         "role": "Lead",
-        "crew": "margot"
+        "crew": "josie"
       }
     ],
     "beats": [
       {
         "from": 0,
         "to": 2.0,
-        "text": "Margot clips a microphone onto her collar"
+        "text": "Josie clips a microphone onto her collar"
       },
       {
         "from": 2.0,
