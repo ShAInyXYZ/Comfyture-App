@@ -13,10 +13,10 @@ import {
 } from "../mixer.js";
 import { loraStack } from "../loras.js";
 import { TRENDS, CREW, KINDS, trendById, crewById, trendArt, crewFace } from "../mixer-trends.js";
-import { pick, castOf, selectTrend, setKind, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, reviewFrames, making, takesOf, castArtist, trendInputs, setProblem, estimate as trendCost } from "../mixer-trend.js";
+import { pick, castOf, selectTrend, setKind, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, reviewFrames, making, takesOf, castArtist, trendInputs, setProblem, setFrameIdeas, estimate as trendCost } from "../mixer-trend.js";
 import { openPicker, pictureOf } from "../picker.js";
 import { voiceReferenceFor } from "../mixer-voices.js";
-import { isProblemReveal, problemBeats } from "../mixer-problem-reveal.js";
+import { isProblemReveal, problemBeats, FRAME_IDEA_LIMIT } from "../mixer-problem-reveal.js";
 import { reviewGeneration } from "../mixer-generation-review.js";
 import { canResumeTrend } from "../mixer-trend-state.js";
 
@@ -105,58 +105,77 @@ function recipe(t) {
   const m = trendMix(t);
   const cast = castOf(t);
   const busy = making();
-  const cost = trendCost(t);
   const inputs = trendInputs(t);
-  const problem = inputs.problem ?? "";
+  const reveal = isProblemReveal(t);
   const resume = canResumeTrend(m, t.id, pick.cast.roles, t.revision ?? 1, inputs);
-  const beats = isProblemReveal(t) ? problemBeats(problem || "…") : t.beats;
+  // Finished frames are displayable, but never turn into a new video approval.
+  const matches = m && canResumeTrend({ ...m, body: { ...m.body, film: null } }, t.id, pick.cast.roles, t.revision ?? 1, inputs);
   const ownFrames = reviewFrames(t);
-  const shownFrames = ownFrames ?? (t.render?.referenceFrames ? Object.fromEntries(Object.entries(t.render.referenceFrames).map(([key, value]) => [key, { photo: { url: t.recipe.replace(/recipe\.json$/, '') + value.image } }])) : null);
-  const head = [
-    h("div.mx-recipe-title", {}, h("span.label", {}, "Trend recipe"), h("h2", {}, t.name), h("span.mx-recipe-meta", {}, `${t.seconds} s · ${KIND_NAME[t.kind]}${t.caption ? ` · “${t.caption}”` : ""}`)),
-    isProblemReveal(t) ? h("div.mx-problem", {},
-      h("label.label", { for: "mx-problem" }, "My small problem"),
-      h("input", { id: "mx-problem", type: "text", value: problem, maxLength: 48, disabled: busy,
-        placeholder: "guitar, plant, sneaker…", "aria-describedby": "mx-problem-help",
-        on: { input: e => {
-          setProblem(e.target.value, false);
-          const line = e.target.closest('.mx-recipe-body')?.querySelector('.mx-beat span');
-          if (line) line.textContent = problemBeats(e.target.value || '…')[0].text;
-        }, blur: () => requestAnimationFrame(changedMixer) } }),
-      h("p", { id: "mx-problem-help" }, "Name your collection, then add your photo below. The opening hides your collection; the slow reveal shows the whole room.")) : null,
-    h("div.mx-beats", {}, ...beats.map((b) => h("div.mx-beat", { style: { flexGrow: String(Math.max(0.6, b.to - b.from)) } }, h("i"), h("b", {}, span(b.from, b.to)), h("span", {}, b.text)))),
-    // every trend gets a track made in its feel: the original recordings are not shipped, ours or not
-    h("div.mx-music", {},
-      m?.body.music ? keep(`music:${m.body.music.url}`, () => h("audio", { src: m.body.music.url, controls: true, preload: "none" })) : h("span.mx-music-icon", {}, sprite("audio-music")),
-      ...[t.music?.bpm ? `${t.music.bpm} BPM` : null, t.music?.genre, t.music?.mood].filter(Boolean).map((x) => h("span.mx-chip", {}, x)),
-      h("span.mx-chip.is-own", { title: t.engine === "official-template" ? "Dialogue, music and effects generated with your video" : "A new track made for your mix in the trend's feel: never the trend's own song" }, t.engine === "official-template" ? "Original sound + voices" : "Our own track")),
-  ];
-  const rest = [
-      // who stars in it beside how it is made
-      h("div.mx-lower", {},
-        h("div.mx-cast-col", {},
-          h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "Add your photo or choose a character, then review your generation.")),
-          h("div.mx-roles", {}, ...cast.map((c) => role(c)))),
-        madeWith({ music: t.engine !== "official-template", native: t.engine === "official-template", model: t.model, billing: t.billing, voice: voiceReferenceFor(t, cast), guided: isProblemReveal(t) })),
-      isProblemReveal(t) && shownFrames ? h("div.mx-reference-guides" + (ownFrames ? ".is-personal" : ""), {}, h("span.label", {}, ownFrames ? "Your reference frames" : `Example frames · ${t.customization.defaultProblem}`), h("div.mx-reference-pair", {},
-        ...[['close', 'Start frame'], ['wide', 'End frame']].map(([key, label]) => {
-          const photo = shownFrames[key]?.photo;
-          return h("figure", {}, photo ? h("button", { type: 'button', title: `View ${label.toLowerCase()}`, on: { click: () => view(photo.url) } }, h("img", { src: photo.url, alt: label })) : h("span", {}, label + ' pending'), h("figcaption", {}, label));
-        }))) : null,
-      ownFrames && !busy && !m?.body.shots?.some(s => s.native?.id || s.submissionPending) ? h("button.key", { type: "button", on: { click: () => reviewGeneration({ freshFrames: true }) } }, "Regenerate frames") : null,
-      ownFrames && !busy ? h("p.hint", {}, "Review both frames above. Generate video opens a separate confirmation.") : null,
-      t.render ? h("details.mx-provenance", {}, h("summary", {}, "Preview generation details"),
-        h("p", {}, `${t.render.model} · ${t.render.executionSeconds == null ? "Execution time unavailable" : `${Math.round(t.render.executionSeconds)} s execution`} · ${t.render.elapsedSeconds == null ? "" : `${Math.round(t.render.elapsedSeconds)} s elapsed`}`),
-        h("p", {}, t.render.actualCostCredits == null ? "Actual cost: not reported by provider. This was a paid generation." : `Actual cost: ${t.render.actualCostCredits} cr`),
-        t.render.estimatedCredits != null ? h("p", {}, `Estimated production cost: ${t.render.estimatedCredits.toFixed(1)} cr · ${t.render.estimateNote ?? "includes voice setup; image generation billed separately"}`) : null,
-        t.render.voiceMethod ? h("p", {}, t.render.voiceMethod) : null,
-        h("a", { href: t.recipe, target: "_blank", rel: "noopener" }, "Recipe, script and metadata")) : null,
-      m?.body.error && resume && !busy ? h("p.mx-error", { role: "alert" }, `${m.body.error} Your completed steps are saved. Continue to finish this mix.`) : null,
-      h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy || stars.uploading > 0, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.engine === "official-template" ? `Your cast in the scene, animated with original dialogue and sound using ${t.model ?? "MiniMax H3"}` : t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, a track of its own, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => reviewGeneration() } },
-        sprite("product-mixer"), h("span", {}, busy ? (m ? makeFeel(m, t).word : "Making it") : stars.uploading ? "Adding your photo…" : isProblemReveal(t) ? ownFrames ? "Generate video" : "Generate frames" : resume ? "Continue" : m?.body.film ? "Make it again" : "Make it"), cost && !busy && !resume && !stars.uploading ? h("em", {}, `≈ ${cost} cr`) : null),
-  ];
-  return h("section.mx-work.mx-recipe", {}, preview(t, m), h("div.mx-recipe-body", {}, ...head, ...rest));
+  const savedFrames = matches ? m?.body.revealFrames : null;
+  const shownFrames = ownFrames ?? savedFrames;
+  const finished = !!m?.body.film;
+  const beats = reveal ? problemBeats(inputs.problem || '…') : t.beats;
+  const idea = (key, label, placeholder) => h('div.mx-workspace-idea', {},
+    h('label.label', { for: `mx-work-${key}` }, label),
+    h('textarea', { id: `mx-work-${key}`, rows: key === 'scene' ? 2 : 3, maxLength: FRAME_IDEA_LIMIT,
+      value: inputs.frameIdeas?.[key] ?? '', placeholder, disabled: busy, dataset: { focus: `idea-${key}` },
+      on: { input: e => setFrameIdeas({ ...trendInputs(t).frameIdeas, [key]: e.target.value }), blur: () => requestAnimationFrame(changedMixer) } }));
+  const disclosure = (key, label, ...children) => h('details.nk-disclosure.mx-workspace-details', {
+    dataset: { disclosure: key }, open: disclosures.has(`${t.id}:${key}`),
+    on: { toggle: e => e.target.open ? disclosures.add(`${t.id}:${key}`) : disclosures.delete(`${t.id}:${key}`) }
+  }, h('summary', {}, label), h('div.nk-disclosure-body', {}, ...children));
+  const price = reveal ? ownFrames ? t.render?.estimatedVideoCredits : state.image.catalogue?.models?.find(x => x.id === 'gpt-image-2.5-flare')?.credits ?? t.render?.estimatedImageCredits : trendCost(t);
+  const action = busy ? (m ? makeFeel(m, t).word : 'Making it') : stars.uploading ? 'Adding your photo…'
+    : reveal ? ownFrames ? 'Review & generate video' : finished ? 'Create another version' : 'Generate frames'
+    : resume ? 'Continue' : finished ? 'Create another version' : 'Review generation';
+  const frame = (key, label, inputKey, placeholder) => {
+    const photo = shownFrames?.[key]?.photo;
+    const example = t.render?.referenceFrames?.[key]?.image;
+    const url = photo?.url ?? (example ? t.recipe.replace(/recipe\.json$/, '') + example : null);
+    return h('div.mx-frame-editor', {},
+      h('figure', {}, url ? h('button', { type: 'button', title: `View ${label.toLowerCase()}`, on: { click: () => view(url) } },
+        h('img', { src: url, alt: `${photo ? 'Your' : 'Example'} ${label.toLowerCase()}`, loading: 'lazy' })) : h('div.mx-frame-empty', {}, icon('image'), 'After generation'),
+        h('figcaption', {}, label)), idea(inputKey, `${label} idea`, placeholder));
+  };
+  const generationDetails = disclosure('generation', 'Generation details',
+    madeWith({ music: t.engine !== 'official-template', native: t.engine === 'official-template', model: t.model, billing: t.billing, voice: voiceReferenceFor(t, cast), guided: reveal }),
+    h('p.hint', {}, 'The confirmation shows settings and estimated additional cost before anything starts.'),
+    t.recipe ? h('a', { href: t.recipe, target: '_blank', rel: 'noopener' }, 'Recipe, script and metadata') : null,
+    m ? h('p.hint', {}, m.body.shots?.some(s => s.render?.elapsedSeconds != null)
+      ? `Video generation: ${Math.round(m.body.shots.reduce((sum, s) => sum + (s.render?.elapsedSeconds ?? 0), 0))} s elapsed. Actual cost not reported by provider.`
+      : 'Actual cost not reported by provider.') : null);
+  return h('section.mx-work.mx-recipe.mx-workspace', {},
+    h('div.mx-workspace-left', {},
+      h('div.mx-canvas', {},
+        h('div.mx-canvas-head', {}, h('span.label', {}, finished ? 'Your result' : busy ? 'Generating your version' : ownFrames ? 'Frames ready' : 'Trend preview'),
+          h('span.mx-recipe-meta', {}, `${t.seconds} s · ${KIND_NAME[t.kind]}`)),
+        preview(t, m)),
+      h('div.mx-chat#mixer-chat')),
+    h('div.mx-recipe-body', {},
+      h('header.mx-recipe-title', {}, h('span.label', {}, 'Make it yours'), h('h2', {}, t.name)),
+      h('div.mx-setup-scroll', { dataset: { scrollKey: 'mx-setup' } },
+        h('section.mx-cast-col', {}, h('h3', {}, 'Your cast'), h('div.mx-roles', {}, ...cast.map(c => role(c)))),
+        reveal ? h('div.mx-problem', {}, h('label.label', { for: 'mx-problem' }, 'My small problem'),
+          h('input', { id: 'mx-problem', type: 'text', value: inputs.problem, maxLength: 48, disabled: busy, dataset: { focus: 'problem' },
+            placeholder: 'guitar, plant, sneaker…', on: { input: e => setProblem(e.target.value), blur: () => requestAnimationFrame(changedMixer) } }),
+          h('p', {}, 'Keep it hidden in the close-up. Reveal it when the camera pulls back.')) : null,
+        reveal ? idea('scene', 'Scene idea', 'Your setting, atmosphere and lighting…') : null,
+        reveal ? h('section.mx-workspace-frames', {},
+          h('div.mx-section-head', {}, h('h3', {}, shownFrames ? 'Your frames' : 'Frame direction'), h('span.label', {}, shownFrames ? 'Saved with this version' : 'Examples · not your output')),
+          h('div.mx-frame-editors', {}, frame('close', 'Start frame', 'opening', 'A new pose, expression or opening detail…'), frame('wide', 'End frame', 'ending', 'How should the collection fill the room?')),
+          ownFrames && !busy && !m?.body.shots?.some(s => s.native?.id || s.submissionPending) ? h('button.key', { type: 'button', on: { click: () => reviewGeneration({ freshFrames: true }) } }, icon('remix'), 'Regenerate frames') : null,
+          !matches && m?.body.revealFrames ? h('p.hint', {}, 'Your ideas have changed. Generate a new pair to match them; the previous version stays in Your mixes.') : null) : null,
+        disclosure('script', 'Script & sound', h('div.mx-beats', {}, ...beats.map(b => h('div.mx-beat', {}, h('b', {}, span(b.from, b.to)), h('span', {}, b.text)))),
+          h('p.hint', {}, t.engine === 'official-template' ? 'Original dialogue and sound, with character voice direction.' : 'An original track made for your mix.')),
+        generationDetails),
+      h('footer.mx-action-footer', {},
+        m?.body.error && resume && !busy ? h('p.mx-error', { role: 'alert' }, m.body.error) : null,
+        h('div.mx-next-step', {}, h('span', {}, reveal ? ownFrames ? 'Next · animate approved frames' : 'Next · create & review frames' : 'Next · review your generation'),
+          h('b', { title: 'Approximate additional cost; confirmed in the generation summary. Actual billing may differ.' }, Number.isFinite(price) ? `≈ ${price} cr` : 'Cost in review')),
+        h('button.mx-go' + (busy && m ? '.is-making' : ''), { type: 'button', disabled: busy || stars.uploading > 0,
+          style: busy && m ? { '--p': String(makeFeel(m, t).pct) } : {}, on: { click: () => reviewGeneration() } }, sprite('product-mixer'), h('span', {}, action)))));
 }
+const disclosures = new Set();
 
 // the trend whose preview plays in its cover's frame, and whether it has just been started
 let watching = null;
@@ -172,9 +191,7 @@ function preview(t, m) {
   // A newly generated result takes over; saved mixes remain explicitly selectable.
   if (making()) watching = null;
   const film = m?.body.film;
-  // Trend cards open the example; My mixes opens saved results.
-  if (film && t.preview && watching === t.id && !making())
-    return h("div.mx-preview", {}, player({ name: t.name, body: { film: { url: t.preview, seconds: t.seconds }, shots: t.beats } }, { inFrame: true }));
+  // An open result always owns the canvas, including after a page reload.
   if (film) return h("div.mx-preview", {}, player(m));
   // our crew's version, in the cover's frame at the shape it was made in, until yours exists;
   // another trend picked, and this one is back to its cover
@@ -216,7 +233,7 @@ const makingHud = (f) => h("div.mx-hud", { role: "status" },
 function role(c) {
   const on = pick.role === c.role;
   return h(`div.mx-role${on ? ".is-on" : ""}`, {},
-    h("button.mx-role-face", { type: "button", disabled: making() || stars.uploading > 0, title: on ? "Pick someone at the side, or drop a photo here" : `Pick who plays the ${c.role.toLowerCase()}`, on: { click: () => pickRole(c.role) } }, h("img", { src: faceOf(c.who), alt: "", draggable: false })),
+    h("button.mx-role-face", { type: "button", disabled: making() || stars.uploading > 0, title: `Choose who plays the ${c.role.toLowerCase()}`, on: { click: e => openPicker(e.currentTarget, { title: `Who plays the ${c.role.toLowerCase()}`, stars: stars.list, onPick: choice => castChoice(c.role, choice) }) } }, h("img", { src: faceOf(c.who), alt: "", draggable: false })),
     h("span.mx-role-text", {}, h("span.label", {}, c.role), h("b", {}, nameOf(c.who)), h("em", {}, c.who.crew ? crewById(c.who.crew).role : "Your star")),
     h("button.mx-role-swap", { type: "button", disabled: making() || stars.uploading > 0, title: "Another of the crew", "aria-label": "Another of the crew", on: { click: () => swapRole(c.role) } }, sprite("cast-swap")),
     h("button.mx-role-drop", { type: "button", disabled: making() || stars.uploading > 0, title: "Someone else plays this role: one of our characters, a star of yours, a picture from the Library or your computer", on: { click: (e) => openPicker(e.currentTarget, { title: `Who plays the ${c.role.toLowerCase()}`, stars: stars.list, onPick: (choice) => castChoice(c.role, choice) }), dragover: (e) => e.preventDefault(), drop: (e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith("image/")) addStar(f, c.role); } } }, icon("plus"), h("span", {}, "Add photo")));
@@ -318,6 +335,8 @@ function player(m, { inFrame = false } = {}) {
       h("button.key.is-icon.mx-toggle", { type: "button", title: "Play or pause", on: { click: () => (video.paused ? video.play() : video.pause()) } }, icon(video.paused ? "play" : "pause")),
       h("span.mx-time", {}, h("b", {}, "0:00.0"), h("em", {}, ` / ${time(total)}`)),
       bar,
+      h("button.key.is-icon", { type: "button", title: "Replay", "aria-label": "Replay", on: { click: () => { video.currentTime = 0; video.play().catch(() => {}); } } }, icon("remix")),
+      h("button.key.is-icon", { type: "button", title: "Fullscreen", "aria-label": "Fullscreen", on: { click: () => video.closest('.mx-stage')?.requestFullscreen?.().catch(() => toast('Fullscreen is unavailable in this browser.')) } }, icon("expand")),
       inFrame ? null : h("button.key.is-icon.mx-sound", { type: "button", title: video.muted ? "Sound on" : "Sound off", "aria-label": "Sound", on: { click: () => (video.muted = !video.muted) } }, icon(video.muted ? "mute" : "sound")),
       inFrame ? null : h("a.key.is-icon", { href: `${film.url}?download=${name}.mp4`, download: `${name}.mp4`, title: "Download the mix" }, icon("download")),
       !inFrame && m.body.cut ? h("button.key.is-icon", { type: "button", title: "Open in Kitchen's Cut\nFine-tune the edit: trims, titles, sound", on: { click: () => openInCut(m.body.cut) } }, icon("scissors")) : null));
@@ -399,11 +418,32 @@ function shotFix(m) {
     st.step === "failed" ? h("p.mx-error", {}, st.note) : null);
 }
 
+// Read saved generation records for the history strip without loading or changing a mix.
+const mixDetails = new Map();
+function historyFacts(row) {
+  const body = row.id === mixer.mix?.id ? mixer.mix.body : mixDetails.get(row.id);
+  if (!body) return ago(row.updatedAt);
+  const status = body.film ? 'Finished' : body.error ? 'Needs attention' : body.revealFrames?.close?.photo ? 'Frames ready' : 'Draft';
+  const seconds = body.film?.seconds;
+  const elapsed = (body.shots ?? []).reduce((sum, shot) => sum + (shot.render?.elapsedSeconds ?? 0), 0);
+  return [status, seconds ? `${Math.round(seconds * 10) / 10} s` : null, elapsed ? `${Math.round(elapsed)} s generation` : null, 'Cost unreported'].filter(Boolean).join(' · ');
+}
+function loadHistoryDetails() {
+  if (mixer.mix) mixDetails.set(mixer.mix.id, mixer.mix.body);
+  for (const row of mixer.list.slice(0, 24)) {
+    if (mixDetails.has(row.id)) continue;
+    mixDetails.set(row.id, null);
+    fetch(`api/mixes/${encodeURIComponent(row.id)}`).then(r => r.ok ? r.json() : null).then(data => {
+      if (data?.project?.body) { mixDetails.set(row.id, data.project.body); changedMixer(); }
+    }).catch(() => {});
+  }
+}
+
 // ---------------------------------------------------------------- the crew, your stars, the mixes
 
-function aside() {
+function aside(historyOnly = false) {
   const firstRole = () => pick.role ?? castOf()[0]?.role;
-  return h("aside.mx-aside", {},
+  const panel = h("aside.mx-aside", {},
     h("section.mx-panel", {},
       h("div.mx-head", {}, h("span.card-label", {}, "The crew")),
       h("div.mx-crew", {}, ...CREW.map((c) =>
@@ -418,17 +458,22 @@ function aside() {
           h("button.mx-star-x", { type: "button", title: "Take it off", "aria-label": "Take it off", on: { click: () => removeStar(s.file) } }, icon("close")))),
         h("button.mx-star.is-add", { type: "button", disabled: making() || stars.uploading > 0, title: "Add a photo to the selected role", on: { click: (e) => openPicker(e.currentTarget, { title: "Add your photo", onPick: (choice) => castChoice(firstRole(), choice) }) } }, icon("plus"), h("span", {}, "Add")))),
     h("section.mx-panel", {},
-      h("div.mx-head", {}, h("span.card-label", {}, "My mixes"), h("span.mx-count", {}, mixer.list.length ? String(mixer.list.length) : "")),
+      h("div.mx-head", {}, h("span.card-label", {}, "Your mixes"), h("span.mx-count", {}, mixer.list.length ? String(mixer.list.length) : "")),
       mixer.list.length
         ? h("div.mx-mixes", { dataset: { scrollKey: "mx-mixes" } }, ...mixer.list.map((row) =>
           h(`div.mx-mix${row.id === mixer.mix?.id ? ".is-on" : ""}`, {},
             h("button.mx-mix-open", { type: "button", title: `Open ${row.name}`, on: { click: () => openOne(row.id) } },
               row.thumb ? h("img", { src: row.thumb, alt: "", draggable: false, loading: "lazy" }) : h("span.mx-mix-none", {}, sprite("product-mixer")),
-              h("span.mx-mix-text", {}, h("b", {}, row.name), h("em", {}, ago(row.updatedAt)))),
+              h("span.mx-mix-text", {}, h("b", {}, row.name), h("em", {}, historyFacts(row)), h("small", {}, ago(row.updatedAt)))),
             h(`button.mx-mix-x${armed === row.id ? ".is-armed" : ""}`, { type: "button", title: armed === row.id ? "Click again to delete it" : "Delete this mix", on: { click: () => (armed === row.id ? ((armed = null), removeMix(row.id)) : ((armed = row.id), changedMixer(), setTimeout(() => armed === row.id && ((armed = null), changedMixer()), 3000))) } }, icon("trash")))))
         : h("p.hint", {}, "What you make is kept here.")),
     h("button.mx-remix-drop", { type: "button", title: "Any edit you like, remixed shot by shot with your cast\nA vertical video with cuts and music, up to 20 s", on: { click: () => pickFile("video/*", false, ([f]) => f && useVideo(f)) } },
       icon("upload"), h("span", {}, h("b", {}, "Remix any edit"), h("em", {}, "Drop a video you like"))));
+  if (!historyOnly) return panel;
+  const history = panel.children[2];
+  history.classList.add('mx-history');
+  history.querySelector('.mx-head').append(panel.lastElementChild);
+  return history;
 }
 async function openOne(id) {
   await openMix(id);
@@ -451,12 +496,28 @@ async function openOne(id) {
 export function renderMixer(el) {
   loadMixes();
   loadStars();
+  loadHistoryDetails();
   const t = trendById(pick.trend) ?? OURS[0];
   // a note being typed keeps its place when the takes' progress redraws the screen
   const active = document.activeElement;
   const focus = el.contains(active) ? active.dataset.focus : null;
   const sel = focus ? [active.selectionStart, active.selectionEnd] : null;
-  el.replaceChildren(h("div.mixer", {}, feed(), remixing() ? remix(mixer.mix) : recipe(t), aside()));
+  const assistant = el.querySelector('#assistant');
+  const chatFocus = assistant?.contains(active) ? active : null;
+  const chatSelection = chatFocus && typeof chatFocus.selectionStart === 'number' ? [chatFocus.selectionStart, chatFocus.selectionEnd] : null;
+  if (assistant) document.body.append(assistant);
+  const scrolls = [...el.querySelectorAll('[data-scroll-key]')].map(node => [node.dataset.scrollKey, node.scrollLeft, node.scrollTop]);
+  el.replaceChildren(h("div.mixer" + (remixing() ? '' : '.is-workspace'), {}, feed(), remixing() ? remix(mixer.mix) : recipe(t), aside(!remixing())));
+  if (assistant && !remixing()) el.querySelector('#mixer-chat')?.append(assistant);
+  for (const [key, left, top] of scrolls) {
+    const node = el.querySelector(`[data-scroll-key="${key}"]`);
+    if (node) { node.scrollLeft = left; node.scrollTop = top; }
+  }
+  document.dispatchEvent(new Event('mixer:drawn'));
+  if (chatFocus?.isConnected) {
+    chatFocus.focus({ preventScroll: true });
+    if (chatSelection) chatFocus.setSelectionRange?.(...chatSelection);
+  }
   if (focus) {
     const back = el.querySelector(`[data-focus="${CSS.escape(focus)}"]`);
     back?.focus({ preventScroll: true });

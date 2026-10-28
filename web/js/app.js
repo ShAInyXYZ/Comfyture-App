@@ -213,13 +213,14 @@ function dockAssistant(page = currentPage()) {
   if (dockSpice(bar, page)) return;
   if (dockUtensils(bar, page)) return;
   if (dockToaster(bar, page)) return;
-  const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : page === "cut" ? $("cut-chat") : page === "jam" ? $("jam-chat") : page === "mixer" ? document.body : $("page-shot");
+  const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : page === "cut" ? $("cut-chat") : page === "jam" ? $("jam-chat") : page === "mixer" ? ($("mixer-chat") ?? document.body) : $("page-shot");
   bar.hidden = !slot || !["shot", "stage", "story", "cut", "jam", "mixer"].includes(page);
   if (slot && bar.parentElement !== slot) slot.append(bar);
-  bar.classList.toggle("is-docked", page === "stage" || page === "story" || page === "cut" || page === "jam");
+  bar.classList.toggle("is-docked", page === "stage" || page === "story" || page === "cut" || page === "jam" || (page === "mixer" && !!$("mixer-chat")));
   pending.add("assistant");
   flush();
 }
+document.addEventListener("mixer:drawn", () => currentPage() === "mixer" && dockAssistant());
 document.addEventListener("stage:ready", () => dockAssistant());
 // Story draws its page (and the bar's slot) when its first story has come
 document.addEventListener("story:drawn", () => currentPage() === "story" && $("assistant").parentElement?.id !== "story-chat" && dockAssistant());
