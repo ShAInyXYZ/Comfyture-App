@@ -2,8 +2,8 @@ import { h, icon } from './dom.js';
 import { state, toast } from './store.js';
 import { mixer } from './mixer.js';
 import { crewById, crewFace, trendById } from './mixer-trends.js';
-import { pick, castOf, castArtist, trendInputs, generationIdentity, reviewFrames, makeTrend, generateTrendVideo, making, estimate } from './mixer-trend.js';
-import { isProblemReveal, cleanProblem, problemBeats, problemFramePrompt, problemVideoPrompt } from './mixer-problem-reveal.js';
+import { pick, castOf, castArtist, trendInputs, generationIdentity, reviewFrames, makeTrend, generateTrendVideo, making, estimate, setFrameIdeas } from './mixer-trend.js';
+import { isProblemReveal, cleanProblem, cleanFrameIdeas, FRAME_IDEA_LIMIT, problemBeats, problemFramePrompt, problemVideoPrompt } from './mixer-problem-reveal.js';
 import { canResumeTrend } from './mixer-trend-state.js';
 import { castVoiceDirection } from './mixer-voices.js';
 import { currentPage } from './router.js';
@@ -13,7 +13,7 @@ let dialog;
 
 // An example is never labelled as the user's output. A recipe without an end anchor
 // gets an explicit empty slot rather than a fabricated finish image.
-function sequences(t, recipe, frames, saved, freshFrames) {
+function sequences(t, recipe, frames, saved, freshFrames, ideaField) {
   const dir = t.recipe?.replace(/recipe\.json$/, '') ?? '';
   const shots = recipe?.shots ?? [{ from: 0, to: t.seconds }];
   const refs = recipe?.render?.referenceFrames ?? t.render?.referenceFrames;
@@ -28,7 +28,7 @@ function sequences(t, recipe, frames, saved, freshFrames) {
         h('div.mx-review-frames', {}, ...[['first', 'Start frame', firstPath], ['last', 'End frame', lastPath]].map(([key, label, path]) => {
           const url = actual?.[key]?.url ?? (path ? dir + path : null);
           return h('figure', {}, url ? h('a', { href: url, target: '_blank', rel: 'noopener', title: `Open ${label.toLowerCase()} full size` }, h('img', { src: url, alt: `${actual?.[key] ? 'Your' : 'Example'} ${label.toLowerCase()}` })) : h('div.mx-review-empty', {}, icon('image'), h('p', {}, key === 'last' ? 'No fixed end-frame guide in this recipe' : 'Created after you confirm')),
-            h('figcaption', {}, h('b', {}, label), h('span', {}, isProblemReveal(t) ? key === 'first' ? 'Close-up · collection hidden' : 'Wide shot · full collection revealed' : actual?.[key] ? 'Your generated frame' : 'Recipe reference')));
+            h('figcaption', {}, h('b', {}, label), h('span', {}, isProblemReveal(t) ? key === 'first' ? 'Close-up · collection hidden' : 'Wide shot · full collection revealed' : actual?.[key] ? 'Your generated frame' : 'Recipe reference')), isProblemReveal(t) ? ideaField(key === 'first' ? 'opening' : 'ending') : null);
         })),
         isProblemReveal(t) ? h('p.mx-review-continuity', {}, icon('video'), 'One continuous zoom-out · same character, room and lighting') : null);
     }),
@@ -47,6 +47,24 @@ export async function reviewGeneration({ freshFrames = false } = {}) {
   const frames = freshFrames ? null : reviewFrames(t);
   const video = !!frames;
   const identity = generationIdentity();
+  const draftIdeas = cleanFrameIdeas(trendInputs(t).frameIdeas);
+  const initialIdeas = JSON.stringify(draftIdeas);
+  let direction, refreshEstimate = () => {};
+  const ideasChanged = () => JSON.stringify(cleanFrameIdeas(draftIdeas)) !== initialIdeas;
+  const fieldInfo = {
+    scene: ['Scene direction', 'A cozy attic music room, slanted ceiling, warm afternoon light…'],
+    opening: ['Start-frame idea', 'Leaning forward, shoulders hunched, a guilty smile, looking straight at the camera…'],
+    ending: ['End-frame idea', 'Guitars covering the walls and floor, tiny amps stacked like furniture, one absurdly oversized guitar…'],
+  };
+  const ideaField = key => {
+    const [label, placeholder] = fieldInfo[key];
+    return h('div.mx-frame-idea', {}, h('label', { for: `mx-idea-${key}` }, label),
+      h('textarea', { id: `mx-idea-${key}`, rows: 3, maxLength: FRAME_IDEA_LIMIT, value: draftIdeas[key], placeholder: video ? 'Preset improvisation' : placeholder, readOnly: video, 'aria-describedby': 'mx-ideas-help', on: { input: e => {
+        draftIdeas[key] = e.target.value;
+        if (direction) direction.textContent = problemFramePrompt(problem, draftIdeas);
+        refreshEstimate();
+      } } }));
+  };
   const action = reveal ? video ? 'Generate video' : freshFrames ? 'Regenerate frames' : 'Generate frames' : 'Generate trend';
   const d = dialog = h('dialog.nk-dialog.mx-generation-review', { 'aria-labelledby': 'mx-review-title', 'aria-describedby': 'mx-review-desc' });
   const close = () => d.close();
@@ -61,6 +79,7 @@ export async function reviewGeneration({ freshFrames = false } = {}) {
     close();
     if (video) await generateTrendVideo(identity);
     else {
+      if (reveal) setFrameIdeas(draftIdeas);
       await makeTrend({ freshFrames });
       // Bring the actual frames into view; never confirm or submit the video here.
       if (reveal && currentPage() === 'mixer' && pick.trend === t.id && reviewFrames(t)) await reviewGeneration();
@@ -85,23 +104,33 @@ export async function reviewGeneration({ freshFrames = false } = {}) {
     const imagePrice = state.image.catalogue?.models?.find(m => m.id === 'gpt-image-2.5-flare')?.credits ?? t.render?.estimatedImageCredits;
     const videoPrice = t.render?.estimatedVideoCredits;
     const fullPrice = Number.isFinite(imagePrice) && Number.isFinite(videoPrice) ? imagePrice + videoPrice : null;
-    const amount = reveal ? video ? existingVideo ? 0 : videoPrice : existingImage ? 0 : imagePrice : estimate(t);
+    let amount = reveal ? video ? existingVideo ? 0 : videoPrice : existingImage ? 0 : imagePrice : estimate(t);
     const row = (label, value) => h('div.mx-review-row', {}, h('dt', {}, label), h('dd', {}, value));
     const beats = reveal ? problemBeats(problem) : t.beats;
     const resolution = settings.width && settings.height ? `${settings.width} × ${settings.height}` : settings.resolution ?? 'Recipe default';
     const fps = settings.fram_rate ?? settings.frame_rate;
-    stagePrice.append(h('span', {}, reveal ? video ? 'Confirm video only' : 'Confirm frames only' : 'Confirm generation'), h('strong', {}, credits(amount)));
+    const priceValue = h('strong', {}, credits(amount));
+    stagePrice.append(h('span', {}, reveal ? video ? 'Confirm video only' : 'Confirm frames only' : 'Confirm generation'), priceValue);
+    const priceNote = h('p', {}, existingVideo || existingImage ? 'Resumes the saved job if your ideas stay unchanged. Editing an idea creates a new paid frame pair.' : reveal && !video ? 'This confirmation pays for one image only. The opening crop is free. Video requires a separate confirmation.' : video ? 'Your frames are already prepared. This confirmation starts the video only.' : 'Confirming starts a paid generation.');
+    refreshEstimate = () => {
+      if (reveal && !video && existingImage) {
+        priceValue.textContent = credits(ideasChanged() ? imagePrice : 0);
+        priceNote.textContent = ideasChanged() ? 'Your ideas changed. This confirmation creates a new paid frame pair; the previous draft stays saved.' : 'Resumes the saved job without submitting it again. Its original generation remains billable.';
+      }
+    };
     const price = h('section.mx-review-price', {}, h('h3', {}, 'Estimated cost'),
       reveal ? h('dl', {}, row(video ? 'Frames · prepared' : 'Frames', credits(imagePrice)), row(video ? 'Video · next' : 'Video · later', credits(videoPrice)), h('div.mx-review-total', {}, h('dt', {}, 'Full sequence'), h('dd', {}, credits(fullPrice)))) : h('strong', {}, credits(amount)),
-      h('p', {}, existingVideo || existingImage ? 'Resumes the saved job without submitting it again. Its original generation remains billable.' : reveal && !video ? 'This confirmation pays for one image only. The opening crop is free. Video requires a separate confirmation.' : video ? 'Your frames are already prepared. This confirmation starts the video only.' : 'Confirming starts a paid generation.'),
+      priceNote,
       h('p', {}, reveal ? 'Per-sequence estimates, excluding retries. Image price: catalogue estimate. Video price: saved preview’s GPU execution time, not a live quote. Actual billing may differ.' : 'Estimated cost may vary. When unavailable, no reliable quote was supplied.'));
+    direction = h('pre', {}, video ? problemVideoPrompt(problem, draftIdeas) + '\n' + castVoiceDirection(cast) : problemFramePrompt(problem, draftIdeas));
     body.replaceChildren(h('div.mx-review-layout', {},
-      h('div.mx-review-story', {}, sequences(t, recipe, frames, saved, freshFrames),
+      h('div.mx-review-story', {}, sequences(t, recipe, frames, saved, freshFrames, ideaField),
         h('div.mx-review-script', {}, h('h3', {}, 'Performance'), ...beats.map(b => h('p', {}, h('b', {}, `${b.from}–${b.to}s `), b.text))),
-        reveal ? h('details.mx-review-prompt', {}, h('summary', {}, 'Full generation direction'), h('pre', {}, video ? problemVideoPrompt(problem) + '\n' + castVoiceDirection(cast) : problemFramePrompt(problem))) : null),
+        reveal ? h('details.mx-review-prompt', {}, h('summary', {}, 'Full generation direction'), direction) : null),
       h('aside.mx-review-setup', {},
         h('div.mx-review-cast', {}, ...cast.map(c => h('div', {}, h('img', { src: c.who.crew ? crewFace(c.who.crew) : c.who.star.url, alt: '' }),
           h('span', {}, h('b', {}, c.who.crew ? crewById(c.who.crew).name : c.who.star.name ?? 'Your photo'), h('small', {}, `${c.role} · identity reference`))))),
+        reveal ? h('section.mx-review-ideas', {}, ideaField('scene'), h('p', { id: 'mx-ideas-help' }, video ? 'These ideas belong to this frame pair. Choose Regenerate frames to edit them.' : 'Optional. Your ideas guide the preset: a fresh pose and setting, one shared room, the collection hidden at first and revealed at the end. Leave blank for an improvised take.')) : null,
         price,
         h('dl.mx-review-facts', {}, problem ? row('Collection', problem) : null,
           row('Frames', reveal ? 'GPT Image 2.5 Flare · new scene + matching crop' : castArtist()),

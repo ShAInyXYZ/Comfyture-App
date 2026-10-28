@@ -330,3 +330,22 @@ test('an empty collection does not submit images or video', async () => {
   assert.equal(calls.native.length, 0);
   assert.equal(calls.mixes, 0);
 });
+
+test('frame ideas reach the image and video jobs, survive a subject edit, and invalidate old frame approval', async () => {
+  const {flow,calls,mixer}=await harness({reveal:true});
+  flow.setFrameIdeas({scene:'An attic studio',opening:'A guilty shrug',ending:'Guitars stacked around a sofa'});
+  flow.setProblem('guitar');
+  await flow.makeTrend();
+  assert.match(calls.pictures[0].prompt,/An attic studio/);
+  assert.equal(mixer.mix.body.trend.inputs.frameIdeas.opening,'A guilty shrug');
+  const identity=flow.generationIdentity();
+  flow.setFrameIdeas({scene:'A garage',opening:'A skeptical squint',ending:'Guitars on every wall'});
+  assert.equal(flow.reviewFrames(),null);
+  await flow.generateTrendVideo(identity);
+  assert.equal(calls.native.length,0);
+  await flow.makeTrend();
+  assert.equal(calls.pictures.length,2);
+  await flow.generateTrendVideo(flow.generationIdentity());
+  assert.match(calls.native[0].inputs.prompt,/A skeptical squint/);
+  assert.match(calls.native[0].inputs.prompt,/A garage/);
+});

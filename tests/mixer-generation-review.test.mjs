@@ -7,7 +7,7 @@ import * as helpers from '../web/js/mixer-trend-state.js';
 
 // Exercise the dialog's approval boundary without a browser or paid provider.
 async function harness({ frames = null, failRecipe = false, generatedFrames = null } = {}) {
-  const calls = { images: 0, videos: 0, errors: [] };
+  const calls = { images: 0, videos: 0, errors: [], ideas: [] };
   let identity = 'selected-draft';
   class Element {
     constructor(tag, props = {}, children = []) { this.tag = tag; this.props = props; this.children = children; this.disabled = props.disabled ?? false; this.events = {}; }
@@ -30,7 +30,7 @@ async function harness({ frames = null, failRecipe = false, generatedFrames = nu
     './store.js': {state:{image:{catalogue:{models:[]}}},toast:msg=>calls.errors.push(msg)},
     './mixer.js':{mixer:{mix:null}},
     './mixer-trends.js':{trendById:()=>trend,crewById:()=>({name:'Shiny'}),crewFace:()=>'/shiny.webp'},
-    './mixer-trend.js':{pick:{trend:'reveal',cast:{roles:{Lead:{crew:'shiny'}}}},castOf:()=>[{role:'Lead',who:{crew:'shiny'}}],castArtist:()=> 'GPT',trendInputs:()=>({problem:'guitar'}),generationIdentity:()=>identity,reviewFrames:()=>frames,making:()=>false,estimate:()=>null,makeTrend:()=>{calls.images++; if (generatedFrames) frames=generatedFrames;},generateTrendVideo:()=>calls.videos++},
+    './mixer-trend.js':{setFrameIdeas:ideas=>calls.ideas.push(structuredClone(ideas)),pick:{trend:'reveal',cast:{roles:{Lead:{crew:'shiny'}}}},castOf:()=>[{role:'Lead',who:{crew:'shiny'}}],castArtist:()=> 'GPT',trendInputs:()=>({problem:'guitar'}),generationIdentity:()=>identity,reviewFrames:()=>frames,making:()=>false,estimate:()=>null,makeTrend:()=>{calls.images++; if (generatedFrames) frames=generatedFrames;},generateTrendVideo:()=>calls.videos++},
     './mixer-problem-reveal.js':problem,
     './mixer-trend-state.js':helpers,
     './mixer-voices.js':{castVoiceDirection:()=> 'Natural voice direction'},
@@ -83,4 +83,25 @@ test('completing image generation opens the actual pair for review without start
   assert.ok(review.find(el=>el.props.src==='/new-end.png'));
   assert.equal(calls.images, 1);
   assert.equal(calls.videos, 0);
+});
+
+test('frame ideas are drafted locally, reflected in the composed prompt and applied only on confirmation', async () => {
+  const {calls,dialog,confirm} = await harness();
+  dialog.find(el=>el.props.id==='mx-idea-opening').props.on.input({target:{value:'Leaning forward with a guilty grin'}});
+  dialog.find(el=>el.props.id==='mx-idea-ending').props.on.input({target:{value:'Guitars stacked around an old sofa'}});
+  dialog.find(el=>el.props.id==='mx-idea-scene').props.on.input({target:{value:'A lived-in attic studio'}});
+  assert.equal(calls.ideas.length, 0);
+  assert.match(dialog.find(el=>el.tag==='pre').textContent, /A lived-in attic studio/);
+  await confirm.click();
+  assert.deepEqual(calls.ideas[0], {scene:'A lived-in attic studio',opening:'Leaning forward with a guilty grin',ending:'Guitars stacked around an old sofa'});
+  assert.equal(calls.images,1);
+  assert.equal(calls.videos,0);
+});
+test('cancel discards unconfirmed frame ideas and video review cannot edit an approved pair', async () => {
+  const first = await harness();
+  first.dialog.find(el=>el.props.id==='mx-idea-scene').props.on.input({target:{value:'A garage'}});
+  first.dialog.find(el=>el.tag==='button.key'&&el.text()==='Cancel').click();
+  assert.equal(first.calls.ideas.length,0);
+  const video=await harness({frames:{close:{photo:{url:'/start.png'}},wide:{photo:{url:'/end.png'}}}});
+  assert.equal(video.dialog.find(el=>el.props.id==='mx-idea-opening').props.readOnly,true);
 });

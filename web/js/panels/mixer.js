@@ -439,6 +439,7 @@ async function openOne(id) {
     watching = null;
     starting = false;
     pick.cast = { trend: t.id, roles: structuredClone(t.cast) };
+    pick.inputs[t.id] = structuredClone(t.inputs ?? {});
   }
   changedMixer();
   // the list of mixes is far below the version: bring it into view

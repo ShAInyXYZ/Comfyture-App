@@ -14,7 +14,7 @@ import { onServer } from "./picker.js";
 import { castVoiceDirection, nativeRecipeRequest, applyCharacterVoice } from "./mixer-voices.js";
 import { uploadRole, canResumeTrend, validateRecipe } from "./mixer-trend-state.js";
 
-import { isProblemReveal, cleanProblem, problemVideoPrompt, prepareProblemFrames } from "./mixer-problem-reveal.js";
+import { isProblemReveal, cleanProblem, cleanFrameIdeas, problemVideoPrompt, prepareProblemFrames } from "./mixer-problem-reveal.js";
 
 const update = () => changed("mixer");
 const call = async (path, init) => {
@@ -56,13 +56,20 @@ export function selectTrend(id) {
   update();
 }
 export function trendInputs(t = trendById(pick.trend)) {
-  return isProblemReveal(t) ? { problem: pick.inputs[t.id]?.problem ?? t.customization.defaultProblem ?? 'plant' } : {};
+  return isProblemReveal(t) ? { problem: pick.inputs[t.id]?.problem ?? t.customization.defaultProblem ?? 'plant', ...(pick.inputs[t.id]?.frameIdeas ? { frameIdeas: cleanFrameIdeas(pick.inputs[t.id].frameIdeas) } : {}) } : {};
 }
 export function setProblem(value, notify = true) {
   if (making()) return;
   picked = true;
-  pick.inputs[pick.trend] = { problem: String(value).slice(0, 48) };
+  pick.inputs[pick.trend] = { ...pick.inputs[pick.trend], problem: String(value).slice(0, 48) };
   if (notify) update();
+}
+
+export function setFrameIdeas(ideas) {
+  if (making() || !isProblemReveal(trendById(pick.trend))) return;
+  picked = true;
+  pick.inputs[pick.trend] = { ...pick.inputs[pick.trend], frameIdeas: cleanFrameIdeas(ideas) };
+  update();
 }
 
 export const setKind = (kind) => ((pick.kind = kind), update());
@@ -317,7 +324,7 @@ async function fromRecipe(t, cast, m, reviewedPair) {
 async function fromNativeRecipe(t, cast, m, recipe, reviewedPair) {
   validateRecipe(recipe, {});
   const problem = isProblemReveal(recipe) ? cleanProblem(m.body.trend.inputs?.problem) : null;
-  if (problem) recipe = { ...recipe, shots: recipe.shots.map(s => ({ ...s, prompt: problemVideoPrompt(problem) })) };
+  if (problem) recipe = { ...recipe, shots: recipe.shots.map(s => ({ ...s, prompt: problemVideoPrompt(problem, m.body.trend.inputs?.frameIdeas) })) };
   const words = roleWords(recipe, cast);
   let pair;
   if (problem) {
@@ -325,6 +332,7 @@ async function fromNativeRecipe(t, cast, m, recipe, reviewedPair) {
     const lead = who.crew ? await onServer(crewPicture(who.crew), crewById(who.crew).name) : who.star;
     m.body.revealFrames ??= {};
     pair = await prepareProblemFrames(problem, lead, m.body.revealFrames, {
+      ideas: m.body.trend.inputs?.frameIdeas,
       crop: photo => send('api/mixer/reveal-frame', 'POST', { file: photo.file }),
       submit: body => send('api/image', 'POST', body), wait: async id => {
         let job = await call(`api/image/jobs/${id}`);
@@ -445,7 +453,7 @@ async function runTrend(reviewedPair = null, freshFrames = false) {
   const cast = structuredClone(castOf(t));
   const roles = structuredClone(pick.cast.roles);
   let inputs = trendInputs(t);
-  try { if (isProblemReveal(t)) inputs = { problem: cleanProblem(inputs.problem) }; }
+  try { if (isProblemReveal(t)) inputs = { ...inputs, problem: cleanProblem(inputs.problem), ...(inputs.frameIdeas ? { frameIdeas: cleanFrameIdeas(inputs.frameIdeas) } : {}) }; }
   catch (error) { toast(error.message, { tone: 'crit' }); return; }
   let m;
   mixer.busy.add("trend");

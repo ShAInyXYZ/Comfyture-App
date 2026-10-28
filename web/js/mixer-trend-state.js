@@ -5,6 +5,7 @@ export function canResumeTrend(mix, id, roles, revision = 1, inputs = {}) {
   return !!mix && mix.body?.kind === "trend" && mix.body.trend?.id === id && !mix.body.film
     && (mix.body.trend.revision ?? 1) === revision
     && (mix.body.trend.inputs?.problem ?? "").trim().replace(/\s+/g, " ") === (inputs.problem ?? "").trim().replace(/\s+/g, " ")
+    && ['scene', 'opening', 'ending'].every(key => (mix.body.trend.inputs?.frameIdeas?.[key] ?? '').trim() === (inputs.frameIdeas?.[key] ?? '').trim())
     && Object.keys(roles).every((role) => {
       const before = mix.body.trend.cast?.[role];
       const after = roles[role];

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanProblem, prepareProblemFrames, problemFramePrompt } from '../web/js/mixer-problem-reveal.js';
+import { cleanProblem, prepareProblemFrames, problemFramePrompt, problemVideoPrompt, cleanFrameIdeas } from '../web/js/mixer-problem-reveal.js';
 import { nativeRecipeRequest } from '../web/js/mixer-voices.js';
 
 test('problem input trims whitespace and bounds spoken scene content', () => {
@@ -65,7 +65,17 @@ test('the character is an identity reference, re-staged in a fresh scene rather 
   assert.match(prompt, /IDENTITY AND DESIGN REFERENCE ONLY/);
   assert.match(prompt, /Do not paste, trace, cut out or outpaint/);
   assert.match(prompt, /Do not copy its pose/);
-  assert.match(prompt, /both hands tucked behind/);
-  assert.match(prompt, /blank wall/);
+  assert.match(prompt, /using the opening idea/);
+  assert.match(prompt, /quiet background/);
   assert.match(prompt, /collection theme is "guitar"/);
+});
+
+test('creative ideas are bounded and combined with preset constraints in both prompts', () => {
+  const ideas = {scene:'  A warm attic  ',opening:'A guilty sideways glance',ending:'Guitars covering every side wall'};
+  assert.equal(cleanFrameIdeas(ideas).scene,'A warm attic');
+  assert.throws(()=>cleanFrameIdeas({opening:'x'.repeat(601)}), /600/);
+  for (const prompt of [problemFramePrompt('guitar',ideas),problemVideoPrompt('guitar',ideas)]) {
+    assert.match(prompt,/A warm attic/);assert.match(prompt,/A guilty sideways glance/);assert.match(prompt,/Guitars covering every side wall/);
+    assert.match(prompt,/FIXED PRESET CONTRACT/);assert.match(prompt,/collection completely hidden/);
+  }
 });
