@@ -5,9 +5,10 @@ import vm from 'node:vm';
 import * as catalogue from '../web/js/mixer-trends.js';
 import * as helpers from '../web/js/mixer-trend-state.js';
 import * as voices from '../web/js/mixer-voices.js';
+import * as problemReveal from '../web/js/mixer-problem-reveal.js';
 import { completionFeed } from '../web/js/job-completion.js';
 
-async function harness({ missingControl = false, failCut = false, native = false, distilled = false, pro = false, loseSubmission = false, voicePass = false } = {}) {
+async function harness({ missingControl = false, failCut = false, native = false, distilled = false, reveal = false, pro = false, loseSubmission = false, voicePass = false } = {}) {
   const calls = { pictures: [], shoots: [], tracks: 0, mixes: 0, cuts: 0, native: [], timelines: [] };
   const state = { runs: [], image: { catalogue: { models: [{ id: 'gpt-image-2.5-flare' }] } } };
   const mixer = { busy: new Set(), mix: null };
@@ -18,6 +19,7 @@ async function harness({ missingControl = false, failCut = false, native = false
     { from: 0, to: 10, prompt: '{Lead} speaks an original line.', seed: 123 },
     { from: 10, to: 20, prompt: '{Lead} reacts.', seed: 124 },
   ] });
+  if (reveal) Object.assign(recipe, { engine: 'official-template', template: 'video_ltx2_5_flf2v', customization: { kind: 'problem-reveal', defaultProblem: 'plant' }, settings: { width: 768, height: 1344, fram_rate: 24 }, shots: [{ from: 0, to: 10, prompt: 'Original prompt', seed: 123 }] });
   if (voicePass) recipe.voiceConversion = { role: 'Lead', referenceCrew: 'ivy' };
   let fail = failCut;
   const fetch = async (url, init = {}) => {
@@ -27,7 +29,9 @@ async function harness({ missingControl = false, failCut = false, native = false
     else if (url === 'api/audio/music') { calls.tracks++; body = { id: 'music' }; }
     else if (url === 'api/mixer/stars') body = JSON.parse(init.body);
     else if (url === 'api/cuts') { calls.timelines.push(JSON.parse(init.body).body); body = { project: { id: 'cut' } }; }
-    else if (url.endsWith('/video_fastvideo_fasth3_i2v/run') || url.endsWith('/api_ltx2_5_i2v/run') || url.endsWith('/video_ltx2_5_i2v/run')) {
+    else if (url === 'api/image') { calls.pictures.push(JSON.parse(init.body)); body = [{ id: `image${calls.pictures.length}`, status: 'running' }]; }
+    else if (url.startsWith('api/image/jobs/')) { const id = url.split('/').at(-1); body = { id, status: 'done', photo: { file: `${id}.png`, url: `/media/photos/${id}.png` } }; }
+    else if (url.endsWith('/video_ltx2_5_flf2v/run') || url.endsWith('/video_fastvideo_fasth3_i2v/run') || url.endsWith('/api_ltx2_5_i2v/run') || url.endsWith('/video_ltx2_5_i2v/run')) {
       calls.native.push(JSON.parse(init.body));
       if (loseSubmission) throw new Error('Connection interrupted');
       body = { id: 'native1', status: 'running', progress: .2 };
@@ -68,7 +72,7 @@ async function harness({ missingControl = false, failCut = false, native = false
   const context = vm.createContext({ fetch, structuredClone, Date, console, setTimeout: (fn) => fn() });
   const modules = {
     './store.js': store, './api.js': { api }, './mixer.js': mixModule,
-    './mixer-trends.js': catalogue, './mixer-trend-state.js': helpers, './mixer-voices.js': voices,
+    './mixer-trends.js': reveal ? { ...catalogue, trendById: id => ({ ...catalogue.trendById(id), customization: recipe.customization }) } : catalogue, './mixer-trend-state.js': helpers, './mixer-problem-reveal.js': problemReveal, './mixer-voices.js': voices,
     './picker.js': { onServer: async () => ({ file: 'scene.png', url: '/scene.png' }) },
   };
   const mod = new vm.SourceTextModule(await readFile('web/js/mixer-trend.js', 'utf8'), { context });
@@ -236,4 +240,49 @@ test('LTX Distilled recasts a photo with the open-weight template and retains na
   assert.equal(calls.timelines[0].tracks[0].items[0].sound, true);
   assert.ok(!mixer.mix.body.shots[0].voicePass);
   assert.ok(mixer.mix.body.film);
+});
+
+
+test('a personal problem creates a wide GPT reference, matching close-up, and sends both to LTX', async () => {
+  const { flow, calls, mixer } = await harness({ reveal: true });
+  flow.setProblem('guitar');
+  await flow.addStar({ name: 'me.png' });
+  await flow.makeTrend();
+  assert.equal(calls.pictures.length, 2);
+  assert.ok(calls.pictures.every(p => p.model === 'gpt-image-2.5-flare'));
+  assert.equal(calls.pictures[0].refs[0].file, 'my-photo.png');
+  assert.match(calls.pictures[0].prompt, /theme is "guitar"/);
+  assert.equal(calls.pictures[1].refs[0].file, 'image1.png');
+  assert.equal(calls.pictures[1].refs[1].file, 'my-photo.png');
+  assert.equal(calls.native[0].inputs.first_frame.file, 'image2.png');
+  assert.equal(calls.native[0].inputs.last_frame.file, 'image1.png');
+  assert.match(calls.native[0].inputs.prompt, /I think I have a small guitar problem/);
+  assert.match(calls.native[0].inputs.prompt, /Oopsie/);
+  assert.equal(mixer.mix.body.trend.inputs.problem, 'guitar');
+  assert.equal(calls.timelines[0].tracks[0].items[0].sound, true);
+});
+
+test('retrying a guided cut reuses both images and video; changing the problem creates a fresh run', async () => {
+  const { flow, calls, mixer } = await harness({ reveal: true, failCut: true });
+  flow.setProblem('guitar');
+  await flow.makeTrend();
+  assert.equal(mixer.mix.body.error, 'Render interrupted');
+  await flow.makeTrend();
+  assert.equal(calls.pictures.length, 2);
+  assert.equal(calls.native.length, 1);
+  flow.setProblem('sneaker');
+  await flow.makeTrend();
+  assert.equal(calls.mixes, 2);
+  assert.equal(calls.pictures.length, 4);
+  assert.equal(calls.native.length, 2);
+  assert.match(calls.native[1].inputs.prompt, /small sneaker problem/);
+});
+
+test('an empty collection does not submit images or video', async () => {
+  const { flow, calls } = await harness({ reveal: true });
+  flow.setProblem('  ');
+  await flow.makeTrend();
+  assert.equal(calls.pictures.length, 0);
+  assert.equal(calls.native.length, 0);
+  assert.equal(calls.mixes, 0);
 });

@@ -1,0 +1,70 @@
+{
+  "id": "my-reaction",
+  "engine": "official-template",
+  "template": "video_ltx2_5_i2v",
+  "about": "An original plant obsession reveal starring Ivy. No source recording.",
+  "source": {
+    "url": null,
+    "note": "Original Comfyture script and scene, 28 October 2026."
+  },
+  "seconds": 10,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 10,
+    "frame_rate": 24,
+    "prompt_enhance": false
+  },
+  "look": "look-v2.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Native LTX 2.5 dialogue and ambience. Character voice and emotional performance are directed in the generation prompt."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "ivy",
+      "look": "the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers"
+    }
+  ],
+  "beats": [
+    {
+      "from": 0,
+      "to": 3,
+      "text": "Lead admits: I think I have a small plant problem."
+    },
+    {
+      "from": 3,
+      "to": 7,
+      "text": "A steady zoom-out reveals an absurd number of plants filling the room."
+    },
+    {
+      "from": 7,
+      "to": 10,
+      "text": "Still in the wide shot, Lead gives a sheepish smile: Oopsie."
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 10,
+      "frames": 240,
+      "seed": 281026105,
+      "prompt": "Use the provided image as the exact first frame and character identity. One continuous ten-second shot of a tactile 3D animated comedy. {Lead} stands facing the camera, holding a tiny terracotta plant at chest height. She stays in the same spot throughout. The apartment around her is ridiculously overfilled with houseplants: dozens of pots across the floor, plants on every chair and table, dense hanging vines, leaves occupying almost every available space. Preserve her face, glasses, clothing and tiny plant.\n0 to 3 seconds: Start in the reference image's close framing. She gives the camera a slightly embarrassed smile and says exactly: \"I think I have a small plant problem.\" Adult female voice, warm conversational delivery, a tiny hesitation before \"small\" and guilty comic understatement on that word.\n3 to 7 seconds: After the first line finishes, a smooth, continuous optical zoom OUT from the fixed camera position reveals a much wider view of the room. The character becomes progressively smaller in the frame. Reveal the absurd scale of her plant obsession: pots covering the floor, chairs buried in foliage and hanging plants crowding the ceiling. These are real stationary objects already in the scene, revealed by widening the frame. Ivy remains facing camera and holding the tiny plant; she does not walk or turn away. Keep soft neutral daylight, fixed exposure and white balance, and gentle visible shadows as the frame widens.\n7 to 10 seconds: STOP zooming and HOLD the widest view, showing Ivy surrounded by her overwhelming collection of plants. She glances sideways at the plants, lifts her shoulders in a tiny guilty shrug, looks back to camera and says exactly: \"Oopsie.\" Give the word a playful, sheepish, slightly rising inflection, a small embarrassed smile and raised eyebrows. Hold the wide visual punchline to the end. No return to a close-up. No forward camera move, cuts, camera orbit or extra dialogue.\nOnly the two quoted lines are spoken, with clear synchronized lip movement. Keep her voice close, expressive and prominent even in the wide shot. Nearly silent room tone and faint leaf rustle. No music, footsteps, narrator, captions or logos."
+    }
+  ],
+  "revision": 4,
+  "name": "Tell Me Without Telling Me",
+  "model": "LTX 2.5 Distilled",
+  "billing": "gpu",
+  "coverAt": 8.4,
+  "imageModel": "Existing Codex imagegen reference reused; no new image generation",
+  "billingEstimate": {
+    "creditsPerExecutionSecond": 0.266,
+    "source": "https://support.comfy.org/articles/5846341390-how-credits-work-in-comfy",
+    "note": "Approximate GPU cost from measured workflow execution time; actual billable GPU seconds may differ. Existing reference reused; no paid voice conversion."
+  }
+}

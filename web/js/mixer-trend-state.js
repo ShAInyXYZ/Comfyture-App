@@ -1,9 +1,10 @@
 export const uploadRole = (trend, selected) => selected ?? trend?.cast?.[0]?.role ?? null;
 
 // Resume only the same trend with the same people; a changed cast makes a new mix.
-export function canResumeTrend(mix, id, roles, revision = 1) {
+export function canResumeTrend(mix, id, roles, revision = 1, inputs = {}) {
   return !!mix && mix.body?.kind === "trend" && mix.body.trend?.id === id && !mix.body.film
     && (mix.body.trend.revision ?? 1) === revision
+    && (mix.body.trend.inputs?.problem ?? "").trim().replace(/\s+/g, " ") === (inputs.problem ?? "").trim().replace(/\s+/g, " ")
     && Object.keys(roles).every((role) => {
       const before = mix.body.trend.cast?.[role];
       const after = roles[role];
@@ -15,7 +16,7 @@ export function canResumeTrend(mix, id, roles, revision = 1) {
 export function validateRecipe(recipe, files) {
   if (!recipe?.shots?.length) throw new Error("This trend has no shots to generate.");
   if (recipe.engine === "official-template") {
-    if (!["video_fastvideo_fasth3_i2v", "video_ltx2_5_i2v", "api_ltx2_5_i2v"].includes(recipe.template) || !recipe.look)
+    if (!["video_fastvideo_fasth3_i2v", "video_ltx2_5_i2v", "video_ltx2_5_flf2v", "api_ltx2_5_i2v"].includes(recipe.template) || !recipe.look)
       throw new Error("This trend's video recipe is incomplete.");
     for (const shot of recipe.shots) {
       const duration = shot.to - shot.from;

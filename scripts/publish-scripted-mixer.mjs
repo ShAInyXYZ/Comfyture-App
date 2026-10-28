@@ -12,6 +12,7 @@ const recipe = JSON.parse(await readFile(source, 'utf8'));
 validateRecipe(recipe, {});
 const receipts = await Promise.all(recipe.shots.map((_, i) => readFile(`${out}/take-${i + 1}.json`, 'utf8').then(JSON.parse)));
 if (receipts.some(r => r.status !== 'done')) throw Error('Every take must be complete.');
+const referenceFrames = recipe.customization?.kind === 'problem-reveal' ? JSON.parse(await readFile(`${out}/frames.json`, 'utf8')) : null;
 const post = recipe.voiceConversion ? JSON.parse(await readFile(`${out}/post-production.json`, 'utf8')) : null;
 if (post && (post.status !== 'reviewed' || post.takes.length !== recipe.shots.length)) throw Error('Review every voice-converted take before publishing.');
 const args = [], filters = [], joins = [];
@@ -43,10 +44,22 @@ if (!post && recipe.billing === 'gpu' && recipe.billingEstimate?.creditsPerExecu
   recipe.render.estimateNote = recipe.billingEstimate.note;
   recipe.render.costNote = 'Estimate only; actual per-job credits were not supplied by the provider. ' + recipe.billingEstimate.note;
 }
+if (referenceFrames) {
+  recipe.render.referenceFrames = Object.fromEntries(Object.entries(referenceFrames).map(([key, frame]) => [key, {
+    model: frame.request.model, job: frame.job, prompt: frame.request.prompt,
+    startedAt: frame.startedAt, finishedAt: frame.finishedAt, elapsedSeconds: frame.elapsedSeconds,
+    image: key === 'wide' ? recipe.lastLook : recipe.look,
+  }]));
+  recipe.render.estimatedImageCredits = 6; // Two GPT Image 2.5 Flare images at the app catalogue's 3 cr/image.
+  recipe.render.estimatedVideoCredits = recipe.render.estimatedCredits;
+  recipe.render.estimatedCredits = recipe.render.estimatedVideoCredits == null ? null : Math.round((recipe.render.estimatedVideoCredits + 6) * 100) / 100;
+  recipe.render.estimateNote = 'Two GPT Image references (catalogue estimate 6 cr) plus estimated video GPU time; actual provider bill unavailable.';
+  recipe.render.productionElapsedSeconds = (Date.parse(receipts.at(-1).finishedAt) - Date.parse(referenceFrames.wide.startedAt)) / 1000;
+}
 await copyFile(`${out}/preview.mp4`, `${dir}/preview.mp4`);
 await exec('ffmpeg', ['-v', 'error', '-y', '-ss', String(recipe.coverAt ?? Math.min(9, recipe.seconds - .5)), '-i', `${out}/preview.mp4`, '-frames:v', '1', '-vf', 'scale=768:1344:force_original_aspect_ratio=increase,crop=768:1344', '-quality', '90', `${dir}/poster.webp`]);
 await copyFile(`${dir}/poster.webp`, `web/brand/mixer/trends/${recipe.id}.webp`);
 await writeFile(`${dir}/recipe.json`, JSON.stringify(recipe, null, 2) + '\n');
-const entries = AUTUMN_TRENDS.map(t => t.id !== recipe.id ? t : { ...t, name: recipe.name ?? t.name, voiceConversion: recipe.voiceConversion ?? null, revision: recipe.revision, model: recipe.model, billing: recipe.billing, seconds: recipe.seconds, beats: recipe.beats, render: recipe.render });
+const entries = AUTUMN_TRENDS.map(t => t.id !== recipe.id ? t : { ...t, name: recipe.name ?? t.name, voiceConversion: recipe.voiceConversion ?? null, customization: recipe.customization ?? null, revision: recipe.revision, model: recipe.model, billing: recipe.billing, seconds: recipe.seconds, beats: recipe.beats, render: recipe.render });
 await writeFile('web/js/mixer-trends-autumn.js', '// Generated from reviewed previews; preserve per-scene productionRecipe overrides.\nexport const AUTUMN_TRENDS = ' + JSON.stringify(entries, null, 2) + ';\n');
 console.log('Published', recipe.id, recipe.model, recipe.seconds, 'seconds');

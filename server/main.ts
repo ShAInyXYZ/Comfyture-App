@@ -1451,6 +1451,12 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/video/models" && method === "GET") {
     return json(res, 200, { default: "ltx-2.5", models: [{ id: "ltx-2.5", name: "LTX-2.5", short: "LTX-2.5", about: "Open weights: picture and sound in one pass", maker: "open", router: false, seconds: LTX_SHOT_SECONDS, sound: true }, ...routerVideos()] });
   }
+  const imageJobId = path.match(/^\/api\/image\/jobs\/([a-f0-9]{8})$/)?.[1];
+  if (imageJobId && method === "GET") {
+    const job = engine.imageJob(imageJobId);
+    if (!job) throw bad("That image job is no longer tracked. Check the image library before starting another generation.", 404);
+    return json(res, 200, job);
+  }
   if (path === "/api/image/models" && method === "GET") {
     await images.ready;
     // the open-weights models in ComfyUI, then the partners' on Comfy Router

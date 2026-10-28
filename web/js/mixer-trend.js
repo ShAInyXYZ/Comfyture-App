@@ -14,6 +14,8 @@ import { onServer } from "./picker.js";
 import { castVoiceDirection, nativeRecipeRequest, applyCharacterVoice } from "./mixer-voices.js";
 import { uploadRole, canResumeTrend, validateRecipe } from "./mixer-trend-state.js";
 
+import { isProblemReveal, cleanProblem, problemVideoPrompt, prepareProblemFrames } from "./mixer-problem-reveal.js";
+
 const update = () => changed("mixer");
 const call = async (path, init) => {
   const res = await fetch(path, init);
@@ -24,7 +26,7 @@ const call = async (path, init) => {
 const send = (path, method, body) => call(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
 
 /** What is picked on the shelf: the trend, the filter, and who plays each of its roles. */
-export const pick = { trend: (TRENDS.find((t) => t.home === "mixer" || t.also?.includes("mixer")) ?? TRENDS[0]).id, kind: "all", cast: null, role: null };
+export const pick = { trend: (TRENDS.find((t) => t.home === "mixer" || t.also?.includes("mixer")) ?? TRENDS[0]).id, kind: "all", cast: null, role: null, inputs: {} };
 export const stars = { list: [], ready: null, uploading: 0 };
 // a trend's mix opened again brings back its trend and who played in it, unless something was
 // picked before it came back (a trend from Jam's "Make it with your cast", a role given to someone):
@@ -34,6 +36,7 @@ whenOpened((m) => {
   if (!m.body.trend) return;
   if (picked) return void (m.body.trend.id !== pick.trend && (mixer.mix = null));
   pick.trend = m.body.trend.id;
+  pick.inputs[pick.trend] = structuredClone(m.body.trend.inputs ?? {});
   pick.cast = { trend: m.body.trend.id, roles: structuredClone(m.body.trend.cast) };
 });
 
@@ -52,6 +55,16 @@ export function selectTrend(id) {
   if (mixer.mix?.body?.trend?.id !== id) mixer.mix = null;
   update();
 }
+export function trendInputs(t = trendById(pick.trend)) {
+  return isProblemReveal(t) ? { problem: pick.inputs[t.id]?.problem ?? t.customization.defaultProblem ?? 'plant' } : {};
+}
+export function setProblem(value, notify = true) {
+  if (making()) return;
+  picked = true;
+  pick.inputs[pick.trend] = { problem: String(value).slice(0, 48) };
+  if (notify) update();
+}
+
 export const setKind = (kind) => ((pick.kind = kind), update());
 export const pickRole = (role) => ((pick.role = pick.role === role ? null : role), update());
 
@@ -303,7 +316,27 @@ async function fromRecipe(t, cast, m) {
 /** Native-audio recipes keep the generated dialogue and foley with their video. */
 async function fromNativeRecipe(t, cast, m, recipe) {
   validateRecipe(recipe, {});
+  const problem = isProblemReveal(recipe) ? cleanProblem(m.body.trend.inputs?.problem) : null;
+  if (problem) recipe = { ...recipe, shots: recipe.shots.map(s => ({ ...s, prompt: problemVideoPrompt(problem) })) };
   const words = roleWords(recipe, cast);
+  let pair;
+  if (problem) {
+    const who = cast[0].who;
+    const lead = who.crew ? await onServer(crewPicture(who.crew), crewById(who.crew).name) : who.star;
+    m.body.revealFrames ??= {};
+    pair = await prepareProblemFrames(problem, lead, m.body.revealFrames, {
+      submit: body => send('api/image', 'POST', body), wait: async id => {
+        let job = await call(`api/image/jobs/${id}`);
+        while (job.status === 'running' || job.status === 'queued') {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          job = await call(`api/image/jobs/${id}`);
+        }
+        if (job.status !== 'done') throw new Error(job.error ?? 'The reference image did not finish.');
+        return job;
+      },
+      persist: () => save(m), progress: label => { m.body.progress = label; save(m); update(); },
+    });
+  }
   const dir = t.recipe.replace(/recipe\.json$/, "");
   const frames = new Map();
   if (!m.body.shots.length) m.body.shots = recipe.shots.map(s => ({ from: s.from, to: s.to, look: null, run: null, native: null, output: null }));
@@ -316,7 +349,8 @@ async function fromNativeRecipe(t, cast, m, recipe) {
     m.body.progress = `Drawing frame ${i + 1} of ${recipe.shots.length}`; update();
     const lookPath = dir + (s.look ?? recipe.look);
     if (shot.look) frames.set(lookPath, shot.look);
-    shot.look ??= frames.get(lookPath) ?? await firstFrame(t, cast, lookPath);
+    shot.look ??= pair?.first ?? frames.get(lookPath) ?? await firstFrame(t, cast, lookPath);
+    if (pair) shot.lastLook = pair.last;
     frames.set(lookPath, shot.look);
     save(m);
     if (shot.submissionPending && !shot.native?.id)
@@ -329,7 +363,7 @@ async function fromNativeRecipe(t, cast, m, recipe) {
         const prompt = s.prompt.replace(/\{(\w+)\}/g, (all, k) => words[k] ?? all) + "\n" + castVoiceDirection(cast);
         const seed = cast.every(c => c.who.crew === c.original) ? s.seed : Math.floor(Math.random() * 2147483647);
         shot.voiceDirection = castVoiceDirection(cast);
-        shot.native = await send(`api/utensils/templates/${recipe.template}/run`, "POST", nativeRecipeRequest(recipe, s, shot.look.file, prompt, seed));
+        shot.native = await send(`api/utensils/templates/${recipe.template}/run`, "POST", nativeRecipeRequest(recipe, s, shot.look.file, prompt, seed, shot.lastLook?.file));
         shot.submissionPending = false;
       } catch (e) {
         // A lost response may still mean a paid job started. Only definite request rejection is retryable.
@@ -374,16 +408,19 @@ export async function makeTrend() {
   if (!t || t.soon || making() || stars.uploading) return;
   const cast = structuredClone(castOf(t));
   const roles = structuredClone(pick.cast.roles);
+  let inputs = trendInputs(t);
+  try { if (isProblemReveal(t)) inputs = { problem: cleanProblem(inputs.problem) }; }
+  catch (error) { toast(error.message, { tone: 'crit' }); return; }
   let m;
   mixer.busy.add("trend");
   update();
   try {
-    m = canResumeTrend(mixer.mix, t.id, roles, t.revision ?? 1) ? mixer.mix : await newMix();
+    m = canResumeTrend(mixer.mix, t.id, roles, t.revision ?? 1, inputs) ? mixer.mix : await newMix();
     const resume = m.body.kind === "trend";
     m.body.error = null;
     m.body.progress = "Preparing your trend";
     m.name = `${t.name} · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
-    if (!resume) Object.assign(m.body, { kind: "trend", trend: { id: t.id, revision: t.revision ?? 1, cast: roles }, aspect: "9:16", shots: [], film: null, music: null });
+    if (!resume) Object.assign(m.body, { kind: "trend", trend: { id: t.id, revision: t.revision ?? 1, cast: roles, inputs }, aspect: "9:16", shots: [], film: null, music: null });
     save(m);
     update();
     if (t.recipe) {

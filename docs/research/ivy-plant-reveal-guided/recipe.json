@@ -1,0 +1,75 @@
+{
+  "id": "my-reaction",
+  "engine": "official-template",
+  "template": "video_ltx2_5_flf2v",
+  "about": "An original plant obsession reveal starring Ivy. No source recording.",
+  "source": {
+    "url": null,
+    "note": "Original Comfyture script and scene, 28 October 2026."
+  },
+  "seconds": 10,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 10,
+    "fram_rate": 24,
+    "prompt_enhance": false
+  },
+  "look": "look-v5.jpg",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Native LTX 2.5 dialogue and ambience. Character voice and emotional performance are directed in the generation prompt."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "ivy",
+      "look": "the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers"
+    }
+  ],
+  "beats": [
+    {
+      "from": 0,
+      "to": 3,
+      "text": "Lead admits: I think I have a small plant problem."
+    },
+    {
+      "from": 3,
+      "to": 7,
+      "text": "A slow zoom-out reveals a room overflowing with the collection."
+    },
+    {
+      "from": 7,
+      "to": 10,
+      "text": "Hold the wide shot. A sheepish smile: Oopsie."
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 10,
+      "frames": 240,
+      "seed": 281026106,
+      "prompt": "Use the provided FIRST and LAST images as matching framing anchors for one continuous ten-second shot. {Lead} is the same person in both frames, in the same room. The collection theme is \"plant\". Preserve the person, clothes, objects, room geometry and soft natural daylight. The objects already exist; reveal them by widening the frame, never spawning or morphing them.\n0–3s: Hold the close first-frame composition. The person faces camera, gives a guilty half smile and says exactly: \"I think I have a small plant problem.\" Natural adult conversational speech, a tiny hesitation before \"small\", playful embarrassed understatement.\n3–7s: Slowly and smoothly zoom OUT toward the supplied wide last frame. Fixed camera axis, no orbit, no fast motion or cuts. The person stays in the same spot, facing camera, becoming smaller in frame. Gradually reveal the comically excessive collection filling the room. Keep exposure, white balance and gentle shadow detail constant.\n7–10s: Arrive at the wide last-frame composition and hold it. Keep the overwhelming collection visible. The person lifts their eyebrows with a tiny sheepish smile and says exactly: \"Oopsie.\" Warm playful rising inflection. Minimal head motion, hands stay still. Hold the wide view through the end; never zoom back in. Only these two spoken lines, synchronized lips. The voice stays clear and prominent even in the wide shot. Nearly silent room tone, no footsteps, music, narrator, text or logos."
+    }
+  ],
+  "revision": 5,
+  "name": "Tell Me Without Telling Me",
+  "model": "LTX 2.5 Distilled",
+  "billing": "gpu",
+  "coverAt": 8.4,
+  "imageModel": "GPT Image 2.5 Flare · two matching reference images",
+  "billingEstimate": {
+    "creditsPerExecutionSecond": 0.266,
+    "source": "https://support.comfy.org/articles/5846341390-how-credits-work-in-comfy",
+    "note": "Approximate video GPU cost from execution time; actual billable GPU seconds may differ. Two GPT Image reference images are recorded separately. Native audio; no voice conversion."
+  },
+  "lastLook": "end-v5.jpg",
+  "customization": {
+    "kind": "problem-reveal",
+    "defaultProblem": "plant"
+  }
+}

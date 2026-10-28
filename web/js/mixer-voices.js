@@ -20,7 +20,7 @@ export function castVoiceDirection(cast) {
   return `CHARACTER VOICE DIRECTION (apply only to scripted speech, never add dialogue):\n${lines.join("\n")}\nKeep each voice distinct and consistent across takes. Follow the script's speaker assignments. Preserve breaths and small hesitations; no presenter cadence. This is text direction, not a supplied voice recording.`;
 }
 
-export function nativeRecipeRequest(recipe, shot, file, prompt, seed) {
+export function nativeRecipeRequest(recipe, shot, file, prompt, seed, lastFile) {
   const duration = shot.to - shot.from;
   if (recipe.template === "api_ltx2_5_i2v") return {
     confirm: true,
@@ -28,7 +28,8 @@ export function nativeRecipeRequest(recipe, shot, file, prompt, seed) {
     overrides: { "5": { model: "LTX-2.5 (Pro)", "model.duration": String(duration),
       "model.resolution": recipe.settings?.resolution ?? "1080x1920", "model.fps": "24", "model.generate_audio": true } },
   };
-  return { confirm: true, inputs: { ...recipe.settings, duration, first_frame: { file }, prompt, seed } };
+  if (recipe.template === "video_ltx2_5_flf2v" && !lastFile) throw new Error('The wide end frame is missing; no video was submitted.');
+  return { confirm: true, inputs: { ...recipe.settings, duration, first_frame: { file }, ...(recipe.template === "video_ltx2_5_flf2v" ? { last_frame: { file: lastFile } } : {}), prompt, seed } };
 }
 
 // Original synthetic character recordings. A picture never supplies someone's real voice.

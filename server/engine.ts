@@ -960,6 +960,8 @@ export class Engine extends EventEmitter {
     return job;
   }
 
+  imageJob(id: string): Paint | undefined { return this.paints.get(id); }
+
   /** A picture made outside ComfyUI (a partner model on Comfy Router), tracked like a paint job. */
   externalPhotoJob(name: string, make: () => Promise<Buffer>, seconds = 25): Paint {
     const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };

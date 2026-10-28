@@ -13,9 +13,10 @@ import {
 } from "../mixer.js";
 import { loraStack } from "../loras.js";
 import { TRENDS, CREW, KINDS, trendById, crewById, trendArt, crewFace } from "../mixer-trends.js";
-import { pick, castOf, selectTrend, setKind, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, makeTrend, making, takesOf, castArtist, estimate as trendCost } from "../mixer-trend.js";
+import { pick, castOf, selectTrend, setKind, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, makeTrend, making, takesOf, castArtist, trendInputs, setProblem, estimate as trendCost } from "../mixer-trend.js";
 import { openPicker, pictureOf } from "../picker.js";
 import { voiceReferenceFor } from "../mixer-voices.js";
+import { isProblemReveal, problemBeats } from "../mixer-problem-reveal.js";
 import { canResumeTrend } from "../mixer-trend-state.js";
 
 /** Whoever is picked for a role: one of the crew plays it as themselves, anyone else as a star. */
@@ -104,10 +105,25 @@ function recipe(t) {
   const cast = castOf(t);
   const busy = making();
   const cost = trendCost(t);
-  const resume = canResumeTrend(m, t.id, pick.cast.roles, t.revision ?? 1);
+  const inputs = trendInputs(t);
+  const problem = inputs.problem ?? "";
+  const resume = canResumeTrend(m, t.id, pick.cast.roles, t.revision ?? 1, inputs);
+  const beats = isProblemReveal(t) ? problemBeats(problem || "…") : t.beats;
+  const ownFrames = m?.body.revealFrames && m.body.trend.inputs?.problem === problem ? m.body.revealFrames : null;
+  const shownFrames = ownFrames ?? (t.render?.referenceFrames ? Object.fromEntries(Object.entries(t.render.referenceFrames).map(([key, value]) => [key, { photo: { url: t.recipe.replace(/recipe\.json$/, '') + value.image } }])) : null);
   const head = [
     h("div.mx-recipe-title", {}, h("span.label", {}, "Trend recipe"), h("h2", {}, t.name), h("span.mx-recipe-meta", {}, `${t.seconds} s · ${KIND_NAME[t.kind]}${t.caption ? ` · “${t.caption}”` : ""}`)),
-    h("div.mx-beats", {}, ...t.beats.map((b) => h("div.mx-beat", { style: { flexGrow: String(Math.max(0.6, b.to - b.from)) } }, h("i"), h("b", {}, span(b.from, b.to)), h("span", {}, b.text)))),
+    isProblemReveal(t) ? h("div.mx-problem", {},
+      h("label.label", { for: "mx-problem" }, "My small problem"),
+      h("input", { id: "mx-problem", type: "text", value: problem, maxLength: 48, disabled: busy,
+        placeholder: "guitar, plant, sneaker…", "aria-describedby": "mx-problem-help",
+        on: { input: e => {
+          setProblem(e.target.value, false);
+          const line = e.target.closest('.mx-recipe-body')?.querySelector('.mx-beat span');
+          if (line) line.textContent = problemBeats(e.target.value || '…')[0].text;
+        }, blur: () => requestAnimationFrame(changedMixer) } }),
+      h("p", { id: "mx-problem-help" }, "Name your collection, then add your photo below. We create matching close-up and wide frames before the slow reveal.")) : null,
+    h("div.mx-beats", {}, ...beats.map((b) => h("div.mx-beat", { style: { flexGrow: String(Math.max(0.6, b.to - b.from)) } }, h("i"), h("b", {}, span(b.from, b.to)), h("span", {}, b.text)))),
     // every trend gets a track made in its feel: the original recordings are not shipped, ours or not
     h("div.mx-music", {},
       m?.body.music ? keep(`music:${m.body.music.url}`, () => h("audio", { src: m.body.music.url, controls: true, preload: "none" })) : h("span.mx-music-icon", {}, sprite("audio-music")),
@@ -120,7 +136,12 @@ function recipe(t) {
         h("div.mx-cast-col", {},
           h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "Add your photo or choose a character, then Make it.")),
           h("div.mx-roles", {}, ...cast.map((c) => role(c)))),
-        madeWith({ music: t.engine !== "official-template", native: t.engine === "official-template", model: t.model, billing: t.billing, voice: voiceReferenceFor(t, cast) })),
+        madeWith({ music: t.engine !== "official-template", native: t.engine === "official-template", model: t.model, billing: t.billing, voice: voiceReferenceFor(t, cast), guided: isProblemReveal(t) })),
+      isProblemReveal(t) && shownFrames ? h("div.mx-reference-guides", {}, h("span.label", {}, ownFrames ? "Your reference frames" : `Example frames · ${t.customization.defaultProblem}`), h("div.mx-reference-pair", {},
+        ...[['close', 'Start frame'], ['wide', 'End frame']].map(([key, label]) => {
+          const photo = shownFrames[key]?.photo;
+          return h("figure", {}, photo ? h("button", { type: 'button', title: `View ${label.toLowerCase()}`, on: { click: () => view(photo.url) } }, h("img", { src: photo.url, alt: label })) : h("span", {}, label + ' pending'), h("figcaption", {}, label));
+        }))) : null,
       t.render ? h("details.mx-provenance", {}, h("summary", {}, "Preview generation details"),
         h("p", {}, `${t.render.model} · ${t.render.executionSeconds == null ? "Execution time unavailable" : `${Math.round(t.render.executionSeconds)} s execution`} · ${t.render.elapsedSeconds == null ? "" : `${Math.round(t.render.elapsedSeconds)} s elapsed`}`),
         h("p", {}, t.render.actualCostCredits == null ? "Actual cost: not reported by provider. This was a paid generation." : `Actual cost: ${t.render.actualCostCredits} cr`),
@@ -237,10 +258,10 @@ const modelRow = (glyph, part, model, cost, ...more) =>
  * How a mix is made, at a glance: the picture model that redraws its first frames with the cast,
  * LTX-2.5 with the LoRAs it rolls with (none until picked), and the music model.
  */
-function madeWith({ music, native = false, model, billing, voice }) {
+function madeWith({ music, native = false, model, billing, voice, guided = false }) {
   return h("div.mx-made", {},
     h("div.mx-section-head", {}, h("h3", {}, "Made with")),
-    pictureRow(),
+    guided ? modelRow(sprite("image-generate"), "Start + end frames", h("b", {}, "GPT Image 2.5 Flare"), "2 matching images") : pictureRow(),
     native ? modelRow(sprite("film-make"), "Video + sound", h("b", {}, model ?? "MiniMax H3 · FastH3"), billing === "partner" ? "Partner credits · Comfy Cloud" : "GPU time · Comfy Cloud") : modelRow(sprite("film-make"), "Video", h("b", {}, "LTX-2.5"), cloud() ? "≈ 4.8 cr/s" : "your GPU",
       h("div.mx-model-loras", {}, h("span.label", {}, "LoRAs"), loraStack(mixLoras(), (list) => (setMixLoras(list), changed("mixer"))))),
     voice ? modelRow(sprite("audio-voice"), "Character voice", h("b", {}, `${voice.name} · Chatterbox`), "Saved fictional voice · also used for photo replacements") : null,

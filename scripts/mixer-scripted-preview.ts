@@ -18,6 +18,14 @@ const first = await fetch('http://127.0.0.1:5177/api/photos?name=' + encodeURICo
 });
 if (!first.ok) throw Error(await first.text());
 const photo = await first.json();
+let lastPhoto;
+if (recipe.lastLook) {
+  const last = await fetch('http://127.0.0.1:5177/api/photos?name=' + encodeURIComponent(`${recipe.name ?? recipe.id} end reference`), {
+    method: 'POST', headers: { 'Content-Type': 'image/png' }, body: await readFile(`web/brand/mixer/trends/${recipe.id}/${recipe.lastLook}`),
+  });
+  if (!last.ok) throw Error(await last.text());
+  lastPhoto = await last.json();
+}
 for (const [i, shot] of recipe.shots.entries()) {
   const receipt = join(out, `take-${i + 1}.json`);
   let meta = await readFile(receipt, 'utf8').then(JSON.parse, () => null);
@@ -25,7 +33,7 @@ for (const [i, shot] of recipe.shots.entries()) {
   if (meta && !meta.cloudPromptId) throw Error(`Take ${i + 1} already attempted; inspect its receipt before submitting again.`);
   if (!meta) {
     const prompt = shot.prompt.replace(/\{(\w+)\}/g, (all: string, k: string) => words[k] ?? all) + '\n' + castVoiceDirection(cast);
-    const request = nativeRecipeRequest(recipe, shot, photo.file, prompt, shot.seed);
+    const request = nativeRecipeRequest(recipe, shot, photo.file, prompt, shot.seed, lastPhoto?.file);
     meta = { status: 'submitting', model: recipe.model, template: recipe.template, request, startedAt: new Date().toISOString(), actualCostCredits: null };
     await writeFile(receipt, JSON.stringify(meta, null, 2));
     try {
