@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanProblem, prepareProblemFrames } from '../web/js/mixer-problem-reveal.js';
+import { cleanProblem, prepareProblemFrames, problemFramePrompt } from '../web/js/mixer-problem-reveal.js';
 import { nativeRecipeRequest } from '../web/js/mixer-voices.js';
 
 test('problem input trims whitespace and bounds spoken scene content', () => {
@@ -58,4 +58,14 @@ test('a different problem cannot reuse an unfinished reveal', async () => {
   const mix = { body: { kind: 'trend', trend: { id: 'reveal', revision: 5, cast, inputs: { problem: 'guitar' } } } };
   assert.equal(canResumeTrend(mix, 'reveal', cast, 5, { problem: 'guitar' }), true);
   assert.equal(canResumeTrend(mix, 'reveal', cast, 5, { problem: 'plant' }), false);
+});
+
+test('the character is an identity reference, re-staged in a fresh scene rather than pasted into it', () => {
+  const prompt = problemFramePrompt('guitar');
+  assert.match(prompt, /IDENTITY AND DESIGN REFERENCE ONLY/);
+  assert.match(prompt, /Do not paste, trace, cut out or outpaint/);
+  assert.match(prompt, /Do not copy its pose/);
+  assert.match(prompt, /both hands tucked behind/);
+  assert.match(prompt, /blank wall/);
+  assert.match(prompt, /collection theme is "guitar"/);
 });
