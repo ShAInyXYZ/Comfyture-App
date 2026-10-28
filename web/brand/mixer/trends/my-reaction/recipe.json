@@ -157,5 +157,6 @@
     "estimatedImageCredits": 3,
     "estimatedVideoCredits": 17,
     "productionElapsedSeconds": 123.175
-  }
+  },
+  "defaultPreview": "ours"
 }

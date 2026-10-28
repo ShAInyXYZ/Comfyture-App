@@ -71,5 +71,6 @@
   "customization": {
     "kind": "problem-reveal",
     "defaultProblem": "plant"
-  }
+  },
+  "defaultPreview": "ours"
 }

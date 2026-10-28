@@ -61,6 +61,6 @@ await copyFile(`${out}/preview.mp4`, `${dir}/preview.mp4`);
 await exec('ffmpeg', ['-v', 'error', '-y', '-ss', String(recipe.coverAt ?? Math.min(9, recipe.seconds - .5)), '-i', `${out}/preview.mp4`, '-frames:v', '1', '-vf', 'scale=768:1344:force_original_aspect_ratio=increase,crop=768:1344', '-quality', '90', `${dir}/poster.webp`]);
 await copyFile(`${dir}/poster.webp`, `web/brand/mixer/trends/${recipe.id}.webp`);
 await writeFile(`${dir}/recipe.json`, JSON.stringify(recipe, null, 2) + '\n');
-const entries = AUTUMN_TRENDS.map(t => t.id !== recipe.id ? t : { ...t, name: recipe.name ?? t.name, voiceConversion: recipe.voiceConversion ?? null, customization: recipe.customization ?? null, revision: recipe.revision, model: recipe.model, billing: recipe.billing, seconds: recipe.seconds, beats: recipe.beats, render: recipe.render });
+const entries = AUTUMN_TRENDS.map(t => t.id !== recipe.id ? t : { ...t, name: recipe.name ?? t.name, defaultPreview: recipe.defaultPreview ?? t.defaultPreview, voiceConversion: recipe.voiceConversion ?? null, customization: recipe.customization ?? null, revision: recipe.revision, model: recipe.model, billing: recipe.billing, seconds: recipe.seconds, beats: recipe.beats, render: recipe.render });
 await writeFile('web/js/mixer-trends-autumn.js', '// Generated from reviewed previews; preserve per-scene productionRecipe overrides.\nexport const AUTUMN_TRENDS = ' + JSON.stringify(entries, null, 2) + ';\n');
 console.log('Published', recipe.id, recipe.model, recipe.seconds, 'seconds');

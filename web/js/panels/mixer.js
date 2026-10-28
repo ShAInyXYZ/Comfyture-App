@@ -158,8 +158,16 @@ function recipe(t) {
 // the trend whose preview plays in its cover's frame, and whether it has just been started
 let watching = null;
 let starting = false;
+let previewTrend = null;
 
 function preview(t, m) {
+  if (previewTrend !== t.id) {
+    previewTrend = t.id;
+    watching = t.defaultPreview === "ours" ? t.id : null;
+    starting = false;
+  }
+  // A newly generated result takes over; saved mixes remain explicitly selectable.
+  if (making()) watching = null;
   const film = m?.body.film;
   // a version of yours and ours: a switch on the card goes between them
   if (film && t.preview && watching === t.id && !making())
@@ -436,6 +444,9 @@ async function openOne(id) {
   const t = mixer.mix?.body?.trend;
   if (mixer.mix?.body?.kind === "trend" && t) {
     pick.trend = t.id;
+    previewTrend = t.id;
+    watching = null;
+    starting = false;
     pick.cast = { trend: t.id, roles: structuredClone(t.cast) };
   }
   changedMixer();

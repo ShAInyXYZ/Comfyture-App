@@ -409,6 +409,7 @@ export const AUTUMN_TRENDS = [
   },
   {
     "id": "my-reaction",
+    "defaultPreview": "ours",
     "name": "Tell Me Without Telling Me",
     "kind": "reactions",
     "home": "mixer",
