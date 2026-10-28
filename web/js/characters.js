@@ -3,7 +3,7 @@
 import { CREW, crewFace, crewPicture } from "./mixer-trends.js";
 
 const CAST = [
-  { id: "ketkout", name: "Ketkout", role: "Mascot", look: "the butter-yellow baby chick with three crown feathers and an apricot neckerchief" },
+  { id: "ketkout", name: "Ketkout", role: "Mascot · Shiny’s chick", owner: "shiny", look: "the butter-yellow baby chick with three crown feathers and an apricot neckerchief" },
   { id: "bagel", name: "Bagel", role: "Goofball", look: "the chubby golden-brown corgi puppy with a white chest, big ears and a plum bandana" },
   { id: "truffle", name: "Truffle", role: "Bandit", look: "the round grey raccoon with a dark eye mask and a ringed tail" },
   { id: "tofu", name: "Tofu", role: "Unbothered", look: "the calm barrel-shaped capybara with an orange slice on its head" },

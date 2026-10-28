@@ -11,6 +11,7 @@ Source frames from the review are never copied: only our own artwork goes on the
 
 Run from the repository root: python3 scripts/mixer-trends.py
 """
+import shutil
 import json
 import re
 from pathlib import Path
@@ -230,6 +231,18 @@ def main():
         front = s.crop((int(sw * 0.03), int(sh * 0.097), int(sw * 0.25), int(sh * 0.552)))
         front.save(OUT_CREW / f"{key}.png", optimize=True)
         crew.append({"id": key, "name": name, "role": role, "look": desc, "kind": "person", "pet": pet})
+
+    # Individually authored crew assets do not need a multi-view sheet. Keep their
+    # identity and relationships when regenerating the catalogue.
+    owners_dir = CREW_DIR / "characters/owners"
+    for spec in sorted(owners_dir.glob("*-crew.json")):
+        member = json.loads(spec.read_text())
+        key = member["id"]
+        if any(c["id"] == key for c in crew):
+            raise ValueError(f"Duplicate crew id: {key}")
+        for asset, suffix in [("picture", ".png"), ("face", "-face.webp"), ("stage", "-stage.webp")]:
+            shutil.copyfile(owners_dir / member["assets"][asset], OUT_CREW / f"{key}{suffix}")
+        crew.append({field: member[field] for field in ("id", "name", "role", "look", "kind", "pet")})
 
     # the rest of the cast: a clean front view for the models and a round face for the pickers
     for key, (name, sheet, (x0, y0, x1, y1)) in CAST.items():

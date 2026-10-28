@@ -74,6 +74,14 @@ export const CREW = [
     "look": "Theo's big-hearted older brother with a short boxed beard, a burgundy bucket hat, a cream varsity jacket with burgundy sleeves and light jeans",
     "kind": "person",
     "pet": "bagel"
+  },
+  {
+    "id": "shiny",
+    "name": "Shiny",
+    "role": "Ketkout's owner",
+    "look": "the adult creator with shoulder-length center-parted wavy brown hair, a subtle mustache and short beard along the chin and jaw, a plain black crewneck sweatshirt, charcoal jeans and black sneakers",
+    "kind": "person",
+    "pet": "ketkout"
   }
 ];
 
