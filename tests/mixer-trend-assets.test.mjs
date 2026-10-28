@@ -43,15 +43,19 @@ test('We Listen is an original script with no source footage or borrowed soundtr
 });
 
 
-test('the plant reveal replaces My Reaction with a reusable fictional voice and completed post-production', async () => {
+test('the plant reveal uses non-Pro LTX with native speech and accurate generation metadata', async () => {
   const t = AUTUMN_TRENDS.find(t => t.id === 'my-reaction');
   assert.equal(t.name, 'Tell Me Without Telling Me');
   const r = JSON.parse(await readFile('web/' + t.recipe, 'utf8'));
-  assert.equal(r.revision, 2);
+  assert.equal(r.revision, 3);
   assert.equal(r.seconds, 10);
-  assert.equal(r.voiceConversion.referenceCrew, 'ivy');
-  assert.match(r.render.voiceMethod, /Chatterbox/);
-  assert.equal(r.render.postProduction.length, 4);
-  assert.ok((await stat('web/' + r.voiceConversion.reference)).size > 1000);
-  assert.ok(r.render.estimatedCredits < 125);
+  assert.equal(r.template, 'video_ltx2_5_i2v');
+  assert.equal(r.voiceConversion, undefined);
+  assert.equal(t.voiceConversion, null);
+  assert.match(r.render.voiceMethod, /native generated/);
+  assert.equal(r.render.postProduction, undefined);
+  assert.ok(r.render.estimatedCredits > 0);
+  assert.match(r.render.estimateNote, /actual billable GPU seconds may differ/);
+  assert.equal(r.render.takes[0].settings.width, 768);
+  assert.equal(r.render.takes[0].settings.height, 1344);
 });

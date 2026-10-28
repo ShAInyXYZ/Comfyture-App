@@ -1,0 +1,138 @@
+{
+  "render": {
+    "model": "LTX 2.5 Distilled",
+    "imageModel": "Existing Codex imagegen reference reused; no new image generation",
+    "template": "video_ltx2_5_i2v",
+    "startedAt": "2026-10-28T19:45:15.310Z",
+    "finishedAt": "2026-10-28T19:46:10.437Z",
+    "executionSeconds": 42.706,
+    "elapsedSeconds": 55.127,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "billing": "gpu",
+    "costNote": "Estimate only; actual per-job credits were not supplied by the provider. Approximate GPU cost from measured workflow execution time; actual billable GPU seconds may differ. Existing reference reused; no paid voice conversion.",
+    "voiceMethod": "Text-directed native generated voices, not cloned audio or post-production conversion.",
+    "takes": [
+      {
+        "seed": 281026104,
+        "cloudPromptId": "b91b1815-95af-4c50-88e0-b95727653e10",
+        "executionSeconds": 42.706,
+        "elapsedSeconds": 55.127,
+        "settings": {
+          "width": 768,
+          "height": 1344,
+          "duration": 10,
+          "frame_rate": 24,
+          "prompt_enhance": false,
+          "seed": 281026104
+        },
+        "prompt": "Use the provided image as the exact first frame. A single continuous ten-second shot of a tactile, beautifully animated 3D comedy. Ivy, the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers holds a tiny terracotta plant in an apartment doorway. Keep the same character design, clothes, glasses and plant throughout. Soft diffuse daylight from a large window fills the entire apartment with neutral, natural color. Fixed exposure and white balance throughout the camera move; gentle shadow detail remains visible in both the doorway and the revealed room. No dramatic lighting change or harsh contrast as the shot widens.\nAt the beginning, she meets the camera with an embarrassed half smile, lifts her eyebrows, hesitates slightly, and says in a clear adult female conversational voice: \"I might have a small plant problem.\" Stress \"small\" with transparently guilty understatement. Her delivery is warm, intimate and amused, with natural breath and changing inflection, not a flat narration.\nAs she finishes the first line, the camera smoothly dollies backward and slightly sideways through the open doorway, revealing a living room hilariously overfilled with stationary plants. Plants cover the sofa and dining table; terracotta pots line the floor; hanging vines crowd the hall. All plants already exist in the room and are revealed by the camera movement. Keep her visible as the frame widens. She makes one careful small sidestep around a pot, hugs her tiny plant protectively, spots an absurdly small empty corner, then looks back at camera with stubborn pride.\nIn the final three seconds she says, with a tiny thoughtful pause after the first word and a rising defensive smile: \"There's still room.\" End on her delighted, self-satisfied expression. Only these two lines are spoken, with accurate lip sync. Dialogue stays close, clear and prominent even when the camera moves away. Very quiet room tone and a faint leaf rustle beneath the voice. The small sidestep is nearly silent; no prominent footsteps or impacts. No music, narrator, additional voices, captions, logos or cuts.\nCHARACTER VOICE DIRECTION (apply only to scripted speech, never add dialogue):\nLead: Gentle mid-register voice with a slightly airy texture, thoughtful conversational English and curious, uneven little pauses. Soft-spoken plant-shop wit, precise dry punchlines and delighted small laughs. Never monotone.\nKeep each voice distinct and consistent across takes. Follow the script's speaker assignments. Preserve breaths and small hesitations; no presenter cadence. This is text direction, not a supplied voice recording."
+      }
+    ],
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "10.000000"
+      }
+    },
+    "estimatedCredits": 11.36,
+    "estimateNote": "Approximate GPU cost from measured workflow execution time; actual billable GPU seconds may differ. Existing reference reused; no paid voice conversion."
+  },
+  "transcript": [
+    {
+      "start": 0.0,
+      "end": 2.6,
+      "text": " I might have a small plant problem.",
+      "words": [
+        {
+          "word": " I",
+          "start": 0.0,
+          "end": 0.74
+        },
+        {
+          "word": " might",
+          "start": 0.74,
+          "end": 0.96
+        },
+        {
+          "word": " have",
+          "start": 0.96,
+          "end": 1.16
+        },
+        {
+          "word": " a",
+          "start": 1.16,
+          "end": 1.34
+        },
+        {
+          "word": " small",
+          "start": 1.34,
+          "end": 1.66
+        },
+        {
+          "word": " plant",
+          "start": 1.66,
+          "end": 2.1
+        },
+        {
+          "word": " problem.",
+          "start": 2.1,
+          "end": 2.6
+        }
+      ]
+    },
+    {
+      "start": 8.18,
+      "end": 9.38,
+      "text": " There's still room.",
+      "words": [
+        {
+          "word": " There's",
+          "start": 8.18,
+          "end": 8.82
+        },
+        {
+          "word": " still",
+          "start": 8.82,
+          "end": 9.06
+        },
+        {
+          "word": " room.",
+          "start": 9.06,
+          "end": 9.38
+        }
+      ]
+    }
+  ],
+  "audioLevels": {
+    "line1": [
+      "mean_volume: -16.8 dB",
+      "max_volume: -4.5 dB"
+    ],
+    "room_and_movement": [
+      "mean_volume: -57.7 dB",
+      "max_volume: -22.4 dB"
+    ],
+    "line2": [
+      "mean_volume: -18.6 dB",
+      "max_volume: -4.7 dB"
+    ]
+  },
+  "review": {
+    "picture": "Five-frame contact sheet reviewed: Ivy identity retained; bright room reveal stays visible. The camera reveals the room then returns toward Ivy for the final line; it does not maintain the requested continuous backward move.",
+    "audio": "Whisper large-v3 confirms both exact lines, ending at 9.38s. Native audio retained without voice conversion or additional paid audio jobs. Whole-clip integrated loudness -13.66 LUFS, true peak -4.44 dBTP. Speech-window mean levels -16.8/-18.6 dBFS; non-dialogue movement window -57.7 dBFS mean / -22.4 dBFS peak. These are mixed-track measurements, not isolated stems. Emotional delivery remains for user listening review.",
+    "reference": "Reused look-v2.webp; no new reference charge.",
+    "remake": "Photo/crew recasting uses the same official open-weight template with native sound, without the previous Chatterbox conversion.",
+    "previousVersion": "FastH3 and voice-converted master preserved in output/ivy-plant-reveal; previous published version in git b78ccfc."
+  }
+}

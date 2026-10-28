@@ -124,7 +124,7 @@ function recipe(t) {
       t.render ? h("details.mx-provenance", {}, h("summary", {}, "Preview generation details"),
         h("p", {}, `${t.render.model} · ${t.render.executionSeconds == null ? "Execution time unavailable" : `${Math.round(t.render.executionSeconds)} s execution`} · ${t.render.elapsedSeconds == null ? "" : `${Math.round(t.render.elapsedSeconds)} s elapsed`}`),
         h("p", {}, t.render.actualCostCredits == null ? "Actual cost: not reported by provider. This was a paid generation." : `Actual cost: ${t.render.actualCostCredits} cr`),
-        t.render.estimatedCredits != null ? h("p", {}, `Estimated production cost: ${t.render.estimatedCredits.toFixed(1)} cr · includes voice setup; image generation billed separately`) : null,
+        t.render.estimatedCredits != null ? h("p", {}, `Estimated production cost: ${t.render.estimatedCredits.toFixed(1)} cr · ${t.render.estimateNote ?? "includes voice setup; image generation billed separately"}`) : null,
         t.render.voiceMethod ? h("p", {}, t.render.voiceMethod) : null,
         h("a", { href: t.recipe, target: "_blank", rel: "noopener" }, "Recipe, script and metadata")) : null,
       m?.body.error && resume && !busy ? h("p.mx-error", { role: "alert" }, `${m.body.error} Your completed steps are saved. Continue to finish this mix.`) : null,

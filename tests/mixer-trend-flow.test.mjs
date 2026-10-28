@@ -7,12 +7,13 @@ import * as helpers from '../web/js/mixer-trend-state.js';
 import * as voices from '../web/js/mixer-voices.js';
 import { completionFeed } from '../web/js/job-completion.js';
 
-async function harness({ missingControl = false, failCut = false, native = false, pro = false, loseSubmission = false, voicePass = false } = {}) {
+async function harness({ missingControl = false, failCut = false, native = false, distilled = false, pro = false, loseSubmission = false, voicePass = false } = {}) {
   const calls = { pictures: [], shoots: [], tracks: 0, mixes: 0, cuts: 0, native: [], timelines: [] };
   const state = { runs: [], image: { catalogue: { models: [{ id: 'gpt-image-2.5-flare' }] } } };
   const mixer = { busy: new Set(), mix: null };
   const recipe = JSON.parse(await readFile('web/brand/mixer/trends/documentary/recipe.json', 'utf8'));
   if (native) Object.assign(recipe, { engine: 'official-template', template: 'video_fastvideo_fasth3_i2v', settings: { width: 768, height: 1344 }, shots: [{ from: 0, to: 8, prompt: '{Lead} speaks an original line.', seed: 123 }] });
+  if (distilled) Object.assign(recipe, { engine: 'official-template', template: 'video_ltx2_5_i2v', settings: { width: 768, height: 1344, frame_rate: 24, prompt_enhance: false }, shots: [{ from: 0, to: 10, prompt: '{Lead} admits a small plant problem.', seed: 123 }] });
   if (pro) Object.assign(recipe, { engine: 'official-template', template: 'api_ltx2_5_i2v', model: 'LTX-2.5 Pro', settings: { resolution: '1080x1920' }, shots: [
     { from: 0, to: 10, prompt: '{Lead} speaks an original line.', seed: 123 },
     { from: 10, to: 20, prompt: '{Lead} reacts.', seed: 124 },
@@ -26,7 +27,7 @@ async function harness({ missingControl = false, failCut = false, native = false
     else if (url === 'api/audio/music') { calls.tracks++; body = { id: 'music' }; }
     else if (url === 'api/mixer/stars') body = JSON.parse(init.body);
     else if (url === 'api/cuts') { calls.timelines.push(JSON.parse(init.body).body); body = { project: { id: 'cut' } }; }
-    else if (url.endsWith('/video_fastvideo_fasth3_i2v/run') || url.endsWith('/api_ltx2_5_i2v/run')) {
+    else if (url.endsWith('/video_fastvideo_fasth3_i2v/run') || url.endsWith('/api_ltx2_5_i2v/run') || url.endsWith('/video_ltx2_5_i2v/run')) {
       calls.native.push(JSON.parse(init.body));
       if (loseSubmission) throw new Error('Connection interrupted');
       body = { id: 'native1', status: 'running', progress: .2 };
@@ -213,5 +214,26 @@ test('a photo remake with voice conversion mutes native speech and places conver
   assert.equal(tracks.find(t => t.role === 'voice').items[0].src.id, 'balanced.wav');
   assert.equal(tracks.find(t => t.role === 'effects').items[0].volume, 0.25);
   assert.equal(tracks.find(t => t.role === 'effects').items[0].src.id, 'room.mp3');
+  assert.ok(mixer.mix.body.film);
+});
+
+
+test('LTX Distilled recasts a photo with the open-weight template and retains native dialogue', async () => {
+  const { flow, calls, mixer } = await harness({ distilled: true });
+  await flow.addStar({ name: 'guest.png' });
+  await flow.makeTrend();
+  assert.equal(calls.native.length, 1);
+  const request = calls.native[0];
+  assert.equal(request.inputs.first_frame.file, 'cast.png');
+  assert.equal(request.inputs.width, 768);
+  assert.equal(request.inputs.height, 1344);
+  assert.equal(request.inputs.duration, 10);
+  assert.equal(request.inputs.frame_rate, 24);
+  assert.equal(request.inputs.prompt_enhance, false);
+  assert.equal(request.overrides, undefined);
+  assert.match(request.inputs.prompt, /guest, as in the first frame/);
+  assert.equal(calls.tracks, 0);
+  assert.equal(calls.timelines[0].tracks[0].items[0].sound, true);
+  assert.ok(!mixer.mix.body.shots[0].voicePass);
   assert.ok(mixer.mix.body.film);
 });

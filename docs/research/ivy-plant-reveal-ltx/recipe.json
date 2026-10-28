@@ -1,0 +1,70 @@
+{
+  "id": "my-reaction",
+  "engine": "official-template",
+  "template": "video_ltx2_5_i2v",
+  "about": "An original plant obsession reveal starring Ivy. No source recording.",
+  "source": {
+    "url": null,
+    "note": "Original Comfyture script and scene, 28 October 2026."
+  },
+  "seconds": 10,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 10,
+    "frame_rate": 24,
+    "prompt_enhance": false
+  },
+  "look": "look-v2.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Native LTX 2.5 dialogue and ambience. Character voice and emotional performance are directed in the generation prompt."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "ivy",
+      "look": "the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers"
+    }
+  ],
+  "beats": [
+    {
+      "from": 0,
+      "to": 3,
+      "text": "Lead admits: I might have a small plant problem."
+    },
+    {
+      "from": 3,
+      "to": 7,
+      "text": "Camera pulls back to reveal an apartment overflowing with plants."
+    },
+    {
+      "from": 7,
+      "to": 10,
+      "text": "Lead squeezes between the plants: There\u2019s still room."
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 10,
+      "frames": 240,
+      "seed": 281026104,
+      "prompt": "Use the provided image as the exact first frame. A single continuous ten-second shot of a tactile, beautifully animated 3D comedy. {Lead} holds a tiny terracotta plant in an apartment doorway. Keep the same character design, clothes, glasses and plant throughout. Soft diffuse daylight from a large window fills the entire apartment with neutral, natural color. Fixed exposure and white balance throughout the camera move; gentle shadow detail remains visible in both the doorway and the revealed room. No dramatic lighting change or harsh contrast as the shot widens.\nAt the beginning, she meets the camera with an embarrassed half smile, lifts her eyebrows, hesitates slightly, and says in a clear adult female conversational voice: \"I might have a small plant problem.\" Stress \"small\" with transparently guilty understatement. Her delivery is warm, intimate and amused, with natural breath and changing inflection, not a flat narration.\nAs she finishes the first line, the camera smoothly dollies backward and slightly sideways through the open doorway, revealing a living room hilariously overfilled with stationary plants. Plants cover the sofa and dining table; terracotta pots line the floor; hanging vines crowd the hall. All plants already exist in the room and are revealed by the camera movement. Keep her visible as the frame widens. She makes one careful small sidestep around a pot, hugs her tiny plant protectively, spots an absurdly small empty corner, then looks back at camera with stubborn pride.\nIn the final three seconds she says, with a tiny thoughtful pause after the first word and a rising defensive smile: \"There's still room.\" End on her delighted, self-satisfied expression. Only these two lines are spoken, with accurate lip sync. Dialogue stays close, clear and prominent even when the camera moves away. Very quiet room tone and a faint leaf rustle beneath the voice. The small sidestep is nearly silent; no prominent footsteps or impacts. No music, narrator, additional voices, captions, logos or cuts."
+    }
+  ],
+  "revision": 3,
+  "name": "Tell Me Without Telling Me",
+  "model": "LTX 2.5 Distilled",
+  "billing": "gpu",
+  "coverAt": 7.2,
+  "imageModel": "Existing Codex imagegen reference reused; no new image generation",
+  "billingEstimate": {
+    "creditsPerExecutionSecond": 0.266,
+    "source": "https://support.comfy.org/articles/5846341390-how-credits-work-in-comfy",
+    "note": "Approximate GPU cost from measured workflow execution time; actual billable GPU seconds may differ. Existing reference reused; no paid voice conversion."
+  }
+}

@@ -15,7 +15,7 @@ export function canResumeTrend(mix, id, roles, revision = 1) {
 export function validateRecipe(recipe, files) {
   if (!recipe?.shots?.length) throw new Error("This trend has no shots to generate.");
   if (recipe.engine === "official-template") {
-    if (!["video_fastvideo_fasth3_i2v", "api_ltx2_5_i2v"].includes(recipe.template) || !recipe.look)
+    if (!["video_fastvideo_fasth3_i2v", "video_ltx2_5_i2v", "api_ltx2_5_i2v"].includes(recipe.template) || !recipe.look)
       throw new Error("This trend's video recipe is incomplete.");
     for (const shot of recipe.shots) {
       const duration = shot.to - shot.from;
