@@ -138,7 +138,7 @@ function recipe(t) {
           h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "Add your photo or choose a character, then review your generation.")),
           h("div.mx-roles", {}, ...cast.map((c) => role(c)))),
         madeWith({ music: t.engine !== "official-template", native: t.engine === "official-template", model: t.model, billing: t.billing, voice: voiceReferenceFor(t, cast), guided: isProblemReveal(t) })),
-      isProblemReveal(t) && shownFrames ? h("div.mx-reference-guides", {}, h("span.label", {}, ownFrames ? "Your reference frames" : `Example frames · ${t.customization.defaultProblem}`), h("div.mx-reference-pair", {},
+      isProblemReveal(t) && shownFrames ? h("div.mx-reference-guides" + (ownFrames ? ".is-personal" : ""), {}, h("span.label", {}, ownFrames ? "Your reference frames" : `Example frames · ${t.customization.defaultProblem}`), h("div.mx-reference-pair", {},
         ...[['close', 'Start frame'], ['wide', 'End frame']].map(([key, label]) => {
           const photo = shownFrames[key]?.photo;
           return h("figure", {}, photo ? h("button", { type: 'button', title: `View ${label.toLowerCase()}`, on: { click: () => view(photo.url) } }, h("img", { src: photo.url, alt: label })) : h("span", {}, label + ' pending'), h("figcaption", {}, label));

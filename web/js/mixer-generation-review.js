@@ -6,8 +6,35 @@ import { pick, castOf, castArtist, trendInputs, generationIdentity, reviewFrames
 import { isProblemReveal, cleanProblem, problemBeats, problemFramePrompt, problemVideoPrompt } from './mixer-problem-reveal.js';
 import { canResumeTrend } from './mixer-trend-state.js';
 import { castVoiceDirection } from './mixer-voices.js';
+import { currentPage } from './router.js';
 
+const credits = value => Number.isFinite(value) ? `≈ ${Number(value).toFixed(1).replace(/\.0$/, '')} cr` : 'Unavailable';
 let dialog;
+
+// An example is never labelled as the user's output. A recipe without an end anchor
+// gets an explicit empty slot rather than a fabricated finish image.
+function sequences(t, recipe, frames, saved, freshFrames) {
+  const dir = t.recipe?.replace(/recipe\.json$/, '') ?? '';
+  const shots = recipe?.shots ?? [{ from: 0, to: t.seconds }];
+  const refs = recipe?.render?.referenceFrames ?? t.render?.referenceFrames;
+  return h('section.mx-review-sequences', {},
+    h('div.mx-review-section-head', {}, h('h3', {}, 'Sequence frames'), h('span.label', {}, frames ? 'Your generated frames' : saved?.shots?.some(s => s.look) ? 'Saved frames & recipe guides' : 'Example · not your generated result')),
+    ...shots.map((shot, i) => {
+      const actual = frames ? { first: frames.close.photo, last: frames.wide.photo } : saved?.shots?.[i] ? { first: saved.shots[i].look, last: saved.shots[i].lastLook } : null;
+      const firstPath = isProblemReveal(t) ? refs?.close?.image : shot.look ?? recipe?.look;
+      const lastPath = isProblemReveal(t) ? refs?.wide?.image : shot.end ?? recipe?.lastLook;
+      return h('div.mx-review-sequence', {},
+        h('div.mx-review-sequence-label', {}, `Sequence ${i + 1}`, h('span', {}, `${shot.from}–${shot.to}s`)),
+        h('div.mx-review-frames', {}, ...[['first', 'Start frame', firstPath], ['last', 'End frame', lastPath]].map(([key, label, path]) => {
+          const url = actual?.[key]?.url ?? (path ? dir + path : null);
+          return h('figure', {}, url ? h('a', { href: url, target: '_blank', rel: 'noopener', title: `Open ${label.toLowerCase()} full size` }, h('img', { src: url, alt: `${actual?.[key] ? 'Your' : 'Example'} ${label.toLowerCase()}` })) : h('div.mx-review-empty', {}, icon('image'), h('p', {}, key === 'last' ? 'No fixed end-frame guide in this recipe' : 'Created after you confirm')),
+            h('figcaption', {}, h('b', {}, label), h('span', {}, isProblemReveal(t) ? key === 'first' ? 'Close-up · collection hidden' : 'Wide shot · full collection revealed' : actual?.[key] ? 'Your generated frame' : 'Recipe reference')));
+        })),
+        isProblemReveal(t) ? h('p.mx-review-continuity', {}, icon('video'), 'One continuous zoom-out · same character, room and lighting') : null);
+    }),
+    !frames && isProblemReveal(t) ? h('p.mx-review-example-note', {}, freshFrames ? 'These example frames show the reveal structure. Regenerating creates a new performance with your selected character; your previous pair remains saved in My mixes.' : 'These example frames show the reveal structure. Your character and collection will be generated after confirmation, then both frames open here for review.') : null);
+}
+
 /** No generation or uploads happen until the explicit confirmation button is pressed. */
 export async function reviewGeneration({ freshFrames = false } = {}) {
   if (dialog || making()) return;
@@ -25,21 +52,26 @@ export async function reviewGeneration({ freshFrames = false } = {}) {
   const close = () => d.close();
   const opener = document.activeElement;
   const body = h('div.nk-dialog-body', {}, h('p', { role: 'status' }, 'Loading generation details…'));
-  const confirm = h('button.key.mx-review-confirm', { type: 'button', disabled: true, on: { click: () => {
+  const stagePrice = h('div.mx-review-stage-price', {});
+  const confirm = h('button.key.mx-review-confirm', { type: 'button', disabled: true, on: { click: async () => {
     if (identity !== generationIdentity() || making()) {
       close(); toast('Your selection changed. Open the generation summary again.', { tone: 'crit' }); return;
     }
     confirm.disabled = true;
     close();
-    if (video) void generateTrendVideo(identity);
-    else void makeTrend({ freshFrames });
+    if (video) await generateTrendVideo(identity);
+    else {
+      await makeTrend({ freshFrames });
+      // Bring the actual frames into view; never confirm or submit the video here.
+      if (reveal && currentPage() === 'mixer' && pick.trend === t.id && reviewFrames(t)) await reviewGeneration();
+    }
   } } }, action);
   const cancel = h('button.key', { type: 'button', on: { click: close } }, 'Cancel');
-  d.append(h('div.nk-dialog-head', {}, h('div', {}, h('span.label', {}, reveal ? video ? 'Step 2 of 2 · Animate' : 'Step 1 of 2 · Reference frames' : 'Generation review'),
-    h('h2.nk-dialog-title', { id: 'mx-review-title' }, action),
+  d.append(h('div.nk-dialog-head', {}, h('div', {}, h('span.label', {}, reveal ? video ? 'Step 2 of 2 · Review frames & animate' : 'Step 1 of 2 · Create your scene' : 'Generation review'),
+    h('h2.nk-dialog-title', { id: 'mx-review-title' }, video ? 'Review your sequence' : action),
     h('p.nk-dialog-desc', { id: 'mx-review-desc' }, t.name)),
     h('button.nk-dialog-close.key.is-icon', { type: 'button', 'aria-label': 'Close generation summary', on: { click: close } }, icon('close'))), body,
-    h('div.nk-dialog-actions', {}, cancel, confirm));
+    h('div.nk-dialog-actions', {}, stagePrice, video && !mixer.mix?.body?.shots?.some(s => s.native?.id || s.submissionPending) ? h('button.key', { type: 'button', on: { click: () => { d.addEventListener('close', () => { void reviewGeneration({ freshFrames: true }); }, { once: true }); close(); } } }, 'Regenerate frames') : null, cancel, confirm));
   d.addEventListener('close', () => { d.remove(); if (dialog === d) dialog = null; requestAnimationFrame(() => (opener?.isConnected ? opener : document.querySelector('#page-mixer .mx-recipe .mx-go'))?.focus()); }, { once: true });
   document.body.append(d); d.showModal(); cancel.focus();
   try {
@@ -51,30 +83,32 @@ export async function reviewGeneration({ freshFrames = false } = {}) {
     const existingVideo = video && saved?.shots?.some(s => s.native?.id && !['failed', 'canceled'].includes(s.native.status));
     const existingImage = !video && saved?.revealFrames?.wide?.job;
     const imagePrice = state.image.catalogue?.models?.find(m => m.id === 'gpt-image-2.5-flare')?.credits ?? t.render?.estimatedImageCredits;
-    const amount = reveal ? video ? existingVideo ? 0 : t.render?.estimatedVideoCredits : existingImage ? 0 : imagePrice : estimate(t);
+    const videoPrice = t.render?.estimatedVideoCredits;
+    const fullPrice = Number.isFinite(imagePrice) && Number.isFinite(videoPrice) ? imagePrice + videoPrice : null;
+    const amount = reveal ? video ? existingVideo ? 0 : videoPrice : existingImage ? 0 : imagePrice : estimate(t);
     const row = (label, value) => h('div.mx-review-row', {}, h('dt', {}, label), h('dd', {}, value));
     const beats = reveal ? problemBeats(problem) : t.beats;
     const resolution = settings.width && settings.height ? `${settings.width} × ${settings.height}` : settings.resolution ?? 'Recipe default';
     const fps = settings.fram_rate ?? settings.frame_rate;
-    body.replaceChildren(...[
-      h('div.mx-review-cast', {}, ...cast.map(c => h('div', {}, h('img', { src: c.who.crew ? crewFace(c.who.crew) : c.who.star.url, alt: '' }),
-        h('span', {}, h('b', {}, c.who.crew ? crewById(c.who.crew).name : c.who.star.name ?? 'Your photo'), h('small', {}, c.role))))),
-      h('dl.mx-review-facts', {},
-        problem ? row('Collection', problem) : null,
-        row('This step', reveal ? video ? 'Animate your reviewed start and end frames' : 'One generated room + a matching opening crop' : 'Reference images, video and sound'),
-        row('Model', reveal && !video ? 'GPT Image 2.5 Flare' : recipe?.model ?? t.model ?? 'LTX 2.5'),
-        row(reveal && !video ? 'Images' : 'Output', reveal && !video ? '9:16 · 1 MP room · opening cropped from the same image' : `${recipe?.seconds ?? t.seconds} seconds · ${resolution}${fps ? ` · ${fps} fps` : ''}`),
-        !reveal ? row('Reference model', castArtist()) : null,
-        row('Sound', reveal ? 'Native LTX dialogue with character voice direction (video step)' : recipe?.sound?.note ?? 'Generated dialogue, music and effects')),
-      video ? h('div.mx-review-frames', {}, ...[['close', 'Start · hidden collection'], ['wide', 'End · full reveal']].map(([key, label]) =>
-        h('figure', {}, h('a', { href: frames[key].photo.url, target: '_blank', rel: 'noopener', title: 'Open full-size frame' }, h('img', { src: frames[key].photo.url, alt: label })), h('figcaption', {}, label)))) : null,
-      h('div.mx-review-script', {}, h('span.label', {}, 'Script'), ...beats.map(b => h('p', {}, h('b', {}, `${b.from}–${b.to}s `), b.text))),
-      reveal ? h('details.mx-review-prompt', {}, h('summary', {}, 'Full generation direction'), h('pre', {}, video ? problemVideoPrompt(problem) + '\n' + castVoiceDirection(cast) : problemFramePrompt(problem))) : null,
-      h('div.mx-review-price', {}, h('div', {}, h('span', {}, 'Estimated additional cost'), h('strong', {}, amount == null ? 'Unavailable' : `≈ ${Number(amount).toFixed(1).replace(/\.0$/, '')} cr`)),
-        h('p', {}, existingVideo || existingImage ? 'Resumes your saved job without submitting it again. Its original generation remains billable.' : reveal && !video ? 'One paid image; the opening crop is free. Video is billed separately after you review both frames.' : amount == null ? 'The provider has not supplied a reliable estimate. Confirming will start a paid generation.' : 'An estimate, not a fixed quote. GPU cost varies with execution time; actual billing is reported by Comfy Cloud.'),
-        reveal && !existingVideo && !existingImage ? h('p', {}, `Previous example: ≈ ${t.render?.estimatedImageCredits ?? '—'} cr for frames + ≈ ${t.render?.estimatedVideoCredits ?? '—'} cr for video. This is an estimate based on the saved preview, not a live quote.`) : null),
-      h('p.mx-review-next', {}, reveal ? video ? 'Confirm only when both frames look right. The video uses this exact pair.' : 'Generation stops at the frames. Inspect them, regenerate if needed, then confirm the video separately.' : 'Your finished video will appear in My mixes.')
-    ].filter(Boolean));
+    stagePrice.append(h('span', {}, reveal ? video ? 'Confirm video only' : 'Confirm frames only' : 'Confirm generation'), h('strong', {}, credits(amount)));
+    const price = h('section.mx-review-price', {}, h('h3', {}, 'Estimated cost'),
+      reveal ? h('dl', {}, row(video ? 'Frames · prepared' : 'Frames', credits(imagePrice)), row(video ? 'Video · next' : 'Video · later', credits(videoPrice)), h('div.mx-review-total', {}, h('dt', {}, 'Full sequence'), h('dd', {}, credits(fullPrice)))) : h('strong', {}, credits(amount)),
+      h('p', {}, existingVideo || existingImage ? 'Resumes the saved job without submitting it again. Its original generation remains billable.' : reveal && !video ? 'This confirmation pays for one image only. The opening crop is free. Video requires a separate confirmation.' : video ? 'Your frames are already prepared. This confirmation starts the video only.' : 'Confirming starts a paid generation.'),
+      h('p', {}, reveal ? 'Per-sequence estimates, excluding retries. Image price: catalogue estimate. Video price: saved preview’s GPU execution time, not a live quote. Actual billing may differ.' : 'Estimated cost may vary. When unavailable, no reliable quote was supplied.'));
+    body.replaceChildren(h('div.mx-review-layout', {},
+      h('div.mx-review-story', {}, sequences(t, recipe, frames, saved, freshFrames),
+        h('div.mx-review-script', {}, h('h3', {}, 'Performance'), ...beats.map(b => h('p', {}, h('b', {}, `${b.from}–${b.to}s `), b.text))),
+        reveal ? h('details.mx-review-prompt', {}, h('summary', {}, 'Full generation direction'), h('pre', {}, video ? problemVideoPrompt(problem) + '\n' + castVoiceDirection(cast) : problemFramePrompt(problem))) : null),
+      h('aside.mx-review-setup', {},
+        h('div.mx-review-cast', {}, ...cast.map(c => h('div', {}, h('img', { src: c.who.crew ? crewFace(c.who.crew) : c.who.star.url, alt: '' }),
+          h('span', {}, h('b', {}, c.who.crew ? crewById(c.who.crew).name : c.who.star.name ?? 'Your photo'), h('small', {}, `${c.role} · identity reference`))))),
+        price,
+        h('dl.mx-review-facts', {}, problem ? row('Collection', problem) : null,
+          row('Frames', reveal ? 'GPT Image 2.5 Flare · new scene + matching crop' : castArtist()),
+          row('Video', recipe?.model ?? t.model ?? 'LTX 2.5'),
+          row('Output', `${recipe?.seconds ?? t.seconds} seconds · ${resolution}${fps ? ` · ${fps} fps` : ''}`),
+          row('Sound', reveal ? 'Native dialogue · character-directed voice' : recipe?.sound?.note ?? 'Generated dialogue, music and effects')),
+        h('p.mx-review-next', {}, reveal ? video ? 'Check both frames before confirming. Open either image to inspect it full size.' : 'We create a fresh scene using your character’s identity. Review both generated frames before approving video.' : 'Your finished video will appear in My mixes.'))));
     confirm.disabled = false;
   } catch (e) { if (d.open) body.replaceChildren(h('p.mx-error', { role: 'alert' }, e.message)); }
 }
