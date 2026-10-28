@@ -2,6 +2,7 @@
 // Panels call actions and re-render when changed(scope) fires.
 
 import { api, subscribe, STATIC } from "./api.js";
+import { completionFeed } from "./job-completion.js";
 import { normalize } from "./photo.js";
 import { emptyShot, PANELS, finalPrompt } from "./script.js";
 import { view } from "./viewer.js";
@@ -171,16 +172,11 @@ state.selected = state.tabs.find((t) => t.id === state.tab).run ?? null;
 export const activeTab = () => state.tabs.find((t) => t.id === state.tab);
 
 /** Promises waiting on a job or a take to finish, fed by the live events. */
-const waiting = { job: new Map(), run: new Map() };
+const waiting = { job: completionFeed(), run: completionFeed() };
 /** Who follows a job's progress as it goes (a Utensils tool), by the job's id. */
 export const jobWatchers = new Map();
 export function waitFor(kind, id) {
-  return new Promise((ok, no) => waiting[kind].set(id, (x) => {
-    if (!["done", "failed", "canceled"].includes(x.status)) return;
-    waiting[kind].delete(id);
-    if (x.status === "done") ok(x);
-    else no(new Error(x.status === "canceled" ? "Canceled." : x.error ?? "That didn't work."));
-  }));
+  return waiting[kind].wait(id, kind === "run" ? state.runs.find((r) => r.id === id) : undefined);
 }
 
 const listeners = new Set();
@@ -251,7 +247,7 @@ export async function load() {
       if (i >= 0) state.runs[i] = run;
       else state.runs.unshift(run);
       if (["done", "failed", "canceled"].includes(run.status)) state.previews.delete(run.id);
-      waiting.run.get(run.id)?.(run);
+      waiting.run.publish(run);
       changed("takes", "tabs", state.selected === run.id ? "monitor" : "none");
     },
     removed(id) {
@@ -267,13 +263,14 @@ export async function load() {
     },
     paint(job) {
       jobWatchers.get(job.id)?.(job);
-      waiting.job.get(job.id)?.(job);
+      waiting.job.publish(job);
       imageJob(job);
       const slot = Object.keys(state.jobs).find((k) => state.jobs[k].id === job.id);
       if (slot) jobDone(slot, job);
     },
     async resync() {
       state.runs = await api.runs();
+      state.runs.forEach((run) => waiting.run.publish(run));
       changed("takes");
     },
   });

@@ -1,3 +1,4 @@
+import { liveEvents } from "./live-events.js";
 // The live demo is the same app as static files: reads come from a snapshot (js/static-demo.js), and
 // anything that would render answers that rendering is off there.
 export const STATIC = document.documentElement.hasAttribute("data-static");
@@ -71,7 +72,7 @@ export const api = {
 export function subscribe(handlers) {
   let connected = false;
   if (STATIC) return;
-  const source = new EventSource("api/events");
+  const source = liveEvents("api/events");
   source.addEventListener("hello", () => {
     if (connected) handlers.resync();
     connected = true;

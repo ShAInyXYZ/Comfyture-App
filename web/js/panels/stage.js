@@ -1,3 +1,4 @@
+import { liveEvents } from "../live-events.js";
 import { toast, useStageVideo, useStageRender, editStageRun, makeStageRef } from "../store.js";
 import { go } from "../router.js";
 import { setStage } from "../control/link.js";
@@ -23,7 +24,7 @@ const hold = (e) => {
 /** Listens for an outside agent; its first command mounts the Stage and is handed to it. */
 export function listenForAgents() {
   if (agents || mounting) return;
-  agents = new EventSource("api/control/events");
+  agents = liveEvents("api/control/events");
   agents.addEventListener("command", hold);
 }
 

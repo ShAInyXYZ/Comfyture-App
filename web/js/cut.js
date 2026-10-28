@@ -4,7 +4,7 @@
 // undo; a film is rendered on the server from the timeline into the Library.
 
 import { api } from "./api.js";
-import { state, changed, toast, rollAsTab, writer } from "./store.js";
+import { state, changed, toast, rollAsTab, writer, waitFor } from "./store.js";
 import { normalizeBody, snapCuts, lyricItems, resplit, shiftLine, retext, editWord, draft, uid } from "./edit.js";
 import { keyedSaver } from "./saving.js";
 import { beatTimes, newFx, FX_DEFAULTS, FX_KINDS } from "./fx.js";
@@ -854,15 +854,7 @@ export async function renderFilm() {
 
 // ---------------------------------------------------------------- AI: sounds, voices, lip sync, extend
 
-const waitJob = (id) => new Promise((ok, no) => {
-  const es = new EventSource("api/events");
-  es.addEventListener("paint", (e) => {
-    const j = JSON.parse(e.data);
-    if (j.id !== id || j.status === "running") return;
-    es.close();
-    j.status === "done" ? ok(j) : no(new Error(j.error ?? "That didn't work."));
-  });
-});
+const waitJob = (id) => waitFor("job", id);
 const waitRun = (id) => new Promise((ok, no) => {
   const check = () => {
     const r = state.runs.find((x) => x.id === id);

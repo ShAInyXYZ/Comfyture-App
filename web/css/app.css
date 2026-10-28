@@ -1484,7 +1484,7 @@ button.account:hover:not(:disabled), button.account[aria-expanded="true"] { back
 button.account:disabled { cursor: default; }
 .account .account-credits { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .account .account-run { color: var(--warn); }
-.account-pop { width: 21.25rem; gap: .125rem; padding: .5rem; overflow-y: auto; }
+.account-pop { z-index: 50; width: 21.25rem; gap: .125rem; padding: .5rem; overflow-y: auto; }
 .account-pop:focus { outline: none; }
 .account-sec { display: grid; gap: .375rem; padding: .625rem .5rem; }
 .account-sec + .account-sec { border-top: 1px solid var(--line); }

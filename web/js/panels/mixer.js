@@ -15,11 +15,13 @@ import { loraStack } from "../loras.js";
 import { TRENDS, CREW, KINDS, trendById, crewById, trendArt, crewFace } from "../mixer-trends.js";
 import { pick, castOf, selectTrend, setKind, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, makeTrend, making, takesOf, castArtist, estimate as trendCost } from "../mixer-trend.js";
 import { openPicker, pictureOf } from "../picker.js";
+import { canResumeTrend } from "../mixer-trend-state.js";
 
 /** Whoever is picked for a role: one of the crew plays it as themselves, anyone else as a star. */
 async function castChoice(role, choice) {
   try {
     if (choice.kind === "character" && choice.character.group === "crew") return setRole(role, { crew: choice.character.id });
+    if (choice.kind === "file") return await addStar(choice.file, role);
     const photo = await pictureOf(choice);
     // a picture of your own joins your stars; one of our cast plays without
     if (choice.kind === "character") return setRole(role, { star: { file: photo.file, url: photo.url, name: choice.character.name } });
@@ -79,7 +81,7 @@ function card(t) {
   const on = t.id === pick.trend && !remixing();
   const mk = making() && mixer.mix?.body?.trend?.id === t.id ? makeFeel(mixer.mix, t) : null;
   // a trend not made yet is shown at the end of the shelf and opens nothing
-  return h(`button.mx-card${on ? ".is-on" : ""}${t.soon ? ".is-soon" : ""}${mk ? ".is-making" : ""}`, { type: "button", disabled: !!t.soon, title: t.soon ? `${t.name}\nComing soon` : `${t.name}\n${KIND_NAME[t.kind]} · ${t.seconds} s`, on: { click: () => selectTrend(t.id) } },
+  return h(`button.mx-card${on ? ".is-on" : ""}${t.soon ? ".is-soon" : ""}${mk ? ".is-making" : ""}`, { type: "button", disabled: !!t.soon || making(), title: t.soon ? `${t.name}\nComing soon` : `${t.name}\n${KIND_NAME[t.kind]} · ${t.seconds} s`, on: { click: () => selectTrend(t.id) } },
     h("img", { src: trendArt(t), alt: "", draggable: false, loading: "lazy" }),
     h("span.mx-card-len", {}, t.soon ? "Soon" : `0:${pad2(Math.round(t.seconds))}`),
     t.soon ? h("span.mx-card-soon", {}, "Coming soon") : null,
@@ -101,6 +103,7 @@ function recipe(t) {
   const cast = castOf(t);
   const busy = making();
   const cost = trendCost(t);
+  const resume = canResumeTrend(m, t.id, pick.cast.roles);
   const head = [
     h("div.mx-recipe-title", {}, h("span.label", {}, "Trend recipe"), h("h2", {}, t.name), h("span.mx-recipe-meta", {}, `${t.seconds} s · ${KIND_NAME[t.kind]}${t.caption ? ` · “${t.caption}”` : ""}`)),
     h("div.mx-beats", {}, ...t.beats.map((b) => h("div.mx-beat", { style: { flexGrow: String(Math.max(0.6, b.to - b.from)) } }, h("i"), h("b", {}, span(b.from, b.to)), h("span", {}, b.text)))),
@@ -114,11 +117,12 @@ function recipe(t) {
       // who stars in it beside how it is made
       h("div.mx-lower", {},
         h("div.mx-cast-col", {},
-          h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "The crew by default. Swap them, or pick your own.")),
+          h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "Add your photo or choose a character, then Make it.")),
           h("div.mx-roles", {}, ...cast.map((c) => role(c)))),
         madeWith({ music: true })),
-      h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, a track of its own, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
-        sprite("product-mixer"), h("span", {}, busy ? (m ? makeFeel(m, t).word : "Making it") : m?.body.film ? "Make it again" : "Make it"), cost && !busy ? h("em", {}, `≈ ${cost} cr`) : null),
+      m?.body.error && resume && !busy ? h("p.mx-error", { role: "alert" }, `${m.body.error} Your completed steps are saved. Continue to finish this mix.`) : null,
+      h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy || stars.uploading > 0, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, a track of its own, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
+        sprite("product-mixer"), h("span", {}, busy ? (m ? makeFeel(m, t).word : "Making it") : stars.uploading ? "Adding your photo…" : resume ? "Continue" : m?.body.film ? "Make it again" : "Make it"), cost && !busy && !resume && !stars.uploading ? h("em", {}, `≈ ${cost} cr`) : null),
   ];
   return h("section.mx-work.mx-recipe", {}, preview(t, m), h("div.mx-recipe-body", {}, ...head, ...rest));
 }
@@ -175,7 +179,7 @@ function makeFeel(m, t) {
   const cut = m.body.film ? 1 : 0;
   const pct = Math.min(1, first * 0.08 + (rolledShare / n) * 0.84 + cut * 0.08);
   // (a recipe's track is made before its first frame is drawn, and before it has any shot: see recipeSound)
-  const word = !first ? (t.recipe && !shots.length ? "Making the track" : "Drawing the first frame") : cut ? "Done" : rolledShare >= n ? "Cutting it together" : n > 1 ? `Rolling take ${Math.min(n, Math.floor(rolledShare) + 1)} of ${n}` : "Rolling the take";
+  const word = m.body.progress ?? (!first ? (t.recipe && !shots.length ? "Making the track" : "Drawing the first frame") : cut ? "Done" : rolledShare >= n ? "Cutting it together" : n > 1 ? `Rolling take ${Math.min(n, Math.floor(rolledShare) + 1)} of ${n}` : "Rolling the take");
   return { pct, word };
 }
 const makingHud = (f) => h("div.mx-hud", { role: "status" },
@@ -185,10 +189,10 @@ const makingHud = (f) => h("div.mx-hud", { role: "status" },
 function role(c) {
   const on = pick.role === c.role;
   return h(`div.mx-role${on ? ".is-on" : ""}`, {},
-    h("button.mx-role-face", { type: "button", title: on ? "Pick someone at the side, or drop a photo here" : `Pick who plays the ${c.role.toLowerCase()}`, on: { click: () => pickRole(c.role) } }, h("img", { src: faceOf(c.who), alt: "", draggable: false })),
+    h("button.mx-role-face", { type: "button", disabled: making() || stars.uploading > 0, title: on ? "Pick someone at the side, or drop a photo here" : `Pick who plays the ${c.role.toLowerCase()}`, on: { click: () => pickRole(c.role) } }, h("img", { src: faceOf(c.who), alt: "", draggable: false })),
     h("span.mx-role-text", {}, h("span.label", {}, c.role), h("b", {}, nameOf(c.who)), h("em", {}, c.who.crew ? crewById(c.who.crew).role : "Your star")),
-    h("button.mx-role-swap", { type: "button", title: "Another of the crew", "aria-label": "Another of the crew", on: { click: () => swapRole(c.role) } }, sprite("cast-swap")),
-    h("button.mx-role-drop", { type: "button", title: "Someone else plays this role: one of our characters, a star of yours, a picture from the Library or your computer", on: { click: (e) => openPicker(e.currentTarget, { title: `Who plays the ${c.role.toLowerCase()}`, stars: stars.list, onPick: (choice) => castChoice(c.role, choice) }), dragover: (e) => e.preventDefault(), drop: (e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith("image/")) addStar(f, c.role); } } }, icon("plus"), h("span", {}, "Pick")));
+    h("button.mx-role-swap", { type: "button", disabled: making() || stars.uploading > 0, title: "Another of the crew", "aria-label": "Another of the crew", on: { click: () => swapRole(c.role) } }, sprite("cast-swap")),
+    h("button.mx-role-drop", { type: "button", disabled: making() || stars.uploading > 0, title: "Someone else plays this role: one of our characters, a star of yours, a picture from the Library or your computer", on: { click: (e) => openPicker(e.currentTarget, { title: `Who plays the ${c.role.toLowerCase()}`, stars: stars.list, onPick: (choice) => castChoice(c.role, choice) }), dragover: (e) => e.preventDefault(), drop: (e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith("image/")) addStar(f, c.role); } } }, icon("plus"), h("span", {}, "Add photo")));
 }
 
 /** How far making the open trend has come: its first frame, its takes, its track, the cut. */
@@ -375,16 +379,16 @@ function aside() {
     h("section.mx-panel", {},
       h("div.mx-head", {}, h("span.card-label", {}, "The crew")),
       h("div.mx-crew", {}, ...CREW.map((c) =>
-        h("button.mx-crew-cat", { type: "button", title: `${c.name}, ${c.look}\n${pick.role ? `Plays the ${pick.role.toLowerCase()}` : "Click to cast"}`, on: { click: () => !remixing() && setRole(firstRole(), { crew: c.id }) } },
+        h("button.mx-crew-cat", { type: "button", disabled: making() || stars.uploading > 0, title: `${c.name}, ${c.look}\n${pick.role ? `Plays the ${pick.role.toLowerCase()}` : "Click to cast"}`, on: { click: () => !remixing() && setRole(firstRole(), { crew: c.id }) } },
           h("img", { src: crewFace(c.id), alt: "", draggable: false }), h("b", {}, c.name), h("em", {}, c.role))))),
     h("section.mx-panel", {},
       h("div.mx-head", {}, h("span.card-label", {}, "Your stars")),
       h("div.mx-stars", {},
         ...stars.list.map((s) => h("div.mx-star", {},
-          h("button.mx-star-pic", { type: "button", title: `${s.name}\n${pick.role ? `Plays the ${pick.role.toLowerCase()}` : "Click to cast"}`, on: { click: () => !remixing() && setRole(firstRole(), { star: s }) } }, h("img", { src: s.url, alt: "", draggable: false })),
+          h("button.mx-star-pic", { type: "button", disabled: making() || stars.uploading > 0, title: `${s.name}\n${pick.role ? `Plays the ${pick.role.toLowerCase()}` : "Click to cast"}`, on: { click: () => !remixing() && setRole(firstRole(), { star: s }) } }, h("img", { src: s.url, alt: "", draggable: false })),
           h("span", {}, s.name),
           h("button.mx-star-x", { type: "button", title: "Take it off", "aria-label": "Take it off", on: { click: () => removeStar(s.file) } }, icon("close")))),
-        h("button.mx-star.is-add", { type: "button", title: "Stars to cast: from the Library, our characters or your computer", on: { click: (e) => openPicker(e.currentTarget, { title: "Add your stars", multiple: true, onPick: async (choice) => { try { await addStar(await pictureOf(choice), null); } catch (err) { toast(err.message, { tone: "crit" }); } } }) } }, icon("plus"), h("span", {}, "Add")))),
+        h("button.mx-star.is-add", { type: "button", disabled: making() || stars.uploading > 0, title: "Add a photo to the selected role", on: { click: (e) => openPicker(e.currentTarget, { title: "Add your photo", onPick: (choice) => castChoice(firstRole(), choice) }) } }, icon("plus"), h("span", {}, "Add")))),
     h("section.mx-panel", {},
       h("div.mx-head", {}, h("span.card-label", {}, "My mixes"), h("span.mx-count", {}, mixer.list.length ? String(mixer.list.length) : "")),
       mixer.list.length

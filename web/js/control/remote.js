@@ -1,3 +1,4 @@
+import { liveEvents } from "../live-events.js";
 // The stage, driven by words: the commands the assistant and outside agents send.
 // Each one runs as one step of history and answers with what it did. Units are
 // metres and degrees; Y is up, X is screen right and Z points at the default
@@ -1080,7 +1081,7 @@ export function controlOps(stage) {
  * opened at the start, when the Stage was not there yet) and `early` the commands that came before the Stage was up;
  * `ready` says when the stage that was open last is open, which they work on.
  */
-export function connectRemote(stage, { onActivity, events = new EventSource("api/control/events"), early = [], ready = () => null } = {}) {
+export function connectRemote(stage, { onActivity, events = liveEvents("api/control/events"), early = [], ready = () => null } = {}) {
   const { ops: OPS, quiet: QUIET } = controlOps(stage);
 
   const answer = (body) => fetch("api/control/reply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
