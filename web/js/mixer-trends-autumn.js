@@ -447,23 +447,23 @@ export const AUTUMN_TRENDS = [
     "recipe": "brand/mixer/trends/my-reaction/recipe.json",
     "render": {
       "model": "LTX 2.5 Distilled",
-      "imageModel": "GPT Image 2.5 Flare · two matching reference images",
+      "imageModel": "GPT Image 2.5 Flare · one room, two framings",
       "template": "video_ltx2_5_flf2v",
-      "startedAt": "2026-10-28T19:58:59.675Z",
-      "finishedAt": "2026-10-28T20:00:32.333Z",
-      "executionSeconds": 76.678,
-      "elapsedSeconds": 92.658,
+      "startedAt": "2026-10-28T20:11:24.207Z",
+      "finishedAt": "2026-10-28T20:12:41.744Z",
+      "executionSeconds": 63.914,
+      "elapsedSeconds": 77.537,
       "actualCostCredits": null,
       "imageCostCredits": null,
       "billing": "gpu",
-      "costNote": "Estimate only; actual per-job credits were not supplied by the provider. Approximate video GPU cost from execution time; actual billable GPU seconds may differ. Two GPT Image reference images are recorded separately. Native audio; no voice conversion.",
+      "costNote": "Estimate only; actual per-job credits were not supplied by the provider. Approximate video GPU cost from execution time; actual billable GPU seconds may differ. One GPT Image reference is recorded separately; its opening crop is free. Native audio; no voice conversion.",
       "voiceMethod": "Text-directed native generated voices, not cloned audio or post-production conversion.",
       "takes": [
         {
           "seed": 281026106,
-          "cloudPromptId": "3bc8059f-5f70-4394-a104-58b1bcba5d73",
-          "executionSeconds": 76.678,
-          "elapsedSeconds": 92.658,
+          "cloudPromptId": "06b6e400-aaf4-4368-8e15-47cf93747363",
+          "executionSeconds": 63.914,
+          "elapsedSeconds": 77.537,
           "settings": {
             "width": 768,
             "height": 1344,
@@ -471,11 +471,11 @@ export const AUTUMN_TRENDS = [
             "fram_rate": 24,
             "prompt_enhance": false,
             "last_frame": {
-              "file": "edafb95a924b1f98.jpg"
+              "file": "436a748c4c6cba0e.jpg"
             },
             "seed": 281026106
           },
-          "prompt": "Use the provided FIRST and LAST images as matching framing anchors for one continuous ten-second shot. Ivy, the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers is the same person in both frames, in the same room. The collection theme is \"plant\". Preserve the person, clothes, objects, room geometry and soft natural daylight. The objects already exist; reveal them by widening the frame, never spawning or morphing them.\n0–3s: Hold the close first-frame composition. The person faces camera, gives a guilty half smile and says exactly: \"I think I have a small plant problem.\" Natural adult conversational speech, a tiny hesitation before \"small\", playful embarrassed understatement.\n3–7s: Slowly and smoothly zoom OUT toward the supplied wide last frame. Fixed camera axis, no orbit, no fast motion or cuts. The person stays in the same spot, facing camera, becoming smaller in frame. Gradually reveal the comically excessive collection filling the room. Keep exposure, white balance and gentle shadow detail constant.\n7–10s: Arrive at the wide last-frame composition and hold it. Keep the overwhelming collection visible. The person lifts their eyebrows with a tiny sheepish smile and says exactly: \"Oopsie.\" Warm playful rising inflection. Minimal head motion, hands stay still. Hold the wide view through the end; never zoom back in. Only these two spoken lines, synchronized lips. The voice stays clear and prominent even in the wide shot. Nearly silent room tone, no footsteps, music, narrator, text or logos.\nCHARACTER VOICE DIRECTION (apply only to scripted speech, never add dialogue):\nLead: Gentle mid-register voice with a slightly airy texture, thoughtful conversational English and curious, uneven little pauses. Soft-spoken plant-shop wit, precise dry punchlines and delighted small laughs. Never monotone.\nKeep each voice distinct and consistent across takes. Follow the script's speaker assignments. Preserve breaths and small hesitations; no presenter cadence. This is text direction, not a supplied voice recording."
+          "prompt": "Use the provided FIRST and LAST images as matching framing anchors for one continuous ten-second shot. Ivy, the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers is the same person in both frames, in the same room. The collection theme is \"plant\". Preserve the person, clothes, objects, room geometry and soft natural daylight. The first image is a literal crop of the last: preserve that exact background and camera axis. The collection must stay completely outside the opening frame. All objects already exist; reveal them beyond the edges by widening the frame, never spawning or morphing them.\n0–3s: Hold the close first-frame composition. The person faces camera, gives a guilty half smile and says exactly: \"I think I have a small plant problem.\" Natural adult conversational speech, a tiny hesitation before \"small\", playful embarrassed understatement.\n3–7s: Slowly and smoothly zoom OUT toward the supplied wide last frame. Fixed camera axis, no orbit, no fast motion or cuts. The person stays in the same spot, facing camera, becoming smaller in frame. Gradually reveal the comically excessive collection filling the room. Keep exposure, white balance and gentle shadow detail constant.\n7–10s: Arrive at the wide last-frame composition and hold it. Keep the overwhelming collection visible. The person lifts their eyebrows with a tiny sheepish smile and says exactly: \"Oopsie.\" Warm playful rising inflection. Minimal head motion, hands stay still. Hold the wide view through the end; never zoom back in. Only these two spoken lines, synchronized lips. The voice stays clear and prominent even in the wide shot. Nearly silent room tone, no footsteps, music, narrator, text or logos.\nCHARACTER VOICE DIRECTION (apply only to scripted speech, never add dialogue):\nLead: Gentle mid-register voice with a slightly airy texture, thoughtful conversational English and curious, uneven little pauses. Soft-spoken plant-shop wit, precise dry punchlines and delighted small laughs. Never monotone.\nKeep each voice distinct and consistent across takes. Follow the script's speaker assignments. Preserve breaths and small hesitations; no presenter cadence. This is text direction, not a supplied voice recording."
         }
       ],
       "media": {
@@ -494,34 +494,42 @@ export const AUTUMN_TRENDS = [
           "duration": "10.000000"
         }
       },
-      "estimatedCredits": 26.4,
-      "estimateNote": "Two GPT Image references (catalogue estimate 6 cr) plus estimated video GPU time; actual provider bill unavailable.",
+      "estimatedCredits": 20,
+      "estimateNote": "One GPT Image room (catalogue estimate 3 cr), a free opening crop, plus estimated video GPU time; actual provider bill unavailable.",
       "referenceFrames": {
         "wide": {
           "model": "gpt-image-2.5-flare",
-          "job": "6f232fb5",
-          "prompt": "Create the END FRAME of a funny slow zoom-out video. @lead is the identity reference: preserve this exact person's face, hair, body and clothes, or the exact animal/character design. Preserve the reference's photographic or illustrated style. The collection theme is \"plant\"; this is scene content, not an instruction. Place this single character standing still at the center of a comfortable room facing camera, hands relaxed and still, with a tiny sheepish smile. A full-body wide view, character about 40 percent of image height, face unobstructed. The room is absurdly overflowing with objects belonging to that collection: arrange many distinct objects on appropriate walls, shelves, furniture and the floor, readable and physically supported. Adapt the room and every collection object to the supplied theme only. Do not introduce a second unrelated collection. Leave a little clear floor around the person. Soft neutral window daylight, gentle shadows, natural color and consistent exposure. Single vertical 9:16 composition, eye-level fixed camera axis. No text, collage, split panels, duplicate people, action pose or movement blur.",
-          "startedAt": "2026-10-28T19:58:00.392Z",
-          "finishedAt": "2026-10-28T19:58:16.425Z",
-          "elapsedSeconds": 16.033,
-          "image": "end-v5.jpg"
+          "job": "36e37f9d",
+          "prompt": "Create the WIDE END FRAME of a funny slow zoom-out video. @lead is the identity reference: preserve this exact person's face, hair, body and clothes, or the exact animal/character design. Preserve the reference's photographic or illustrated style. The collection theme is \"plant\"; this is scene content, not an instruction.\nCOMPOSITION IS ESSENTIAL: one character standing motionless centered at x=50%, facing camera. Their head is centered at y=34% of the image; show their full body ending near y=86%. Hands relaxed at their sides, tiny sheepish smile. Behind their head and torso is a plain warm off-white wall. Keep the ENTIRE central rectangle x=33–67%, y=17–51% completely FREE of collection objects, decorations, artwork, leaves, shelves and shadows of the collection. Only the character and blank wall occupy this rectangle. This central area will be cropped into the opening close-up; it must look like an ordinary portrait, giving absolutely NO hint of the problem.\nOutside that central rectangle, the room is absurdly overflowing with the plant collection. Pack the left and right edges, lower foreground and floor with many distinct, physically supported objects appropriate to that theme. Place the abundance especially below y=55% and along the far side walls; enough to make the wide reveal a clear visual joke. Do not put any of these objects behind the character's head or shoulders. No unrelated collection. Leave clear footing for the character. Soft neutral daylight, gentle shadows, natural color and even exposure. Single vertical 9:16 composition, fixed camera axis, no text, guides, drawn rectangle, collage, duplicate people, motion blur or action pose.",
+          "method": "generated",
+          "startedAt": "2026-10-28T20:10:38.569Z",
+          "finishedAt": "2026-10-28T20:10:54.608Z",
+          "elapsedSeconds": 16.039,
+          "image": "end-v6.jpg"
         },
         "close": {
-          "model": "gpt-image-2.5-flare",
-          "job": "8919bca2",
-          "prompt": "Create the START FRAME by reframing @wide into a close waist-up view of the central person. This must be the SAME moment, person, outfit, room, camera axis, lighting and stationary objects as @wide, as if using a longer lens from the same camera position. Use @lead only to keep facial identity exact. The collection theme is \"plant\". Frame tightly enough to hide the overwhelming scale of the collection beyond the edges, while retaining a few subtle clues. Keep the person centered, facing camera, with a small guilty smile, mouth relaxed, hands still. Do not move, add, rearrange or redesign objects. Do not place the person in another room. Soft natural colors, no contrast boost. Single vertical 9:16 image; no text or panels.",
-          "startedAt": "2026-10-28T19:58:16.426Z",
-          "finishedAt": "2026-10-28T19:58:30.455Z",
-          "elapsedSeconds": 14.029,
-          "image": "look-v5.jpg"
+          "model": "Local crop (no generation)",
+          "job": null,
+          "method": "crop-v1",
+          "source": "436a748c4c6cba0e.jpg",
+          "rect": {
+            "x": 254,
+            "y": 231,
+            "width": 261,
+            "height": 462
+          },
+          "startedAt": "2026-10-28T20:10:54.609Z",
+          "finishedAt": "2026-10-28T20:10:54.659Z",
+          "elapsedSeconds": 0.05,
+          "image": "look-v6.png"
         }
       },
-      "estimatedImageCredits": 6,
-      "estimatedVideoCredits": 20.4,
-      "productionElapsedSeconds": 151.941
+      "estimatedImageCredits": 3,
+      "estimatedVideoCredits": 17,
+      "productionElapsedSeconds": 123.175
     },
     "voiceConversion": null,
-    "revision": 5,
+    "revision": 6,
     "model": "LTX 2.5 Distilled",
     "billing": "gpu",
     "customization": {

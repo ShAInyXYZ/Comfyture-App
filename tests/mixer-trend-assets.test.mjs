@@ -47,7 +47,7 @@ test('the plant reveal uses non-Pro LTX with native speech and accurate generati
   const t = AUTUMN_TRENDS.find(t => t.id === 'my-reaction');
   assert.equal(t.name, 'Tell Me Without Telling Me');
   const r = JSON.parse(await readFile('web/' + t.recipe, 'utf8'));
-  assert.equal(r.revision, 5);
+  assert.equal(r.revision, 6);
   assert.equal(r.seconds, 10);
   assert.equal(r.template, 'video_ltx2_5_flf2v');
   assert.equal(r.customization.kind, 'problem-reveal');
@@ -58,7 +58,7 @@ test('the plant reveal uses non-Pro LTX with native speech and accurate generati
   assert.equal(r.render.postProduction, undefined);
   assert.ok(r.render.estimatedCredits > 0);
   assert.match(r.render.estimateNote, /actual provider bill unavailable/);
-  assert.equal(r.render.estimatedImageCredits, 6);
+  assert.equal(r.render.estimatedImageCredits, 3);
   assert.equal(r.render.takes[0].settings.width, 768);
   assert.equal(r.render.takes[0].settings.height, 1344);
 });

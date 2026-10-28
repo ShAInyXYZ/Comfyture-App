@@ -9,7 +9,7 @@ import * as problemReveal from '../web/js/mixer-problem-reveal.js';
 import { completionFeed } from '../web/js/job-completion.js';
 
 async function harness({ missingControl = false, failCut = false, native = false, distilled = false, reveal = false, pro = false, loseSubmission = false, voicePass = false } = {}) {
-  const calls = { pictures: [], shoots: [], tracks: 0, mixes: 0, cuts: 0, native: [], timelines: [] };
+  const calls = { crops: [], pictures: [], shoots: [], tracks: 0, mixes: 0, cuts: 0, native: [], timelines: [] };
   const state = { runs: [], image: { catalogue: { models: [{ id: 'gpt-image-2.5-flare' }] } } };
   const mixer = { busy: new Set(), mix: null };
   const recipe = JSON.parse(await readFile('web/brand/mixer/trends/documentary/recipe.json', 'utf8'));
@@ -29,6 +29,7 @@ async function harness({ missingControl = false, failCut = false, native = false
     else if (url === 'api/audio/music') { calls.tracks++; body = { id: 'music' }; }
     else if (url === 'api/mixer/stars') body = JSON.parse(init.body);
     else if (url === 'api/cuts') { calls.timelines.push(JSON.parse(init.body).body); body = { project: { id: 'cut' } }; }
+    else if (url === 'api/mixer/reveal-frame') { calls.crops.push(JSON.parse(init.body)); body = { photo: { file: 'crop.png', url: '/media/photos/crop.png' } }; }
     else if (url === 'api/image') { calls.pictures.push(JSON.parse(init.body)); body = [{ id: `image${calls.pictures.length}`, status: 'running' }]; }
     else if (url.startsWith('api/image/jobs/')) { const id = url.split('/').at(-1); body = { id, status: 'done', photo: { file: `${id}.png`, url: `/media/photos/${id}.png` } }; }
     else if (url.endsWith('/video_ltx2_5_flf2v/run') || url.endsWith('/video_fastvideo_fasth3_i2v/run') || url.endsWith('/api_ltx2_5_i2v/run') || url.endsWith('/video_ltx2_5_i2v/run')) {
@@ -248,13 +249,13 @@ test('a personal problem creates a wide GPT reference, matching close-up, and se
   flow.setProblem('guitar');
   await flow.addStar({ name: 'me.png' });
   await flow.makeTrend();
-  assert.equal(calls.pictures.length, 2);
+  assert.equal(calls.pictures.length, 1);
   assert.ok(calls.pictures.every(p => p.model === 'gpt-image-2.5-flare'));
   assert.equal(calls.pictures[0].refs[0].file, 'my-photo.png');
   assert.match(calls.pictures[0].prompt, /theme is "guitar"/);
-  assert.equal(calls.pictures[1].refs[0].file, 'image1.png');
-  assert.equal(calls.pictures[1].refs[1].file, 'my-photo.png');
-  assert.equal(calls.native[0].inputs.first_frame.file, 'image2.png');
+  assert.equal(calls.crops.length, 1);
+  assert.equal(calls.crops[0].file, 'image1.png');
+  assert.equal(calls.native[0].inputs.first_frame.file, 'crop.png');
   assert.equal(calls.native[0].inputs.last_frame.file, 'image1.png');
   assert.match(calls.native[0].inputs.prompt, /I think I have a small guitar problem/);
   assert.match(calls.native[0].inputs.prompt, /Oopsie/);
@@ -268,12 +269,12 @@ test('retrying a guided cut reuses both images and video; changing the problem c
   await flow.makeTrend();
   assert.equal(mixer.mix.body.error, 'Render interrupted');
   await flow.makeTrend();
-  assert.equal(calls.pictures.length, 2);
+  assert.equal(calls.pictures.length, 1);
   assert.equal(calls.native.length, 1);
   flow.setProblem('sneaker');
   await flow.makeTrend();
   assert.equal(calls.mixes, 2);
-  assert.equal(calls.pictures.length, 4);
+  assert.equal(calls.pictures.length, 2);
   assert.equal(calls.native.length, 2);
   assert.match(calls.native[1].inputs.prompt, /small sneaker problem/);
 });

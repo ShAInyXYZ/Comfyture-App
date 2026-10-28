@@ -1,4 +1,4 @@
-// Make the two GPT reference frames through the app; retain accepted job IDs before waiting.
+// Generate a wide reveal and derive its opening crop; retain accepted job IDs before waiting.
 import { readFile, mkdir, copyFile } from 'node:fs/promises';
 import { writeFileSync } from 'node:fs';
 import { prepareProblemFrames, cleanProblem } from '../web/js/mixer-problem-reveal.js';
@@ -17,6 +17,7 @@ const call = async (url, init) => {
 const crew = recipe.roles[0].crew;
 const lead = await call(`api/photos?name=${encodeURIComponent(crew + ' identity')}`, { method: 'POST', headers: { 'Content-Type': 'image/png' }, body: await readFile(`web/brand/mixer/crew/${crew}.png`) });
 const pair = await prepareProblemFrames(cleanProblem(recipe.customization.defaultProblem), lead, frames, {
+  crop: photo => call('api/mixer/reveal-frame', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: photo.file }) }),
   submit: body => call('api/image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
   wait: async id => {
     let job;

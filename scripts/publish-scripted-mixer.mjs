@@ -46,14 +46,15 @@ if (!post && recipe.billing === 'gpu' && recipe.billingEstimate?.creditsPerExecu
 }
 if (referenceFrames) {
   recipe.render.referenceFrames = Object.fromEntries(Object.entries(referenceFrames).map(([key, frame]) => [key, {
-    model: frame.request.model, job: frame.job, prompt: frame.request.prompt,
+    model: frame.request?.model ?? "Local crop (no generation)", job: frame.job ?? null, prompt: frame.request?.prompt,
+    method: frame.method ?? "generated", source: frame.source, rect: frame.rect,
     startedAt: frame.startedAt, finishedAt: frame.finishedAt, elapsedSeconds: frame.elapsedSeconds,
     image: key === 'wide' ? recipe.lastLook : recipe.look,
   }]));
-  recipe.render.estimatedImageCredits = 6; // Two GPT Image 2.5 Flare images at the app catalogue's 3 cr/image.
+  recipe.render.estimatedImageCredits = Object.values(referenceFrames).filter(f => f.request?.model === "gpt-image-2.5-flare").length * 3; // Catalogue estimate; local crops have no provider charge.
   recipe.render.estimatedVideoCredits = recipe.render.estimatedCredits;
-  recipe.render.estimatedCredits = recipe.render.estimatedVideoCredits == null ? null : Math.round((recipe.render.estimatedVideoCredits + 6) * 100) / 100;
-  recipe.render.estimateNote = 'Two GPT Image references (catalogue estimate 6 cr) plus estimated video GPU time; actual provider bill unavailable.';
+  recipe.render.estimatedCredits = recipe.render.estimatedVideoCredits == null ? null : Math.round((recipe.render.estimatedVideoCredits + recipe.render.estimatedImageCredits) * 100) / 100;
+  recipe.render.estimateNote = 'One GPT Image room (catalogue estimate 3 cr), a free opening crop, plus estimated video GPU time; actual provider bill unavailable.';
   recipe.render.productionElapsedSeconds = (Date.parse(receipts.at(-1).finishedAt) - Date.parse(referenceFrames.wide.startedAt)) / 1000;
 }
 await copyFile(`${out}/preview.mp4`, `${dir}/preview.mp4`);

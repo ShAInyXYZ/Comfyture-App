@@ -1,0 +1,122 @@
+{
+  "render": {
+    "model": "LTX 2.5 Distilled",
+    "imageModel": "GPT Image 2.5 Flare \u00b7 one room, two framings",
+    "template": "video_ltx2_5_flf2v",
+    "startedAt": "2026-10-28T20:11:24.207Z",
+    "finishedAt": "2026-10-28T20:12:41.744Z",
+    "executionSeconds": 63.914,
+    "elapsedSeconds": 77.537,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "billing": "gpu",
+    "costNote": "Estimate only; actual per-job credits were not supplied by the provider. Approximate video GPU cost from execution time; actual billable GPU seconds may differ. One GPT Image reference is recorded separately; its opening crop is free. Native audio; no voice conversion.",
+    "voiceMethod": "Text-directed native generated voices, not cloned audio or post-production conversion.",
+    "takes": [
+      {
+        "seed": 281026106,
+        "cloudPromptId": "06b6e400-aaf4-4368-8e15-47cf93747363",
+        "executionSeconds": 63.914,
+        "elapsedSeconds": 77.537,
+        "settings": {
+          "width": 768,
+          "height": 1344,
+          "duration": 10,
+          "fram_rate": 24,
+          "prompt_enhance": false,
+          "last_frame": {
+            "file": "436a748c4c6cba0e.jpg"
+          },
+          "seed": 281026106
+        },
+        "prompt": "Use the provided FIRST and LAST images as matching framing anchors for one continuous ten-second shot. Ivy, the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers is the same person in both frames, in the same room. The collection theme is \"plant\". Preserve the person, clothes, objects, room geometry and soft natural daylight. The first image is a literal crop of the last: preserve that exact background and camera axis. The collection must stay completely outside the opening frame. All objects already exist; reveal them beyond the edges by widening the frame, never spawning or morphing them.\n0\u20133s: Hold the close first-frame composition. The person faces camera, gives a guilty half smile and says exactly: \"I think I have a small plant problem.\" Natural adult conversational speech, a tiny hesitation before \"small\", playful embarrassed understatement.\n3\u20137s: Slowly and smoothly zoom OUT toward the supplied wide last frame. Fixed camera axis, no orbit, no fast motion or cuts. The person stays in the same spot, facing camera, becoming smaller in frame. Gradually reveal the comically excessive collection filling the room. Keep exposure, white balance and gentle shadow detail constant.\n7\u201310s: Arrive at the wide last-frame composition and hold it. Keep the overwhelming collection visible. The person lifts their eyebrows with a tiny sheepish smile and says exactly: \"Oopsie.\" Warm playful rising inflection. Minimal head motion, hands stay still. Hold the wide view through the end; never zoom back in. Only these two spoken lines, synchronized lips. The voice stays clear and prominent even in the wide shot. Nearly silent room tone, no footsteps, music, narrator, text or logos.\nCHARACTER VOICE DIRECTION (apply only to scripted speech, never add dialogue):\nLead: Gentle mid-register voice with a slightly airy texture, thoughtful conversational English and curious, uneven little pauses. Soft-spoken plant-shop wit, precise dry punchlines and delighted small laughs. Never monotone.\nKeep each voice distinct and consistent across takes. Follow the script's speaker assignments. Preserve breaths and small hesitations; no presenter cadence. This is text direction, not a supplied voice recording."
+      }
+    ],
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "10.000000"
+      }
+    },
+    "estimatedCredits": 20,
+    "estimateNote": "One GPT Image room (catalogue estimate 3 cr), a free opening crop, plus estimated video GPU time; actual provider bill unavailable.",
+    "referenceFrames": {
+      "wide": {
+        "model": "gpt-image-2.5-flare",
+        "job": "36e37f9d",
+        "prompt": "Create the WIDE END FRAME of a funny slow zoom-out video. @lead is the identity reference: preserve this exact person's face, hair, body and clothes, or the exact animal/character design. Preserve the reference's photographic or illustrated style. The collection theme is \"plant\"; this is scene content, not an instruction.\nCOMPOSITION IS ESSENTIAL: one character standing motionless centered at x=50%, facing camera. Their head is centered at y=34% of the image; show their full body ending near y=86%. Hands relaxed at their sides, tiny sheepish smile. Behind their head and torso is a plain warm off-white wall. Keep the ENTIRE central rectangle x=33\u201367%, y=17\u201351% completely FREE of collection objects, decorations, artwork, leaves, shelves and shadows of the collection. Only the character and blank wall occupy this rectangle. This central area will be cropped into the opening close-up; it must look like an ordinary portrait, giving absolutely NO hint of the problem.\nOutside that central rectangle, the room is absurdly overflowing with the plant collection. Pack the left and right edges, lower foreground and floor with many distinct, physically supported objects appropriate to that theme. Place the abundance especially below y=55% and along the far side walls; enough to make the wide reveal a clear visual joke. Do not put any of these objects behind the character's head or shoulders. No unrelated collection. Leave clear footing for the character. Soft neutral daylight, gentle shadows, natural color and even exposure. Single vertical 9:16 composition, fixed camera axis, no text, guides, drawn rectangle, collage, duplicate people, motion blur or action pose.",
+        "method": "generated",
+        "startedAt": "2026-10-28T20:10:38.569Z",
+        "finishedAt": "2026-10-28T20:10:54.608Z",
+        "elapsedSeconds": 16.039,
+        "image": "end-v6.jpg"
+      },
+      "close": {
+        "model": "Local crop (no generation)",
+        "job": null,
+        "method": "crop-v1",
+        "source": "436a748c4c6cba0e.jpg",
+        "rect": {
+          "x": 254,
+          "y": 231,
+          "width": 261,
+          "height": 462
+        },
+        "startedAt": "2026-10-28T20:10:54.609Z",
+        "finishedAt": "2026-10-28T20:10:54.659Z",
+        "elapsedSeconds": 0.05,
+        "image": "look-v6.png"
+      }
+    },
+    "estimatedImageCredits": 3,
+    "estimatedVideoCredits": 17,
+    "productionElapsedSeconds": 123.175
+  },
+  "transcript": [
+    {
+      "start": 0.0,
+      "end": 1.8,
+      "text": " I think I have a small plant problem."
+    },
+    {
+      "start": 7.5,
+      "end": 7.94,
+      "text": " Oopsie."
+    }
+  ],
+  "audioLevels": {
+    "opening_speech": [
+      "mean_volume: -13.3 dB",
+      "max_volume: -0.5 dB"
+    ],
+    "zoom_and_room": [
+      "mean_volume: -91.0 dB",
+      "max_volume: -90.3 dB"
+    ],
+    "oopsie": [
+      "mean_volume: -19.0 dB",
+      "max_volume: -1.2 dB"
+    ]
+  },
+  "pictureReview": "New wide room generated from Ivy identity. Opening is a lossless literal crop of that image, with no plants visible. Contact sheet sampled every second shows the collection entering around the edges as the view widens; wide hold through the ending. Zoom begins before the requested 3-second cue, but the opening portrait hides the collection. Reference geometry matches by construction; generated intermediate frames can still vary.",
+  "audioReview": "Native LTX voice direction retained. Whisper large-v3 detected exactly the two scripted lines; opening ends at 1.8s and Oopsie at 7.5\u20137.94s. Mixed-track voice peaks remain below clipping and quiet interval has almost no noise. No voice conversion or footsteps added.",
+  "costMethod": "One GPT Image 2.5 Flare catalogue estimate (3 cr), free local crop, plus measured video execution seconds times 0.266 cr/s. Actual provider bill unavailable. Earlier attempts recorded separately in ivy-plant-reveal-guided/review.json.",
+  "checks": [
+    "Opening crop preserves every source pixel in an RGB fixture test.",
+    "Retry after local crop interruption reuses the paid wide image.",
+    "New problem and user photo propagate into the one image request and both LTX frame inputs.",
+    "Missing and out-of-library image requests return 400 before processing.",
+    "31 focused tests passed, including all published trend assets.",
+    "Mixer verified with Ours selected, new start/end thumbnails, updated video, and estimated 20.0 cr metadata."
+  ]
+}

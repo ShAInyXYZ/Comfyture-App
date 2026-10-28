@@ -16,6 +16,7 @@ import { askClaude, blenderStatus, command, CONTROL_BRIEF, controlConnected, con
 import { llms, defaultLlm, pickLlm, onRouter, llmName, routerAsk, imageBlock, takesTools } from "./llm.ts";
 import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
+import { cropRevealFrame } from "./mixer-reveal-frame.ts";
 import { readStory, storyBrief, storyPrompt, STORY_ASSIST_BRIEF, storyAssistPrompt, readStoryAssist, IDEAS_BRIEF, ideasPrompt, readIdeas, type StoryStep } from "./story.ts";
 import { isRouterImage, routerImages, routerDraw } from "./router-images.ts";
 import { isRouterVideo, routerVideos } from "./router-videos.ts";
@@ -1229,6 +1230,17 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const files = (await readdir(dir).catch(() => [])).filter((f) => /\.(png|jpe?g|webp)$/i.test(f)).sort();
     return json(res, 200, files.map((f) => ({ name: f.replace(/\.\w+$/, ""), url: `/samples/${f}` })));
   }
+  if (path === "/api/mixer/reveal-frame" && method === "POST") {
+    const request = await jsonBody(req);
+    const file = await photo(request.file);
+    if (!file) throw bad("Choose the wide reveal image first.");
+    const source = engine.photoPath(file);
+    const size = imageSize(await readFile(source));
+    if (!size) throw bad("That reveal image can't be read.");
+    const { bytes, rect } = await cropRevealFrame(source, size.width, size.height);
+    return json(res, 200, { photo: await engine.storeImage(bytes, "Reveal · opening portrait"), rect });
+  }
+
   if (path === "/api/photos" && method === "GET") {
     // the image library, newest first, with sizes read from each file's header
     const dir = join(data, "photos");

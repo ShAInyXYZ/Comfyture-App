@@ -13,16 +13,18 @@ test('an interrupted image wait resumes its job, keeping wide-to-close reference
   const deps = {
     submit: async r => { requests.push(r); return [{id: 'job' + requests.length}]; },
     wait: async id => { if (interrupt) { interrupt = false; throw Error('Disconnected'); } return { photo: { file: id + '.png' } }; },
+    crop: async photo => ({photo: {file: 'crop.png'}, source: photo.file}),
     persist() {}, progress() {},
   };
   await assert.rejects(prepareProblemFrames('guitar', {file:'person.png'}, frames, deps), /Disconnected/);
   const pair = await prepareProblemFrames('guitar', {file:'person.png'}, frames, deps);
-  assert.equal(requests.length, 2);
-  assert.equal(requests[1].refs[0].file, 'job1.png');
-  assert.equal(pair.first.file, 'job2.png');
+  assert.equal(requests.length, 1);
+  assert.equal(frames.close.source, 'job1.png');
+  assert.equal(frames.close.method, 'crop-v1');
+  assert.equal(pair.first.file, 'crop.png');
   assert.equal(pair.last.file, 'job1.png');
   await prepareProblemFrames('guitar', {file:'person.png'}, frames, deps);
-  assert.equal(requests.length, 2);
+  assert.equal(requests.length, 1);
 });
 test('ambiguous image acceptance is never resubmitted automatically', async () => {
   const frames = {}; let calls = 0;
@@ -30,6 +32,21 @@ test('ambiguous image acceptance is never resubmitted automatically', async () =
   await assert.rejects(prepareProblemFrames('guitar', {file:'me.png'}, frames, deps), /Lost response/);
   await assert.rejects(prepareProblemFrames('guitar', {file:'me.png'}, frames, deps), /no duplicate/);
   assert.equal(calls, 1);
+});
+test('a failed local crop retries without charging for another wide image', async () => {
+  const frames = {}; let paid = 0, attempts = 0;
+  const deps = {
+    submit: async () => { paid++; return [{id: 'wide'}]; },
+    wait: async () => ({photo: {file: 'wide.png'}}),
+    crop: async () => { if (++attempts === 1) throw Error('Crop interrupted'); return {photo: {file: 'close.png'}}; },
+    persist() {}, progress() {},
+  };
+  await assert.rejects(prepareProblemFrames('plant', {file:'ivy.png'}, frames, deps), /Crop interrupted/);
+  const pair = await prepareProblemFrames('plant', {file:'ivy.png'}, frames, deps);
+  assert.equal(paid, 1);
+  assert.equal(attempts, 2);
+  assert.equal(pair.first.file, 'close.png');
+  assert.equal(frames.close.source, 'wide.png');
 });
 test('FLF cannot start without its end reference', () => {
   assert.throws(() => nativeRecipeRequest({template:'video_ltx2_5_flf2v'}, {from:0,to:10}, 'start.png', 'script', 1), /end frame is missing/);

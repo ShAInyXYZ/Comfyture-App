@@ -325,6 +325,7 @@ async function fromNativeRecipe(t, cast, m, recipe) {
     const lead = who.crew ? await onServer(crewPicture(who.crew), crewById(who.crew).name) : who.star;
     m.body.revealFrames ??= {};
     pair = await prepareProblemFrames(problem, lead, m.body.revealFrames, {
+      crop: photo => send('api/mixer/reveal-frame', 'POST', { file: photo.file }),
       submit: body => send('api/image', 'POST', body), wait: async id => {
         let job = await call(`api/image/jobs/${id}`);
         while (job.status === 'running' || job.status === 'queued') {
