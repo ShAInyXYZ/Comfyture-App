@@ -6,11 +6,12 @@ import * as catalogue from '../web/js/mixer-trends.js';
 import * as helpers from '../web/js/mixer-trend-state.js';
 import { completionFeed } from '../web/js/job-completion.js';
 
-async function harness({ missingControl = false, failCut = false } = {}) {
-  const calls = { pictures: [], shoots: [], tracks: 0, mixes: 0, cuts: 0 };
+async function harness({ missingControl = false, failCut = false, native = false, loseSubmission = false } = {}) {
+  const calls = { pictures: [], shoots: [], tracks: 0, mixes: 0, cuts: 0, native: [], timelines: [] };
   const state = { runs: [], image: { catalogue: { models: [{ id: 'gpt-image-2.5-flare' }] } } };
   const mixer = { busy: new Set(), mix: null };
   const recipe = JSON.parse(await readFile('web/brand/mixer/trends/documentary/recipe.json', 'utf8'));
+  if (native) Object.assign(recipe, { engine: 'official-template', template: 'video_fastvideo_fasth3_i2v', settings: { width: 768, height: 1344 }, shots: [{ from: 0, to: 8, prompt: '{Lead} speaks an original line.', seed: 123 }] });
   let fail = failCut;
   const fetch = async (url, init = {}) => {
     let body = {};
@@ -18,7 +19,13 @@ async function harness({ missingControl = false, failCut = false } = {}) {
     else if (url.endsWith('/files')) body = { controls: missingControl ? {} : { 'take-1.pose.mp4': { file: 'pose.mp4' } } };
     else if (url === 'api/audio/music') { calls.tracks++; body = { id: 'music' }; }
     else if (url === 'api/mixer/stars') body = JSON.parse(init.body);
-    else if (url === 'api/cuts') body = { project: { id: 'cut' } };
+    else if (url === 'api/cuts') { calls.timelines.push(JSON.parse(init.body).body); body = { project: { id: 'cut' } }; }
+    else if (url.endsWith('/video_fastvideo_fasth3_i2v/run')) {
+      calls.native.push(JSON.parse(init.body));
+      if (loseSubmission) throw new Error('Connection interrupted');
+      body = { id: 'native1', status: 'running', progress: .2 };
+    }
+    else if (url.endsWith('/job/native1')) body = { id: 'native1', status: 'done', outputs: [{ kind: 'video', file: 'spoken.mp4', url: '/media/videos/spoken.mp4', seconds: 8 }] };
     else if (url.endsWith('/render')) {
       calls.cuts++;
       if (fail) { fail = false; return { ok: false, status: 500, json: async () => ({ error: 'Render interrupted' }) }; }
@@ -46,7 +53,7 @@ async function harness({ missingControl = false, failCut = false } = {}) {
   const mixModule = { mixer, save() {}, whenOpened() {}, mixLoras: () => [], newMix: async () => {
     calls.mixes++; return mixer.mix = { id: `mix${calls.mixes}`, body: {} };
   } };
-  const context = vm.createContext({ fetch, structuredClone, Date, console });
+  const context = vm.createContext({ fetch, structuredClone, Date, console, setTimeout: (fn) => fn() });
   const modules = {
     './store.js': store, './api.js': { api }, './mixer.js': mixModule,
     './mixer-trends.js': catalogue, './mixer-trend-state.js': helpers,
@@ -115,4 +122,37 @@ test('job completion arriving before wait and several waiters all settle', async
   assert.equal((await b).status, 'done');
   feed.publish({ id: 'bad', status: 'failed', error: 'GPU unavailable' });
   await assert.rejects(feed.wait('bad'), /GPU unavailable/);
+});
+
+test('native recipe casts a photo and keeps generated dialogue in the final cut without a replacement music job', async () => {
+  const { flow, calls, mixer } = await harness({ native: true });
+  await flow.addStar({ name: 'guest.png' });
+  await flow.makeTrend();
+  assert.equal(calls.native.length, 1);
+  assert.equal(calls.native[0].inputs.first_frame.file, 'cast.png');
+  assert.match(calls.native[0].inputs.prompt, /guest, as in the first frame/);
+  assert.equal(calls.tracks, 0);
+  assert.equal(calls.shoots.length, 0);
+  assert.equal(calls.timelines[0].tracks[0].items[0].src.kind, 'video');
+  assert.equal(calls.timelines[0].tracks[0].items[0].sound, true);
+  assert.equal(mixer.mix.body.shots[0].render.actualCostCredits, null);
+  assert.ok(mixer.mix.body.film);
+});
+
+test('native cut retry reuses a completed paid video and its reference image', async () => {
+  const { flow, calls, mixer } = await harness({ native: true, failCut: true });
+  await flow.addStar({ name: 'guest.png' });
+  await flow.makeTrend();
+  await flow.makeTrend();
+  assert.equal(calls.native.length, 1);
+  assert.equal(calls.pictures.length, 1);
+  assert.ok(mixer.mix.body.film);
+});
+
+test('an ambiguous paid submission is not automatically submitted again', async () => {
+  const { flow, calls, mixer } = await harness({ native: true, loseSubmission: true });
+  await flow.makeTrend();
+  await flow.makeTrend();
+  assert.equal(calls.native.length, 1);
+  assert.match(mixer.mix.body.error, /no duplicate was sent/);
 });

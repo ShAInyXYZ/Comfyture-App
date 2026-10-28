@@ -1,0 +1,93 @@
+{
+  "id": "tiny-desk",
+  "engine": "official-template",
+  "template": "video_fastvideo_fasth3_i2v",
+  "about": "Original Comfyture cast adaptation of a researched trend format. Script-driven motion; not a replica of source footage.",
+  "source": {
+    "url": "https://slapclip.com/",
+    "note": "Research reference for the format only. No original recording or soundtrack is bundled."
+  },
+  "seconds": 10,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 10
+  },
+  "look": "look.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Original dialogue, music and foley generated with the video."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "margot",
+      "look": "the glamorous former stage actress with a sleek platinum-white bob, sky-blue eyes, a white blouse, cream trousers and a coral silk scarf"
+    },
+    {
+      "role": "Partner",
+      "crew": "theo",
+      "look": "the laid-back young producer with short black twists, an oversized black tee, black joggers and emerald-green headphones around his neck"
+    }
+  ],
+  "beats": [
+    {
+      "to": 3,
+      "text": "Partner plays a soft piano introduction",
+      "from": 0
+    },
+    {
+      "to": 7,
+      "text": "Lead sings a warm original phrase into the microphone",
+      "from": 3
+    },
+    {
+      "to": 10,
+      "text": "Lead holds the final note and smiles at Partner",
+      "from": 7
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 10,
+      "frames": 240,
+      "seed": 28102601,
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0–3s: {Partner} plays a gentle electric piano introduction, {Lead} leans toward the microphone with a breath. 3–7s: Lead sings the original words \"Little moments, big bright dreams\" with a new soulful melody, warm clear voice, accurate lip sync. 7–10s: sustains the final note and smiles toward Partner, who finishes a chord. Original soft soul accompaniment, no recognizable existing song. Small head sways, hands stable. Slow subtle push toward Lead. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people."
+    }
+  ],
+  "render": {
+    "model": "MiniMax H3 · FastH3",
+    "imageModel": "Codex imagegen",
+    "template": "video_fastvideo_fasth3_i2v",
+    "seed": 28102601,
+    "startedAt": "2026-10-28T16:46:25.192Z",
+    "finishedAt": "2026-10-28T16:49:10.981Z",
+    "executionSeconds": 112.792,
+    "queueSeconds": null,
+    "elapsedSeconds": 165.789,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "costNote": "Provider has not supplied an actual per-job bill. Unknown is not zero.",
+    "cloudPromptId": "643aa621-168e-4501-8398-5a16ca818cae",
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "10.144000"
+      }
+    }
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "id": "we-listen",
+  "engine": "official-template",
+  "template": "video_fastvideo_fasth3_i2v",
+  "about": "Original Comfyture script and cast. No source video.",
+  "source": {
+    "url": null,
+    "note": "Written for Earl and Josie, 28 October 2026."
+  },
+  "seconds": 15,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 15
+  },
+  "look": "look.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Original dialogue, music and foley generated with the video."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "earl",
+      "look": "the grumpy old Texan rancher with a cream straw cowboy hat, bushy silver eyebrows, a silver handlebar mustache, a faded blue denim shirt and a plum bandana"
+    },
+    {
+      "role": "Partner",
+      "crew": "josie",
+      "look": "the upbeat young creator with caramel-blonde curls in a messy bun, freckles, a butter-yellow cropped hoodie, light jeans and small gold hoop earrings"
+    }
+  ],
+  "beats": [
+    {
+      "to": 3,
+      "text": "Together: We listen and we do not judge",
+      "from": 0
+    },
+    {
+      "to": 7,
+      "text": "Lead admits blaming the cat for eating the last biscuit",
+      "from": 3
+    },
+    {
+      "to": 11,
+      "text": "Partner admits the houseplants are plastic",
+      "from": 7
+    },
+    {
+      "to": 15,
+      "text": "They fail to hide their judgment and laugh",
+      "from": 11
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 15,
+      "frames": 360,
+      "seed": 28102610,
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. An ORIGINAL comedy script with our own fictional characters, no source video. Single stable medium two-shot. {Lead} sits left, {Partner} right, on sofa. 0–3s: both warmly say together \"We listen and we don't judge.\" 3–7s: Lead sheepishly says \"I ate the last biscuit and blamed the cat.\" Partner keeps a strained polite smile. 7–11s: Partner replies \"Your houseplants are plastic. I stopped watering them months ago.\" Lead slowly turns, genuinely baffled. 11–13s: Lead deadpans \"I was proud of those.\" 13–15s: both break into warm laughter. Original natural character voices, each line only by assigned speaker, clear dialogue, precise lips, no overlapping lines except opening, no music obscuring voices. Gentle room tone. Preserve faces and clothes. No captions. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people."
+    }
+  ],
+  "render": {
+    "model": "MiniMax H3 · FastH3",
+    "imageModel": "Codex imagegen",
+    "template": "video_fastvideo_fasth3_i2v",
+    "seed": 28102610,
+    "startedAt": "2026-10-28T16:56:43.333Z",
+    "finishedAt": "2026-10-28T16:59:58.564Z",
+    "executionSeconds": 183.056,
+    "queueSeconds": 3.948,
+    "elapsedSeconds": 195.231,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "costNote": "Provider has not supplied an actual per-job bill. Unknown is not zero.",
+    "cloudPromptId": "dacfc9fa-dd85-480e-bb4a-7be13b9b794f",
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "15.104000"
+      }
+    }
+  }
+}

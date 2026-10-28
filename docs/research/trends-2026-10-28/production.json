@@ -1,0 +1,481 @@
+{
+  "date": "2026-10-28",
+  "note": "Original cast adaptations of researched formats. No source recordings copied. We Listen is an original script. Generation metadata records unknown costs as null.",
+  "scenes": [
+    {
+      "id": "uno-car-reveal",
+      "name": "UNO Car Reveal",
+      "kind": "glowups",
+      "cast": [
+        {
+          "role": "Lead",
+          "crew": "dre"
+        }
+      ],
+      "seconds": 8,
+      "scene": "A sunset rooftop car park. Lead stands in front of a burgundy sports coupe holding two colorful game cards, +2 and +4, at chest height.",
+      "beats": [
+        {
+          "to": 2,
+          "text": "Lead flashes the two cards toward the lens",
+          "from": 0
+        },
+        {
+          "to": 5,
+          "text": "Lead lowers the cards and steps aside to reveal the sports car",
+          "from": 2
+        },
+        {
+          "to": 8,
+          "text": "Lead points proudly to the car as its headlights blink",
+          "from": 5
+        }
+      ],
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0\u20132s: {Lead} raises the two cards toward the camera, smiling. 2\u20135s: lowers both cards and takes one clear step to the left, revealing the stationary sports coupe behind. 5\u20138s: points proudly to the car; headlights blink once and a soft engine purr sounds. Original upbeat bass sting and paper flick foley. No speech. Keep a single car, stable hands and unchanged card printing. Camera gently pushes in. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people.",
+      "source": "https://slapclip.com/changelog",
+      "seed": 28102600,
+      "template": "video_fastvideo_fasth3_i2v",
+      "settings": {
+        "width": 768,
+        "height": 1344,
+        "duration": 8
+      }
+    },
+    {
+      "id": "tiny-desk",
+      "name": "Tiny Desk",
+      "kind": "duo",
+      "cast": [
+        {
+          "role": "Lead",
+          "crew": "margot"
+        },
+        {
+          "role": "Partner",
+          "crew": "theo"
+        }
+      ],
+      "seconds": 10,
+      "scene": "Lead at a small wooden desk with a retro microphone; Partner at an electric piano behind, warm wood-paneled music studio.",
+      "beats": [
+        {
+          "to": 3,
+          "text": "Partner plays a soft piano introduction",
+          "from": 0
+        },
+        {
+          "to": 7,
+          "text": "Lead sings a warm original phrase into the microphone",
+          "from": 3
+        },
+        {
+          "to": 10,
+          "text": "Lead holds the final note and smiles at Partner",
+          "from": 7
+        }
+      ],
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0\u20133s: {Partner} plays a gentle electric piano introduction, {Lead} leans toward the microphone with a breath. 3\u20137s: Lead sings the original words \"Little moments, big bright dreams\" with a new soulful melody, warm clear voice, accurate lip sync. 7\u201310s: sustains the final note and smiles toward Partner, who finishes a chord. Original soft soul accompaniment, no recognizable existing song. Small head sways, hands stable. Slow subtle push toward Lead. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people.",
+      "source": "https://slapclip.com/",
+      "seed": 28102601,
+      "template": "video_fastvideo_fasth3_i2v",
+      "settings": {
+        "width": 768,
+        "height": 1344,
+        "duration": 10
+      }
+    },
+    {
+      "id": "talking-about-me",
+      "name": "You Talking About Me?",
+      "kind": "duo",
+      "cast": [
+        {
+          "role": "Lead",
+          "crew": "dre"
+        },
+        {
+          "role": "Partner",
+          "crew": "theo"
+        },
+        {
+          "role": "Third",
+          "crew": "earl"
+        }
+      ],
+      "seconds": 10,
+      "scene": "Three characters seated at a diner counter in a diagonal row: Lead nearest camera, Partner in middle, Third at far end looking at a phone.",
+      "beats": [
+        {
+          "to": 3,
+          "text": "Lead jokes about the bills",
+          "from": 0
+        },
+        {
+          "to": 6,
+          "text": "Partner turns and asks if the joke is about them",
+          "from": 3
+        },
+        {
+          "to": 10,
+          "text": "Lead points toward Third, who slowly looks up",
+          "from": 6
+        }
+      ],
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0\u20133s: {Lead}, closest to camera, chuckles and says \"Somebody here owes me lunch.\" 3\u20136s: {Partner}, in the middle, turns toward Lead and asks \"You talking about me?\" 6\u20138s: Lead points to {Third} at the far end and answers \"No. The one pretending to text.\" 8\u201310s: Third slowly lowers the phone and raises one eyebrow. Each line spoken only by its assigned character, no overlapping voices. Natural diner room tone, original voices, clear lips and comic pause, fixed medium three-shot. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people.",
+      "source": "https://smew.ai/templates/you-talking-bout-me-ai-trend",
+      "seed": 28102602,
+      "template": "video_fastvideo_fasth3_i2v",
+      "settings": {
+        "width": 768,
+        "height": 1344,
+        "duration": 10
+      }
+    },
+    {
+      "id": "millionaire-advice",
+      "name": "Millionaire Advice",
+      "kind": "reactions",
+      "cast": [
+        {
+          "role": "Lead",
+          "crew": "earl"
+        }
+      ],
+      "seconds": 8,
+      "scene": "Lead seated at a rustic kitchen table with coffee and a smartphone, face clearly visible. Phone screen angled away from camera.",
+      "beats": [
+        {
+          "to": 3,
+          "text": "Lead asks how to become a millionaire",
+          "from": 0
+        },
+        {
+          "to": 5,
+          "text": "The phone replies with blunt advice",
+          "from": 3
+        },
+        {
+          "to": 8,
+          "text": "Lead slowly turns toward the camera, offended",
+          "from": 5
+        }
+      ],
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0\u20133s: {Lead} confidently speaks to the phone: \"How do I become a millionaire?\" 3\u20135s: a clear neutral synthetic voice from the phone replies \"Get a job.\" 5\u20138s: Lead freezes, slowly lowers the phone and gives the camera an offended, incredulous stare. One eyebrow lifts. Original gentle comic plucked-bass punctuation, cup clink, no other speech. No phone-screen text, no captions; keep screen angled away. Fixed camera. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people.",
+      "source": "https://slapclip.com/",
+      "seed": 28102603,
+      "template": "video_fastvideo_fasth3_i2v",
+      "settings": {
+        "width": 768,
+        "height": 1344,
+        "duration": 8
+      }
+    },
+    {
+      "id": "my-reaction",
+      "name": "My Reaction",
+      "kind": "reactions",
+      "cast": [
+        {
+          "role": "Lead",
+          "crew": "ivy"
+        }
+      ],
+      "seconds": 8,
+      "scene": "Lead in her sunny plant shop, chest-up framing, leafy blurred background and warm window light.",
+      "beats": [
+        {
+          "to": 2,
+          "text": "Lead reacts with delight",
+          "from": 0
+        },
+        {
+          "to": 4,
+          "text": "The smile turns into suspicion",
+          "from": 2
+        },
+        {
+          "to": 6,
+          "text": "Lead recoils in disbelief",
+          "from": 4
+        },
+        {
+          "to": 8,
+          "text": "Lead gives the camera a knowing side-eye",
+          "from": 6
+        }
+      ],
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. One continuous reaction close-up of {Lead}. 0\u20132s: eyes brighten and a delighted smile. 2\u20134s: smile fades into suspicion, one eyebrow rises, head tilts slightly. 4\u20136s: brief mild recoil, incredulous open mouth. 6\u20138s: lips press into a deadpan knowing side-eye at the camera. Keep face identity, glasses, hair, eyes and clothing constant. Quiet shop room tone, four gentle original comic percussion accents, no speech. No text. Fixed eye-level camera. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people.",
+      "source": "https://later.com/blog/tiktok-trends/",
+      "seed": 28102604,
+      "template": "video_fastvideo_fasth3_i2v",
+      "settings": {
+        "width": 768,
+        "height": 1344,
+        "duration": 8
+      }
+    },
+    {
+      "id": "getting-robbed",
+      "name": "Getting Robbed, But First\u2026",
+      "kind": "reactions",
+      "cast": [
+        {
+          "role": "Lead",
+          "crew": "josie"
+        },
+        {
+          "role": "Partner",
+          "crew": "dre"
+        }
+      ],
+      "seconds": 10,
+      "scene": "Lead seated at an outdoor caf\u00e9 table engrossed in phone, canvas tote on adjacent chair. Partner approaching in background, face visible.",
+      "beats": [
+        {
+          "to": 3,
+          "text": "Lead scrolls, completely distracted",
+          "from": 0
+        },
+        {
+          "to": 7,
+          "text": "Partner quietly picks up the tote bag",
+          "from": 3
+        },
+        {
+          "to": 10,
+          "text": "Lead laughs at the phone while Partner walks away",
+          "from": 7
+        }
+      ],
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. A harmless staged comedy with {Lead} foreground seated at a caf\u00e9 table looking at a phone, and {Partner} behind. 0\u20133s: Lead scrolls intently and smiles at phone. 3\u20137s: Partner glances around and carefully picks up the canvas tote from the empty adjacent chair. 7\u201310s: Partner walks out of frame with tote while Lead laughs quietly at the phone, completely unaware. One continuous wide shot, both characters remain visually distinct; no threats, no chase, no violence. Caf\u00e9 chatter, bag fabric rustle, tiny original sneaky pizzicato score. No dialogue or captions. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people.",
+      "source": "https://later.com/blog/tiktok-trends/",
+      "seed": 28102605,
+      "template": "video_fastvideo_fasth3_i2v",
+      "settings": {
+        "width": 768,
+        "height": 1344,
+        "duration": 10
+      }
+    },
+    {
+      "id": "slow-motion-squad",
+      "name": "Slow-Motion Squad",
+      "kind": "walks",
+      "cast": [
+        {
+          "role": "Lead",
+          "crew": "theo"
+        },
+        {
+          "role": "Partner",
+          "crew": "dre"
+        },
+        {
+          "role": "Third",
+          "crew": "margot"
+        }
+      ],
+      "seconds": 10,
+      "scene": "Three characters ready to walk toward camera in a supermarket aisle, Lead center slightly ahead, Partner left, Third right, shelves and glossy floor.",
+      "beats": [
+        {
+          "to": 3,
+          "text": "Lead starts a dramatically slow walk",
+          "from": 0
+        },
+        {
+          "to": 7,
+          "text": "Partner and Third join the formation",
+          "from": 3
+        },
+        {
+          "to": 10,
+          "text": "The squad stops for an unnecessarily heroic pose",
+          "from": 7
+        }
+      ],
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0\u20133s: {Lead} walks slowly and heroically toward the camera down the supermarket aisle. 3\u20137s: {Partner} and {Third} join one pace behind on left and right, exaggerated slow-motion arms and clothing, completely serious faces. 7\u201310s: all three stop and strike calm action-movie hero poses; Lead holds up a small grocery basket like a trophy. Smooth camera tracks backwards. Original cinematic percussion and bass swell, slowed footsteps. No speech or captions. No running, no identity swaps, each character stays in their own lane. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people.",
+      "source": "https://postdom.com/blog/tiktok-trends",
+      "seed": 28102606,
+      "template": "video_fastvideo_fasth3_i2v",
+      "settings": {
+        "width": 768,
+        "height": 1344,
+        "duration": 10
+      }
+    },
+    {
+      "id": "dip-on-em",
+      "name": "Dip On Em",
+      "kind": "dance",
+      "cast": [
+        {
+          "role": "Lead",
+          "crew": "dre"
+        },
+        {
+          "role": "Partner",
+          "crew": "ivy"
+        }
+      ],
+      "seconds": 8,
+      "scene": "Lead and Partner full-body in a plant shop after closing, clear open floor, facing camera with arms relaxed, sneakers visible.",
+      "beats": [
+        {
+          "to": 2,
+          "text": "Both bounce into the rhythm",
+          "from": 0
+        },
+        {
+          "to": 5,
+          "text": "A synchronized dip and two side steps",
+          "from": 2
+        },
+        {
+          "to": 8,
+          "text": "They shoulder-bounce and finish with a proud pose",
+          "from": 5
+        }
+      ],
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. A playful short dance by {Lead} on left and {Partner} on right. 0\u20132s: both gently bounce knees and shoulders to an original bouncy hip-hop beat. 2\u20135s: dip knees once, take two synchronized side steps, swing forearms across torso. 5\u20138s: upright shoulder bounce, then finish facing camera with proud folded arms. Full bodies and feet visible throughout; stable left-right roles, natural anatomy and contact with floor. Fixed camera. New instrumental beat, crisp snare and rubbery bass, 110 BPM, no copied song or vocals, no text. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people.",
+      "source": "https://postdom.com/blog/tiktok-trends",
+      "seed": 28102607,
+      "template": "video_fastvideo_fasth3_i2v",
+      "settings": {
+        "width": 768,
+        "height": 1344,
+        "duration": 8
+      }
+    },
+    {
+      "id": "pumpkin-reveal",
+      "name": "Pumpkin Head Reveal",
+      "kind": "glowups",
+      "cast": [
+        {
+          "role": "Lead",
+          "crew": "margot"
+        }
+      ],
+      "seconds": 8,
+      "scene": "Lead in an autumn pumpkin patch at golden hour, holding a small orange pumpkin with both hands just below her chin, exact face visible, cream outfit and coral scarf.",
+      "beats": [
+        {
+          "to": 2,
+          "text": "Lead lifts the pumpkin in front of their face",
+          "from": 0
+        },
+        {
+          "to": 5,
+          "text": "A playful pause behind the pumpkin",
+          "from": 2
+        },
+        {
+          "to": 8,
+          "text": "Lead lowers it and reveals a warm smile",
+          "from": 5
+        }
+      ],
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0\u20132s: {Lead} smoothly lifts the small pumpkin from chest height directly in front of face, hiding it fully. 2\u20135s: holds pumpkin steady, playful slight shoulder sway, a leaf drifts across the foreground. 5\u20138s: lowers pumpkin to waist, reveals the same face and a bright warm smile, tilts head. One continuous shot, exact outfit and identity preserved. Gentle original acoustic autumn music, leaves rustle. No speech, no text, no transformation of the head itself. Very subtle camera push in. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people.",
+      "source": "https://www.medianug.com/tiktok-trending-report",
+      "seed": 28102608,
+      "template": "video_fastvideo_fasth3_i2v",
+      "settings": {
+        "width": 768,
+        "height": 1344,
+        "duration": 8
+      }
+    },
+    {
+      "id": "ghost-photoshoot",
+      "name": "Ghost Photoshoot",
+      "kind": "duo",
+      "cast": [
+        {
+          "role": "Lead",
+          "crew": "josie"
+        },
+        {
+          "role": "Partner",
+          "crew": "ivy"
+        }
+      ],
+      "seconds": 10,
+      "scene": "Two characters in a cozy plant-filled studio, white ghost sheets draped over shoulders like capes with faces visible, sunglasses perched above heads, standing side by side ready to pull sheets up.",
+      "beats": [
+        {
+          "to": 3,
+          "text": "The friends grin before hiding under their sheets",
+          "from": 0
+        },
+        {
+          "to": 7,
+          "text": "Two sheet ghosts strike awkward fashion poses",
+          "from": 3
+        },
+        {
+          "to": 10,
+          "text": "They peek out and break into laughter",
+          "from": 7
+        }
+      ],
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0\u20133s: {Lead} left and {Partner} right grin at each other then pull their loose white sheets over their heads. 3\u20137s: the two sheet ghosts wear dark sunglasses on top of fabric, strike two silly fashion poses, knees bent and leaning away from each other, camera shutter click twice. 7\u201310s: both lift sheets just enough to show their unchanged faces again and laugh. Preserve their identities at reveal. Warm studio light, original playful spooky pizzicato, soft laughter, cloth rustle. Single fixed full-body shot, exactly two people, no words or captions. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people.",
+      "source": "https://postdom.com/blog/tiktok-trends",
+      "seed": 28102609,
+      "template": "video_fastvideo_fasth3_i2v",
+      "settings": {
+        "width": 768,
+        "height": 1344,
+        "duration": 10
+      }
+    },
+    {
+      "id": "we-listen",
+      "name": "We Listen, We Don\u2019t Judge",
+      "kind": "duo",
+      "cast": [
+        {
+          "role": "Lead",
+          "crew": "earl"
+        },
+        {
+          "role": "Partner",
+          "crew": "josie"
+        }
+      ],
+      "seconds": 15,
+      "scene": "Lead and Partner seated side by side on a comfy sofa, Lead on left and Partner on right. Cozy living room, no other characters.",
+      "beats": [
+        {
+          "to": 3,
+          "text": "Together: We listen and we do not judge",
+          "from": 0
+        },
+        {
+          "to": 7,
+          "text": "Lead admits blaming the cat for eating the last biscuit",
+          "from": 3
+        },
+        {
+          "to": 11,
+          "text": "Partner admits the houseplants are plastic",
+          "from": 7
+        },
+        {
+          "to": 15,
+          "text": "They fail to hide their judgment and laugh",
+          "from": 11
+        }
+      ],
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. An ORIGINAL comedy script with our own fictional characters, no source video. Single stable medium two-shot. {Lead} sits left, {Partner} right, on sofa. 0\u20133s: both warmly say together \"We listen and we don't judge.\" 3\u20137s: Lead sheepishly says \"I ate the last biscuit and blamed the cat.\" Partner keeps a strained polite smile. 7\u201311s: Partner replies \"Your houseplants are plastic. I stopped watering them months ago.\" Lead slowly turns, genuinely baffled. 11\u201313s: Lead deadpans \"I was proud of those.\" 13\u201315s: both break into warm laughter. Original natural character voices, each line only by assigned speaker, clear dialogue, precise lips, no overlapping lines except opening, no music obscuring voices. Gentle room tone. Preserve faces and clothes. No captions. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people.",
+      "source": "original-script",
+      "seed": 28102610,
+      "template": "video_fastvideo_fasth3_i2v",
+      "settings": {
+        "width": 768,
+        "height": 1344,
+        "duration": 15
+      }
+    }
+  ]
+}

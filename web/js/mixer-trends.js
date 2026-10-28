@@ -1,3 +1,4 @@
+import { AUTUMN_TRENDS } from "./mixer-trends-autumn.js";
 // Mixer's trend shelf and its crew, written by scripts/mixer-trends.py from the crew's artwork and the
 // trend research (docs/research/trends-2026-10-19). Each trend: its length, how hot it is now (1 to 5),
 // who stars in it, its beats over time, and the feel of the music made for it (never the original track).
@@ -77,6 +78,7 @@ export const CREW = [
 ];
 
 export const TRENDS = [
+  ...AUTUMN_TRENDS,
   {
     "id": "state-property",
     "name": "State Property",

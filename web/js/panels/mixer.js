@@ -86,7 +86,7 @@ function card(t) {
     h("span.mx-card-len", {}, t.soon ? "Soon" : `0:${pad2(Math.round(t.seconds))}`),
     t.soon ? h("span.mx-card-soon", {}, "Coming soon") : null,
     mk ? h("span.mx-card-making", {}, h("span.lamp", { dataset: { tone: "busy" } }), `${Math.round(mk.pct * 100)}%`) : null,
-    h("span.mx-card-heat", { title: lit === 3 ? "Very hot right now" : lit === 2 ? "Hot right now" : "Warm" }, sprite("trend-heat"), ...[0, 1, 2].map((k) => h(`i${k < lit ? ".is-lit" : ""}`))),
+    t.added ? h("span.mx-card-heat", { title: `Added ${t.added}` }, "New") : h("span.mx-card-heat", { title: lit === 3 ? "Very hot right now" : lit === 2 ? "Hot right now" : "Warm" }, sprite("trend-heat"), ...[0, 1, 2].map((k) => h(`i${k < lit ? ".is-lit" : ""}`))),
     h("span.mx-card-foot", {},
       h("b", {}, t.name),
       h("span.mx-faces", {}, ...t.cast.map((c) => h("img", { src: crewFace(c.crew), alt: crewById(c.crew)?.name ?? "", draggable: false })))));
@@ -111,7 +111,7 @@ function recipe(t) {
     h("div.mx-music", {},
       m?.body.music ? keep(`music:${m.body.music.url}`, () => h("audio", { src: m.body.music.url, controls: true, preload: "none" })) : h("span.mx-music-icon", {}, sprite("audio-music")),
       ...[t.music?.bpm ? `${t.music.bpm} BPM` : null, t.music?.genre, t.music?.mood].filter(Boolean).map((x) => h("span.mx-chip", {}, x)),
-      h("span.mx-chip.is-own", { title: "A new track made for your mix in the trend's feel: never the trend's own song" }, "Our own track")),
+      h("span.mx-chip.is-own", { title: t.engine === "official-template" ? "Dialogue, music and effects generated with your video" : "A new track made for your mix in the trend's feel: never the trend's own song" }, t.engine === "official-template" ? "Original sound + voices" : "Our own track")),
   ];
   const rest = [
       // who stars in it beside how it is made
@@ -119,9 +119,13 @@ function recipe(t) {
         h("div.mx-cast-col", {},
           h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "Add your photo or choose a character, then Make it.")),
           h("div.mx-roles", {}, ...cast.map((c) => role(c)))),
-        madeWith({ music: true })),
+        madeWith({ music: t.engine !== "official-template", native: t.engine === "official-template" })),
+      t.render ? h("details.mx-provenance", {}, h("summary", {}, "Preview generation details"),
+        h("p", {}, `${t.render.model} · ${t.render.executionSeconds == null ? "GPU time unavailable" : `${Math.round(t.render.executionSeconds)} s GPU time`} · ${t.render.elapsedSeconds == null ? "" : `${Math.round(t.render.elapsedSeconds)} s elapsed`}`),
+        h("p", {}, t.render.actualCostCredits == null ? "Actual cost: not reported by provider. This was a paid generation." : `Actual cost: ${t.render.actualCostCredits} cr`),
+        h("a", { href: t.recipe, target: "_blank", rel: "noopener" }, "Recipe, script and metadata")) : null,
       m?.body.error && resume && !busy ? h("p.mx-error", { role: "alert" }, `${m.body.error} Your completed steps are saved. Continue to finish this mix.`) : null,
-      h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy || stars.uploading > 0, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, a track of its own, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
+      h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy || stars.uploading > 0, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.engine === "official-template" ? "Your cast in the scene, animated with original dialogue and sound using MiniMax H3" : t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, a track of its own, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
         sprite("product-mixer"), h("span", {}, busy ? (m ? makeFeel(m, t).word : "Making it") : stars.uploading ? "Adding your photo…" : resume ? "Continue" : m?.body.film ? "Make it again" : "Make it"), cost && !busy && !resume && !stars.uploading ? h("em", {}, `≈ ${cost} cr`) : null),
   ];
   return h("section.mx-work.mx-recipe", {}, preview(t, m), h("div.mx-recipe-body", {}, ...head, ...rest));
@@ -230,11 +234,11 @@ const modelRow = (glyph, part, model, cost, ...more) =>
  * How a mix is made, at a glance: the picture model that redraws its first frames with the cast,
  * LTX-2.5 with the LoRAs it rolls with (none until picked), and the music model.
  */
-function madeWith({ music }) {
+function madeWith({ music, native = false }) {
   return h("div.mx-made", {},
     h("div.mx-section-head", {}, h("h3", {}, "Made with")),
     pictureRow(),
-    modelRow(sprite("film-make"), "Video", h("b", {}, "LTX-2.5"), cloud() ? "≈ 4.8 cr/s" : "your GPU",
+    native ? modelRow(sprite("film-make"), "Video + sound", h("b", {}, "MiniMax H3 · FastH3"), "GPU time · Comfy Cloud") : modelRow(sprite("film-make"), "Video", h("b", {}, "LTX-2.5"), cloud() ? "≈ 4.8 cr/s" : "your GPU",
       h("div.mx-model-loras", {}, h("span.label", {}, "LoRAs"), loraStack(mixLoras(), (list) => (setMixLoras(list), changed("mixer"))))),
     music ? modelRow(sprite("audio-music"), "Music", h("b", {}, "ACE-Step 1.5"), cloud() ? `≈ ${MUSIC_CR} cr/s` : "your GPU") : null);
 }

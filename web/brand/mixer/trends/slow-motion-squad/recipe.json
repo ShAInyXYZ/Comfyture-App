@@ -1,0 +1,98 @@
+{
+  "id": "slow-motion-squad",
+  "engine": "official-template",
+  "template": "video_fastvideo_fasth3_i2v",
+  "about": "Original Comfyture cast adaptation of a researched trend format. Script-driven motion; not a replica of source footage.",
+  "source": {
+    "url": "https://postdom.com/blog/tiktok-trends",
+    "note": "Research reference for the format only. No original recording or soundtrack is bundled."
+  },
+  "seconds": 10,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 10
+  },
+  "look": "look.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Original dialogue, music and foley generated with the video."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "theo",
+      "look": "the laid-back young producer with short black twists, an oversized black tee, black joggers and emerald-green headphones around his neck"
+    },
+    {
+      "role": "Partner",
+      "crew": "dre",
+      "look": "Theo's big-hearted older brother with a short boxed beard, a burgundy bucket hat, a cream varsity jacket with burgundy sleeves and light jeans"
+    },
+    {
+      "role": "Third",
+      "crew": "margot",
+      "look": "the glamorous former stage actress with a sleek platinum-white bob, sky-blue eyes, a white blouse, cream trousers and a coral silk scarf"
+    }
+  ],
+  "beats": [
+    {
+      "to": 3,
+      "text": "Lead starts a dramatically slow walk",
+      "from": 0
+    },
+    {
+      "to": 7,
+      "text": "Partner and Third join the formation",
+      "from": 3
+    },
+    {
+      "to": 10,
+      "text": "The squad stops for an unnecessarily heroic pose",
+      "from": 7
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 10,
+      "frames": 240,
+      "seed": 28102606,
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0–3s: {Lead} walks slowly and heroically toward the camera down the supermarket aisle. 3–7s: {Partner} and {Third} join one pace behind on left and right, exaggerated slow-motion arms and clothing, completely serious faces. 7–10s: all three stop and strike calm action-movie hero poses; Lead holds up a small grocery basket like a trophy. Smooth camera tracks backwards. Original cinematic percussion and bass swell, slowed footsteps. No speech or captions. No running, no identity swaps, each character stays in their own lane. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people."
+    }
+  ],
+  "render": {
+    "model": "MiniMax H3 · FastH3",
+    "imageModel": "Codex imagegen",
+    "template": "video_fastvideo_fasth3_i2v",
+    "seed": 28102606,
+    "startedAt": "2026-10-28T16:53:00.962Z",
+    "finishedAt": "2026-10-28T16:55:02.799Z",
+    "executionSeconds": 106.562,
+    "queueSeconds": 4.456,
+    "elapsedSeconds": 121.837,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "costNote": "Provider has not supplied an actual per-job bill. Unknown is not zero.",
+    "cloudPromptId": "233e855f-a933-416e-9fc9-2318da96dc37",
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "10.144000"
+      }
+    }
+  }
+}

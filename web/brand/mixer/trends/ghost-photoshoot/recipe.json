@@ -1,0 +1,93 @@
+{
+  "id": "ghost-photoshoot",
+  "engine": "official-template",
+  "template": "video_fastvideo_fasth3_i2v",
+  "about": "Original Comfyture cast adaptation of a researched trend format. Script-driven motion; not a replica of source footage.",
+  "source": {
+    "url": "https://postdom.com/blog/tiktok-trends",
+    "note": "Research reference for the format only. No original recording or soundtrack is bundled."
+  },
+  "seconds": 10,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 10
+  },
+  "look": "look.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Original dialogue, music and foley generated with the video."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "josie",
+      "look": "the upbeat young creator with caramel-blonde curls in a messy bun, freckles, a butter-yellow cropped hoodie, light jeans and small gold hoop earrings"
+    },
+    {
+      "role": "Partner",
+      "crew": "ivy",
+      "look": "the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers"
+    }
+  ],
+  "beats": [
+    {
+      "to": 3,
+      "text": "The friends grin before hiding under their sheets",
+      "from": 0
+    },
+    {
+      "to": 7,
+      "text": "Two sheet ghosts strike awkward fashion poses",
+      "from": 3
+    },
+    {
+      "to": 10,
+      "text": "They peek out and break into laughter",
+      "from": 7
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 10,
+      "frames": 240,
+      "seed": 28102609,
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0–3s: {Lead} left and {Partner} right grin at each other then pull their loose white sheets over their heads. 3–7s: the two sheet ghosts wear dark sunglasses on top of fabric, strike two silly fashion poses, knees bent and leaning away from each other, camera shutter click twice. 7–10s: both lift sheets just enough to show their unchanged faces again and laugh. Preserve their identities at reveal. Warm studio light, original playful spooky pizzicato, soft laughter, cloth rustle. Single fixed full-body shot, exactly two people, no words or captions. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people."
+    }
+  ],
+  "render": {
+    "model": "MiniMax H3 · FastH3",
+    "imageModel": "Codex imagegen",
+    "template": "video_fastvideo_fasth3_i2v",
+    "seed": 28102609,
+    "startedAt": "2026-10-28T16:55:15.896Z",
+    "finishedAt": "2026-10-28T16:57:56.082Z",
+    "executionSeconds": 112.435,
+    "queueSeconds": 37.676,
+    "elapsedSeconds": 160.186,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "costNote": "Provider has not supplied an actual per-job bill. Unknown is not zero.",
+    "cloudPromptId": "72611639-5a42-4a03-9973-8136c48a3cfb",
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "10.144000"
+      }
+    }
+  }
+}

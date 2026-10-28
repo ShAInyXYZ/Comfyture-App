@@ -1,0 +1,88 @@
+{
+  "id": "millionaire-advice",
+  "engine": "official-template",
+  "template": "video_fastvideo_fasth3_i2v",
+  "about": "Original Comfyture cast adaptation of a researched trend format. Script-driven motion; not a replica of source footage.",
+  "source": {
+    "url": "https://slapclip.com/",
+    "note": "Research reference for the format only. No original recording or soundtrack is bundled."
+  },
+  "seconds": 8,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 8
+  },
+  "look": "look.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Original dialogue, music and foley generated with the video."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "earl",
+      "look": "the grumpy old Texan rancher with a cream straw cowboy hat, bushy silver eyebrows, a silver handlebar mustache, a faded blue denim shirt and a plum bandana"
+    }
+  ],
+  "beats": [
+    {
+      "to": 3,
+      "text": "Lead asks how to become a millionaire",
+      "from": 0
+    },
+    {
+      "to": 5,
+      "text": "The phone replies with blunt advice",
+      "from": 3
+    },
+    {
+      "to": 8,
+      "text": "Lead slowly turns toward the camera, offended",
+      "from": 5
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 8,
+      "frames": 192,
+      "seed": 28102603,
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0–3s: {Lead} confidently speaks to the phone: \"How do I become a millionaire?\" 3–5s: a clear neutral synthetic voice from the phone replies \"Get a job.\" 5–8s: Lead freezes, slowly lowers the phone and gives the camera an offended, incredulous stare. One eyebrow lifts. Original gentle comic plucked-bass punctuation, cup clink, no other speech. No phone-screen text, no captions; keep screen angled away. Fixed camera. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people."
+    }
+  ],
+  "render": {
+    "model": "MiniMax H3 · FastH3",
+    "imageModel": "Codex imagegen",
+    "template": "video_fastvideo_fasth3_i2v",
+    "seed": 28102603,
+    "startedAt": "2026-10-28T16:49:11.445Z",
+    "finishedAt": "2026-10-28T16:51:12.820Z",
+    "executionSeconds": 87.83,
+    "queueSeconds": 23.462,
+    "elapsedSeconds": 121.375,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "costNote": "Provider has not supplied an actual per-job bill. Unknown is not zero.",
+    "cloudPromptId": "275a650d-4bb5-4b31-807a-a06688bc2e0a",
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "8.000000"
+      }
+    }
+  }
+}

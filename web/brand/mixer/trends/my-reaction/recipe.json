@@ -1,0 +1,93 @@
+{
+  "id": "my-reaction",
+  "engine": "official-template",
+  "template": "video_fastvideo_fasth3_i2v",
+  "about": "Original Comfyture cast adaptation of a researched trend format. Script-driven motion; not a replica of source footage.",
+  "source": {
+    "url": "https://later.com/blog/tiktok-trends/",
+    "note": "Research reference for the format only. No original recording or soundtrack is bundled."
+  },
+  "seconds": 8,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 8
+  },
+  "look": "look.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Original dialogue, music and foley generated with the video."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "ivy",
+      "look": "the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers"
+    }
+  ],
+  "beats": [
+    {
+      "to": 2,
+      "text": "Lead reacts with delight",
+      "from": 0
+    },
+    {
+      "to": 4,
+      "text": "The smile turns into suspicion",
+      "from": 2
+    },
+    {
+      "to": 6,
+      "text": "Lead recoils in disbelief",
+      "from": 4
+    },
+    {
+      "to": 8,
+      "text": "Lead gives the camera a knowing side-eye",
+      "from": 6
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 8,
+      "frames": 192,
+      "seed": 28102604,
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. One continuous reaction close-up of {Lead}. 0–2s: eyes brighten and a delighted smile. 2–4s: smile fades into suspicion, one eyebrow rises, head tilts slightly. 4–6s: brief mild recoil, incredulous open mouth. 6–8s: lips press into a deadpan knowing side-eye at the camera. Keep face identity, glasses, hair, eyes and clothing constant. Quiet shop room tone, four gentle original comic percussion accents, no speech. No text. Fixed eye-level camera. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people."
+    }
+  ],
+  "render": {
+    "model": "MiniMax H3 · FastH3",
+    "imageModel": "Codex imagegen",
+    "template": "video_fastvideo_fasth3_i2v",
+    "seed": 28102604,
+    "startedAt": "2026-10-28T16:51:21.390Z",
+    "finishedAt": "2026-10-28T16:52:56.369Z",
+    "executionSeconds": 80.504,
+    "queueSeconds": 2.314,
+    "elapsedSeconds": 94.979,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "costNote": "Provider has not supplied an actual per-job bill. Unknown is not zero.",
+    "cloudPromptId": "95d96966-1748-40ab-b33e-d68dcbb95bbd",
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "8.000000"
+      }
+    }
+  }
+}

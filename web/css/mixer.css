@@ -295,3 +295,10 @@
 .mx-versions { position: absolute; left: .75rem; top: .75rem; z-index: 3; display: inline-flex; padding: .1875rem; border-radius: 999px; background: rgb(14 14 16 / .78); backdrop-filter: blur(6px); }
 .mx-versions button { padding: .3125rem .75rem; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font: 600 var(--fs-small)/1 var(--font-sans); cursor: pointer; }
 .mx-versions button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+/* Render provenance stays available without crowding the cast controls. */
+.mx-provenance { border-top: 1px solid var(--line); padding-top: .75rem; color: var(--muted); font: 400 var(--fs-small)/1.5 var(--font-sans); }
+.mx-provenance summary { cursor: pointer; color: var(--text); }
+.mx-provenance p { margin: .5rem 0; }
+.mx-provenance a { color: var(--accent); }
+.mx-provenance summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }

@@ -1,0 +1,93 @@
+{
+  "id": "dip-on-em",
+  "engine": "official-template",
+  "template": "video_fastvideo_fasth3_i2v",
+  "about": "Original Comfyture cast adaptation of a researched trend format. Script-driven motion; not a replica of source footage.",
+  "source": {
+    "url": "https://postdom.com/blog/tiktok-trends",
+    "note": "Research reference for the format only. No original recording or soundtrack is bundled."
+  },
+  "seconds": 8,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 8
+  },
+  "look": "look.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Original dialogue, music and foley generated with the video."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "dre",
+      "look": "Theo's big-hearted older brother with a short boxed beard, a burgundy bucket hat, a cream varsity jacket with burgundy sleeves and light jeans"
+    },
+    {
+      "role": "Partner",
+      "crew": "ivy",
+      "look": "the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers"
+    }
+  ],
+  "beats": [
+    {
+      "to": 2,
+      "text": "Both bounce into the rhythm",
+      "from": 0
+    },
+    {
+      "to": 5,
+      "text": "A synchronized dip and two side steps",
+      "from": 2
+    },
+    {
+      "to": 8,
+      "text": "They shoulder-bounce and finish with a proud pose",
+      "from": 5
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 8,
+      "frames": 192,
+      "seed": 28102607,
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. A playful short dance by {Lead} on left and {Partner} on right. 0–2s: both gently bounce knees and shoulders to an original bouncy hip-hop beat. 2–5s: dip knees once, take two synchronized side steps, swing forearms across torso. 5–8s: upright shoulder bounce, then finish facing camera with proud folded arms. Full bodies and feet visible throughout; stable left-right roles, natural anatomy and contact with floor. Fixed camera. New instrumental beat, crisp snare and rubbery bass, 110 BPM, no copied song or vocals, no text. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people."
+    }
+  ],
+  "render": {
+    "model": "MiniMax H3 · FastH3",
+    "imageModel": "Codex imagegen",
+    "template": "video_fastvideo_fasth3_i2v",
+    "seed": 28102607,
+    "startedAt": "2026-10-28T16:53:38.310Z",
+    "finishedAt": "2026-10-28T16:55:14.951Z",
+    "executionSeconds": 82.043,
+    "queueSeconds": 4.759,
+    "elapsedSeconds": 96.641,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "costNote": "Provider has not supplied an actual per-job bill. Unknown is not zero.",
+    "cloudPromptId": "31f515c6-31fd-4c8c-85cc-8dfcbc27a6d6",
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "8.000000"
+      }
+    }
+  }
+}

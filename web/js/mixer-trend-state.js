@@ -12,6 +12,15 @@ export function canResumeTrend(mix, id, roles) {
 
 export function validateRecipe(recipe, files) {
   if (!recipe?.shots?.length) throw new Error("This trend has no shots to generate.");
+  if (recipe.engine === "official-template") {
+    if (recipe.template !== "video_fastvideo_fasth3_i2v" || !recipe.look)
+      throw new Error("This trend's video recipe is incomplete.");
+    for (const shot of recipe.shots) {
+      const duration = shot.to - shot.from;
+      if (!shot.prompt || !(duration >= 1 && duration <= 30)) throw new Error("This trend's timing or script is incomplete.");
+    }
+    return;
+  }
   for (const shot of recipe.shots) {
     if (!files.controls?.[shot.pose ?? shot.guide]?.file)
       throw new Error("This trend's motion reference is missing. No generation was started.");

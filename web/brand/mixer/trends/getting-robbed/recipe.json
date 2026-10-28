@@ -1,0 +1,93 @@
+{
+  "id": "getting-robbed",
+  "engine": "official-template",
+  "template": "video_fastvideo_fasth3_i2v",
+  "about": "Original Comfyture cast adaptation of a researched trend format. Script-driven motion; not a replica of source footage.",
+  "source": {
+    "url": "https://later.com/blog/tiktok-trends/",
+    "note": "Research reference for the format only. No original recording or soundtrack is bundled."
+  },
+  "seconds": 10,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 10
+  },
+  "look": "look.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Original dialogue, music and foley generated with the video."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "josie",
+      "look": "the upbeat young creator with caramel-blonde curls in a messy bun, freckles, a butter-yellow cropped hoodie, light jeans and small gold hoop earrings"
+    },
+    {
+      "role": "Partner",
+      "crew": "dre",
+      "look": "Theo's big-hearted older brother with a short boxed beard, a burgundy bucket hat, a cream varsity jacket with burgundy sleeves and light jeans"
+    }
+  ],
+  "beats": [
+    {
+      "to": 3,
+      "text": "Lead scrolls, completely distracted",
+      "from": 0
+    },
+    {
+      "to": 7,
+      "text": "Partner quietly picks up the tote bag",
+      "from": 3
+    },
+    {
+      "to": 10,
+      "text": "Lead laughs at the phone while Partner walks away",
+      "from": 7
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 10,
+      "frames": 240,
+      "seed": 28102605,
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. A harmless staged comedy with {Lead} foreground seated at a café table looking at a phone, and {Partner} behind. 0–3s: Lead scrolls intently and smiles at phone. 3–7s: Partner glances around and carefully picks up the canvas tote from the empty adjacent chair. 7–10s: Partner walks out of frame with tote while Lead laughs quietly at the phone, completely unaware. One continuous wide shot, both characters remain visually distinct; no threats, no chase, no violence. Café chatter, bag fabric rustle, tiny original sneaky pizzicato score. No dialogue or captions. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people."
+    }
+  ],
+  "render": {
+    "model": "MiniMax H3 · FastH3",
+    "imageModel": "Codex imagegen",
+    "template": "video_fastvideo_fasth3_i2v",
+    "seed": 28102605,
+    "startedAt": "2026-10-28T16:51:33.429Z",
+    "finishedAt": "2026-10-28T16:53:37.742Z",
+    "executionSeconds": 112.539,
+    "queueSeconds": 3.326,
+    "elapsedSeconds": 124.313,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "costNote": "Provider has not supplied an actual per-job bill. Unknown is not zero.",
+    "cloudPromptId": "139e46f5-22df-46a6-b021-0744fcd8397f",
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "10.144000"
+      }
+    }
+  }
+}

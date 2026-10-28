@@ -1,0 +1,88 @@
+{
+  "id": "pumpkin-reveal",
+  "engine": "official-template",
+  "template": "video_fastvideo_fasth3_i2v",
+  "about": "Original Comfyture cast adaptation of a researched trend format. Script-driven motion; not a replica of source footage.",
+  "source": {
+    "url": "https://www.medianug.com/tiktok-trending-report",
+    "note": "Research reference for the format only. No original recording or soundtrack is bundled."
+  },
+  "seconds": 8,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 8
+  },
+  "look": "look.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Original dialogue, music and foley generated with the video."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "margot",
+      "look": "the glamorous former stage actress with a sleek platinum-white bob, sky-blue eyes, a white blouse, cream trousers and a coral silk scarf"
+    }
+  ],
+  "beats": [
+    {
+      "to": 2,
+      "text": "Lead lifts the pumpkin in front of their face",
+      "from": 0
+    },
+    {
+      "to": 5,
+      "text": "A playful pause behind the pumpkin",
+      "from": 2
+    },
+    {
+      "to": 8,
+      "text": "Lead lowers it and reveals a warm smile",
+      "from": 5
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 8,
+      "frames": 192,
+      "seed": 28102608,
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0–2s: {Lead} smoothly lifts the small pumpkin from chest height directly in front of face, hiding it fully. 2–5s: holds pumpkin steady, playful slight shoulder sway, a leaf drifts across the foreground. 5–8s: lowers pumpkin to waist, reveals the same face and a bright warm smile, tilts head. One continuous shot, exact outfit and identity preserved. Gentle original acoustic autumn music, leaves rustle. No speech, no text, no transformation of the head itself. Very subtle camera push in. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people."
+    }
+  ],
+  "render": {
+    "model": "MiniMax H3 · FastH3",
+    "imageModel": "Codex imagegen",
+    "template": "video_fastvideo_fasth3_i2v",
+    "seed": 28102608,
+    "startedAt": "2026-10-28T16:55:09.329Z",
+    "finishedAt": "2026-10-28T16:56:42.616Z",
+    "executionSeconds": 80.511,
+    "queueSeconds": 3.747,
+    "elapsedSeconds": 93.287,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "costNote": "Provider has not supplied an actual per-job bill. Unknown is not zero.",
+    "cloudPromptId": "551bcff5-95dc-4648-8574-ac27ac407d41",
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "8.000000"
+      }
+    }
+  }
+}

@@ -17,6 +17,7 @@ const shelf = () => TRENDS.filter((t) => t.home === "mixer" || t.also?.includes(
 const remixing = () => !!mixer.mix?.body?.edit || mixer.splitting;
 const whoName = (who) => (who?.crew ? crewById(who.crew)?.name ?? who.crew : `star ${who?.star?.name ?? "?"}`);
 const costOf = (t) => {
+  if (t.engine === "official-template") return "Comfy Cloud · GPU time";
   const credits = estimate(t);
   return typeof credits === "number" ? `≈ ${credits} cr` : "your GPU";
 };

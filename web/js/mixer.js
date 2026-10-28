@@ -225,6 +225,9 @@ export const shotLength = (s) => Math.max(0.1, s.to - s.from);
 export const take = (s) => (s?.run ? state.runs.find((r) => r.id === s.run) : null);
 /** Where a shot is: waiting, drawing its frame, rolling (how far), done, or failed. */
 export function shotState(s, i) {
+  if (s.output) return { step: "done", note: "Done" };
+  if (s.native?.status === "running") return { step: "rolling", note: s.native.phase === "queued" ? "Queued" : "Animating with sound", progress: s.native.progress ?? 0 };
+  if (s.native && s.native.status !== "done") return { step: "failed", note: s.native.error ?? "Didn't roll" };
   const key = (k) => mixer.busy.has(`${k}:${i}`);
   if (key("look")) return { step: "drawing", note: "Drawing the frame" };
   const t = take(s);

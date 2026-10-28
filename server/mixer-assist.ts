@@ -78,7 +78,7 @@ export function mixerPrompt(s: Summary, turns: Turn[]) {
   if (s.remixing) lines.push("A REMIX IS OPEN: an edit the user dropped in, with its own Mix it key. No trend is open until one is picked.");
   else if (s.open?.trend) {
     const o = s.open;
-    lines.push(`THE TREND OPEN: ${cut(o.trend, 40)}. Cast: ${things<{ role: string; who: string }>(o.cast, 8).map((c) => `${cut(c.role, 20)} = ${cut(c.who, 30)}`).join("; ") || "none"}.${o.role ? ` Picked on screen: ${cut(o.role, 20)}.` : ""} ${typeof o.cost === "number" ? `Make it costs about ${Math.round(o.cost)} credits.` : "Make it runs on the user's own machine."}`);
+    lines.push(`THE TREND OPEN: ${cut(o.trend, 40)}. Cast: ${things<{ role: string; who: string }>(o.cast, 8).map((c) => `${cut(c.role, 20)} = ${cut(c.who, 30)}`).join("; ") || "none"}.${o.role ? ` Picked on screen: ${cut(o.role, 20)}.` : ""} ${typeof o.cost === "number" ? `Make it costs about ${Math.round(o.cost)} credits.` : "No reliable credit estimate is available; do not assume this is free or runs locally."}`);
   } else lines.push("NO TREND IS OPEN.");
   lines.push(s.making ? "A trend is being made right now: Make it has to wait until it is done." : "Nothing is being made now.");
   lines.push("", `SAVED MIXES (newest first; id · name): ${things<{ id: string; name: string }>(s.mixes, 20).map((m) => `${cut(m.id, 60)} · ${cut(m.name, 50)}`).join("; ") || "none"}`);

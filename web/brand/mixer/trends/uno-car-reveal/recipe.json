@@ -1,0 +1,88 @@
+{
+  "id": "uno-car-reveal",
+  "engine": "official-template",
+  "template": "video_fastvideo_fasth3_i2v",
+  "about": "Original Comfyture cast adaptation of a researched trend format. Script-driven motion; not a replica of source footage.",
+  "source": {
+    "url": "https://slapclip.com/changelog",
+    "note": "Research reference for the format only. No original recording or soundtrack is bundled."
+  },
+  "seconds": 8,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 8
+  },
+  "look": "look.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Original dialogue, music and foley generated with the video."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "dre",
+      "look": "Theo's big-hearted older brother with a short boxed beard, a burgundy bucket hat, a cream varsity jacket with burgundy sleeves and light jeans"
+    }
+  ],
+  "beats": [
+    {
+      "to": 2,
+      "text": "Lead flashes the two cards toward the lens",
+      "from": 0
+    },
+    {
+      "to": 5,
+      "text": "Lead lowers the cards and steps aside to reveal the sports car",
+      "from": 2
+    },
+    {
+      "to": 8,
+      "text": "Lead points proudly to the car as its headlights blink",
+      "from": 5
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 8,
+      "frames": 192,
+      "seed": 28102600,
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0–2s: {Lead} raises the two cards toward the camera, smiling. 2–5s: lowers both cards and takes one clear step to the left, revealing the stationary sports coupe behind. 5–8s: points proudly to the car; headlights blink once and a soft engine purr sounds. Original upbeat bass sting and paper flick foley. No speech. Keep a single car, stable hands and unchanged card printing. Camera gently pushes in. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people."
+    }
+  ],
+  "render": {
+    "model": "MiniMax H3 · FastH3",
+    "imageModel": "Codex imagegen",
+    "template": "video_fastvideo_fasth3_i2v",
+    "seed": 28102600,
+    "startedAt": "2026-10-28T16:46:25.192Z",
+    "finishedAt": "2026-10-28T16:49:11.445Z",
+    "executionSeconds": 80.795,
+    "queueSeconds": null,
+    "elapsedSeconds": 166.253,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "costNote": "Provider has not supplied an actual per-job bill. Unknown is not zero.",
+    "cloudPromptId": "a5a84da3-de2a-49b1-a28d-653a2bdc5100",
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "8.000000"
+      }
+    }
+  }
+}

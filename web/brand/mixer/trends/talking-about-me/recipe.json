@@ -1,0 +1,98 @@
+{
+  "id": "talking-about-me",
+  "engine": "official-template",
+  "template": "video_fastvideo_fasth3_i2v",
+  "about": "Original Comfyture cast adaptation of a researched trend format. Script-driven motion; not a replica of source footage.",
+  "source": {
+    "url": "https://smew.ai/templates/you-talking-bout-me-ai-trend",
+    "note": "Research reference for the format only. No original recording or soundtrack is bundled."
+  },
+  "seconds": 10,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 10
+  },
+  "look": "look.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Original dialogue, music and foley generated with the video."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "dre",
+      "look": "Theo's big-hearted older brother with a short boxed beard, a burgundy bucket hat, a cream varsity jacket with burgundy sleeves and light jeans"
+    },
+    {
+      "role": "Partner",
+      "crew": "theo",
+      "look": "the laid-back young producer with short black twists, an oversized black tee, black joggers and emerald-green headphones around his neck"
+    },
+    {
+      "role": "Third",
+      "crew": "earl",
+      "look": "the grumpy old Texan rancher with a cream straw cowboy hat, bushy silver eyebrows, a silver handlebar mustache, a faded blue denim shirt and a plum bandana"
+    }
+  ],
+  "beats": [
+    {
+      "to": 3,
+      "text": "Lead jokes about the bills",
+      "from": 0
+    },
+    {
+      "to": 6,
+      "text": "Partner turns and asks if the joke is about them",
+      "from": 3
+    },
+    {
+      "to": 10,
+      "text": "Lead points toward Third, who slowly looks up",
+      "from": 6
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 10,
+      "frames": 240,
+      "seed": 28102602,
+      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. 0–3s: {Lead}, closest to camera, chuckles and says \"Somebody here owes me lunch.\" 3–6s: {Partner}, in the middle, turns toward Lead and asks \"You talking about me?\" 6–8s: Lead points to {Third} at the far end and answers \"No. The one pretending to text.\" 8–10s: Third slowly lowers the phone and raises one eyebrow. Each line spoken only by its assigned character, no overlapping voices. Natural diner room tone, original voices, clear lips and comic pause, fixed medium three-shot. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people."
+    }
+  ],
+  "render": {
+    "model": "MiniMax H3 · FastH3",
+    "imageModel": "Codex imagegen",
+    "template": "video_fastvideo_fasth3_i2v",
+    "seed": 28102602,
+    "startedAt": "2026-10-28T16:49:10.982Z",
+    "finishedAt": "2026-10-28T16:51:32.892Z",
+    "executionSeconds": 106.485,
+    "queueSeconds": 24.168,
+    "elapsedSeconds": 141.91,
+    "actualCostCredits": null,
+    "imageCostCredits": null,
+    "costNote": "Provider has not supplied an actual per-job bill. Unknown is not zero.",
+    "cloudPromptId": "d54a20e4-f1f1-4fa7-b70e-f0be51ab6b71",
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 768,
+          "height": 1344
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "10.144000"
+      }
+    }
+  }
+}

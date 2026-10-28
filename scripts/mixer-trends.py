@@ -242,11 +242,12 @@ def main():
         face.save(OUT_CAST / f"{key}-face.webp", quality=88, method=6)
 
     OUT_JS.write_text(
+        'import { AUTUMN_TRENDS } from "./mixer-trends-autumn.js";\n'
         "// Mixer's trend shelf and its crew, written by scripts/mixer-trends.py from the crew's artwork and the\n"
         "// trend research (docs/research/trends-2026-10-19). Each trend: its length, how hot it is now (1 to 5),\n"
         "// who stars in it, its beats over time, and the feel of the music made for it (never the original track).\n"
         f"export const CREW = {json.dumps(crew, ensure_ascii=False, indent=2)};\n\n"
-        f"export const TRENDS = {json.dumps(sorted(trends, key=lambda t: t['soon']), ensure_ascii=False, indent=2)};\n\n"
+        f"export const TRENDS = [...AUTUMN_TRENDS, ...{json.dumps(sorted(trends, key=lambda t: t['soon']), ensure_ascii=False, indent=2)}];\n\n"
         'export const KINDS = [["all", "All"], ["dance", "Dance"], ["duo", "Duo"], ["reactions", "Reactions"], ["walks", "Walks"], ["glowups", "Glow-ups"]];\n'
         "export const trendById = (id) => TRENDS.find((t) => t.id === id) ?? null;\n"
         "export const crewById = (id) => CREW.find((c) => c.id === id) ?? null;\n"

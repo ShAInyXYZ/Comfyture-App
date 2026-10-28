@@ -17,7 +17,7 @@ const update = () => changed("mixer");
 const call = async (path, init) => {
   const res = await fetch(path, init);
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error ?? `Request failed (${res.status})`);
+  if (!res.ok) throw Object.assign(new Error(body.error ?? `Request failed (${res.status})`), { status: res.status });
   return body;
 };
 const send = (path, method, body) => call(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
@@ -227,6 +227,7 @@ async function recipeSound(t, recipe, files) {
  */
 async function fromRecipe(t, cast, m) {
   const recipe = await call(t.recipe);
+  if (recipe.engine === "official-template") return fromNativeRecipe(t, cast, m, recipe);
   const files = await send(`api/mixer/trends/${t.id}/files`, "POST");
   validateRecipe(recipe, files);
   m.body.progress = "Making the track"; save(m); update();
@@ -295,6 +296,61 @@ async function fromRecipe(t, cast, m) {
   if (failed) throw failed.reason;
   m.body.music = files.mix ?? voice;
   save(m);
+  return recipe;
+}
+
+/** Native-audio recipes keep the generated dialogue and foley with their video. */
+async function fromNativeRecipe(t, cast, m, recipe) {
+  validateRecipe(recipe, {});
+  const words = roleWords(recipe, cast);
+  const dir = t.recipe.replace(/recipe\.json$/, "");
+  if (!m.body.shots.length) m.body.shots = recipe.shots.map(s => ({ from: s.from, to: s.to, look: null, run: null, native: null, output: null }));
+  m.body.music = null;
+  save(m);
+  for (const [i, s] of recipe.shots.entries()) {
+    const shot = m.body.shots[i];
+    if (shot.output) continue;
+    m.body.progress = `Drawing frame ${i + 1} of ${recipe.shots.length}`; update();
+    shot.look ??= await firstFrame(t, cast, dir + (s.look ?? recipe.look));
+    save(m);
+    if (shot.submissionPending && !shot.native?.id)
+      throw new Error("The previous submission needs checking on Comfy Cloud before trying again; no duplicate was sent.");
+    if (!shot.native?.id || ["failed", "canceled"].includes(shot.native.status)) {
+      shot.submissionPending = true;
+      shot.startedAt = new Date().toISOString();
+      save(m);
+      try {
+        shot.native = await send(`api/utensils/templates/${recipe.template}/run`, "POST", {
+          confirm: true,
+          inputs: { ...recipe.settings, duration: s.to - s.from, first_frame: { file: shot.look.file },
+            prompt: s.prompt.replace(/\{(\w+)\}/g, (all, k) => words[k] ?? all),
+            seed: cast.every(c => c.who.crew === c.original) ? s.seed : Math.floor(Math.random() * 2147483647) },
+        });
+        shot.submissionPending = false;
+      } catch (e) {
+        // A lost response may still mean a paid job started. Only definite request rejection is retryable.
+        if (e.status >= 400 && e.status < 500) shot.submissionPending = false;
+        save(m);
+        throw e;
+      }
+      save(m);
+    }
+    while (shot.native.status === "running") {
+      m.body.progress = `${shot.native.phase === "queued" ? "Queued" : "Animating with sound"} · take ${i + 1} of ${recipe.shots.length}`;
+      save(m); update();
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      shot.native = await call(`api/utensils/templates/job/${shot.native.id}`);
+    }
+    save(m);
+    if (shot.native.status !== "done") throw new Error(shot.native.error ?? "This take did not finish.");
+    shot.output = shot.native.outputs?.find(o => o.kind === "video");
+    if (!shot.output) throw new Error("This take finished without a video.");
+    shot.render = { model: "MiniMax H3 · FastH3", finishedAt: new Date().toISOString(),
+      elapsedSeconds: (Date.now() - Date.parse(shot.startedAt)) / 1000,
+      estimatedCredits: shot.native.credits ?? null, actualCostCredits: null,
+      costNote: "Actual per-job billing was not supplied by the provider." };
+    save(m); update();
+  }
   return recipe;
 }
 
@@ -368,9 +424,9 @@ async function cutTogether(m, t, seconds = t.seconds) {
   const items = m.body.shots.map((s, i) => {
     const r = take(s);
     const need = s.to - s.from;
-    const have = r.length ?? r.request.seconds;
+    const have = s.output ? (s.output.seconds ?? need) : r.length ?? r.request.seconds;
     const speed = have < need ? Math.max(0.25, have / need) : 1;
-    return { id: `t${i + 1}`, src: { kind: "take", id: r.id }, from: 0, to: Math.min(have, need * speed), speed, sound: !m.body.music, join: s.join ?? "cut" };
+    return { id: `t${i + 1}`, src: s.output ? { kind: "video", id: s.output.file } : { kind: "take", id: r.id }, from: 0, to: Math.min(have, need * speed), speed, sound: !m.body.music, join: s.join ?? "cut" };
   });
   const tracks = [{ id: "video", kind: "video", main: true, items }];
   if (m.body.music) tracks.push({ id: "music", kind: "audio", role: "music", items: [{ id: "track", src: { kind: "audio", id: m.body.music.file }, start: 0, from: 0, to: seconds }] });
@@ -381,6 +437,7 @@ async function cutTogether(m, t, seconds = t.seconds) {
   m.body.cut = id;
   const film = await send(`api/cuts/${id}/render`, "POST", {});
   m.body.film = { url: film.url, seconds: film.seconds, id: film.id, poster: m.body.shots[0]?.look?.url };
+  m.body.progress = "Done";
   state.films = [film, ...(state.films ?? []).filter((f) => f.id !== film.id)];
   save(m);
 }
@@ -388,6 +445,7 @@ async function cutTogether(m, t, seconds = t.seconds) {
 /** Roughly what making the trend costs, in Comfy credits. */
 export function estimate(t = trendById(pick.trend)) {
   if (state.info?.target !== "comfy-cloud" || !t) return null;
+  if (t.engine === "official-template") return null; // GPU-time billing; no invented per-second price.
   const cast = castOf(t);
   const redraw = cast.some((c) => !(c.who.crew && c.who.crew === c.original));
   const m = (state.image.catalogue?.models ?? []).find((x) => x.id === castArtist());
