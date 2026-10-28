@@ -443,39 +443,39 @@
           "crew": "josie"
         }
       ],
-      "seconds": 15,
+      "seconds": 20,
       "scene": "Lead and Partner seated side by side on a comfy sofa, Lead on left and Partner on right. Cozy living room, no other characters.",
       "beats": [
         {
+          "from": 0,
           "to": 3,
-          "text": "Together: We listen and we do not judge",
-          "from": 0
+          "text": "Together: We listen and we don\u2019t judge"
         },
         {
-          "to": 7,
-          "text": "Lead admits blaming the cat for eating the last biscuit",
-          "from": 3
+          "from": 3,
+          "to": 10,
+          "text": "Face cream on his boots. Josie\u2019s side-eye says everything."
         },
         {
-          "to": 11,
-          "text": "Partner admits the houseplants are plastic",
-          "from": 7
+          "from": 10,
+          "to": 17,
+          "text": "His hat is a costume-shop replacement. Earl silently seethes."
         },
         {
-          "to": 15,
-          "text": "They fail to hide their judgment and laugh",
-          "from": 11
+          "from": 17,
+          "to": 20,
+          "text": "No judgment. Two painfully fake smiles."
         }
       ],
-      "prompt": "Use <Picture 1> as the exact first frame and identity reference. Premium tactile 3D animated feature-film style, vertical composition. An ORIGINAL comedy script with our own fictional characters, no source video. Single stable medium two-shot. {Lead} sits left, {Partner} right, on sofa. 0\u20133s: both warmly say together \"We listen and we don't judge.\" 3\u20137s: Lead sheepishly says \"I ate the last biscuit and blamed the cat.\" Partner keeps a strained polite smile. 7\u201311s: Partner replies \"Your houseplants are plastic. I stopped watering them months ago.\" Lead slowly turns, genuinely baffled. 11\u201313s: Lead deadpans \"I was proud of those.\" 13\u201315s: both break into warm laughter. Original natural character voices, each line only by assigned speaker, clear dialogue, precise lips, no overlapping lines except opening, no music obscuring voices. Gentle room tone. Preserve faces and clothes. No captions. Keep the same environment, character designs and accessories as the first frame. No logos, watermarks, subtitles or duplicated people.",
+      "prompt": "See productionRecipe for the two LTX-2.5 Pro takes and character voice direction.",
       "source": "original-script",
-      "seed": 28102610,
-      "template": "video_fastvideo_fasth3_i2v",
+      "template": "api_ltx2_5_i2v",
       "settings": {
-        "width": 768,
-        "height": 1344,
-        "duration": 15
-      }
+        "resolution": "1080x1920",
+        "fps": 24,
+        "generate_audio": true
+      },
+      "productionRecipe": "docs/research/we-listen-ltx-pro-v2/recipe.json"
     }
   ]
 }

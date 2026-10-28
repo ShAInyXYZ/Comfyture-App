@@ -4,7 +4,7 @@ Eleven playable presets with original Comfyture cast performances, scripts, firs
 
 | Preset | Cast | Length |
 | --- | --- | --- |
-| We Listen, We Don’t Judge | Earl, Josie | 15 s |
+| We Listen, We Don’t Judge | Earl, Josie | 20 s (LTX-2.5 Pro revision) |
 | UNO Car Reveal | Dre | 8 s |
 | Tiny Desk | Margot, Theo | 10 s |
 | You Talking About Me? | Dre, Theo, Earl | 10 s |
@@ -20,7 +20,7 @@ The cast already existed in Lore; no new identity was needed. First frames were 
 
 ## Making a new version
 
-Users pick a preset, upload a photo or assign a Lore character to each role, and press Make it. Changed roles are redrawn into the scene using the selected reference-image model. The official FastVideo FastH3 image-to-video template generates video with its own dialogue, music and foley; the final cut preserves that audio. Existing LTX motion-reference recipes remain separate and continue working.
+Users pick a preset, upload a photo or assign a Lore character to each role, and press Make it. Changed roles are redrawn into the scene using the selected reference-image model. The official FastVideo FastH3 image-to-video template generates ten presets; We Listen now uses two LTX-2.5 Pro takes with character voice direction. Both generate native dialogue and sound; the final cut preserves that audio. Existing LTX motion-reference recipes remain separate and continue working.
 
 Each recipe records the exact prompt, seed, dimensions, duration, cast and source attribution. Preview metadata includes measured provider execution time and end-to-end elapsed time. Actual per-job credits and image-generation charges were not reported and remain **null**, not zero. Displayed estimates elsewhere are not invoices.
 
@@ -34,7 +34,9 @@ The batch runner records submissions and resumes known cloud jobs rather than si
 - Tests cover photo recasting, native sound retention, LTX regression, missing references, cut retries, and avoiding duplicate submissions after a lost response. All 36 relevant tests passed.
 - A live Mixer test with an uploaded Ivy photo completed the reference-image redraw, FastH3 render and final cut, producing a playable video with sound in My mixes (`mixes-new-mix-83d8aa`).
 
-## Original We Listen script
+## Original We Listen script (superseded)
+
+The current 20-second LTX-2.5 Pro remake and production notes are in `../we-listen-ltx-pro-v2/`. The following is the first FastH3 version, preserved for provenance.
 
 Together: “We listen and we don't judge.”
 

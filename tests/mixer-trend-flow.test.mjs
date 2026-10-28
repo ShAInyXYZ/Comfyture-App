@@ -4,14 +4,19 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import * as catalogue from '../web/js/mixer-trends.js';
 import * as helpers from '../web/js/mixer-trend-state.js';
+import * as voices from '../web/js/mixer-voices.js';
 import { completionFeed } from '../web/js/job-completion.js';
 
-async function harness({ missingControl = false, failCut = false, native = false, loseSubmission = false } = {}) {
+async function harness({ missingControl = false, failCut = false, native = false, pro = false, loseSubmission = false } = {}) {
   const calls = { pictures: [], shoots: [], tracks: 0, mixes: 0, cuts: 0, native: [], timelines: [] };
   const state = { runs: [], image: { catalogue: { models: [{ id: 'gpt-image-2.5-flare' }] } } };
   const mixer = { busy: new Set(), mix: null };
   const recipe = JSON.parse(await readFile('web/brand/mixer/trends/documentary/recipe.json', 'utf8'));
   if (native) Object.assign(recipe, { engine: 'official-template', template: 'video_fastvideo_fasth3_i2v', settings: { width: 768, height: 1344 }, shots: [{ from: 0, to: 8, prompt: '{Lead} speaks an original line.', seed: 123 }] });
+  if (pro) Object.assign(recipe, { engine: 'official-template', template: 'api_ltx2_5_i2v', model: 'LTX-2.5 Pro', settings: { resolution: '1080x1920' }, shots: [
+    { from: 0, to: 10, prompt: '{Lead} speaks an original line.', seed: 123 },
+    { from: 10, to: 20, prompt: '{Lead} reacts.', seed: 124 },
+  ] });
   let fail = failCut;
   const fetch = async (url, init = {}) => {
     let body = {};
@@ -20,7 +25,7 @@ async function harness({ missingControl = false, failCut = false, native = false
     else if (url === 'api/audio/music') { calls.tracks++; body = { id: 'music' }; }
     else if (url === 'api/mixer/stars') body = JSON.parse(init.body);
     else if (url === 'api/cuts') { calls.timelines.push(JSON.parse(init.body).body); body = { project: { id: 'cut' } }; }
-    else if (url.endsWith('/video_fastvideo_fasth3_i2v/run')) {
+    else if (url.endsWith('/video_fastvideo_fasth3_i2v/run') || url.endsWith('/api_ltx2_5_i2v/run')) {
       calls.native.push(JSON.parse(init.body));
       if (loseSubmission) throw new Error('Connection interrupted');
       body = { id: 'native1', status: 'running', progress: .2 };
@@ -56,7 +61,7 @@ async function harness({ missingControl = false, failCut = false, native = false
   const context = vm.createContext({ fetch, structuredClone, Date, console, setTimeout: (fn) => fn() });
   const modules = {
     './store.js': store, './api.js': { api }, './mixer.js': mixModule,
-    './mixer-trends.js': catalogue, './mixer-trend-state.js': helpers,
+    './mixer-trends.js': catalogue, './mixer-trend-state.js': helpers, './mixer-voices.js': voices,
     './picker.js': { onServer: async () => ({ file: 'scene.png', url: '/scene.png' }) },
   };
   const mod = new vm.SourceTextModule(await readFile('web/js/mixer-trend.js', 'utf8'), { context });
@@ -155,4 +160,37 @@ test('an ambiguous paid submission is not automatically submitted again', async 
   await flow.makeTrend();
   assert.equal(calls.native.length, 1);
   assert.match(mixer.mix.body.error, /no duplicate was sent/);
+});
+
+
+test('LTX Pro uses explicit Pro/audio/duration controls, selected character voice and a shared reference across takes', async () => {
+  const { flow, calls, mixer } = await harness({ pro: true });
+  flow.setRole('Lead', { crew: 'earl' });
+  await flow.makeTrend();
+  assert.equal(calls.native.length, 2);
+  assert.equal(calls.pictures.length, 1);
+  for (const req of calls.native) {
+    assert.equal(req.overrides['5'].model, 'LTX-2.5 (Pro)');
+    assert.equal(req.overrides['5']['model.duration'], '10');
+    assert.equal(req.overrides['5']['model.generate_audio'], true);
+    assert.equal(req.overrides['5']['model.resolution'], '1080x1920');
+    assert.equal(req.inputs.image.file, 'cast.png');
+    assert.match(req.inputs.prompt, /Texas drawl/);
+    assert.doesNotMatch(req.inputs.prompt, /bright.*mid-high/i);
+  }
+  assert.equal(calls.tracks, 0);
+  assert.ok(mixer.mix.body.film);
+  assert.ok(calls.timelines[0].tracks[0].items.every(i => i.sound));
+});
+
+test('a new recipe revision cannot resume an older unfinished generation', () => {
+  const roles = { Lead: { crew: 'earl' } };
+  const mix = { body: { kind: 'trend', trend: { id: 'we-listen', cast: roles }, shots: [{}] } };
+  assert.equal(helpers.canResumeTrend(mix, 'we-listen', roles, 2), false);
+});
+
+test('voice direction for an uploaded star does not silently inherit the original character voice', () => {
+  const text = voices.castVoiceDirection([{ role: 'Lead', original: 'earl', who: { star: { name: 'My photo' } } }]);
+  assert.doesNotMatch(text, /Texas drawl/);
+  assert.match(text, /does not provide or clone/);
 });

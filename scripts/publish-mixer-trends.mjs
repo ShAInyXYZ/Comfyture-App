@@ -3,11 +3,17 @@ import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { CREW } from '../web/js/mixer-trends.js';
+import { AUTUMN_TRENDS } from '../web/js/mixer-trends-autumn.js';
 const exec=promisify(execFile);
 const plan=JSON.parse(await readFile('docs/research/trends-2026-10-28/production.json','utf8'));
 const output='output/mixer-new-trends-2026-10-28';
 const entries=[];
 for(const s of plan.scenes){
+ if(s.productionRecipe){
+  const current=AUTUMN_TRENDS.find(t=>t.id===s.id);
+  if(!current)throw Error(`Missing separately produced preset ${s.id}`);
+  entries.push(current);console.log('Preserved scripted revision',s.id);continue;
+ }
  const meta=await readFile(`${output}/${s.id}.json`,'utf8').then(JSON.parse,()=>null);
  if(meta?.status!=='done')continue;
  const dir=`web/brand/mixer/trends/${s.id}`;

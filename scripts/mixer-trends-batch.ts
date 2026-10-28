@@ -5,6 +5,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createTemplates, realCloud, jobOutputs, isDone, isOver } from '../server/comfy-templates.ts';
 import { CREW } from '../web/js/mixer-trends.js';
+import { castVoiceDirection } from '../web/js/mixer-voices.js';
 const root=process.cwd(), dir=join(root,'output/mixer-new-trends-2026-10-28');
 const plan=JSON.parse(await readFile(join(root,'docs/research/trends-2026-10-28/production.json'),'utf8'));
 const cloud=realCloud(process.env.COMFY_API_KEY!);
@@ -16,6 +17,7 @@ let next=0;
 async function lane(){
  while(next<plan.scenes.length){
   const scene=plan.scenes[next++];
+  if(scene.productionRecipe){console.log(scene.id,'uses scripted production:',scene.productionRecipe);continue;}
   const old=await readFile(join(dir,scene.id+'.json'),'utf8').then(JSON.parse,()=>null);
   if(old){
    if(old.cloudPromptId && ['running','needs-review'].includes(old.status)) {
@@ -45,7 +47,7 @@ async function lane(){
    if(!up.ok)throw Error(await up.text());
    meta.firstFrame=await up.json();
    const words=Object.fromEntries(scene.cast.map((r:any)=>{const c=CREW.find(c=>c.id===r.crew)!;return[r.role,c.name+', '+c.look];}));
-   meta.prompt=scene.prompt.replace(/\{(\w+)\}/g,(all:string,k:string)=>words[k]??all);
+   meta.prompt=scene.prompt.replace(/\{(\w+)\}/g,(all:string,k:string)=>words[k]??all)+'\n'+castVoiceDirection(scene.cast.map((r:any)=>({role:r.role,who:{crew:r.crew}})));
    meta.inputs={first_frame:{file:meta.firstFrame.file},prompt:meta.prompt,...meta.settings};
    meta.estimate=await service.estimate(scene.template);
    meta.status='submitting';await save(scene.id,meta);

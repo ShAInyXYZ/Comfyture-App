@@ -11,6 +11,7 @@ import { api } from "./api.js";
 import { mixer, save, newMix, whenOpened, mixLoras } from "./mixer.js";
 import { TRENDS, CREW, trendById, crewById, trendArt, crewPicture } from "./mixer-trends.js";
 import { onServer } from "./picker.js";
+import { castVoiceDirection, nativeRecipeRequest } from "./mixer-voices.js";
 import { uploadRole, canResumeTrend, validateRecipe } from "./mixer-trend-state.js";
 
 const update = () => changed("mixer");
@@ -137,7 +138,7 @@ const NAMES = new RegExp(`\\b(${CREW.map((c) => c.name).join("|")})\\b`, "g");
 function actionOf(t, cast, take) {
   const who = looks(t, cast);
   const said = take.beats.map((b) => b.text.replace(NAMES, (n) => who[n] ?? n)).join(", then ");
-  return `${said}. The same characters, place and light as the first frame, playful and smooth, made for a short vertical video.`;
+  return `${said}. The same characters, place and light as the first frame, playful and smooth, made for a short vertical video.\n${castVoiceDirection(cast)}`;
 }
 
 /**
@@ -251,7 +252,7 @@ async function fromRecipe(t, cast, m) {
     const end = s.end ? await first(s.end) : null;
     const body = {
       name: `${m.name} · ${i + 1}`, start: start.file, seconds: Math.ceil(s.frames / 24), aspect: "9:16", review: false, takes: 1, quality: "standard",
-      script: { shots: [], raw: fill(s.prompt) }, audio: { file: voice.file }, ...(end ? { end: { file: end.file } } : {}),
+      script: { shots: [], raw: fill(s.prompt) + "\n" + castVoiceDirection(cast) }, audio: { file: voice.file }, ...(end ? { end: { file: end.file } } : {}),
       video: { file: files.controls[s.pose ?? s.guide].file, mode: "swap", from: s.from, strength: s.strength ?? recipe.take.strength, length: s.frames, build: recipe.take.build },
       ...(ours && s.seed ? { seed: s.seed } : {}),
     };
@@ -304,14 +305,19 @@ async function fromNativeRecipe(t, cast, m, recipe) {
   validateRecipe(recipe, {});
   const words = roleWords(recipe, cast);
   const dir = t.recipe.replace(/recipe\.json$/, "");
+  const frames = new Map();
   if (!m.body.shots.length) m.body.shots = recipe.shots.map(s => ({ from: s.from, to: s.to, look: null, run: null, native: null, output: null }));
+  recipe.shots.forEach((s, i) => { if (m.body.shots[i]?.look) frames.set(dir + (s.look ?? recipe.look), m.body.shots[i].look); });
   m.body.music = null;
   save(m);
   for (const [i, s] of recipe.shots.entries()) {
     const shot = m.body.shots[i];
     if (shot.output) continue;
     m.body.progress = `Drawing frame ${i + 1} of ${recipe.shots.length}`; update();
-    shot.look ??= await firstFrame(t, cast, dir + (s.look ?? recipe.look));
+    const lookPath = dir + (s.look ?? recipe.look);
+    if (shot.look) frames.set(lookPath, shot.look);
+    shot.look ??= frames.get(lookPath) ?? await firstFrame(t, cast, lookPath);
+    frames.set(lookPath, shot.look);
     save(m);
     if (shot.submissionPending && !shot.native?.id)
       throw new Error("The previous submission needs checking on Comfy Cloud before trying again; no duplicate was sent.");
@@ -320,12 +326,10 @@ async function fromNativeRecipe(t, cast, m, recipe) {
       shot.startedAt = new Date().toISOString();
       save(m);
       try {
-        shot.native = await send(`api/utensils/templates/${recipe.template}/run`, "POST", {
-          confirm: true,
-          inputs: { ...recipe.settings, duration: s.to - s.from, first_frame: { file: shot.look.file },
-            prompt: s.prompt.replace(/\{(\w+)\}/g, (all, k) => words[k] ?? all),
-            seed: cast.every(c => c.who.crew === c.original) ? s.seed : Math.floor(Math.random() * 2147483647) },
-        });
+        const prompt = s.prompt.replace(/\{(\w+)\}/g, (all, k) => words[k] ?? all) + "\n" + castVoiceDirection(cast);
+        const seed = cast.every(c => c.who.crew === c.original) ? s.seed : Math.floor(Math.random() * 2147483647);
+        shot.voiceDirection = castVoiceDirection(cast);
+        shot.native = await send(`api/utensils/templates/${recipe.template}/run`, "POST", nativeRecipeRequest(recipe, s, shot.look.file, prompt, seed));
         shot.submissionPending = false;
       } catch (e) {
         // A lost response may still mean a paid job started. Only definite request rejection is retryable.
@@ -345,7 +349,7 @@ async function fromNativeRecipe(t, cast, m, recipe) {
     if (shot.native.status !== "done") throw new Error(shot.native.error ?? "This take did not finish.");
     shot.output = shot.native.outputs?.find(o => o.kind === "video");
     if (!shot.output) throw new Error("This take finished without a video.");
-    shot.render = { model: "MiniMax H3 · FastH3", finishedAt: new Date().toISOString(),
+    shot.render = { model: recipe.model ?? "MiniMax H3 · FastH3", finishedAt: new Date().toISOString(),
       elapsedSeconds: (Date.now() - Date.parse(shot.startedAt)) / 1000,
       estimatedCredits: shot.native.credits ?? null, actualCostCredits: null,
       costNote: "Actual per-job billing was not supplied by the provider." };
@@ -364,12 +368,12 @@ export async function makeTrend() {
   mixer.busy.add("trend");
   update();
   try {
-    m = canResumeTrend(mixer.mix, t.id, roles) ? mixer.mix : await newMix();
+    m = canResumeTrend(mixer.mix, t.id, roles, t.revision ?? 1) ? mixer.mix : await newMix();
     const resume = m.body.kind === "trend";
     m.body.error = null;
     m.body.progress = "Preparing your trend";
     m.name = `${t.name} · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
-    if (!resume) Object.assign(m.body, { kind: "trend", trend: { id: t.id, cast: roles }, aspect: "9:16", shots: [], film: null, music: null });
+    if (!resume) Object.assign(m.body, { kind: "trend", trend: { id: t.id, revision: t.revision ?? 1, cast: roles }, aspect: "9:16", shots: [], film: null, music: null });
     save(m);
     update();
     if (t.recipe) {

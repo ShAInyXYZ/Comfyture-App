@@ -1,0 +1,77 @@
+{
+  "id": "we-listen",
+  "engine": "official-template",
+  "template": "api_ltx2_5_i2v",
+  "about": "Original Comfyture script and cast. No source video.",
+  "source": {
+    "url": null,
+    "note": "Written for Earl and Josie, 28 October 2026."
+  },
+  "seconds": 20,
+  "aspect": "9:16",
+  "settings": {
+    "resolution": "1080x1920",
+    "fps": 24,
+    "generate_audio": true
+  },
+  "look": "look.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Original dialogue, music and foley generated with the video."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "earl",
+      "look": "the grumpy old Texan rancher with a cream straw cowboy hat, bushy silver eyebrows, a silver handlebar mustache, a faded blue denim shirt and a plum bandana"
+    },
+    {
+      "role": "Partner",
+      "crew": "josie",
+      "look": "the upbeat young creator with caramel-blonde curls in a messy bun, freckles, a butter-yellow cropped hoodie, light jeans and small gold hoop earrings"
+    }
+  ],
+  "beats": [
+    {
+      "from": 0,
+      "to": 3,
+      "text": "Together: We listen and we don\u2019t judge"
+    },
+    {
+      "from": 3,
+      "to": 10,
+      "text": "Face cream on his boots. Josie\u2019s side-eye says everything."
+    },
+    {
+      "from": 10,
+      "to": 17,
+      "text": "His hat is a costume-shop replacement. Earl silently seethes."
+    },
+    {
+      "from": 17,
+      "to": 20,
+      "text": "No judgment. Two painfully fake smiles."
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 10,
+      "frames": 240,
+      "seed": 28102801,
+      "prompt": "Use the provided image as the first frame. Preserve the beautiful tactile 3D animated character designs and clothing. Soft neutral daylight, believable skin and fabric colors, restrained saturation, no orange wash. Stable eye-level medium two-shot, both faces always fully visible; Earl on the left, Josie on the right, on the same sofa. Comedy comes from tiny involuntary facial reactions followed by painfully forced politeness. No cuts within this take, no subtitles, no added people, no background music; quiet room tone. {Lead} sits left; {Partner} sits right. 0\u20132.5 seconds: both look at the camera and say together, \"We listen and we don't judge.\" 2.5\u20136 seconds: Lead casually confesses, \"I polish my boots with your face cream.\" Partner silently freezes; her smile drops, one eyebrow climbs, her eyes flick down to his boots and back at his face in horrified disbelief. 6\u20138 seconds: hold on her silent side-eye. She presses her lips together, takes a tiny breath and forces an impossibly tight polite smile. 8\u201310 seconds: Partner says through that strained smile, \"No judgment.\" Lead notices her face, raises an innocent eyebrow. Only the assigned character speaks each line. The reaction is judgmental, never angry yelling; neither admits judging."
+    },
+    {
+      "from": 10,
+      "to": 20,
+      "frames": 240,
+      "seed": 28102802,
+      "prompt": "Use the provided image as the first frame. Preserve the beautiful tactile 3D animated character designs and clothing. Soft neutral daylight, believable skin and fabric colors, restrained saturation, no orange wash. Stable eye-level medium two-shot, both faces always fully visible; Earl on the left, Josie on the right, on the same sofa. Comedy comes from tiny involuntary facial reactions followed by painfully forced politeness. No cuts within this take, no subtitles, no added people, no background music; quiet room tone. {Lead} sits left; {Partner} sits right. This is the second confession in the same conversation. 0\u20135.5 seconds: Partner cheerfully confesses, \"I sold your real hat. That one's from a costume shop.\" Lead goes utterly still. His bushy eyebrows slowly pinch together; he looks up at his own hat brim, touches it with two fingers, then gives her a long wounded, accusing side-eye. 5.5\u20138 seconds: Partner studies his expression with an innocent smile. Lead starts to object without speaking, stops himself, swallows and forces a rigid smile. 8\u201310 seconds: Lead says very slowly and tightly, \"No judgment.\" Partner gives a tiny smug nod. End on both staring sideways at each other while holding painfully fake polite smiles. No laughing away the tension; neither admits judging. Only the assigned speaker moves their lips for each line."
+    }
+  ],
+  "revision": 2,
+  "model": "LTX-2.5 Pro",
+  "billing": "partner"
+}

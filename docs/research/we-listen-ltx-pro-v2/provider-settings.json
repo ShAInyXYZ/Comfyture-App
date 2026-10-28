@@ -1,0 +1,15 @@
+{
+  "class_type": "LtxApi25ImageToVideo",
+  "settings": {
+    "image": [
+      "4",
+      0
+    ],
+    "model": "LTX-2.5 (Pro)",
+    "model.duration": "10",
+    "model.fps": "24",
+    "model.generate_audio": true,
+    "model.resolution": "1080x1920",
+    "seed": 28102802
+  }
+}

@@ -30,8 +30,14 @@ test('all eleven cast presets ship usable recipes, matching covers, video and or
 test('We Listen is an original script with no source footage or borrowed soundtrack', async () => {
   const r = JSON.parse(await readFile('web/brand/mixer/trends/we-listen/recipe.json', 'utf8'));
   assert.equal(r.source.url, null);
-  assert.match(r.shots[0].prompt, /last biscuit/);
-  assert.match(r.shots[0].prompt, /houseplants are plastic/);
+  assert.equal(r.template, 'api_ltx2_5_i2v');
+  assert.equal(r.model, 'LTX-2.5 Pro');
+  assert.equal(r.seconds, 20);
+  assert.match(r.shots[0].prompt, /face cream/);
+  assert.match(r.shots[1].prompt, /costume shop/);
+  assert.ok(r.shots.every(s => /No judgment/.test(s.prompt)));
+  assert.match(r.voiceProfiles.earl, /Texas drawl/);
+  assert.match(r.voiceProfiles.josie, /mischievous/);
   assert.ok(r.shots.every(s => !s.pose && !s.guide));
   assert.ok(!r.sound.mix && !r.sound.vocals);
 });

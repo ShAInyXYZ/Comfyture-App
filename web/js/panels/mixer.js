@@ -103,7 +103,7 @@ function recipe(t) {
   const cast = castOf(t);
   const busy = making();
   const cost = trendCost(t);
-  const resume = canResumeTrend(m, t.id, pick.cast.roles);
+  const resume = canResumeTrend(m, t.id, pick.cast.roles, t.revision ?? 1);
   const head = [
     h("div.mx-recipe-title", {}, h("span.label", {}, "Trend recipe"), h("h2", {}, t.name), h("span.mx-recipe-meta", {}, `${t.seconds} s · ${KIND_NAME[t.kind]}${t.caption ? ` · “${t.caption}”` : ""}`)),
     h("div.mx-beats", {}, ...t.beats.map((b) => h("div.mx-beat", { style: { flexGrow: String(Math.max(0.6, b.to - b.from)) } }, h("i"), h("b", {}, span(b.from, b.to)), h("span", {}, b.text)))),
@@ -119,13 +119,13 @@ function recipe(t) {
         h("div.mx-cast-col", {},
           h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "Add your photo or choose a character, then Make it.")),
           h("div.mx-roles", {}, ...cast.map((c) => role(c)))),
-        madeWith({ music: t.engine !== "official-template", native: t.engine === "official-template" })),
+        madeWith({ music: t.engine !== "official-template", native: t.engine === "official-template", model: t.model, billing: t.billing })),
       t.render ? h("details.mx-provenance", {}, h("summary", {}, "Preview generation details"),
-        h("p", {}, `${t.render.model} · ${t.render.executionSeconds == null ? "GPU time unavailable" : `${Math.round(t.render.executionSeconds)} s GPU time`} · ${t.render.elapsedSeconds == null ? "" : `${Math.round(t.render.elapsedSeconds)} s elapsed`}`),
+        h("p", {}, `${t.render.model} · ${t.render.executionSeconds == null ? "Execution time unavailable" : `${Math.round(t.render.executionSeconds)} s execution`} · ${t.render.elapsedSeconds == null ? "" : `${Math.round(t.render.elapsedSeconds)} s elapsed`}`),
         h("p", {}, t.render.actualCostCredits == null ? "Actual cost: not reported by provider. This was a paid generation." : `Actual cost: ${t.render.actualCostCredits} cr`),
         h("a", { href: t.recipe, target: "_blank", rel: "noopener" }, "Recipe, script and metadata")) : null,
       m?.body.error && resume && !busy ? h("p.mx-error", { role: "alert" }, `${m.body.error} Your completed steps are saved. Continue to finish this mix.`) : null,
-      h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy || stars.uploading > 0, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.engine === "official-template" ? "Your cast in the scene, animated with original dialogue and sound using MiniMax H3" : t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, a track of its own, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
+      h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy || stars.uploading > 0, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.engine === "official-template" ? `Your cast in the scene, animated with original dialogue and sound using ${t.model ?? "MiniMax H3"}` : t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, a track of its own, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
         sprite("product-mixer"), h("span", {}, busy ? (m ? makeFeel(m, t).word : "Making it") : stars.uploading ? "Adding your photo…" : resume ? "Continue" : m?.body.film ? "Make it again" : "Make it"), cost && !busy && !resume && !stars.uploading ? h("em", {}, `≈ ${cost} cr`) : null),
   ];
   return h("section.mx-work.mx-recipe", {}, preview(t, m), h("div.mx-recipe-body", {}, ...head, ...rest));
@@ -234,11 +234,11 @@ const modelRow = (glyph, part, model, cost, ...more) =>
  * How a mix is made, at a glance: the picture model that redraws its first frames with the cast,
  * LTX-2.5 with the LoRAs it rolls with (none until picked), and the music model.
  */
-function madeWith({ music, native = false }) {
+function madeWith({ music, native = false, model, billing }) {
   return h("div.mx-made", {},
     h("div.mx-section-head", {}, h("h3", {}, "Made with")),
     pictureRow(),
-    native ? modelRow(sprite("film-make"), "Video + sound", h("b", {}, "MiniMax H3 · FastH3"), "GPU time · Comfy Cloud") : modelRow(sprite("film-make"), "Video", h("b", {}, "LTX-2.5"), cloud() ? "≈ 4.8 cr/s" : "your GPU",
+    native ? modelRow(sprite("film-make"), "Video + sound", h("b", {}, model ?? "MiniMax H3 · FastH3"), billing === "partner" ? "Partner credits · Comfy Cloud" : "GPU time · Comfy Cloud") : modelRow(sprite("film-make"), "Video", h("b", {}, "LTX-2.5"), cloud() ? "≈ 4.8 cr/s" : "your GPU",
       h("div.mx-model-loras", {}, h("span.label", {}, "LoRAs"), loraStack(mixLoras(), (list) => (setMixLoras(list), changed("mixer"))))),
     music ? modelRow(sprite("audio-music"), "Music", h("b", {}, "ACE-Step 1.5"), cloud() ? `≈ ${MUSIC_CR} cr/s` : "your GPU") : null);
 }
