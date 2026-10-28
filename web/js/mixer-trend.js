@@ -239,9 +239,9 @@ async function recipeSound(t, recipe, files) {
  * skeleton or depth), starts on its first frame redrawn with your cast, and follows the recipe's
  * sound (see recipeSound) for the mouths.
  */
-async function fromRecipe(t, cast, m) {
+async function fromRecipe(t, cast, m, reviewedPair) {
   const recipe = await call(t.recipe);
-  if (recipe.engine === "official-template") return fromNativeRecipe(t, cast, m, recipe);
+  if (recipe.engine === "official-template") return fromNativeRecipe(t, cast, m, recipe, reviewedPair);
   const files = await send(`api/mixer/trends/${t.id}/files`, "POST");
   validateRecipe(recipe, files);
   m.body.progress = "Making the track"; save(m); update();
@@ -314,7 +314,7 @@ async function fromRecipe(t, cast, m) {
 }
 
 /** Native-audio recipes keep the generated dialogue and foley with their video. */
-async function fromNativeRecipe(t, cast, m, recipe) {
+async function fromNativeRecipe(t, cast, m, recipe, reviewedPair) {
   validateRecipe(recipe, {});
   const problem = isProblemReveal(recipe) ? cleanProblem(m.body.trend.inputs?.problem) : null;
   if (problem) recipe = { ...recipe, shots: recipe.shots.map(s => ({ ...s, prompt: problemVideoPrompt(problem) })) };
@@ -337,6 +337,17 @@ async function fromNativeRecipe(t, cast, m, recipe) {
       },
       persist: () => save(m), progress: label => { m.body.progress = label; save(m); update(); },
     });
+  }
+  if (pair) {
+    if (!reviewedPair) {
+      m.body.progress = "Frames ready · review them before generating your video";
+      save(m); update();
+      return null;
+    }
+    if (reviewedPair.first !== pair.first.file || reviewedPair.last !== pair.last.file)
+      throw new Error("Your frames changed. Review the new pair before generating video.");
+    m.body.frameApproval = { ...reviewedPair, approvedAt: new Date().toISOString() };
+    save(m);
   }
   const dir = t.recipe.replace(/recipe\.json$/, "");
   const frames = new Map();
@@ -404,7 +415,31 @@ async function fromNativeRecipe(t, cast, m, recipe) {
 }
 
 /** The trend, made: its first frame, its takes rolled two at a time, its own track, cut together. */
-export async function makeTrend() {
+export function reviewFrames(t = trendById(pick.trend)) {
+  if (!isProblemReveal(t) || !canResumeTrend(mixer.mix, t.id, (castOf(t), pick.cast.roles), t.revision ?? 1, trendInputs(t))) return null;
+  const frames = mixer.mix.body.revealFrames;
+  return frames?.close?.photo?.file && frames?.wide?.photo?.file && frames.close.method === 'crop-v1' && frames.close.source === frames.wide.photo.file ? frames : null;
+}
+
+// Capture the actual draft and pair so a confirmation cannot approve a different selection.
+export function generationIdentity() {
+  const t = trendById(pick.trend);
+  castOf(t);
+  return JSON.stringify({ trend: t?.id, revision: t?.revision, roles: pick.cast?.roles, inputs: trendInputs(t),
+    mix: mixer.mix?.id, frames: reviewFrames(t) });
+}
+export async function generateTrendVideo(identity) {
+  const frames = reviewFrames();
+  if (!frames || identity !== generationIdentity()) {
+    toast("Review the current start and end frames before generating video.", { tone: 'crit' });
+    return;
+  }
+  return runTrend({ first: frames.close.photo.file, last: frames.wide.photo.file });
+}
+export async function makeTrend({ freshFrames = false } = {}) {
+  return runTrend(null, freshFrames);
+}
+async function runTrend(reviewedPair = null, freshFrames = false) {
   const t = trendById(pick.trend);
   if (!t || t.soon || making() || stars.uploading) return;
   const cast = structuredClone(castOf(t));
@@ -416,7 +451,7 @@ export async function makeTrend() {
   mixer.busy.add("trend");
   update();
   try {
-    m = canResumeTrend(mixer.mix, t.id, roles, t.revision ?? 1, inputs) ? mixer.mix : await newMix();
+    m = !freshFrames && canResumeTrend(mixer.mix, t.id, roles, t.revision ?? 1, inputs) ? mixer.mix : await newMix();
     const resume = m.body.kind === "trend";
     m.body.error = null;
     m.body.progress = "Preparing your trend";
@@ -425,7 +460,8 @@ export async function makeTrend() {
     save(m);
     update();
     if (t.recipe) {
-      const recipe = await fromRecipe(t, cast, m);
+      const recipe = await fromRecipe(t, cast, m, reviewedPair);
+      if (!recipe) return; // The reference review is a separate, explicit user action.
       await cutTogether(m, t, recipe.seconds);
       return;
     }

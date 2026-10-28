@@ -255,6 +255,13 @@ test('a personal problem creates a wide GPT reference, matching close-up, and se
   assert.match(calls.pictures[0].prompt, /theme is "guitar"/);
   assert.equal(calls.crops.length, 1);
   assert.equal(calls.crops[0].file, 'image1.png');
+  assert.equal(calls.native.length, 0);
+  assert.equal(calls.cuts, 0);
+  assert.match(mixer.mix.body.progress, /review/);
+  await flow.makeTrend();
+  assert.equal(calls.native.length, 0, 'repeated frame generation never starts video');
+  await flow.generateTrendVideo(flow.generationIdentity());
+  assert.equal(calls.pictures.length, 1);
   assert.equal(calls.native[0].inputs.first_frame.file, 'crop.png');
   assert.equal(calls.native[0].inputs.last_frame.file, 'image1.png');
   assert.match(calls.native[0].inputs.prompt, /I think I have a small guitar problem/);
@@ -263,20 +270,56 @@ test('a personal problem creates a wide GPT reference, matching close-up, and se
   assert.equal(calls.timelines[0].tracks[0].items[0].sound, true);
 });
 
-test('retrying a guided cut reuses both images and video; changing the problem creates a fresh run', async () => {
+test('retrying a guided cut reuses both images and video; changing the problem requires new review', async () => {
   const { flow, calls, mixer } = await harness({ reveal: true, failCut: true });
   flow.setProblem('guitar');
   await flow.makeTrend();
+  await flow.generateTrendVideo(flow.generationIdentity());
   assert.equal(mixer.mix.body.error, 'Render interrupted');
-  await flow.makeTrend();
+  await flow.generateTrendVideo(flow.generationIdentity());
   assert.equal(calls.pictures.length, 1);
   assert.equal(calls.native.length, 1);
   flow.setProblem('sneaker');
+  await flow.generateTrendVideo(flow.generationIdentity());
+  assert.equal(calls.native.length, 1);
   await flow.makeTrend();
   assert.equal(calls.mixes, 2);
   assert.equal(calls.pictures.length, 2);
+  assert.equal(calls.native.length, 1);
+  await flow.generateTrendVideo(flow.generationIdentity());
   assert.equal(calls.native.length, 2);
   assert.match(calls.native[1].inputs.prompt, /small sneaker problem/);
+});
+
+test('video cannot start without frames, with stale approval or after a cast change', async () => {
+  const { flow, calls } = await harness({ reveal: true });
+  await flow.generateTrendVideo(flow.generationIdentity());
+  assert.equal(calls.mixes, 0);
+  await flow.makeTrend();
+  const identity = flow.generationIdentity();
+  flow.setRole('Lead', { crew: 'shiny' });
+  assert.equal(flow.reviewFrames(), null);
+  await flow.generateTrendVideo(identity);
+  assert.equal(calls.native.length, 0);
+  await flow.makeTrend();
+  await flow.generateTrendVideo(identity);
+  assert.equal(calls.native.length, 0);
+  await flow.generateTrendVideo(flow.generationIdentity());
+  assert.equal(calls.native.length, 1);
+});
+
+test('regeneration preserves the previous frame receipt and requires a new approval', async () => {
+  const { flow, calls, mixer } = await harness({ reveal: true });
+  await flow.makeTrend();
+  const before = mixer.mix;
+  const identity = flow.generationIdentity();
+  await flow.makeTrend({ freshFrames: true });
+  assert.equal(calls.mixes, 2);
+  assert.equal(calls.pictures.length, 2);
+  assert.equal(before.body.revealFrames.wide.photo.file, 'image1.png');
+  assert.equal(mixer.mix.body.revealFrames.wide.photo.file, 'image2.png');
+  await flow.generateTrendVideo(identity);
+  assert.equal(calls.native.length, 0);
 });
 
 test('an empty collection does not submit images or video', async () => {

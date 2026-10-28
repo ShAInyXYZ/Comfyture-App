@@ -312,3 +312,37 @@
 .mx-reference-pair figcaption { color: var(--muted); font-size: var(--fs-small); }
 
 .mx-reference-guides { display: grid; gap: .5rem; }
+
+/* Generation approval lives in the native top layer, above every assistant or panel. */
+.mx-generation-review { box-sizing: border-box; width: min(46rem, calc(100vw - 4rem)); max-width: none; max-height: calc(100dvh - 4rem); margin: auto; padding: 0; border: 1px solid var(--line2); border-radius: var(--r-panel); background: var(--s1); color: var(--text); overflow: hidden; }
+.mx-generation-review[open] { display: flex; flex-direction: column; }
+.mx-generation-review::backdrop { background: color-mix(in srgb, var(--sunk) 75%, transparent); backdrop-filter: blur(8px); }
+.mx-generation-review .nk-dialog-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 1.5rem 1.75rem 1rem; border-bottom: 1px solid var(--line); flex: none; }
+.mx-generation-review h2 { margin: .5rem 0; font-size: 1.65rem; }
+.mx-generation-review .nk-dialog-desc { margin: 0; color: var(--muted); }
+.mx-generation-review .nk-dialog-close { position: static; flex: none; }
+.mx-generation-review .nk-dialog-body { padding: 1.25rem 1.75rem; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line2) transparent; }
+.mx-generation-review .nk-dialog-actions { display: flex; justify-content: flex-end; gap: .75rem; padding: 1rem 1.75rem; border-top: 1px solid var(--line); flex: none; }
+.mx-review-cast { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.mx-review-cast > div { display: flex; align-items: center; gap: .75rem; }
+.mx-review-cast img { width: 3rem; height: 3rem; border-radius: 50%; object-fit: cover; }
+.mx-review-cast span { display: grid; gap: .25rem; }
+.mx-review-cast small, .mx-review-row dt, .mx-review-frames figcaption { color: var(--muted); }
+.mx-review-facts { margin: 1rem 0; }
+.mx-review-row { display: grid; grid-template-columns: 8rem 1fr; gap: 1rem; padding: .6rem 0; border-bottom: 1px solid var(--line); font-size: var(--fs-small); line-height: 1.5; }
+.mx-review-row dd { margin: 0; }
+.mx-review-script p { margin: .65rem 0; font-size: var(--fs-small); line-height: 1.5; }
+.mx-review-script b { color: var(--muted); margin-right: .4rem; font-variant-numeric: tabular-nums; }
+.mx-review-prompt { margin: 1rem 0; font-size: var(--fs-small); }
+.mx-review-prompt summary { cursor: pointer; color: var(--muted); }
+.mx-review-prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.6; }
+.mx-review-frames { display: flex; justify-content: center; gap: 1.25rem; margin: 1rem 0; }
+.mx-review-frames figure { margin: 0; text-align: center; }
+.mx-review-frames img { display: block; height: 15rem; max-width: 100%; object-fit: contain; border-radius: .75rem; background: var(--sunk); }
+.mx-review-frames figcaption { margin-top: .5rem; font-size: var(--fs-small); }
+.mx-review-price { margin-top: 1.25rem; padding: 1rem; background: var(--sunk); border: 1px solid var(--line); border-radius: .75rem; }
+.mx-review-price > div { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.mx-review-price strong { color: var(--accent); font-size: 1.3rem; white-space: nowrap; }
+.mx-review-price p, .mx-review-next { color: var(--muted); font-size: var(--fs-small); line-height: 1.5; margin: .65rem 0 0; }
+.mx-review-next { color: var(--text); margin-top: 1rem; }
+.mx-generation-review .mx-review-confirm { background: var(--accent); color: var(--accent-ink); border-color: var(--accent-line); }
