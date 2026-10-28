@@ -35,6 +35,7 @@ async function harness({ missingControl = false, failCut = false, native = false
     else if (url === '/media/videos/spoken.mp4' || url === 'brand/mixer/voices/ivy-v1.mp3') return { ok: true, blob: async () => 'media bytes' };
     else if (url.startsWith('api/audio?name=')) body = { file: url.includes('reference') ? 'reference.mp3' : 'performance.mp3' };
     else if (url.endsWith('/audio_melbandroformer_audio_separation/run')) body = { id: 'stems', status: 'done', outputs: [{ kind: 'audio', node: '4', file: 'speech.mp3' }, { kind: 'audio', node: '5', file: 'room.mp3' }] };
+    else if (url === 'api/utensils/fx/master') body = { id: 'master', status: 'done', results: [{ kind: 'audio', file: 'balanced.wav' }] };
     else if (url.endsWith('/audio-chatterbox_vc/run')) body = { id: 'vc', status: 'done', outputs: [{ kind: 'audio', file: 'converted.mp3' }] };
     else if (url.endsWith('/render')) {
       calls.cuts++;
@@ -209,7 +210,8 @@ test('a photo remake with voice conversion mutes native speech and places conver
   assert.equal(calls.native.length, 1);
   const tracks = calls.timelines[0].tracks;
   assert.equal(tracks.find(t => t.kind === 'video').items[0].sound, false);
-  assert.equal(tracks.find(t => t.role === 'voice').items[0].src.id, 'converted.mp3');
+  assert.equal(tracks.find(t => t.role === 'voice').items[0].src.id, 'balanced.wav');
+  assert.equal(tracks.find(t => t.role === 'effects').items[0].volume, 0.25);
   assert.equal(tracks.find(t => t.role === 'effects').items[0].src.id, 'room.mp3');
   assert.ok(mixer.mix.body.film);
 });

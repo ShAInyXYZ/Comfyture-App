@@ -36,7 +36,7 @@ recipe.render = { model: recipe.model, imageModel: recipe.imageModel ?? 'Codex i
   actualCostCredits: null, imageCostCredits: null, billing: recipe.billing ?? 'gpu',
   costNote: post?.costNote ?? 'Paid generation. Actual per-job credits were not supplied by the provider.',
   voiceMethod: post?.voiceMethod ?? 'Text-directed native generated voices, not cloned audio or post-production conversion.',
-  ...(post ? { postProduction: post.stages, estimatedCredits: post.estimatedCredits, productionElapsedSeconds: post.elapsedSeconds, recurringEstimateCredits: post.recurringEstimateCredits } : {}),
+  ...(post ? { postProduction: post.stages, audioMix: post.audioMix ?? null, estimatedCredits: post.estimatedCredits, productionElapsedSeconds: post.elapsedSeconds, recurringEstimateCredits: post.recurringEstimateCredits } : {}),
   takes: receipts.map((r, i) => ({ seed: recipe.shots[i].seed, cloudPromptId: r.cloudPromptId, executionSeconds: r.executionSeconds, elapsedSeconds: r.elapsedSeconds, settings: r.request.overrides, prompt: r.request.inputs.prompt })), media: JSON.parse(stdout) };
 await copyFile(`${out}/preview.mp4`, `${dir}/preview.mp4`);
 await exec('ffmpeg', ['-v', 'error', '-y', '-ss', String(recipe.coverAt ?? Math.min(9, recipe.seconds - .5)), '-i', `${out}/preview.mp4`, '-frames:v', '1', '-vf', 'scale=768:1344:force_original_aspect_ratio=increase,crop=768:1344', '-quality', '90', `${dir}/poster.webp`]);

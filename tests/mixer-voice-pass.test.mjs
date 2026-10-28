@@ -11,6 +11,7 @@ function harness({ ambiguous = false, interrupt = false } = {}) {
     upload: async (url) => { uploads.push(url); return { file: url.includes('voices') ? 'reference.mp3' : 'performance.mp3' }; },
     send: async (path, method, request) => {
       calls.push({ path, request });
+      if (path.endsWith('/fx/master')) return { id: 'master', status: 'done', results: [{ kind: 'audio', file: 'balanced.wav' }] };
       if (path.includes('chatterbox') && ambiguous) throw Error('Lost submit response');
       return { id: path.includes('chatterbox') ? 'vc' : 'stems', status: 'running' };
     },
@@ -26,20 +27,22 @@ const shot = () => ({ from: 0, to: 10, output: { url: '/media/videos/shot.mp4' }
 test('voice pass sends the reference and isolated performance to the correct loader slots, preserving ambience', async () => {
   const h = harness(), s = shot();
   await applyCharacterVoice(recipe, cast, s, h.deps);
-  assert.equal(h.calls.length, 2);
+  assert.equal(h.calls.length, 3);
   assert.equal(h.calls[1].request.inputs.audio.file, 'reference.mp3');
   assert.equal(h.calls[1].request.inputs.audio3.file, 'vocals.mp3');
   assert.equal(s.voicePass.ambience.file, 'ambience.mp3');
-  assert.equal(s.voicePass.converted.file, 'converted.mp3');
+  assert.equal(s.voicePass.converted.file, 'balanced.wav');
+  assert.equal(s.voicePass.ambienceVolume, 0.25);
+  assert.equal(h.calls[2].request.lufs, -18);
   await applyCharacterVoice(recipe, cast, s, h.deps);
-  assert.equal(h.calls.length, 2);
+  assert.equal(h.calls.length, 3);
   assert.equal(h.uploads.length, 2);
 });
 test('an interrupted voice poll resumes the existing job without paying for another stage', async () => {
   const h = harness({ interrupt: true }), s = shot();
   await assert.rejects(applyCharacterVoice(recipe, cast, s, h.deps), /Lost poll/);
   await applyCharacterVoice(recipe, cast, s, h.deps);
-  assert.equal(h.calls.length, 2);
+  assert.equal(h.calls.length, 3);
   assert.ok(s.voicePass.converted);
 });
 test('an ambiguous conversion submission never automatically resubmits', async () => {

@@ -50,7 +50,7 @@ export async function applyCharacterVoice(recipe, cast, shot, { call, send, uplo
   const reference = voiceReferenceFor(recipe, cast);
   if (!reference) return; // Other crew retain their directed native voice until a sample is authored.
   const pass = shot.voicePass ??= { name: reference.name };
-  if (pass.converted && pass.ambience) return;
+  if (pass.converted && pass.ambience && pass.mixVersion === 1) return;
   const stage = async (key, template, request, label) => {
     const state = pass[key] ??= {};
     if (state.pending && !state.job?.id) throw new Error('The previous voice submission needs checking on Comfy Cloud; no duplicate was sent.');
@@ -86,5 +86,20 @@ export async function applyCharacterVoice(recipe, cast, shot, { call, send, uplo
   }, `Giving the performance ${reference.name}'s voice`);
   pass.converted = outputs.find(o => o.kind === 'audio');
   if (!pass.converted) throw new Error('Voice conversion finished without audio.');
+  pass.rawConverted = pass.converted;
+  progress('Balancing dialogue above footsteps and room sound');
+  if (!pass.masterJob || ['failed', 'canceled'].includes(pass.masterJob.status)) {
+    pass.masterJob = await send('api/utensils/fx/master', 'POST', { file: pass.rawConverted.file, preset: 'custom', lufs: -18, peak: -2, range: 11, format: 'wav', title: `${reference.name} dialogue` });
+    persist();
+  }
+  while (['queued', 'running'].includes(pass.masterJob.status)) {
+    await sleep();
+    pass.masterJob = await call(`api/utensils/fx/jobs/${pass.masterJob.id}`); persist();
+  }
+  if (pass.masterJob.status !== 'done') throw new Error(pass.masterJob.error ?? 'Dialogue loudness correction did not finish.');
+  pass.converted = pass.masterJob.results?.find(o => o.kind === 'audio');
+  if (!pass.converted) throw new Error('Dialogue loudness correction returned no audio.');
+  pass.ambienceVolume = 0.25; // -12 dB: foley supports the dialogue instead of competing with it.
+  pass.mixVersion = 1;
   pass.finishedAt = new Date().toISOString(); persist();
 }

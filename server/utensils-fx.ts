@@ -398,8 +398,8 @@ export function plan(tool: Tool, p: Params, ctx: Ctx): Plan {
       // the second pass knows what the first measured, so the gain is one steady change instead of a moving one
       const loud = m ? `loudnorm=${target}:measured_I=${f3(m.input_i)}:measured_LRA=${f3(m.input_lra)}:measured_TP=${f3(m.input_tp)}:measured_thresh=${f3(m.input_thresh)}:offset=${f3(m.target_offset)}:linear=true` : `loudnorm=${target}`;
       const note = m ? `${f3(m.input_i)} → ${f3(p.lufs)} LUFS` : `To ${f3(p.lufs)} LUFS`;
-      if (a.hasVideo) return { seconds: a.duration, steps: [{ args: ["-i", a.path, "-map", "0:v", "-map", "0:a", "-c:v", "copy", "-af", `${loud},aresample=48000`, ...AENC, ...FAST, out(ctx, "out.mp4")], out: out(ctx, "out.mp4"), kind: "video", ext: "mp4", note }] };
-      return { seconds: a.duration, steps: [{ args: ["-i", a.path, "-vn", "-af", `${loud},aresample=48000`, ...AUDIO_ARGS[p.format as (typeof AUDIO_OUT)[number]], out(ctx, `out.${p.format}`)], out: out(ctx, `out.${p.format}`), kind: "audio", ext: p.format, note }] };
+      if (a.hasVideo) return { seconds: a.duration, steps: [{ args: ["-i", a.path, "-map", "0:v", "-map", "0:a", "-c:v", "copy", "-af", `aformat=channel_layouts=stereo,${loud},aresample=48000`, ...AENC, ...FAST, out(ctx, "out.mp4")], out: out(ctx, "out.mp4"), kind: "video", ext: "mp4", note }] };
+      return { seconds: a.duration, steps: [{ args: ["-i", a.path, "-vn", "-af", `aformat=channel_layouts=stereo,${loud},aresample=48000`, ...AUDIO_ARGS[p.format as (typeof AUDIO_OUT)[number]], out(ctx, `out.${p.format}`)], out: out(ctx, `out.${p.format}`), kind: "audio", ext: p.format, note }] };
     }
     case "layer": {
       const v = clip(ctx);
@@ -465,7 +465,7 @@ export function plan(tool: Tool, p: Params, ctx: Ctx): Plan {
 
 /** The first pass of a loudness job: measures the sound (ffmpeg prints the numbers as JSON on its error output). */
 export function measureArgs(p: Params, input: string) {
-  return ["-hide_banner", "-nostdin", "-i", input, "-vn", "-af", `loudnorm=I=${f3(p.lufs)}:TP=${f3(p.peak)}:LRA=${f3(p.range)}:print_format=json`, "-f", "null", "-"];
+  return ["-hide_banner", "-nostdin", "-i", input, "-vn", "-af", `aformat=channel_layouts=stereo,loudnorm=I=${f3(p.lufs)}:TP=${f3(p.peak)}:LRA=${f3(p.range)}:print_format=json`, "-f", "null", "-"];
 }
 /** The numbers a loudnorm measuring pass printed, or null when they are not there. */
 export function readMeasured(stderr: string): Measured | null {

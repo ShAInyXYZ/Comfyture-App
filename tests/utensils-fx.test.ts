@@ -191,14 +191,14 @@ test("cleaning a sound lifts the rumble out and takes the noise down; a clip kee
 
 test("mastering reads the loudness first, then moves it once to the target, with a ceiling for the peaks", () => {
   const p = clean("master", { preset: "streaming", peak: -1, range: 9 });
-  assert.deepEqual(measureArgs(p, "/in.mp3").slice(-5), ["-af", "loudnorm=I=-14:TP=-1:LRA=9:print_format=json", "-f", "null", "-"]);
+  assert.deepEqual(measureArgs(p, "/in.mp3").slice(-5), ["-af", "aformat=channel_layouts=stereo,loudnorm=I=-14:TP=-1:LRA=9:print_format=json", "-f", "null", "-"]);
   const measured = readMeasured(`junk\n{ "input_i" : "-22.40", "input_tp" : "-12.90", "input_lra" : "0.10", "input_thresh" : "-33.00", "output_i": "-14.4", "target_offset" : "0.40" }\n`)!;
   assert.deepEqual(measured, { input_i: -22.4, input_tp: -12.9, input_lra: 0.1, input_thresh: -33, target_offset: 0.4 });
   const second = plan("master", p, ctx({ input: sound(), measured })).steps[0];
-  assert.equal(arg(second.args, "-af"), "loudnorm=I=-14:TP=-1:LRA=9:measured_I=-22.4:measured_LRA=0.1:measured_TP=-12.9:measured_thresh=-33:offset=0.4:linear=true,aresample=48000");
+  assert.equal(arg(second.args, "-af"), "aformat=channel_layouts=stereo,loudnorm=I=-14:TP=-1:LRA=9:measured_I=-22.4:measured_LRA=0.1:measured_TP=-12.9:measured_thresh=-33:offset=0.4:linear=true,aresample=48000");
   assert.equal(second.note, "-22.4 → -14 LUFS");
   assert.equal(second.ext, "mp3");
-  assert.ok(arg(plan("master", p, ctx({ input: sound() })).steps[0].args, "-af").startsWith("loudnorm=I=-14:TP=-1:LRA=9,"), "without a measuring it is one pass");
+  assert.ok(arg(plan("master", p, ctx({ input: sound() })).steps[0].args, "-af").startsWith("aformat=channel_layouts=stereo,loudnorm=I=-14:TP=-1:LRA=9,"), "without a measuring it is one pass");
   assert.equal(readMeasured("nothing here"), null);
   assert.equal(readMeasured("{ \"input_i\" : \"-inf\" }"), null);
 });

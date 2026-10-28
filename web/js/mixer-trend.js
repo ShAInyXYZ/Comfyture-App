@@ -447,7 +447,7 @@ async function cutTogether(m, t, seconds = t.seconds) {
     if (!shot.voicePass?.converted) continue;
     for (const [part, role] of [['converted', 'voice'], ['ambience', 'effects']]) {
       const audio = shot.voicePass[part];
-      if (audio) tracks.push({ id: `${part}-${i}`, kind: 'audio', role, items: [{ id: `${part}-${i}`, src: { kind: 'audio', id: audio.file }, start: shot.from, from: 0, to: shot.to - shot.from }] });
+      if (audio) tracks.push({ id: `${part}-${i}`, kind: 'audio', role, items: [{ id: `${part}-${i}`, src: { kind: 'audio', id: audio.file }, start: shot.from, from: 0, to: shot.to - shot.from, volume: part === 'ambience' ? (shot.voicePass.ambienceVolume ?? 0.25) : 1 }] });
     }
   }
   if (m.body.music) tracks.push({ id: "music", kind: "audio", role: "music", items: [{ id: "track", src: { kind: "audio", id: m.body.music.file }, start: 0, from: 0, to: seconds }] });

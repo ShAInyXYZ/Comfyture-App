@@ -61,5 +61,13 @@
     "outputSeconds": 10,
     "transcript": "Mmm, I might have a small plant problem. There\u2019s still room.",
     "note": "Automatic transcription spells the final homophone \u201cThey\u2019re\u201d. Word boundaries compared before and after conversion; no lines lost. Subjective voice preference remains for the user to review."
+  },
+  "audioMix": {
+    "version": 1,
+    "voiceIntegratedTargetLUFS": -18,
+    "voiceTruePeakLimitDBTP": -2,
+    "ambienceGainDB": -12.04,
+    "method": "Local loudness normalization of converted dialogue; ambience attenuated independently. No new cloud jobs.",
+    "emotion": "Performance is unchanged; this correction fixes loudness only."
   }
 }

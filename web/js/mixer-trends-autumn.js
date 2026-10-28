@@ -500,6 +500,14 @@ export const AUTUMN_TRENDS = [
           "actualCostCredits": null
         }
       ],
+      "audioMix": {
+        "version": 1,
+        "voiceIntegratedTargetLUFS": -18,
+        "voiceTruePeakLimitDBTP": -2,
+        "ambienceGainDB": -12.04,
+        "method": "Local loudness normalization of converted dialogue; ambience attenuated independently. No new cloud jobs.",
+        "emotion": "Performance is unchanged; this correction fixes loudness only."
+      },
       "estimatedCredits": 44.5,
       "productionElapsedSeconds": 272.018,
       "recurringEstimateCredits": 30.5,

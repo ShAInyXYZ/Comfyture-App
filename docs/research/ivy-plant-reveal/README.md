@@ -33,3 +33,7 @@ Built-in imagegen, with Ivy’s existing portrait as identity reference: vertica
 ## Validation
 
 45 tests passed across template execution/output metadata, Mixer flow, voice conversion retry safety, and published assets. Browser checked the updated card, cover, ten-second playback and voice method. Production render/contact sheet/transcripts and screenshot are kept under `output/ivy-plant-reveal/` (local QA artifacts).
+
+## Audio balance correction
+
+The original conversion was 26 dB quieter on average than the native dialogue and was mixed at unity gain. Corrected locally: normalize converted speech toward −18 LUFS with a −2 dBTP ceiling, reduce ambience by 12 dB, and preserve native timing. Future Mixer generations run the same local loudness step. No new paid generation; this does not change the performance or the video’s color/contrast.
