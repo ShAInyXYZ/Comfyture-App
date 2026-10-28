@@ -83,7 +83,7 @@ function card(t) {
   const on = t.id === pick.trend && !remixing();
   const mk = making() && mixer.mix?.body?.trend?.id === t.id ? makeFeel(mixer.mix, t) : null;
   // a trend not made yet is shown at the end of the shelf and opens nothing
-  return h(`button.mx-card${on ? ".is-on" : ""}${t.soon ? ".is-soon" : ""}${mk ? ".is-making" : ""}`, { type: "button", disabled: !!t.soon || making(), title: t.soon ? `${t.name}\nComing soon` : `${t.name}\n${KIND_NAME[t.kind]} · ${t.seconds} s`, on: { click: () => selectTrend(t.id) } },
+  return h(`button.mx-card${on ? ".is-on" : ""}${t.soon ? ".is-soon" : ""}${mk ? ".is-making" : ""}`, { type: "button", disabled: !!t.soon || making(), title: t.soon ? `${t.name}\nComing soon` : `${t.name}\n${KIND_NAME[t.kind]} · ${t.seconds} s`, on: { click: () => { previewTrend = t.id; watching = t.preview ? t.id : null; starting = false; selectTrend(t.id); } } },
     h("img", { src: trendArt(t), alt: "", draggable: false, loading: "lazy" }),
     h("span.mx-card-len", {}, t.soon ? "Soon" : `0:${pad2(Math.round(t.seconds))}`),
     t.soon ? h("span.mx-card-soon", {}, "Coming soon") : null,
@@ -169,10 +169,10 @@ function preview(t, m) {
   // A newly generated result takes over; saved mixes remain explicitly selectable.
   if (making()) watching = null;
   const film = m?.body.film;
-  // a version of yours and ours: a switch on the card goes between them
+  // Trend cards open the example; My mixes opens saved results.
   if (film && t.preview && watching === t.id && !making())
-    return h("div.mx-preview", {}, player({ name: t.name, body: { film: { url: t.preview, seconds: t.seconds }, shots: t.beats } }, { inFrame: true }), versionSwitch(t, "ours"));
-  if (film) return h("div.mx-preview", {}, player(m), t.preview ? versionSwitch(t, "yours") : null);
+    return h("div.mx-preview", {}, player({ name: t.name, body: { film: { url: t.preview, seconds: t.seconds }, shots: t.beats } }, { inFrame: true }));
+  if (film) return h("div.mx-preview", {}, player(m));
   // our crew's version, in the cover's frame at the shape it was made in, until yours exists;
   // another trend picked, and this one is back to its cover
   if (watching !== t.id) watching = null;
@@ -189,18 +189,6 @@ function preview(t, m) {
       // our own version of the trend, in the shape it was made in
       t.preview && !first && !making() ? h("button.mx-watch", { type: "button", title: "Watch our crew's version", "aria-label": "Watch our crew's version", on: { click: () => ((watching = t.id), (starting = true), changedMixer()) } }, icon("play")) : null,
       feel ? makingHud(feel) : making() ? h("span.mx-making", {}, h("span.lamp", { dataset: { tone: "busy" } }), "Making your version") : h("span.mx-cover-note", {}, "Your version plays here")));
-}
-
-/** Yours | Ours: between the version made for you and the trend's own (our crew's). */
-function versionSwitch(t, on) {
-  const go = (ours) => () => {
-    watching = ours ? t.id : null;
-    starting = ours;
-    changedMixer();
-  };
-  return h("div.mx-versions", { role: "group", "aria-label": "Version" },
-    h("button", { type: "button", "aria-pressed": String(on === "yours"), on: { click: go(false) } }, "Yours"),
-    h("button", { type: "button", "aria-pressed": String(on === "ours"), on: { click: go(true) } }, "Ours"));
 }
 
 /**
