@@ -16,8 +16,8 @@
 //   2. Whether the name an upload returns is accepted as LoadImage.image / LoadVideo.file / LoadAudio.audio in input_overrides.
 //      Images use POST /api/upload/image (returns {name}); video and audio use POST /api/assets (the loader name is then the
 //      content hash plus the extension, as the engine's own submitted graphs show: see loaderName()).
-//   3. Whether node ids of a flattened subgraph ("57:12") are accepted in input_overrides. This module only ever overrides
-//      top-level loader nodes (input_overrides) and declared subgraph inputs (slot_overrides, the documented route).
+//   3. Subgraphs without proxyWidgets cannot use slot_overrides. Cloud's apply_slots diagnostics direct these inputs to
+//      their flattened interior node ids ("105:15") through input_overrides; derive them from the graph's actual links.
 //   4. Subgraph slot defaults in get_template_schema are shifted against the slot names (image_qwen_image_edit_2509 shows the
 //      prompt text as the default of 'image'): they are not used; defaults come from the instance node's widgets_values when
 //      their count matches the subgraph's widget inputs, else the field is left empty and the template's own value runs.
@@ -53,7 +53,8 @@ const DAY = 24 * 3600 * 1000;
 // (the second version of the price and form caches: the first were written while calls made at once could be answered with each
 // other's results, so a price or a form kept then may belong to another template)
 const CREDITS_FILE = "credits-2.json";
-const FORMS_DIR = "forms-2";
+// v3 fixes declared subgraph inputs whose instance has no proxyWidgets mapping.
+const FORMS_DIR = "forms-3";
 const NAME = /^[A-Za-z0-9._-]+$/;
 
 // ------------------------------------------------------------------ the catalog
@@ -352,6 +353,32 @@ function numberSlot(id: string, label: string, name: string, value: unknown, tar
   return { id, label, kind: "number", required: false, advanced: !PRIMARY_NUMBERS.has(norm(name)), default: dflt, ...(r ? { min: r[0], max, step: r[2] } : {}), target };
 }
 
+/** Resolve every consumer of a declared input, including nested subgraphs and fan-out.
+ * These executed-graph addresses are Cloud's documented fallback when apply_slots
+ * rejects a declared slot because the instance has no proxyWidgets mapping.
+ */
+function interiorTargets(instance: any, name: string, subgraphs: Map<string, any>, path = String(instance.id), seen = new Set<string>()): Target[] {
+  const sg = subgraphs.get(instance.type);
+  const input = sg?.inputs?.find((i: any) => i.name === name);
+  const key = `${instance.type}.${name}`;
+  if (!input?.linkIds?.length || seen.has(key)) return [];
+  const visited = new Set([...seen, key]);
+  const targets: Target[] = [];
+  for (const id of input.linkIds) {
+    const link = sg.links?.find((l: any) => l.id === id);
+    const node = sg.nodes?.find((n: any) => n.id === link?.target_id);
+    const inputName = node?.inputs?.[link?.target_slot]?.name;
+    if (!node || !inputName || node.mode === 2 || node.mode === 4) return [];
+    const nodePath = `${path}:${node.id}`;
+    const resolved: Target[] = subgraphs.has(node.type)
+      ? interiorTargets(node, inputName, subgraphs, nodePath, visited)
+      : [{ via: "input", node: nodePath, input: inputName }];
+    if (!resolved.length) return [];
+    targets.push(...resolved);
+  }
+  return targets;
+}
+
 /**
  * The form of a template made from get_template_schema's answer (`schema`) and the template's own workflow file (`wf`, optional):
  *  - a template that exposes its inputs through a subgraph: one slot per declared input, labelled by the subgraph's own labels;
@@ -428,6 +455,17 @@ export function buildForm(schema: any, wf?: any): Form {
       if (type === "INT" || type === "FLOAT") {
         slots.push(numberSlot(unique(label.replace(/\W+/g, "_")), nice(rawLabel), label, dflt, at));
       }
+    }
+    for (const slot of slots) {
+      if (slot.target.via !== "slot") continue;
+      const address = slot.target.address;
+      const source = schema.slots.find((s: any) => s.address === address);
+      const instance = instances.get(String(source?.node_id));
+      if (!instance || instance.properties?.proxyWidgets?.length) continue;
+      const targets = interiorTargets(instance, source.input_name, subgraphs);
+      if (!targets.length) continue;
+      slot.target = targets[0];
+      if (targets.length > 1) slot.also = targets.slice(1);
     }
     if (!slots.length) notes.push("This template shows no inputs of its own: it runs as it is.");
     return { slots: order(slots), models: [...new Set(models)], notes };
@@ -1040,6 +1078,7 @@ export interface Job {
   id: string;
   status: "running" | "done" | "failed" | "canceled";
   progress: number;
+  phase?: "queued" | "running" | "saving";
   template: string;
   promptId: string;
   outputs: { kind: string; url: string; file: string; width?: number; height?: number; seconds?: number; name?: string; saved?: string }[];
@@ -1326,6 +1365,7 @@ export function createTemplates(deps: Deps) {
       await sleep(i === 0 ? 400 : 2000);
       const st: any = await cloud.rest(`/job/${job.promptId}/status`).catch(() => null);
       const s = String(st?.status ?? "");
+      job.phase = /progress|running|execut/.test(s) ? "running" : /queued|waiting|pending|assigned/.test(s) ? "queued" : job.phase;
       if (process.env.COMFYTURE_DEBUG) console.log(`template ${item.name} (${job.promptId}) poll ${i}: ${s || "(no answer)"}`);
       if (isDone(s)) break;
       if (isOver(s)) {
@@ -1349,6 +1389,7 @@ export function createTemplates(deps: Deps) {
     }
     if (job.status !== "running") return;
     const detail = await cloud.rest(`/jobs/${job.promptId}`);
+    job.phase = "saving";
     const files = jobOutputs(detail);
     if (!files.length) throw fail("The template finished without making a file.");
     for (const o of files) {
@@ -1363,7 +1404,7 @@ export function createTemplates(deps: Deps) {
     await writeFile(join(dir, "timings.json"), JSON.stringify(timings)).catch(() => {});
   }
 
-  const view = (j: Job) => ({ id: j.id, status: j.status, progress: j.progress, template: j.template, outputs: j.outputs, error: j.error, needsImport: j.needsImport, credits: j.credits });
+  const view = (j: Job) => ({ id: j.id, status: j.status, phase: j.phase, progress: j.progress, progressIsEstimated: j.status === "running", template: j.template, outputs: j.outputs, error: j.error, needsImport: j.needsImport, credits: j.credits });
 
   /** The workflow's nodes and models in a few lines: what "View graph" shows. */
   async function graph(name: string) {

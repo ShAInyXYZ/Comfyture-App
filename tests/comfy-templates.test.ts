@@ -130,23 +130,54 @@ test("the page sees a slot without where it writes to", async () => {
   assert.ok(!("also" in publicSlot({ ...form.slots[0], also: [{ via: "slot", address: "1.x" }] })), "nor the places a value is also written");
 });
 
+test("FastH3: missing proxyWidgets routes prompt, dimensions, duration and seed to their actual interior nodes", async () => {
+  // Captured from Cloud on 2026-10-28. apply_slots rejects these declared
+  // addresses and explicitly directs them to the following flattened nodes.
+  const form = buildForm(await schemaOf("video_fastvideo_fasth3_i2v"), await wfOf("video_fastvideo_fasth3_i2v"));
+  const req = buildRunRequest("video_fastvideo_fasth3_i2v", form,
+    { prompt: "Ketkout watches the robot wave.", width: 1344, height: 768, duration: 5, seed: 42 },
+    { first_frame: { name: "ketkout-robot.png" } });
+  assert.deepEqual(req.slot_overrides, {});
+  assert.deepEqual(req.input_overrides, {
+    "136": { image: "ketkout-robot.png" },
+    "105:104": { prompt: "Ketkout watches the robot wave.", width: 1344, height: 768 },
+    "105:111": { value: 5 },
+    "105:15": { noise_seed: 42 },
+  });
+});
+
+test("direct subgraph routing follows nested links and all consumers of a shared value", () => {
+  const schema = { slots: [{ address: "1.duration", node_id: "1", input_name: "duration", source: "subgraph_input", type: "FLOAT" }] };
+  const wf = { nodes: [{ id: 1, type: "outer" }], definitions: { subgraphs: [
+    { id: "outer", inputs: [{ name: "duration", type: "FLOAT", linkIds: [1, 2] }], links: [
+      { id: 1, target_id: 2, target_slot: 0 }, { id: 2, target_id: 3, target_slot: 0 },
+    ], nodes: [{ id: 2, type: "inner", inputs: [{ name: "seconds" }] }, { id: 3, type: "PrimitiveFloat", inputs: [{ name: "value" }] }] },
+    { id: "inner", inputs: [{ name: "seconds", type: "FLOAT", linkIds: [3] }], links: [{ id: 3, target_id: 4, target_slot: 0 }], nodes: [{ id: 4, type: "PrimitiveFloat", inputs: [{ name: "value" }] }] },
+  ] } };
+  const request = buildRunRequest("nested", buildForm(schema, wf), { duration: 5 });
+  assert.deepEqual(request.slot_overrides, {});
+  assert.deepEqual(request.input_overrides, { "1:2:4": { value: 5 }, "1:3": { value: 5 } });
+});
+
 test("the run_template request: only what was given, in the right place, kept in range", async () => {
   const form = buildForm(await schemaOf("video_ltx2_3_i2v"), await wfOf("video_ltx2_3_i2v"));
   const req = buildRunRequest("video_ltx2_3_i2v", form, { prompt: "A fox runs", width: 99999, height: 700, seed: -5, duration: 7.4, prompt_enhance: "true" }, { first_frame: { name: "abc.png" } });
   assert.equal(req.name, "video_ltx2_3_i2v");
-  assert.deepEqual(req.input_overrides, { 269: { image: "abc.png" } });
+  assert.deepEqual(req.slot_overrides, {}, "an instance without proxyWidgets uses direct executed inputs");
+  assert.deepEqual(req.input_overrides, {
+    "269": { image: "abc.png" },
+    "320:319": { value: "A fox runs" },
+    "320:312": { value: 2048 }, // clamped to the range
+    "320:299": { value: 700 },
+    "320:277": { noise_seed: 0 },
+    "320:301": { value: 7 }, // whole seconds stay whole
+    "320:328": { value: true },
+  });
+  assert.ok(!("320:300" in req.input_overrides), "frame rate was not given");
   const by = Object.fromEntries(form.slots.map((s) => [s.id, s]));
-  const at = (id: string) => (by[id].target as { via: "slot"; address: string }).address;
-  assert.equal(req.slot_overrides[at("prompt")], "A fox runs");
-  assert.equal(req.slot_overrides[at("width")], 2048, "clamped to the range");
-  assert.equal(req.slot_overrides[at("height")], 700);
-  assert.equal(req.slot_overrides[at("seed")], 0);
-  assert.equal(req.slot_overrides[at("duration")], 7, "whole seconds stay whole");
-  assert.equal(req.slot_overrides[at("prompt_enhance")], true);
-  assert.ok(!(at("fps") in req.slot_overrides), "what was not given is left to the template");
   // a prompt left as the template's own is not sent
   const same = buildRunRequest("video_ltx2_3_i2v", form, { prompt: by.prompt.default }, { first_frame: { name: "abc.png" } });
-  assert.ok(!(at("prompt") in same.slot_overrides));
+  assert.deepEqual(same.input_overrides, { "269": { image: "abc.png" } });
   // a missing picture is said in words
   assert.throws(() => buildRunRequest("video_ltx2_3_i2v", form, {}), /First frame needs a picture/);
 });

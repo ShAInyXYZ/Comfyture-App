@@ -1,0 +1,146 @@
+{
+  "id": "video_fastvideo_fasth3_i2v",
+  "slots": [
+    {
+      "address": "105.first_frame",
+      "node_id": "105",
+      "input_name": "first_frame",
+      "class_type": "First Last Frame to Video (FastVideo FastH3)",
+      "type": "IMAGE",
+      "default": null,
+      "known": true,
+      "wired_to": {
+        "node_id": "136",
+        "class_type": "LoadImage",
+        "inputs": {
+          "image": "red_line_barrier.png"
+        },
+        "kind": "media"
+      },
+      "source": "subgraph_input",
+      "subgraph": "First Last Frame to Video (FastVideo FastH3)"
+    },
+    {
+      "address": "105.last_frame",
+      "node_id": "105",
+      "input_name": "last_frame",
+      "class_type": "First Last Frame to Video (FastVideo FastH3)",
+      "type": "IMAGE",
+      "default": null,
+      "known": true,
+      "source": "subgraph_input",
+      "subgraph": "First Last Frame to Video (FastVideo FastH3)"
+    },
+    {
+      "address": "105.prompt",
+      "node_id": "105",
+      "input_name": "prompt",
+      "class_type": "First Last Frame to Video (FastVideo FastH3)",
+      "type": "STRING",
+      "default": null,
+      "known": true,
+      "source": "subgraph_input",
+      "subgraph": "First Last Frame to Video (FastVideo FastH3)"
+    },
+    {
+      "address": "105.width",
+      "node_id": "105",
+      "input_name": "width",
+      "class_type": "First Last Frame to Video (FastVideo FastH3)",
+      "type": "INT",
+      "default": null,
+      "known": true,
+      "source": "subgraph_input",
+      "subgraph": "First Last Frame to Video (FastVideo FastH3)"
+    },
+    {
+      "address": "105.height",
+      "node_id": "105",
+      "input_name": "height",
+      "class_type": "First Last Frame to Video (FastVideo FastH3)",
+      "type": "INT",
+      "default": null,
+      "known": true,
+      "source": "subgraph_input",
+      "subgraph": "First Last Frame to Video (FastVideo FastH3)"
+    },
+    {
+      "address": "105.value_1",
+      "node_id": "105",
+      "input_name": "value_1",
+      "class_type": "First Last Frame to Video (FastVideo FastH3)",
+      "type": "FLOAT",
+      "default": 5,
+      "known": true,
+      "source": "subgraph_input",
+      "subgraph": "First Last Frame to Video (FastVideo FastH3)"
+    },
+    {
+      "address": "105.noise_seed",
+      "node_id": "105",
+      "input_name": "noise_seed",
+      "class_type": "First Last Frame to Video (FastVideo FastH3)",
+      "type": "INT",
+      "default": 793369680225544,
+      "known": true,
+      "source": "subgraph_input",
+      "subgraph": "First Last Frame to Video (FastVideo FastH3)"
+    },
+    {
+      "address": "105.unet_name",
+      "node_id": "105",
+      "input_name": "unet_name",
+      "class_type": "First Last Frame to Video (FastVideo FastH3)",
+      "type": "COMBO",
+      "default": "fastvideo_fasth3_8step_v2_pruned_int8_convrot.safetensors",
+      "known": true,
+      "source": "subgraph_input",
+      "subgraph": "First Last Frame to Video (FastVideo FastH3)"
+    },
+    {
+      "address": "105.clip_name",
+      "node_id": "105",
+      "input_name": "clip_name",
+      "class_type": "First Last Frame to Video (FastVideo FastH3)",
+      "type": "COMBO",
+      "default": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+      "known": true,
+      "source": "subgraph_input",
+      "subgraph": "First Last Frame to Video (FastVideo FastH3)"
+    },
+    {
+      "address": "105.vae_name",
+      "node_id": "105",
+      "input_name": "vae_name",
+      "class_type": "First Last Frame to Video (FastVideo FastH3)",
+      "type": "COMBO",
+      "default": "minimax_h3_video_vae_int8_convrot.safetensors",
+      "known": true,
+      "source": "subgraph_input",
+      "subgraph": "First Last Frame to Video (FastVideo FastH3)"
+    },
+    {
+      "address": "105.vae_name_1",
+      "node_id": "105",
+      "input_name": "vae_name_1",
+      "class_type": "First Last Frame to Video (FastVideo FastH3)",
+      "type": "COMBO",
+      "default": "minimax_h3_audio_vae_fp32.safetensors",
+      "known": true,
+      "source": "subgraph_input",
+      "subgraph": "First Last Frame to Video (FastVideo FastH3)"
+    },
+    {
+      "address": "105.attention",
+      "node_id": "105",
+      "input_name": "attention",
+      "class_type": "First Last Frame to Video (FastVideo FastH3)",
+      "type": "COMBO",
+      "default": "comfy kitchen attention",
+      "known": true,
+      "source": "subgraph_input",
+      "subgraph": "First Last Frame to Video (FastVideo FastH3)"
+    }
+  ],
+  "edit_without_running": "To change these values WITHOUT running the template (e.g. to show the edited workflow), call apply_slots with `workflow` set to get_template's `workflow_json` and `overrides` keyed by the `address` of the entries that carry no `route`; it returns the edited workflow and runs nothing. To run with the same values, pass them to run_template as `slot_overrides`. get_template is itself capped: a very large template returns a bounded node summary instead of `workflow_json` — for one of those, use the run_template route. Most declared addresses resolve, but one the instance promotes from its own container is refused with `interior node -1 not found in subgraph` (a known engine defect) — for that entry use run_template `input_overrides` keyed by the slot's `node_id` instead."
+}
