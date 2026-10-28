@@ -1,0 +1,17 @@
+{
+  "id": "voice-conversion",
+  "template": "audio-chatterbox_vc",
+  "inputs": {
+    "seed": 281026106
+  },
+  "files": {
+    "audio": "web/brand/mixer/voices/ivy-v1.mp3",
+    "audio3": "output/ivy-plant-reveal/stems-1.mp3"
+  },
+  "overrides": {
+    "5": {
+      "start_time": "0:00",
+      "end_time": "0:10"
+    }
+  }
+}

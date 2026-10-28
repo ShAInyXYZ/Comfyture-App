@@ -13,7 +13,7 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 await mkdir(out, { recursive: true });
 const cast = recipe.roles.map((r: any) => ({ role: r.role, who: { crew: r.crew } }));
 const words = Object.fromEntries(recipe.roles.map((r: any) => { const c = CREW.find(c => c.id === r.crew)!; return [r.role, `${c.name}, ${c.look}`]; }));
-const first = await fetch('http://127.0.0.1:5177/api/photos?name=We%20Listen%20LTX%20reference', {
+const first = await fetch('http://127.0.0.1:5177/api/photos?name=' + encodeURIComponent(`${recipe.name ?? recipe.id} reference`), {
   method: 'POST', headers: { 'Content-Type': 'image/webp' }, body: await readFile(`web/brand/mixer/trends/${recipe.id}/${recipe.look}`),
 });
 if (!first.ok) throw Error(await first.text());
@@ -56,4 +56,4 @@ for (const [i, shot] of recipe.shots.entries()) {
   await writeFile(receipt, JSON.stringify(meta, null, 2));
   console.log('Completed take', i + 1, meta.elapsedSeconds, 'seconds');
 }
-console.log('Review both takes before replacing the published preview.');
+console.log('Review completed takes before replacing the published preview.');

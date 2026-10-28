@@ -1081,7 +1081,7 @@ export interface Job {
   phase?: "queued" | "running" | "saving";
   template: string;
   promptId: string;
-  outputs: { kind: string; url: string; file: string; width?: number; height?: number; seconds?: number; name?: string; saved?: string }[];
+  outputs: { node?: string; kind: string; url: string; file: string; width?: number; height?: number; seconds?: number; name?: string; saved?: string }[];
   error?: string;
   needsImport?: boolean;
   credits?: number | null;
@@ -1272,10 +1272,10 @@ export function createTemplates(deps: Deps) {
     if (o.kind === "audio") {
       if (deps.keepAudio) {
         const a = await deps.keepAudio(bytes, `.${ext}`, { name: items.find((i) => i.name === job.template)?.title ?? "Template sound", kind: "template", prompt: job.template });
-        return { kind: "audio", url: a.url, file: a.file, seconds: a.seconds, name: items.find((i) => i.name === job.template)?.title };
+        return { kind: "audio", node: o.node, saved: o.filename, url: a.url, file: a.file, seconds: a.seconds, name: items.find((i) => i.name === job.template)?.title };
       }
       const path = await place("audio");
-      return { kind: "audio", url: `/media/audio/${name}`, file: name, seconds: (await probe(path)).duration };
+      return { kind: "audio", node: o.node, saved: o.filename, url: `/media/audio/${name}`, file: name, seconds: (await probe(path)).duration };
     }
     await place("models");
     return { kind: "model", url: `/media/models/${name}`, file: name };

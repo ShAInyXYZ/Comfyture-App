@@ -1,0 +1,12 @@
+{
+  "id": "ivy-voice-design",
+  "template": "api_bytedance_seed_audio1_0_t2a",
+  "inputs": {
+    "seed": 281026105
+  },
+  "overrides": {
+    "3": {
+      "text_prompt": "[Language: English only. One adult female speaker. Clean dry studio voice reference, no ambience, music, effects, reverb or other voices. Total length about 10 seconds. Do not read directions aloud.]\n[Ivy: adult woman around thirty, warm gentle middle register, slightly airy grain, soft British conversational English, thoughtful uneven little pauses, quietly mischievous plant-shop owner, subtle smile and restrained dry comic timing. Grounded adult voice, not squeaky, not a child, not a commercial announcer.]\nIvy says: \"Every plant has a personality. That one is dramatic. This one needs space. And this tiny one? Well... she's clearly moving in.\"\n[End immediately after the line.]"
+    }
+  }
+}

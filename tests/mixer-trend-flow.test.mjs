@@ -7,7 +7,7 @@ import * as helpers from '../web/js/mixer-trend-state.js';
 import * as voices from '../web/js/mixer-voices.js';
 import { completionFeed } from '../web/js/job-completion.js';
 
-async function harness({ missingControl = false, failCut = false, native = false, pro = false, loseSubmission = false } = {}) {
+async function harness({ missingControl = false, failCut = false, native = false, pro = false, loseSubmission = false, voicePass = false } = {}) {
   const calls = { pictures: [], shoots: [], tracks: 0, mixes: 0, cuts: 0, native: [], timelines: [] };
   const state = { runs: [], image: { catalogue: { models: [{ id: 'gpt-image-2.5-flare' }] } } };
   const mixer = { busy: new Set(), mix: null };
@@ -17,6 +17,7 @@ async function harness({ missingControl = false, failCut = false, native = false
     { from: 0, to: 10, prompt: '{Lead} speaks an original line.', seed: 123 },
     { from: 10, to: 20, prompt: '{Lead} reacts.', seed: 124 },
   ] });
+  if (voicePass) recipe.voiceConversion = { role: 'Lead', referenceCrew: 'ivy' };
   let fail = failCut;
   const fetch = async (url, init = {}) => {
     let body = {};
@@ -31,6 +32,10 @@ async function harness({ missingControl = false, failCut = false, native = false
       body = { id: 'native1', status: 'running', progress: .2 };
     }
     else if (url.endsWith('/job/native1')) body = { id: 'native1', status: 'done', outputs: [{ kind: 'video', file: 'spoken.mp4', url: '/media/videos/spoken.mp4', seconds: 8 }] };
+    else if (url === '/media/videos/spoken.mp4' || url === 'brand/mixer/voices/ivy-v1.mp3') return { ok: true, blob: async () => 'media bytes' };
+    else if (url.startsWith('api/audio?name=')) body = { file: url.includes('reference') ? 'reference.mp3' : 'performance.mp3' };
+    else if (url.endsWith('/audio_melbandroformer_audio_separation/run')) body = { id: 'stems', status: 'done', outputs: [{ kind: 'audio', node: '4', file: 'speech.mp3' }, { kind: 'audio', node: '5', file: 'room.mp3' }] };
+    else if (url.endsWith('/audio-chatterbox_vc/run')) body = { id: 'vc', status: 'done', outputs: [{ kind: 'audio', file: 'converted.mp3' }] };
     else if (url.endsWith('/render')) {
       calls.cuts++;
       if (fail) { fail = false; return { ok: false, status: 500, json: async () => ({ error: 'Render interrupted' }) }; }
@@ -193,4 +198,18 @@ test('voice direction for an uploaded star does not silently inherit the origina
   const text = voices.castVoiceDirection([{ role: 'Lead', original: 'earl', who: { star: { name: 'My photo' } } }]);
   assert.doesNotMatch(text, /Texas drawl/);
   assert.match(text, /does not provide or clone/);
+});
+
+
+test('a photo remake with voice conversion mutes native speech and places converted voice plus ambience in the cut', async () => {
+  const { flow, calls, mixer } = await harness({ native: true, voicePass: true });
+  await flow.addStar({ name: 'my-person.png' });
+  await flow.makeTrend();
+  assert.equal(mixer.mix.body.error, null);
+  assert.equal(calls.native.length, 1);
+  const tracks = calls.timelines[0].tracks;
+  assert.equal(tracks.find(t => t.kind === 'video').items[0].sound, false);
+  assert.equal(tracks.find(t => t.role === 'voice').items[0].src.id, 'converted.mp3');
+  assert.equal(tracks.find(t => t.role === 'effects').items[0].src.id, 'room.mp3');
+  assert.ok(mixer.mix.body.film);
 });

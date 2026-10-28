@@ -11,7 +11,7 @@ import { api } from "./api.js";
 import { mixer, save, newMix, whenOpened, mixLoras } from "./mixer.js";
 import { TRENDS, CREW, trendById, crewById, trendArt, crewPicture } from "./mixer-trends.js";
 import { onServer } from "./picker.js";
-import { castVoiceDirection, nativeRecipeRequest } from "./mixer-voices.js";
+import { castVoiceDirection, nativeRecipeRequest, applyCharacterVoice } from "./mixer-voices.js";
 import { uploadRole, canResumeTrend, validateRecipe } from "./mixer-trend-state.js";
 
 const update = () => changed("mixer");
@@ -355,6 +355,16 @@ async function fromNativeRecipe(t, cast, m, recipe) {
       costNote: "Actual per-job billing was not supplied by the provider." };
     save(m); update();
   }
+  for (const shot of m.body.shots) await applyCharacterVoice(recipe, cast, shot, {
+    call, send,
+    upload: async (url, type, name) => {
+      const media = await fetch(url);
+      if (!media.ok) throw new Error('The voice source could not be loaded.');
+      return call('api/audio?name=' + encodeURIComponent(name), { method: 'POST', headers: { 'Content-Type': type }, body: await media.blob() });
+    },
+    persist: () => save(m), progress: (label) => { m.body.progress = label; save(m); update(); },
+    sleep: () => new Promise(resolve => setTimeout(resolve, 2000)),
+  });
   return recipe;
 }
 
@@ -430,9 +440,16 @@ async function cutTogether(m, t, seconds = t.seconds) {
     const need = s.to - s.from;
     const have = s.output ? (s.output.seconds ?? need) : r.length ?? r.request.seconds;
     const speed = have < need ? Math.max(0.25, have / need) : 1;
-    return { id: `t${i + 1}`, src: s.output ? { kind: "video", id: s.output.file } : { kind: "take", id: r.id }, from: 0, to: Math.min(have, need * speed), speed, sound: !m.body.music, join: s.join ?? "cut" };
+    return { id: `t${i + 1}`, src: s.output ? { kind: "video", id: s.output.file } : { kind: "take", id: r.id }, from: 0, to: Math.min(have, need * speed), speed, sound: !m.body.music && !s.voicePass?.converted, join: s.join ?? "cut" };
   });
   const tracks = [{ id: "video", kind: "video", main: true, items }];
+  for (const [i, shot] of m.body.shots.entries()) {
+    if (!shot.voicePass?.converted) continue;
+    for (const [part, role] of [['converted', 'voice'], ['ambience', 'effects']]) {
+      const audio = shot.voicePass[part];
+      if (audio) tracks.push({ id: `${part}-${i}`, kind: 'audio', role, items: [{ id: `${part}-${i}`, src: { kind: 'audio', id: audio.file }, start: shot.from, from: 0, to: shot.to - shot.from }] });
+    }
+  }
   if (m.body.music) tracks.push({ id: "music", kind: "audio", role: "music", items: [{ id: "track", src: { kind: "audio", id: m.body.music.file }, start: 0, from: 0, to: seconds }] });
   if (t.caption) tracks.push({ id: "caption", kind: "title", items: [{ id: "c1", text: t.caption, start: 0, length: seconds, style: "top" }] });
   const body = { aspect: "9:16", tracks, product: "mixer" };

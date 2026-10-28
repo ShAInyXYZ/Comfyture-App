@@ -19,7 +19,7 @@ test('all eleven cast presets ship usable recipes, matching covers, video and or
     assert.equal(recipe.render.actualCostCredits, null);
     assert.ok(recipe.render.executionSeconds > 0);
     assert.ok(recipe.render.media.streams.some(s => s.codec_type === 'audio'));
-    for (const path of [t.preview, t.poster, t.recipe.replace('recipe.json', 'look.webp'), `brand/mixer/trends/${t.id}.webp`]) {
+    for (const path of [t.preview, t.poster, t.recipe.replace('recipe.json', recipe.look), `brand/mixer/trends/${t.id}.webp`]) {
       assert.ok((await stat('web/' + path)).size > 100, `${t.id}: ${path}`);
     }
     const declared = new Set(recipe.roles.map(r => r.role));
@@ -40,4 +40,18 @@ test('We Listen is an original script with no source footage or borrowed soundtr
   assert.match(r.voiceProfiles.josie, /mischievous/);
   assert.ok(r.shots.every(s => !s.pose && !s.guide));
   assert.ok(!r.sound.mix && !r.sound.vocals);
+});
+
+
+test('the plant reveal replaces My Reaction with a reusable fictional voice and completed post-production', async () => {
+  const t = AUTUMN_TRENDS.find(t => t.id === 'my-reaction');
+  assert.equal(t.name, 'Tell Me Without Telling Me');
+  const r = JSON.parse(await readFile('web/' + t.recipe, 'utf8'));
+  assert.equal(r.revision, 2);
+  assert.equal(r.seconds, 10);
+  assert.equal(r.voiceConversion.referenceCrew, 'ivy');
+  assert.match(r.render.voiceMethod, /Chatterbox/);
+  assert.equal(r.render.postProduction.length, 4);
+  assert.ok((await stat('web/' + r.voiceConversion.reference)).size > 1000);
+  assert.ok(r.render.estimatedCredits < 125);
 });

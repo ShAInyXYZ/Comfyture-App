@@ -409,14 +409,14 @@ export const AUTUMN_TRENDS = [
   },
   {
     "id": "my-reaction",
-    "name": "My Reaction",
+    "name": "Tell Me Without Telling Me",
     "kind": "reactions",
     "home": "mixer",
     "also": [],
     "soon": false,
     "added": "2026-10-28",
     "engine": "official-template",
-    "seconds": 8,
+    "seconds": 10,
     "cast": [
       {
         "role": "Lead",
@@ -425,24 +425,19 @@ export const AUTUMN_TRENDS = [
     ],
     "beats": [
       {
-        "to": 2,
-        "text": "Lead reacts with delight",
-        "from": 0
+        "from": 0,
+        "to": 3,
+        "text": "Lead admits: I might have a small plant problem."
       },
       {
-        "to": 4,
-        "text": "The smile turns into suspicion",
-        "from": 2
+        "from": 3,
+        "to": 7,
+        "text": "Camera pulls back to reveal an apartment overflowing with plants."
       },
       {
-        "to": 6,
-        "text": "Lead recoils in disbelief",
-        "from": 4
-      },
-      {
-        "to": 8,
-        "text": "Lead gives the camera a knowing side-eye",
-        "from": 6
+        "from": 7,
+        "to": 10,
+        "text": "Lead squeezes between the plants: There’s still room."
       }
     ],
     "caption": null,
@@ -452,18 +447,71 @@ export const AUTUMN_TRENDS = [
     "recipe": "brand/mixer/trends/my-reaction/recipe.json",
     "render": {
       "model": "MiniMax H3 · FastH3",
-      "imageModel": "Codex imagegen",
+      "imageModel": "Codex built-in imagegen (new reference; billing unavailable separately)",
       "template": "video_fastvideo_fasth3_i2v",
-      "seed": 28102604,
-      "startedAt": "2026-10-28T16:51:21.390Z",
-      "finishedAt": "2026-10-28T16:52:56.369Z",
-      "executionSeconds": 80.504,
-      "queueSeconds": 2.314,
-      "elapsedSeconds": 94.979,
+      "startedAt": "2026-10-28T19:11:40.674Z",
+      "finishedAt": "2026-10-28T19:13:41.360Z",
+      "executionSeconds": 108.163,
+      "elapsedSeconds": 120.686,
       "actualCostCredits": null,
       "imageCostCredits": null,
-      "costNote": "Provider has not supplied an actual per-job bill. Unknown is not zero.",
-      "cloudPromptId": "95d96966-1748-40ab-b33e-d68dcbb95bbd",
+      "billing": "gpu",
+      "costNote": "Estimate, not a bill: workflow execution time at 0.266 cr/s plus Seed Audio estimate 45 cr/min for 10.104 s. Upper estimate includes voice-design execution time conservatively; partner waiting may not be billable GPU time. Imagegen billing unavailable and excluded. Actual per-job credits not returned.",
+      "voiceMethod": "Original Ivy reference designed with Seed Audio 1.0; native FastH3 speech isolated with MelBandRoFormer and converted with Chatterbox VC. Original separated room sound mixed back in. Not a real person’s voice.",
+      "postProduction": [
+        {
+          "stage": "take-1",
+          "template": "video_fastvideo_fasth3_i2v",
+          "promptId": "353f3ad1-a724-428f-aeab-b88e365560d8",
+          "executionSeconds": 108.163,
+          "elapsedSeconds": 120.686,
+          "startedAt": "2026-10-28T19:11:40.674Z",
+          "finishedAt": "2026-10-28T19:13:41.360Z",
+          "actualCostCredits": null
+        },
+        {
+          "stage": "ivy-voice-design",
+          "template": "api_bytedance_seed_audio1_0_t2a",
+          "promptId": "3c767f91-d42e-4e3b-9cd9-a76a292f903b",
+          "executionSeconds": 24.173,
+          "elapsedSeconds": 37.66,
+          "startedAt": "2026-10-28T19:12:13.688Z",
+          "finishedAt": "2026-10-28T19:12:51.348Z",
+          "actualCostCredits": null
+        },
+        {
+          "stage": "stems",
+          "template": "audio_melbandroformer_audio_separation",
+          "promptId": "b8d34388-acee-4b57-b30e-39687f699633",
+          "executionSeconds": 3.417,
+          "elapsedSeconds": 27.971,
+          "startedAt": "2026-10-28T19:14:41.718Z",
+          "finishedAt": "2026-10-28T19:15:09.689Z",
+          "actualCostCredits": null
+        },
+        {
+          "stage": "voice-conversion",
+          "template": "audio-chatterbox_vc",
+          "promptId": "f8c467e4-b5dc-49a0-94da-ae1d1be92a83",
+          "executionSeconds": 3.065,
+          "elapsedSeconds": 20.505,
+          "startedAt": "2026-10-28T19:15:52.187Z",
+          "finishedAt": "2026-10-28T19:16:12.692Z",
+          "actualCostCredits": null
+        }
+      ],
+      "estimatedCredits": 44.5,
+      "productionElapsedSeconds": 272.018,
+      "recurringEstimateCredits": 30.5,
+      "takes": [
+        {
+          "seed": 281026104,
+          "cloudPromptId": "353f3ad1-a724-428f-aeab-b88e365560d8",
+          "executionSeconds": 108.163,
+          "elapsedSeconds": 120.686,
+          "prompt": "Use <Picture 1> as exact first frame and identity reference. One continuous 10-second shot in a tactile premium 3D animated comedy, restrained natural daylight and true-to-life color, no oversaturated orange filter. Ivy, the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers holds a tiny terracotta plant in an apartment doorway. 0–3 seconds: looks innocently at camera, slightly guilty smile, speaks exactly: \"I might have a small plant problem.\" 3–7 seconds: camera smoothly dollies backward and slightly sideways through the open doorway to reveal the full living room as a hilariously dense indoor jungle: plants cover the sofa and dining table, pots line the floor, hanging vines and huge leafy plants nearly block the hall. Plants are stationary objects being revealed by camera movement, never magically appearing. Keep Lead visible as the shot widens. 7–10 seconds: Lead carefully sidesteps between pots, hugging the tiny plant protectively, pauses to assess one absurdly small empty spot, then looks at camera and says exactly: \"There's still room.\" Hold a quietly proud deadpan smile. Clear adult conversational speech, not a child voice. Only Lead speaks. Quiet room ambience and gentle leaf rustle/footsteps; NO music, narrator, other voices, extra dialogue, captions, text or logos. Keep identity, hands, glasses and pot stable. Lip movements match the two spoken lines. No cuts.\nCHARACTER VOICE DIRECTION (apply only to scripted speech, never add dialogue):\nLead: Gentle mid-register voice with a slightly airy texture, thoughtful conversational English and curious, uneven little pauses. Soft-spoken plant-shop wit, precise dry punchlines and delighted small laughs. Never monotone.\nKeep each voice distinct and consistent across takes. Follow the script's speaker assignments. Preserve breaths and small hesitations; no presenter cadence. This is text direction, not a supplied voice recording."
+        }
+      ],
       "media": {
         "programs": [],
         "streams": [
@@ -477,10 +525,20 @@ export const AUTUMN_TRENDS = [
           }
         ],
         "format": {
-          "duration": "8.000000"
+          "duration": "10.000000"
         }
       }
-    }
+    },
+    "voiceConversion": {
+      "role": "Lead",
+      "referenceCrew": "ivy",
+      "template": "audio-chatterbox_vc",
+      "reference": "brand/mixer/voices/ivy-v1.mp3",
+      "method": "Isolate speech, convert into the saved fictional character voice, mix original ambience back in. Uploaded photos use the fictional role voice, not a clone of the photographed person."
+    },
+    "revision": 2,
+    "model": "MiniMax H3 · FastH3",
+    "billing": "gpu"
   },
   {
     "id": "getting-robbed",

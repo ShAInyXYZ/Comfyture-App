@@ -15,6 +15,7 @@ import { loraStack } from "../loras.js";
 import { TRENDS, CREW, KINDS, trendById, crewById, trendArt, crewFace } from "../mixer-trends.js";
 import { pick, castOf, selectTrend, setKind, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, makeTrend, making, takesOf, castArtist, estimate as trendCost } from "../mixer-trend.js";
 import { openPicker, pictureOf } from "../picker.js";
+import { voiceReferenceFor } from "../mixer-voices.js";
 import { canResumeTrend } from "../mixer-trend-state.js";
 
 /** Whoever is picked for a role: one of the crew plays it as themselves, anyone else as a star. */
@@ -119,10 +120,12 @@ function recipe(t) {
         h("div.mx-cast-col", {},
           h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "Add your photo or choose a character, then Make it.")),
           h("div.mx-roles", {}, ...cast.map((c) => role(c)))),
-        madeWith({ music: t.engine !== "official-template", native: t.engine === "official-template", model: t.model, billing: t.billing })),
+        madeWith({ music: t.engine !== "official-template", native: t.engine === "official-template", model: t.model, billing: t.billing, voice: voiceReferenceFor(t, cast) })),
       t.render ? h("details.mx-provenance", {}, h("summary", {}, "Preview generation details"),
         h("p", {}, `${t.render.model} · ${t.render.executionSeconds == null ? "Execution time unavailable" : `${Math.round(t.render.executionSeconds)} s execution`} · ${t.render.elapsedSeconds == null ? "" : `${Math.round(t.render.elapsedSeconds)} s elapsed`}`),
         h("p", {}, t.render.actualCostCredits == null ? "Actual cost: not reported by provider. This was a paid generation." : `Actual cost: ${t.render.actualCostCredits} cr`),
+        t.render.estimatedCredits != null ? h("p", {}, `Estimated production cost: ${t.render.estimatedCredits.toFixed(1)} cr · includes voice setup; image generation billed separately`) : null,
+        t.render.voiceMethod ? h("p", {}, t.render.voiceMethod) : null,
         h("a", { href: t.recipe, target: "_blank", rel: "noopener" }, "Recipe, script and metadata")) : null,
       m?.body.error && resume && !busy ? h("p.mx-error", { role: "alert" }, `${m.body.error} Your completed steps are saved. Continue to finish this mix.`) : null,
       h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy || stars.uploading > 0, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.engine === "official-template" ? `Your cast in the scene, animated with original dialogue and sound using ${t.model ?? "MiniMax H3"}` : t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, a track of its own, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => makeTrend() } },
@@ -234,12 +237,13 @@ const modelRow = (glyph, part, model, cost, ...more) =>
  * How a mix is made, at a glance: the picture model that redraws its first frames with the cast,
  * LTX-2.5 with the LoRAs it rolls with (none until picked), and the music model.
  */
-function madeWith({ music, native = false, model, billing }) {
+function madeWith({ music, native = false, model, billing, voice }) {
   return h("div.mx-made", {},
     h("div.mx-section-head", {}, h("h3", {}, "Made with")),
     pictureRow(),
     native ? modelRow(sprite("film-make"), "Video + sound", h("b", {}, model ?? "MiniMax H3 · FastH3"), billing === "partner" ? "Partner credits · Comfy Cloud" : "GPU time · Comfy Cloud") : modelRow(sprite("film-make"), "Video", h("b", {}, "LTX-2.5"), cloud() ? "≈ 4.8 cr/s" : "your GPU",
       h("div.mx-model-loras", {}, h("span.label", {}, "LoRAs"), loraStack(mixLoras(), (list) => (setMixLoras(list), changed("mixer"))))),
+    voice ? modelRow(sprite("audio-voice"), "Character voice", h("b", {}, `${voice.name} · Chatterbox`), "Saved fictional voice · also used for photo replacements") : null,
     music ? modelRow(sprite("audio-music"), "Music", h("b", {}, "ACE-Step 1.5"), cloud() ? `≈ ${MUSIC_CR} cr/s` : "your GPU") : null);
 }
 

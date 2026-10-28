@@ -237,7 +237,7 @@ test("a finished job's files: the saved ones, by kind, and not what it echoed ba
 // ---------------------------------------------------------------- a whole run, through a stand-in Cloud
 
 /** A Cloud with no network: the catalog and schemas are the fixtures, and the paid calls are recorded. */
-async function service(dir: string) {
+async function service(dir: string, audioOutputs = false) {
   const index = JSON.stringify(await fx("index.json"));
   const calls: { tool: string; args: any }[] = [];
   const uploads: { kind: string; name: string; bytes: number }[] = [];
@@ -253,6 +253,10 @@ async function service(dir: string) {
     upload: async () => "x.png",
   };
   const cloud = fakeRun(base, 0.3);
+  if (audioOutputs) {
+    cloud.rest = async () => ({ status: 'completed', outputs: { '4': { audio: [{ filename: 'hashed-vocals.mp3', type: 'output' }] }, '5': { audio: [{ filename: 'hashed-room.mp3', type: 'output' }] } } });
+    cloud.view = async (file) => ({ bytes: Buffer.from(file.filename), type: 'audio/mpeg' });
+  }
   const real = cloud.mcpRun;
   cloud.mcpRun = async (tool, args) => (calls.push({ tool, args }), real(tool, args));
   const real2 = cloud.upload;
@@ -269,7 +273,8 @@ async function service(dir: string) {
     }
     return new Response("nope", { status: 404 });
   }) as unknown as typeof fetch;
-  const svc = createTemplates({ data: dir, root: join(import.meta.dirname, ".."), cloud, fetch: fetchStub, warm: false });
+  const svc = createTemplates({ data: dir, root: join(import.meta.dirname, ".."), cloud, fetch: fetchStub, warm: false,
+    ...(audioOutputs ? { keepAudio: async (bytes: Buffer) => ({ file: bytes.toString(), url: '/media/audio/' + bytes.toString(), seconds: 10 }) } : {}) });
   return { svc, calls, uploads };
 }
 
@@ -426,4 +431,17 @@ test("a grid shows an animated preview's first frame: cut out of its container, 
   await run("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=s=96x64:d=1", "-frames:v", "1", "-c:v", "libwebp", join(dir, "still.webp")]);
   assert.equal(firstFrame(await readFile(join(dir, "still.webp"))), null);
   assert.equal(firstFrame(Buffer.from("not a picture")), null);
+});
+
+
+test('re-hosted audio keeps its output node so speech and ambience cannot be accidentally swapped', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'templates-audio-'));
+  const { svc } = await service(dir, true);
+  let job: any = (await svc.handle('POST', '/image_z_image_turbo/run', new URLSearchParams(), { inputs: { prompt: 'test' }, confirm: true })).body;
+  for (let i = 0; i < 30 && job.status === 'running'; i++) {
+    await new Promise(ok => setTimeout(ok, 100));
+    job = (await svc.handle('GET', `/job/${job.id}`, new URLSearchParams(), {})).body;
+  }
+  assert.equal(job.status, 'done');
+  assert.deepEqual(job.outputs.map((o: any) => [o.node, o.saved]), [['4', 'hashed-vocals.mp3'], ['5', 'hashed-room.mp3']]);
 });

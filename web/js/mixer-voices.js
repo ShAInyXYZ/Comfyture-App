@@ -30,3 +30,61 @@ export function nativeRecipeRequest(recipe, shot, file, prompt, seed) {
   };
   return { confirm: true, inputs: { ...recipe.settings, duration, first_frame: { file }, prompt, seed } };
 }
+
+// Original synthetic character recordings. A picture never supplies someone's real voice.
+export const CHARACTER_VOICE_SAMPLES = {
+  ivy: { url: 'brand/mixer/voices/ivy-v1.mp3', name: 'Ivy', provenance: 'Original Seed Audio voice design' },
+};
+
+export function voiceReferenceFor(recipe, cast) {
+  if (!recipe.voiceConversion) return null;
+  const who = cast.find(c => c.role === recipe.voiceConversion.role)?.who;
+  if (!who) throw new Error('The voice role is missing from this cast.');
+  if (who.voiceSample?.file) return { ...who.voiceSample, name: 'Your supplied voice' };
+  // Uploaded photos play the fictional role, with its explicitly labelled stock voice.
+  return CHARACTER_VOICE_SAMPLES[who.crew ?? (who.star ? recipe.voiceConversion.referenceCrew : '')] ?? null;
+}
+
+/** Resumable single-speaker post-production. Keep the performance and room sound separate. */
+export async function applyCharacterVoice(recipe, cast, shot, { call, send, upload, persist, progress, sleep }) {
+  const reference = voiceReferenceFor(recipe, cast);
+  if (!reference) return; // Other crew retain their directed native voice until a sample is authored.
+  const pass = shot.voicePass ??= { name: reference.name };
+  if (pass.converted && pass.ambience) return;
+  const stage = async (key, template, request, label) => {
+    const state = pass[key] ??= {};
+    if (state.pending && !state.job?.id) throw new Error('The previous voice submission needs checking on Comfy Cloud; no duplicate was sent.');
+    progress(label);
+    if (!state.job?.id) {
+      state.pending = true; persist();
+      try {
+        state.job = await send(`api/utensils/templates/${template}/run`, 'POST', request);
+        state.pending = false;
+      } catch (e) {
+        if (e.status >= 400 && e.status < 500) state.pending = false;
+        persist(); throw e;
+      }
+      persist();
+    }
+    while (state.job.status === 'running') {
+      await sleep();
+      state.job = await call(`api/utensils/templates/job/${state.job.id}`); persist();
+    }
+    if (state.job.status !== 'done') throw new Error(state.job.error ?? 'Voice processing did not finish. Check the existing job before retrying.');
+    return state.job.outputs ?? [];
+  };
+  pass.source ??= await upload(shot.output.url, 'video/mp4', 'Trend original performance'); persist();
+  pass.reference ??= reference.file ? reference : await upload(reference.url, 'audio/mpeg', `${reference.name} voice reference`); persist();
+  const stems = await stage('separation', 'audio_melbandroformer_audio_separation', { confirm: true, inputs: { audio: { file: pass.source.file } } }, 'Separating dialogue and room sound');
+  const vocals = stems.find(o => o.kind === 'audio' && (o.node === '4' || /vocals/i.test(o.filename ?? o.file)));
+  const ambience = stems.find(o => o.kind === 'audio' && (o.node === '5' || /instruments/i.test(o.filename ?? o.file)));
+  if (!vocals || !ambience) throw new Error('The voice and ambience stems could not be identified.');
+  pass.ambience = ambience; persist();
+  const outputs = await stage('conversion', 'audio-chatterbox_vc', {
+    confirm: true, inputs: { audio: { file: pass.reference.file }, audio3: { file: vocals.file }, seed: 281026106 },
+    overrides: { '5': { start_time: '0:00', end_time: `0:${Math.ceil(shot.to - shot.from).toString().padStart(2, '0')}` } },
+  }, `Giving the performance ${reference.name}'s voice`);
+  pass.converted = outputs.find(o => o.kind === 'audio');
+  if (!pass.converted) throw new Error('Voice conversion finished without audio.');
+  pass.finishedAt = new Date().toISOString(); persist();
+}

@@ -1,0 +1,70 @@
+{
+  "id": "my-reaction",
+  "engine": "official-template",
+  "template": "video_fastvideo_fasth3_i2v",
+  "about": "An original plant obsession reveal starring Ivy. No source recording.",
+  "source": {
+    "url": null,
+    "note": "Original Comfyture script and scene, 28 October 2026."
+  },
+  "seconds": 10,
+  "aspect": "9:16",
+  "settings": {
+    "width": 768,
+    "height": 1344,
+    "duration": 10
+  },
+  "look": "look-v2.webp",
+  "preview": "preview.mp4",
+  "poster": "poster.webp",
+  "sound": {
+    "native": true,
+    "note": "Native performance converted with Chatterbox into Ivy\u2019s saved fictional voice, with original separated ambience."
+  },
+  "roles": [
+    {
+      "role": "Lead",
+      "crew": "ivy",
+      "look": "the quirky plant-shop owner with a glossy black bob with blunt bangs, round tortoiseshell glasses, a leaf-green cardigan, a cream tee and brown corduroy trousers"
+    }
+  ],
+  "beats": [
+    {
+      "from": 0,
+      "to": 3,
+      "text": "Lead admits: I might have a small plant problem."
+    },
+    {
+      "from": 3,
+      "to": 7,
+      "text": "Camera pulls back to reveal an apartment overflowing with plants."
+    },
+    {
+      "from": 7,
+      "to": 10,
+      "text": "Lead squeezes between the plants: There\u2019s still room."
+    }
+  ],
+  "shots": [
+    {
+      "from": 0,
+      "to": 10,
+      "frames": 240,
+      "seed": 281026104,
+      "prompt": "Use <Picture 1> as exact first frame and identity reference. One continuous 10-second shot in a tactile premium 3D animated comedy, restrained natural daylight and true-to-life color, no oversaturated orange filter. {Lead} holds a tiny terracotta plant in an apartment doorway. 0\u20133 seconds: looks innocently at camera, slightly guilty smile, speaks exactly: \"I might have a small plant problem.\" 3\u20137 seconds: camera smoothly dollies backward and slightly sideways through the open doorway to reveal the full living room as a hilariously dense indoor jungle: plants cover the sofa and dining table, pots line the floor, hanging vines and huge leafy plants nearly block the hall. Plants are stationary objects being revealed by camera movement, never magically appearing. Keep Lead visible as the shot widens. 7\u201310 seconds: Lead carefully sidesteps between pots, hugging the tiny plant protectively, pauses to assess one absurdly small empty spot, then looks at camera and says exactly: \"There's still room.\" Hold a quietly proud deadpan smile. Clear adult conversational speech, not a child voice. Only Lead speaks. Quiet room ambience and gentle leaf rustle/footsteps; NO music, narrator, other voices, extra dialogue, captions, text or logos. Keep identity, hands, glasses and pot stable. Lip movements match the two spoken lines. No cuts."
+    }
+  ],
+  "revision": 2,
+  "name": "Tell Me Without Telling Me",
+  "model": "MiniMax H3 \u00b7 FastH3",
+  "billing": "gpu",
+  "coverAt": 8.3,
+  "voiceConversion": {
+    "role": "Lead",
+    "referenceCrew": "ivy",
+    "template": "audio-chatterbox_vc",
+    "reference": "brand/mixer/voices/ivy-v1.mp3",
+    "method": "Isolate speech, convert into the saved fictional character voice, mix original ambience back in. Uploaded photos use the fictional role voice, not a clone of the photographed person."
+  },
+  "imageModel": "Codex built-in imagegen (new reference; billing unavailable separately)"
+}

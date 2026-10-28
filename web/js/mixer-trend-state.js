@@ -7,7 +7,8 @@ export function canResumeTrend(mix, id, roles, revision = 1) {
     && Object.keys(roles).every((role) => {
       const before = mix.body.trend.cast?.[role];
       const after = roles[role];
-      return before && (after.crew ? before.crew === after.crew : before.star?.file === after.star?.file);
+      return before && (before.voiceSample?.file ?? null) === (after.voiceSample?.file ?? null)
+        && (before.voice ?? "") === (after.voice ?? "") && (after.crew ? before.crew === after.crew : before.star?.file === after.star?.file);
     });
 }
 
