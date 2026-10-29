@@ -1,14 +1,16 @@
 // Kitchen's real controls and persisted handoffs, on an isolated server. Paid endpoints are intercepted.
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-import {mkdtemp,mkdir,copyFile,rm} from 'node:fs/promises';
+import {mkdtemp,mkdir,copyFile,rm,cp} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
-import {join} from 'node:path';
+import {join,resolve} from 'node:path';
 import {createServer} from 'node:net';
 import {createRequire} from 'node:module';
 const {chromium}=createRequire(import.meta.url)('playwright');
 const data=await mkdtemp(join(tmpdir(),'kitchen-production-'));
 await mkdir(join(data,'photos'));await mkdir(join(data,'videos'));await mkdir(join(data,'examples'));
+await mkdir(join(data,'examples/kitchen'));
+await cp(resolve('examples/kitchen/tarte-for-friends'),join(data,'examples/kitchen/tarte-for-friends'),{recursive:true});
 await copyFile('web/brand/cast/ketkout-ref.png',join(data,'photos','start.png'));
 await copyFile('web/brand/cast/ketkout-ref.png',join(data,'photos','end.png'));
 const port=await new Promise(done=>{const s=createServer().listen(0,()=>{const p=s.address().port;s.close(()=>done(p));});});
@@ -18,6 +20,7 @@ const browser=await chromium.launch({args:['--no-sandbox']});
 try {
   for(let i=0;i<100;i++){if(await fetch(`${base}/api/stories`).then(r=>r.ok,()=>false))break;await new Promise(r=>setTimeout(r,200));}
   const api=async(path,body,method='POST')=>(await fetch(`${base}/api/${path}`,body?{method,headers:{'content-type':'application/json'},body:JSON.stringify(body)}:undefined)).json();
+  const tutorial=(await api('stories')).stories.find(s=>s.name==='A Little Jar, A Full Table');assert.ok(tutorial,'the portable tutorial seeds in an empty data directory');
   const body={v:2,imageModel:'gpt-image-2.5-flare',videoModel:'ltx-2.5',tutorial:{version:1},idea:{title:'Kitchen production test',aspect:'16:9',length:5},blocks:[{id:'scene',kind:'scene',slug:'INT. KITCHEN'},{id:'shot',kind:'shot',seconds:5,frame:'A chick.',action:'Open the door.',photo:{file:'start.png',url:'/media/photos/start.png'},endPhoto:{file:'end.png',url:'/media/photos/end.png'},endPrompt:'Door open.',videoPrompt:'A gentle welcome.',drawnAs:'film'}]};
   const {project}=await api('stories',{name:'Kitchen production test',body});
   const page=await browser.newPage({viewport:{width:1600,height:1050}});
@@ -55,6 +58,20 @@ try {
   const draft=await page.evaluate(()=>import('/js/store.js').then(m=>m.state.tabs.at(-1).draft));
   assert.equal(draft.end.file,'end.png');assert.equal(draft.script.raw,'The chick opens the door. Locked camera.');
   assert.equal(draft.model,'ltx-2.5');assert.equal(requests.length,1);
+  await page.goto(`${base}/#/story`);
+  await page.evaluate(async id=>{const m=await import('/js/story.js');await m.loadStories();await m.openStory(id);},tutorial.id);
+  await page.getByRole('button',{name:'Watch the 1-minute film',exact:true}).click();
+  await page.locator('.viewer video').waitFor();
+  await page.waitForFunction(()=>{const v=document.querySelector('.viewer video');return v?.readyState>=2&&v.duration===60;});
+  await page.locator('.viewer video').evaluate(v=>{v.pause();v.currentTime=59;});
+  await page.waitForFunction(()=>!document.querySelector('.viewer video').seeking && document.querySelector('.viewer video').readyState>=2 && Math.abs(document.querySelector('.viewer video').currentTime-59)<0.05);
+  if(process.env.OUT){await mkdir(process.env.OUT,{recursive:true});await page.screenshot({path:join(process.env.OUT,'kitchen-tutorial-final.png')});}
+  await page.keyboard.press('Escape');
+  await page.getByRole('button',{name:'Open the finished edit',exact:true}).click();
+  await page.waitForURL('**/#/cut');
+  const finished=await page.evaluate(()=>import('/js/cut.js').then(m=>m.cut.project.body));
+  assert.equal(finished.tracks.find(t=>t.main).items.length,12);
+  assert.equal(requests.length,1,'opening the tutorial and edit submits no generation');
   assert.deepEqual(errors,[]);
-  console.log('PASS: editable persisted prompt, both frames, native workflow, saved video, project count, five-second edit and Shot handoff; one mocked submission.');
+  console.log('PASS: editable persisted prompt, both frames, native workflow, saved video, project count, five-second edit, Shot handoff, portable tutorial playback and finished edit; one mocked submission.');
 } finally {await browser.close();server.kill();await rm(data,{recursive:true,force:true});}

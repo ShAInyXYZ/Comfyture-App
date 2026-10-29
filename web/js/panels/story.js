@@ -260,6 +260,15 @@ function sceneCard(b, sc) {
 
 function documentColumn(b) {
   const parts = [titleBlock(b)];
+  const openFinishedEdit=async()=>{
+    try { const m=await import('../cut.js');await m.loadCuts();await m.openCut(b.tutorial.cut);const {go}=await import('../router.js');go('cut'); }
+    catch(e) { const {toast}=await import('../store.js');toast(e.message,{tone:'crit'}); }
+  };
+  if (b.tutorial?.film?.url) parts.push(h('section.doc-production',{},
+    h('div.doc-production-text',{},h('b',{},'Kitchen tutorial'),h('span',{},'Watch the finished film, then follow the numbered shot notes below.')),
+    h('div.doc-production-keys',{},
+      h('button.key.is-primary',{type:'button',on:{click:()=>view(b.tutorial.film.url,'video')}},icon('play'),'Watch the 1-minute film'),
+      b.tutorial.cut?h('button.key',{type:'button',on:{click:openFinishedEdit}},icon('scissors'),'Open the finished edit'):null)));
   const scenes = scenesOf(b);
   if (b.idea.logline && !b.blocks.length) {
     parts.push(h("section.doc-start.is-next", {},
