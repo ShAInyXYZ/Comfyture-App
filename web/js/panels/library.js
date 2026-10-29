@@ -68,13 +68,20 @@ function takeCard(run) {
   return card;
 }
 
+/** What a film was made of: its takes, counted (a film rendered from an edit lists only the takes among its clips, so an edit of
+ * Jam's scenes or Mixer's videos counted "0 clips"). */
+const filmMade = (film) => {
+  const n = film.takes?.length ?? 0;
+  return n ? `${n} ${n === 1 ? "clip" : "clips"}` : film.cut ? "Made in Cut" : "A film";
+};
+
 function filmCard(film) {
   const card = h("article.lib-card.is-film", { on: { click: () => view(film.url, "video") } },
     h("div.lib-thumb", {},
       h("video", { src: `${film.url}#t=0.6`, muted: true, loop: true, preload: "metadata", draggable: false }),
       h("span.film-badge", {}, icon("film"), "Film"),
       h("span.lib-dur", {}, `${film.seconds.toFixed(1)} s`)),
-    h("div.lib-meta", {}, h("b", {}, film.name), h("span.lib-sub", {}, `${film.takes.length} clips${film.transition === "fade" ? " · dissolves" : ""}`, h("em", {}, ago(film.createdAt)))),
+    h("div.lib-meta", {}, h("b", {}, film.name), h("span.lib-sub", {}, `${filmMade(film)}${film.transition === "fade" ? " · dissolves" : ""}`, h("em", {}, ago(film.createdAt)))),
     h("div.lib-actions", {},
       film.clips || film.cut || film.takes?.length
         ? h("button.key.is-sm", { type: "button", title: "Edit it again in Cut", on: { click: (e) => (e.stopPropagation(), go("cut"), editFilm(film)) } }, icon("scissors"), "Edit again")
