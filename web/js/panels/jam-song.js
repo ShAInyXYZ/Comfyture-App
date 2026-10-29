@@ -454,12 +454,12 @@ function pills(group, more) {
     more ? h("button.sg-pill.is-more", { type: "button", "aria-expanded": String(song.more), title: "Every word of style, and the style as typed", on: { click: () => ((song.more = !song.more), redrawSteps()) } }, "More", jicon("caret")) : null);
 }
 
-/** What More holds: every word of style, and the style as typed. */
+/** What More holds: optional style suggestions. */
 function moreWords() {
   return h("div.sg-more", {},
     ...STYLE_WORDS.map(([name, words]) => h("div.sg-words", {}, h("span.sg-field", {}, name),
       h("div.sg-pills.is-small", {}, ...words.map((w) => h("button.sg-pill", { type: "button", "aria-pressed": String(hasWord(w)), on: { click: () => toggleWord(w) } }, w))))),
-    h("div.sg-words", {}, h("span.sg-field", {}, "The style, as typed"), page.tags));
+  );
 }
 
 const step = (n, label, meta, ...body) =>
@@ -471,21 +471,24 @@ function drawSteps() {
   const here = noteOf(song.key);
   const lines = song.lyrics.split("\n").filter((l) => l.trim() && !/^\s*\[[^\]]*\]\s*$/.test(l)).length;
   return [
-    step(1, "The idea", null,
+    step(1, "Style prompt & lyrics", "ACE-Step 1.5 XL",
+      h("div.sg-words", {}, h("label.sg-field", { for: "sg-style-prompt" }, "Style prompt"),
+        h("p.sg-field-help", {}, "Describe the genre, instruments, voice, arrangement and production."), page.tags),
+      h("div.sg-lyrics", {}, h("div.sg-lyrics-head", {}, h("label.sg-field", { for: "sg-lyrics-input" }, "Lyrics"), h("span.sg-meta", {}, lines ? `${lines} lines` : "none yet")),
+        h("p.sg-field-help", {}, "Write your own words, or enter [Instrumental] for a track without vocals."),
+        h("div.sg-tags", {}, ...SECTIONS.map((sec) => h("button.key.is-quiet", { type: "button", title: `Add [${sec}]`, on: { click: () => addSection(sec) } }, jicon("plus"), sec))), page.lyrics)),
+    step(2, "Ask Pickle", "Optional",
       h("div.sg-ask", {}, h("img.sg-pickle", { src: "brand/cast/pickle-face.webp", alt: "Pickle", draggable: false }), h("div.sg-idea", {}, page.idea, page.count)),
       h("button.key.is-primary.sg-set", { type: "button", disabled: song.writing, on: { click: setUp } }, jicon("pencil"), song.writing ? "Pickle is writing…" : "Pickle, set it up")),
-    step(2, "The shape", STRUCTURES.find((x) => x.id === song.structure)?.desc,
-      h("div.sg-shapes", { role: "group", "aria-label": "Shape" }, ...STRUCTURES.map((x) =>
-        h("button.sg-shape", { type: "button", "aria-pressed": String(song.structure === x.id), title: x.desc, on: { click: () => pickStructure(x.id) } }, blocks(x.id), h("b", {}, x.label))))),
-    step(3, "The sound", null,
+    step(3, "Structure & sound", null,
+      h("div.sg-shapes", { role: "group", "aria-label": "Song structure" }, ...STRUCTURES.map((x) =>
+        h("button.sg-shape", { type: "button", "aria-pressed": String(song.structure === x.id), title: x.desc, on: { click: () => pickStructure(x.id) } }, blocks(x.id), h("b", {}, x.label)))),
       h("div.sg-line", {}, h("span.sg-field", {}, "Genre"), pills("Genre", true)),
       h("div.sg-line", {}, h("span.sg-field", {}, "Mood"), pills("Mood", false)),
       song.more ? moreWords() : null,
-      h("div.sg-dials", {},
-        lengthControl(),
-        tempoDial())),
+      h("div.sg-dials", {}, lengthControl(), tempoDial())),
     h("details.sg-adv", { open: song.adv, on: { toggle: (e) => (song.adv = e.target.open) } },
-      h("summary", {}, jicon("caret"), h("b", {}, "Advanced"), h("span", {}, "Key · Time · Language · Quality · Lyrics")),
+      h("summary", {}, jicon("caret"), h("b", {}, "Advanced"), h("span", {}, "Title · Key · Time · Language · Quality")),
       h("div.sg-adv-body", {},
         row("Title", page.name),
         row("Key",
@@ -497,10 +500,7 @@ function drawSteps() {
         onOwnGpu() ? row("Style LoRA", chips([["", "None", "No LoRA"], ...STYLE_LORAS.map(([id, name]) => [id, name, `The ${name} LoRA: its trigger word goes in for you. For a beat or a song with no words: it makes sung words unclear`])], song.lora ?? "", pick("lora"), "Style LoRA", ".is-seg")) : null,
         row("Creativity", range({ min: 0.4, max: 1.1, step: 0.05, value: song.temperature, label: "Creativity", format: (v) => v.toFixed(2), set: (v) => ((song.temperature = v), keepDraft()), ends: ["steady", "wild"] })),
         row("Follows the words", range({ min: 1, max: 5, step: 0.5, value: song.adherence, label: "How closely it follows the words and the style", format: (v) => v.toFixed(1), set: (v) => ((song.adherence = v), keepDraft()), ends: ["loose", "strict"] })),
-        row("Plans first", h("button.key", { type: "button", "aria-pressed": String(song.thinking), title: "The model plans the song's structure before it sounds it: better built, slower", on: { click: () => pick("thinking")(!song.thinking) } }, song.thinking ? "On" : "Off")),
-        h("div.sg-lyrics", {}, h("div.sg-lyrics-head", {}, h("span.sg-field", {}, "Lyrics"), h("span.sg-meta", {}, lines ? `${lines} lines` : "none yet")),
-          h("div.sg-tags", {}, ...SECTIONS.map((sec) => h("button.key.is-quiet", { type: "button", title: `Add [${sec}]`, on: { click: () => addSection(sec) } }, jicon("plus"), sec))),
-          page.lyrics))),
+        row("Plans first", h("button.key", { type: "button", "aria-pressed": String(song.thinking), title: "The model plans the song's structure before it sounds it: better built, slower", on: { click: () => pick("thinking")(!song.thinking) } }, song.thinking ? "On" : "Off")))),
   ];
 }
 
@@ -547,13 +547,10 @@ function drawMap() {
   ];
 }
 
-/** A section of the map is found in the lyrics: Advanced opens and the cursor stands on its tag. */
+/** A section of the map is found in the lyrics, with the cursor on its tag. */
 function showSection(n) {
-  song.adv = true;
-  redrawSteps();
   const tags = [...page.lyrics.value.matchAll(/^[ \t]*\[[^\]\n]+\][ \t]*$/gm)];
   const m = tags[n];
-  page.steps.querySelector(".sg-adv")?.setAttribute("open", "");
   requestAnimationFrame(() => {
     page.lyrics.focus();
     if (m) page.lyrics.setSelectionRange(m.index, m.index + m[0].length);
@@ -790,8 +787,8 @@ export function songWorkspace() {
     page = {
       idea: area("idea", 2, "What is the song about?", "", { maxLength: 500 }),
       count: h("span.sg-count", {}, "0/500"),
-      tags: area("tags", 6, "Its style, as a paragraph: the genre and its main instrument, the groove, the voice, each instrument tied to a section, the finish", ".is-mono"),
-      lyrics: area("lyrics", 12, "Its lyrics, in sections: [Verse 1], [Chorus]…", ".is-mono"),
+      tags: area("tags", 6, "Describe the genre, instruments, vocal style, arrangement and production…", ".is-mono", { id: "sg-style-prompt", "aria-label": "Style prompt" }),
+      lyrics: area("lyrics", 12, "Write your lyrics using sections such as [Verse] and [Chorus]…", ".is-mono", { id: "sg-lyrics-input", "aria-label": "Lyrics" }),
       name: h("input.field.sg-name-field", { type: "text", maxlength: 40, placeholder: "A title", "aria-label": "Title", on: { input: set("name") } }),
       audio,
     };

@@ -292,3 +292,7 @@ li[data-kind="edge"] .sg-sec i { background: #6b6a74; }
   .sg-ly-tag { margin: .5rem 0 .125rem; }
 }
 @media (prefers-reduced-motion: reduce) { .sg-ly-line, .sg-ly-tag { transition: none; } }
+
+/* The two song inputs are available immediately, without opening advanced controls. */
+.sg-field-help { margin: 0; color: var(--muted); font: 400 var(--fs-small)/1.45 var(--font-sans); }
+.sg-lyrics .sg-field-help { margin: 0; }
