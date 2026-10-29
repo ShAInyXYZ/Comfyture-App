@@ -3,7 +3,7 @@ import { state, toast } from './store.js';
 import { mixer } from './mixer.js';
 import { crewById, crewFace, trendById } from './mixer-trends.js';
 import { pick, castOf, castArtist, trendInputs, generationIdentity, reviewFrames, makeTrend, generateTrendVideo, making, estimate, setFrameIdeas } from './mixer-trend.js';
-import { isProblemReveal, cleanProblem, cleanFrameIdeas, FRAME_IDEA_LIMIT, problemBeats, problemFramePrompt, problemVideoPrompt } from './mixer-problem-reveal.js';
+import { isProblemReveal, cleanProblem, cleanFrameIdeas, FRAME_IDEA_LIMIT, problemBeats, problemFramePrompt, problemOutpaintPrompt, problemVideoPrompt } from './mixer-problem-reveal.js';
 import { canResumeTrend } from './mixer-trend-state.js';
 import { castVoiceDirection } from './mixer-voices.js';
 import { currentPage } from './router.js';
@@ -61,7 +61,7 @@ export async function reviewGeneration({ freshFrames = false } = {}) {
     return h('div.mx-frame-idea', {}, h('label', { for: `mx-idea-${key}` }, label),
       h('textarea', { id: `mx-idea-${key}`, rows: 3, maxLength: FRAME_IDEA_LIMIT, value: draftIdeas[key], placeholder: video ? 'Preset improvisation' : placeholder, readOnly: video, 'aria-describedby': 'mx-ideas-help', on: { input: e => {
         draftIdeas[key] = e.target.value;
-        if (direction) direction.textContent = problemFramePrompt(problem, draftIdeas);
+        if (direction) direction.textContent = problemFramePrompt(problem, draftIdeas) + '\n\n' + problemOutpaintPrompt(problem, draftIdeas);
         refreshEstimate();
       } } }));
   };
@@ -100,29 +100,40 @@ export async function reviewGeneration({ freshFrames = false } = {}) {
     const sameDraft = !freshFrames && canResumeTrend(mixer.mix, t.id, pick.cast.roles, t.revision ?? 1, trendInputs(t));
     const saved = sameDraft ? mixer.mix.body : null;
     const existingVideo = video && saved?.shots?.some(s => s.native?.id && !['failed', 'canceled'].includes(s.native.status));
-    const existingImage = !video && saved?.revealFrames?.wide?.job;
+    const imageRecord = saved?.revealFrames;
+    const legacy = imageRecord?.method === 'crop-v1' || (!imageRecord?.method && !!(imageRecord?.wide?.job || imageRecord?.wide?.photo || imageRecord?.wide?.pending));
     const imagePrice = state.image.catalogue?.models?.find(m => m.id === 'gpt-image-2.5-flare')?.credits ?? t.render?.estimatedImageCredits;
     const videoPrice = t.render?.estimatedVideoCredits;
-    const fullPrice = Number.isFinite(imagePrice) && Number.isFinite(videoPrice) ? imagePrice + videoPrice : null;
-    let amount = reveal ? video ? existingVideo ? 0 : videoPrice : existingImage ? 0 : imagePrice : estimate(t);
+    const pairPrice = Number.isFinite(imagePrice) ? imagePrice * (legacy ? 1 : 2) : null;
+    const fullPrice = Number.isFinite(pairPrice) && Number.isFinite(videoPrice) ? pairPrice + videoPrice : null;
+    const accepted = part => !!(part?.job || part?.photo || part?.pending);
+    const pendingCount = legacy ? (accepted(imageRecord?.wide) ? 0 : 1) : (accepted(imageRecord?.close) ? 0 : 1) + (accepted(imageRecord?.wide) ? 0 : 1);
+    const remainingFrames = Number.isFinite(imagePrice) ? pendingCount * imagePrice : null;
+    const hasImageJob = accepted(imageRecord?.close) || accepted(imageRecord?.wide);
+    let amount = reveal ? video ? existingVideo ? 0 : videoPrice : remainingFrames : estimate(t);
     const row = (label, value) => h('div.mx-review-row', {}, h('dt', {}, label), h('dd', {}, value));
     const beats = reveal ? problemBeats(problem) : t.beats;
     const resolution = settings.width && settings.height ? `${settings.width} × ${settings.height}` : settings.resolution ?? 'Recipe default';
     const fps = settings.fram_rate ?? settings.frame_rate;
     const priceValue = h('strong', {}, credits(amount));
     stagePrice.append(h('span', {}, reveal ? video ? 'Confirm video only' : 'Confirm frames only' : 'Confirm generation'), priceValue);
-    const priceNote = h('p', {}, existingVideo || existingImage ? 'Resumes the saved job if your ideas stay unchanged. Editing an idea creates a new paid frame pair.' : reveal && !video ? 'This confirmation pays for one image only. The opening crop is free. Video requires a separate confirmation.' : video ? 'Your frames are already prepared. This confirmation starts the video only.' : 'Confirming starts a paid generation.');
+    const priceNote = h('p', {}, video ? existingVideo ? 'Resumes the saved video job without submitting it again; its original generation remains billable.' : 'Your frames are already prepared. This confirmation starts the video only.' : reveal ? legacy ? 'Resumes the previous frame job and its local crop. Video requires a separate confirmation.' : hasImageJob ? 'Saved image jobs are reused. The estimate covers any image still to be submitted; earlier jobs may still be billed.' : 'Two image generations: an opening frame and a wide scene extended from it. Video requires a separate confirmation.' : 'Confirming starts a paid generation.');
+    const framesCost = h('dd', {}, credits(pairPrice));
+    const totalCost = h('dd', {}, credits(fullPrice));
     refreshEstimate = () => {
-      if (reveal && !video && existingImage) {
-        priceValue.textContent = credits(ideasChanged() ? imagePrice : 0);
-        priceNote.textContent = ideasChanged() ? 'Your ideas changed. This confirmation creates a new paid frame pair; the previous draft stays saved.' : 'Resumes the saved job without submitting it again. Its original generation remains billable.';
+      if (reveal && !video && hasImageJob) {
+        const newPairPrice = Number.isFinite(imagePrice) ? imagePrice * 2 : null;
+        priceValue.textContent = credits(ideasChanged() ? newPairPrice : remainingFrames);
+        framesCost.textContent = credits(ideasChanged() ? newPairPrice : pairPrice);
+        totalCost.textContent = credits(ideasChanged() && Number.isFinite(newPairPrice) && Number.isFinite(videoPrice) ? newPairPrice + videoPrice : fullPrice);
+        priceNote.textContent = ideasChanged() ? 'Your ideas changed. This confirmation creates two new paid images; the previous draft stays saved.' : legacy ? 'Resumes the previous frame job and its local crop. Video requires a separate confirmation.' : 'Saved image jobs are reused. The estimate covers any image still to be submitted; earlier jobs may still be billed.';
       }
     };
     const price = h('section.mx-review-price', {}, h('h3', {}, 'Estimated cost'),
-      reveal ? h('dl', {}, row(video ? 'Frames · prepared' : 'Frames', credits(imagePrice)), row(video ? 'Video · next' : 'Video · later', credits(videoPrice)), h('div.mx-review-total', {}, h('dt', {}, 'Full sequence'), h('dd', {}, credits(fullPrice)))) : h('strong', {}, credits(amount)),
+      reveal ? h('dl', {}, h('div.mx-review-row', {}, h('dt', {}, video ? 'Frames · prepared' : 'Frames'), framesCost), row(video ? 'Video · next' : 'Video · later', credits(videoPrice)), h('div.mx-review-total', {}, h('dt', {}, 'Full sequence'), totalCost)) : h('strong', {}, credits(amount)),
       priceNote,
       h('p', {}, reveal ? 'Per-sequence estimates, excluding retries. Image price: catalogue estimate. Video price: saved preview’s GPU execution time, not a live quote. Actual billing may differ.' : 'Estimated cost may vary. When unavailable, no reliable quote was supplied.'));
-    direction = h('pre', {}, video ? problemVideoPrompt(problem, draftIdeas) + '\n' + castVoiceDirection(cast) : problemFramePrompt(problem, draftIdeas));
+    direction = h('pre', {}, video ? problemVideoPrompt(problem, draftIdeas) + '\n' + castVoiceDirection(cast) : problemFramePrompt(problem, draftIdeas) + '\n\n' + problemOutpaintPrompt(problem, draftIdeas));
     body.replaceChildren(h('div.mx-review-layout', {},
       h('div.mx-review-story', {}, sequences(t, recipe, frames, saved, freshFrames, ideaField),
         h('div.mx-review-script', {}, h('h3', {}, 'Performance'), ...beats.map(b => h('p', {}, h('b', {}, `${b.from}–${b.to}s `), b.text))),
@@ -133,7 +144,7 @@ export async function reviewGeneration({ freshFrames = false } = {}) {
         reveal ? h('section.mx-review-ideas', {}, ideaField('scene'), h('p', { id: 'mx-ideas-help' }, video ? 'These ideas belong to this frame pair. Choose Regenerate frames to edit them.' : 'Optional. Your ideas guide the preset: a fresh pose and setting, one shared room, the collection hidden at first and revealed at the end. Leave blank for an improvised take.')) : null,
         price,
         h('dl.mx-review-facts', {}, problem ? row('Collection', problem) : null,
-          row('Frames', reveal ? 'GPT Image 2.5 Flare · new scene + matching crop' : castArtist()),
+          row('Frames', reveal ? legacy ? 'GPT Image 2.5 Flare · saved image + matching crop' : 'GPT Image 2.5 Flare · opening + extended scene' : castArtist()),
           row('Video', recipe?.model ?? t.model ?? 'LTX 2.5'),
           row('Output', `${recipe?.seconds ?? t.seconds} seconds · ${resolution}${fps ? ` · ${fps} fps` : ''}`),
           row('Sound', reveal ? 'Native dialogue · character-directed voice' : recipe?.sound?.note ?? 'Generated dialogue, music and effects')),

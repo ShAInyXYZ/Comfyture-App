@@ -114,21 +114,21 @@ function recipe(t) {
   const shownFrames = ownFrames ?? (t.render?.referenceFrames ? Object.fromEntries(Object.entries(t.render.referenceFrames).map(([key, value]) => [key, { photo: { url: t.recipe.replace(/recipe\.json$/, '') + value.image } }])) : null);
   const head = [
     h("div.mx-recipe-heading", {},
-      h("div.mx-recipe-title", {}, h("span.label", {}, "Trend recipe"), h("h2", {}, t.name), h("span.mx-recipe-meta", {}, `${t.seconds} s · ${KIND_NAME[t.kind]}${t.caption ? ` · “${t.caption}”` : ""}`)),
-      h("div.mx-music", {},
+      h("div.mx-recipe-title", {}, h("span.label", {}, "Trend recipe"), h("h2", {}, t.name), h("span.mx-recipe-meta", {}, `${KIND_NAME[t.kind]}${t.caption ? ` · “${t.caption}”` : ""}`)),
+      h("div.mx-recipe-heading-side", {}, h("span.mx-recipe-duration", {}, `${t.seconds} s`), h("div.mx-music", {},
         m?.body.music ? keep(`music:${m.body.music.url}`, () => h("audio", { src: m.body.music.url, controls: true, preload: "none" })) : h("span.mx-music-icon", {}, sprite("audio-music")),
         ...[t.music?.bpm ? `${t.music.bpm} BPM` : null, t.music?.genre, t.music?.mood].filter(Boolean).map((x) => h("span.mx-chip", {}, x)),
-        h("span.mx-chip.is-own", { title: t.engine === "official-template" ? "Dialogue, music and effects generated with your video" : "A new track made for your mix in the trend's feel: never the trend's own song" }, t.engine === "official-template" ? "Original sound + voices" : "Our own track"))),
+        h("span.mx-chip.is-own", { title: t.engine === "official-template" ? "Dialogue, music and effects generated with your video" : "A new track made for your mix in the trend's feel: never the trend's own song" }, t.engine === "official-template" ? "Original sound + voices" : "Our own track")))),
     isProblemReveal(t) ? h("div.mx-problem", {},
       h("label.label", { for: "mx-problem" }, "My small problem"),
-      h("input", { id: "mx-problem", type: "text", value: problem, maxLength: 48, disabled: busy,
+      h("div.mx-problem-row", {}, h("input", { id: "mx-problem", type: "text", value: problem, maxLength: 48, disabled: busy,
         placeholder: "guitar, plant, sneaker…", "aria-describedby": "mx-problem-help",
         on: { input: e => {
           setProblem(e.target.value, false);
           const line = e.target.closest('.mx-recipe-body')?.querySelector('.mx-beat span');
           if (line) line.textContent = problemBeats(e.target.value || '…')[0].text;
         }, blur: () => requestAnimationFrame(changedMixer) } }),
-      h("p", { id: "mx-problem-help" }, "Name your collection, then add your photo below. The opening hides your collection; the slow reveal shows the whole room.")) : null,
+      h("p", { id: "mx-problem-help" }, "Name your collection, then add your photo below. The opening hides your collection; the slow reveal shows the whole room."))) : null,
     h("div.mx-beats", {}, ...beats.map((b) => h("div.mx-beat", { style: { flexGrow: String(Math.max(0.6, b.to - b.from)) } }, h("i"), h("b", {}, span(b.from, b.to)), h("span", {}, b.text)))),
   ];
   const rest = [
@@ -260,7 +260,7 @@ const modelRow = (glyph, part, model, cost, ...more) =>
 function madeWith({ music, native = false, model, billing, voice, guided = false }) {
   return h("div.mx-made", {},
     h("div.mx-section-head", {}, h("h3", {}, "Made with")),
-    guided ? modelRow(sprite("image-generate"), "Start + end frames", h("b", {}, "GPT Image 2.5 Flare"), "1 image + matching crop") : pictureRow(),
+    guided ? modelRow(sprite("image-generate"), "Start + end frames", h("b", {}, "GPT Image 2.5 Flare"), "2 generated images") : pictureRow(),
     native ? modelRow(sprite("film-make"), "Video + sound", h("b", {}, model ?? "MiniMax H3 · FastH3"), billing === "partner" ? "Partner credits · Comfy Cloud" : "GPU time · Comfy Cloud") : modelRow(sprite("film-make"), "Video", h("b", {}, "LTX-2.5"), cloud() ? "≈ 4.8 cr/s" : "your GPU",
       h("div.mx-model-loras", {}, h("span.label", {}, "LoRAs"), loraStack(mixLoras(), (list) => (setMixLoras(list), changed("mixer"))))),
     voice ? modelRow(sprite("audio-voice"), "Character voice", h("b", {}, `${voice.name} · Chatterbox`), "Saved fictional voice · also used for photo replacements") : null,

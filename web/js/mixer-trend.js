@@ -426,7 +426,7 @@ async function fromNativeRecipe(t, cast, m, recipe, reviewedPair) {
 export function reviewFrames(t = trendById(pick.trend)) {
   if (!isProblemReveal(t) || !canResumeTrend(mixer.mix, t.id, (castOf(t), pick.cast.roles), t.revision ?? 1, trendInputs(t))) return null;
   const frames = mixer.mix.body.revealFrames;
-  return frames?.close?.photo?.file && frames?.wide?.photo?.file && frames.close.method === 'crop-v1' && frames.close.source === frames.wide.photo.file ? frames : null;
+  return frames?.close?.photo?.file && frames?.wide?.photo?.file && ((frames.close.method === 'crop-v1' && frames.close.source === frames.wide.photo.file) || (frames.method === 'outpaint-v1' && frames.wide.source === frames.close.photo.file)) ? frames : null;
 }
 
 // Capture the actual draft and pair so a confirmation cannot approve a different selection.

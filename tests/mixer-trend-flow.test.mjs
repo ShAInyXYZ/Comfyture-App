@@ -244,26 +244,26 @@ test('LTX Distilled recasts a photo with the open-weight template and retains na
 });
 
 
-test('a personal problem creates a wide GPT reference, matching close-up, and sends both to LTX', async () => {
+test('a personal problem creates an opening and a guided wide reference, and sends both to LTX', async () => {
   const { flow, calls, mixer } = await harness({ reveal: true });
   flow.setProblem('guitar');
   await flow.addStar({ name: 'me.png' });
   await flow.makeTrend();
-  assert.equal(calls.pictures.length, 1);
+  assert.equal(calls.pictures.length, 2);
   assert.ok(calls.pictures.every(p => p.model === 'gpt-image-2.5-flare'));
   assert.equal(calls.pictures[0].refs[0].file, 'my-photo.png');
   assert.match(calls.pictures[0].prompt, /theme is "guitar"/);
-  assert.equal(calls.crops.length, 1);
-  assert.equal(calls.crops[0].file, 'image1.png');
+  assert.equal(calls.crops.length, 0);
+  assert.equal(calls.pictures[1].refs[0].file, 'image1.png');
   assert.equal(calls.native.length, 0);
   assert.equal(calls.cuts, 0);
   assert.match(mixer.mix.body.progress, /review/);
   await flow.makeTrend();
   assert.equal(calls.native.length, 0, 'repeated frame generation never starts video');
   await flow.generateTrendVideo(flow.generationIdentity());
-  assert.equal(calls.pictures.length, 1);
-  assert.equal(calls.native[0].inputs.first_frame.file, 'crop.png');
-  assert.equal(calls.native[0].inputs.last_frame.file, 'image1.png');
+  assert.equal(calls.pictures.length, 2);
+  assert.equal(calls.native[0].inputs.first_frame.file, 'image1.png');
+  assert.equal(calls.native[0].inputs.last_frame.file, 'image2.png');
   assert.match(calls.native[0].inputs.prompt, /I think I have a small guitar problem/);
   assert.match(calls.native[0].inputs.prompt, /Oopsie/);
   assert.equal(mixer.mix.body.trend.inputs.problem, 'guitar');
@@ -277,14 +277,14 @@ test('retrying a guided cut reuses both images and video; changing the problem r
   await flow.generateTrendVideo(flow.generationIdentity());
   assert.equal(mixer.mix.body.error, 'Render interrupted');
   await flow.generateTrendVideo(flow.generationIdentity());
-  assert.equal(calls.pictures.length, 1);
+  assert.equal(calls.pictures.length, 2);
   assert.equal(calls.native.length, 1);
   flow.setProblem('sneaker');
   await flow.generateTrendVideo(flow.generationIdentity());
   assert.equal(calls.native.length, 1);
   await flow.makeTrend();
   assert.equal(calls.mixes, 2);
-  assert.equal(calls.pictures.length, 2);
+  assert.equal(calls.pictures.length, 4);
   assert.equal(calls.native.length, 1);
   await flow.generateTrendVideo(flow.generationIdentity());
   assert.equal(calls.native.length, 2);
@@ -315,9 +315,9 @@ test('regeneration preserves the previous frame receipt and requires a new appro
   const identity = flow.generationIdentity();
   await flow.makeTrend({ freshFrames: true });
   assert.equal(calls.mixes, 2);
-  assert.equal(calls.pictures.length, 2);
-  assert.equal(before.body.revealFrames.wide.photo.file, 'image1.png');
-  assert.equal(mixer.mix.body.revealFrames.wide.photo.file, 'image2.png');
+  assert.equal(calls.pictures.length, 4);
+  assert.equal(before.body.revealFrames.wide.photo.file, 'image2.png');
+  assert.equal(mixer.mix.body.revealFrames.wide.photo.file, 'image4.png');
   await flow.generateTrendVideo(identity);
   assert.equal(calls.native.length, 0);
 });
@@ -344,7 +344,7 @@ test('frame ideas reach the image and video jobs, survive a subject edit, and in
   await flow.generateTrendVideo(identity);
   assert.equal(calls.native.length,0);
   await flow.makeTrend();
-  assert.equal(calls.pictures.length,2);
+  assert.equal(calls.pictures.length,4);
   await flow.generateTrendVideo(flow.generationIdentity());
   assert.match(calls.native[0].inputs.prompt,/A skeptical squint/);
   assert.match(calls.native[0].inputs.prompt,/A garage/);

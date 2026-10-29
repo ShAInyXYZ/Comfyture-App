@@ -6,7 +6,7 @@ import * as problem from '../web/js/mixer-problem-reveal.js';
 import * as helpers from '../web/js/mixer-trend-state.js';
 
 // Exercise the dialog's approval boundary without a browser or paid provider.
-async function harness({ frames = null, failRecipe = false, generatedFrames = null } = {}) {
+async function harness({ frames = null, failRecipe = false, generatedFrames = null, saved = null } = {}) {
   const calls = { images: 0, videos: 0, errors: [], ideas: [] };
   let identity = 'selected-draft';
   class Element {
@@ -28,7 +28,7 @@ async function harness({ frames = null, failRecipe = false, generatedFrames = nu
   const deps = {
     './dom.js': {h,icon:()=>h('svg',{})},
     './store.js': {state:{image:{catalogue:{models:[]}}},toast:msg=>calls.errors.push(msg)},
-    './mixer.js':{mixer:{mix:null}},
+    './mixer.js':{mixer:{mix:saved}},
     './mixer-trends.js':{trendById:()=>trend,crewById:()=>({name:'Shiny'}),crewFace:()=>'/shiny.webp'},
     './mixer-trend.js':{setFrameIdeas:ideas=>calls.ideas.push(structuredClone(ideas)),pick:{trend:'reveal',cast:{roles:{Lead:{crew:'shiny'}}}},castOf:()=>[{role:'Lead',who:{crew:'shiny'}}],castArtist:()=> 'GPT',trendInputs:()=>({problem:'guitar'}),generationIdentity:()=>identity,reviewFrames:()=>frames,making:()=>false,estimate:()=>null,makeTrend:()=>{calls.images++; if (generatedFrames) frames=generatedFrames;},generateTrendVideo:()=>calls.videos++},
     './mixer-problem-reveal.js':problem,
@@ -48,7 +48,7 @@ async function harness({ frames = null, failRecipe = false, generatedFrames = nu
 
 test('opening and canceling the overview submits nothing; it shows the selected cast, script and estimate',async()=>{
   const {calls,dialog}=await harness();
-  assert.match(dialog.text(),/Shiny/); assert.match(dialog.text(),/small guitar problem/); assert.match(dialog.text(),/≈ 3 cr/); assert.match(dialog.text(),/Full sequence ≈ 20 cr/); assert.match(dialog.text(),/Confirm frames only ≈ 3 cr/);
+  assert.match(dialog.text(),/Shiny/); assert.match(dialog.text(),/small guitar problem/); assert.match(dialog.text(),/≈ 6 cr/); assert.match(dialog.text(),/Full sequence ≈ 23 cr/); assert.match(dialog.text(),/Confirm frames only ≈ 6 cr/);
   assert.ok(dialog.find(el=>el.props.src==='/example-start.png'));assert.ok(dialog.find(el=>el.props.src==='/example-end.jpg'));
   assert.match(dialog.text(),/Example · not your generated result/);
   assert.doesNotMatch(dialog.text(),/\bnull\b/);
@@ -104,4 +104,15 @@ test('cancel discards unconfirmed frame ideas and video review cannot edit an ap
   assert.equal(first.calls.ideas.length,0);
   const video=await harness({frames:{close:{photo:{url:'/start.png'}},wide:{photo:{url:'/end.png'}}}});
   assert.equal(video.dialog.find(el=>el.props.id==='mx-idea-opening').props.readOnly,true);
+});
+
+
+test('resuming an opening image estimates only the remaining wide image', async () => {
+  const saved = {body:{kind:'trend', trend:{id:'reveal',cast:{Lead:{crew:'shiny'}},inputs:{problem:'guitar'}}, revealFrames:{method:'outpaint-v1',close:{job:'opening',photo:{file:'opening.png'}}}}};
+  const {dialog,calls,confirm} = await harness({saved});
+  assert.match(dialog.text(),/Confirm frames only ≈ 3 cr/);
+  assert.match(dialog.text(),/Full sequence ≈ 23 cr/);
+  assert.match(dialog.text(),/earlier jobs may still be billed/);
+  dialog.find(el=>el.tag==='button.key' && el.text()==='Cancel').click();
+  assert.equal(calls.images,0); assert.equal(calls.videos,0);
 });
