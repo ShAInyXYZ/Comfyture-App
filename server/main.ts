@@ -1349,6 +1349,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const name = text(input.name, 60) || tags.slice(0, 40);
     const job = engine.audioJob("song", {
       prompt: tags,
+      model: input.model === "minimax-music-3" ? "minimax-music-3" : "ace-step",
       seconds,
       lyrics: text(input.lyrics, 3000),
       bpm: num(input.bpm, 40, 220, DEFAULT_SONG.bpm),

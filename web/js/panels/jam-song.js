@@ -22,8 +22,8 @@ import { KIND, WEIGHT, lyricTimeline, entryAt, sectionSpans, timingCovers } from
 import { COVER_SECONDS, COVER_VIDEO_PROMPT, bestPart, coverPrompt, costOfCover, costOfCoverVideo, coverOf, fileOfUrl, stepWords } from "../song-cover.js";
 
 const STORE = "comfyture.jam.song.3";
-const MINE = ["idea", "structure", "tags", "lyrics", "seconds", "language", "key", "bpm", "signature", "name", "passes", "temperature", "adherence", "thinking", "lora"];
-const song = { idea: "", tags: "", lyrics: "", name: "", ...DEFAULT_SONG, writing: false, making: false, made: [], shown: null, loaded: false, adv: false };
+const MINE = ["model", "idea", "structure", "tags", "lyrics", "seconds", "language", "key", "bpm", "signature", "name", "passes", "temperature", "adherence", "thinking", "lora"];
+const song = { idea: "", tags: "", lyrics: "", name: "", ...DEFAULT_SONG, model: "minimax-music-3", writing: false, making: false, made: [], shown: null, loaded: false, adv: false };
 try {
   Object.assign(song, JSON.parse(localStorage.getItem(STORE) ?? "{}"));
 } catch {}
@@ -92,9 +92,9 @@ async function make() {
   song.making = true;
   redrawAll();
   try {
-    const job = await api.makeSong({ tags: song.tags, lyrics: song.lyrics, seconds: song.seconds, bpm: song.bpm, key: song.key, language: song.language, timesignature: song.signature, passes: song.passes, temperature: song.temperature, adherence: song.adherence, thinking: song.thinking, lora: onOwnGpu() ? song.lora : "", name: song.name || "New song" });
+    const job = await api.makeSong({ model: song.model, tags: song.tags, lyrics: song.lyrics, seconds: song.seconds, bpm: song.bpm, key: song.key, language: song.language, timesignature: song.signature, passes: song.passes, temperature: song.temperature, adherence: song.adherence, thinking: song.thinking, lora: onOwnGpu() ? song.lora : "", name: song.name || "New song" });
     const done = await waitFor("job", job.id);
-    const made = { ...done.audio, tags: song.tags, lyrics: song.lyrics, key: song.key, bpm: song.bpm };
+    const made = { ...done.audio, tags: song.tags, lyrics: song.lyrics, ...(song.model === "ace-step" ? { key: song.key, bpm: song.bpm } : {}) };
     song.made.unshift(made);
     show(made.file);
     // a video that has no song takes this one at once (free: the part is cut here); one that has keeps its own until you say
@@ -425,24 +425,26 @@ const step = (n, label, meta, ...body) =>
 const row = (label, ...body) => h("div.sg-row", {}, h("span.sg-field", {}, label), h("div.sg-ctl", {}, ...body));
 
 function drawSteps() {
+  const minimax = song.model === "minimax-music-3";
   const lang = dropdown({ label: "Language", value: song.language, items: LANGUAGES.map((l) => ({ value: l.value, label: l.label })), onChange: pick("language"), width: "fit" });
   const here = noteOf(song.key);
   const lines = song.lyrics.split("\n").filter((l) => l.trim() && !/^\s*\[[^\]]*\]\s*$/.test(l)).length;
   return [
-    step(1, "Style prompt & lyrics", "ACE-Step 1.5 XL",
+    step(1, "Style prompt & lyrics", null,
+      row("Music model", chips([["minimax-music-3", "MiniMax Music 3"], ["ace-step", "ACE-Step 1.5 XL"]], song.model, pick("model"), "Music model", ".is-seg")),
       h("div.sg-words", {}, h("label.sg-field", { for: "sg-style-prompt" }, "Style prompt"),
-        h("p.sg-field-help", {}, "Describe the genre, instruments, voice, arrangement and production."), page.tags),
+        h("p.sg-field-help", {}, minimax ? "Describe the genre, tempo, key, voice, instruments and arrangement. MiniMax follows these as creative direction." : "Describe the genre, instruments, voice, arrangement and production."), page.tags),
       h("div.sg-lyrics", {}, h("div.sg-lyrics-head", {}, h("label.sg-field", { for: "sg-lyrics-input" }, "Lyrics"), h("span.sg-meta", {}, lines ? `${lines} lines` : "none yet")),
         h("p.sg-field-help", {}, "Write your own words, or enter [Instrumental] for a track without vocals."),
         page.lyrics)),
     step(2, "Ask Pickle", "Optional",
       h("div.sg-ask", {}, h("img.sg-pickle", { src: "brand/cast/pickle-face.webp", alt: "Pickle", draggable: false }), h("div.sg-idea", {}, page.idea, page.count)),
       h("button.key.is-primary.sg-set", { type: "button", disabled: song.writing, on: { click: setUp } }, jicon("pencil"), song.writing ? "Pickle is writing…" : "Pickle, set it up")),
-    step(3, "Structure & sound", null,
+    minimax ? step(3, "Length", "Maximum duration", lengthControl()) : step(3, "Structure & sound", null,
       h("div.sg-shapes", { role: "group", "aria-label": "Song structure" }, ...STRUCTURES.map((x) =>
         h("button.sg-shape", { type: "button", "aria-pressed": String(song.structure === x.id), title: x.desc, on: { click: () => pickStructure(x.id) } }, blocks(x.id), h("b", {}, x.label)))),
       h("div.sg-dials", {}, lengthControl(), tempoDial())),
-    h("details.sg-adv", { open: song.adv, on: { toggle: (e) => (song.adv = e.target.open) } },
+    minimax ? h("section.sg-step", {}, row("Title", page.name), h("p.sg-field-help", {}, "MiniMax uses your style prompt and lyrics. Duration is a maximum; the finished song may be shorter.")) : h("details.sg-adv", { open: song.adv, on: { toggle: (e) => (song.adv = e.target.open) } },
       h("summary", {}, jicon("caret"), h("b", {}, "Advanced"), h("span", {}, "Title · Key · Time · Language · Quality")),
       h("div.sg-adv-body", {},
         row("Title", page.name),
@@ -603,12 +605,12 @@ const keyLabel = (m) => (inJam(m) ? "On to the track" : jam.jam?.body.track ? "U
 function drawStage() {
   if (!page) return;
   const m = shownSong();
-  const cost = state.info?.target === "comfy-cloud" ? costOfSong(song.seconds, song.passes) : null;
+  const cost = state.info?.target === "comfy-cloud" && song.model !== "minimax-music-3" ? costOfSong(song.seconds, song.passes) : null;
   const title = (m?.name ?? song.name) || "New song";
   page.name_.textContent = title;
   page.read.textContent = m
     ? `${m.bpm ? `${m.bpm} BPM · ` : ""}${m.key ? `${m.key} · ` : ""}${lengthLabel(Math.round(m.seconds || 0))}`
-    : `${song.bpm} BPM · ${song.key} · ${lengthLabel(song.seconds)}`;
+    : song.model === "minimax-music-3" ? `MiniMax Music 3 · up to ${lengthLabel(song.seconds)}` : `${song.bpm} BPM · ${song.key} · ${lengthLabel(song.seconds)}`;
   if (!m) page.time.textContent = "00:00 / 00:00";
   page.state.textContent = song.making ? "Making the song…" : m ? "" : "Not made yet";
   page.state.hidden = !page.state.textContent;
@@ -620,7 +622,7 @@ function drawStage() {
   page.make.className = `key is-primary sg-make${song.making ? " is-busy" : ""}`;
   // (replaceChildren writes a null out as the word "null": the price goes in only when there is one)
   page.make.replaceChildren(jicon("note"), song.making ? "Making the song…" : "Make the song", ...(cost && !song.making ? [h("span.sg-cr", {}, cr(cost))] : []));
-  page.hint.textContent = song.passes === 1 ? "A draft: quicker and cheaper. Make it Full for the final." : "Full songs sound best. Cut your favourite part next.";
+  page.hint.textContent = song.model === "minimax-music-3" ? "MiniMax Music 3 · GPU time billed by Comfy Cloud; cost not yet estimated." : song.passes === 1 ? "A draft: quicker and cheaper. Make it Full for the final." : "Full songs sound best. Cut your favourite part next.";
   deck.setCover(coverFor(m).picture);
   drawCover(m);
   drawClip(m);

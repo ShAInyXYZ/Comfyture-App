@@ -1,0 +1,11 @@
+{
+  "unet": { "class_type": "UNETLoader", "inputs": { "unet_name": "minimax_music3_dit_fp16.safetensors", "weight_dtype": "default" } },
+  "clip": { "class_type": "CLIPLoader", "inputs": { "clip_name": "minimax_music3_text_encoder_pruned_int8_convrot.safetensors", "type": "minimax", "device": "default" } },
+  "vae": { "class_type": "VAELoader", "inputs": { "vae_name": "minimax_music3_dav.safetensors" } },
+  "text": { "class_type": "MiniMaxMusic3TextEncode", "inputs": { "clip": ["clip", 0], "caption": "", "lyrics": "", "seed": 0, "max_duration": 180, "cfg_scale": 1.7, "top_k": 50 } },
+  "negative": { "class_type": "ConditioningZeroOut", "inputs": { "conditioning": ["text", 0] } },
+  "latent": { "class_type": "EmptyMiniMaxMusic3LatentAudio", "inputs": { "seconds": ["text", 1], "batch_size": 1 } },
+  "sample": { "class_type": "KSampler", "inputs": { "model": ["unet", 0], "seed": 0, "steps": 30, "cfg": 1.7, "sampler_name": "euler", "scheduler": "simple", "positive": ["text", 0], "negative": ["negative", 0], "latent_image": ["latent", 0], "denoise": 1 } },
+  "decode": { "class_type": "VAEDecodeAudio", "inputs": { "samples": ["sample", 0], "vae": ["vae", 0] } },
+  "out": { "class_type": "SaveAudioMP3", "inputs": { "audio": ["decode", 0], "filename_prefix": "comfyture/song", "quality": "V0" } }
+}

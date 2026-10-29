@@ -352,6 +352,12 @@ export function songGraph(graph: any, v: { prompt: string; seconds: number; lyri
   return graph;
 }
 
+export function minimaxSongGraph(graph: any, v: { prompt: string; lyrics?: string; seconds: number; seed: number }) {
+  Object.assign(graph.text.inputs, { caption: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", max_duration: v.seconds, seed: v.seed });
+  graph.sample.inputs.seed = v.seed;
+  return graph;
+}
+
 export class Engine extends EventEmitter {
   client: Comfy;
   private runs = new Map<string, Run>();
@@ -891,15 +897,16 @@ export class Engine extends EventEmitter {
    * Music (ACE-Step 1.5) or a sound effect (Stable Audio 3 small SFX) from words, tracked like a
    * paint job; keep() stores what it made in the audio library.
    */
-  audioJob(kind: "music" | "song" | "sfx", v: { prompt: string; seconds: number; lyrics?: string; bpm?: number; seed: number; key?: string; language?: string; timesignature?: string; passes?: number; temperature?: number; adherence?: number; thinking?: boolean; lora?: string }, keep: (bytes: Buffer) => Promise<Paint["audio"]>): Paint {
+  audioJob(kind: "music" | "song" | "sfx", v: { prompt: string; seconds: number; lyrics?: string; bpm?: number; seed: number; key?: string; language?: string; timesignature?: string; passes?: number; temperature?: number; adherence?: number; thinking?: boolean; lora?: string; model?: string }, keep: (bytes: Buffer) => Promise<Paint["audio"]>): Paint {
     const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
     this.paints.set(job.id, job);
     const emit = () => this.emit("paint", job);
     (async () => {
       try {
-        const graph = await loadGraph(this.dirs.workflows, kind === "music" ? "audio/music.json" : kind === "song" ? "audio/song.json" : "audio/sfx.json");
+        const graph = await loadGraph(this.dirs.workflows, kind === "music" ? "audio/music.json" : kind === "song" ? (v.model === "minimax-music-3" ? "audio/song-minimax.json" : "audio/song.json") : "audio/sfx.json");
         if (kind === "song") {
-          songGraph(graph, v, targetOf(process.env.COMFY_BASE_URL?.trim() || CLOUD_URL).kind === "self-hosted");
+          if (v.model === "minimax-music-3") minimaxSongGraph(graph, v);
+          else songGraph(graph, v, targetOf(process.env.COMFY_BASE_URL?.trim() || CLOUD_URL).kind === "self-hosted");
         } else if (kind === "music") {
           Object.assign(graph.text.inputs, { tags: v.prompt, lyrics: v.lyrics?.trim() || "[Instrumental]", seed: v.seed, duration: v.seconds, bpm: Math.round(v.bpm ?? 100) });
           Object.assign(graph.latent.inputs, { seconds: v.seconds });
