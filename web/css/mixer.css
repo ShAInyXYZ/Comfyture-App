@@ -414,3 +414,10 @@
 .mx-cast-and-frames .mx-reference-guides { min-width: 0; }
 .mx-cast-and-frames .mx-reference-pair figure, .mx-cast-and-frames .mx-reference-guides.is-personal .mx-reference-pair figure { width: 4rem; max-width: 45%; }
 @container (max-width: 42rem) { .mx-cast-and-frames { grid-template-columns: minmax(0, 1fr); } }
+
+/* Let the recipe fill the preview's height and keep its main action at the foot. */
+.mx-recipe .mx-recipe-body { display: flex; flex-direction: column; align-self: stretch; }
+.mx-recipe .mx-recipe-body > .mx-go { flex: none; margin-top: auto; justify-content: center; }
+.mx-recipe .mx-recipe-body > .mx-go em { margin-left: 0; }
+.mx-cast-and-frames .mx-reference-pair figure,
+.mx-cast-and-frames .mx-reference-guides.is-personal .mx-reference-pair figure { width: 5.25rem; }
