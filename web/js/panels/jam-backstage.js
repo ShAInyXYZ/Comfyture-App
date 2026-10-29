@@ -497,7 +497,7 @@ registerWindow("backstage-review", {
           summaryRow("Resolution", d.width && d.height ? `${d.width} × ${d.height}` : d.resolution),
           summaryRow("Canvas", r.id === "cover" ? "1:1" : bs.aspect),
           summaryRow("Song timing", bs.scenes.some((s) => s.id === item.id) ? `${clock(item.from)}–${clock(item.to)}` : null),
-          summaryRow("End frame", r.kind === "video" ? d.frames.length > 1 ? "Included" : "Not used" : null),
+          summaryRow("End frame", r.kind === "video" && d.frames.length < 2 ? "Not used" : null),
           summaryRow("Characters", (item.characterIds ?? []).map((id) => bs.characters.find((c) => c.id === id)?.title).filter(Boolean).join(", ")))),
       h(`section.jb-review-direction${r.kind === "video" ? ".is-brief" : ""}`, {}, h("span.label", {}, "Generation direction"), h("p", {}, d.prompt || [bs.style, item.prompt, r.kind === "video" ? item.motion : ""].filter(Boolean).join("\n\n"))),
       r.kind === "video" ? h("section.jb-review-direction", {},
@@ -507,7 +507,7 @@ registerWindow("backstage-review", {
         h("p", {}, price?.note || price?.costNote || "Actual billing depends on provider execution. This estimate is for this asset only; later images and videos are separate.")) : null,
       changedRequest ? h("p.jb-error", { role: "alert" }, "The scene changed. Close this window and review the updated request.") : null,
       h(`div.jb-review-actions${r.kind === "video" ? ".has-cost" : ""}`, {},
-        r.kind === "video" ? h("div.jb-review-inline-price", {}, h("span", {}, "Estimated cost"), h("strong", {}, r.loading ? "Checking…" : typeof value === "number" && Number.isFinite(value) ? `≈ ${value.toFixed(2).replace(/\.00$/, "")} cr` : "Not available"), h("small", {}, price?.note || "Billed for active Comfy Cloud GPU time.")) : null,
+        r.kind === "video" ? h("div.jb-review-inline-price", {}, h("span", {}, "Estimated cost"), h("strong", {}, r.loading ? "Checking…" : typeof value === "number" && Number.isFinite(value) ? `≈ ${value.toFixed(2).replace(/\.00$/, "")} cr` : "Not available")) : null,
         key("Cancel", null, () => openWindow(null)),
         r.kind === "video" ? key(r.writing ? "Writing prompt…" : r.written ? "Rewrite prompt" : "Write video prompt", "sparkle", async () => {
           r.writing = true; show();

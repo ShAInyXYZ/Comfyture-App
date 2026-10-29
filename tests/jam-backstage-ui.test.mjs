@@ -127,7 +127,7 @@ test('Fast H3 can review both frames and reports the actual frames in the reques
   find(root, 'Review video generation').props.on.click();
   await tick();
   const modal = t.windows.get('backstage-review').build();
-  assert.match(text(modal), /End frame\s+Included/);
+  assert.doesNotMatch(text(modal), /End frame\s+Included/);
   assert.deepEqual(walk(modal).filter(n => n.tag === 'figcaption').map(text), ['Start frame', 'End frame']);
   assert.equal(t.calls.length, 0);
 

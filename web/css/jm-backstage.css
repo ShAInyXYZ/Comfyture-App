@@ -143,12 +143,13 @@
 .jb-review-references { display: flex; flex-wrap: wrap; gap: .75rem; max-width: 21rem; flex: none; }
 .jb-review-reference { margin: 0; width: 10rem; flex: none; }
 .jb-review-body.is-landscape { display: grid; gap: 1rem; }
-.jb-review-references.is-landscape { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(100%, 60rem); max-width: none; }
+.jb-review-references.is-landscape { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(100%, 60rem); max-width: none; justify-self: center; }
 .jb-review-references.is-landscape .jb-review-reference { width: 100%; }
 .jb-review-references.is-landscape .jb-review-reference img { max-height: none; }
 .jb-review-body.is-landscape .jb-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1.5rem; }
 .jb-review-reference img { display: block; width: 100%; max-height: 13rem; object-fit: contain; border-radius: var(--r-control, .75rem); corner-shape: var(--corner, round); background: var(--sunk); }
 .jb-review-reference figcaption { margin-top: .5rem; color: var(--dim); font: 500 .75rem/1.3 var(--font-sans); }
+.jb-review-references.is-landscape .jb-review-reference figcaption { text-align: center; }
 .jb-summary { display: grid; width: 100%; margin: 0; min-width: 0; }
 .jb-summary-row { display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: 1rem; padding: .75rem 0; border-bottom: 1px solid var(--line); font: 400 .875rem/1.4 var(--font-sans); }
 .jb-summary-row dt { color: var(--dim); }
@@ -164,7 +165,6 @@
 .jb-review-actions.has-cost { align-items: center; flex-wrap: wrap; }
 .jb-review-inline-price { display: flex; align-items: baseline; flex-wrap: wrap; gap: .3rem .6rem; margin-right: auto; font: 400 .8125rem/1.4 var(--font-sans); color: var(--dim); }
 .jb-review-inline-price strong { color: var(--accent); font: 700 1rem/1.3 var(--font-mono); }
-.jb-review-inline-price small { flex-basis: 100%; font: 400 .6875rem/1.4 var(--font-sans); }
 @media (max-width: 600px) {
   .jb-review-body { flex-direction: column; }
   .jb-review-body.is-landscape .jb-summary { grid-template-columns: 1fr; }
