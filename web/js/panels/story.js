@@ -98,7 +98,7 @@ function bibleCard(kind, x) {
 }
 
 function bibleColumn(b) {
-  return h("aside.story-bible", { "aria-label": "Story bible", dataset: { scrollKey: "bible" } },
+  return h("aside.story-bible", { "aria-label": "Story bible", dataset: { scrollKey: `bible:${story.project?.id}` } },
     h("div.story-col-head", {}, h("span.card-label", {}, "Story bible"), h("span.spacer"),
       key(sprite("prompt-enhance"), busy("world") ? "Describing…" : "Describe everyone and everything from the script", () => write("world"), { disabled: busy("world") }),
       key(sprite("image-generate"), "Render what has no picture yet", () => drawMissingRefs())),
@@ -287,7 +287,7 @@ function documentColumn(b) {
       h("div.segment.is-sm", { role: "group", "aria-label": "How frames are drawn" },
         h("button", { type: "button", "aria-pressed": String(b.style === "sketch"), title: "Frames drawn as pencil sketches", on: { click: () => ((b.style = "sketch"), commit()) } }, "Sketch"),
         h("button", { type: "button", "aria-pressed": String(b.style === "film"), title: "Frames drawn as film stills, in the look", on: { click: () => ((b.style = "film"), commit()) } }, "Film"))),
-    h("div.doc-page", { dataset: { scrollKey: "doc" } }, ...parts.filter(Boolean)));
+    h("div.doc-page", { dataset: { scrollKey: `doc:${story.project?.id}` } }, ...parts.filter(Boolean)));
 }
 
 // ---------------------------------------------------------------- right: the inspector
@@ -422,7 +422,7 @@ function inspectorColumn(b) {
       h("button.key", { type: "button", disabled: busy("idea"), on: { click: () => write("idea") } }, sprite("prompt-enhance"), busy("idea") ? "Writing…" : "Write the idea again from the brief"),
     ];
   }
-  return h("aside.story-inspector", { "aria-label": "Inspector", dataset: { scrollKey: "inspector" } }, ...(content ?? overview(b)).filter(Boolean));
+  return h("aside.story-inspector", { "aria-label": "Inspector", dataset: { scrollKey: `inspector:${story.project?.id}` } }, ...(content ?? overview(b)).filter(Boolean));
 }
 
 // ---------------------------------------------------------------- the page
