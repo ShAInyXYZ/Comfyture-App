@@ -138,7 +138,7 @@ function recipe(t) {
   const referenceFrames = isProblemReveal(t) && shownFrames ? h("div.mx-reference-guides" + (ownFrames ? ".is-personal" : ""), {}, h("span.label", {}, ownFrames ? "Your reference frames" : `Example frames · ${t.customization.defaultProblem}`), h("div.mx-reference-pair", {},
     ...[['close', 'Start frame'], ['wide', 'End frame']].map(([key, label]) => {
       const photo = shownFrames[key]?.photo;
-      return h("figure", {}, photo ? h("button", { type: 'button', title: `View ${label.toLowerCase()}`, on: { click: () => view(photo.url) } }, h("img", { src: photo.url, alt: label })) : h("span", {}, label + ' pending'), h("figcaption", {}, label));
+      return h("figure", {}, photo ? h("button", { type: 'button', title: `View ${label.toLowerCase()}`, on: { click: () => view(photo.url) } }, h("img", { src: photo.url, alt: label })) : h("span", {}, label + ' pending'), h("figcaption", {}, label.replace(" frame", "")));
     }))) : null;
   const rest = [
       referenceFrames ? h("div.mx-cast-and-frames", {}, castSection, referenceFrames) : h("div.mx-lower", {}, castSection, models),
