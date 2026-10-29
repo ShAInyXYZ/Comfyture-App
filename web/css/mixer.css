@@ -422,3 +422,18 @@
 .mx-recipe .mx-recipe-body > .mx-go em { margin-left: 0; }
 .mx-cast-and-frames .mx-reference-pair figure,
 .mx-cast-and-frames .mx-reference-guides.is-personal .mx-reference-pair figure { width: 5.25rem; }
+
+/* Scale the cast controls with the taller row beside its reference frames. */
+.mx-cast-and-frames .mx-role { grid-template-columns: 6rem minmax(0, 1fr) 4.5rem 6rem; gap: 1rem; padding: 1rem; }
+.mx-cast-and-frames .mx-role-face { width: 6rem; height: 6rem; }
+.mx-cast-and-frames .mx-role-text b { font-size: var(--fs-heading); }
+.mx-cast-and-frames .mx-role-text em { font-size: var(--fs-body); line-height: 1.3; }
+.mx-cast-and-frames .mx-role-swap { width: 4.5rem; height: 4.5rem; }
+.mx-cast-and-frames .mx-role-swap svg.icon { width: 1.5rem; height: 1.5rem; }
+.mx-cast-and-frames .mx-role-drop { height: 6rem; }
+@container (max-width: 42rem) {
+  .mx-cast-and-frames .mx-role { grid-template-columns: 4rem minmax(0, 1fr) 3.25rem 4.75rem; gap: .75rem; padding: .75rem; }
+  .mx-cast-and-frames .mx-role-face { width: 4rem; height: 4rem; }
+  .mx-cast-and-frames .mx-role-swap { width: 3.25rem; height: 3.25rem; }
+  .mx-cast-and-frames .mx-role-drop { height: 4rem; }
+}
