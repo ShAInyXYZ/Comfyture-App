@@ -1,14 +1,14 @@
-// Jam's first workspace, the song. A calm column of three steps makes it (the idea, the shape, the sound, with the many fine
+// Jam's first workspace, the song. The form sets its style, words and sound, with the many fine
 // settings folded under Advanced) and the stage shows it: a record on a turntable in a spotlight, the song's name, its tempo,
 // key and length, its waveform, and the key that makes it. The sections of the lyrics stand in a slim map beside the stage and the
-// songs made so far on a shelf of sleeves under it. Pickle sets the form up from the idea and every setting stays in your hands.
+// songs made so far on a shelf of sleeves under it. Pickle can help set the form up from the chat bar.
 // Making costs credits, so it is a key with its estimate on it; nothing here makes a song by itself.
 // A song made or brought in becomes the track of the video open (or of a new one): "Song made" in the pipeline, then the Track.
 // A song has a cover (the record wears it as its label, the sleeve shows it) and a video cover: a few seconds of a character
 // performing the best part of the song, made with LTX from the cover. Both are one key each under the song's name; the two that
 // cost credits arm on the first press, with the price, and spend on the second.
 import { h } from "../dom.js";
-import { state, toast, waitFor, writer, artistFor, onChange } from "../store.js";
+import { state, toast, waitFor, artistFor, onChange } from "../store.js";
 import { api } from "../api.js";
 import { dropdown } from "../controls.js";
 import { LANGUAGES, SIGNATURES, DEFAULT_SONG, MAX_SECONDS, STYLE_LORAS, PITCHES, MODES, KEYS, noteOf, modeOf, QUALITY, lengthLabel, STRUCTURES, skeleton, costOfSong } from "../song.js";
@@ -61,30 +61,6 @@ function shelf() {
 }
 const shownSong = () => shelf().find((m) => m.file === song.shown) ?? null;
 const inJam = (m) => !!m && jam.jam?.body.track?.file === m.file;
-
-/** Pickle sets the song up from the idea, keeping what the page already holds when it is a change that is asked for. */
-async function setUp() {
-  if (song.writing) return;
-  if (!song.idea.trim() && !song.tags.trim()) return toast("Say what the song is about first.");
-  song.writing = true;
-  redrawAll();
-  try {
-    const hasWords = song.lyrics.replace(/\[[^\]]*\]/g, "").trim();
-    const got = await api.writeSong({
-      idea: song.idea, seconds: song.seconds, language: song.language, structure: song.structure, model: writer(),
-      current: song.tags || hasWords ? { tags: song.tags, lyrics: song.lyrics, bpm: song.bpm, key: song.key } : undefined,
-    });
-    Object.assign(song, { name: got.name, tags: got.tags, lyrics: got.lyrics, bpm: got.bpm, key: got.key, language: got.language, signature: got.timesignature, lora: got.lora ?? "" });
-    keepDraft();
-    showDraft();
-  } catch (e) {
-    toast(e.message, { tone: "crit" });
-  } finally {
-    song.writing = false;
-    sync();
-    redrawAll();
-  }
-}
 
 async function make() {
   if (song.making) return;
@@ -437,10 +413,7 @@ function drawSteps() {
       h("div.sg-lyrics", {}, h("div.sg-lyrics-head", {}, h("label.sg-field", { for: "sg-lyrics-input" }, "Lyrics"), h("span.sg-meta", {}, lines ? `${lines} lines` : "none yet")),
         h("p.sg-field-help", {}, "Write your own words, or enter [Instrumental] for a track without vocals."),
         page.lyrics)),
-    step(2, "Ask Pickle", "Optional",
-      h("div.sg-ask", {}, h("img.sg-pickle", { src: "brand/cast/pickle-face.webp", alt: "Pickle", draggable: false }), h("div.sg-idea", {}, page.idea, page.count)),
-      h("button.key.is-primary.sg-set", { type: "button", disabled: song.writing, on: { click: setUp } }, jicon("pencil"), song.writing ? "Pickle is writing…" : "Pickle, set it up")),
-    minimax ? step(3, "Length", "Maximum duration", lengthControl()) : step(3, "Structure & sound", null,
+    minimax ? step(2, "Length", "Maximum duration", lengthControl()) : step(2, "Structure & sound", null,
       h("div.sg-shapes", { role: "group", "aria-label": "Song structure" }, ...STRUCTURES.map((x) =>
         h("button.sg-shape", { type: "button", "aria-pressed": String(song.structure === x.id), title: x.desc, on: { click: () => pickStructure(x.id) } }, blocks(x.id), h("b", {}, x.label)))),
       h("div.sg-dials", {}, lengthControl(), tempoDial())),
