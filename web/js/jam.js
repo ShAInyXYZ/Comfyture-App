@@ -287,7 +287,39 @@ export async function startFromTrend(t) {
   }
 }
 
+const partRequests = new WeakMap();
+const partTimers = new WeakMap();
+const sameSpan = (a, b) => !!a && !!b && Number(a.from) === Number(b.from) && Number(a.to) === Number(b.to);
+const partSource = (b) => ({ file: b.track.file, from: Number(b.span.from), to: Number(b.span.to) });
+
+/** Old saved cuts predate source stamps. Capture their established range before it can change. */
+function stampPartSource(b) {
+  if (!b?.part || b.part.source || !b.track || !b.span) return;
+  if (Math.abs(Number(b.part.seconds) - (Number(b.span.to) - Number(b.span.from))) <= .15) b.part.source = partSource(b);
+}
+
+/** A sliced audio file only belongs to the source range from which it was actually made. */
+export function partMatchesSpan(b) {
+  const source = b?.part?.source;
+  return !!source && source.file === b.track?.file && sameSpan(source, b.span);
+}
+
+function invalidatePart(b) {
+  stampPartSource(b);
+  clearTimeout(partTimers.get(b));
+  partTimers.delete(b);
+  partRequests.set(b, (partRequests.get(b) ?? 0) + 1);
+  delete b.syncedCaptionKey;
+}
+
+function schedulePart(j, delay = 0) {
+  clearTimeout(partTimers.get(j.body));
+  if (!delay) return cutPart(j);
+  partTimers.set(j.body, setTimeout(() => { partTimers.delete(j.body); cutPart(j); }, delay));
+}
+
 function setTrack(j, track) {
+  invalidatePart(j.body);
   const len = j.body.span ? j.body.span.to - j.body.span.from : 30;
   Object.assign(j.body, { track, span: { from: 0, to: Math.min(track.seconds, len || track.seconds) }, part: null, vocals: null, stems: null, sung: [], lines: [], bpm: null, beats: [], down: 0, shots: [], film: null });
   delete j.body.sure;
@@ -307,22 +339,23 @@ export function setLength(seconds) {
   if (!j?.body.track) return;
   const from = j.body.span?.from ?? 0;
   const to = seconds ? Math.min(j.body.track.seconds, from + seconds) : j.body.track.seconds;
+  invalidatePart(j.body);
   j.body.span = { from: Math.max(0, Math.min(from, to - 5)), to };
-  Object.assign(j.body, { shots: [], film: null, vocals: null, stems: null, sung: [], lines: [] });
+  Object.assign(j.body, { shots: [], film: null, vocals: null, stems: null, sung: [], lines: [], beats: [] });
   touched();
-  cutPart(j);
+  schedulePart(j);
 }
 export function setStart(from) {
   const j = jam.jam;
   if (!j?.body.track) return;
   const len = (j.body.span?.to ?? 30) - (j.body.span?.from ?? 0);
   const start = Math.max(0, Math.min(from, j.body.track.seconds - Math.min(len, j.body.track.seconds)));
+  invalidatePart(j.body);
   j.body.span = { from: Math.round(start * 10) / 10, to: Math.min(j.body.track.seconds, Math.round((start + len) * 10) / 10) };
   Object.assign(j.body, { shots: [], film: null });
-  Object.assign(j.body, { vocals: null, stems: null, sung: [], lines: [] });
+  Object.assign(j.body, { vocals: null, stems: null, sung: [], lines: [], beats: [] });
   touched();
-  clearTimeout(setStart.t);
-  setStart.t = setTimeout(() => cutPart(j), 900);
+  schedulePart(j, 900);
 }
 
 /** The part of the track the video uses, from and to (seconds), as dragged on the cut's waveform; the part is cut again a moment after the last change. */
@@ -332,11 +365,11 @@ export function setSpan(from, to) {
   const total = j.body.track.seconds;
   const len = Math.max(Math.min(5, total), Math.min(total, to - from));
   const start = Math.max(0, Math.min(from, total - len));
+  invalidatePart(j.body);
   j.body.span = { from: Math.round(start * 10) / 10, to: Math.min(total, Math.round((start + len) * 10) / 10) };
-  Object.assign(j.body, { shots: [], film: null, vocals: null, stems: null, sung: [], lines: [] });
+  Object.assign(j.body, { shots: [], film: null, vocals: null, stems: null, sung: [], lines: [], beats: [] });
   touched();
-  clearTimeout(setSpan.t);
-  setSpan.t = setTimeout(() => cutPart(j), 900);
+  schedulePart(j, 900);
 }
 
 /** The video whose part was asked to be heard again while it was being heard: it is, once that hearing ends (and only if it is still the open one). */
@@ -348,30 +381,49 @@ let again = null;
 export async function cutPart(j = jam.jam) {
   const b = j?.body;
   if (!b?.track) return;
+  clearTimeout(partTimers.get(b));
+  partTimers.delete(b);
+  stampPartSource(b);
   const asked = { ...b.span };
+  const track = b.track;
+  const sourceFile = track.file;
+  const request = (partRequests.get(b) ?? 0) + 1;
+  partRequests.set(b, request);
+  const current = () => j.body === b && b.track === track && track.file === sourceFile && sameSpan(b.span, asked) && partRequests.get(b) === request;
   jam.busy.add("part", j);
   update();
   try {
-    const part = await send("api/jam/slice", "POST", { audio: b.track.file, from: asked.from, to: asked.to, name: b.track.name });
-    if (b.span.from !== asked.from || b.span.to !== asked.to) return;
-    b.part = { file: part.file, url: part.url, seconds: part.seconds };
-    b.bpm = b.track.bpm ?? b.bpm ?? null;
-    await hearBeats(b);
+    const part = await send("api/jam/slice", "POST", { audio: sourceFile, from: asked.from, to: asked.to, name: track.name });
+    if (!current()) return;
+    const nextPart = { file: part.file, url: part.url, seconds: part.seconds, source: { file: sourceFile, ...asked } };
+    // Beat analysis can finish after another range was requested. Keep its result off the live body until it is still current.
+    const candidate = { ...b, part: nextPart, bpm: track.bpm ?? b.bpm ?? null, beats: [], down: 0 };
+    delete candidate.sure;
+    await hearBeats(candidate);
+    if (!current()) return;
+    Object.assign(b, { part: nextPart, bpm: candidate.bpm, beats: candidate.beats, down: candidate.down });
+    if (candidate.sure !== undefined) b.sure = candidate.sure;
+    else delete b.sure;
+    let projected = null;
     // the words typed for the track go on the new part (the singing heard belonged to the one before)
     if (b.track.lyrics?.trim() && !b.lines.length) {
-      b.lines = syncedLinesForCut(b.track, asked) ?? spreadLyrics(b.track.lyrics, b.part.seconds, b.bpm);
-      if (syncedLinesForCut(b.track, asked)) b.syncedCaptionKey = JSON.stringify([b.track.file, b.track.lyrics, b.track.timing?.lines, asked]);
+      projected = syncedLinesForCut(b.track, asked);
+      b.lines = projected ?? spreadLyrics(b.track.lyrics, b.part.seconds, b.bpm);
     }
     plan(j);
     // (a video that is not the open one has its edit made when it is opened: the editor holds the open one's)
     if (jam.jam !== j) b.stale = true;
     touched(j);
-    if (jam.jam === j) await syncEdit(j, { fresh: true }).catch((e) => console.warn("jam edit:", e.message));
+    if (jam.jam === j) {
+      const body = await syncEdit(j, { fresh: true, expectedPart: nextPart }).catch((e) => console.warn("jam edit:", e.message));
+      if (body && current() && projected !== null) { b.syncedCaptionKey = syncedCaptionKey(b); save(j); }
+    }
     hearLoud(j);
   } catch (e) {
     toast(`The part: ${e.message}`, { tone: "crit" });
   } finally {
-    jam.busy.delete("part", j);
+    // A superseded request must not clear the newer slice's busy indicator.
+    if (partRequests.get(b) === request) jam.busy.delete("part", j);
     update();
   }
 }
@@ -399,7 +451,7 @@ export async function listen() {
   if (!b?.track) return;
   // a part asked for while another is being heard is heard after it
   if (jam.busy.has("listen")) return void (again = j.id);
-  const asked = { ...b.span };
+  const asked = { ...b.span, file: b.track.file };
   jam.busy.add("listen", j);
   update();
   try {
@@ -427,13 +479,17 @@ export async function listen() {
  */
 export async function putHeard(j, asked, track, heard) {
   const b = j.body;
-  if (b.span.from !== asked.from || b.span.to !== asked.to) return false;
-  b.part = { file: track.file, url: track.url, seconds: track.seconds };
+  const current = () => sameSpan(b.span, asked) && (!asked.file || b.track.file === asked.file);
+  if (!current()) return false;
+  const part = { file: track.file, url: track.url, seconds: track.seconds, source: { file: asked.file ?? b.track.file, from: asked.from, to: asked.to } };
+  b.part = part;
   b.vocals = heard.vocals ? { file: heard.vocals.file, url: heard.vocals.url } : null;
   // the four stems of the part (Comfy's separation gives them all): the vocals the lips follow, and the bass, the drums and the rest
   const st = heard.stems ?? {};
   b.stems = b.vocals ? Object.fromEntries(Object.entries({ vocals: b.vocals, bass: st.bass, drums: st.drums, other: st.other }).filter(([, v]) => v).map(([k, v]) => [k, { file: v.file, url: v.url }])) : null;
-  b.sung = b.vocals ? await singing(b.vocals.url) : [];
+  const sung = b.vocals ? await singing(b.vocals.url) : [];
+  if (!current() || b.part !== part) return false;
+  b.sung = sung;
   b.lines = readSrt(heard.srt ?? "");
   b.bpm = Number((heard.bpm ?? "").match(/([\d.]+)/)?.[1]) || b.track.bpm || null;
   b.beats = readBeats(heard.beats ?? "");
@@ -441,6 +497,7 @@ export async function putHeard(j, asked, track, heard) {
   // the words written for a made track are the words: put them on the times heard
   if (b.track.lyrics?.trim()) b.lines = alignLyrics(b.track.lyrics, b.lines, b.sung);
   await hearBeats(b);
+  if (!current() || b.part !== part) return false;
   plan(j);
   if (jam.jam !== j) b.stale = true;
   touched(j);
@@ -454,9 +511,11 @@ export async function putHeard(j, asked, track, heard) {
  */
 async function hearBeats(b) {
   if (b.beats?.length > 3 || !b.part) return;
+  const part = b.part;
+  const track = b.track;
   try {
-    const found = await detectBeats(b.part.url, { hint: b.bpm || b.track?.bpm || 0 });
-    if (found.times.length < 4) return;
+    const found = await detectBeats(part.url, { hint: b.bpm || track?.bpm || 0 });
+    if (b.part !== part || b.track !== track || found.times.length < 4) return;
     b.beats = found.times;
     b.down = found.down;
     b.sure = found.confidence;
@@ -615,23 +674,35 @@ export function spreadLyrics(text, seconds, bpm) {
   return lines.map((t, i) => ({ text: t, from: Math.round(i * step * 100) / 100, to: Math.round((i * step + Math.max(1, step - 0.3)) * 100) / 100 }));
 }
 
-/** Apply saved song timings once per track and cut, without repeatedly replacing edited captions. */
+const captionSyncs = new WeakMap();
+const syncedCaptionKey = (b) => JSON.stringify([b.track.file, b.track.lyrics, b.track.timing?.lines, b.span]);
+
+/** Apply saved timings only to their matching audio; in-flight redraws share one application. */
 export async function applySyncedCaptions(j = jam.jam) {
   const b = j?.body;
-  if (!b?.track || !b.part) return false;
+  if (!b?.track || !b.part || jam.busy.has("part", j)) return false;
+  stampPartSource(b);
+  if (!partMatchesSpan(b)) return false;
   const lines = syncedLinesForCut(b.track, b.span);
   if (!lines) return false;
-  const key = JSON.stringify([b.track.file, b.track.lyrics, b.track.timing?.lines, b.span]);
+  const key = syncedCaptionKey(b);
   if (b.syncedCaptionKey === key) return false;
-  b.syncedCaptionKey = key;
-  b.lines = lines;
-  try {
-    await syncEdit(j, { lines: true, shots: false, beats: false });
+  const pending = captionSyncs.get(b);
+  if (pending?.key === key) return pending.promise;
+  const part = b.part;
+  const entry = { key, promise: null };
+  entry.promise = (async () => {
+    const body = await syncEdit(j, { lines: true, shots: false, beats: false, expectedPart: part, expectedCaptionKey: key, captionLines: lines });
+    if (!body || b.part !== part || !partMatchesSpan(b) || syncedCaptionKey(b) !== key) return false;
+    b.syncedCaptionKey = key;
     touched(j);
     return true;
-  } catch (e) {
-    delete b.syncedCaptionKey;
-    throw e;
+  })();
+  captionSyncs.set(b, entry);
+  try {
+    return await entry.promise;
+  } finally {
+    if (captionSyncs.get(b) === entry) captionSyncs.delete(b);
   }
 }
 
@@ -929,6 +1000,7 @@ const opening = new WeakMap();
 export function edit(j = jam.jam) {
   const b = j?.body;
   if (!b?.part) return Promise.resolve(null);
+  stampPartSource(b);
   if (cut.project?.id === b.cut) return Promise.resolve(cut.project.body);
   if (!opening.has(b)) opening.set(b, openEdit(j).finally(() => opening.delete(b)));
   return opening.get(b);
@@ -969,10 +1041,13 @@ function shotSource(b, s) {
  * kept. The lines of the words are made only when asked (`lines`, or `fresh`: the words are new, so
  * the edit's lines are made again from them), never as a side effect: a line taken away in the editor stays away.
  */
-export async function syncEdit(j = jam.jam, { shots = true, lines = false, beats = true, fresh = false } = {}) {
+export async function syncEdit(j = jam.jam, { shots = true, lines = false, beats = true, fresh = false, expectedPart = null, expectedCaptionKey = null, captionLines = null } = {}) {
   const b = j?.body;
+  const sourcePart = b?.part;
   const body = await edit(j);
-  if (!body || !b.part) return;
+  // Opening an edit yields: a range or song may have changed before its body arrives.
+  if (!body || !b.part || b.part !== sourcePart || !partMatchesSpan(b) || cut.project?.id !== b.cut || cut.project.body !== body || (expectedPart && b.part !== expectedPart) || (expectedCaptionKey && syncedCaptionKey(b) !== expectedCaptionKey)) return null;
+  if (captionLines) b.lines = captionLines;
   const main = body.tracks.find((t) => t.main);
   const music = body.tracks.find((t) => t.role === "music");
   const titles = body.tracks.find((t) => t.kind === "title");
@@ -985,6 +1060,12 @@ export async function syncEdit(j = jam.jam, { shots = true, lines = false, beats
   // (the same part keeps what the editor did to it: its start, its trim, its level; music taken away stays away)
   const song = { src: { kind: "audio", id: b.part.file, duration: b.part.seconds, name: b.track?.name }, start: 0, from: 0, to: b.part.seconds };
   const had = music.items.find((it) => it.id === "track");
+  if (had && had.src?.id !== song.src.id && body.tracks.some((t) => t.items.some((it) => it.backstage))) {
+    // These placements refer to the old audio range. Keep the scene assets and
+    // directions in Backstage, but never show an old cut-local time over new audio.
+    for (const t of body.tracks) t.items = t.items.filter((it) => !it.backstage);
+    toast("Clip range changed. Add your saved Backstage scenes to this range from Backstage.");
+  }
   if (!had) {
     if (b.musicIn !== b.part.file) music.items.unshift({ id: "track", ...song });
   } else if (had.src?.id !== song.src.id) Object.assign(had, song);
@@ -1032,7 +1113,7 @@ export async function syncEdit(j = jam.jam, { shots = true, lines = false, beats
     titles.items = titles.items.filter((it) => !it.lyric);
     titles.items.push(...b.lines.map((l, i) => {
       const old = !fresh && mine.get(`c${i + 1}`);
-      const length = Math.max(0.6, round(l.to - l.from));
+      const length = Math.max(0.02, round(l.to - l.from));
       // a line kept as it was keeps what the editor did to it, unless its words or its place changed
       if (old && old.text === l.text) return { ...old, start: round(l.from), length, ...(Math.abs((Number(old.length) || 0) - length) > 0.01 ? { words: splitWords(l.text, length) } : {}) };
       return { id: `c${i + 1}`, lyric: true, text: l.text, start: round(l.from), length, style, words: splitWords(l.text, length), ...look };
@@ -1043,6 +1124,7 @@ export async function syncEdit(j = jam.jam, { shots = true, lines = false, beats
   if (beats && b.beats?.length > 3 && (!body.beats || body.beats.source === "comfy")) body.beats = { bpm: b.bpm ?? 120, offset: 0, times: b.beats, down: b.down ?? 0, source: "comfy", ...(b.sure !== undefined ? { sure: b.sure } : {}) };
   else if (beats && !body.beats && b.bpm) body.beats = gridBeats(b.bpm, b.beats?.[0] ?? 0, b.part.seconds + 1, "grid");
   commit({ history: false });
+  return body;
 }
 
 /** The shots' times and the lines of the words follow the edit as it is changed in the editor. */
@@ -1166,13 +1248,14 @@ export const linesOf = (b) => (b && cut.project?.id === b.cut ? lyricItems(cut.p
 /** What each workspace's tile says: a few words in mono. */
 export function statusOf(j = jam.jam) {
   const b = j?.body;
-  if (!b) return { song: "No song yet", track: "No song yet", words: "No song yet", band: "Pick who", edit: "Empty" };
+  if (!b) return { song: "No song yet", track: "No song yet", backstage: "Plan your scenes", words: "No song yet", band: "Pick who", edit: "Empty" };
   const busy = (k) => jam.busy.has(k, j);
   const lines = linesOf(b);
   return {
     song: b.track ? "Song made" : "No song yet",
     track: !b.track ? "No song yet" : busy("part") || jam.starting ? "Cutting…" : b.bpm ? `${Math.round(b.bpm)} BPM` : "Ready",
-    words: !b.track ? "No song yet" : busy("listen") ? "Hearing…" : !lines.length ? "No words" : b.vocals ? "Word synced" : "Typed",
+    backstage: b.backstage?.scenes?.length ? `${b.backstage.scenes.filter((s) => s.video || s.image).length}/${b.backstage.scenes.length} scenes ready` : "Scenes · cast · cover",
+    words: !b.track ? "No song yet" : busy("song-sync") || busy("listen") ? "Syncing…" : !lines.length ? "No lyrics in this cut" : syncedLinesForCut(b.track, b.span) !== null ? "Lyrics synced" : b.vocals ? "Timed captions" : "Sync lyrics",
     band: b.artist ? (crewById(b.artist.crew)?.name ?? b.artist.name ?? "Your photo") : "Pick who",
     edit: !b.part ? "Empty" : busy("make-video") || busy("render") ? "Making…" : b.film ? "Exported" : "Draft",
   };
@@ -1184,7 +1267,8 @@ export function statusOf(j = jam.jam) {
  */
 export const STEPS = [
   { id: "song", label: "Song made", open: "song" },
-  { id: "words", label: "Words heard", open: "words" },
+  { id: "backstage", label: "Visuals prepared", open: "backstage" },
+  { id: "words", label: "Lyrics synced", open: "words" },
   { id: "captions", label: "Captions styled", open: "words" },
   { id: "band", label: "Band cast", open: "band" },
   { id: "edit", label: "Edit cut", open: "edit" },
@@ -1192,22 +1276,25 @@ export const STEPS = [
 export function pipeline(j = jam.jam) {
   const b = j?.body;
   const lines = b ? linesOf(b) : [];
+  const scenes = (b?.backstage?.scenes ?? []).filter((s) => s.to > (b.span?.from ?? 0) && s.from < (b.span?.to ?? Infinity));
+  const steps = b?.backstage?.scenes?.length ? STEPS.filter((s) => s.id !== "band") : STEPS;
   const done = {
     song: !!b?.track,
-    words: !!b?.track && (!!b.vocals || lines.length > 0),
+    backstage: scenes.length > 0 ? scenes.every((s) => s.image || s.video) : !!b?.shots?.some((s) => s.clip || take(s)?.status === "done"),
+    words: !!b?.track && (syncedLinesForCut(b.track, b.span) !== null || !!b.vocals),
     captions: lines.length > 0 && (b.captionsSet === true || (b.captions ?? "karaoke") !== "karaoke"),
     band: !!b?.artist,
     edit: !!b?.film,
   };
-  const next = STEPS.find((s) => !done[s.id])?.id ?? null;
-  return STEPS.map((s) => ({ ...s, state: done[s.id] ? "done" : s.id === next ? "next" : "todo" }));
+  const next = steps.find((s) => !done[s.id])?.id ?? null;
+  return steps.map((s) => ({ ...s, state: done[s.id] ? "done" : s.id === next ? "next" : "todo" }));
 }
 
 /** What each workspace's tile shows as its lamp: done when what it is for is made. */
 export function lampsOf(j = jam.jam) {
   const b = j?.body;
   const p = Object.fromEntries(pipeline(j).map((s) => [s.id, s.state]));
-  return { song: p.song, track: b?.part ? "done" : b?.track ? "next" : "todo", words: p.words === "done" && p.captions === "done" ? "done" : p.words === "done" ? "next" : p.words, band: p.band, edit: p.edit };
+  return { song: p.song, track: b?.part ? "done" : b?.track ? "next" : "todo", backstage: p.backstage, words: p.words === "done" && p.captions === "done" ? "done" : p.words === "done" ? "next" : p.words, band: p.band ?? (b?.artist ? "done" : "todo"), edit: p.edit };
 }
 
 /**
@@ -1282,6 +1369,7 @@ function context() {
   const out = { workspace: ws, steps: pipeline(j).map((s) => `${s.label}${s.state === "done" ? " ✓" : s.state === "next" ? " (next)" : ""}`).join(", ") };
   if (ws === "song") return { ...out, song: songHook.summary(), track: track && { name: track.name, seconds: track.seconds } };
   if (ws === "track") return { ...out, track, costs: { words: costs.words } };
+  if (ws === "backstage") return { ...out, track, backstage: b?.backstage ? { format: b.backstage.format, style: b.backstage.style, scenes: (b.backstage.scenes ?? []).map((s) => ({ title: s.title, from: s.from, to: s.to, image: !!s.image, endImage: !!s.endImage, video: !!s.video })) } : null };
   if (ws === "words") return { ...out, track: track && { name: track.name, from: track.from, to: track.to, bpm: track.bpm }, words: b?.track ? { count: lines.length, heard: !!b.vocals, style: b.captions ?? "karaoke" } : null, costs: { words: costs.words } };
   if (ws === "band") return { ...out, artist: crew?.name ?? b?.artist?.name ?? (b?.artist ? "a photo" : null), dance: b?.dance?.duration ?? null, vibe: b?.style || null, shots: (b?.shots ?? []).map((s) => ({ kind: s.kind, from: s.from, to: s.to })), costs: { video: costs.video } };
   return { ...out, track: track && { name: track.name, bpm: track.bpm, from: track.from, to: track.to }, artist: crew?.name ?? b?.artist?.name ?? (b?.artist ? "a photo" : null), shots: (b?.shots ?? []).map((s) => ({ kind: s.kind, from: s.from, to: s.to })), costs: { video: costs.video } };

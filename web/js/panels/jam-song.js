@@ -621,11 +621,13 @@ async function syncSongLyrics(m) {
   if (!lyr.armed) { lyr.armed = true; page.lyrSync.textContent = "Confirm sync · Cloud GPU cost"; return; }
   lyr.armed = false;
   lyr.syncing = true;
+  const syncingJam = inJam(m) ? jam.jam : null;
+  if (syncingJam) { jam.busy.add("song-sync", syncingJam); changed("jam"); }
   page.lyrSync.disabled = true;
   page.lyrSync.textContent = "Listening to the song…";
   try {
-    const lyrics = m.lyrics || (inJam(m) ? jam.jam?.body.track?.lyrics : "") || "";
-    const { timing } = await syncSongFile({ ...m, lyrics });
+    const sourceLyrics = m.lyrics || (inJam(m) ? jam.jam?.body.track?.lyrics : "") || "";
+    const { lyrics, timing } = await syncSongFile({ ...m, lyrics: sourceLyrics });
     Object.assign(m, { lyrics, timing });
     const stored = song.made.find((x) => x.file === m.file);
     if (stored) Object.assign(stored, { lyrics, timing });
@@ -633,7 +635,7 @@ async function syncSongLyrics(m) {
     lyr.key = null;
     redrawAll();
   } catch (e) { toast(e.message, { tone: "crit" }); }
-  finally { lyr.syncing = false; if (page) { page.lyrSync.disabled = false; lyr.key = null; drawLyrics(); } }
+  finally { lyr.syncing = false; if (syncingJam) { jam.busy.delete("song-sync", syncingJam); changed("jam"); } if (page) { page.lyrSync.disabled = false; lyr.key = null; drawLyrics(); } }
 }
 function drawLyrics() {
   if (!page) return;

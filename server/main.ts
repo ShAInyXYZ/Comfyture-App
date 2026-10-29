@@ -1384,7 +1384,10 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const file = text(input.file, 100);
     const entry = (await readAudioIndex())[file];
     if (!entry) throw bad("That song is not in the library.", 404);
-    const lyrics = text(input.lyrics, 3000);
+    const lyrics = typeof input.lyrics === "string" ? input.lyrics.trim() : "";
+    // Saved captions can be a podcast transcript. Never truncate its text away
+    // from the timing rows; the music-generation input has its own limit.
+    if (lyrics.length > 100000) throw bad("Keep the transcript under 100,000 characters.");
     if (!lyrics) throw bad("Add lyrics first.");
     const timing = input.timing;
     if (!Array.isArray(timing?.lines) || timing.lines.length > 500 || timing.lines.some((x: unknown) => !Array.isArray(x) || x.length !== 2 || !x.every((v) => Number.isFinite(v) && v >= 0 && v <= entry.seconds))) throw bad("Invalid lyric timing.");
