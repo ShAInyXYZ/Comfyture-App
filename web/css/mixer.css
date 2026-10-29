@@ -455,13 +455,13 @@
   .mx-nudge .key:last-child svg { transform: rotate(-90deg); }
 }
 
-/* Desktop: use the whole room, with Praline inside the dashboard instead of a separate strip. */
+/* Desktop: fit the dashboard and lower panels above the centered assistant. */
 @media (min-width: 981px) {
-  body[data-page="mixer"] #page-mixer { height: calc(100dvh - var(--head)); padding: .75rem; overflow: hidden; }
+  body[data-page="mixer"] #page-mixer { height: calc(100dvh - var(--head) - var(--chat-h, 3.5rem) - 1.75rem); padding: .75rem; overflow: hidden; }
   .mixer { height: 100%; box-sizing: border-box; grid-template-rows: minmax(0, 1fr) minmax(0, 11rem); gap: .75rem; padding: 0; }
   .mx-feed { position: static; height: 100%; min-height: 0; box-sizing: border-box; }
   .mx-work { box-sizing: border-box; height: 100%; min-height: 0; }
-  .mx-recipe { grid-template-columns: minmax(12rem, min(24rem, calc((100dvh - var(--head) - 14rem) * 9 / 16))) minmax(0, 1fr); }
+  .mx-recipe { grid-template-columns: minmax(12rem, min(24rem, calc((100dvh - var(--head) - var(--chat-h, 3.5rem) - 14rem) * 9 / 16))) minmax(0, 1fr); }
   .mx-preview { align-self: stretch; width: 100%; max-height: 100%; min-height: 0; display: block; }
   .mx-preview > .mx-stage.is-in-frame, .mx-preview > .mx-screen { height: 100%; aspect-ratio: auto; }
   .mx-recipe .mx-recipe-body, .mx-remix-right { min-height: 0; overflow-y: auto; scrollbar-width: none; }
@@ -474,12 +474,5 @@
   .mx-remix-drop em { display: none; }
   .mx-crew-cat img { max-width: 3rem; }
   .mx-stars, .mx-mixes { grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr)); }
-  .mx-chat-slot { position: sticky; bottom: 0; z-index: 6; flex: none; min-width: 0; padding-top: .25rem; background: var(--card); }
-  .mx-chat-slot .chat-float { position: relative; inset: auto; width: 100%; transform: none; }
-  .mx-chat-slot .chat-panel { position: absolute; bottom: calc(100% + .5rem); left: 0; right: 0; max-height: min(24rem, 45dvh); }
-  .mx-chat-slot .chat-bar { padding: .5rem .75rem; gap: .5rem; }
-  .mx-chat-slot .pet-face { width: 2.5rem; height: 2.5rem; }
-  .mx-chat-slot .pet-id { min-width: 4.5rem; padding-top: .25rem; }
-  .mx-chat-slot .pet-chips { padding: 0; margin: 0; }
-  .mx-chat-slot .pet-chip { min-height: 1.75rem; padding-inline: .625rem; }
+
 }
