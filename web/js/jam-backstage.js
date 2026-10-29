@@ -140,7 +140,7 @@ export async function writeVideoPrompt(id, expected) {
   if (JSON.stringify(details) !== expected) throw new Error('The scene changed. Review the updated request first.');
   const response = await fetch('api/jam/video-prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
     videoModel: item.model, duration: details.duration, frames: details.frames.map(frame => frame.file),
-    format: board.format, style: board.style, scene: item.prompt, motion: item.motion,
+    format: board.format, style: board.style, scene: item.prompt, motion: item.motion, direction: details.prompt,
   }) });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || 'The writer could not prepare the video prompt.');

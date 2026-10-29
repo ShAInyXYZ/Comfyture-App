@@ -1809,7 +1809,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     }
     const images = await Promise.all(names.map((file) => imageBlock(engine.photoPath(file))));
     const brief = videoWriterBrief(videoModel, images.length === 2);
-    const context = `Duration: ${duration} seconds.\nFormat: ${text(input.format, 80)}\nShared visual direction: ${text(input.style, 1500)}\nImage direction (context only): ${text(input.scene, 3000)}\nCamera and action: ${text(input.motion, 3000)}`;
+    const context = `Duration: ${duration} seconds.\nFormat: ${text(input.format, 80)}\nShared visual direction: ${text(input.style, 1500)}\nImage direction (context only): ${text(input.scene, 3000)}\nCamera and action: ${text(input.motion, 3000)}\nGeneration direction to adapt: ${text(input.direction, 10000)}`;
     const answer = await routerAsk(model, brief, context, { maxTokens: 1200, temperature: 0.4, images });
     return json(res, 200, { prompt: finishVideoPrompt(videoModel, images.length === 2, duration, answer), writer: llmName(model) });
   }
