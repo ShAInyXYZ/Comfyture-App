@@ -125,7 +125,7 @@ function card(run) {
   const name = run.takes > 1 ? `${run.request.name} · ${run.take}/${run.takes}` : run.request.name;
   const isOpen = state.tabs.some((t) => t.run === run.id && t.id === state.tab);
   const running = ["queued", "frame", "shot"].includes(run.status);
-  const stage = run.error ?? (running ? `${run.stage || label} · ${Math.round(run.progress * 100)}%` : run.status === "done" ? `Ready in ${run.seconds.shot ?? "?"} s` : label);
+  const stage = run.error ? `${label} · ${String(run.error).trim().split("\n")[0]}` : (running ? `${run.stage || label} · ${Math.round(run.progress * 100)}%` : run.status === "done" ? `Ready in ${run.seconds.shot ?? "?"} s` : label);
   const box = thumb(run);
   box.append(h("span.take-dur", {}, `${(run.length ?? run.request.seconds).toFixed(1)} s`), actions(run));
   return h("article.take", {
@@ -138,7 +138,7 @@ function card(run) {
       h("b", {}, name),
       h("button.key.is-quiet.is-icon.take-more", { type: "button", "aria-label": "More", title: "More", on: { click: (e) => (e.stopPropagation(), moreMenu(run, e.currentTarget)) } }, icon("more")),
     ),
-    h("div.take-state", { className: run.error ? "is-error" : "" }, h("span.lamp", { dataset: tone ? { tone } : {} }), h("span", {}, stage)),
+    h("div.take-state", { className: run.error ? "is-error" : "" }, h("span.lamp", { dataset: tone ? { tone } : {} }), h("span", run.error ? { title: String(run.error).trim() } : {}, stage)),
   );
 }
 

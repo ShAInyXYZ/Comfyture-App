@@ -42,6 +42,9 @@ function pickBox(id) {
   return box;
 }
 
+/** A take that stopped, said as its state first, then the first line of why (the server's words; the whole of them in the tooltip). */
+const said = (label, error) => `${label} · ${String(error).trim().split("\n")[0]}`;
+
 function takeCard(run) {
   const [label, tone] = STATE[run.status] ?? [run.status, null];
   const done = run.status === "done";
@@ -52,7 +55,7 @@ function takeCard(run) {
     h("div.lib-thumb", {}, media, done ? pickBox(run.id) : null, h("span.lib-dur", {}, `${takeLength(run).toFixed(1)} s`)),
     h("div.lib-meta", {},
       h("b", {}, run.takes > 1 ? `${run.request.name} · ${run.take}/${run.takes}` : run.request.name),
-      h("span.lib-sub", {}, h("span.lamp", { dataset: tone ? { tone } : {} }), run.error ?? label, h("em", {}, ago(run.createdAt)))),
+      h("span.lib-sub", {}, h("span.lamp", { dataset: tone ? { tone } : {} }), run.error ? h("span.lib-err", { title: String(run.error).trim() }, said(label, run.error)) : label, h("em", {}, ago(run.createdAt)))),
     h("div.lib-actions", {},
       done ? h("button.key.is-sm", { type: "button", title: "Add it to the open edit in Cut", on: { click: (e) => (e.stopPropagation(), addTakesToCut([run.id])) } }, icon("plus"), "Cut") : null,
       done ? h("a.key.is-sm.is-icon.is-quiet", { href: `${run.video}?download=comfyture-${slug(run.request.name)}-take${run.take}.mp4`, "aria-label": "Download", title: "Download", on: { click: (e) => e.stopPropagation() } }, icon("download")) : null,

@@ -1275,6 +1275,7 @@ body[data-page="shot"]:not(.has-window) .toast, body[data-page="mixer"] .toast {
 .lib-meta b { font: 600 var(--fs-body)/1.25 var(--font-sans); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lib-sub { display: flex; align-items: center; gap: .4375rem; font: 400 var(--fs-small)/1.2 var(--font-sans); color: var(--muted); min-width: 0; }
 .lib-sub em { margin-left: auto; font-style: normal; color: var(--dim); white-space: nowrap; }
+.lib-err { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--err); }
 .lib-actions { display: flex; align-items: center; gap: .25rem; padding: 0 .125rem .125rem; }
 .lib-actions .key:first-child { margin-right: auto; }
 .lib-empty { padding: 3rem 1rem; text-align: center; color: var(--dim); font: 400 var(--fs-body)/1.5 var(--font-sans); }
