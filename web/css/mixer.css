@@ -476,3 +476,10 @@
   .mx-stars, .mx-mixes { grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr)); }
 
 }
+
+/* Praline stays centered; the trend shelf uses the full height on the left. */
+body[data-page="mixer"] #assistant .pet-chips { display: none; }
+@media (min-width: 981px) {
+  body[data-page="mixer"] #page-mixer { overflow: visible; }
+  .mx-feed { height: calc(100% + var(--chat-h, 3.5rem) + .75rem); }
+}
