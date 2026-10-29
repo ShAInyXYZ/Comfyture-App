@@ -18,6 +18,7 @@ import { onServer } from "./picker.js";
 import { CREW, crewById, crewPicture } from "./mixer-trends.js";
 import { withBand } from "./jam-band-model.js";
 import { costOfSong } from "./song.js";
+import { syncedLinesForCut } from "./song-lyrics.js";
 
 const OPEN = "comfyture.jam.open";
 
@@ -82,6 +83,12 @@ export async function openJam(id) {
   await flushJams();
   const { project } = await call(`api/jams/${id}`);
   jam.jam = { ...project, body: { ...blank(), ...project.body } };
+  const track = jam.jam.body.track;
+  if (track) {
+    const saved = (await api.songs().catch(() => [])).find((a) => a.file === track.file && a.timing?.lines?.length && (!track.lyrics || track.lyrics === a.lyrics));
+    if (saved && jam.jam?.id === id) Object.assign(track, { lyrics: saved.lyrics, timing: saved.timing });
+  }
+  if (jam.jam?.id !== id) return;
   try {
     localStorage.setItem(OPEN, id);
   } catch {}
@@ -89,6 +96,7 @@ export async function openJam(id) {
   if (jam.workspace === "song" && jam.jam.body.track) setWorkspace("track");
   update();
   await edit(jam.jam).catch((e) => console.warn("jam edit:", e.message));
+  if (jam.jam?.id === id) await applySyncedCaptions(jam.jam).catch((e) => console.warn("Sync captions:", e.message));
   update();
   // work that finished while it was not the open one (a part cut, the words heard, the shots made) is put in its edit now
   if (jam.jam?.id === id && jam.jam.body.stale) {
@@ -283,6 +291,7 @@ function setTrack(j, track) {
   const len = j.body.span ? j.body.span.to - j.body.span.from : 30;
   Object.assign(j.body, { track, span: { from: 0, to: Math.min(track.seconds, len || track.seconds) }, part: null, vocals: null, stems: null, sung: [], lines: [], bpm: null, beats: [], down: 0, shots: [], film: null });
   delete j.body.sure;
+  delete j.body.syncedCaptionKey;
   delete j.body.musicIn;
   // a new track: what the old one made in the edit goes, what was added stays
   if (cut.project?.id === j.body.cut) {
@@ -349,7 +358,10 @@ export async function cutPart(j = jam.jam) {
     b.bpm = b.track.bpm ?? b.bpm ?? null;
     await hearBeats(b);
     // the words typed for the track go on the new part (the singing heard belonged to the one before)
-    if (b.track.lyrics?.trim() && !b.lines.length) b.lines = spreadLyrics(b.track.lyrics, b.part.seconds, b.bpm);
+    if (b.track.lyrics?.trim() && !b.lines.length) {
+      b.lines = syncedLinesForCut(b.track, asked) ?? spreadLyrics(b.track.lyrics, b.part.seconds, b.bpm);
+      if (syncedLinesForCut(b.track, asked)) b.syncedCaptionKey = JSON.stringify([b.track.file, b.track.lyrics, b.track.timing?.lines, asked]);
+    }
     plan(j);
     // (a video that is not the open one has its edit made when it is opened: the editor holds the open one's)
     if (jam.jam !== j) b.stale = true;
@@ -603,10 +615,31 @@ export function spreadLyrics(text, seconds, bpm) {
   return lines.map((t, i) => ({ text: t, from: Math.round(i * step * 100) / 100, to: Math.round((i * step + Math.max(1, step - 0.3)) * 100) / 100 }));
 }
 
+/** Apply saved song timings once per track and cut, without repeatedly replacing edited captions. */
+export async function applySyncedCaptions(j = jam.jam) {
+  const b = j?.body;
+  if (!b?.track || !b.part) return false;
+  const lines = syncedLinesForCut(b.track, b.span);
+  if (!lines) return false;
+  const key = JSON.stringify([b.track.file, b.track.lyrics, b.track.timing?.lines, b.span]);
+  if (b.syncedCaptionKey === key) return false;
+  b.syncedCaptionKey = key;
+  b.lines = lines;
+  try {
+    await syncEdit(j, { lines: true, shots: false, beats: false });
+    touched(j);
+    return true;
+  } catch (e) {
+    delete b.syncedCaptionKey;
+    throw e;
+  }
+}
+
 /** The words typed for the track (an uploaded one's), put on the times heard; the edit's lines are made again from them. */
 export function useLyrics(text) {
   const j = jam.jam;
   const b = j.body;
+  if (text !== b.track.lyrics) { delete b.track.timing; delete b.syncedCaptionKey; }
   b.track.lyrics = text;
   b.lines = b.lines.length || b.sung.length ? alignLyrics(text, b.lines, b.sung) : spreadLyrics(text, b.part?.seconds ?? 30, b.bpm);
   touched();
@@ -1001,7 +1034,7 @@ export async function syncEdit(j = jam.jam, { shots = true, lines = false, beats
       const old = !fresh && mine.get(`c${i + 1}`);
       const length = Math.max(0.6, round(l.to - l.from));
       // a line kept as it was keeps what the editor did to it, unless its words or its place changed
-      if (old && old.text === l.text) return { ...old, start: round(l.from), length };
+      if (old && old.text === l.text) return { ...old, start: round(l.from), length, ...(Math.abs((Number(old.length) || 0) - length) > 0.01 ? { words: splitWords(l.text, length) } : {}) };
       return { id: `c${i + 1}`, lyric: true, text: l.text, start: round(l.from), length, style, words: splitWords(l.text, length), ...look };
     }));
     // a title the user added stays where it is, ahead of the lines

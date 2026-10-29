@@ -14,8 +14,9 @@ import { dropdown } from "../controls.js";
 import { LANGUAGES, SIGNATURES, DEFAULT_SONG, MAX_SECONDS, STYLE_LORAS, PITCHES, MODES, KEYS, noteOf, modeOf, QUALITY, lengthLabel, STRUCTURES, skeleton, costOfSong } from "../song.js";
 import { jicon, pickFile, cr, clock, mins } from "./jam-ui.js";
 import { createDeck } from "./jam-deck.js";
-import { jam, useSong, songHook, setWorkspace, save, readSrt } from "../jam.js";
-import { alignLines, sungLines } from "../lyrics-align.js";
+import { jam, useSong, songHook, setWorkspace, save, applySyncedCaptions } from "../jam.js";
+import { sungLines } from "../lyrics-align.js";
+import { syncSongFile } from "../song-sync.js";
 import { analyse } from "./jam-track-audio.js";
 import { detectSections, lyricTags, HOP } from "../jam-sections.js";
 import { pay, isArmed } from "./jam-band-pay.js";
@@ -624,23 +625,11 @@ async function syncSongLyrics(m) {
   page.lyrSync.textContent = "Listening to the song…";
   try {
     const lyrics = m.lyrics || (inJam(m) ? jam.jam?.body.track?.lyrics : "") || "";
-    const lines = sungLines(lyrics);
-    if (!lines.length) throw new Error("This song has no saved lyrics to match.");
-    const job = await api.transcribeSong({ file: m.file });
-    const result = await waitFor("job", job.id);
-    const segments = readSrt(result.listen?.srt || "");
-    const words = segments.flatMap((x) => {
-      const parts = x.text.split(/\s+/).filter(Boolean);
-      return parts.map((w, i) => ({ w, s: x.from + (x.to - x.from) * i / parts.length, e: x.from + (x.to - x.from) * (i + 1) / parts.length }));
-    });
-    const aligned = alignLines(lines, words, { seconds: m.seconds, chars: /[\u3040-\u30ff\u3400-\u9fff]/u.test(lyrics) });
-    if (!aligned.total || aligned.matched / aligned.total < 0.5) throw new Error("Not enough lyrics were recognized in the mix to sync reliably.");
-    const timing = { lines: aligned.lines.map((x) => [x.from, x.to]), matched: aligned.matched };
-    await api.saveSongLyrics({ file: m.file, lyrics, timing });
+    const { timing } = await syncSongFile({ ...m, lyrics });
     Object.assign(m, { lyrics, timing });
     const stored = song.made.find((x) => x.file === m.file);
     if (stored) Object.assign(stored, { lyrics, timing });
-    if (inJam(m)) { Object.assign(jam.jam.body.track, { lyrics, timing }); save(jam.jam); changed("jam"); }
+    if (inJam(m)) { Object.assign(jam.jam.body.track, { lyrics, timing }); save(jam.jam); await applySyncedCaptions(jam.jam); changed("jam"); }
     lyr.key = null;
     redrawAll();
   } catch (e) { toast(e.message, { tone: "crit" }); }
@@ -822,10 +811,11 @@ export function songWorkspace() {
       for (const a of list) if (a.cover || a.coverVideo) covers.set(a.file, { cover: a.cover, coverVideo: a.coverVideo, coverSeconds: a.coverSeconds });
       // A song can be synced after it was added to a video. Restore the saved timings to that track too.
       const track = jam.jam?.body.track;
-      const saved = track && list.find((a) => a.file === track.file && a.lyrics && a.timing?.lines?.length);
+      const saved = track && list.find((a) => a.file === track.file && a.lyrics && a.timing?.lines?.length && (!track.lyrics || track.lyrics === a.lyrics));
       if (saved && (saved.lyrics !== track.lyrics || JSON.stringify(saved.timing) !== JSON.stringify(track.timing))) {
         Object.assign(track, { lyrics: saved.lyrics, timing: saved.timing });
         save(jam.jam);
+        applySyncedCaptions(jam.jam).catch((e) => console.warn("Sync captions:", e.message));
         changed("jam");
       }
       // (only songs: a sound under the shortest length a song is made at, 30 s, is a clip, and a song kept twice is shown once)

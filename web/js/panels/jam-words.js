@@ -3,13 +3,15 @@
 // colour, how a word arrives), and at the foot the two keys: hear the words (Comfy writes them down with their times, it costs
 // credits) and style the captions. Typed words cost nothing.
 import { h } from "../dom.js";
-import { changed } from "../store.js";
-import { jam, setLine, useLyrics, setCaptions, openWindow, setWorkspace, linesOf, listen, costOfWords, save } from "../jam.js";
+import { changed, toast } from "../store.js";
+import { jam, setLine, useLyrics, setCaptions, openWindow, setWorkspace, linesOf, applySyncedCaptions, save } from "../jam.js";
+import { syncedLinesForCut } from "../song-lyrics.js";
+import { syncSongFile } from "../song-sync.js";
 import { cut, setWord, splitLine, addLyric, setLyricSize, setLyricColours, setLyricPlace, setLyricAnim, filmLength } from "../cut.js";
 import { lyricItems } from "../edit.js";
 import { wordsOf, LOOKS, ANIMS } from "../lyrics.js";
 import { editor, editorParts } from "./editor.js";
-import { jicon, clock, fine, registerWindow, lamp, cr } from "./jam-ui.js";
+import { jicon, clock, fine, registerWindow, lamp } from "./jam-ui.js";
 import { card } from "./jam-card.js";
 import { captionSample } from "./jam-words-look.js";
 
@@ -238,16 +240,32 @@ function previewCard(ctx) {
 
 // ---------------------------------------------------------------- the foot: the two keys
 
+let syncArmedFor = null;
+async function syncWords(j) {
+  const track = j?.body.track;
+  if (!track || jam.busy.has("song-sync", j)) return;
+  if (syncArmedFor !== track.file) { syncArmedFor = track.file; changed("jam"); return; }
+  syncArmedFor = null;
+  jam.busy.add("song-sync", j);
+  changed("jam");
+  try {
+    const result = await syncSongFile(track);
+    if (j.body.track?.file !== track.file) return;
+    Object.assign(j.body.track, result);
+    save(j);
+    await applySyncedCaptions(j);
+  } catch (e) { toast(e.message, { tone: "crit" }); }
+  finally { jam.busy.delete("song-sync", j); changed("jam"); }
+}
+
 function foot(ctx) {
   const { b } = ctx;
-  const length = b?.part?.seconds ?? 0;
-  const cost = costOfWords(length || 30);
-  const heard = !!b?.vocals;
-  const busy = jam.busy.has("listen");
+  const synced = !!b?.track && syncedLinesForCut(b.track, b.span) !== null;
+  const busy = jam.busy.has("song-sync");
   const has = !!b?.track && itemsOf(b).length > 0;
   return h("footer.jw-foot", {},
-    h("button.jw-hear", { type: "button", disabled: !b?.part || busy || jam.busy.has("part"), title: heard ? "Comfy has heard this part: its vocals and words are in. Hearing it again costs credits again" : "Comfy separates the vocals and writes down the words with their times; it costs credits, so it only starts when you press this", on: { click: () => listen() } },
-      busy ? lamp("busy") : jicon("play"), h("b", {}, busy ? "Hearing the words…" : heard ? "Hear them again" : "Hear the words"), cost !== null && !busy ? h("em", {}, cr(cost)) : null),
+    h("button.jw-hear", { type: "button", disabled: !b?.track?.lyrics?.trim() || synced || busy, title: synced ? "The song's lyrics are already synced" : "Transcribe the full mix and match its lyrics. Uses Comfy Cloud GPU time.", on: { click: () => syncWords(jam.jam) } },
+      busy ? lamp("busy") : jicon("play"), h("b", {}, busy ? "Syncing lyrics…" : synced ? "Lyrics synced" : syncArmedFor === b?.track?.file ? "Confirm sync · Cloud GPU cost" : "Sync lyrics")),
     h("button.jt-primary.jw-style-it", { type: "button", disabled: !has, title: has ? "These captions are done: the band is next" : "Words first: type them, or have them heard", on: { click: () => styleDone() } },
       jicon("sparkle"), h("span", {}, "Style the captions")));
 }
@@ -264,6 +282,7 @@ function styleDone() {
 // ---------------------------------------------------------------- the workspace
 
 export function wordsWorkspace(ctx) {
+  if (ctx.b?.part && syncedLinesForCut(ctx.b.track, ctx.b.span) !== null) applySyncedCaptions(jam.jam).catch((e) => toast(e.message, { tone: "crit" }));
   return [h("div.jw", {}, lyricsCard(ctx), previewCard(ctx), h("div.jw-right", {}, stylesCard(ctx), controlsCard(ctx)), foot(ctx))];
 }
 

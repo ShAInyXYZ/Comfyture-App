@@ -93,6 +93,21 @@ export const timingCovers = (timing, seconds) => !!timing?.lines?.length && Numb
 /** Changes whenever lyrics or their timing changes, even if the audio file stays the same. */
 export const sectionAnalysisKey = (track, bpm) => JSON.stringify([track.url, track.seconds, bpm ?? track.bpm ?? null, track.lyrics ?? "", track.timing?.lines ?? null]);
 
+/** Project the full song's timed lines onto a video cut, trimming lines at its boundaries. */
+export function syncedLinesForCut(track, span) {
+  const lines = parseSections(track?.lyrics ?? "").flatMap((s) => s.lines);
+  const times = track?.timing?.lines;
+  if (!lines.length || !Array.isArray(times) || times.length !== lines.length) return null;
+  const from = Number(span?.from) || 0;
+  const to = Number(span?.to) || Number(track.seconds) || 0;
+  if (to <= from || times.some((t) => !Array.isArray(t) || t.length !== 2 || !t.every(Number.isFinite) || t[1] <= t[0])) return null;
+  return lines.flatMap((text, i) => {
+    const [start, end] = times[i];
+    if (end <= from || start >= to) return [];
+    return [{ text, from: Math.round(Math.max(0, start - from) * 100) / 100, to: Math.round(Math.min(to - from, end - from) * 100) / 100 }];
+  });
+}
+
 /** The sections of a song with the stretch of it each takes: [{ name, label, from, to }] (those with a tag), from its timeline. */
 export const sectionSpans = (lyrics, seconds, timing) => lyricTimeline(lyrics, seconds, timing).filter((e) => e.kind === "tag").map((e) => ({ name: e.hint ? `${e.text} - ${e.hint}` : e.text, label: e.text, from: e.from, to: e.to }));
 
