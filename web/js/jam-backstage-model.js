@@ -4,7 +4,7 @@ import { sectionSpans, lyricTimeline, timingCovers } from './song-lyrics.js';
 
 export const VIDEO_MODELS = [
   { id: 'ltx-2.5', name: 'LTX 2.5 Distilled', endFrame: true },
-  { id: 'fast-h3', name: 'Fast H3', endFrame: false },
+  { id: 'fast-h3', name: 'Fast H3', endFrame: true },
 ];
 export const ASPECTS = ['16:9', '9:16', '1:1'];
 export const FORMATS = ['music-video', 'opening', 'ending', 'game-cinematic', 'lyric-video', 'podcast'];
@@ -116,7 +116,6 @@ export function videoRequest(scene, board, seed = Math.floor(Math.random() * 214
   if (!scene.motion?.trim()) throw new Error('Describe the movement before animating.');
   const model = VIDEO_MODELS.find(m => m.id === scene.model);
   if (!model) throw new Error('Choose LTX 2.5 or Fast H3.');
-  if (scene.endImage?.file && !model.endFrame) throw new Error('Choose LTX 2.5 to use both start and end frames. Fast H3 uses one start frame.');
   const template = model.id === 'fast-h3' ? 'video_fastvideo_fasth3_i2v' : scene.endImage?.file ? 'video_ltx2_5_flf2v' : 'video_ltx2_5_i2v';
   const [width, height] = board.aspect === '9:16' ? [768, 1344] : board.aspect === '1:1' ? [1024, 1024] : [1344, 768];
   return { template, body: { confirm: true, inputs: { first_frame: { file: scene.image.file }, ...(scene.endImage?.file ? { last_frame: { file: scene.endImage.file } } : {}), width, height, duration: Math.ceil(seconds), seed,

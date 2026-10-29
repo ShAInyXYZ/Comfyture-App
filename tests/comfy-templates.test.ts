@@ -7,7 +7,7 @@ import { mkdtemp, readFile, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  flatten, library, listing, search, buildForm, buildRunRequest, withOverrides, parseCredits, explainError, isDone, isOver, jobOutputs, jobError, loaderName, publicSlot, createTemplates, fakeRun, png, firstFrame, type Cloud,
+  flatten, library, listing, search, buildForm, buildRunRequest, withOverrides, parseCredits, explainError, isDone, isOver, jobOutputs, jobError, loaderName, publicSlot, createTemplates, fakeRun, png, firstFrame, fastH3EndFrameWorkflow, type Cloud,
 } from "../server/comfy-templates.ts";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -146,6 +146,22 @@ test("FastH3: missing proxyWidgets routes prompt, dimensions, duration and seed 
   });
 });
 
+test("Fast H3 connects an ending image to its actual last-frame input and rejects workflow drift", async () => {
+  const source = await wfOf("video_fastvideo_fasth3_i2v");
+  const wf = fastH3EndFrameWorkflow(source, "end.png");
+  const node = wf.nodes.find((n: any) => n.id === 105);
+  const end = node.inputs.find((i: any) => i.name === "last_frame");
+  const link = wf.links.find((l: any) => l[0] === end.link);
+  const loader = wf.nodes.find((n: any) => n.id === link[1]);
+  assert.deepEqual(link.slice(2), [0, 105, 1, "IMAGE"]);
+  assert.equal(loader.type, "LoadImage");
+  assert.equal(loader.widgets_values[0], "end.png");
+  assert.equal(source.nodes.find((n: any) => n.id === 105).inputs[1].link, null, "the official template is not mutated");
+  const broken = structuredClone(source);
+  broken.definitions.subgraphs[0].nodes.find((n: any) => n.type === "MiniMaxH3ImageToVideo").inputs[3].name = "changed";
+  assert.throws(() => fastH3EndFrameWorkflow(broken, "end.png"), /could not be connected safely/);
+});
+
 test("direct subgraph routing follows nested links and all consumers of a shared value", () => {
   const schema = { slots: [{ address: "1.duration", node_id: "1", input_name: "duration", source: "subgraph_input", type: "FLOAT" }] };
   const wf = { nodes: [{ id: 1, type: "outer" }], definitions: { subgraphs: [
@@ -238,7 +254,9 @@ test("a finished job's files: the saved ones, by kind, and not what it echoed ba
 
 /** A Cloud with no network: the catalog and schemas are the fixtures, and the paid calls are recorded. */
 async function service(dir: string, audioOutputs = false) {
-  const index = JSON.stringify(await fx("index.json"));
+  const entries = await fx("index.json");
+  entries.push({ category: "Video", title: "Video", type: "video", templates: [{ name: "video_fastvideo_fasth3_i2v", title: "Fast H3", mediaType: "video", openSource: true }] });
+  const index = JSON.stringify(entries);
   const calls: { tool: string; args: any }[] = [];
   const uploads: { kind: string; name: string; bytes: number }[] = [];
   const base: Cloud = {
@@ -277,6 +295,41 @@ async function service(dir: string, audioOutputs = false) {
     ...(audioOutputs ? { keepAudio: async (bytes: Buffer) => ({ file: bytes.toString(), url: '/media/audio/' + bytes.toString(), seconds: 10 }) } : {}) });
   return { svc, calls, uploads };
 }
+
+test("Fast H3 with two frames saves the connected graph and runs it only after confirmation", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "fasth3-"));
+  await mkdir(join(dir, "photos"), { recursive: true });
+  await writeFile(join(dir, "photos", "start.png"), png(8, 8));
+  await writeFile(join(dir, "photos", "end.png"), png(9, 9));
+  const { svc, calls, uploads } = await service(dir);
+  const body = { inputs: { first_frame: "start.png", last_frame: "end.png", prompt: "soft movement", duration: 5 }, confirm: true };
+  await assert.rejects(() => svc.handle("POST", "/video_fastvideo_fasth3_i2v/run", new URLSearchParams(), { ...body, confirm: false }), /Review and confirm/);
+  assert.equal(uploads.length, 0);
+  assert.equal(calls.length, 0);
+  await assert.rejects(() => svc.handle("POST", "/video_fastvideo_fasth3_i2v/run", new URLSearchParams(), { ...body, inputs: { ...body.inputs, last_frame: {} } }), /end frame is missing/i);
+  assert.equal(uploads.length, 0, "an invalid end frame must not be ignored");
+  const result = await svc.handle("POST", "/video_fastvideo_fasth3_i2v/run", new URLSearchParams(), body);
+  assert.equal(result.status, 202);
+  assert.deepEqual(calls.map((c) => c.tool), ["save_workflow", "run_saved_workflow"]);
+  assert.equal(calls[0].args.overwrite, false);
+  assert.equal(uploads.length, 2);
+  const wf = calls[0].args.workflow_json;
+  const node = wf.nodes.find((n: any) => n.id === 105);
+  const link = wf.links.find((l: any) => l[0] === node.inputs.find((i: any) => i.name === "last_frame").link);
+  assert.match(wf.nodes.find((n: any) => n.id === link[1]).widgets_values[0], /end.png$/);
+  assert.match(calls[1].args.input_overrides["136"].image, /start.png$/);
+  assert.equal(calls[1].args.input_overrides["105:104"].prompt, "soft movement");
+  assert.equal(calls[1].args.confirm, true);
+});
+
+test("Fast H3 with one frame still uses the ordinary template", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "fasth3-one-"));
+  await mkdir(join(dir, "photos"), { recursive: true });
+  await writeFile(join(dir, "photos", "start.png"), png(8, 8));
+  const { svc, calls } = await service(dir);
+  await svc.handle("POST", "/video_fastvideo_fasth3_i2v/run", new URLSearchParams(), { inputs: { first_frame: "start.png", prompt: "soft movement" }, confirm: true });
+  assert.deepEqual(calls.map((c) => c.tool), ["run_template"]);
+});
 
 test("a run: the picture goes up, the request is made from the form, the job is followed and its picture kept", async () => {
   const dir = await mkdtemp(join(tmpdir(), "templates-"));

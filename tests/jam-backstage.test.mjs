@@ -107,7 +107,11 @@ test('Video requests select the exact first/last template with native parameter 
   assert.equal(fast.body.inputs.width, 768);
   assert.equal(fast.body.inputs.height, 1344);
   assert.equal(fast.body.inputs.last_frame, undefined);
-  assert.throws(() => videoRequest({ ...s, model: 'fast-h3' }, b), /both start and end/);
+  const fastPair = videoRequest({ ...s, model: 'fast-h3' }, b, 123);
+  assert.equal(fastPair.template, 'video_fastvideo_fasth3_i2v');
+  assert.deepEqual(fastPair.body.inputs.first_frame, { file: s.image.file });
+  assert.deepEqual(fastPair.body.inputs.last_frame, { file: 'end.png' });
+  assert.match(fastPair.body.inputs.prompt, /start frame and end frame as composition anchors/);
 });
 
 test('Video requests describe tagged characters by name from the frames without changing editable direction', () => {

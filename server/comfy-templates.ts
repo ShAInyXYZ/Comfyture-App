@@ -814,6 +814,37 @@ export function buildRunRequest(name: string, form: Form, values: Record<string,
   return req;
 }
 
+/** Connect a second image loader to FastH3's otherwise-unwired last-frame socket.
+ * Refuse workflow drift: sending a job without the requested ending is worse than failing early. */
+export function fastH3EndFrameWorkflow(source: any, uploadedName: string): any {
+  const wf = structuredClone(source);
+  const instance = wf?.nodes?.find((n: any) => n?.inputs?.some((i: any) => i.name === "first_frame") && n?.inputs?.some((i: any) => i.name === "last_frame"));
+  const sg = wf?.definitions?.subgraphs?.find((s: any) => s.id === instance?.type);
+  const end = sg?.inputs?.find((i: any) => i.name === "last_frame" && i.type === "IMAGE");
+  const firstInput = instance?.inputs?.find((i: any) => i.name === "first_frame" && i.type === "IMAGE");
+  const firstLink = wf?.links?.find((l: any) => l[0] === firstInput?.link && l[3] === instance.id);
+  const firstLoader = wf?.nodes?.find((n: any) => n.id === firstLink?.[1] && n.type === "LoadImage");
+  const first = sg?.inputs?.find((i: any) => i.name === "first_frame" && i.type === "IMAGE");
+  const firstConsumers = (first?.linkIds ?? []).map((id: number) => sg?.links?.find((l: any) => l.id === id));
+  const slot = instance?.inputs?.findIndex((i: any) => i.name === "last_frame" && i.type === "IMAGE");
+  const consumers = (end?.linkIds ?? []).map((id: number) => sg?.links?.find((l: any) => l.id === id));
+  if (!uploadedName || !Array.isArray(wf?.links) || !Array.isArray(wf?.nodes) || !firstLoader || firstConsumers.length !== 1 ||
+      !sg.nodes?.some((n: any) => n.id === firstConsumers[0]?.target_id && n.type === "MiniMaxH3ImageToVideo" && n.inputs?.[firstConsumers[0].target_slot]?.name === "first_frame") ||
+      slot < 0 || instance.inputs[slot].link != null || consumers.length !== 1 || !consumers[0] || !sg.nodes?.some((n: any) => n.id === consumers[0].target_id && n.type === "MiniMaxH3ImageToVideo" && n.inputs?.[consumers[0].target_slot]?.name === "last_frame")) {
+    throw new Error("The Fast H3 workflow changed, so the end frame could not be connected safely. Please try again after updating the workflow.");
+  }
+  const id = Math.max(Number(wf.last_node_id) || 0, ...wf.nodes.map((n: any) => Number(n.id) || 0)) + 1;
+  const link = Math.max(Number(wf.last_link_id) || 0, ...wf.links.map((l: any) => Number(l[0]) || 0)) + 1;
+  wf.nodes.push({ id, type: "LoadImage", pos: [0, 0], size: [315, 314], flags: {}, order: 0, mode: 0,
+    inputs: [], outputs: [{ name: "IMAGE", type: "IMAGE", links: [link] }, { name: "MASK", type: "MASK", links: null }],
+    properties: { "Node name for S&R": "LoadImage" }, widgets_values: [uploadedName, "image"] });
+  wf.links.push([link, id, 0, instance.id, slot, "IMAGE"]);
+  instance.inputs[slot].link = link;
+  wf.last_node_id = id;
+  wf.last_link_id = link;
+  return wf;
+}
+
 /** The loader name of an uploaded file: Cloud stores by content hash, and the loaders take `<hash>.<ext>`. */
 export function loaderName(asset: { name?: string; asset_hash?: string; hash?: string }, ext: string) {
   if (asset.name && /^[a-f0-9]{64}\./i.test(asset.name)) return asset.name;
@@ -1002,7 +1033,8 @@ export function fakeRun(base: Cloud, seconds = 4): Cloud {
     ...base,
     mcpRun: async (tool, args) => {
       calls.push({ tool, args });
-      if (tool === "run_template") {
+      if (tool === "save_workflow") return JSON.stringify({ filename: `${args.name}.json` });
+      if (tool === "run_template" || tool === "run_saved_workflow") {
         const id = `fake-${randomBytes(6).toString("hex")}`;
         jobs.set(id, Date.now());
         return JSON.stringify({ prompt_id: id, status: "submitted" });
@@ -1299,6 +1331,11 @@ export function createTemplates(deps: Deps) {
     if (!deps.cloud) throw fail("Connect Comfy Cloud to run templates: paste a Comfy API key in the account window (top right). The examples and tours work without one.", 501);
     const form = await schemaOf(name);
     const values = body?.inputs && typeof body.inputs === "object" ? body.inputs : {};
+    const hasFastEnd = name === "video_fastvideo_fasth3_i2v" && Object.hasOwn(values, "last_frame");
+    if (hasFastEnd && !(typeof values.last_frame === "string" ? values.last_frame : values.last_frame?.file))
+      throw fail("The end frame is missing. Add it again.");
+    if (hasFastEnd && body?.confirm !== true)
+      throw fail("Review and confirm the Fast H3 video before preparing the end-frame workflow.", 402);
     // the pictures, clips and sounds go to Cloud first, each under the name its loader takes
     const uploaded: Record<string, Uploaded> = {};
     // (a file two slots take, the clip and its "before" of a comparison, is sent once)
@@ -1320,7 +1357,37 @@ export function createTemplates(deps: Deps) {
     const confirm = body?.confirm === true;
     let text: string;
     try {
-      text = await deps.cloud.mcpRun("run_template", { ...req, ...(confirm ? { confirm: true } : {}) });
+      const last = hasFastEnd && values.last_frame;
+      if (hasFastEnd) {
+        // Its default graph has no loader wired to last_frame; ordinary overrides cannot create a connection.
+        const file = typeof last === "string" ? last : last?.file;
+        const workflow: any = await f(`${CLOUD}/templates/${name}.json`, { signal: AbortSignal.timeout(20_000) }).then((r) => r.ok ? r.json() : null);
+        if (!workflow) throw new Error("Fast H3's workflow could not be loaded; the end frame was not submitted.");
+        // Validate the graph before uploading anything or saving a Cloud workflow.
+        fastH3EndFrameWorkflow(workflow, "validation.png");
+        const frameSlot = form.slots.find((s) => s.id === "first_frame" && s.kind === "image");
+        const instance = workflow.nodes.find((n: any) => n.inputs?.some((i: any) => i.name === "first_frame") && n.inputs?.some((i: any) => i.name === "last_frame"));
+        const firstLink = workflow.links.find((l: any) => l[0] === instance?.inputs?.find((i: any) => i.name === "first_frame")?.link);
+        if (!uploaded.first_frame || frameSlot?.target.via !== "input" || frameSlot.target.node !== String(firstLink?.[1]) || frameSlot.target.input !== "image" || req.input_overrides[frameSlot.target.node]?.image !== uploaded.first_frame.name)
+          throw new Error("The Fast H3 start frame could not be connected safely; the video was not started.");
+        const key = `image:${file}`;
+        if (!sent.has(key)) {
+          const local = await localFile("image", file);
+          const ext = local.file.split(".").pop()?.toLowerCase() ?? "";
+          sent.set(key, await deps.cloud.upload("image", { name: local.file, bytes: await readFile(local.path), type: MIME[ext] ?? "application/octet-stream" }));
+        }
+        const patched = fastH3EndFrameWorkflow(workflow, sent.get(key)!);
+        const saved = await deps.cloud.mcpRun("save_workflow", { name: `Comfyture FastH3 ${randomBytes(10).toString("hex")}`, workflow_json: patched, overwrite: false });
+        let receipt: any;
+        try { receipt = JSON.parse(saved); } catch { throw new Error("Comfy Cloud did not confirm the end-frame workflow was saved; the video was not started."); }
+        const workflowId = receipt.workflow_id ?? receipt.id;
+        const filename = receipt.filename ?? receipt.save_filename;
+        if (!(typeof workflowId === "string" && workflowId.trim()) && !(typeof filename === "string" && filename.trim())) throw new Error("Comfy Cloud did not return a saved workflow reference; the video was not started.");
+        text = await deps.cloud.mcpRun("run_saved_workflow", { ...(typeof workflowId === "string" && workflowId.trim() ? { workflow_id: workflowId } : { filename }),
+          input_overrides: req.input_overrides, slot_overrides: req.slot_overrides, ...(confirm ? { confirm: true } : {}) });
+      } else {
+        text = await deps.cloud.mcpRun("run_template", { ...req, ...(confirm ? { confirm: true } : {}) });
+      }
     } catch (e: any) {
       throw fail(explainError(e.message).message, 502);
     }

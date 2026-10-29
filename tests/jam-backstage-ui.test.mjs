@@ -33,7 +33,7 @@ function harness() {
   const itemOf = id => id === 'cover' ? bs.cover : [...bs.scenes, ...bs.characters].find(item => item.id === id);
   const details = (id, kind) => {
     const item = itemOf(id);
-    return { id, kind, title: item.title, model: kind === 'video' ? 'LTX 2.5 Distilled' : 'GPT Image 2.5 Flare', duration: kind === 'video' ? 11 : null, timelineDuration: kind === 'video' ? 10.5 : null, width: kind === 'video' ? 1344 : null, height: kind === 'video' ? 768 : null, frames: kind === 'video' ? [item.image, item.endImage].filter(Boolean) : [], references: [kind === 'endImage' && item.image ? { file: item.image.file, name: 'start-frame' } : null, item.reference ? { file: item.reference.file, name: 'identity-reference' } : null, ...(item.characterIds ?? []).map((id, i) => ({ file: itemOf(id).image.file, name: `character-${i + 1}` }))].filter(Boolean), prompt: item.prompt, request: { count: 1, megapixels: 1 } };
+    return { id, kind, title: item.title, model: kind === 'video' ? (item.model === 'fast-h3' ? 'Fast H3' : 'LTX 2.5 Distilled') : 'GPT Image 2.5 Flare', duration: kind === 'video' ? 11 : null, timelineDuration: kind === 'video' ? 10.5 : null, width: kind === 'video' ? 1344 : null, height: kind === 'video' ? 768 : null, frames: kind === 'video' ? [item.image, item.endImage].filter(Boolean) : [], references: [kind === 'endImage' && item.image ? { file: item.image.file, name: 'start-frame' } : null, item.reference ? { file: item.reference.file, name: 'identity-reference' } : null, ...(item.characterIds ?? []).map((id, i) => ({ file: itemOf(id).image.file, name: `character-${i + 1}` }))].filter(Boolean), prompt: item.prompt, request: { count: 1, megapixels: 1 } };
   };
   const mocks = {
     h, changed() {}, toast: message => toasts.push(message), mentionables: () => [], backstageMentionables: () => [], mentionAt: () => null, putMention() {}, jam: { jam: j, workspace: 'backstage', busy: new Set() }, openWindow() {}, setWorkspace() {},
@@ -42,7 +42,7 @@ function harness() {
     jicon: name => h('svg', { 'aria-label': name }), clock: n => `${Math.floor(n / 60)}:${String(Math.floor(n % 60)).padStart(2, '0')}`,
     registerWindow: (id, value) => windows.set(id, value), pickFile: (...args) => pickers.push(args), keep: (_, fn) => fn(),
     segs: (items, value, onPick) => h('div', {}, ...items.map(([id, name]) => h('button', { 'aria-pressed': value === id, on: { click: () => onPick(id) } }, name))),
-    backstageOf: () => bs, VIDEO_MODELS: [{ id: 'ltx-2.5', name: 'LTX 2.5 Distilled', endFrame: true }, { id: 'fast-h3', name: 'Fast H3', endFrame: false }],
+    backstageOf: () => bs, VIDEO_MODELS: [{ id: 'ltx-2.5', name: 'LTX 2.5 Distilled', endFrame: true }, { id: 'fast-h3', name: 'Fast H3', endFrame: true }],
     planScenes() {}, addScene() {}, updateScene: (id, patch) => { updates.push({ id, patch }); Object.assign(itemOf(id), patch); }, removeScene() {},
     setBackstage() {}, attachAsset() {}, generateAsset: (...args) => calls.push(args), resumeAsset() {}, resumeBackstageJobs() {}, insertScenes() {},
     addCharacter() {}, removeCharacter() {}, prepareBackstageMentions: async () => {}, generationDetails: details, estimateGeneration: async () => ({ credits: null, note: 'Active GPU time.' }), useCover() {},
@@ -106,6 +106,28 @@ test('Video generation reviews both frames, actual render duration and cost befo
   assert.equal(t.calls.length, 1);
   assert.equal(t.calls[0][2].confirm, true);
   assert.equal(JSON.parse(t.calls[0][2].expected).duration, 11);
+});
+
+test('Fast H3 can review both frames and reports the actual frames in the request', async () => {
+  const t = harness();
+  t.scene.model = 'fast-h3';
+  find(t.render(), 'Video').props.on.click();
+  const root = t.render();
+  assert.equal(find(root, 'Review video generation').disabled, false);
+  assert.match(text(root), /Fast H3 can use a start frame and an optional end frame/);
+  find(root, 'Review video generation').props.on.click();
+  await tick();
+  const modal = t.windows.get('backstage-review').build();
+  assert.match(text(modal), /End frame\s+Included/);
+  assert.deepEqual(walk(modal).filter(n => n.tag === 'figcaption').map(text), ['Start frame', 'End frame']);
+  assert.equal(t.calls.length, 0);
+
+  t.scene.endImage = null;
+  find(t.render(), 'Review video generation').props.on.click();
+  await tick();
+  const startOnly = t.windows.get('backstage-review').build();
+  assert.match(text(startOnly), /End frame\s+Not used/);
+  assert.deepEqual(walk(startOnly).filter(n => n.tag === 'figcaption').map(text), ['Start frame']);
 });
 
 test('A changed request cannot submit through an old confirmation', async () => {
