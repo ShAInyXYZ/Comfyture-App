@@ -293,4 +293,11 @@ body[data-page="cut"] { padding-bottom: 0; overflow: hidden; }
   .cut-top { grid-template-columns: minmax(0, 1fr); }
   .cut-bin { max-height: 20rem; }
   .cut-chat { position: sticky; left: auto; transform: none; margin: 0 auto .75rem; }
+  /* the page grows with the edit (its rows were a flex share of nothing: under 900 px wide the bin, the monitor and the timeline
+     were all 0 px high, the Cut a bare bar), the bin a fixed height its clips scroll in, the monitor a share of the screen, the tracks
+     at their height up to a screen's */
+  #page-cut .cut-page { flex: none; }
+  #page-cut .cut-bin { height: 20rem; }
+  #page-cut .cut-tracks { flex: none; max-height: min(26rem, 70dvh); }
+  #page-cut .cut-stage { flex: none; height: min(55dvh, 75vw); }
 }
