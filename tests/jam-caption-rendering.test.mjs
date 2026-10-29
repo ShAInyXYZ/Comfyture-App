@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { captionLayouts, layoutLyric, lyricAss, textWidth, wordState } from '../web/js/lyrics.js';
+import { captionLayouts, layoutLyric, lyricAss, textWidth, wordState, usesLyricLayout } from '../web/js/lyrics.js';
 
 const japanese = '茜色に染まる帰り道で君の影が少し伸びていた';
 const original = { text: japanese, start: 7, length: 5, style: 'plain', size: .09, y: .78 };
@@ -48,4 +48,17 @@ test('wrapping does not repeat the whole unbroken phrase in exported subtitle fr
   const chunks = ass.split('\n').filter(x => x.startsWith('Dialogue:')).map(x => x.slice(x.lastIndexOf('}') + 1));
   assert.ok(chunks.length > 1);
   assert.equal(chunks.join(''), japanese);
+});
+
+test('lower-third captions keep both readings in the shared renderer while ordinary titles stay ordinary', () => {
+  const item = { ...original, lyric: true, style: 'lower', captionLanguage: 'both', romanization: 'Akane iro ni somaru kaerimichi de' };
+  assert.equal(usesLyricLayout(item), true);
+  assert.equal(usesLyricLayout({ text: 'Episode One', style: 'lower' }), false);
+  const layers = captionLayouts(item, 1280, 720);
+  assert.equal(layers.length, 2);
+  assert.equal(layers[0].L.look.anim, 'none');
+  assert.ok(layers[0].L.boxes.length);
+  const ass = lyricAss([item], { W: 1280, H: 720 });
+  assert.match(ass, /Akane/);
+  assert.match(ass, /茜色/);
 });

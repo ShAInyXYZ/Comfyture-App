@@ -8,7 +8,7 @@
 // both makes ffmpeg 4 drop and repeat frames at the joins).
 
 import { fxPlan, FX_KINDS, EVERY, WHIP, whipBlur } from "../web/js/fx.js";
-import { lyricAss, ANIMATED, LYRIC_FONT, LOOKS } from "../web/js/lyrics.js";
+import { lyricAss, usesLyricLayout, LYRIC_FONT, LOOKS } from "../web/js/lyrics.js";
 import { KEYS, LANGUAGES, STRUCTURES, MAX_SECONDS } from "../web/js/song.js";
 import { SONG_GUIDE_CORE } from "./song-guide.ts";
 
@@ -29,7 +29,10 @@ export interface CutItem {
   sound?: boolean;
   join?: "cut" | "dissolve" | "whip";
   text?: string;
-  style?: "center" | "lower" | "pop" | "karaoke" | "bounce" | "top" | "none" | "stack" | "type" | "neon" | "outline" | "hand" | "minimal" | "comic";
+  style?: "center" | "plain" | "lower" | "pop" | "karaoke" | "bounce" | "top" | "none" | "stack" | "type" | "neon" | "outline" | "hand" | "minimal" | "comic";
+  lyric?: boolean;
+  romanization?: string;
+  captionLanguage?: "original" | "romaji" | "both";
   /** how a word arrives, when the line names one (else its style's own): fill, pop, bounce, cut, fade */
   anim?: string;
   grade?: string;
@@ -344,7 +347,7 @@ export function planCut(body: CutBody, source: (item: CutItem) => Source | null,
     for (const it of t.items) {
       if (it.style === "none") continue;
       // a line sung is drawn word by word (by subtitles), where this ffmpeg can
-      if (o.ass && it.style && ANIMATED.has(it.style)) {
+      if (o.ass && usesLyricLayout(it)) {
         lyrics.push(it);
         continue;
       }
@@ -499,8 +502,8 @@ Rules: change only what is asked; use the clip numbers and times of the edit as 
 }
 export const CUT_BRIEF = cutBrief();
 
-/** Jam's five workspaces, in the order a video is made, and the bentos whose windows Pickle may open for the user (so a key that costs credits is pressed by them). */
-export const JAM_WORKSPACES = ["song", "track", "words", "band", "edit"] as const;
+/** Jam's workspaces, in the order a video is made, and the bentos whose windows Pickle may open for the user (so a key that costs credits is pressed by them). */
+export const JAM_WORKSPACES = ["song", "track", "backstage", "words", "band", "edit"] as const;
 export const JAM_WINDOWS = ["record", "start", "hear", "lyrics", "styles", "preview", "artist", "moves", "vibe", "shots", "editor", "effects", "stickers", "make"] as const;
 const JAM_CREW = ["Praline", "Sesame", "Mochi", "Meringue", "Earl", "Josie", "Theo", "Margot", "Ivy", "Dre"];
 
@@ -512,12 +515,12 @@ const JAM_CREW = ["Praline", "Sesame", "Mochi", "Meringue", "Earl", "Josie", "Th
 export function jamBrief(stickers: string[] = []) {
   return `You are Pickle, the little green frog, Jam's band leader. Jam turns a song into a music video starring the user's character; you know that and nothing else of Comfyture. Be brief and warm, one short sentence. The user asks for changes; you answer with JSON only, no other words:
 {"reply": "one short sentence of what you did", "actions": [ ... ]}
-Jam has five workspaces, in the order a video is made: the song (a form that makes a song: its idea, shape, style, lyrics, length, tempo and key), the track (the song's part used and its beats), the words (lyrics timed word by word, the captions' look), the band (the artist, the dance to copy, the vibe, the planned shots) and the edit (the cut on the beat, joins, effects, stickers, then making and exporting the video). JAM NOW below says which one is open, how far the video is (its steps, done or next) and what the open workspace holds; what the others hold you are not shown, so do not guess it: say where it is and offer to open it. Times are seconds.
-You never start anything that costs credits: making a song, hearing the words and making the video are keys the user presses, each showing its estimate. When one is what they need, say which key to press (open its window when it has one). Lead them to the next step JAM NOW names: with no song yet, the first thing is the song: fill its form with set_song, then say "Make the song" is ready; a made song is the video's track at once; after the track come the words, then the band, then the edit.
+Jam has six workspaces: the song (a form that makes a song: its idea, shape, style, lyrics, length, tempo and key), the track (the song's part used and its beats), backstage (timestamped scenes, character references and album covers, with GPT Image 2.5 Flare images and LTX 2.5 Distilled or Fast H3 video), the words (shared synced lyrics, Original/Romaji/Both display, editable line and word timings, caption design), the band (the artist, the dance to copy, the vibe, the planned shots) and the edit (the cut on the beat, joins, effects, stickers, then making and exporting the video). JAM NOW below says which one is open, how far the video is (its steps, done or next) and what the open workspace holds; what the others hold you are not shown, so do not guess it: say where it is and offer to open it. Times are seconds.
+You never start anything that costs credits: making a song, hearing the words and making the video are keys the user presses, each showing its estimate. When one is what they need, say which key to press (open its window when it has one). Lead them to the next step JAM NOW names: with no song yet, the first thing is the song: fill its form with set_song, then say "Make the song" is ready; a made song is the video's track at once; after the track, plan visuals in Backstage and style captions in Words, then assemble and export in Edit. Band is optional for performance or dance workflows. Backstage preserves the original song soundtrack and mutes generated clip audio. Image and video generation requires the user to review and confirm each asset. Backstage scene times refer to the full song; only scenes overlapping the selected clip are inserted into Edit. You may open Backstage and suggest scene directions, but you cannot create or generate its assets through assistant actions.
 Actions for the track, the words, the band and Jam itself:
 - {"op": "part", "seconds": 15}: how long the video runs: 15, 30, 60, or 0 for the whole track. {"op": "part", "from": 42.5}: where in the track the part starts. {"op": "part", "drop": true}: starts the part at the track's drop (its biggest lift), {"op": "part", "chorus": true}: at the loudest stretch of the track, when JAM NOW gives them
 - {"op": "words", "text": "first line\nsecond line"}: the lyrics, a line each, put on the singing heard, or spread over the part when none was heard
-- {"op": "captions", "style": "pop", "size": 0.1}: how every line is drawn: karaoke, pop, bounce, stack (bold, a word to a row), type (typewriter), neon, outline, hand (handwritten), minimal, comic, lower or none; size is a share of the frame's short side, 0.04 to 0.2 (0.09 is the usual)
+- {"op": "captions", "style": "pop", "size": 0.1}: how every line is drawn: plain (whole line), karaoke, pop, bounce, stack (bold, a word to a row), type (typewriter), neon, outline, hand (handwritten), minimal, comic, lower or none; size is a share of the frame's short side, 0.04 to 0.2 (0.09 is the usual)
 - {"op": "artist", "name": "Josie"}: who performs, one of the crew: ${JAM_CREW.join(", ")}
 - {"op": "vibe", "text": "pastel room, soft daylight"}: the look of the scene, a few words
 - {"op": "shots", "every": 2}: the video cut every 1, 2 or 4 bars; {"op": "shots", "shot": 3, "kind": "dance"}: shot 3 is a performance, a dance or broll shot
@@ -568,11 +571,12 @@ function jamLines(j: any) {
       ...(t.name ? [`the video's track: "${String(t.name).slice(0, 60)}", ${n(t.seconds)} s`] : ["the video has no track yet"]),
     ],
     track: [...track(true), ...keys("words")],
+    backstage: [...track(true), ...say("video format", j.backstage?.format), ...say("shared visual direction", j.backstage?.style), ...(Array.isArray(j.backstage?.scenes) ? [`scene plan: ${j.backstage.scenes.slice(0, 30).map((x: any) => `${String(x.title).slice(0, 70)} ${n(x.from)}-${n(x.to)} s; start ${x.image ? "ready" : "missing"}; end ${x.endImage ? "ready" : "missing"}; video ${x.video ? "ready" : "missing"}`).join("; ")}`] : []), "Generation is reviewed and confirmed by the user in Backstage."],
     words: [...track(false), ...(t.from !== undefined ? [`the part used runs ${n(t.from)} to ${n(t.to)} s`] : []), ...(j.words ? [`words: ${j.words.count ?? 0} lines${j.words.heard ? ", the singing was heard" : j.words.count ? ", typed" : ""}; captions ${j.words.style ?? "karaoke"}`] : []), ...keys("words")],
     band: [...say("artist", j.artist), ...say("dance to copy", j.dance ? `${n(j.dance)} s` : ""), ...say("vibe", j.vibe), ...shots, ...keys("video")],
     edit: [...track(false), ...say("artist", j.artist), ...shots, ...keys("video")],
   };
-  const others: Record<string, string> = { song: "a form that makes a song", track: "the part of the song used and its beats", words: "the lyrics and the captions", band: "the artist, the dance, the vibe and the shots", edit: "the cut, effects and stickers" };
+  const others: Record<string, string> = { song: "a form that makes a song", track: "the part of the song used and its beats", backstage: "timestamped scenes, characters, covers and visual generation", words: "the lyrics and the captions", band: "the artist, the dance, the vibe and the shots", edit: "the cut, effects and stickers" };
   return [
     "JAM NOW",
     `workspace open: ${ws}`,

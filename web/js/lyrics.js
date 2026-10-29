@@ -41,6 +41,9 @@ const ANIM_IDS = new Set(ANIMS.map(([id]) => id));
 export const LYRIC_STYLES = [...Object.entries(LOOKS).map(([id, l]) => [id, l.name]), ["lower", "Lower third"], ["none", "Off"]];
 /** The styles drawn word by word (the others are a plain title). */
 export const ANIMATED = new Set(Object.keys(LOOKS));
+/** Lyrics use the shared wrapping/language renderer even with a lower-third look.
+ * Ordinary lower-third titles retain their existing title rendering. */
+export const usesLyricLayout = (item) => ANIMATED.has(item.style) || (!!item.lyric && item.style === "lower");
 export const LYRIC_FONT = { family: "Comfyture Lyric", file: "comfyture-lyric.ttf" };
 /** Every face a film's subtitles may be drawn in: the files to put where ffmpeg runs (next to its subtitles file). */
 export const LYRIC_FILES = [LYRIC_FONT.file, ...Object.values(FACES).map((f) => f.file)];
@@ -133,8 +136,8 @@ const hex = (v, d) => (/^#[0-9a-f]{6}$/i.test(String(v ?? "")) ? String(v).toUpp
  * frame's short side), colours, and what its style makes of them (LOOKS: the face, capitals, a stack, a box, a glow...).
  */
 export function lyricLook(item) {
-  const style = ANIMATED.has(item.style) ? item.style : "karaoke";
-  const k = LOOKS[style];
+  const style = item.style === "lower" ? "lower" : ANIMATED.has(item.style) ? item.style : "karaoke";
+  const k = style === "lower" ? { anim: "none", scale: .85, outline: false, box: { color: "#0D0D10", alpha: .72 } } : LOOKS[style];
   return {
     style,
     anim: ANIM_IDS.has(item.anim) ? item.anim : k.anim,

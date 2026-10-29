@@ -1,246 +1,121 @@
-// The words: the lyrics as a timed list (each line with when it is sung and a dot for each of its words, which can be dragged), the
-// video in a phone with the captions drawn live, a gallery of eight caption styles, the few controls of how they read (size, where,
-// colour, how a word arrives), and at the foot the two keys: hear the words (Comfy writes them down with their times, it costs
-// credits) and style the captions. Typed words cost nothing.
+// The Words: one timed caption editor, using the song's sync and the film's actual render path.
 import { h } from "../dom.js";
+import { api } from "../api.js";
 import { changed, toast } from "../store.js";
-import { jam, setLine, useLyrics, setCaptions, openWindow, setWorkspace, linesOf, applySyncedCaptions, save } from "../jam.js";
+import { jam, useLyrics, setCaptions, openWindow, setWorkspace, linesOf, applySyncedCaptions, save, setSpan } from "../jam.js";
 import { syncedLinesForCut } from "../song-lyrics.js";
 import { syncSongFile } from "../song-sync.js";
-import { cut, setWord, splitLine, addLyric, setLyricSize, setLyricColours, setLyricPlace, setLyricAnim, filmLength } from "../cut.js";
-import { lyricItems } from "../edit.js";
+import { cut, setWord, splitLine, addLyric, removeItem, setItem, setLyricStyle, setLyricSize, setLyricColours, setLyricPlace, setLyricAnim, filmLength, commit, undo, redo } from "../cut.js";
+import { lyricItems, retext } from "../edit.js";
 import { wordsOf, LOOKS, ANIMS } from "../lyrics.js";
+import { CAPTION_LANGUAGES, captionLanguage, captionText, captionTimingPatch, captionSubtitles, needsRomanization } from "../jam-caption-language.js";
 import { editor, editorParts } from "./editor.js";
 import { jicon, clock, fine, registerWindow, lamp } from "./jam-ui.js";
 import { card } from "./jam-card.js";
-import { captionSample } from "./jam-words-look.js";
 
-/** The eight styles of the gallery, in the order it shows them; the older plain ones are chips under it. */
-const GALLERY = ["karaoke", "stack", "type", "neon", "outline", "hand", "minimal", "comic"];
-const PLAIN = [["pop", "Pop-in"], ["bounce", "Bounce"], ["lower", "Lower third"], ["none", "Off"]];
-const SIZES = [["S", 0.07], ["M", 0.09], ["L", 0.12], ["XL", 0.16]];
-const PLACES = [["top", 0.2, "At the top"], ["mid", 0.5, "In the middle"], ["bottom", 0.74, "At the bottom"]];
-/** The brand's colours as a caption may wear them: yellow, ink, white, plum. */
-const BRAND = ["#F2FF59", "#211927", "#FFFFFF", "#49378B"];
-let openLine = null; // the lyric item whose words are shown one by one (null: none was chosen yet, the first; "": none)
-
-/** The lines in the edit: the items, with their words. */
-const itemsOf = (b) => (b && cut.project && cut.project.id === b.cut ? lyricItems(cut.project.body) : []);
-
-// ---------------------------------------------------------------- the lyrics
-
-function wordBlocks(it) {
-  const length = Number(it.length) || 3;
-  const start = Number(it.start) || 0;
-  return h("div.jm-words", {}, ...wordsOf(it).map((w, i) => {
-    const dur = Math.max(0.02, w.to - w.from);
-    return h("div.jm-word", {},
-      h("input.jm-word-text", { value: w.text, "aria-label": `Word ${i + 1}`, on: { change: (e) => setWord(it.id, i, { text: e.target.value.trim() || w.text }), keydown: (e) => e.stopPropagation() } }),
-      h("label.jm-word-time", { title: "When the word starts (s, in the film)" }, h("input", { type: "number", step: 0.01, min: 0, value: (start + w.from).toFixed(2), "aria-label": `Word ${i + 1} starts`, on: { change: (e) => setWord(it.id, i, { from: Number(e.target.value) - start }), keydown: (e) => e.stopPropagation() } })),
-      h("span.jm-word-bar", {}, h("i", { style: { width: `${Math.min(100, (dur / length) * 100)}%` } })),
-      h("label.jm-word-len", { title: "How long the word lasts (s)" }, h("input", { type: "number", step: 0.01, min: 0.02, value: dur.toFixed(2), "aria-label": `Word ${i + 1} lasts`, on: { change: (e) => setWord(it.id, i, { to: w.from + Number(e.target.value) }), keydown: (e) => e.stopPropagation() } })));
-  }));
-}
-
-/** A dot for each word along a line, where the word starts; dragged, a dot moves its word (and ends the one before it there). */
-function dotsOf(it) {
-  const len = Number(it.length) || 3;
-  const ws = wordsOf(it);
-  const track = h("div.jw-dots", { dataset: { id: it.id } }, ...ws.map((w, i) => h("i.jw-dot", { dataset: { i: String(i) }, style: { left: `${Math.min(97, (w.from / len) * 100)}%` }, title: `${w.text}: ${w.from.toFixed(2)} s (drag to move it)` })));
-  track.addEventListener("pointerdown", (e) => {
-    const dot = e.target.closest(".jw-dot");
-    if (!dot) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const i = Number(dot.dataset.i);
-    const box = track.getBoundingClientRect();
-    const lo = i > 0 ? ws[i - 1].from + 0.03 : 0;
-    const hi = (ws[i + 1]?.from ?? len) - 0.03;
-    let at = ws[i].from;
-    dot.setPointerCapture(e.pointerId);
-    dot.classList.add("is-drag");
-    const move = (ev) => {
-      at = Math.round(Math.min(hi, Math.max(lo, ((ev.clientX - box.left) / box.width) * len)) * 100) / 100;
-      dot.style.left = `${Math.min(97, (at / len) * 100)}%`;
-    };
-    const up = () => {
-      dot.removeEventListener("pointermove", move);
-      dot.classList.remove("is-drag");
-      if (Math.abs(at - ws[i].from) < 0.005) return;
-      if (i > 0) setWord(it.id, i - 1, { to: at }, { history: false });
-      setWord(it.id, i, { from: at });
-    };
-    dot.addEventListener("pointermove", move);
-    dot.addEventListener("pointerup", up, { once: true });
-  });
-  return track;
-}
-
-let rows = []; // the rows on screen: [{ el, it }], for the lit line and the lit dots while the film plays
-function lyricRows(b) {
-  const items = itemsOf(b);
-  if (openLine && !items.some((x) => x.id === openLine)) openLine = null; // (another video's lines)
-  const open = openLine === null ? null : items.find((x) => x.id === openLine)?.id ?? null;
-  rows = [];
-  return items.map((it, i) => {
-    const on = it.id === open;
-    const row = h(`div.jm-line-row.jw-row${on ? ".is-open" : ""}`, { dataset: { line: String(i) } },
-      h("div.jm-line.jw-line", {},
-        h("button.jw-at", { type: "button", title: `Play from here (${fine(Number(it.start) || 0)})`, on: { click: () => (editor.seek(Number(it.start) || 0), editor.play()) } }, clock(Number(it.start) || 0)),
-        h("div.jw-body", {},
-          h("input.jw-text", { value: it.text, "aria-label": `Line ${i + 1}`, dataset: { focus: `line:${i}` }, on: { input: (e) => setLine(i, e.target.value, { history: false }), change: (e) => setLine(i, e.target.value), keydown: (e) => e.stopPropagation() } }),
-          dotsOf(it)),
-        h("button.jw-more", { type: "button", "aria-expanded": String(on), title: on ? "Hide its words" : "Its words, one by one", "aria-label": "Its words", on: { click: () => ((openLine = on ? "" : it.id), changed("jam")) } }, jicon("expand"))),
-      on ? wordBlocks(it) : null);
-    rows.push({ el: row, it });
-    return row;
-  });
-}
-
-// the line being sung is lit, and the dots of the words already sung, while the film plays
-let lit = 0;
-function light() {
-  cancelAnimationFrame(lit);
-  const t = cut.playhead;
-  for (const { el, it } of rows) {
-    if (!el.isConnected) continue;
-    const rel = t - (Number(it.start) || 0);
-    const len = Number(it.length) || 3;
-    const now = rel >= 0 && rel < len;
-    el.classList.toggle("is-now", now);
-    const ws = wordsOf(it);
-    el.querySelectorAll(".jw-dot").forEach((dot, i) => {
-      const w = ws[i];
-      dot.classList.toggle("is-sung", now && !!w && rel >= w.from);
-      dot.classList.toggle("is-on", now && !!w && rel >= w.from && rel < w.to);
-    });
-  }
-  if (editor.playing) lit = requestAnimationFrame(light);
-}
-document.addEventListener("editor:play", () => requestAnimationFrame(light));
-document.addEventListener("editor:stop", () => requestAnimationFrame(light));
-
-function lyricsCard(ctx) {
-  const { b, editing } = ctx;
-  const items = b?.track ? itemsOf(b) : [];
-  const empty = !b?.track
-    ? h("div.jw-empty", {}, h("p", {}, "Add a song first: the words are timed to it."), h("button.key", { type: "button", on: { click: () => setWorkspace("track") } }, jicon("disc"), "Go to the track"))
-    : !editing
-      ? h("div.jw-empty", {}, h("p", {}, b.part ? "Opening the edit…" : "The part is being cut…"))
-      : !items.length
-        ? h("div.jw-empty", {}, h("p", {}, "No words yet. Type them (free), or have them heard (it shows what that costs)."),
-          h("div.jm-row", {}, h("button.key.is-primary", { type: "button", on: { click: () => openWindow("lyrics") } }, jicon("pencil"), "Type the lyrics")))
-        : null;
-  return card({ id: "lyrics", title: "LYRICS & TIMING", cls: "is-label", win: "lyrics", tools: editing ? [h("button.jt-expand", { type: "button", title: "A new line at the playhead", "aria-label": "Add a line", on: { click: () => addLyric("New line") } }, jicon("plus"))] : [] },
-    empty ?? h("div.jw-lines", { dataset: { scrollKey: "jw-lines" } }, ...lyricRows(b)));
-}
-
-// ---------------------------------------------------------------- the captions' style
-
-/** The picture a style is shown over: the made look of the artist, else the artist's own picture, else the stage. */
-function pictureOf(b) {
-  const scene = b?.looks?.performance?.url;
-  const pic = scene ?? b?.artist?.url ?? "img/jam/stage.svg";
-  return { url: new URL(pic, document.baseURI).href, crew: !scene && !!b?.artist?.crew };
-}
-
-function styleTiles(b, { big = false } = {}) {
-  const now = b?.captions ?? "karaoke";
-  const text = linesOf(b)[0]?.text ?? "";
-  const first = itemsOf(b)[0];
-  const pic = pictureOf(b);
-  // (the colours a line names are worn by the samples too: what is on screen is what the film will have)
-  const wear = { color: first?.color, hi: first?.hi };
-  return h(`div.jw-styles${big ? ".is-big" : ""}`, { role: "radiogroup", "aria-label": "Caption style" },
-    ...GALLERY.map((id) =>
-      h("button.jw-style", { type: "button", role: "radio", "aria-checked": String(now === id), "aria-pressed": String(now === id), dataset: { style: id }, disabled: !b?.track, title: LOOKS[id].name, on: { click: () => setCaptions(id) } },
-        h(`span.jw-style-pic${pic.crew ? ".is-crew" : ""}`, { style: { "--pic": `url("${pic.url}")` } }, captionSample(id, text, wear)),
-        h("span.jw-style-name", {}, LOOKS[id].name))));
-}
-
-function plainChips(b) {
-  const now = b?.captions ?? "karaoke";
-  return h("div.jt-fchips.jw-plain", {}, h("span.label", {}, "Also"), ...PLAIN.map(([id, label]) => h("button.jt-fchip", { type: "button", "aria-pressed": String(now === id), disabled: !b?.track, on: { click: () => setCaptions(id) } }, label)));
-}
-
-function stylesCard(ctx) {
-  return card({ id: "styles", title: "CAPTION STYLES", cls: "is-label" }, styleTiles(ctx.b), plainChips(ctx.b));
-}
-
-const near = (a, b) => Math.abs(a - b) < 0.012;
-function controlsCard(ctx) {
-  const { b } = ctx;
-  const items = itemsOf(b);
-  const first = items[0];
-  const off = !first;
-  const size = Number(first?.size) || 0.09;
-  const y = Number(first?.y) || 0.74;
-  const color = (first?.color ?? "#FFFFFF").toUpperCase();
-  const hi = (first?.hi ?? LOOKS[b?.captions]?.hi ?? "#F2FF59").toUpperCase();
-  const anim = first?.anim ?? LOOKS[b?.captions ?? "karaoke"]?.anim ?? "fill";
-  const chips = (value, set, label) => h("div.jw-chips", { role: "group", "aria-label": label, dataset: { for: label === "The words" ? "Words" : "Lit" } },
-    ...BRAND.map((c) => h("button.jw-chip", { type: "button", disabled: off, "aria-pressed": String(c === value), title: `${label} ${c}`, style: { "--c": c }, on: { click: () => set(c) } })),
-    h("label.jw-chip.is-custom", { title: `${label}: another colour` }, h("input", { type: "color", value: value.toLowerCase(), disabled: off, "aria-label": `${label}, another colour`, on: { change: (e) => set(e.target.value) } })));
-  return card({ id: "controls", title: "STYLE CONTROLS", cls: "is-label", win: "styles" },
-    h("div.jw-ctl", {},
-      h("div.jw-field.is-wide", {}, h("span.label", {}, "Size"),
-        h("div.jw-size", {}, h("i", {}, "A"), h("input", { type: "range", min: 0.05, max: 0.18, step: 0.005, value: size, disabled: off, "aria-label": "Size of the captions", title: "How big the words are", on: { input: (e) => setLyricSizeQuietly(Number(e.target.value)), change: (e) => setLyricSize(Number(e.target.value)) } }), h("b", {}, "A"))),
-      h("div.jw-field", {}, h("span.label", {}, "Position"),
-        h("div.jt-segs.is-icons", { role: "group", "aria-label": "Where the captions sit" }, ...PLACES.map(([id, v, title]) => h("button.jt-seg", { type: "button", disabled: off, "aria-pressed": String(near(y, v)), title, "aria-label": title, on: { click: () => setLyricPlace(v) } }, jicon(id))))),
-      h("div.jw-field", {}, h("span.label", {}, "Animation"),
-        h("select.field.jw-anim", { disabled: off, "aria-label": "How a word arrives", title: "How a word arrives (the style's own is the first)", on: { change: (e) => setLyricAnim(e.target.value === (LOOKS[b?.captions]?.anim ?? "fill") ? null : e.target.value) } },
-          ...ANIMS.map(([v, label]) => h("option", { value: v, selected: v === anim }, label)))),
-      h("div.jw-field.is-wide", {}, h("span.label", {}, "Brand colour"), h("div.jw-colours", {}, chips(hi, (c) => setLyricColours({ hi: c }), "The word being sung"), chips(color, (c) => setLyricColours({ color: c }), "The words"))),
-      off ? h("p.jt-note.is-wide", {}, "Size, place and colours go on the words once there are some.") : null));
-}
-// (the size slider moves the words as it is dragged, without an undo step for each tick: the step is made when it is let go)
-function setLyricSizeQuietly(v) {
-  for (const it of itemsOf(jam.jam?.body)) it.size = Math.round(v * 1000) / 1000;
-  editor.show();
-}
-
-// ---------------------------------------------------------------- the preview
-
-/** The monitor (the editor's: the picture, its captions drawn as they will be in the film) in a phone's frame, with its transport under it. */
-export function phone(ctx) {
-  const { editing, parts, b } = ctx;
-  const progress = h("div.jm-progress", { role: "slider", "aria-label": "Where the film is", on: { pointerdown: (e) => {
-    const box = e.currentTarget.getBoundingClientRect();
-    const at = (ev) => editor.seek(Math.min(1, Math.max(0, (ev.clientX - box.left) / box.width)) * filmLength());
-    at(e);
-    const move = (ev) => at(ev);
-    const up = () => (removeEventListener("pointermove", move), removeEventListener("pointerup", up));
-    addEventListener("pointermove", move);
-    addEventListener("pointerup", up);
-  } } }, h("i", { style: { width: `${Math.min(100, (cut.playhead / (filmLength() || 1)) * 100)}%` } }));
-  // (before there is a picture of the video, the artist's, or the stage, is behind the captions)
-  const back = pictureOf(b);
-  parts?.stage?.style.setProperty("--back", `url("${back.url}")`);
-  return editing
-    ? h("div.jm-phone-wrap", {}, h("div.jm-phone", {}, parts.stage, h("span.jm-ratio", {}, cut.project?.body.aspect ?? "9:16")), progress, h("div.jm-phone-transport", {}, parts.transport))
-    : h("div.jm-phone-wrap", {}, h("div.jm-phone.is-empty", {}, h("img", { src: "img/jam/stage.svg", alt: "", draggable: false }), h("span", {}, b?.track ? "The edit is being made…" : "The video plays here")));
-}
-
-let shown = "";
-/** The preview of a video shows a caption when it is first looked at: it stands in the middle of the first line (not on the film's first frame). */
-function showFirstLine(b) {
-  const first = itemsOf(b)[0];
-  if (!first || shown === cut.project.id || editor.playing || cut.playhead > 0.05) return;
-  shown = cut.project.id;
-  requestAnimationFrame(() => editor.seek((Number(first.start) || 0) + Math.min(1.4, (Number(first.length) || 3) * 0.4)));
-}
-
-function previewCard(ctx) {
-  showFirstLine(ctx.b);
-  // (its window takes the monitor while it is open: the card shows the frame empty meanwhile)
-  return h("section.jt-card.jw-preview", { dataset: { card: "preview" } },
-    h("button.jt-expand.is-corner", { type: "button", title: "The preview in a window", "aria-label": "The preview in a window", on: { click: () => openWindow("preview") } }, jicon("expand")),
-    jam.win === "preview" ? h("div.jm-phone-wrap", {}, h("div.jm-phone.is-empty", {}, h("span", {}, "In its window"))) : phone(ctx));
-}
-
-// ---------------------------------------------------------------- the foot: the two keys
-
+const STYLES = [["plain", "Plain", "A quiet line"], ["karaoke", "Karaoke", "Follow the words"], ["pop", "Pop", "Word by word"], ["type", "Typewriter", "Built as you speak"], ["neon", "Neon", "A soft colour glow"], ["lower", "Lower third", "A caption strip"]];
+const PLACES = [["top", 0.2, "Top"], ["mid", 0.5, "Centre"], ["bottom", 0.82, "Bottom"]];
+let selectedLine = null;
+let selectedProject = null;
+let scope = "all";
+let follow = true;
 let syncArmedFor = null;
+let fullSongArmedFor = null;
+let romanBusy = false;
+let romanError = "";
+let rows = [];
+let playFrame = 0;
+let progressSlider = null;
+let lastActive = null;
+let shownProject = null;
+let romanAttemptedKey = "";
+let undoKey = null;
+let redoKey = null;
+
+const repaint = () => { refreshLyricRows(); refreshHistoryControls(); editor.show(); changed("jam"); };
+const editItem = (item, patch) => { setItem(item.id, patch); repaint(); };
+const editWord = (item, i, patch) => { if (patch.text !== undefined) delete item.romanization; setWord(item.id, i, patch); repaint(); };
+
+const itemsOf = (b) => b && cut.project && cut.project.id === b.cut ? lyricItems(cut.project.body) : [];
+const modeOf = (b) => captionLanguage(b && cut.project && cut.project.id === b.cut ? cut.project.body.captionLanguage ?? itemsOf(b)[0]?.captionLanguage ?? b?.captionLanguage : b?.captionLanguage);
+const selectedOf = (b) => itemsOf(b).find((item) => item.id === selectedLine) ?? itemsOf(b)[0];
+const clipDuration = (b) => Math.max(0, Number(b?.part?.seconds) || ((b?.span?.to ?? 0) - (b?.span?.from ?? 0)) || filmLength());
+const stopKeys = (e) => e.stopPropagation();
+const synced = (b) => !!b?.track && syncedLinesForCut(b.track, b.span) !== null;
+const isFullSong = (b) => !!b?.track && (b.span?.from ?? 0) < .1 && Math.abs((b.span?.to ?? 0) - b.track.seconds) < .15;
+
+function chooseLine(item) {
+  selectedLine = item.id;
+  cut.selected = item.id;
+  // Pause inside the visible caption, beyond its opening fade.
+  editor.seek((Number(item.start) || 0) + Math.min(.2, (Number(item.length) || 1) / 2));
+  changed("jam");
+}
+
+function putText(item, value) {
+  const text = value.trim();
+  if (!text || text === item.text) return;
+  retext(item, text.slice(0, 500));
+  delete item.romanization;
+  commit();
+  repaint();
+}
+
+function retime(item, from, to, b) {
+  try { editItem(item, captionTimingPatch(item, from, to, clipDuration(b))); }
+  catch (e) { toast(e.message, { tone: "crit" }); changed("jam"); }
+}
+
+/** Romanization is computed locally by the existing API, never a paid media generation. */
+async function chooseLanguage(mode, { history = true } = {}) {
+  const j = jam.jam;
+  const project = cut.project;
+  const b = j?.body;
+  if (!b || !project || romanBusy) return;
+  const items = itemsOf(b);
+  const wanted = captionLanguage(mode);
+  b.captionLanguage = wanted;
+  project.body.captionLanguage = wanted;
+  for (const item of items) item.captionLanguage = wanted;
+  save(j);
+  commit({ history });
+  if (wanted === "original") return;
+  const missing = items.filter((item) => needsRomanization(item.text) && !item.romanization?.trim());
+  if (!missing.length) return;
+  const texts = [...new Set(missing.map((item) => item.text))];
+  romanAttemptedKey = JSON.stringify([project.id, texts]);
+  romanBusy = true;
+  romanError = "";
+  changed("jam");
+  try {
+    const result = await api.romanizeSong({ lines: texts });
+    if (jam.jam !== j || cut.project !== project) return;
+    const readings = new Map(texts.map((text, i) => [text, result.lines?.[i] ?? ""]));
+    for (const item of itemsOf(b)) if (!item.romanization?.trim() && readings.has(item.text)) item.romanization = readings.get(item.text);
+    commit({ history: false });
+  } catch (e) {
+    romanError = e.message || "The reading could not be prepared. Try again.";
+    toast(romanError, { tone: "crit" });
+  } finally {
+    romanBusy = false;
+    changed("jam");
+  }
+}
+
+function languageControl(b) {
+  const mode = modeOf(b);
+  return h("div.jw-language", {},
+    h("div.jt-segs", { role: "group", "aria-label": "Caption language" }, ...CAPTION_LANGUAGES.map(([id, name]) => h("button.jt-seg", { type: "button", disabled: !itemsOf(b).length || romanBusy, "aria-pressed": String(mode === id), on: { click: () => chooseLanguage(id) } }, name))),
+    romanBusy ? h("span.jw-status", { role: "status" }, "Preparing reading…") : null,
+    romanError ? h("button.jw-textkey", { type: "button", title: romanError, on: { click: () => chooseLanguage(mode) } }, "Retry reading") : null);
+}
+
+function syncButton(b) {
+  const busy = jam.busy.has("song-sync");
+  const done = synced(b);
+  return h("button.jw-sync", { type: "button", disabled: !b?.track?.file || done || busy, title: done ? "The song and captions use the same saved lyric timestamps" : b?.track?.lyrics?.trim() ? "Match the saved lyrics to this track. The confirmation uses Comfy Cloud GPU time." : "Transcribe the full audio track. The confirmation uses Comfy Cloud GPU time.", on: { click: () => syncWords(jam.jam) } }, busy ? lamp("busy") : jicon(done ? "check" : "wave"), busy ? "Syncing…" : done ? "Lyrics synced" : syncArmedFor === b?.track?.file ? "Confirm sync · GPU cost" : "Sync lyrics");
+}
+
 async function syncWords(j) {
   const track = j?.body.track;
   if (!track || jam.busy.has("song-sync", j)) return;
@@ -258,68 +133,248 @@ async function syncWords(j) {
   finally { jam.busy.delete("song-sync", j); changed("jam"); }
 }
 
-function foot(ctx) {
-  const { b } = ctx;
-  const synced = !!b?.track && syncedLinesForCut(b.track, b.span) !== null;
-  const busy = jam.busy.has("song-sync");
-  const has = !!b?.track && itemsOf(b).length > 0;
-  return h("footer.jw-foot", {},
-    h("button.jw-hear", { type: "button", disabled: !b?.track?.lyrics?.trim() || synced || busy, title: synced ? "The song's lyrics are already synced" : "Transcribe the full mix and match its lyrics. Uses Comfy Cloud GPU time.", on: { click: () => syncWords(jam.jam) } },
-      busy ? lamp("busy") : jicon("play"), h("b", {}, busy ? "Syncing lyrics…" : synced ? "Lyrics synced" : syncArmedFor === b?.track?.file ? "Confirm sync · Cloud GPU cost" : "Sync lyrics")),
-    h("button.jt-primary.jw-style-it", { type: "button", disabled: !has, title: has ? "These captions are done: the band is next" : "Words first: type them, or have them heard", on: { click: () => styleDone() } },
-      jicon("sparkle"), h("span", {}, "Style the captions")));
-}
-/** The captions are as they should be: the step is done, and the band is next. */
-function styleDone() {
-  const j = jam.jam;
-  if (!j) return;
-  j.body.captionsSet = true;
-  save();
-  changed("jam");
-  setWorkspace("band");
+function fullSong(b) {
+  if (!b?.track || isFullSong(b)) return;
+  if (fullSongArmedFor !== b.track.file) { fullSongArmedFor = b.track.file; changed("jam"); return; }
+  fullSongArmedFor = null;
+  editor.stop();
+  setSpan(0, b.track.seconds);
 }
 
-// ---------------------------------------------------------------- the workspace
+function toolbar(ctx) {
+  const { b, editing } = ctx;
+  const full = isFullSong(b);
+  undoKey = h("button.jt-expand", { type: "button", disabled: !editing || !cut.history.length, title: "Undo caption edit", "aria-label": "Undo", on: { click: () => { undo(); repaint(); } } }, jicon("undo"));
+  redoKey = h("button.jt-expand", { type: "button", disabled: !editing || !cut.future.length, title: "Redo caption edit", "aria-label": "Redo", on: { click: () => { redo(); repaint(); } } }, jicon("redo"));
+  return h("header.jw-toolbar", {},
+    h("div.jw-range", {}, h("b", {}, full ? "Full song" : "Selected clip"), h("span", {}, `${clock(b?.span?.from ?? 0)}–${clock(b?.span?.to ?? 0)}`),
+      h("button.jw-textkey", { type: "button", disabled: !b?.track, on: { click: () => setWorkspace("track") } }, "Change range"),
+      !full && b?.track ? h("button.jw-textkey", { type: "button", disabled: jam.busy.has("part"), title: "Use the complete song. Existing shot planning for the old clip is reset.", on: { click: () => fullSong(b) } }, fullSongArmedFor === b.track.file ? "Confirm full song · reset clip plan" : "Use full song") : null),
+    h("div.jw-toolbar-keys", {}, syncButton(b), undoKey, redoKey));
+}
+
+function refreshHistoryControls() {
+  const b = jam.jam?.body;
+  const editing = !!b && cut.project?.id === b.cut;
+  if (undoKey) undoKey.disabled = !editing || !cut.history.length;
+  if (redoKey) redoKey.disabled = !editing || !cut.future.length;
+}
+
+function lyricRows(b) {
+  const items = itemsOf(b);
+  const mode = modeOf(b);
+  rows = [];
+  return items.map((item, index) => {
+    const active = item.id === selectedOf(b)?.id;
+    const copy = h("span.jw-caption-copy");
+    const from = h("span"), to = h("span");
+    const row = h(`button.jw-caption-row${active ? ".is-selected" : ""}`, { type: "button", "aria-pressed": String(active), dataset: { line: item.id }, on: { click: () => chooseLine(item) } },
+      h("span.jw-caption-index", {}, String(index + 1).padStart(2, "0")),
+      copy, h("span.jw-caption-time", {}, from, to));
+    const entry = { el: row, it: item, copy, from, to };
+    paintLyricRow(entry, item, mode);
+    rows.push(entry);
+    return row;
+  });
+}
+
+function paintLyricRow(row, item, mode) {
+  row.it = item;
+  const primary = mode === "romaji" && item.romanization ? item.romanization : item.text;
+  const secondary = mode === "both" && item.romanization && item.romanization !== item.text ? item.romanization : "";
+  row.copy.replaceChildren(h("span.jw-caption-original", {}, primary), ...(secondary ? [h("span.jw-caption-roman", {}, secondary)] : []));
+  row.from.textContent = fine(Number(item.start) || 0);
+  row.to.textContent = fine((Number(item.start) || 0) + (Number(item.length) || 0));
+}
+
+/** The app defers page redraws while a field has focus. Update read-only output
+ * directly so tabbing from lyrics to timing still shows the committed edit. */
+function refreshLyricRows() {
+  const b = jam.jam?.body;
+  const items = new Map(itemsOf(b).map((item) => [item.id, item]));
+  const mode = modeOf(b);
+  for (const row of rows) {
+    const item = items.get(row.it.id);
+    if (item && row.el.isConnected) paintLyricRow(row, item, mode);
+  }
+}
+
+function wordBlocks(item) {
+  const start = Number(item.start) || 0;
+  // The renderer sorts normalized copies. Keep the source index so moving a word
+  // past its neighbour does not redirect the next edit to that neighbour.
+  const words = item.words?.length
+    ? item.words.flatMap((word, index) => word && String(word.text ?? "").trim() ? [{ ...wordsOf({ ...item, words: [word] })[0], index }] : []).sort((a, b) => a.from - b.from)
+    : wordsOf(item).map((word, index) => ({ ...word, index }));
+  return h("div.jw-word-table", {},
+    h("div.jw-word-head", {}, h("span", {}, "Word / phrase"), h("span", {}, "Start (s)"), h("span", {}, "End (s)")),
+    ...words.map((word, i) => h("div.jw-word-edit", {},
+      h("input.field", { value: word.text, "aria-label": `Word ${i + 1}`, on: { change: (e) => editWord(item, word.index, { text: e.target.value.trim() || word.text }), keydown: stopKeys } }),
+      h("input.field", { type: "number", step: .01, min: start, max: start + item.length, value: (start + word.from).toFixed(2), "aria-label": `Word ${i + 1} starts at seconds`, on: { change: (e) => editWord(item, word.index, { from: Number(e.target.value) - start }), keydown: stopKeys } }),
+      h("input.field", { type: "number", step: .01, min: start, max: start + item.length, value: (start + word.to).toFixed(2), "aria-label": `Word ${i + 1} ends at seconds`, on: { change: (e) => editWord(item, word.index, { to: Number(e.target.value) - start }), keydown: stopKeys } }))));
+}
+
+function lineEditor(b) {
+  const item = selectedOf(b);
+  if (!item) return null;
+  const index = itemsOf(b).indexOf(item);
+  return h("section.jw-line-editor", { "aria-label": `Edit caption ${index + 1}` },
+    h("header.jw-subhead", {}, h("b", {}, `Caption ${index + 1}`), h("button.jw-textkey", { type: "button", on: { click: () => (editor.seek(Number(item.start) || 0), editor.play()) } }, jicon("play"), "Listen"),
+      h("button.jt-expand", { type: "button", title: "Delete this caption (Undo restores it)", "aria-label": "Delete selected caption", on: { click: () => { removeItem(item.id); selectedLine = null; } } }, jicon("trash"))),
+    h("label.jw-field", {}, h("span.label", {}, "Original text"), h("textarea.field.jw-caption-input", { rows: 2, value: item.text, dataset: { focus: `caption-text:${item.id}` }, "aria-label": "Original caption text", on: { change: (e) => putText(item, e.target.value), keydown: stopKeys } })),
+    modeOf(b) !== "original" || item.romanization ? h("label.jw-field", {}, h("span.label", {}, "Romaji / pronunciation"), h("textarea.field.jw-caption-input.is-reading", { rows: 2, value: item.romanization ?? "", placeholder: romanBusy ? "Preparing the reading…" : "Add or correct the reading", dataset: { focus: `caption-roman:${item.id}` }, "aria-label": "Romanized caption text", on: { change: (e) => editItem(item, { romanization: e.target.value.trim() }), keydown: stopKeys } })) : null,
+    h("div.jw-line-times", {},
+      h("label.jw-field", {}, h("span.label", {}, "Start · seconds"), h("input.field", { type: "number", step: .01, min: 0, max: clipDuration(b), value: Number(item.start).toFixed(2), "aria-label": "Caption start in seconds", on: { change: (e) => retime(item, e.target.value, Number(item.start) + Number(item.length), b), keydown: stopKeys } })),
+      h("label.jw-field", {}, h("span.label", {}, "End · seconds"), h("input.field", { type: "number", step: .01, min: 0, max: clipDuration(b), value: (Number(item.start) + Number(item.length)).toFixed(2), "aria-label": "Caption end in seconds", on: { change: (e) => retime(item, item.start, e.target.value, b), keydown: stopKeys } }))),
+    h("details.jw-word-details", {}, h("summary", {}, "Fine-tune word timing"), h("p.jw-note", {}, "Line timings come from sync. Word highlights are estimated; adjust them here."), wordBlocks(item),
+      h("button.jw-textkey", { type: "button", on: { click: () => splitLine(item.id, "syllables") } }, "Redistribute words across this line")));
+}
+
+function lyricsCard(ctx) {
+  const { b, editing } = ctx;
+  const items = itemsOf(b);
+  const empty = !b?.track ? "Add a song or a podcast in The Track to begin." : !editing ? "Preparing this clip…" : "No captions in this range. Add a line or edit the source lyrics.";
+  return card({ id: "lyrics", title: "Lyrics & timing", cls: "is-label", win: null, tools: [h("button.jt-expand", { type: "button", disabled: !editing, title: "Add a caption at the playhead", "aria-label": "Add caption", on: { click: () => {
+    const remaining = clipDuration(b) - cut.playhead;
+    if (remaining < .05) return toast("Move the playhead before the end of the clip.");
+    const item = addLyric("New caption", { length: Math.min(3, remaining) });
+    if (item) { item.captionLanguage = modeOf(b); selectedLine = item.id; commit({ history: false }); }
+  } } }, jicon("plus"))] },
+    languageControl(b),
+    h("div.jw-list-tools", {}, h("span", {}, `${items.length} ${items.length === 1 ? "caption" : "captions"}`), h("button.jw-textkey", { type: "button", disabled: !b?.track, on: { click: () => openWindow("lyrics") } }, "Source lyrics"),
+      h("button.jw-textkey", { type: "button", "aria-pressed": String(follow), on: { click: () => { follow = !follow; changed("jam"); } } }, follow ? "Following playback" : "Follow playback")),
+    h("div.jw-lines", { dataset: { scrollKey: "jw-lines" }, "aria-label": "Timed captions" }, ...(items.length ? lyricRows(b) : [h("p.jw-empty", {}, empty)])),
+    lineEditor(b));
+}
+
+export function updateWordsPlayback() {
+  cancelAnimationFrame(playFrame);
+  const t = cut.playhead;
+  let current = null;
+  for (const { el, it } of rows) {
+    if (!el.isConnected) continue;
+    const now = t >= Number(it.start) && t < Number(it.start) + Number(it.length);
+    el.classList.toggle("is-now", now);
+    if (now) current = el;
+  }
+  if (follow && current && current !== lastActive && editor.playing) {
+    const list = current.parentElement;
+    const bounds = list.getBoundingClientRect();
+    const line = current.getBoundingClientRect();
+    const delta = line.top < bounds.top ? line.top - bounds.top : line.bottom > bounds.bottom ? line.bottom - bounds.bottom : 0;
+    if (delta) list.scrollBy({ top: delta, behavior: "smooth" });
+  }
+  lastActive = current;
+  if (progressSlider?.isConnected) progressSlider.value = String(t);
+  if (editor.playing) playFrame = requestAnimationFrame(updateWordsPlayback);
+}
+document.addEventListener("editor:play", () => requestAnimationFrame(updateWordsPlayback));
+document.addEventListener("editor:stop", () => requestAnimationFrame(updateWordsPlayback));
+document.addEventListener("editor:live", () => requestAnimationFrame(updateWordsPlayback));
+
+/** The real editor monitor: its preview and final export share the same caption renderer. */
+export function phone(ctx) {
+  const { editing, parts, b } = ctx;
+  if (!editing || !parts) return h("div.jw-monitor-empty", {}, jicon("film"), h("p", {}, b?.track ? "Preparing the preview…" : "Your captioned video plays here"));
+  progressSlider = h("input.jw-scrub", { type: "range", min: 0, max: Math.max(.01, clipDuration(b)), step: .01, value: cut.playhead, "aria-label": "Preview playhead", on: { input: (e) => { editor.seek(Number(e.target.value)); updateWordsPlayback(); }, keydown: stopKeys } });
+  const [width, height] = (cut.project.body.aspect ?? "9:16").split(":").map(Number);
+  return h("div.jw-monitor", {}, h("div.jw-monitor-stage", { style: { "--jw-ratio": String(width / height) } }, parts.stage), progressSlider, h("div.jw-monitor-transport", {}, parts.transport));
+}
+
+function aspectChoices(ctx) {
+  return h("div.jt-segs.jw-aspects", { role: "group", "aria-label": "Video aspect ratio" }, ...[["16:9", "Landscape"], ["9:16", "Portrait"], ["1:1", "Square"]].map(([value, name]) => h("button.jt-seg", { type: "button", disabled: !ctx.editing, "aria-pressed": String(cut.project?.body.aspect === value), title: `${name} · ${value}`, on: { click: () => { cut.project.body.aspect = value; if (ctx.b) ctx.b.aspect = value; save(); commit(); } } }, value)));
+}
+
+function previewCard(ctx) {
+  return card({ id: "preview", title: "Preview", cls: "is-label.jw-preview", win: "preview", tools: [aspectChoices(ctx)] },
+    jam.win === "preview" ? h("div.jw-monitor-empty", {}, "Preview is open in its window") : phone(ctx),
+    h("p.jw-preview-note", {}, modeOf(ctx.b) === "both" ? "Original + romaji · included in the video" : modeOf(ctx.b) === "romaji" ? "Romaji · included in the video" : "Original lyrics · included in the video"));
+}
+
+function applyStyle(style, b) {
+  if (scope === "selected") setLyricStyle(style, selectedOf(b)?.id);
+  else setCaptions(style);
+  repaint();
+}
+const targetId = (b) => scope === "selected" ? selectedOf(b)?.id : null;
+
+function stylesControl(b) {
+  const item = scope === "selected" ? selectedOf(b) : itemsOf(b)[0];
+  const now = item?.style ?? b?.captions ?? "plain";
+  return h("section.jw-style-picks", {}, h("div.jw-field", {}, h("span.label", {}, "Caption style"),
+    h("div.jw-style-buttons", { role: "group", "aria-label": "Caption style" }, ...STYLES.map(([id, label, description]) => h(`button.jw-style-choice${id === "plain" ? ".is-plain" : ""}`, { type: "button", disabled: !item, "aria-pressed": String(now === id), on: { click: () => applyStyle(id, b) } }, h("b", {}, label), h("span", {}, description))))),
+    h("label.jw-field", {}, h("span.label", {}, "All styles"), h("select.field", { "aria-label": "All caption styles", disabled: !item, on: { change: (e) => applyStyle(e.target.value, b) } }, ...[...Object.entries(LOOKS).map(([id, look]) => [id, look.name]), ["lower", "Lower third"], ["none", "Hide captions"]].map(([id, label]) => h("option", { value: id, selected: now === id }, label)))));
+}
+
+function controls(b) {
+  const item = scope === "selected" ? selectedOf(b) : itemsOf(b)[0];
+  const disabled = !item;
+  const id = targetId(b);
+  const look = LOOKS[item?.style] ?? LOOKS.plain ?? {};
+  const anim = item?.anim ?? look.anim ?? "none";
+  const size = Number(item?.size) || .09;
+  return h("section.jw-ctl", {},
+    h("label.jw-field.is-wide", {}, h("span.jw-label-value", {}, h("span.label", {}, "Size"), h("span", {}, `${Math.round(size * 100)}%`)), h("input.jw-slider", { type: "range", min: .04, max: .2, step: .005, value: size, disabled, "aria-label": "Caption size", on: { input: (e) => {
+      const value = Number(e.target.value); for (const it of scope === "selected" ? [item] : itemsOf(b)) if (it) it.size = value; editor.show(); e.target.previousElementSibling.lastElementChild.textContent = `${Math.round(value * 100)}%`;
+    }, change: (e) => setLyricSize(Number(e.target.value), id) } })),
+    h("div.jw-field", {}, h("span.label", {}, "Position"), h("div.jt-segs.is-icons", { role: "group", "aria-label": "Caption position" }, ...PLACES.map(([name, y, label]) => h("button.jt-seg", { type: "button", disabled, title: label, "aria-label": label, "aria-pressed": String(Math.abs((Number(item?.y) || .74) - y) < .09), on: { click: () => setLyricPlace(y, id) } }, jicon(name))))),
+    h("label.jw-field", {}, h("span.label", {}, "Motion"), h("select.field", { disabled, "aria-label": "Caption animation", on: { change: (e) => { setLyricAnim(e.target.value, id); repaint(); } } }, ...ANIMS.map(([value, label]) => h("option", { value, selected: value === anim }, label)))),
+    h("div.jw-field.is-wide", {}, h("span.label", {}, "Colour"), h("div.jw-colours", {},
+      ...[["color", "Text", item?.color ?? look.color ?? "#FFFFFF"], ["hi", "Highlight", item?.hi ?? look.hi ?? "#F2FF59"]].map(([key, label, value]) => h("label.jw-colour", {}, h("input", { type: "color", value, disabled, "aria-label": `${label} colour`, on: { change: (e) => { setLyricColours({ [key]: e.target.value }, id); repaint(); } } }), h("span", {}, label))))));
+}
+
+function downloadCaptions(b, format) {
+  const text = captionSubtitles(itemsOf(b), { language: modeOf(b), format });
+  const url = URL.createObjectURL(new Blob([text], { type: format === "vtt" ? "text/vtt;charset=utf-8" : "application/x-subrip;charset=utf-8" }));
+  const link = h("a", { href: url, download: `${(jam.jam?.name ?? "captions").replace(/[^\p{L}\p{N} _-]/gu, "").slice(0, 70) || "captions"}.${format}` });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function inspector(ctx) {
+  const { b } = ctx;
+  return card({ id: "styles", title: "Caption design", cls: "is-label.jw-inspector", win: null },
+    h("div.jt-segs.jw-scope", { role: "group", "aria-label": "Style applies to" }, ...[["all", "All captions"], ["selected", "Selected line"]].map(([value, label]) => h("button.jt-seg", { type: "button", "aria-pressed": String(scope === value), on: { click: () => { scope = value; changed("jam"); } } }, label))),
+    h("div.jw-inspector-scroll", { dataset: { scrollKey: "jw-inspector" } }, stylesControl(b), controls(b),
+      h("section.jw-export", {}, h("span.label", {}, "Caption files"), h("p.jw-note", {}, "Save the selected language and edited timing for another video editor."),
+        h("div.jw-export-keys", {}, ...["srt", "vtt"].map((format) => h("button.key", { type: "button", disabled: !itemsOf(b).length, on: { click: () => downloadCaptions(b, format) } }, jicon("download"), format.toUpperCase()))))),
+    h("button.jt-primary.jw-ready", { type: "button", disabled: !b?.track, on: { click: () => { if (jam.jam) { jam.jam.body.captionsSet = true; save(); } setWorkspace("edit"); } } }, jicon("scissors"), "Open the edit"));
+}
 
 export function wordsWorkspace(ctx) {
-  if (ctx.b?.part && syncedLinesForCut(ctx.b.track, ctx.b.span) !== null) applySyncedCaptions(jam.jam).catch((e) => toast(e.message, { tone: "crit" }));
-  return [h("div.jw", {}, lyricsCard(ctx), previewCard(ctx), h("div.jw-right", {}, stylesCard(ctx), controlsCard(ctx)), foot(ctx))];
+  if (selectedProject !== ctx.b?.cut) { selectedProject = ctx.b?.cut; selectedLine = null; romanError = ""; }
+  if (ctx.b?.part && synced(ctx.b)) applySyncedCaptions(jam.jam).catch((e) => toast(e.message, { tone: "crit" }));
+  const first = itemsOf(ctx.b)[0];
+  if (first && shownProject !== ctx.b?.cut && !editor.playing) {
+    shownProject = ctx.b.cut;
+    if (cut.playhead < .05) requestAnimationFrame(() => { editor.seek((Number(first.start) || 0) + Math.min(.2, (Number(first.length) || 1) / 2)); updateWordsPlayback(); });
+  }
+  const currentItems = itemsOf(ctx.b);
+  const missingReadings = [...new Set(currentItems.filter((item) => needsRomanization(item.text) && !item.romanization?.trim()).map((item) => item.text))];
+  const readingKey = JSON.stringify([cut.project?.id, missingReadings]);
+  if (!romanBusy && modeOf(ctx.b) !== "original" && missingReadings.length && romanAttemptedKey !== readingKey) requestAnimationFrame(() => chooseLanguage(modeOf(ctx.b), { history: false }));
+  requestAnimationFrame(updateWordsPlayback);
+  return [h("div.jw", {}, toolbar(ctx), lyricsCard(ctx), previewCard(ctx), inspector(ctx))];
 }
 
-// ---------------------------------------------------------------- windows
-
 registerWindow("lyrics", {
-  title: "LYRICS",
-  wide: true,
+  title: "SOURCE LYRICS", wide: true,
   build() {
     const b = jam.jam?.body;
-    if (!b?.track) return h("p.jm-hint", {}, "Add a song first.");
-    const lines = linesOf(b);
-    const edited = { text: b.track.lyrics ?? lines.map((l) => l.text).join("\n") };
-    const items = itemsOf(b);
-    return [
-      h("p.jm-note", {}, "A line each. They go on the singing heard, or are spread over the part when none was heard; every word is then timed again, and can be moved in the lyrics."),
-      h("textarea.field.jm-lyrics-edit", { rows: 10, value: edited.text, placeholder: "[verse]\nThe words, a line each\n[chorus]\n…", dataset: { focus: "lyrics-text" }, on: { input: (e) => (edited.text = e.target.value), keydown: (e) => e.stopPropagation() } }),
-      h("div.jm-row", {},
-        h("button.key.is-primary", { type: "button", disabled: !b.part, on: { click: () => (useLyrics(edited.text), openWindow(null)) } }, jicon("check"), "Put them on the singing"),
-        items[0] ? h("div.jm-row", {}, ...[["syllables", "Time the words by syllables"], ["even", "Time them evenly"]].map(([how, label]) => h("button.key", { type: "button", on: { click: () => items.forEach((it) => splitLine(it.id, how)) } }, label))) : null),
-    ];
+    if (!b?.track) return h("p.jm-hint", {}, "Add a song or podcast first.");
+    const draft = { text: b.track.lyrics ?? linesOf(b).map((line) => line.text).join("\n") };
+    return [h("p.jm-note", {}, "One sung or spoken line per row. Keep section markers such as [Verse] and [Chorus]. Changing the source requires syncing it again; caption-only corrections can be made in the selected line editor."),
+      h("textarea.field.jm-lyrics-edit", { rows: 16, value: draft.text, "aria-label": "Source lyrics", dataset: { focus: "source-lyrics" }, on: { input: (e) => draft.text = e.target.value, keydown: stopKeys } }),
+      h("div.jm-row", {}, h("button.key.is-primary", { type: "button", disabled: !b.part, on: { click: () => { if (draft.text !== b.track.lyrics) useLyrics(draft.text); openWindow(null); } } }, "Save source lyrics"))];
   },
 });
-
-registerWindow("styles", {
-  title: "CAPTION STYLES",
-  wide: true,
-  build() {
-    const b = jam.jam?.body;
-    return [styleTiles(b, { big: true }), plainChips(b), controlsCard({ b }).querySelector(".jw-ctl")];
-  },
-});
-
+registerWindow("styles", { title: "CAPTION DESIGN", wide: true, build: () => inspector({ b: jam.jam?.body }) });
 registerWindow("preview", {
-  title: "PREVIEW",
+  title: "PREVIEW", wide: true,
   build() {
-    const ctx = { editing: !!jam.jam?.body.part && cut.project?.id === jam.jam.body.cut, parts: editorParts(), b: jam.jam?.body };
-    return ctx.editing && ctx.parts ? phone(ctx) : h("p.jm-hint", {}, "The preview is there once the part is cut.");
+    const b = jam.jam?.body;
+    return h("div.jw-preview-window", {}, phone({ editing: !!b?.part && cut.project?.id === b.cut, parts: editorParts(), b }));
   },
 });

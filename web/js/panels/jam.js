@@ -1,12 +1,10 @@
-// Jam's screen: Pickle's panel on the left (the jam, the five workspaces, the video's pipeline and what it has cost), the open
-// workspace beside it with its big title (the song page's two columns, or the others' bento grids, every bento opening in a
-// window for its details), his chat bar at the foot. The song, the track, the words, the band, the edit: a music video is made
-// in that order, each its own screen. Nothing that costs credits starts by itself: each such step is a key with its estimate on
-// it, and nothing here blocks switching jams or workspaces.
+// Jam's screen: project and workspaces on the left, the active studio beside them,
+// and Pickle's chat bar at the foot. Backstage prepares visuals; Words styles synced
+// captions; Edit assembles both over the song. Paid generation requires confirmation.
 import { h, ago } from "../dom.js";
 import { state, changed, toast, onChange } from "../store.js";
 import { currentPage } from "../router.js";
-import { jam, loadJams, openJam, newJam, removeJam, rename, setWorkspace, statusOf, lampsOf, pipeline, spentOf, useTrack, setArtist, setDance, edit } from "../jam.js";
+import { jam, loadJams, openJam, newJam, removeJam, rename, setWorkspace, statusOf, lampsOf, pipeline, useTrack, setArtist, setDance, edit } from "../jam.js";
 import { cut, filmLength } from "../cut.js";
 import { lyricItems } from "../edit.js";
 import { setRoom } from "../harnesses.js";
@@ -14,13 +12,14 @@ import { editorParts, drawEditor, editor } from "./editor.js";
 import { PICKLE, WORKSPACES } from "../jam-harness.js";
 import { jicon, drawWindow } from "./jam-ui.js";
 import { trackWorkspace, stopRecord } from "./jam-track.js";
-import { wordsWorkspace } from "./jam-words.js";
+import { wordsWorkspace, updateWordsPlayback } from "./jam-words.js";
+import { backstageWorkspace } from "./jam-backstage.js";
 import { bandWorkspace } from "./jam-band.js";
 import { editWorkspace } from "./jam-edit.js";
 import { songWorkspace, pauseSong, bringSong } from "./jam-song.js";
 
-const VIEWS = { track: trackWorkspace, words: wordsWorkspace, band: bandWorkspace, edit: editWorkspace };
-const TILE_ICON = { song: "note", track: "disc", words: "notepad", band: "band", edit: "scissors" };
+const VIEWS = { track: trackWorkspace, backstage: backstageWorkspace, words: wordsWorkspace, band: bandWorkspace, edit: editWorkspace };
+const TILE_ICON = { song: "note", track: "disc", backstage: "image", words: "notepad", band: "band", edit: "scissors" };
 
 let menu = false; // the jam chip's menu, open or not
 let armed = null; // a jam asked to be deleted: the second press does it
@@ -70,7 +69,6 @@ function side(j) {
   const status = statusOf(j);
   const lamps = lampsOf(j);
   const steps = pipeline(j);
-  const spent = spentOf(j);
   return h("aside.jm-side", { "aria-label": "Pickle's panel" },
     h("div.jm-pet", {},
       h("img.jm-pet-face", { src: PICKLE.face, alt: PICKLE.name, draggable: false }),
@@ -88,9 +86,9 @@ function side(j) {
         h("li", { dataset: { state: st.state } },
           h("button.jm-step", { type: "button", title: st.state === "done" ? `${st.label}: open it` : st.state === "next" ? `Next: ${st.label}` : st.label, on: { click: () => setWorkspace(st.open) } },
             lamp(st.state), h("span", {}, st.label), st.state === "next" ? h("em", {}, "Next") : null))))),
-    h("div.jm-credits", { title: spent === null ? "Nothing here is billed: the work runs on your own GPU" : "Roughly: the song made here, the words heard, the looks and shots rolled. Nothing records what is spent as it goes." },
-      h("span", {}, "Credits spent"),
-      h("b", {}, spent === null ? "0 cr" : `≈ ${spent} cr`)));
+    h("div.jm-credits", { title: "Review estimates before generation. Backstage saves each asset’s model, settings and elapsed time; unavailable actual billing is labelled explicitly." },
+      h("span", {}, "Generation costs"),
+      h("b", {}, "Per asset")));
 }
 
 // ---------------------------------------------------------------- the page: built once, redrawn in parts
@@ -172,6 +170,7 @@ onChange((scopes) => {
 editor.onTime = (t) => {
   const root = page?.root;
   if (!root || !jam.jam) return;
+  if (jam.workspace === "words") updateWordsPlayback();
   const items = cut.project?.id === jam.jam.body.cut ? lyricItems(cut.project.body) : [];
   const line = items.findIndex((it) => t >= (Number(it.start) || 0) && t < (Number(it.start) || 0) + (Number(it.length) || 3));
   root.querySelectorAll(".jm-line").forEach((x, i) => x.classList.toggle("is-now", i === line));

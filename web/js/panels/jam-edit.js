@@ -6,13 +6,14 @@ import { h, icon } from "../dom.js";
 import { changed } from "../store.js";
 import { api } from "../api.js";
 import { jam, making, makeVideo, exportVideo, costOfVideo, setWorkspace, openWindow, setKind, take, rerollShot, KINDS } from "../jam.js";
-import { cut, addFx, addSticker, addPictureSticker, setItem, removeItem, select, track, findItem, commit, setJoin, snapToBeats, mainTrack, filmLength, MOTIONS, STICKERS, loadStickers, flushCuts } from "../cut.js";
+import { cut, addFx, addSticker, addPictureSticker, setItem, removeItem, select, track, findItem, commit, setJoin, snapToBeats, mainTrack, filmLength, lengthOf, MOTIONS, STICKERS, loadStickers, flushCuts } from "../cut.js";
 import { EVERY, FX_DEFAULTS } from "../fx.js";
 import { editorParts, drawEditor } from "./editor.js";
 import { bento, jicon, cr, lamp, dial, pickFile, mins, registerWindow } from "./jam-ui.js";
 import { pay, isArmed } from "./jam-band-pay.js";
 import { smartKey } from "./jam-edit-smart.js";
 import { creditsFor } from "../jam-band-model.js";
+import { openBackstageScene } from "./jam-backstage.js";
 
 const FX_ICON = { shake: "shake", zoom: "pulse", flash: "flash", hue: "colour" };
 const FX_NAME = { zoom: "Zoom", shake: "Shake", flash: "Flash", hue: "Colour" };
@@ -29,14 +30,18 @@ function pickedFx() {
 // ---------------------------------------------------------------- the monitor
 
 const FORMATS = [["9:16", "Vertical"], ["16:9", "Horizontal"], ["1:1", "Square"]];
+const backstageItems = (b) => b?.cut === cut.project?.id ? (cut.project.body.tracks ?? []).flatMap((t) => t.items ?? []).filter((it) => it.backstage) : [];
+const usesBackstage = (b) => !!b?.backstage?.scenes?.length || backstageItems(b).length > 0;
 /** What there is to say of the film at a glance: its length, its shots, its tempo. */
 function facts(b) {
   const made = b?.shots?.filter((s) => s.clip || take(s)?.status === "done").length ?? 0;
   const total = b?.shots?.length ?? 0;
+  const backstage = usesBackstage(b);
+  const visuals = backstageItems(b);
   const bpm = cut.project?.body.beats?.bpm ?? b?.bpm;
   return h("div.jm-ed-facts", {},
     h("div.jm-fact", {}, h("span.label", {}, "Length"), h("b", {}, mins(filmLength()))),
-    h("div.jm-fact", {}, h("span.label", {}, "Shots"), h("b", {}, `${made}/${total}`), h("em", {}, "made")),
+    h("div.jm-fact", {}, h("span.label", {}, backstage ? "Scenes" : "Shots"), h("b", {}, backstage ? String(visuals.length) : `${made}/${total}`), h("em", {}, backstage ? "in edit" : "made")),
     h("div.jm-fact", {}, h("span.label", {}, "Tempo"), h("b", {}, bpm ? `${Math.round(bpm)}` : "–"), h("em", {}, "bpm")));
 }
 
@@ -50,13 +55,13 @@ function monitorBento(ctx) {
       h("span.jm-frame-tag", {}, h("b", {}, aspect), FORMATS.find(([a]) => a === aspect)?.[1].toUpperCase() ?? ""),
       h("div.jm-ed-transport", {}, parts.transport),
       facts(b)));
-  return bento({ id: "monitor", title: "PREVIEW", win: "editor" }, body);
+  return bento({ id: "monitor", title: "PREVIEW", win: "editor", tools: usesBackstage(b) ? [h("button.jm-chipkey", { type: "button", title: "Open the visual storyboard", on: { click: () => setWorkspace("backstage") } }, jicon("image"), "Backstage")] : [] }, body);
 }
 
 function emptyBento(b) {
   return bento({ id: "empty", title: "THE EDIT", win: null },
-    h("div.jm-empty", {}, h("p", {}, !b?.track ? "Add a song first: the edit is cut on its beat." : "The edit is being made…"),
-      !b?.track ? h("button.key", { type: "button", on: { click: () => setWorkspace("track") } }, jicon("disc"), "Go to the track") : null));
+    h("div.jm-empty", {}, h("p", {}, !b?.track ? "Choose a song first, then prepare its video." : !b?.part ? "Choose the song range in The Track to open your edit." : "Opening your saved edit…"),
+      !b?.part ? h("button.key", { type: "button", on: { click: () => setWorkspace(b?.track ? "track" : "song") } }, jicon(b?.track ? "disc" : "note"), b?.track ? "Go to the track" : "Choose a song") : null));
 }
 
 // a double click on an item of the timeline opens what is picked, in a window
@@ -78,7 +83,7 @@ function timelineBento(ctx) {
       smartKey(),
       key(jicon("pulse"), "Beat effects: shake, zoom, flash, colour", () => openWindow("effects")),
       key(jicon("star"), "Stickers on the frame", () => openWindow("stickers")),
-    ] }, h("div.jm-ed-timeline", {}, parts.timeline));
+    ] }, h(`div.jm-ed-timeline${backstageItems(ctx.b).length ? ".has-backstage" : ""}`, {}, parts.timeline));
 }
 
 // ---------------------------------------------------------------- the shot that is picked
@@ -132,11 +137,22 @@ function fxPanel(f) {
   ];
 }
 
-function quietPanel() {
+function quietPanel(b) {
   return [
-    h("div.jm-pick-empty", {}, jicon("scissors"), h("b", {}, "Pick a shot on the timeline"), h("p", {}, "Its source, its move and its length show here. Pick a title, a line, a sticker or an effect to change that instead.")),
+    h("div.jm-pick-empty", {}, jicon("scissors"), h("b", {}, usesBackstage(b) ? "Pick a scene on the timeline" : "Pick a shot on the timeline"), h("p", {}, "Trim or reposition the visual, adjust a caption, or add a title and effect.")),
+    usesBackstage(b) ? h("p.jm-note", {}, backstageItems(b).length ? "Your Backstage visuals sit above the base track. The song and captions stay on their own lanes." : "Your storyboard is ready in Backstage. Add its generated images or clips to this edit when you are happy with them.") : null,
+    usesBackstage(b) ? h("button.key", { type: "button", on: { click: () => setWorkspace("backstage") } }, jicon("image"), "Open Backstage") : null,
     h("div.jm-row", {}, h("button.key", { type: "button", title: "The beats: find them, move them, cut on them", on: { click: () => (select(null), (cut.beat = null), openWindow("editor")) } }, jicon("wave"), "Beat tools")),
   ];
+}
+
+function backstageOrigin(f, b) {
+  const scene = b?.backstage?.scenes?.find((s) => s.id === f.item.backstage);
+  const start = (Number(b?.span?.from) || 0) + (Number(f.item.start) || 0);
+  return h("div.jm-scene-origin", {},
+    h("div", {}, h("span.label", {}, "Backstage"), h("b", {}, scene?.title || f.item.src?.name || "Scene visual"),
+      h("span", {}, `Song ${mins(start)}–${mins(start + lengthOf(f.item))} · ${f.item.src?.kind === "photo" ? "Still image" : "Video"}`)),
+    scene ? h("button.key.is-sm", { type: "button", on: { click: () => openBackstageScene(scene.id) } }, jicon("pencil"), "Scene direction") : null);
 }
 
 function selectedBento(ctx) {
@@ -146,13 +162,16 @@ function selectedBento(ctx) {
   const i = shotOf(f, b);
   let body;
   let title = "SELECTED SHOT";
-  if (f && i >= 0) body = shotPanel(f, b, i);
+  if (f?.item.backstage) {
+    title = "SELECTED SCENE";
+    body = [backstageOrigin(f, b), jam.win === "editor" ? h("p.jm-note", {}, "Its timeline controls are in the window.") : parts.inspector];
+  } else if (f && i >= 0) body = shotPanel(f, b, i);
   else if (f?.track.kind === "fx") ((title = "SELECTED EFFECT"), (body = fxPanel(f)));
   else if (f) {
     // a title, a line of lyrics, a sticker, a sound: the editor's own inspector knows how to change it (it is in the window while that is open)
     title = "SELECTED";
     body = jam.win === "editor" ? [h("p.jm-note", {}, "Its details are in the window.")] : [parts.inspector];
-  } else body = quietPanel();
+  } else body = quietPanel(b);
   return bento({ id: "selected", title, win: "editor" }, h("div.jm-selected", {}, ...body));
 }
 
@@ -173,14 +192,14 @@ function footBento(ctx) {
   const name = (jam.jam?.name ?? "jam").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "jam";
   const armed = isArmed("make");
   // Make rolls what is not made yet and costs, so it is the key while there is something to roll; with everything made, the free export is
-  const make = m.todo > 0 ? h(`button.jm-primary${armed ? ".is-armed" : ""}`, { type: "button", disabled: m.busy || !m.ready, title: !b?.part ? "Add a track first" : !m.ready ? "Pick the artist first" : `Every shot not made yet is rolled with LTX-2.5 (it costs credits, so it asks twice), then the video is cut`, dataset: { go: "make" }, on: { click: () => pay("make", m.cost, makeVideo) } },
+  const make = !m.backstage && m.todo > 0 ? h(`button.jm-primary${armed ? ".is-armed" : ""}`, { type: "button", disabled: m.busy || !m.ready, title: !b?.part ? "Add a track first" : !m.ready ? "Pick the artist first" : `Every shot not made yet is rolled with LTX-2.5 (it costs credits, so it asks twice), then the video is cut`, dataset: { go: "make" }, on: { click: () => pay("make", m.cost, makeVideo) } },
     jicon(armed ? "sparkle" : "film"), h("b", {}, making() ? "Making…" : armed ? "Press again to make" : "Make the video"), m.cost ? h("em", {}, cr(m.cost)) : null) : null;
   const exp = h(`button.${make ? "jm-exportkey" : "jm-primary"}`, { type: "button", disabled: !b?.part || m.busy, title: "Render the edit as it is now: the picture, the beat effects, stickers and words, the sound (free)", dataset: { go: "export" }, on: { click: () => exportVideo() } },
     jicon("upload"), h("b", {}, jam.busy.has("render") ? "Exporting…" : "Export the video"));
   return bento({ id: "foot", title: "EXPORT", win: "make", cls: "is-foot" },
     h("div.jm-foot", {}, frameChips(), h("span.spacer"),
       b?.film ? h("a.jm-iconkey", { href: b.film.url, download: `${name}.mp4`, title: "Download the video", "aria-label": "Download the video" }, jicon("download")) : null,
-      h("button.jm-iconkey", { type: "button", title: b?.film ? "The finished video, and what making it costs" : "What making the video costs, in a window", "aria-label": "The video in a window", on: { click: () => openWindow("make") } }, jicon("expand")),
+      h("button.jm-iconkey", { type: "button", title: m.backstage ? "Review and export this edit" : b?.film ? "The finished video, and what making it costs" : "What making the video costs, in a window", "aria-label": "The video in a window", on: { click: () => openWindow("make") } }, jicon("expand")),
       make ? exp : null, make ?? exp));
 }
 
@@ -190,7 +209,8 @@ function makeState(b) {
   const busy = making() || jam.busy.has("render");
   const todo = b?.shots?.filter((s) => !s.clip && take(s)?.status !== "done").length ?? 0;
   const clips = !!b?.shots?.length && b.shots.every((s) => s.clip);
-  return { busy, cost: costOfVideo(), todo, clips, ready: !!b?.shots?.length && (!!b.artist || clips) };
+  const backstage = usesBackstage(b);
+  return { busy, cost: backstage ? null : costOfVideo(), todo, clips, backstage, ready: !!b?.shots?.length && (!!b.artist || clips) };
 }
 
 // ---------------------------------------------------------------- the effects
@@ -226,7 +246,7 @@ function makeKeys(b, { done } = {}) {
   const m = makeState(b);
   const name = (jam.jam?.name ?? "jam").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "jam";
   return [
-    h("button.jm-makebig", { type: "button", disabled: m.busy || !m.ready, title: !b?.part ? "Add a track first" : !m.ready ? "Pick the artist first" : "Every shot not made yet is rolled with LTX-2.5 (it costs credits, so it asks twice), then the video is cut with its captions", on: { click: () => pay("make-window", m.cost, () => (makeVideo(), done?.())) } },
+    m.backstage ? h("button.jm-exportkey", { type: "button", on: { click: () => (done?.(), setWorkspace("backstage")) } }, jicon("image"), "Open Backstage") : h("button.jm-makebig", { type: "button", disabled: m.busy || !m.ready, title: !b?.part ? "Add a track first" : !m.ready ? "Pick the artist first" : "Every shot not made yet is rolled with LTX-2.5 (it costs credits, so it asks twice), then the video is cut with its captions", on: { click: () => pay("make-window", m.cost, () => (makeVideo(), done?.())) } },
       jicon("sparkle"), h("b", {}, making() ? "Making…" : isArmed("make-window") ? "Press again to make" : "Make the video"), m.cost ? h("em", {}, cr(m.cost)) : null),
     h("div.jm-row.is-split", {},
       h("button.jm-exportkey", { type: "button", disabled: !b?.part || m.busy, title: "Render the edit as it is now: the picture, the beat effects, stickers and words, the sound (free)", on: { click: () => (exportVideo(), done?.()) } }, jicon("upload"), jam.busy.has("render") ? "Exporting…" : "Export MP4"),
@@ -297,7 +317,7 @@ registerWindow("make", {
     const b = jam.jam?.body;
     const m = makeState(b);
     return [
-      h("p.jm-note", {}, m.cost ? `Rolling the shots not made yet costs about ${m.cost} credits. It only starts when you press the key; shots already made stay.` : m.clips ? "Every shot is already made: the video is only cut and exported." : "Nothing to roll yet: pick the artist, and the shots are planned from the part."),
+      h("p.jm-note", {}, m.backstage ? `Export renders this timeline with its ${backstageItems(b).length} Backstage scene${backstageItems(b).length === 1 ? "" : "s"}, captions and soundtrack. Export uses no generation credits. Generate or replace visuals in Backstage.` : m.cost ? `Rolling the shots not made yet costs about ${m.cost} credits. It only starts when you press the key; shots already made stay.` : m.clips ? "Every shot is already made: the video is only cut and exported." : "Nothing to roll yet: pick the artist, and the shots are planned from the part."),
       ...makeKeys(b, { done: () => openWindow(null) }),
       b?.film ? h("video.jm-film", { src: b.film.url, controls: true, preload: "metadata" }) : null,
     ];

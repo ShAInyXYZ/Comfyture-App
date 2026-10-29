@@ -1132,6 +1132,10 @@ export function syncFromCut(j = jam.jam) {
   const b = j?.body;
   const body = cut.project?.body;
   if (!b?.cut || cut.project?.id !== b.cut || !body) return false;
+  // The open edit still holds the previous audio while a new range is being cut.
+  // A style/reading commit must not copy those old captions into the new range.
+  stampPartSource(b);
+  if (!partMatchesSpan(b)) return false;
   // what was made for the video while it was away is not yet in its edit: the edit does not give back its old shots and lines over it
   if (b.stale) return false;
   let moved = false;

@@ -1,0 +1,389 @@
+{
+  "dgv": 1,
+  "meta": {
+    "title": "Jam — song, scenes, captions and film",
+    "description": "Shared song timestamps guide Backstage scenes and editable multilingual captions; generation reviewed before submission; assets reused on the final edit timeline.",
+    "updated": "2026-10-29",
+    "colorBy": "kind"
+  },
+  "frames": [],
+  "nodes": [
+    {
+      "ports": [
+        {
+          "id": "timing",
+          "protocol": "import",
+          "dir": "out"
+        }
+      ],
+      "tags": [],
+      "id": "song",
+      "kind": "ui",
+      "label": "Song and Track",
+      "path": [
+        "web/js/panels/jam-song.js",
+        "web/js/panels/jam-track.js"
+      ],
+      "position": {
+        "x": 324,
+        "y": 484
+      }
+    },
+    {
+      "ports": [
+        {
+          "id": "module",
+          "protocol": "import",
+          "dir": "both"
+        }
+      ],
+      "tags": [],
+      "id": "timing",
+      "kind": "module",
+      "label": "Shared lyric and section timing",
+      "path": [
+        "web/js/song-sync.js",
+        "web/js/song-lyrics.js"
+      ],
+      "position": {
+        "x": 648,
+        "y": 358
+      }
+    },
+    {
+      "ports": [
+        {
+          "id": "state",
+          "protocol": "import",
+          "dir": "both"
+        }
+      ],
+      "tags": [],
+      "id": "backstage",
+      "kind": "ui",
+      "label": "Backstage scenes, cast and cover",
+      "status": "todo",
+      "path": "web/js/panels/jam-backstage.js",
+      "position": {
+        "x": 0,
+        "y": 132
+      }
+    },
+    {
+      "ports": [
+        {
+          "id": "module",
+          "protocol": "import",
+          "dir": "both"
+        },
+        {
+          "id": "jobs",
+          "protocol": "http",
+          "dir": "out"
+        }
+      ],
+      "tags": [],
+      "id": "scene",
+      "kind": "module",
+      "label": "Scene generation and timeline insertion",
+      "status": "todo",
+      "path": "web/js/jam-backstage.js",
+      "position": {
+        "x": 324,
+        "y": 137
+      }
+    },
+    {
+      "ports": [
+        {
+          "id": "module",
+          "protocol": "import",
+          "dir": "both"
+        }
+      ],
+      "tags": [],
+      "id": "words",
+      "kind": "ui",
+      "label": "Words lyric editor with romaji",
+      "status": "wip",
+      "path": "web/js/panels/jam-words.js",
+      "position": {
+        "x": 324,
+        "y": 278
+      }
+    },
+    {
+      "ports": [
+        {
+          "id": "module",
+          "protocol": "import",
+          "dir": "both"
+        }
+      ],
+      "tags": [],
+      "id": "render",
+      "kind": "module",
+      "label": "Shared caption layout and export",
+      "path": [
+        "web/js/lyrics.js",
+        "web/js/panels/editor.js"
+      ],
+      "position": {
+        "x": 648,
+        "y": 499
+      }
+    },
+    {
+      "ports": [
+        {
+          "id": "module",
+          "protocol": "import",
+          "dir": "both"
+        }
+      ],
+      "tags": [],
+      "id": "cut",
+      "kind": "module",
+      "label": "Persistent project and edit timeline",
+      "path": [
+        "web/js/jam.js",
+        "web/js/cut.js"
+      ],
+      "position": {
+        "x": 648,
+        "y": 135
+      }
+    },
+    {
+      "ports": [
+        {
+          "id": "jobs",
+          "protocol": "http",
+          "dir": "in"
+        }
+      ],
+      "tags": [],
+      "id": "api",
+      "kind": "api",
+      "label": "Existing template generation APIs",
+      "path": "server/main.ts",
+      "position": {
+        "x": 648,
+        "y": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "kind": "import",
+      "id": "a",
+      "source": "song",
+      "target": "timing",
+      "protocol": "import",
+      "targetPort": "module"
+    },
+    {
+      "kind": "import",
+      "id": "b",
+      "source": "backstage",
+      "target": "scene",
+      "protocol": "import",
+      "targetPort": "module"
+    },
+    {
+      "kind": "import",
+      "id": "c",
+      "source": "scene",
+      "target": "timing",
+      "protocol": "import",
+      "targetPort": "module"
+    },
+    {
+      "kind": "import",
+      "id": "d",
+      "source": "words",
+      "target": "timing",
+      "protocol": "import",
+      "targetPort": "module"
+    },
+    {
+      "kind": "import",
+      "id": "e",
+      "source": "words",
+      "target": "render",
+      "protocol": "import",
+      "targetPort": "module"
+    },
+    {
+      "kind": "import",
+      "id": "f",
+      "source": "scene",
+      "target": "cut",
+      "protocol": "import",
+      "targetPort": "module"
+    },
+    {
+      "kind": "import",
+      "id": "g",
+      "source": "words",
+      "target": "cut",
+      "protocol": "import",
+      "targetPort": "module"
+    },
+    {
+      "kind": "sync",
+      "id": "h",
+      "source": "scene",
+      "target": "api",
+      "protocol": "http",
+      "sourcePort": "jobs",
+      "targetPort": "jobs"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "node",
+      "id": "song",
+      "op": "add",
+      "kind": "ui",
+      "label": "Song and Track"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "node",
+      "id": "timing",
+      "op": "add",
+      "kind": "module",
+      "label": "Shared lyric and section timing"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "node",
+      "id": "backstage",
+      "op": "add",
+      "kind": "ui",
+      "label": "Backstage scenes, cast and cover"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "node",
+      "id": "scene",
+      "op": "add",
+      "kind": "module",
+      "label": "Scene generation and timeline insertion"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "node",
+      "id": "words",
+      "op": "add",
+      "kind": "ui",
+      "label": "Words lyric editor with romaji"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "node",
+      "id": "render",
+      "op": "add",
+      "kind": "module",
+      "label": "Shared caption layout and export"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "node",
+      "id": "cut",
+      "op": "add",
+      "kind": "module",
+      "label": "Persistent project and edit timeline"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "node",
+      "id": "api",
+      "op": "add",
+      "kind": "api",
+      "label": "Existing template generation APIs"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "edge",
+      "id": "a",
+      "op": "add",
+      "kind": "import",
+      "label": "song → timing"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "edge",
+      "id": "b",
+      "op": "add",
+      "kind": "import",
+      "label": "backstage → scene"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "edge",
+      "id": "c",
+      "op": "add",
+      "kind": "import",
+      "label": "scene → timing"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "edge",
+      "id": "d",
+      "op": "add",
+      "kind": "import",
+      "label": "words → timing"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "edge",
+      "id": "e",
+      "op": "add",
+      "kind": "import",
+      "label": "words → render"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "edge",
+      "id": "f",
+      "op": "add",
+      "kind": "import",
+      "label": "scene → cut"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "edge",
+      "id": "g",
+      "op": "add",
+      "kind": "import",
+      "label": "words → cut"
+    },
+    {
+      "at": "2026-10-29T05:38:17.324Z",
+      "by": "agent",
+      "type": "edge",
+      "id": "h",
+      "op": "add",
+      "kind": "sync",
+      "label": "scene → api"
+    }
+  ]
+}

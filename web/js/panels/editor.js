@@ -10,7 +10,7 @@ import {
   STICKERS, loadStickers, addBeatAt, removeBeat, draftEdit, addLyric, addMedia, undo, redo,
 } from "../cut.js";
 import { fxAt, hitsOf, beatTimes, colourMatrix, FX_KINDS, aspectRatio, WHIP, whipBlur } from "../fx.js";
-import { wordsOf, captionLayouts, wordState, ANIMATED, LINE, OUTLINE, faceOf } from "../lyrics.js";
+import { wordsOf, captionLayouts, wordState, usesLyricLayout, LINE, OUTLINE, faceOf } from "../lyrics.js";
 import { nearestBeat } from "../beats.js";
 import { renderInspector } from "./inspector.js";
 import { api } from "../api.js";
@@ -267,7 +267,7 @@ function show(t) {
   const lyricsNow = new Set();
   for (const x of f.titles) {
     const it = x.item;
-    if (ANIMATED.has(it.style)) {
+    if (usesLyricLayout(it)) {
       lyricsNow.add(it.id);
       const box = lyricOf(it, b);
       const rel = t - x.start;
@@ -384,7 +384,7 @@ function boxOf(it, b) {
     return { x: Number(it.x ?? 0.5), y: Number(it.y ?? 0.5), w, h: w * nat * ratio, rot: Number(it.rot) || 0 };
   }
   const box = player.words.get(it.id);
-  if (!box || !ANIMATED.has(it.style)) return null;
+  if (!box || !usesLyricLayout(it)) return null;
   const ratio = aspectRatio(b.aspect);
   const W = ratio >= 1 ? 1280 : Math.round(1280 * ratio);
   const H = ratio >= 1 ? Math.round(1280 / ratio) : 1280;

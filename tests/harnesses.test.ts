@@ -434,10 +434,10 @@ test("the bar's Jam entry is Jam's own: Pickle, his workspaces, their placeholde
   }
 });
 
-test("Jam has five workspaces in the order a video is made, the page and the server agree on them, and Pickle has no canned tools", async () => {
+test("Jam has Backstage between Track and Words, the page and server agree, and Pickle has no canned tools", async () => {
   const jam = await import("../web/js/jam-harness.js");
   const ids = jam.WORKSPACES.map((w: { id: string }) => w.id);
-  assert.deepEqual(ids, ["song", "track", "words", "band", "edit"]);
+  assert.deepEqual(ids, ["song", "track", "backstage", "words", "band", "edit"]);
   assert.deepEqual([...JAM_WORKSPACES], ids, "Pickle's server list is the page's");
   for (const w of jam.WORKSPACES as { title: string; tag: string[] }[]) {
     assert.ok(w.title.length > 0 && Array.isArray(w.tag) && w.tag.length >= 3 && w.tag.length <= 4, `${w.title}: a title and three or four short lines under it`);

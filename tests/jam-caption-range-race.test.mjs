@@ -37,7 +37,7 @@ async function harness({ delayedBeats = false } = {}) {
   };
   const source = (await readFile(new URL('../web/js/jam.js', import.meta.url), 'utf8'))
     .replace(/^import \{([^}]+)\} from "([^"]+)";$/gm, (_, names, path) => `const {${names}} = __modules[${JSON.stringify(path)}];`)
-    .replace(/^export /gm, '') + '\nglobalThis.__jamTest = {jam, applySyncedCaptions, partMatchesSpan, setSpan, setStart, cutPart};';
+    .replace(/^export /gm, '') + '\nglobalThis.__jamTest = {jam, applySyncedCaptions, partMatchesSpan, setSpan, setStart, cutPart, syncFromCut};';
   const context = vm.createContext({
     __modules: modules, structuredClone, localStorage: { getItem: () => null, setItem() {} },
     console: { ...console, warn: (...args) => calls.warnings.push(args.join(' ')) },
@@ -147,4 +147,24 @@ test('a changed source file cannot inherit a slice requested for the previous so
   assert.equal(await h.applySyncedCaptions(h.j), false);
   assert.equal(captions(h)[0].text, 'Existing caption');
   assert.equal(h.calls.commits, 0);
+});
+
+test('a caption commit during a pending range cannot restore old lines into the new range', async () => {
+  const h = await harness();
+  h.setSpan(0, 100);
+  // A caption style/romanization commit can notify Jam while the old editor is
+  // still visible. Those lines belong to the old 30-second audio, not this range.
+  captions(h)[0].romanization = 'an edited reading';
+  assert.equal(h.syncFromCut(h.j), false);
+  assert.deepEqual(plain(h.j.body.lines), []);
+  const pending = h.cutPart(h.j);
+  finishSlice(h.calls.slices[0], 'full-song.mp3');
+  await pending;
+  assert.deepEqual(captions(h).map(item => item.text), ['First', 'Second', 'Third']);
+  assert.deepEqual(captions(h).map(item => item.start), [7, 45, 80]);
+  assert.ok(h.j.body.syncedCaptionKey);
+  // Once the ranges match, ordinary manual caption corrections still flow back.
+  captions(h)[2].text = 'Corrected third';
+  assert.equal(h.syncFromCut(h.j), true);
+  assert.equal(h.j.body.lines[2].text, 'Corrected third');
 });

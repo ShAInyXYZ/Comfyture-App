@@ -66,6 +66,11 @@
 .jm-selected > .cut-inspector { border: 0; background: transparent; padding: 0; }
 .jm-selected .jm-row .key { min-height: 2.5rem; }
 .jm-selected .jm-cost { margin-left: .375rem; opacity: .8; }
+.jm-scene-origin { display: grid; gap: .75rem; padding-bottom: 1rem; border-bottom: 1px solid var(--line); }
+.jm-scene-origin > div { display: grid; gap: .375rem; }
+.jm-scene-origin b { font: 600 1rem/1.35 var(--font-sans); }
+.jm-scene-origin > div > span:last-child { color: var(--dim); font: 500 .75rem/1.4 var(--font-mono); }
+.jm-scene-origin .key { justify-self: start; }
 
 /* ---- the timeline --------------------------------------------------------------------------------- */
 .jm-ed-timeline { height: 100%; }
@@ -87,6 +92,11 @@
 .jam .jm-ed-timeline .cut-lane, .jam .jm-ed-timeline .cut-head { height: 2.375rem; }
 .jam .jm-ed-timeline .cut-lane.is-title, .jam .jm-ed-timeline .cut-head.is-title, .jam .jm-ed-timeline .cut-lane.is-fx, .jam .jm-ed-timeline .cut-head.is-fx { height: 2rem; }
 .jam .jm-ed-timeline .cut-lane.is-main, .jam .jm-ed-timeline .cut-head.is-main { height: 3.5rem; }
+/* Backstage's scene lane is the visual lead; keep its matching header beside it. */
+.jam .jm-ed-timeline.has-backstage .cut-lane.is-video:not(.is-main), .jam .jm-ed-timeline.has-backstage .cut-head.is-video:not(.is-main) { order: 1; min-height: 3.5rem; }
+.jam .jm-ed-timeline.has-backstage .is-main { order: 2; }
+.jam .jm-ed-timeline.has-backstage .cut-lane.is-title, .jam .jm-ed-timeline.has-backstage .cut-head.is-title { order: 3; }
+.jam .jm-ed-timeline.has-backstage .cut-lane.is-fx, .jam .jm-ed-timeline.has-backstage .cut-head.is-fx { order: 4; }
 .jm-smart { position: relative; }
 .jm-smart-menu { position: absolute; z-index: 20; right: 0; top: calc(100% + .5rem); display: grid; gap: .125rem; min-width: 15.5rem; padding: .375rem; border: 1px solid var(--line2); border-radius: 1rem; background: var(--s2); box-shadow: var(--float); }
 .jm-smart-item { display: flex; align-items: center; gap: .75rem; min-height: 2.5rem; padding: 0 .75rem; border: 0; border-radius: .75rem; background: transparent; color: var(--text); font: 500 .9375rem/1 var(--font-sans); text-align: left; cursor: pointer; }
