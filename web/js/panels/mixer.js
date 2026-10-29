@@ -69,6 +69,15 @@ const OUR_KINDS = KINDS.filter(([id]) => id === "all" || OURS.some((t) => t.kind
 function feed() {
   const list = OURS.filter((t) => pick.kind === "all" || t.kind === pick.kind);
   const cards = h("div.mx-cards", { dataset: { scrollKey: "mx-cards" } }, ...list.map(card));
+  cards.addEventListener("wheel", (e) => {
+    if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    const delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? cards.clientWidth : 1);
+    const max = Math.max(0, cards.scrollWidth - cards.clientWidth);
+    const next = Math.max(0, Math.min(max, cards.scrollLeft + delta));
+    if (next === cards.scrollLeft) return;
+    e.preventDefault();
+    cards.scrollLeft = next;
+  }, { passive: false });
   const nudge = (d) => cards.scrollBy({ left: d * cards.clientWidth * 0.8, behavior: "smooth" });
   return h("section.mx-feed", {},
     h("div.mx-feed-head", {},

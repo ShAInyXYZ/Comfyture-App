@@ -32,7 +32,8 @@
 .mx-nudge .key { width: 2.5rem; min-height: 2.5rem; border-radius: 50%; }
 .mx-nudge .key:first-child svg { transform: rotate(90deg); }
 .mx-nudge .key:last-child svg { transform: rotate(-90deg); }
-.mx-cards { display: grid; grid-auto-flow: column; grid-auto-columns: clamp(11rem, 13.5vw, 15rem); gap: .875rem; padding: .25rem .125rem .75rem; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.mx-cards { display: grid; grid-auto-flow: column; grid-auto-columns: clamp(9.5rem, 12vw, 13.25rem); gap: .875rem; padding: .25rem .125rem .75rem; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
+.mx-cards::-webkit-scrollbar { display: none; }
 .mx-card { position: relative; display: block; aspect-ratio: 9 / 16; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: calc(1rem * var(--corner-k, 1)); background: var(--sunk); color: var(--text); text-align: left; cursor: pointer; scroll-snap-align: start; isolation: isolate; transition: border-color var(--t-fast); }
 .mx-card > img { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; transition: transform .5s var(--ease-out); }
 .mx-card::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgba(10, 9, 12, .88), rgba(10, 9, 12, .2) 34%, transparent 55%), linear-gradient(to bottom, rgba(10, 9, 12, .45), transparent 22%); }
