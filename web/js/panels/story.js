@@ -1,4 +1,4 @@
-import { h, icon, sprite } from "../dom.js";
+import { h, icon, sprite, fitTabs } from "../dom.js";
 import { openImage, writer, writers, inProject } from "../store.js";
 import { view } from "../viewer.js";
 import { CAMERA_LABELS } from "../script.js";
@@ -53,8 +53,8 @@ function subbar() {
   const shown = story.tabs.filter((id) => id === p?.id || inProject("story", { id }));
   const others = story.list.filter((s) => !story.tabs.includes(s.id) && inProject("story", s));
   return h("div.subbar", {}, h("div.subbar-in", {},
-    h("nav.tabs", { "aria-label": "Stories" }, h("div.tablist", { role: "tablist", "aria-label": "Stories" }, ...shown.map(tab)),
-      h("button.tab-add", { type: "button", title: "A new story in its own tab", on: { click: () => newStory() } }, icon("plus"), "New story")),
+    fitTabs(h("nav.tabs", { "aria-label": "Stories" }, h("div.tablist", { role: "tablist", "aria-label": "Stories" }, ...shown.map(tab)),
+      h("button.tab-add", { type: "button", title: "A new story in its own tab", on: { click: () => newStory() } }, icon("plus"), "New story"))),
     h("div.subbar-actions", {},
       others.length ? h("select.chip-select.story-open", { "aria-label": "Open a story", on: { change: (e) => e.target.value && openStory(e.target.value) } },
         h("option", { value: "" }, `${others.length} more`), ...others.map((s) => h("option", { value: s.id }, s.name))) : null,

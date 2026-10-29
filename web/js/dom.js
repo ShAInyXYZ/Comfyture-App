@@ -90,3 +90,31 @@ export function ago(iso) {
   if (s < 86400) return `${Math.round(s / 3600)} h ago`;
   return new Date(iso).toISOString().slice(0, 10);
 }
+
+/**
+ * A strip of tabs with more tabs than room: marked "is-overflowing" (its New key then stays at its right edge, app.css) whenever its
+ * size changes, so a strip drawn anew or a window narrowed is measured once it is laid out; the wheel scrolls it, and the open tab
+ * is brought into view as it is drawn. Answers the strip.
+ */
+let tabStrips = null;
+export function fitTabs(el) {
+  tabStrips ??= new ResizeObserver((entries) => {
+    for (const { target } of entries) {
+      if (!target.isConnected) {
+        tabStrips.unobserve(target);
+        continue;
+      }
+      const over = target.scrollWidth > target.clientWidth + 1;
+      const was = target.classList.contains("is-overflowing");
+      target.classList.toggle("is-overflowing", over);
+      if (over && !was) target.querySelector('.tab[aria-selected="true"]')?.scrollIntoView({ inline: "nearest", block: "nearest" });
+    }
+  });
+  tabStrips.observe(el);
+  el.onwheel = (e) => {
+    if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+    el.scrollLeft += e.deltaY;
+    e.preventDefault();
+  };
+  return el;
+}

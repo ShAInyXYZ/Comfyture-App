@@ -1,4 +1,4 @@
-import { h, icon } from "../dom.js";
+import { h, icon, fitTabs } from "../dom.js";
 import { state, switchTab, closeTab, moveTab, newTab, editFromTabs, filmTakes, inProject } from "../store.js";
 
 const STATE_TONE = { queued: "busy", frame: "busy", shot: "busy", review: "warn", done: "ok", failed: "crit" };
@@ -123,12 +123,8 @@ export function renderTabs(el) {
     e.preventDefault();
     moveTab(e.dataTransfer.getData("text/comfyture-tab"), null);
   };
-  // more tabs than room: fade the edge, scroll with the wheel, keep the open tab in view
-  el.onwheel = (e) => {
-    if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
-    el.scrollLeft += e.deltaY;
-    e.preventDefault();
-  };
+  // more tabs than room: fade the edge, scroll with the wheel, keep the open tab in view (and measured again when the window narrows)
+  if (!el.onwheel) fitTabs(el);
   el.classList.toggle("is-overflowing", el.scrollWidth > el.clientWidth + 1);
   if (lastActive !== state.tab) {
     lastActive = state.tab;

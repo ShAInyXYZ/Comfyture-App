@@ -1,4 +1,4 @@
-import { h, icon, sprite } from "../dom.js";
+import { h, icon, sprite, fitTabs } from "../dom.js";
 import { state, loadPhotos, inProject, changed } from "../store.js";
 import {
   cut, loadCuts, openCut, newCut, duplicateCut, closeCut, deleteCut, undo, redo, filmLength, addMedia, renderFilm, makeAudio, makeVoice,
@@ -111,7 +111,7 @@ function subbar() {
       cut.tabs.length > 1 ? h("span.tab-close", { role: "button", "aria-label": `Close ${c.name}`, title: "Close the tab — the edit is kept", on: { click: (e) => (e.stopPropagation(), closeCut(id)) } }, icon("close")) : null);
   };
   return h("div.subbar", {}, h("div.subbar-in", {},
-    h("nav.tabs", { "aria-label": "Edits" }, h("div.tablist", { role: "tablist", "aria-label": "Edits" }, ...cut.tabs.filter((id) => id === p?.id || inProject("cut", cut.list.find((c) => c.id === id) ?? { id })).map(tab)), h("button.tab-add", { type: "button", title: "A new, empty edit", on: { click: () => (stop(), newCut()) } }, icon("plus"), "New edit")),
+    fitTabs(h("nav.tabs", { "aria-label": "Edits" }, h("div.tablist", { role: "tablist", "aria-label": "Edits" }, ...cut.tabs.filter((id) => id === p?.id || inProject("cut", cut.list.find((c) => c.id === id) ?? { id })).map(tab)), h("button.tab-add", { type: "button", title: "A new, empty edit", on: { click: () => (stop(), newCut()) } }, icon("plus"), "New edit"))),
     h("div.subbar-actions", {},
       key(sprite("edit-undo"), "Undo — Ctrl Z", undo, { disabled: !cut.history.length }),
       key(sprite("edit-redo"), "Redo — Ctrl Shift Z", redo, { disabled: !cut.future.length }),

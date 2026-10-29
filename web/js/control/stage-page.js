@@ -5,7 +5,7 @@
 // Everything the panels show comes from the stage; everything they change goes
 // through it, so undo covers all.
 
-import { h, icon, sprite } from "../dom.js";
+import { h, icon, sprite, fitTabs } from "../dom.js";
 import { state as app, inProject, projectNow } from "../store.js";
 import { view as viewImage } from "../viewer.js";
 import { peek as peekCard, unpeek } from "../peek.js";
@@ -1306,11 +1306,8 @@ function projectsOf(stage, { el, toast, tabsEl, actionsEl }) {
   }
   // another film opened (or left): the bar shows its stages
   window.addEventListener("comfyture:project", () => render());
-  tabsEl.onwheel = (e) => {
-    if (tabsEl.scrollWidth <= tabsEl.clientWidth || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
-    tabsEl.scrollLeft += e.deltaY;
-    e.preventDefault();
-  };
+  // (measured again whenever the window changes its width, not only when the tabs are drawn; the wheel scrolls it)
+  fitTabs(tabsEl);
 
   /** A stage gets a tab of its own, next to the one open. */
   function addTab(id) {
