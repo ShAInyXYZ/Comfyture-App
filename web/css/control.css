@@ -349,9 +349,29 @@ body[data-page="stage"] { padding-bottom: 0; overflow: hidden; }
 
 /* smaller desks: tighter columns, icon-only channels */
 @media (max-width: 1400px) {
-  .ctl-desk { grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr) minmax(17rem, 20rem); }
+  /* the side columns narrow with the window (they kept their widest and left the viewport 352 px at 1024 wide) */
+  .ctl-desk { grid-template-columns: clamp(15.5rem, 22vw, 19rem) minmax(0, 1fr) clamp(15rem, 23.5vw, 20rem); }
   .ctl-channel span { display: none; }
   .ctl-channel { min-width: 2.25rem; }
+}
+/* a narrow bar (the middle column under ~600 px, a window 900 to 1100 px wide): the words, the models and Send on the first line, the
+   maps and the keys on a line of their own under them (beside the words, the keys ran under the model pickers) */
+.ctl-chat { container: stage-bar / inline-size; }
+@container stage-bar (max-width: 37.5rem) {
+  .ctl-chat .chat-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0 .625rem; }
+  .ctl-chat .chat-bar::after { content: ""; order: 3; flex-basis: 100%; height: 0; }
+  .ctl-chat .bar-main, .ctl-chat .bar-actions { display: contents; }
+  .ctl-chat .pet-id { display: none; }
+  .ctl-chat .pet-face { order: 0; }
+  .ctl-chat .chat-input { order: 1; flex: 1 1 0; min-width: 4rem; }
+  .ctl-chat .composer-model, .ctl-chat .send { order: 2; }
+  .ctl-chat .composer-model .sel-trigger { max-width: 7.5rem; }
+  .ctl-chat .file-tray { order: 4; margin-top: .375rem; }
+  .ctl-chat .bar-row { order: 5; flex: 1 1 auto; margin-top: .375rem; }
+}
+/* a narrow viewport: the renders' key goes over the tools, which it sat on */
+@container (max-width: 34rem) {
+  .ctl-runs { bottom: 5rem; max-width: calc(100% - 2rem); }
 }
 
 /* phones: the viewport on top, the panels under it */
