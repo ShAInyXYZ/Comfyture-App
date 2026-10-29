@@ -94,7 +94,8 @@ try {
   const js = (fn, arg) => page.evaluate(fn, arg);
 
   // ---- every product's page: its pet in the bar
-  await page.goto(`${base}/#/shot`, { waitUntil: "networkidle" });
+  // (not "networkidle": the live events' shared worker keeps a request open, so the network is never idle; visit() waits for the bar)
+  await page.goto(`${base}/#/shot`, { waitUntil: "load" });
   const PAGES = [["shot", "kitchen", "shot"], ["stage", "kitchen", "stage"], ["story", "kitchen", "story"], ["cut", "kitchen", "cut"], ["jam", "jam"], ["macaron", "macaron"], ["spice", "spice"], ["toaster", "toaster"], ["mixer", "mixer"], ["utensils", "utensils"]];
   for (const [p, product, room] of PAGES) {
     await visit(p);
@@ -124,8 +125,10 @@ try {
     ok(info.chips.includes("Show me around") === tour, `${p}: ${h.name} offers the tour where there is one`, String(tour));
     ok(info.picker, `${p}: the model picker is still there`);
     ok(info.clip === (p === "shot" || p === "stage" || p === "toaster"), `${p}: the attach key is only where the bar takes files (Toaster: a photo for Crumpet)`);
-    // every bar is the card: the words on top, at least two lines, the keys on a row under them (Stage adds its maps)
-    ok(info.bar >= 100 && (p === "stage" || info.bar <= 124), `${p}: ${h.name}'s bar is the card, high enough`, `${Math.round(info.bar)}px`);
+    // every bar is the card: the words on top, at least two lines, the keys on a row under them (Stage adds its maps); the Cut's is
+    // one line, a row of its own under the timeline with its quick actions beside it, so it covers no track (956ce45)
+    if (p === "cut") ok(info.bar >= 56 && info.bar < 100, `${p}: ${h.name}'s bar is one line under the timeline`, `${Math.round(info.bar)}px`);
+    else ok(info.bar >= 100 && (p === "stage" || info.bar <= 124), `${p}: ${h.name}'s bar is the card, high enough`, `${Math.round(info.bar)}px`);
     ok(Math.abs(info.chatH - info.composer) <= 1, `${p}: the page keeps room for the bar as tall as it is`, `--chat-h ${info.chatH}px, bar and chips ${Math.round(info.composer)}px`);
     if (out) await page.screenshot({ path: join(out, `${p}.png`) });
   }
