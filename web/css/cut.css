@@ -259,6 +259,21 @@ body[data-page="cut"] { padding-bottom: 0; overflow: hidden; }
   .cut-bin { gap: .375rem; padding: .5rem .625rem; }
   .cut-bin .cut-panel-head { min-height: 1.25rem; }
 }
+/* a laptop's window (760 px tall and under): the bin's own rows took all its height and left the clips none (5 px at 1366 × 650).
+   The search and the three makers share a line, the makers by their marks, and the bin's name is left to screen readers unless
+   something is being made, so the clips keep a row */
+@media (max-height: 760px) and (min-width: 901px) {
+  #page-cut .cut-bin { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto auto minmax(0, 1fr) auto; }
+  #page-cut .cut-bin > * { grid-column: 1 / -1; }
+  #page-cut .cut-bin > .cut-panel-head:not(:has(.cut-busy)) { position: absolute; width: 1px; height: 1px; min-height: 0; overflow: hidden; clip-path: inset(50%); }
+  #page-cut .cut-bin > .cut-panel-head:not(:has(.cut-busy)) + .cut-bin-tabs { margin-top: -.375rem; }
+  #page-cut .cut-bin > .cut-bin-tabs { grid-row: 2; }
+  #page-cut .cut-bin > .cut-search { grid-column: 1; grid-row: 3; }
+  #page-cut .cut-bin > .cut-ai-keys { grid-column: 2; grid-row: 3; grid-template-columns: repeat(3, 2.25rem); gap: .25rem; }
+  #page-cut .cut-bin > .cut-ai-keys .key { min-height: 2.25rem; padding: 0; gap: 0; font-size: 0; }
+  #page-cut .cut-bin > .cut-media-grid { grid-row: 4; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: .375rem; }
+  #page-cut .cut-bin > .cut-ai-form { grid-row: 5; }
+}
 .composer.is-cut .composer-model { display: flex; }
 .composer.is-cut .render-key, .composer.is-cut .stage-only, .composer.is-cut .clip-key { display: none; }
 
