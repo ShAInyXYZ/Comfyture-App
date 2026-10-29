@@ -11,7 +11,7 @@ import { h } from "../dom.js";
 import { state, toast, waitFor, writer, artistFor, onChange } from "../store.js";
 import { api } from "../api.js";
 import { dropdown } from "../controls.js";
-import { LANGUAGES, SIGNATURES, DEFAULT_SONG, MAX_SECONDS, STYLE_LORAS, PITCHES, MODES, KEYS, noteOf, modeOf, STYLE_WORDS, QUALITY, lengthLabel, SECTIONS, STRUCTURES, skeleton, costOfSong } from "../song.js";
+import { LANGUAGES, SIGNATURES, DEFAULT_SONG, MAX_SECONDS, STYLE_LORAS, PITCHES, MODES, KEYS, noteOf, modeOf, QUALITY, lengthLabel, STRUCTURES, skeleton, costOfSong } from "../song.js";
 import { jicon, pickFile, cr, clock, mins } from "./jam-ui.js";
 import { createDeck } from "./jam-deck.js";
 import { jam, useSong, songHook, setWorkspace, save } from "../jam.js";
@@ -23,7 +23,7 @@ import { COVER_SECONDS, COVER_VIDEO_PROMPT, bestPart, coverPrompt, costOfCover, 
 
 const STORE = "comfyture.jam.song.3";
 const MINE = ["idea", "structure", "tags", "lyrics", "seconds", "language", "key", "bpm", "signature", "name", "passes", "temperature", "adherence", "thinking", "lora"];
-const song = { idea: "", tags: "", lyrics: "", name: "", ...DEFAULT_SONG, writing: false, making: false, made: [], shown: null, loaded: false, more: false, adv: false };
+const song = { idea: "", tags: "", lyrics: "", name: "", ...DEFAULT_SONG, writing: false, making: false, made: [], shown: null, loaded: false, adv: false };
 try {
   Object.assign(song, JSON.parse(localStorage.getItem(STORE) ?? "{}"));
 } catch {}
@@ -38,9 +38,6 @@ const keepDraft = () => {
 const MIN_SECONDS = 20;
 const MIN_BPM = 40;
 const MAX_BPM = 220;
-/** The words each row of the sound shows (one line of the column); the rest are one press away under More (a word picked stays on the row). */
-const QUICK = { Genre: ["pop", "indie pop", "lo-fi hip hop", "rock"], Mood: ["dreamy", "chill", "playful", "energetic"] };
-
 let page = null; // the elements kept between draws: the fields, the record, the song that plays
 let deck = null;
 let seen = null; // the video the stage was last set for
@@ -334,30 +331,6 @@ function range({ min, max, step, value, label, format, set, ends }) {
   return h("div.sg-slider", {}, input, out, ends ? h("div.sg-ends", {}, h("span", {}, ends[0]), h("span", {}, ends[1])) : null);
 }
 
-const tagList = () => song.tags.split(",").map((t) => t.trim()).filter(Boolean);
-const hasWord = (w) => tagList().some((t) => t.toLowerCase() === w.toLowerCase());
-/** A word of style added to the tags, or taken out when it is there. */
-function toggleWord(w) {
-  const list = tagList();
-  song.tags = (hasWord(w) ? list.filter((t) => t.toLowerCase() !== w.toLowerCase()) : [...list, w]).join(", ");
-  page.tags.value = song.tags;
-  keepDraft();
-  redrawSteps();
-}
-
-/** A section tag put into the lyrics where the cursor is, on lines of its own. */
-function addSection(tag) {
-  const box = page.lyrics;
-  const at = box.selectionStart ?? box.value.length;
-  const before = box.value.slice(0, at);
-  const lead = !before || before.endsWith("\n\n") ? "" : before.endsWith("\n") ? "\n" : "\n\n";
-  box.setRangeText(`${lead}[${tag}]\n`, at, box.selectionEnd ?? at, "end");
-  song.lyrics = box.value;
-  keepDraft();
-  box.focus();
-  redrawStage();
-}
-
 function pickStructure(id) {
   song.structure = id;
   const words = song.lyrics.replace(/\[[^\]]*\]/g, "").trim();
@@ -447,21 +420,6 @@ function lengthControl() {
 }
 
 /** A row of word pills; the ones picked that the row does not list stay on it. */
-function pills(group, more) {
-  const all = STYLE_WORDS.find(([name]) => name === group)?.[1] ?? [];
-  const words = [...new Set([...all.filter(hasWord), ...QUICK[group]])];
-  return h("div.sg-pills", { role: "group", "aria-label": group }, ...words.map((w) => h("button.sg-pill", { type: "button", "aria-pressed": String(hasWord(w)), on: { click: () => toggleWord(w) } }, w)),
-    more ? h("button.sg-pill.is-more", { type: "button", "aria-expanded": String(song.more), title: "Every word of style, and the style as typed", on: { click: () => ((song.more = !song.more), redrawSteps()) } }, "More", jicon("caret")) : null);
-}
-
-/** What More holds: optional style suggestions. */
-function moreWords() {
-  return h("div.sg-more", {},
-    ...STYLE_WORDS.map(([name, words]) => h("div.sg-words", {}, h("span.sg-field", {}, name),
-      h("div.sg-pills.is-small", {}, ...words.map((w) => h("button.sg-pill", { type: "button", "aria-pressed": String(hasWord(w)), on: { click: () => toggleWord(w) } }, w))))),
-  );
-}
-
 const step = (n, label, meta, ...body) =>
   h("section.sg-step", {}, h("header.sg-step-head", {}, h("span.sg-num", {}, String(n)), h("h2", {}, label), meta ? h("span.sg-meta", {}, meta) : null), ...body);
 const row = (label, ...body) => h("div.sg-row", {}, h("span.sg-field", {}, label), h("div.sg-ctl", {}, ...body));
@@ -476,16 +434,13 @@ function drawSteps() {
         h("p.sg-field-help", {}, "Describe the genre, instruments, voice, arrangement and production."), page.tags),
       h("div.sg-lyrics", {}, h("div.sg-lyrics-head", {}, h("label.sg-field", { for: "sg-lyrics-input" }, "Lyrics"), h("span.sg-meta", {}, lines ? `${lines} lines` : "none yet")),
         h("p.sg-field-help", {}, "Write your own words, or enter [Instrumental] for a track without vocals."),
-        h("div.sg-tags", {}, ...SECTIONS.map((sec) => h("button.key.is-quiet", { type: "button", title: `Add [${sec}]`, on: { click: () => addSection(sec) } }, jicon("plus"), sec))), page.lyrics)),
+        page.lyrics)),
     step(2, "Ask Pickle", "Optional",
       h("div.sg-ask", {}, h("img.sg-pickle", { src: "brand/cast/pickle-face.webp", alt: "Pickle", draggable: false }), h("div.sg-idea", {}, page.idea, page.count)),
       h("button.key.is-primary.sg-set", { type: "button", disabled: song.writing, on: { click: setUp } }, jicon("pencil"), song.writing ? "Pickle is writing…" : "Pickle, set it up")),
     step(3, "Structure & sound", null,
       h("div.sg-shapes", { role: "group", "aria-label": "Song structure" }, ...STRUCTURES.map((x) =>
         h("button.sg-shape", { type: "button", "aria-pressed": String(song.structure === x.id), title: x.desc, on: { click: () => pickStructure(x.id) } }, blocks(x.id), h("b", {}, x.label)))),
-      h("div.sg-line", {}, h("span.sg-field", {}, "Genre"), pills("Genre", true)),
-      h("div.sg-line", {}, h("span.sg-field", {}, "Mood"), pills("Mood", false)),
-      song.more ? moreWords() : null,
       h("div.sg-dials", {}, lengthControl(), tempoDial())),
     h("details.sg-adv", { open: song.adv, on: { toggle: (e) => (song.adv = e.target.open) } },
       h("summary", {}, jicon("caret"), h("b", {}, "Advanced"), h("span", {}, "Title · Key · Time · Language · Quality")),
