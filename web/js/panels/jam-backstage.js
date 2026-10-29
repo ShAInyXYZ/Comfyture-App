@@ -12,7 +12,7 @@ import { segs } from "./jam-card.js";
 import {
   backstageOf, VIDEO_MODELS, planScenes, addScene, updateScene, removeScene,
   setBackstage, attachAsset, generateAsset, resumeAsset, resumeBackstageJobs, insertScenes,
-  addCharacter, removeCharacter, generationDetails, estimateGeneration, useCover, prepareBackstageMentions,
+  addCharacter, removeCharacter, generationDetails, estimateGeneration, useCover, prepareBackstageMentions, writeVideoPrompt,
 } from "../jam-backstage.js";
 
 const TABS = [["scenes", "Scenes"], ["characters", "Characters"], ["cover", "Cover"]];
@@ -499,15 +499,23 @@ registerWindow("backstage-review", {
           summaryRow("Song timing", bs.scenes.some((s) => s.id === item.id) ? `${clock(item.from)}–${clock(item.to)}` : null),
           summaryRow("End frame", r.kind === "video" ? d.frames.length > 1 ? "Included" : "Not used" : null),
           summaryRow("Characters", (item.characterIds ?? []).map((id) => bs.characters.find((c) => c.id === id)?.title).filter(Boolean).join(", ")))),
-      h("section.jb-review-direction", {}, h("span.label", {}, "Generation direction"), h("p", {}, d.prompt || [bs.style, item.prompt, r.kind === "video" ? item.motion : ""].filter(Boolean).join("\n\n"))),
+      r.kind === "video" ? h("section.jb-review-direction", {}, h("span.label", {}, "Video prompt"),
+        h("p.jb-hint", {}, "Pickle's writer inspects your frames and writes for the selected video model. Writing uses a small amount of credits; video generation is separate."),
+        key(r.writing ? "Writing prompt…" : r.written ? "Rewrite prompt" : "Write video prompt", "sparkle", async () => {
+          r.writing = true; show();
+          try { const result = await writeVideoPrompt(r.id, r.signature); if (review === r) { r.written = result.prompt; r.writer = result.writer; } }
+          finally { r.writing = false; if (review === r) show(); }
+        }, { disabled: r.writing || changedRequest }),
+        r.written ? h("textarea.field", { "aria-label": "Video prompt", value: r.written, rows: 8, on: { input: (e) => { r.written = e.target.value; } } }) : h("p.jb-hint", {}, "Write the prompt to review it before generating."))
+        : h("section.jb-review-direction", {}, h("span.label", {}, "Generation direction"), h("p", {}, d.prompt || [bs.style, item.prompt].filter(Boolean).join("\n\n"))),
       h("div.jb-review-price", {}, h("div", {}, h("span", {}, "Estimated additional cost"), h("strong", {}, r.loading ? "Checking…" : typeof value === "number" && Number.isFinite(value) ? `≈ ${value.toFixed(2).replace(/\.00$/, "")} cr` : "Not available")),
         h("p", {}, price?.note || price?.costNote || "Actual billing depends on provider execution. This estimate is for this asset only; later images and videos are separate.")),
       changedRequest ? h("p.jb-error", { role: "alert" }, "The scene changed. Close this window and review the updated request.") : null,
       h("div.jb-review-actions", {}, key("Cancel", null, () => openWindow(null)), key(`Generate ${labelFor(r.kind)}`, "sparkle", async () => {
         if (r.jamId !== jam.jam?.id || JSON.stringify(generationDetails(r.id, r.kind)) !== r.signature) throw new Error("The scene changed. Review the updated request first.");
         openWindow(null);
-        await generateAsset(r.id, r.kind, { confirm: true, expected: r.signature });
-      }, { primary: true, disabled: r.loading || changedRequest || pendingOf(item) })));
+        await generateAsset(r.id, r.kind, { confirm: true, expected: r.signature, prompt: r.written });
+      }, { primary: true, disabled: r.loading || r.writing || changedRequest || pendingOf(item) || (r.kind === "video" && !r.written?.trim()) })));
   },
 });
 

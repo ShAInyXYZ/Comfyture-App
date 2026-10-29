@@ -134,6 +134,20 @@ export async function estimateGeneration(id, kind) {
   catalogueImageCredits = Number.isFinite(credits) ? credits : null;
   return { credits: Number.isFinite(credits) ? credits : null, note: 'One GPT Image 2.5 Flare image. Catalogue estimate; retries and video are billed separately.' };
 }
+export async function writeVideoPrompt(id, expected) {
+  const j = requireJam(), item = itemOf(id, j), board = backstageOf(j);
+  const details = generationDetails(id, 'video');
+  if (JSON.stringify(details) !== expected) throw new Error('The scene changed. Review the updated request first.');
+  const response = await fetch('api/jam/video-prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+    videoModel: item.model, duration: details.duration, frames: details.frames.map(frame => frame.file),
+    format: board.format, style: board.style, scene: item.prompt, motion: item.motion,
+  }) });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || 'The writer could not prepare the video prompt.');
+  if (jam.jam !== j || JSON.stringify(generationDetails(id, 'video')) !== expected) throw new Error('The scene changed while the prompt was written. Review it again.');
+  if (typeof result.prompt !== 'string' || !result.prompt.trim() || result.prompt.length > 6000) throw new Error('The writer returned an invalid prompt.');
+  return result;
+}
 const active = new Map();
 const request = async (path, body) => {
   const res = await fetch(path, body === undefined ? undefined : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -141,10 +155,11 @@ const request = async (path, body) => {
   if (!res.ok) { const error = new Error(data.error ?? `Request failed (${res.status})`); error.status = res.status; throw error; }
   return data;
 };
-async function run(id, kind, { resume = false } = {}) {
+async function run(id, kind, { resume = false, prompt } = {}) {
   const j = requireJam(), item = itemOf(id, j), key = `${j.id}:${id}:${kind}`;
   if (active.has(key)) return active.get(key);
   const specificationNow = resume ? null : specification(id, kind, j);
+  if (kind === 'video' && specificationNow && prompt) specificationNow.body.inputs.prompt = prompt;
   if (specificationNow?.body.inputs) specificationNow.body.inputs.seed = Math.floor(Math.random() * 2147483647);
   const task = runAssetJob(item, kind, specificationNow, {
     post: request, get: request, sleep: ms => new Promise(resolve => setTimeout(resolve, ms)),
@@ -159,10 +174,11 @@ async function run(id, kind, { resume = false } = {}) {
   }, { resume }).finally(() => active.delete(key));
   active.set(key, task); return task;
 }
-export function generateAsset(id, kind, { confirm = false, expected } = {}) {
+export function generateAsset(id, kind, { confirm = false, expected, prompt } = {}) {
   if (!confirm) throw new Error('Review and confirm this generation before spending credits.');
   if (expected && JSON.stringify(generationDetails(id, kind)) !== expected) throw new Error('The generation changed. Review the current settings before confirming.');
-  return run(id, kind);
+  if (kind === 'video' && (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 6000)) throw new Error('Write and review the video prompt first.');
+  return run(id, kind, { prompt });
 }
 export const resumeAsset = (id, kind) => run(id, kind, { resume: true });
 /** Reconnect known accepted jobs on entering Backstage. This never submits a paid request. */

@@ -14,6 +14,7 @@ import { createAccount } from "./account.ts";
 import { ASPECTS, ImageModels } from "./images.ts";
 import { askClaude, blenderStatus, command, CONTROL_BRIEF, controlConnected, controlEvents, controlPrompt, fromBlender, readControlAnswer, reply, toBlender, type ControlTurn } from "./control.ts";
 import { llms, defaultLlm, pickLlm, onRouter, llmName, routerAsk, imageBlock, takesTools } from "./llm.ts";
+import { videoWriterBrief, finishVideoPrompt } from "./jam-video-prompt.ts";
 import { CATEGORIES, loadPresets, savePreset, type Preset } from "./presets.ts";
 import { IMAGE_EXT, imageSize, sendFile } from "./media.ts";
 import { cropRevealFrame } from "./mixer-reveal-frame.ts";
@@ -1790,6 +1791,27 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     }
     if (process.env.COMFYTURE_DEBUG) console.log(`crumpet answered\n${reply}`);
     return json(res, 200, readToasterAnswer(reply, summary));
+  }
+  if (path === "/api/jam/video-prompt" && method === "POST") {
+    const input = await jsonBody(req, 64 * 1024);
+    const videoModel = text(input.videoModel, 40);
+    const duration = Number(input.duration);
+    if (!(duration > 0 && duration <= 30)) throw bad("Choose a valid video duration.");
+    const files = Array.isArray(input.frames) ? input.frames : [];
+    if (files.length < 1 || files.length > 2) throw bad("Add a start frame and, optionally, an end frame.");
+    const model = pickLlm(input.model, "assistant");
+    if (!onRouter(model)) throw bad("A vision-capable writer on Comfy Router is needed to inspect the frames.");
+    const names = [];
+    for (const file of files) {
+      const name = await photo(file);
+      if (!name) throw bad("One of the frames is missing. Add it again.");
+      names.push(name);
+    }
+    const images = await Promise.all(names.map((file) => imageBlock(engine.photoPath(file))));
+    const brief = videoWriterBrief(videoModel, images.length === 2);
+    const context = `Duration: ${duration} seconds.\nFormat: ${text(input.format, 80)}\nShared visual direction: ${text(input.style, 1500)}\nImage direction (context only): ${text(input.scene, 3000)}\nCamera and action: ${text(input.motion, 3000)}`;
+    const answer = await routerAsk(model, brief, context, { maxTokens: 1200, temperature: 0.4, images });
+    return json(res, 200, { prompt: finishVideoPrompt(videoModel, images.length === 2, duration, answer), writer: llmName(model) });
   }
   if ((path === "/api/toaster/write" || path === "/api/toaster/improve") && method === "POST") {
     // the prompt of a render written for the image model, from its guide: the facts, the user's own prompt if any and, on Comfy Router, the clay frame and a picture of each sheet

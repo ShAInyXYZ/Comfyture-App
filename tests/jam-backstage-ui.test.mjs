@@ -45,7 +45,7 @@ function harness() {
     backstageOf: () => bs, VIDEO_MODELS: [{ id: 'ltx-2.5', name: 'LTX 2.5 Distilled', endFrame: true }, { id: 'fast-h3', name: 'Fast H3', endFrame: true }],
     planScenes() {}, addScene() {}, updateScene: (id, patch) => { updates.push({ id, patch }); Object.assign(itemOf(id), patch); }, removeScene() {},
     setBackstage() {}, attachAsset() {}, generateAsset: (...args) => calls.push(args), resumeAsset() {}, resumeBackstageJobs() {}, insertScenes() {},
-    addCharacter() {}, removeCharacter() {}, prepareBackstageMentions: async () => {}, generationDetails: details, estimateGeneration: async () => ({ credits: null, note: 'Active GPU time.' }), useCover() {},
+    addCharacter() {}, removeCharacter() {}, prepareBackstageMentions: async () => {}, generationDetails: details, estimateGeneration: async () => ({ credits: null, note: 'Active GPU time.' }), writeVideoPrompt: async () => ({ prompt: 'Reviewed motion prompt', writer: 'Luna' }), useCover() {},
     document: { addEventListener: (name, fn) => events.set(name, fn) }, window: { addEventListener() {} },
   };
   const executable = source.replace(/^import\s+\{[\s\S]*?\}\s+from\s+["'][^"']+["'];\s*/gm, '').replace(/export function /g, 'function ');
@@ -99,12 +99,17 @@ test('Video generation reviews both frames, actual render duration and cost befo
   assert.match(text(modal), /10\.5 s · trimmed to the scene/);
   assert.match(text(modal), /Not available/);
   assert.equal(walk(modal).filter(n => n.tag === 'img').length, 2);
-  const confirm = find(modal, 'Generate video');
+  assert.equal(find(modal, 'Generate video').props.disabled, true);
+  find(modal, 'Write video prompt').props.on.click();
+  await tick();
+  const written = t.windows.get('backstage-review').build();
+  const confirm = find(written, 'Generate video');
   assert.equal(confirm.props.disabled, false);
   confirm.props.on.click();
   await tick();
   assert.equal(t.calls.length, 1);
   assert.equal(t.calls[0][2].confirm, true);
+  assert.equal(t.calls[0][2].prompt, 'Reviewed motion prompt');
   assert.equal(JSON.parse(t.calls[0][2].expected).duration, 11);
 });
 
