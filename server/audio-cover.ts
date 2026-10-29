@@ -19,6 +19,7 @@ export interface AudioEntry {
   /** What a shipped song was made from (its style, words, tempo and key), for a video that takes it as its track. */
   tags?: string;
   lyrics?: string;
+  romaji?: string[];
   bpm?: number;
   key?: string;
   /** The jam a shipped song comes as (its id). */

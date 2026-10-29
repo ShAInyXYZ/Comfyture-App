@@ -14,7 +14,8 @@ import { dropdown } from "../controls.js";
 import { LANGUAGES, SIGNATURES, DEFAULT_SONG, MAX_SECONDS, STYLE_LORAS, PITCHES, MODES, KEYS, noteOf, modeOf, QUALITY, lengthLabel, STRUCTURES, skeleton, costOfSong } from "../song.js";
 import { jicon, pickFile, cr, clock, mins } from "./jam-ui.js";
 import { createDeck } from "./jam-deck.js";
-import { jam, useSong, songHook, setWorkspace, save } from "../jam.js";
+import { jam, useSong, songHook, setWorkspace, save, readSrt } from "../jam.js";
+import { alignLines, sungLines } from "../lyrics-align.js";
 import { analyse } from "./jam-track-audio.js";
 import { detectSections, lyricTags, HOP } from "../jam-sections.js";
 import { pay, isArmed } from "./jam-band-pay.js";
@@ -555,6 +556,7 @@ function drawWave() {
 
 /** One song shown on the stage: its record, its readings, its sound ready to play. */
 function show(file) {
+  lyr.armed = false;
   drafting = false;
   song.shown = file;
   const m = shownSong();
@@ -612,24 +614,65 @@ function drawStage() {
 // ---------------------------------------------------------------- the lyrics display
 
 /** The lyrics under the player: the words the song was made from (the form's own while none is shown), the line sounding lit as it plays. */
-const lyr = { key: null, timeline: [], items: [], at: -2, held: -Infinity };
+const lyr = { key: null, timeline: [], items: [], at: -2, held: -Infinity, syncing: false, armed: false, roman: new Map(), loading: new Set() };
+async function syncSongLyrics(m) {
+  if (!m || lyr.syncing) return;
+  if (!lyr.armed) { lyr.armed = true; page.lyrSync.textContent = "Confirm sync · Cloud GPU cost"; return; }
+  lyr.armed = false;
+  lyr.syncing = true;
+  page.lyrSync.disabled = true;
+  page.lyrSync.textContent = "Listening to the song…";
+  try {
+    const lyrics = m.lyrics || (inJam(m) ? jam.jam?.body.track?.lyrics : "") || "";
+    const lines = sungLines(lyrics);
+    if (!lines.length) throw new Error("This song has no saved lyrics to match.");
+    const job = await api.transcribeSong({ file: m.file });
+    const result = await waitFor("job", job.id);
+    const segments = readSrt(result.listen?.srt || "");
+    const words = segments.flatMap((x) => {
+      const parts = x.text.split(/\s+/).filter(Boolean);
+      return parts.map((w, i) => ({ w, s: x.from + (x.to - x.from) * i / parts.length, e: x.from + (x.to - x.from) * (i + 1) / parts.length }));
+    });
+    const aligned = alignLines(lines, words, { seconds: m.seconds, chars: /[\u3040-\u30ff\u3400-\u9fff]/u.test(lyrics) });
+    if (!aligned.total || aligned.matched / aligned.total < 0.5) throw new Error("Not enough lyrics were recognized in the mix to sync reliably.");
+    const timing = { lines: aligned.lines.map((x) => [x.from, x.to]), matched: aligned.matched };
+    await api.saveSongLyrics({ file: m.file, lyrics, timing });
+    Object.assign(m, { lyrics, timing });
+    const stored = song.made.find((x) => x.file === m.file);
+    if (stored) Object.assign(stored, { lyrics, timing });
+    if (inJam(m)) { Object.assign(jam.jam.body.track, { lyrics, timing }); await save(jam.jam); }
+    lyr.key = null;
+    redrawAll();
+  } catch (e) { toast(e.message, { tone: "crit" }); }
+  finally { lyr.syncing = false; if (page) { page.lyrSync.disabled = false; lyr.key = null; drawLyrics(); } }
+}
 function drawLyrics() {
   if (!page) return;
   const m = shownSong();
   const words = m ? m.lyrics ?? "" : song.lyrics;
   const seconds = m ? m.seconds || 0 : song.seconds;
   const timing = m?.timing;
-  const key = `${m?.file ?? "draft"}|${seconds}|${words}|${timing ? "heard" : ""}`;
+  const japanese = /[^\p{Script=Latin}\p{Script=Common}\p{Script=Inherited}\s]/u.test(words);
+  const linesForRoman = sungLines(words);
+  if (japanese && linesForRoman.length && !lyr.roman.has(words) && !lyr.loading.has(words)) {
+    lyr.loading.add(words);
+    api.romanizeSong({ lines: linesForRoman }).then((r) => { lyr.roman.set(words, r.lines); lyr.key = null; drawLyrics(); }).catch(() => {}).finally(() => lyr.loading.delete(words));
+  }
+  const roman = lyr.roman.get(words);
+  const key = `${m?.file ?? "draft"}|${seconds}|${words}|${timing ? "heard" : ""}|${!!roman}`;
   if (key === lyr.key) return;
   const timeline = lyricTimeline(words, seconds, timing);
   const lines = timeline.filter((e) => e.kind === "line").length;
+  let lineIndex = 0;
   page.lyrBody.replaceChildren(...(timeline.length
     ? timeline.map((e, i) => (e.kind === "tag"
       ? h("div.sg-ly-tag", { dataset: { i } }, h("span", {}, e.text), e.hint ? h("em", {}, e.hint) : null)
-      : h("button.sg-ly-line", { type: "button", dataset: { i }, title: `Jump to ${mins(e.from)}`, on: { click: () => lyricSeek(e.from) } }, e.text)))
+      : h("button.sg-ly-line", { type: "button", dataset: { i }, disabled: !timing, title: timing ? `Jump to ${mins(e.from)}` : "Sync lyrics to seek", on: { click: () => lyricSeek(e.from) } }, h("span", {}, e.text), roman?.[lineIndex++] ? h("small", { style: { display: "block", opacity: "0.65" } }, roman[lineIndex - 1]) : null)))
     : [h("p.sg-ly-empty", {}, m ? "No lyrics kept for this song." : "Lyrics appear here once the song has some.")]));
   Object.assign(lyr, { key, timeline, items: [...page.lyrBody.children], at: -2 });
-  page.lyrMeta.textContent = lines ? `${lines} lines` : timeline.length ? "no words" : "";
+  page.lyrMeta.textContent = lines ? timing ? `${lines} lines · synced` : `${lines} lines · not synced` : timeline.length ? "no words" : "";
+  page.lyrSync.hidden = !m || !lines;
+  if (!lyr.syncing) page.lyrSync.textContent = timing ? "Sync again" : "Sync lyrics";
   page.lyrBody.scrollTop = 0;
   tickLyrics();
 }
@@ -638,7 +681,8 @@ function tickLyrics() {
   if (!page) return;
   const m = shownSong();
   const now = m && page.audio.getAttribute("src") === m.url ? page.audio.currentTime : -1;
-  const i = lyr.timeline.length ? entryAt(lyr.timeline, now) : -1;
+  const found = m?.timing && lyr.timeline.length ? entryAt(lyr.timeline, now) : -1;
+  const i = found >= 0 && now < lyr.timeline[found].to ? found : -1;
   if (i === lyr.at) return;
   lyr.at = i;
   lyr.items.forEach((el, k) => (el.classList.toggle("is-now", k === i), el.classList.toggle("is-past", i >= 0 && k < i)));
@@ -764,7 +808,8 @@ export function songWorkspace() {
       audio);
     page.lyrMeta = h("span.sg-meta", {});
     page.lyrBody = h("div.sg-ly-body", { tabindex: "0", "aria-label": "Lyrics", on: { wheel: () => (lyr.held = performance.now()), touchmove: () => (lyr.held = performance.now()), pointerdown: () => (lyr.held = performance.now()) } });
-    page.ld = h("section.sg-ld", { "aria-label": "Lyrics display" }, h("div.sg-ly-head", {}, h("span.sg-label", {}, "Lyrics display"), page.lyrMeta), page.lyrBody);
+    page.lyrSync = h("button.key.is-quiet", { type: "button", title: "Transcribe the full mix and match your lyrics. Uses Comfy Cloud GPU time.", on: { click: () => syncSongLyrics(shownSong()) } }, "Sync lyrics");
+    page.ld = h("section.sg-ld", { "aria-label": "Lyrics display" }, h("div.sg-ly-head", {}, h("span.sg-label", {}, "Lyrics display"), page.lyrMeta, page.lyrSync), page.lyrBody);
     page.map = h("aside.sg-map", { "aria-label": "The song's sections" });
     page.shelf = h("section.sg-shelf", { "aria-label": "Your songs" });
     page.root = h("div.sg-work", {}, page.steps, page.stage, page.ld, page.map, page.shelf);

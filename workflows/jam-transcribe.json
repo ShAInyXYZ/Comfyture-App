@@ -1,0 +1,5 @@
+{
+  "track": { "class_type": "LoadAudio", "inputs": { "audio": "" } },
+  "words": { "class_type": "AudioSpeechToTextWhisper", "inputs": { "audio": ["track", 0], "model_size": "large-v2", "language": "Auto-Detect", "task": "Transcribe", "generate_srt": true, "srt_max_line_len": 32, "srt_max_lines": 1, "srt_max_duration_sec": 4 } },
+  "srt": { "class_type": "SaveText", "inputs": { "text": ["words", 1], "filename_prefix": "comfyture/jam-lyrics", "format": "txt" } }
+}

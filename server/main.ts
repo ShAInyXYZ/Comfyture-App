@@ -25,6 +25,7 @@ import { splitEdit } from "./mixer.ts";
 import { macaronBrief, macaronTool, spaceOf, macaronPrompt, readMacaronAnswer, topUpBrand, keepExport, keepFrame, encodeFrames, dropFrames, frameJob, validJob, sweepFrames, ledgerLine } from "./macaron.ts";
 import { SONG_BRIEF, songPrompt, readSong } from "./song.ts";
 import { SONG_LORAS } from "./song-guide.ts";
+import { romanizeLyrics } from "./romanize.ts";
 import { KEYS, LANGUAGES, SIGNATURES, MAX_SECONDS, DEFAULT_SONG } from "../web/js/song.js";
 import { LYRIC_FILES } from "../web/js/lyrics.js";
 import { MIXER_BRIEF, MIXER_TOOL, mixerPrompt, readMixerAnswer } from "./mixer-assist.ts";
@@ -1366,9 +1367,34 @@ async function route(req: IncomingMessage, res: ServerResponse) {
       seed: Number.isInteger(input.seed) && input.seed > 0 ? Math.min(input.seed, 2 ** 32 - 4) : randomBytes(4).readUInt32BE(0) % (2 ** 32 - 4),
     }, async (bytes) => {
       const kept = await keepAudio(bytes, ".mp3", { name, kind: "music", prompt: tags });
+      await noteAudio({ ...kept, lyrics: text(input.lyrics, 3000) });
       return { file: kept.file, url: kept.url, seconds: kept.seconds, name: kept.name, kind: kept.kind };
     });
     return json(res, 202, job);
+  }
+  if (path === "/api/audio/song/transcribe" && method === "POST") {
+    const input = await jsonBody(req);
+    const file = text(input.file, 100);
+    const entry = (await readAudioIndex())[file];
+    if (!entry) throw bad("That song is not in the library.", 404);
+    return json(res, 202, engine.transcribeJob(file, entry.seconds));
+  }
+  if (path === "/api/audio/song/lyrics" && method === "POST") {
+    const input = await jsonBody(req);
+    const file = text(input.file, 100);
+    const entry = (await readAudioIndex())[file];
+    if (!entry) throw bad("That song is not in the library.", 404);
+    const lyrics = text(input.lyrics, 3000);
+    if (!lyrics) throw bad("Add lyrics first.");
+    const timing = input.timing;
+    if (!Array.isArray(timing?.lines) || timing.lines.length > 500 || timing.lines.some((x: unknown) => !Array.isArray(x) || x.length !== 2 || !x.every((v) => Number.isFinite(v) && v >= 0 && v <= entry.seconds))) throw bad("Invalid lyric timing.");
+    return json(res, 200, await noteAudio({ ...entry, lyrics, timing: { lines: timing.lines, matched: Number(timing.matched) || 0 } }, true));
+  }
+  if (path === "/api/audio/song/romaji" && method === "POST") {
+    const input = await jsonBody(req);
+    const lines = Array.isArray(input.lines) ? input.lines : [];
+    if (!lines.length || lines.length > 500 || lines.some((x: unknown) => typeof x !== "string" || x.length > 500)) throw bad("Invalid lyric lines.");
+    return json(res, 200, { lines: await romanizeLyrics(lines) });
   }
   if (path === "/api/audio/song/write" && method === "POST") {
     // Pickle sets a song up from an idea (and what is there already): a short writer answer, no song is made

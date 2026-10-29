@@ -967,6 +967,26 @@ export class Engine extends EventEmitter {
     return job;
   }
 
+  transcribeJob(file: string, seconds: number): Paint {
+    const job: Paint = { id: randomBytes(4).toString("hex"), status: "running", progress: 0 };
+    this.paints.set(job.id, job);
+    const emit = () => this.emit("paint", job);
+    (async () => {
+      try {
+        if (!(await exists(this.audioPath(file)))) throw new Error("That track is no longer on disk.");
+        const graph = await loadGraph(this.dirs.workflows, "jam-transcribe.json");
+        graph.track.inputs.audio = this.assetFor(this.audioPath(file));
+        const result = await this.execute(graph, new AbortController().signal, { kind: "listen", stage: "frame", units: seconds, onProgress: (p) => ((job.progress = p), emit()) });
+        const [out] = result.getOutputs("srt");
+        if (!out) throw new Error("Transcription returned no timestamps.");
+        job.listen = { srt: Buffer.from(await out.toBytes()).toString("utf8"), bpm: "", beats: "" };
+        job.status = "done";
+      } catch (error) { job.status = "failed"; job.error = describe(error); }
+      emit();
+    })();
+    return job;
+  }
+
   imageJob(id: string): Paint | undefined { return this.paints.get(id); }
 
   /** A picture made outside ComfyUI (a partner model on Comfy Router), tracked like a paint job. */
