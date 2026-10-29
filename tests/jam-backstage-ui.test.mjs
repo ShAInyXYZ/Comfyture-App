@@ -33,7 +33,7 @@ function harness() {
   const itemOf = id => id === 'cover' ? bs.cover : [...bs.scenes, ...bs.characters].find(item => item.id === id);
   const details = (id, kind) => {
     const item = itemOf(id);
-    return { id, kind, title: item.title, model: kind === 'video' ? 'LTX 2.5 Distilled' : 'GPT Image 2.5 Flare', duration: kind === 'video' ? 11 : null, timelineDuration: kind === 'video' ? 10.5 : null, width: kind === 'video' ? 1344 : null, height: kind === 'video' ? 768 : null, frames: kind === 'video' ? [item.image, item.endImage].filter(Boolean) : [], references: [item.reference ? { file: item.reference.file, name: 'identity-reference' } : null, ...(item.characterIds ?? []).map((id, i) => ({ file: itemOf(id).image.file, name: `character-${i + 1}` }))].filter(Boolean), prompt: item.prompt, request: { count: 1, megapixels: 1 } };
+    return { id, kind, title: item.title, model: kind === 'video' ? 'LTX 2.5 Distilled' : 'GPT Image 2.5 Flare', duration: kind === 'video' ? 11 : null, timelineDuration: kind === 'video' ? 10.5 : null, width: kind === 'video' ? 1344 : null, height: kind === 'video' ? 768 : null, frames: kind === 'video' ? [item.image, item.endImage].filter(Boolean) : [], references: [kind === 'endImage' && item.image ? { file: item.image.file, name: 'start-frame' } : null, item.reference ? { file: item.reference.file, name: 'identity-reference' } : null, ...(item.characterIds ?? []).map((id, i) => ({ file: itemOf(id).image.file, name: `character-${i + 1}` }))].filter(Boolean), prompt: item.prompt, request: { count: 1, megapixels: 1 } };
   };
   const mocks = {
     h, changed() {}, toast: message => toasts.push(message), mentionables: () => [], backstageMentionables: () => [], mentionAt: () => null, putMention() {}, jam: { jam: j, workspace: 'backstage', busy: new Set() }, openWindow() {}, setWorkspace() {},
@@ -61,10 +61,31 @@ test('Backstage shows an exact scene range and prepares a separate end-frame pro
   const end = t.render();
   const prompt = walk(end).find(n => n.props.id === 'backstage-s1-end-prompt');
   assert.ok(prompt);
+  assert.equal(prompt.props.value, 'A quiet station at dusk.');
+  assert.equal(walk(end).find(n => n.props.id === 'backstage-s1-prompt'), undefined);
+  assert.match(text(end), /Included as reference/);
+  assert.ok(walk(end).find(n => n.tag === 'img' && n.props.src === '/media/start.png' && n.props.alt === 'Start frame used as a reference'));
   prompt.props.on.input({ target: { value: 'Wider, same station and lighting.' } });
   await tick();
   assert.deepEqual(t.updates.at(-1), { id: 's1', patch: { endPrompt: 'Wider, same station and lighting.' } });
+  assert.equal(t.scene.prompt, 'A quiet station at dusk.');
   assert.equal(t.calls.length, 0);
+  find(t.render(), 'Review end frame').props.on.click();
+  await tick();
+  const modal = t.windows.get('backstage-review').build();
+  assert.match(text(modal), /using the start frame as a reference/i);
+  assert.ok(walk(modal).find(n => n.tag === 'img' && n.props.alt === 'Start frame'));
+});
+
+test('End-frame generation explains when a start frame is missing', () => {
+  const t = harness();
+  t.scene.image = null;
+  find(t.render(), 'End frame').props.on.click();
+  const end = t.render();
+  assert.match(text(end), /Generate or upload a start frame first/);
+  assert.equal(find(end, 'Review end frame').disabled, true);
+  find(end, 'Go to start frame').props.on.click();
+  assert.ok(walk(t.render()).find(n => n.props.id === 'backstage-s1-prompt'));
 });
 
 test('Video generation reviews both frames, actual render duration and cost before confirmation', async () => {

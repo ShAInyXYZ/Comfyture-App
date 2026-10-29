@@ -366,7 +366,7 @@ function inspector(ctx, bs, v, item) {
   const busy = pendingOf(item);
   const model = VIDEO_MODELS.find((x) => x.id === item.model) ?? VIDEO_MODELS[0];
   const ready = () => slot === "video" ? !!item.image && !!item.motion?.trim() && (!item.endImage || (VIDEO_MODELS.find((x) => x.id === item.model) ?? VIDEO_MODELS[0]).endFrame)
-    : slot === "endImage" ? !!item.image && !!(item.endPrompt?.trim() || item.prompt?.trim()) : !!item.prompt?.trim();
+    : slot === "endImage" ? !!item.image?.file && !!(item.endPrompt?.trim() || item.prompt?.trim()) : !!item.prompt?.trim();
   const generateKey = key(busy ? busyOf(item) ? "Generation in progress" : "Check the existing job" : slot === "video" ? "Review video generation" : slot === "endImage" ? "Review end frame" : "Review image generation", "sparkle", () => requestGeneration(item, slot), {
     primary: true, disabled: busy || !ready(),
   });
@@ -382,17 +382,25 @@ function inspector(ctx, bs, v, item) {
   p.append(h("div.jb-inspector-scroll", { dataset: { scrollKey: `backstage-inspector-${item.id}` } },
     field(scene ? "Scene name" : "Name", item.title, (title) => update({ title }), { name: `${item.id}-title`, placeholder: scene ? "A quiet train platform" : v.tab === "cover" ? "Name this artwork" : "Name this character", disabled: busy }),
     scene ? timingFields(ctx, item) : null,
-    field(v.tab === "characters" ? "Identity & appearance" : "Image direction", item.prompt, (prompt) => update({ prompt }), {
+    !(scene && slot === "endImage") ? field(v.tab === "characters" ? "Identity & appearance" : "Image direction", item.prompt, (prompt) => update({ prompt }), {
       name: `${item.id}-prompt`, area: true, rows: 4, disabled: busy,
       mentions: () => backstageMentionables(bs, mentionables(), item, slot),
       hint: "Type @ to add a character or picture reference.",
       placeholder: v.tab === "characters" ? "Appearance, outfit and defining features. Describe a clear reusable character reference." : v.tab === "cover" ? "Composition, mood and colour palette…" : "Setting, character pose, framing and atmosphere for this shot…",
-    }),
-    scene && slot === "endImage" ? field("End-frame direction", item.endPrompt, (endPrompt) => update({ endPrompt }), {
+    }) : null,
+    scene && slot === "endImage" ? h("div.jb-start-anchor", {},
+      h("span.label", {}, "Start frame"),
+      item.image?.file ? h("div.jb-start-anchor-content", {},
+        assetUrl(item.image) ? h("img", { src: assetUrl(item.image), alt: "Start frame used as a reference" }) : jicon("image"),
+        h("span", {}, h("b", {}, "Included as reference"), h("small", {}, "Keeps the character, setting and visual style consistent.")))
+        : h("div.jb-start-anchor-content", {}, jicon("image"),
+          h("span", {}, h("b", {}, "Start frame needed"), h("small", {}, "Generate or upload a start frame first.")),
+          key("Go to start frame", null, () => { v.slot = "image"; show(); }))) : null,
+    scene && slot === "endImage" ? field("End-frame direction", item.endPrompt || item.prompt, (endPrompt) => update({ endPrompt }), {
       name: `${item.id}-end-prompt`, area: true, rows: 3, disabled: busy,
       mentions: () => backstageMentionables(bs, mentionables(), item, slot),
       placeholder: "How should the shot end? Keep this setting and character, but pull back to reveal the station and evening sky.",
-      hint: "The start frame anchors the same location, lighting and character. This is a separately generated image.",
+      hint: "Describe how the shot ends. This creates a separate image using the start frame as its reference.",
     }) : null,
     references(bs, item, scene),
     scene ? field("Camera & action", item.motion, (motion) => update({ motion }), { name: `${item.id}-motion`, area: true, rows: 3, disabled: busy, placeholder: "A slow push-in. Hair and coat move gently in the breeze." }) : null,
@@ -479,7 +487,7 @@ registerWindow("backstage-review", {
     const changedRequest = JSON.stringify(generationDetails(r.id, r.kind)) !== r.signature;
     return h("div.jb-review", {},
       h("div.jb-review-heading", {}, h("span.label", {}, `Backstage · ${labelFor(r.kind)}`), h("h2", {}, r.title || "Untitled scene"),
-        h("p.jb-hint", {}, r.kind === "video" ? "Animate this scene. Your song remains the soundtrack in the final edit." : r.id === "cover" ? "Generate square cover artwork. It stays separate from your video scenes." : bs.characters.some((c) => c.id === r.id) ? "Generate a reusable character reference to keep this identity consistent across scenes." : "Generate one image, then review it before making a video.")),
+        h("p.jb-hint", {}, r.kind === "video" ? "Animate this scene. Your song remains the soundtrack in the final edit." : r.kind === "endImage" ? "Generate a separate end frame using the start frame as a reference." : r.id === "cover" ? "Generate square cover artwork. It stays separate from your video scenes." : bs.characters.some((c) => c.id === r.id) ? "Generate a reusable character reference to keep this identity consistent across scenes." : "Generate one image, then review it before making a video.")),
       h("div.jb-review-body", {},
         references.some((ref) => assetUrl(ref.asset)) ? h("div.jb-review-references", {}, ...references.filter((ref) => assetUrl(ref.asset)).map((ref) => h("figure.jb-review-reference", {}, h("img", { src: assetUrl(ref.asset), alt: ref.label }), h("figcaption", {}, ref.label)))) : null,
         h("dl.jb-summary", {},

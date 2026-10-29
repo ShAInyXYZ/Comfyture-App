@@ -101,6 +101,13 @@
 .jb-mentions small { color: var(--muted); font: 500 .6875rem var(--font-mono); }
 .jb-field .field { width: 100%; min-width: 0; min-height: 2.625rem; padding: .625rem .75rem; font: 400 .875rem/1.5 var(--font-sans); }
 .jb-field textarea.field { resize: vertical; min-height: 5.5rem; }
+.jb-start-anchor { display: grid; gap: .5rem; min-width: 0; }
+.jb-start-anchor-content { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.jb-start-anchor-content > img, .jb-start-anchor-content > svg { width: 3.5rem; height: 3.5rem; flex: none; object-fit: cover; border-radius: var(--r-control, .375rem); corner-shape: var(--corner, round); }
+.jb-start-anchor-content > svg { padding: .75rem; background: var(--sunk); color: var(--muted); }
+.jb-start-anchor-content > span { display: grid; gap: .2rem; flex: 1; min-width: 0; }
+.jb-start-anchor-content b { font: 600 .8125rem/1.3 var(--font-sans); color: var(--text); }
+.jb-start-anchor-content small { font: 400 .75rem/1.4 var(--font-sans); color: var(--muted); }
 .jb-times { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: .5rem; }
 .jb-times .field { padding-inline: .5rem; font-family: var(--font-mono); }
 .jb-duration { padding: .875rem 0; color: var(--dim); font: 500 .75rem/1 var(--font-mono); white-space: nowrap; }
