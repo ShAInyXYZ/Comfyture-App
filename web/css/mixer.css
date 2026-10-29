@@ -409,7 +409,7 @@
 @container (max-width: 30rem) { .mx-recipe .mx-made { grid-template-columns: minmax(0, 1fr); } }
 
 /* Keep reference frames beside the cast on the recipe that uses them. */
-.mx-cast-and-frames { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 1rem; padding: .875rem; border: 1px solid var(--line); border-radius: var(--r-panel); background: var(--s1); }
+.mx-cast-and-frames { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 1rem; }
 .mx-cast-and-frames .mx-reference-guides { min-width: 0; }
 .mx-cast-and-frames .mx-reference-pair figure, .mx-cast-and-frames .mx-reference-guides.is-personal .mx-reference-pair figure { width: 4rem; max-width: 45%; }
 @container (max-width: 42rem) { .mx-cast-and-frames { grid-template-columns: minmax(0, 1fr); } }
