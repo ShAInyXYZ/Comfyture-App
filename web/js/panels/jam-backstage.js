@@ -489,7 +489,7 @@ registerWindow("backstage-review", {
       h("div.jb-review-heading", {}, h("span.label", {}, `Backstage · ${labelFor(r.kind)}`), h("h2", {}, r.title || "Untitled scene"),
         h("p.jb-hint", {}, r.kind === "video" ? "Animate this scene. Your song remains the soundtrack in the final edit." : r.kind === "endImage" ? "Generate a separate end frame using the start frame as a reference." : r.id === "cover" ? "Generate square cover artwork. It stays separate from your video scenes." : bs.characters.some((c) => c.id === r.id) ? "Generate a reusable character reference to keep this identity consistent across scenes." : "Generate one image, then review it before making a video.")),
       h("div.jb-review-body", {},
-        references.some((ref) => assetUrl(ref.asset)) ? h("div.jb-review-references", {}, ...references.filter((ref) => assetUrl(ref.asset)).map((ref) => h("figure.jb-review-reference", {}, h("img", { src: assetUrl(ref.asset), alt: ref.label }), h("figcaption", {}, ref.label)))) : null,
+        references.some((ref) => assetUrl(ref.asset)) ? h(`div.jb-review-references${r.kind === "video" && d.width > d.height ? ".is-landscape" : ""}`, {}, ...references.filter((ref) => assetUrl(ref.asset)).map((ref) => h("figure.jb-review-reference", {}, h("img", { src: assetUrl(ref.asset), alt: ref.label }), h("figcaption", {}, ref.label)))) : null,
         h("dl.jb-summary", {},
           summaryRow("Model", d.modelName || d.model || (r.kind === "video" ? VIDEO_MODELS.find((m) => m.id === item.model)?.name : "GPT Image 2.5 Flare")),
           summaryRow("Output", r.kind === "video" ? `${seconds(d.duration)} video` : `${d.request.count || 1} image · ${d.request.megapixels || 1} MP`),

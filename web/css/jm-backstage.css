@@ -137,10 +137,13 @@
 .jb-footer p { margin: .25rem 0 0; font: 400 .75rem/1.4 var(--font-sans); color: var(--dim); }
 .jb-footer-actions { display: flex; gap: .5rem; flex: none; }
 .jb-review { display: grid; gap: 1.25rem; }
+.jm-win:has(.jb-review) { max-height: min(100%, 78rem); }
 .jb-review h2 { margin: .5rem 0; font: 700 1.5rem/1.25 var(--font-sans); }
 .jb-review-body { display: flex; gap: 1.5rem; align-items: start; }
 .jb-review-references { display: flex; flex-wrap: wrap; gap: .75rem; max-width: 21rem; flex: none; }
 .jb-review-reference { margin: 0; width: 10rem; flex: none; }
+.jb-review-references.is-landscape { display: grid; width: min(21rem, 35%); }
+.jb-review-references.is-landscape .jb-review-reference { width: 100%; }
 .jb-review-reference img { display: block; width: 100%; max-height: 13rem; object-fit: contain; border-radius: var(--r-control, .75rem); corner-shape: var(--corner, round); background: var(--sunk); }
 .jb-review-reference figcaption { margin-top: .5rem; color: var(--dim); font: 500 .75rem/1.3 var(--font-sans); }
 .jb-summary { display: grid; width: 100%; margin: 0; min-width: 0; }
@@ -154,6 +157,10 @@
 .jb-review-price strong { color: var(--accent); font: 700 1.125rem/1.3 var(--font-mono); }
 .jb-review-price p { margin: .75rem 0 0; color: var(--dim); font: 400 .8125rem/1.5 var(--font-sans); }
 .jb-review-actions { display: flex; justify-content: flex-end; gap: .75rem; }
+@media (max-width: 600px) {
+  .jb-review-body { flex-direction: column; }
+  .jb-review-references.is-landscape { width: min(21rem, 100%); }
+}
 @media (max-width: 1500px) {
   .jb-workspace { grid-template-columns: minmax(11rem, .65fr) minmax(0, 1.2fr) minmax(16rem, 1fr); gap: .75rem; }
   .jb-panel { padding: .875rem; }
