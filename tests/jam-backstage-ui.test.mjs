@@ -96,8 +96,8 @@ test('Video generation reviews both frames, actual render duration and cost befo
   assert.equal(t.calls.length, 0);
   const modal = t.windows.get('backstage-review').build();
   assert.match(text(modal), /Generation direction/);
-  assert.ok(text(modal).indexOf('Generation direction') < text(modal).indexOf('Write video prompt'));
-  assert.ok(text(modal).indexOf('Write video prompt') < text(modal).indexOf('Video prompt'));
+  assert.ok(text(modal).indexOf('Generation direction') < text(modal).indexOf('Video prompt'));
+  assert.ok(text(modal).indexOf('Write video prompt') < text(modal).indexOf('Generate video'));
   assert.match(text(modal), /11 s video/);
   assert.match(text(modal), /10\.5 s · trimmed to the scene/);
   assert.match(text(modal), /Not available/);

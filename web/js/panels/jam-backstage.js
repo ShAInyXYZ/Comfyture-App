@@ -488,7 +488,7 @@ registerWindow("backstage-review", {
     return h("div.jb-review", {},
       h("div.jb-review-heading", {}, h("span.label", {}, `Backstage · ${labelFor(r.kind)}`), h("h2", {}, r.title || "Untitled scene"),
         h("p.jb-hint", {}, r.kind === "video" ? "Animate this scene. Your song remains the soundtrack in the final edit." : r.kind === "endImage" ? "Generate a separate end frame using the start frame as a reference." : r.id === "cover" ? "Generate square cover artwork. It stays separate from your video scenes." : bs.characters.some((c) => c.id === r.id) ? "Generate a reusable character reference to keep this identity consistent across scenes." : "Generate one image, then review it before making a video.")),
-      h("div.jb-review-body", {},
+      h(`div.jb-review-body${r.kind === "video" && d.width > d.height ? ".is-landscape" : ""}`, {},
         references.some((ref) => assetUrl(ref.asset)) ? h(`div.jb-review-references${r.kind === "video" && d.width > d.height ? ".is-landscape" : ""}`, {}, ...references.filter((ref) => assetUrl(ref.asset)).map((ref) => h("figure.jb-review-reference", {}, h("img", { src: assetUrl(ref.asset), alt: ref.label }), h("figcaption", {}, ref.label)))) : null,
         h("dl.jb-summary", {},
           summaryRow("Model", d.modelName || d.model || (r.kind === "video" ? VIDEO_MODELS.find((m) => m.id === item.model)?.name : "GPT Image 2.5 Flare")),
@@ -499,19 +499,22 @@ registerWindow("backstage-review", {
           summaryRow("Song timing", bs.scenes.some((s) => s.id === item.id) ? `${clock(item.from)}–${clock(item.to)}` : null),
           summaryRow("End frame", r.kind === "video" ? d.frames.length > 1 ? "Included" : "Not used" : null),
           summaryRow("Characters", (item.characterIds ?? []).map((id) => bs.characters.find((c) => c.id === id)?.title).filter(Boolean).join(", ")))),
-      h("section.jb-review-direction", {}, h("span.label", {}, "Generation direction"), h("p", {}, d.prompt || [bs.style, item.prompt, r.kind === "video" ? item.motion : ""].filter(Boolean).join("\n\n"))),
+      h(`section.jb-review-direction${r.kind === "video" ? ".is-brief" : ""}`, {}, h("span.label", {}, "Generation direction"), h("p", {}, d.prompt || [bs.style, item.prompt, r.kind === "video" ? item.motion : ""].filter(Boolean).join("\n\n"))),
       r.kind === "video" ? h("section.jb-review-direction", {},
-        key(r.writing ? "Writing prompt…" : r.written ? "Rewrite prompt" : "Write video prompt", "sparkle", async () => {
+        h("span.label", {}, "Video prompt"),
+        r.written ? h("textarea.field", { "aria-label": "Video prompt", value: r.written, rows: 8, on: { input: (e) => { r.written = e.target.value; } } }) : h("p.jb-hint", {}, "Write the prompt to review it before generating. Writing uses a small amount of credits.")) : null,
+      r.kind !== "video" ? h("div.jb-review-price", {}, h("div", {}, h("span", {}, "Estimated additional cost"), h("strong", {}, r.loading ? "Checking…" : typeof value === "number" && Number.isFinite(value) ? `≈ ${value.toFixed(2).replace(/\.00$/, "")} cr` : "Not available")),
+        h("p", {}, price?.note || price?.costNote || "Actual billing depends on provider execution. This estimate is for this asset only; later images and videos are separate.")) : null,
+      changedRequest ? h("p.jb-error", { role: "alert" }, "The scene changed. Close this window and review the updated request.") : null,
+      h(`div.jb-review-actions${r.kind === "video" ? ".has-cost" : ""}`, {},
+        r.kind === "video" ? h("div.jb-review-inline-price", {}, h("span", {}, "Estimated cost"), h("strong", {}, r.loading ? "Checking…" : typeof value === "number" && Number.isFinite(value) ? `≈ ${value.toFixed(2).replace(/\.00$/, "")} cr` : "Not available"), h("small", {}, price?.note || "Billed for active Comfy Cloud GPU time.")) : null,
+        key("Cancel", null, () => openWindow(null)),
+        r.kind === "video" ? key(r.writing ? "Writing prompt…" : r.written ? "Rewrite prompt" : "Write video prompt", "sparkle", async () => {
           r.writing = true; show();
           try { const result = await writeVideoPrompt(r.id, r.signature); if (review === r) { r.written = result.prompt; r.writer = result.writer; } }
           finally { r.writing = false; if (review === r) show(); }
-        }, { disabled: r.writing || changedRequest }),
-        h("span.label", {}, "Video prompt"),
-        r.written ? h("textarea.field", { "aria-label": "Video prompt", value: r.written, rows: 8, on: { input: (e) => { r.written = e.target.value; } } }) : h("p.jb-hint", {}, "Write the prompt to review it before generating. Writing uses a small amount of credits.")) : null,
-      h("div.jb-review-price", {}, h("div", {}, h("span", {}, "Estimated additional cost"), h("strong", {}, r.loading ? "Checking…" : typeof value === "number" && Number.isFinite(value) ? `≈ ${value.toFixed(2).replace(/\.00$/, "")} cr` : "Not available")),
-        h("p", {}, price?.note || price?.costNote || "Actual billing depends on provider execution. This estimate is for this asset only; later images and videos are separate.")),
-      changedRequest ? h("p.jb-error", { role: "alert" }, "The scene changed. Close this window and review the updated request.") : null,
-      h("div.jb-review-actions", {}, key("Cancel", null, () => openWindow(null)), key(`Generate ${labelFor(r.kind)}`, "sparkle", async () => {
+        }, { disabled: r.writing || changedRequest }) : null,
+        key(`Generate ${labelFor(r.kind)}`, "sparkle", async () => {
         if (r.jamId !== jam.jam?.id || JSON.stringify(generationDetails(r.id, r.kind)) !== r.signature) throw new Error("The scene changed. Review the updated request first.");
         openWindow(null);
         await generateAsset(r.id, r.kind, { confirm: true, expected: r.signature, prompt: r.written });
