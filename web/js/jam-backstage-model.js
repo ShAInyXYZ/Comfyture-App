@@ -8,6 +8,15 @@ export const VIDEO_MODELS = [
 ];
 export const ASPECTS = ['16:9', '9:16', '1:1'];
 export const FORMATS = ['music-video', 'opening', 'ending', 'game-cinematic', 'lyric-video', 'podcast'];
+const FORMAT_SUBJECT = {
+  'music-video': 'a music video',
+  opening: 'an anime or television opening',
+  ending: 'an anime or television ending',
+  'game-cinematic': 'a game cinematic',
+  'lyric-video': 'a lyric video',
+  podcast: 'a podcast',
+};
+const formatSubject = format => FORMAT_SUBJECT[format] ?? FORMAT_SUBJECT['music-video'];
 export const FORMAT_DIRECTION = {
   'music-video': 'A coherent music-video world with recurring visual motifs and clear character identity.',
   opening: 'A television or anime opening: establish the world and character silhouettes, intentional cinematic composition, room for title and credit overlays. Build energy through planned shots rather than frantic movement within one shot.',
@@ -91,8 +100,8 @@ export function imageRequest(item, board, kind = 'image') {
   const contract = kind === 'endImage'
     ? 'Create a separate high-resolution end frame using @start-frame as the scene continuity anchor. Keep the same character identity, clothing, location geometry, lighting and color treatment. Change the framing and small pose details only as directed. For a wider composition extend the scene outward, not a low-resolution crop.'
     : cover ? 'Create original album-cover artwork. Use identity references for appearance only; invent a fresh composition, pose and setting. Leave typography to the editor; no lettering, watermark or logos.'
-    : character ? 'Create an original character reference for a music-video cast. Preserve identity from any supplied reference without copying its exact pose, background or crop. A clear readable design with consistent costume and face.'
-    : 'Create a fresh cinematic scene for a music video. Any character references establish identity only: create the requested pose, expression, costume and environment rather than pasting the reference portrait. No captions, lettering, logos or watermark.';
+    : character ? `Create an original character reference for ${formatSubject(board.format)}. Preserve identity from any supplied reference without copying its exact pose, background or crop. A clear readable design with consistent costume and face.`
+    : `Create a fresh cinematic scene for ${formatSubject(board.format)}. Any character references establish identity only: create the requested pose, expression, costume and environment rather than pasting the reference portrait. No captions, lettering, logos or watermark.`;
   const prompt = [contract, FORMAT_DIRECTION[board.format] ?? FORMAT_DIRECTION['music-video'], board.style?.trim() && `Shared visual direction: ${board.style.trim()}`, `Scene direction: ${kind === 'endImage' ? item.endPrompt?.trim() || item.prompt.trim() : item.prompt.trim()}`, kind === 'endImage' && item.motion?.trim() && `Motion to bridge from the start: ${item.motion.trim()}`].filter(Boolean).join('\n\n');
   if (prompt.length > 6000) throw new Error('Shorten the scene and visual direction so the full image prompt stays under 6,000 characters.');
   return { model: 'gpt-image-2.5-flare', template: unique.length ? 'edit' : 'generate', prompt, aspect: cover ? '1:1' : board.aspect, megapixels: 1, count: 1, refs: unique, name: `${item.title} · ${cover ? 'cover' : character ? 'character' : kind === 'endImage' ? 'end frame' : 'start frame'}` };
@@ -108,7 +117,7 @@ export function videoRequest(scene, board, seed = Math.floor(Math.random() * 214
   const template = model.id === 'fast-h3' ? 'video_fastvideo_fasth3_i2v' : scene.endImage?.file ? 'video_ltx2_5_flf2v' : 'video_ltx2_5_i2v';
   const [width, height] = board.aspect === '9:16' ? [768, 1344] : board.aspect === '1:1' ? [1024, 1024] : [1344, 768];
   return { template, body: { confirm: true, inputs: { first_frame: { file: scene.image.file }, ...(scene.endImage?.file ? { last_frame: { file: scene.endImage.file } } : {}), width, height, duration: Math.ceil(seconds), seed,
-    prompt: [`Use the supplied start frame${scene.endImage?.file ? ' and end frame as composition anchors' : ''}. Create one continuous coherent shot for a music video.`, FORMAT_DIRECTION[board.format] ?? FORMAT_DIRECTION['music-video'], board.style && `Visual direction: ${board.style}`, scene.prompt && `Scene: ${scene.prompt}`, `Motion: ${scene.motion.trim()}`, 'Keep stable anatomy, lighting, exposure and natural colors. Prefer controlled movement to fast gestures. No captions, lettering, watermark, music, narration or added dialogue. The original song will be the soundtrack in the edit; generated sound is muted.'].filter(Boolean).join('\n'),
+    prompt: [`Use the supplied start frame${scene.endImage?.file ? ' and end frame as composition anchors' : ''}. Create one continuous coherent shot for ${formatSubject(board.format)}.`, FORMAT_DIRECTION[board.format] ?? FORMAT_DIRECTION['music-video'], board.style && `Visual direction: ${board.style}`, scene.prompt && `Scene: ${scene.prompt}`, `Motion: ${scene.motion.trim()}`, `Keep stable anatomy, lighting, exposure and natural colors. Prefer controlled movement to fast gestures. No captions, lettering, watermark, music, narration or added dialogue. The original ${board.format === 'podcast' ? 'audio' : 'song'} will be the soundtrack in the edit; generated sound is muted.`].filter(Boolean).join('\n'),
     ...(model.id === 'ltx-2.5' ? { prompt_enhance: false, [scene.endImage?.file ? 'fram_rate' : 'frame_rate']: 24 } : {}),
   } } };
 }

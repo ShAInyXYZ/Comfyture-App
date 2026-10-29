@@ -71,6 +71,26 @@ test('Album cover uses square art and start frames without references use genera
   assert.throws(() => imageRequest(scene({ image: null }), b, 'endImage'), /start frame first/);
 });
 
+test('Image and video directions name the selected format without a conflicting music-video lead', () => {
+  const subjects = {
+    'music-video': 'a music video', opening: 'an anime or television opening',
+    ending: 'an anime or television ending', 'game-cinematic': 'a game cinematic',
+    'lyric-video': 'a lyric video', podcast: 'a podcast',
+  };
+  for (const [format, subject] of Object.entries(subjects)) {
+    const b = { ...blankBackstage(), format };
+    const s = scene();
+    const image = imageRequest(s, b).prompt;
+    const video = videoRequest(s, b, 1).body.inputs.prompt;
+    assert.ok(image.startsWith(`Create a fresh cinematic scene for ${subject}.`), format);
+    assert.ok(video.includes(`Create one continuous coherent shot for ${subject}.`), format);
+    if (format !== 'music-video') {
+      assert.doesNotMatch(image, /scene for a music video/);
+      assert.doesNotMatch(video, /shot for a music video/);
+    }
+  }
+});
+
 test('Video requests select the exact first/last template with native parameter names', () => {
   const b = blankBackstage(), s = scene({ to: 16.4, endImage: { file: 'end.png' } });
   const ltx = videoRequest(s, b, 123);
