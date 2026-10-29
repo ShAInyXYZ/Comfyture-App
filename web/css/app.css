@@ -475,6 +475,10 @@ body[data-product="kitchen"] .rooms { display: block; }
 @keyframes typing { 0%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }
 /* outside the fitted desk the page scrolls: leave room so the bar never sits on the last row */
 @media not ((min-width: 1281px) and (min-height: 900px)) { #page-shot { padding-bottom: calc(var(--chat-h, 3.5rem) + 2.5rem); } }
+/* there the monitor keeps its keys above the floating bar: at 1280 × 720 the bar sat on Play and the Start, Shot and End marks */
+@media (min-width: 821px) and (not ((min-width: 1281px) and (min-height: 900px))) {
+  #page-shot .monitor .screen { max-height: max(12rem, min(46dvh, calc(100dvh - var(--head) - var(--chat-h, 3.5rem) - 11.5rem))); }
+}
 /* on the Shot's desk the bar floats over the middle column only (app.js measures it), so it covers neither the inputs nor the take log */
 #page-shot > .chat-float { left: var(--mid-x, 50%); width: min(50rem, var(--mid-w, calc(100vw - 2rem))); }
 
