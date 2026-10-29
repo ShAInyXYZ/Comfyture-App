@@ -283,6 +283,8 @@ body[data-page="cut"] { padding-bottom: 0; overflow: hidden; }
 @media (max-width: 1200px) {
   .cut-top { grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); }
   .cut-inspector { display: none; }
+  /* the bin is 20rem there: its four tabs by their names only (Voice was cut off) */
+  #page-cut .cut-bin-tabs svg { display: none; }
 }
 @media (max-width: 900px) {
   #page-cut { height: auto; overflow: visible; }
