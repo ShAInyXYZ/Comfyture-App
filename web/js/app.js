@@ -204,7 +204,7 @@ onChange((scopes) => {
 /** Shows the section the address names, and draws what changed while it was hidden. */
 /**
  * The assistant's bar floats over the Shot's desk and docks under the Stage's viewport, the Cut's timeline, Jam's page.
- * Mixer's page redraws all it holds, so its bar floats from the body, like the Shot's. Utensils', Spice's and Macaron's docks in their pages' foot,
+ * Mixer's composer docks in its dashboard and is preserved across redraws. Utensils', Spice's and Macaron's dock in their pages' foot,
  * Toaster's under its viewport.
  */
 function dockAssistant(page = currentPage()) {
@@ -213,13 +213,14 @@ function dockAssistant(page = currentPage()) {
   if (dockSpice(bar, page)) return;
   if (dockUtensils(bar, page)) return;
   if (dockToaster(bar, page)) return;
-  const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : page === "cut" ? $("cut-chat") : page === "jam" ? $("jam-chat") : page === "mixer" ? document.body : $("page-shot");
+  const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : page === "cut" ? $("cut-chat") : page === "jam" ? $("jam-chat") : page === "mixer" ? ($("mixer-chat") ?? document.body) : $("page-shot");
   bar.hidden = !slot || !["shot", "stage", "story", "cut", "jam", "mixer"].includes(page);
   if (slot && bar.parentElement !== slot) slot.append(bar);
-  bar.classList.toggle("is-docked", page === "stage" || page === "story" || page === "cut" || page === "jam");
+  bar.classList.toggle("is-docked", page === "stage" || page === "story" || page === "cut" || page === "jam" || (page === "mixer" && !!$("mixer-chat")));
   pending.add("assistant");
   flush();
 }
+document.addEventListener("mixer:drawn", () => currentPage() === "mixer" && dockAssistant());
 document.addEventListener("stage:ready", () => dockAssistant());
 // Story draws its page (and the bar's slot) when its first story has come
 document.addEventListener("story:drawn", () => currentPage() === "story" && $("assistant").parentElement?.id !== "story-chat" && dockAssistant());

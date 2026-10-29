@@ -148,6 +148,7 @@ function recipe(t) {
       m?.body.error && resume && !busy ? h("p.mx-error", { role: "alert" }, `${m.body.error} Your completed steps are saved. Continue to finish this mix.`) : null,
       h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy || stars.uploading > 0, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.engine === "official-template" ? `Your cast in the scene, animated with original dialogue and sound using ${t.model ?? "MiniMax H3"}` : t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, a track of its own, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => reviewGeneration() } },
         sprite("product-mixer"), h("span", {}, busy ? (m ? makeFeel(m, t).word : "Making it") : stars.uploading ? "Adding your photo…" : isProblemReveal(t) ? ownFrames ? "Generate video" : "Generate frames" : resume ? "Continue" : m?.body.film ? "Make it again" : "Make it"), cost && !busy && !resume && !stars.uploading ? h("em", {}, `≈ ${cost} cr`) : null),
+      h("div.mx-chat-slot#mixer-chat"),
   ];
   return h("section.mx-work.mx-recipe", {}, preview(t, m), h("div.mx-recipe-body", {}, ...head, ...rest));
 }
@@ -450,7 +451,20 @@ export function renderMixer(el) {
   const active = document.activeElement;
   const focus = el.contains(active) ? active.dataset.focus : null;
   const sel = focus ? [active.selectionStart, active.selectionEnd] : null;
-  el.replaceChildren(h("div.mixer", {}, feed(), remixing() ? remix(mixer.mix) : recipe(t), aside()));
+  // The assistant owns a persistent composer: preserve it and its caret when Mixer redraws.
+  const assistant = el.querySelector('#assistant');
+  const chatFocus = assistant?.contains(active) ? active : null;
+  const chatSelection = chatFocus && typeof chatFocus.selectionStart === 'number' ? [chatFocus.selectionStart, chatFocus.selectionEnd] : null;
+  if (assistant) document.body.append(assistant);
+  const work = remixing() ? remix(mixer.mix) : recipe(t);
+  if (remixing()) work.querySelector('.mx-remix-right')?.append(h('div.mx-chat-slot#mixer-chat'));
+  el.replaceChildren(h("div.mixer", {}, feed(), work, aside()));
+  if (assistant) el.querySelector('#mixer-chat')?.append(assistant);
+  document.dispatchEvent(new Event('mixer:drawn'));
+  if (chatFocus?.isConnected) {
+    chatFocus.focus({ preventScroll: true });
+    if (chatSelection) chatFocus.setSelectionRange?.(...chatSelection);
+  }
   if (focus) {
     const back = el.querySelector(`[data-focus="${CSS.escape(focus)}"]`);
     back?.focus({ preventScroll: true });
