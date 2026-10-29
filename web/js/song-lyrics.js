@@ -90,6 +90,9 @@ function heardTimeline(sections, heard, total) {
  */
 export const timingCovers = (timing, seconds) => !!timing?.lines?.length && Number(seconds) > 0 && timing.lines[0][0] <= 0.25 * seconds && timing.lines.at(-1)[1] >= 0.6 * seconds;
 
+/** Changes whenever lyrics or their timing changes, even if the audio file stays the same. */
+export const sectionAnalysisKey = (track, bpm) => JSON.stringify([track.url, track.seconds, bpm ?? track.bpm ?? null, track.lyrics ?? "", track.timing?.lines ?? null]);
+
 /** The sections of a song with the stretch of it each takes: [{ name, label, from, to }] (those with a tag), from its timeline. */
 export const sectionSpans = (lyrics, seconds, timing) => lyricTimeline(lyrics, seconds, timing).filter((e) => e.kind === "tag").map((e) => ({ name: e.hint ? `${e.text} - ${e.hint}` : e.text, label: e.text, from: e.from, to: e.to }));
 

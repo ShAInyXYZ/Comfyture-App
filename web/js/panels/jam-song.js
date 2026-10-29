@@ -8,7 +8,7 @@
 // performing the best part of the song, made with LTX from the cover. Both are one key each under the song's name; the two that
 // cost credits arm on the first press, with the price, and spend on the second.
 import { h } from "../dom.js";
-import { state, toast, waitFor, artistFor, onChange } from "../store.js";
+import { state, toast, waitFor, artistFor, onChange, changed } from "../store.js";
 import { api } from "../api.js";
 import { dropdown } from "../controls.js";
 import { LANGUAGES, SIGNATURES, DEFAULT_SONG, MAX_SECONDS, STYLE_LORAS, PITCHES, MODES, KEYS, noteOf, modeOf, QUALITY, lengthLabel, STRUCTURES, skeleton, costOfSong } from "../song.js";
@@ -640,7 +640,7 @@ async function syncSongLyrics(m) {
     Object.assign(m, { lyrics, timing });
     const stored = song.made.find((x) => x.file === m.file);
     if (stored) Object.assign(stored, { lyrics, timing });
-    if (inJam(m)) { Object.assign(jam.jam.body.track, { lyrics, timing }); await save(jam.jam); }
+    if (inJam(m)) { Object.assign(jam.jam.body.track, { lyrics, timing }); save(jam.jam); changed("jam"); }
     lyr.key = null;
     redrawAll();
   } catch (e) { toast(e.message, { tone: "crit" }); }
@@ -820,6 +820,14 @@ export function songWorkspace() {
     song.loaded = true;
     api.songs().then((list) => {
       for (const a of list) if (a.cover || a.coverVideo) covers.set(a.file, { cover: a.cover, coverVideo: a.coverVideo, coverSeconds: a.coverSeconds });
+      // A song can be synced after it was added to a video. Restore the saved timings to that track too.
+      const track = jam.jam?.body.track;
+      const saved = track && list.find((a) => a.file === track.file && a.lyrics && a.timing?.lines?.length);
+      if (saved && (saved.lyrics !== track.lyrics || JSON.stringify(saved.timing) !== JSON.stringify(track.timing))) {
+        Object.assign(track, { lyrics: saved.lyrics, timing: saved.timing });
+        save(jam.jam);
+        changed("jam");
+      }
       // (only songs: a sound under the shortest length a song is made at, 30 s, is a clip, and a song kept twice is shown once)
       const have = new Set(song.made.map((m) => m.file));
       const named = new Set(song.made.map((m) => m.name).filter(Boolean).map((n) => n.toLowerCase()));

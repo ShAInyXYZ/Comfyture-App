@@ -9,7 +9,7 @@ import { TRENDS, crewFace, crewById, trendArt } from "../mixer-trends.js";
 import { jam, useTrack, makeTrack, setLength, setStart, setSpan, LENGTHS, startFromTrend, listen, costOfTrack, costOfWords, openWindow, setWorkspace, cutPart, save } from "../jam.js";
 import { cut, tempoOctave, select, importBeats } from "../cut.js";
 import { detectSections, lyricTags, kindOf } from "../jam-sections.js";
-import { sectionSpans, timingCovers } from "../song-lyrics.js";
+import { sectionSpans, timingCovers, sectionAnalysisKey } from "../song-lyrics.js";
 import { editor } from "./editor.js";
 import { jicon, vinyl, clock, mins, pickFile, keep, cr, lamp, registerWindow } from "./jam-ui.js";
 import { card, segs } from "./jam-card.js";
@@ -133,7 +133,7 @@ function placed(b, found) {
 /** The sections of the song, found once for a track from its loudness (named by the lyrics' tags when they match). */
 const sectionsOf = new Map();
 function sectionsFor(b) {
-  const key = `${b.track.url}|${b.bpm ?? ""}|${b.track.lyrics ?? ""}`;
+  const key = sectionAnalysisKey(b.track, b.bpm);
   if (!sectionsOf.has(key)) sectionsOf.set(key, analyse(b.track.url).then((a) => (a ? { a, ...placed(b, detectSections(a.energy, b.track.seconds, { bpm: b.bpm || b.track.bpm || 0, names: lyricTags(b.track.lyrics) })) } : null)));
   return sectionsOf.get(key);
 }
@@ -191,12 +191,29 @@ function waveBox(b, id = "hero") {
         h("b", {}, s.name.toUpperCase()), ((s.to - s.from) / total) * w > 92 ? h("em", {}, `${mins(s.from)} – ${mins(s.to)}`) : null)));
     };
     let sig = "";
+    let sectionKey = "";
+    const refreshSections = (next) => {
+      const key = sectionAnalysisKey(next.track, next.bpm);
+      if (key === sectionKey) return;
+      sectionKey = key;
+      sectionsFor(next).then((got) => {
+        if (!got || sectionKey !== key) return;
+        data = got.a;
+        sections = got.sections;
+        api.source = got.source;
+        wrap.dataset.sections = got.source;
+        secs.title = got.source === "lyrics" ? "Sections placed where their lyrics are sung, named by the lyrics' tags" : "Sections found from how loud the song is, named by loudness and place";
+        label();
+        paint();
+      });
+    };
     const api = {
       el,
       sections: () => sections,
       source: "energy",
       update(next) {
         now = next;
+        refreshSections(next);
         const span = spanOf(next);
         part.style.left = `${(span.from / total) * 100}%`;
         part.style.width = `${((span.to - span.from) / total) * 100}%`;
@@ -225,16 +242,7 @@ function waveBox(b, id = "hero") {
     });
     wrap.title = "Click to move the song there";
     new ResizeObserver(() => (paint(), label())).observe(wrap);
-    sectionsFor(b).then((got) => {
-      if (!got) return;
-      data = got.a;
-      sections = got.sections;
-      api.source = got.source;
-      wrap.dataset.sections = got.source;
-      secs.title = got.source === "lyrics" ? (b.track.timing ? "Sections placed where their lyrics are sung, named by the lyrics' tags" : "Sections named by the lyrics' tags") : "Sections found from how loud the song is, named by loudness and place";
-      label();
-      paint();
-    });
+    refreshSections(b);
     return api;
   });
 }
