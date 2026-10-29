@@ -12,7 +12,7 @@ import { segs } from "./jam-card.js";
 import {
   backstageOf, VIDEO_MODELS, planScenes, addScene, updateScene, removeScene,
   setBackstage, attachAsset, generateAsset, resumeAsset, resumeBackstageJobs, insertScenes,
-  addCharacter, removeCharacter, generationDetails, estimateGeneration, useCover, prepareBackstageMentions, writeVideoPrompt,
+  addCharacter, removeCharacter, generationDetails, estimateGeneration, useCover, prepareBackstageMentions, writeVideoPrompt, setVideoPrompt,
 } from "../jam-backstage.js";
 
 const TABS = [["scenes", "Scenes"], ["characters", "Characters"], ["cover", "Cover"]];
@@ -47,14 +47,17 @@ function selected(bs, v) {
   if (v.tab === "cover") return bs.cover;
   const list = v.tab === "characters" ? bs.characters : bs.scenes;
   const key = v.tab === "characters" ? "character" : "scene";
-  if (!list.some((x) => x.id === v[key])) v[key] = list[0]?.id ?? null;
+  if (!list.some((x) => x.id === v[key])) {
+    v[key] = list[0]?.id ?? null;
+    if (v.tab === "scenes") v.slot = list[0]?.video ? "video" : "image";
+  }
   return list.find((x) => x.id === v[key]) ?? null;
 }
 
 function selectItem(v, id) {
   stopBackstageAudio();
   v[v.tab === "characters" ? "character" : "scene"] = id;
-  v.slot = "image";
+  v.slot = v.tab === "scenes" && backstageOf().scenes.find((scene) => scene.id === id)?.video ? "video" : "image";
   show();
 }
 
@@ -347,7 +350,7 @@ async function requestGeneration(item, kind) {
   const j = jam.jam;
   await prepareBackstageMentions(item.id, kind);
   const details = generationDetails(item.id, kind);
-  review = { type: "generate", jamId: j.id, id: item.id, title: item.title, kind, details, signature: JSON.stringify(details), loading: true };
+  review = { type: "generate", jamId: j.id, id: item.id, title: item.title, kind, details, signature: JSON.stringify(details), written: kind === "video" ? item.videoPrompt || "" : "", loading: true };
   const current = review;
   openWindow("backstage-review");
   try { current.estimate = await estimateGeneration(item.id, kind); }
@@ -485,6 +488,11 @@ registerWindow("backstage-review", {
     const references = r.kind === "video" ? d.frames.map((asset, i) => ({ asset, label: i === 0 ? "Start frame" : "End frame" }))
       : d.references.map((ref) => reviewReference(bs, item, ref));
     const changedRequest = JSON.stringify(generationDetails(r.id, r.kind)) !== r.signature;
+    const confirm = key(`Generate ${labelFor(r.kind)}`, "sparkle", async () => {
+      if (r.jamId !== jam.jam?.id || JSON.stringify(generationDetails(r.id, r.kind)) !== r.signature) throw new Error("The scene changed. Review the updated request first.");
+      openWindow(null);
+      await generateAsset(r.id, r.kind, { confirm: true, expected: r.signature, prompt: r.written });
+    }, { primary: true, disabled: r.loading || r.writing || changedRequest || pendingOf(item) || (r.kind === "video" && !r.written?.trim()) });
     return h("div.jb-review", {},
       h("div.jb-review-heading", {}, h("span.label", {}, `Backstage · ${labelFor(r.kind)}`), h("h2", {}, r.title || "Untitled scene"),
         h("p.jb-hint", {}, r.kind === "video" ? "Animate this scene. Your song remains the soundtrack in the final edit." : r.kind === "endImage" ? "Generate a separate end frame using the start frame as a reference." : r.id === "cover" ? "Generate square cover artwork. It stays separate from your video scenes." : bs.characters.some((c) => c.id === r.id) ? "Generate a reusable character reference to keep this identity consistent across scenes." : "Generate one image, then review it before making a video.")),
@@ -502,7 +510,12 @@ registerWindow("backstage-review", {
       h(`section.jb-review-direction${r.kind === "video" ? ".is-brief" : ""}`, {}, h("span.label", {}, "Generation direction"), h("p", {}, d.prompt || [bs.style, item.prompt, r.kind === "video" ? item.motion : ""].filter(Boolean).join("\n\n"))),
       r.kind === "video" ? h("section.jb-review-direction", {},
         h("span.label", {}, "Video prompt"),
-        r.written ? h("textarea.field", { "aria-label": "Video prompt", value: r.written, rows: 8, on: { input: (e) => { r.written = e.target.value; } } }) : h("p.jb-hint", {}, "Write the prompt to review it before generating. Writing uses a small amount of credits.")) : null,
+        h("textarea.field", { "aria-label": "Video prompt", value: r.written, rows: 8, maxlength: 6000, placeholder: "Describe the movement, or use Write video prompt.", on: { input: (e) => {
+          try { setVideoPrompt(r.id, e.target.value, r.signature); r.written = e.target.value; confirm.disabled = r.loading || r.writing || changedRequest || pendingOf(item) || !r.written.trim(); }
+          catch (error) { toast(error.message, { tone: "crit" }); }
+        } } }),
+        item.videoPromptSignature && item.videoPromptSignature !== r.signature && r.written ? h("p.jb-hint", {}, "The scene or frames changed since this prompt was saved. Review it before generating.") : null,
+        h("p.jb-hint", {}, "Write your own prompt for free, or use the writer (uses credits).")) : null,
       r.kind !== "video" ? h("div.jb-review-price", {}, h("div", {}, h("span", {}, "Estimated additional cost"), h("strong", {}, r.loading ? "Checking…" : typeof value === "number" && Number.isFinite(value) ? `≈ ${value.toFixed(2).replace(/\.00$/, "")} cr` : "Not available")),
         h("p", {}, price?.note || price?.costNote || "Actual billing depends on provider execution. This estimate is for this asset only; later images and videos are separate.")) : null,
       changedRequest ? h("p.jb-error", { role: "alert" }, "The scene changed. Close this window and review the updated request.") : null,
@@ -510,15 +523,12 @@ registerWindow("backstage-review", {
         r.kind === "video" ? h("div.jb-review-inline-price", {}, h("span", {}, "Estimated cost"), h("strong", {}, r.loading ? "Checking…" : typeof value === "number" && Number.isFinite(value) ? `≈ ${value.toFixed(2).replace(/\.00$/, "")} cr` : "Not available")) : null,
         key("Cancel", null, () => openWindow(null)),
         r.kind === "video" ? key(r.writing ? "Writing prompt…" : r.written ? "Rewrite prompt" : "Write video prompt", "sparkle", async () => {
+          const before = r.written;
           r.writing = true; show();
-          try { const result = await writeVideoPrompt(r.id, r.signature); if (review === r) { r.written = result.prompt; r.writer = result.writer; } }
+          try { const result = await writeVideoPrompt(r.id, r.signature); if (r.written === before && (item.videoPrompt || "") === before) { setVideoPrompt(r.id, result.prompt, r.signature); r.written = result.prompt; r.writer = result.writer; if (review !== r && review?.jamId === r.jamId && review?.id === r.id && review?.signature === r.signature && review.written === before) { review.written = result.prompt; show(); } } else toast("Your edits were kept; the written suggestion was not applied."); }
           finally { r.writing = false; if (review === r) show(); }
         }, { disabled: r.writing || changedRequest }) : null,
-        key(`Generate ${labelFor(r.kind)}`, "sparkle", async () => {
-        if (r.jamId !== jam.jam?.id || JSON.stringify(generationDetails(r.id, r.kind)) !== r.signature) throw new Error("The scene changed. Review the updated request first.");
-        openWindow(null);
-        await generateAsset(r.id, r.kind, { confirm: true, expected: r.signature, prompt: r.written });
-      }, { primary: true, disabled: r.loading || r.writing || changedRequest || pendingOf(item) || (r.kind === "video" && !r.written?.trim()) })));
+        confirm));
   },
 });
 

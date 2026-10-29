@@ -148,6 +148,15 @@ export async function writeVideoPrompt(id, expected) {
   if (typeof result.prompt !== 'string' || !result.prompt.trim() || result.prompt.length > 6000) throw new Error('The writer returned an invalid prompt.');
   return result;
 }
+/** Keep the exact reviewed text with its scene without redrawing the editor while typing. */
+export function setVideoPrompt(id, prompt, expected) {
+  const j = requireJam(), item = itemOf(id, j);
+  if (JSON.stringify(generationDetails(id, 'video')) !== expected) throw new Error('The scene changed. Review the updated request first.');
+  if (typeof prompt !== 'string' || prompt.length > 6000) throw new Error('Keep the video prompt under 6,000 characters.');
+  item.videoPrompt = prompt;
+  item.videoPromptSignature = expected;
+  save(j);
+}
 const active = new Map();
 const request = async (path, body) => {
   const res = await fetch(path, body === undefined ? undefined : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });

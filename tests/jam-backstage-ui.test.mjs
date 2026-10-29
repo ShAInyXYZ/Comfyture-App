@@ -45,7 +45,7 @@ function harness() {
     backstageOf: () => bs, VIDEO_MODELS: [{ id: 'ltx-2.5', name: 'LTX 2.5 Distilled', endFrame: true }, { id: 'fast-h3', name: 'Fast H3', endFrame: true }],
     planScenes() {}, addScene() {}, updateScene: (id, patch) => { updates.push({ id, patch }); Object.assign(itemOf(id), patch); }, removeScene() {},
     setBackstage() {}, attachAsset() {}, generateAsset: (...args) => calls.push(args), resumeAsset() {}, resumeBackstageJobs() {}, insertScenes() {},
-    addCharacter() {}, removeCharacter() {}, prepareBackstageMentions: async () => {}, generationDetails: details, estimateGeneration: async () => ({ credits: null, note: 'Active GPU time.' }), writeVideoPrompt: async () => ({ prompt: 'Reviewed motion prompt', writer: 'Luna' }), useCover() {},
+    addCharacter() {}, removeCharacter() {}, prepareBackstageMentions: async () => {}, generationDetails: details, estimateGeneration: async () => ({ credits: null, note: 'Active GPU time.' }), writeVideoPrompt: async () => ({ prompt: 'Reviewed motion prompt', writer: 'Luna' }), setVideoPrompt: (id, prompt, signature) => Object.assign(itemOf(id), { videoPrompt: prompt, videoPromptSignature: signature }), useCover() {},
     document: { addEventListener: (name, fn) => events.set(name, fn) }, window: { addEventListener() {} },
   };
   const executable = source.replace(/^import\s+\{[\s\S]*?\}\s+from\s+["'][^"']+["'];\s*/gm, '').replace(/export function /g, 'function ');
@@ -107,6 +107,7 @@ test('Video generation reviews both frames, actual render duration and cost befo
   await tick();
   const written = t.windows.get('backstage-review').build();
   assert.match(text(written), /Generation direction/);
+  assert.equal(t.scene.videoPrompt, 'Reviewed motion prompt');
   const confirm = find(written, 'Generate video');
   assert.equal(confirm.props.disabled, false);
   confirm.props.on.click();
@@ -115,6 +116,52 @@ test('Video generation reviews both frames, actual render duration and cost befo
   assert.equal(t.calls[0][2].confirm, true);
   assert.equal(t.calls[0][2].prompt, 'Reviewed motion prompt');
   assert.equal(JSON.parse(t.calls[0][2].expected).duration, 11);
+});
+
+test('A manually typed video prompt is saved and restored without calling the writer', async () => {
+  const t = harness();
+  find(t.render(), 'Video').props.on.click();
+  find(t.render(), 'Review video generation').props.on.click();
+  await tick();
+  let modal = t.windows.get('backstage-review').build();
+  const field = walk(modal).find(n => n.tag.startsWith('textarea') && n.props['aria-label'] === 'Video prompt');
+  assert.ok(field);
+  field.props.on.input({ target: { value: 'stable camera slowly zooming out, colors stay the same' } });
+  assert.equal(t.scene.videoPrompt, 'stable camera slowly zooming out, colors stay the same');
+  assert.equal(find(modal, 'Generate video').props.disabled, false);
+  find(modal, 'Cancel').props.on.click();
+  find(t.render(), 'Review video generation').props.on.click();
+  await tick();
+  modal = t.windows.get('backstage-review').build();
+  assert.equal(walk(modal).find(n => n.props['aria-label'] === 'Video prompt').props.value, t.scene.videoPrompt);
+  find(modal, 'Generate video').props.on.click();
+  await tick();
+  assert.equal(t.calls[0][2].prompt, t.scene.videoPrompt);
+});
+
+test('A scene with a completed video opens its video preview and can switch to its frames', () => {
+  const t = harness();
+  t.scene.video = { file: 'video.mp4', url: '/media/video.mp4' };
+  let root = t.render();
+  assert.ok(walk(root).find(n => n.tag === 'video' && n.props.src === '/media/video.mp4'));
+  find(root, 'Start frame').props.on.click();
+  root = t.render();
+  assert.ok(walk(root).find(n => n.tag === 'img' && n.props.src === '/media/start.png'));
+});
+
+test('A saved prompt is retained and marked for review after changing the model', async () => {
+  const t = harness();
+  find(t.render(), 'Video').props.on.click();
+  find(t.render(), 'Review video generation').props.on.click();
+  await tick();
+  let modal = t.windows.get('backstage-review').build();
+  walk(modal).find(n => n.props['aria-label'] === 'Video prompt').props.on.input({ target: { value: 'Hold the shot.' } });
+  t.scene.model = 'fast-h3';
+  find(t.render(), 'Review video generation').props.on.click();
+  await tick();
+  modal = t.windows.get('backstage-review').build();
+  assert.match(text(modal), /changed since this prompt was saved/i);
+  assert.equal(walk(modal).find(n => n.props['aria-label'] === 'Video prompt').props.value, 'Hold the shot.');
 });
 
 test('Fast H3 can review both frames and reports the actual frames in the request', async () => {
