@@ -1415,7 +1415,8 @@ export class Stage {
     const character = this.characters.find((c) => c.id === sel.character?.id) ?? null;
     const prop = this.props.find((p) => p.userData.id === sel.prop?.userData.id) ?? null;
     this.selection = { character, joint: character ? sel.joint : null, prop };
-    if (!keepHistory) (this.history = []), (this.future = []);
+    // a stage opened starts its history at the scene as it came, so its first change can be undone too (it could not: undo needs two)
+    if (!keepHistory) (this.history = [JSON.stringify(this.toJSON())]), (this.future = []);
     this.resize();
     this.attachGizmo();
     this.emit("scene");
