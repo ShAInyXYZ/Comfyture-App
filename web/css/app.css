@@ -475,6 +475,8 @@ body[data-product="kitchen"] .rooms { display: block; }
 @keyframes typing { 0%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }
 /* outside the fitted desk the page scrolls: leave room so the bar never sits on the last row */
 @media not ((min-width: 1281px) and (min-height: 900px)) { #page-shot { padding-bottom: calc(var(--chat-h, 3.5rem) + 2.5rem); } }
+/* on the Shot's desk the bar floats over the middle column only (app.js measures it), so it covers neither the inputs nor the take log */
+#page-shot > .chat-float { left: var(--mid-x, 50%); width: min(50rem, var(--mid-w, calc(100vw - 2rem))); }
 
 /* the bar: the conversation's files ride just above it, as in a chat */
 .composer { position: relative; display: grid; gap: .5rem; }
@@ -1351,6 +1353,14 @@ body[data-page="shot"]:not(.has-window) .toast, body[data-page="mixer"] .toast {
   .col.stage { padding-bottom: calc(var(--chat-h, 3.5rem) + 1.75rem); }
   .col.inputs .settings { margin-top: auto; }
 
+}
+
+/* a laptop's short window: the desk scrolls as a page, and the take log keeps to the window and scrolls on its own, so a long log
+   does not stretch the page to many screens beside the inputs and the script */
+@media (min-width: 1281px) and (height < 900px) {
+  .col.side { position: sticky; top: .75rem; align-self: start; max-height: calc(100dvh - 1.5rem); }
+  .col.side .takes { min-height: 0; }
+  .col.side .shelf { flex: 1 1 auto; min-height: 0; }
 }
 
 /* ---- smaller screens ------------------------------------------------------- */

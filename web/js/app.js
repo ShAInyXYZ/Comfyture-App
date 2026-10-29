@@ -221,6 +221,17 @@ function dockAssistant(page = currentPage()) {
   flush();
 }
 document.addEventListener("stage:ready", () => dockAssistant());
+// on the Shot's desk the floating bar keeps to the middle column (app.css reads where it is), so it never covers the inputs or the take log
+const shotMid = document.querySelector("#page-shot .col.stage");
+function fitShotBar() {
+  const r = shotMid?.getBoundingClientRect();
+  if (!r?.width) return;
+  const page = $("page-shot");
+  page.style.setProperty("--mid-x", `${Math.round(r.left + r.width / 2)}px`);
+  page.style.setProperty("--mid-w", `${Math.round(r.width)}px`);
+}
+if (shotMid) new ResizeObserver(fitShotBar).observe(shotMid);
+addEventListener("resize", fitShotBar);
 // Story draws its page (and the bar's slot) when its first story has come
 document.addEventListener("story:drawn", () => currentPage() === "story" && $("assistant").parentElement?.id !== "story-chat" && dockAssistant());
 document.addEventListener("cut:drawn", () => currentPage() === "cut" && $("assistant").parentElement?.id !== "cut-chat" && dockAssistant());
