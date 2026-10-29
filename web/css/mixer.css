@@ -245,7 +245,7 @@
 .mx-remix-drop em { color: var(--dim); font: 400 var(--fs-small)/1 var(--font-sans); font-style: normal; }
 
 @supports (corner-shape: squircle) {
-  .mx-panel, .mx-work, .mx-kinds button, .mx-card, .mx-card-len, .mx-card-heat, .mx-screen, .mx-stage.is-in-frame, .mx-music, .mx-chip, .mx-role, .mx-role-drop, .mx-role-swap, .mx-model, .mx-model-icon, .mx-steps, .mx-go, .mx-transport, .mx-shot, .mx-thumb, .mx-slot-pic, .mx-slot.is-empty, .mx-star-pic, .mx-star.is-add, .mx-mix-open, .mx-mix-x, .mx-remix-drop, .mx-fix .key { corner-shape: squircle; }
+  .mx-panel, .mx-work, .mx-feed, .mx-card, .mx-card-len, .mx-card-heat, .mx-screen, .mx-stage.is-in-frame, .mx-music, .mx-chip, .mx-role, .mx-role-drop, .mx-role-swap, .mx-model, .mx-model-icon, .mx-steps, .mx-go, .mx-transport, .mx-shot, .mx-thumb, .mx-slot-pic, .mx-slot.is-empty, .mx-star-pic, .mx-star.is-add, .mx-mix-open, .mx-mix-x, .mx-remix-drop, .mx-fix .key { corner-shape: squircle; }
 }
 
 @media (max-width: 1280px) {
@@ -293,13 +293,6 @@
 
 /* Preview card positioning. */
 .mx-preview { position: relative; }
-
-/* Render provenance stays available without crowding the cast controls. */
-.mx-provenance { border-top: 1px solid var(--line); padding-top: .75rem; color: var(--muted); font: 400 var(--fs-small)/1.5 var(--font-sans); }
-.mx-provenance summary { cursor: pointer; color: var(--text); }
-.mx-provenance p { margin: .5rem 0; }
-.mx-provenance a { color: var(--accent); }
-.mx-provenance summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
 /* A personal collection reveal: one subject field and the two saved camera anchors. */
 .mx-problem { display: grid; gap: .5rem; }

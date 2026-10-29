@@ -13,7 +13,7 @@ import {
 } from "../mixer.js";
 import { loraStack } from "../loras.js";
 import { TRENDS, CREW, KINDS, trendById, crewById, trendArt, crewFace } from "../mixer-trends.js";
-import { pick, castOf, selectTrend, setKind, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, reviewFrames, making, takesOf, castArtist, trendInputs, setProblem, estimate as trendCost } from "../mixer-trend.js";
+import { pick, castOf, selectTrend, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, reviewFrames, making, takesOf, castArtist, trendInputs, setProblem, estimate as trendCost } from "../mixer-trend.js";
 import { openPicker, pictureOf } from "../picker.js";
 import { voiceReferenceFor } from "../mixer-voices.js";
 import { isProblemReveal, problemBeats } from "../mixer-problem-reveal.js";
@@ -64,10 +64,9 @@ const nameOf = (who) => (who?.crew ? crewById(who.crew)?.name : who?.star?.name 
 
 // Mixer's own trends: comedy and reactions, and the few shown here as well as on Jam's shelf
 const OURS = TRENDS.filter((t) => t.home === "mixer" || t.also?.includes("mixer"));
-const OUR_KINDS = KINDS.filter(([id]) => id === "all" || OURS.some((t) => t.kind === id));
 
 function feed() {
-  const list = OURS.filter((t) => pick.kind === "all" || t.kind === pick.kind);
+  const list = OURS;
   const cards = h("div.mx-cards", { dataset: { scrollKey: "mx-cards" } }, ...list.map(card));
   const nudge = (d) => cards.scrollBy(matchMedia("(min-width: 981px)").matches
     ? { top: d * cards.clientHeight * 0.8, behavior: "smooth" }
@@ -75,7 +74,6 @@ function feed() {
   return h("section.mx-feed", {},
     h("div.mx-feed-head", {},
       h("h1", {}, "Trending now"), h("p", {}, "Viral trends, made yours."),
-      h("div.mx-kinds", {}, ...OUR_KINDS.map(([id, label]) => h("button", { type: "button", "aria-pressed": String(pick.kind === id), on: { click: () => setKind(id) } }, label))),
       h("div.mx-nudge", {},
         h("button.key.is-icon", { type: "button", "aria-label": "Previous trends", on: { click: () => nudge(-1) } }, icon("chevron")),
         h("button.key.is-icon", { type: "button", "aria-label": "More trends", on: { click: () => nudge(1) } }, icon("chevron")))),
@@ -147,12 +145,6 @@ function recipe(t) {
       referenceFrames ? models : null,
       ownFrames && !busy && !m?.body.shots?.some(s => s.native?.id || s.submissionPending) ? h("button.key", { type: "button", on: { click: () => reviewGeneration({ freshFrames: true }) } }, "Regenerate frames") : null,
       ownFrames && !busy ? h("p.hint", {}, "Review both frames above. Generate video opens a separate confirmation.") : null,
-      t.render ? h("details.mx-provenance", {}, h("summary", {}, "Preview generation details"),
-        h("p", {}, `${t.render.model} · ${t.render.executionSeconds == null ? "Execution time unavailable" : `${Math.round(t.render.executionSeconds)} s execution`} · ${t.render.elapsedSeconds == null ? "" : `${Math.round(t.render.elapsedSeconds)} s elapsed`}`),
-        h("p", {}, t.render.actualCostCredits == null ? "Actual cost: not reported by provider. This was a paid generation." : `Actual cost: ${t.render.actualCostCredits} cr`),
-        t.render.estimatedCredits != null ? h("p", {}, `Estimated production cost: ${t.render.estimatedCredits.toFixed(1)} cr · ${t.render.estimateNote ?? "includes voice setup; image generation billed separately"}`) : null,
-        t.render.voiceMethod ? h("p", {}, t.render.voiceMethod) : null,
-        h("a", { href: t.recipe, target: "_blank", rel: "noopener" }, "Recipe, script and metadata")) : null,
       m?.body.error && resume && !busy ? h("p.mx-error", { role: "alert" }, `${m.body.error} Your completed steps are saved. Continue to finish this mix.`) : null,
       h("button.mx-go" + (busy && m ? ".is-making" : ""), { type: "button", disabled: busy || stars.uploading > 0, style: busy && m ? { "--p": String(makeFeel(m, t).pct) } : {}, title: t.engine === "official-template" ? `Your cast in the scene, animated with original dialogue and sound using ${t.model ?? "MiniMax H3"}` : t.recipe ? "The trend's first frame with your cast, its takes rolled with LTX-2.5 on its own motion, a track of its own, cut together" : "The trend's first frame with your cast, its beats rolled with LTX-2.5, a track of its own, cut together", on: { click: () => reviewGeneration() } },
         sprite("product-mixer"), h("span", {}, busy ? (m ? makeFeel(m, t).word : "Making it") : stars.uploading ? "Adding your photo…" : isProblemReveal(t) ? ownFrames ? "Generate video" : "Generate frames" : resume ? "Continue" : m?.body.film ? "Make it again" : "Make it"), cost && !busy && !resume && !stars.uploading ? h("em", {}, `≈ ${cost} cr`) : null),
