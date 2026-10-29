@@ -10,7 +10,7 @@ import {
   STICKERS, loadStickers, addBeatAt, removeBeat, draftEdit, addLyric, addMedia, undo, redo,
 } from "../cut.js";
 import { fxAt, hitsOf, beatTimes, colourMatrix, FX_KINDS, aspectRatio, WHIP, whipBlur } from "../fx.js";
-import { wordsOf, layoutLyric, wordState, ANIMATED, LINE, OUTLINE, faceOf } from "../lyrics.js";
+import { wordsOf, captionLayouts, wordState, ANIMATED, LINE, OUTLINE, faceOf } from "../lyrics.js";
 import { nearestBeat } from "../beats.js";
 import { renderInspector } from "./inspector.js";
 import { api } from "../api.js";
@@ -127,33 +127,36 @@ function lyricOf(it, b) {
   const ratio = aspectRatio(b.aspect);
   const W = ratio >= 1 ? 1280 : Math.round(1280 * ratio);
   const H = ratio >= 1 ? Math.round(1280 / ratio) : 1280;
-  const sig = JSON.stringify([it.text, it.words, it.style, it.anim, it.x, it.y, it.size, it.color, it.hi, it.length, b.aspect]);
+  const sig = JSON.stringify([it.text, it.words, it.romanization, it.captionLanguage, it.style, it.anim, it.x, it.y, it.size, it.color, it.hi, it.length, b.aspect]);
   let box = player.words.get(it.id);
   if (box && box.sig === sig) return box;
   box?.el.remove();
-  const L = layoutLyric(it, W, H);
-  const look = L.look;
+  const layers = captionLayouts(it, W, H);
   const pct = (v, of) => `${(v / of) * 100}%`;
   const px = (v) => `${(v / W) * 100}cqw`;
+  const boxes = [], words = [];
+  for (const { L } of layers) {
+  const look = L.look;
   // the outline is the word drawn again all round it, a border's width away (round at the corners, as the film's is)
   const ring = Array.from({ length: 24 }, (_, i) => `${px(L.bord * Math.cos((i * Math.PI) / 12))} ${px(L.bord * Math.sin((i * Math.PI) / 12))} 0 ${OUTLINE}`).join(", ");
   // what a look adds: its face, its spacing, hollow letters (a stroke in the colour), a glow in the lit colour, a box behind each row
   const own = look.face === "lyric" ? {} : { fontFamily: `"${faceOf(look.face).family}", sans-serif` };
   const glow = `0 0 ${px(L.em * 0.1)} ${look.hi}, 0 0 ${px(L.em * 0.24)} ${look.hi}, 0 0 ${px(L.em * 0.5)} ${look.hi}`;
-  const boxes = L.boxes.map((bx) => h("i.cw-box", { style: { left: pct(bx.cx - bx.w / 2, W), top: pct(bx.cy - bx.h / 2, H), width: pct(bx.w, W), height: pct(bx.h, H), background: look.box.color, opacity: String(look.box.alpha), borderRadius: px(L.em * 0.08) }, dataset: { i: String(bx.i) } }));
-  const words = L.placed.map((p) => {
+  boxes.push(...L.boxes.map((bx) => ({ L, i: bx.i, el: h("i.cw-box", { style: { left: pct(bx.cx - bx.w / 2, W), top: pct(bx.cy - bx.h / 2, H), width: pct(bx.w, W), height: pct(bx.h, H), background: look.box.color, opacity: String(look.box.alpha), borderRadius: px(L.em * 0.08) } }) })));
+  words.push(...L.placed.map((p) => {
     const bottom = look.anim === "bounce";
     const o = look.outline && !look.hollow ? h("b.cw-o", { style: { color: OUTLINE, textShadow: ring } }, p.text) : null;
     const g = look.glow ? h("b.cw-g", { style: { color: "transparent", textShadow: glow } }, p.text) : null;
     const f = h("b.cw-f", { style: look.hollow ? { color: "transparent", webkitTextStroke: `${px(L.bord)} ${look.color}` } : { color: look.color } }, p.text);
     const k = look.anim === "fill" ? h("b.cw-k", { style: { color: look.hi } }, p.text) : null;
     const el = h("span.cut-word", { style: { left: pct(p.cx - p.w / 2, W), top: pct(p.cy - L.boxH / 2 + L.drop, H), width: pct(p.w, W), height: pct(L.boxH, H), fontSize: px(L.em), lineHeight: String(L.line.box), transformOrigin: bottom ? "50% 100%" : "50% 50%", letterSpacing: look.spacing ? `${look.spacing}em` : "", ...own } }, g, o, f, k);
-    return { el, f, k, p };
-  });
-  const el = h("div.cut-lyric", { dataset: { id: it.id } }, ...boxes, ...words.map((w) => w.el));
+    return { el, f, k, p, L };
+  }));
+  }
+  const el = h("div.cut-lyric", { dataset: { id: it.id } }, ...boxes.map((b) => b.el), ...words.map((w) => w.el));
   el.addEventListener("pointerdown", (e) => gesture(e, it.id, "move"));
   ed.shell.titles.append(el);
-  box = { sig, el, words, L };
+  box = { sig, el, words, boxes, L: layers[0].L };
   player.words.set(it.id, box);
   return box;
 }
@@ -268,11 +271,10 @@ function show(t) {
       lyricsNow.add(it.id);
       const box = lyricOf(it, b);
       const rel = t - x.start;
-      const words = wordsOf(it);
       box.el.hidden = false;
-      const look = box.L.look;
       box.words.forEach((w) => {
-        const word = words[w.p.i];
+        const look = w.L.look;
+        const word = w.L.words[w.p.i];
         const state = wordState(look.style, word, rel, x.len, look.anim);
         const e = w.el;
         e.style.visibility = state.show ? "visible" : "hidden";
@@ -285,9 +287,9 @@ function show(t) {
         if (w.k) w.k.style.clipPath = `inset(0 ${(1 - state.fill) * 100}% 0 0)`;
       });
       // a box behind a row shows from its first word to the end of the line
-      box.el.querySelectorAll(".cw-box").forEach((bx) => {
-        const first = box.words.find((w) => w.p.i === Number(bx.dataset.i));
-        bx.style.visibility = first && wordState(look.style, words[first.p.i], rel, x.len, look.anim).show ? "visible" : "hidden";
+      box.boxes.forEach((bx) => {
+        const look = bx.L.look;
+        bx.el.style.visibility = wordState(look.style, bx.L.words[bx.i], rel, x.len, look.anim).show ? "visible" : "hidden";
       });
     } else plain.push(h("div.cut-title", { className: it.style === "lower" ? "is-lower" : "", style: { opacity: String(x.alpha) } }, it.text));
   }
@@ -383,14 +385,13 @@ function boxOf(it, b) {
   }
   const box = player.words.get(it.id);
   if (!box || !ANIMATED.has(it.style)) return null;
-  const L = box.L;
   const ratio = aspectRatio(b.aspect);
   const W = ratio >= 1 ? 1280 : Math.round(1280 * ratio);
   const H = ratio >= 1 ? Math.round(1280 / ratio) : 1280;
-  const widest = Math.max(...L.placed.map((p) => p.cx + p.w / 2)) - Math.min(...L.placed.map((p) => p.cx - p.w / 2));
-  const top = Math.min(...L.placed.map((p) => p.cy)) - L.boxH / 2;
-  const bottom = Math.max(...L.placed.map((p) => p.cy)) + L.boxH / 2;
-  const left = Math.min(...L.placed.map((p) => p.cx - p.w / 2));
+  const widest = Math.max(...box.words.map(({ p }) => p.cx + p.w / 2)) - Math.min(...box.words.map(({ p }) => p.cx - p.w / 2));
+  const top = Math.min(...box.words.map(({ p, L }) => p.cy - L.boxH / 2));
+  const bottom = Math.max(...box.words.map(({ p, L }) => p.cy + L.boxH / 2));
+  const left = Math.min(...box.words.map(({ p }) => p.cx - p.w / 2));
   return { x: (left + widest / 2) / W, y: (top + bottom) / 2 / H, w: widest / W, h: (bottom - top) / H, rot: 0, lyric: true };
 }
 

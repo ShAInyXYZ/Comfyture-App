@@ -21,6 +21,7 @@ const cs = (v) => Math.round(v * 100) / 100;
  * karaoke, pop and bounce are the first three Jam and Cut had: they are drawn exactly as they were.
  */
 export const LOOKS = {
+  plain: { name: "Simple lyrics", anim: "none", scale: 0.85, bordK: 0.55 },
   karaoke: { name: "Karaoke pop", anim: "fill" },
   pop: { name: "Pop-in", anim: "pop" },
   bounce: { name: "Bounce", anim: "bounce" },
@@ -33,7 +34,7 @@ export const LOOKS = {
   comic: { name: "Comic", anim: "bounce", face: "comic", caps: true, scale: 1.16, tilt: -5, bordK: 1.5, hi: "#FFE24A" },
 };
 /** How a word may arrive, whatever the style (a line may name one of its own: item.anim); the style's own is used otherwise. */
-export const ANIMS = [["fill", "Word highlight"], ["pop", "Pop in"], ["bounce", "Bounce"], ["cut", "Typed"], ["fade", "Fade in"]];
+export const ANIMS = [["none", "Whole line"], ["fill", "Word highlight"], ["pop", "Pop in"], ["bounce", "Bounce"], ["cut", "Typed"], ["fade", "Fade in"]];
 const ANIM_IDS = new Set(ANIMS.map(([id]) => id));
 
 /** The styles of the Cut editor's list (Kitchen's inspector and Jam's gallery): every look, then the plain ones. */
@@ -64,7 +65,10 @@ export const faceOf = (id) => OTHER[id] ?? { family: LYRIC_FONT.family, file: LY
 /** How wide a text is at a font size (the em, in pixels), by the face's advance widths. */
 export const textWidth = (text, em, face = "lyric") => {
   const f = faceOf(face);
-  return ([...String(text)].reduce((sum, ch) => sum + (f.adv.get(ch) ?? f.fallback), 0) * em) / f.upm;
+  // CJK fallback fonts use full-em glyphs. Treating them as Latin fallback widths makes
+  // separately positioned phrases overlap in both the player and burned-in subtitles.
+  const full = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\u3000-\u303f\uff01-\uff60]/u;
+  return ([...String(text)].reduce((sum, ch) => sum + (full.test(ch) ? f.upm : /\p{Mark}/u.test(ch) ? 0 : f.adv.get(ch) ?? f.fallback), 0) * em) / f.upm;
 };
 /** The face's line box, in em: its height (what ASS calls the font size) and how far its middle is above the baseline's middle. */
 export const lineOf = (face = "lyric") => {
@@ -168,13 +172,27 @@ export function layoutLyric(item, W, H) {
   const gap = measure(" ");
   const room = W * 0.9;
   const rows = [];
-  words.forEach((w, i) => {
-    const text = shown(w.text);
+  const place = (text, i, join = false) => {
     const width = measure(text);
     let row = rows.at(-1);
-    if (!row || look.stack || (row.words.length && row.width + gap + width > room)) rows.push((row = { words: [], width: 0 }));
-    row.width += (row.words.length ? gap : 0) + width;
-    row.words.push({ i, text, w: width });
+    const space = join ? 0 : gap;
+    if (!row || look.stack || (row.words.length && row.width + space + width > room)) rows.push((row = { words: [], width: 0 }));
+    const before = row.words.length ? space : 0;
+    row.width += before + width;
+    row.words.push({ i, text, w: width, before });
+  };
+  words.forEach((w, i) => {
+    const text = shown(w.text);
+    if (measure(text) <= room) return place(text, i);
+    // Japanese often has no spaces. Break an oversized phrase at grapheme boundaries,
+    // keeping its original timing rather than pretending these are transcribed words.
+    const chars = typeof Intl.Segmenter === "function" ? [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text)].map((x) => x.segment) : [...text];
+    let fragment = "", first = true;
+    for (const ch of chars) {
+      if (fragment && measure(fragment + ch) > room) { place(fragment, i, !first); fragment = ""; first = false; }
+      fragment += ch;
+    }
+    if (fragment) place(fragment, i, !first);
   });
   const step = em * look.leading;
   const top = look.y * H - (rows.length * step) / 2 + step / 2;
@@ -187,8 +205,9 @@ export function layoutLyric(item, W, H) {
     const centre = clamp(look.x * W, Math.min(half + em * 0.2, W / 2), Math.max(W - half - em * 0.2, W / 2));
     let x = centre - half;
     for (const w of row.words) {
+      x += w.before;
       placed.push({ ...w, cx: x + w.w / 2, cy, row: k });
-      x += w.w + gap;
+      x += w.w;
     }
     if (look.box) boxes.push({ row: k, i: row.words[0].i, cx: centre, cy, w: row.width + em * 0.5, h: em * 1.12 });
   });
@@ -205,6 +224,31 @@ export function layoutLyric(item, W, H) {
   const bord = look.outline ? Math.round(base * look.bordK * 100) / 100 : 0;
   // (`drop`: how far lower the film draws this face than a browser does, for the preview to follow)
   return { look, words, placed, boxes, rows: rows.length, em, line, boxH: em * line.box, fs: em * line.box, bord, step, drop: em * faceOf(look.face).drop };
+}
+
+/** Display variants never overwrite the original lyric or its saved timings. Romaji in
+ * a second line is held for the whole phrase; it is not word-aligned transcription. */
+export function captionLayouts(source, W, H) {
+  const roman = String(source.romanization ?? "").trim();
+  const mode = roman ? source.captionLanguage : "original";
+  const item = mode === "romaji" ? { ...source, text: roman, words: splitWords(roman, num(source.length, 3)) } : source;
+  const L = layoutLyric(item, W, H);
+  const layers = [{ item, L }];
+  if (mode !== "both" || roman === String(source.text).trim()) return layers;
+  const secondary = { ...source, text: roman, words: [{ text: roman, from: 0, to: num(source.length, 3) }], style: "plain", anim: "none", size: num(source.size, 0.09) * 0.66 };
+  const R = layoutLyric(secondary, W, H);
+  const bounds = (v) => ({ top: Math.min(...v.placed.map((p) => p.cy - v.boxH / 2)), bottom: Math.max(...v.placed.map((p) => p.cy + v.boxH / 2)) });
+  if (!L.placed.length || !R.placed.length) return layers;
+  const a = bounds(L), b = bounds(R);
+  const move = (v, dy) => { for (const p of [...v.placed, ...v.boxes]) p.cy += dy; };
+  move(R, a.bottom + L.em * 0.18 - b.top);
+  const totalBottom = bounds(R).bottom;
+  const height = totalBottom - a.top;
+  const centre = clamp(L.look.y * H, height / 2 + H * 0.025, H - height / 2 - H * 0.025);
+  const shift = centre - (a.top + totalBottom) / 2;
+  move(L, shift); move(R, shift);
+  layers.push({ item: secondary, L: R });
+  return layers;
 }
 
 /** How long a word takes to fade in (the fade styles). */
@@ -265,12 +309,11 @@ const safe = (s) => String(s).replace(/[{}\\]/g, "").replace(/\s+/g, " ");
  */
 export function lyricAss(items, { W, H, T = Infinity, font = LYRIC_FONT.family }) {
   const events = [];
-  for (const item of items) {
+  for (const source of items) for (const { item, L } of captionLayouts(source, W, H)) {
     const start = num(item.start, 0);
     const length = num(item.length, 3);
     const end = Math.min(start + length, T);
     if (end - start < 0.05 || !String(item.text ?? "").trim() && !(item.words ?? []).length) continue;
-    const L = layoutLyric(item, W, H);
     const { style, color, hi, anim } = L.look;
     const fadeMs = Math.round(LYRIC_FADE * 1000);
     // what a look adds to every event of its words: its face, its spacing, its turn, hollow letters (the outline carries the colour)
@@ -292,12 +335,14 @@ export function lyricAss(items, { W, H, T = Infinity, font = LYRIC_FONT.family }
     }
     for (const p of L.placed) {
       const w = L.words[p.i];
-      const text = safe(L.look.caps ? w.text.toUpperCase() : w.text);
+      const text = safe(p.text);
       const from = Math.min(w.from, len);
       const to = Math.min(w.to, len);
       const pos = `\\pos(${f1(p.cx)},${f1(p.cy)})`;
       const row = (a, b, tags, lay = layer) => events.push(`Dialogue: ${lay},${assTime(start + a)},${assTime(start + b)},Lyric,,0,0,0,,{${tags}}${text}`);
-      if (anim === "fill") {
+      if (anim === "none") {
+        row(0, len, `\\an5${pos}${common}\\fad(${fadeMs},${fadeMs})`);
+      } else if (anim === "fill") {
         // waiting in the base colour, then filled as it is sung, staying lit to the end of the line
         const fadeIn = `\\fad(${fadeMs},0)`;
         if (L.look.glow) row(0, len, `\\an5${pos}\\fs${f1(L.fs)}\\bord${f1(L.em * 0.2)}\\blur${f1(L.em * 0.2)}\\shad0\\3c${assHex(hi)}\\1a&HFF&\\3a&H50&${own}${L.look.spacing ? `\\fsp${f1(L.look.spacing * L.em)}` : ""}\\fad(${fadeMs},${fadeMs})`, 0);
