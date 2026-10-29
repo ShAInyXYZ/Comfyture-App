@@ -437,3 +437,27 @@
   .mx-cast-and-frames .mx-role-swap { width: 3.25rem; height: 3.25rem; }
   .mx-cast-and-frames .mx-role-drop { height: 4rem; }
 }
+
+/* The trend shelf stays to the left; cast, stars and saved mixes sit below the dashboard. */
+@media (min-width: 981px) {
+  .mixer { grid-template-columns: clamp(15rem, 19vw, 21rem) minmax(0, 1fr); grid-template-areas: "feed work" "feed aside"; }
+  .mx-feed { position: sticky; top: 1rem; height: calc(100dvh - var(--head, 4rem) - 3rem); grid-template-rows: auto minmax(0, 1fr); padding: .875rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); }
+  .mx-feed-head { align-content: start; gap: .625rem; }
+  .mx-feed-head h1 { font-size: 1.375rem; }
+  .mx-feed-head p { font-size: var(--fs-small); }
+  .mx-kinds { width: 100%; }
+  .mx-kinds button { padding-inline: .75rem; }
+  .mx-nudge .key:first-child svg { transform: rotate(180deg); }
+  .mx-nudge .key:last-child svg { transform: none; }
+  .mx-cards { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-columns: auto; grid-auto-rows: min-content; overflow-x: hidden; overflow-y: auto; scroll-snap-type: none; }
+  .mx-card-foot b { font-size: var(--fs-body); line-height: 1.1; }
+  .mx-card-foot { left: .5rem; right: .5rem; bottom: .5rem; gap: .375rem; }
+  .mx-aside { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr); }
+  .mx-aside .mx-remix-drop { grid-column: 1 / -1; }
+  .mx-crew { grid-template-columns: repeat(auto-fit, minmax(4rem, 1fr)); }
+  .mx-stars, .mx-mixes { grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr)); }
+}
+@media (max-width: 980px) {
+  .mx-nudge .key:first-child svg { transform: rotate(90deg); }
+  .mx-nudge .key:last-child svg { transform: rotate(-90deg); }
+}
