@@ -178,6 +178,9 @@ body[data-page="story"] { padding-bottom: 0; overflow: hidden; }
 .story-ins-frame { position: relative; aspect-ratio: 16 / 9; border-radius: .5rem; overflow: hidden; background: #111114; }
 .story-ins-frame img, .story-ins-frame video { width: 100%; height: 100%; object-fit: cover; }
 .story-ins-frame img { cursor: zoom-in; }
+.story-frame-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .625rem; }
+.story-frame-thumb { display: block; width: 100%; padding: 0; overflow: hidden; border: 0; border-radius: .5rem; background: var(--s1); cursor: zoom-in; }
+.story-frame-thumb img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; }
 .story-ins-row { display: flex; align-items: center; gap: .625rem; }
 .story-ins-big { font: 600 var(--fs-heading)/1 var(--font-mono); }
 .story-ins-size { font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .1em; color: var(--muted); }

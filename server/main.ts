@@ -487,7 +487,7 @@ function summary(kind: string, body: any) {
     const shots = blocks.length ? blocks.filter((b) => b?.kind === "shot") : Array.isArray(body?.board?.shots) ? body.board.shots : [];
     const scenes = blocks.length ? blocks.filter((b) => b?.kind === "scene").length : body?.script?.scenes?.length ?? 0;
     const pic = (s: any) => (s?.still ?? s?.photo)?.url;
-    return { logline: text(body?.idea?.logline, 200), scenes, shots: shots.length, drawn: shots.filter((s: any) => s?.photo).length, rolled: shots.filter((s: any) => s?.run).length, cast: body?.cast?.length ?? 0, frames: shots.map(pic).filter(Boolean).slice(0, 8), runs: shots.map((s: any) => s?.run).filter((r: unknown) => typeof r === "string") };
+    return { logline: text(body?.idea?.logline, 200), scenes, shots: shots.length, drawn: shots.filter((s: any) => s?.photo).length, rolled: shots.filter((s: any) => s?.run || s?.video?.file).length, cast: body?.cast?.length ?? 0, frames: shots.map(pic).filter(Boolean).slice(0, 8), runs: shots.map((s: any) => s?.run).filter((r: unknown) => typeof r === "string") };
   }
   if (kind === "cuts") {
     const tracks: any[] = Array.isArray(body?.tracks) ? body.tracks : [];

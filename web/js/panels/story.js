@@ -8,7 +8,7 @@ import {
   story, SIZES, KINDS, BIBLE, loadStories, openStory, newStory, duplicateStory, closeStory, deleteStory, undo, redo, commit, touch, refresh,
   select, addBlock, updateBlock, removeBlock, moveBlock, addRef, updateRef, removeRef, write, writeAll, scenesOf, shotsOf,
   codeOf, blockOf, bible, speaker, castOf, storyLookup, drawRef, drawShot, drawMissingRefs, drawMissingShots, addRefPicture,
-  removeRefPicture, rollShot, rollMissingShots, takeOf, openInShot, stageShot, sendToCut,
+  removeRefPicture, rollShot, rollMissingShots, takeOf, openInShot, stageShot, sendToCut, drawEndShot, setShotFrame, STORY_VIDEO_MODELS,
 } from "../story.js";
 
 const CAMERA_ICON = { locked: "camera-locked", "push-in": "camera-push-in", "pull-out": "camera-pull-out", orbit: "camera-orbit", "crane-up": "camera-crane-up", handheld: "camera-handheld" };
@@ -278,7 +278,7 @@ function documentColumn(b) {
         h("button.key", { type: "button", disabled: busy("board"), title: "Shots for every scene that has none", on: { click: () => write("board") } }, sprite("frame-first"), "Board"),
         h("button.key", { type: "button", disabled: !shots.length, title: "Draw every shot that has no frame", on: { click: () => drawMissingShots() } }, sprite("image-generate"), "Draw"),
         h("button.key", { type: "button", disabled: !shots.length, title: "Block the picked shot (or the first) on the Stage", on: { click: () => stageShot(story.selected?.kind === "block" && blockOf(story.selected.id)?.kind === "shot" ? story.selected.id : shots[0].block.id) } }, sprite("section-stage"), "Block on Stage"),
-        h("button.key", { type: "button", disabled: !shots.length, title: "Roll every shot with LTX-2.5, each in a Shot tab of its own", on: { click: () => rollMissingShots() } }, sprite("section-shot"), "Roll in Shot"),
+        h("button.key", { type: "button", disabled: !shots.length, title: "Generate missing videos with each shot's selected model and saved frames", on: { click: () => rollMissingShots() } }, sprite("section-shot"), "Roll shots"),
         h("button.key.is-primary", { type: "button", disabled: !shots.length, title: "An edit in Cut, in story order: the takes, or the frames until they're rolled", on: { click: () => sendToCut() } }, icon("scissors"), "Edit in Cut"))));
   }
   return h("section.story-doc", { on: { click: (e) => e.target.classList.contains("doc-page") && ((inserting = null), select(null)) } },
@@ -294,11 +294,19 @@ function documentColumn(b) {
 
 function shotInspector(b, x) {
   const take = takeOf(x);
+  const uploadFrame=(end,anchor)=>attachMenu(anchor,{picture:photo=>setShotFrame(x.id,photo,end),files:async files=>{
+    const f=[...files].find(f=>f.type.startsWith('image/'));if(!f)return;
+    const res=await fetch(`api/photos?name=${encodeURIComponent(`${codeOf(x.id)} ${end?'end':'start'} frame`)}`,{method:'POST',headers:{'Content-Type':f.type},body:f});
+    if(res.ok)setShotFrame(x.id,await res.json(),end);
+  }});
+  const startKey=key(sprite('image-upload'),'Upload start frame',e=>uploadFrame(false,e.currentTarget));
+  const endKey=key(sprite('image-upload'),'Upload end frame',e=>uploadFrame(true,e.currentTarget));
+  const pending=x.jobs?.video && ['running','unknown'].includes(x.jobs.video.status);
   const field = (k, label, placeholder, cls) => {
     const f = pillField({ label, placeholder, lookup: storyLookup, className: `field story-prompt ${cls ?? ""}`.trim() });
     f.value = x[k] ?? "";
     f.addEventListener("input", () => ((x[k] = f.value), typed(false)));
-    f.addEventListener("blur", () => commit());
+    f.addEventListener("blur", () => { commit(); void touch({ now: true, quiet: true }); });
     f.addEventListener("keydown", (e) => e.stopPropagation());
     return f.el;
   };
@@ -310,6 +318,9 @@ function shotInspector(b, x) {
       busy(`shot:${x.id}`) ? h("span.story-drawing", {}, "Drawing the frame…") : busy(`open:${x.id}`) || busy(`roll:${x.id}`) ? h("span.story-drawing", {}, x.drawnAs === "sketch" && !x.still ? "Making a film frame of the sketch…" : "Rolling…") : null),
     h("div.story-ins-row", {}, h("b.story-ins-big", {}, codeOf(x.id)), h("span.story-ins-size", {}, (SIZES.find(([v]) => v === x.size)?.[1] ?? x.size).toUpperCase()), h("span.spacer"),
       h("span.story-ins-state", {}, lamp(take?.status === "done" ? "ok" : take && take.status !== "failed" ? "busy" : null), take?.status === "done" ? "Rolled" : take ? take.status : "Not rolled")),
+    h('div.story-frame-pair',{},...[[x.still??x.photo,'Start frame',startKey,false],[x.endPhoto,'End frame',endKey,true]].map(([pic,label,upload,end])=>h('div',{},
+      pic?h('button.story-frame-thumb',{type:'button','aria-label':`View ${label.toLowerCase()}`,on:{click:()=>view(pic.url)}},h('img',{src:pic.url,alt:label})):null,
+      h('div.story-ins-row',{},h('span.row-label',{},label),h('span.spacer'),upload,end&&pic?key(icon('close'),'Remove end frame',()=>setShotFrame(x.id,null,true)):null)))),
     h("span.row-label", {}, "Shot size"),
     h("div.segment", { role: "group", "aria-label": "Shot size" }, ...SIZES.map(([v, l]) => h("button", { type: "button", "aria-pressed": String(x.size === v), on: { click: () => updateBlock(x.id, { size: v }) } }, l))),
     h("span.row-label", {}, "Camera"),
@@ -318,6 +329,11 @@ function shotInspector(b, x) {
       h("div.story-stepper", {}, h("button", { type: "button", "aria-label": "Shorter", disabled: x.seconds <= 3, on: { click: () => updateBlock(x.id, { seconds: x.seconds - 1 }) } }, "−"), h("b", {}, `${Number(x.seconds).toFixed(1)} s`), h("button", { type: "button", "aria-label": "Longer", disabled: x.seconds >= 8, on: { click: () => updateBlock(x.id, { seconds: x.seconds + 1 }) } }, "+"))),
     h("span.row-label", {}, "Frame prompt"), field("frame", "The frame", "The first frame: who (@name), where (@place), what they do, the light"),
     h("span.row-label", {}, "What happens"), field("action", "What happens", "What happens in the shot, present tense", "is-short"),
+    h('span.row-label',{},'End-frame direction'),field('endPrompt','End-frame direction','Optional: how should this same shot finish?','is-short'),
+    h('button.key',{type:'button',disabled:!x.photo||!x.endPrompt?.trim()||busy(`end:${x.id}`),on:{click:()=>drawEndShot(x.id)}},sprite('image-generate'),busy(`end:${x.id}`)?'Drawing end frame…':x.endPhoto?'Redraw end frame':'Generate end frame'),
+    h('span.row-label',{},'Video model'),
+    h('select.field',{'aria-label':'Video model',on:{change:e=>updateBlock(x.id,{model:e.target.value})}},...STORY_VIDEO_MODELS.map(([id,name])=>h('option',{value:id,selected:(x.model??b.videoModel??'ltx-2.5')===id},name))),
+    h('span.row-label',{},'Video prompt'),field('videoPrompt','Video prompt','Describe the visible action and camera move. Saved with this shot.'),
     h("span.row-label", {}, "Dialogue"),
     h("div.story-line", {},
       h("select.chip-select", { "aria-label": "Who says it", on: { change: (e) => updateBlock(x.id, { line: e.target.value ? { who: e.target.value, text: x.line?.text ?? "" } : null }) } },
@@ -334,7 +350,8 @@ function shotInspector(b, x) {
       key(sprite("section-stage"), "Block it on the Stage", () => stageShot(x.id)),
       key(sprite("section-shot"), "Open it in Shot, to craft its prompt there", () => openInShot(x.id), { disabled: busy(`open:${x.id}`) }),
       key(icon("trash"), "Take the shot out", () => removeBlock(x.id))),
-    h("button.roll.story-roll", { type: "button", disabled: busy(`roll:${x.id}`) || (take && !["done", "failed", "canceled"].includes(take.status)), on: { click: () => rollShot(x.id) } }, sprite("scene-render"), take?.status === "done" ? "ROLL AGAIN" : busy(`roll:${x.id}`) ? "ROLLING…" : "ROLL SHOT"),
+    x.jobs?.video?.error?h('p.doc-hint',{role:'status'},x.jobs.video.error):null,
+    h("button.roll.story-roll", { type: "button", disabled: busy(`roll:${x.id}`) || (take && !["done", "failed", "canceled", "running", "unknown"].includes(take.status)), on: { click: () => rollShot(x.id) } }, sprite("scene-render"), busy(`roll:${x.id}`) ? `ROLLING… ${Math.round((x.jobs?.video?.progress??0)*100)}%` : pending?'RESUME GENERATION':take?.status === "done" ? "ROLL AGAIN" : "ROLL SHOT"),
   ];
 }
 

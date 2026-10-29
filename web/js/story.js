@@ -8,6 +8,9 @@
 import { state, changed, toast, drawPicture, rollAsTab, switchTab, sheetOf, writer, artistFor, videoModel, setProject } from "./store.js";
 import { expandTags } from "./pills.js";
 import { go } from "./router.js";
+import { storyVideoRequest, storyClip, STORY_VIDEO_MODELS } from './story-production.js';
+import { runAssetJob } from './jam-backstage-jobs.js';
+export { STORY_VIDEO_MODELS };
 
 // the Stage's colours, so a character reads the same everywhere
 const COLORS = ["#e8584f", "#3fc6c0", "#f0a63a", "#8d7cf2", "#5fbf6a", "#e97fb4", "#4f8de8", "#c9a27a"];
@@ -35,7 +38,7 @@ const keepLocal = (k, v) => {
 const call = async (path, init) => {
   const res = await fetch(path, init);
   const out = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(out.error ?? `Request failed (${res.status})`);
+  if (!res.ok) throw Object.assign(new Error(out.error ?? `Request failed (${res.status})`),{status:res.status});
   return out;
 };
 const send = (path, method, data) => call(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
@@ -56,6 +59,7 @@ const ref = (kind, x, i) => ({ id: x.id ?? uid(), name: x.name ?? "", tag: x.tag
 /** A story's body with every part in place; one written as steps (scenes and a board) becomes blocks. */
 function normalize(b = {}) {
   const out = {
+    ...b,
     v: 2,
     // refs: the user's references for the film (pictures, videos with a still), shown to the writers on one sheet
     idea: { brief: "", length: 60, aspect: "16:9", genre: "", tone: "", title: "", logline: "", synopsis: "", refs: [], ...b.idea },
@@ -577,7 +581,7 @@ export async function drawRef(kind, id) {
   story.busy.add(key);
   update();
   try {
-    const photo = await drawPicture({ model: artistFor("generate"), template: "generate", prompt, aspect: kind === "cast" ? "16:9" : kind === "props" ? "1:1" : b.idea.aspect });
+    const photo = await drawPicture({ model: b.imageModel || artistFor("generate"), template: "generate", prompt, aspect: kind === "cast" ? "16:9" : kind === "props" ? "1:1" : b.idea.aspect });
     item.refs = [...(item.refs ?? []), { file: photo.file, url: photo.url, width: photo.width, height: photo.height }].slice(-6);
     commit();
   } catch (e) {
@@ -612,20 +616,29 @@ export const drawMissingRefs = () => {
 
 /** A shot's first frame: drawn from its words with the sheets of who and what it shows, as a sketch or a film frame. */
 export async function drawShot(id) {
+  const p = story.project;
   const b = body();
   const shot = blockOf(id);
   const key = `shot:${id}`;
   if (!shot || story.busy.has(key)) return;
+  if (shot.jobs?.video && ['running','submitting','unknown'].includes(shot.jobs.video.status)) return toast('Finish or resume the pending video before replacing its frame.');
   const members = castOf(b, `${shot.frame} ${shot.action}`);
   const pictured = members.filter((m) => m.refs?.length).slice(0, 6);
   const refs = pictured.map((m) => ({ file: m.refs[0].file, name: m.tag }));
+  for (const tag of new Set([...`${shot.frame} ${shot.action}`.matchAll(/@([\w-]+)/g)].map(m=>m[1]))) {
+    const other=b.blocks.find(x=>x.kind==='shot'&&x.id===tag.replace(/-end$/,''));
+    const photo=tag.endsWith('-end')?other?.endPhoto:other?.still??other?.photo;
+    if(photo?.file&&!refs.some(r=>r.file===photo.file))refs.push({file:photo.file,name:tag});
+  }
   const cast = members.map((m) => ({ tag: m.tag, name: m.name, person: m.person, words: lower(m.words || m.about), pictures: pictured.includes(m) ? [m.tag] : [] }));
   const style = b.style === "sketch" ? "A storyboard panel: a loose graphite pencil sketch in grey tones on white paper, clear shapes and strong composition, no text." : `A cinematic film still.${lookWords(b)}`;
   const prompt = `${style} ${SIZE_WORDS[shot.size] ?? "A shot"}: ${expandTags(shot.frame || shot.action, cast)}.`.replace(/\.\.$/, ".");
   story.busy.add(key);
   update();
   try {
-    const photo = await drawPicture({ model: artistFor(refs.length ? "edit" : "generate"), template: refs.length ? "edit" : "generate", prompt, aspect: b.idea.aspect, refs });
+    const photo = await drawPicture({ model: b.imageModel || artistFor(refs.length ? "edit" : "generate"), template: refs.length ? "edit" : "generate", prompt, aspect: b.idea.aspect, refs });
+    if (story.project !== p) throw new Error('The image is saved in the Library. Reopen its story to attach it.');
+    archiveShotMedia(shot);
     shot.photo = { file: photo.file, url: photo.url, width: photo.width, height: photo.height };
     shot.drawnAs = b.style;
     shot.still = null;
@@ -638,6 +651,40 @@ export async function drawShot(id) {
   }
 }
 export const drawMissingShots = () => Promise.allSettled(shotsOf().filter((s) => !s.block.photo).map((s) => drawShot(s.block.id)));
+
+function archiveShotMedia(shot, endOnly = false) {
+  shot.history ??= [];
+  for (const kind of endOnly ? ['video'] : ['photo','still','endPhoto','video']) {
+    if (shot[kind]) shot.history.push({kind,media:shot[kind]});
+    shot[kind] = null;
+  }
+  if (shot.run) shot.history.push({kind:'take',run:shot.run});
+  shot.run=null;
+  if (shot.jobs) delete shot.jobs.video;
+}
+export function setShotFrame(id, photo, end = false) {
+  const shot=blockOf(id);
+  if (!shot || story.busy.has(`roll:${id}`)) return;
+  if (Object.values(shot.jobs??{}).some(j=>['running','submitting','unknown'].includes(j.status))) return toast('Resume the pending generation first.');
+  if(end&&shot.endPhoto) (shot.history??=[]).push({kind:'endPhoto',media:shot.endPhoto});
+  archiveShotMedia(shot,end);
+  shot[end?'endPhoto':'photo']=photo;
+  if(!end)shot.drawnAs='film';
+  commit();
+}
+export async function drawEndShot(id) {
+  const p=story.project,shot=blockOf(id),key=`end:${id}`;
+  if(!shot || story.busy.has(key))return;
+  if (shot.jobs?.video && ['running','submitting','unknown'].includes(shot.jobs.video.status)) return toast('Finish or resume the pending video before replacing its frame.');
+  const start=shot.still??shot.photo;
+  if(!start?.file||!shot.endPrompt?.trim())return toast('Add a start frame and describe how the shot ends.');
+  story.busy.add(key);update();
+  try {
+    const media=await drawPicture({model:p.body.imageModel||'gpt-image-2.5-flare',template:'edit',aspect:p.body.idea.aspect,refs:[{file:start.file,name:'start-frame'}],prompt:`Create a separate high-resolution ending frame from @start-frame. Preserve the same character identities, costume, setting geometry, lighting and style. ${shot.endPrompt}`});
+    if(story.project!==p)throw new Error('The image is saved in the Library. Reopen its story to attach it.');
+    setShotFrame(id,media,true);
+  }catch(e){toast(e.message,{tone:'crit'});}finally{story.busy.delete(key);update();}
+}
 
 // ---------------------------------------------------------------- production: Stage, Shot, Cut
 
@@ -658,14 +705,15 @@ async function filmFrame(b, shot) {
   const members = castOf(b, shot.frame).filter((m) => m.refs?.length).slice(0, 5);
   const cast = castOf(b, shot.frame).map((m) => ({ tag: m.tag, name: m.name, person: m.person, words: lower(m.words || m.about), pictures: members.includes(m) ? [m.tag] : [] }));
   const prompt = `Turn @sketch, a storyboard panel, into a finished cinematic film still: the same framing, the same places and poses, real people and places with real light. ${expandTags(shot.frame || shot.action, cast)}.${lookWords(b)}`;
-  const photo = await drawPicture({ model: artistFor("edit"), template: "edit", prompt, aspect: b.idea.aspect, refs: [{ file: shot.photo.file, name: "sketch" }, ...members.map((m) => ({ file: m.refs[0].file, name: m.tag }))] });
+  const photo = await drawPicture({ model: b.imageModel || artistFor("edit"), template: "edit", prompt, aspect: b.idea.aspect, refs: [{ file: shot.photo.file, name: "sketch" }, ...members.map((m) => ({ file: m.refs[0].file, name: m.tag }))] });
   shot.still = { file: photo.file, url: photo.url, width: photo.width, height: photo.height };
   commit({ history: false });
   return shot.still;
 }
 
-/** A shot's take: rolled with LTX-2.5 in a Shot tab of its own, from a film frame of its drawing. */
+/** The approved start/end frames and saved prompt, through the selected model's native workflow. */
 export async function rollShot(id) {
+  const p = story.project;
   const b = body();
   const shot = blockOf(id);
   const key = `roll:${id}`;
@@ -674,6 +722,16 @@ export async function rollShot(id) {
   update();
   try {
     const first = await filmFrame(b, shot);
+    const model = shot.model ?? b.videoModel ?? videoModel();
+    if (STORY_VIDEO_MODELS.some(([id])=>id===model)) {
+      const spec=storyVideoRequest(b,{...shot,photo:first,model});
+      await runAssetJob(shot,'video',spec,{
+        save:async()=>{await send(`api/stories/${p.id}`,'PUT',{name:p.name,body:p.body});if(story.project===p){story.last=JSON.stringify(p.body);update();}},
+        post:(path,body)=>send(path,'POST',body),get:path=>call(path),sleep:ms=>new Promise(r=>setTimeout(r,ms)),
+        importVideo:async media=>({...media,duration:media.duration??media.seconds})
+      },{resume:!!shot.jobs?.video?.id && ['running','unknown'].includes(shot.jobs.video.status)});
+      return;
+    }
     const r = await rollAsTab({ tab: shot.tab, name: `${codeOf(id)} · ${b.idea.title || story.project.name}`.slice(0, 60), group: b.idea.title || story.project.name, project: story.project.id, start: first, shot: shotSpec(b, shot), seconds: shot.seconds, aspect: b.idea.aspect, model: videoModel() });
     shot.tab = r.tab;
     shot.run = r.run;
@@ -686,8 +744,8 @@ export async function rollShot(id) {
     update();
   }
 }
-export const rollMissingShots = () => Promise.allSettled(shotsOf().filter((s) => !takeOf(s.block) || takeOf(s.block).status === "failed").map((s) => rollShot(s.block.id)));
-export const takeOf = (shot) => (shot?.run ? state.runs.find((r) => r.id === shot.run) ?? null : null);
+export const rollMissingShots = () => Promise.allSettled(shotsOf().filter((s) => !takeOf(s.block) || ['failed','running','unknown'].includes(takeOf(s.block).status)).map((s) => rollShot(s.block.id)));
+export const takeOf = (shot) => shot?.video?.file ? {status:'done',video:shot.video.url??`/media/videos/${shot.video.file}`,length:shot.video.duration??shot.video.seconds} : shot?.jobs?.video ? {status:shot.jobs.video.status,progress:shot.jobs.video.progress} : (shot?.run ? state.runs.find((r) => r.id === shot.run) ?? null : null);
 
 /** A shot opened in Shot to craft it there (its frame, its words, its line), without rolling it. */
 export async function openInShot(id) {
@@ -706,7 +764,7 @@ export async function openInShot(id) {
     // a sketch is turned into a film still first: the video model starts from a real picture
     const first = shot.photo ? await filmFrame(b, shot) : null;
     const { openStoryShot } = await import("./store.js");
-    shot.tab = openStoryShot({ name: `${codeOf(id)} · ${b.idea.title || story.project.name}`.slice(0, 60), group: b.idea.title || story.project.name, project: story.project.id, start: first, shot: shotSpec(b, shot), seconds: shot.seconds, aspect: b.idea.aspect });
+    shot.tab = openStoryShot({ name: `${codeOf(id)} · ${b.idea.title || story.project.name}`.slice(0, 60), group: b.idea.title || story.project.name, project: story.project.id, start: first, end: shot.endPhoto, raw: shot.videoPrompt, model: shot.model ?? b.videoModel, shot: shotSpec(b, shot), seconds: shot.seconds, aspect: b.idea.aspect });
     commit({ history: false });
     go("shot");
   } catch (e) {
@@ -743,20 +801,21 @@ export async function sendToCut() {
   if (!shots.length) return toast("Add shots to the script first: a scene's Board key writes them.");
   const names = (t) => String(t ?? "").replace(/@([a-z0-9-]+)/gi, (_, tag) => bible(b).find((x) => x.tag === tag)?.name ?? tag);
   // each shot with its picture: its take once rolled, its frame until then
-  const placed = shots.map(({ block, code, scene }) => {
+  let placed;
+  try { placed = shots.map(({ block, code, scene }) => {
     const take = takeOf(block);
     const name = `${code} · ${names(block.action || block.frame).slice(0, 40)}`;
-    if (take?.status === "done") return { scene, clip: { src: { kind: "take", id: take.id }, name } };
-    const pic = block.still ?? block.photo;
-    return pic ? { scene, clip: { src: { kind: "photo", id: pic.file, url: pic.url, width: pic.width, height: pic.height, name }, length: block.seconds, name } } : null;
-  }).filter(Boolean);
+    const clip=storyClip(block,take,name);
+    return clip?{scene,clip}:null;
+  }).filter(Boolean); } catch (e) { return toast(e.message, { tone: 'crit' }); }
   const clips = placed.map((p) => p.clip);
   if (!clips.length) return toast("Draw or roll the shots first: Cut needs a picture for each.");
   const { newCut, cut, track, layout, commit: commitCut, loadCuts } = await import("./cut.js");
   go("cut");
   await (cut.ready ?? loadCuts());
   await newCut(b.idea.title || story.project.name, clips, { project: story.project.id });
-  if (b.idea.title) track("t1").items.push({ id: uid(), text: b.idea.title.toUpperCase(), start: 0, length: 3, style: "center" });
+  cut.project.body.aspect=b.idea.aspect;
+  if (b.idea.title && !b.tutorial) track("t1").items.push({ id: uid(), text: b.idea.title.toUpperCase(), start: 0, length: 3, style: "center" });
   // each scene marked where its first shot starts
   const l = layout();
   cut.project.body.markers = scenesOf(b).filter((s) => s.scene).map((s) => {
