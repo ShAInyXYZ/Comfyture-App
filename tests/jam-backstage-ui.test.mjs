@@ -14,6 +14,7 @@ class Node {
   get disabled() { return !!this.props.disabled; }
   set textContent(value) { this.children = [String(value)]; }
   setAttribute(name, value) { this.props[name] = String(value); }
+  addEventListener(name, fn) { const previous = this.props.on?.[name]; (this.props.on ??= {})[name] = e => { previous?.(e); fn(e); }; }
   replaceChildren(...children) { this.children = []; this.append(...children); }
   pause() { this.paused = true; this.onpause?.(); }
   play() { this.paused = false; this.onplay?.(); return Promise.resolve(); }
@@ -35,7 +36,7 @@ function harness() {
     return { id, kind, title: item.title, model: kind === 'video' ? 'LTX 2.5 Distilled' : 'GPT Image 2.5 Flare', duration: kind === 'video' ? 11 : null, timelineDuration: kind === 'video' ? 10.5 : null, width: kind === 'video' ? 1344 : null, height: kind === 'video' ? 768 : null, frames: kind === 'video' ? [item.image, item.endImage].filter(Boolean) : [], references: [item.reference ? { file: item.reference.file, name: 'identity-reference' } : null, ...(item.characterIds ?? []).map((id, i) => ({ file: itemOf(id).image.file, name: `character-${i + 1}` }))].filter(Boolean), prompt: item.prompt, request: { count: 1, megapixels: 1 } };
   };
   const mocks = {
-    h, changed() {}, toast: message => toasts.push(message), jam: { jam: j, workspace: 'backstage', busy: new Set() }, openWindow() {}, setWorkspace() {},
+    h, changed() {}, toast: message => toasts.push(message), mentionables: () => [], backstageMentionables: () => [], mentionAt: () => null, putMention() {}, jam: { jam: j, workspace: 'backstage', busy: new Set() }, openWindow() {}, setWorkspace() {},
     partMatchesSpan: b => b.part?.source?.file === b.track.file && b.part.source.from === b.span.from && b.part.source.to === b.span.to,
     openPicker() {}, pictureOf() {}, lyricTimeline: () => [], syncedLinesForCut: () => null,
     jicon: name => h('svg', { 'aria-label': name }), clock: n => `${Math.floor(n / 60)}:${String(Math.floor(n % 60)).padStart(2, '0')}`,
@@ -44,7 +45,7 @@ function harness() {
     backstageOf: () => bs, VIDEO_MODELS: [{ id: 'ltx-2.5', name: 'LTX 2.5 Distilled', endFrame: true }, { id: 'fast-h3', name: 'Fast H3', endFrame: false }],
     planScenes() {}, addScene() {}, updateScene: (id, patch) => { updates.push({ id, patch }); Object.assign(itemOf(id), patch); }, removeScene() {},
     setBackstage() {}, attachAsset() {}, generateAsset: (...args) => calls.push(args), resumeAsset() {}, resumeBackstageJobs() {}, insertScenes() {},
-    addCharacter() {}, removeCharacter() {}, generationDetails: details, estimateGeneration: async () => ({ credits: null, note: 'Active GPU time.' }), useCover() {},
+    addCharacter() {}, removeCharacter() {}, prepareBackstageMentions: async () => {}, generationDetails: details, estimateGeneration: async () => ({ credits: null, note: 'Active GPU time.' }), useCover() {},
     document: { addEventListener: (name, fn) => events.set(name, fn) }, window: { addEventListener() {} },
   };
   const executable = source.replace(/^import\s+\{[\s\S]*?\}\s+from\s+["'][^"']+["'];\s*/gm, '').replace(/export function /g, 'function ');

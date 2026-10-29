@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import * as model from '../web/js/jam-backstage-model.js';
 import * as jobs from '../web/js/jam-backstage-jobs.js';
+import * as mentions from '../web/js/jam-backstage-mentions.js';
 
 const deferred = () => { let resolve; const promise = new Promise(r => resolve = r); return { promise, resolve }; };
 async function harness() {
@@ -16,7 +17,8 @@ async function harness() {
   const cut = { project: { id: 'cut-a', body } };
   const modules = {
     './jam.js': { jam, save() {}, flushJams: async () => {}, edit: () => { calls.edits++; return gate.promise; }, partMatchesSpan: b => b.part?.source.file === b.track.file && b.part.source.from === b.span.from && b.part.source.to === b.span.to },
-    './store.js': { changed() {}, state: {} }, './api.js': { api: {} },
+    './store.js': { changed() {}, state: {}, mentionables: () => [] }, './api.js': { api: {} },
+    './picker.js': { pictureOf() {} }, './jam-backstage-mentions.js': mentions,
     './cut.js': { cut, commit: () => calls.commits++, flushCuts: async () => {} },
     './jam-backstage-model.js': model, './jam-backstage-jobs.js': jobs,
   };

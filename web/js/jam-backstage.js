@@ -1,7 +1,9 @@
 // Backstage stores creative assets with the Jam. It reuses Mixer's image and native
 // template APIs and adds the chosen results to the same edit, with generated sound muted.
 import { jam, save, flushJams, edit, partMatchesSpan } from './jam.js';
-import { changed, state } from './store.js';
+import { changed, state, mentionables } from './store.js';
+import { pictureOf } from './picker.js';
+import { backstageMentionables, namesIn, resolveBackstageMentions, bindBackstageMentions, labelBackstageCast } from './jam-backstage-mentions.js';
 import { api } from './api.js';
 import { cut, commit, flushCuts } from './cut.js';
 import { blankBackstage, newAsset, validateScene, nextSceneRange, planFromTrack, imageRequest, videoRequest, timelineItems, reconcileTimeline, VIDEO_MODELS, ASPECTS, FORMATS, sceneDuration } from './jam-backstage-model.js';
@@ -92,6 +94,17 @@ export async function attachAsset(id, slot, input) {
   replaceAssetMedia(item, slot, media); touch(j); return media;
 }
 let catalogueImageCredits = null;
+const mentionText = (item, board, kind) => [board.style, kind === 'endImage' ? item.endPrompt || item.prompt : item.prompt, kind === 'endImage' ? item.motion : ''].filter(Boolean).join('\n');
+/** Prepare existing and newly typed @ references before showing the paid review. */
+export async function prepareBackstageMentions(id, kind) {
+  if (kind === 'video') return;
+  const j = requireJam(), item = itemOf(id, j), board = backstageOf(j);
+  const text = mentionText(item, board, kind);
+  const refs = await resolveBackstageMentions(text, backstageMentionables(board, mentionables(), item, kind), character => pictureOf({ kind: 'character', character }));
+  if (jam.jam !== j || itemOf(id, j) !== item || mentionText(item, board, kind) !== text) throw new Error('The direction changed while preparing references. Review it again.');
+  item.mentionRefs = refs;
+  touch(j);
+}
 function specification(id, kind, j = requireJam()) {
   const item = itemOf(id, j), board = backstageOf(j);
   if (kind === 'video') {
@@ -100,7 +113,10 @@ function specification(id, kind, j = requireJam()) {
     const { template, body } = videoRequest(item, board, item.seed ?? 1);
     return { path: `api/utensils/templates/${template}/run`, body, template, model: VIDEO_MODELS.find(m => m.id === item.model).name };
   }
-  return { path: 'api/image', body: imageRequest(item, board, kind), model: 'GPT Image 2.5 Flare', estimatedCredits: state.image?.catalogue?.models?.find(m => m.id === 'gpt-image-2.5-flare')?.credits ?? catalogueImageCredits };
+  const names = namesIn(mentionText(item, board, kind));
+  const resolved = names.map(name => (item.mentionRefs ?? []).find(ref => ref.name === name));
+  if (resolved.some(ref => !ref)) throw new Error('Review this image to prepare its @ references.');
+  return { path: 'api/image', body: bindBackstageMentions(labelBackstageCast(imageRequest(item, board, kind), item, board), resolved), model: 'GPT Image 2.5 Flare', estimatedCredits: state.image?.catalogue?.models?.find(m => m.id === 'gpt-image-2.5-flare')?.credits ?? catalogueImageCredits };
 }
 export function generationDetails(id, kind) {
   const j = requireJam(), item = itemOf(id, j), spec = specification(id, kind, j);

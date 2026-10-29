@@ -95,6 +95,10 @@
 .jb-error { color: var(--warn, var(--text)); font: 400 .8125rem/1.5 var(--font-sans); }
 .jb-inspector-scroll { display: flex; flex-direction: column; gap: 1rem; min-height: 0; overflow: auto; scrollbar-width: none; }
 .jb-field { display: grid; gap: .5rem; min-width: 0; }
+.jb-field-input { position: relative; min-width: 0; }
+.jb-mentions { top: calc(100% + .35rem); bottom: auto; left: 0; width: 100%; max-width: 100%; min-width: 0; max-height: 14rem; overflow: auto; }
+.jb-mention-face { width: 2rem; height: 2rem; border-radius: .375rem; object-fit: cover; }
+.jb-mentions small { color: var(--muted); font: 500 .6875rem var(--font-mono); }
 .jb-field .field { width: 100%; min-width: 0; min-height: 2.625rem; padding: .625rem .75rem; font: 400 .875rem/1.5 var(--font-sans); }
 .jb-field textarea.field { resize: vertical; min-height: 5.5rem; }
 .jb-times { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: .5rem; }

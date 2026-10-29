@@ -110,6 +110,21 @@ test('Video requests select the exact first/last template with native parameter 
   assert.throws(() => videoRequest({ ...s, model: 'fast-h3' }, b), /both start and end/);
 });
 
+test('Video requests describe tagged characters by name from the frames without changing editable direction', () => {
+  for (const model of ['ltx-2.5', 'fast-h3']) {
+    const b = { ...blankBackstage(), style: 'In the style of @blue-room' };
+    const s = scene({ model, prompt: '@ketkout watches @red-robot', motion: '@ketkout turns slowly' });
+    const before = JSON.stringify({ b, s });
+    const prompt = videoRequest(s, b, 1).body.inputs.prompt;
+    assert.match(prompt, /identity and appearance of characters shown in the supplied frame/);
+    assert.match(prompt, /style of blue room/);
+    assert.match(prompt, /ketkout watches red robot/);
+    assert.match(prompt, /ketkout turns slowly/);
+    assert.doesNotMatch(prompt, /@/);
+    assert.equal(JSON.stringify({ b, s }), before);
+  }
+});
+
 test('Timeline placement clips to selected cut and mutes video without changing song data', () => {
   const source = scene({ from: 10, to: 20, video: { file: 'take.mp4', duration: 10 } });
   const before = JSON.stringify(source);

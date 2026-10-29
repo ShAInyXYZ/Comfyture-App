@@ -1,7 +1,9 @@
 // Backstage is the visual plan for a song: timed scenes, reusable characters, and its cover.
 // Preparing and editing a plan is free. Every generated asset has its own review before submission.
 import { h } from "../dom.js";
-import { changed, toast } from "../store.js";
+import { changed, toast, mentionables } from "../store.js";
+import { mentionAt, putMention } from "../mentions.js";
+import { backstageMentionables } from "../jam-backstage-mentions.js";
 import { jam, openWindow, setWorkspace, partMatchesSpan } from "../jam.js";
 import { openPicker, pictureOf } from "../picker.js";
 import { lyricTimeline, syncedLinesForCut } from "../song-lyrics.js";
@@ -10,7 +12,7 @@ import { segs } from "./jam-card.js";
 import {
   backstageOf, VIDEO_MODELS, planScenes, addScene, updateScene, removeScene,
   setBackstage, attachAsset, generateAsset, resumeAsset, resumeBackstageJobs, insertScenes,
-  addCharacter, removeCharacter, generationDetails, estimateGeneration, useCover,
+  addCharacter, removeCharacter, generationDetails, estimateGeneration, useCover, prepareBackstageMentions,
 } from "../jam-backstage.js";
 
 const TABS = [["scenes", "Scenes"], ["characters", "Characters"], ["cover", "Cover"]];
@@ -66,14 +68,38 @@ function smallKey(label, ic, fn, disabled = false) {
   return h("button.jb-icon", { type: "button", disabled, title: label, "aria-label": label, on: { click: () => run(fn) } }, jicon(ic));
 }
 
-function field(label, value, commit, { name, area = false, placeholder = "", rows = 3, disabled = false, hint = "" } = {}) {
+function field(label, value, commit, { name, area = false, placeholder = "", rows = 3, disabled = false, hint = "", mentions = null } = {}) {
   const id = `backstage-${name}`;
+  const input = h(area ? "textarea.field" : "input.field", {
+    id, value: value ?? "", rows: area ? rows : undefined, disabled, placeholder,
+    dataset: { focus: id }, on: { input: (e) => run(() => commit(e.target.value)), keydown: (e) => e.stopPropagation() },
+  });
+  const picker = mentions ? h("div.mention-picker.is-list.jb-mentions", { hidden: true, role: "listbox", "aria-label": "Character and image references" }) : null;
+  if (picker) {
+    let options = [], active = 0;
+    const draw = () => {
+      const at = document.activeElement === input ? mentionAt(input) : null;
+      options = at ? mentions().filter(c => c.name.startsWith(at.query) || (at.query && c.title?.toLowerCase().includes(at.query))).slice(0, 10) : [];
+      active = Math.min(active, Math.max(0, options.length - 1));
+      picker.hidden = !options.length;
+      picker.replaceChildren(h("div.pick-grid.is-list", {}, ...options.map((c, i) => h("button.pick-file", {
+        type: "button", role: "option", "aria-selected": String(i === active), className: i === active ? "is-active" : "",
+        on: { mousedown: e => { e.preventDefault(); putMention(input, c.name); picker.hidden = true; } },
+      }, c.image ? h("img.jb-mention-face", { src: c.image, alt: "" }) : jicon("image"), h("span", {}, h("b", {}, c.title), h("small", {}, ` @${c.name}`))))));
+    };
+    input.addEventListener("input", () => { active = 0; draw(); });
+    input.addEventListener("click", draw);
+    input.addEventListener("blur", () => { picker.hidden = true; });
+    input.addEventListener("keydown", e => {
+      if (picker.hidden || !options.length) return;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); active = (active + (e.key === "ArrowDown" ? 1 : options.length - 1)) % options.length; draw(); }
+      else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); putMention(input, options[active].name); picker.hidden = true; }
+      else if (e.key === "Escape") { e.preventDefault(); picker.hidden = true; }
+    });
+  }
   return h("div.jb-field", {},
     h("label.label", { for: id }, label),
-    h(area ? "textarea.field" : "input.field", {
-      id, value: value ?? "", rows: area ? rows : undefined, disabled, placeholder,
-      dataset: { focus: id }, on: { input: (e) => run(() => commit(e.target.value)), keydown: (e) => e.stopPropagation() },
-    }), hint ? h("p.jb-hint", {}, hint) : null);
+    h("div.jb-field-input", {}, input, picker), hint ? h("p.jb-hint", {}, hint) : null);
 }
 
 function chooser(label, value, options, commit, name, disabled = false) {
@@ -319,6 +345,7 @@ function removeItem(item, v) {
 
 async function requestGeneration(item, kind) {
   const j = jam.jam;
+  await prepareBackstageMentions(item.id, kind);
   const details = generationDetails(item.id, kind);
   review = { type: "generate", jamId: j.id, id: item.id, title: item.title, kind, details, signature: JSON.stringify(details), loading: true };
   const current = review;
@@ -357,10 +384,13 @@ function inspector(ctx, bs, v, item) {
     scene ? timingFields(ctx, item) : null,
     field(v.tab === "characters" ? "Identity & appearance" : "Image direction", item.prompt, (prompt) => update({ prompt }), {
       name: `${item.id}-prompt`, area: true, rows: 4, disabled: busy,
+      mentions: () => backstageMentionables(bs, mentionables(), item, slot),
+      hint: "Type @ to add a character or picture reference.",
       placeholder: v.tab === "characters" ? "Appearance, outfit and defining features. Describe a clear reusable character reference." : v.tab === "cover" ? "Composition, mood and colour palette…" : "Setting, character pose, framing and atmosphere for this shot…",
     }),
     scene && slot === "endImage" ? field("End-frame direction", item.endPrompt, (endPrompt) => update({ endPrompt }), {
       name: `${item.id}-end-prompt`, area: true, rows: 3, disabled: busy,
+      mentions: () => backstageMentionables(bs, mentionables(), item, slot),
       placeholder: "How should the shot end? Keep this setting and character, but pull back to reveal the station and evening sky.",
       hint: "The start frame anchors the same location, lighting and character. This is a separately generated image.",
     }) : null,
@@ -419,6 +449,8 @@ function summaryRow(label, value) {
 function reviewReference(bs, item, ref) {
   if (ref.name === "start-frame") return { asset: item.image, label: "Start frame" };
   if (ref.name === "identity-reference") return { asset: item.reference, label: "Identity reference" };
+  const mentioned = (item.mentionRefs ?? []).find((a) => a.file === ref.file);
+  if (mentioned) return { asset: mentioned, label: `@${mentioned.name} · ${mentioned.title || "Reference"}` };
   const character = bs.characters.find((c) => c.image?.file === ref.file || c.reference?.file === ref.file);
   if (character) return { asset: character.image?.file === ref.file ? character.image : character.reference, label: character.title || "Character reference" };
   return { asset: [item.reference, item.image].find((a) => a?.file === ref.file), label: "Reference image" };

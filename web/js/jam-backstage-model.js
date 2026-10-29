@@ -88,6 +88,9 @@ export function planFromTrack(track, { span, maxSeconds = 10, format = 'music-vi
   return scenes;
 }
 function photoRef(asset, name) { return asset?.file ? { file: asset.file, name } : null; }
+// Video models receive only the generated frame(s), not the named image references
+// used to create them. Keep the editable direction intact and use plain names here.
+const videoDirection = value => String(value ?? '').replace(/@([a-z0-9][a-z0-9-]*)/gi, (_, name) => name.replace(/-/g, ' '));
 export function imageRequest(item, board, kind = 'image') {
   if (!['image', 'endImage'].includes(kind)) throw new Error('Choose a start or end image.');
   if (!item.prompt?.trim() && !(kind === 'endImage' && item.endPrompt?.trim())) throw new Error('Describe the image before generating it.');
@@ -117,7 +120,7 @@ export function videoRequest(scene, board, seed = Math.floor(Math.random() * 214
   const template = model.id === 'fast-h3' ? 'video_fastvideo_fasth3_i2v' : scene.endImage?.file ? 'video_ltx2_5_flf2v' : 'video_ltx2_5_i2v';
   const [width, height] = board.aspect === '9:16' ? [768, 1344] : board.aspect === '1:1' ? [1024, 1024] : [1344, 768];
   return { template, body: { confirm: true, inputs: { first_frame: { file: scene.image.file }, ...(scene.endImage?.file ? { last_frame: { file: scene.endImage.file } } : {}), width, height, duration: Math.ceil(seconds), seed,
-    prompt: [`Use the supplied start frame${scene.endImage?.file ? ' and end frame as composition anchors' : ''}. Create one continuous coherent shot for ${formatSubject(board.format)}.`, FORMAT_DIRECTION[board.format] ?? FORMAT_DIRECTION['music-video'], board.style && `Visual direction: ${board.style}`, scene.prompt && `Scene: ${scene.prompt}`, `Motion: ${scene.motion.trim()}`, `Keep stable anatomy, lighting, exposure and natural colors. Prefer controlled movement to fast gestures. No captions, lettering, watermark, music, narration or added dialogue. The original ${board.format === 'podcast' ? 'audio' : 'song'} will be the soundtrack in the edit; generated sound is muted.`].filter(Boolean).join('\n'),
+    prompt: [`Use the supplied start frame${scene.endImage?.file ? ' and end frame as composition anchors' : ''}. Preserve the identity and appearance of characters shown in the supplied frame${scene.endImage?.file ? 's' : ''}. Create one continuous coherent shot for ${formatSubject(board.format)}.`, FORMAT_DIRECTION[board.format] ?? FORMAT_DIRECTION['music-video'], board.style && `Visual direction: ${videoDirection(board.style)}`, scene.prompt && `Scene: ${videoDirection(scene.prompt)}`, `Motion: ${videoDirection(scene.motion.trim())}`, `Keep stable anatomy, lighting, exposure and natural colors. Prefer controlled movement to fast gestures. No captions, lettering, watermark, music, narration or added dialogue. The original ${board.format === 'podcast' ? 'audio' : 'song'} will be the soundtrack in the edit; generated sound is muted.`].filter(Boolean).join('\n'),
     ...(model.id === 'ltx-2.5' ? { prompt_enhance: false, [scene.endImage?.file ? 'fram_rate' : 'frame_rate']: 24 } : {}),
   } } };
 }
