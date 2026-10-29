@@ -131,18 +131,18 @@ function recipe(t) {
       h("p", { id: "mx-problem-help" }, "Name your collection, then add your photo below. The opening hides your collection; the slow reveal shows the whole room."))) : null,
     h("div.mx-beats", {}, ...beats.map((b) => h("div.mx-beat", { style: { flexGrow: String(Math.max(0.6, b.to - b.from)) } }, h("i"), h("b", {}, span(b.from, b.to)), h("span", {}, b.text)))),
   ];
+  const castSection = h("div.mx-cast-col", {},
+    h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "Add your photo or choose a character, then review your generation.")),
+    h("div.mx-roles", {}, ...cast.map((c) => role(c))));
+  const models = madeWith({ music: t.engine !== "official-template", native: t.engine === "official-template", model: t.model, billing: t.billing, voice: voiceReferenceFor(t, cast), guided: isProblemReveal(t) });
+  const referenceFrames = isProblemReveal(t) && shownFrames ? h("div.mx-reference-guides" + (ownFrames ? ".is-personal" : ""), {}, h("span.label", {}, ownFrames ? "Your reference frames" : `Example frames · ${t.customization.defaultProblem}`), h("div.mx-reference-pair", {},
+    ...[['close', 'Start frame'], ['wide', 'End frame']].map(([key, label]) => {
+      const photo = shownFrames[key]?.photo;
+      return h("figure", {}, photo ? h("button", { type: 'button', title: `View ${label.toLowerCase()}`, on: { click: () => view(photo.url) } }, h("img", { src: photo.url, alt: label })) : h("span", {}, label + ' pending'), h("figcaption", {}, label));
+    }))) : null;
   const rest = [
-      // who stars in it beside how it is made
-      h("div.mx-lower", {},
-        h("div.mx-cast-col", {},
-          h("div.mx-section-head", {}, h("h3", {}, "Cast"), h("em", {}, pick.role ? `Pick who plays the ${pick.role.toLowerCase()}: one of the crew, or one of your stars` : "Add your photo or choose a character, then review your generation.")),
-          h("div.mx-roles", {}, ...cast.map((c) => role(c)))),
-        madeWith({ music: t.engine !== "official-template", native: t.engine === "official-template", model: t.model, billing: t.billing, voice: voiceReferenceFor(t, cast), guided: isProblemReveal(t) })),
-      isProblemReveal(t) && shownFrames ? h("div.mx-reference-guides" + (ownFrames ? ".is-personal" : ""), {}, h("span.label", {}, ownFrames ? "Your reference frames" : `Example frames · ${t.customization.defaultProblem}`), h("div.mx-reference-pair", {},
-        ...[['close', 'Start frame'], ['wide', 'End frame']].map(([key, label]) => {
-          const photo = shownFrames[key]?.photo;
-          return h("figure", {}, photo ? h("button", { type: 'button', title: `View ${label.toLowerCase()}`, on: { click: () => view(photo.url) } }, h("img", { src: photo.url, alt: label })) : h("span", {}, label + ' pending'), h("figcaption", {}, label));
-        }))) : null,
+      referenceFrames ? h("div.mx-cast-and-frames", {}, castSection, referenceFrames) : h("div.mx-lower", {}, castSection, models),
+      referenceFrames ? models : null,
       ownFrames && !busy && !m?.body.shots?.some(s => s.native?.id || s.submissionPending) ? h("button.key", { type: "button", on: { click: () => reviewGeneration({ freshFrames: true }) } }, "Regenerate frames") : null,
       ownFrames && !busy ? h("p.hint", {}, "Review both frames above. Generate video opens a separate confirmation.") : null,
       t.render ? h("details.mx-provenance", {}, h("summary", {}, "Preview generation details"),
