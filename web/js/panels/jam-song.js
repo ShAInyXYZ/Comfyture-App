@@ -686,13 +686,13 @@ function drawStage() {
 const lyr = { key: null, timeline: [], items: [], at: -2, held: -Infinity, syncing: false, armed: false, roman: new Map(), loading: new Set() };
 async function syncSongLyrics(m) {
   if (!m || lyr.syncing) return;
-  if (!lyr.armed) { lyr.armed = true; page.lyrSync.textContent = "Confirm sync · Cloud GPU cost"; return; }
+  if (!lyr.armed) { lyr.armed = true; syncLabel("Confirm sync · Cloud GPU cost", "armed"); return; }
   lyr.armed = false;
   lyr.syncing = true;
   const syncingJam = inJam(m) ? jam.jam : null;
   if (syncingJam) { jam.busy.add("song-sync", syncingJam); changed("jam"); }
   page.lyrSync.disabled = true;
-  page.lyrSync.textContent = "Listening to the song…";
+  syncLabel("Listening to the song…", "busy");
   try {
     const sourceLyrics = m.lyrics || (inJam(m) ? jam.jam?.body.track?.lyrics : "") || "";
     const { lyrics, timing } = await syncSongFile({ ...m, lyrics: sourceLyrics });
@@ -731,9 +731,14 @@ function drawLyrics() {
   Object.assign(lyr, { key, timeline, items: [...page.lyrBody.children], at: -2 });
   page.lyrMeta.textContent = lines ? timing ? `${lines} lines · synced` : `${lines} lines · not synced` : timeline.length ? "no words" : "";
   page.lyrSync.hidden = !m || !lines;
-  if (!lyr.syncing) page.lyrSync.textContent = timing ? "Sync again" : "Sync lyrics";
+  if (!lyr.syncing) syncLabel(timing ? "Sync again" : "Sync lyrics", timing ? "done" : "new");
   page.lyrBody.scrollTop = 0;
   tickLyrics();
+}
+/** The sync key: lit in the accent until the lyrics are synced (and while it waits for the second press), a plain key after. */
+function syncLabel(words, state) {
+  page.lyrSync.className = `key sg-ly-sync${state === "done" ? "" : " is-accent"}${state === "armed" ? " is-armed-sync" : ""}`;
+  page.lyrSync.replaceChildren(jicon(state === "done" ? "check" : "wave"), words);
 }
 /** The line sounding now is lit, those before it dimmed, and the display follows the song (until the person scrolls it, for a few seconds). */
 function tickLyrics() {
@@ -875,7 +880,7 @@ export function songWorkspace() {
       audio);
     page.lyrMeta = h("span.sg-meta", {});
     page.lyrBody = h("div.sg-ly-body", { tabindex: "0", "aria-label": "Lyrics", on: { wheel: () => (lyr.held = performance.now()), touchmove: () => (lyr.held = performance.now()), pointerdown: () => (lyr.held = performance.now()) } });
-    page.lyrSync = h("button.key.is-quiet", { type: "button", title: "Transcribe the full mix and match your lyrics. Uses Comfy Cloud GPU time.", on: { click: () => syncSongLyrics(shownSong()) } }, "Sync lyrics");
+    page.lyrSync = h("button.key.sg-ly-sync", { type: "button", title: "Transcribe the full mix and match your lyrics. Uses Comfy Cloud GPU time.", on: { click: () => syncSongLyrics(shownSong()) } }, "Sync lyrics");
     page.ld = h("section.sg-ld", { "aria-label": "Lyrics display" }, h("div.sg-ly-head", {}, h("span.sg-label", {}, "Lyrics display"), page.lyrMeta, page.lyrSync), page.lyrBody);
     page.map = h("aside.sg-map", { "aria-label": "The song's sections" });
     page.shelf = h("section.sg-shelf", { "aria-label": "Your songs" });
