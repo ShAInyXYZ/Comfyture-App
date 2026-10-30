@@ -10,5 +10,6 @@ work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
 git clone -q --no-local --single-branch --branch main "$repo" "$work/pub"
 cd "$work/pub"
 FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --index-filter "$here/filter.sh" -- main >/dev/null
-if git log main --name-only --format= | grep -q '\.m4a$'; then echo "a song is still in the history; not publishing" >&2; exit 1; fi
+# grep without -q reads every line: with -q it can stop early, break the pipe and, under pipefail, let a song through
+if git log main --name-only --format= | grep '\.m4a$' >/dev/null; then echo "a song is still in the history; not publishing" >&2; exit 1; fi
 git push https://github.com/ShAInyXYZ/Comfyture-App.git main:main
