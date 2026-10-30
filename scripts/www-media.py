@@ -123,11 +123,23 @@ clip(film, dst("film", "desert-dawn-rescue.mp4"), 960, 28, sound=True)
 poster(film, dst("film", "desert-dawn-rescue.jpg"), 3)
 
 # ── the pets ─────────────────────────────────────────────────────────────────────────────────────────────────
-for pet in ("ketkout", "praline", "pickle", "brioche", "paprika", "crumpet", "truffle"):
+for pet in ("ketkout", "praline", "pickle", "brioche", "paprika", "crumpet", "canelle", "truffle"):
     face = src("web", "brand", "mixer", "crew", "praline-face.webp") if pet == "praline" else src("web", "brand", "cast", f"{pet}-face.webp")
     pic(face, dst("pets", f"{pet}.webp"), 256, 82)
 for cat in ("praline", "sesame", "mochi", "meringue"):
     pic(src("web", "brand", "mixer", "crew", f"{cat}-face.webp"), dst("mixer", f"crew-{cat}.webp"), 256, 82)
+
+# ── Mixer's trends acted by our cast, with their own lines (MiniMax H3, LTX-2.5), and Cabinet ────────────────────────────────
+for t in ("we-listen", "uno-car-reveal", "tiny-desk", "getting-robbed", "ghost-photoshoot", "talking-about-me"):
+    clip(src("web", "brand", "mixer", "trends", t, "preview.mp4"), dst("mixer", t + ".mp4"), 540, 27, sound=True, length=10)
+    poster(dst("mixer", t + ".mp4"), dst("mixer", t + ".jpg"), 1.2, 540)
+pic(src("docs", "brand", "products", "cabinet-cover.png"), dst("cabinet", "cover.webp"), 1400, 80)
+for n in ("josie", "bagel", "earl"):
+    pic(src("web", "brand", "cabinet", "examples", n + ".webp"), dst("cabinet", n + ".webp"), 360, 82)
+for n in ("anime", "manga", "render-3d", "cinematic", "claymation", "storybook", "pixel", "oil", "neon", "bw-film", "comic", "sticker"):
+    pic(src("docs", "brand", "products", "cabinet-v1", "originals", n + ".webp"), dst("cabinet", "style-" + n + ".webp"), 480, 80)
+# (the pets' lineup, media/pets/lineup.webp, is docs/brand/cast/pets-lineup-8.png, drawn with Codex's GPT Image from the old lineup and
+# Canelle's sheet; the app's screens are captured as below)
 
 # ── the hero reel: real takes of our cast, cross-faded, picture and sound (16:9) ──────────────────────────────────────────────
 REEL = [  # (source, start, seconds, window: where the 16:9 frame sits in a cover fit (x, y), has sound)

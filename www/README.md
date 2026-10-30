@@ -11,13 +11,14 @@ GitHub Pages under the repository's sub-path. `demo/` (the app as static files, 
 | Flag and bar | #OpenSourceHiggsfield, For judges (docs/competition/JUDGES.md), Star on GitHub, Try the demo | |
 | Hero | a 15-second reel of real takes with its sound on demand, a caption per take, the promise and the two keys | `media/hero/` |
 | Ticker | the open-weights models it runs | |
-| Seven studios | the seven pets together, then a card per studio with its pet, one line, what it makes and a clip | `media/pets/`, the studios' clips |
+| Eight studios | the eight pets together, then a card per studio with its pet, one line, what it makes and a clip | `media/pets/`, the studios' clips |
 | Kitchen | Story, Stage, Shot, Cut and Library as tabs over the real screens; the Stage's seven passes; Last frame first; the 28 presets | `media/app/`, `media/loops/`, `media/presets/` |
-| Mixer | the crew, two vertical takes of Meringue | `media/mixer/` |
+| Mixer | the crew, six trends acted by our cast with their own lines (MiniMax H3, LTX-2.5), each with its sound on demand, the Mixer screen | `media/mixer/`, `media/app/mixer.webp` |
 | Jam | Taro's video cover (his ACE-Step song, with sound), the five workspaces, the Track screen | `media/jam/`, `media/app/jam.webp` |
 | Macaron | posts and motion from two brands (Comfyture, Little Otter Tea), the brand kit screen | `media/macaron/`, `media/app/macaron.webp` |
 | Spice | the five shots of Truffle's Jam Heist, each a wipe of the plate against the last pass of its chain (real runs), the chain named under each, the Spice screen and the suite; the card plays two shots side by side under a sweeping wipe | `media/spice/`, `media/app/spice.webp` |
 | Toaster | clay frame against render on its three examples, the maps sent, the turnaround, the Scene screen | `media/toaster/`, `media/app/toaster.webp` |
+| Cabinet | Bagel's dressing room, three characters dressed and posed, Josie in twelve of the twenty styles, the Cabinet screen | `media/cabinet/`, `media/app/cabinet.webp` |
 | Utensils | the shelf of tools, the Picture screen | `media/app/utensils.webp` |
 | Pets | the tour, checked actions, a paid run only on a yes; each pet with what its bar asks (the app's own words) | `media/app/tour.webp` |
 | Open weights | the models by job, Renders on (Comfy Cloud or your ComfyUI), `COMFYTURE_OPEN_WEIGHTS=1`, how it runs | |
