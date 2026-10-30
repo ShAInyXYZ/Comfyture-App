@@ -3,6 +3,7 @@ import {Composition} from 'remotion';
 import {FPS, H, TL, W} from './lib';
 import {S1PublicProperty} from './S1PublicProperty';
 import {S2Mixer} from './S2Mixer';
+import {S3ToasterCabinet} from './S3ToasterCabinet';
 
 export const Root: React.FC = () => (
   <>
@@ -14,6 +15,7 @@ export const Root: React.FC = () => (
       width={W}
       height={H}
     />
+    <Composition id="S3ToasterCabinet" component={S3ToasterCabinet} durationInFrames={Math.round(TL.s3.duration * FPS)} fps={FPS} width={W} height={H} />
     <Composition id="S2Mixer" component={S2Mixer} durationInFrames={Math.round(TL.s2.duration * FPS)} fps={FPS} width={W} height={H} />
   </>
 );

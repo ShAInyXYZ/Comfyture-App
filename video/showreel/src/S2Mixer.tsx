@@ -10,7 +10,7 @@ const S = TL.s2;
 const fr = (sec: number) => Math.round(sec * FPS);
 const CX = 960;
 
-const TABS = [
+export const TABS = [
   {id: 'kitchen', name: 'Kitchen', craft: 'Films', pet: 'ketkout', petName: 'Ketkout', tag: 'head chef'},
   {id: 'mixer', name: 'Mixer', craft: 'Trends', pet: 'praline', petName: 'Praline', tag: 'trend boss'},
   {id: 'jam', name: 'Jam', craft: 'Music videos', pet: 'pickle', petName: 'Pickle', tag: 'band leader'},
@@ -30,10 +30,10 @@ const CARD_X0 = (1920 - (TABS.length * CARD_W + (TABS.length - 1) * CARD_GAP)) /
 const CARD_Y = 452;
 
 // The app's header, which the cards fold into.
-const HEAD_H = 72;
+export const HEAD_H = 72;
 const TAB_X0 = 220;
-const tabW = (name: string) => 24 + 10 + name.length * 11.4 + 34;
-const TAB_POS = TABS.reduce<number[]>((acc, t, i) => [...acc, i === 0 ? TAB_X0 : acc[i - 1] + tabW(TABS[i - 1].name) + 6], []);
+export const tabW = (name: string) => 24 + 10 + name.length * 11.4 + 34;
+export const TAB_POS = TABS.reduce<number[]>((acc, t, i) => [...acc, i === 0 ? TAB_X0 : acc[i - 1] + tabW(TABS[i - 1].name) + 6], []);
 
 // Scene B: the trend shelf, then the trend open with its player.
 const SHELF = ['we-listen', 'uno-car-reveal', 'tiny-desk', 'my-reaction', 'talking-about-me', 'getting-robbed', 'ghost-photoshoot'];
@@ -63,13 +63,13 @@ const BEATS = [
 const BAR = {x: 610, y: 916, w: 880, h: 124};
 const TICKS = ['Opened the trend', 'Lead: Moon', 'Theme: guitar', 'Frames drafted'];
 
-const Face: React.FC<{src: string; size: number; ring?: string; style?: React.CSSProperties}> = ({src, size, ring, style}) => (
+export const Face: React.FC<{src: string; size: number; ring?: string; style?: React.CSSProperties}> = ({src, size, ring, style}) => (
   <div style={{width: size, height: size, borderRadius: '50%', overflow: 'hidden', background: '#fff', flex: 'none', boxShadow: ring ? `0 0 0 3px ${ring}` : undefined, ...style}}>
     <Img src={staticFile(src)} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
   </div>
 );
 
-const Icon: React.FC<{id: string; size: number; color: string}> = ({id, size, color}) => (
+export const Icon: React.FC<{id: string; size: number; color: string}> = ({id, size, color}) => (
   <div style={{width: size, height: size, flex: 'none', background: color, WebkitMaskImage: `url(${staticFile(`brand/icons/product-${id}.svg`)})`, WebkitMaskSize: '100% 100%'}} />
 );
 

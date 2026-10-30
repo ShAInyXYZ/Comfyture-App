@@ -65,6 +65,13 @@ JOBS = {
     "s2-sfx-ticks": lambda: sfx("four soft clean UI confirmation ticks in a row, evenly spaced", 1.3, 0.6),
     "s2-sfx-magic": lambda: sfx("magical sparkle whoosh into a soft deep boom, a transformation", 1.8, 0.5),
     "s2-sfx-cards": lambda: sfx("playful soft whooshes as seven cards slide into a row, light and quick", 1.5, 0.5),
+    # Section 3, Toaster and Cabinet.
+    "s3-vo-a": lambda: tts("Brian (male, american)", "[warm] Toaster gives you full control. Block the shot in 3D clay... or just ask Crumpet.", 41, 0.4),
+    "s3-vo-b": lambda: tts("Brian (male, american)", "Toast it into a finished render... [excited] then into a real 3D model.", 42, 0.35),
+    "s3-vo-c": lambda: tts("Brian (male, american)", "[warm] And Cabinet is your virtual photobooth. Pick your characters, an outfit, a pose... ask Canelle, and shoot!", 43, 0.35),
+    "s3-sfx-shutter": lambda: sfx("camera shutter click with a bright flash pop, photobooth", 0.8, 0.6),
+    "s3-sfx-toast": lambda: sfx("toaster pops up with a cheerful ding", 1.0, 0.6),
+    "s3-sfx-spin": lambda: sfx("soft magical shimmer as a 3D object materializes and starts spinning", 2.0, 0.5),
     # Sound effects.
     "sfx-scratch": lambda: sfx("vinyl record scratch, music stops abruptly, comedic freeze frame", 1.2, 0.6),
     "sfx-stamp": lambda: sfx("heavy rubber stamp slammed hard on a wooden desk, one loud thud", 1.0, 0.6),

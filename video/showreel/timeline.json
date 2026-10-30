@@ -405,5 +405,66 @@
     0
    ]
   ]
+ },
+ "s3": {
+  "duration": 27.0,
+  "vo": [
+   {
+    "src": "audio/s3-vo-a.mp3",
+    "at": 0.4,
+    "from": 0.0,
+    "to": 6.16
+   },
+   {
+    "src": "audio/s3-vo-b.mp3",
+    "at": 9.35,
+    "from": 0.0,
+    "to": 4.64
+   },
+   {
+    "src": "audio/s3-vo-c.mp3",
+    "at": 15.9,
+    "from": 0.0,
+    "to": 8.4
+   }
+  ],
+  "toasterOn": 0.25,
+  "viewport": 0.45,
+  "typing": 5.7,
+  "message": "Pickle mid-air in a joyful leap, arms up, red scarf flying",
+  "send": 7.2,
+  "dots": 7.3,
+  "reply": 7.75,
+  "ticks": [
+   7.95,
+   8.1,
+   8.25,
+   8.4
+  ],
+  "toastKey": 8.55,
+  "press": 9.4,
+  "colourId": 9.45,
+  "render": 9.85,
+  "threeD": 11.3,
+  "sheet": 11.45,
+  "model": 12.3,
+  "cabinetOn": 15.6,
+  "chars": [
+   19.3,
+   19.42
+  ],
+  "outfits": [
+   20.45,
+   20.57
+  ],
+  "poses": [
+   21.45,
+   21.57
+  ],
+  "note": "Follow the exact pose references we have for both characters",
+  "noteTyping": 22.45,
+  "shoot": 23.75,
+  "strip": 24.55,
+  "end": 27.0
  }
 }
