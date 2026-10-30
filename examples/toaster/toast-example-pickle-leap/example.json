@@ -1,0 +1,165 @@
+{
+ "id": "toast-example-pickle-leap",
+ "rev": 1,
+ "name": "Pickle’s leap",
+ "about": "Pickle the frog mid-leap: posed in clay, toasted into a render, drawn as a four-view sheet and turned into a 3D model with Tripo from one image.",
+ "thumb": "example:5bb91cdb29f0de6c.png",
+ "body": {
+  "parts": [
+   {
+    "id": "p-p6y8gyo",
+    "shape": "character",
+    "body": "toddler",
+    "pose": "jump",
+    "params": {
+     "look": 14,
+     "nod": -8,
+     "lean": 10,
+     "twist": 18,
+     "side": -8,
+     "arms": 25,
+     "stance": 25,
+     "step": 30
+    },
+    "name": "Pickle",
+    "color": "#ff6b3d",
+    "made": "Pickle the frog: a bright apple-green frog with a plump round body, a pale cream belly and chin, two big round white eyes with black pupils bulging on top of his wide head, pink cheeks, a wide open happy mouth with a pink tongue, long springy legs and webbed hands and feet with round sticky pads, a red knitted scarf around his neck",
+    "size": [
+     0.6,
+     0.86,
+     0.38
+    ],
+    "pos": [
+     0,
+     0.63,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "camera": {
+   "position": [
+    1.305,
+    0.553,
+    1.583
+   ],
+   "target": [
+    0,
+    0.64,
+    0
+   ],
+   "focal": 45
+  },
+  "cameras": [],
+  "ratio": "4:5",
+  "maps": [
+   "clay",
+   "id",
+   "depth"
+  ],
+  "mapsV": 2,
+  "what": "Pickle the frog, our green dancing frog, caught mid-air in a joyful leap, both arms thrown up, his legs tucked under him, a red scarf flying",
+  "scene": "A bright playful 3D animated-film still against a plain soft backdrop, warm light from the front, a slightly low camera, rich saturated greens",
+  "refs": [],
+  "prompt": "",
+  "promptBy": "",
+  "promptFor": null,
+  "strength": 0.6,
+  "model": null,
+  "sheetModel": null,
+  "renders": [
+   {
+    "id": "r-pickle-leap",
+    "status": "done",
+    "photo": {
+     "url": "example:5bb91cdb29f0de6c.png",
+     "file": "example:5bb91cdb29f0de6c.png",
+     "width": 1121,
+     "height": 1403
+    },
+    "frame": {
+     "url": "example:38f1355cc3dd2851.png",
+     "file": "example:38f1355cc3dd2851.png",
+     "width": 1120,
+     "height": 1400
+    },
+    "maps": [
+     {
+      "url": "example:0e7ea4970100c9b3.png",
+      "file": "example:0e7ea4970100c9b3.png",
+      "width": 1120,
+      "height": 1400,
+      "name": "Colour ID"
+     }
+    ],
+    "camera": {
+     "position": [
+      1.35,
+      0.55,
+      1.65
+     ],
+     "target": [
+      0,
+      0.64,
+      0
+     ],
+     "focal": 45
+    },
+    "ratio": "4:5",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "sent": [
+     "clay",
+     "id"
+    ],
+    "prompt": "clay.png is a grey clay blockout of ONE character caught mid-air in a joyful leap: it is the canvas. Keep its camera, its framing and its pose exactly: both arms thrown up, the legs tucked under him, the same lean and the same height above the floor. idmap.png is the same frame in one flat colour: the whole figure is one character.\n\nThe character is Pickle, the bright green frog of cast-sheet.png: the same big round eyes with black pupils on top of his wide head, pink cheeks, cream chin and belly, smooth apple-green skin, webbed hands and feet with round sticky pads, a wide happy open mouth with a pink tongue. He wears a red knitted scarf whose tail flies up behind him. A frog's body, squat and round, never a human's: the clay only gives the pose and the framing.\n\nLook: a bright playful 3D animated-film still against a plain soft warm backdrop, warm light from the front, a soft shadow on the floor below him (he is in the air), rich saturated colours. No clay, no mannequin, no text, no labels.",
+    "refs": [],
+    "at": "2026-10-26T17:13:55.000Z",
+    "example": true,
+    "note": "Drawn with GPT Image from the clay frame, for free (development image)."
+   }
+  ],
+  "sheets": [
+   {
+    "id": "r-sheet-pickle",
+    "status": "done",
+    "part": "p-p6y8gyo",
+    "photo": {
+     "url": "example:fc4f731cf5bcd819.png",
+     "file": "example:fc4f731cf5bcd819.png",
+     "width": 1254,
+     "height": 1254
+    },
+    "frame": null,
+    "maps": [],
+    "ratio": "1:1",
+    "model": "gpt-image-2.5",
+    "modelName": "GPT Image",
+    "cost": "free",
+    "prompt": "Render @sheet as a finished multi-view sheet of ONE character: Pickle. Four views in a 2 by 2 grid of equal square cells, the front at the top left, the back at the top right, the left side at the bottom left and the right side at the bottom right. The four cells are four different views of one real object turned on a turntable, in the order of the clay in @sheet: the front is the side that faces the camera in the top left cell, the back is the object turned half way round, the left and the right are its two sides. Copy the clay cell by cell, with the same pose, the same angle and the same size in each: anything that sticks out on one side (a handle, a spout, an arm, a hinge, a tail) shows only in the cells where the clay shows it, and stays hidden or seen end-on where the clay hides it, so no two cells are the same picture. All four show the same single object with the same materials, colours and details, on the same ground line. The character is Pickle the frog: a bright apple-green frog with a plump round body, a pale cream belly and chin, two big round white eyes with black pupils bulging on top of his wide head, pink cheeks, a wide open happy mouth with a pink tongue, long springy legs and webbed hands and feet with round sticky pads, a red knitted scarf around his neck. Its look: Pickle the frog: a bright apple-green frog with a plump round body, a pale cream belly and chin, two big round white eyes with black pupils bulging on top of his wide head, pink cheeks, a wide open happy mouth with a pink tongue, long springy legs and webbed hands and feet with round sticky pads, a red knitted scarf around his neck. It belongs to this setting, so match its style, but draw only the character: A bright playful 3D animated-film still against a plain soft backdrop, warm light from the front, a slightly low camera, rich saturated greens. The pictures sent with it show how it really looks: draw it exactly like them. The camera is the same in all four views: a little above his eye level, a natural lens with no wide-angle distortion, the object turned to each side in turn. The clay colours only tell parts apart: give everything its real materials, no clay or mannequin left. A plain pure white background, soft even light, no floor, no shadow, no text, no labels, no borders and nothing else.",
+    "refs": [],
+    "at": "2026-10-26T17:13:55.000Z",
+    "example": true,
+    "note": "Drawn with GPT Image from Pickle's clay in four views and his cast sheet, for free."
+   }
+  ],
+  "models": [
+   {
+    "id": "r-pickle-tripo-single",
+    "status": "done",
+    "part": "p-p6y8gyo",
+    "via": "file",
+    "note": "Tripo · single image",
+    "url": "example:4be5281504f31410.glb",
+    "file": "example:4be5281504f31410.glb",
+    "views": [],
+    "at": "2026-10-28T23:26:05.374Z"
+   }
+  ]
+ }
+}

@@ -62,18 +62,20 @@ export function projectBar(extra = []) {
   const lampEl = h("span.lamp.ts-saved", { role: "status", "data-tooltip": "Not saved yet" });
   const tabsEl = h("nav.tabs.ts-tabs", { "aria-label": "Projects" });
   const del = deleteKey("Delete this project — click twice", () => remove(toaster.draft?.id).catch(fail));
-  const keys = h("div.subbar-actions.ts-bar-keys", { role: "toolbar", "aria-label": "Project" }, ...extra,
-    key(icon("grid"), "Your projects", () => browse().catch(fail)),
+  // the projects' keys first, on the left: Your projects opens any project; the page's own keys (Scene or Render) stay on the right
+  const projectKeys = h("div.subbar-actions.ts-bar-keys.ts-project-keys", { role: "toolbar", "aria-label": "Projects" },
+    h("button.key.ts-open-projects", { type: "button", title: "Your projects — open any of them", on: { click: () => browse().catch(fail) } }, icon("grid"), h("span", {}, "Your projects")),
     key(sprite("copy"), "Save a copy — a project of its own, with the same parts", () => duplicate().catch(fail)),
     key(sprite("export"), "Export to share — one file; it refers to this Library's pictures", () => exportDraft().catch(fail)),
     key(sprite("import"), "Import a project someone shared", importFile),
     del);
+  const keys = h("div.subbar-actions.ts-bar-keys.ts-mode-keys", { role: "toolbar", "aria-label": "Project" }, ...extra);
   tabsEl.onwheel = (e) => {
     if (tabsEl.scrollWidth <= tabsEl.clientWidth || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
     tabsEl.scrollLeft += e.deltaY;
     e.preventDefault();
   };
-  bar = { el: h("div.subbar.ts-subbar", {}, h("div.subbar-in", {}, tabsEl, keys)), tabsEl, lampEl };
+  bar = { el: h("div.subbar.ts-subbar", {}, h("div.subbar-in", {}, projectKeys, tabsEl, keys)), tabsEl, lampEl };
   return bar.el;
 }
 

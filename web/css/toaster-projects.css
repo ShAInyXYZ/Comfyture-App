@@ -11,3 +11,8 @@
 .ts-project-card .ctl-project-card { width: 100%; }
 .ts-card-delete { position: absolute; top: .75rem; right: .75rem; width: 1.875rem; min-height: 1.875rem; opacity: 0; background: var(--bg); transition: opacity var(--t-fast); }
 .ts-project-card:hover .ts-card-delete, .ts-card-delete:focus-visible, .ts-card-delete[aria-pressed="true"] { opacity: 1; }
+
+/* the projects' keys lead the bar, a line between them and the tabs; the page's keys go to the far right */
+.ts-project-keys { padding-right: .75rem; border-right: 1px solid var(--line); }
+.ts-project-keys .ts-open-projects { gap: .5rem; font-weight: 600; }
+.ts-mode-keys { margin-left: auto; }
