@@ -114,6 +114,7 @@ const panels = {
   macaron: [$("page-macaron"), product("macaron", () => Promise.all([import("./panels/macaron.js"), import("./macaron-assist.js")]).then(([m]) => m.renderMacaron)), "macaron"],
   spice: [$("page-spice"), product("spice", () => Promise.all([import("./panels/spice.js"), import("./spice-assist.js")]).then(([m]) => m.renderSpice)), "spice"],
   toaster: [$("page-toaster"), product("toaster", () => Promise.all([import("./panels/toaster.js"), import("./toaster-assist.js")]).then(([m]) => m.renderToaster)), "toaster"],
+  cabinet: [$("page-cabinet"), product("cabinet", () => import("./panels/cabinet.js").then((m) => m.renderCabinet)), "cabinet"],
   utensils: [$("page-utensils"), product("utensils", () => Promise.all([import("./panels/utensils.js"), import("./utensils-assist.js")]).then(([m]) => m.renderUtensils)), "utensils"],
 };
 

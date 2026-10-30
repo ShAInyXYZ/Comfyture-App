@@ -8,7 +8,7 @@ const ORDER = [
   "ut-shell", "ut-shelf", "ut-picture", "ut-video", "ut-audio", "ut-vfx", "ut-edit", "ut-templates", "ut-library", "ut-home", "ut-guide", "ut-library-frame", "ut-makers",
   "macaron", "macaron-win", "macaron-win-idea", "macaron-win-kit", "macaron-win-content", "macaron-win-make", "macaron-win-studio", "mc-studio", "mc-create", "mc-book",
   "sp-shell", "sp-viewer", "sp-suite", "sp-win",
-  "toaster", "toaster-projects", "jam", "jm-shell", "jm-song", "jm-track", "jm-words", "jm-band", "jm-edit", "jm-backstage", "tour",
+  "toaster", "toaster-projects", "cabinet", "jam", "jm-shell", "jm-song", "jm-track", "jm-words", "jm-band", "jm-edit", "jm-backstage", "tour",
 ];
 
 const linkOf = (name) => document.head.querySelector(`link[href="css/${name}.css"]`);
@@ -28,6 +28,7 @@ export const STYLES = {
   // (Spice's controls are Utensils': its labels, pills, steppers, wells and sliders)
   spice: ["ut-shell", "ut-picture", "ut-vfx", "sp-shell", "sp-viewer", "sp-suite", "sp-win"],
   toaster: ["toaster", "toaster-projects"],
+  cabinet: ["cabinet"],
   utensils: ["ut-shell", "ut-shelf", "ut-picture", "ut-video", "ut-audio", "ut-vfx", "ut-edit", "ut-templates", "ut-library", "ut-home", "ut-guide", "ut-library-frame", "ut-makers"],
 };
 

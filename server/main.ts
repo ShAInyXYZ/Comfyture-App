@@ -1735,11 +1735,11 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const pops = (Array.isArray(input.sound?.pops) ? input.sound.pops : []).map(Number).filter((n: number) => Number.isFinite(n) && n >= 0 && n < 30);
     return json(res, 201, await encodeFrames(data, input.job, { fps: Math.round(num(input.fps, 12, 60, 30)), name: text(input.name, 60) || "motion", sound: input.sound ? { pops, pad: input.sound.pad === true } : undefined, container: input.container === "webm" ? "webm" : input.container === "gif" ? "gif" : "mp4" }));
   }
-  // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos, Spice's shots, Toaster's drafts
+  // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos, Spice's shots, Toaster's drafts, Cabinet's shoots
   // a store's examples are in before it is first served
   const store = /^\/api\/([\w-]+)/.exec(path)?.[1];
   if (store && store in EXAMPLE_KINDS && method === "GET") await seedStore(store);
-  for (const kind of ["stories", "cuts", "mixes", "brands", "jams", SPICE_STORE, "toasts"]) {
+  for (const kind of ["stories", "cuts", "mixes", "brands", "jams", SPICE_STORE, "toasts", "cabinet"]) {
     if (path === `/api/${kind}` || path.startsWith(`/api/${kind}/`)) {
       const answered = await projectRoute(kind, path, method, req, res);
       if (answered !== false) return answered;

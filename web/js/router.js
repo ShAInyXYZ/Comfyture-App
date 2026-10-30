@@ -1,5 +1,5 @@
-// The home of the whole app (#/home, where it opens) shows seven products, each with its own home
-// (#/kitchen, #/mixer, #/jam, #/macaron, #/spice, #/toaster, #/utensils). Kitchen, the full-control one, has five
+// The home of the whole app (#/home, where it opens) shows eight products, each with its own home
+// (#/kitchen, #/mixer, #/jam, #/macaron, #/spice, #/toaster, #/cabinet, #/utensils). Kitchen, the full-control one, has five
 // rooms, in the order a film is made: #/story, #/stage, #/shot, #/cut, #/library. Plain hash
 // routing, so it works on any static host and under a sub-path.
 
@@ -10,6 +10,7 @@ export const PRODUCTS = {
   macaron: ["Macaron", "Ready-to-post content for a brand"],
   spice: ["Spice", "The VFX house: a scenario, every tool a Comfy Cloud workflow"],
   toaster: ["Toaster", "Clay in, toast out"],
+  cabinet: ["Cabinet", "Dress a character, pose them, shoot them"],
   utensils: ["Utensils", "One tool, one job"],
 };
 

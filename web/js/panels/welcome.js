@@ -1,4 +1,4 @@
-// The app's home: the seven products in one banner (the one shown large, all seven as tiles along its foot, turning from one to the next),
+// The app's home: the eight products in one banner (the one shown large, all eight as tiles along its foot, turning from one to the next),
 // then the storefront of the most-run Comfy Cloud workflows (welcome-popular.js), then the films last worked on.
 import { h, icon, sprite } from "../dom.js";
 import { state } from "../store.js";
@@ -12,6 +12,7 @@ const ABOUT = {
   macaron: { who: "For brands", line: "Turn any product into ready-to-post content, on brand.", does: ["Product shots", "UGC ads", "Brand kit"] },
   spice: { who: "For visual effects", line: "A scenario of shots, each run through the suite's AI tools pass after pass: the object gone, the day turned to night, the frame widened, the close-up sharpened, its sound back.", does: ["IC-LoRAs", "Cut out", "Upscale", "Sound"] },
   toaster: { who: "For objects in 3D", line: "Block an object out in clay shapes, then toast it: a finished picture, four views that agree, and a textured 3D model.", does: ["Blockout", "Render", "Turnaround", "3D model"] },
+  cabinet: { who: "For looks and photoshoots", line: "One of your characters, dressed and posed: outfits tried on, poses struck, the picture made for a post, a story or a photoshoot.", does: ["Outfits", "Poses", "Try-on", "Photoshoot"] },
   utensils: { who: "For one small job", line: "One small tool, one job, one result: upscale, cut out, vary, lip-sync. A shot that needs pass after pass goes to Spice.", does: ["Upscale", "Cutout", "Variations", "Lip-sync"] },
 };
 const ids = Object.keys(PRODUCTS);

@@ -1,4 +1,4 @@
-// The pets: the registry has all seven, each with a face on disk, a placeholder that names it and a few presets for
+// The pets: the registry has all eight, each with a face on disk, a placeholder that names it and a few presets for
 // every room; a pet's brief knows its own product only; and each assist route's answer reader keeps its own actions
 // and drops everything else (Praline's and Truffle's against what the page told them). No model is called.
 
@@ -20,8 +20,8 @@ import { manual } from "../server/manual.ts";
 import * as macaron from "../server/macaron.ts";
 
 const web = join(import.meta.dirname, "..", "web");
-const PETS = { kitchen: "Ketkout", mixer: "Praline", jam: "Pickle", macaron: "Brioche", spice: "Paprika", toaster: "Crumpet", utensils: "Truffle" } as const;
-const TAGS = { kitchen: "head chef", mixer: "trend boss", jam: "band leader", macaron: "brand room", spice: "VFX house", toaster: "model maker", utensils: "shelf keeper" } as const;
+const PETS = { kitchen: "Ketkout", mixer: "Praline", jam: "Pickle", macaron: "Brioche", spice: "Paprika", toaster: "Crumpet", cabinet: "Bagel", utensils: "Truffle" } as const;
+const TAGS = { kitchen: "head chef", mixer: "trend boss", jam: "band leader", macaron: "brand room", spice: "VFX house", toaster: "model maker", cabinet: "stylist", utensils: "shelf keeper" } as const;
 
 // ---------------------------------------------------------------- the registry
 
@@ -35,8 +35,8 @@ test("every product has its pet, with a name, a tag and a face that is on disk",
     assert.ok(/\.webp$/.test(h.face) && existsSync(join(web, h.face)), `${name}'s face is a picture under web/: ${h.face}`);
     assert.ok(h.tools === "bar" || h.tools === "panel");
   }
-  assert.equal(new Set(Object.values(HARNESSES).map((h) => h.pet)).size, 7, "seven different pets");
-  assert.equal(new Set(Object.values(HARNESSES).map((h) => h.face)).size, 7, "seven different faces");
+  assert.equal(new Set(Object.values(HARNESSES).map((h) => h.pet)).size, 8, "eight different pets");
+  assert.equal(new Set(Object.values(HARNESSES).map((h) => h.face)).size, 8, "eight different faces");
   assert.equal(harnessOf("library"), null);
 });
 

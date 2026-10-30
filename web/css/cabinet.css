@@ -1,0 +1,169 @@
+/* Cabinet: a character dressed and posed. The shoots as tabs over the page, then three columns as in a dressing room: who (left),
+   the mirror and its bar (middle), the shelves of outfits and poses (right). The pictures are on white, so their wells are light. */
+
+#page-cabinet { display: flex; flex-direction: column; width: 100%; height: calc(100dvh - var(--head)); margin: 0; overflow: hidden; }
+#page-cabinet[hidden] { display: none; }
+body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
+#page-cabinet img { -webkit-user-drag: none; }
+
+.cab-loading { display: flex; align-items: center; justify-content: center; gap: .625rem; flex: 1; color: var(--muted); font: 500 var(--fs-body)/1 var(--font-sans); }
+.cab-saved { flex: none; }
+
+.cab-room {
+  --cab-gap: .75rem;
+  --cab-paper: #ecebe7;
+  display: grid;
+  grid-template-columns: clamp(14rem, 17vw, 18rem) minmax(0, 1fr) clamp(19rem, 25vw, 26rem);
+  gap: var(--cab-gap);
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  max-width: 130rem;
+  margin: 0 auto;
+  padding: var(--cab-gap);
+}
+.cab-col { display: flex; flex-direction: column; gap: var(--cab-gap); min-width: 0; min-height: 0; }
+
+.cab-card { display: flex; flex-direction: column; gap: .75rem; padding: .875rem 1rem 1rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); }
+.cab-card-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.cab-label { margin: 0; font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.cab-sub { font: 600 var(--fs-small)/1 var(--font-sans); color: var(--text); }
+.cab-count { font: 500 var(--fs-micro)/1 var(--font-mono); color: var(--dim); }
+.cab-note { margin: 0; font: 400 var(--fs-small)/1.35 var(--font-sans); color: var(--dim); }
+
+/* ---------------------------------------------------------------- who, and the look */
+
+.cab-who { overflow-y: auto; scrollbar-width: thin; }
+.cab-portrait { aspect-ratio: 3 / 4; max-height: 38dvh; border-radius: .625rem; background: var(--cab-paper); overflow: hidden; display: grid; place-items: center; }
+.cab-portrait img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.cab-name { display: flex; flex-direction: column; gap: .25rem; }
+.cab-name b { font: 700 var(--fs-heading)/1.1 var(--font-sans); }
+.cab-name span { font: 500 var(--fs-small)/1.2 var(--font-sans); color: var(--muted); }
+
+.cab-look { flex: 1 0 auto; }
+.cab-picked { display: flex; flex-direction: column; gap: .5rem; }
+.cab-picked-head { display: flex; align-items: baseline; justify-content: space-between; }
+.cab-chips { display: flex; flex-direction: column; gap: .375rem; }
+.cab-pick { display: flex; align-items: center; gap: .5rem; min-width: 0; padding: .25rem .25rem .25rem .25rem; border-radius: .5rem; background: var(--sunk); font: 500 var(--fs-small)/1.2 var(--font-sans); }
+.cab-pick img { width: 1.75rem; height: 2.25rem; border-radius: .3125rem; object-fit: cover; background: var(--cab-paper); flex: none; }
+.cab-pick span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cab-pick-x { display: grid; place-items: center; flex: none; width: 1.75rem; height: 1.75rem; border: 0; border-radius: .375rem; background: transparent; color: var(--dim); cursor: pointer; }
+.cab-pick-x:hover { background: var(--s2); color: var(--text); }
+.cab-pick-x svg { width: .875rem; height: .875rem; }
+.cab-none { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; padding: .625rem .75rem; border: 1px dashed var(--line2); border-radius: .5rem; background: transparent; color: var(--muted); font: 500 var(--fs-small)/1.2 var(--font-sans); text-align: left; cursor: pointer; }
+.cab-none em { font-style: normal; color: var(--dim); font-size: var(--fs-micro); }
+.cab-none:hover { color: var(--text); border-color: var(--muted); }
+
+/* ---------------------------------------------------------------- the mirror */
+
+.cab-glass { position: relative; flex: 1 1 0; min-height: 12rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: radial-gradient(90% 80% at 50% 40%, #1f1f23, #141416); overflow: hidden; display: flex; }
+.cab-frame { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; margin: 0; }
+.cab-photo { flex: 1 1 0; min-height: 0; width: 100%; object-fit: contain; padding: .75rem .75rem 0; cursor: zoom-in; }
+.cab-caption { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem .75rem; padding: .625rem .75rem .75rem; font: 500 var(--fs-small)/1.2 var(--font-sans); color: var(--muted); }
+.cab-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .375rem; }
+.cab-actions .key.is-armed { color: var(--err); }
+
+.cab-frame.is-busy, .cab-frame.is-failed { align-items: center; justify-content: center; }
+.cab-wait { display: flex; flex-direction: column; align-items: center; gap: .625rem; max-width: 26rem; padding: 1.5rem; text-align: center; font: 500 var(--fs-small)/1.35 var(--font-sans); color: var(--muted); }
+.cab-wait b { font: 600 var(--fs-title)/1.2 var(--font-sans); color: var(--text); }
+.cab-err { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: var(--err); }
+.cab-progress { --p: .04; display: block; width: 12rem; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--accent) calc(var(--p) * 100%), var(--s3) 0); transition: background .3s; }
+
+.cab-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .75rem; padding: 1.5rem; text-align: center; }
+.cab-empty b { font: 700 var(--fs-display)/1.15 var(--font-sans); }
+.cab-empty p { max-width: 30rem; margin: 0; font: 400 var(--fs-body)/1.45 var(--font-sans); color: var(--muted); }
+.cab-examples { display: flex; justify-content: center; gap: .75rem; margin-top: .5rem; min-height: 0; }
+.cab-example { display: flex; flex-direction: column; gap: .375rem; width: 7.5rem; margin: 0; }
+.cab-example img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: .625rem; background: var(--sunk); }
+.cab-example figcaption { font: 500 var(--fs-micro)/1.3 var(--font-sans); color: var(--dim); text-align: center; }
+@media (max-height: 760px) { .cab-examples { display: none; } }
+.cab-recipe { display: flex; align-items: center; gap: .75rem; margin-bottom: .5rem; }
+.cab-recipe img { width: 5.5rem; height: 7.25rem; border-radius: .625rem; object-fit: contain; background: var(--cab-paper); }
+.cab-plus { font: 300 1.5rem/1 var(--font-sans); color: var(--dim); }
+.cab-slot { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; width: 5.5rem; height: 7.25rem; border: 1px dashed var(--line2); border-radius: .625rem; font: 500 var(--fs-micro)/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+.cab-slot svg { width: 1.5rem; height: 1.5rem; }
+
+.cab-sheet { display: flex; flex-direction: column; gap: .375rem; flex: none; padding: .75rem 0 .75rem .75rem; overflow-y: auto; scrollbar-width: none; }
+.cab-thumb { position: relative; display: grid; place-items: center; flex: none; width: 3.5rem; height: 4.375rem; padding: 0; border: 1px solid var(--card-line); border-radius: .5rem; background: var(--sunk); overflow: hidden; cursor: pointer; }
+.cab-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cab-thumb[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.cab-thumb[data-tone="failed"] { border-color: color-mix(in srgb, var(--err) 50%, transparent); }
+
+.cab-bar { display: flex; flex-direction: column; gap: .625rem; flex: none; padding: .75rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); }
+.cab-bar-row { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem .75rem; }
+.cab-formats > button { display: inline-flex; align-items: center; gap: .375rem; }
+.cab-formats svg { width: .875rem; height: .875rem; }
+.cab-pickers { display: flex; align-items: center; gap: .5rem; margin-left: auto; min-width: 0; }
+.cab-backdrop .sel-trigger { min-width: 7.5rem; }
+.cab-group { min-height: 1.875rem; padding: 0 .75rem; border: 1px solid var(--line); border-radius: var(--r-pill); background: transparent; color: var(--muted); font: 500 var(--fs-small)/1 var(--font-sans); cursor: pointer; }
+.cab-group:hover { color: var(--text); border-color: var(--line2); }
+.cab-group[aria-pressed="true"] { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent); }
+.cab-notes { flex: 1 1 14rem; min-width: 10rem; height: 2.5rem; }
+.cab-model { flex: 0 1 auto; min-width: 0; max-width: 15rem; }
+.cab-model .sel-trigger { max-width: 15rem; }
+.cab-shoot { flex: none; min-height: 2.5rem; gap: .5rem; padding: 0 1rem; }
+.cab-price { padding-left: .5rem; border-left: 1px solid rgba(0, 0, 0, .2); font: 600 var(--fs-micro)/1 var(--font-mono); opacity: .75; }
+
+/* ---------------------------------------------------------------- the shelves */
+
+.cab-shelf { border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); padding: .75rem; gap: .625rem; }
+.cab-shelf-head { display: flex; flex-direction: column; gap: .625rem; flex: none; }
+.cab-shelves > button { flex: 1; justify-content: center; }
+.cab-shelves .count { margin-left: .375rem; font: 500 var(--fs-micro)/1 var(--font-mono); opacity: .7; }
+.cab-groups { display: flex; flex-wrap: wrap; gap: .25rem; }
+.cab-group { min-height: 1.625rem; padding: 0 .625rem; font-size: var(--fs-micro); }
+
+.cab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); align-content: start; gap: .5rem; flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: .125rem; }
+.cab-item { position: relative; display: flex; flex-direction: column; min-width: 0; }
+.cab-item-pick { display: flex; flex-direction: column; gap: 0; padding: 0; border: 1px solid var(--card-line); border-radius: .625rem; background: var(--sunk); overflow: hidden; color: var(--muted); text-align: left; cursor: pointer; transition: border-color var(--t-fast); }
+.cab-item-pick img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; background: var(--cab-paper); display: block; }
+.cab-grid.is-poses .cab-item-pick img { aspect-ratio: 3 / 4; }
+.cab-item-name { padding: .4375rem .5rem; font: 500 var(--fs-small)/1.2 var(--font-sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cab-item-pick:hover { border-color: var(--line2); color: var(--text); }
+.cab-item.is-picked .cab-item-pick { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); color: var(--text); }
+.cab-item-n { position: absolute; top: .375rem; left: .375rem; display: grid; place-items: center; width: 1.375rem; height: 1.375rem; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font: 700 var(--fs-micro)/1 var(--font-mono); }
+.cab-item-x { position: absolute; top: .375rem; right: .375rem; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .6); color: #fff; cursor: pointer; }
+.cab-item-x svg { width: .75rem; height: .75rem; }
+.cab-add { align-items: center; justify-content: center; gap: .375rem; min-height: 7rem; padding: .75rem; border: 1px dashed var(--line2); border-radius: .625rem; background: transparent; color: var(--muted); text-align: center; cursor: pointer; }
+.cab-add svg { width: 1.375rem; height: 1.375rem; }
+.cab-add b { font: 600 var(--fs-small)/1.2 var(--font-sans); color: var(--text); }
+.cab-add em { font: 400 var(--fs-micro)/1.2 var(--font-sans); font-style: normal; color: var(--dim); }
+.cab-add:hover { border-color: var(--muted); }
+.cab-gallery { flex: none; margin: 0; padding-top: .5rem; border-top: 1px solid var(--line); font: 400 var(--fs-micro)/1.45 var(--font-sans); color: var(--dim); }
+.cab-gallery a { color: var(--muted); white-space: nowrap; }
+.cab-gallery a svg { display: inline-block; width: .75rem; height: .75rem; margin-left: .1875rem; vertical-align: -.125rem; }
+
+/* ---------------------------------------------------------------- narrower windows */
+
+/* a laptop's half-screen or a tablet: the mirror keeps the whole height; who goes over the shelf (the look is said on the
+   shelf's tabs and by its numbered cards) */
+@media (max-width: 1100px) {
+  .cab-room { grid-template-columns: minmax(0, 1fr) clamp(17rem, 36vw, 22rem); grid-template-rows: auto minmax(0, 1fr); }
+  .cab-who { grid-column: 2; grid-row: 1; overflow: visible; }
+  .cab-who > .cab-card:first-child { display: grid; grid-template-columns: 3rem minmax(0, 1fr) auto; align-items: center; gap: .75rem; padding: .5rem .75rem .5rem .5rem; }
+  .cab-who .cab-card-head { display: contents; }
+  .cab-who .cab-label { display: none; }
+  .cab-who .cab-card-head .key { grid-column: 3; grid-row: 1; }
+  .cab-portrait { grid-column: 1; grid-row: 1; width: 3rem; max-height: none; border-radius: .5rem; }
+  .cab-name { grid-column: 2; grid-row: 1; }
+  .cab-look { display: none; }
+  .cab-mirror { grid-column: 1; grid-row: 1 / span 2; }
+  .cab-shelf { grid-column: 2; grid-row: 2; }
+}
+
+/* a phone or a narrow window: one column, the page scrolls */
+@media (max-width: 820px) {
+  #page-cabinet { height: auto; min-height: calc(100dvh - var(--head)); overflow: visible; }
+  body[data-page="cabinet"] { overflow: auto; }
+  .cab-room { display: flex; flex-direction: column; }
+  .cab-look { display: flex; }
+  .cab-glass { flex: none; height: min(70dvh, 120vw); }
+  .cab-shelf { max-height: 80dvh; }
+  .cab-grid { min-height: 20rem; }
+}
+
+/* a short window: a smaller portrait, so the look stays in sight */
+@media (max-height: 760px) and (min-width: 1101px) {
+  .cab-portrait { max-height: 26dvh; }
+  .cab-card { padding: .75rem .875rem .875rem; gap: .5rem; }
+}

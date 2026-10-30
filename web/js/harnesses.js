@@ -113,6 +113,19 @@ export const HARNESSES = {
     offers: TOASTER_OFFERS,
   },
 
+  // a character dressed and posed: Bagel, the cast's goofball, styles the shoots. His bar is not docked on Cabinet's page yet
+  // (he has no brief on the server): this is who he is, and what he will say and offer there
+  cabinet: {
+    pet: "bagel",
+    name: "Bagel",
+    tag: "stylist",
+    face: "brand/cast/bagel-face.webp",
+    tools: "bar",
+    home: "cabinet",
+    placeholders: { cabinet: "Ask Bagel — dress them for a rainy day in Paris, three poses, for a post" },
+    presets: { cabinet: [p("Beach day", "Dress them for a sunny day at the beach"), p("Office ready", "Dress them for the office, standing confident"), p("Party night", "Dress them for a party at night, in three poses")] },
+  },
+
   // one-tool jobs: Truffle, her seven workspaces and what the bar says in each are Utensils' own data (web/js/utensils-harness.js);
   // she has no canned tools: her panel shows the queue and the recent results, and her bar is her words
   utensils: {

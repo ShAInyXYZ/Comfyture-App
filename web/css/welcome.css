@@ -26,7 +26,7 @@
 .welcome-go:active { transform: translateY(1px); }
 .welcome-go svg { width: 1.125rem; height: 1.125rem; }
 /* the seven products along the banner's foot: the lit one fills as its time runs, a picked one slides in */
-.welcome-strip { position: absolute; z-index: 2; left: 1.25rem; right: 1.25rem; bottom: 1.25rem; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .75rem; }
+.welcome-strip { position: absolute; z-index: 2; left: 1.25rem; right: 1.25rem; bottom: 1.25rem; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: .75rem; }
 .welcome-tile { position: relative; height: var(--strip-h); padding: 0; overflow: hidden; border: 1px solid rgba(240, 239, 237, .12); border-radius: calc(.875rem * var(--corner-k, 1)); background: var(--sunk); color: var(--text); text-align: left; cursor: pointer; isolation: isolate; filter: brightness(.7) saturate(.85); transition: filter .3s var(--ease-out), transform .3s var(--ease-out), border-color .3s; }
 .welcome-tile img { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; object-position: 62% 42%; }
 .welcome-tile::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgba(10, 9, 12, .9), rgba(10, 9, 12, .2) 70%); }
