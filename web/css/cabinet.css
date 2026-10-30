@@ -54,6 +54,29 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 .cab-none em { font-style: normal; color: var(--dim); font-size: var(--fs-micro); }
 .cab-none:hover { color: var(--text); border-color: var(--muted); }
 
+/* ---------------------------------------------------------------- the style */
+
+.cab-style-key { display: flex; align-items: center; gap: .625rem; width: 100%; min-width: 0; padding: .3125rem .625rem .3125rem .3125rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--sunk); color: var(--text); font: 500 var(--fs-small)/1.2 var(--font-sans); text-align: left; cursor: pointer; }
+.cab-style-key:hover, .cab-style-key[aria-expanded="true"] { border-color: var(--line2); }
+.cab-style-key img { width: 2.5rem; height: 2.5rem; border-radius: .375rem; object-fit: cover; background: var(--cab-paper, #ecebe7); flex: none; }
+.cab-style-key span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cab-style-key svg { width: .875rem; height: .875rem; color: var(--dim); flex: none; }
+.cab-style-key.is-small { width: auto; height: 2.5rem; padding: .25rem .5rem .25rem .25rem; gap: .5rem; }
+.cab-style-key.is-small img { width: 2rem; height: 2rem; }
+.cab-style-key.is-small span { max-width: 7rem; }
+/* on the bar only when the look is hidden (a narrower window) */
+.cab-style-bar { display: none; }
+
+.cab-styles { position: fixed; z-index: 60; display: flex; flex-direction: column; gap: .625rem; width: min(30rem, calc(100vw - 1rem)); max-height: min(36rem, calc(100dvh - 1rem)); padding: .875rem; border: 1px solid var(--line2); border-radius: var(--r-panel); background: var(--s1); box-shadow: var(--float); }
+.cab-styles-head { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
+.cab-styles-head b { font: 600 var(--fs-title)/1 var(--font-sans); }
+.cab-styles-head span { font: 400 var(--fs-small)/1.2 var(--font-sans); color: var(--dim); }
+.cab-styles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr)); gap: .5rem; overflow-y: auto; scrollbar-width: thin; padding: .125rem; }
+.cab-style-tile { display: flex; flex-direction: column; gap: .3125rem; padding: .25rem; border: 1px solid transparent; border-radius: .625rem; background: transparent; color: var(--muted); font: 500 var(--fs-micro)/1.2 var(--font-sans); text-align: center; cursor: pointer; }
+.cab-style-tile img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: .5rem; background: var(--cab-paper, #ecebe7); }
+.cab-style-tile:hover { background: var(--s2); color: var(--text); }
+.cab-style-tile[aria-selected="true"] { border-color: var(--accent); color: var(--text); }
+
 /* ---------------------------------------------------------------- the mirror */
 
 .cab-glass { position: relative; flex: 1 1 0; min-height: 12rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: radial-gradient(90% 80% at 50% 40%, #1f1f23, #141416); overflow: hidden; display: flex; }
@@ -123,6 +146,7 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 
 .cab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); align-content: start; gap: .5rem; flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: .125rem; }
 .cab-item { position: relative; display: flex; flex-direction: column; min-width: 0; }
+.cab-item[hidden], .cab-style-tile[hidden] { display: none; }
 .cab-item-pick { display: flex; flex-direction: column; gap: 0; padding: 0; border: 1px solid var(--card-line); border-radius: .625rem; background: var(--sunk); overflow: hidden; color: var(--muted); text-align: left; cursor: pointer; transition: border-color var(--t-fast); }
 .cab-item-pick img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; background: var(--cab-paper); display: block; }
 .cab-grid.is-poses .cab-item-pick img { aspect-ratio: 3 / 4; }
@@ -155,6 +179,7 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
   .cab-portrait { grid-column: 1; grid-row: 1; width: 3rem; max-height: none; border-radius: .5rem; }
   .cab-name { grid-column: 2; grid-row: 1; }
   .cab-look { display: none; }
+  .cab-style-bar { display: block; }
   .cab-mirror { grid-column: 1; grid-row: 1 / span 2; }
   .cab-shelf { grid-column: 2; grid-row: 2; }
 }
@@ -165,6 +190,7 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
   body[data-page="cabinet"] { overflow: auto; }
   .cab-room { display: flex; flex-direction: column; }
   .cab-look { display: flex; }
+  .cab-style-bar { display: none; }
   .cab-glass { flex: none; height: min(70dvh, 120vw); }
   .cab-shelf { max-height: 80dvh; }
   .cab-grid { min-height: 20rem; }

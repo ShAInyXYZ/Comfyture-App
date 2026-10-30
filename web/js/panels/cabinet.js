@@ -8,7 +8,7 @@ import {
   cabinet, loadCabinet, whoNow, setWho, itemOf, toggle, addOwn, removeOwn, set, modelNow, setModel, priceNow,
   newShoot, openShoot, removeShoot, renameShoot, shootNow, again, dropPicture, show,
 } from "../cabinet.js";
-import { WARDROBE, POSES, WARDROBE_GROUPS, POSE_GROUPS, WARDROBE_GROUP_TAGS, POSE_GROUP_TAGS, FORMATS, BACKDROPS, EXAMPLES, combos, find, wardrobeItem, poseItem } from "../cabinet-shelf.js";
+import { WARDROBE, POSES, STYLES, styleItem, WARDROBE_GROUPS, POSE_GROUPS, WARDROBE_GROUP_TAGS, POSE_GROUP_TAGS, FORMATS, BACKDROPS, EXAMPLES, combos, find, wardrobeItem, poseItem } from "../cabinet-shelf.js";
 
 const fail = (e) => toast(e.message, { tone: "crit" });
 const BRANDS = { openai: "brand-openai", google: "brand-google", bytedance: "brand-bytedance", qwen: "brand-qwen" };
@@ -125,13 +125,73 @@ function whoColumn(b) {
       h("h2.cab-label", {}, "The look"),
       pickedRow("outfits", b),
       pickedRow("poses", b),
+      h("div.cab-picked", {}, h("div.cab-picked-head", {}, h("span.cab-sub", {}, "Style")), styleKey(b)),
       h("p.cab-note", {}, n === 1 ? "One picture each time you shoot." : `${n} pictures each time you shoot: every outfit in every pose.`)));
+}
+
+// ---------------------------------------------------------------- the style
+
+let stylesOpen = null;
+function closeStyles() {
+  if (!stylesOpen) return;
+  stylesOpen.el.remove();
+  stylesOpen.anchor.setAttribute("aria-expanded", "false");
+  document.removeEventListener("pointerdown", stylesOpen.outside, true);
+  document.removeEventListener("keydown", stylesOpen.escape, true);
+  stylesOpen = null;
+}
+
+/** The styles as a grid of their samples, by the key that opened it: "As they are" first, then the twenty. */
+function openStyles(anchor, b) {
+  if (stylesOpen?.anchor === anchor) return closeStyles();
+  closeStyles();
+  const who = whoNow(b);
+  const tile = (id, name, src, words) => h("button.cab-style-tile", {
+    type: "button",
+    role: "option",
+    "aria-selected": String((b.style ?? null) === id),
+    title: words ? `${name}: ${words}` : name,
+    on: { click: () => (closeStyles(), set("style", id)) },
+  }, h("img", { src, alt: "", loading: "lazy", draggable: false, on: { error: (e) => e.currentTarget.closest(".cab-style-tile")?.setAttribute("hidden", "") } }), h("span", {}, name));
+  const el = h("div.cab-styles", { role: "listbox", "aria-label": "Style" },
+    h("div.cab-styles-head", {}, h("b", {}, "Style"), h("span", {}, "How the whole picture is drawn")),
+    h("div.cab-styles-grid", {},
+      tile(null, "As they are", who.picture, "their own look: a 3D character stays 3D, a photo stays a photo"),
+      ...STYLES.map((s) => tile(s.id, s.name, s.thumb, s.words))));
+  document.body.append(el);
+  const outside = (e) => !el.contains(e.target) && !anchor.contains(e.target) && closeStyles();
+  const escape = (e) => e.key === "Escape" && (e.stopPropagation(), closeStyles());
+  document.addEventListener("pointerdown", outside, true);
+  document.addEventListener("keydown", escape, true);
+  stylesOpen = { el, anchor, outside, escape };
+  anchor.setAttribute("aria-expanded", "true");
+  // by the key, inside the window: beside the look on a wide window, else above the key
+  const a = anchor.getBoundingClientRect();
+  const box = el.getBoundingClientRect();
+  const beside = a.right + 8 + box.width < innerWidth;
+  const x = Math.min(Math.max(8, beside ? a.right + 8 : a.left + a.width / 2 - box.width / 2), innerWidth - box.width - 8);
+  const y = Math.min(Math.max(8, beside ? a.top - box.height / 2 : a.top - box.height - 8), innerHeight - box.height - 8);
+  el.style.left = `${x}px`;
+  el.style.top = `${y}px`;
+}
+
+/** The key that shows the style picked (its sample) and opens the others. */
+function styleKey(b, small = false) {
+  const st = styleItem(b.style);
+  const who = whoNow(b);
+  return h(`button.cab-style-key${small ? ".is-small" : ""}`, {
+    type: "button",
+    "aria-haspopup": "listbox",
+    "aria-expanded": "false",
+    title: st ? `${st.name}: ${st.words}` : "As they are: their own look",
+    on: { click: (e) => openStyles(e.currentTarget, b) },
+  }, h("img", { src: st?.thumb ?? who.picture, alt: "", draggable: false }), h("span", {}, st?.name ?? "As they are"), icon("chevron"));
 }
 
 // ---------------------------------------------------------------- the mirror
 
 function pictureLabel(p) {
-  return [itemOf("outfits", p.outfit)?.name ?? "Own clothes", itemOf("poses", p.pose)?.name ?? "Natural pose", FORMATS[p.format]?.name].filter(Boolean).join(" · ");
+  return [itemOf("outfits", p.outfit)?.name ?? "Own clothes", itemOf("poses", p.pose)?.name ?? "Natural pose", styleItem(p.style)?.name, FORMATS[p.format]?.name].filter(Boolean).join(" · ");
 }
 
 function bigPicture(p, who) {
@@ -215,6 +275,7 @@ function shootBar(b) {
       h("div.segment.is-inline.cab-formats", { role: "group", "aria-label": "What it is for" },
         ...Object.entries(FORMATS).map(([id, f]) => h("button", { type: "button", title: f.about, "aria-pressed": String(b.format === id), on: { click: () => set("format", id) } }, sprite(RATIO[f.aspect]), f.name))),
       h("div.cab-pickers", {},
+        h("div.cab-style-bar", {}, styleKey(b, true)),
         h("div.cab-backdrop", { title: "Where the picture is taken" }, dropdown({ label: "Backdrop", value: b.backdrop, items: backdrops, onChange: (id) => set("backdrop", id) })),
         models.length ? h("div.cab-model", {}, dropdown({ label: "Image model", value: m?.id, items: models, onChange: setModel, note: "What dresses and poses them: a partner model's credits, or Comfy Cloud's GPU time" })) : h("span.cab-note", {}, cabinet.models ? "No image model yet" : "…"))),
     h("div.cab-bar-row", {},
@@ -237,7 +298,8 @@ function shelfCard(kind, it, b, own) {
   const at = b[kind].indexOf(key);
   return h("div.cab-item", { className: at >= 0 ? "is-picked" : "" },
     h("button.cab-item-pick", { type: "button", "aria-pressed": String(at >= 0), title: it.words ? `${it.name}: ${it.words}` : it.name, on: { click: () => toggle(kind, key) } },
-      h("img", { src: it.thumb, alt: "", loading: "lazy", draggable: false }),
+      // (a thing whose picture is not there yet is not offered)
+      h("img", { src: it.thumb, alt: "", loading: "lazy", draggable: false, on: { error: (e) => !own && e.currentTarget.closest(".cab-item")?.setAttribute("hidden", "") } }),
       at >= 0 ? h("span.cab-item-n", {}, String(at + 1)) : null,
       h("span.cab-item-name", {}, it.name)),
     own ? h("button.cab-item-x", { type: "button", "aria-label": `Remove ${it.name} from this shoot`, title: "Remove it from this shoot", on: { click: () => removeOwn(kind, it.own.file) } }, icon("close")) : null);

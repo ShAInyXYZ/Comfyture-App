@@ -2,7 +2,7 @@
 // with. The pictures are Comfyture's own (drawn for it: docs/brand/products/cabinet-v1, MIT like the rest of the repo), so they can
 // ship with the app. Pure: no page, no server, so the tests read it as it is.
 
-import { WARDROBE_LIST, POSES_LIST, WARDROBE_GROUPS, POSE_GROUPS, WARDROBE_GROUP_TAGS, POSE_GROUP_TAGS } from "./cabinet-library.js";
+import { WARDROBE_LIST, POSES_LIST, STYLES_LIST, WARDROBE_GROUPS, POSE_GROUPS, WARDROBE_GROUP_TAGS, POSE_GROUP_TAGS } from "./cabinet-library.js";
 
 export { WARDROBE_GROUPS, POSE_GROUPS, WARDROBE_GROUP_TAGS, POSE_GROUP_TAGS };
 const pic = (kind, id) => ({ src: `brand/cabinet/${kind}/${id}.webp`, thumb: `brand/cabinet/${kind}/${id}.thumb.webp` });
@@ -101,6 +101,10 @@ export const EXAMPLES = [
   { src: "brand/cabinet/examples/earl.webp", who: "Earl", outfit: "tuxedo", pose: "arms-crossed", format: "shoot" },
 ];
 
+/** The styles a picture can be made in (none: as they are, in their own rendering), each with its sample of Josie. */
+export const STYLES = STYLES_LIST.map(([id, name, words]) => ({ id, name, words, ...pic("styles", id) }));
+export const styleItem = (id) => STYLES.find((s) => s.id === id) ?? null;
+
 export const wardrobeItem = (id) => WARDROBE.find((w) => w.id === id) ?? null;
 export const poseItem = (id) => POSES.find((p) => p.id === id) ?? null;
 
@@ -118,8 +122,11 @@ export function combos(outfits = [], poses = []) {
  * The words one picture is asked with. who: { name, look }; outfit and pose: a shelf item, or { name } for a picture of one's
  * own (said only by its picture), or null; the pictures go as @character, @outfit and @pose, in that order.
  */
-export function shotPrompt({ who, outfit, pose, format = "post", backdrop = "studio", notes = "" }) {
+export function shotPrompt({ who, outfit, pose, format = "post", backdrop = "studio", notes = "", style = null }) {
   const f = FORMATS[format] ?? FORMATS.post;
+  const st = styleItem(style);
+  // (a picture in a style is not a photo: the format says "picture" then)
+  const framing = st ? f.words.replace(/\bphoto(graph)?\b/g, "picture") : f.words;
   const b = BACKDROPS[backdrop] ?? BACKDROPS.studio;
   const name = who?.name || "the character";
   const look = who?.look ? ` (${who.look})` : "";
@@ -130,12 +137,16 @@ export function shotPrompt({ who, outfit, pose, format = "post", backdrop = "stu
     ? `Pose them exactly like the figure in @pose${pose.words ? ` (${pose.words})` : ""}: copy the body position, the arms, the legs and the turn of the head, but never draw the grey figure itself; anything it holds or sits on is drawn as the real thing`
     : "Give them a natural, flattering pose";
   const extra = String(notes ?? "").trim();
+  const traits = `the same face, ${who?.person ? "hair, skin" : "hair or fur, markings"}, colours and proportions`;
   return [
-    `${f.words[0].toUpperCase()}${f.words.slice(1)}.`,
+    st ? `The whole picture is ${st.words}.` : "",
+    `${framing[0].toUpperCase()}${framing.slice(1)}.`,
     `It shows ${name} from @character${look}, ${wearing}.`,
     `${posed}.`,
     `The backdrop: ${b.words}.`,
-    `Keep ${name} exactly themself: the same face, ${who?.person ? "hair, skin" : "hair or fur, markings"}, colours and proportions, and their own rendering style (a 3D animated character stays 3D animated, a photograph stays a photograph). Only one ${name} in the picture.`,
+    st
+      ? `Keep ${name} recognisably themself: ${traits}, drawn in that style, as are the outfit and everything around them. Only one ${name} in the picture.`
+      : `Keep ${name} exactly themself: ${traits}, and their own rendering style (a 3D animated character stays 3D animated, a photograph stays a photograph). Only one ${name} in the picture.`,
     extra ? `Also: ${extra}` : "",
   ].filter(Boolean).join(" ");
 }

@@ -6,7 +6,7 @@ import { state, changed, toast, jobWatchers, waitFor, artistFor } from "./store.
 import { keyedSaver } from "./saving.js";
 import { onServer, pictureOf } from "./picker.js";
 import { characterById } from "./characters.js";
-import { FORMATS, combos, shotPrompt, wardrobeItem, poseItem } from "./cabinet-shelf.js";
+import { FORMATS, combos, shotPrompt, wardrobeItem, poseItem, styleItem } from "./cabinet-shelf.js";
 
 const KIND = "cabinet";
 const OPEN = "comfyture.cabinet.open";
@@ -48,7 +48,7 @@ const call = async (url, method = "GET", body) => {
 const draw = () => changed("cabinet");
 const fail = (e) => toast(e.message, { tone: "crit" });
 
-export const freshBody = (who = { kind: "character", id: "josie" }) => ({ who, outfits: [], poses: [], own: { outfits: [], poses: [] }, format: "post", backdrop: "studio", notes: "", pictures: [] });
+export const freshBody = (who = { kind: "character", id: "josie" }) => ({ who, outfits: [], poses: [], own: { outfits: [], poses: [] }, format: "post", backdrop: "studio", style: null, notes: "", pictures: [] });
 
 // ---------------------------------------------------------------- who
 
@@ -306,10 +306,10 @@ export async function shootNow({ outfit: only, pose: onlyPose } = {}) {
   for (const { outfit: oKey, pose: pKey } of pairs) {
     const outfit = itemOf("outfits", oKey);
     const pose = itemOf("poses", pKey);
-    const prompt = shotPrompt({ who, outfit, pose, format: b.format, backdrop: b.backdrop, notes: b.notes });
-    const name = `${who.name} · ${[outfit?.name, pose?.name].filter(Boolean).join(" · ") || "Cabinet"}`;
+    const prompt = shotPrompt({ who, outfit, pose, format: b.format, backdrop: b.backdrop, notes: b.notes, style: b.style });
+    const name = `${who.name} · ${[outfit?.name, pose?.name, styleItem(b.style)?.name].filter(Boolean).join(" · ") || "Cabinet"}`;
     // the picture shows at once, waiting; it is made when its references are on the server
-    const p = { id: `wait-${Math.random().toString(36).slice(2, 10)}`, outfit: oKey ?? null, pose: pKey ?? null, format: b.format, status: "running", progress: 0, at: new Date().toISOString(), model: m.id };
+    const p = { id: `wait-${Math.random().toString(36).slice(2, 10)}`, outfit: oKey ?? null, pose: pKey ?? null, format: b.format, style: b.style ?? null, status: "running", progress: 0, at: new Date().toISOString(), model: m.id };
     b.pictures.unshift(p);
     cabinet.shown = p.id;
     draw();

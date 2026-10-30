@@ -84,3 +84,22 @@ test("no outfit says a country in its name; its words may", async () => {
   for (const it of WARDROBE) assert.doesNotMatch(it.name, countries, it.name);
   for (const id of ["karakou", "burnous", "caftan", "caftan-light", "djellaba", "qachabiya", "kabyle-dress", "chaoui", "chedda"]) assert.match(WARDROBE.find((x) => x.id === id).words, /Algerian|Moroccan|Algeria/);
 });
+
+test("twenty styles, each with its sample; a picture in a style says so first and is drawn all in it", async () => {
+  const { STYLES, styleItem, shotPrompt, WARDROBE, POSES } = await import("../web/js/cabinet-shelf.js");
+  assert.equal(STYLES.length, 20);
+  assert.equal(new Set(STYLES.map((s) => s.id)).size, 20);
+  for (const s of STYLES) {
+    assert.ok(s.words.length > 30, `${s.id} says how it draws`);
+    assert.ok(existsSync(new URL(`../web/${s.thumb}`, import.meta.url)), `${s.thumb} is there`);
+  }
+  const ask = { who: { name: "Bagel", look: "the corgi" }, outfit: WARDROBE[0], pose: POSES[0], format: "tryon" };
+  const plain = shotPrompt(ask);
+  assert.match(plain, /their own rendering style/);
+  assert.match(plain, /try-on photo/);
+  const anime = shotPrompt({ ...ask, style: "anime" });
+  assert.ok(anime.startsWith(`The whole picture is ${styleItem("anime").words}.`));
+  assert.doesNotMatch(anime, /their own rendering style|\bphoto\b/);
+  assert.match(anime, /drawn in that style/);
+  assert.equal(shotPrompt({ ...ask, style: "nothing" }), plain, "an unknown style is no style");
+});

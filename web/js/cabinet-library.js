@@ -320,3 +320,29 @@ export const POSES_LIST = [
   ["kneel", "One knee", "editorial", "kneeling on one knee, one hand resting on the raised knee"],
 ];
 
+/**
+ * The styles a picture can be made in, as [id, name, words]: the words say how the whole picture is drawn. Their samples (web/brand/
+ * cabinet/styles/) all show Josie, waving, so the styles compare at a glance.
+ */
+export const STYLES_LIST = [
+  ["anime", "Anime", "a Japanese anime key visual: clean cel shading, crisp line art, vibrant colours, expressive eyes"],
+  ["manga", "Manga lineart", "black-and-white manga line art: clean ink lines, screentone shading, no colour at all"],
+  ["render-3d", "3D animated", "a premium 3D animated feature-film render: soft subsurface scattering, appealing stylised proportions, glossy eyes, soft global illumination"],
+  ["cinematic", "Cinematic", "a cinematic film still: anamorphic lens, shallow depth of field, dramatic motivated lighting, a teal-and-orange grade, fine 35 mm grain"],
+  ["studio", "Studio photo", "a professional studio photograph: a softbox key light, a clean seamless backdrop, tack-sharp focus, true-to-life colour"],
+  ["editorial", "Fashion editorial", "a high-fashion magazine editorial photograph: bold styling, a strong direct flash, glossy saturated colour"],
+  ["vintage", "Vintage film", "a 1970s vintage film photograph: faded warm colours, soft focus, light leaks, heavy film grain"],
+  ["digicam", "Old digital camera", "a 2000s point-and-shoot digital camera snapshot: a harsh on-camera flash, slight noise, a cool white balance, an orange date stamp in a corner"],
+  ["instant", "Instant photo", "an instant film photo with a thick white border: soft contrast, slightly washed colours, a dreamy glow"],
+  ["bw-film", "Black and white", "a black-and-white 35 mm film photograph: rich contrast, deep blacks, visible grain"],
+  ["neon", "Neon night", "a neon-lit night photograph: magenta and cyan rim lights, wet reflections, light haze"],
+  ["watercolour", "Watercolour", "a loose watercolour painting: soft washes, visible paper texture, colours bleeding at the edges"],
+  ["oil", "Oil painting", "a classical oil painting: visible brushstrokes, rich glazes, warm chiaroscuro lighting"],
+  ["pencil", "Pencil sketch", "a graphite pencil sketch on white paper: fine hatching, smudged shading, no colour"],
+  ["comic", "Comic book", "a comic-book panel: bold ink outlines, halftone dots, flat bright colours"],
+  ["storybook", "Storybook", "a children's storybook illustration: gouache textures, warm soft colours, gentle outlines"],
+  ["woodblock", "Woodblock print", "a Japanese ukiyo-e woodblock print: flat colours, fine carved outlines, washi paper texture"],
+  ["pixel", "Pixel art", "16-bit pixel art: a limited palette, crisp square pixels, no smoothing"],
+  ["claymation", "Claymation", "a stop-motion claymation figure on a handmade set: plasticine texture with fingerprints, soft studio light"],
+  ["sticker", "Sticker", "a die-cut sticker: flat bright colours, a thick white outline around the whole figure, a plain background"],
+];
