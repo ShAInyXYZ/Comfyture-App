@@ -103,3 +103,17 @@ test("twenty styles, each with its sample; a picture in a style says so first an
   assert.match(anime, /drawn in that style/);
   assert.equal(shotPrompt({ ...ask, style: "nothing" }), plain, "an unknown style is no style");
 });
+
+test("a group picture names each character's pictures in turn, left to right, and keeps their outfits apart", async () => {
+  const { groupPrompt, WARDROBE, POSES, MOST_CAST } = await import("../web/js/cabinet-shelf.js");
+  assert.equal(MOST_CAST, 3, "three pictures each: nine, under the ten the server takes");
+  const kd = WARDROBE.find((x) => x.id === "kabyle-dress");
+  const p = groupPrompt({ members: [{ who: { name: "Josie" }, outfit: kd, pose: POSES[1] }, { who: { name: "Earl" }, outfit: null, pose: POSES[2] }], format: "shoot", style: "anime" });
+  assert.ok(p.startsWith("The whole picture is a Japanese anime"));
+  assert.match(p, /2 characters together, from left to right: 1\. Josie from @character-1/);
+  assert.match(p, /@outfit-1: an Amazigh Kabyle dress/);
+  assert.match(p, /2\. Earl from @character-2, in their own clothes, posed exactly like the figure in @pose-2/);
+  assert.doesNotMatch(p, /@outfit-2|@character(?!-)|@pose(?!-)/, "Earl's outfit is not sent, and no one goes by the single names");
+  assert.match(p, /the outfits never swap between them/);
+  assert.doesNotMatch(p, /\bphoto\b/, "a picture in a style");
+});

@@ -1,12 +1,13 @@
-// Cabinet: one of our characters (or anyone in a photo) dressed and posed, for a post, a story, a try-on or a photoshoot.
-// A shoot keeps who, the outfits and poses picked, how the pictures are made, and the pictures made (the server's "cabinet"
-// store). Each picture is one outfit in one pose: an image model's edit of three pictures, @character, @outfit and @pose.
+// Cabinet: our characters (or anyone in a photo) dressed and posed, for a post, a story, a try-on or a photoshoot.
+// A shoot keeps its cast (each character with the outfits and poses picked for them), how the pictures are made, and the pictures
+// made (the server's "cabinet" store). One character: each picture is one outfit in one pose, an image model's edit of three
+// pictures, @character, @outfit and @pose. Several: one picture of them all, each in one outfit and one pose (@character-1…).
 import { api } from "./api.js";
 import { state, changed, toast, jobWatchers, waitFor, artistFor } from "./store.js";
 import { keyedSaver } from "./saving.js";
 import { onServer, pictureOf } from "./picker.js";
 import { characterById } from "./characters.js";
-import { FORMATS, combos, shotPrompt, wardrobeItem, poseItem, styleItem } from "./cabinet-shelf.js";
+import { FORMATS, MOST_CAST, combos, shotPrompt, groupPrompt, wardrobeItem, poseItem, styleItem } from "./cabinet-shelf.js";
 
 const KIND = "cabinet";
 const OPEN = "comfyture.cabinet.open";
@@ -48,31 +49,79 @@ const call = async (url, method = "GET", body) => {
 const draw = () => changed("cabinet");
 const fail = (e) => toast(e.message, { tone: "crit" });
 
-export const freshBody = (who = { kind: "character", id: "josie" }) => ({ who, outfits: [], poses: [], own: { outfits: [], poses: [] }, format: "post", backdrop: "studio", style: null, notes: "", pictures: [] });
+const member = (who = null) => ({ who, outfits: [], poses: [] });
+export const freshBody = (who = { kind: "character", id: "josie" }) => ({ cast: [member(who)], active: 0, own: { outfits: [], poses: [] }, format: "post", backdrop: "studio", style: null, notes: "", pictures: [] });
 
-// ---------------------------------------------------------------- who
-
-/** Who the shoot dresses, said for the page and the prompt: { name, look, person, face, picture } (picture: a url). */
-export function whoNow(body = cabinet.shoot?.body) {
-  const w = body?.who;
-  if (w?.kind === "photo" && w.photo) return { name: w.name || "them", look: "", person: true, face: w.photo.url, picture: w.photo.url };
-  const c = characterById(w?.id) ?? characterById("josie");
-  return { name: c.name, look: c.look, person: c.kind === "person", face: c.face, picture: c.picture, character: c };
+/** A shoot as it is kept now: a cast (a shoot of before, with one who and its picks, is its first character). */
+function upgraded(body) {
+  const b = { ...freshBody(), ...(body ?? {}) };
+  if (!Array.isArray(body?.cast) || !body.cast.length) b.cast = [{ who: body?.who ?? { kind: "character", id: "josie" }, outfits: body?.outfits ?? [], poses: body?.poses ?? [] }];
+  delete b.who, delete b.outfits, delete b.poses;
+  b.active = Math.min(Math.max(0, b.active | 0), b.cast.length - 1);
+  b.own = { outfits: [], poses: [], ...(b.own ?? {}) };
+  return b;
 }
 
-/** A pick from the picture picker becomes who the shoot dresses (one of ours, or any picture). */
-export async function setWho(choice) {
+// ---------------------------------------------------------------- the cast
+
+/** The character the shelves dress now. */
+export const activeMember = (body = cabinet.shoot?.body) => body?.cast[body.active ?? 0] ?? body?.cast[0] ?? null;
+export const isGroup = (body = cabinet.shoot?.body) => (body?.cast.length ?? 0) > 1;
+
+/** Who a character is, said for the page and the prompt: { name, look, person, face, picture } (picture: a url); null for a place not filled yet. */
+export function whoOf(m) {
+  const w = m?.who;
+  if (!w) return null;
+  if (w.kind === "photo" && w.photo) return { name: w.name || "them", look: "", person: true, face: w.photo.url, picture: w.photo.url };
+  const c = characterById(w.id) ?? characterById("josie");
+  return { name: c.name, look: c.look, person: c.kind === "person", face: c.face, picture: c.picture, character: c };
+}
+/** Who the first character is (the shoot is named after them). */
+export const whoNow = (body = cabinet.shoot?.body) => whoOf(body?.cast[0]) ?? whoOf(member({ kind: "character", id: "josie" }));
+
+/** A pick from the picture picker becomes who a character is (one of ours, or any picture). */
+export async function setWho(choice, index = cabinet.shoot?.body.active ?? 0) {
   const b = cabinet.shoot?.body;
-  if (!b) return;
-  // a shoot still called after who it dressed is called after who it dresses now
-  const auto = cabinet.shoot.name.startsWith(`${whoNow(b).name}'s shoot`);
-  if (choice.kind === "character") b.who = { kind: "character", id: choice.character.id };
+  const m = b?.cast[index];
+  if (!m) return;
+  // a shoot still called after who it dressed first is called after who it dresses first now
+  const auto = index === 0 && cabinet.shoot.name.startsWith(`${whoNow(b).name}'s shoot`);
+  if (choice.kind === "character") m.who = { kind: "character", id: choice.character.id };
   else {
     const photo = await pictureOf(choice);
-    b.who = { kind: "photo", photo: { file: photo.file, url: photo.url, width: photo.width, height: photo.height }, name: (photo.name ?? "").slice(0, 24) || "Them" };
+    m.who = { kind: "photo", photo: { file: photo.file, url: photo.url, width: photo.width, height: photo.height }, name: (photo.name ?? "").slice(0, 24) || "Them" };
   }
+  b.active = index;
   if (auto) cabinet.shoot.name = nameFor(whoNow(b), cabinet.shoot.id);
   save();
+  draw();
+}
+
+/** One more character, chosen next (at most MOST_CAST). In a group each wears one outfit in one pose: the picks keep their first. */
+export function addCharacter() {
+  const b = cabinet.shoot?.body;
+  if (!b || b.cast.length >= MOST_CAST) return;
+  b.cast.push(member());
+  for (const m of b.cast) (m.outfits = m.outfits.slice(0, 1)), (m.poses = m.poses.slice(0, 1));
+  b.active = b.cast.length - 1;
+  save();
+  draw();
+}
+
+export function removeCharacter(index) {
+  const b = cabinet.shoot?.body;
+  if (!b || b.cast.length < 2) return;
+  b.cast.splice(index, 1);
+  b.active = Math.min(b.active > index ? b.active - 1 : b.active, b.cast.length - 1);
+  save();
+  draw();
+}
+
+/** The character the shelves dress. */
+export function setActive(index) {
+  const b = cabinet.shoot?.body;
+  if (!b?.cast[index] || b.active === index) return;
+  b.active = index;
   draw();
 }
 
@@ -87,13 +136,15 @@ export function itemOf(kind, key) {
   return own ? { id: key, name: own.name || (kind === "outfits" ? "Your outfit" : "Your pose"), words: "", src: own.url, thumb: own.url, own } : null;
 }
 
-/** Picks an outfit or a pose, or lets it go. */
+/** Picks an outfit or a pose for the character the shelves dress, or lets it go (in a group, a pick takes the place of the one before). */
 export function toggle(kind, key) {
   const b = cabinet.shoot?.body;
-  if (!b) return;
-  const list = b[kind];
+  const m = activeMember(b);
+  if (!m) return;
+  const list = m[kind];
   const i = list.indexOf(key);
   if (i >= 0) list.splice(i, 1);
+  else if (isGroup(b)) list.splice(0, list.length, key);
   else {
     if (list.length >= 4) return void toast(`Four ${kind === "outfits" ? "outfits" : "poses"} at most: let one go first.`, { tone: "warn" });
     list.push(key);
@@ -109,7 +160,7 @@ export async function addOwn(kind, choice) {
   const photo = await pictureOf(choice);
   b.own ??= { outfits: [], poses: [] };
   if (!b.own[kind].some((p) => p.file === photo.file)) b.own[kind].unshift({ file: photo.file, url: photo.url, width: photo.width, height: photo.height, name: (photo.name ?? "").slice(0, 24) });
-  if (!b[kind].includes(`own:${photo.file}`) && b[kind].length < 4) b[kind].push(`own:${photo.file}`);
+  if (!activeMember(b)[kind].includes(`own:${photo.file}`)) toggle(kind, `own:${photo.file}`);
   save();
   draw();
 }
@@ -118,7 +169,7 @@ export function removeOwn(kind, file) {
   const b = cabinet.shoot?.body;
   if (!b) return;
   b.own[kind] = b.own[kind].filter((p) => p.file !== file);
-  b[kind] = b[kind].filter((k) => k !== `own:${file}`);
+  for (const m of b.cast) m[kind] = m[kind].filter((k) => k !== `own:${file}`);
   save();
   draw();
 }
@@ -151,12 +202,20 @@ export function setModel(id) {
   remember(MODEL, id);
   draw();
 }
-/** About what one press costs: { pictures, credits } (credits null for open weights, which cost GPU time). */
+/** How many pictures a model takes at once (the server takes ten at most). */
+export const refsTaken = (m) => Math.min(10, m?.templates?.find((t) => t.id === "edit")?.refs ?? 10);
+/** How many pictures one group picture sends: each character, their outfit and their pose. */
+export const refsNeeded = (body = cabinet.shoot?.body) => (body?.cast ?? []).reduce((n, m) => n + 1 + (m.outfits.length ? 1 : 0) + (m.poses.length ? 1 : 0), 0);
+/**
+ * About what one press costs: { pictures, credits } (credits null for open weights, which cost GPU time), and why it can't be
+ * pressed yet, if it can't: a character not chosen, or more pictures than the model takes.
+ */
 export function priceNow() {
   const b = cabinet.shoot?.body;
-  const n = b ? combos(b.outfits, b.poses).length : 0;
   const m = modelNow();
-  return { pictures: n, credits: m?.router ? Math.round(n * m.credits) : null };
+  const n = !b ? 0 : isGroup(b) ? 1 : combos(b.cast[0].outfits, b.cast[0].poses).length;
+  const blocked = !b ? "" : b.cast.some((x) => !x.who) ? "Choose every character first" : isGroup(b) && m && refsNeeded(b) > refsTaken(m) ? `${m.short ?? m.name} takes ${refsTaken(m)} pictures: this group sends ${refsNeeded(b)}` : "";
+  return { pictures: n, credits: m?.router ? Math.round(n * m.credits) : null, blocked };
 }
 
 // ---------------------------------------------------------------- the shoots
@@ -195,8 +254,7 @@ export async function loadCabinet() {
 }
 
 function opened(project) {
-  const body = { ...freshBody(), ...(project.body ?? {}) };
-  body.own = { outfits: [], poses: [], ...(body.own ?? {}) };
+  const body = upgraded(project.body);
   cabinet.shoot = { id: project.id, name: project.name, body };
   cabinet.shown = body.pictures[0]?.id ?? null;
   cabinet.saving = "ok";
@@ -221,10 +279,10 @@ const nameFor = (who, self) => {
   for (let i = 1; ; i++) if (!taken.has(i === 1 ? base : `${base} ${i}`)) return i === 1 ? base : `${base} ${i}`;
 };
 
-/** A new shoot, open at once, dressing whoever the open one dressed. */
+/** A new shoot, open at once, dressing whoever the open one dressed first. */
 export async function newShoot() {
   await saver.flush();
-  const body = freshBody(cabinet.shoot?.body.who);
+  const body = freshBody(cabinet.shoot?.body.cast[0]?.who ?? undefined);
   const { project } = await call(`api/${KIND}`, "POST", { name: nameFor(whoNow(body)), body });
   cabinet.list = [{ id: project.id, name: project.name, updatedAt: project.updatedAt }, ...(cabinet.list ?? [])];
   opened(project);
@@ -253,14 +311,14 @@ export function renameShoot(name) {
 
 // ---------------------------------------------------------------- the pictures
 
-/** The picture's three references, on the server: who, then the outfit, then the pose (each named as the prompt calls it). */
-async function refsOf(body, outfit, pose) {
-  const who = whoNow(body);
-  const first = body.who?.kind === "photo" ? body.who.photo : await onServer(who.picture, who.name);
+/** A character's three references, on the server: who, then the outfit, then the pose (each named as the prompt calls it, -n in a group). */
+async function refsOf(m, outfit, pose, n = "") {
+  const who = whoOf(m);
+  const first = m.who?.kind === "photo" ? m.who.photo : await onServer(who.picture, who.name);
   const shelf = async (item) => (item.own ? item.own : await onServer(item.src, item.name));
-  const refs = [{ file: first.file, name: "character" }];
-  if (outfit) refs.push({ file: (await shelf(outfit)).file, name: "outfit" });
-  if (pose) refs.push({ file: (await shelf(pose)).file, name: "pose" });
+  const refs = [{ file: first.file, name: `character${n}` }];
+  if (outfit) refs.push({ file: (await shelf(outfit)).file, name: `outfit${n}` });
+  if (pose) refs.push({ file: (await shelf(pose)).file, name: `pose${n}` });
   return refs;
 }
 
@@ -293,28 +351,39 @@ async function follow(shoot, p) {
   if (p.status === "done") api.photos().then((photos) => ((state.photos = photos), changed("library"))).catch(() => {});
 }
 
-/** One picture for each outfit picked in each pose picked, all asked at once. */
-export async function shootNow({ outfit: only, pose: onlyPose } = {}) {
+/** One character: one picture for each outfit picked in each pose picked. Several: one picture of them all. All asked at once. */
+export async function shootNow({ outfit: only, pose: onlyPose, cast: group } = {}) {
   const shoot = cabinet.shoot;
   const b = shoot?.body;
   const m = modelNow();
   if (!b) return;
   if (!m) return void toast("No image model that edits is set up: add a Comfy key, or connect a ComfyUI.", { tone: "warn" });
-  const pairs = only !== undefined ? [{ outfit: only, pose: onlyPose }] : combos(b.outfits, b.poses);
-  const who = whoNow(b);
+  const { blocked } = priceNow();
+  if (blocked && !group) return void toast(`${blocked}.`, { tone: "warn" });
   const f = FORMATS[b.format] ?? FORMATS.post;
-  for (const { outfit: oKey, pose: pKey } of pairs) {
-    const outfit = itemOf("outfits", oKey);
-    const pose = itemOf("poses", pKey);
-    const prompt = shotPrompt({ who, outfit, pose, format: b.format, backdrop: b.backdrop, notes: b.notes, style: b.style });
-    const name = `${who.name} · ${[outfit?.name, pose?.name, styleItem(b.style)?.name].filter(Boolean).join(" · ") || "Cabinet"}`;
+  // a group: each character with their outfit and pose, as they are now (or as a picture made before had them)
+  const cast = group ?? (isGroup(b) ? b.cast.map((x) => ({ who: x.who, outfit: x.outfits[0] ?? null, pose: x.poses[0] ?? null })) : null);
+  const pairs = cast ? [null] : only !== undefined ? [{ outfit: only, pose: onlyPose }] : combos(b.cast[0].outfits, b.cast[0].poses);
+  for (const pair of pairs) {
+    const members = cast?.map((x) => ({ who: whoOf(x), outfit: itemOf("outfits", x.outfit), pose: itemOf("poses", x.pose), m: x }));
+    const outfit = pair && itemOf("outfits", pair.outfit);
+    const pose = pair && itemOf("poses", pair.pose);
+    const who = whoOf(b.cast[0]);
+    const prompt = members
+      ? groupPrompt({ members, format: b.format, backdrop: b.backdrop, notes: b.notes, style: b.style })
+      : shotPrompt({ who, outfit, pose, format: b.format, backdrop: b.backdrop, notes: b.notes, style: b.style });
+    const name = members
+      ? `${members.map((x) => x.who?.name).join(", ")}${styleItem(b.style) ? ` · ${styleItem(b.style).name}` : ""}`
+      : `${who.name} · ${[outfit?.name, pose?.name, styleItem(b.style)?.name].filter(Boolean).join(" · ") || "Cabinet"}`;
     // the picture shows at once, waiting; it is made when its references are on the server
-    const p = { id: `wait-${Math.random().toString(36).slice(2, 10)}`, outfit: oKey ?? null, pose: pKey ?? null, format: b.format, style: b.style ?? null, status: "running", progress: 0, at: new Date().toISOString(), model: m.id };
+    const p = { id: `wait-${Math.random().toString(36).slice(2, 10)}`, outfit: pair?.outfit ?? null, pose: pair?.pose ?? null, ...(cast ? { cast } : {}), format: b.format, style: b.style ?? null, status: "running", progress: 0, at: new Date().toISOString(), model: m.id };
     b.pictures.unshift(p);
     cabinet.shown = p.id;
     draw();
     try {
-      const refs = await refsOf(b, outfit, pose);
+      const refs = members
+        ? (await Promise.all(members.map((x, i) => refsOf(x.m, x.outfit, x.pose, `-${i + 1}`)))).flat()
+        : await refsOf(b.cast[0], outfit, pose);
       const [job] = await api.image({ model: m.id, template: "edit", prompt, refs, aspect: f.aspect, count: 1, megapixels: m.megapixels?.[0] ?? 1, seed: Math.floor(Math.random() * 2 ** 31), name });
       if (!job?.id) throw new Error("The picture was not started.");
       if (cabinet.shown === p.id) cabinet.shown = job.id;
@@ -330,8 +399,8 @@ export async function shootNow({ outfit: only, pose: onlyPose } = {}) {
   }
 }
 
-/** The same outfit in the same pose again (a new seed). */
-export const again = (p) => shootNow({ outfit: p.outfit, pose: p.pose });
+/** The same outfit in the same pose again, or the same group as it was (a new seed). */
+export const again = (p) => (p.cast ? shootNow({ cast: p.cast }) : shootNow({ outfit: p.outfit, pose: p.pose }));
 
 export function dropPicture(id) {
   const b = cabinet.shoot?.body;

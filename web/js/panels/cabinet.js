@@ -5,10 +5,11 @@ import { toast, changed, openImage, useImage } from "../store.js";
 import { dropdown } from "../controls.js";
 import { openPicker } from "../picker.js";
 import {
-  cabinet, loadCabinet, whoNow, setWho, itemOf, toggle, addOwn, removeOwn, set, modelNow, setModel, priceNow,
+  cabinet, loadCabinet, whoNow, whoOf, setWho, itemOf, toggle, addOwn, removeOwn, set, modelNow, setModel, priceNow,
+  activeMember, isGroup, addCharacter, removeCharacter, setActive,
   newShoot, openShoot, removeShoot, renameShoot, shootNow, again, dropPicture, show,
 } from "../cabinet.js";
-import { WARDROBE, POSES, STYLES, styleItem, WARDROBE_GROUPS, POSE_GROUPS, WARDROBE_GROUP_TAGS, POSE_GROUP_TAGS, FORMATS, BACKDROPS, EXAMPLES, combos, find, wardrobeItem, poseItem } from "../cabinet-shelf.js";
+import { WARDROBE, POSES, STYLES, styleItem, WARDROBE_GROUPS, POSE_GROUPS, WARDROBE_GROUP_TAGS, POSE_GROUP_TAGS, FORMATS, BACKDROPS, EXAMPLES, MOST_CAST, combos, find, wardrobeItem, poseItem } from "../cabinet-shelf.js";
 
 const fail = (e) => toast(e.message, { tone: "crit" });
 const BRANDS = { openai: "brand-openai", google: "brand-google", bytedance: "brand-bytedance", qwen: "brand-qwen" };
@@ -91,42 +92,62 @@ function subbar() {
 
 // ---------------------------------------------------------------- who, and the look
 
-function pickedRow(kind, b) {
-  const keys = b[kind];
-  const none = kind === "outfits" ? "Their own clothes" : "A natural pose";
-  const goShelf = () => ((cabinet.shelf = kind), changed("cabinet"));
-  return h("div.cab-picked", {},
-    h("div.cab-picked-head", {}, h("span.cab-sub", {}, kind === "outfits" ? "Outfits" : "Poses"), h("span.cab-count", {}, `${keys.length}/4`)),
-    keys.length
-      ? h("div.cab-chips", {}, ...keys.map((key) => {
-        const it = itemOf(kind, key);
-        if (!it) return null;
-        return h("span.cab-pick", { title: it.words || it.name },
-          h("img", { src: it.thumb, alt: "", draggable: false }), h("span", {}, it.name),
-          h("button.cab-pick-x", { type: "button", "aria-label": `Take off ${it.name}`, on: { click: () => toggle(kind, key) } }, icon("close")));
-      }))
-      : h("button.cab-none", { type: "button", title: `Pick ${kind === "outfits" ? "outfits on the Wardrobe" : "poses on the Poses"} shelf`, on: { click: goShelf } }, none, h("em", {}, "pick on the shelf")));
+/** A picked outfit or pose as a card: its picture, its name, a key to take it off. */
+function lookCard(kind, key) {
+  const it = itemOf(kind, key);
+  if (!it) return null;
+  return h(`div.cab-look-card.is-${kind}`, { title: it.words ? `${it.name}: ${it.words}` : it.name },
+    h("img", { src: it.thumb, alt: "", draggable: false }),
+    h("span", {}, it.name),
+    h("button.cab-pick-x", { type: "button", "aria-label": `Take off ${it.name}`, title: "Take it off", on: { click: (e) => (e.stopPropagation(), toggle(kind, key)) } }, icon("close")));
+}
+/** A place for a pick not made yet: it opens the shelf of its kind, for this character. */
+const emptyCard = (kind, i) => h(`button.cab-look-card.is-empty.is-${kind}`, {
+  type: "button",
+  title: `Pick ${kind === "outfits" ? "an outfit on the Wardrobe" : "a pose on the Poses"} shelf`,
+  on: { click: (e) => (e.stopPropagation(), setActive(i), (cabinet.shelf = kind), changed("cabinet")) },
+}, sprite(kind === "outfits" ? "product-cabinet" : "pose-rest"), h("span", {}, kind === "outfits" ? "Own clothes" : "Natural pose"), h("em", {}, "pick on the shelf"));
+
+/** A character's look: in a group, their one outfit beside their one pose; alone, every outfit, then every pose, two to a row. */
+function lookOf(m, i, group) {
+  if (group) return h("div.cab-look-cards", {}, m.outfits[0] ? lookCard("outfits", m.outfits[0]) : emptyCard("outfits", i), m.poses[0] ? lookCard("poses", m.poses[0]) : emptyCard("poses", i));
+  const part = (kind, label) => h("div.cab-look-part", {},
+    h("div.cab-picked-head", {}, h("span.cab-sub", {}, label), h("span.cab-count", {}, `${m[kind].length}/4`)),
+    h("div.cab-look-cards", {}, ...(m[kind].length ? m[kind].map((key) => lookCard(kind, key)) : [emptyCard(kind, i)])));
+  return [part("outfits", "Outfits"), part("poses", "Poses")];
+}
+
+/** One character: their portrait, who they are, the key that changes them, and their look. */
+function memberColumn(m, i, b) {
+  const w = whoOf(m);
+  const group = isGroup(b);
+  const choose = (e) => (e.stopPropagation(), openPicker(e.currentTarget, { title: "Who to dress", onPick: (c) => setWho(c, i).catch(fail) }));
+  return h("div.cab-member", { className: group && i === b.active ? "is-active" : "", title: group && i !== b.active ? "Dress this one: the shelves pick for them" : undefined, on: { click: () => setActive(i) } },
+    w
+      ? h("div.cab-portrait", {}, h("img", { src: w.picture, alt: w.name, draggable: false }))
+      : h("button.cab-portrait.is-empty", { type: "button", "aria-haspopup": "dialog", on: { click: choose } }, icon("plus"), h("span", {}, "Choose who")),
+    h("div.cab-member-head", {},
+      h("div.cab-name", {}, h("b", {}, w?.name ?? `Character ${i + 1}`), h("span", {}, w ? w.character?.role ?? "From a picture" : "Not chosen yet")),
+      h("div.cab-member-keys", {},
+        h("button.key.is-sm", { type: "button", "aria-haspopup": "dialog", title: "One of our cast, a picture from your computer, or one from the Library", on: { click: choose } }, icon("pencil"), w ? "Change" : "Choose"),
+        group ? h("button.key.is-sm.is-icon.is-quiet", { type: "button", "aria-label": `Take ${w?.name ?? "this character"} out`, title: "Take them out of the shoot", on: { click: (e) => (e.stopPropagation(), removeCharacter(i)) } }, icon("close")) : null)),
+    ...[lookOf(m, i, group)].flat());
 }
 
 function whoColumn(b) {
-  const w = whoNow(b);
-  const change = h("button.key.is-sm", {
-    type: "button",
-    "aria-haspopup": "dialog",
-    on: { click: (e) => openPicker(e.currentTarget, { title: "Who to dress", onPick: (c) => setWho(c).catch(fail) }) },
-  }, icon("pencil"), "Change");
-  const n = combos(b.outfits, b.poses).length;
-  return h("aside.cab-col.cab-who", { "aria-label": "Who, and the look" },
-    h("section.cab-card", {},
-      h("div.cab-card-head", {}, h("h2.cab-label", {}, "Who"), change),
-      h("div.cab-portrait", {}, h("img", { src: w.picture, alt: w.name, draggable: false })),
-      h("div.cab-name", {}, h("b", {}, w.name), h("span", {}, w.character?.role ?? "From a picture"))),
+  const group = isGroup(b);
+  const n = group ? 1 : combos(b.cast[0].outfits, b.cast[0].poses).length;
+  const full = b.cast.length >= MOST_CAST;
+  return h("aside.cab-col.cab-who", { "aria-label": "The characters and their look" },
+    h("section.cab-card.cab-cast", {},
+      h("div.cab-card-head", {},
+        h("h2.cab-title", {}, group ? "Characters" : "Character", group ? h("span.cab-count", {}, `${b.cast.length}/${MOST_CAST}`) : null),
+        h("button.key.is-sm.is-icon.cab-add-member", { type: "button", disabled: full, "aria-label": "Add a character", title: full ? `${MOST_CAST} characters at most in one picture` : "Add a character: they are pictured together, each in their own outfit and pose", on: { click: addCharacter } }, icon("plus"))),
+      h("div.cab-members", { className: group ? "is-group" : "", style: { "--cast": String(b.cast.length) } }, ...b.cast.map((m, i) => memberColumn(m, i, b)))),
     h("section.cab-card.cab-look", {},
-      h("h2.cab-label", {}, "The look"),
-      pickedRow("outfits", b),
-      pickedRow("poses", b),
-      h("div.cab-picked", {}, h("div.cab-picked-head", {}, h("span.cab-sub", {}, "Style")), styleKey(b)),
-      h("p.cab-note", {}, n === 1 ? "One picture each time you shoot." : `${n} pictures each time you shoot: every outfit in every pose.`)));
+      h("div.cab-picked-head", {}, h("h2.cab-title", {}, "Style")),
+      styleKey(b),
+      h("p.cab-note", {}, group ? `One picture of all ${b.cast.length} each time you shoot, from left to right as they stand here.` : n === 1 ? "One picture each time you shoot." : `${n} pictures each time you shoot: every outfit in every pose.`)));
 }
 
 // ---------------------------------------------------------------- the style
@@ -191,7 +212,8 @@ function styleKey(b, small = false) {
 // ---------------------------------------------------------------- the mirror
 
 function pictureLabel(p) {
-  return [itemOf("outfits", p.outfit)?.name ?? "Own clothes", itemOf("poses", p.pose)?.name ?? "Natural pose", styleItem(p.style)?.name, FORMATS[p.format]?.name].filter(Boolean).join(" · ");
+  const what = p.cast ? [p.cast.map((x) => whoOf(x)?.name ?? "?").join(", ")] : [itemOf("outfits", p.outfit)?.name ?? "Own clothes", itemOf("poses", p.pose)?.name ?? "Natural pose"];
+  return [...what, styleItem(p.style)?.name, FORMATS[p.format]?.name].filter(Boolean).join(" · ");
 }
 
 function bigPicture(p, who) {
@@ -258,7 +280,7 @@ function modelItems() {
 
 function shootBar(b) {
   const m = modelNow();
-  const { pictures, credits } = priceNow();
+  const { pictures, credits, blocked } = priceNow();
   const models = modelItems();
   const notes = h("input.field.cab-notes", {
     type: "text",
@@ -280,7 +302,8 @@ function shootBar(b) {
         models.length ? h("div.cab-model", {}, dropdown({ label: "Image model", value: m?.id, items: models, onChange: setModel, note: "What dresses and poses them: a partner model's credits, or Comfy Cloud's GPU time" })) : h("span.cab-note", {}, cabinet.models ? "No image model yet" : "…"))),
     h("div.cab-bar-row", {},
       notes,
-      h("button.key.is-primary.cab-shoot", { type: "button", disabled: !m || !pictures, on: { click: () => shootNow().catch(fail) } },
+      blocked ? h("span.cab-blocked", {}, blocked) : null,
+      h("button.key.is-primary.cab-shoot", { type: "button", disabled: !m || !pictures || !!blocked, title: blocked || undefined, on: { click: () => shootNow().catch(fail) } },
         sprite("image-generate"), pictures === 1 ? "Shoot" : `Shoot ${pictures}`, h("span.cab-price", {}, credits != null ? `≈ ${credits} cr` : "GPU"))));
 }
 
@@ -295,7 +318,7 @@ function mirror(b) {
 
 function shelfCard(kind, it, b, own) {
   const key = own ? it.id : `shelf:${it.id}`;
-  const at = b[kind].indexOf(key);
+  const at = activeMember(b)[kind].indexOf(key);
   return h("div.cab-item", { className: at >= 0 ? "is-picked" : "" },
     h("button.cab-item-pick", { type: "button", "aria-pressed": String(at >= 0), title: it.words ? `${it.name}: ${it.words}` : it.name, on: { click: () => toggle(kind, key) } },
       // (a thing whose picture is not there yet is not offered)
@@ -345,7 +368,8 @@ function shelf(b) {
     h("div.cab-shelf-head", {},
       h("div.segment.cab-shelves", { role: "tablist", "aria-label": "Shelf" },
         ...Object.entries(SHELF).map(([id, x]) => h("button", { type: "button", role: "tab", "aria-selected": String(kind === id), on: { click: () => ((cabinet.shelf = id), changed("cabinet")) } },
-          x.label, h("span.count", {}, b[id].length ? `${b[id].length} picked` : String(x.items.length))))),
+          x.label, h("span.count", {}, activeMember(b)[id].length ? `${activeMember(b)[id].length} picked` : String(x.items.length))))),
+      isGroup(b) ? h("p.cab-dressing", {}, "Picking for ", h("b", {}, whoOf(activeMember(b))?.name ?? `character ${b.active + 1}`), ": one outfit, one pose") : null,
       search,
       groups),
     grid,
@@ -368,5 +392,5 @@ export function renderCabinet(el) {
     return;
   }
   const b = cabinet.shoot.body;
-  el.replaceChildren(subbar(), h("div.cab-room", {}, whoColumn(b), mirror(b), shelf(b)));
+  el.replaceChildren(subbar(), h("div.cab-room", { dataset: { cast: String(b.cast.length) } }, whoColumn(b), mirror(b), shelf(b)));
 }

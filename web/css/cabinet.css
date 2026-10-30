@@ -13,7 +13,9 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
   --cab-gap: .75rem;
   --cab-paper: #ecebe7;
   display: grid;
-  grid-template-columns: clamp(14rem, 17vw, 18rem) minmax(0, 1fr) clamp(19rem, 25vw, 26rem);
+  grid-template-columns: clamp(15rem, 18vw, 19rem) minmax(0, 1fr) clamp(19rem, 25vw, 26rem);
+  /* (one row, the window's height: a tall cast scrolls in its column, never the page) */
+  grid-template-rows: minmax(0, 1fr);
   gap: var(--cab-gap);
   flex: 1 1 0;
   min-height: 0;
@@ -22,6 +24,9 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
   margin: 0 auto;
   padding: var(--cab-gap);
 }
+/* two or three characters: a column each, side by side */
+.cab-room[data-cast="2"] { grid-template-columns: clamp(24rem, 29vw, 30rem) minmax(0, 1fr) clamp(19rem, 24vw, 26rem); }
+.cab-room[data-cast="3"] { grid-template-columns: clamp(32rem, 38vw, 40rem) minmax(0, 1fr) clamp(18rem, 22vw, 24rem); }
 .cab-col { display: flex; flex-direction: column; gap: var(--cab-gap); min-width: 0; min-height: 0; }
 
 .cab-card { display: flex; flex-direction: column; gap: .75rem; padding: .875rem 1rem 1rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); }
@@ -40,19 +45,41 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 .cab-name b { font: 700 var(--fs-heading)/1.1 var(--font-sans); }
 .cab-name span { font: 500 var(--fs-small)/1.2 var(--font-sans); color: var(--muted); }
 
-.cab-look { flex: 1 0 auto; }
+.cab-title { display: flex; align-items: baseline; gap: .5rem; margin: 0; font: 700 var(--fs-title)/1.1 var(--font-sans); color: var(--text); }
+.cab-add-member { flex: none; }
+.cab-members { display: grid; grid-template-columns: repeat(var(--cast, 1), minmax(0, 1fr)); gap: .75rem; }
+.cab-member { display: flex; flex-direction: column; gap: .625rem; min-width: 0; padding: .375rem; margin: -.375rem; border: 1px solid transparent; border-radius: .875rem; cursor: default; transition: border-color var(--t-fast); }
+.cab-members.is-group .cab-member { cursor: pointer; }
+.cab-member.is-active { border-color: var(--accent-line); background: var(--accent-soft); }
+.cab-member-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .375rem; }
+.cab-member-keys { display: flex; gap: .25rem; flex: none; }
+.cab-room[data-cast="3"] .cab-member-keys .key:not(.is-icon) { padding: 0 .5rem; }
+.cab-portrait.is-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; width: 100%; border: 1px dashed var(--line2); background: transparent; color: var(--muted); font: 600 var(--fs-small)/1 var(--font-sans); cursor: pointer; }
+.cab-portrait.is-empty:hover { border-color: var(--muted); color: var(--text); }
+.cab-look-part { display: flex; flex-direction: column; gap: .375rem; }
+.cab-look-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.cab-look-card { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 0; border: 1px solid var(--card-line); border-radius: .625rem; background: var(--sunk); overflow: hidden; color: var(--text); font: 500 var(--fs-small)/1.2 var(--font-sans); text-align: left; }
+.cab-look-card img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; background: var(--cab-paper); display: block; }
+.cab-look-card.is-poses img { aspect-ratio: 3 / 4; }
+.cab-look-card > span { padding: .375rem .5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cab-look-card .cab-pick-x { position: absolute; top: .3125rem; right: .3125rem; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: rgba(0, 0, 0, .6); color: #fff; }
+.cab-look-card.is-empty { align-items: center; justify-content: center; gap: .375rem; aspect-ratio: 2 / 3; padding: .5rem; border-style: dashed; border-color: var(--line2); background: transparent; color: var(--muted); text-align: center; cursor: pointer; }
+.cab-look-card.is-empty.is-poses { aspect-ratio: 3 / 4; }
+.cab-look-card.is-empty > span { padding: 0; white-space: normal; }
+.cab-look-card.is-empty svg { width: 1.375rem; height: 1.375rem; }
+.cab-look-card.is-empty em { font: 400 var(--fs-micro)/1.2 var(--font-sans); font-style: normal; color: var(--dim); }
+.cab-look-card.is-empty:hover { border-color: var(--muted); color: var(--text); }
+.cab-look { flex: none; }
+.cab-look .cab-style-key img { width: 3.5rem; height: 3.5rem; }
+.cab-look .cab-style-key { padding: .375rem .75rem .375rem .375rem; font-size: var(--fs-body); }
+.cab-dressing { margin: 0; font: 400 var(--fs-small)/1.3 var(--font-sans); color: var(--muted); }
+.cab-dressing b { color: var(--accent); font-weight: 600; }
+.cab-blocked { flex: 1 1 100%; order: -1; font: 500 var(--fs-small)/1.2 var(--font-sans); color: var(--warn); }
+.cab-pick-x { display: grid; place-items: center; flex: none; padding: 0; border: 0; cursor: pointer; }
+.cab-pick-x svg { width: .75rem; height: .75rem; }
+
 .cab-picked { display: flex; flex-direction: column; gap: .5rem; }
 .cab-picked-head { display: flex; align-items: baseline; justify-content: space-between; }
-.cab-chips { display: flex; flex-direction: column; gap: .375rem; }
-.cab-pick { display: flex; align-items: center; gap: .5rem; min-width: 0; padding: .25rem .25rem .25rem .25rem; border-radius: .5rem; background: var(--sunk); font: 500 var(--fs-small)/1.2 var(--font-sans); }
-.cab-pick img { width: 1.75rem; height: 2.25rem; border-radius: .3125rem; object-fit: cover; background: var(--cab-paper); flex: none; }
-.cab-pick span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cab-pick-x { display: grid; place-items: center; flex: none; width: 1.75rem; height: 1.75rem; border: 0; border-radius: .375rem; background: transparent; color: var(--dim); cursor: pointer; }
-.cab-pick-x:hover { background: var(--s2); color: var(--text); }
-.cab-pick-x svg { width: .875rem; height: .875rem; }
-.cab-none { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; padding: .625rem .75rem; border: 1px dashed var(--line2); border-radius: .5rem; background: transparent; color: var(--muted); font: 500 var(--fs-small)/1.2 var(--font-sans); text-align: left; cursor: pointer; }
-.cab-none em { font-style: normal; color: var(--dim); font-size: var(--fs-micro); }
-.cab-none:hover { color: var(--text); border-color: var(--muted); }
 
 /* ---------------------------------------------------------------- the style */
 
@@ -167,17 +194,18 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 
 /* ---------------------------------------------------------------- narrower windows */
 
-/* a laptop's half-screen or a tablet: the mirror keeps the whole height; who goes over the shelf (the look is said on the
-   shelf's tabs and by its numbered cards) */
+/* a laptop's half-screen or a tablet: the mirror keeps the whole height; the characters go over the shelf as a short list (their
+   look is said on the shelf's tabs and by its numbered cards) */
 @media (max-width: 1100px) {
-  .cab-room { grid-template-columns: minmax(0, 1fr) clamp(17rem, 36vw, 22rem); grid-template-rows: auto minmax(0, 1fr); }
+  .cab-room, .cab-room[data-cast] { grid-template-columns: minmax(0, 1fr) clamp(17rem, 36vw, 22rem); grid-template-rows: auto minmax(0, 1fr); }
   .cab-who { grid-column: 2; grid-row: 1; overflow: visible; }
-  .cab-who > .cab-card:first-child { display: grid; grid-template-columns: 3rem minmax(0, 1fr) auto; align-items: center; gap: .75rem; padding: .5rem .75rem .5rem .5rem; }
-  .cab-who .cab-card-head { display: contents; }
-  .cab-who .cab-label { display: none; }
-  .cab-who .cab-card-head .key { grid-column: 3; grid-row: 1; }
-  .cab-portrait { grid-column: 1; grid-row: 1; width: 3rem; max-height: none; border-radius: .5rem; }
-  .cab-name { grid-column: 2; grid-row: 1; }
+  .cab-cast { padding: .5rem .625rem; gap: .5rem; }
+  .cab-members { grid-template-columns: minmax(0, 1fr); gap: .375rem; }
+  .cab-member { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr); align-items: center; gap: .625rem; margin: 0; padding: .25rem; }
+  .cab-member .cab-portrait { width: 2.75rem; aspect-ratio: 1; max-height: none; border-radius: .5rem; }
+  .cab-member .cab-portrait.is-empty span { display: none; }
+  .cab-member-head { align-items: center; }
+  .cab-member .cab-look-cards, .cab-member .cab-look-part { display: none; }
   .cab-look { display: none; }
   .cab-style-bar { display: block; }
   .cab-mirror { grid-column: 1; grid-row: 1 / span 2; }
@@ -189,6 +217,11 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
   #page-cabinet { height: auto; min-height: calc(100dvh - var(--head)); overflow: visible; }
   body[data-page="cabinet"] { overflow: auto; }
   .cab-room { display: flex; flex-direction: column; }
+  .cab-members { grid-template-columns: repeat(var(--cast, 1), minmax(0, 1fr)); }
+  .cab-member { display: flex; }
+  .cab-member .cab-portrait { width: auto; aspect-ratio: 3 / 4; max-height: 50dvh; }
+  .cab-member .cab-look-cards { display: grid; }
+  .cab-member .cab-look-part { display: flex; }
   .cab-look { display: flex; }
   .cab-style-bar { display: none; }
   .cab-glass { flex: none; height: min(70dvh, 120vw); }
@@ -205,7 +238,7 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 /* every corner a squircle where the browser can, as in Mixer: the radii are doubled there (--corner-k), and a squircle of the doubled
    radius reads as the tight corner the plain radius gives elsewhere (a plain arc of it is a big round corner) */
 @supports (corner-shape: squircle) {
-  .cab-card, .cab-glass, .cab-bar, .cab-shelf, .cab-portrait, .cab-pick, .cab-pick img, .cab-pick-x, .cab-none, .cab-thumb, .cab-item-pick, .cab-add,
+  .cab-card, .cab-glass, .cab-bar, .cab-shelf, .cab-portrait, .cab-member, .cab-look-card, .cab-look-card img, .cab-thumb, .cab-item-pick, .cab-add,
   .cab-recipe img, .cab-slot, .cab-example img, .cab-style-key, .cab-style-key img, .cab-styles, .cab-style-tile, .cab-style-tile img,
   .cab-bar .key, .cab-bar .field, .cab-bar .segment, .cab-bar .segment > button, .cab-bar .sel-trigger, .cab-search .field, .cab-shelves, .cab-shelves > button, .cab-actions .key { corner-shape: squircle; }
 }

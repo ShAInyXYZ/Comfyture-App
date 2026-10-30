@@ -150,3 +150,37 @@ export function shotPrompt({ who, outfit, pose, format = "post", backdrop = "stu
     extra ? `Also: ${extra}` : "",
   ].filter(Boolean).join(" ");
 }
+
+/** The most characters one picture holds (each brings three pictures: who, the outfit, the pose). */
+export const MOST_CAST = 3;
+
+/**
+ * The words a group picture is asked with: members [{ who, outfit, pose }], left to right. Each member's pictures go as @character-1,
+ * @outfit-1, @pose-1, then @character-2… (an outfit or a pose not picked is not sent, and the words say so).
+ */
+export function groupPrompt({ members, format = "post", backdrop = "studio", notes = "", style = null }) {
+  const f = FORMATS[format] ?? FORMATS.post;
+  const b = BACKDROPS[backdrop] ?? BACKDROPS.studio;
+  const st = styleItem(style);
+  const framing = (st ? f.words.replace(/\bphoto(graph)?\b/g, "picture") : f.words).replace("the character is the clear subject", "the group is the clear subject");
+  const lines = members.map(({ who, outfit, pose }, i) => {
+    const n = i + 1;
+    const name = who?.name || `character ${n}`;
+    const wearing = outfit ? `wearing, in place of their usual clothes, the outfit shown in @outfit-${n}${outfit.words ? `: ${outfit.words}` : ""}` : "in their own clothes";
+    const posed = pose ? `posed exactly like the figure in @pose-${n}${pose.words ? ` (${pose.words})` : ""}` : "in a natural pose";
+    return `${n}. ${name} from @character-${n}${who?.look ? ` (${who.look})` : ""}, ${wearing}, ${posed}.`;
+  });
+  const extra = String(notes ?? "").trim();
+  return [
+    st ? `The whole picture is ${st.words}.` : "",
+    `${framing[0].toUpperCase()}${framing.slice(1)}.`,
+    `It shows ${members.length} characters together, from left to right:`,
+    ...lines,
+    "Fit each outfit to the one who wears it and keep its colours, fabrics and details; the outfits never swap between them. Copy each pose's body position, the arms, the legs and the turn of the head, but never draw the grey figures; anything they hold or sit on is drawn as the real thing.",
+    `The backdrop: ${b.words}.`,
+    st
+      ? "Keep each of them recognisably themself (the same face, hair or fur, markings, colours and proportions), drawn in that style. Each one appears once."
+      : "Keep each of them exactly themself: the same face, hair or fur, markings, colours and proportions, and their own rendering style (a 3D animated character stays 3D animated, a photograph stays a photograph). Each one appears once.",
+    extra ? `Also: ${extra}` : "",
+  ].filter(Boolean).join(" ");
+}
