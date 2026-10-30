@@ -69,7 +69,7 @@ RunPod (a partner) is worth one afternoon to film the "your own GPU" beat, not f
 3. **Software.** Node.js 22 (22.18 or newer), ffmpeg, Caddy, git.
 4. **The app**, pinned to the submission tag:
    ```bash
-   sudo git clone --depth 1 --branch submission https://github.com/ShAInyXYZ/Comfyture /opt/comfyture
+   sudo git clone --depth 1 --branch submission https://github.com/ShAInyXYZ/Comfyture-App /opt/comfyture
    cd /opt/comfyture && sudo npm ci
    ```
 5. **`/etc/comfyture/judge.env`** (mode 0600, never in the repo):

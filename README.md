@@ -191,7 +191,7 @@ The add-on runs whatever Python it is sent. Keep it on localhost.
 You need **Node.js 22.18 or newer** and **ffmpeg** on the path (the free edits, bakes and exports use it).
 
 ```bash
-git clone --depth 1 https://github.com/ShAInyXYZ/Comfyture comfyture && cd comfyture   # --depth 1: today's files, not the history
+git clone --depth 1 https://github.com/ShAInyXYZ/Comfyture-App comfyture && cd comfyture   # --depth 1: today's files, not the history
 npm install
 npm start          # then open http://127.0.0.1:5177
 ```

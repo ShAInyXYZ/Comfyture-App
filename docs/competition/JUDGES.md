@@ -17,14 +17,14 @@ Every picture, video and sound model it runs by default is open weights, and LTX
 | **Live app** (private, judge mode: examples and tours free, real runs capped) | `<judge link>`, user and password on the form |
 | **Static demo** (always up, nothing renders) | `<https://shainyxyz.github.io/Comfyture/>` |
 | **Demo video** (1:55) | `<video link>` |
-| **Code** (MIT) | [github.com/ShAInyXYZ/Comfyture](https://github.com/ShAInyXYZ/Comfyture) |
+| **Code** (MIT) | [github.com/ShAInyXYZ/Comfyture-App](https://github.com/ShAInyXYZ/Comfyture-App) |
 
 ## Run it in five minutes
 
 You need **Node.js 22.18 or newer** and **ffmpeg**.
 
 ```bash
-git clone --depth 1 https://github.com/ShAInyXYZ/Comfyture && cd Comfyture
+git clone --depth 1 https://github.com/ShAInyXYZ/Comfyture-App && cd Comfyture-App
 npm install
 npm start            # then open http://127.0.0.1:5177
 ```

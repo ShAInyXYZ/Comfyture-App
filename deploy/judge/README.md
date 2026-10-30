@@ -15,7 +15,7 @@ In short, on an Ubuntu 24.04 server with Node.js 22.18+, ffmpeg, Caddy and git:
 
 ```bash
 sudo useradd --system --home /var/lib/comfyture --create-home comfyture
-sudo git clone --depth 1 --branch submission https://github.com/ShAInyXYZ/Comfyture /opt/comfyture && cd /opt/comfyture && sudo npm ci
+sudo git clone --depth 1 --branch submission https://github.com/ShAInyXYZ/Comfyture-App /opt/comfyture && cd /opt/comfyture && sudo npm ci
 sudo install -d -m 0755 /etc/comfyture && sudo install -m 0600 deploy/judge/judge.env.example /etc/comfyture/judge.env
 sudoedit /etc/comfyture/judge.env                      # the judges' key
 sudo install -d -o comfyture -g comfyture /var/lib/comfyture/data
