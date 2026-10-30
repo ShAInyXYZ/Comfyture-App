@@ -1,14 +1,19 @@
-# The live demo without a server, on GitHub Pages: `npm run demo-site` (every product open on its example, every tour playable) built
-# and published. It runs only when it is asked to: by hand (Actions → Pages → Run workflow) or when the `submission` tag is pushed.
-# Before the first run: the repo public (Pages is free then), Settings → Pages → Source: GitHub Actions, and D1 settled
-# (docs/competition/README.md): the site copies all of web/, Mixer's trend media included. The build has no key and reaches no Comfy
-# service that needs one; the site it makes is at https://<owner>.github.io/Comfyture/.
+# Comfyture's website on GitHub Pages, at https://shainyxyz.github.io/Comfyture-App/: www/ at the root, and the live demo without a
+# server (`npm run demo-site`, every product open on its example) under demo/ when it is asked for. It runs on the public repo only
+# (Comfyture-App; the private working repo has no Pages), on each push to main that changes www/ or this file, or by hand
+# (Actions → Pages → Run workflow, with "demo" ticked to build the demo too). Until a demo is built, demo/ says it is coming.
 name: Pages
 
 on:
   workflow_dispatch:
+    inputs:
+      demo:
+        description: "Build the live demo into demo/ (needs the examples in the repo)"
+        type: boolean
+        default: false
   push:
-    tags: ["submission"]
+    branches: [main]
+    paths: ["www/**", ".github/workflows/pages.yml"]
 
 permissions:
   contents: read
@@ -21,22 +26,40 @@ concurrency:
 
 jobs:
   build:
+    if: github.repository == 'ShAInyXYZ/Comfyture-App'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - run: cp -r www _site && rm -f _site/README.md
+      # the demo: the free edits its pages show are made with ffmpeg, and the build plays every page in a headless browser
+      - if: inputs.demo
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
-      # (the free edits the pages show, the timeline's frames among them, are made with ffmpeg)
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - run: npm ci
-      # (the build plays every page in a headless browser)
-      - run: npm install --no-save playwright@1.64.0 && npx playwright install --with-deps chromium
-      - run: npm run demo-site
+      - if: inputs.demo
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          npm ci
+          npm install --no-save playwright@1.64.0 && npx playwright install --with-deps chromium
+          npm run demo-site _site/demo
+      - if: ${{ !inputs.demo }}
+        run: |
+          mkdir -p _site/demo
+          cat > _site/demo/index.html <<'EOF'
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Comfyture demo</title><link rel="icon" href="../brand/favicon.svg"><link rel="stylesheet" href="../site.css"></head>
+          <body style="display:grid;place-items:center;min-height:100vh;padding:24px;text-align:center">
+          <main style="max-width:34rem"><h1>The live demo is coming</h1>
+          <p>Every studio will open here on its example. Meanwhile Comfyture runs on your machine in five minutes, with no key:
+          see <a href="https://github.com/ShAInyXYZ/Comfyture-App/blob/main/docs/competition/JUDGES.md">For judges</a>.</p>
+          <p><a href="../">Back to the website</a> · <a href="https://github.com/ShAInyXYZ/Comfyture-App">The code on GitHub</a></p></main>
+          </body></html>
+          EOF
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: _site
 
   deploy:
     needs: build
