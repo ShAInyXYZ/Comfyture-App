@@ -56,6 +56,11 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 .cab-room[data-cast="3"] .cab-member-keys .key:not(.is-icon) { padding: 0 .5rem; }
 .cab-portrait.is-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; width: 100%; border: 1px dashed var(--line2); background: transparent; color: var(--muted); font: 600 var(--fs-small)/1 var(--font-sans); cursor: pointer; }
 .cab-portrait.is-empty:hover { border-color: var(--muted); color: var(--text); }
+.cab-portrait.is-empty svg { width: 1.75rem; height: 1.75rem; }
+/* in a narrow column the keys go under the name rather than out of the column */
+.cab-member-head { flex-wrap: wrap; }
+.cab-member-head .cab-name { flex: 1 1 5rem; min-width: 0; }
+.cab-members.is-group .cab-name b { font-size: var(--fs-title); }
 .cab-look-part { display: flex; flex-direction: column; gap: .375rem; }
 .cab-look-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .cab-look-card { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 0; border: 1px solid var(--card-line); border-radius: .625rem; background: var(--sunk); overflow: hidden; color: var(--text); font: 500 var(--fs-small)/1.2 var(--font-sans); text-align: left; }
@@ -69,9 +74,14 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 .cab-look-card.is-empty svg { width: 1.375rem; height: 1.375rem; }
 .cab-look-card.is-empty em { font: 400 var(--fs-micro)/1.2 var(--font-sans); font-style: normal; color: var(--dim); }
 .cab-look-card.is-empty:hover { border-color: var(--muted); color: var(--text); }
-.cab-look { flex: none; }
-.cab-look .cab-style-key img { width: 3.5rem; height: 3.5rem; }
-.cab-look .cab-style-key { padding: .375rem .75rem .375rem .375rem; font-size: var(--fs-body); }
+.cab-look-parts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; align-items: start; }
+.cab-look-parts .cab-look-cards { grid-template-columns: minmax(0, 1fr); }
+/* the style: its word upright on the left, its sample filling the rest */
+.cab-look { flex: none; flex-direction: row; align-items: stretch; gap: .5rem; padding: .5rem; }
+.cab-vertical { flex: none; margin: 0; writing-mode: vertical-rl; transform: rotate(180deg); text-align: center; font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+.cab-style-pic { flex: 1 1 auto; min-width: 0; height: 7.5rem; padding: 0; border: 1px solid var(--line); border-radius: .625rem; background: var(--cab-paper); overflow: hidden; cursor: pointer; transition: border-color var(--t-fast); }
+.cab-style-pic img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; display: block; }
+.cab-style-pic:hover, .cab-style-pic[aria-expanded="true"] { border-color: var(--accent-line); }
 .cab-dressing { margin: 0; font: 400 var(--fs-small)/1.3 var(--font-sans); color: var(--muted); }
 .cab-dressing b { color: var(--accent); font-weight: 600; }
 .cab-blocked { flex: 1 1 100%; order: -1; font: 500 var(--fs-small)/1.2 var(--font-sans); color: var(--warn); }
@@ -94,11 +104,11 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 /* on the bar only when the look is hidden (a narrower window) */
 .cab-style-bar { display: none; }
 
-.cab-styles { position: fixed; z-index: 60; display: flex; flex-direction: column; gap: .625rem; width: min(30rem, calc(100vw - 1rem)); max-height: min(36rem, calc(100dvh - 1rem)); padding: .875rem; border: 1px solid var(--line2); border-radius: var(--r-panel); background: var(--s1); box-shadow: var(--float); }
+.cab-styles { position: fixed; z-index: 60; display: flex; flex-direction: column; gap: .625rem; width: min(32rem, calc(100vw - 1rem)); max-height: min(36rem, calc(100dvh - 1rem)); padding: .875rem; border: 1px solid var(--line2); border-radius: var(--r-panel); background: var(--s1); box-shadow: var(--float); }
 .cab-styles-head { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
 .cab-styles-head b { font: 600 var(--fs-title)/1 var(--font-sans); }
 .cab-styles-head span { font: 400 var(--fs-small)/1.2 var(--font-sans); color: var(--dim); }
-.cab-styles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr)); gap: .5rem; overflow-y: auto; scrollbar-width: thin; padding: .125rem; }
+.cab-styles-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; overflow-y: auto; scrollbar-width: thin; padding: .125rem; }
 .cab-style-tile { display: flex; flex-direction: column; gap: .3125rem; padding: .25rem; border: 1px solid transparent; border-radius: .625rem; background: transparent; color: var(--muted); font: 500 var(--fs-micro)/1.2 var(--font-sans); text-align: center; cursor: pointer; }
 .cab-style-tile img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: .5rem; background: var(--cab-paper, #ecebe7); }
 .cab-style-tile:hover { background: var(--s2); color: var(--text); }
@@ -205,7 +215,7 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
   .cab-member .cab-portrait { width: 2.75rem; aspect-ratio: 1; max-height: none; border-radius: .5rem; }
   .cab-member .cab-portrait.is-empty span { display: none; }
   .cab-member-head { align-items: center; }
-  .cab-member .cab-look-cards, .cab-member .cab-look-part { display: none; }
+  .cab-member .cab-look-cards, .cab-member .cab-look-parts { display: none; }
   .cab-look { display: none; }
   .cab-style-bar { display: block; }
   .cab-mirror { grid-column: 1; grid-row: 1 / span 2; }
@@ -221,7 +231,7 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
   .cab-member { display: flex; }
   .cab-member .cab-portrait { width: auto; aspect-ratio: 3 / 4; max-height: 50dvh; }
   .cab-member .cab-look-cards { display: grid; }
-  .cab-member .cab-look-part { display: flex; }
+  .cab-member .cab-look-parts { display: grid; }
   .cab-look { display: flex; }
   .cab-style-bar { display: none; }
   .cab-glass { flex: none; height: min(70dvh, 120vw); }
@@ -238,7 +248,7 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 /* every corner a squircle where the browser can, as in Mixer: the radii are doubled there (--corner-k), and a squircle of the doubled
    radius reads as the tight corner the plain radius gives elsewhere (a plain arc of it is a big round corner) */
 @supports (corner-shape: squircle) {
-  .cab-card, .cab-glass, .cab-bar, .cab-shelf, .cab-portrait, .cab-member, .cab-look-card, .cab-look-card img, .cab-thumb, .cab-item-pick, .cab-add,
+  .cab-card, .cab-glass, .cab-bar, .cab-shelf, .cab-portrait, .cab-member, .cab-look-card, .cab-look-card img, .cab-style-pic, .cab-thumb, .cab-item-pick, .cab-add,
   .cab-recipe img, .cab-slot, .cab-example img, .cab-style-key, .cab-style-key img, .cab-styles, .cab-style-tile, .cab-style-tile img,
   .cab-bar .key, .cab-bar .field, .cab-bar .segment, .cab-bar .segment > button, .cab-bar .sel-trigger, .cab-search .field, .cab-shelves, .cab-shelves > button, .cab-actions .key { corner-shape: squircle; }
 }

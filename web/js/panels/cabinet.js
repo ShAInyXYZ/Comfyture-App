@@ -9,7 +9,7 @@ import {
   activeMember, isGroup, addCharacter, removeCharacter, setActive,
   newShoot, openShoot, removeShoot, renameShoot, shootNow, again, dropPicture, show,
 } from "../cabinet.js";
-import { WARDROBE, POSES, STYLES, styleItem, WARDROBE_GROUPS, POSE_GROUPS, WARDROBE_GROUP_TAGS, POSE_GROUP_TAGS, FORMATS, BACKDROPS, EXAMPLES, MOST_CAST, combos, find, wardrobeItem, poseItem } from "../cabinet-shelf.js";
+import { WARDROBE, POSES, STYLES, styleItem, WARDROBE_GROUPS, POSE_GROUPS, WARDROBE_GROUP_TAGS, POSE_GROUP_TAGS, FORMATS, BACKDROPS, EXAMPLES, MOST_CAST, find, wardrobeItem, poseItem } from "../cabinet-shelf.js";
 
 const fail = (e) => toast(e.message, { tone: "crit" });
 const BRANDS = { openai: "brand-openai", google: "brand-google", bytedance: "brand-bytedance", qwen: "brand-qwen" };
@@ -108,13 +108,13 @@ const emptyCard = (kind, i) => h(`button.cab-look-card.is-empty.is-${kind}`, {
   on: { click: (e) => (e.stopPropagation(), setActive(i), (cabinet.shelf = kind), changed("cabinet")) },
 }, sprite(kind === "outfits" ? "product-cabinet" : "pose-rest"), h("span", {}, kind === "outfits" ? "Own clothes" : "Natural pose"), h("em", {}, "pick on the shelf"));
 
-/** A character's look: in a group, their one outfit beside their one pose; alone, every outfit, then every pose, two to a row. */
+/** A character's look: in a group, their one outfit beside their one pose; alone, the outfits beside the poses, a column each. */
 function lookOf(m, i, group) {
   if (group) return h("div.cab-look-cards", {}, m.outfits[0] ? lookCard("outfits", m.outfits[0]) : emptyCard("outfits", i), m.poses[0] ? lookCard("poses", m.poses[0]) : emptyCard("poses", i));
   const part = (kind, label) => h("div.cab-look-part", {},
     h("div.cab-picked-head", {}, h("span.cab-sub", {}, label), h("span.cab-count", {}, `${m[kind].length}/4`)),
     h("div.cab-look-cards", {}, ...(m[kind].length ? m[kind].map((key) => lookCard(kind, key)) : [emptyCard(kind, i)])));
-  return [part("outfits", "Outfits"), part("poses", "Poses")];
+  return h("div.cab-look-parts", {}, part("outfits", "Outfits"), part("poses", "Poses"));
 }
 
 /** One character: their portrait, who they are, the key that changes them, and their look. */
@@ -136,7 +136,6 @@ function memberColumn(m, i, b) {
 
 function whoColumn(b) {
   const group = isGroup(b);
-  const n = group ? 1 : combos(b.cast[0].outfits, b.cast[0].poses).length;
   const full = b.cast.length >= MOST_CAST;
   return h("aside.cab-col.cab-who", { "aria-label": "The characters and their look" },
     h("section.cab-card.cab-cast", {},
@@ -144,10 +143,8 @@ function whoColumn(b) {
         h("h2.cab-title", {}, group ? "Characters" : "Character", group ? h("span.cab-count", {}, `${b.cast.length}/${MOST_CAST}`) : null),
         h("button.key.is-sm.is-icon.cab-add-member", { type: "button", disabled: full, "aria-label": "Add a character", title: full ? `${MOST_CAST} characters at most in one picture` : "Add a character: they are pictured together, each in their own outfit and pose", on: { click: addCharacter } }, icon("plus"))),
       h("div.cab-members", { className: group ? "is-group" : "", style: { "--cast": String(b.cast.length) } }, ...b.cast.map((m, i) => memberColumn(m, i, b)))),
-    h("section.cab-card.cab-look", {},
-      h("div.cab-picked-head", {}, h("h2.cab-title", {}, "Style")),
-      styleKey(b),
-      h("p.cab-note", {}, group ? `One picture of all ${b.cast.length} each time you shoot, from left to right as they stand here.` : n === 1 ? "One picture each time you shoot." : `${n} pictures each time you shoot: every outfit in every pose.`)));
+    // the style: its word on its side, then its sample, which opens the catalogue
+    h("section.cab-card.cab-look", {}, h("h2.cab-vertical", {}, "Style"), stylePicture(b)));
 }
 
 // ---------------------------------------------------------------- the style
@@ -194,6 +191,14 @@ function openStyles(anchor, b) {
   const y = Math.min(Math.max(8, beside ? a.top - box.height / 2 : a.top - box.height - 8), innerHeight - box.height - 8);
   el.style.left = `${x}px`;
   el.style.top = `${y}px`;
+}
+
+/** The style picked as its sample alone, the whole width of the card: a click opens the catalogue. */
+function stylePicture(b) {
+  const st = styleItem(b.style);
+  const name = st ? `${st.name}: ${st.words}` : "As they are: their own look";
+  return h("button.cab-style-pic", { type: "button", "aria-haspopup": "listbox", "aria-expanded": "false", "aria-label": `Style: ${st?.name ?? "as they are"}. Choose another`, title: name, on: { click: (e) => openStyles(e.currentTarget, b) } },
+    h("img", { src: st?.src ?? whoNow(b).picture, alt: "", draggable: false }));
 }
 
 /** The key that shows the style picked (its sample) and opens the others. */
