@@ -41,6 +41,7 @@ const ICONS = {
   sound: '<path d="M5 10v4h3l4 3.5v-11L8 10zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
   mute: '<path d="M5 10v4h3l4 3.5v-11L8 10zM16 9.5l5 5m0-5-5 5"/>',
   share: '<rect x="7" y="3.5" width="10" height="17" rx="2"/><path d="M12 8v6m0-6-2.5 2.5M12 8l2.5 2.5"/>',
+  copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/>',
   trash: '<path d="M5 7h14M10 7V4.5h4V7m-7 0 .8 12.5h8.4L17 7"/>',
   chevron: '<path d="m6 9 6 6 6-6"/>',
   image: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17 5-4.5 3.5 3 3-2.5 4.5 4"/>',

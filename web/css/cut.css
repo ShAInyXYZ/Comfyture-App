@@ -200,6 +200,12 @@ body[data-page="cut"] { padding-bottom: 0; overflow: hidden; }
 .cut-beat.is-selected { height: 100%; background: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .cut-lane.is-main { background: rgba(255, 255, 255, .015); }
 .cut-item { position: absolute; top: 3px; bottom: 3px; overflow: hidden; border: 1px solid var(--line2); border-radius: calc(.375rem * var(--corner-k)); background: var(--s3); cursor: grab; }
+/* a looping clip's repeats: its shadow along the lane, not picked or moved on their own */
+.cut-item.is-ghost { opacity: .38; border-style: dashed; cursor: pointer; filter: saturate(.6); }
+.cut-item.is-ghost.is-of-selected { opacity: .55; border-color: var(--accent-line); }
+.cut-item.is-ghost .cut-item-name { visibility: hidden; }
+.cut-loop-mark { position: absolute; right: .375rem; top: .25rem; z-index: 2; display: grid; place-items: center; width: 1.125rem; height: 1.125rem; border-radius: 50%; background: var(--accent); color: var(--accent-ink); pointer-events: none; }
+.cut-loop-mark svg { width: .75rem; height: .75rem; stroke-width: 2.2; }
 /* beat effects: a colour each, with a mark where every hit falls */
 .cut-item.is-fx { --fxc: #f2ff59; background: color-mix(in srgb, var(--fxc) 18%, var(--s2)); border-color: color-mix(in srgb, var(--fxc) 55%, transparent); }
 .cut-item.fx-shake { --fxc: #ff7ab8; } .cut-item.fx-flash { --fxc: #ffffff; } .cut-item.fx-hue { --fxc: #b59cff; }

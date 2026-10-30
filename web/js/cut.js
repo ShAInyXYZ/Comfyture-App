@@ -7,6 +7,7 @@ import { api } from "./api.js";
 import { state, changed, toast, rollAsTab, writer, waitFor } from "./store.js";
 import { normalizeBody, snapCuts, lyricItems, resplit, shiftLine, retext, editWord, draft, uid } from "./edit.js";
 import { keyedSaver } from "./saving.js";
+import { withLoops, loopCopies } from "./loops.js";
 import { beatTimes, newFx, FX_DEFAULTS, FX_KINDS } from "./fx.js";
 import { detectBeats, parseBeats, gridBeats, beatsFromTimes, halveBeats, doubleBeats, nearestBeat } from "./beats.js";
 import { splitWords, wordsOf, ANIMATED } from "./lyrics.js";
@@ -138,6 +139,12 @@ export function totalLength(b = body()) {
   return Math.max(main, ...others, 0);
 }
 export const filmLength = (b = body()) => (layout(b).at(-1)?.end ?? 0);
+/** Where a looping clip stops repeating: the end of the film (of the main track, or of the rest when it has no clips). */
+export const loopEnd = (b = body()) => (layout(b).length ? filmLength(b) : totalLength(b));
+/** The edit as it plays: each looping clip followed by its repeats on its lane. */
+export const played = (b = body()) => withLoops(b, lengthOf, loopEnd(b));
+/** A looping item's repeats on its lane, from where it starts. */
+export const repeatsOf = (it, start, len, b = body()) => loopCopies(it, start, len, loopEnd(b));
 
 // ---------------------------------------------------------------- projects
 
@@ -386,6 +393,29 @@ export function removeItem(id = cut.selected) {
   if (!f) return;
   f.track.items = f.track.items.filter((x) => x !== f.item);
   if (cut.selected === id) cut.selected = null;
+  commit();
+}
+/** A copy of the item, right after it: on the main track the next clip, on a lane where the item ends. */
+export function duplicateItem(id = cut.selected) {
+  const f = findItem(id);
+  if (!f) return toast("Pick a clip to duplicate.");
+  const copy = { ...structuredClone(f.item), id: uid() };
+  if (f.track.main) f.track.items.splice(f.track.items.indexOf(f.item) + 1, 0, copy);
+  else {
+    copy.start = round(startOf(f.item) + lengthOf(f.item));
+    f.track.items.push(copy);
+  }
+  cut.selected = copy.id;
+  commit();
+}
+/** A clip on a lane over the film repeats until the film ends, or stops repeating. */
+export function toggleLoop(id = cut.selected) {
+  const f = findItem(id);
+  if (!f) return toast("Pick a clip to loop.");
+  if (f.track.main) return toast("A clip of the main track plays once: put it on a lane over the film to loop it.");
+  if (f.track.kind === "fx") return;
+  if (f.item.loop) delete f.item.loop;
+  else f.item.loop = true;
   commit();
 }
 export function select(id) {

@@ -397,3 +397,24 @@ test("Pickle's actions are checked: Jam's own, fields in range, a workspace or a
   const kitchen = readCutAnswer(JSON.stringify({ reply: "ok", actions: raw }));
   assert.ok(kitchen.actions.some((a: any) => a.op === "music"));
 });
+
+test("a looping overlay repeats on its lane until the film ends, its last repeat cut short", async (t) => {
+  const { loopCopies } = await import("../web/js/loops.js");
+  const copies = loopCopies({ id: "o", loop: true, src: { kind: "video" }, from: 0 }, 1, 2, 6.5);
+  assert.deepEqual(copies.map((c: any) => [c.id, c.start, c.to ?? null, c.ghost]), [["o~1", 3, null, "o"], ["o~2", 5, 1.5, "o"]]);
+  assert.deepEqual(loopCopies({ id: "p", loop: true, src: { kind: "photo" }, length: 2 }, 0, 2, 3).map((c: any) => c.length), [1]);
+  assert.equal(loopCopies({ id: "n", src: { kind: "video" } }, 0, 2, 9).length, 0);
+
+  const dir = await tmp(t);
+  await makeClip(join(dir, "blue.mp4"), 160, 90, 4, "solid", "0x2040c0");
+  await makeClip(join(dir, "red.mp4"), 160, 90, 1, "solid", "0xc02020");
+  const blue = { path: join(dir, "blue.mp4"), still: false, hasAudio: false, duration: 4 };
+  const red = { path: join(dir, "red.mp4"), still: false, hasAudio: false, duration: 1 };
+  const body: any = { aspect: "16:9", tracks: [
+    { id: "v1", kind: "video", main: true, items: [{ id: "c", src: { kind: "video", id: "b" } }] },
+    { id: "v2", kind: "video", items: [{ id: "o", src: { kind: "video", id: "r" }, start: 0, loop: true }] },
+  ] };
+  const out = await render(body, { c: blue, o: red, "o~1": red, "o~2": red, "o~3": red }, join(dir, "l"), { size: { width: 160, height: 90 } });
+  const f = await rgbFrame(out.film, 2.5);
+  assert.ok(near(px(f, 160, 80, 45), [192, 32, 32], 30), `the overlay's repeat plays at 2.5 s: ${px(f, 160, 80, 45)}`);
+});

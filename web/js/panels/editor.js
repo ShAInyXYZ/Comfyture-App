@@ -7,7 +7,7 @@ import { state } from "../store.js";
 import {
   cut, FPS, GRADES, track, mainTrack, findItem, sourceOf, lengthOf, layout, totalLength, filmLength, addTitle, removeItem,
   select, splitAt, moveMain, moveToTrack, toggleTrack, setJoin, commit, isPlaced, addFx, addSticker, addPictureSticker,
-  STICKERS, loadStickers, addBeatAt, removeBeat, draftEdit, addLyric, addMedia, undo, redo,
+  STICKERS, loadStickers, addBeatAt, removeBeat, draftEdit, addLyric, addMedia, undo, redo, played, repeatsOf, duplicateItem, toggleLoop,
 } from "../cut.js";
 import { fxAt, hitsOf, beatTimes, colourMatrix, FX_KINDS, aspectRatio, WHIP, whipBlur } from "../fx.js";
 import { wordsOf, captionLayouts, wordState, usesLyricLayout, LINE, OUTLINE, faceOf } from "../lyrics.js";
@@ -33,7 +33,8 @@ export const editor = { get playing() { return player.playing; }, stop: () => st
 
 /** What plays at a time: the main clip (two in a dissolve), the overlays and stickers, the titles, the sounds. */
 function frameAt(t) {
-  const b = cut.project?.body;
+  // (a looping clip's repeats play as the clip does)
+  const b = cut.project?.body && played(cut.project.body);
   const out = { pictures: [], stickers: [], titles: [], sounds: [] };
   if (!b) return out;
   const fade = (it, start, len, at) => {
@@ -533,9 +534,13 @@ function fit() {
 }
 
 const thumbs = new Map();
+// (one element per picture, kept between draws; a second block showing the same picture in one draw, a copy or a loop's repeat, gets a copy of it)
+const thumbsDrawn = new Set();
 function thumbOf(s, from) {
   const k = `${s.url}#${from.toFixed(1)}`;
   if (!thumbs.has(k)) thumbs.set(k, s.still ? h("img.cut-thumb", { src: s.url, alt: "", draggable: false }) : h("video.cut-thumb", { src: `${s.url}#t=${from + 0.3}`, muted: true, preload: "metadata", draggable: false }));
+  if (thumbsDrawn.has(k)) return thumbs.get(k).cloneNode(true);
+  thumbsDrawn.add(k);
   return thumbs.get(k);
 }
 
@@ -556,6 +561,8 @@ function renderTools() {
       h("button.ctl-tool", { type: "button", "aria-pressed": String(cut.tool === "blade"), title: "Blade: click a clip to cut it there — B", "aria-label": "Blade", on: { click: () => ((cut.tool = "blade"), renderTimeline()) } }, sprite("edit-scissors"))),
     h("button.ctl-tool", { type: "button", title: "Cut at the playhead — S", "aria-label": "Cut at the playhead", on: { click: () => splitAt(cut.playhead) } }, sprite("edit-playhead")),
     ...(jam ? [h("button.ctl-tool", { type: "button", title: "Take away what is picked — Delete", "aria-label": "Take away", disabled: !cut.selected, on: { click: () => removeItem() } }, icon("trash"))] : []),
+    h("button.ctl-tool", { type: "button", title: "Duplicate what is picked, right after it — Ctrl+D", "aria-label": "Duplicate", disabled: !cut.selected, on: { click: () => duplicateItem() } }, icon("copy")),
+    loopKey(),
     h("button.ctl-tool", { type: "button", title: "A title at the playhead", "aria-label": "Add a title", on: { click: () => addTitle("Title") } }, h("b.cut-t", {}, "T")),
     h("button.ctl-tool", { type: "button", "aria-pressed": String(cut.snap), title: "Snap to the playhead and to clip edges", "aria-label": "Snap", on: { click: () => ((cut.snap = !cut.snap), renderTimeline()) } }, sprite("frame-first")),
     ...(jam ? [] : [
@@ -597,6 +604,7 @@ function renderTray() {
 }
 
 function renderTimeline() {
+  thumbsDrawn.clear();
   const sh = ed.shell;
   const b = cut.project.body;
   const z = cut.zoom;
@@ -685,9 +693,20 @@ function beatLane(width, total) {
   return el;
 }
 
+/** The loop key: lit while the picked clip loops; a clip of the main track or an effect cannot. */
+function loopKey() {
+  const f = cut.selected ? findItem(cut.selected) : null;
+  const can = !!f && !f.track.main && f.track.kind !== "fx";
+  return h("button.ctl-tool", { type: "button", "aria-pressed": String(!!f?.item.loop), disabled: !can,
+    title: !f ? "Loop the clip — pick a clip on a lane over the film" : can ? (f.item.loop ? "Stop the clip looping" : "Loop the clip until the film ends: its repeats show as a ghost trail — L") : "Loop the clip — only a clip on a lane over the film loops",
+    "aria-label": "Loop the clip", on: { click: () => toggleLoop() } }, icon("loop"));
+}
+
 /** What a lane holds, laid out: its items with their times, and the row each is on (items that overlap go on rows of their own, so none hides another). */
 function laneItems(t) {
   const items = t.main ? layout().map((m) => ({ it: m.item, start: m.start, len: m.len, dissolve: m.dissolve })) : t.items.map((it) => ({ it, start: Number(it.start) || 0, len: t.kind === "title" || t.kind === "fx" ? Number(it.length) || 3 : lengthOf(it) }));
+  // a looping clip's repeats follow it on its lane, as a ghost trail
+  if (!t.main && t.kind !== "fx") for (const x of [...items]) if (x.it.loop) items.push(...repeatsOf(x.it, x.start, x.len).map((c) => ({ it: c, start: c.start, len: lengthOf(c) })));
   const stacked = !t.main && t.kind !== "audio";
   const ends = [];
   items.forEach((x) => {
@@ -714,7 +733,7 @@ function lane(t, width) {
     const s = sourceOf(it.src);
     const w = Math.max(6, len * z);
     const off = t.kind === "fx" && it.on === false;
-    const block = h("div.cut-item", { className: `${cut.selected === it.id ? "is-selected" : ""}${s?.status && s.status !== "done" && it.src?.kind === "take" ? " is-missing" : ""}${t.kind === "fx" ? ` is-fx fx-${it.kind}${off ? " is-off" : ""}` : ""}${it.lyric ? " is-lyric" : ""}${isPlaced(it) ? " is-sticker" : ""}`, style: { left: `${start * z}px`, width: `${w}px`, ...(rows > 1 ? { top: `${0.1875 + row * rowRem}rem`, bottom: "auto", height: `${rowRem - 0.125}rem` } : {}) }, dataset: { id: it.id } },
+    const block = h("div.cut-item", { className: `${cut.selected === it.id ? "is-selected" : ""}${it.ghost ? ` is-ghost${cut.selected === it.ghost ? " is-of-selected" : ""}` : ""}${it.loop ? " is-loop" : ""}${s?.status && s.status !== "done" && it.src?.kind === "take" ? " is-missing" : ""}${t.kind === "fx" ? ` is-fx fx-${it.kind}${off ? " is-off" : ""}` : ""}${it.lyric ? " is-lyric" : ""}${isPlaced(it) ? " is-sticker" : ""}`, style: { left: `${start * z}px`, width: `${w}px`, ...(rows > 1 ? { top: `${0.1875 + row * rowRem}rem`, bottom: "auto", height: `${rowRem - 0.125}rem` } : {}) }, dataset: { id: it.id } },
       t.kind === "video" && s?.url && !isPlaced(it) ? thumbOf(s, Number(it.from) || 0) : null,
       t.kind === "video" && s?.color ? h("i.cut-colour", { style: { background: s.color } }) : null,
       isPlaced(it) && s?.url ? h("img.cut-sticker-thumb", { src: s.url, alt: "", draggable: false }) : null,
@@ -724,8 +743,11 @@ function lane(t, width) {
       ...(t.kind === "fx" && !off ? hitsOf(it, body).filter((h0) => h0 >= start && h0 < start + len).slice(0, 300).map((h0) => h("i.cut-hit", { style: { left: `${(h0 - start) * z}px` } })) : []),
       ...(it.lyric && w > 60 ? wordsOf(it).slice(1).map((wd) => h("i.cut-word-mark", { style: { left: `${wd.from * z}px` } })) : []),
       dissolve ? h("i.cut-dissolve", { style: { width: `${dissolve * z}px` }, title: "Dissolve" }) : null,
-      h("i.cut-grip.is-left"), h("i.cut-grip.is-right"));
-    block.addEventListener("pointerdown", (e) => drag(e, t, it, start, len, block));
+      it.loop ? h("i.cut-loop-mark", { title: "Loops until the film ends" }, icon("loop")) : null,
+      it.ghost ? null : h("i.cut-grip.is-left"), it.ghost ? null : h("i.cut-grip.is-right"));
+    // (a repeat is the looping clip's shadow: a press picks the clip itself)
+    if (it.ghost) block.title = "A repeat of the looping clip: pick the clip to change it";
+    block.addEventListener("pointerdown", (e) => (it.ghost ? (e.button === 0 && (e.stopPropagation(), select(it.ghost))) : drag(e, t, it, start, len, block)));
     el.append(block);
     // between two clips of the main track: the join, a cut or a dissolve, one click to change
     if (t.main && i > 0) {
@@ -939,7 +961,7 @@ export function drawEditor(mode = "cut") {
   show(cut.playhead);
 }
 
-// keys on the page: Space plays, S cuts, V and B pick a tool, Delete removes
+// keys on the page: Space plays, S cuts, V and B pick a tool, Delete removes, Ctrl+D duplicates, L loops
 document.addEventListener("keydown", (e) => {
   const page = document.body.dataset.page;
   if ((page !== "cut" && page !== "jam") || !cut.project || document.body.classList.contains("has-window") || document.body.classList.contains("has-jam-window") || !ed.shell) return;
@@ -947,6 +969,7 @@ document.addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
   if ((e.ctrlKey || e.metaKey) && k === "z") return e.preventDefault(), e.shiftKey ? redo() : undo();
   if ((e.ctrlKey || e.metaKey) && k === "y") return e.preventDefault(), redo();
+  if ((e.ctrlKey || e.metaKey) && k === "d") return e.preventDefault(), cut.selected && duplicateItem();
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (k === " ") return e.preventDefault(), play();
   if (k === "arrowleft") return e.preventDefault(), step(e.shiftKey ? -FPS : -1);
@@ -954,6 +977,7 @@ document.addEventListener("keydown", (e) => {
   if (k === "s") return splitAt(cut.playhead);
   if (k === "b") return (cut.tool = "blade"), renderTimeline();
   if (k === "v") return (cut.tool = "select"), renderTimeline();
+  if (k === "l") return cut.selected && toggleLoop();
   if (k === "delete" || k === "backspace") return cut.beat !== null && !cut.selected ? removeBeat() : removeItem();
   if (k === "escape") return select(null);
   if (k === "home") return seek(0);

@@ -9,6 +9,7 @@
 
 import { fxPlan, FX_KINDS, EVERY, WHIP, whipBlur } from "../web/js/fx.js";
 import { lyricAss, usesLyricLayout, LYRIC_FONT, LOOKS } from "../web/js/lyrics.js";
+import { withLoops } from "../web/js/loops.js";
 import { KEYS, LANGUAGES, STRUCTURES, MAX_SECONDS } from "../web/js/song.js";
 import { SONG_GUIDE_CORE } from "./song-guide.ts";
 
@@ -306,6 +307,12 @@ export function planCut(body: CutBody, source: (item: CutItem) => Source | null,
     vf.push(`color=c=0x14101f:s=${W}x${H}:r=24:d=${f3(T)},format=yuv420p[m0]`);
     acc = "m0";
   }
+
+  // a looping clip repeats on its lane until the film ends (web/js/loops.js: the page plays the same)
+  body = withLoops(body, (it: CutItem) => {
+    const src = source(it);
+    return src ? span(it, src) : n(it.length, 0.5, 60, 3);
+  }, T) as CutBody;
 
   // overlays, over the main track at their times, lowest first; a sticker sits where it was put
   for (const t of body.tracks.filter((x) => x.kind === "video" && x !== main && !x.mute)) {
