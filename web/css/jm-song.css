@@ -119,7 +119,10 @@
 .sg-deck-3d { position: absolute; inset: 0; }
 .sg-deck-3d canvas { display: block; width: 100%; height: 100%; }
 .sg-label-block { display: grid; justify-items: center; gap: .375rem; max-width: 100%; text-align: center; }
-.sg-name { max-width: 100%; margin: 0; overflow: hidden; font: 800 clamp(2rem, 4.2cqw + .5rem, 4.25rem)/.95 var(--font-sans); letter-spacing: -.03em; text-transform: uppercase; text-overflow: ellipsis; white-space: nowrap; }
+.sg-name { max-width: 100%; margin: 0; overflow: hidden; font: 800 clamp(2rem, 4.2cqw + .5rem, 4.25rem)/.95 var(--font-sans); letter-spacing: -.03em; text-transform: uppercase; text-overflow: ellipsis; white-space: nowrap; cursor: text; border-radius: .25rem; }
+.sg-name:hover:not(:has(input)) { text-decoration: underline dotted color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: .12em; text-decoration-thickness: .06em; }
+.sg-name:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.sg-name-input { width: min(100%, 24ch); padding: 0 .25em; border: 0; border-bottom: 2px solid var(--accent); border-radius: 0; background: transparent; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: center; outline: none; }
 .sg-readout { margin: 0; font: 500 clamp(.8125rem, 1.4cqw + .25rem, 1.0625rem)/1.2 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
 .sg-state { margin: 0; font: 500 .8125rem/1 var(--font-mono); letter-spacing: .1em; color: var(--dim); }
 .sg-stage.is-making .sg-state { color: var(--warn); animation: sg-pulse 1.4s ease-in-out infinite; }

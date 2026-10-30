@@ -44,6 +44,7 @@ export const api = {
   romanizeSong: (body) => post("api/audio/song/romaji", body),
   writeSong: (body) => post("api/audio/song/write", body),
   setCover: (body) => post("api/audio/cover", body),
+  renameSong: (body) => post("api/audio/name", body),
   slicePart: (body) => post("api/jam/slice", body),
   uploadAudio: (file) => request("api/audio", { method: "POST", headers: { "Content-Type": file.type || "audio/mpeg" }, body: file }),
   paint: (body) => post("api/paint", body),

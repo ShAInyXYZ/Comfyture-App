@@ -577,13 +577,58 @@ function toggle(m) {
 
 const keyLabel = (m) => (inJam(m) ? "On to the track" : jam.jam?.body.track ? "Use it in a new video" : "Use it for the video");
 
+/**
+ * The name on the stage is changed in place: a click turns it into a field, Enter or leaving it keeps the name, Escape drops it.
+ * A song of the shelf is renamed in the library (and on the video's track when it is the track); the draft's name is the form's Title.
+ */
+function editName() {
+  if (page.name_.querySelector("input")) return;
+  const m = shownSong();
+  const was = (m?.name ?? song.name) || "";
+  const field = h("input.sg-name-input", { type: "text", maxLength: 60, value: was, "aria-label": "Song name" });
+  let done = false;
+  const finish = async (keep) => {
+    if (done) return;
+    done = true;
+    const name = field.value.trim().slice(0, 60);
+    page.name_.textContent = (keep && name) || was || "New song"; // the field goes, the name is back at once
+    if (!keep || !name || name === was) return drawStage();
+    if (!m) {
+      song.name = name.slice(0, 40);
+      keepDraft();
+      sync();
+      return drawStage();
+    }
+    const j = jam.jam;
+    if (j?.body.track?.file === m.file) (j.body.track.name = name), save(j);
+    const kept = song.made.find((x) => x.file === m.file);
+    if (kept) kept.name = name;
+    redrawAll();
+    try {
+      await api.renameSong({ file: m.file, name });
+    } catch (e) {
+      // a track the library does not hold (a showcase's) is still renamed on the video
+      if (kept) toast(e.message, { tone: "crit" });
+    }
+  };
+  field.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") (e.preventDefault(), finish(true));
+    else if (e.key === "Escape") (e.preventDefault(), finish(false));
+  });
+  field.addEventListener("blur", () => finish(true));
+  page.name_.replaceChildren(field);
+  field.focus();
+  field.select();
+}
+
 /** The stage's readings and keys, set again when the song, the form or the video changes (the record and the sound are never rebuilt). */
 function drawStage() {
   if (!page) return;
   const m = shownSong();
   const cost = state.info?.target === "comfy-cloud" && song.model !== "minimax-music-3" ? costOfSong(song.seconds, song.passes) : null;
   const title = (m?.name ?? song.name) || "New song";
-  page.name_.textContent = title;
+  if (!page.name_.querySelector("input")) page.name_.textContent = title;
+  page.name_.title = `${title}\nClick to rename`;
   page.read.textContent = m
     ? `${m.bpm ? `${m.bpm} BPM · ` : ""}${m.key ? `${m.key} · ` : ""}${lengthLabel(Math.round(m.seconds || 0))}`
     : song.model === "minimax-music-3" ? `MiniMax Music 3 · up to ${lengthLabel(song.seconds)}` : `${song.bpm} BPM · ${song.key} · ${lengthLabel(song.seconds)}`;
@@ -771,7 +816,7 @@ export function songWorkspace() {
     audio.addEventListener("loadedmetadata", () => (page.time.textContent = `${clock(0)} / ${clock(audio.duration || 0)}`));
 
     page.steps = h("section.sg-steps", { "aria-label": "Make the song", dataset: { scrollKey: "sg-steps" } });
-    page.name_ = h("h2.sg-name", {});
+    page.name_ = h("h2.sg-name", { tabIndex: 0, role: "button", on: { click: editName, keydown: (e) => (e.key === "Enter" || e.key === "F2") && e.target === page.name_ && (e.preventDefault(), editName()) } });
     page.read = h("p.sg-readout", {});
     page.state = h("p.sg-state", {});
     page.play = h("button.sg-play", { type: "button", on: { click: () => toggle(shownSong()) } });

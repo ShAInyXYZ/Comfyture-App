@@ -1366,6 +1366,18 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const entry: AudioEntry = known ?? { file: ask.file, url: `/media/audio/${ask.file}`, name: ask.file.replace(/\.\w+$/, ""), kind: "upload", seconds: Math.round((await probeMedia(onDisk)).duration * 100) / 100, createdAt: (await stat(onDisk)).mtime.toISOString() };
     return json(res, 200, await noteAudio(mergeCover(entry, ask), true));
   }
+  if (path === "/api/audio/name" && method === "POST") {
+    // a song's name, changed on Jam's stage
+    const input = await jsonBody(req);
+    const file = typeof input.file === "string" ? basename(input.file) : "";
+    const name = text(input.name, 60);
+    if (!name) throw bad("Give the song a name.");
+    const known = (await readAudioIndex())[file];
+    const onDisk = join(data, "audio", file);
+    if (!file || (!known && !(await exists(onDisk)))) throw bad("That song is not in the library.", 404);
+    const entry: AudioEntry = known ?? { file, url: `/media/audio/${file}`, name, kind: "upload", seconds: Math.round((await probeMedia(onDisk)).duration * 100) / 100, createdAt: (await stat(onDisk)).mtime.toISOString() };
+    return json(res, 200, await noteAudio({ ...entry, name }, true));
+  }
   if ((path === "/api/audio/music" || path === "/api/audio/sound") && method === "POST") {
     const input = await jsonBody(req);
     const prompt = text(input.prompt, 800);
