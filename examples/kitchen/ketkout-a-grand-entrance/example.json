@@ -1,0 +1,2107 @@
+{
+ "id": "stori-ketkout-a-grand-entrance-ex",
+ "rev": 1,
+ "name": "Ketkout — A Grand Entrance",
+ "thumb": "example:12f83fac95be76c4.png",
+ "story": {
+  "body": {
+   "v": 2,
+   "style": "film",
+   "imageModel": "gpt-image-2.5-flare",
+   "videoModel": "ltx-2.5",
+   "idea": {
+    "brief": "",
+    "length": 16,
+    "aspect": "16:9",
+    "genre": "Animated short",
+    "tone": "Punchy, playful, cinematic",
+    "title": "Ketkout — A Grand Entrance",
+    "logline": "A dramatic entrance, tiny determined footsteps, one irresistible jar and a tart-shaped idea.",
+    "synopsis": "Ketkout bursts into his own tiny kitchen. A side-on tracking shot follows his feet toward the table. From below the tabletop, his crown passes the Comfyture jar before he doubles back and grabs it. Holding the jar, he has an idea: the camera rises to a thought cloud containing a jam tart.",
+    "refs": []
+   },
+   "look": {
+    "words": "Warm tactile 3D animated cottage, fluffy yellow Ketkout with peach scarf, house and furniture sized for him.",
+    "palette": [],
+    "refs": []
+   },
+   "cast": [
+    {
+     "id": "6ydcfyn",
+     "name": "ketkout",
+     "tag": "ketkout",
+     "about": "Curious, bold, and determined, with a playful streak and an appetite for big ideas.",
+     "words": "A fluffy yellow baby chick with soft down, round features, tiny wings, and a peach scarf.",
+     "refs": [
+      {
+       "file": "example:ff5a06aeba80a793.png",
+       "url": "example:ff5a06aeba80a793.png",
+       "width": 1536,
+       "height": 1024
+      }
+     ],
+     "color": "#e8584f"
+    },
+    {
+     "id": "builp3t",
+     "name": "Crumpet",
+     "tag": "crumpet",
+     "about": "A cheerful, expressive member of the Comfyture cast.",
+     "words": "A fluffy brown beaver with rounded ears, a cream-colored muzzle and belly, large eyes, and a broad quilted tail.",
+     "refs": [
+      {
+       "file": "example:06d1d6defe4f37fd.png",
+       "url": "example:06d1d6defe4f37fd.png",
+       "width": 1536,
+       "height": 1024
+      }
+     ],
+     "color": "#3fc6c0"
+    },
+    {
+     "id": "xc9hfjt",
+     "name": "Meringue",
+     "tag": "meringue",
+     "about": "A member of the Comfyture mixer crew.",
+     "words": "A fluffy white cat with large blue eyes, pink inner ears and nose, and a coral bow; a full fluffy tail.",
+     "refs": [
+      {
+       "file": "example:38923e93f5d13dfa.png",
+       "url": "example:38923e93f5d13dfa.png",
+       "width": 1536,
+       "height": 1024
+      }
+     ],
+     "color": "#f0a63a"
+    }
+   ],
+   "places": [
+    {
+     "id": "96d0cc0",
+     "name": "Ketkout’s kitchen",
+     "tag": "ketkouts-kitchen",
+     "about": "Ketkout’s miniature cottage kitchen.",
+     "words": "Warm tactile 3D cottage kitchen with terracotta tiles, sage cabinets, arched wooden door and a round table.",
+     "refs": [
+      {
+       "file": "example:5bc3a50b31e8ead4.png",
+       "url": "example:5bc3a50b31e8ead4.png",
+       "width": 1672,
+       "height": 941,
+       "name": "Ketkout kitchen reference sheet"
+      },
+      {
+       "file": "example:d78c2b24f64f9619.png",
+       "url": "example:d78c2b24f64f9619.png",
+       "width": 1672,
+       "height": 941,
+       "name": "Northern cabinet"
+      }
+     ]
+    }
+   ],
+   "props": [],
+   "blocks": [
+    {
+     "id": "scene-01",
+     "kind": "scene",
+     "slug": "INT. KETKOUT’S KITCHEN — DAY",
+     "summary": "A dramatic entrance introduces Ketkout and his tiny house.",
+     "place": "ketkouts-kitchen"
+    },
+    {
+     "id": "shot-01",
+     "kind": "shot",
+     "size": "wide",
+     "camera": "locked",
+     "seconds": 4,
+     "action": "The door bursts inward as if kicked; daylight reveals Ketkout, who settles at the threshold.",
+     "frame": "Closed arched oak door. Camera inside the kitchen behind its swing. Warm window light.",
+     "line": null,
+     "sound": "Wooden thump, air whoosh, short hinge rattle; no speech or music.",
+     "photo": {
+      "file": "example:12f83fac95be76c4.png",
+      "url": "example:12f83fac95be76c4.png",
+      "width": 1672,
+      "height": 941,
+      "name": "Ketkout · Shot 01"
+     },
+     "still": null,
+     "run": null,
+     "tab": "story-mvv44wqh-ys7d",
+     "title": "A grand entrance",
+     "endPrompt": "Ketkout backlit in the open doorway, wing on the door, both feet planted.",
+     "endPhoto": {
+      "file": "example:b774805ace5ca068.png",
+      "url": "example:b774805ace5ca068.png",
+      "width": 1672,
+      "height": 941,
+      "name": "Ketkout · Shot 01"
+     },
+     "drawnAs": "film",
+     "model": "ltx-2.5",
+     "videoPrompt": "A single punchy four-second shot inside the miniature cottage kitchen. The camera begins on the fully closed arched wooden door. After a split-second of stillness, a sudden kick-like impact from outside sends the door flying inward to the left on its existing left-hand hinges, opening explosively in one fast swing. A sharp wooden THUMP, a fast air whoosh and a tiny hinge rattle accompany the motion. Bright golden daylight floods the doorway and sweeps across the floor, instantly revealing Ketkout, the small round fluffy yellow chick with three head feathers and a peach neckerchief. He makes one quick forward weight shift, plants both orange feet on the threshold and catches the open door with his little wing, settling into the supplied ending pose. The door remains intact and settles open after a small physical rebound. A brief, tight camera jolt at the impact immediately settles back to the original framing. Real-time snappy action, energetic acceleration and natural motion blur, followed by a short confident hold on his backlit reveal. Preserve the exact kitchen layout, fixed lens, tiny-house scale, character proportions, feather design and warm 3D materials. The only lighting change comes from the door opening. One continuous shot with no cuts, no additional characters, no dialogue and no music.",
+     "video": {
+      "kind": "video",
+      "url": "example:7807f29d01cb1957.mp4",
+      "file": "example:7807f29d01cb1957.mp4",
+      "width": 1280,
+      "height": 704,
+      "seconds": 4.04,
+      "saved": "0e43987a56991580fee6fb1567b2af47d4b6d9580991501e772bf3dbc168f5f9.mp4",
+      "duration": 4.04
+     },
+     "jobs": {
+      "video": {
+       "status": "done",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "example:12f83fac95be76c4.png"
+         },
+         "last_frame": {
+          "file": "example:b774805ace5ca068.png"
+         },
+         "prompt": "A single punchy four-second shot inside the miniature cottage kitchen. The camera begins on the fully closed arched wooden door. After a split-second of stillness, a sudden kick-like impact from outside sends the door flying inward to the left on its existing left-hand hinges, opening explosively in one fast swing. A sharp wooden THUMP, a fast air whoosh and a tiny hinge rattle accompany the motion. Bright golden daylight floods the doorway and sweeps across the floor, instantly revealing Ketkout, the small round fluffy yellow chick with three head feathers and a peach neckerchief. He makes one quick forward weight shift, plants both orange feet on the threshold and catches the open door with his little wing, settling into the supplied ending pose. The door remains intact and settles open after a small physical rebound. A brief, tight camera jolt at the impact immediately settles back to the original framing. Real-time snappy action, energetic acceleration and natural motion blur, followed by a short confident hold on his backlit reveal. Preserve the exact kitchen layout, fixed lens, tiny-house scale, character proportions, feather design and warm 3D materials. The only lighting change comes from the door opening. One continuous shot with no cuts, no additional characters, no dialogue and no music.",
+         "duration": 4,
+         "width": 1280,
+         "height": 720,
+         "seed": 2910202601,
+         "prompt_enhance": false,
+         "fram_rate": 24
+        }
+       },
+       "template": "video_ltx2_5_flf2v",
+       "startedAt": "2026-10-29T21:31:23.549Z",
+       "id": "tpl-0327cec6657e",
+       "progress": 1,
+       "phase": "saving",
+       "finishedAt": "2026-10-29T21:32:15.582Z"
+      }
+     },
+     "history": []
+    },
+    {
+     "id": "rluei3r",
+     "kind": "shot",
+     "size": "medium",
+     "camera": "locked",
+     "seconds": 2,
+     "action": "@ketkout wing is being see switching on the light",
+     "frame": "close shot on @ketkout turning on the lightswitch",
+     "line": null,
+     "sound": "",
+     "photo": null,
+     "still": null,
+     "run": null,
+     "tab": "story-mvus7jbo-hdss",
+     "title": "Lights ON",
+     "storyRefs": [
+      {
+       "file": "example:a9cbdb8a90f172b3.jpg",
+       "url": "example:a9cbdb8a90f172b3.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "SwitchOff",
+       "role": "start"
+      },
+      {
+       "file": "example:fcea114fe86bd286.jpg",
+       "url": "example:fcea114fe86bd286.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Switch covered — end frame",
+       "role": "reference"
+      },
+      {
+       "file": "example:99049576639c2d9d.jpg",
+       "url": "example:99049576639c2d9d.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Switch covered — indoor light on",
+       "role": "end"
+      }
+     ],
+     "model": "ltx-2.5",
+     "jobs": {
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-30T10:13:04.281Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_flf2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "example:a9cbdb8a90f172b3.jpg"
+         },
+         "last_frame": {
+          "file": "example:99049576639c2d9d.jpg"
+         },
+         "prompt": "Ketkout’s small fluffy yellow wing reaches in from the lower left and presses the light switch, ending with his wing covering the rocker. As he presses, a gentle warm indoor light comes on and softly lifts the shadows. Fixed close-up, same switch, wall and soft 3D style. One continuous shot, no speech.",
+         "duration": 2,
+         "width": 1344,
+         "height": 768,
+         "seed": 1774328284,
+         "prompt_enhance": false,
+         "fram_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-ef8a7e70a3e5",
+       "finishedAt": "2026-10-30T10:13:47.238Z",
+       "metadata": {
+        "elapsedSeconds": 42.957,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "history": [
+      {
+       "kind": "video",
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "saving",
+        "startedAt": "2026-10-30T08:49:06.018Z",
+        "model": "LTX 2.5 Distilled",
+        "template": "video_ltx2_5_flf2v",
+        "request": {
+         "confirm": true,
+         "inputs": {
+          "first_frame": {
+           "file": "example:a9cbdb8a90f172b3.jpg"
+          },
+          "last_frame": {
+           "file": "example:1edf685cc640a96e.jpg"
+          },
+          "prompt": "ketkout wing is being see switching on the light\nCamera: locked.",
+          "duration": 2,
+          "width": 1344,
+          "height": 768,
+          "seed": 47241120,
+          "prompt_enhance": false,
+          "fram_rate": 24
+         }
+        },
+        "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+        "estimatedCredits": null,
+        "id": "tpl-95c4426f9d39",
+        "finishedAt": "2026-10-30T08:49:29.034Z",
+        "metadata": {
+         "elapsedSeconds": 23.016,
+         "executionSeconds": null,
+         "estimatedCredits": null,
+         "partnerCredits": null,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       },
+       "media": {
+        "kind": "video",
+        "url": "example:7b13be866318b12a.mp4",
+        "file": "example:7b13be866318b12a.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 2.04,
+        "saved": "d68c98bcfbab194d8e197ab9a58b4814bcb95e3a38072e6a7ef062afdaaf1a39.mp4",
+        "duration": 2.04
+       }
+      },
+      {
+       "kind": "video",
+       "media": {
+        "kind": "video",
+        "url": "example:7b13be866318b12a.mp4",
+        "file": "example:7b13be866318b12a.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 2.04,
+        "saved": "d68c98bcfbab194d8e197ab9a58b4814bcb95e3a38072e6a7ef062afdaaf1a39.mp4",
+        "duration": 2.04
+       }
+      },
+      {
+       "kind": "video",
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "saving",
+        "startedAt": "2026-10-30T09:45:31.332Z",
+        "model": "Fast H3",
+        "template": "video_fastvideo_fasth3_i2v",
+        "request": {
+         "confirm": true,
+         "inputs": {
+          "first_frame": {
+           "file": "example:a9cbdb8a90f172b3.jpg"
+          },
+          "prompt": "For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.\n\nintegrated_multimodal_description: [Shot 1] Ketkout’s small fluffy yellow wing reaches in from the left, presses the light switch once, then pulls back. The warm electric light turns on as the switch clicks. Fixed close-up, same switch, wall and soft 3D style. One continuous shot, no speech.\n\noverall_soundscape: N/A\n\nnon_diegetic_music: N/A",
+          "duration": 2,
+          "width": 1344,
+          "height": 768,
+          "seed": 654231055
+         }
+        },
+        "endpoint": "api/utensils/templates/video_fastvideo_fasth3_i2v/run",
+        "estimatedCredits": null,
+        "id": "tpl-f29ad3d193bb",
+        "finishedAt": "2026-10-30T09:46:01.712Z",
+        "metadata": {
+         "elapsedSeconds": 30.38,
+         "executionSeconds": null,
+         "estimatedCredits": null,
+         "partnerCredits": 0,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       },
+       "media": {
+        "kind": "video",
+        "url": "example:e3cac396d8792761.mp4",
+        "file": "example:e3cac396d8792761.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 2.33,
+        "saved": "aeda2b40b5c799164332db8bc960726db1aa454fb8c87a4aba04c59228590fb4.mp4",
+        "duration": 2.33
+       }
+      },
+      {
+       "kind": "video",
+       "media": {
+        "kind": "video",
+        "url": "example:e3cac396d8792761.mp4",
+        "file": "example:e3cac396d8792761.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 2.33,
+        "saved": "aeda2b40b5c799164332db8bc960726db1aa454fb8c87a4aba04c59228590fb4.mp4",
+        "duration": 2.33
+       }
+      },
+      {
+       "kind": "video",
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "saving",
+        "startedAt": "2026-10-30T09:50:15.722Z",
+        "model": "LTX 2.5 Distilled",
+        "template": "video_ltx2_5_i2v",
+        "request": {
+         "confirm": true,
+         "inputs": {
+          "first_frame": {
+           "file": "example:a9cbdb8a90f172b3.jpg"
+          },
+          "prompt": "Ketkout’s small fluffy yellow wing reaches in from the left, presses the light switch once, then pulls back. The warm electric light turns on as the switch clicks. Fixed close-up, same switch, wall and soft 3D style. One continuous shot, no speech.",
+          "duration": 2,
+          "width": 1344,
+          "height": 768,
+          "seed": 1239320463,
+          "prompt_enhance": false,
+          "frame_rate": 24
+         }
+        },
+        "endpoint": "api/utensils/templates/video_ltx2_5_i2v/run",
+        "estimatedCredits": null,
+        "id": "tpl-e8cb35510ff4",
+        "finishedAt": "2026-10-30T09:51:04.149Z",
+        "metadata": {
+         "elapsedSeconds": 48.427,
+         "executionSeconds": null,
+         "estimatedCredits": null,
+         "partnerCredits": 0,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       },
+       "media": {
+        "kind": "video",
+        "url": "example:e4f3f2fe313e3f81.mp4",
+        "file": "example:e4f3f2fe313e3f81.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 2.04,
+        "saved": "05d80530cf4d1a177ad37c1025da967791b059cde5746ed8dd08f5a8d25430a3.mp4",
+        "duration": 2.04
+       }
+      },
+      {
+       "kind": "video",
+       "media": {
+        "kind": "video",
+        "url": "example:e4f3f2fe313e3f81.mp4",
+        "file": "example:e4f3f2fe313e3f81.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 2.04,
+        "saved": "05d80530cf4d1a177ad37c1025da967791b059cde5746ed8dd08f5a8d25430a3.mp4",
+        "duration": 2.04
+       }
+      }
+     ],
+     "error": null,
+     "video": {
+      "kind": "video",
+      "url": "example:c8d26b813cde203f.mp4",
+      "file": "example:c8d26b813cde203f.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 2.04,
+      "saved": "c3689a38bdd4e27c818ad6cd13c1385cd9653897e7290ef84fef61d6629e731b.mp4",
+      "duration": 2.04
+     },
+     "videoPrompt": "Ketkout’s small fluffy yellow wing reaches in from the lower left and presses the light switch, ending with his wing covering the rocker. As he presses, a gentle warm indoor light comes on and softly lifts the shadows. Fixed close-up, same switch, wall and soft 3D style. One continuous shot, no speech."
+    },
+    {
+     "id": "shot-03",
+     "kind": "shot",
+     "size": "close",
+     "camera": "locked",
+     "seconds": 2,
+     "action": "Ketkout rises slightly behind the table until only the top of his head and feather tufts appear beside the Comfyture jar.",
+     "frame": "Locked low-angle close-up of the Comfyture jar on the table. Start with no character visible; end with Ketkout’s yellow crown and three feather tufts peeking above the right side of the table.",
+     "line": null,
+     "sound": "Natural foley only; no speech or music.",
+     "photo": {
+      "file": "example:8514efbfae229008.png",
+      "url": "example:8514efbfae229008.png",
+      "width": 1672,
+      "height": 941,
+      "name": "Ketkout · shot-03 ·"
+     },
+     "still": null,
+     "run": null,
+     "tab": null,
+     "title": "Wait… Comfyture!",
+     "endPrompt": "Only his crown and upper eyes peek above the edge as one feathered wing decisively grips the jar.",
+     "drawnAs": "film",
+     "model": "ltx-2.5",
+     "videoPrompt": "The Comfyture jar stays still. Ketkout rises slightly behind the table on the right until only the top of his yellow head and three feather tufts are visible, matching the end frame. Fixed low-angle camera; the kitchen and lighting remain unchanged. No cuts, no speech.",
+     "history": [
+      {
+       "kind": "endPhoto",
+       "media": {
+        "file": "example:fd9d15e0aac3a994.png",
+        "url": "example:fd9d15e0aac3a994.png",
+        "width": 1672,
+        "height": 941,
+        "name": "Ketkout · shot-03 ·"
+       }
+      },
+      {
+       "kind": "video",
+       "job": {
+        "status": "done",
+        "request": {
+         "confirm": true,
+         "inputs": {
+          "first_frame": {
+           "file": "example:8514efbfae229008.png"
+          },
+          "last_frame": {
+           "file": "example:fd9d15e0aac3a994.png"
+          },
+          "prompt": "One playful five-second low-angle shot, camera locked just below the wooden table edge. The closed Comfyture jar stands motionless in the left foreground with its yellow label facing the lens. Behind the far edge, only Ketkout's round yellow crown and three feather tufts are visible. In the first second his crown bobs briskly toward the right as he walks past the jar. He suddenly stops at the right edge in a sharp comic double-take. After a tiny pause, his crown quickly reverses left toward the jar, still mostly hidden by the tabletop. His curious eyes peek just above the edge. He thrusts one short fluffy yellow wing upward in a fast decisive reach and curls its rounded feather tips around the right side of the jar, landing in the supplied final grip. Keep the jar upright and its label stable; it remains on the table until the cut. Crisp anticipation, fast reversal and quick grab, followed by a brief contact hold; real-time lively animation rather than slow motion. The table occludes his body throughout. Preserve the exact room geometry, camera angle, lighting, glass, lettering and fluffy chick design. Quick foot taps below frame, a short feather swish and soft glass contact. No dialogue, music, human hands, additional characters, scene changes or camera orbit.",
+          "duration": 5,
+          "width": 1280,
+          "height": 720,
+          "seed": 2910202603,
+          "prompt_enhance": false,
+          "fram_rate": 24
+         }
+        },
+        "template": "video_ltx2_5_flf2v",
+        "startedAt": "2026-10-29T21:48:32.195Z",
+        "id": "tpl-9bb5d8e1bdd9",
+        "progress": 1,
+        "phase": "saving",
+        "finishedAt": "2026-10-29T21:49:12.192Z"
+       },
+       "media": {
+        "kind": "video",
+        "url": "example:89bd0744a87290c4.mp4",
+        "file": "example:89bd0744a87290c4.mp4",
+        "width": 1280,
+        "height": 704,
+        "seconds": 5.04,
+        "saved": "0f899cc905c7009828857597cae7fb3fd32121e256af4b9cce9e4cf5f703de84.mp4",
+        "duration": 5.04
+       }
+      },
+      {
+       "kind": "video",
+       "media": {
+        "kind": "video",
+        "url": "example:89bd0744a87290c4.mp4",
+        "file": "example:89bd0744a87290c4.mp4",
+        "width": 1280,
+        "height": 704,
+        "seconds": 5.04,
+        "saved": "0f899cc905c7009828857597cae7fb3fd32121e256af4b9cce9e4cf5f703de84.mp4",
+        "duration": 5.04
+       }
+      }
+     ],
+     "jobs": {
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-30T10:19:46.289Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_flf2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "example:36862512e11e7d60.jpg"
+         },
+         "last_frame": {
+          "file": "example:8514efbfae229008.png"
+         },
+         "prompt": "The Comfyture jar stays still. Ketkout rises slightly behind the table on the right until only the top of his yellow head and three feather tufts are visible, matching the end frame. Fixed low-angle camera; the kitchen and lighting remain unchanged. No cuts, no speech.",
+         "duration": 2,
+         "width": 1344,
+         "height": 768,
+         "seed": 1323551023,
+         "prompt_enhance": false,
+         "fram_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-76b1858f0867",
+       "finishedAt": "2026-10-30T10:20:10.180Z",
+       "metadata": {
+        "elapsedSeconds": 23.891,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "endPhoto": null,
+     "video": {
+      "kind": "video",
+      "url": "example:a1536b146e4e113e.mp4",
+      "file": "example:a1536b146e4e113e.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 2.04,
+      "saved": "05d333708b7a2de22467f5a36f527a37de368d91f29339643cfbdd1872b0ef6a.mp4",
+      "duration": 2.04
+     },
+     "storyRefs": [
+      {
+       "file": "example:8514efbfae229008.png",
+       "url": "example:8514efbfae229008.png",
+       "width": 1672,
+       "height": 941,
+       "name": "Ketkout head visible — end frame",
+       "role": "end"
+      },
+      {
+       "file": "example:36862512e11e7d60.jpg",
+       "url": "example:36862512e11e7d60.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Jar, no head — start frame",
+       "role": "start"
+      }
+     ],
+     "storyIdeas": "Previous video review: Rejected. Revised to a two-second head reveal; awaiting review.",
+     "error": null
+    },
+    {
+     "id": "shot-rolling-dough",
+     "kind": "shot",
+     "size": "close",
+     "camera": "locked",
+     "seconds": 3,
+     "action": "@ketkout presses a wooden rolling pin over a round piece of dough with both little wings.",
+     "frame": "Medium close three-quarter view at the round wooden table in @ketkouts-kitchen. Show Ketkout’s face, wings, rolling pin and dough clearly, with warm light and the established tactile 3D style.",
+     "line": null,
+     "sound": "",
+     "photo": null,
+     "still": null,
+     "run": null,
+     "tab": null,
+     "title": "Rolling the dough",
+     "endPhoto": null,
+     "model": "ltx-2.5",
+     "drawnAs": "film",
+     "storyRefs": [
+      {
+       "file": "example:76ebcd2688ede621.jpg",
+       "url": "example:76ebcd2688ede621.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Ketkout rolling dough — start frame",
+       "role": "start"
+      }
+     ],
+     "storyIdeas": "",
+     "videoPrompt": "Ketkout pushes the wooden rolling pin forward across the dough with both little wings, then draws it back in one smooth rolling motion. The dough gently flattens as he leans into it. Fixed camera; preserve his design, the kitchen, lighting and colors. One continuous shot, no speech.",
+     "jobs": {
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-30T10:47:43.951Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_i2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "example:76ebcd2688ede621.jpg"
+         },
+         "prompt": "Ketkout pushes the wooden rolling pin forward across the dough with both little wings, then draws it back in one smooth rolling motion. The dough gently flattens as he leans into it. Fixed camera; preserve his design, the kitchen, lighting and colors. One continuous shot, no speech.",
+         "duration": 3,
+         "width": 1344,
+         "height": 768,
+         "seed": 900106928,
+         "prompt_enhance": false,
+         "frame_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_i2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-082065c79928",
+       "finishedAt": "2026-10-30T10:48:24.425Z",
+       "metadata": {
+        "elapsedSeconds": 40.474,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": 0,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "history": [],
+     "error": null,
+     "video": {
+      "kind": "video",
+      "url": "example:27502a487d885770.mp4",
+      "file": "example:27502a487d885770.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 3.04,
+      "saved": "5d29013dd7c7e2c7f0f07dcec61ddf678e9c12f542c891e2384c399447cca86a.mp4",
+      "duration": 3.04
+     }
+    },
+    {
+     "id": "shot-tart-mold",
+     "kind": "shot",
+     "size": "close",
+     "camera": "locked overhead",
+     "seconds": 3,
+     "action": "@ketkout gently presses and tucks the dough into the fluted tart mold’s inner edges with his little wings, fixing loose folds.",
+     "frame": "Tight 90-degree top-down view over the wooden table in @ketkouts-kitchen. Ketkout’s head and wings fill the lower part of the frame as he fits the dough into the mold. Keep the established character proportions, peach scarf, flour-dusted wooden surface and warm tactile 3D style.",
+     "line": null,
+     "sound": "",
+     "photo": null,
+     "still": null,
+     "run": null,
+     "tab": null,
+     "title": "Into the tart mold",
+     "endPhoto": null,
+     "model": "ltx-2.5",
+     "drawnAs": "film",
+     "storyRefs": [
+      {
+       "file": "example:a7f2896bd73657ed.jpg",
+       "url": "example:a7f2896bd73657ed.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Dough into tart mold — overhead start frame",
+       "role": "start"
+      }
+     ],
+     "storyIdeas": "",
+     "videoPrompt": "Ketkout uses his little wings to gently press the dough into the inner corners where the base meets the fluted sides of the tart mold. He makes a few small alternating presses, tucking loose edges and smoothing the folds so the dough fits neatly. The mold stays still. Fixed top-down camera; preserve his design, the table, lighting and colors. One continuous shot, no speech.",
+     "jobs": {
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-30T10:57:51.980Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_i2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "example:a7f2896bd73657ed.jpg"
+         },
+         "prompt": "Ketkout uses his little wings to gently press the dough into the inner corners where the base meets the fluted sides of the tart mold. He makes a few small alternating presses, tucking loose edges and smoothing the folds so the dough fits neatly. The mold stays still. Fixed top-down camera; preserve his design, the table, lighting and colors. One continuous shot, no speech.",
+         "duration": 3,
+         "width": 1344,
+         "height": 768,
+         "seed": 1066814276,
+         "prompt_enhance": false,
+         "frame_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_i2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-4c848ec232db",
+       "finishedAt": "2026-10-30T10:58:34.604Z",
+       "metadata": {
+        "elapsedSeconds": 42.624,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": 0,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "history": [],
+     "error": null,
+     "video": {
+      "kind": "video",
+      "url": "example:40d29eb61ae70bde.mp4",
+      "file": "example:40d29eb61ae70bde.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 3.04,
+      "saved": "f8d06b83fde2fdae22199984ba099f0096a205fe2948684241b141e348596982.mp4",
+      "duration": 3.04
+     }
+    },
+    {
+     "id": "shot-inside-oven",
+     "kind": "shot",
+     "size": "wide",
+     "camera": "locked inside oven",
+     "seconds": 4,
+     "action": "@ketkout approaches from the side, opens the oven door and slides the baking tray with the tart all the way onto the rack. Once the tray is fully inside, he releases it and draws his wings back.",
+     "frame": "Fixed camera inside the dark oven in @ketkouts-kitchen. Start looking through the closed glass door. End with the door lowered out of view and the tray fully inside on the rack, close to the camera. Ketkout remains outside, looking in with his wings released. Preserve his fluffy yellow body and short peach neck scarf only, the oven interior, kitchen layout and warm tactile 3D style.",
+     "line": null,
+     "sound": "",
+     "photo": null,
+     "still": null,
+     "run": null,
+     "tab": null,
+     "title": "Inside the oven",
+     "endPhoto": null,
+     "model": "ltx-2.5",
+     "drawnAs": "film",
+     "storyRefs": [
+      {
+       "file": "example:67e0ff1901c67ea0.jpg",
+       "url": "example:67e0ff1901c67ea0.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Inside dark oven — closed glass door",
+       "role": "start"
+      },
+      {
+       "file": "example:508a96a401c66070.jpg",
+       "url": "example:508a96a401c66070.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Ketkout inserting tart tray — end frame",
+       "role": "reference"
+      },
+      {
+       "file": "example:2ff8c5578d87658e.jpg",
+       "url": "example:2ff8c5578d87658e.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Tart tray fully inside oven — end frame",
+       "role": "end"
+      }
+     ],
+     "storyIdeas": "",
+     "videoPrompt": "A small fluffy yellow baby chick with a round yellow down-covered belly, short yellow wings and two tiny orange bird feet. His only accessory is a small peach triangle tied closely around his neck, ending just under his chin. His belly and legs remain entirely yellow feathers and orange feet throughout. Seen through the oven glass, he enters from the left carrying the tart tray. He opens the door downward, then pushes the tray fully onto the rack toward the camera and releases it, matching the final frame. Brisk natural movement. Camera locked inside the oven, unchanged kitchen and lighting, continuous shot, silent.",
+     "jobs": {
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-30T11:39:15.166Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_flf2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "example:67e0ff1901c67ea0.jpg"
+         },
+         "last_frame": {
+          "file": "example:2ff8c5578d87658e.jpg"
+         },
+         "prompt": "A small fluffy yellow baby chick with a round yellow down-covered belly, short yellow wings and two tiny orange bird feet. His only accessory is a small peach triangle tied closely around his neck, ending just under his chin. His belly and legs remain entirely yellow feathers and orange feet throughout. Seen through the oven glass, he enters from the left carrying the tart tray. He opens the door downward, then pushes the tray fully onto the rack toward the camera and releases it, matching the final frame. Brisk natural movement. Camera locked inside the oven, unchanged kitchen and lighting, continuous shot, silent.",
+         "duration": 4,
+         "width": 1344,
+         "height": 768,
+         "seed": 655145098,
+         "prompt_enhance": false,
+         "fram_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-0cedc8a91175",
+       "finishedAt": "2026-10-30T11:40:04.514Z",
+       "metadata": {
+        "elapsedSeconds": 49.348,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "history": [
+      {
+       "kind": "video",
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "saving",
+        "startedAt": "2026-10-30T11:11:41.066Z",
+        "model": "LTX 2.5 Distilled",
+        "template": "video_ltx2_5_flf2v",
+        "request": {
+         "confirm": true,
+         "inputs": {
+          "first_frame": {
+           "file": "example:67e0ff1901c67ea0.jpg"
+          },
+          "last_frame": {
+           "file": "example:508a96a401c66070.jpg"
+          },
+          "prompt": "From inside the dark oven, Ketkout comes into view through the closed glass door. He lowers the door out of view, then leans forward and slides the metal tray with the tart onto the rack toward the camera, ending in the supplied final pose. A quick, smooth action. The camera stays completely fixed inside the oven; preserve his design, the tart, kitchen layout and warm lighting. One continuous shot, no speech.",
+          "duration": 3,
+          "width": 1344,
+          "height": 768,
+          "seed": 79169068,
+          "prompt_enhance": false,
+          "fram_rate": 24
+         }
+        },
+        "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+        "estimatedCredits": null,
+        "id": "tpl-c8d06ad62cd6",
+        "finishedAt": "2026-10-30T11:12:10.501Z",
+        "metadata": {
+         "elapsedSeconds": 29.435,
+         "executionSeconds": null,
+         "estimatedCredits": null,
+         "partnerCredits": null,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       },
+       "media": {
+        "kind": "video",
+        "url": "example:6cc21719dd67f864.mp4",
+        "file": "example:6cc21719dd67f864.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 3.04,
+        "saved": "dfcd74806b57447a0c11fb95345900f17a3b9f4aea68b238a2981cff8a2cb151.mp4",
+        "duration": 3.04
+       }
+      },
+      {
+       "kind": "video",
+       "media": {
+        "kind": "video",
+        "url": "example:6cc21719dd67f864.mp4",
+        "file": "example:6cc21719dd67f864.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 3.04,
+        "saved": "dfcd74806b57447a0c11fb95345900f17a3b9f4aea68b238a2981cff8a2cb151.mp4",
+        "duration": 3.04
+       }
+      },
+      {
+       "kind": "video",
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "saving",
+        "startedAt": "2026-10-30T11:12:45.579Z",
+        "model": "LTX 2.5 Distilled",
+        "template": "video_ltx2_5_flf2v",
+        "request": {
+         "confirm": true,
+         "inputs": {
+          "first_frame": {
+           "file": "example:67e0ff1901c67ea0.jpg"
+          },
+          "last_frame": {
+           "file": "example:508a96a401c66070.jpg"
+          },
+          "prompt": "From inside the dark oven, Ketkout comes into view through the closed glass door. He lowers the door out of view, then leans forward and slides the metal tray with the tart onto the rack toward the camera, ending in the supplied final pose. A quick, smooth action. The camera stays completely fixed inside the oven; preserve his design, the tart, kitchen layout and warm lighting. One continuous shot, no speech.",
+          "duration": 4,
+          "width": 1344,
+          "height": 768,
+          "seed": 508048366,
+          "prompt_enhance": false,
+          "fram_rate": 24
+         }
+        },
+        "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+        "estimatedCredits": null,
+        "id": "tpl-cc20fdc6d20a",
+        "finishedAt": "2026-10-30T11:13:18.785Z",
+        "metadata": {
+         "elapsedSeconds": 33.207,
+         "executionSeconds": null,
+         "estimatedCredits": null,
+         "partnerCredits": null,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       },
+       "media": {
+        "kind": "video",
+        "url": "example:3fd824318823372f.mp4",
+        "file": "example:3fd824318823372f.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 4.04,
+        "saved": "db7b39d22c23007953ab216e2bb3070a995b45c558afcd5c9493902716a5a611.mp4",
+        "duration": 4.04
+       }
+      },
+      {
+       "kind": "video",
+       "media": {
+        "kind": "video",
+        "url": "example:3fd824318823372f.mp4",
+        "file": "example:3fd824318823372f.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 4.04,
+        "saved": "db7b39d22c23007953ab216e2bb3070a995b45c558afcd5c9493902716a5a611.mp4",
+        "duration": 4.04
+       }
+      },
+      {
+       "kind": "video",
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "saving",
+        "startedAt": "2026-10-30T11:37:07.111Z",
+        "model": "LTX 2.5 Distilled",
+        "template": "video_ltx2_5_flf2v",
+        "request": {
+         "confirm": true,
+         "inputs": {
+          "first_frame": {
+           "file": "example:67e0ff1901c67ea0.jpg"
+          },
+          "last_frame": {
+           "file": "example:2ff8c5578d87658e.jpg"
+          },
+          "prompt": "Fixed camera inside the dark oven. Through the closed glass door, Ketkout steps into view from the left side of the kitchen with the tart tray. He opens the oven door downward, then slides the tray all the way inside toward the camera. The tray rests fully on the rack; he releases it and draws his little wings back, matching the end frame. Brisk, smooth movement. Keep his fluffy yellow body and short peach neck scarf only, no skirt or apron. Same kitchen, lighting and colors. One continuous shot, no speech.",
+          "duration": 4,
+          "width": 1344,
+          "height": 768,
+          "seed": 351679809,
+          "prompt_enhance": false,
+          "fram_rate": 24
+         }
+        },
+        "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+        "estimatedCredits": null,
+        "id": "tpl-0a55367d452d",
+        "finishedAt": "2026-10-30T11:38:10.350Z",
+        "metadata": {
+         "elapsedSeconds": 63.239,
+         "executionSeconds": null,
+         "estimatedCredits": null,
+         "partnerCredits": null,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       },
+       "media": {
+        "kind": "video",
+        "url": "example:b45768a70d72df45.mp4",
+        "file": "example:b45768a70d72df45.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 4.04,
+        "saved": "dd192abd2d1611cb2440a603729c8d9d18b206e759f1aac60c7155ad8798edfc.mp4",
+        "duration": 4.04
+       }
+      },
+      {
+       "kind": "video",
+       "media": {
+        "kind": "video",
+        "url": "example:b45768a70d72df45.mp4",
+        "file": "example:b45768a70d72df45.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 4.04,
+        "saved": "dd192abd2d1611cb2440a603729c8d9d18b206e759f1aac60c7155ad8798edfc.mp4",
+        "duration": 4.04
+       }
+      }
+     ],
+     "error": null,
+     "video": {
+      "kind": "video",
+      "url": "example:6faf7b22385feaec.mp4",
+      "file": "example:6faf7b22385feaec.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 4.04,
+      "saved": "8b008d3af756e2a4febf7b964a22ac245f58c09760f61c021373d9a8da3101c3.mp4",
+      "duration": 4.04
+     }
+    },
+    {
+     "id": "shot-opening-jar",
+     "kind": "shot",
+     "size": "close",
+     "camera": "locked three-quarter tabletop",
+     "seconds": 3,
+     "action": "@ketkout braces the Comfyture jar with one little wing and begins twisting the lid with the other. Cut away before the lid comes off.",
+     "frame": "Medium-close three-quarter view at the wooden table in @ketkouts-kitchen. Show Ketkout’s focused face, his wings gripping the still-closed jar, and the yellow Comfyture label facing the camera. Same warm tactile 3D style and short peach neck scarf.",
+     "line": null,
+     "sound": "",
+     "photo": null,
+     "still": null,
+     "run": null,
+     "tab": null,
+     "title": "Opening Comfyture",
+     "endPhoto": null,
+     "model": "ltx-2.5",
+     "drawnAs": "film",
+     "storyRefs": [
+      {
+       "file": "example:64bb6dea094e8ec0.jpg",
+       "url": "example:64bb6dea094e8ec0.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Ketkout gripping the Comfyture lid — start frame",
+       "role": "start"
+      }
+     ],
+     "storyIdeas": "Cut to the clock before he finishes opening the jar.",
+     "videoPrompt": "Ketkout braces the Comfyture jar with one little wing and grips the lid with the other. He makes two short, determined twisting attempts, leaning his round body into the effort and narrowing his eyes. The stubborn lid stays attached; he is still trying when the shot ends. Keep the jar upright on the table and its yellow label facing the camera. Fixed camera, same fluffy yellow chick, short peach neck scarf, kitchen, colors and warm lighting. One continuous shot, no speech.",
+     "jobs": {
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-30T11:56:09.220Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_i2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "example:64bb6dea094e8ec0.jpg"
+         },
+         "prompt": "Ketkout braces the Comfyture jar with one little wing and grips the lid with the other. He makes two short, determined twisting attempts, leaning his round body into the effort and narrowing his eyes. The stubborn lid stays attached; he is still trying when the shot ends. Keep the jar upright on the table and its yellow label facing the camera. Fixed camera, same fluffy yellow chick, short peach neck scarf, kitchen, colors and warm lighting. One continuous shot, no speech.",
+         "duration": 3,
+         "width": 1344,
+         "height": 768,
+         "seed": 1124437513,
+         "prompt_enhance": false,
+         "frame_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_i2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-f90b6ad9c430",
+       "finishedAt": "2026-10-30T11:56:31.661Z",
+       "metadata": {
+        "elapsedSeconds": 22.441,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": 0,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "history": [],
+     "error": null,
+     "video": {
+      "kind": "video",
+      "url": "example:34a4be408d1bb4df.mp4",
+      "file": "example:34a4be408d1bb4df.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 3.04,
+      "saved": "c817e41d79180878b626854f7c7a41ba94e456b28e9979614cf29a3bd1a65292.mp4",
+      "duration": 3.04
+     }
+    },
+    {
+     "id": "shot-clock",
+     "kind": "shot",
+     "size": "close",
+     "camera": "locked front-facing clock insert",
+     "seconds": 2,
+     "action": "The kitchen clock advances from 3:00 to 3:20, showing twenty minutes passing while the tart bakes.",
+     "frame": "Tight close-up of the round wooden clock on the counter in @ketkouts-kitchen. Same camera, warm light, clock face and background in both frames. Only the clock hands change position.",
+     "line": null,
+     "sound": "",
+     "photo": null,
+     "still": null,
+     "run": null,
+     "tab": null,
+     "title": "Twenty minutes later",
+     "endPhoto": null,
+     "model": "ltx-2.5",
+     "drawnAs": "film",
+     "storyRefs": [
+      {
+       "file": "example:77e4f8e517d7cc10.jpg",
+       "url": "example:77e4f8e517d7cc10.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Kitchen clock — 3:00 — start frame",
+       "role": "start"
+      },
+      {
+       "file": "example:b0d990e14341f417.jpg",
+       "url": "example:b0d990e14341f417.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Kitchen clock — 3:20 — end frame",
+       "role": "end"
+      }
+     ],
+     "storyIdeas": "Twenty minutes pass, then cut back to Ketkout proud of his tart.",
+     "videoPrompt": "Locked close-up of the kitchen clock. The long minute hand sweeps smoothly clockwise from 12 through 1, 2 and 3 to stop at 4. The short hour hand advances slightly from 3, ending at 3:20 as in the final frame. Twenty minutes pass in a brief time-lapse. Both hands remain solid and rotate around their central pivot. The clock face, numerals, case, camera, kitchen and lighting remain still. One continuous shot, no speech.",
+     "jobs": {
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-30T12:21:21.697Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_flf2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "example:77e4f8e517d7cc10.jpg"
+         },
+         "last_frame": {
+          "file": "example:b0d990e14341f417.jpg"
+         },
+         "prompt": "Locked close-up of the kitchen clock. The long minute hand sweeps smoothly clockwise from 12 through 1, 2 and 3 to stop at 4. The short hour hand advances slightly from 3, ending at 3:20 as in the final frame. Twenty minutes pass in a brief time-lapse. Both hands remain solid and rotate around their central pivot. The clock face, numerals, case, camera, kitchen and lighting remain still. One continuous shot, no speech.",
+         "duration": 2,
+         "width": 1344,
+         "height": 768,
+         "seed": 1673140446,
+         "prompt_enhance": false,
+         "fram_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-3f16a64e1579",
+       "finishedAt": "2026-10-30T12:22:02.975Z",
+       "metadata": {
+        "elapsedSeconds": 41.278,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "history": [],
+     "error": null,
+     "video": {
+      "kind": "video",
+      "url": "example:889a6433def227df.mp4",
+      "file": "example:889a6433def227df.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 2.04,
+      "saved": "3ebc616e5df42ebdeb337f4bcfecc3f8fe8b3e8b615f7a3138c399c4f891e811.mp4",
+      "duration": 2.04
+     }
+    },
+    {
+     "id": "shot-proud-tart",
+     "kind": "shot",
+     "size": "close",
+     "camera": "locked low-angle contre-plongée, shallow depth of field",
+     "seconds": 3,
+     "action": "@ketkout stands proudly behind his finished jam tart, wings on his hips, looking toward the camera.",
+     "frame": "Locked low-angle contre-plongée in @ketkouts-kitchen. Ketkout is sharply in focus; the ready tart is blurred in the foreground. Hold the proud stance and direct gaze.",
+     "line": null,
+     "sound": "Soft kitchen room tone, no voice or music.",
+     "photo": null,
+     "still": null,
+     "run": null,
+     "tab": null,
+     "title": "Proud of his tart",
+     "endPhoto": null,
+     "model": "ltx-2.5",
+     "drawnAs": "film",
+     "storyRefs": [
+      {
+       "file": "example:2e50df473245dbf6.jpg",
+       "url": "example:2e50df473245dbf6.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Proud Ketkout — tart blurred in foreground",
+       "role": "reference"
+      },
+      {
+       "file": "example:8b3c28628713e5f5.jpg",
+       "url": "example:8b3c28628713e5f5.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Proud Ketkout — low-angle start frame",
+       "role": "reference"
+      },
+      {
+       "file": "example:7b357dac57acdb11.jpg",
+       "url": "example:7b357dac57acdb11.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Proud Ketkout — looking at camera",
+       "role": "start"
+      },
+      {
+       "file": "example:c1cf7ca4c45798e0.png",
+       "url": "example:c1cf7ca4c45798e0.png",
+       "width": 1344,
+       "height": 768,
+       "name": "Proud stance — final frame",
+       "role": "end"
+      }
+     ],
+     "storyIdeas": "Hold his satisfaction before the separate doorbell reaction shot.",
+     "videoPrompt": "Ketkout stands proudly behind his finished jam tart, little wings on his hips, looking toward the low camera. He gently lifts his chest with a satisfied smile, blinks once and settles into the same proud pose. Subtle breathing, feet and wings stay in place. Locked low-angle camera, sharp focus on Ketkout, tart softly blurred in the foreground. Same fluffy yellow body and short peach neck scarf, warm kitchen light. Quiet room tone, no speech or music.",
+     "jobs": {
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-30T13:10:14.951Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_flf2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "example:7b357dac57acdb11.jpg"
+         },
+         "last_frame": {
+          "file": "example:7b357dac57acdb11.jpg"
+         },
+         "prompt": "Ketkout stands proudly behind his finished jam tart, little wings on his hips, looking toward the low camera. He gently lifts his chest with a satisfied smile, blinks once and settles into the same proud pose. Subtle breathing, feet and wings stay in place. Locked low-angle camera, sharp focus on Ketkout, tart softly blurred in the foreground. Same fluffy yellow body and short peach neck scarf, warm kitchen light. Quiet room tone, no speech or music.",
+         "duration": 3,
+         "width": 1344,
+         "height": 768,
+         "seed": 172490605,
+         "prompt_enhance": false,
+         "fram_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-3dfe876fa792",
+       "finishedAt": "2026-10-30T13:10:43.422Z",
+       "metadata": {
+        "elapsedSeconds": 28.471,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "history": [],
+     "error": null,
+     "video": {
+      "kind": "video",
+      "url": "example:bc348a65f48b2cdc.mp4",
+      "file": "example:bc348a65f48b2cdc.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 3.04,
+      "saved": "665ddcc1f508c40ddf23d13ecabb0e21a1161fd2c928fb39b25832a264fc4f8d.mp4",
+      "duration": 3.04
+     }
+    },
+    {
+     "id": "shot-doorbell-reaction",
+     "kind": "shot",
+     "size": "close",
+     "camera": "locked low-angle contre-plongée, shallow depth of field",
+     "seconds": 2,
+     "action": "@ketkout hears the doorbell ring ding-dong and turns his head screen-left toward the door.",
+     "frame": "Continue from the final frame of the proud pose, same locked low camera and blurred tart foreground. Ketkout turns only his head toward the door, matching the approved leftward glance.",
+     "line": null,
+     "sound": "Two-note doorbell: ding at 0.12s, dong at 0.50s; Ketkout turns toward the door immediately afterward. No voice or music.",
+     "photo": null,
+     "still": null,
+     "run": null,
+     "tab": null,
+     "title": "Ding-dong!",
+     "endPhoto": null,
+     "model": "ltx-2.5",
+     "drawnAs": "film",
+     "storyRefs": [
+      {
+       "file": "example:20269266f8e68573.jpg",
+       "url": "example:20269266f8e68573.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Ketkout hears something — looking screen-left",
+       "role": "end"
+      },
+      {
+       "file": "example:c1cf7ca4c45798e0.png",
+       "url": "example:c1cf7ca4c45798e0.png",
+       "width": 1344,
+       "height": 768,
+       "name": "Proud stance — continuous start",
+       "role": "start"
+      }
+     ],
+     "storyIdeas": "The doorbell motivates the head turn. Continue directly from the proud pose; cut next to him approaching the door.",
+     "videoPrompt": "Ketkout holds his proud pose behind the finished tart, wings on his hips. A clear two-note ding-dong doorbell rings off-screen to the left. Hearing it, he becomes curious and quickly turns his head toward screen-left, settling into the end frame. His body stays in place. Locked low camera, Ketkout sharp, tart softly blurred in the foreground. Same warm light and short peach neck scarf. Doorbell sound and quiet room tone, no speech or music.",
+     "history": [
+      {
+       "kind": "video",
+       "media": {
+        "kind": "video",
+        "url": "example:449f3de2a915d1a5.mp4",
+        "file": "example:449f3de2a915d1a5.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 2.04,
+        "saved": "cef71d6cdecf826a176f1fa68056c2de6ea68d2288505cef35968b41cca45210.mp4",
+        "duration": 2.04
+       },
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "saving",
+        "startedAt": "2026-10-30T13:11:53.330Z",
+        "model": "LTX 2.5 Distilled",
+        "template": "video_ltx2_5_flf2v",
+        "request": {
+         "confirm": true,
+         "inputs": {
+          "first_frame": {
+           "file": "example:c1cf7ca4c45798e0.png"
+          },
+          "last_frame": {
+           "file": "example:20269266f8e68573.jpg"
+          },
+          "prompt": "Ketkout holds his proud pose behind the finished tart, wings on his hips. A clear two-note ding-dong doorbell rings off-screen to the left. Hearing it, he becomes curious and quickly turns his head toward screen-left, settling into the end frame. His body stays in place. Locked low camera, Ketkout sharp, tart softly blurred in the foreground. Same warm light and short peach neck scarf. Doorbell sound and quiet room tone, no speech or music.",
+          "duration": 2,
+          "width": 1344,
+          "height": 768,
+          "seed": 409768588,
+          "prompt_enhance": false,
+          "fram_rate": 24
+         }
+        },
+        "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+        "estimatedCredits": null,
+        "id": "tpl-279ce51d9b47",
+        "finishedAt": "2026-10-30T13:12:33.742Z",
+        "metadata": {
+         "elapsedSeconds": 40.412,
+         "executionSeconds": null,
+         "estimatedCredits": null,
+         "partnerCredits": null,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       }
+      }
+     ],
+     "jobs": {
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-30T13:11:53.330Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_flf2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "example:c1cf7ca4c45798e0.png"
+         },
+         "last_frame": {
+          "file": "example:20269266f8e68573.jpg"
+         },
+         "prompt": "Ketkout holds his proud pose behind the finished tart, wings on his hips. A clear two-note ding-dong doorbell rings off-screen to the left. Hearing it, he becomes curious and quickly turns his head toward screen-left, settling into the end frame. His body stays in place. Locked low camera, Ketkout sharp, tart softly blurred in the foreground. Same warm light and short peach neck scarf. Doorbell sound and quiet room tone, no speech or music.",
+         "duration": 2,
+         "width": 1344,
+         "height": 768,
+         "seed": 409768588,
+         "prompt_enhance": false,
+         "fram_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-279ce51d9b47",
+       "finishedAt": "2026-10-30T13:12:33.742Z",
+       "metadata": {
+        "elapsedSeconds": 40.412,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "video": {
+      "file": "example:ccc3a9a8472141f0.mp4",
+      "url": "example:ccc3a9a8472141f0.mp4",
+      "width": 1280,
+      "height": 732,
+      "frames": 49,
+      "duration": 2.042,
+      "name": "Ding-dong — Ketkout turns toward the door",
+      "sourceVideo": "stori-ketkout-a-grand-entrance-ex-449f3de2a915d1a5.mp4"
+     },
+     "error": null
+    },
+    {
+     "id": "shot-welcome-friends",
+     "kind": "shot",
+     "size": "wide",
+     "camera": "locked view across the table, slow rack focus from friends to Comfyture and tart",
+     "seconds": 6,
+     "action": "The door is already open. @ketkout, @meringue and @crumpet are already gathered at the doorway, chatting with small gestures. Focus slowly shifts from the three friends to the Comfyture jar and finished tart.",
+     "frame": "Same camera and kitchen throughout. Meringue on the left, Ketkout in the middle, Crumpet on the right, already at the open doorway. Start focused on the group, with products blurred in the foreground; end focused on the large Comfyture jar and tart, with the same group heavily blurred behind them. Preserve all positions and character designs from their sheets.",
+     "line": null,
+     "sound": "Quiet kitchen ambience; no intelligible dialogue or music.",
+     "photo": null,
+     "still": null,
+     "run": null,
+     "tab": null,
+     "title": "Welcome to Comfyture",
+     "endPhoto": null,
+     "model": "ltx-2.5",
+     "drawnAs": "film",
+     "storyRefs": [
+      {
+       "file": "example:b7d63cb909378d8e.jpg",
+       "url": "example:b7d63cb909378d8e.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Door already open — Ketkout, Meringue and Crumpet chatting",
+       "role": "start"
+      },
+      {
+       "file": "example:799d4dc13f45fc9e.jpg",
+       "url": "example:799d4dc13f45fc9e.jpg",
+       "width": 1360,
+       "height": 768,
+       "name": "Same group — focus on Comfyture and tart",
+       "role": "end"
+      }
+     ],
+     "storyIdeas": "The shot begins after the door has opened. Only subtle conversational gestures and a focus shift. Feet stay planted and the door stays open. Reference sheets: Ketkout, Meringue, Crumpet.",
+     "videoPrompt": "The arched door is already open. The white cat, yellow baby chick and brown beaver are already gathered at the doorway, facing one another in friendly conversation. They remain in their exact places with feet planted and bodies facing the same way, making only small natural nods, blinks and tiny paw or wing gestures. The camera stays fixed. Focus slowly shifts from the friends to the large Comfyture jar and jam tart in the foreground. Hold the sharp label and tart for the last two seconds, with the friends deeply blurred behind them. The open door, kitchen and products remain still. Preserve the character designs. Quiet room ambience, no intelligible dialogue, music or added text.",
+     "history": [
+      {
+       "kind": "still",
+       "media": {
+        "file": "example:8b7da8d8417dca92.jpg",
+        "url": "example:8b7da8d8417dca92.jpg",
+        "width": 1360,
+        "height": 768,
+        "name": "Ketkout heading toward the closed door",
+        "role": "start"
+       }
+      },
+      {
+       "kind": "endPhoto",
+       "media": {
+        "file": "example:3fb4adde14302f2f.jpg",
+        "url": "example:3fb4adde14302f2f.jpg",
+        "width": 1360,
+        "height": 768,
+        "name": "Comfyture jar and tart — friends at the open door",
+        "role": "end"
+       }
+      },
+      {
+       "kind": "endPhoto",
+       "media": {
+        "file": "example:208c44e7fd17bae5.jpg",
+        "url": "example:208c44e7fd17bae5.jpg",
+        "width": 1360,
+        "height": 768,
+        "name": "Comfyture foreground — friends at the doorway",
+        "role": "end"
+       }
+      },
+      {
+       "kind": "still",
+       "media": {
+        "file": "example:52370da414f4020e.jpg",
+        "url": "example:52370da414f4020e.jpg",
+        "width": 1360,
+        "height": 768,
+        "name": "Closed door — Ketkout approaching",
+        "role": "start"
+       }
+      },
+      {
+       "kind": "endPhoto",
+       "media": {
+        "file": "example:1bba0dcc6f643556.jpg",
+        "url": "example:1bba0dcc6f643556.jpg",
+        "width": 1360,
+        "height": 768,
+        "name": "Comfyture and tart — friends chatting in silhouette",
+        "role": "end"
+       }
+      },
+      {
+       "kind": "video",
+       "media": {
+        "kind": "video",
+        "url": "example:85ba0f6ec367e10d.mp4",
+        "file": "example:85ba0f6ec367e10d.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 6.04,
+        "saved": "0361d15e34ad1a91c7e0f79db612bb0c621414e39b147587cb8a144a1dd9ba8e.mp4",
+        "duration": 6.04
+       },
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "saving",
+        "startedAt": "2026-10-30T13:55:48.062Z",
+        "model": "LTX 2.5 Distilled",
+        "template": "video_ltx2_5_flf2v",
+        "request": {
+         "confirm": true,
+         "inputs": {
+          "first_frame": {
+           "file": "example:52370da414f4020e.jpg"
+          },
+          "last_frame": {
+           "file": "example:1bba0dcc6f643556.jpg"
+          },
+          "prompt": "Ketkout walks to the closed arched door, reaches it and pulls it open inward, revealing his two backlit pet friends, a beaver and a fluffy cat. The three turn toward one another and chat with small friendly gestures at the doorway. The camera gently travels toward the foreground table as focus shifts from Ketkout to the Comfyture jar and finished jam tart. Hold the final composition for the last two seconds: label and tart sharp, the three friends dark and heavily blurred behind them. Keep the kitchen and products stationary, the same fluffy yellow chick with his short peach neck scarf. One continuous shot. Soft footsteps, door creak and quiet room tone; no intelligible dialogue, music or added text.",
+          "duration": 6,
+          "width": 1344,
+          "height": 768,
+          "seed": 1473264152,
+          "prompt_enhance": false,
+          "fram_rate": 24
+         }
+        },
+        "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+        "estimatedCredits": null,
+        "id": "tpl-88d6fe9eaf7d",
+        "finishedAt": "2026-10-30T13:56:33.819Z",
+        "metadata": {
+         "elapsedSeconds": 45.757,
+         "executionSeconds": null,
+         "estimatedCredits": null,
+         "partnerCredits": null,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       }
+      }
+     ],
+     "jobs": {
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-30T14:13:26.982Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_flf2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "example:b7d63cb909378d8e.jpg"
+         },
+         "last_frame": {
+          "file": "example:799d4dc13f45fc9e.jpg"
+         },
+         "prompt": "The arched door is already open. The white cat, yellow baby chick and brown beaver are already gathered at the doorway, facing one another in friendly conversation. They remain in their exact places with feet planted and bodies facing the same way, making only small natural nods, blinks and tiny paw or wing gestures. The camera stays fixed. Focus slowly shifts from the friends to the large Comfyture jar and jam tart in the foreground. Hold the sharp label and tart for the last two seconds, with the friends deeply blurred behind them. The open door, kitchen and products remain still. Preserve the character designs. Quiet room ambience, no intelligible dialogue, music or added text.",
+         "duration": 6,
+         "width": 1344,
+         "height": 768,
+         "seed": 2051277654,
+         "prompt_enhance": false,
+         "fram_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-4eddacef87bd",
+       "finishedAt": "2026-10-30T14:14:26.505Z",
+       "metadata": {
+        "elapsedSeconds": 59.523,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "error": null,
+     "video": {
+      "kind": "video",
+      "url": "example:7d7139ab3b9f798b.mp4",
+      "file": "example:7d7139ab3b9f798b.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 6.04,
+      "saved": "0d46d141124ebda59cc1960540b99715431cf5105b6151372480925c4e3b679b.mp4",
+      "duration": 6.04
+     }
+    }
+   ],
+   "tutorial": {
+    "version": 1,
+    "duration": 34.0,
+    "cut": "cuts-ketkout-a-grand-entrance-example",
+    "film": {
+     "id": "20261030-476735",
+     "url": "example:ketkout-a-grand-entrance.mp4",
+     "name": "Ketkout — A Grand Entrance",
+     "takes": [],
+     "cut": "cuts-ketkout-a-grand-entrance-example",
+     "seconds": 34.0,
+     "createdAt": "2026-10-30T14:44:49.029Z"
+    },
+    "steps": []
+   }
+  }
+ },
+ "cut": {
+  "id": "cuts-ketkout-a-grand-entrance-example",
+  "name": "Ketkout — A Grand Entrance",
+  "body": {
+   "aspect": "16:9",
+   "fit": "cover",
+   "duck": false,
+   "product": "kitchen",
+   "tracks": [
+    {
+     "id": "t1",
+     "kind": "title",
+     "name": "Titles",
+     "items": []
+    },
+    {
+     "id": "fx",
+     "kind": "fx",
+     "name": "Beat FX",
+     "items": []
+    },
+    {
+     "id": "v2",
+     "kind": "video",
+     "name": "Overlays",
+     "items": [
+      {
+       "id": "final-logo-comfyture",
+       "name": "Comfyture",
+       "src": {
+        "kind": "photo",
+        "id": "stori-ketkout-a-grand-entrance-ex-639ce8265b94f56c.png",
+        "file": "stori-ketkout-a-grand-entrance-ex-639ce8265b94f56c.png",
+        "url": "/media/photos/stori-ketkout-a-grand-entrance-ex-639ce8265b94f56c.png",
+        "width": 1360,
+        "height": 557,
+        "name": "Comfyture accent + shadow"
+       },
+       "start": 31,
+       "length": 3,
+       "x": 0.25,
+       "y": 0.43,
+       "w": 0.4759999999999999,
+       "rot": 0,
+       "z": 1,
+       "opacity": 1,
+       "fadeIn": 0.45,
+       "fadeOut": 0,
+       "sound": false
+      },
+      {
+       "id": "final-logo-comfyui",
+       "name": "ComfyUI",
+       "src": {
+        "kind": "photo",
+        "id": "stori-ketkout-a-grand-entrance-ex-a5849921ea27ebc9.png",
+        "file": "stori-ketkout-a-grand-entrance-ex-a5849921ea27ebc9.png",
+        "url": "/media/photos/stori-ketkout-a-grand-entrance-ex-a5849921ea27ebc9.png",
+        "width": 800,
+        "height": 294,
+        "name": "ComfyUI + shadow"
+       },
+       "start": 31,
+       "length": 3,
+       "x": 0.25,
+       "y": 0.62,
+       "w": 0.22857142857142856,
+       "rot": 0,
+       "z": 1,
+       "opacity": 1,
+       "fadeIn": 0.45,
+       "fadeOut": 0,
+       "sound": false
+      }
+     ]
+    },
+    {
+     "id": "v1",
+     "kind": "video",
+     "name": "Video",
+     "main": true,
+     "items": [
+      {
+       "id": "shot-01",
+       "src": {
+        "kind": "video",
+        "id": "stori-ketkout-a-grand-entrance-ex-7807f29d01cb1957.mp4",
+        "duration": 4.04,
+        "name": "1A · A grand entrance"
+       },
+       "name": "1A · A grand entrance",
+       "from": 0,
+       "to": 4,
+       "speed": 1,
+       "sound": true,
+       "join": "cut",
+       "volume": 0.7
+      },
+      {
+       "id": "rluei3r",
+       "src": {
+        "kind": "video",
+        "id": "stori-ketkout-a-grand-entrance-ex-c8d26b813cde203f.mp4",
+        "duration": 2.04,
+        "name": "1B · Lights ON"
+       },
+       "name": "1B · Lights ON",
+       "from": 0,
+       "to": 2,
+       "speed": 1,
+       "sound": true,
+       "join": "cut",
+       "volume": 0.7
+      },
+      {
+       "id": "shot-03",
+       "src": {
+        "kind": "video",
+        "id": "stori-ketkout-a-grand-entrance-ex-a1536b146e4e113e.mp4",
+        "duration": 2.04,
+        "name": "1C · Wait… Comfyture!"
+       },
+       "name": "1C · Wait… Comfyture!",
+       "from": 0,
+       "to": 2,
+       "speed": 1,
+       "sound": true,
+       "join": "cut",
+       "volume": 0.7
+      },
+      {
+       "id": "shot-rolling-dough",
+       "src": {
+        "kind": "video",
+        "id": "stori-ketkout-a-grand-entrance-ex-27502a487d885770.mp4",
+        "duration": 3.04,
+        "name": "1D · Rolling the dough"
+       },
+       "name": "1D · Rolling the dough",
+       "from": 0,
+       "to": 3,
+       "speed": 1,
+       "sound": true,
+       "join": "cut",
+       "volume": 0.7
+      },
+      {
+       "id": "shot-tart-mold",
+       "src": {
+        "kind": "video",
+        "id": "stori-ketkout-a-grand-entrance-ex-40d29eb61ae70bde.mp4",
+        "duration": 3.04,
+        "name": "1E · Into the tart mold"
+       },
+       "name": "1E · Into the tart mold",
+       "from": 0,
+       "to": 3,
+       "speed": 1,
+       "sound": true,
+       "join": "cut",
+       "volume": 0.7
+      },
+      {
+       "id": "shot-inside-oven",
+       "src": {
+        "kind": "video",
+        "id": "stori-ketkout-a-grand-entrance-ex-6faf7b22385feaec.mp4",
+        "duration": 4.04,
+        "name": "1F · Inside the oven"
+       },
+       "name": "1F · Inside the oven",
+       "from": 0,
+       "to": 4,
+       "speed": 1,
+       "sound": true,
+       "join": "cut",
+       "volume": 0.7
+      },
+      {
+       "id": "shot-opening-jar",
+       "src": {
+        "kind": "video",
+        "id": "stori-ketkout-a-grand-entrance-ex-34a4be408d1bb4df.mp4",
+        "duration": 3.04,
+        "name": "1G · Opening Comfyture"
+       },
+       "name": "1G · Opening Comfyture",
+       "from": 0,
+       "to": 3,
+       "speed": 1,
+       "sound": true,
+       "join": "cut",
+       "volume": 0.7
+      },
+      {
+       "id": "shot-clock",
+       "src": {
+        "kind": "video",
+        "id": "stori-ketkout-a-grand-entrance-ex-889a6433def227df.mp4",
+        "duration": 2.04,
+        "name": "1H · Twenty minutes later"
+       },
+       "name": "1H · Twenty minutes later",
+       "from": 0,
+       "to": 2,
+       "speed": 1,
+       "sound": true,
+       "join": "cut",
+       "volume": 0.7
+      },
+      {
+       "id": "shot-proud-tart",
+       "src": {
+        "kind": "video",
+        "id": "stori-ketkout-a-grand-entrance-ex-bc348a65f48b2cdc.mp4",
+        "duration": 3.04,
+        "name": "1I · Proud of his tart"
+       },
+       "name": "1I · Proud of his tart",
+       "from": 0,
+       "to": 3,
+       "speed": 1,
+       "sound": true,
+       "join": "cut",
+       "volume": 0.7
+      },
+      {
+       "id": "shot-doorbell-reaction",
+       "src": {
+        "kind": "video",
+        "id": "stori-ketkout-a-grand-entrance-ex-ccc3a9a8472141f0.mp4",
+        "duration": 2.042,
+        "name": "1J · Ding-dong!"
+       },
+       "name": "1J · Ding-dong!",
+       "from": 0,
+       "to": 2,
+       "speed": 1,
+       "sound": true,
+       "join": "cut",
+       "volume": 0.7
+      },
+      {
+       "id": "shot-welcome-friends",
+       "src": {
+        "kind": "video",
+        "id": "stori-ketkout-a-grand-entrance-ex-7d7139ab3b9f798b.mp4",
+        "duration": 6.04,
+        "name": "1K · Welcome to Comfyture"
+       },
+       "name": "1K · Welcome to Comfyture",
+       "from": 0,
+       "to": 6,
+       "speed": 1,
+       "sound": true,
+       "join": "cut",
+       "volume": 0.7
+      }
+     ]
+    },
+    {
+     "id": "a1",
+     "kind": "audio",
+     "role": "voice",
+     "name": "Voice",
+     "items": []
+    },
+    {
+     "id": "a2",
+     "kind": "audio",
+     "role": "music",
+     "name": "Music",
+     "items": []
+    },
+    {
+     "id": "a3",
+     "kind": "audio",
+     "role": "effects",
+     "name": "Effects",
+     "items": []
+    }
+   ],
+   "markers": [
+    {
+     "t": 0,
+     "label": "1A · A grand entrance"
+    },
+    {
+     "t": 4,
+     "label": "1B · Lights ON"
+    },
+    {
+     "t": 6,
+     "label": "1C · Wait… Comfyture!"
+    },
+    {
+     "t": 8,
+     "label": "1D · Rolling the dough"
+    },
+    {
+     "t": 11,
+     "label": "1E · Into the tart mold"
+    },
+    {
+     "t": 14,
+     "label": "1F · Inside the oven"
+    },
+    {
+     "t": 18,
+     "label": "1G · Opening Comfyture"
+    },
+    {
+     "t": 21,
+     "label": "1H · Twenty minutes later"
+    },
+    {
+     "t": 23,
+     "label": "1I · Proud of his tart"
+    },
+    {
+     "t": 26,
+     "label": "1J · Ding-dong!"
+    },
+    {
+     "t": 28,
+     "label": "1K · Welcome to Comfyture"
+    }
+   ],
+   "project": "stori-ketkout-a-grand-entrance-77501a",
+   "story": "stori-ketkout-a-grand-entrance-77501a",
+   "exampleFiles": [
+    "example:06d1d6defe4f37fd.png",
+    "example:12f83fac95be76c4.png",
+    "example:1bba0dcc6f643556.jpg",
+    "example:1edf685cc640a96e.jpg",
+    "example:20269266f8e68573.jpg",
+    "example:208c44e7fd17bae5.jpg",
+    "example:27502a487d885770.mp4",
+    "example:2e50df473245dbf6.jpg",
+    "example:2ff8c5578d87658e.jpg",
+    "example:34a4be408d1bb4df.mp4",
+    "example:36862512e11e7d60.jpg",
+    "example:38923e93f5d13dfa.png",
+    "example:3fb4adde14302f2f.jpg",
+    "example:3fd824318823372f.mp4",
+    "example:40d29eb61ae70bde.mp4",
+    "example:449f3de2a915d1a5.mp4",
+    "example:508a96a401c66070.jpg",
+    "example:52370da414f4020e.jpg",
+    "example:5bc3a50b31e8ead4.png",
+    "example:639ce8265b94f56c.png",
+    "example:64bb6dea094e8ec0.jpg",
+    "example:67e0ff1901c67ea0.jpg",
+    "example:6cc21719dd67f864.mp4",
+    "example:6faf7b22385feaec.mp4",
+    "example:76ebcd2688ede621.jpg",
+    "example:77e4f8e517d7cc10.jpg",
+    "example:7807f29d01cb1957.mp4",
+    "example:799d4dc13f45fc9e.jpg",
+    "example:7b13be866318b12a.mp4",
+    "example:7b357dac57acdb11.jpg",
+    "example:7d7139ab3b9f798b.mp4",
+    "example:8514efbfae229008.png",
+    "example:85ba0f6ec367e10d.mp4",
+    "example:889a6433def227df.mp4",
+    "example:89bd0744a87290c4.mp4",
+    "example:8b3c28628713e5f5.jpg",
+    "example:8b7da8d8417dca92.jpg",
+    "example:99049576639c2d9d.jpg",
+    "example:a1536b146e4e113e.mp4",
+    "example:a5849921ea27ebc9.png",
+    "example:a7f2896bd73657ed.jpg",
+    "example:a9cbdb8a90f172b3.jpg",
+    "example:b0d990e14341f417.jpg",
+    "example:b45768a70d72df45.mp4",
+    "example:b774805ace5ca068.png",
+    "example:b7d63cb909378d8e.jpg",
+    "example:bc348a65f48b2cdc.mp4",
+    "example:c1cf7ca4c45798e0.png",
+    "example:c8d26b813cde203f.mp4",
+    "example:ccc3a9a8472141f0.mp4",
+    "example:d78c2b24f64f9619.png",
+    "example:e3cac396d8792761.mp4",
+    "example:e4f3f2fe313e3f81.mp4",
+    "example:fcea114fe86bd286.jpg",
+    "example:fd9d15e0aac3a994.png",
+    "example:ff5a06aeba80a793.png"
+   ]
+  }
+ }
+}
