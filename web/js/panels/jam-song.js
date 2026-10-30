@@ -905,11 +905,12 @@ export function songWorkspace() {
       redrawShelf();
     }, () => {});
   }
-  // another video was opened: the stage shows its song
+  // another video was opened: the stage shows its song, and the form holds the words it was made from
   if (seen !== (jam.jam?.id ?? null)) {
     seen = jam.jam?.id ?? null;
     drafting = false;
     song.shown = null;
+    formFromTrack();
   }
   // the song shown is the video's own (until the form is worked on: then the stage shows that draft)
   if (!drafting && (!song.shown || !shelf().some((m) => m.file === song.shown))) {
@@ -923,6 +924,26 @@ export function songWorkspace() {
   }
   redrawAll();
   return page.root;
+}
+
+/**
+ * The form takes the open video's song: its style prompt, lyrics, title, tempo and length (from the video's track, or the library's
+ * entry for it). A video with no song yet, or one brought in without words, leaves the form as it is.
+ */
+function formFromTrack() {
+  const t = jam.jam?.body.track;
+  if (!t) return;
+  const kept = song.made.find((m) => m.file === t.file);
+  const tags = t.prompt || kept?.tags || kept?.prompt || "";
+  const lyrics = t.lyrics || kept?.lyrics || "";
+  if (!tags && !lyrics) return;
+  Object.assign(song, { tags, lyrics, idea: "", name: (t.name || kept?.name || "").slice(0, 40) });
+  const bpm = Math.round(Number(t.bpm ?? kept?.bpm));
+  if (bpm >= MIN_BPM && bpm <= MAX_BPM) song.bpm = bpm;
+  const seconds = Math.round(Number(t.seconds) / 5) * 5;
+  if (seconds) song.seconds = Math.min(MAX_SECONDS, Math.max(MIN_SECONDS, seconds));
+  keepDraft();
+  sync();
 }
 
 /** Leaving the page, or the workspace: what plays stops (the record and the sound are kept, not rebuilt). */
