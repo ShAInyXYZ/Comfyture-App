@@ -1,0 +1,2065 @@
+{
+ "name": "Ketkout OP1",
+ "rev": "1",
+ "about": "Ketkout no Koe, a bittersweet anime ending song made in Jam: the song, its sung Japanese lyrics with romaji, four LTX-2.5 scenes of Ketkout in blue ink, and the edit that cuts them on the beat with karaoke captions.",
+ "thumb": "thumb.png",
+ "jam": {
+  "track": {
+   "file": "jam-ketkout-no-koe-4920c626ce39e1ef.mp3",
+   "url": "/media/audio/jam-ketkout-no-koe-4920c626ce39e1ef.mp3",
+   "seconds": 180.02,
+   "name": "Ketkout no Koe",
+   "kind": "made",
+   "prompt": "A bittersweet Japanese anime ending song, intimate and nostalgic with a quiet sense of hope. Melodic J-pop ballad built around a warm piano, clean electric guitar with gentle delay, soft acoustic guitar, melodic electric bass, and a restrained live drum kit. A clear, expressive female lead vocal sings in Japanese with a youthful but natural tone, delicate in the verses and fuller in the chorus; preserve breaths and subtle imperfections, without exaggerated vibrato or heavy pitch correction. Begin with a few seconds of piano and distant guitar, like watching the last light disappear from a train window. Keep the first verse sparse, with piano and a soft pulse of bass. In the pre-chorus, introduce rising strings and a gentle drum build. Let the chorus bloom into wide guitars, flowing drums and understated harmonies, carrying a memorable melody that feels like a promise between friends. Pull the arrangement back briefly for the bridge, then return to a final chorus with a little more warmth and vocal harmony. End gently with piano and a ringing guitar note, leaving a feeling of gratitude and unfinished adventures. Natural dynamics, clear Japanese diction, warm stereo mix, soft reverb, no spoken dialogue, no crowd noise, no abrupt ending.",
+   "lyrics": "[intro]\n[SOFT PIANO AND CLEAN GUITAR]\n\n[verse]\n茜色に染まる　帰り道で\n君の影が　少し伸びていた\n言えなかった言葉　ポケットの中\n握りしめて　空を見上げた\n\nいつかこの景色も　変わるのかな\n違う明日へ　歩き出しても\n今日の笑い声が　胸の奥で\n小さな灯りに　なっている\n\n[pre-chorus]\nさよならの練習なんて\nまだしなくていいから\nもう少しだけ　このままで\n同じ風を感じて\n\n[chorus]\nまたね　またね　遠く離れても\n君と見た空は　消えないから\nこぼれそうな涙の向こうに\n僕らの明日が　待っている\n\n忘れないよ　名前を呼ぶ声も\n不器用な夢も　あの日の約束も\n夜が来ても　星を探すように\n君を思い出すよ\n\n[instrumental]\n[CLEAN GUITAR MELODY OVER PIANO AND STRINGS]\n\n[bridge]\nもしも迷って　立ち止まる夜は\nあの歌を　そっと口ずさもう\n聞こえなくても　届かなくても\n同じ空が　つながってる\n\n[final chorus]\nまたね　またね　季節が巡っても\n君といた日々は　ここにあるよ\n何気ない一秒のすべてが\n僕らを明日へ　連れてゆく\n\nありがとうを　まだ言えないまま\n手を振る君に　僕も笑った\n夜が来ても　星を探すように\nまた会えると信じて\n\n[outro]\nまたね　またね\n明日へ続く空の下\n\n[PIANO AND GUITAR FADE GENTLY]",
+   "bpm": 128,
+   "drop": 36.75,
+   "loud": 143.5,
+   "timing": {
+    "lines": [
+     [
+      7.12,
+      12.8
+     ],
+     [
+      12.8,
+      18.78
+     ],
+     [
+      20.72,
+      28.1
+     ],
+     [
+      28.1,
+      34.06
+     ],
+     [
+      35.92,
+      40.78
+     ],
+     [
+      40.78,
+      44.62
+     ],
+     [
+      44.62,
+      48.4
+     ],
+     [
+      48.4,
+      51.68
+     ],
+     [
+      51.68,
+      54.94
+     ],
+     [
+      54.94,
+      57.86
+     ],
+     [
+      57.86,
+      61.88
+     ],
+     [
+      61.88,
+      65.86
+     ],
+     [
+      66.56,
+      70.68
+     ],
+     [
+      70.68,
+      74.2
+     ],
+     [
+      74.87,
+      78.28
+     ],
+     [
+      78.28,
+      81.68
+     ],
+     [
+      81.68,
+      85.78
+     ],
+     [
+      85.78,
+      90.02
+     ],
+     [
+      90.02,
+      94.22
+     ],
+     [
+      94.78,
+      100.62
+     ],
+     [
+      111.16,
+      115.38
+     ],
+     [
+      115.38,
+      119.02
+     ],
+     [
+      119.02,
+      122.96
+     ],
+     [
+      122.96,
+      125.88
+     ],
+     [
+      128.28,
+      132.57
+     ],
+     [
+      132.57,
+      136.4
+     ],
+     [
+      136.4,
+      139.76
+     ],
+     [
+      139.76,
+      143.82
+     ],
+     [
+      143.82,
+      147.64
+     ],
+     [
+      147.64,
+      151.14
+     ],
+     [
+      151.14,
+      155.14
+     ],
+     [
+      155.14,
+      160.5
+     ],
+     [
+      161.36,
+      165.14
+     ],
+     [
+      167.46,
+      170.46
+     ]
+    ],
+    "matched": 368
+   },
+   "cover": "/media/photos/jam-ketkout-no-koe-e983168bd8058f4f.jpg"
+  },
+  "span": {
+   "from": 33.8,
+   "to": 63.8
+  },
+  "part": {
+   "file": "jam-ketkout-no-koe-50a9359d71de4667.mp3",
+   "url": "/media/audio/jam-ketkout-no-koe-50a9359d71de4667.mp3",
+   "seconds": 30.02,
+   "source": {
+    "file": "jam-ketkout-no-koe-4920c626ce39e1ef.mp3",
+    "from": 33.8,
+    "to": 63.8
+   }
+  },
+  "vocals": null,
+  "stems": null,
+  "sung": [],
+  "lines": [
+   {
+    "from": 2.12,
+    "to": 6.98,
+    "text": "いつかこの景色も　変わるのかな"
+   },
+   {
+    "from": 6.98,
+    "to": 10.82,
+    "text": "違う明日へ　歩き出しても"
+   },
+   {
+    "from": 10.82,
+    "to": 14.6,
+    "text": "今日の笑い声が　胸の奥で"
+   },
+   {
+    "from": 14.6,
+    "to": 17.88,
+    "text": "小さな灯りに　なっている"
+   },
+   {
+    "from": 17.88,
+    "to": 21.14,
+    "text": "さよならの練習なんて"
+   },
+   {
+    "from": 21.14,
+    "to": 24.06,
+    "text": "まだしなくていいから"
+   },
+   {
+    "from": 24.06,
+    "to": 28.08,
+    "text": "もう少しだけ　このままで"
+   },
+   {
+    "from": 28.08,
+    "to": 30,
+    "text": "同じ風を感じて"
+   }
+  ],
+  "bpm": 128,
+  "beats": [
+   0.047,
+   0.516,
+   0.984,
+   1.453,
+   1.922,
+   2.391,
+   2.86,
+   3.329,
+   3.798,
+   4.266,
+   4.735,
+   5.204,
+   5.673,
+   6.142,
+   6.611,
+   7.08,
+   7.548,
+   8.017,
+   8.486,
+   8.955,
+   9.424,
+   9.893,
+   10.361,
+   10.83,
+   11.299,
+   11.768,
+   12.237,
+   12.706,
+   13.175,
+   13.643,
+   14.112,
+   14.581,
+   15.05,
+   15.519,
+   15.988,
+   16.456,
+   16.925,
+   17.394,
+   17.863,
+   18.332,
+   18.801,
+   19.27,
+   19.738,
+   20.207,
+   20.676,
+   21.145,
+   21.614,
+   22.083,
+   22.551,
+   23.02,
+   23.489,
+   23.958,
+   24.427,
+   24.896,
+   25.365,
+   25.833,
+   26.302,
+   26.771,
+   27.24,
+   27.709,
+   28.178,
+   28.647,
+   29.115,
+   29.584,
+   30.053,
+   30.522,
+   30.991,
+   31.46
+  ],
+  "captions": "karaoke",
+  "artist": {
+   "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+   "url": "/media/photos/jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+   "width": 361,
+   "height": 497
+  },
+  "dance": null,
+  "style": "",
+  "every": 2,
+  "shots": [
+   {
+    "from": 0,
+    "to": 3.786,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 3.786,
+    "to": 7.536,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 7.536,
+    "to": 11.286,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 11.286,
+    "to": 15.036,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 15.036,
+    "to": 18.786,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 18.786,
+    "to": 22.536,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 22.536,
+    "to": 26.286,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 26.286,
+    "to": 30.02,
+    "kind": "performance",
+    "run": null
+   }
+  ],
+  "looks": {},
+  "film": null,
+  "cut": "cut-jam-ketkout-no-koe",
+  "down": 0,
+  "sure": 0.46653292607246105,
+  "musicIn": "jam-ketkout-no-koe-50a9359d71de4667.mp3",
+  "linesInEdit": true,
+  "backstage": {
+   "version": 1,
+   "aspect": "16:9",
+   "style": "",
+   "format": "opening",
+   "scenes": [
+    {
+     "id": "scene-6d2df5d8-4736-4bf5-9897-35a589272a0f",
+     "title": "verse · 1",
+     "from": 33.8,
+     "to": 42.74,
+     "prompt": "@ketkout front facing, looking up eyes opened with serene face , cowboy shot close up on him , monochrome drawn style with blue background",
+     "motion": "A slow, steady camera move. Subtle natural movement, no sudden action.",
+     "model": "ltx-2.5",
+     "characterIds": [],
+     "reference": {
+      "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+      "url": "/media/photos/jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+      "width": 361,
+      "height": 497,
+      "name": "Ketkout"
+     },
+     "image": {
+      "file": "jam-ketkout-no-koe-ae1cfe450f8296d7.jpg",
+      "url": "/media/photos/jam-ketkout-no-koe-ae1cfe450f8296d7.jpg",
+      "width": 1360,
+      "height": 768,
+      "name": "verse · 1 ·"
+     },
+     "endImage": {
+      "file": "jam-ketkout-no-koe-2e75032e19c4dbf8.jpg",
+      "url": "/media/photos/jam-ketkout-no-koe-2e75032e19c4dbf8.jpg",
+      "width": 1360,
+      "height": 768,
+      "name": "verse · 1 ·"
+     },
+     "video": {
+      "kind": "video",
+      "url": "/media/videos/jam-ketkout-no-koe-cb1e5857f937c73d.mp4",
+      "file": "jam-ketkout-no-koe-cb1e5857f937c73d.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 9.04,
+      "saved": "47746b735345312126b30e2300ecefef1d0b75b11363611a28e80b8029316b31.mp4",
+      "duration": 9.04
+     },
+     "jobs": {
+      "image": {
+       "status": "done",
+       "progress": 1,
+       "phase": "Complete",
+       "startedAt": "2026-10-29T11:38:36.771Z",
+       "model": "GPT Image 2.5 Flare",
+       "request": {
+        "model": "gpt-image-2.5-flare",
+        "template": "edit",
+        "prompt": "Create a fresh cinematic scene for an anime or television opening. Any character references establish identity only: create the requested pose, expression, costume and environment rather than pasting the reference portrait. No captions, lettering, logos or watermark.\n\nA television or anime opening: establish the world and character silhouettes, intentional cinematic composition, room for title and credit overlays. Build energy through planned shots rather than frantic movement within one shot.\n\nScene direction: @ketkout front facing, looking down eyesclosed with serene face , cowboy shot close up on him , monochrome drawn style with blue background",
+        "aspect": "16:9",
+        "megapixels": 1,
+        "count": 1,
+        "refs": [
+         {
+          "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+          "name": "ketkout"
+         }
+        ],
+        "name": "verse · 1 · start frame"
+       },
+       "endpoint": "api/image",
+       "estimatedCredits": 3,
+       "id": "3e991170",
+       "finishedAt": "2026-10-29T11:38:50.908Z",
+       "metadata": {
+        "elapsedSeconds": 14.137,
+        "executionSeconds": null,
+        "estimatedCredits": 3,
+        "partnerCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      },
+      "endImage": {
+       "status": "done",
+       "progress": 1,
+       "phase": "Complete",
+       "startedAt": "2026-10-29T11:55:52.637Z",
+       "model": "GPT Image 2.5 Flare",
+       "request": {
+        "model": "gpt-image-2.5-flare",
+        "template": "edit",
+        "prompt": "Create a separate high-resolution end frame using @start-frame as the scene continuity anchor. Keep the same character identity, clothing, location geometry, lighting and color treatment. Change the framing and small pose details only as directed. For a wider composition extend the scene outward, not a low-resolution crop.\n\nA television or anime opening: establish the world and character silhouettes, intentional cinematic composition, room for title and credit overlays. Build energy through planned shots rather than frantic movement within one shot.\n\nScene direction: @ketkout front facing, looking straight eyes opened with serene face , cowboy shot close up on him , monochrome drawn style with blue background, the feathers arround him moved, the image is almost the same\n\nMotion to bridge from the start: A slow, steady camera move. Subtle natural movement, no sudden action.",
+        "aspect": "16:9",
+        "megapixels": 1,
+        "count": 1,
+        "refs": [
+         {
+          "file": "jam-ketkout-no-koe-ae1cfe450f8296d7.jpg",
+          "name": "start-frame"
+         },
+         {
+          "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+          "name": "ketkout"
+         }
+        ],
+        "name": "verse · 1 · end frame"
+       },
+       "endpoint": "api/image",
+       "estimatedCredits": 3,
+       "id": "2146bbf0",
+       "finishedAt": "2026-10-29T11:56:06.784Z",
+       "metadata": {
+        "elapsedSeconds": 14.147,
+        "executionSeconds": null,
+        "estimatedCredits": 3,
+        "partnerCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      },
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-29T16:22:54.427Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_flf2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "jam-ketkout-no-koe-ae1cfe450f8296d7.jpg"
+         },
+         "last_frame": {
+          "file": "jam-ketkout-no-koe-2e75032e19c4dbf8.jpg"
+         },
+         "width": 1344,
+         "height": 768,
+         "duration": 9,
+         "seed": 490767890,
+         "prompt": "The small white, round bird holds centered against the vivid blue, cloud-streaked sky, eyes gently closed. It slowly opens its large dark eyes and lifts its gaze slightly, remaining serene and still as pale feathers drift past. The camera makes a subtle, steady pullback from the close framing to reveal more of its body and the surrounding sky, settling into the ending composition. Preserve the delicate monochrome ink-drawn shading, blue-and-white palette, and soft daylight.",
+         "prompt_enhance": false,
+         "fram_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-bd8619df6319",
+       "finishedAt": "2026-10-29T16:24:15.756Z",
+       "metadata": {
+        "elapsedSeconds": 81.329,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "history": [
+      {
+       "kind": "image",
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "Complete",
+        "startedAt": "2026-10-29T11:36:06.314Z",
+        "model": "GPT Image 2.5 Flare",
+        "request": {
+         "model": "gpt-image-2.5-flare",
+         "template": "edit",
+         "prompt": "Create a fresh cinematic scene for an anime or television opening. Any character references establish identity only: create the requested pose, expression, costume and environment rather than pasting the reference portrait. No captions, lettering, logos or watermark.\n\nA television or anime opening: establish the world and character silhouettes, intentional cinematic composition, room for title and credit overlays. Build energy through planned shots rather than frantic movement within one shot.\n\nScene direction: @ketkout looking down eyesclosed with serene face , cowboy shot close up on him , monochrome drawn style with blue background",
+         "aspect": "1:1",
+         "megapixels": 1,
+         "count": 1,
+         "refs": [
+          {
+           "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+           "name": "ketkout"
+          }
+         ],
+         "name": "verse · 1 · start frame"
+        },
+        "endpoint": "api/image",
+        "estimatedCredits": 3,
+        "id": "f383a277",
+        "finishedAt": "2026-10-29T11:36:18.449Z",
+        "metadata": {
+         "elapsedSeconds": 12.135,
+         "executionSeconds": null,
+         "estimatedCredits": 3,
+         "partnerCredits": null,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       },
+       "media": {
+        "file": "jam-ketkout-no-koe-450dde50f5b9ba96.jpg",
+        "url": "/media/photos/jam-ketkout-no-koe-450dde50f5b9ba96.jpg",
+        "width": 1024,
+        "height": 1024,
+        "name": "verse · 1 ·"
+       }
+      },
+      {
+       "kind": "image",
+       "media": {
+        "file": "jam-ketkout-no-koe-450dde50f5b9ba96.jpg",
+        "url": "/media/photos/jam-ketkout-no-koe-450dde50f5b9ba96.jpg",
+        "width": 1024,
+        "height": 1024,
+        "name": "verse · 1 ·"
+       }
+      },
+      {
+       "kind": "image",
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "Complete",
+        "startedAt": "2026-10-29T11:38:01.207Z",
+        "model": "GPT Image 2.5 Flare",
+        "request": {
+         "model": "gpt-image-2.5-flare",
+         "template": "edit",
+         "prompt": "Create a fresh cinematic scene for an anime or television opening. Any character references establish identity only: create the requested pose, expression, costume and environment rather than pasting the reference portrait. No captions, lettering, logos or watermark.\n\nA television or anime opening: establish the world and character silhouettes, intentional cinematic composition, room for title and credit overlays. Build energy through planned shots rather than frantic movement within one shot.\n\nScene direction: @ketkout looking down eyesclosed with serene face , cowboy shot close up on him , monochrome drawn style with blue background",
+         "aspect": "16:9",
+         "megapixels": 1,
+         "count": 1,
+         "refs": [
+          {
+           "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+           "name": "ketkout"
+          }
+         ],
+         "name": "verse · 1 · start frame"
+        },
+        "endpoint": "api/image",
+        "estimatedCredits": 3,
+        "id": "94e049f0",
+        "finishedAt": "2026-10-29T11:38:13.667Z",
+        "metadata": {
+         "elapsedSeconds": 12.46,
+         "executionSeconds": null,
+         "estimatedCredits": 3,
+         "partnerCredits": null,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       },
+       "media": {
+        "file": "jam-ketkout-no-koe-69501f0e79f6b249.jpg",
+        "url": "/media/photos/jam-ketkout-no-koe-69501f0e79f6b249.jpg",
+        "width": 1360,
+        "height": 768,
+        "name": "verse · 1 ·"
+       }
+      },
+      {
+       "kind": "image",
+       "media": {
+        "file": "jam-ketkout-no-koe-69501f0e79f6b249.jpg",
+        "url": "/media/photos/jam-ketkout-no-koe-69501f0e79f6b249.jpg",
+        "width": 1360,
+        "height": 768,
+        "name": "verse · 1 ·"
+       }
+      },
+      {
+       "kind": "endImage",
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "Complete",
+        "startedAt": "2026-10-29T11:54:29.173Z",
+        "model": "GPT Image 2.5 Flare",
+        "request": {
+         "model": "gpt-image-2.5-flare",
+         "template": "edit",
+         "prompt": "Create a separate high-resolution end frame using @start-frame as the scene continuity anchor. Keep the same character identity, clothing, location geometry, lighting and color treatment. Change the framing and small pose details only as directed. For a wider composition extend the scene outward, not a low-resolution crop.\n\nA television or anime opening: establish the world and character silhouettes, intentional cinematic composition, room for title and credit overlays. Build energy through planned shots rather than frantic movement within one shot.\n\nScene direction: @ketkout front facing, looking up eyes opened with serene face , cowboy shot close up on him , monochrome drawn style with blue background\n\nMotion to bridge from the start: A slow, steady camera move. Subtle natural movement, no sudden action.",
+         "aspect": "16:9",
+         "megapixels": 1,
+         "count": 1,
+         "refs": [
+          {
+           "file": "jam-ketkout-no-koe-ae1cfe450f8296d7.jpg",
+           "name": "start-frame"
+          },
+          {
+           "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+           "name": "ketkout"
+          }
+         ],
+         "name": "verse · 1 · end frame"
+        },
+        "endpoint": "api/image",
+        "estimatedCredits": 3,
+        "id": "51cfce2c",
+        "finishedAt": "2026-10-29T11:54:43.342Z",
+        "metadata": {
+         "elapsedSeconds": 14.169,
+         "executionSeconds": null,
+         "estimatedCredits": 3,
+         "partnerCredits": null,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       },
+       "media": {
+        "file": "jam-ketkout-no-koe-6424a6b12f65f40e.jpg",
+        "url": "/media/photos/jam-ketkout-no-koe-6424a6b12f65f40e.jpg",
+        "width": 1360,
+        "height": 768,
+        "name": "verse · 1 ·"
+       }
+      },
+      {
+       "kind": "endImage",
+       "media": {
+        "file": "jam-ketkout-no-koe-6424a6b12f65f40e.jpg",
+        "url": "/media/photos/jam-ketkout-no-koe-6424a6b12f65f40e.jpg",
+        "width": 1360,
+        "height": 768,
+        "name": "verse · 1 ·"
+       }
+      },
+      {
+       "kind": "video",
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "saving",
+        "startedAt": "2026-10-29T15:54:24.770Z",
+        "model": "Fast H3",
+        "template": "video_fastvideo_fasth3_i2v",
+        "request": {
+         "confirm": true,
+         "inputs": {
+          "first_frame": {
+           "file": "jam-ketkout-no-koe-ae1cfe450f8296d7.jpg"
+          },
+          "last_frame": {
+           "file": "jam-ketkout-no-koe-2e75032e19c4dbf8.jpg"
+          },
+          "width": 1344,
+          "height": 768,
+          "duration": 9,
+          "seed": 1161207012,
+          "prompt": "How the reference pictures align with the target video — Picture 1 (from Shot 1) aligns with the 0.00-second mark of the target video; Picture 2 (from Shot 1) aligns with the 9.42-second mark of the target video.\n\nintegrated_multimodal_description: [Shot 1] The small white bird holds still against the vivid blue, cloud-streaked sky as its closed eyes slowly open, revealing bright round eyes while its serene expression remains. A few pale feathers drift gently past; the camera makes a slow, steady pullback, settling on the centered bird as the framing widens to match the final image.\n\noverall_soundscape: N/A\n\nnon_diegetic_music: N/A"
+         }
+        },
+        "endpoint": "api/utensils/templates/video_fastvideo_fasth3_i2v/run",
+        "estimatedCredits": null,
+        "id": "tpl-1c5cc8bb9f30",
+        "finishedAt": "2026-10-29T15:56:24.827Z",
+        "metadata": {
+         "elapsedSeconds": 120.057,
+         "executionSeconds": null,
+         "estimatedCredits": null,
+         "partnerCredits": 0,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       },
+       "media": {
+        "kind": "video",
+        "url": "/media/videos/jam-ketkout-no-koe-2fb9db94a03d3df4.mp4",
+        "file": "jam-ketkout-no-koe-2fb9db94a03d3df4.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 9.42,
+        "saved": "8202053919d8d2a4459c88f5c909069961b4f711d3deb11c8d59bcc7e01a6528.mp4",
+        "duration": 9.42
+       }
+      },
+      {
+       "kind": "video",
+       "media": {
+        "kind": "video",
+        "url": "/media/videos/jam-ketkout-no-koe-2fb9db94a03d3df4.mp4",
+        "file": "jam-ketkout-no-koe-2fb9db94a03d3df4.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 9.42,
+        "saved": "8202053919d8d2a4459c88f5c909069961b4f711d3deb11c8d59bcc7e01a6528.mp4",
+        "duration": 9.42
+       }
+      },
+      {
+       "kind": "video",
+       "job": {
+        "status": "done",
+        "progress": 1,
+        "phase": "saving",
+        "startedAt": "2026-10-29T16:02:47.135Z",
+        "model": "Fast H3",
+        "template": "video_fastvideo_fasth3_i2v",
+        "request": {
+         "confirm": true,
+         "inputs": {
+          "first_frame": {
+           "file": "jam-ketkout-no-koe-ae1cfe450f8296d7.jpg"
+          },
+          "last_frame": {
+           "file": "jam-ketkout-no-koe-2e75032e19c4dbf8.jpg"
+          },
+          "width": 1344,
+          "height": 768,
+          "duration": 9,
+          "seed": 619996770,
+          "prompt": "stable camera slowly zooming out , colors stay the same"
+         }
+        },
+        "endpoint": "api/utensils/templates/video_fastvideo_fasth3_i2v/run",
+        "estimatedCredits": null,
+        "id": "tpl-f269b803e245",
+        "finishedAt": "2026-10-29T16:04:44.027Z",
+        "metadata": {
+         "elapsedSeconds": 116.892,
+         "executionSeconds": null,
+         "estimatedCredits": null,
+         "partnerCredits": 0,
+         "actualCostCredits": null,
+         "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+        }
+       },
+       "media": {
+        "kind": "video",
+        "url": "/media/videos/jam-ketkout-no-koe-f93a83eeb83bf8c2.mp4",
+        "file": "jam-ketkout-no-koe-f93a83eeb83bf8c2.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 9.42,
+        "saved": "5fbb1ac0788330aa99f8223f1cebb8f3ba10345c650612c96f598725116ac84c.mp4",
+        "duration": 9.42
+       }
+      },
+      {
+       "kind": "video",
+       "media": {
+        "kind": "video",
+        "url": "/media/videos/jam-ketkout-no-koe-f93a83eeb83bf8c2.mp4",
+        "file": "jam-ketkout-no-koe-f93a83eeb83bf8c2.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 9.42,
+        "saved": "5fbb1ac0788330aa99f8223f1cebb8f3ba10345c650612c96f598725116ac84c.mp4",
+        "duration": 9.42
+       }
+      }
+     ],
+     "error": null,
+     "section": "verse",
+     "timingSource": "synced-lyrics",
+     "lyricExcerpt": "握りしめて　空を見上げた\nいつかこの景色も　変わるのかな\n違う明日へ　歩き出しても",
+     "mentionRefs": [
+      {
+       "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+       "url": "/media/photos/jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+       "width": 361,
+       "height": 497,
+       "name": "ketkout",
+       "title": "Ketkout"
+      }
+     ],
+     "endPrompt": "@ketkout front facing, looking straight eyes opened with serene face , cowboy shot close up on him , monochrome drawn style with blue background, the feathers arround him moved, the image is almost the same",
+     "videoPrompt": "The small white, round bird holds centered against the vivid blue, cloud-streaked sky, eyes gently closed. It slowly opens its large dark eyes and lifts its gaze slightly, remaining serene and still as pale feathers drift past. The camera makes a subtle, steady pullback from the close framing to reveal more of its body and the surrounding sky, settling into the ending composition. Preserve the delicate monochrome ink-drawn shading, blue-and-white palette, and soft daylight.",
+     "videoPromptSignature": "{\"id\":\"scene-6d2df5d8-4736-4bf5-9897-35a589272a0f\",\"kind\":\"video\",\"title\":\"verse · 1\",\"model\":\"LTX 2.5 Distilled\",\"template\":\"video_ltx2_5_flf2v\",\"duration\":9,\"timelineDuration\":8.94,\"width\":1344,\"height\":768,\"aspect\":\"16:9\",\"frames\":[{\"file\":\"ae1cfe450f8296d7.jpg\",\"url\":\"/media/photos/ae1cfe450f8296d7.jpg\",\"width\":1360,\"height\":768,\"name\":\"verse · 1 ·\"},{\"file\":\"2e75032e19c4dbf8.jpg\",\"url\":\"/media/photos/2e75032e19c4dbf8.jpg\",\"width\":1360,\"height\":768,\"name\":\"verse · 1 ·\"}],\"references\":[],\"prompt\":\"Use the supplied start frame and end frame as composition anchors. Preserve the identity and appearance of characters shown in the supplied frames. Create one continuous coherent shot for an anime or television opening.\\nA television or anime opening: establish the world and character silhouettes, intentional cinematic composition, room for title and credit overlays. Build energy through planned shots rather than frantic movement within one shot.\\nScene: ketkout front facing, looking up eyes opened with serene face , cowboy shot close up on him , monochrome drawn style with blue background\\nMotion: A slow, steady camera move. Subtle natural movement, no sudden action.\\nKeep stable anatomy, lighting, exposure and natural colors. Prefer controlled movement to fast gestures. No captions, lettering, watermark, music, narration or added dialogue. The original song will be the soundtrack in the edit; generated sound is muted.\",\"request\":{\"confirm\":true,\"inputs\":{\"first_frame\":{\"file\":\"ae1cfe450f8296d7.jpg\"},\"last_frame\":{\"file\":\"2e75032e19c4dbf8.jpg\"},\"width\":1344,\"height\":768,\"duration\":9,\"seed\":1,\"prompt\":\"Use the supplied start frame and end frame as composition anchors. Preserve the identity and appearance of characters shown in the supplied frames. Create one continuous coherent shot for an anime or television opening.\\nA television or anime opening: establish the world and character silhouettes, intentional cinematic composition, room for title and credit overlays. Build energy through planned shots rather than frantic movement within one shot.\\nScene: ketkout front facing, looking up eyes opened with serene face , cowboy shot close up on him , monochrome drawn style with blue background\\nMotion: A slow, steady camera move. Subtle natural movement, no sudden action.\\nKeep stable anatomy, lighting, exposure and natural colors. Prefer controlled movement to fast gestures. No captions, lettering, watermark, music, narration or added dialogue. The original song will be the soundtrack in the edit; generated sound is muted.\",\"prompt_enhance\":false,\"fram_rate\":24}},\"soundtrack\":\"The original song; generated audio is muted in the edit.\"}",
+     "addedToEdit": {
+      "cut": "cut-jam-ketkout-no-koe",
+      "at": "2026-10-30T12:05:13.598Z",
+      "asset": "jam-ketkout-no-koe-cb1e5857f937c73d.mp4"
+     }
+    },
+    {
+     "id": "scene-9ce81536-9357-4386-b362-efa9b0f10603",
+     "title": "verse · 2",
+     "from": 42.74,
+     "to": 51.68,
+     "prompt": "@ketkout stands by the ocean and looks up at the sky, dramatic and wistful, in monochrome blue ink-drawn anime style.",
+     "motion": "A subtle slow wind",
+     "model": "ltx-2.5",
+     "characterIds": [],
+     "reference": {
+      "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+      "url": "/media/photos/jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+      "width": 361,
+      "height": 497,
+      "name": "Ketkout"
+     },
+     "image": {
+      "file": "jam-ketkout-no-koe-7df7fa0c5e667c98.jpg",
+      "url": "/media/photos/jam-ketkout-no-koe-7df7fa0c5e667c98.jpg",
+      "width": 1360,
+      "height": 768,
+      "name": "verse · 2 ·"
+     },
+     "endImage": null,
+     "video": {
+      "kind": "video",
+      "url": "/media/videos/jam-ketkout-no-koe-4d4266de5acd5f24.mp4",
+      "file": "jam-ketkout-no-koe-4d4266de5acd5f24.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 9.04,
+      "saved": "697589af1f1bc9cafd233dbf137558ba80b864b6765b49825457ef7711d68c13.mp4",
+      "duration": 9.04
+     },
+     "jobs": {
+      "image": {
+       "status": "done",
+       "progress": 1,
+       "phase": "Complete",
+       "startedAt": "2026-10-30T12:01:31.995Z",
+       "model": "GPT Image 2.5 Flare",
+       "request": {
+        "model": "gpt-image-2.5-flare",
+        "template": "edit",
+        "prompt": "Create a fresh cinematic scene for an anime or television opening. Any character references establish identity only: create the requested pose, expression, costume and environment rather than pasting the reference portrait. No captions, lettering, logos or watermark.\n\nA television or anime opening: establish the world and character silhouettes, intentional cinematic composition, room for title and credit overlays. Build energy through planned shots rather than frantic movement within one shot.\n\nScene direction: @ketkout stands by the ocean and looks up at the sky, dramatic and wistful, in monochrome blue ink-drawn anime style.",
+        "aspect": "16:9",
+        "megapixels": 1,
+        "count": 1,
+        "refs": [
+         {
+          "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+          "name": "ketkout"
+         }
+        ],
+        "name": "verse · 2 · start frame"
+       },
+       "endpoint": "api/image",
+       "estimatedCredits": 3,
+       "id": "c9adeffd",
+       "finishedAt": "2026-10-30T12:01:44.163Z",
+       "metadata": {
+        "elapsedSeconds": 12.168,
+        "executionSeconds": null,
+        "estimatedCredits": 3,
+        "partnerCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      },
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-30T12:02:19.484Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_i2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "jam-ketkout-no-koe-7df7fa0c5e667c98.jpg"
+         },
+         "width": 1344,
+         "height": 768,
+         "duration": 9,
+         "seed": 944556604,
+         "prompt": "The small blue-ink-drawn bird stands on the rocky shore, gazing up toward the bright sun over the ocean. Hold the wide, airy composition as a gentle breeze stirs its neck scarf, nearby grasses, and a few drifting leaves; waves shimmer and roll softly below. Slowly push in toward the bird without changing the scene or its wistful pose.",
+         "prompt_enhance": false,
+         "frame_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_i2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-456ce5f58254",
+       "finishedAt": "2026-10-30T12:03:26.549Z",
+       "metadata": {
+        "elapsedSeconds": 67.065,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": 0,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "history": [
+      {
+       "kind": "reference",
+       "media": {
+        "file": "jam-ketkout-no-koe-c3bf9c56eb30f17d.png",
+        "url": "/media/photos/jam-ketkout-no-koe-c3bf9c56eb30f17d.png",
+        "width": 369,
+        "height": 389,
+        "name": "Meringue identity"
+       }
+      },
+      {
+       "kind": "image",
+       "job": {
+        "id": "8c0eb89b",
+        "status": "done",
+        "progress": 1,
+        "phase": "Complete",
+        "startedAt": "2026-10-29T16:34:16.389Z",
+        "finishedAt": "2026-10-29T16:34:33.922Z",
+        "model": "GPT Image 2.5 Flare",
+        "request": {
+         "model": "gpt-image-2.5-flare",
+         "template": "edit",
+         "prompt": "Create a new 16:9 anime opening frame. Use @style only for its exact hand-drawn 2D ink linework, gentle crosshatched shading, desaturated monochrome blue-and-white palette, sky and light. Use @meringue as the identity of the white cat with her bow; adapt her to this flat ink anime style, preserve her recognizable rounded face, ears and proportions. Meringue stands on a wind-swept rocky ocean overlook, seen in a three-quarter medium-wide shot, looking up toward the sky with quiet dramatic longing. In the clouds, a very faint ethereal outline of @praline, her cat friend, appears like a soft memory, not a physical giant or a literal ghost; preserve his cat silhouette and distinctive face. Wide ocean horizon, wispy clouds, restrained wind and atmosphere, cinematic anime opening composition. Deep blue and white only, delicate hand-drawn ink shading, no text, no logos. The two cats are separate identifiable characters.",
+         "aspect": "16:9",
+         "megapixels": 1,
+         "count": 1,
+         "refs": [
+          {
+           "file": "jam-ketkout-no-koe-ae1cfe450f8296d7.jpg",
+           "name": "style"
+          },
+          {
+           "file": "jam-ketkout-no-koe-c3bf9c56eb30f17d.png",
+           "name": "meringue"
+          },
+          {
+           "file": "jam-ketkout-no-koe-f22ef26700b57685.png",
+           "name": "praline"
+          }
+         ],
+         "name": "Jam anime verse2 start"
+        },
+        "endpoint": "api/image",
+        "estimatedCredits": 3,
+        "metadata": {
+         "elapsedSeconds": 17.533,
+         "executionSeconds": null,
+         "estimatedCredits": 3,
+         "actualCostCredits": null,
+         "costNote": "Image estimates use the catalogue price; actual per-job billing was not supplied. Elapsed time includes queueing."
+        }
+       },
+       "media": {
+        "file": "jam-ketkout-no-koe-514fdae1aaaf0a6f.jpg",
+        "url": "/media/photos/jam-ketkout-no-koe-514fdae1aaaf0a6f.jpg",
+        "width": 1360,
+        "height": 768,
+        "name": "Jam anime verse2 start"
+       }
+      },
+      {
+       "kind": "image",
+       "media": {
+        "file": "jam-ketkout-no-koe-514fdae1aaaf0a6f.jpg",
+        "url": "/media/photos/jam-ketkout-no-koe-514fdae1aaaf0a6f.jpg",
+        "width": 1360,
+        "height": 768,
+        "name": "Jam anime verse2 start"
+       }
+      },
+      {
+       "kind": "endImage",
+       "media": {
+        "file": "jam-ketkout-no-koe-442879f29be76932.jpg",
+        "url": "/media/photos/jam-ketkout-no-koe-442879f29be76932.jpg",
+        "width": 1360,
+        "height": 768,
+        "name": "Jam anime verse2End"
+       },
+       "job": {
+        "id": "d0e55a80",
+        "status": "done",
+        "progress": 1,
+        "phase": "Complete",
+        "startedAt": "2026-10-29T16:35:39.153Z",
+        "finishedAt": "2026-10-29T16:35:51.682Z",
+        "model": "GPT Image 2.5 Flare",
+        "request": {
+         "model": "gpt-image-2.5-flare",
+         "template": "edit",
+         "prompt": "Using @start as the precise image and continuity reference, create the END frame of the same single anime shot. Preserve the same Meringue cat, bow, face, exact rocky coastline and ocean, cloud layout, translucent friend in the upper right sky, same framing, same blue-and-white palette, crosshatching and light. Only change her expression gently: her gaze softens, one small tear catches the light and she lifts one paw slightly toward the sky. Keep the friend's apparition and horizon exactly consistent; no new objects, no additional characters, no text. The pose difference must be subtle and physically continuous from the supplied image.",
+         "aspect": "16:9",
+         "megapixels": 1,
+         "count": 1,
+         "refs": [
+          {
+           "file": "jam-ketkout-no-koe-514fdae1aaaf0a6f.jpg",
+           "name": "start"
+          }
+         ],
+         "name": "Jam anime verse2End"
+        },
+        "endpoint": "api/image",
+        "estimatedCredits": 3,
+        "metadata": {
+         "elapsedSeconds": 12.529,
+         "executionSeconds": null,
+         "estimatedCredits": 3,
+         "actualCostCredits": null,
+         "costNote": "Image estimates use the catalogue price; actual per-job billing was not supplied. Elapsed time includes queueing."
+        }
+       }
+      },
+      {
+       "kind": "video",
+       "media": {
+        "kind": "video",
+        "url": "/media/videos/jam-ketkout-no-koe-07c30d19faf2fa91.mp4",
+        "file": "jam-ketkout-no-koe-07c30d19faf2fa91.mp4",
+        "width": 1344,
+        "height": 768,
+        "seconds": 9.04,
+        "saved": "8617da57c0628bb5d9e19200deec11b3055245c83a8e9a4245378ddd3d352172.mp4",
+        "duration": 9.04
+       },
+       "job": {
+        "id": "tpl-31e0ac56e411",
+        "status": "done",
+        "progress": 1,
+        "phase": "Complete",
+        "startedAt": "2026-10-29T16:36:40.801Z",
+        "finishedAt": "2026-10-29T16:37:48.290Z",
+        "model": "LTX 2.5 Distilled",
+        "request": {
+         "confirm": true,
+         "inputs": {
+          "first_frame": {
+           "file": "jam-ketkout-no-koe-514fdae1aaaf0a6f.jpg"
+          },
+          "last_frame": {
+           "file": "jam-ketkout-no-koe-442879f29be76932.jpg"
+          },
+          "width": 1344,
+          "height": 768,
+          "duration": 9,
+          "seed": 154037023,
+          "prompt": "A hand-drawn blue-and-white anime scene by the ocean. Meringue, the white cat with a bow, stands on the rocky shore, looking up at the gentle image of her friend Praline in the clouds. She slowly raises one paw and a tear catches the light, her expression tender and wistful. The camera makes a very slow, subtle push toward her. The waves shimmer softly and a few white feathers drift on the breeze. Keep the coastline, sky, ghostly image, character design and monochrome ink shading consistent throughout. One continuous shot, no sudden changes, no text.",
+          "prompt_enhance": false,
+          "fram_rate": 24
+         }
+        },
+        "template": "video_ltx2_5_flf2v",
+        "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+        "metadata": {
+         "elapsedSeconds": 67.489,
+         "executionSeconds": null,
+         "estimatedCredits": null,
+         "actualCostCredits": null,
+         "costNote": "Image estimates use the catalogue price; actual per-job billing was not supplied. Elapsed time includes queueing."
+        }
+       }
+      }
+     ],
+     "error": null,
+     "section": "verse",
+     "timingSource": "synced-lyrics",
+     "lyricExcerpt": "違う明日へ　歩き出しても\n今日の笑い声が　胸の奥で\n小さな灯りに　なっている",
+     "endPrompt": "The same ocean and sky: Meringue slowly raises a paw toward Praline’s image, with a tear in her eye.",
+     "videoPrompt": "The small blue-ink-drawn bird stands on the rocky shore, gazing up toward the bright sun over the ocean. Hold the wide, airy composition as a gentle breeze stirs its neck scarf, nearby grasses, and a few drifting leaves; waves shimmer and roll softly below. Slowly push in toward the bird without changing the scene or its wistful pose.",
+     "addedToEdit": {
+      "cut": "cut-jam-ketkout-no-koe",
+      "at": "2026-10-30T12:05:13.598Z",
+      "asset": "jam-ketkout-no-koe-4d4266de5acd5f24.mp4"
+     },
+     "mentionRefs": [
+      {
+       "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+       "url": "/media/photos/jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+       "width": 361,
+       "height": 497,
+       "name": "ketkout",
+       "title": "Ketkout"
+      }
+     ],
+     "videoPromptSignature": "{\"id\":\"scene-9ce81536-9357-4386-b362-efa9b0f10603\",\"kind\":\"video\",\"title\":\"verse · 2\",\"model\":\"LTX 2.5 Distilled\",\"template\":\"video_ltx2_5_i2v\",\"duration\":9,\"timelineDuration\":8.94,\"width\":1344,\"height\":768,\"aspect\":\"16:9\",\"frames\":[{\"file\":\"7df7fa0c5e667c98.jpg\",\"url\":\"/media/photos/7df7fa0c5e667c98.jpg\",\"width\":1360,\"height\":768,\"name\":\"verse · 2 ·\"}],\"references\":[],\"prompt\":\"Use the supplied start frame. Preserve the identity and appearance of characters shown in the supplied frame. Create one continuous coherent shot for an anime or television opening.\\nA television or anime opening: establish the world and character silhouettes, intentional cinematic composition, room for title and credit overlays. Build energy through planned shots rather than frantic movement within one shot.\\nScene: ketkout stands by the ocean and looks up at the sky, dramatic and wistful, in monochrome blue ink-drawn anime style.\\nMotion: A subtle slow wind\\nKeep stable anatomy, lighting, exposure and natural colors. Prefer controlled movement to fast gestures. No captions, lettering, watermark, music, narration or added dialogue. The original song will be the soundtrack in the edit; generated sound is muted.\",\"request\":{\"confirm\":true,\"inputs\":{\"first_frame\":{\"file\":\"7df7fa0c5e667c98.jpg\"},\"width\":1344,\"height\":768,\"duration\":9,\"seed\":1,\"prompt\":\"Use the supplied start frame. Preserve the identity and appearance of characters shown in the supplied frame. Create one continuous coherent shot for an anime or television opening.\\nA television or anime opening: establish the world and character silhouettes, intentional cinematic composition, room for title and credit overlays. Build energy through planned shots rather than frantic movement within one shot.\\nScene: ketkout stands by the ocean and looks up at the sky, dramatic and wistful, in monochrome blue ink-drawn anime style.\\nMotion: A subtle slow wind\\nKeep stable anatomy, lighting, exposure and natural colors. Prefer controlled movement to fast gestures. No captions, lettering, watermark, music, narration or added dialogue. The original song will be the soundtrack in the edit; generated sound is muted.\",\"prompt_enhance\":false,\"frame_rate\":24}},\"soundtrack\":\"The original song; generated audio is muted in the edit.\"}"
+    },
+    {
+     "id": "scene-3b48e435-dad8-4689-9df6-8fac09d11a02",
+     "title": "pre-chorus · 1",
+     "from": 51.68,
+     "to": 57.74,
+     "prompt": "@ketkout runs to the right along a coastal road, seen in full-body side profile; monochrome blue and white anime ink lines.",
+     "motion": "The camera follows beside Ketkout, holding a smooth side profile while he runs.",
+     "model": "ltx-2.5",
+     "characterIds": [],
+     "reference": null,
+     "image": {
+      "file": "jam-ketkout-no-koe-1730080bb9eabcf0.jpg",
+      "url": "/media/photos/jam-ketkout-no-koe-1730080bb9eabcf0.jpg",
+      "width": 1360,
+      "height": 768,
+      "name": "Jam anime pre1 start"
+     },
+     "endImage": {
+      "file": "jam-ketkout-no-koe-29800b157d4032dd.jpg",
+      "url": "/media/photos/jam-ketkout-no-koe-29800b157d4032dd.jpg",
+      "width": 1360,
+      "height": 768,
+      "name": "Jam anime pre1End"
+     },
+     "video": {
+      "kind": "video",
+      "url": "/media/videos/jam-ketkout-no-koe-e5f31a1fe4186668.mp4",
+      "file": "jam-ketkout-no-koe-e5f31a1fe4186668.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 7.04,
+      "saved": "3f32df0870bbaf7f52dcc9f58923b1dfc31fd50fdedc870716a34a06713b08d2.mp4",
+      "duration": 7.04
+     },
+     "jobs": {
+      "image": {
+       "id": "289078d1",
+       "status": "done",
+       "progress": 1,
+       "phase": "Complete",
+       "startedAt": "2026-10-29T16:34:16.393Z",
+       "finishedAt": "2026-10-29T16:34:33.924Z",
+       "model": "GPT Image 2.5 Flare",
+       "request": {
+        "model": "gpt-image-2.5-flare",
+        "template": "edit",
+        "prompt": "Create a new 16:9 anime opening frame. Use @style as visual style reference: hand-drawn 2D ink lines and crosshatched shadows, monochrome blue and white, same sky, gentle daylight. @ketkout is the small round chick with three head feathers, a short scarf and round black eyes with no visible white sclera; preserve his exact recognizable anatomy. Side-profile full-body wide shot: Ketkout facing right, about to run along a quiet coastal road. The camera is exactly side-on at his height, the long road and low fence stretch horizontally in front of him, ocean and soft clouds behind, full figure and feet visible. Crisp coherent perspective, calm wistful expression, dramatic but restrained. Keep the entire scene blue and white as the previous shot, no text, no logos.",
+        "aspect": "16:9",
+        "megapixels": 1,
+        "count": 1,
+        "refs": [
+         {
+          "file": "jam-ketkout-no-koe-ae1cfe450f8296d7.jpg",
+          "name": "style"
+         },
+         {
+          "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+          "name": "ketkout"
+         }
+        ],
+        "name": "Jam anime pre1 start"
+       },
+       "endpoint": "api/image",
+       "estimatedCredits": 3,
+       "metadata": {
+        "elapsedSeconds": 17.531,
+        "executionSeconds": null,
+        "estimatedCredits": 3,
+        "actualCostCredits": null,
+        "costNote": "Image estimates use the catalogue price; actual per-job billing was not supplied. Elapsed time includes queueing."
+       }
+      },
+      "endImage": {
+       "id": "4f0b175a",
+       "status": "done",
+       "progress": 1,
+       "phase": "Complete",
+       "startedAt": "2026-10-29T16:35:39.158Z",
+       "finishedAt": "2026-10-29T16:35:51.685Z",
+       "model": "GPT Image 2.5 Flare",
+       "request": {
+        "model": "gpt-image-2.5-flare",
+        "template": "edit",
+        "prompt": "Use @start as the precise composition and style reference for the END frame of the same uninterrupted side-tracking shot. Retain the exact monochrome blue-and-white ink-drawn look, clouds, ocean, coastal road, white railing, character design, scarf and proportions. Ketkout is running to the right, seen in the same side profile at roughly the same screen position because the camera follows beside him. Show a plausible next running stride with his legs lifted; his scarf trails slightly behind. The road and railing extend continuously, no scene cut, no new subjects, no text, consistent anatomy.",
+        "aspect": "16:9",
+        "megapixels": 1,
+        "count": 1,
+        "refs": [
+         {
+          "file": "jam-ketkout-no-koe-1730080bb9eabcf0.jpg",
+          "name": "start"
+         }
+        ],
+        "name": "Jam anime pre1End"
+       },
+       "endpoint": "api/image",
+       "estimatedCredits": 3,
+       "metadata": {
+        "elapsedSeconds": 12.527,
+        "executionSeconds": null,
+        "estimatedCredits": 3,
+        "actualCostCredits": null,
+        "costNote": "Image estimates use the catalogue price; actual per-job billing was not supplied. Elapsed time includes queueing."
+       }
+      },
+      "video": {
+       "id": "tpl-7142df977ecf",
+       "status": "done",
+       "progress": 1,
+       "phase": "Complete",
+       "startedAt": "2026-10-29T16:36:44.500Z",
+       "finishedAt": "2026-10-29T16:37:53.295Z",
+       "model": "LTX 2.5 Distilled",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "jam-ketkout-no-koe-1730080bb9eabcf0.jpg"
+         },
+         "last_frame": {
+          "file": "jam-ketkout-no-koe-29800b157d4032dd.jpg"
+         },
+         "width": 1344,
+         "height": 768,
+         "duration": 7,
+         "seed": 1639919010,
+         "prompt": "In a blue-and-white hand-drawn anime scene, Ketkout runs to the right along the coastal road. The camera follows smoothly beside him in a steady side profile, keeping his whole body visible and roughly centered as the railing and ocean move gently behind him. His small feet alternate in a natural continuous running cycle, and his scarf trails in the breeze. Preserve his round chick shape, solid dark eye without visible white sclera, three head feathers, lighting and detailed blue ink shading. One continuous side-tracking shot, no cuts, no background or color changes.",
+         "prompt_enhance": false,
+         "fram_rate": 24
+        }
+       },
+       "template": "video_ltx2_5_flf2v",
+       "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+       "metadata": {
+        "elapsedSeconds": 68.795,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Image estimates use the catalogue price; actual per-job billing was not supplied. Elapsed time includes queueing."
+       }
+      }
+     },
+     "history": [],
+     "error": null,
+     "section": "pre-chorus",
+     "timingSource": "synced-lyrics",
+     "lyricExcerpt": "さよならの練習なんて\nまだしなくていいから",
+     "endPrompt": "The same side view, road and ocean; Ketkout continues a running stride, his scarf trailing.",
+     "videoPrompt": "In a blue-and-white hand-drawn anime scene, Ketkout runs to the right along the coastal road. The camera follows smoothly beside him in a steady side profile, keeping his whole body visible and roughly centered as the railing and ocean move gently behind him. His small feet alternate in a natural continuous running cycle, and his scarf trails in the breeze. Preserve his round chick shape, solid dark eye without visible white sclera, three head feathers, lighting and detailed blue ink shading. One continuous side-tracking shot, no cuts, no background or color changes.",
+     "addedToEdit": {
+      "cut": "cut-jam-ketkout-no-koe",
+      "at": "2026-10-30T12:05:13.598Z",
+      "asset": "jam-ketkout-no-koe-e5f31a1fe4186668.mp4"
+     }
+    },
+    {
+     "id": "scene-f32cbe24-9432-4e5b-87bc-c3d1cfa8a5f0",
+     "title": "pre-chorus · 2",
+     "from": 57.74,
+     "to": 63.8,
+     "prompt": "From behind, @ketkout runs toward his friends waiting as silhouettes on the horizon, along the same coastal road in blue-and-white anime.",
+     "motion": "Follow behind Ketkout toward his friends as his colors and the scene slowly return.",
+     "model": "ltx-2.5",
+     "characterIds": [],
+     "reference": null,
+     "image": {
+      "file": "jam-ketkout-no-koe-942a6f618f89127e.jpg",
+      "url": "/media/photos/jam-ketkout-no-koe-942a6f618f89127e.jpg",
+      "width": 1360,
+      "height": 768,
+      "name": "Jam anime prechorus 2"
+     },
+     "endImage": {
+      "file": "jam-ketkout-no-koe-e360de7bcd223283.jpg",
+      "url": "/media/photos/jam-ketkout-no-koe-e360de7bcd223283.jpg",
+      "width": 1360,
+      "height": 768,
+      "name": "Jam anime prechorus 2"
+     },
+     "video": {
+      "kind": "video",
+      "url": "/media/videos/jam-ketkout-no-koe-550846f155ed31fc.mp4",
+      "file": "jam-ketkout-no-koe-550846f155ed31fc.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 7.04,
+      "saved": "cd0734d35f81ab5d1be67e0f39899ca4427613284dc37436157a464442b63140.mp4",
+      "duration": 7.04
+     },
+     "jobs": {
+      "image": {
+       "id": "8233f85e",
+       "status": "done",
+       "progress": 1,
+       "phase": "Complete",
+       "startedAt": "2026-10-29T16:37:24.960Z",
+       "finishedAt": "2026-10-29T16:37:39.987Z",
+       "model": "GPT Image 2.5 Flare",
+       "request": {
+        "model": "gpt-image-2.5-flare",
+        "template": "edit",
+        "aspect": "16:9",
+        "megapixels": 1,
+        "count": 1,
+        "name": "Jam anime prechorus 2 start",
+        "refs": [
+         {
+          "file": "jam-ketkout-no-koe-29800b157d4032dd.jpg",
+          "name": "road"
+         },
+         {
+          "file": "jam-ketkout-no-koe-4d9e6251eec24e3d.png",
+          "name": "ketkout"
+         },
+         {
+          "file": "jam-ketkout-no-koe-c3bf9c56eb30f17d.png",
+          "name": "meringue"
+         },
+         {
+          "file": "jam-ketkout-no-koe-f22ef26700b57685.png",
+          "name": "praline"
+         }
+        ],
+        "prompt": "Create the START frame of an anime opening shot continuing the world shown in @road: the same hand-inked 2D anime texture, crosshatching, blue-and-white monochrome, sky, coastal road and white railing. Change camera angle to a low rear three-quarter view, looking down the road toward the horizon. @ketkout, the little round chick with three head feathers and a scarf, is seen clearly from behind in the foreground, starting to run down the road, his whole small body visible. On the distant sunlit horizon several small silhouettes of his friends, including @meringue and @praline, wait together, recognizable only as silhouettes, friendly and hopeful. The road leads naturally toward them, one stable landscape, no text. All colors still blue and white at the start. Preserve Ketkout’s small round shape, no extra limbs."
+       },
+       "endpoint": "api/image",
+       "estimatedCredits": 3,
+       "metadata": {
+        "elapsedSeconds": 15.027,
+        "executionSeconds": null,
+        "estimatedCredits": 3,
+        "actualCostCredits": null,
+        "costNote": "Image estimates use the catalogue price; actual per-job billing was not supplied. Elapsed time includes queueing."
+       }
+      },
+      "endImage": {
+       "id": "9c784007",
+       "status": "done",
+       "progress": 1,
+       "phase": "Complete",
+       "startedAt": "2026-10-29T16:37:39.992Z",
+       "finishedAt": "2026-10-29T16:37:55.018Z",
+       "model": "GPT Image 2.5 Flare",
+       "request": {
+        "model": "gpt-image-2.5-flare",
+        "template": "edit",
+        "aspect": "16:9",
+        "megapixels": 1,
+        "count": 1,
+        "name": "Jam anime prechorus 2 end",
+        "refs": [
+         {
+          "file": "jam-ketkout-no-koe-942a6f618f89127e.jpg",
+          "name": "start"
+         }
+        ],
+        "prompt": "Use @start as the precise start frame for the END frame of the same continuous shot. Keep the same road, horizon, friends' silhouettes, camera angle, same hand-inked lines and composition. Ketkout is running slightly farther along the road toward his waiting friends, seen from behind; preserve the exact little round chick body, three head feathers and scarf. His natural colors have gently returned: soft warm yellow feathers, orange feet and beak, peach scarf; the previously monochrome blue scene now blooms subtly into natural color, warm golden daylight on the same sky and landscape. The friends remain distant, visible silhouettes in the same positions. No sudden scene change, no text, no extra limbs."
+       },
+       "endpoint": "api/image",
+       "estimatedCredits": 3,
+       "metadata": {
+        "elapsedSeconds": 15.026,
+        "executionSeconds": null,
+        "estimatedCredits": 3,
+        "actualCostCredits": null,
+        "costNote": "Image estimates use the catalogue price; actual per-job billing was not supplied. Elapsed time includes queueing."
+       }
+      },
+      "video": {
+       "id": "tpl-81eddd8a56be",
+       "status": "done",
+       "progress": 1,
+       "phase": "Complete",
+       "startedAt": "2026-10-29T16:38:44.215Z",
+       "finishedAt": "2026-10-29T16:41:23.112Z",
+       "model": "LTX 2.5 Distilled",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "jam-ketkout-no-koe-942a6f618f89127e.jpg"
+         },
+         "last_frame": {
+          "file": "jam-ketkout-no-koe-e360de7bcd223283.jpg"
+         },
+         "width": 1344,
+         "height": 768,
+         "duration": 7,
+         "seed": 36894976,
+         "prompt": "A continuous hand-drawn anime shot, seen from behind Ketkout on the same coastal road. The small round chick runs gently toward the horizon where his friends wait as distant silhouettes. The camera follows steadily from behind, with smooth natural running and no cuts. As he approaches, his blue-and-white feathers gradually return to their warm golden yellow, his feet turn orange and his scarf becomes peach; the very same landscape slowly warms into soft sunset color. Preserve the road, fence, horizon, ink-drawn lines, character shapes and positions as in the two supplied frames. Keep the friends waiting in the distance and the transformation gradual and hopeful. No new objects, no text.",
+         "prompt_enhance": false,
+         "fram_rate": 24
+        }
+       },
+       "template": "video_ltx2_5_flf2v",
+       "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+       "metadata": {
+        "elapsedSeconds": 158.897,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Image estimates use the catalogue price; actual per-job billing was not supplied. Elapsed time includes queueing."
+       }
+      }
+     },
+     "history": [],
+     "error": null,
+     "section": "pre-chorus",
+     "timingSource": "synced-lyrics",
+     "lyricExcerpt": "まだしなくていいから\nもう少しだけ　このままで\n同じ風を感じて",
+     "endPrompt": "The same shot and horizon; Ketkout becomes golden yellow again as the whole scene gently returns to warm color.",
+     "videoPrompt": "A continuous hand-drawn anime shot, seen from behind Ketkout on the same coastal road. The small round chick runs gently toward the horizon where his friends wait as distant silhouettes. The camera follows steadily from behind, with smooth natural running and no cuts. As he approaches, his blue-and-white feathers gradually return to their warm golden yellow, his feet turn orange and his scarf becomes peach; the very same landscape slowly warms into soft sunset color. Preserve the road, fence, horizon, ink-drawn lines, character shapes and positions as in the two supplied frames. Keep the friends waiting in the distance and the transformation gradual and hopeful. No new objects, no text.",
+     "addedToEdit": {
+      "cut": "cut-jam-ketkout-no-koe",
+      "at": "2026-10-30T12:05:13.598Z",
+      "asset": "jam-ketkout-no-koe-550846f155ed31fc.mp4"
+     }
+    }
+   ],
+   "characters": [],
+   "cover": {
+    "id": "cover",
+    "title": "Album cover",
+    "prompt": "",
+    "image": null,
+    "reference": null,
+    "jobs": {},
+    "history": []
+   }
+  },
+  "syncedCaptionKey": "[\"4920c626ce39e1ef.mp3\",\"[intro]\\n[SOFT PIANO AND CLEAN GUITAR]\\n\\n[verse]\\n茜色に染まる　帰り道で\\n君の影が　少し伸びていた\\n言えなかった言葉　ポケットの中\\n握りしめて　空を見上げた\\n\\nいつかこの景色も　変わるのかな\\n違う明日へ　歩き出しても\\n今日の笑い声が　胸の奥で\\n小さな灯りに　なっている\\n\\n[pre-chorus]\\nさよならの練習なんて\\nまだしなくていいから\\nもう少しだけ　このままで\\n同じ風を感じて\\n\\n[chorus]\\nまたね　またね　遠く離れても\\n君と見た空は　消えないから\\nこぼれそうな涙の向こうに\\n僕らの明日が　待っている\\n\\n忘れないよ　名前を呼ぶ声も\\n不器用な夢も　あの日の約束も\\n夜が来ても　星を探すように\\n君を思い出すよ\\n\\n[instrumental]\\n[CLEAN GUITAR MELODY OVER PIANO AND STRINGS]\\n\\n[bridge]\\nもしも迷って　立ち止まる夜は\\nあの歌を　そっと口ずさもう\\n聞こえなくても　届かなくても\\n同じ空が　つながってる\\n\\n[final chorus]\\nまたね　またね　季節が巡っても\\n君といた日々は　ここにあるよ\\n何気ない一秒のすべてが\\n僕らを明日へ　連れてゆく\\n\\nありがとうを　まだ言えないまま\\n手を振る君に　僕も笑った\\n夜が来ても　星を探すように\\nまた会えると信じて\\n\\n[outro]\\nまたね　またね\\n明日へ続く空の下\\n\\n[PIANO AND GUITAR FADE GENTLY]\",[[7.12,12.8],[12.8,18.78],[20.72,28.1],[28.1,34.06],[35.92,40.78],[40.78,44.62],[44.62,48.4],[48.4,51.68],[51.68,54.94],[54.94,57.86],[57.86,61.88],[61.88,65.86],[66.56,70.68],[70.68,74.2],[74.87,78.28],[78.28,81.68],[81.68,85.78],[85.78,90.02],[90.02,94.22],[94.78,100.62],[111.16,115.38],[115.38,119.02],[119.02,122.96],[122.96,125.88],[128.28,132.57],[132.57,136.4],[136.4,139.76],[139.76,143.82],[143.82,147.64],[147.64,151.14],[151.14,155.14],[155.14,160.5],[161.36,165.14],[167.46,170.46]],{\"from\":33.8,\"to\":63.8}]",
+  "captionLanguage": "both"
+ },
+ "cut": {
+  "id": "cut-jam-ketkout-no-koe",
+  "name": "New song",
+  "body": {
+   "aspect": "16:9",
+   "duck": false,
+   "fit": "cover",
+   "product": "jam",
+   "tracks": [
+    {
+     "id": "t1",
+     "kind": "title",
+     "name": "Titles",
+     "items": [
+      {
+       "id": "c2",
+       "lyric": true,
+       "text": "いつかこの景色も　変わるのかな",
+       "start": 2.12,
+       "length": 4.86,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "いつかこの景色も",
+         "from": 0,
+         "to": 2.43
+        },
+        {
+         "text": "変わるのかな",
+         "from": 2.43,
+         "to": 4.86
+        }
+       ],
+       "size": 0.075,
+       "captionLanguage": "both",
+       "romanization": "itsuka kono keshiki mo kawaru no ka na",
+       "y": 0.91,
+       "x": 0.497
+      },
+      {
+       "id": "c3",
+       "lyric": true,
+       "text": "違う明日へ　歩き出しても",
+       "start": 6.98,
+       "length": 3.84,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "違う明日へ",
+         "from": 0,
+         "to": 1.92
+        },
+        {
+         "text": "歩き出しても",
+         "from": 1.92,
+         "to": 3.84
+        }
+       ],
+       "size": 0.075,
+       "captionLanguage": "both",
+       "romanization": "chigau ashita e arukidashite mo",
+       "y": 0.987,
+       "x": 0.508
+      },
+      {
+       "id": "c4",
+       "lyric": true,
+       "text": "今日の笑い声が　胸の奥で",
+       "start": 10.82,
+       "length": 3.78,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "今日の笑い声が",
+         "from": 0,
+         "to": 1.89
+        },
+        {
+         "text": "胸の奥で",
+         "from": 1.89,
+         "to": 3.78
+        }
+       ],
+       "size": 0.075,
+       "captionLanguage": "both",
+       "romanization": "kyō no waraigoe ga mune no oku de",
+       "y": 0.126,
+       "x": 0.512
+      },
+      {
+       "id": "c5",
+       "lyric": true,
+       "text": "小さな灯りに　なっている",
+       "start": 14.6,
+       "length": 3.28,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "小さな灯りに",
+         "from": 0,
+         "to": 1.64
+        },
+        {
+         "text": "なっている",
+         "from": 1.64,
+         "to": 3.28
+        }
+       ],
+       "size": 0.075,
+       "captionLanguage": "both",
+       "romanization": "chīsana akari ni natteiru",
+       "y": 0.129,
+       "x": 0.519
+      },
+      {
+       "id": "c6",
+       "lyric": true,
+       "text": "さよならの練習なんて",
+       "start": 17.88,
+       "length": 3.26,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "さよならの練習なんて",
+         "from": 0,
+         "to": 3.26
+        }
+       ],
+       "size": 0.075,
+       "captionLanguage": "both",
+       "romanization": "sayonara no renshū nante",
+       "y": 0.127,
+       "x": 0.508
+      },
+      {
+       "id": "c7",
+       "lyric": true,
+       "text": "まだしなくていいから",
+       "start": 21.14,
+       "length": 2.92,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "まだしなくていいから",
+         "from": 0,
+         "to": 2.92
+        }
+       ],
+       "size": 0.075,
+       "captionLanguage": "both",
+       "romanization": "mada shinakute ii kara",
+       "y": 0.123,
+       "x": 0.504
+      },
+      {
+       "id": "c8",
+       "lyric": true,
+       "text": "もう少しだけ　このままで",
+       "start": 24.06,
+       "length": 4.02,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "もう少しだけ",
+         "from": 0,
+         "to": 2.01
+        },
+        {
+         "text": "このままで",
+         "from": 2.01,
+         "to": 4.02
+        }
+       ],
+       "size": 0.075,
+       "captionLanguage": "both",
+       "romanization": "mōsukoshi dake kono mama de",
+       "y": 0.135,
+       "x": 0.512
+      },
+      {
+       "id": "c9",
+       "lyric": true,
+       "text": "同じ風を感じて",
+       "start": 28.08,
+       "length": 1.92,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "同じ風を感じて",
+         "from": 0,
+         "to": 1.92
+        }
+       ],
+       "size": 0.075,
+       "captionLanguage": "both",
+       "romanization": "onaji kaze o kanjite",
+       "y": 0.103,
+       "x": 0.511
+      }
+     ]
+    },
+    {
+     "id": "fx",
+     "kind": "fx",
+     "name": "Beat FX",
+     "items": []
+    },
+    {
+     "id": "v2",
+     "kind": "video",
+     "name": "Overlays",
+     "items": [
+      {
+       "id": "backstage-scene-6d2df5d8-4736-4bf5-9897-35a589272a0f",
+       "backstage": "scene-6d2df5d8-4736-4bf5-9897-35a589272a0f",
+       "start": 0,
+       "sound": false,
+       "join": "cut",
+       "opacity": 1,
+       "src": {
+        "kind": "video",
+        "id": "jam-ketkout-no-koe-cb1e5857f937c73d.mp4",
+        "duration": 9.04,
+        "name": "verse · 1"
+       },
+       "from": 0,
+       "to": 8.94,
+       "speed": 1
+      },
+      {
+       "id": "backstage-scene-9ce81536-9357-4386-b362-efa9b0f10603",
+       "backstage": "scene-9ce81536-9357-4386-b362-efa9b0f10603",
+       "start": 8.94,
+       "sound": false,
+       "join": "cut",
+       "opacity": 1,
+       "src": {
+        "kind": "video",
+        "id": "jam-ketkout-no-koe-4d4266de5acd5f24.mp4",
+        "duration": 9.04,
+        "name": "verse · 2"
+       },
+       "from": 0,
+       "to": 8.94,
+       "speed": 1
+      },
+      {
+       "id": "backstage-scene-3b48e435-dad8-4689-9df6-8fac09d11a02",
+       "backstage": "scene-3b48e435-dad8-4689-9df6-8fac09d11a02",
+       "start": 17.88,
+       "sound": false,
+       "join": "cut",
+       "opacity": 1,
+       "src": {
+        "kind": "video",
+        "id": "jam-ketkout-no-koe-e5f31a1fe4186668.mp4",
+        "duration": 7.04,
+        "name": "pre-chorus · 1"
+       },
+       "from": 0,
+       "to": 6.06,
+       "speed": 1
+      },
+      {
+       "id": "backstage-scene-f32cbe24-9432-4e5b-87bc-c3d1cfa8a5f0",
+       "backstage": "scene-f32cbe24-9432-4e5b-87bc-c3d1cfa8a5f0",
+       "start": 23.94,
+       "sound": false,
+       "join": "cut",
+       "opacity": 1,
+       "src": {
+        "kind": "video",
+        "id": "jam-ketkout-no-koe-550846f155ed31fc.mp4",
+        "duration": 7.04,
+        "name": "pre-chorus · 2"
+       },
+       "from": 0,
+       "to": 6.06,
+       "speed": 1
+      }
+     ]
+    },
+    {
+     "id": "v1",
+     "kind": "video",
+     "name": "Video",
+     "main": true,
+     "items": [
+      {
+       "id": "j1",
+       "shot": 0,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 3.786
+      },
+      {
+       "id": "j2",
+       "shot": 1,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 3.75
+      },
+      {
+       "id": "j3",
+       "shot": 2,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 3.75
+      },
+      {
+       "id": "j4",
+       "shot": 3,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 3.75
+      },
+      {
+       "id": "j5",
+       "shot": 4,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 3.75
+      },
+      {
+       "id": "j6",
+       "shot": 5,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 3.75
+      },
+      {
+       "id": "j7",
+       "shot": 6,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 3.75
+      },
+      {
+       "id": "j8",
+       "shot": 7,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 3.734
+      }
+     ]
+    },
+    {
+     "id": "a1",
+     "kind": "audio",
+     "role": "voice",
+     "name": "Voice",
+     "items": []
+    },
+    {
+     "id": "a2",
+     "kind": "audio",
+     "role": "music",
+     "name": "Music",
+     "items": [
+      {
+       "id": "track",
+       "src": {
+        "kind": "audio",
+        "id": "jam-ketkout-no-koe-50a9359d71de4667.mp3",
+        "duration": 30.02,
+        "name": "New song"
+       },
+       "start": 0,
+       "from": 0,
+       "to": 30.02
+      }
+     ]
+    },
+    {
+     "id": "a3",
+     "kind": "audio",
+     "role": "effects",
+     "name": "Effects",
+     "items": []
+    }
+   ],
+   "markers": [],
+   "beats": {
+    "bpm": 128,
+    "offset": 0,
+    "times": [
+     0.047,
+     0.516,
+     0.984,
+     1.453,
+     1.922,
+     2.391,
+     2.86,
+     3.329,
+     3.798,
+     4.266,
+     4.735,
+     5.204,
+     5.673,
+     6.142,
+     6.611,
+     7.08,
+     7.548,
+     8.017,
+     8.486,
+     8.955,
+     9.424,
+     9.893,
+     10.361,
+     10.83,
+     11.299,
+     11.768,
+     12.237,
+     12.706,
+     13.175,
+     13.643,
+     14.112,
+     14.581,
+     15.05,
+     15.519,
+     15.988,
+     16.456,
+     16.925,
+     17.394,
+     17.863,
+     18.332,
+     18.801,
+     19.27,
+     19.738,
+     20.207,
+     20.676,
+     21.145,
+     21.614,
+     22.083,
+     22.551,
+     23.02,
+     23.489,
+     23.958,
+     24.427,
+     24.896,
+     25.365,
+     25.833,
+     26.302,
+     26.771,
+     27.24,
+     27.709,
+     28.178,
+     28.647,
+     29.115,
+     29.584,
+     30.053,
+     30.522,
+     30.991,
+     31.46
+    ],
+    "down": 0,
+    "source": "comfy",
+    "sure": 0.46653292607246105
+   },
+   "captionLanguage": "both"
+  }
+ },
+ "media": [
+  {
+   "file": "07c30d19faf2fa91.mp4",
+   "to": "videos/jam-ketkout-no-koe-07c30d19faf2fa91.mp4"
+  },
+  {
+   "file": "1730080bb9eabcf0.jpg",
+   "to": "photos/jam-ketkout-no-koe-1730080bb9eabcf0.jpg"
+  },
+  {
+   "file": "29800b157d4032dd.jpg",
+   "to": "photos/jam-ketkout-no-koe-29800b157d4032dd.jpg"
+  },
+  {
+   "file": "2e75032e19c4dbf8.jpg",
+   "to": "photos/jam-ketkout-no-koe-2e75032e19c4dbf8.jpg"
+  },
+  {
+   "file": "2fb9db94a03d3df4.mp4",
+   "to": "videos/jam-ketkout-no-koe-2fb9db94a03d3df4.mp4"
+  },
+  {
+   "file": "442879f29be76932.jpg",
+   "to": "photos/jam-ketkout-no-koe-442879f29be76932.jpg"
+  },
+  {
+   "file": "450dde50f5b9ba96.jpg",
+   "to": "photos/jam-ketkout-no-koe-450dde50f5b9ba96.jpg"
+  },
+  {
+   "file": "4920c626ce39e1ef.mp3",
+   "to": "audio/jam-ketkout-no-koe-4920c626ce39e1ef.mp3",
+   "name": "Ketkout no Koe",
+   "kind": "music"
+  },
+  {
+   "file": "4d4266de5acd5f24.mp4",
+   "to": "videos/jam-ketkout-no-koe-4d4266de5acd5f24.mp4"
+  },
+  {
+   "file": "4d9e6251eec24e3d.png",
+   "to": "photos/jam-ketkout-no-koe-4d9e6251eec24e3d.png"
+  },
+  {
+   "file": "50a9359d71de4667.mp3",
+   "to": "audio/jam-ketkout-no-koe-50a9359d71de4667.mp3",
+   "name": "Ketkout OP1",
+   "kind": "music"
+  },
+  {
+   "file": "514fdae1aaaf0a6f.jpg",
+   "to": "photos/jam-ketkout-no-koe-514fdae1aaaf0a6f.jpg"
+  },
+  {
+   "file": "550846f155ed31fc.mp4",
+   "to": "videos/jam-ketkout-no-koe-550846f155ed31fc.mp4"
+  },
+  {
+   "file": "6424a6b12f65f40e.jpg",
+   "to": "photos/jam-ketkout-no-koe-6424a6b12f65f40e.jpg"
+  },
+  {
+   "file": "69501f0e79f6b249.jpg",
+   "to": "photos/jam-ketkout-no-koe-69501f0e79f6b249.jpg"
+  },
+  {
+   "file": "7df7fa0c5e667c98.jpg",
+   "to": "photos/jam-ketkout-no-koe-7df7fa0c5e667c98.jpg"
+  },
+  {
+   "file": "942a6f618f89127e.jpg",
+   "to": "photos/jam-ketkout-no-koe-942a6f618f89127e.jpg"
+  },
+  {
+   "file": "ae1cfe450f8296d7.jpg",
+   "to": "photos/jam-ketkout-no-koe-ae1cfe450f8296d7.jpg"
+  },
+  {
+   "file": "c3bf9c56eb30f17d.png",
+   "to": "photos/jam-ketkout-no-koe-c3bf9c56eb30f17d.png"
+  },
+  {
+   "file": "cb1e5857f937c73d.mp4",
+   "to": "videos/jam-ketkout-no-koe-cb1e5857f937c73d.mp4"
+  },
+  {
+   "file": "e360de7bcd223283.jpg",
+   "to": "photos/jam-ketkout-no-koe-e360de7bcd223283.jpg"
+  },
+  {
+   "file": "e5f31a1fe4186668.mp4",
+   "to": "videos/jam-ketkout-no-koe-e5f31a1fe4186668.mp4"
+  },
+  {
+   "file": "e983168bd8058f4f.jpg",
+   "to": "photos/jam-ketkout-no-koe-e983168bd8058f4f.jpg"
+  },
+  {
+   "file": "f22ef26700b57685.png",
+   "to": "photos/jam-ketkout-no-koe-f22ef26700b57685.png"
+  },
+  {
+   "file": "f93a83eeb83bf8c2.mp4",
+   "to": "videos/jam-ketkout-no-koe-f93a83eeb83bf8c2.mp4"
+  }
+ ]
+}

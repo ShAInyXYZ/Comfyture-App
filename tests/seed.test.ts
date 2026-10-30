@@ -17,8 +17,8 @@ const root = resolve(import.meta.dirname, "..");
  * were retired on 25 October, and La Calabaza and Three Kittens, for their 13 and 15 s songs, on 26 October (they are kept for the tests in
  * tests/fixtures/jam/): a data folder from before still has them, and the first start takes out an untouched copy.
  */
-const SHIPPED = ["jam-walk-moonlit-oolong"];
-const VERSIONS = { "jam-walk-moonlit-oolong": 3 };
+const SHIPPED = ["jam-ketkout-no-koe", "jam-praline-lo-fi", "jam-walk-moonlit-oolong"];
+const VERSIONS = { "jam-ketkout-no-koe": 1, "jam-praline-lo-fi": 1, "jam-walk-moonlit-oolong": 3 };
 const freePort = () => new Promise<number>((done) => {
   const s = createServer().listen(0, () => {
     const { port } = s.address() as { port: number };

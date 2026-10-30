@@ -1,0 +1,1673 @@
+{
+ "name": "Praline Lo-Fi",
+ "rev": "1",
+ "about": "Praline Lo-Fi, a Jam made from Praline's lo-fi song: the track, its scenes and the edit.",
+ "thumb": "thumb.png",
+ "jam": {
+  "track": {
+   "file": "jam-praline-lo-fi-06733da4987e19d1.mp3",
+   "url": "/media/audio/jam-praline-lo-fi-06733da4987e19d1.mp3",
+   "seconds": 174.63,
+   "name": "Praline Lo-Fi",
+   "kind": "made",
+   "cover": "/media/photos/jam-praline-lo-fi-5b7bf7ee57bebf42.png",
+   "prompt": "A cosy Japanese lo-fi hip hop song for studying late at night, warm and dreamy, from the same world as a bittersweet anime ending. Slow laid-back boom-bap groove around 76 BPM with dusty swung drums, soft rimshots and a round muffled kick. Mellow Rhodes electric piano playing jazzy seventh and ninth chords, a warm upright-style bass, a gentle nylon guitar motif and faint vinyl crackle with soft rain outside a window. A soft, close, breathy female vocal sings in Japanese, relaxed and intimate, almost whispered in the verses and a little brighter in the hook, with light doubled harmonies. Begin with rain, crackle and the Rhodes alone like a desk lamp switching on. Keep the verses sparse and steady. Let the hook float with a simple, memorable melody. Leave a short instrumental break where the Rhodes and guitar trade a tiny melody over the beat. End with the beat dropping out, the Rhodes and the rain fading together. Tape-saturated warm mix, gentle low-pass filtering, soft reverb, no spoken dialogue, no crowd noise, no abrupt ending.",
+   "lyrics": "[intro]\n[RAIN, VINYL CRACKLE AND SOFT RHODES]\n\n[verse]\n窓の向こう　雨のリズム\nノートの端に　小さな落書き\nあたたかいお茶　湯気がゆれて\n時計の針も　ゆっくり歩く\n\nヘッドフォンの中　やさしい夜\n眠い目こすって　ページをめくる\n街の灯りが　にじんで見える\nまだ少しだけ　ここにいたい\n\n[chorus]\nゆっくりでいいよ　急がなくていい\n今夜の音に　包まれて\n明日のことは　明日に任せて\nこのページだけ　読み終えよう\n\n[instrumental]\n[RHODES AND NYLON GUITAR MELODY OVER THE BEAT]\n\n[verse]\n消しゴムのかす　机の上\n書きかけの夢　まだ途中でも\nしっぽをまるめて　深呼吸して\nひとつずつでいい　前に進む\n\n[chorus]\nゆっくりでいいよ　急がなくていい\n今夜の音に　包まれて\n明日のことは　明日に任せて\nこのページだけ　読み終えよう\n\n[outro]\n雨がやむころ　またね\nおやすみ　やさしい夜\n\n[BEAT FADES, RHODES AND RAIN LINGER]",
+   "drop": 21.25,
+   "loud": 129.5,
+   "timing": {
+    "lines": [
+     [
+      21,
+      26.22
+     ],
+     [
+      26.22,
+      31.58
+     ],
+     [
+      32.37,
+      36.52
+     ],
+     [
+      37.22,
+      41.58
+     ],
+     [
+      42.5,
+      47.26
+     ],
+     [
+      48.22,
+      53.48
+     ],
+     [
+      53.48,
+      58.04
+     ],
+     [
+      58.04,
+      63.78
+     ],
+     [
+      64.32,
+      68.88
+     ],
+     [
+      69.38,
+      73.6
+     ],
+     [
+      74.68,
+      79.84
+     ],
+     [
+      79.84,
+      85.12
+     ],
+     [
+      106.98,
+      111.34
+     ],
+     [
+      111.34,
+      116.58
+     ],
+     [
+      118.52,
+      122.38
+     ],
+     [
+      122.91,
+      127.36
+     ],
+     [
+      128.2,
+      133.22
+     ],
+     [
+      133.22,
+      137.44
+     ],
+     [
+      138.3,
+      143.58
+     ],
+     [
+      144.08,
+      148.48
+     ],
+     [
+      154.46,
+      158.48
+     ],
+     [
+      158.48,
+      169.99
+     ]
+    ],
+    "matched": 238,
+    "source": "lyrics-alignment"
+   }
+  },
+  "span": {
+   "from": 0,
+   "to": 174.63
+  },
+  "part": {
+   "file": "jam-praline-lo-fi-a5098c4e730420f8.mp3",
+   "url": "/media/audio/jam-praline-lo-fi-a5098c4e730420f8.mp3",
+   "seconds": 174.62,
+   "source": {
+    "file": "jam-praline-lo-fi-06733da4987e19d1.mp3",
+    "from": 0,
+    "to": 174.63
+   }
+  },
+  "vocals": null,
+  "stems": null,
+  "sung": [],
+  "lines": [
+   {
+    "from": 21,
+    "to": 26.22,
+    "text": "窓の向こう　雨のリズム"
+   },
+   {
+    "from": 26.22,
+    "to": 31.58,
+    "text": "ノートの端に　小さな落書き"
+   },
+   {
+    "from": 32.37,
+    "to": 36.52,
+    "text": "あたたかいお茶　湯気がゆれて"
+   },
+   {
+    "from": 37.22,
+    "to": 41.58,
+    "text": "時計の針も　ゆっくり歩く"
+   },
+   {
+    "from": 42.5,
+    "to": 47.26,
+    "text": "ヘッドフォンの中　やさしい夜"
+   },
+   {
+    "from": 48.22,
+    "to": 53.48,
+    "text": "眠い目こすって　ページをめくる"
+   },
+   {
+    "from": 53.48,
+    "to": 58.04,
+    "text": "街の灯りが　にじんで見える"
+   },
+   {
+    "from": 58.04,
+    "to": 63.78,
+    "text": "まだ少しだけ　ここにいたい"
+   },
+   {
+    "from": 64.32,
+    "to": 68.88,
+    "text": "ゆっくりでいいよ　急がなくていい"
+   },
+   {
+    "from": 69.38,
+    "to": 73.6,
+    "text": "今夜の音に　包まれて"
+   },
+   {
+    "from": 74.68,
+    "to": 79.84,
+    "text": "明日のことは　明日に任せて"
+   },
+   {
+    "from": 79.84,
+    "to": 85.12,
+    "text": "このページだけ　読み終えよう"
+   },
+   {
+    "from": 106.98,
+    "to": 111.34,
+    "text": "消しゴムのかす　机の上"
+   },
+   {
+    "from": 111.34,
+    "to": 116.58,
+    "text": "書きかけの夢　まだ途中でも"
+   },
+   {
+    "from": 118.52,
+    "to": 122.38,
+    "text": "しっぽをまるめて　深呼吸して"
+   },
+   {
+    "from": 122.91,
+    "to": 127.36,
+    "text": "ひとつずつでいい　前に進む"
+   },
+   {
+    "from": 128.2,
+    "to": 133.22,
+    "text": "ゆっくりでいいよ　急がなくていい"
+   },
+   {
+    "from": 133.22,
+    "to": 137.44,
+    "text": "今夜の音に　包まれて"
+   },
+   {
+    "from": 138.3,
+    "to": 143.58,
+    "text": "明日のことは　明日に任せて"
+   },
+   {
+    "from": 144.08,
+    "to": 148.48,
+    "text": "このページだけ　読み終えよう"
+   },
+   {
+    "from": 154.46,
+    "to": 158.48,
+    "text": "雨がやむころ　またね"
+   },
+   {
+    "from": 158.48,
+    "to": 169.99,
+    "text": "おやすみ　やさしい夜"
+   }
+  ],
+  "bpm": 88.8,
+  "beats": [
+   0.524,
+   1.185,
+   1.87,
+   2.544,
+   3.229,
+   3.902,
+   4.576,
+   5.249,
+   5.922,
+   6.596,
+   7.281,
+   7.954,
+   8.627,
+   9.301,
+   9.986,
+   10.659,
+   11.333,
+   12.006,
+   12.679,
+   13.364,
+   14.038,
+   14.711,
+   15.384,
+   16.058,
+   16.743,
+   17.416,
+   18.09,
+   18.763,
+   19.436,
+   20.11,
+   20.818,
+   21.468,
+   22.165,
+   22.826,
+   23.5,
+   24.173,
+   24.847,
+   25.52,
+   26.205,
+   26.878,
+   27.552,
+   28.225,
+   28.898,
+   29.572,
+   30.257,
+   30.93,
+   31.604,
+   32.277,
+   32.95,
+   33.635,
+   34.309,
+   34.982,
+   35.655,
+   36.329,
+   37.014,
+   37.687,
+   38.361,
+   39.034,
+   39.719,
+   40.392,
+   41.066,
+   41.727,
+   42.412,
+   43.097,
+   43.771,
+   44.433,
+   45.106,
+   45.779,
+   46.453,
+   47.126,
+   47.799,
+   48.473,
+   49.158,
+   49.831,
+   50.505,
+   51.178,
+   51.851,
+   52.513,
+   53.198,
+   53.871,
+   54.533,
+   55.218,
+   55.892,
+   56.553,
+   57.238,
+   57.9,
+   58.585,
+   59.247,
+   59.92,
+   60.594,
+   61.267,
+   61.94,
+   62.614,
+   63.287,
+   63.984,
+   64.646,
+   65.307,
+   65.981,
+   66.654,
+   67.327,
+   68.001,
+   68.663,
+   69.336,
+   70.009,
+   70.683,
+   71.368,
+   72.029,
+   72.703,
+   73.376,
+   74.038,
+   74.711,
+   75.385,
+   76.047,
+   76.732,
+   77.405,
+   78.067,
+   78.74,
+   79.413,
+   80.087,
+   80.76,
+   81.434,
+   82.095,
+   82.769,
+   83.442,
+   84.115,
+   84.777,
+   85.462,
+   86.124,
+   86.786,
+   87.459,
+   88.133,
+   88.806,
+   89.468,
+   90.129,
+   90.803,
+   91.476,
+   92.138,
+   92.8,
+   93.473,
+   94.135,
+   94.797,
+   95.47,
+   96.143,
+   96.805,
+   97.467,
+   98.129,
+   98.79,
+   99.464,
+   100.126,
+   100.787,
+   101.461,
+   102.123,
+   102.784,
+   103.446,
+   104.108,
+   104.781,
+   105.443,
+   106.105,
+   106.79,
+   107.452,
+   108.113,
+   108.763,
+   109.425,
+   110.099,
+   110.76,
+   111.422,
+   112.084,
+   112.746,
+   113.407,
+   114.081,
+   114.743,
+   115.416,
+   116.078,
+   116.728,
+   117.39,
+   118.063,
+   118.725,
+   119.387,
+   120.048,
+   120.71,
+   121.372,
+   122.034,
+   122.695,
+   123.357,
+   124.019,
+   124.681,
+   125.342,
+   126.004,
+   126.666,
+   127.328,
+   128.001,
+   128.64,
+   129.301,
+   129.963,
+   130.637,
+   131.298,
+   131.949,
+   132.61,
+   133.272,
+   133.934,
+   134.596,
+   135.257,
+   135.919,
+   136.569,
+   137.231,
+   137.893,
+   138.543,
+   139.205,
+   139.867,
+   140.528,
+   141.19,
+   141.84,
+   142.502,
+   143.164,
+   143.826,
+   144.476,
+   145.137,
+   145.799,
+   146.449,
+   147.123,
+   147.773,
+   148.435,
+   149.085,
+   149.747,
+   150.397,
+   151.059,
+   151.72,
+   152.382,
+   153.044,
+   153.694,
+   154.356,
+   155.006,
+   155.668,
+   156.33,
+   156.991,
+   157.641,
+   158.303,
+   158.953,
+   159.615,
+   160.277,
+   160.927,
+   161.589,
+   162.239,
+   162.901,
+   163.563,
+   164.213,
+   164.863,
+   165.525,
+   166.186,
+   166.837,
+   167.487,
+   168.148,
+   168.799,
+   169.472,
+   170.157,
+   170.854,
+   171.527,
+   172.212,
+   172.909,
+   173.57,
+   174.232
+  ],
+  "captions": "karaoke",
+  "artist": null,
+  "dance": null,
+  "style": "",
+  "every": 2,
+  "shots": [
+   {
+    "from": 0,
+    "to": 3.222,
+    "kind": "broll",
+    "run": null
+   },
+   {
+    "from": 3.222,
+    "to": 8.627,
+    "kind": "broll",
+    "run": null
+   },
+   {
+    "from": 8.627,
+    "to": 14.033,
+    "kind": "broll",
+    "run": null
+   },
+   {
+    "from": 14.033,
+    "to": 19.438,
+    "kind": "broll",
+    "run": null
+   },
+   {
+    "from": 19.438,
+    "to": 24.843,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 24.843,
+    "to": 30.02,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 30.932,
+    "to": 40.511,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 40.511,
+    "to": 50.09,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 50.09,
+    "to": 59.67,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 59.67,
+    "to": 69.249,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 69.249,
+    "to": 78.828,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 78.828,
+    "to": 88.407,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 88.407,
+    "to": 97.986,
+    "kind": "broll",
+    "run": null
+   },
+   {
+    "from": 97.986,
+    "to": 107.566,
+    "kind": "broll",
+    "run": null
+   },
+   {
+    "from": 107.566,
+    "to": 117.145,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 117.145,
+    "to": 126.724,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 126.724,
+    "to": 136.303,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 136.303,
+    "to": 145.882,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 145.882,
+    "to": 155.462,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 155.462,
+    "to": 165.041,
+    "kind": "performance",
+    "run": null
+   },
+   {
+    "from": 165.041,
+    "to": 174.62,
+    "kind": "performance",
+    "run": null
+   }
+  ],
+  "looks": {},
+  "film": null,
+  "cut": "cut-jam-praline-lo-fi",
+  "down": 1,
+  "sure": 1,
+  "musicIn": "jam-praline-lo-fi-a5098c4e730420f8.mp3",
+  "linesInEdit": true,
+  "backstage": {
+   "version": 1,
+   "aspect": "16:9",
+   "style": "Cosy painterly anime lo-fi study scene: warm lamp light inside, cool rainy night town outside the window, soft film grain.",
+   "format": "lyric-video",
+   "scenes": [
+    {
+     "id": "scene-e87fdc24-8f33-45e9-a46f-fd8b6f4c9e8a",
+     "title": "Study loop",
+     "from": 0,
+     "to": 10,
+     "prompt": "Praline, the cream-and-caramel kitten in cream headphones, writes in her notebook at her desk by the rainy night window, exactly as in the frame.",
+     "motion": "Locked-off camera, no camera move. Praline writes slowly with her pencil and blinks once, her ears twitch, her fluffy tail sways gently, steam curls from the tea, rain streaks down the window and the town lights twinkle. Calm, continuous, seamless loop: she ends in the same pose she starts in.",
+     "model": "ltx-2.5",
+     "characterIds": [],
+     "reference": null,
+     "image": {
+      "file": "jam-praline-lo-fi-5212184ae6b1e97c.png",
+      "url": "/media/photos/jam-praline-lo-fi-5212184ae6b1e97c.png",
+      "width": 1672,
+      "height": 941,
+      "name": "Praline Lo-Fi · loop"
+     },
+     "endImage": {
+      "file": "jam-praline-lo-fi-5212184ae6b1e97c.png",
+      "url": "/media/photos/jam-praline-lo-fi-5212184ae6b1e97c.png",
+      "width": 1672,
+      "height": 941,
+      "name": "Praline Lo-Fi · loop"
+     },
+     "video": {
+      "kind": "video",
+      "url": "/media/videos/jam-praline-lo-fi-529c154bb1f7be38.mp4",
+      "file": "jam-praline-lo-fi-529c154bb1f7be38.mp4",
+      "width": 1344,
+      "height": 768,
+      "seconds": 10.04,
+      "saved": "2dfba509fbdf2b6daf7ee72862931908f13ffd58ac22274efcbe1038137cf66e.mp4",
+      "duration": 10.04
+     },
+     "jobs": {
+      "video": {
+       "status": "done",
+       "progress": 1,
+       "phase": "saving",
+       "startedAt": "2026-10-30T12:39:26.588Z",
+       "model": "LTX 2.5 Distilled",
+       "template": "video_ltx2_5_flf2v",
+       "request": {
+        "confirm": true,
+        "inputs": {
+         "first_frame": {
+          "file": "jam-praline-lo-fi-5212184ae6b1e97c.png"
+         },
+         "last_frame": {
+          "file": "jam-praline-lo-fi-5212184ae6b1e97c.png"
+         },
+         "width": 1344,
+         "height": 768,
+         "duration": 10,
+         "seed": 1922959238,
+         "prompt": "Locked-off, continuous shot in the exact cozy painterly composition: Praline, the cream-and-caramel kitten in cream headphones, slowly moves her pencil across the notebook, blinks once, and gives a small ear twitch as her fluffy tail gently sways. Steam curls above the tea while rain trails down the window and distant town lights softly twinkle. Keep the warm lamplight, cool rainy-night colors, and soft film grain steady; end with Praline settled back into her opening pose for a seamless loop.",
+         "prompt_enhance": false,
+         "fram_rate": 24
+        }
+       },
+       "endpoint": "api/utensils/templates/video_ltx2_5_flf2v/run",
+       "estimatedCredits": null,
+       "id": "tpl-9a867841442b",
+       "finishedAt": "2026-10-30T12:40:38.820Z",
+       "metadata": {
+        "elapsedSeconds": 72.232,
+        "executionSeconds": null,
+        "estimatedCredits": null,
+        "partnerCredits": null,
+        "actualCostCredits": null,
+        "costNote": "Actual per-job billing was not supplied. Elapsed time includes queueing and is not GPU billing time."
+       }
+      }
+     },
+     "history": [],
+     "error": null,
+     "videoPrompt": "Locked-off, continuous shot in the exact cozy painterly composition: Praline, the cream-and-caramel kitten in cream headphones, slowly moves her pencil across the notebook, blinks once, and gives a small ear twitch as her fluffy tail gently sways. Steam curls above the tea while rain trails down the window and distant town lights softly twinkle. Keep the warm lamplight, cool rainy-night colors, and soft film grain steady; end with Praline settled back into her opening pose for a seamless loop.",
+     "videoPromptSignature": "{\"id\":\"scene-e87fdc24-8f33-45e9-a46f-fd8b6f4c9e8a\",\"kind\":\"video\",\"title\":\"Study loop\",\"model\":\"LTX 2.5 Distilled\",\"template\":\"video_ltx2_5_flf2v\",\"duration\":10,\"timelineDuration\":10,\"width\":1344,\"height\":768,\"aspect\":\"16:9\",\"frames\":[{\"file\":\"5212184ae6b1e97c.png\",\"url\":\"/media/photos/5212184ae6b1e97c.png\",\"width\":1672,\"height\":941,\"name\":\"Praline Lo-Fi · loop\"},{\"file\":\"5212184ae6b1e97c.png\",\"url\":\"/media/photos/5212184ae6b1e97c.png\",\"width\":1672,\"height\":941,\"name\":\"Praline Lo-Fi · loop\"}],\"references\":[],\"prompt\":\"Use the supplied start frame and end frame as composition anchors. Preserve the identity and appearance of characters shown in the supplied frames. Create one continuous coherent shot for a lyric video.\\nA lyric video: atmospheric artwork with a calm central or lower area, strong text readability and uncluttered negative space. Lettering is added later by the caption editor.\\nVisual direction: Cosy painterly anime lo-fi study scene: warm lamp light inside, cool rainy night town outside the window, soft film grain.\\nScene: Praline, the cream-and-caramel kitten in cream headphones, writes in her notebook at her desk by the rainy night window, exactly as in the frame.\\nMotion: Locked-off camera, no camera move. Praline writes slowly with her pencil and blinks once, her ears twitch, her fluffy tail sways gently, steam curls from the tea, rain streaks down the window and the town lights twinkle. Calm, continuous, seamless loop: she ends in the same pose she starts in.\\nKeep stable anatomy, lighting, exposure and natural colors. Prefer controlled movement to fast gestures. No captions, lettering, watermark, music, narration or added dialogue. The original song will be the soundtrack in the edit; generated sound is muted.\",\"request\":{\"confirm\":true,\"inputs\":{\"first_frame\":{\"file\":\"5212184ae6b1e97c.png\"},\"last_frame\":{\"file\":\"5212184ae6b1e97c.png\"},\"width\":1344,\"height\":768,\"duration\":10,\"seed\":1,\"prompt\":\"Use the supplied start frame and end frame as composition anchors. Preserve the identity and appearance of characters shown in the supplied frames. Create one continuous coherent shot for a lyric video.\\nA lyric video: atmospheric artwork with a calm central or lower area, strong text readability and uncluttered negative space. Lettering is added later by the caption editor.\\nVisual direction: Cosy painterly anime lo-fi study scene: warm lamp light inside, cool rainy night town outside the window, soft film grain.\\nScene: Praline, the cream-and-caramel kitten in cream headphones, writes in her notebook at her desk by the rainy night window, exactly as in the frame.\\nMotion: Locked-off camera, no camera move. Praline writes slowly with her pencil and blinks once, her ears twitch, her fluffy tail sways gently, steam curls from the tea, rain streaks down the window and the town lights twinkle. Calm, continuous, seamless loop: she ends in the same pose she starts in.\\nKeep stable anatomy, lighting, exposure and natural colors. Prefer controlled movement to fast gestures. No captions, lettering, watermark, music, narration or added dialogue. The original song will be the soundtrack in the edit; generated sound is muted.\",\"prompt_enhance\":false,\"fram_rate\":24}},\"soundtrack\":\"The original song; generated audio is muted in the edit.\"}",
+     "addedToEdit": {
+      "cut": "cut-jam-praline-lo-fi",
+      "at": "2026-10-30T12:44:28.010Z",
+      "asset": "jam-praline-lo-fi-529c154bb1f7be38.mp4"
+     }
+    }
+   ],
+   "characters": [],
+   "cover": {
+    "id": "cover",
+    "title": "Album cover",
+    "prompt": "",
+    "image": null,
+    "reference": null,
+    "jobs": {},
+    "history": []
+   }
+  },
+  "syncedCaptionKey": "[\"06733da4987e19d1.mp3\",\"[intro]\\n[RAIN, VINYL CRACKLE AND SOFT RHODES]\\n\\n[verse]\\n窓の向こう　雨のリズム\\nノートの端に　小さな落書き\\nあたたかいお茶　湯気がゆれて\\n時計の針も　ゆっくり歩く\\n\\nヘッドフォンの中　やさしい夜\\n眠い目こすって　ページをめくる\\n街の灯りが　にじんで見える\\nまだ少しだけ　ここにいたい\\n\\n[chorus]\\nゆっくりでいいよ　急がなくていい\\n今夜の音に　包まれて\\n明日のことは　明日に任せて\\nこのページだけ　読み終えよう\\n\\n[instrumental]\\n[RHODES AND NYLON GUITAR MELODY OVER THE BEAT]\\n\\n[verse]\\n消しゴムのかす　机の上\\n書きかけの夢　まだ途中でも\\nしっぽをまるめて　深呼吸して\\nひとつずつでいい　前に進む\\n\\n[chorus]\\nゆっくりでいいよ　急がなくていい\\n今夜の音に　包まれて\\n明日のことは　明日に任せて\\nこのページだけ　読み終えよう\\n\\n[outro]\\n雨がやむころ　またね\\nおやすみ　やさしい夜\\n\\n[BEAT FADES, RHODES AND RAIN LINGER]\",[[21,26.22],[26.22,31.58],[32.37,36.52],[37.22,41.58],[42.5,47.26],[48.22,53.48],[53.48,58.04],[58.04,63.78],[64.32,68.88],[69.38,73.6],[74.68,79.84],[79.84,85.12],[106.98,111.34],[111.34,116.58],[118.52,122.38],[122.91,127.36],[128.2,133.22],[133.22,137.44],[138.3,143.58],[144.08,148.48],[154.46,158.48],[158.48,169.99]],{\"from\":0,\"to\":174.63}]"
+ },
+ "cut": {
+  "id": "cut-jam-praline-lo-fi",
+  "name": "Praline Lo-Fi",
+  "body": {
+   "aspect": "16:9",
+   "duck": false,
+   "fit": "cover",
+   "product": "jam",
+   "tracks": [
+    {
+     "id": "t1",
+     "kind": "title",
+     "name": "Titles",
+     "items": [
+      {
+       "id": "c1",
+       "lyric": true,
+       "text": "窓の向こう　雨のリズム",
+       "start": 21,
+       "length": 5.22,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "窓の向こう",
+         "from": 0,
+         "to": 2.61
+        },
+        {
+         "text": "雨のリズム",
+         "from": 2.61,
+         "to": 5.22
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c2",
+       "lyric": true,
+       "text": "ノートの端に　小さな落書き",
+       "start": 26.22,
+       "length": 5.36,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "ノートの端に",
+         "from": 0,
+         "to": 2.68
+        },
+        {
+         "text": "小さな落書き",
+         "from": 2.68,
+         "to": 5.36
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c3",
+       "lyric": true,
+       "text": "あたたかいお茶　湯気がゆれて",
+       "start": 32.37,
+       "length": 4.15,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "あたたかいお茶",
+         "from": 0,
+         "to": 2.08
+        },
+        {
+         "text": "湯気がゆれて",
+         "from": 2.08,
+         "to": 4.15
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c4",
+       "lyric": true,
+       "text": "時計の針も　ゆっくり歩く",
+       "start": 37.22,
+       "length": 4.36,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "時計の針も",
+         "from": 0,
+         "to": 2.18
+        },
+        {
+         "text": "ゆっくり歩く",
+         "from": 2.18,
+         "to": 4.36
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c5",
+       "lyric": true,
+       "text": "ヘッドフォンの中　やさしい夜",
+       "start": 42.5,
+       "length": 4.76,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "ヘッドフォンの中",
+         "from": 0,
+         "to": 2.38
+        },
+        {
+         "text": "やさしい夜",
+         "from": 2.38,
+         "to": 4.76
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c6",
+       "lyric": true,
+       "text": "眠い目こすって　ページをめくる",
+       "start": 48.22,
+       "length": 5.26,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "眠い目こすって",
+         "from": 0,
+         "to": 2.63
+        },
+        {
+         "text": "ページをめくる",
+         "from": 2.63,
+         "to": 5.26
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c7",
+       "lyric": true,
+       "text": "街の灯りが　にじんで見える",
+       "start": 53.48,
+       "length": 4.56,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "街の灯りが",
+         "from": 0,
+         "to": 2.28
+        },
+        {
+         "text": "にじんで見える",
+         "from": 2.28,
+         "to": 4.56
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c8",
+       "lyric": true,
+       "text": "まだ少しだけ　ここにいたい",
+       "start": 58.04,
+       "length": 5.74,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "まだ少しだけ",
+         "from": 0,
+         "to": 2.87
+        },
+        {
+         "text": "ここにいたい",
+         "from": 2.87,
+         "to": 5.74
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c9",
+       "lyric": true,
+       "text": "ゆっくりでいいよ　急がなくていい",
+       "start": 64.32,
+       "length": 4.56,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "ゆっくりでいいよ",
+         "from": 0,
+         "to": 2.28
+        },
+        {
+         "text": "急がなくていい",
+         "from": 2.28,
+         "to": 4.56
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c10",
+       "lyric": true,
+       "text": "今夜の音に　包まれて",
+       "start": 69.38,
+       "length": 4.22,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "今夜の音に",
+         "from": 0,
+         "to": 2.11
+        },
+        {
+         "text": "包まれて",
+         "from": 2.11,
+         "to": 4.22
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c11",
+       "lyric": true,
+       "text": "明日のことは　明日に任せて",
+       "start": 74.68,
+       "length": 5.16,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "明日のことは",
+         "from": 0,
+         "to": 2.58
+        },
+        {
+         "text": "明日に任せて",
+         "from": 2.58,
+         "to": 5.16
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c12",
+       "lyric": true,
+       "text": "このページだけ　読み終えよう",
+       "start": 79.84,
+       "length": 5.28,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "このページだけ",
+         "from": 0,
+         "to": 2.64
+        },
+        {
+         "text": "読み終えよう",
+         "from": 2.64,
+         "to": 5.28
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c13",
+       "lyric": true,
+       "text": "消しゴムのかす　机の上",
+       "start": 106.98,
+       "length": 4.36,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "消しゴムのかす",
+         "from": 0,
+         "to": 2.18
+        },
+        {
+         "text": "机の上",
+         "from": 2.18,
+         "to": 4.36
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c14",
+       "lyric": true,
+       "text": "書きかけの夢　まだ途中でも",
+       "start": 111.34,
+       "length": 5.24,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "書きかけの夢",
+         "from": 0,
+         "to": 2.62
+        },
+        {
+         "text": "まだ途中でも",
+         "from": 2.62,
+         "to": 5.24
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c15",
+       "lyric": true,
+       "text": "しっぽをまるめて　深呼吸して",
+       "start": 118.52,
+       "length": 3.86,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "しっぽをまるめて",
+         "from": 0,
+         "to": 1.93
+        },
+        {
+         "text": "深呼吸して",
+         "from": 1.93,
+         "to": 3.86
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c16",
+       "lyric": true,
+       "text": "ひとつずつでいい　前に進む",
+       "start": 122.91,
+       "length": 4.45,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "ひとつずつでいい",
+         "from": 0,
+         "to": 2.23
+        },
+        {
+         "text": "前に進む",
+         "from": 2.23,
+         "to": 4.45
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c17",
+       "lyric": true,
+       "text": "ゆっくりでいいよ　急がなくていい",
+       "start": 128.2,
+       "length": 5.02,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "ゆっくりでいいよ",
+         "from": 0,
+         "to": 2.51
+        },
+        {
+         "text": "急がなくていい",
+         "from": 2.51,
+         "to": 5.02
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c18",
+       "lyric": true,
+       "text": "今夜の音に　包まれて",
+       "start": 133.22,
+       "length": 4.22,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "今夜の音に",
+         "from": 0,
+         "to": 2.11
+        },
+        {
+         "text": "包まれて",
+         "from": 2.11,
+         "to": 4.22
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c19",
+       "lyric": true,
+       "text": "明日のことは　明日に任せて",
+       "start": 138.3,
+       "length": 5.28,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "明日のことは",
+         "from": 0,
+         "to": 2.64
+        },
+        {
+         "text": "明日に任せて",
+         "from": 2.64,
+         "to": 5.28
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c20",
+       "lyric": true,
+       "text": "このページだけ　読み終えよう",
+       "start": 144.08,
+       "length": 4.4,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "このページだけ",
+         "from": 0,
+         "to": 2.2
+        },
+        {
+         "text": "読み終えよう",
+         "from": 2.2,
+         "to": 4.4
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c21",
+       "lyric": true,
+       "text": "雨がやむころ　またね",
+       "start": 154.46,
+       "length": 4.02,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "雨がやむころ",
+         "from": 0,
+         "to": 2.01
+        },
+        {
+         "text": "またね",
+         "from": 2.01,
+         "to": 4.02
+        }
+       ],
+       "y": 0.2
+      },
+      {
+       "id": "c22",
+       "lyric": true,
+       "text": "おやすみ　やさしい夜",
+       "start": 158.48,
+       "length": 11.51,
+       "style": "karaoke",
+       "words": [
+        {
+         "text": "おやすみ",
+         "from": 0,
+         "to": 5.76
+        },
+        {
+         "text": "やさしい夜",
+         "from": 5.76,
+         "to": 11.51
+        }
+       ],
+       "y": 0.2
+      }
+     ]
+    },
+    {
+     "id": "fx",
+     "kind": "fx",
+     "name": "Beat FX",
+     "items": []
+    },
+    {
+     "id": "v2",
+     "kind": "video",
+     "name": "Overlays",
+     "items": [
+      {
+       "id": "backstage-scene-e87fdc24-8f33-45e9-a46f-fd8b6f4c9e8a",
+       "backstage": "scene-e87fdc24-8f33-45e9-a46f-fd8b6f4c9e8a",
+       "start": 0,
+       "sound": false,
+       "join": "cut",
+       "opacity": 1,
+       "src": {
+        "kind": "video",
+        "id": "jam-praline-lo-fi-529c154bb1f7be38.mp4",
+        "duration": 10.04,
+        "name": "Study loop"
+       },
+       "from": 0,
+       "to": null,
+       "speed": 1,
+       "loop": true
+      }
+     ]
+    },
+    {
+     "id": "v1",
+     "kind": "video",
+     "name": "Video",
+     "main": true,
+     "items": [
+      {
+       "id": "j1",
+       "shot": 0,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 3.222
+      },
+      {
+       "id": "j2",
+       "shot": 1,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 5.405
+      },
+      {
+       "id": "j3",
+       "shot": 2,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 5.406
+      },
+      {
+       "id": "j4",
+       "shot": 3,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 5.405
+      },
+      {
+       "id": "j5",
+       "shot": 4,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 5.405
+      },
+      {
+       "id": "j6",
+       "shot": 5,
+       "src": {
+        "kind": "color",
+        "id": "14101f",
+        "name": "Stage"
+       },
+       "sound": false,
+       "join": "cut",
+       "length": 5.177
+      }
+     ]
+    },
+    {
+     "id": "a1",
+     "kind": "audio",
+     "role": "voice",
+     "name": "Voice",
+     "items": []
+    },
+    {
+     "id": "a2",
+     "kind": "audio",
+     "role": "music",
+     "name": "Music",
+     "items": [
+      {
+       "id": "track",
+       "src": {
+        "kind": "audio",
+        "id": "jam-praline-lo-fi-a5098c4e730420f8.mp3",
+        "duration": 174.62,
+        "name": "Praline Lo-Fi"
+       },
+       "start": 0,
+       "from": 0,
+       "to": 174.62
+      }
+     ]
+    },
+    {
+     "id": "a3",
+     "kind": "audio",
+     "role": "effects",
+     "name": "Effects",
+     "items": []
+    }
+   ],
+   "markers": [],
+   "beats": {
+    "bpm": 88.8,
+    "offset": 0,
+    "times": [
+     0.524,
+     1.185,
+     1.87,
+     2.544,
+     3.229,
+     3.902,
+     4.576,
+     5.249,
+     5.922,
+     6.596,
+     7.281,
+     7.954,
+     8.627,
+     9.301,
+     9.986,
+     10.659,
+     11.333,
+     12.006,
+     12.679,
+     13.364,
+     14.038,
+     14.711,
+     15.384,
+     16.058,
+     16.743,
+     17.416,
+     18.09,
+     18.763,
+     19.436,
+     20.11,
+     20.818,
+     21.468,
+     22.165,
+     22.826,
+     23.5,
+     24.173,
+     24.847,
+     25.52,
+     26.205,
+     26.878,
+     27.552,
+     28.225,
+     28.898,
+     29.572,
+     30.257,
+     30.93,
+     31.604,
+     32.277,
+     32.95,
+     33.635,
+     34.309,
+     34.982,
+     35.655,
+     36.329,
+     37.014,
+     37.687,
+     38.361,
+     39.034,
+     39.719,
+     40.392,
+     41.066,
+     41.727,
+     42.412,
+     43.097,
+     43.771,
+     44.433,
+     45.106,
+     45.779,
+     46.453,
+     47.126,
+     47.799,
+     48.473,
+     49.158,
+     49.831,
+     50.505,
+     51.178,
+     51.851,
+     52.513,
+     53.198,
+     53.871,
+     54.533,
+     55.218,
+     55.892,
+     56.553,
+     57.238,
+     57.9,
+     58.585,
+     59.247,
+     59.92,
+     60.594,
+     61.267,
+     61.94,
+     62.614,
+     63.287,
+     63.984,
+     64.646,
+     65.307,
+     65.981,
+     66.654,
+     67.327,
+     68.001,
+     68.663,
+     69.336,
+     70.009,
+     70.683,
+     71.368,
+     72.029,
+     72.703,
+     73.376,
+     74.038,
+     74.711,
+     75.385,
+     76.047,
+     76.732,
+     77.405,
+     78.067,
+     78.74,
+     79.413,
+     80.087,
+     80.76,
+     81.434,
+     82.095,
+     82.769,
+     83.442,
+     84.115,
+     84.777,
+     85.462,
+     86.124,
+     86.786,
+     87.459,
+     88.133,
+     88.806,
+     89.468,
+     90.129,
+     90.803,
+     91.476,
+     92.138,
+     92.8,
+     93.473,
+     94.135,
+     94.797,
+     95.47,
+     96.143,
+     96.805,
+     97.467,
+     98.129,
+     98.79,
+     99.464,
+     100.126,
+     100.787,
+     101.461,
+     102.123,
+     102.784,
+     103.446,
+     104.108,
+     104.781,
+     105.443,
+     106.105,
+     106.79,
+     107.452,
+     108.113,
+     108.763,
+     109.425,
+     110.099,
+     110.76,
+     111.422,
+     112.084,
+     112.746,
+     113.407,
+     114.081,
+     114.743,
+     115.416,
+     116.078,
+     116.728,
+     117.39,
+     118.063,
+     118.725,
+     119.387,
+     120.048,
+     120.71,
+     121.372,
+     122.034,
+     122.695,
+     123.357,
+     124.019,
+     124.681,
+     125.342,
+     126.004,
+     126.666,
+     127.328,
+     128.001,
+     128.64,
+     129.301,
+     129.963,
+     130.637,
+     131.298,
+     131.949,
+     132.61,
+     133.272,
+     133.934,
+     134.596,
+     135.257,
+     135.919,
+     136.569,
+     137.231,
+     137.893,
+     138.543,
+     139.205,
+     139.867,
+     140.528,
+     141.19,
+     141.84,
+     142.502,
+     143.164,
+     143.826,
+     144.476,
+     145.137,
+     145.799,
+     146.449,
+     147.123,
+     147.773,
+     148.435,
+     149.085,
+     149.747,
+     150.397,
+     151.059,
+     151.72,
+     152.382,
+     153.044,
+     153.694,
+     154.356,
+     155.006,
+     155.668,
+     156.33,
+     156.991,
+     157.641,
+     158.303,
+     158.953,
+     159.615,
+     160.277,
+     160.927,
+     161.589,
+     162.239,
+     162.901,
+     163.563,
+     164.213,
+     164.863,
+     165.525,
+     166.186,
+     166.837,
+     167.487,
+     168.148,
+     168.799,
+     169.472,
+     170.157,
+     170.854,
+     171.527,
+     172.212,
+     172.909,
+     173.57,
+     174.232
+    ],
+    "down": 1,
+    "source": "comfy",
+    "sure": 1
+   }
+  }
+ },
+ "media": [
+  {
+   "file": "06733da4987e19d1.mp3",
+   "to": "audio/jam-praline-lo-fi-06733da4987e19d1.mp3",
+   "name": "Praline Lo-Fi",
+   "kind": "music"
+  },
+  {
+   "file": "5212184ae6b1e97c.png",
+   "to": "photos/jam-praline-lo-fi-5212184ae6b1e97c.png"
+  },
+  {
+   "file": "529c154bb1f7be38.mp4",
+   "to": "videos/jam-praline-lo-fi-529c154bb1f7be38.mp4"
+  },
+  {
+   "file": "5b7bf7ee57bebf42.png",
+   "to": "photos/jam-praline-lo-fi-5b7bf7ee57bebf42.png"
+  },
+  {
+   "file": "a5098c4e730420f8.mp3",
+   "to": "audio/jam-praline-lo-fi-a5098c4e730420f8.mp3",
+   "name": "Praline Lo-Fi",
+   "kind": "music"
+  }
+ ]
+}
