@@ -13,6 +13,7 @@ import { api } from "../api.js";
 import { dropdown } from "../controls.js";
 import { LANGUAGES, SIGNATURES, DEFAULT_SONG, MAX_SECONDS, STYLE_LORAS, PITCHES, MODES, KEYS, noteOf, modeOf, QUALITY, lengthLabel, STRUCTURES, skeleton, costOfSong } from "../song.js";
 import { jicon, pickFile, cr, clock, mins } from "./jam-ui.js";
+import { attachMenu, closeAttach } from "../attach.js";
 import { createDeck } from "./jam-deck.js";
 import { jam, useSong, songHook, setWorkspace, save, applySyncedCaptions } from "../jam.js";
 import { sungLines } from "../lyrics-align.js";
@@ -160,12 +161,21 @@ async function busyWith(what, m, run) {
 }
 
 /** A picture of the person's own becomes the cover (free). */
-function useMyPicture(m) {
-  pickFile("image/*", (file) => busyWith("picture", m, async () => {
+function useMyPicture(m, file) {
+  busyWith("picture", m, async () => {
     making.words = "Keeping your picture";
     const p = await api.upload(file, file.name);
     await setCover(m, { cover: p.url });
-  }));
+  });
+}
+
+/** The cover itself is the key: a press asks where the picture comes from (the computer, the Library, or the Oven to make one). */
+function pickCover(m, anchor) {
+  attachMenu(anchor, {
+    files: ([file]) => file && useMyPicture(m, file),
+    picture: (photo) => (closeAttach(), busyWith("picture", m, () => setCover(m, { cover: photo.url }))),
+    generate: () => makeCover(m),
+  });
 }
 
 /**
@@ -264,10 +274,11 @@ function drawCover(m) {
   const cv = coverFor(m);
   const mine = making.file === m.file ? making : null;
   row.replaceChildren(...[
-    cv.picture ? h("img.sg-cthumb", { src: cv.picture, alt: "The cover", draggable: false }) : h("span.sg-cthumb.is-none", { title: "No cover yet" }, jicon("image")),
+    h(`button.sg-cthumb${cv.picture ? "" : ".is-none"}`, { type: "button", disabled: !!making.what, dataset: { cover: "picture" }, "aria-haspopup": "dialog", "aria-expanded": "false",
+      title: `${cv.picture ? "Change the cover" : "Add a cover"}: from your computer, the Library, or made in the Oven`, "aria-label": cv.picture ? "Change the cover" : "Add a cover",
+      on: { click: (e) => pickCover(m, e.currentTarget) } },
+      cv.picture ? h("img", { src: cv.picture, alt: "", draggable: false }) : jicon("plus")),
     h("div.sg-ckeys", { role: "group", "aria-label": "The cover" },
-      coverKey({ id: `cover:picture:${m.file}`, icon: "sparkle", label: cv.picture ? "New cover" : "Make the cover", tip: "Make the cover in the Oven (GPT Image 2.5 Flare, square): add your characters and places, then Send to → Song cover", run: () => makeCover(m) }),
-      coverKey({ id: `cover:mine:${m.file}`, icon: "image", label: "My picture", tip: "Use a picture of your own as the cover (free)", run: () => useMyPicture(m) }),
       coverKey({ id: `cover:video:${m.file}`, icon: "film", label: cv.video ? "New video cover" : "Video cover", tip: cv.picture ? "A few seconds of the cover performing the best part of the song (LTX 2.5, from the cover)" : "Needs a cover first: the video starts from it", cost: cv.picture ? videoCost() : null, run: () => makeVideoCover(m), disabled: !cv.picture }),
       cv.video ? coverKey({ id: `cover:novideo:${m.file}`, icon: "close", label: "Video off", tip: "Take the video cover off (the cover stays)", run: () => removeCover(m, "video") }) : null,
       cv.picture ? coverKey({ id: `cover:none:${m.file}`, icon: "trash", label: "Cover off", tip: "Take the cover and its video off the song", run: () => removeCover(m) }) : null),

@@ -193,7 +193,11 @@ li[data-kind="edge"] .sg-sec i { background: #6b6a74; }
 /* ---- the cover: the record's label, the keys under the song's name, the video cover's loop, the sleeves ------------------------ */
 .sg-cover { display: flex; align-items: center; justify-content: center; gap: .75rem; max-width: 100%; min-height: 2.5rem; }
 .sg-cover[hidden], .sg-clip[hidden] { display: none; }
-.sg-cthumb { flex: none; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; overflow: hidden; border-radius: .625rem; object-fit: cover; background: rgba(255, 255, 255, .05); box-shadow: 0 0 0 1px var(--line2); color: var(--dim); }
+.sg-cthumb { flex: none; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; padding: 0; overflow: hidden; border: 0; border-radius: .625rem; background: rgba(255, 255, 255, .05); box-shadow: 0 0 0 1px var(--line2); color: var(--dim); cursor: pointer; transition: box-shadow var(--t-fast), color var(--t-fast); }
+.sg-cthumb img { width: 100%; height: 100%; object-fit: cover; }
+.sg-cthumb:hover, .sg-cthumb[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--accent); color: var(--text); }
+.sg-cthumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sg-cthumb:disabled { cursor: progress; opacity: .6; }
 .sg-cthumb.is-none { border: 1px dashed var(--line2); box-shadow: none; }
 .sg-cthumb svg { width: 1.125rem; height: 1.125rem; }
 .sg-ckeys { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; }
@@ -224,7 +228,6 @@ li[data-kind="edge"] .sg-sec i { background: #6b6a74; }
 .sg-sleeve.has-cover.is-track .sg-sleeve-art::after { z-index: 3; }
 
 @media (max-height: 820px) {
-  .sg-cthumb { display: none; }
   .sg-ckey { min-height: 2rem; }
 }
 @media (prefers-reduced-motion: reduce) { .sg-spin { animation: none; } }
