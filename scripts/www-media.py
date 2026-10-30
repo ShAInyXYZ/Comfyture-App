@@ -112,16 +112,6 @@ for f in ("dancer.jpg",):  # the photo of Last frame first
     if todo(dst("samples", f), src("samples", f)):
         shutil.copy2(src("samples", f), dst("samples", f))
 
-# ── Kitchen's first takes and film (October 16), from the take log: the ones the gallery shows ─────────────────────────────────
-for rid, slug in (("20261016-2425942a", "not-tonight"), ("20261016-0959104a", "thunder-god-extended")):
-    run = src("data", "runs", rid)
-    mp4 = next((os.path.join(run, f) for f in ("shot.mp4", "extension.mp4") if os.path.exists(os.path.join(run, f))), os.path.join(run, "shot.mp4"))
-    clip(mp4, dst("takes", slug + ".mp4"), 960, 27, sound=True)
-    poster(mp4, dst("takes", slug + ".jpg"), 1.5)
-film = src("data", "reels", "20261016-37b820.mp4")
-clip(film, dst("film", "desert-dawn-rescue.mp4"), 960, 28, sound=True)
-poster(film, dst("film", "desert-dawn-rescue.jpg"), 3)
-
 # ── the pets ─────────────────────────────────────────────────────────────────────────────────────────────────
 for pet in ("ketkout", "praline", "pickle", "brioche", "paprika", "crumpet", "canelle", "truffle"):
     face = src("web", "brand", "mixer", "crew", "praline-face.webp") if pet == "praline" else src("web", "brand", "cast", f"{pet}-face.webp")
@@ -142,12 +132,14 @@ for n in ("anime", "manga", "render-3d", "cinematic", "claymation", "storybook",
 # Canelle's sheet; the app's screens are captured as below)
 
 # ── the hero reel: real takes of our cast, cross-faded, picture and sound (16:9) ──────────────────────────────────────────────
-REEL = [  # (source, start, seconds, window: where the 16:9 frame sits in a cover fit (x, y), has sound)
-    (src("data", "runs", "20261019-db48ff6e", "shot.mp4"), 0.0, 3.0, (0.5, 0.5), True),     # Kitchen: Ketkout, the last jar
-    (dst("spice", "spice-card.mp4"), 1.0, 3.4, (0.5, 0.2), False),                           # Spice: the yard and the dance, plate and pass, wiped
-    (src("data", "runs", "20261021-501232c8", "shot.mp4"), 0.0, 4.0, (0.5, 0.28), True),    # Jam: Taro sings his song
-    (src("data", "runs", "20261019-32648f63", "shot.mp4"), 0.0, 3.0, (0.5, 0.5), True),     # Kitchen: the jam goes in the pie
-    (src("data", "reels", "20261016-37b820.mp4"), 6.4, 3.4, (0.5, 0.5), True),              # Kitchen: Desert Dawn Rescue
+JAR = src("examples", "kitchen", "tarte-for-friends", "a-little-jar-a-full-table.mp4")
+REEL = [  # (source, start, seconds, window: where the 16:9 frame sits in a cover fit (x, y), has sound); a 9:16 source stands on the right
+    (src("web", "brand", "mixer", "trends", "state-property", "preview.mp4"), 1.5, 4.5, (0.5, 0.5), False),  # Mixer: State Property
+    (JAR, 4.6, 3.2, (0.5, 0.5), True),                                                                       # Kitchen: Ketkout rolls the dough
+    (dst("spice", "spice-card.mp4"), 1.0, 3.4, (0.5, 0.2), False),                                           # Spice: plate and pass, wiped
+    (src("web", "brand", "mixer", "trends", "uno-car-reveal", "preview.mp4"), 0.0, 4.0, (0.5, 0.5), True),  # Mixer: UNO Car Reveal
+    (src("data", "runs", "20261021-501232c8", "shot.mp4"), 0.0, 4.0, (0.5, 0.28), True),                    # Jam: Taro sings his song
+    (JAR, 41.0, 3.6, (0.5, 0.5), True),                                                                      # Kitchen: friends at the table
 ]
 
 
@@ -159,8 +151,14 @@ def reel(path, width=1280, crf=27, fade=0.5):
     for s, ss, d, _, _ in REEL:
         args += ["-ss", str(ss), "-t", str(d), "-i", s]
     for i, (_, _, d, (cx, cy), sound) in enumerate(REEL):
-        vf.append(f"[{i}:v]fps=24,scale={width}:{h}:force_original_aspect_ratio=increase:flags=lanczos,"
-                  f"crop={width}:{h}:(iw-{width})*{cx}:(ih-{h})*{cy},setsar=1,format=yuv420p,trim=0:{d},setpts=PTS-STARTPTS[v{i}]")
+        tall = "/trends/" in REEL[i][0]  # a 9:16 trend: whole, on the right, over a blurred, darker copy of itself
+        if tall:
+            vf.append(f"[{i}:v]fps=24,trim=0:{d},setpts=PTS-STARTPTS,split[f{i}][g{i}];"
+                      f"[g{i}]scale={width}:{h}:force_original_aspect_ratio=increase,crop={width}:{h},gblur=sigma=28,eq=brightness=-0.28[bg{i}];"
+                      f"[f{i}]scale=-2:{h}:flags=lanczos[fg{i}];[bg{i}][fg{i}]overlay=x={width}*0.68-w/2:y=0,setsar=1,format=yuv420p[v{i}]")
+        else:
+            vf.append(f"[{i}:v]fps=24,scale={width}:{h}:force_original_aspect_ratio=increase:flags=lanczos,"
+                      f"crop={width}:{h}:(iw-{width})*{cx}:(ih-{h})*{cy},setsar=1,format=yuv420p,trim=0:{d},setpts=PTS-STARTPTS[v{i}]")
         af.append(f"[{i}:a]aformat=sample_rates=48000:channel_layouts=stereo,atrim=0:{d},asetpts=PTS-STARTPTS,apad=whole_dur={d}[a{i}]"
                   if sound else f"anullsrc=r=48000:cl=stereo,atrim=0:{d}[a{i}]")
     v, a, t = "v0", "a0", REEL[0][2]
@@ -174,10 +172,11 @@ def reel(path, width=1280, crf=27, fade=0.5):
 
 # (the reel is made at the end: one of its takes is Spice's card, made further down)
 
-# ── Kitchen: The Great Jam Chase (Ketkout), and the Stage's examples, clay and render ─────────────────────────────────────────
-for rid, slug in (("20261019-db48ff6e", "jam-chase-1"), ("20261019-32648f63", "jam-chase-2")):
-    clip(src("data", "runs", rid, "shot.mp4"), dst("kitchen", slug + ".mp4"), 960, 27, sound=True)
-    poster(dst("kitchen", slug + ".mp4"), dst("kitchen", slug + ".jpg"), 1.0)
+# ── Kitchen: A Little Jar, A Full Table (Ketkout's example film), whole with its sound, and a short loop for its card; the Stage's examples
+clip(JAR, dst("kitchen", "little-jar.mp4"), 960, 27, sound=True)
+poster(dst("kitchen", "little-jar.mp4"), dst("kitchen", "little-jar.jpg"), 41.5)
+clip(JAR, dst("kitchen", "little-jar-loop.mp4"), 960, 28, start=4.6, length=6)
+poster(dst("kitchen", "little-jar-loop.mp4"), dst("kitchen", "little-jar-loop.jpg"), 0.5)
 import base64, tempfile  # noqa: E402
 for f in sorted(os.listdir(src("examples", "stage"))):
     # each example stage keeps its first render (Qwen Image 2.1, an edit of the clay frame) and its clay thumbnail inside its file

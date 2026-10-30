@@ -38,11 +38,12 @@ $("#ticker").innerHTML = [...MODELS, ...MODELS].map((m) => `<span>${m}</span>`).
 /* ── the hero reel: five takes, a caption for each, and its sound on demand ── */
 const reel = $("#reel");
 const REEL = [
-  { at: 0, k: "Kitchen", t: "The Great Jam Chase", m: "Ketkout · LTX-2.5, picture and sound in one pass" },
-  { at: 2.75, k: "Spice", t: "Pickle's storm on stage", m: "Lightning and stage rays laid by hand in FX, baked free" },
-  { at: 5.85, k: "Jam", t: "Moonlit Oolong Walk", m: "Taro sings his ACE-Step 1.5 song, lip-synced by LTX-2.5" },
-  { at: 9.35, k: "Kitchen", t: "The Great Jam Chase", m: "The jam goes in the pie: one of three LTX-2.5 takes" },
-  { at: 11.85, k: "Kitchen", t: "Desert Dawn Rescue", m: "A film from one sentence: four shots, cut in Cut" },
+  { at: 0, k: "Mixer", t: "State Property", m: "Earl at the wheel, Mochi riding shotgun · the meme's own motion" },
+  { at: 4.0, k: "Kitchen", t: "A Little Jar, A Full Table", m: "Ketkout · a one-minute film from one sentence" },
+  { at: 6.7, k: "Spice", t: "Truffle's Jam Heist", m: "The plate against its last pass, every pass a real run" },
+  { at: 9.6, k: "Mixer", t: "UNO Car Reveal", m: "Dre and his lines · MiniMax H3" },
+  { at: 13.1, k: "Jam", t: "Moonlit Oolong Walk", m: "Taro sings his ACE-Step 1.5 song, lip-synced by LTX-2.5" },
+  { at: 16.6, k: "Kitchen", t: "A Little Jar, A Full Table", m: "The friends at the table: twelve shots, cut in Cut" },
 ];
 const segs = $("#segs"), np = $(".np");
 REEL.forEach((r, i) => {
@@ -148,9 +149,9 @@ $$(".picker").forEach((pk) => {
 const ROOMS = {
   story: { img: "media/app/story.webp", cap: "Story: the film's scenes and shots on the left, each shot's workspace in the middle (what happens, its visual direction, ideas and images), its references on the right.", alt: "Story with A Little Jar, A Full Table open: the scenes and shots, the shot workspace of A little jar, and its references" },
   stage: { img: "media/app/stage.webp", cap: "Stage: block a scene with mannequins and 372 set pieces, then render its frame: the picture laid over the clay, a compare bar between them.", alt: "The Stage: a campfire night blocked with mannequins, its render laid over the clay frame with a compare bar" },
-  shot: { img: "media/app/shot.webp", cap: "Shot: the start frame, the script and its camera, the take log; one to four takes, picture and sound together.", alt: "The Shot desk with a take of The Great Jam Chase open" },
-  cut: { img: "media/app/cut.webp", cap: "Cut: a timeline that makes what is missing: music with ACE-Step, sound effects, voice lines.", alt: "Cut: the media bin, the monitor and the timeline of The Great Jam Chase" },
-  library: { img: "media/app/library.webp", cap: "Library: every take, film and picture, each reopened with the inputs that made it.", alt: "The Library: a grid of pictures made in the app" },
+  shot: { img: "media/app/shot.webp", cap: "Shot: the inputs (start frame, end frame, keyframes, references, sound), the script and its camera, the presets and the take log; one to four takes, picture and sound together.", alt: "The Shot desk: the inputs, the script, the presets and the take log" },
+  cut: { img: "media/app/cut.webp", cap: "Cut: the media bin, the monitor and the timeline, with A Little Jar, A Full Table open; it makes what is missing: music with ACE-Step, sound effects, voice lines.", alt: "Cut with A Little Jar, A Full Table open: the media bin, the monitor and its twelve clips on the timeline" },
+  library: { img: "media/app/library.webp", cap: "Library: every take, film and picture, each reopened with the inputs that made it.", alt: "The Library: the films made in the app" },
 };
 const tabs = $$(".rooms [role=tab]"), roomImg = $("#room-img");
 function room(b, focus) {
@@ -232,8 +233,8 @@ fetch("media/presets.json").then((r) => r.json()).then((P) => {
 
 /* ── the gallery: what the studios made ── */
 const G = [
-  { p: "Kitchen", t: "The Great Jam Chase · the last jar", m: "LTX-2.5", v: "media/kitchen/jam-chase-1.mp4", i: "media/kitchen/jam-chase-1.jpg", w: 960, h: 528, sound: true,
-    d: "On tiptoe at the counter, the chick lifts the last jar of jam beside the rolled-out dough and pie tin. The jar slips from her wings and falls. The camera pushes in slowly. The chick says, \"Oh no, not the last jar!\"", d2: "Soft morning ambience, a small strained grunt, then a glassy thump as the jar hits the floor." },
+  { p: "Mixer", t: "State Property", m: "Our crew in the meme · 9:16", v: "media/mixer/state-property.mp4", i: "media/mixer/state-property.jpg", w: 540, h: 960, d: "Earl leans out of his truck window and complains, Mochi riding shotgun: the meme's own motion (DWPose's body, face and hands) driving our cast, four takes chained so the shot never jumps." },
+  { p: "Kitchen", t: "A Little Jar, A Full Table", m: "A one-minute film · LTX-2.5", v: "media/kitchen/little-jar.mp4", i: "media/kitchen/little-jar.jpg", w: 960, h: 540, sound: true, d: "Ketkout bakes a jam tart for the kittens: twelve shots planned in Story from one sentence, each rolled with picture and sound, then cut together in Cut with its room tone." },
   { p: "Spice", t: "SH010 · The yard", m: "Four passes on one shot, all real runs", v: "media/spice/sh010-pass.mp4", i: "media/spice/sh010-pass.jpg", w: 960, h: 402, d: "Truffle's Jam Heist, the yard: the white van painted out by Inpaint (a stone house where it stood), the day turned to night, the frame widened to scope by In-outpainting, and the yard given its sound by LTX-2.5. Every pass a workflow on Comfy Cloud, kept with the clip it ran on." },
   { p: "Spice", t: "SH020 · The lookout", m: "Water, Crossview, Cut out", v: "media/spice/sh020-pass.mp4", i: "media/spice/sh020-pass.jpg", w: 960, h: 544, d: "Pickle keeps watch on a crate: rain poured on by the Water IC-LoRA, a new camera angle by Crossview, then SAM3 cut him out as a green screen with the matte kept beside it." },
   { p: "Spice", t: "SH030 · The jar", m: "Refocus, Upscale, Sound", v: "media/spice/sh030-pass.mp4", i: "media/spice/sh030-pass.jpg", w: 960, h: 544, d: "The close-up that missed focus, pulled back by Refocus, taken to 1080 lines by SeedVR2, and given its sound." },
@@ -258,8 +259,6 @@ const G = [
   { p: "Macaron", t: "Little Otter Tea", m: "A fictional brand, made end to end", i: "media/macaron/otter-flyer.webp", w: 720, h: 1018, d: "An A4 café flyer from the Little Otter Tea brand kit: deep teal, moon cream, tangerine, Manrope and IBM Plex Mono." },
   { p: "Toaster", t: "Pickle's little stage, as a poster", m: "From the clay frame", i: "media/toaster/stage-poster.webp", w: 1280, h: 720, d: "Pickle at the microphone with his band and three fans, a screen-printed poster look. The example's render was made with GPT Image from the clay frame kept with it." },
   { p: "Macaron", t: "Comfyture: the launch post", m: "4:5", i: "media/macaron/launch.webp", w: 720, h: 900, d: "A launch post made in Macaron from the Comfyture brand kit, with Brioche." },
-  { p: "Kitchen", t: "The Great Jam Chase · into the pie", m: "LTX-2.5", v: "media/kitchen/jam-chase-2.mp4", i: "media/kitchen/jam-chase-2.jpg", w: 960, h: 528, sound: true,
-    d: "The chick trots back to the counter with the jar clutched to her chest and spoons the jam into the pie, ready for the oven. The camera pulls back slowly.", d2: "Happy trotting steps, a squelch of jam spooned onto the pie, a warm cheerful musical ending." },
   { p: "Toaster", t: "Crumpet's workbench, storybook look", m: "From the clay frame", i: "media/toaster/woodshop-storybook.webp", w: 1280, h: 720, d: "The same clay as the workbench, another look. The example's render was made with GPT Image." },
   { p: "Toaster", t: "After dark", m: "From the clay frame", i: "media/toaster/perfume-after-dark.webp", w: 1024, h: 1280, d: "Brioche's perfume launch, an after-dark look of the same clay. The example's render was made with GPT Image." },
   { p: "Jam", t: "Taro's song cover", m: "The cover row", i: "media/jam/taro-cover.webp", w: 720, h: 720, d: "The cover of Taro's song, and the first frame of its video cover." },

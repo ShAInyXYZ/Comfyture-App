@@ -9,8 +9,8 @@ GitHub Pages under the repository's sub-path. `demo/` (the app as static files, 
 | Section | What it shows | Media |
 |---|---|---|
 | Flag and bar | #OpenSourceHiggsfield, For judges (docs/competition/JUDGES.md), Star on GitHub, Try the demo | |
-| Hero | a 15-second reel of real takes with its sound on demand, a caption per take, the promise and the two keys | `media/hero/` |
-| Ticker | the open-weights models it runs | |
+| Hero | a 20-second reel (State Property, A Little Jar, A Full Table, the heist's wipe, UNO Car Reveal, Taro) with its sound on demand, a caption per take, the promise and the two keys | `media/hero/` |
+| Ticker | the open models it runs | |
 | Eight studios | the eight pets together, then a card per studio with its pet, one line, what it makes and a clip | `media/pets/`, the studios' clips |
 | Kitchen | Story, Stage, Shot, Cut and Library as tabs over the real screens; the Stage's seven passes; Last frame first; the 28 presets | `media/app/`, `media/loops/`, `media/presets/` |
 | Mixer | the crew, six trends acted by our cast with their own lines (MiniMax H3, LTX-2.5), each with its sound on demand, the Mixer screen | `media/mixer/`, `media/app/mixer.webp` |
@@ -20,8 +20,8 @@ GitHub Pages under the repository's sub-path. `demo/` (the app as static files, 
 | Toaster | clay frame against render on its three examples, the maps sent, the turnaround, the Scene screen | `media/toaster/`, `media/app/toaster.webp` |
 | Cabinet | Bagel's dressing room, three characters dressed and posed, Josie in twelve of the twenty styles, the Cabinet screen | `media/cabinet/`, `media/app/cabinet.webp` |
 | Utensils | the shelf of tools, the Picture screen | `media/app/utensils.webp` |
-| Pets | the tour, checked actions, a paid run only on a yes; each pet with what its bar asks (the app's own words) | `media/app/tour.webp` |
-| Open weights | the models by job, Renders on (Comfy Cloud or your ComfyUI), `COMFYTURE_OPEN_WEIGHTS=1`, how it runs | |
+| Harnesses | eight pets, eight sealed rooms: each pet's own brief, tool, context and paid key, as a table (from the code: `server/*-assist.ts`, `web/js/harnesses.js`); GPT-6 Luna by default | |
+| Your GPU, the cloud, or both | the models by job (open, and the partner defaults), Renders on (Comfy Cloud, Both, Local ComfyUI), `COMFYTURE_OPEN_WEIGHTS=1`, how it runs | |
 | Gallery | 28 outputs, filtered by studio, each opened in a viewer with how it was made | the folders above |
 | Run it | the commands, the three ways (no key, Comfy Cloud, your GPU) | |
 
@@ -47,16 +47,14 @@ server on a fresh data folder, so each studio opens on its shipped examples and 
 PORT=5313 COMFYTURE_DATA=/tmp/lab/data COMFY_API_KEY= COMFY_BASE_URL=http://127.0.0.1:9 node server/main.ts
 ```
 
-Viewport 1600x950 at twice the pixels; Kitchen's story is The Great Jam Chase (Ketkout), copied into the lab's data folder with its
-pictures and takes. The capture folder holds `a/` (Kitchen), `b/` (Spice, Macaron) and `c/` (Toaster, Jam, Utensils); the `APP` table in
+Viewport 1600x950 at twice the pixels; Kitchen opens on A Little Jar, A Full Table, the example a fresh data folder seeds. The capture folder holds `a/` (Kitchen), `b/` (Spice, Macaron) and `c/` (Toaster, Jam, Utensils); the `APP` table in
 the script says which file becomes which screen. The Stage's passes loop is made from seven stills of one frame (clay, colour ID, depth,
 normal, pose, lines, mask), its viewport cropped and cross-faded. Nothing was rendered: no key, ComfyUI on a dead port, no paid run.
 
 ## Where everything comes from
 
-- **Takes and films**: the app's own take log, made with LTX-2.5 (picture and sound): The Great Jam Chase (Ketkout), Taro's video cover
-  (his song made with ACE-Step 1.5), Desert Dawn Rescue, Not tonight, Thunder God. Meringue's two takes come from Mixer's Face Dance
-  trend (her picture, its motion copied with LTX-2.5) and are shown without their sound.
+- **Films and takes**: Kitchen's example film A Little Jar, A Full Table (`examples/kitchen/tarte-for-friends`), Taro's video cover
+  (his song made with ACE-Step 1.5), and Mixer's trends from `web/brand/mixer/trends/` (State Property silent: its original audio is out).
 - **Spice**: the shipped example shots, every pass made by the app itself (`scripts/spice-examples.mjs`): four pictures (two plates drawn with GPT Image from our cast's sheets for the effect) and three takes from Jam's own videos, Taro's and Pickle's, cut out frame by frame on this machine.
 - **Toaster**: the shipped examples' clay frames and maps; their renders were made with GPT Image from those frames for the examples, as
   the page says under them.
