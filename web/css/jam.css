@@ -459,6 +459,12 @@ button.jm-way:disabled { opacity: .55; cursor: progress; }
 
 @supports (corner-shape: squircle) {
   .jm-side, .jm-cover-art, .jm-bento, .jm-tile, .jm-tool, .jm-jam, .jm-menu, .jm-menu-row, .jm-menu-new, .jm-turntable, .jm-wave, .jm-way, .jm-way-ic, .jm-mini, .jm-keybig, .jm-makebig, .jm-exportkey, .jm-chip, .jm-line-row, .jm-word, .jm-capstyle, .jm-cap-pic, .jm-phone, .jm-phone .cut-screen, .jm-set, .jm-set .cut-screen, .jm-artist-stage, .jm-move, .jm-look, .jm-vibe, .jm-shot, .jm-fxkey, .jm-sticker, .jm-win, .jm-fxrow, .jm-shot-row, .jm-trend, .jm-trend-len, .jm-trend-own, .jm-empty, .jm-ed-timeline .cut-timeline, .jm-make, .jm-film, .jm-name-chip { corner-shape: squircle; }
+  /* (every other panel, card, key, field and picture of Jam's workspaces: Mixer's corners; circles and pills keep their round) */
+  #page-jam :is(.jt-card, .jt-grid, .jt-range, .jt-range-wave, .jt-segs, .jt-sel, .jt-seg, .jt-ms, .jt-tap, .jt-primary, .jt-ghostkey, .jt-expand, .jt-flag, .jt-part, .jt-h,
+    .jb-panel, .jb-job, .jb-view-space, .jb-item, .jb-item-pic, .jb-key, .jb-icon, .jb-reference-pick, .jb-history-take,
+    .jm-step, .jm-cast-add, .jm-cast-key, .jm-expand, .jm-iconkey, .jm-primary, .jm-pick-empty, .jm-fig, .jm-jam-cover, .jm-fmt, .jm-look-scene,
+    .sg-ckey, .sg-cthumb, .sg-ly-line, .sg-sec, .sg-chips,
+    .key, .field, .sel-trigger, .ctl-tool, .ctl-mini, .cut-join, .cut-tool-group, .jm-frame-tag b, .jm-phone.is-add i) { corner-shape: squircle; }
 }
 
 @media (max-height: 820px) {
