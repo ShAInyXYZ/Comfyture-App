@@ -139,10 +139,12 @@ export async function loadModels() {
   cabinet.models = { default: all.default, models: (all.models ?? []).filter((m) => m.templates?.some((t) => t.id === "edit")) };
   return cabinet.models;
 }
-/** The model that makes the pictures: the one chosen here, else the app's artist, else the first that edits. */
+/** GPT Image 2.5 Flare: about 3 credits a picture, and it dresses a whole character from a picture of an outfit. */
+const FLARE = "gpt-image-2.5-flare";
+/** The model that makes the pictures: the one chosen here, else GPT Flare (when Comfy Router offers it), else the app's artist. */
 export function modelNow() {
   const list = cabinet.models?.models ?? [];
-  const want = recall(MODEL) || artistFor("edit");
+  const want = recall(MODEL) || (list.some((m) => m.id === FLARE) ? FLARE : artistFor("edit"));
   return list.find((m) => m.id === want) ?? list.find((m) => m.id === cabinet.models?.default) ?? list[0] ?? null;
 }
 export function setModel(id) {
