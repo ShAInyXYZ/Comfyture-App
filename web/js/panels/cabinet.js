@@ -117,7 +117,7 @@ function lookOf(m, i, group) {
   return h("div.cab-look-parts", {}, part("outfits", "Outfits"), part("poses", "Poses"));
 }
 
-/** One character: their portrait, who they are, the key that changes them, and their look. */
+/** One character: their portrait, who they are, the key that changes them. */
 function memberColumn(m, i, b) {
   const w = whoOf(m);
   const group = isGroup(b);
@@ -130,8 +130,17 @@ function memberColumn(m, i, b) {
       h("div.cab-name", {}, h("b", {}, w?.name ?? `Character ${i + 1}`), h("span", {}, w ? w.character?.role ?? "From a picture" : "Not chosen yet")),
       h("div.cab-member-keys", {},
         h("button.key.is-sm", { type: "button", "aria-haspopup": "dialog", title: "One of our cast, a picture from your computer, or one from the Library", on: { click: choose } }, icon("pencil"), w ? "Change" : "Choose"),
-        group ? h("button.key.is-sm.is-icon.is-quiet", { type: "button", "aria-label": `Take ${w?.name ?? "this character"} out`, title: "Take them out of the shoot", on: { click: (e) => (e.stopPropagation(), removeCharacter(i)) } }, icon("close")) : null)),
-    ...[lookOf(m, i, group)].flat());
+        group ? h("button.key.is-sm.is-icon.is-quiet", { type: "button", "aria-label": `Take ${w?.name ?? "this character"} out`, title: "Take them out of the shoot", on: { click: (e) => (e.stopPropagation(), removeCharacter(i)) } }, icon("close")) : null)));
+}
+
+/** The looks, under the style: alone, the outfits beside the poses; in a group, each character's outfit and pose under their name, a column each, as their portraits stand. */
+function looksCard(b) {
+  if (!isGroup(b)) return h("section.cab-card.cab-looks", {}, lookOf(b.cast[0], 0, false));
+  return h("section.cab-card.cab-looks", {},
+    h("div.cab-members.is-group", { style: { "--cast": String(b.cast.length) } }, ...b.cast.map((m, i) =>
+      h("div.cab-member", { className: i === b.active ? "is-active" : "", title: i !== b.active ? "Dress this one: the shelves pick for them" : undefined, on: { click: () => setActive(i) } },
+        h("span.cab-sub", {}, whoOf(m)?.name ?? `Character ${i + 1}`),
+        lookOf(m, i, true)))));
 }
 
 function whoColumn(b) {
@@ -143,8 +152,9 @@ function whoColumn(b) {
         h("h2.cab-title", {}, group ? "Characters" : "Character", group ? h("span.cab-count", {}, `${b.cast.length}/${MOST_CAST}`) : null),
         h("button.key.is-sm.is-icon.cab-add-member", { type: "button", disabled: full, "aria-label": "Add a character", title: full ? `${MOST_CAST} characters at most in one picture` : "Add a character: they are pictured together, each in their own outfit and pose", on: { click: addCharacter } }, icon("plus"))),
       h("div.cab-members", { className: group ? "is-group" : "", style: { "--cast": String(b.cast.length) } }, ...b.cast.map((m, i) => memberColumn(m, i, b)))),
-    // the style: its word on its side, then its sample, which opens the catalogue
-    h("section.cab-card.cab-look", {}, h("h2.cab-vertical", {}, "Style"), stylePicture(b)));
+    // the style: its word on its side, then its sample, which opens the catalogue; then the looks
+    h("section.cab-card.cab-look", {}, h("h2.cab-vertical", {}, "Style"), stylePicture(b)),
+    looksCard(b));
 }
 
 // ---------------------------------------------------------------- the style
@@ -197,7 +207,7 @@ function openStyles(anchor, b) {
 function stylePicture(b) {
   const st = styleItem(b.style);
   const name = st ? `${st.name}: ${st.words}` : "As they are: their own look";
-  return h("button.cab-style-pic", { type: "button", "aria-haspopup": "listbox", "aria-expanded": "false", "aria-label": `Style: ${st?.name ?? "as they are"}. Choose another`, title: name, on: { click: (e) => openStyles(e.currentTarget, b) } },
+  return h(`button.cab-style-pic${st ? "" : ".is-own"}`, { type: "button", "aria-haspopup": "listbox", "aria-expanded": "false", "aria-label": `Style: ${st?.name ?? "as they are"}. Choose another`, title: name, on: { click: (e) => openStyles(e.currentTarget, b) } },
     h("img", { src: st?.src ?? whoNow(b).picture, alt: "", draggable: false }));
 }
 

@@ -65,11 +65,10 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 .cab-look-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .cab-look-card { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 0; border: 1px solid var(--card-line); border-radius: .625rem; background: var(--sunk); overflow: hidden; color: var(--text); font: 500 var(--fs-small)/1.2 var(--font-sans); text-align: left; }
 .cab-look-card img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; background: var(--cab-paper); display: block; }
-.cab-look-card.is-poses img { aspect-ratio: 3 / 4; }
+.cab-look-card.is-poses img { object-fit: contain; background: #fff; }
 .cab-look-card > span { padding: .375rem .5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cab-look-card .cab-pick-x { position: absolute; top: .3125rem; right: .3125rem; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: rgba(0, 0, 0, .6); color: #fff; }
 .cab-look-card.is-empty { align-items: center; justify-content: center; gap: .375rem; aspect-ratio: 2 / 3; padding: .5rem; border-style: dashed; border-color: var(--line2); background: transparent; color: var(--muted); text-align: center; cursor: pointer; }
-.cab-look-card.is-empty.is-poses { aspect-ratio: 3 / 4; }
 .cab-look-card.is-empty > span { padding: 0; white-space: normal; }
 .cab-look-card.is-empty svg { width: 1.375rem; height: 1.375rem; }
 .cab-look-card.is-empty em { font: 400 var(--fs-micro)/1.2 var(--font-sans); font-style: normal; color: var(--dim); }
@@ -79,8 +78,10 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 /* the style: its word upright on the left, its sample filling the rest */
 .cab-look { flex: none; flex-direction: row; align-items: stretch; gap: .5rem; padding: .5rem; }
 .cab-vertical { flex: none; margin: 0; writing-mode: vertical-rl; transform: rotate(180deg); text-align: center; font: 600 var(--fs-micro)/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
-.cab-style-pic { flex: 1 1 auto; min-width: 0; height: 7.5rem; padding: 0; border: 1px solid var(--line); border-radius: .625rem; background: var(--cab-paper); overflow: hidden; cursor: pointer; transition: border-color var(--t-fast); }
-.cab-style-pic img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; display: block; }
+.cab-style-pic { flex: 0 1 auto; width: min(100%, 16rem); aspect-ratio: 1; height: auto; margin: 0 auto; padding: 0; border: 1px solid var(--line); border-radius: .625rem; background: var(--cab-paper); overflow: hidden; cursor: pointer; transition: border-color var(--t-fast); }
+.cab-style-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cab-style-pic.is-own img { object-fit: contain; }
+.cab-looks { flex: none; }
 .cab-style-pic:hover, .cab-style-pic[aria-expanded="true"] { border-color: var(--accent-line); }
 .cab-dressing { margin: 0; font: 400 var(--fs-small)/1.3 var(--font-sans); color: var(--muted); }
 .cab-dressing b { color: var(--accent); font-weight: 600; }
@@ -215,7 +216,7 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
   .cab-member .cab-portrait { width: 2.75rem; aspect-ratio: 1; max-height: none; border-radius: .5rem; }
   .cab-member .cab-portrait.is-empty span { display: none; }
   .cab-member-head { align-items: center; }
-  .cab-member .cab-look-cards, .cab-member .cab-look-parts { display: none; }
+  .cab-looks { display: none; }
   .cab-look { display: none; }
   .cab-style-bar { display: block; }
   .cab-mirror { grid-column: 1; grid-row: 1 / span 2; }
@@ -230,8 +231,7 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
   .cab-members { grid-template-columns: repeat(var(--cast, 1), minmax(0, 1fr)); }
   .cab-member { display: flex; }
   .cab-member .cab-portrait { width: auto; aspect-ratio: 3 / 4; max-height: 50dvh; }
-  .cab-member .cab-look-cards { display: grid; }
-  .cab-member .cab-look-parts { display: grid; }
+  .cab-looks { display: flex; }
   .cab-look { display: flex; }
   .cab-style-bar { display: none; }
   .cab-glass { flex: none; height: min(70dvh, 120vw); }
