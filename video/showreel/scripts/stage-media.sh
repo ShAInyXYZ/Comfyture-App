@@ -36,3 +36,11 @@ cp $R/web/brand/cabinet/wardrobe/kabyle-dress.webp $R/web/brand/cabinet/wardrobe
 for f in 2e01293d611e5204 9124e1e7095f2a44 37691be560533bb9 2acbb4ef00e549f1 cd9b658b329f3591 bfdc3950abb11c5b; do cp $R/data/photos/$f.jpg public/media/cabinet/shot-$f.jpg; done
 for n in blazer boho biker barista ballet basketball astronaut kabyle-dress burnous; do cp $R/web/brand/cabinet/wardrobe/$n.thumb.webp public/media/cabinet/wardrobe/$n.webp; done
 cp $R/web/brand/cast/canelle-face.webp $R/web/brand/cast/crumpet-face.webp $R/web/brand/cast/pickle-face.webp public/media/crew/
+# Section 4, Jam: Ketkout no Koe from its edit (cuts-new-song-6f333b): the four scenes, the 30 s part, the covers.
+mkdir -p public/media/jam/covers
+for f in cb1e5857f937c73d 4d4266de5acd5f24 e5f31a1fe4186668 550846f155ed31fc; do cp $R/data/videos/$f.mp4 public/media/jam/; done
+cp "$(find $R/data -name 50a9359d71de4667.mp3 | head -1)" public/media/jam/ketkout-no-koe-part.mp3
+cp $R/data/photos/e983168bd8058f4f.jpg public/media/jam/covers/ketkout-no-koe.jpg
+for d in $R/examples/songs/*/; do cp $d/cover.jpg public/media/jam/covers/$(basename $d).jpg; done
+cp $R/examples/jam/jam-walk-moonlit-oolong/look.jpg public/media/jam/covers/moonlit-oolong.jpg
+cp $R/web/fonts/comfyture-lyric.ttf public/fonts/

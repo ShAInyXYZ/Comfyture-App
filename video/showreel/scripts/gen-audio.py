@@ -72,6 +72,10 @@ JOBS = {
     "s3-sfx-shutter": lambda: sfx("camera shutter click with a bright flash pop, photobooth", 0.8, 0.6),
     "s3-sfx-toast": lambda: sfx("toaster pops up with a cheerful ding", 1.0, 0.6),
     "s3-sfx-spin": lambda: sfx("soft magical shimmer as a 3D object materializes and starts spinning", 2.0, 0.5),
+    # Section 4, Jam.
+    "s4-vo-a": lambda: tts("Brian (male, american)", "[warm] Jam makes music: covers, music videos, even openings for your series.", 51, 0.4),
+    "s4-vo-b": lambda: tts("Brian (male, american)", "[emphatic] The song, the voice, the scenes, the edit... all AI. Only the idea and the mood were ours.", 52, 0.35),
+    "s4-vo-c": lambda: tts("Brian (male, american)", "[excited] And Jam can do so much more.", 53, 0.35),
     # Sound effects.
     "sfx-scratch": lambda: sfx("vinyl record scratch, music stops abruptly, comedic freeze frame", 1.2, 0.6),
     "sfx-stamp": lambda: sfx("heavy rubber stamp slammed hard on a wooden desk, one loud thud", 1.0, 0.6),
