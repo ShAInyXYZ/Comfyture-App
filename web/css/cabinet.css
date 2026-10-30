@@ -110,7 +110,13 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 .cab-shelf-head { display: flex; flex-direction: column; gap: .625rem; flex: none; }
 .cab-shelves > button { flex: 1; justify-content: center; }
 .cab-shelves .count { margin-left: .375rem; font: 500 var(--fs-micro)/1 var(--font-mono); opacity: .7; }
-.cab-groups { display: flex; flex-wrap: wrap; gap: .25rem; }
+.cab-groups { display: flex; gap: .25rem; overflow-x: auto; scrollbar-width: none; mask-image: linear-gradient(90deg, #000 calc(100% - 1.5rem), transparent); padding-right: 1.5rem; }
+.cab-groups::-webkit-scrollbar { display: none; }
+.cab-group { flex: none; white-space: nowrap; }
+.cab-search { position: relative; display: block; }
+.cab-search .field { width: 100%; height: 2.125rem; padding-left: 1.875rem; }
+.cab-search svg { position: absolute; left: .625rem; top: 50%; width: .875rem; height: .875rem; transform: translateY(-50%); color: var(--dim); pointer-events: none; }
+.cab-nothing { grid-column: 1 / -1; margin: .5rem 0; font: 400 var(--fs-small)/1.4 var(--font-sans); color: var(--dim); }
 .cab-group { min-height: 1.625rem; padding: 0 .625rem; font-size: var(--fs-micro); }
 
 .cab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); align-content: start; gap: .5rem; flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: .125rem; }

@@ -8,7 +8,7 @@ import {
   cabinet, loadCabinet, whoNow, setWho, itemOf, toggle, addOwn, removeOwn, set, modelNow, setModel, priceNow,
   newShoot, openShoot, removeShoot, renameShoot, shootNow, again, dropPicture, show,
 } from "../cabinet.js";
-import { WARDROBE, POSES, WARDROBE_GROUPS, POSE_GROUPS, FORMATS, BACKDROPS, EXAMPLES, combos, wardrobeItem, poseItem } from "../cabinet-shelf.js";
+import { WARDROBE, POSES, WARDROBE_GROUPS, POSE_GROUPS, FORMATS, BACKDROPS, EXAMPLES, combos, find, wardrobeItem, poseItem } from "../cabinet-shelf.js";
 
 const fail = (e) => toast(e.message, { tone: "crit" });
 const BRANDS = { openai: "brand-openai", google: "brand-google", bytedance: "brand-bytedance", qwen: "brand-qwen" };
@@ -23,6 +23,8 @@ const SHELF = { outfits: { items: WARDROBE, groups: WARDROBE_GROUPS, label: "War
 
 let loading = null;
 let failed = null;
+// what each shelf is searched for
+const query = { outfits: "", poses: "" };
 let renaming = false;
 
 /** A key that asks twice: the first press arms it. */
@@ -246,24 +248,42 @@ function shelf(b) {
   const s = SHELF[kind];
   const group = cabinet.group[kind] ?? "all";
   const own = (b.own?.[kind] ?? []).map((p) => itemOf(kind, `own:${p.file}`)).filter(Boolean);
-  const items = s.items.filter((it) => group === "all" || it.group === group);
   const g = GALLERY[kind];
   const add = h("button.cab-item.cab-add", {
     type: "button",
     title: `A picture of ${kind === "outfits" ? "an outfit or a garment" : "a pose"}: from your computer or the Library`,
     on: { click: (e) => openPicker(e.currentTarget, { title: kind === "outfits" ? "Add an outfit" : "Add a pose", characters: false, onPick: (c) => addOwn(kind, c).catch(fail) }) },
   }, sprite("image-upload"), h("b", {}, kind === "outfits" ? "Your own outfit" : "Your own pose"), h("em", {}, "a picture of it"));
+  // the grid is drawn again in place as the search is typed (the page is not drawn again while a field in it has the focus)
+  const grid = h("div.cab-grid", { className: kind === "poses" ? "is-poses" : "", dataset: { scrollKey: `cab-shelf-${kind}` } });
+  const fill = () => {
+    const items = find(s.items.filter((it) => group === "all" || it.group === group), query[kind], s.groups);
+    grid.replaceChildren(add, ...own.map((it) => shelfCard(kind, it, b, true)), ...items.map((it) => shelfCard(kind, it, b, false)),
+      ...(items.length ? [] : [h("p.cab-nothing", {}, `No ${kind === "outfits" ? "outfit" : "pose"} by that name${group === "all" ? "" : ` in ${s.groups[group]}`}.`)]));
+  };
+  fill();
+  const search = h("label.cab-search", {}, icon("search"), h("input.field", {
+    type: "search",
+    value: query[kind],
+    placeholder: `Search ${s.items.length} ${kind === "outfits" ? "outfits" : "poses"}`,
+    "aria-label": `Search the ${s.label.toLowerCase()}`,
+    on: { input: (e) => ((query[kind] = e.target.value), fill(), (grid.scrollTop = 0)), keydown: (e) => e.stopPropagation() },
+  }));
+  const groups = h("div.cab-groups", { role: "group", "aria-label": "Show", on: { wheel: (e) => {
+    if (groups.scrollWidth <= groups.clientWidth || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+    groups.scrollLeft += e.deltaY;
+    e.preventDefault();
+  } } }, ...[["all", "All"], ...Object.entries(s.groups)].map(([id, label]) => h("button.cab-group", { type: "button", "aria-pressed": String(group === id), on: { click: () => ((cabinet.group[kind] = id), changed("cabinet")) } }, label)));
+  // the group picked stays in sight
+  requestAnimationFrame(() => groups.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" }));
   return h("aside.cab-col.cab-shelf", { "aria-label": "The shelves" },
     h("div.cab-shelf-head", {},
       h("div.segment.cab-shelves", { role: "tablist", "aria-label": "Shelf" },
         ...Object.entries(SHELF).map(([id, x]) => h("button", { type: "button", role: "tab", "aria-selected": String(kind === id), on: { click: () => ((cabinet.shelf = id), changed("cabinet")) } },
           x.label, h("span.count", {}, b[id].length ? `${b[id].length} picked` : String(x.items.length))))),
-      h("div.cab-groups", { role: "group", "aria-label": "Show" },
-        ...[["all", "All"], ...Object.entries(s.groups)].map(([id, label]) => h("button.cab-group", { type: "button", "aria-pressed": String(group === id), on: { click: () => ((cabinet.group[kind] = id), changed("cabinet")) } }, label)))),
-    h("div.cab-grid", { className: kind === "poses" ? "is-poses" : "", dataset: { scrollKey: `cab-shelf-${kind}` } },
-      add,
-      ...own.map((it) => shelfCard(kind, it, b, true)),
-      ...items.map((it) => shelfCard(kind, it, b, false))),
+      search,
+      groups),
+    grid,
     h("p.cab-gallery", {},
       "More ", g.what, " in ", h("a", { href: g.url, target: "_blank", rel: "noreferrer" }, g.name, icon("open")), " by ギア: free to use in your pictures but not open source, so it isn't copied here. Download one by hand, then add it as your own. No bulk downloads, no reposting."));
 }

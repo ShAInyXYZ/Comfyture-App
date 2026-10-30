@@ -49,3 +49,13 @@ test("the examples are on disk and made of the shelves' own outfits and poses", 
     assert.ok(wardrobeItem(x.outfit) && poseItem(x.pose) && FORMATS[x.format], `${x.who}'s example`);
   }
 });
+
+test("a shelf is searched by every word, in its names, words and group names", async () => {
+  const { find, WARDROBE, POSES, WARDROBE_GROUPS, POSE_GROUPS } = await import("../web/js/cabinet-shelf.js");
+  assert.ok(WARDROBE.length >= 100 && POSES.length >= 90, "a full wardrobe and a full pose shelf");
+  assert.deepEqual(find(WARDROBE, "", WARDROBE_GROUPS), WARDROBE);
+  assert.deepEqual(find(WARDROBE, "  Chef  ", WARDROBE_GROUPS).map((x) => x.id), ["chef"]);
+  assert.ok(find(WARDROBE, "winter coat", WARDROBE_GROUPS).every((x) => x.group === "winter"));
+  assert.ok(find(POSES, "holding", POSE_GROUPS).length >= 10, "a group's name is searched too");
+  assert.deepEqual(find(POSES, "nothing like this", POSE_GROUPS), []);
+});
