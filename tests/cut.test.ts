@@ -438,3 +438,24 @@ test("a looping clip runs to the end of the project: past a short film, to the e
   const f = await rgbFrame(out.film, 4.5);
   assert.ok(near(px(f, 160, 80, 45), [192, 32, 32], 30), `the loop still plays at 4.5 s, past the 2 s film: ${px(f, 160, 80, 45)}`);
 });
+
+test("a looping clip's repeats follow each other with no gap, even when its frames stop short of its length", async (t) => {
+  const dir = await tmp(t);
+  await makeClip(join(dir, "blue.mp4"), 160, 90, 2, "solid", "0x2040c0");
+  // a 30 fps clip said to run 1.07 s (its sound runs longer than its picture, as many do)
+  await exec("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "color=c=0xc02020:s=160x90:r=30:d=1", "-c:v", "libx264", "-pix_fmt", "yuv420p", join(dir, "red.mp4")]);
+  const blue = { path: join(dir, "blue.mp4"), still: false, hasAudio: false, duration: 2 };
+  const red = { path: join(dir, "red.mp4"), still: false, hasAudio: false, duration: 1.07 };
+  const body: any = { aspect: "16:9", tracks: [
+    { id: "v1", kind: "video", main: true, items: [{ id: "c", src: { kind: "video", id: "b" } }] },
+    { id: "v2", kind: "video", items: [{ id: "o", src: { kind: "video", id: "r" }, start: 0, loop: true }] },
+  ] };
+  const srcs: any = { c: blue, o: red };
+  for (let i = 1; i <= 4; i++) srcs[`o~${i}`] = red;
+  const out = await render(body, srcs, join(dir, "g"), { size: { width: 160, height: 90 } });
+  const { stdout } = (await exec("ffmpeg", ["-v", "error", "-i", out.film, "-vf", "crop=2:2:80:44,scale=1:1,format=rgb24", "-f", "rawvideo", "-"], { encoding: "buffer", maxBuffer: 1e8 })) as any;
+  const frames = stdout.length / 3;
+  assert.equal(frames, 48, "the film keeps its 2 s");
+  const through = Array.from({ length: frames }, (_, i) => i).filter((i) => stdout[i * 3 + 2] > stdout[i * 3]);
+  assert.deepEqual(through, [], "the film never shows through between the repeats");
+});

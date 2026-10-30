@@ -35,7 +35,7 @@ export const editor = { get playing() { return player.playing; }, stop: () => st
 function frameAt(t) {
   // (a looping clip's repeats play as the clip does)
   const b = cut.project?.body && played(cut.project.body);
-  const out = { pictures: [], stickers: [], titles: [], sounds: [] };
+  const out = { pictures: [], stickers: [], titles: [], sounds: [], played: b };
   if (!b) return out;
   const fade = (it, start, len, at) => {
     const fi = Number(it.fadeIn) || 0;
@@ -94,15 +94,24 @@ function frameAt(t) {
   return out;
 }
 
+/** A looping clip and its repeats play in two layers taken in turn (n even, n odd), so the next repeat is loaded and
+ * waiting on its first frame while this one plays: no new player is opened at the joint, which showed as a gap. */
+function layerKey(it) {
+  const root = it.ghost ?? (it.loop ? it.id : null);
+  if (!root) return { key: it.id };
+  const n = it.ghost ? Number(String(it.id).split("~").pop()) || 0 : 0;
+  return { key: `${root}#${n % 2}`, root, n };
+}
+
 /** The layer an item plays in, made once and kept while it is on screen. */
-function layerOf(it, kind) {
+function layerOf(it, kind, key = it.id) {
   const sh = ed.shell;
-  let el = player.layers.get(it.id);
+  let el = player.layers.get(key);
   const s = sourceOf(it.src);
   const url = s?.url ?? s?.color;
   if (el && el.dataset.url !== url) {
     el.remove();
-    player.layers.delete(it.id);
+    player.layers.delete(key);
     el = null;
   }
   if (!el) {
@@ -113,12 +122,12 @@ function layerOf(it, kind) {
     else if (s?.still) el = h("img.cut-layer", { draggable: false });
     else el = h("video.cut-layer", { playsInline: true, preload: "auto", ...(poster && !(Number(it.from) > 0.2) ? { poster: `media/photos/${poster}` } : {}) });
     el.dataset.url = url ?? "";
-    el.dataset.id = it.id;
+    el.dataset.id = it.ghost ?? it.id;
     if (s?.color) el.style.background = s.color;
     else if (url) el.src = url;
     if (kind === "sticker") el.addEventListener("pointerdown", (e) => gesture(e, it.id, "move"));
     if (kind !== "sound") sh.layers.append(el);
-    player.layers.set(it.id, el);
+    player.layers.set(key, el);
   }
   return el;
 }
@@ -173,8 +182,24 @@ function show(t) {
     const it = p.item;
     const s = sourceOf(it.src);
     if (!s?.url && !s?.color) continue;
-    const el = layerOf(it, "picture");
-    live.add(it.id);
+    const lk = layerKey(it);
+    const el = layerOf(it, "picture", lk.key);
+    live.add(lk.key);
+    // the next repeat of a looping clip waits in the other layer, hidden, on its first frame
+    if (lk.root) {
+      const next = f.played.tracks.flatMap((x) => x.items).find((x) => x.id === `${lk.root}~${lk.n + 1}`);
+      if (next) {
+        const nk = layerKey(next).key;
+        const wait = layerOf(next, "picture", nk);
+        live.add(nk);
+        wait.style.opacity = "0";
+        if (wait.tagName === "VIDEO") {
+          if (!wait.paused) wait.pause();
+          const first = Number(next.from) || 0;
+          if (Math.abs(wait.currentTime - first) > 0.02) wait.currentTime = first;
+        }
+      }
+    }
     el.style.opacity = String(p.alpha);
     el.style.zIndex = String(p.z);
     // a clip held on its first frame (the one a whip is coming in with) has not started yet

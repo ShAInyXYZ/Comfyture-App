@@ -175,6 +175,9 @@ export function planCut(body: CutBody, source: (item: CutItem) => Source | null,
     }
     // a clip that gives its last frames to a whip has exactly the frames its length says (resampling to 24 fps may add one or lose one)
     if (frames) chain.push("tpad=stop_mode=clone:stop=2", `trim=end_frame=${frames}`, "setpts=PTS-STARTPTS");
+    // an overlay's last frame is held to its end: a clip whose frames stop short of its length (its sound runs longer, or
+    // 30 fps resampled to 24) let the film show through for a frame or two, a gap between a looping clip's repeats
+    else if (overlay && !src.color && !src.still) chain.push(`tpad=stop_mode=clone:stop_duration=${f3(Math.min(1, len))}`);
     const m = it.motion;
     if (m) {
       // a push in, a pull out or a pan: the frame scaled up and moved over the clip's length
@@ -300,7 +303,7 @@ export function planCut(body: CutBody, source: (item: CutItem) => Source | null,
   });
   let T = at;
   // where the rest ends (the lanes over the film, the sound under it)
-  const end = (t: CutTrack, it: CutItem) => n(it.start, 0, 36000, 0) + (t.kind === "audio" ? Math.max(0, Math.min(Number(it.to) || Infinity, source(it)?.duration ?? 0) - n(it.from, 0, 36000, 0)) : t.kind === "title" ? n(it.length, 0.5, 60, 3) : n(it.length, 0.5, 60, 4));
+  const end = (t: CutTrack, it: CutItem) => n(it.start, 0, 36000, 0) + (t.kind === "audio" ? Math.max(0, Math.min(Number(it.to) || Infinity, source(it)?.duration ?? 0) - n(it.from, 0, 36000, 0)) : t.kind === "title" ? n(it.length, 0.5, 60, 3) : (source(it) ? span(it, source(it)!) : n(it.length, 0.5, 60, 4)));
   const rest = Math.max(0, ...body.tracks.filter((t) => !t.mute && t.kind !== "fx" && t !== main).flatMap((t) => t.items.map((it) => end(t, it))));
   // a looping clip runs to the end of the project (the song, say), so the film plays on past its main track to there
   const looping = body.tracks.some((t) => t !== main && !t.mute && t.items.some((it) => it.loop));
