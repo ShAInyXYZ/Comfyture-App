@@ -50,7 +50,18 @@ function keep(key, make) {
   if (!el) kept.set(key, (el = make()));
   return el;
 }
-const loopVideo = (slot, src, poster) => keep(`${slot}:${src}`, () => h("video", { src, poster, muted: true, loop: true, autoplay: true, playsInline: true, preload: "metadata", draggable: false, disablePictureInPicture: true }));
+const loopVideo = (slot, src, poster) => keep(`${slot}:${src}`, () => h("video", { src, poster, muted: true, loop: true, autoplay: true, playsInline: true, preload: "metadata", draggable: false, disablePictureInPicture: true, on: { loadedmetadata: (e) => learnShape(e.target) } }));
+
+// the preview's frame takes the shape of what it shows (9:16 until the picture or video has said its own)
+const shapes = new Map();
+function learnShape(media) {
+  const w = media.videoWidth || media.naturalWidth;
+  const h = media.videoHeight || media.naturalHeight;
+  if (!w || !h) return;
+  shapes.set(media.getAttribute("src"), w / h);
+  media.closest(".mx-preview")?.style.setProperty("--ar", String(w / h));
+}
+const framed = (src, ...kids) => h("div.mx-preview", { style: shapes.has(src) ? { "--ar": String(shapes.get(src)) } : {} }, ...kids);
 const pickFile = (accept, multiple, fn) => {
   const input = h("input", { type: "file", accept, multiple, hidden: true, on: { change: () => (fn([...input.files]), input.remove()) } });
   document.body.append(input);
@@ -168,20 +179,21 @@ function preview(t, m) {
   const film = m?.body.film;
   // Trend cards open the example; My mixes opens saved results.
   if (film && t.preview && watching === t.id && !making())
-    return h("div.mx-preview", {}, player({ name: t.name, body: { film: { url: t.preview, seconds: t.seconds }, shots: t.beats } }, { inFrame: true }));
-  if (film) return h("div.mx-preview", {}, player(m));
+    return framed(t.preview, player({ name: t.name, body: { film: { url: t.preview, seconds: t.seconds }, shots: t.beats } }, { inFrame: true }));
+  if (film) return framed(film.url, player(m));
   // our crew's version, in the cover's frame at the shape it was made in, until yours exists;
   // another trend picked, and this one is back to its cover
   if (watching !== t.id) watching = null;
   if (watching && t.preview && !making())
-    return h("div.mx-preview", {}, player({ name: t.name, body: { film: { url: t.preview, seconds: t.seconds }, shots: t.beats } }, { inFrame: true }));
+    return framed(t.preview, player({ name: t.name, body: { film: { url: t.preview, seconds: t.seconds }, shots: t.beats } }, { inFrame: true }));
   const first = m?.body.shots?.[0]?.look?.url;
   const feel = making() && m ? makeFeel(m, t) : null;
   // the latest take that is done plays in the card while the rest is rolled
   const rolledTake = feel ? [...(m.body.shots ?? [])].reverse().map((s) => take(s)).find((r) => r?.status === "done" && r.video) : null;
-  return h("div.mx-preview", {},
+  const cover = rolledTake ? rolledTake.video : first ?? trendArt(t);
+  return framed(cover,
     h(`div.mx-screen.is-cover${feel ? ".is-making" : ""}`, {},
-      rolledTake ? loopVideo(`rolled:${rolledTake.id}`, rolledTake.video) : h("img", { src: first ?? trendArt(t), alt: "", draggable: false }),
+      rolledTake ? loopVideo(`rolled:${rolledTake.id}`, rolledTake.video) : h("img", { src: cover, alt: "", draggable: false, on: { load: (e) => learnShape(e.target) } }),
       h("span.mx-card-len", {}, `0:${pad2(Math.round(t.seconds))}`),
       // our own version of the trend, in the shape it was made in
       t.preview && !first && !making() ? h("button.mx-watch", { type: "button", title: "Watch our crew's version", "aria-label": "Watch our crew's version", on: { click: () => ((watching = t.id), (starting = true), changedMixer()) } }, icon("play")) : null,
@@ -295,6 +307,7 @@ function player(m, { inFrame = false } = {}) {
   const video = keep(`film:${film.url}`, () => {
     // a version of yours opens playing, muted (a browser lets nothing else start by itself); its sound key is in the card
     const v = h("video", { src: film.url, poster: film.poster, playsInline: true, preload: "auto", loop: true, draggable: false, disablePictureInPicture: true, ...(inFrame ? {} : { muted: true, autoplay: true }) });
+    v.addEventListener("loadedmetadata", () => learnShape(v));
     for (const ev of ["timeupdate", "play", "pause", "volumechange"]) v.addEventListener(ev, () => tick(v));
     return v;
   });

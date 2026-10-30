@@ -52,7 +52,7 @@
 /* ---- the trend picked ----------------------------------------------------------------------- */
 .mx-work { grid-area: work; display: grid; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); align-items: start; gap: 1.25rem; min-width: 0; padding: 1rem; border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); }
 .mx-preview { display: grid; gap: .75rem; min-width: 0; }
-.mx-screen { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 9 / 16; overflow: hidden; border-radius: calc(.875rem * var(--corner-k, 1)); background: var(--sunk); }
+.mx-screen { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: var(--ar, 9 / 16); overflow: hidden; border-radius: calc(.875rem * var(--corner-k, 1)); background: var(--sunk); }
 .mx-screen > video, .mx-screen > img { width: 100%; height: 100%; object-fit: cover; }
 /* the trend's cover keeps its own 9:16; its column is as wide as lets it stand as tall as the recipe beside it */
 .mx-recipe { grid-template-columns: minmax(15rem, 24rem) minmax(0, 1fr); }
@@ -82,10 +82,13 @@
 /* under the music: who stars in it (left) beside how it is made (right) */
 .mx-recipe-body { container-type: inline-size; }
 /* our crew's version in the cover's frame: whole, at the shape it was made in, its transport inside the frame */
-.mx-stage.is-in-frame { position: relative; aspect-ratio: 9 / 16; overflow: hidden; border-radius: calc(.875rem * var(--corner-k, 1)); background: var(--sunk); }
+.mx-stage.is-in-frame { position: relative; aspect-ratio: var(--ar, 9 / 16); overflow: hidden; border-radius: calc(.875rem * var(--corner-k, 1)); background: var(--sunk); }
 .mx-stage.is-in-frame .mx-screen { position: absolute; inset: 0; aspect-ratio: auto; border-radius: 0; background: transparent; }
 .mx-stage.is-in-frame .mx-screen > video { object-fit: cover; }
 .mx-stage.is-in-frame .mx-transport { position: absolute; left: .625rem; right: .625rem; bottom: .625rem; }
+/* a narrow frame (a short window) keeps play and the bar; the time would spill out of it */
+.mx-stage.is-in-frame { container-type: inline-size; }
+@container (max-width: 13rem) { .mx-stage.is-in-frame .mx-time { display: none; } }
 .mx-watch-x { position: absolute; top: .625rem; right: .625rem; z-index: 1; display: grid; place-items: center; width: 2.25rem; height: 2.25rem; padding: 0; border: 0; border-radius: 50%; background: rgba(240, 239, 237, .1); color: var(--text); cursor: pointer; }
 .mx-watch-x:hover { background: rgba(240, 239, 237, .2); }
 .mx-watch-x svg { width: 1rem; height: 1rem; }
@@ -284,7 +287,7 @@
 .mx-recipe-meta .mx-chip { margin-left: .625rem; vertical-align: middle; }
 
 /* a version of yours: its controls are in the card, and the card (9:16) fits the screen above the chat bar */
-.mx-preview { max-width: min(100%, calc((100dvh - 13rem) * 9 / 16)); }
+.mx-preview { max-width: min(100%, calc((100dvh - 13rem) * var(--ar, 9 / 16))); }
 .mx-stage.is-made .mx-screen { cursor: pointer; }
 .mx-stage .mx-big { z-index: 2; }
 .mx-stage .mx-big[hidden] { display: none; }
@@ -460,9 +463,9 @@
   .mixer { height: 100%; box-sizing: border-box; grid-template-rows: minmax(0, 1fr) minmax(0, 11rem); gap: .75rem; padding: 0; }
   .mx-feed { position: static; height: 100%; min-height: 0; box-sizing: border-box; }
   .mx-work { box-sizing: border-box; height: 100%; min-height: 0; }
-  .mx-recipe { grid-template-columns: minmax(12rem, min(24rem, calc((100dvh - var(--head) - var(--chat-h, 3.5rem) - 14rem) * 9 / 16))) minmax(0, 1fr); }
-  .mx-preview { align-self: stretch; width: 100%; max-height: 100%; min-height: 0; display: block; }
-  .mx-preview > .mx-stage.is-in-frame, .mx-preview > .mx-screen { height: 100%; aspect-ratio: auto; }
+  /* the preview is as tall as the panel and as wide as its video's shape allows (never more than 45% of the panel) */
+  .mx-recipe { container-type: size; grid-template-columns: auto minmax(0, 1fr); }
+  .mx-recipe > .mx-preview { align-self: start; width: min(calc(100cqh * var(--ar, 9 / 16)), 45cqw); max-width: none; display: block; }
   .mx-recipe .mx-recipe-body, .mx-remix-right { min-height: 0; overflow-y: auto; scrollbar-width: none; }
   .mx-recipe .mx-recipe-body::-webkit-scrollbar, .mx-remix-right::-webkit-scrollbar { display: none; }
   .mx-aside { min-height: 0; height: 100%; align-content: stretch; overflow: auto; scrollbar-width: none; }
