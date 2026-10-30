@@ -183,8 +183,8 @@ try {
   ok(b0.product === "jam" && b0.aspect === "9:16" && b0.tracks.find((t) => t.main).items.length === 8, "the seeded Jam opens as its edit: 9:16, its eight clips, product kept");
 
   // ---- Pickle's panel: his portrait, the jam, the five workspaces with their state, the video's pipeline (no canned tools)
-  ok(await page.locator(".jm-pet-face").getAttribute("src") === "brand/cast/pickle-face.webp" && (await page.locator(".jm-pet-text").innerText()).toLowerCase().includes("band leader"), "Pickle's portrait and tag are on the panel");
-  ok((await page.locator(".jm-jam").innerText()).trim().length > 0, "the jam chip names the jam");
+  ok(!(await page.locator(".jm-pet").count()) && (await page.locator(".jm-album .jm-cover-label b").innerText()).length > 0, "the panel opens on the Album: the video's square card with its name on it, no portrait");
+  ok(!(await page.locator(".jm-jam").count()), "no dropdown: the album card is the jam picker");
   const tiles = await page.locator(".jm-tile").evaluateAll((els) => els.map((e) => ({ ws: e.dataset.workspace, name: e.querySelector("b").textContent, status: e.querySelector("em").textContent, on: e.classList.contains("is-on") })));
   ok(tiles.map((t) => t.name).join() === "The song,The track,The words,The band,The edit" && tiles.map((t) => t.ws).join() === "song,track,words,band,edit", "five workspaces, in the order a video is made");
   // (a video that has a song opens on its track, not on the page that makes a song)
@@ -230,7 +230,7 @@ try {
     const cover = (await api("api/audio")).find((a) => a.file === "jam-walk-moonlit-oolong-track.mp3")?.cover;
     ok(cover === "/media/photos/jam-walk-moonlit-oolong-artist.jpg" && f.thumb === cover && f.sleeve === cover, "its song wears Taro's picture as its cover: under the song's name on the stage, and on its sleeve (the record's label is the same picture)", `${f.thumb} ${f.sleeve}`);
     ok(f.keys === "picture,mine,video,none", "with the keys of a song that has one: a new cover, my picture, a video cover, and taking it off", f.keys);
-    ok((await page.locator(".jm-jam .jm-jam-cover").getAttribute("src")) === cover, "the video's song wears its cover in Pickle's panel too, beside the video's name");
+    ok((await page.locator(".jm-album .jm-cover-art img").getAttribute("src")) === cover, "the video's song wears its cover on the panel's album card too");
     // (and, where the panel has free room, as the album cover: a tall screen shows it large and square between the workspaces and the status)
     await page.setViewportSize({ width: 1440, height: 1600 });
     ok(await until(() => { const a = document.querySelector(".jm-cover-art"); if (!a) return false; const r = a.getBoundingClientRect(); return r.width > 200 && Math.abs(r.width - r.height) < 2; }, 20), "on a tall screen the album cover fills the free room of Pickle's panel, square");
@@ -888,7 +888,7 @@ try {
     await workspace("band");
     await workspace("words");
     ok((await page.locator(".jm-tile.is-on").getAttribute("data-workspace")) === "words" && Date.now() - t0 < 2500, "the workspaces can be switched while it starts");
-    await page.locator(".jm-jam").click();
+    await page.locator(".jm-album .jm-cover-art").click();
     await page.locator('.jm-menu-open:has(b:text-is("Alpha save"))').click();
     ok(await until(() => import("/js/jam.js").then((m) => m.jam.jam?.id === "jam-three-kittens" && !!m.jam.starting).catch(() => false), 20), "and another jam can be opened from the set list");
     ok(await until(() => import("/js/jam.js").then((m) => !m.jam.starting).catch(() => false), 60), "the trend's jam finishes on its own");

@@ -9,7 +9,7 @@ import { cut, filmLength } from "../cut.js";
 import { lyricItems } from "../edit.js";
 import { setRoom } from "../harnesses.js";
 import { editorParts, drawEditor, editor } from "./editor.js";
-import { PICKLE, WORKSPACES } from "../jam-harness.js";
+import { WORKSPACES } from "../jam-harness.js";
 import { jicon, drawWindow } from "./jam-ui.js";
 import { trackWorkspace, stopRecord } from "./jam-track.js";
 import { wordsWorkspace, updateWordsPlayback } from "./jam-words.js";
@@ -40,29 +40,27 @@ function jamMenu(j) {
     h("button.jm-menu-new", { type: "button", role: "menuitem", on: { click: () => (newJam(), close()) } }, jicon("plus"), "New jam"));
 }
 
-function jamChip(j) {
-  // (the video's song wears its cover here too, as on the record and the shelf)
-  const cover = j?.body.track?.cover;
-  return h("div.jm-chipwrap", {},
-    h(`button.jm-jam${cover ? ".has-cover" : ""}`, { type: "button", "aria-haspopup": "menu", "aria-expanded": String(menu), title: "Your jams", on: { click: () => ((menu = !menu), changed("jam")) } },
-      cover ? h("img.jm-jam-cover", { src: cover, alt: "", draggable: false }) : null, h("span", {}, j?.name ?? "No jam yet"), jicon("caret")),
-    menu ? jamMenu(j) : null);
-}
-
 /** A lamp: done (a tick), next (a ring lit), waiting (a ring). */
 const lamp = (state) => h("span.jm-lamp", { dataset: { state }, "aria-hidden": "true" }, state === "done" ? jicon("check") : null);
 
 /**
- * The album cover in the free space of the panel, between the workspaces and the status: the video's song's cover (else the picture the
- * video wears in the set list), as large as the space is, square. A short screen has no space for it and shows none.
+ * The album at the head of the panel: the video's card, square, its song's cover (else the picture the video wears in the set list)
+ * with its name on it, as the sleeves of Your songs wear theirs. It is the jam picker: pressed, it opens your jams. It is as large as
+ * the panel's free room allows.
  */
-function coverCard(j) {
-  const src = j?.body.track?.cover ?? j?.thumb;
-  if (!src) return null;
-  const name = j.body.track?.name ?? j.name;
-  return h("div.jm-cover", {},
-    h("button.jm-cover-art", { type: "button", title: `${name}: the album cover. Open The song`, "aria-label": `${name}, the album cover: open The song`, on: { click: () => setWorkspace("song") } },
-      h("img", { src, alt: "", draggable: false })));
+function albumCard(j) {
+  const src = j ? j.body.track?.cover ?? j.thumb : null;
+  const name = j ? j.body.track?.name ?? j.name : "No jam yet";
+  const hue = [...(name ?? "")].reduce((t, ch) => (t * 31 + ch.charCodeAt(0)) % 360, 17);
+  const secs = j ? Math.round(filmLength() || Number(j.body.part?.seconds) || 0) : 0;
+  return h("section.jm-album", { "aria-label": "Album" },
+    h("span.jm-album-label", {}, "Album"),
+    h("div.jm-cover", {},
+      h("div.jm-album-card", {},
+        h(`button.jm-cover-art${src ? ".has-cover" : ""}`, { type: "button", style: { "--hue": String(hue) }, "aria-haspopup": "menu", "aria-expanded": String(menu), title: `${name}\nYour jams`, "aria-label": `${name}: your jams`, on: { click: () => ((menu = !menu), changed("jam")) } },
+          src ? h("img", { src, alt: "", draggable: false }) : h("span.jm-cover-jar", {}, jicon("jar")),
+          h("span.jm-cover-label", {}, h("span", {}, h("b", {}, name), secs ? h("em", {}, `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`) : null), jicon("caret"))),
+        menu ? jamMenu(j) : null)));
 }
 
 function side(j) {
@@ -70,16 +68,12 @@ function side(j) {
   const lamps = lampsOf(j);
   const steps = pipeline(j);
   return h("aside.jm-side", { "aria-label": "Pickle's panel" },
-    h("div.jm-pet", {},
-      h("img.jm-pet-face", { src: PICKLE.face, alt: PICKLE.name, draggable: false }),
-      h("div.jm-pet-text", {}, h("b", {}, PICKLE.name), h("span", {}, PICKLE.tag))),
-    jamChip(j),
+    albumCard(j),
     h("nav.jm-tiles", { "aria-label": "Workspaces" }, ...WORKSPACES.map((w) =>
       h(`button.jm-tile${jam.workspace === w.id ? ".is-on" : ""}`, { type: "button", "aria-current": jam.workspace === w.id ? "page" : "false", dataset: { workspace: w.id, lamp: lamps[w.id] }, on: { click: () => setWorkspace(w.id) } },
         h("span.jm-tile-ic", {}, jicon(TILE_ICON[w.id])),
         h("span.jm-tile-text", {}, h("b", {}, w.name), h("em", {}, status[w.id])),
         jam.workspace === w.id ? jicon("next") : lamp(lamps[w.id])))),
-    coverCard(j),
     h("section.jm-pipe", { "aria-label": "Jam status" },
       h("span.jm-pipe-label", {}, "Jam status"),
       h("ol.jm-pipe-list", {}, ...steps.map((st) =>
@@ -195,7 +189,7 @@ document.addEventListener("editor:play", () => page?.root.classList.add("is-play
 document.addEventListener("editor:stop", () => page?.root.classList.remove("is-playing"));
 // the jam menu closes on a press elsewhere, or Escape
 document.addEventListener("pointerdown", (e) => {
-  if (menu && currentPage() === "jam" && !e.target.closest?.(".jm-chipwrap")) ((menu = false), changed("jam"));
+  if (menu && currentPage() === "jam" && !e.target.closest?.(".jm-album-card")) ((menu = false), changed("jam"));
 }, true);
 document.addEventListener("keydown", (e) => e.key === "Escape" && menu && currentPage() === "jam" && ((menu = false), changed("jam")));
 
