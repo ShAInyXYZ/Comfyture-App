@@ -2,14 +2,15 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
 import { AUTUMN_TRENDS } from '../web/js/mixer-trends-autumn.js';
-import { CREW, TRENDS } from '../web/js/mixer-trends.js';
+import { CREW, TRENDS, MIXER_SHELF } from '../web/js/mixer-trends.js';
 import { validateRecipe } from '../web/js/mixer-trend-state.js';
 
 test('all eleven cast presets ship usable recipes, matching covers, video and original sound', async () => {
   assert.equal(AUTUMN_TRENDS.length, 11);
   assert.equal(new Set(TRENDS.map(t => t.id)).size, TRENDS.length);
   for (const t of AUTUMN_TRENDS) {
-    assert.equal(t.home, 'mixer');
+    // each is on Mixer's shelf, or kept off it (Slow-Motion Squad, taken off on 30 Oct) with its files still whole
+    assert.ok(t.home === 'mixer' || t.home === 'none', `${t.id}: home ${t.home}`);
     assert.equal(t.soon, false);
     assert.ok(t.cast.every(r => CREW.some(c => c.id === r.crew)));
     const recipe = JSON.parse(await readFile('web/' + t.recipe, 'utf8'));
@@ -61,4 +62,12 @@ test('the plant reveal uses non-Pro LTX with native speech and accurate generati
   assert.equal(r.render.estimatedImageCredits, 3);
   assert.equal(r.render.takes[0].settings.width, 768);
   assert.equal(r.render.takes[0].settings.height, 1344);
+});
+
+test("Mixer's shelf opens on the owner's order, Slow-Motion Squad off it and the ones not made yet last", () => {
+  const ids = MIXER_SHELF.map((t) => t.id);
+  assert.deepEqual(ids.slice(0, 7), ['state-property', 'we-listen', 'my-reaction', 'ghost-photoshoot', 'smalltown-boy', 'face-dance', 'documentary']);
+  assert.ok(!ids.includes('slow-motion-squad'));
+  const firstSoon = MIXER_SHELF.findIndex((t) => t.soon);
+  assert.ok(firstSoon === -1 || MIXER_SHELF.slice(firstSoon).every((t) => t.soon));
 });

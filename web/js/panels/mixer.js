@@ -12,7 +12,7 @@ import {
   shotLength, shotState, setShot, select, redo, mixIt, mixing, estimate, take, mixLoras, setMixLoras, rolled,
 } from "../mixer.js";
 import { loraStack } from "../loras.js";
-import { TRENDS, CREW, KINDS, trendById, crewById, trendArt, crewFace } from "../mixer-trends.js";
+import { CREW, KINDS, MIXER_SHELF, trendById, crewById, trendArt, crewFace } from "../mixer-trends.js";
 import { pick, castOf, selectTrend, pickRole, setRole, swapRole, stars, loadStars, addStar, removeStar, reviewFrames, making, takesOf, castArtist, trendInputs, setProblem, estimate as trendCost } from "../mixer-trend.js";
 import { openPicker, pictureOf } from "../picker.js";
 import { voiceReferenceFor } from "../mixer-voices.js";
@@ -73,22 +73,13 @@ const nameOf = (who) => (who?.crew ? crewById(who.crew)?.name : who?.star?.name 
 
 // ---------------------------------------------------------------- what's trending
 
-// Mixer's own trends: comedy and reactions, and the few shown here as well as on Jam's shelf
-const OURS = TRENDS.filter((t) => t.home === "mixer" || t.also?.includes("mixer"));
+// Mixer's own trends: comedy and reactions, and the few shown here as well as on Jam's shelf, in the shelf's order
+const OURS = MIXER_SHELF;
 
 function feed() {
   const list = OURS;
   const cards = h("div.mx-cards", { dataset: { scrollKey: "mx-cards" } }, ...list.map(card));
-  const nudge = (d) => cards.scrollBy(matchMedia("(min-width: 981px)").matches
-    ? { top: d * cards.clientHeight * 0.8, behavior: "smooth" }
-    : { left: d * cards.clientWidth * 0.8, behavior: "smooth" });
-  return h("section.mx-feed", {},
-    h("div.mx-feed-head", {},
-      h("h1", {}, "Trending now"), h("p", {}, "Viral trends, made yours."),
-      h("div.mx-nudge", {},
-        h("button.key.is-icon", { type: "button", "aria-label": "Previous trends", on: { click: () => nudge(-1) } }, icon("chevron")),
-        h("button.key.is-icon", { type: "button", "aria-label": "More trends", on: { click: () => nudge(1) } }, icon("chevron")))),
-    cards);
+  return h("section.mx-feed", {}, h("div.mx-feed-head", {}, h("h1", {}, "Trending now"), h("p", {}, "Viral trends, made yours.")), cards);
 }
 function card(t) {
   const lit = t.heat >= 5 ? 3 : t.heat >= 4 ? 2 : 1;

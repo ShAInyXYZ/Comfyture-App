@@ -9,7 +9,7 @@
 import { state, changed, toast, waitFor, drawPicture, artistFor, chosenArtist } from "./store.js";
 import { api } from "./api.js";
 import { mixer, save, newMix, whenOpened, mixLoras } from "./mixer.js";
-import { TRENDS, CREW, trendById, crewById, trendArt, crewPicture } from "./mixer-trends.js";
+import { TRENDS, CREW, MIXER_SHELF, trendById, crewById, trendArt, crewPicture } from "./mixer-trends.js";
 import { onServer } from "./picker.js";
 import { castVoiceDirection, nativeRecipeRequest, applyCharacterVoice } from "./mixer-voices.js";
 import { uploadRole, canResumeTrend, validateRecipe } from "./mixer-trend-state.js";
@@ -26,7 +26,7 @@ const call = async (path, init) => {
 const send = (path, method, body) => call(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
 
 /** What is picked on the shelf: the trend, the filter, and who plays each of its roles. */
-export const pick = { trend: (TRENDS.find((t) => t.home === "mixer" || t.also?.includes("mixer")) ?? TRENDS[0]).id, kind: "all", cast: null, role: null, inputs: {} };
+export const pick = { trend: (MIXER_SHELF[0] ?? TRENDS[0]).id, kind: "all", cast: null, role: null, inputs: {} };
 export const stars = { list: [], ready: null, uploading: 0 };
 // a trend's mix opened again brings back its trend and who played in it, unless something was
 // picked before it came back (a trend from Jam's "Make it with your cast", a role given to someone):

@@ -1237,6 +1237,10 @@ export const TRENDS = [
 
 export const KINDS = [["all", "All"], ["dance", "Dance"], ["duo", "Duo"], ["reactions", "Reactions"], ["walks", "Walks"], ["glowups", "Glow-ups"]];
 export const trendById = (id) => TRENDS.find((t) => t.id === id) ?? null;
+// Mixer's shelf: its own trends and the few shared with Jam's, these first, then the rest as they come, the ones not made yet last
+const SHELF_FIRST = ["state-property", "we-listen", "my-reaction", "ghost-photoshoot", "smalltown-boy", "face-dance", "documentary"];
+const shelfRank = (t) => (t.soon ? 1e3 : SHELF_FIRST.includes(t.id) ? SHELF_FIRST.indexOf(t.id) : SHELF_FIRST.length);
+export const MIXER_SHELF = TRENDS.filter((t) => t.home === "mixer" || t.also?.includes("mixer")).sort((a, b) => shelfRank(a) - shelfRank(b));
 export const crewById = (id) => CREW.find((c) => c.id === id) ?? null;
 export const trendArt = (t) => `brand/mixer/trends/${t.id}.webp`;
 export const crewFace = (id) => `brand/mixer/crew/${id}-face.webp`;

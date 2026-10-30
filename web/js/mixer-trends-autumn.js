@@ -616,7 +616,7 @@ export const AUTUMN_TRENDS = [
     "id": "slow-motion-squad",
     "name": "Slow-Motion Squad",
     "kind": "walks",
-    "home": "mixer",
+    "home": "none",
     "also": [],
     "soon": false,
     "added": "2026-10-28",
