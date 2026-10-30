@@ -4,7 +4,7 @@
 /** Every page, by its hash, with the name of the example it opens on (or null where it is the home or a frame). */
 export const PAGES = [
   { hash: "#/home", name: null },
-  { hash: "#/kitchen", name: "The Great Jam Chase" },
+  { hash: "#/kitchen", name: "A Little Jar, A Full Table" },
   { hash: "#/story", name: null },
   { hash: "#/stage", name: null },
   { hash: "#/shot", name: null },

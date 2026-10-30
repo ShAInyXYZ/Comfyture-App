@@ -51,9 +51,9 @@ test("a newer version of a showcase replaces an older copy nobody has touched, k
   t.after(() => rm(data, { recursive: true, force: true }));
   // the first start puts them in: our video at its version, and Kitchen's example film with its takes and its edit
   await started(data, async (get, send, status) => {
-    const film = (await get("api/stories")).stories.find((x: any) => x.name === "The Great Jam Chase");
+    const film = (await get("api/stories")).stories.find((x: any) => x.name === "A Little Jar, A Full Table");
     assert.ok(film?.thumb?.startsWith("/media/photos/"), "Kitchen's example film is there, with its picture");
-    assert.ok((await get("api/runs")).filter((r: any) => r.status === "done" && r.video).length >= 2, "its two takes are in the take log at once");
+    assert.ok(!(await get("api/stories")).stories.some((x: any) => x.name === "The Great Jam Chase"), "the retired Great Jam Chase is not shipped");
     const edit = (await get("api/cuts")).cuts.find((c: any) => c.project === film.id);
     assert.ok(edit, "and its edit, the story's own");
     const jams = (await get("api/jams")).jams;
