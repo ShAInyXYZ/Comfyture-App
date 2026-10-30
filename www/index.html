@@ -10,7 +10,7 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Comfyture · Eight AI studios, all open">
 <meta property="og:description" content="An open-source Higgsfield built on ComfyUI. Eight studios, eight pets, open models with partners one pick away.">
-<meta property="og:image" content="media/hero/reel.jpg">
+<meta property="og:image" content="media/hero/praline-lofi.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="fonts/manrope-400-800.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="site.css">
@@ -54,10 +54,11 @@
 
 <main id="main">
 
-<!-- ── hero: a reel of real takes, picture and sound ─────────────────────────────────────────────────────────── -->
+<!-- ── hero: Praline Lo-Fi, a music video made in Jam, its loop playing and its song on demand ──────────────────── -->
 <section class="hero" aria-labelledby="hero-h">
   <div class="reel">
-    <video id="reel" muted loop playsinline preload="metadata" poster="media/hero/reel.jpg" src="media/hero/reel.mp4" aria-label="A reel of takes made in Comfyture"></video>
+    <video id="reel" muted loop playsinline preload="metadata" poster="media/hero/praline-lofi.jpg" src="media/hero/praline-lofi.mp4" aria-label="Praline Lo-Fi: Praline the kitten, in her headphones, writes in her notebook by a rainy window at night"></video>
+    <audio id="song" loop preload="metadata" src="media/hero/praline-lofi.m4a"></audio>
     <div class="shade"></div>
   </div>
   <div class="wrap in">
@@ -73,14 +74,16 @@
     </div>
     <aside class="now" aria-label="Now playing">
       <div class="np">
-        <span class="mono" id="np-k">Mixer</span>
-        <b id="np-t">State Property</b>
-        <span id="np-m">Earl at the wheel, Mochi riding shotgun · the meme's own motion</span>
+        <span class="mono">Made in Jam</span>
+        <b>Praline Lo-Fi</b>
+        <span>A late-night study song by MiniMax Music 3, Praline's loop rolled by LTX-2.5</span>
       </div>
-      <div class="segs" id="segs" role="group" aria-label="Jump to a take"></div>
+      <p class="lyric" id="lyric" lang="ja"></p>
+      <input class="seek" id="seek" type="range" min="0" max="174.6" step="0.1" value="0" aria-label="Song position">
       <div class="keys">
-        <button class="round" type="button" id="reel-play" aria-label="Pause the reel"><svg class="i"><use href="#pause"/></svg></button>
-        <button class="round" type="button" id="reel-sound" aria-label="Turn the sound on" aria-pressed="false"><svg class="i"><use href="#sound-off"/></svg></button>
+        <button class="round" type="button" id="reel-play" aria-label="Pause"><svg class="i"><use href="#pause"/></svg></button>
+        <button class="round" type="button" id="reel-sound" aria-label="Play the song" aria-pressed="false"><svg class="i"><use href="#sound-off"/></svg></button>
+        <span class="clock mono" id="clock">0:00 / 2:54</span>
       </div>
     </aside>
   </div>

@@ -1,4 +1,4 @@
-/* Comfyture's website: the hero reel, clips that play while they are seen, the compare wipes, Kitchen's rooms, the dock,
+/* Comfyture's website: the hero's song, clips that play while they are seen, the compare wipes, Kitchen's rooms, the dock,
    the presets rail, the gallery and its viewer. Plain JavaScript, no build step. */
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -35,57 +35,74 @@ const MODELS = ["LTX-2.5", "Qwen Image 2.1", "ACE-Step 1.5", "Gemma 4", "SAM3", 
   "Stable Audio 3", "Demucs", "Whisper", "BiRefNet", "SeedVR2", "4x-UltraSharp", "FILM", "VOID"];
 $("#ticker").innerHTML = [...MODELS, ...MODELS].map((m) => `<span>${m}</span>`).join("");
 
-/* ── the hero reel: five takes, a caption for each, and its sound on demand ── */
-const reel = $("#reel");
-const REEL = [
-  { at: 0, k: "Mixer", t: "State Property", m: "Earl at the wheel, Mochi riding shotgun · the meme's own motion" },
-  { at: 4.0, k: "Kitchen", t: "A Little Jar, A Full Table", m: "Ketkout · a one-minute film from one sentence" },
-  { at: 6.7, k: "Spice", t: "Truffle's Jam Heist", m: "The plate against its last pass, every pass a real run" },
-  { at: 9.6, k: "Mixer", t: "UNO Car Reveal", m: "Dre and his lines · MiniMax H3" },
-  { at: 13.1, k: "Jam", t: "Moonlit Oolong Walk", m: "Taro sings his ACE-Step 1.5 song, lip-synced by LTX-2.5" },
-  { at: 16.6, k: "Kitchen", t: "A Little Jar, A Full Table", m: "The friends at the table: twelve shots, cut in Cut" },
+/* ── the hero: Praline Lo-Fi's loop plays while seen, its song on demand, each line's words lit as they are sung ── */
+const reel = $("#reel"), song = $("#song"), lyric = $("#lyric"), seek = $("#seek"), clock = $("#clock");
+const LINES = [ // start in the song, then each word with its own start and end in the line (from the edit's karaoke titles)
+  [21, [["窓の向こう", 0, 2.61], ["雨のリズム", 2.61, 5.22]]],
+  [26.22, [["ノートの端に", 0, 2.68], ["小さな落書き", 2.68, 5.36]]],
+  [32.37, [["あたたかいお茶", 0, 2.08], ["湯気がゆれて", 2.08, 4.15]]],
+  [37.22, [["時計の針も", 0, 2.18], ["ゆっくり歩く", 2.18, 4.36]]],
+  [42.5, [["ヘッドフォンの中", 0, 2.38], ["やさしい夜", 2.38, 4.76]]],
+  [48.22, [["眠い目こすって", 0, 2.63], ["ページをめくる", 2.63, 5.26]]],
+  [53.48, [["街の灯りが", 0, 2.28], ["にじんで見える", 2.28, 4.56]]],
+  [58.04, [["まだ少しだけ", 0, 2.87], ["ここにいたい", 2.87, 5.74]]],
+  [64.32, [["ゆっくりでいいよ", 0, 2.28], ["急がなくていい", 2.28, 4.56]]],
+  [69.38, [["今夜の音に", 0, 2.11], ["包まれて", 2.11, 4.22]]],
+  [74.68, [["明日のことは", 0, 2.58], ["明日に任せて", 2.58, 5.16]]],
+  [79.84, [["このページだけ", 0, 2.64], ["読み終えよう", 2.64, 5.28]]],
+  [106.98, [["消しゴムのかす", 0, 2.18], ["机の上", 2.18, 4.36]]],
+  [111.34, [["書きかけの夢", 0, 2.62], ["まだ途中でも", 2.62, 5.24]]],
+  [118.52, [["しっぽをまるめて", 0, 1.93], ["深呼吸して", 1.93, 3.86]]],
+  [122.91, [["ひとつずつでいい", 0, 2.23], ["前に進む", 2.23, 4.45]]],
+  [128.2, [["ゆっくりでいいよ", 0, 2.51], ["急がなくていい", 2.51, 5.02]]],
+  [133.22, [["今夜の音に", 0, 2.11], ["包まれて", 2.11, 4.22]]],
+  [138.3, [["明日のことは", 0, 2.64], ["明日に任せて", 2.64, 5.28]]],
+  [144.08, [["このページだけ", 0, 2.2], ["読み終えよう", 2.2, 4.4]]],
+  [154.46, [["雨がやむころ", 0, 2.01], ["またね", 2.01, 4.02]]],
+  [158.48, [["おやすみ", 0, 5.76], ["やさしい夜", 5.76, 11.51]]]
 ];
-const segs = $("#segs"), np = $(".np");
-REEL.forEach((r, i) => {
-  const b = document.createElement("button");
-  b.type = "button"; b.setAttribute("aria-label", `${r.k}: ${r.t}`);
-  b.addEventListener("click", () => { reel.currentTime = r.at + 0.35; if (reel.paused) play(true); });
-  segs.append(b);
-});
-let shownSeg = -1;
+const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+let line = -1;
 function paint() {
-  const t = reel.currentTime, end = reel.duration || 15.04;
-  let k = 0; REEL.forEach((r, i) => { if (t >= r.at) k = i; });
-  $$("button", segs).forEach((b, i) => {
-    const a = REEL[i].at, z = REEL[i + 1]?.at ?? end;
-    b.style.setProperty("--p", `${i < k ? 100 : i > k ? 0 : Math.max(0, Math.min(100, ((t - a) / (z - a)) * 100))}%`);
-    b.toggleAttribute("aria-current", i === k);
-  });
-  if (k !== shownSeg) {
-    shownSeg = k;
-    $("#np-k").textContent = REEL[k].k; $("#np-t").textContent = REEL[k].t; $("#np-m").textContent = REEL[k].m;
-    np.classList.remove("swap"); void np.offsetWidth; np.classList.add("swap");
+  const t = song.currentTime, len = song.duration || +seek.max;
+  if (document.activeElement !== seek) seek.value = t;
+  seek.style.setProperty("--p", `${(t / len) * 100}%`);
+  clock.textContent = `${mmss(t)} / ${mmss(len)}`;
+  let k = LINES.findIndex(([at, w]) => t < at + w.at(-1)[2]); // the line being sung, or the next one
+  if (k < 0) k = LINES.length - 1;
+  if (k !== line) {
+    line = k;
+    lyric.replaceChildren(...LINES[k][1].map(([w]) => Object.assign(document.createElement("span"), { className: "w", textContent: w })));
   }
+  const [at, ws] = LINES[k];
+  $$(".w", lyric).forEach((s, i) => s.style.setProperty("--p", `${Math.max(0, Math.min(1, (t - at - ws[i][1]) / (ws[i][2] - ws[i][1]))) * 100}%`));
 }
 let raf = 0;
-const tick = () => { paint(); raf = reel.paused ? 0 : requestAnimationFrame(tick); };
-reel.addEventListener("play", () => { if (!raf) raf = requestAnimationFrame(tick); setPlay(true); });
-reel.addEventListener("pause", () => setPlay(false));
-reel.addEventListener("timeupdate", () => { if (!raf) paint(); });
+const tick = () => { paint(); raf = song.paused ? 0 : requestAnimationFrame(tick); };
+song.addEventListener("play", () => { if (!raf) raf = requestAnimationFrame(tick); setSound(true); });
+song.addEventListener("pause", () => setSound(false));
+song.addEventListener("timeupdate", () => { if (!raf) paint(); });
+song.addEventListener("loadedmetadata", paint);
+seek.addEventListener("input", () => { song.currentTime = +seek.value; paint(); });
 const playBtn = $("#reel-play"), soundBtn = $("#reel-sound");
-function setPlay(on) { playBtn.innerHTML = icon(on ? "pause" : "play"); playBtn.setAttribute("aria-label", on ? "Pause the reel" : "Play the reel"); }
-let held = reduce;
-function play(user) { if (user) held = false; reel.play().catch(() => {}); }
-playBtn.addEventListener("click", () => { if (reel.paused) play(true); else { held = true; reel.pause(); } });
-soundBtn.addEventListener("click", () => {
-  reel.muted = !reel.muted;
-  soundBtn.setAttribute("aria-pressed", String(!reel.muted));
-  soundBtn.setAttribute("aria-label", reel.muted ? "Turn the sound on" : "Turn the sound off");
-  soundBtn.innerHTML = icon(reel.muted ? "sound-off" : "sound-on");
-  if (!reel.muted) play(true);
+function setPlay(on) { playBtn.innerHTML = icon(on ? "pause" : "play"); playBtn.setAttribute("aria-label", on ? "Pause" : "Play"); }
+function setSound(on) {
+  soundBtn.innerHTML = icon(on ? "sound-on" : "sound-off");
+  soundBtn.setAttribute("aria-pressed", String(on));
+  soundBtn.setAttribute("aria-label", on ? "Stop the song" : "Play the song");
+  $(".now").classList.toggle("live", on);
+}
+reel.addEventListener("play", () => setPlay(true));
+reel.addEventListener("pause", () => setPlay(false));
+let held = reduce, songWas = false; // held: paused by hand (or reduced motion); songWas: the song played when Pause was pressed
+const play = () => { held = false; reel.play().catch(() => {}); };
+playBtn.addEventListener("click", () => {
+  if (reel.paused) { play(); if (songWas) song.play().catch(() => {}); }
+  else { held = true; songWas = !song.paused; reel.pause(); song.pause(); }
 });
-new IntersectionObserver(([e]) => { if (e.isIntersecting) { if (!held) play(); } else reel.pause(); }, { threshold: 0.2 }).observe(reel);
-setPlay(false); paint();
+soundBtn.addEventListener("click", () => { if (song.paused) { song.play().catch(() => {}); play(); } else song.pause(); });
+new IntersectionObserver(([e]) => { if (e.isIntersecting) { if (!held) reel.play().catch(() => {}); } else reel.pause(); }, { threshold: 0.2 }).observe(reel);
+setPlay(false); setSound(false); paint();
 
 /* ── sound on a clip ── */
 $$("[data-sound]").forEach((b) => b.addEventListener("click", () => {
