@@ -8,7 +8,7 @@ import {
   cabinet, loadCabinet, whoNow, setWho, itemOf, toggle, addOwn, removeOwn, set, modelNow, setModel, priceNow,
   newShoot, openShoot, removeShoot, renameShoot, shootNow, again, dropPicture, show,
 } from "../cabinet.js";
-import { WARDROBE, POSES, WARDROBE_GROUPS, POSE_GROUPS, FORMATS, BACKDROPS, EXAMPLES, combos, find, wardrobeItem, poseItem } from "../cabinet-shelf.js";
+import { WARDROBE, POSES, WARDROBE_GROUPS, POSE_GROUPS, WARDROBE_GROUP_TAGS, POSE_GROUP_TAGS, FORMATS, BACKDROPS, EXAMPLES, combos, find, wardrobeItem, poseItem } from "../cabinet-shelf.js";
 
 const fail = (e) => toast(e.message, { tone: "crit" });
 const BRANDS = { openai: "brand-openai", google: "brand-google", bytedance: "brand-bytedance", qwen: "brand-qwen" };
@@ -19,7 +19,7 @@ const GALLERY = {
 };
 // (there is no 4:5 glyph: the post's frame is drawn as the nearest, 3:4)
 const RATIO = { "4:5": "ratio-3-4", "9:16": "ratio-9-16", "2:3": "ratio-2-3", "3:2": "ratio-3-2" };
-const SHELF = { outfits: { items: WARDROBE, groups: WARDROBE_GROUPS, label: "Wardrobe" }, poses: { items: POSES, groups: POSE_GROUPS, label: "Poses" } };
+const SHELF = { outfits: { items: WARDROBE, groups: WARDROBE_GROUPS, tags: WARDROBE_GROUP_TAGS, label: "Wardrobe" }, poses: { items: POSES, groups: POSE_GROUPS, tags: POSE_GROUP_TAGS, label: "Poses" } };
 
 let loading = null;
 let failed = null;
@@ -256,16 +256,18 @@ function shelf(b) {
   }, sprite("image-upload"), h("b", {}, kind === "outfits" ? "Your own outfit" : "Your own pose"), h("em", {}, "a picture of it"));
   // the grid is drawn again in place as the search is typed (the page is not drawn again while a field in it has the focus)
   const grid = h("div.cab-grid", { className: kind === "poses" ? "is-poses" : "", dataset: { scrollKey: `cab-shelf-${kind}` } });
+  // a search looks through every group, the one open or not
   const fill = () => {
-    const items = find(s.items.filter((it) => group === "all" || it.group === group), query[kind], s.groups);
+    const asked = query[kind].trim();
+    const items = asked ? find(s.items, asked, s.groups, s.tags) : s.items.filter((it) => group === "all" || it.group === group);
     grid.replaceChildren(add, ...own.map((it) => shelfCard(kind, it, b, true)), ...items.map((it) => shelfCard(kind, it, b, false)),
-      ...(items.length ? [] : [h("p.cab-nothing", {}, `No ${kind === "outfits" ? "outfit" : "pose"} by that name${group === "all" ? "" : ` in ${s.groups[group]}`}.`)]));
+      ...(items.length ? [] : [h("p.cab-nothing", {}, `No ${kind === "outfits" ? "outfit" : "pose"} goes by "${asked}".`)]));
+    groups.classList.toggle("is-searching", !!asked);
   };
-  fill();
   const search = h("label.cab-search", {}, icon("search"), h("input.field", {
     type: "search",
     value: query[kind],
-    placeholder: `Search ${s.items.length} ${kind === "outfits" ? "outfits" : "poses"}`,
+    placeholder: kind === "outfits" ? `Search ${s.items.length} outfits: a name, a country, a kind` : `Search ${s.items.length} poses: a name, a move, a prop`,
     "aria-label": `Search the ${s.label.toLowerCase()}`,
     on: { input: (e) => ((query[kind] = e.target.value), fill(), (grid.scrollTop = 0)), keydown: (e) => e.stopPropagation() },
   }));
@@ -274,6 +276,7 @@ function shelf(b) {
     groups.scrollLeft += e.deltaY;
     e.preventDefault();
   } } }, ...[["all", "All"], ...Object.entries(s.groups)].map(([id, label]) => h("button.cab-group", { type: "button", "aria-pressed": String(group === id), on: { click: () => ((cabinet.group[kind] = id), changed("cabinet")) } }, label)));
+  fill();
   // the group picked stays in sight
   requestAnimationFrame(() => groups.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" }));
   return h("aside.cab-col.cab-shelf", { "aria-label": "The shelves" },

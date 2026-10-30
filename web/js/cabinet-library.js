@@ -1,8 +1,23 @@
-// Cabinet's library: every outfit and pose on its shelves, as [id, name, group, words]. The words are said to the image model
+// Cabinet's library: every outfit and pose on its shelves, as [id, name, group, words, tags]. The tags are only searched (the
+// countries, peoples and other names a thing goes by); a name never says a country, its words may. The words are said to the image model
 // beside the picture, and are what Codex drew the picture from (docs/brand/products/cabinet-v1/library.mjs writes its briefs
 // from this file). Plain data, read by the page, the briefs and the tests.
 
 export const WARDROBE_GROUPS = { everyday: "Everyday", street: "Street", smart: "Smart", evening: "Evening", summer: "Summer", winter: "Winter", sport: "Sport", work: "Work", costume: "Costumes", world: "World" };
+
+/** What each group is also called when a shelf is searched (the group's name is searched too). */
+export const WARDROBE_GROUP_TAGS = {
+  everyday: "casual daily basics",
+  street: "streetwear urban casual",
+  smart: "office business work formal suit",
+  evening: "party formal gala wedding night",
+  summer: "beach holiday vacation hot swim",
+  winter: "cold snow coat jacket autumn fall",
+  sport: "gym athletic fitness training sportswear",
+  work: "uniform job profession career",
+  costume: "costume halloween cosplay carnival fancy",
+  world: "traditional cultural national folk heritage ethnic",
+};
 
 export const WARDROBE_LIST = [
   // everyday
@@ -41,8 +56,8 @@ export const WARDROBE_LIST = [
   ["smart-casual", "Smart casual", "smart", "a navy cardigan over a light blue oxford shirt, grey chinos, brown brogues"],
   ["knit-dress", "Knit dress and coat", "smart", "a fitted grey ribbed knit midi dress under a long camel coat, black knee-high boots"],
   // evening
-  ["gown", "Emerald gown", "evening", "a floor-length emerald satin gown, gold strappy heels, a gold clutch"],
-  ["tuxedo", "Black tie", "evening", "a black tuxedo with satin lapels, a white dress shirt, a black bow tie, patent shoes"],
+  ["gown", "Emerald gown", "evening", "a floor-length emerald satin gown, gold strappy heels, a gold clutch", "dress formal wedding"],
+  ["tuxedo", "Black tie", "evening", "a black tuxedo with satin lapels, a white dress shirt, a black bow tie, patent shoes", "tux formal wedding groom"],
   ["sequin", "Party sequins", "evening", "a short long-sleeved silver sequin party dress, silver heels"],
   ["red-gown", "Red ball gown", "evening", "a red off-the-shoulder satin ball gown with a full skirt, red heels"],
   ["little-black", "Little black dress", "evening", "a little black dress, black strappy heels, a pearl necklace"],
@@ -54,8 +69,8 @@ export const WARDROBE_LIST = [
   ["prom", "Lilac prom", "evening", "a lilac ruffled prom dress, silver sparkly heels"],
   // summer
   ["linen", "Linen summer", "summer", "a loose white linen shirt with rolled sleeves, sand linen shorts, espadrilles, a wide straw hat"],
-  ["swimsuit", "Coral swimsuit", "summer", "a coral one-piece swimsuit, white sunglasses, white flip-flops"],
-  ["swim-shorts", "Swim shorts", "summer", "turquoise palm-print swim shorts, an open white linen shirt, flip-flops"],
+  ["swimsuit", "Coral swimsuit", "summer", "a coral one-piece swimsuit, white sunglasses, white flip-flops", "swimwear bathing suit swim"],
+  ["swim-shorts", "Swim shorts", "summer", "turquoise palm-print swim shorts, an open white linen shirt, flip-flops", "swimwear trunks swim"],
   ["hawaiian", "Hawaiian shirt", "summer", "a hibiscus-print Hawaiian shirt, khaki shorts, brown boat shoes"],
   ["kaftan", "Beach kaftan", "summer", "a white embroidered beach kaftan, gold sandals, a straw bag"],
   ["gingham", "Gingham sundress", "summer", "a blue gingham sundress, white sneakers, a straw hat"],
@@ -82,46 +97,67 @@ export const WARDROBE_LIST = [
   ["boxing", "Boxing robe", "sport", "a gold satin boxing robe, black boxing shorts, red boxing gloves, white boxing boots"],
   ["hiking", "Hiking gear", "sport", "an orange hiking jacket, grey hiking trousers, brown hiking boots, a backpack"],
   // work
-  ["doctor", "Doctor", "work", "a white doctor's coat over blue scrubs, a stethoscope, white clogs"],
-  ["firefighter", "Firefighter", "work", "tan firefighter turnout gear with reflective stripes, a black helmet, black boots"],
-  ["pilot", "Pilot", "work", "a navy pilot's uniform with gold stripes on the cuffs, a white shirt, a black tie, a pilot's cap"],
+  ["doctor", "Doctor", "work", "a white doctor's coat over blue scrubs, a stethoscope, white clogs", "medical hospital nurse uniform"],
+  ["firefighter", "Firefighter", "work", "tan firefighter turnout gear with reflective stripes, a black helmet, black boots", "fireman uniform"],
+  ["pilot", "Pilot", "work", "a navy pilot's uniform with gold stripes on the cuffs, a white shirt, a black tie, a pilot's cap", "airline captain uniform"],
   ["mechanic", "Mechanic", "work", "a blue mechanic's coverall with a few grease marks, black work boots, a cap"],
   ["painter", "House painter", "work", "white painter's overalls with paint splashes, a white cap, old sneakers"],
   ["barista", "Barista", "work", "a black apron over a white tee, black trousers, black sneakers"],
   ["builder", "Builder", "work", "a high-visibility orange vest over a plaid shirt, work jeans, a yellow hard hat, work boots"],
   ["scientist", "Scientist", "work", "a white lab coat over a purple shirt, grey trousers, safety goggles, black shoes"],
   // costumes
-  ["chef", "Chef whites", "costume", "a white double-breasted chef's jacket, a long white apron, a tall white toque, grey check trousers, black shoes"],
+  ["chef", "Chef whites", "costume", "a white double-breasted chef's jacket, a long white apron, a tall white toque, grey check trousers, black shoes", "cook kitchen uniform"],
   ["pirate", "Pirate captain", "costume", "a long burgundy frock coat with gold buttons, a ruffled cream shirt, black breeches, tall boots, a black tricorn hat"],
   ["astronaut", "Astronaut", "costume", "a white spacesuit with a chest control box, white moon boots, a round helmet with a gold visor"],
   ["wizard", "Wizard", "costume", "a midnight-blue robe with gold stars and moons, a tall pointed hat, brown boots, a wooden staff"],
-  ["knight", "Knight", "costume", "a polished silver suit of armour with a plain red tabard, a plumed helmet"],
+  ["knight", "Knight", "costume", "a polished silver suit of armour with a plain red tabard, a plumed helmet", "medieval armor armour"],
   ["superhero", "Superhero", "costume", "an original blue-and-silver superhero suit with a short red cape and red boots, no emblem"],
-  ["witch", "Witch", "costume", "a black witch's dress, a tall pointed black hat, black buckled boots, a broom"],
-  ["cowboy", "Cowboy", "costume", "a brown leather vest over a plaid shirt, jeans with leather chaps, cowboy boots, a cowboy hat"],
-  ["royal", "Royal robe", "costume", "a red velvet royal robe with a white ermine trim, a golden crown, a golden sceptre"],
-  ["vampire", "Vampire", "costume", "a black tailcoat, a high-collared black cape lined in red, a white ruffled shirt, black boots"],
+  ["witch", "Witch", "costume", "a black witch's dress, a tall pointed black hat, black buckled boots, a broom", "halloween"],
+  ["cowboy", "Cowboy", "costume", "a brown leather vest over a plaid shirt, jeans with leather chaps, cowboy boots, a cowboy hat", "America American USA US Texas western"],
+  ["royal", "Royal robe", "costume", "a red velvet royal robe with a white ermine trim, a golden crown, a golden sceptre", "king queen prince princess crown"],
+  ["vampire", "Vampire", "costume", "a black tailcoat, a high-collared black cape lined in red, a white ruffled shirt, black boots", "halloween dracula"],
   ["fairy", "Fairy", "costume", "a pastel-green fairy dress with a petal skirt, sheer iridescent wings, ballet flats"],
   ["ringmaster", "Ringmaster", "costume", "a red tailcoat with gold frogging, white breeches, a black top hat, black boots, a cane"],
   ["robot", "Robot", "costume", "a silver retro robot costume with dials and lights on the chest, silver boots, a box helmet"],
   ["dinosaur", "Dinosaur onesie", "costume", "a green dinosaur onesie with soft spikes down the back and a hood with teeth"],
-  ["ninja", "Ninja", "costume", "a black ninja outfit with a hood and face wrap, a black sash, black split-toe boots"],
+  ["ninja", "Ninja", "costume", "a black ninja outfit with a hood and face wrap, a black sash, black split-toe boots", "Japan Japanese martial arts"],
   ["ballet", "Ballerina", "costume", "a white ballet tutu with a fitted bodice, pale pink satin pointe shoes"],
   // world
-  ["yukata", "Summer yukata", "world", "an indigo bellflower-print yukata with a mustard obi, wooden geta sandals"],
-  ["hanbok", "Hanbok", "world", "a Korean hanbok: a pink jeogori jacket with a ribbon tie over a full sky-blue chima skirt"],
-  ["sari", "Sari", "world", "an emerald-and-gold silk sari with a matching blouse, gold sandals"],
-  ["kilt", "Kilt", "world", "a green tartan kilt, a white shirt, a tweed waistcoat, knee socks, brown brogues"],
-  ["dirndl", "Dirndl", "world", "a Bavarian dirndl with a blue skirt, a white blouse and a pink apron, black shoes"],
-  ["lederhosen", "Lederhosen", "world", "brown leather lederhosen with braces, a red checked shirt, knee socks, brown shoes"],
-  ["caftan", "Moroccan caftan", "world", "a deep-blue Moroccan caftan with gold embroidery and a wide gold belt, gold babouche slippers"],
-  ["djellaba", "Djellaba", "world", "an ivory hooded Moroccan djellaba with fine embroidery, yellow leather babouche slippers"],
-  ["qipao", "Qipao", "world", "a red silk qipao with gold floral embroidery, black heels"],
-  ["dashiki", "Dashiki", "world", "a bright patterned dashiki shirt with matching trousers, brown sandals"],
-  ["poncho", "Poncho", "world", "a woven striped wool poncho in red, orange and cream, dark jeans, brown boots, a felt hat"],
+  ["yukata", "Summer yukata", "world", "a Japanese indigo bellflower-print yukata with a mustard obi, wooden geta sandals", "Japan Japanese kimono Asia Asian festival matsuri Japon japonais"],
+  ["hanbok", "Hanbok", "world", "a Korean hanbok: a pink jeogori jacket with a ribbon tie over a full sky-blue chima skirt", "Korea Korean Asia Asian dress Corée coréen coréenne"],
+  ["sari", "Sari", "world", "an Indian emerald-and-gold silk sari with a matching blouse, gold sandals", "India Indian saree Asia Asian South dress wedding Inde indien indienne"],
+  ["kilt", "Kilt", "world", "a Scottish green tartan kilt, a white shirt, a tweed waistcoat, knee socks, brown brogues", "Scotland Scottish Highlands Britain British UK Europe European skirt Écosse écossais"],
+  ["dirndl", "Dirndl", "world", "a Bavarian dirndl from southern Germany with a blue skirt, a white blouse and a pink apron, black shoes", "Germany German Bavaria Austria Austrian Alps Europe European Oktoberfest dress Allemagne allemand allemande Bavière Autriche autrichien"],
+  ["lederhosen", "Lederhosen", "world", "Bavarian brown leather lederhosen with braces, a red checked shirt, knee socks, brown shoes", "Germany German Bavaria Austria Austrian Alps Europe European Oktoberfest shorts Allemagne allemand Bavière Autriche autrichien"],
+  ["caftan", "Takchita", "world", "a deep-blue Moroccan takchita caftan with gold embroidery and a wide gold belt, gold babouche slippers", "Morocco Moroccan caftan kaftan takchita Maghreb North Africa African Arab wedding dress robe Maroc marocain marocaine Afrique du Nord"],
+  ["djellaba", "Djellaba", "world", "an ivory hooded Moroccan djellaba with fine embroidery, yellow leather babouche slippers", "Morocco Moroccan jellaba djellabah Maghreb North Africa African Arab Amazigh robe Maroc marocain marocaine Afrique du Nord"],
+  ["karakou", "Karakou", "world", "an Algerian karakou from Algiers: a fitted deep-burgundy velvet jacket densely embroidered with gold thread (fetla and medjboud) over a cream silk blouse, full burgundy satin seroual chelka trousers draped low, gold embroidered slippers, a gold khit errouh jewel band across the brow", "Algeria Algerian Algiers Maghreb North Africa African Arab wedding velvet jacket Algérie algérien algérienne Alger Afrique du Nord"],
+  ["burnous", "Burnous", "world", "an Algerian burnous: a long sleeveless hooded cloak of fine ivory wool with a tasselled hood, draped over a white gandoura tunic, tan leather babouche slippers", "Algeria Algerian bernous burnoose Maghreb North Africa African Arab Amazigh Berber cloak cape men Algérie algérien algérienne Afrique du Nord"],
+  ["caftan-light", "Caftan", "world", "an Algerian caftan, refined and light: a floor-length caftan in pearl-white and soft blush satin, its front, cuffs and hem covered in dense patterned embroidery of fine gold and silver floral and geometric motifs (fetla), a slim embroidered belt, satin slippers", "Algeria Algerian Algérie algérien algérienne Maghreb North Africa African Afrique du Nord caftan kaftan qaftan wedding dress pastel"],
+  ["chedda", "Chedda", "world", "the Chedda, the bridal costume of Tlemcen in Algeria: a gold-brocade velvet caftan over a fine silk blouza, layers of pearl necklaces, a tall conical gold-embroidered chachia crown hung with gold jewels, a gold khit errouh across the brow, gold slippers", "Algeria Algerian Algérie algérien algérienne Maghreb North Africa African Afrique du Nord Tlemcen bride bridal wedding caftan crown gold pearl"],
+  ["qachabiya", "Qachabiya", "world", "an Algerian qachabiya from the high plateaus (Djelfa): a long hooded robe with sleeves, woven of thick natural camel hair in warm brown with fine darker stripes, worn over a white gandoura, brown leather babouche slippers", "Algeria Algerian Algérie algérien algérienne Maghreb North Africa African Afrique du Nord kachabia kachabiya qachabia Djelfa camel wool cloak robe coat winter men"],
+  ["kabyle-dress", "Kabyle dress", "world", "an Amazigh Kabyle dress from Kabylia in Algeria: a bright yellow taqendurt with wide bands of red, green and black zigzag ribbon trim at the chest, sleeves and hem, a red-yellow-black striped fouta wrapped and tied at the waist, a fringed silk headscarf, chunky Beni Yenni silver jewellery set with red coral and blue-green enamel", "Algeria Algerian Algérie algérien algérienne Maghreb North Africa African Afrique du Nord Kabyle Kabylie Kabylia Amazigh Berber taqendurt robe kabyle fouta women dress jewellery jewelry silver"],
+  ["chaoui", "Chaoui melhfa", "world", "an Amazigh Chaoui melhfa from the Aures mountains in Algeria: a long dark-indigo wrap dress draped and pinned at both shoulders with large silver fibulae (tabzimt) joined by a silver chain, a woven red wool belt, an embroidered red-and-black headband, heavy silver necklaces, leather sandals", "Algeria Algerian Algérie algérien algérienne Maghreb North Africa African Afrique du Nord Chaoui Chaouia Aures Aurès Amazigh Berber melhfa women dress jewellery jewelry silver fibula"],
+  ["tuareg-men", "Tuareg, men", "world", "Tuareg men's attire from the Sahara (Niger, Mali, southern Algeria): an indigo tagelmust veil-turban wrapped over the head and across the face up to the eyes, a wide flowing indigo boubou robe with an embroidered chest pocket over a white tunic, wide indigo sirwal trousers, leather sandals, a silver Agadez cross pendant and a leather amulet pouch", "Tuareg Touareg Kel Tamasheq Sahara Saharan desert nomad Niger Mali Algeria Algerian Libya Africa African North Amazigh Berber indigo blue men man male veil turban tagelmust robe Algérie algérien homme"],
+  ["tuareg-women", "Tuareg, women", "world", "Tuareg women's attire from the Sahara (Niger, Mali, southern Algeria): a long indigo cotton dress under a wide indigo shawl draped over the head and shoulders with the face left open, heavy silver jewellery (an Agadez cross necklace, wide silver bracelets), leather sandals", "Tuareg Touareg Kel Tamasheq Sahara Saharan desert nomad Niger Mali Algeria Algerian Libya Africa African North Amazigh Berber indigo blue women woman female dress shawl jewellery jewelry silver Algérie algérienne femme"],
+  ["qipao", "Qipao", "world", "a Chinese red silk qipao with gold floral embroidery, black heels", "China Chinese cheongsam Asia Asian dress Chine chinois chinoise"],
+  ["dashiki", "Dashiki", "world", "a West African bright patterned dashiki shirt with matching trousers, brown sandals", "Africa African West Nigeria Nigerian Ghana Ghanaian shirt Afrique africain africaine Nigéria"],
+  ["poncho", "Poncho", "world", "an Andean woven striped wool poncho in red, orange and cream, dark jeans, brown boots, a felt hat", "Andes Andean Peru Peruvian Bolivia Bolivian Mexico Mexican Latin South America American cape Pérou péruvien Mexique mexicain Amérique latine"],
 ];
 
 export const POSE_GROUPS = { standing: "Standing", moving: "Moving", sitting: "Sitting", lying: "Lying", social: "Social", dance: "Dance", action: "Sport and action", props: "Holding something", editorial: "Editorial" };
+
+export const POSE_GROUP_TAGS = {
+  standing: "stand upright",
+  moving: "move walk motion",
+  sitting: "sit seated chair",
+  lying: "lie lay laying down floor",
+  social: "selfie greet gesture hand",
+  dance: "dancing dancer move",
+  action: "sport sports gym fitness yoga martial",
+  props: "hold holding prop object",
+  editorial: "fashion model magazine photoshoot",
+};
 
 export const POSES_LIST = [
   // standing

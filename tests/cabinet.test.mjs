@@ -50,12 +50,35 @@ test("the examples are on disk and made of the shelves' own outfits and poses", 
   }
 });
 
-test("a shelf is searched by every word, in its names, words and group names", async () => {
-  const { find, WARDROBE, POSES, WARDROBE_GROUPS, POSE_GROUPS } = await import("../web/js/cabinet-shelf.js");
+test("a shelf is searched by every word: names, words, countries and peoples, the group's other names, kinds and slips", async () => {
+  const { find, WARDROBE, POSES, WARDROBE_GROUPS, POSE_GROUPS, WARDROBE_GROUP_TAGS, POSE_GROUP_TAGS } = await import("../web/js/cabinet-shelf.js");
+  const w = (q) => find(WARDROBE, q, WARDROBE_GROUPS, WARDROBE_GROUP_TAGS).map((x) => x.id);
+  const p = (q) => find(POSES, q, POSE_GROUPS, POSE_GROUP_TAGS).map((x) => x.id);
   assert.ok(WARDROBE.length >= 100 && POSES.length >= 90, "a full wardrobe and a full pose shelf");
   assert.deepEqual(find(WARDROBE, "", WARDROBE_GROUPS), WARDROBE);
-  assert.deepEqual(find(WARDROBE, "  Chef  ", WARDROBE_GROUPS).map((x) => x.id), ["chef"]);
-  assert.ok(find(WARDROBE, "winter coat", WARDROBE_GROUPS).every((x) => x.group === "winter"));
-  assert.ok(find(POSES, "holding", POSE_GROUPS).length >= 10, "a group's name is searched too");
-  assert.deepEqual(find(POSES, "nothing like this", POSE_GROUPS), []);
+  assert.deepEqual(w("  Chef  "), ["chef"]);
+  const algeria = ["karakou", "burnous", "caftan-light", "chedda", "qachabiya", "kabyle-dress", "chaoui", "tuareg-men", "tuareg-women"];
+  for (const q of ["Algeria", "algerian", "alger", "Algérie", "algérien", "algerien"]) assert.deepEqual(w(q), algeria, q);
+  for (const q of ["Morocco", "moroccan", "Maroc", "marocaine"]) assert.deepEqual(w(q), ["caftan", "djellaba"], q);
+  assert.deepEqual(w("north africa"), ["caftan", "djellaba", ...algeria]);
+  assert.deepEqual(w("touareg femme"), ["tuareg-women"]);
+  assert.deepEqual(w("caftan").slice(0, 2).sort(), ["caftan", "caftan-light"], "both caftans, whatever their names");
+  for (const id of ["burnous", "kabyle-dress", "chaoui", "tuareg-men", "tuareg-women"]) assert.ok(w("amazigh").includes(id), `${id} is Amazigh`);
+  assert.ok(!w("amazigh").includes("karakou") && !w("amazigh").includes("caftan"), "the city costumes are not");
+  assert.deepEqual(w("kabyle"), ["kabyle-dress"]);
+  assert.deepEqual(w("kachabia"), ["qachabiya"]);
+  assert.ok(w("traditional").length >= 15 && w("traditional").every((id) => WARDROBE.find((x) => x.id === id).group === "world"), "a group by another name");
+  assert.ok(["sundress", "gown", "sari", "little-black"].every((id) => w("dresses").includes(id)), "dresses of every kind");
+  assert.ok(!w("dresses").includes("robot"), "not every costume is a dress");
+  assert.ok(w("hats").includes("tuareg-men") && w("hats").includes("cowboy"), "a turban and a cowboy hat are hats");
+  assert.ok(["parka", "peacoat", "qachabiya"].every((id) => w("winter coat").includes(id)), "winter coats, the qachabiya among them");
+  assert.ok(p("holding").length >= 10, "a group's name is searched too");
+  assert.deepEqual(w("nothing like this"), []);
+});
+
+test("no outfit says a country in its name; its words may", async () => {
+  const { WARDROBE } = await import("../web/js/cabinet-shelf.js");
+  const countries = /\b(alger|morocc|japan|korea|india|scot|german|bavaria|china|chinese|africa|peru|andean|mexic)/i;
+  for (const it of WARDROBE) assert.doesNotMatch(it.name, countries, it.name);
+  for (const id of ["karakou", "burnous", "caftan", "caftan-light", "djellaba", "qachabiya", "kabyle-dress", "chaoui", "chedda"]) assert.match(WARDROBE.find((x) => x.id === id).words, /Algerian|Moroccan|Algeria/);
 });
