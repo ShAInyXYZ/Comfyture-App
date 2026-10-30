@@ -1837,6 +1837,17 @@
        "sound": false,
        "join": "cut",
        "length": 3.734
+      },
+      {
+       "id": "sponsor-bumper-frame",
+       "src": {
+        "kind": "photo",
+        "id": "jam-ketkout-no-koe-jam-ketkout-sponsor-card.jpg",
+        "name": "Sponsor card · held final frame"
+       },
+       "length": 6.7,
+       "sound": false,
+       "join": "cut"
       }
      ]
     },
@@ -1845,7 +1856,21 @@
      "kind": "audio",
      "role": "voice",
      "name": "Voice",
-     "items": []
+     "items": [
+      {
+       "id": "sponsor-bumper-voice",
+       "src": {
+        "kind": "audio",
+        "id": "jam-ketkout-no-koe-jam-ketkout-sponsor-voice.mp3",
+        "duration": 5.851429,
+        "name": "Japanese sponsor announcement · ElevenLabs"
+       },
+       "start": 30.32,
+       "from": 0,
+       "to": 5.851429,
+       "volume": 1
+      }
+     ]
     },
     {
      "id": "a2",
@@ -1864,6 +1889,21 @@
        "start": 0,
        "from": 0,
        "to": 30.02
+      },
+      {
+       "id": "sponsor-bumper-music",
+       "src": {
+        "kind": "audio",
+        "id": "jam-ketkout-no-koe-50a9359d71de4667.mp3",
+        "duration": 30.02,
+        "name": "Song reprise · quiet"
+       },
+       "start": 30.02,
+       "from": 17,
+       "to": 23.7,
+       "volume": 0.16,
+       "fadeIn": 0.25,
+       "fadeOut": 0.6
       }
      ]
     },
@@ -2060,6 +2100,14 @@
   {
    "file": "f93a83eeb83bf8c2.mp4",
    "to": "videos/jam-ketkout-no-koe-f93a83eeb83bf8c2.mp4"
+  },
+  {
+   "file": "jam-ketkout-sponsor-card.jpg",
+   "to": "photos/jam-ketkout-no-koe-jam-ketkout-sponsor-card.jpg"
+  },
+  {
+   "file": "jam-ketkout-sponsor-voice.mp3",
+   "to": "audio/jam-ketkout-no-koe-jam-ketkout-sponsor-voice.mp3"
   }
  ]
 }
