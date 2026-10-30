@@ -60,14 +60,16 @@ test("a shelf is searched by every word: names, words, countries and peoples, th
   const algeria = ["karakou", "burnous", "caftan-light", "chedda", "qachabiya", "kabyle-dress", "chaoui", "tuareg-men", "tuareg-women"];
   for (const q of ["Algeria", "algerian", "alger", "Algérie", "algérien", "algerien"]) assert.deepEqual(w(q), algeria, q);
   for (const q of ["Morocco", "moroccan", "Maroc", "marocaine"]) assert.deepEqual(w(q), ["caftan", "djellaba"], q);
-  assert.deepEqual(w("north africa"), ["caftan", "djellaba", ...algeria]);
+  assert.deepEqual(w("north africa"), ["caftan", "djellaba", ...algeria, "galabeya"]);
   assert.deepEqual(w("touareg femme"), ["tuareg-women"]);
   assert.deepEqual(w("caftan").slice(0, 2).sort(), ["caftan", "caftan-light"], "both caftans, whatever their names");
   for (const id of ["burnous", "kabyle-dress", "chaoui", "tuareg-men", "tuareg-women"]) assert.ok(w("amazigh").includes(id), `${id} is Amazigh`);
   assert.ok(!w("amazigh").includes("karakou") && !w("amazigh").includes("caftan"), "the city costumes are not");
   assert.deepEqual(w("kabyle"), ["kabyle-dress"]);
   assert.deepEqual(w("kachabia"), ["qachabiya"]);
-  assert.ok(w("traditional").length >= 15 && w("traditional").every((id) => WARDROBE.find((x) => x.id === id).group === "world"), "a group by another name");
+  const regions = new Set(["africa", "middle-east", "asia", "europe", "americas"]);
+  assert.ok(w("traditional").length >= 70 && w("traditional").every((id) => regions.has(WARDROBE.find((x) => x.id === id).group)), "the regions by another name");
+  for (const [q, id] of [["Poland", "goral"], ["polonais", "krakowiak"], ["France", "bigouden"], ["breton", "bigouden"], ["Japan", "furisode"], ["chinese", "hanfu"], ["Norway", "bunad"], ["viking", "norse-women"], ["germanic", "bollenhut"], ["nordic", "gakti"], ["Mexique", "charro"]]) assert.ok(w(q).includes(id), `${q} finds ${id}`);
   assert.ok(["sundress", "gown", "sari", "little-black"].every((id) => w("dresses").includes(id)), "dresses of every kind");
   assert.ok(!w("dresses").includes("robot"), "not every costume is a dress");
   assert.ok(w("hats").includes("tuareg-men") && w("hats").includes("cowboy"), "a turban and a cowboy hat are hats");
