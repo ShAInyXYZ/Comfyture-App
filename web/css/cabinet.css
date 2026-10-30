@@ -201,3 +201,11 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
   .cab-portrait { max-height: 26dvh; }
   .cab-card { padding: .75rem .875rem .875rem; gap: .5rem; }
 }
+
+/* every corner a squircle where the browser can, as in Mixer: the radii are doubled there (--corner-k), and a squircle of the doubled
+   radius reads as the tight corner the plain radius gives elsewhere (a plain arc of it is a big round corner) */
+@supports (corner-shape: squircle) {
+  .cab-card, .cab-glass, .cab-bar, .cab-shelf, .cab-portrait, .cab-pick, .cab-pick img, .cab-pick-x, .cab-none, .cab-thumb, .cab-item-pick, .cab-add,
+  .cab-recipe img, .cab-slot, .cab-example img, .cab-style-key, .cab-style-key img, .cab-styles, .cab-style-tile, .cab-style-tile img,
+  .cab-bar .key, .cab-bar .field, .cab-bar .segment, .cab-bar .segment > button, .cab-bar .sel-trigger, .cab-search .field, .cab-shelves, .cab-shelves > button, .cab-actions .key { corner-shape: squircle; }
+}
