@@ -44,3 +44,7 @@ cp $R/data/photos/e983168bd8058f4f.jpg public/media/jam/covers/ketkout-no-koe.jp
 for d in $R/examples/songs/*/; do cp $d/cover.jpg public/media/jam/covers/$(basename $d).jpg; done
 cp $R/examples/jam/jam-walk-moonlit-oolong/look.jpg public/media/jam/covers/moonlit-oolong.jpg
 cp $R/web/fonts/comfyture-lyric.ttf public/fonts/
+# Section 5, the ending: Utensils' shelf (keyframe) and Kitchen's Ketkout — A Grand Entrance (30 Oct export).
+mkdir -p public/media/end
+cp $R/docs/competition/keyframes/k18-utensils.webp public/media/end/utensils.webp
+cp $R/data/reels/20261030-476735.mp4 public/media/end/kitchen-grand-entrance.mp4

@@ -82,14 +82,14 @@ const Roll: React.FC<{a: React.ReactNode; b: React.ReactNode; k: number}> = ({a,
 );
 
 /** A clip that waits on its first frame, plays [start, end] of the timeline with its sound, then holds its last frame. */
-const Clip: React.FC<{t: number; src: string; start: number; end: number; holdAt?: number}> = ({t, src, start, end, holdAt}) => {
+const Clip: React.FC<{t: number; src: string; start: number; end: number; rate?: number; mute?: boolean}> = ({t, src, start, end, rate = 1, mute}) => {
   const style: React.CSSProperties = {width: '100%', height: '100%', objectFit: 'cover'};
   const file = staticFile(src);
   if (t < start) return <Freeze frame={0}><OffthreadVideo src={file} muted style={style} /></Freeze>;
-  if (t >= end) return <Freeze frame={fr(holdAt ?? end - start) - 1}><OffthreadVideo src={file} muted style={style} /></Freeze>;
+  if (t >= end) return <Freeze frame={fr(end - start) - 1}><OffthreadVideo src={file} muted playbackRate={rate} style={style} /></Freeze>;
   return (
     <Sequence from={fr(start)} layout="none">
-      <OffthreadVideo src={file} style={style} volume={(f) => 1 - prog(f / FPS, end - start - 0.3, end - start, (x) => x)} />
+      <OffthreadVideo src={file} style={style} playbackRate={rate} muted={mute} volume={(f) => 1 - prog(f / FPS, end - start - 0.3, end - start, (x) => x)} />
     </Sequence>
   );
 };
@@ -133,7 +133,7 @@ export const S2Mixer: React.FC = () => {
     w: lerp(lerp(SH_W, PL.w, opened), 405, cmp),
     h: lerp(lerp(SH_H, PL.h, opened), 720, cmp),
   };
-  const beatClock = t >= S.moon[0] - 1 ? clamp01((t - S.moon[0]) / 10) * 10 : clamp01((t - S.ivy[0]) / 10) * 10;
+  const beatClock = t >= S.moon[0] - 0.5 ? clamp01((t - S.moon[0]) / 10) * 10 : clamp01(((t - S.ivy[0]) * S.ivyRate) / 10) * 10;
   const ivyShown = flip < Math.PI / 2;
 
   return (
@@ -278,7 +278,7 @@ export const S2Mixer: React.FC = () => {
             }}
           >
             {ivyShown ? (
-              <Clip t={t} src="media/ivy-plant-problem.mp4" start={S.ivy[0]} end={S.ivy[1]} />
+              <Clip t={t} src="media/ivy-plant-problem.mp4" start={S.ivy[0]} end={S.ivy[1]} rate={S.ivyRate} mute />
             ) : (
               <Clip t={t} src="media/moon-guitar-problem.mp4" start={S.moon[0]} end={S.moon[1]} />
             )}
@@ -476,20 +476,18 @@ export const S2Mixer: React.FC = () => {
       {t >= S.compare && (
         <>
           <div style={{position: 'absolute', left: 1010 - 405 - 90 - (1 - leftIn) * 700, top: 196, width: 405, height: 720, borderRadius: 28, overflow: 'hidden', boxShadow: '0 30px 80px rgba(0,0,0,0.55)', opacity: Math.min(1, leftIn * 2)}}>
-            <Freeze frame={fr(8.4)}>
-              <OffthreadVideo src={staticFile('media/ivy-plant-problem.mp4')} muted style={{width: '100%', height: '100%', objectFit: 'cover'}} />
-            </Freeze>
+            <Clip t={t} src="media/ivy-plant-problem.mp4" start={S.moon[0]} end={S.moon[1]} mute />
           </div>
           <div style={{position: 'absolute', left: 0, right: 0, top: 74}}>
             <Line
               t={t} frame={frame}
-              words={[['Same', S.compare + 0.35], ['trend.', S.compare + 0.75], ['Your', S.compare + 1.9], ['cast.', S.compare + 2.1]]}
+              words={[['Same', S.sameTrend], ['trend.', S.sameTrend + 0.8], ['Your', S.sameTrend + 1.94], ['cast.', S.sameTrend + 2.14]]}
               exit={S.end + 1} size={84} weight={800} accent="cast."
             />
           </div>
           {[
-            {x: 1010 - 405 - 90, label: 'THE TREND', name: 'Ivy · plants', k: prog(t, S.compare + 0.5, S.compare + 0.9, easeOut), hi: false},
-            {x: 1010, label: 'YOUR CAST', name: 'Moon · guitars', k: prog(t, S.compare + 2.0, S.compare + 2.4, easeOut), hi: true},
+            {x: 1010 - 405 - 90, label: 'THE TREND', name: 'Ivy · plants', k: prog(t, S.compare + 0.4, S.compare + 0.8, easeOut), hi: false},
+            {x: 1010, label: 'YOUR CAST', name: 'Moon · guitars', k: prog(t, S.compare + 0.6, S.compare + 1.0, easeOut), hi: true},
           ].map((l) => (
             <div key={l.label} style={{position: 'absolute', left: l.x, width: 405, top: 940, textAlign: 'center', opacity: l.k, transform: `translateY(${(1 - l.k) * 16}px)`}}>
               <div style={{fontFamily: F.mono, fontSize: 16, fontWeight: 600, letterSpacing: '0.22em', color: C.muted}}>{l.label}</div>

@@ -76,6 +76,10 @@ JOBS = {
     "s4-vo-a": lambda: tts("Brian (male, american)", "[warm] Jam makes music: covers, music videos, even openings for your series.", 51, 0.4),
     "s4-vo-b": lambda: tts("Brian (male, american)", "[emphatic] The song, the voice, the scenes, the edit... all AI. Only the idea and the mood were ours.", 52, 0.35),
     "s4-vo-c": lambda: tts("Brian (male, american)", "[excited] And Jam can do so much more.", 53, 0.35),
+    # Section 5, the ending: Utensils, Kitchen, the end card.
+    "s5-vo-a": lambda: tts("Brian (male, american)", "[warm] Utensils shelves one tool per job, with every official ComfyUI workflow in its library.", 61, 0.4),
+    "s5-vo-b": lambda: tts("Brian (male, american)", "And Kitchen cooks whole films: story, stage, shots and the cut.", 62, 0.4),
+    "s5-vo-c": lambda: tts("Brian (male, american)", "[excited] Comfyture. Open source. Come cook!", 63, 0.35),
     # Sound effects.
     "sfx-scratch": lambda: sfx("vinyl record scratch, music stops abruptly, comedic freeze frame", 1.2, 0.6),
     "sfx-stamp": lambda: sfx("heavy rubber stamp slammed hard on a wooden desk, one loud thud", 1.0, 0.6),
