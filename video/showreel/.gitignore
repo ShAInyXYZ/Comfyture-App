@@ -1,0 +1,8 @@
+node_modules/
+out/
+# Copies of files tracked elsewhere in the repo (scripts/stage-media.sh makes them).
+public/media/
+public/fonts/
+public/brand/
+# Derived from the State Property meme's recording of a private person: never in the history.
+public/audio/earl-voice*.mp3

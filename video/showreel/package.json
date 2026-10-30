@@ -1,0 +1,24 @@
+{
+  "name": "comfyture-showreel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Comfyture's 2-minute show-off video, section by section, in Remotion.",
+  "scripts": {
+    "studio": "remotion studio",
+    "still": "remotion still",
+    "draft": "remotion render S1PublicProperty out/s1-draft.mp4 --scale=0.5 --crf=28",
+    "render:s1": "remotion render S1PublicProperty out/s1-public-property.mp4",
+    "audio": "python3 scripts/gen-audio.py",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.529",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.529"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}

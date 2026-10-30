@@ -1,0 +1,175 @@
+{
+ "fps": 30,
+ "width": 1920,
+ "height": 1080,
+ "s1": {
+  "duration": 28.0,
+  "freeze": 13.1,
+  "scratch": 13.02,
+  "stamp": 13.45,
+  "whoosh": 14.0,
+  "zoomStart": 14.1,
+  "zoomEnd": 15.9,
+  "vo": [
+   {
+    "src": "audio/vo-brian.mp3",
+    "at": 14.2,
+    "from": 0.0,
+    "to": 0.62
+   },
+   {
+    "src": "audio/vo-brian.mp3",
+    "at": 15.0,
+    "from": 1.3,
+    "to": 3.3
+   },
+   {
+    "src": "audio/vo-brian.mp3",
+    "at": 17.2,
+    "from": 4.2,
+    "to": 6.38
+   },
+   {
+    "src": "audio/vo-public-brian.mp3",
+    "at": 19.55,
+    "from": 0.0,
+    "to": 2.43
+   }
+  ],
+  "line1": {
+   "words": [
+    [
+     "Well…",
+     14.2
+    ],
+    [
+     "this",
+     15.1
+    ],
+    [
+     "might",
+     15.3
+    ],
+    [
+     "be",
+     15.5
+    ],
+    [
+     "private",
+     15.92
+    ],
+    [
+     "property.",
+     16.26
+    ]
+   ],
+   "exit": 17.05
+  },
+  "line2": {
+   "words": [
+    [
+     "But",
+     17.32
+    ],
+    [
+     "Comfyture",
+     17.68
+    ],
+    [
+     "isn't.",
+     18.3
+    ]
+   ],
+   "exit": 19.45
+  },
+  "hero": 20.17,
+  "puuu": [
+   20.17,
+   20.85
+  ],
+  "hit": 20.1,
+  "logo": 22.4,
+  "markIn": 22.75,
+  "markSlide": 23.5,
+  "wipe": 23.65,
+  "glitch": 24.2,
+  "sweep": 24.45,
+  "pets": 24.6,
+  "tagline": 25.25,
+  "end": 28.0,
+  "petPops": [
+   0.05,
+   0.17,
+   0.26,
+   0.37,
+   0.49,
+   0.57,
+   0.65,
+   0.74
+  ],
+  "jingle": 23.4,
+  "mix": {
+   "scratch": 0.4,
+   "stamp": 0.8,
+   "whoosh": 0.55,
+   "hitUnderVoice": 0.12,
+   "hitAfter": 0.24,
+   "logo": 0.35,
+   "logoThud": 0.7,
+   "jingle": 0.3,
+   "pops": 0.5
+  }
+ },
+ "captions": [
+  [
+   "Who told you you could fish here?",
+   0.0,
+   2.7
+  ],
+  [
+   "I thought it was state property.",
+   3.0,
+   4.6
+  ],
+  [
+   "State?",
+   5.16,
+   5.7
+  ],
+  [
+   "Yeah.",
+   5.76,
+   6.3
+  ],
+  [
+   "This?",
+   6.38,
+   6.85
+  ],
+  [
+   "Yeah.",
+   6.86,
+   7.45
+  ],
+  [
+   "State?",
+   7.56,
+   8.15
+  ],
+  [
+   "It ain't. It's the road, dude.",
+   8.2,
+   10.1
+  ],
+  [
+   "This ain't no state property.",
+   10.2,
+   11.5
+  ],
+  [
+   "This is PRIVATE PROPERTY.",
+   11.58,
+   13.1
+  ]
+ ]
+}
