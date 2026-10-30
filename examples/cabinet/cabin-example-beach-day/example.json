@@ -1,0 +1,60 @@
+{
+ "id": "cabin-example-beach-day",
+ "rev": 1,
+ "name": "Earl · Beach day",
+ "thumb": "example:shoot.jpg",
+ "body": {
+  "cast": [
+   {
+    "who": {
+     "kind": "character",
+     "id": "earl"
+    },
+    "outfits": [
+     "shelf:hawaiian"
+    ],
+    "poses": [
+     "shelf:coffee"
+    ]
+   }
+  ],
+  "active": 0,
+  "own": {
+   "outfits": [],
+   "poses": []
+  },
+  "format": "post",
+  "backdrop": "beach",
+  "style": "instant",
+  "notes": "",
+  "pictures": [
+   {
+    "id": "beach-day-1",
+    "outfit": "shelf:hawaiian",
+    "pose": "shelf:coffee",
+    "cast": [
+     {
+      "who": {
+       "kind": "character",
+       "id": "earl"
+      },
+      "outfit": "shelf:hawaiian",
+      "pose": "shelf:coffee"
+     }
+    ],
+    "format": "post",
+    "style": "instant",
+    "status": "done",
+    "progress": 1,
+    "at": "2026-10-30T17:00:00.000Z",
+    "model": "gpt-image-2.5",
+    "photo": {
+     "file": "example:shoot.jpg",
+     "url": "example:shoot.jpg",
+     "width": 1024,
+     "height": 1280
+    }
+   }
+  ]
+ }
+}

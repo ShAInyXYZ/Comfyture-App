@@ -1,0 +1,80 @@
+{
+ "id": "cabin-example-night-out",
+ "rev": 1,
+ "name": "Margot & Theo · Night out",
+ "thumb": "example:shoot.jpg",
+ "body": {
+  "cast": [
+   {
+    "who": {
+     "kind": "character",
+     "id": "margot"
+    },
+    "outfits": [
+     "shelf:sequin"
+    ],
+    "poses": [
+     "shelf:vogue"
+    ]
+   },
+   {
+    "who": {
+     "kind": "character",
+     "id": "theo"
+    },
+    "outfits": [
+     "shelf:velvet-tux"
+    ],
+    "poses": [
+     "shelf:lean"
+    ]
+   }
+  ],
+  "active": 0,
+  "own": {
+   "outfits": [],
+   "poses": []
+  },
+  "format": "story",
+  "backdrop": "night",
+  "style": "neon",
+  "notes": "",
+  "pictures": [
+   {
+    "id": "night-out-1",
+    "outfit": null,
+    "pose": null,
+    "cast": [
+     {
+      "who": {
+       "kind": "character",
+       "id": "margot"
+      },
+      "outfit": "shelf:sequin",
+      "pose": "shelf:vogue"
+     },
+     {
+      "who": {
+       "kind": "character",
+       "id": "theo"
+      },
+      "outfit": "shelf:velvet-tux",
+      "pose": "shelf:lean"
+     }
+    ],
+    "format": "story",
+    "style": "neon",
+    "status": "done",
+    "progress": 1,
+    "at": "2026-10-30T17:00:00.000Z",
+    "model": "gpt-image-2.5",
+    "photo": {
+     "file": "example:shoot.jpg",
+     "url": "example:shoot.jpg",
+     "width": 941,
+     "height": 1672
+    }
+   }
+  ]
+ }
+}

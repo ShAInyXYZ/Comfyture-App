@@ -1097,6 +1097,14 @@ async function keptJam(id: string): Promise<Kept | null> {
 }
 
 /** One of Toaster's examples (examples/toaster/<id>/example.json): its body as Toaster keeps a draft, its files named "example:<file>". */
+/** One of Cabinet's example shoots (examples/cabinet/<id>/example.json): its body as Cabinet keeps a shoot, its files named "example:<file>". */
+async function putShoot(spec: any, folder: string, id: string) {
+  const { body } = await placeMedia(spec.body ?? {}, folder, id, data);
+  const thumb = await placeThumb(spec.thumb, folder, id, data);
+  const now = stamp();
+  await writeProject("cabinet", { id, name: text(spec.name, 60) || id, createdAt: now, updatedAt: now, ...(thumb ? { thumb } : {}), body });
+}
+
 async function putToast(spec: any, folder: string, id: string) {
   const { body } = await placeMedia(spec.body ?? {}, folder, id, data);
   const thumb = await placeThumb(spec.thumb, folder, id, data);
@@ -1165,6 +1173,7 @@ const EXAMPLE_KINDS: Record<string, ExampleKind> = {
     },
   },
   toasts: { name: "toaster", dir: join(EXAMPLES, "toaster"), spec: "example.json", ledger: ledgerOf("toasts"), kept: keptIn("toasts"), drop: dropFrom("toasts"), put: putToast },
+  cabinet: { name: "cabinet", dir: join(EXAMPLES, "cabinet"), spec: "example.json", ledger: ledgerOf("cabinet"), kept: keptIn("cabinet"), drop: dropFrom("cabinet"), put: putShoot },
   // (last: its edit is then the newest, the one Cut opens first)
   stories: { name: "kitchen", dir: join(EXAMPLES, "kitchen"), spec: "example.json", ledger: ledgerOf("stories"), kept: keptIn("stories"), drop: dropStory, put: putStory },
 };

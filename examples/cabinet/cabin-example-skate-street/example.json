@@ -1,0 +1,60 @@
+{
+ "id": "cabin-example-skate-street",
+ "rev": 1,
+ "name": "Dre · Skate street",
+ "thumb": "example:shoot.jpg",
+ "body": {
+  "cast": [
+   {
+    "who": {
+     "kind": "character",
+     "id": "dre"
+    },
+    "outfits": [
+     "shelf:techwear"
+    ],
+    "poses": [
+     "shelf:skateboard"
+    ]
+   }
+  ],
+  "active": 0,
+  "own": {
+   "outfits": [],
+   "poses": []
+  },
+  "format": "post",
+  "backdrop": "street",
+  "style": "digicam",
+  "notes": "",
+  "pictures": [
+   {
+    "id": "skate-street-1",
+    "outfit": "shelf:techwear",
+    "pose": "shelf:skateboard",
+    "cast": [
+     {
+      "who": {
+       "kind": "character",
+       "id": "dre"
+      },
+      "outfit": "shelf:techwear",
+      "pose": "shelf:skateboard"
+     }
+    ],
+    "format": "post",
+    "style": "digicam",
+    "status": "done",
+    "progress": 1,
+    "at": "2026-10-30T17:00:00.000Z",
+    "model": "gpt-image-2.5",
+    "photo": {
+     "file": "example:shoot.jpg",
+     "url": "example:shoot.jpg",
+     "width": 1122,
+     "height": 1402
+    }
+   }
+  ]
+ }
+}

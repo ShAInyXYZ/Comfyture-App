@@ -1,0 +1,60 @@
+{
+ "id": "cabin-example-cafe-shift",
+ "rev": 1,
+ "name": "Josie · Café shift",
+ "thumb": "example:shoot.jpg",
+ "body": {
+  "cast": [
+   {
+    "who": {
+     "kind": "character",
+     "id": "josie"
+    },
+    "outfits": [
+     "shelf:barista"
+    ],
+    "poses": [
+     "shelf:coffee"
+    ]
+   }
+  ],
+  "active": 0,
+  "own": {
+   "outfits": [],
+   "poses": []
+  },
+  "format": "post",
+  "backdrop": "cafe",
+  "style": "anime",
+  "notes": "",
+  "pictures": [
+   {
+    "id": "cafe-shift-1",
+    "outfit": "shelf:barista",
+    "pose": "shelf:coffee",
+    "cast": [
+     {
+      "who": {
+       "kind": "character",
+       "id": "josie"
+      },
+      "outfit": "shelf:barista",
+      "pose": "shelf:coffee"
+     }
+    ],
+    "format": "post",
+    "style": "anime",
+    "status": "done",
+    "progress": 1,
+    "at": "2026-10-30T17:00:00.000Z",
+    "model": "gpt-image-2.5",
+    "photo": {
+     "file": "example:shoot.jpg",
+     "url": "example:shoot.jpg",
+     "width": 1024,
+     "height": 1280
+    }
+   }
+  ]
+ }
+}
