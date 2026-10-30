@@ -3,7 +3,7 @@
  "width": 1920,
  "height": 1080,
  "s1": {
-  "duration": 26.6,
+  "duration": 24.63,
   "freeze": 13.1,
   "scratch": 13.02,
   "stamp": 13.45,
@@ -24,16 +24,10 @@
     "to": 3.3
    },
    {
-    "src": "audio/vo-brian.mp3",
+    "src": "audio/vo-is-public-brian.mp3",
     "at": 17.2,
-    "from": 4.2,
-    "to": 6.38
-   },
-   {
-    "src": "audio/vo-public-brian.mp3",
-    "at": 19.55,
     "from": 0.0,
-    "to": 2.43
+    "to": 3.04
    }
   ],
   "line1": {
@@ -68,35 +62,31 @@
   "line2": {
    "words": [
     [
-     "But",
-     17.32
-    ],
-    [
      "Comfyture",
-     17.68
+     17.2
     ],
     [
-     "isn't.",
-     18.3
+     "is",
+     17.84
     ]
    ],
-   "exit": 19.45
+   "exit": 18.0
   },
-  "hero": 20.17,
+  "hero": 18.2,
   "puuu": [
-   20.17,
-   20.85
+   18.2,
+   19.14
   ],
-  "hit": 20.1,
-  "logo": 22.4,
-  "markIn": 22.75,
-  "markSlide": 23.5,
-  "wipe": 23.65,
-  "glitch": 24.2,
-  "sweep": 24.45,
-  "pets": 24.6,
-  "tagline": 25.25,
-  "end": 26.6,
+  "hit": 18.13,
+  "logo": 20.43,
+  "markIn": 20.78,
+  "markSlide": 21.53,
+  "wipe": 21.68,
+  "glitch": 22.23,
+  "sweep": 22.48,
+  "pets": 22.63,
+  "tagline": 23.28,
+  "end": 24.63,
   "petPops": [
    0.05,
    0.17,
@@ -107,7 +97,7 @@
    0.65,
    0.74
   ],
-  "jingle": 23.4,
+  "jingle": 21.43,
   "mix": {
    "scratch": 0.4,
    "stamp": 0.8,
@@ -701,55 +691,37 @@
   ]
  },
  "s5": {
-  "duration": 11.8,
+  "duration": 13.45,
   "vo": [
    {
     "src": "audio/s5-vo-a.mp3",
     "at": 0.3,
     "from": 0.0,
-    "to": 2.66
-   },
-   {
-    "src": "audio/s5-vo-a.mp3",
-    "at": 2.9,
-    "from": 3.1,
     "to": 6.72
    },
    {
     "src": "audio/s5-vo-b.mp3",
-    "at": 6.6,
+    "at": 7.15,
     "from": 0.0,
     "to": 2.2
    },
    {
     "src": "audio/s5-vo-c.mp3",
-    "at": 9.15,
+    "at": 9.8,
     "from": 0.0,
-    "to": 0.9
-   },
-   {
-    "src": "audio/s5-vo-c.mp3",
-    "at": 10.0,
-    "from": 1.15,
-    "to": 2.05
-   },
-   {
-    "src": "audio/s5-vo-c.mp3",
-    "at": 10.85,
-    "from": 2.45,
     "to": 3.04
    }
   ],
   "panels": 0.1,
-  "library": 5.9,
-  "kitchen": 6.6,
+  "library": 6.48,
+  "kitchen": 7.15,
   "chain": [
-   7.4,
-   7.75,
-   8.1,
-   8.45
+   7.6,
+   7.9,
+   8.2,
+   8.5
   ],
-  "card": 8.9,
-  "end": 11.8
+  "card": 9.55,
+  "end": 13.45
  }
 }

@@ -56,13 +56,13 @@ export const S5Ending: React.FC = () => {
         </div>
         <div style={{marginTop: 20, width: 880, height: 495, borderRadius: 22, overflow: 'hidden', boxShadow: '0 30px 80px rgba(0,0,0,0.55)', border: `1px solid ${C.line}`}}>
           <Img
-            src={staticFile('media/end/utensils.webp')}
-            style={{width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${1.02 + 0.1 * prog(t, 0, S.card, (x) => x)})`, transformOrigin: '45% 20%'}}
+            src={staticFile('media/end/utensils-library.png')}
+            style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 38%', transform: `scale(${1.12 + 0.08 * prog(t, 0, S.card, (x) => x)}) translateX(${3 - 6 * prog(t, 0, S.card, (x) => x)}%)`}}
           />
         </div>
         <div style={{display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 22}}>
-          {['Shelf', 'Picture', 'Video', 'Audio', 'VFX', 'Edit'].map((c, i) => <Chip key={c} k={sp(frame, 1.1 + i * 0.09, POP)}>{c}</Chip>)}
-          <Chip k={sp(frame, S.library, POP)} on>Library · 691 official workflows</Chip>
+          {['Shelf', 'Audio', '3D model', 'Vector', 'Product & ads'].map((c, i) => <Chip key={c} k={sp(frame, 1.1 + i * 0.09, POP)}>{c}</Chip>)}
+          <Chip k={sp(frame, S.library, POP)} on>Library · 708 workflows · 50 makers</Chip>
         </div>
       </div>
 

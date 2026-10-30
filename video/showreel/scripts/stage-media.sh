@@ -48,3 +48,4 @@ cp $R/web/fonts/comfyture-lyric.ttf public/fonts/
 mkdir -p public/media/end
 cp $R/docs/competition/keyframes/k18-utensils.webp public/media/end/utensils.webp
 cp $R/data/reels/20261030-476735.mp4 public/media/end/kitchen-grand-entrance.mp4
+# The Utensils Library bookcase (the owner's screenshot, 30 Oct) is kept in public/media/end/utensils-library.png.

@@ -52,6 +52,8 @@ JOBS = {
     "vo-chris": lambda: tts("Chris (male, american)", VO, 13),
     # The last line alone, pushed harder, for a longer "PUUUBLIC".
     "vo-public-brian": lambda: tts("Brian (male, american)", "[excited] [shouting] It's PUUUUUUUBLIC PROPERTYYYY!", 21, 0.0),
+    "vo-is-public-brian": lambda: tts("Brian (male, american)", "[excited] [shouting] Comfyture is PUUUUUUUBLIC PROPERTYYYY!", 24, 0.0),
+    "vo-is-public-brian-2": lambda: tts("Brian (male, american)", "[excited] [shouting] Comfyture is PUUUUUUUBLIC PROPERTYYYY!", 25, 0.0),
     "vo-public-chris": lambda: tts("Chris (male, american)", "[excited] [shouting] It's PUUUUUUUBLIC PROPERTYYYY!", 22, 0.0),
     # Section 2, Mixer: the narrator, line by line, so each fits its beat.
     "s2-vo-a": lambda: tts("Brian (male, american)", "[warm] So, how does Comfyture work? It's all tabs. Each tab is a studio... with its own pet assistant who knows the craft.", 31, 0.4),

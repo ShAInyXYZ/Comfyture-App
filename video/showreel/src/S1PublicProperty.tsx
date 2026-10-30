@@ -451,7 +451,7 @@ export const S1PublicProperty: React.FC = () => {
           src={staticFile('audio/sfx-hit.mp3')}
           volume={(f) => {
             const tt = S.hit + f / FPS;
-            return lerp(M.hitUnderVoice, M.hitAfter, prog(tt, 21.5, 21.8)) * (1 - prog(tt, L, L + 0.5, (x) => x));
+            return lerp(M.hitUnderVoice, M.hitAfter, prog(tt, S.hero + 1.33, S.hero + 1.63)) * (1 - prog(tt, L, L + 0.5, (x) => x));
           }}
         />
       </Sequence>
