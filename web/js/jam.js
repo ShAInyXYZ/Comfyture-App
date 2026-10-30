@@ -393,7 +393,8 @@ export async function cutPart(j = jam.jam) {
   jam.busy.add("part", j);
   update();
   try {
-    const part = await send("api/jam/slice", "POST", { audio: sourceFile, from: asked.from, to: asked.to, name: track.name });
+    // (kept as a part, not a song: the song shelf lists songs only)
+    const part = await send("api/jam/slice", "POST", { audio: sourceFile, from: asked.from, to: asked.to, name: `${track.name} · cut part`, kind: "part" });
     if (!current()) return;
     const nextPart = { file: part.file, url: part.url, seconds: part.seconds, source: { file: sourceFile, ...asked } };
     // Beat analysis can finish after another range was requested. Keep its result off the live body until it is still current.
