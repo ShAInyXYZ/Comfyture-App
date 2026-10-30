@@ -179,6 +179,14 @@ const random32 = () => Math.floor(Math.random() * 2 ** 32);
 
 class Canceled extends Error {}
 
+/** The graph with each file reference made an upload handle of the client that runs it (a copy: the graph itself is kept as it was). */
+export function bindFiles(graph: Graph, client: Comfy): Graph {
+  const bind = (v: unknown): unknown => (v instanceof FileRef ? client.assets.fromFile(v.path) : Array.isArray(v) ? v.map(bind) : v);
+  const out: Graph = {};
+  for (const [id, node] of Object.entries(graph)) out[id] = node && typeof node === "object" && (node as any).inputs ? { ...(node as any), inputs: Object.fromEntries(Object.entries((node as any).inputs).map(([k, v]) => [k, bind(v)])) } : node;
+  return out;
+}
+
 /** The motion graph sizes itself from the clip: its shorter side at 544 on a 32 grid, then doubled. */
 /** A trend's take is made at its control's size: the first stage at half of it, on multiples of 64. */
 function swapSize(clip: { width: number; height: number }) {
@@ -358,12 +366,30 @@ export function minimaxSongGraph(graph: any, v: { prompt: string; lyrics?: strin
   return graph;
 }
 
+/**
+ * A file a graph reads, bound to a client only when the job is sent: the render may go to Comfy Cloud or to a ComfyUI of your own
+ * (with "both", each job to the side that has its models), and the SDK's upload handles belong to one client. Saved workflows show its name.
+ */
+export class FileRef {
+  readonly path: string;
+  constructor(path: string) {
+    this.path = path;
+  }
+  toJSON() {
+    return this.path.split("/").pop();
+  }
+}
+
+/** Where one job runs: the client, the last step before it is sent (Cloud's model names), and the key for partner nodes inside it. */
+export type Route = { client: Comfy; prepare?: (graph: Graph) => Promise<Graph>; apiKey?: string };
+
 export class Engine extends EventEmitter {
   client: Comfy;
   private runs = new Map<string, Run>();
   private paints = new Map<string, Paint>();
   private aborts = new Map<string, AbortController>();
-  private assetNames = new WeakMap<object, string>();
+  /** Picks where each job runs (set by the server); without it, every job goes to `client`. */
+  route?: (graph: Graph) => Promise<Route | null>;
   /**
    * Jobs run one at a time. Two LTX jobs side by side on Comfy Cloud came back
    * with black video (healthy sound, NaN picture); one at a time they don't.
@@ -660,7 +686,7 @@ export class Engine extends EventEmitter {
       await loadGraph(this.dirs.workflows, "director.json"),
       lines.join("\n"),
       random32(),
-      options.photo ? this.client.assets.fromFile(this.photoPath(options.photo)) : undefined,
+      options.photo ? this.fileRef(this.photoPath(options.photo)) : undefined,
     );
     const job = await this.execute(graph, new AbortController().signal, { kind: "plan", stage: "frame" });
     const [out] = job.getOutputs("out");
@@ -678,7 +704,7 @@ export class Engine extends EventEmitter {
    */
   /** Gemma 4 writes from a brief and a prompt; a picture (a photo's file), when given, is in its view as it writes. */
   async write(brief: string, prompt: string, { maxLength = 3000, temperature = 0.7, picture }: { maxLength?: number; temperature?: number; picture?: string } = {}): Promise<string> {
-    const image = picture && (await exists(this.photoPath(picture))) ? this.client.assets.fromFile(this.photoPath(picture)) : undefined;
+    const image = picture && (await exists(this.photoPath(picture))) ? this.fileRef(this.photoPath(picture)) : undefined;
     const graph = buildPlan(await loadGraph(this.dirs.workflows, "director.json"), prompt, random32(), image);
     if (graph.brief) graph.brief.inputs.value = brief;
     if (graph.plan) Object.assign(graph.plan.inputs, { max_length: maxLength, "sampling_mode.temperature": temperature });
@@ -697,7 +723,7 @@ export class Engine extends EventEmitter {
   async ask(prompt: string, photo?: string, manual?: string, { brief, picture }: { brief?: string; picture?: string } = {}): Promise<string> {
     if (photo && !(await exists(this.photoPath(photo)))) photo = undefined;
     const image = picture ?? (photo ? this.photoPath(photo) : undefined);
-    const graph = buildPlan(await loadGraph(this.dirs.workflows, "assistant.json"), prompt, random32(), image ? this.client.assets.fromFile(image) : undefined);
+    const graph = buildPlan(await loadGraph(this.dirs.workflows, "assistant.json"), prompt, random32(), image ? this.fileRef(image) : undefined);
     if (brief && graph.brief) graph.brief.inputs.value = brief;
     // the brief says who it is and what it may do; the manual, how the app works today
     if (manual && graph.brief) graph.brief.inputs.value = `${graph.brief.inputs.value}\n\n${manual}`;
@@ -866,7 +892,7 @@ export class Engine extends EventEmitter {
 
   private async refAssets(refs: string[]) {
     for (const f of refs) if (!(await exists(this.photoPath(f)))) throw new Error("One of the references is no longer on disk.");
-    return refs.map((f) => this.client.assets.fromFile(this.photoPath(f)));
+    return refs.map((f) => this.fileRef(this.photoPath(f)));
   }
 
   /** Pictures from the Image window: one job per picture, each with its own seed. */
@@ -1019,7 +1045,7 @@ export class Engine extends EventEmitter {
     (async () => {
       try {
         if (source && !(await exists(this.photoPath(source)))) throw new Error("That photo is no longer on disk.");
-        const graph = await build(source ? this.client.assets.fromFile(this.photoPath(source)) : null);
+        const graph = await build(source ? this.fileRef(this.photoPath(source)) : null);
         const result = await this.execute(graph, new AbortController().signal, {
           kind,
           stage: "frame",
@@ -1243,16 +1269,16 @@ export class Engine extends EventEmitter {
     await this.update(run, { status: "done", stage: "", progress: 1, video: `/media/runs/${run.id}/shot.mp4` });
   }
 
-  /** An asset handle for a library file, remembered so saved workflows can name it. */
+  /** A file a graph reads, uploaded to whichever side runs the job. */
+  private fileRef(path: string) {
+    return new FileRef(path);
+  }
   private assetFor(path: string) {
-    const asset = this.client.assets.fromFile(path);
-    this.assetNames.set(asset, path.split("/").pop()!);
-    return asset;
+    return this.fileRef(path);
   }
 
   private async saveWorkflow(run: Run, name: string, graph: Graph) {
-    const text = JSON.stringify(graph, (_key, value) => (this.assetNames.has(value) ? this.assetNames.get(value) : value), 2);
-    await writeFile(join(this.runDir(run.id), name), text);
+    await writeFile(join(this.runDir(run.id), name), JSON.stringify(graph, null, 2));
   }
 
   /** Seconds per unit of work, learned from finished jobs (a unit is one second of video at one megapixel). */
@@ -1313,7 +1339,9 @@ export class Engine extends EventEmitter {
   ) {
     // (a judges' copy counts it: an answer of the writer or a pet as words, anything else as a render)
     spend(track.kind === "plan" ? "words" : "render");
-    const job = await this.client.submit(this.client.workflows.fromJson(await this.prepare(graph)), { signal });
+    const route = (await this.route?.(graph)) ?? { client: this.client, prepare: this.prepare };
+    const ready = bindFiles(await (route.prepare ?? (async (g: Graph) => g))(graph), route.client);
+    const job = await route.client.submit(route.client.workflows.fromJson(ready), { signal, ...(route.apiKey ? { apiKey: route.apiKey } : {}) });
     const { run, stage = "shot", span = [0, 1] } = track;
     const kind: Kind = track.kind ?? (stage === "frame" ? "paint" : "guided");
     const units = track.units ?? 1;

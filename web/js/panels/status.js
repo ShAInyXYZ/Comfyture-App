@@ -33,7 +33,7 @@ export function renderStatus(el) {
     tip = `Comfy account: $${a.balance.usd.toFixed(2)} · ${fmt(a.balance.credits)} credits`;
   } else if (!a.key.set) {
     // a ComfyUI of your own needs no key; Comfy Cloud does
-    face = own ? [h("b", {}, "Local ComfyUI"), h("span", {}, a.reach === false ? "not running" : "no key")] : [h("span.account-credits", {}, "no key")];
+    face = own ? [h("b", {}, state.info.target === "hybrid" ? "Both" : "Local ComfyUI"), h("span", {}, a.reach === false ? "not running" : "no key")] : [h("span.account-credits", {}, "no key")];
     tip = own ? `Local ComfyUI at ${a.target.url}: no Comfy key set` : "Comfy account: no API key set";
     if (!own) tone = "crit";
   } else if (a.openWeights) {

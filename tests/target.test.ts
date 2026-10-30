@@ -65,7 +65,7 @@ test("the choice is checked, kept, outranks .env's, and Reset goes back to it", 
   assert.equal(again.current().kind, "comfy-cloud");
   assert.equal(again.saved()?.kind, "comfy-cloud");
   assert.deepEqual(await again.reset(), { kind: "self-hosted", url: "http://from-env:8189" }, "Reset goes back to .env's");
-  await assert.rejects(again.set("somewhere"), /Comfy Cloud or your ComfyUI/);
+  await assert.rejects(again.set("somewhere"), /Comfy Cloud, Both or Local ComfyUI/);
 });
 
 test("a request that reached nothing says what to start, or where to go instead", async () => {

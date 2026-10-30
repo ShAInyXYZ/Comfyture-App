@@ -1521,8 +1521,8 @@ button.account:disabled { cursor: default; }
 .account-msg[data-tone="crit"] { color: var(--err); }
 .account-msg[data-tone="ok"] { color: var(--ok); }
 /* where the renders go: two sides of one switch, and the bridge's address under "Your ComfyUI" */
-.account-switch { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; padding: .25rem; border-radius: calc(.75rem * var(--corner-k, 1)); background: var(--sunk); }
-.account-switch button { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.375rem; padding: 0 .75rem; border: 0; border-radius: calc(.5rem * var(--corner-k, 1)); background: transparent; color: var(--muted); font: 600 var(--fs-small)/1 var(--font-sans); text-align: center; cursor: pointer; }
+.account-switch { display: grid; grid-template-columns: repeat(3, auto); gap: .25rem; padding: .25rem; border-radius: calc(.75rem * var(--corner-k, 1)); background: var(--sunk); }
+.account-switch button { display: flex; align-items: center; justify-content: center; gap: .375rem; min-height: 2.375rem; padding: 0 .5rem; white-space: nowrap; border: 0; border-radius: calc(.5rem * var(--corner-k, 1)); background: transparent; color: var(--muted); font: 600 var(--fs-small)/1 var(--font-sans); text-align: center; cursor: pointer; }
 .account-switch button svg { flex: none; width: 1.125rem; height: 1.125rem; }
 @supports (corner-shape: squircle) { .account-switch, .account-switch button { corner-shape: squircle; } }
 .account-switch button:hover:not(:disabled) { color: var(--text); }

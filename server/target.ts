@@ -9,7 +9,8 @@ export const CLOUD_URL = "https://cloud.comfy.org";
 /** comfy-api-proxy's own default address. */
 export const LOCAL_URL = "http://127.0.0.1:8189";
 
-export type TargetKind = "comfy-cloud" | "self-hosted";
+/** "hybrid" (Both): each render on your ComfyUI when it has the job's nodes and models, else on Comfy Cloud. */
+export type TargetKind = "comfy-cloud" | "self-hosted" | "hybrid";
 export interface Target {
   kind: TargetKind;
   url: string;
@@ -81,7 +82,7 @@ export function unreachable(error: unknown, t: Target): (Error & { status: numbe
   const port = Number(at.port || (at.protocol === "https:" ? 443 : 80));
   // (a bare "fetch failed" says nothing of where: it is taken to be the target)
   const isTarget = !found || found.hostname === at.hostname || found.port === port;
-  const message = t.kind === "self-hosted" && isTarget
+  const message = t.kind !== "comfy-cloud" && isTarget
     ? `No ComfyUI answers at ${at.host}, where this runs. To run it on Comfy Cloud, paste a Comfy API key in the account window (top right); for your own GPU, start ComfyUI with comfy-api-proxy in front of it. The examples and the tours work without either.`
     : `${found?.hostname || found?.address || (isTarget ? at.host : "A service")} did not answer${found?.code ? ` (${found.code})` : ""}. Check the connection and try again.`;
   return Object.assign(new Error(message), { status: 503 });
@@ -94,10 +95,16 @@ export function createTarget(deps: { data: string; env?: NodeJS.ProcessEnv; fetc
   /** what .env gave, kept to go back to */
   const original = env.COMFY_BASE_URL?.trim() ?? "";
   let saved: Target | null = null;
-  const current = (): Target => targetOf(env.COMFY_BASE_URL?.trim() || CLOUD_URL);
+  const current = (): Target => {
+    const t = targetOf(env.COMFY_BASE_URL?.trim() || CLOUD_URL);
+    return t.kind === "self-hosted" && env.COMFYTURE_HYBRID ? { kind: "hybrid", url: t.url } : t;
+  };
   const apply = (t: Target) => {
     if (t.kind === "comfy-cloud") delete env.COMFY_BASE_URL;
     else env.COMFY_BASE_URL = t.url;
+    // (the address alone cannot say "both": it is kept beside it)
+    if (t.kind === "hybrid") env.COMFYTURE_HYBRID = "1";
+    else delete env.COMFYTURE_HYBRID;
   };
 
   /** Takes the choice saved in an earlier session; it outranks .env's. Call once, before anything makes a Comfy client. */
@@ -106,7 +113,7 @@ export function createTarget(deps: { data: string; env?: NodeJS.ProcessEnv; fetc
       const t = JSON.parse(await readFile(file, "utf8"));
       const url = t.kind === "comfy-cloud" ? CLOUD_URL : cleanUrl(t.url);
       if (url) {
-        saved = targetOf(url);
+        saved = t.kind === "hybrid" ? { kind: "hybrid", url } : targetOf(url);
         apply(saved);
       }
     } catch {
@@ -116,7 +123,7 @@ export function createTarget(deps: { data: string; env?: NodeJS.ProcessEnv; fetc
 
   /** Switches where the renders go (a local address is checked first), keeps the choice, and returns the target now in use. */
   async function set(kind: unknown, rawUrl?: unknown): Promise<{ target: Target; probe?: Probe }> {
-    if (kind !== "comfy-cloud" && kind !== "self-hosted") throw Object.assign(new Error("Comfy Cloud or your ComfyUI."), { status: 400 });
+    if (kind !== "comfy-cloud" && kind !== "self-hosted" && kind !== "hybrid") throw Object.assign(new Error("Comfy Cloud, Both or Local ComfyUI."), { status: 400 });
     if (kind === "comfy-cloud") {
       saved = targetOf(CLOUD_URL);
       apply(saved);
@@ -128,7 +135,7 @@ export function createTarget(deps: { data: string; env?: NodeJS.ProcessEnv; fetc
     if (!url) throw Object.assign(new Error("An address like http://127.0.0.1:8189."), { status: 400 });
     const p = await probe(url, deps.fetch);
     if (!p.ok) throw Object.assign(new Error(p.detail), { status: 400, probe: p });
-    saved = targetOf(url);
+    saved = kind === "hybrid" ? { kind, url } : targetOf(url);
     apply(saved);
     await mkdir(deps.data, { recursive: true });
     await writeFile(file, JSON.stringify({ kind, url }));
@@ -139,6 +146,7 @@ export function createTarget(deps: { data: string; env?: NodeJS.ProcessEnv; fetc
   async function reset() {
     await rm(file, { force: true });
     saved = null;
+    delete env.COMFYTURE_HYBRID;
     if (original) env.COMFY_BASE_URL = original;
     else delete env.COMFY_BASE_URL;
     return current();

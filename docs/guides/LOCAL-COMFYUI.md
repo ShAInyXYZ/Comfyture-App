@@ -42,14 +42,16 @@ request for a token. `comfy-api-proxy start` runs it in the background (`status`
 
 ## 3. Point Comfyture at it
 
-Open **the account window** (the credits pill at the top right) and, under **Renders on**, pick **Your ComfyUI**:
+Open **the account window** (the credits pill at the top right) and, under **Renders on**, pick **Local ComfyUI** (or **Both**, below):
 
 1. the address is the bridge's (`http://127.0.0.1:8189` by default);
 2. **Test** asks it what it is, for free;
 3. **Use it** checks it again and switches every render to it, at once, without a restart. The choice is kept (in
    `data/target.json`) and outranks `.env`.
 
-**Comfy Cloud** in the same switch goes back. Or set it in `.env` instead: `COMFY_BASE_URL=http://127.0.0.1:8189`.
+A job your ComfyUI cannot run (a node or a model file it does not have, read from its `/object_info`) stops at once and says what is
+missing. **Both** sends that job to Comfy Cloud instead, with your key, and keeps every job your ComfyUI can run on it: your GPU for what
+it has, Comfy Cloud for the rest. **Comfy Cloud** in the same switch goes back. Or set it in `.env` instead: `COMFY_BASE_URL=http://127.0.0.1:8189`.
 With no key and no address at all, Comfyture already looks for the bridge at `127.0.0.1:8189`.
 
 `npm run check` runs one tiny workflow through the bridge and saves `data/smoke.png`: the quickest proof the three are talking.

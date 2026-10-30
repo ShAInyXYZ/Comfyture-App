@@ -8,9 +8,10 @@ const GUIDE = "docs/guides/LOCAL-COMFYUI.md";
 
 const fmt = (n) => Math.round(n).toLocaleString("en-US");
 
-// the switch's two marks: an API glyph for Comfy Cloud, and ComfyUI's own logo (LobeHub icons, MIT) for a local ComfyUI
+// the switch's marks: an API glyph for Comfy Cloud, two joined rings for Both, and ComfyUI's own logo (LobeHub icons, MIT) for a local ComfyUI
 const MARKS = {
   "comfy-cloud": '<path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.1 4.75 4.75 0 0 0 7 18.5zM10.25 11.5 8.5 13.25l1.75 1.75M13.75 11.5l1.75 1.75L13.75 15"/>',
+  hybrid: '<g fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="12" r="5.5"/><circle cx="15" cy="12" r="5.5"/></g>',
   "self-hosted": '<path fill="currentColor" d="M5.485 23.76c-.568 0-1.026-.207-1.325-.598-.307-.402-.387-.964-.22-1.54l.672-2.315a.605.605 0 00-.1-.536.622.622 0 00-.494-.243H2.085c-.568 0-1.026-.207-1.325-.598-.307-.403-.387-.964-.22-1.54l2.31-7.917.255-.87c.343-1.18 1.592-2.14 2.786-2.14h2.313c.276 0 .519-.18.595-.442l.764-2.633C9.906 1.208 11.155.249 12.35.249l4.945-.008h3.62c.568 0 1.027.206 1.325.597.307.402.387.964.22 1.54l-1.035 3.566c-.343 1.178-1.593 2.137-2.787 2.137l-4.956.01H11.37a.618.618 0 00-.594.441l-1.928 6.604a.605.605 0 00.1.537c.118.153.3.243.495.243l3.275-.006h3.61c.568 0 1.026.206 1.325.598.307.402.387.964.22 1.54l-1.036 3.565c-.342 1.179-1.592 2.138-2.786 2.138l-4.957.01h-3.61z"/>',
 };
 const mark = (kind) => {
@@ -113,7 +114,7 @@ function draw() {
   );
 
   // where the renders go: Comfy Cloud, or your own ComfyUI through comfy-api-proxy (the bridge); a local address is checked before it is taken
-  const picked = side ?? (own ? "self-hosted" : "comfy-cloud");
+  const picked = side ?? a.target.kind;
   const guide = state.info?.repository ? `${state.info.repository.replace(/\.git$/, "").replace(/^git\+/, "")}/blob/main/${GUIDE}` : GUIDE;
   const choose = (kind) => {
     if (busy || jobs) return;
@@ -129,7 +130,7 @@ function draw() {
     try {
       await setRenderTarget(kind, kind === "comfy-cloud" ? undefined : address || LOCAL);
       side = null;
-      answer = kind === "comfy-cloud" ? null : { ok: true, detail: "Renders now go to your ComfyUI." };
+      answer = kind === "comfy-cloud" ? null : { ok: true, detail: kind === "hybrid" ? "Renders now go to your ComfyUI, and to Comfy Cloud for what it lacks." : "Renders now go to your ComfyUI." };
     } catch (e) {
       answer = { ok: false, detail: e.message };
     }
@@ -148,17 +149,18 @@ function draw() {
     checking = false;
     draw();
   };
-  const local = picked === "self-hosted";
+  const local = picked !== "comfy-cloud";
+  const named = { "comfy-cloud": "Comfy Cloud", hybrid: "Both", "self-hosted": "Local ComfyUI" };
   // a judges' copy (COMFYTURE_JUDGE): its key and where it renders are its host's, shown but not changed here
   const judge = !!state.info?.judge;
   const renders = judge
-    ? section("Renders on", h("div.account-row", {}, h("b", {}, own ? "Local ComfyUI" : "Comfy Cloud"), h("span.hint", {}, host)),
+    ? section("Renders on", h("div.account-row", {}, h("b", {}, named[a.target.kind] ?? "Comfy Cloud"), h("span.hint", {}, host)),
         a.judge && h("div.account-row", {}, h("b", {}, `${a.judge.renders} render${a.judge.renders === 1 ? "" : "s"} left today`), h("span.hint", {}, `${a.judge.words} answers`)),
         h("p.hint", {}, "A judges' copy: where it renders is set by its host, and renders are counted for each visitor. The examples and the tours are free."))
     : section(
     "Renders on",
     h("div.account-switch", { role: "radiogroup", "aria-label": "Where the renders go" },
-      ...[["comfy-cloud", "Comfy Cloud"], ["self-hosted", "Local ComfyUI"]].map(([kind, label]) =>
+      ...Object.entries(named).map(([kind, label]) =>
         h("button", { type: "button", role: "radio", "aria-checked": String(picked === kind), disabled: busy || (!!jobs && picked !== kind), title: jobs ? "Wait for the jobs running to end" : "", on: { click: () => choose(kind) } }, mark(kind), h("span", {}, label)))),
     local
       ? h("div.account-local", {},
@@ -167,13 +169,14 @@ function draw() {
           h("div.account-row", {},
             h("button.key.is-quiet", { type: "button", disabled: checking || busy, on: { click: test } }, checking ? "Asking…" : "Test"),
             h("span.spacer"),
-            (!own || (address && address !== a.target.url)) && h("button.key.is-primary", { type: "button", disabled: busy, on: { click: () => go("self-hosted") } }, busy ? "Switching…" : "Use it")),
+            (picked !== a.target.kind || (address && address !== a.target.url)) && h("button.key.is-primary", { type: "button", disabled: busy, on: { click: () => go(picked) } }, busy ? "Switching…" : "Use it")),
+          picked === "hybrid" && h("p.hint", {}, "Each render runs on your ComfyUI when it has the job's nodes and models, and on Comfy Cloud when it does not (with your key). The writers, partner models and Templates use Comfy Cloud either way."),
           answer && h("p.account-msg", { role: "status", dataset: { tone: answer.ok ? "ok" : answer.ok === false ? "crit" : "" } }, answer.detail),
           h("p.hint", {}, "Run ComfyUI with its models, then the bridge in front of it:"),
           h("code.account-cmd", {}, "pip install comfy-api-proxy", h("br"), "comfy-api-proxy run"),
           h("div.account-row", {}, h("span.spacer"), link(guide, "How to set up your own ComfyUI", icon("open"), "The setup guide")))
       : h("div.account-row", {}, h("b", {}, "Comfy Cloud"), h("span.hint", {}, own && side ? "" : host)),
-    h("p.hint", {}, jobs ? `${jobs} job${jobs > 1 ? "s" : ""} running: switch once they end` : own && !side ? (a.reach === false ? `Nothing answers at ${host} yet: start the bridge, or pick Comfy Cloud and add a key` : `Rendering on ${host}`) : "Nothing running"),
+    h("p.hint", {}, jobs ? `${jobs} job${jobs > 1 ? "s" : ""} running: switch once they end` : own && !side ? (a.reach === false ? `Nothing answers at ${host} yet: start the bridge, or pick Comfy Cloud and add a key` : a.target.kind === "hybrid" ? `Rendering on ${host}, and on Comfy Cloud for what it lacks` : `Rendering on ${host}`) : "Nothing running"),
   );
 
   const keyBox = editing

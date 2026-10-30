@@ -44,6 +44,7 @@ import { createToaster3d } from "./toaster-3d.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
 import { seedExamples, placeMedia, placeThumb, placedName, revOf, type ExampleKind, type Kept } from "./examples.ts";
 import { createTarget, cleanUrl, unreachable, targetOf, CLOUD_URL, LOCAL_URL, type Target } from "./target.ts";
+import { createInstalled, missing, lacking } from "./route.ts";
 import { judging, refused, createPace, visitorOf, visitorCookie, asVisitor, keepLedger, leftFor } from "./judge.ts";
 
 const root = resolve(import.meta.dirname, "..");
@@ -66,12 +67,31 @@ if (!where.saved() && !process.env.COMFY_BASE_URL?.trim() && !process.env.COMFY_
   localByDefault = true;
 }
 const base = process.env.COMFY_BASE_URL?.trim() || "https://cloud.comfy.org";
-const target: Target = { kind: new URL(base).hostname === "cloud.comfy.org" ? "comfy-cloud" : "self-hosted", url: base };
+const target: Target = { kind: new URL(base).hostname === "cloud.comfy.org" ? "comfy-cloud" : process.env.COMFYTURE_HYBRID ? "hybrid" : "self-hosted", url: base };
 /**
  * A Comfy client for where the renders go. On your own ComfyUI, the bridge's token when it was started with one
  * (comfy-api-proxy run --token …, given here as COMFY_PROXY_TOKEN); else the SDK sends COMFY_API_KEY, or nothing.
  */
-const comfyClient = () => new Comfy({ clientInfo: "comfyture/0.1", apiKey: target.kind === "self-hosted" ? process.env.COMFY_PROXY_TOKEN?.trim() || undefined : undefined });
+const comfyClient = () => new Comfy({ clientInfo: "comfyture/0.1", apiKey: target.kind !== "comfy-cloud" ? process.env.COMFY_PROXY_TOKEN?.trim() || undefined : undefined });
+/** On Both, the Comfy Cloud client for the jobs your ComfyUI cannot run (made again when the key changes); null with no key. */
+let cloudFor2: { key: string; client: Comfy } | null = null;
+function cloudClient(): Comfy | null {
+  const key = process.env.COMFY_API_KEY?.trim();
+  if (!key) return null;
+  if (cloudFor2?.key !== key) {
+    // the SDK reads where it goes from COMFY_BASE_URL as it is made, so for this one moment it names none (Comfy Cloud)
+    const local = process.env.COMFY_BASE_URL;
+    delete process.env.COMFY_BASE_URL;
+    try {
+      cloudFor2 = { key, client: new Comfy({ clientInfo: "comfyture/0.1", apiKey: key }) };
+    } finally {
+      if (local !== undefined) process.env.COMFY_BASE_URL = local;
+    }
+  }
+  return cloudFor2.client;
+}
+/** What the ComfyUI behind the bridge has (server/route.ts). */
+const installed = createInstalled();
 
 const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 const repository: string | undefined = typeof pkg.repository === "string" ? pkg.repository : pkg.repository?.url;
@@ -118,7 +138,7 @@ const templates = createTemplates({
   keepAudio: (bytes, ext, meta) => keepAudio(bytes, ext, meta),
 });
 
-let library: CloudLibrary | null = target.kind === "comfy-cloud" && process.env.COMFY_API_KEY?.trim() ? new CloudLibrary(process.env.COMFY_API_KEY.trim()) : null;
+let library: CloudLibrary | null = target.kind !== "self-hosted" && process.env.COMFY_API_KEY?.trim() ? new CloudLibrary(process.env.COMFY_API_KEY.trim()) : null;
 const engine = new Engine(
   comfyClient(),
   { data, workflows: join(root, workflowSet) },
@@ -130,6 +150,22 @@ const engine = new Engine(
 const toaster3d = createToaster3d({ data, root, photoPath: (file) => engine.photoPath(file) });
 const images = new ImageModels(join(root, "workflows"));
 engine.images = images;
+// Local ComfyUI: a job it cannot run stops before it is sent, saying what is missing. Both: that job goes to Comfy Cloud instead, and
+// one it can run stays on it, with the key for the partner nodes inside it. (When ComfyUI cannot be asked, the job is sent as before.)
+engine.route = async (graph) => {
+  if (target.kind === "comfy-cloud") return null;
+  const have = await installed(target.url);
+  const lacks = have ? missing(graph, have) : [];
+  const key = process.env.COMFY_API_KEY?.trim();
+  if (target.kind === "self-hosted") {
+    if (lacks.length) throw bad(lacking(lacks, false));
+    return null;
+  }
+  if (!lacks.length && (have || !key)) return { client: engine.client, prepare: async (g) => g, apiKey: key || undefined };
+  const cloud = cloudClient();
+  if (!cloud) throw bad(lacking(lacks, true));
+  return { client: cloud, prepare: (g) => (library ? library.resolve(g) : Promise.resolve(g)) };
+};
 
 /** A new key in Settings reaches the render engine and the model library too (the Router and writer read the key on every call). */
 function followKey(key: string) {
@@ -139,7 +175,7 @@ function followKey(key: string) {
   } catch {
     // the old client stays until a key works
   }
-  if (target.kind === "comfy-cloud") library = new CloudLibrary(key);
+  if (target.kind !== "self-hosted") library = new CloudLibrary(key);
 }
 
 /**
@@ -162,7 +198,7 @@ function followTarget(t: Target) {
     // Comfy Cloud with no key yet: the old client stays until a key is saved
   }
   const key = process.env.COMFY_API_KEY?.trim();
-  library = target.kind === "comfy-cloud" && key ? new CloudLibrary(key) : null;
+  library = target.kind !== "self-hosted" && key ? new CloudLibrary(key) : null;
 }
 
 // Spice: the AI VFX suite (server/spice.ts), on the engine's graphs and the template runner

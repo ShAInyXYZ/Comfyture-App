@@ -116,7 +116,7 @@ export function createAccount(deps: {
       balance: null,
     };
     // (a first visit with no key renders on a ComfyUI here by default: the header says when none is running)
-    if (target.kind === "self-hosted") out.reach = await answers(target.url, refresh);
+    if (target.kind !== "comfy-cloud") out.reach = await answers(target.url, refresh);
     if (open) return Object.assign(out, { error: "Open weights only is on, so no Comfy credits are spent" });
     if (!key) return Object.assign(out, { error: "No API key is set" });
     if (!refresh && cache && cache.key === key && Date.now() - cache.at < CACHE_MS) return Object.assign(out, { balance: cache.balance });
