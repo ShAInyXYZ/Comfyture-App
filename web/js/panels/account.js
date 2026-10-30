@@ -7,6 +7,19 @@ const LOCAL = "http://127.0.0.1:8189";
 const GUIDE = "docs/guides/LOCAL-COMFYUI.md";
 
 const fmt = (n) => Math.round(n).toLocaleString("en-US");
+
+// the switch's two marks: an API glyph for Comfy Cloud, and ComfyUI's own logo (LobeHub icons, MIT) for a local ComfyUI
+const MARKS = {
+  "comfy-cloud": '<path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.1 4.75 4.75 0 0 0 7 18.5zM10.25 11.5 8.5 13.25l1.75 1.75M13.75 11.5l1.75 1.75L13.75 15"/>',
+  "self-hosted": '<path fill="currentColor" d="M5.485 23.76c-.568 0-1.026-.207-1.325-.598-.307-.402-.387-.964-.22-1.54l.672-2.315a.605.605 0 00-.1-.536.622.622 0 00-.494-.243H2.085c-.568 0-1.026-.207-1.325-.598-.307-.403-.387-.964-.22-1.54l2.31-7.917.255-.87c.343-1.18 1.592-2.14 2.786-2.14h2.313c.276 0 .519-.18.595-.442l.764-2.633C9.906 1.208 11.155.249 12.35.249l4.945-.008h3.62c.568 0 1.027.206 1.325.597.307.402.387.964.22 1.54l-1.035 3.566c-.343 1.178-1.593 2.137-2.787 2.137l-4.956.01H11.37a.618.618 0 00-.594.441l-1.928 6.604a.605.605 0 00.1.537c.118.153.3.243.495.243l3.275-.006h3.61c.568 0 1.026.206 1.325.598.307.402.387.964.22 1.54l-1.036 3.565c-.342 1.179-1.592 2.138-2.786 2.138l-4.957.01h-3.61z"/>',
+};
+const mark = (kind) => {
+  const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  s.setAttribute("viewBox", "0 0 24 24");
+  s.setAttribute("aria-hidden", "true");
+  s.innerHTML = MARKS[kind];
+  return s;
+};
 const usd = (cents) => `$${(cents / 100).toFixed(2)}`;
 
 let pop = null;
@@ -139,14 +152,14 @@ function draw() {
   // a judges' copy (COMFYTURE_JUDGE): its key and where it renders are its host's, shown but not changed here
   const judge = !!state.info?.judge;
   const renders = judge
-    ? section("Renders on", h("div.account-row", {}, h("b", {}, own ? "Your ComfyUI" : "Comfy Cloud"), h("span.hint", {}, host)),
+    ? section("Renders on", h("div.account-row", {}, h("b", {}, own ? "Local ComfyUI" : "Comfy Cloud"), h("span.hint", {}, host)),
         a.judge && h("div.account-row", {}, h("b", {}, `${a.judge.renders} render${a.judge.renders === 1 ? "" : "s"} left today`), h("span.hint", {}, `${a.judge.words} answers`)),
         h("p.hint", {}, "A judges' copy: where it renders is set by its host, and renders are counted for each visitor. The examples and the tours are free."))
     : section(
     "Renders on",
     h("div.account-switch", { role: "radiogroup", "aria-label": "Where the renders go" },
-      ...[["comfy-cloud", "Comfy Cloud"], ["self-hosted", "Your ComfyUI"]].map(([kind, label]) =>
-        h("button", { type: "button", role: "radio", "aria-checked": String(picked === kind), disabled: busy || (!!jobs && picked !== kind), title: jobs ? "Wait for the jobs running to end" : "", on: { click: () => choose(kind) } }, label))),
+      ...[["comfy-cloud", "Comfy Cloud"], ["self-hosted", "Local ComfyUI"]].map(([kind, label]) =>
+        h("button", { type: "button", role: "radio", "aria-checked": String(picked === kind), disabled: busy || (!!jobs && picked !== kind), title: jobs ? "Wait for the jobs running to end" : "", on: { click: () => choose(kind) } }, mark(kind), h("span", {}, label)))),
     local
       ? h("div.account-local", {},
           h("label.account-field", {}, h("span.hint", {}, "The bridge's address (comfy-api-proxy)"),

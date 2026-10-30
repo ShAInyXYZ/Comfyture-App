@@ -79,7 +79,7 @@ export default {
       target: "#cloud",
       place: "bottom",
       title: "Where it's made",
-      text: "Your Comfy account: where things are made. **Comfy Cloud** runs on credits, with your API key; **Your ComfyUI** is your own machine. Click it to choose, or to paste your key; whatever costs credits says so first.",
+      text: "Your Comfy account: where things are made. **Comfy Cloud** runs on credits, with your API key; **Local ComfyUI** is your own machine. Click it to choose, or to paste your key; whatever costs credits says so first.",
     },
     {
       go: on("utensils"),
