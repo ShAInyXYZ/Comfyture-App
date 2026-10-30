@@ -39,16 +39,6 @@ def sfx(text, seconds, influence=0.45):
         "text": text, "model": "eleven_sfx_v2", "model.duration": seconds, "model.loop": False,
         "model.prompt_influence": influence, "output_format": "mp3_44100_192"}}}
 
-def sts(voice, audio_name, seed=7, model="eleven_english_sts_v2", denoise=True, stability=0.4):
-    return {
-        "1": {"class_type": "ElevenLabsVoiceSelector", "inputs": {"voice": voice}},
-        "3": {"class_type": "LoadAudio", "inputs": {"audio": audio_name}},
-        "2": {"class_type": "ElevenLabsSpeechToSpeech", "inputs": {
-            "voice": ["1", 0], "audio": ["3", 0], "stability": stability,
-            "model": model, "model.speed": 1.0, "model.similarity_boost": 0.8, "model.style": 0.2,
-            "model.use_speaker_boost": True,
-            "output_format": "mp3_44100_192", "seed": seed, "remove_background_noise": denoise}},
-    }
 
 JOBS = {
     # The narrator, three voices to choose from.
@@ -58,9 +48,6 @@ JOBS = {
     # The last line alone, pushed harder, for a longer "PUUUBLIC".
     "vo-public-brian": lambda: tts("Brian (male, american)", "[excited] [shouting] It's PUUUUUUUBLIC PROPERTYYYY!", 21, 0.0),
     "vo-public-chris": lambda: tts("Chris (male, american)", "[excited] [shouting] It's PUUUUUUUBLIC PROPERTYYYY!", 22, 0.0),
-    # Earl's own voice over the meme's lines (same timing, so the mouths still match): the clean backup.
-    "earl-voice": lambda: sts("Bill (male, american)", "showreel-state-property-voice.wav"),
-    "earl-voice-2": lambda: sts("Bill (male, american)", "showreel-state-property-voice.wav", 8, "eleven_multilingual_sts_v2", False, 0.6),
     # Sound effects.
     "sfx-scratch": lambda: sfx("vinyl record scratch, music stops abruptly, comedic freeze frame", 1.2, 0.6),
     "sfx-stamp": lambda: sfx("heavy rubber stamp slammed hard on a wooden desk, one loud thud", 1.0, 0.6),

@@ -58,11 +58,11 @@ const camera = (t: number, frame: number) => {
 };
 
 /** The State Property clip: plays with sound until the freeze, holds the frozen frame, plays again (muted) after the hero. */
-const Meme: React.FC<{t: number; blur?: boolean; mute?: boolean; style?: React.CSSProperties}> = ({t, blur, mute, style}) => {
+const Meme: React.FC<{t: number; blur?: boolean; style?: React.CSSProperties}> = ({t, blur, style}) => {
   const src = staticFile('media/state-property.mp4');
   const vStyle: React.CSSProperties = {width: '100%', height: '100%', objectFit: 'cover', ...style};
   if (t < S.freeze) {
-    return <OffthreadVideo src={src} muted={blur || mute} style={vStyle} />;
+    return <OffthreadVideo src={src} muted={blur} style={vStyle} />;
   }
   if (t < S.hero) {
     return (
@@ -215,8 +215,7 @@ const Caption: React.FC<{t: number}> = ({t}) => {
   );
 };
 
-/** `voice: 'earl'` swaps the meme's recorded voice for Earl's (ElevenLabs speech to speech, same timing): the clean version. */
-export const S1PublicProperty: React.FC<{voice?: 'original' | 'earl'}> = ({voice = 'original'}) => {
+export const S1PublicProperty: React.FC = () => {
   const frame = useCurrentFrame();
   const t = frame / FPS;
   const cam = camera(t, frame);
@@ -299,7 +298,7 @@ export const S1PublicProperty: React.FC<{voice?: 'original' | 'earl'}> = ({voice
                     }}
                   >
                     {mid ? (
-                      <Meme t={t} mute={voice === 'earl'} />
+                      <Meme t={t} />
                     ) : (
                       <Img src={staticFile(`media/tiles/${name}.webp`)} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
                     )}
@@ -497,9 +496,6 @@ export const S1PublicProperty: React.FC<{voice?: 'original' | 'earl'}> = ({voice
       <Grain frame={frame} />
 
       {/* ——— Sound ——— */}
-      {voice === 'earl' && (
-        <Sequence durationInFrames={fr(S.freeze)}><Audio src={staticFile('audio/earl-voice-2.mp3')} volume={1} /></Sequence>
-      )}
       <Sequence from={fr(S.scratch)} durationInFrames={fr(1.3)}><Audio src={staticFile('audio/sfx-scratch.mp3')} volume={M.scratch} /></Sequence>
       <Sequence from={fr(S.stamp)} durationInFrames={fr(1.1)}><Audio src={staticFile('audio/sfx-stamp.mp3')} volume={M.stamp} /></Sequence>
       <Sequence from={fr(S.whoosh)} durationInFrames={fr(1.9)}><Audio src={staticFile('audio/sfx-whoosh.mp3')} volume={M.whoosh} /></Sequence>
