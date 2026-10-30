@@ -562,7 +562,10 @@ function stage(im, choice) {
 function sendWhere() {
   const page = currentPage();
   const im = state.image;
+  if (page === "shot" && im.origin?.storyFrame) return `to the shot’s ${im.origin.storyFrame.role} frame`;
+  if (page === "story" && im.origin?.storyRef) return "to the Story shot’s references";
   if (page === "toaster") return "to a part's sheet or the render's references";
+  if (page === "jam" && im.origin?.jamCover) return `to ${im.origin.jamCover.name}'s cover`;
   if (page === "stage" && im.origin?.stageRef) return `to ${im.origin.stageRef.name}'s sheet, or an input of the shot`;
   return "to an input of the open tab";
 }
@@ -580,7 +583,30 @@ async function targets(photo) {
   const origin = state.image.origin;
   const out = [];
   const shotInputs = () => out.push(...SEND.map(([slot, ic, label]) => ({ icon: ic, label, run: () => (placePhoto(slot, photo), closeImage()) })));
-  if (page === "toaster") {
+  if (page === "shot" && origin?.storyFrame) {
+    const target=origin.storyFrame;
+    out.push({key:`story-frame:${target.projectId}:${target.shotId}:${target.role}`,label:target.role==='end'?'End frame':'Start frame',icon:'image-reference',note:'asked for',run:async()=>{
+      const {story,blockOf,setShotInputFrame}=await import('../story.js');
+      if(story.project?.id!==target.projectId || !blockOf(target.shotId))return toast('The image is in the Library. Reopen its project to attach it.');
+      setShotInputFrame(target.shotId,target.role,photo);closeImage();
+    }});
+  } else if (page === "story" && origin?.storyRef) {
+    const target=origin.storyRef;
+    out.push({key:`story:${target.projectId}:${target.shotId}`,label:"Shot reference",icon:"image-reference",note:"asked for",run:async()=>{
+      const {story,blockOf,updateBlock}=await import('../story.js');
+      const shot=story.project?.id===target.projectId ? blockOf(target.shotId) : null;
+      if (!shot || shot.kind!=='shot') { toast('The image is in the Library. Reopen its story to attach it.');return; }
+      if (!(shot.storyRefs??[]).some(r=>r.file===photo.file)) updateBlock(shot.id,{storyRefs:[...(shot.storyRefs??[]),{file:photo.file,url:photo.url,width:photo.width,height:photo.height}]});
+      closeImage();
+    }});
+  } else if (page === "jam" && origin?.jamCover) {
+    const target = origin.jamCover;
+    out.push({ key: `jam-cover:${target.file}`, label: "Song cover", icon: "image-reference", note: target.name, run: async () => {
+      const { takeCover } = await import("./jam-song.js");
+      await takeCover(target.file, photo);
+      closeImage();
+    } });
+  } else if (page === "toaster") {
     const t = await import("../toaster.js");
     const draft = t.toaster.draft;
     if (!draft) return out;

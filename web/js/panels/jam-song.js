@@ -8,7 +8,7 @@
 // performing the best part of the song, made with LTX from the cover. Both are one key each under the song's name; the two that
 // cost credits arm on the first press, with the price, and spend on the second.
 import { h } from "../dom.js";
-import { state, toast, waitFor, artistFor, onChange, changed } from "../store.js";
+import { state, toast, waitFor, changed, setImage } from "../store.js";
 import { api } from "../api.js";
 import { dropdown } from "../controls.js";
 import { LANGUAGES, SIGNATURES, DEFAULT_SONG, MAX_SECONDS, STYLE_LORAS, PITCHES, MODES, KEYS, noteOf, modeOf, QUALITY, lengthLabel, STRUCTURES, skeleton, costOfSong } from "../song.js";
@@ -21,7 +21,7 @@ import { analyse } from "./jam-track-audio.js";
 import { detectSections, lyricTags, HOP } from "../jam-sections.js";
 import { pay, isArmed } from "./jam-band-pay.js";
 import { KIND, WEIGHT, lyricTimeline, entryAt, sectionSpans, timingCovers } from "../song-lyrics.js";
-import { COVER_SECONDS, COVER_VIDEO_PROMPT, bestPart, coverPrompt, costOfCover, costOfCoverVideo, coverOf, fileOfUrl, stepWords } from "../song-cover.js";
+import { COVER_SECONDS, COVER_VIDEO_PROMPT, bestPart, coverPrompt, costOfCoverVideo, coverOf, fileOfUrl, stepWords } from "../song-cover.js";
 
 const STORE = "comfyture.jam.song.3";
 const MINE = ["model", "idea", "structure", "tags", "lyrics", "seconds", "language", "key", "bpm", "signature", "name", "passes", "temperature", "adherence", "thinking", "lora"];
@@ -168,16 +168,35 @@ function useMyPicture(m) {
   }));
 }
 
-/** The picture model draws the cover from the song's name, idea and style (a key that costs: armed first). */
-function makeCover(m) {
-  const cost = coverCost();
-  pay(`cover:picture:${m.file}`, cost, () => busyWith("picture", m, async () => {
-    // (the idea is the form's when the song shown is the one it made)
-    const idea = song.tags && m.tags === song.tags ? song.idea : "";
-    const [job] = await api.image({ model: coverArtist(), template: "generate", prompt: coverPrompt({ name: m.name, idea, tags: m.tags ?? song.tags }), refs: [], aspect: "1:1", count: 1, megapixels: 1, seed: Math.floor(Math.random() * 2 ** 31), name: `${m.name} · cover` });
-    const done = await waitFor("job", job.id);
-    await setCover(m, { cover: done.photo.url });
-  }));
+/**
+ * The cover is made in the Oven, so it can be given the world's own characters and places: it opens on GPT Image 2.5 Flare,
+ * square, with words from the song's name, idea and style to start from. Nothing is spent until the Oven's own key is pressed,
+ * and the picture becomes the cover only when it is sent there (Send to → Song cover).
+ */
+async function makeCover(m) {
+  const im = state.image;
+  try {
+    if (!im.catalogue) im.catalogue = await api.imageModels();
+  } catch (e) {
+    return toast(e.message, { tone: "crit" });
+  }
+  const flare = im.catalogue.models.some((x) => x.id === "gpt-image-2.5-flare");
+  // (the idea is the form's when the song shown is the one it made)
+  const idea = song.tags && m.tags === song.tags ? song.idea : "";
+  im.refs = [];
+  im.prompt = coverPrompt({ name: m.name, idea, tags: m.tags ?? song.tags });
+  im.before = null;
+  im.keep = false;
+  im.origin = { jamCover: { file: m.file, name: m.name } };
+  im.open = true;
+  setImage({ ...(flare ? { model: "gpt-image-2.5-flare" } : {}), template: "generate", aspect: "1:1", count: 1 });
+}
+
+/** A picture of the Oven sent to a song as its cover. */
+export async function takeCover(file, photo) {
+  const m = shelf().find((x) => x.file === file) ?? { file };
+  await setCover(m, { cover: photo.url });
+  toast(`The cover of ${m.name ?? "the song"} now.`);
 }
 
 /**
@@ -228,14 +247,6 @@ function removeCover(m, only) {
 }
 
 const cloud = () => state.info?.target === "comfy-cloud";
-// (the picture models arrive a moment after the page: the price on the key is set again when it changes)
-let priced = null;
-onChange((scopes) => {
-  if (page && scopes.has("assistant") && coverCost() !== priced) drawStage();
-});
-/** Who draws a song's cover: GPT Image 2.5 Flare (Comfy Router), or the picked picture model when Flare is not on offer. */
-const coverArtist = () => ((state.image.catalogue?.models ?? []).some((m) => m.id === "gpt-image-2.5-flare") ? "gpt-image-2.5-flare" : artistFor("generate"));
-const coverCost = () => costOfCover((state.image.catalogue?.models ?? []).find((x) => x.id === coverArtist()), cloud());
 const videoCost = () => costOfCoverVideo(COVER_SECONDS.default, cloud());
 
 /** A key of the cover row: an icon with its words in a tooltip; one that costs shows its price, and when armed says to press again. */
@@ -252,11 +263,10 @@ function drawCover(m) {
   if (!m) return;
   const cv = coverFor(m);
   const mine = making.file === m.file ? making : null;
-  priced = coverCost();
   row.replaceChildren(...[
     cv.picture ? h("img.sg-cthumb", { src: cv.picture, alt: "The cover", draggable: false }) : h("span.sg-cthumb.is-none", { title: "No cover yet" }, jicon("image")),
     h("div.sg-ckeys", { role: "group", "aria-label": "The cover" },
-      coverKey({ id: `cover:picture:${m.file}`, icon: "sparkle", label: cv.picture ? "New cover" : "Make the cover", tip: "GPT Image 2.5 Flare draws a cover from the song's name and style", cost: coverCost(), run: () => makeCover(m) }),
+      coverKey({ id: `cover:picture:${m.file}`, icon: "sparkle", label: cv.picture ? "New cover" : "Make the cover", tip: "Make the cover in the Oven (GPT Image 2.5 Flare, square): add your characters and places, then Send to → Song cover", run: () => makeCover(m) }),
       coverKey({ id: `cover:mine:${m.file}`, icon: "image", label: "My picture", tip: "Use a picture of your own as the cover (free)", run: () => useMyPicture(m) }),
       coverKey({ id: `cover:video:${m.file}`, icon: "film", label: cv.video ? "New video cover" : "Video cover", tip: cv.picture ? "A few seconds of the cover performing the best part of the song (LTX 2.5, from the cover)" : "Needs a cover first: the video starts from it", cost: cv.picture ? videoCost() : null, run: () => makeVideoCover(m), disabled: !cv.picture }),
       cv.video ? coverKey({ id: `cover:novideo:${m.file}`, icon: "close", label: "Video off", tip: "Take the video cover off (the cover stays)", run: () => removeCover(m, "video") }) : null,
