@@ -29,7 +29,7 @@ cp $R/data/photos/38f1355cc3dd2851.png public/media/toaster/pickle-clay.png
 cp $R/data/photos/0e7ea4970100c9b3.png public/media/toaster/pickle-colour-id.png
 cp $R/data/photos/5bb91cdb29f0de6c.png public/media/toaster/pickle-render.png
 cp $R/data/photos/fc4f731cf5bcd819.png public/media/toaster/pickle-sheet.png
-# The turntable: blender -b --python scripts/turntable.py -- data/models/280b78af2e084c4c.glb <dir>/f_ 120, then
+# The turntable: blender -b --python scripts/turntable.py -- data/models/4be5281504f31410.glb (Tripo, single image) <dir>/f_ 120, then
 # ffmpeg -framerate 30 -i <dir>/f_%04d.png -c:v libvpx-vp9 -pix_fmt yuva420p -b:v 4M public/media/toaster/pickle-turntable.webm
 cp $R/web/brand/mixer/crew/josie.png $R/web/brand/mixer/crew/shiny.png public/media/cabinet/
 cp $R/web/brand/cabinet/wardrobe/kabyle-dress.webp $R/web/brand/cabinet/wardrobe/burnous.webp $R/web/brand/cabinet/poses/hand-hip.webp $R/web/brand/cabinet/poses/arms-crossed.webp public/media/cabinet/
