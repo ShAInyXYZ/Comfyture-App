@@ -165,21 +165,26 @@ li[data-kind="edge"] .sg-sec i { background: #6b6a74; }
 /* ---- the shelf of songs ---------------------------------------------------------------------------------------- */
 .sg-shelf { display: grid; gap: .625rem; min-width: 0; padding: .75rem 1rem .875rem; border: 1px solid var(--card-line); border-radius: 1.5rem; background: var(--card); }
 .sg-shelf-head { display: flex; align-items: center; gap: .625rem; }
-.sg-sleeves { display: flex; gap: .75rem; padding-bottom: .125rem; overflow-x: auto; scrollbar-width: thin; }
-.sg-sleeve { position: relative; display: grid; grid-template-rows: auto auto auto; gap: .1875rem; flex: none; width: clamp(7.25rem, 9vw, 9rem); }
-.sg-sleeve-art { position: relative; display: grid; place-items: center; height: clamp(4.5rem, 9dvh, 6rem); padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: .9375rem; background: linear-gradient(145deg, hsl(var(--hue) 52% 34%), hsl(calc(var(--hue) + 46) 48% 13%)); cursor: pointer; transition: border-color var(--t-fast), transform var(--t-fast); }
+.sg-shelf { --sleeve: clamp(6rem, 10.5dvh, 8.5rem); }
+/* (the row scrolls sideways with the wheel and no bar shows) */
+.sg-sleeves { display: flex; gap: .75rem; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.sg-sleeves::-webkit-scrollbar { display: none; }
+.sg-sleeve { position: relative; flex: none; width: var(--sleeve); aspect-ratio: 1; }
+.sg-sleeve-art { position: absolute; inset: 0; display: grid; place-items: center; width: 100%; height: 100%; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: .9375rem; background: linear-gradient(145deg, hsl(var(--hue) 52% 34%), hsl(calc(var(--hue) + 46) 48% 13%)); cursor: pointer; transition: border-color var(--t-fast), transform var(--t-fast); }
 .sg-sleeve-art:hover { transform: translateY(-2px); }
 .sg-sleeve.is-on .sg-sleeve-art { border-color: var(--accent); }
 .sg-disc { position: absolute; right: -22%; top: 50%; width: 82%; aspect-ratio: 1; translate: 0 -50%; border-radius: 50%; background: radial-gradient(circle, var(--accent) 0 11%, #121214 12% 100%), repeating-radial-gradient(circle, rgba(255, 255, 255, .06) 0 1px, transparent 1px 4px); background-blend-mode: normal; box-shadow: 0 0 0 1px rgba(255, 255, 255, .08); }
-.sg-sleeve-jar { position: absolute; left: .625rem; bottom: .5rem; color: rgba(255, 255, 255, .78); }
+.sg-sleeve-jar { position: absolute; left: .625rem; top: .5rem; color: rgba(255, 255, 255, .78); }
 .sg-sleeve-jar svg { width: 1.375rem; height: 1.375rem; }
 .sg-sleeve.is-track .sg-sleeve-art::after { content: ""; position: absolute; left: .5rem; top: .5rem; width: .5625rem; height: .5625rem; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 2px rgba(0, 0, 0, .35); }
-.sg-sleeve-play { position: absolute; right: .5rem; top: calc(clamp(4.5rem, 9dvh, 6rem) - 2.375rem); display: grid; place-items: center; width: 1.875rem; height: 1.875rem; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: var(--accent-ink); cursor: pointer; opacity: 0; transform: scale(.9); transition: opacity var(--t-fast), transform var(--t-fast); }
+.sg-sleeve-play { position: absolute; z-index: 4; right: .4375rem; top: .4375rem; display: grid; place-items: center; width: 1.875rem; height: 1.875rem; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: var(--accent-ink); cursor: pointer; opacity: 0; transform: scale(.9); transition: opacity var(--t-fast), transform var(--t-fast); }
 .sg-sleeve:hover .sg-sleeve-play, .sg-sleeve.is-on .sg-sleeve-play, .sg-sleeve-play:focus-visible { opacity: 1; transform: none; }
 .sg-sleeve-play svg { width: .875rem; height: .875rem; }
-.sg-sleeve b { overflow: hidden; font: 600 .875rem/1.25 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
-.sg-sleeve em { font: 500 var(--fs-small)/1 var(--font-mono); font-style: normal; color: var(--dim); }
-.sg-import { display: grid; align-content: center; justify-items: center; gap: .1875rem; flex: none; width: clamp(7.25rem, 9vw, 9rem); height: clamp(4.5rem, 9dvh, 6rem); padding: 0 .5rem; border: 1px dashed var(--line2); border-radius: .9375rem; background: transparent; color: var(--muted); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+/* (the title and the length sit inside the sleeve, over a shade at its foot) */
+.sg-sleeve-label { position: absolute; z-index: 3; inset: auto 2px 2px; display: grid; gap: .125rem; padding: 1.5rem .5rem .4375rem; border-radius: 0 0 .8125rem .8125rem; background: linear-gradient(transparent, rgba(0, 0, 0, .78)); color: #fff; pointer-events: none; }
+.sg-sleeve-label b { overflow: hidden; font: 600 .8125rem/1.2 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+.sg-sleeve-label em { font: 500 .6875rem/1 var(--font-mono); font-style: normal; color: rgba(255, 255, 255, .72); }
+.sg-import { display: grid; align-content: center; justify-items: center; gap: .1875rem; flex: none; width: var(--sleeve); aspect-ratio: 1; padding: 0 .5rem; border: 1px dashed var(--line2); border-radius: .9375rem; background: transparent; color: var(--muted); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
 .sg-import:hover { border-color: var(--accent-line); color: var(--text); }
 .sg-import svg { width: 1.25rem; height: 1.25rem; color: var(--accent); }
 .sg-import b { font: 600 .8125rem/1.2 var(--font-sans); }
@@ -212,8 +217,8 @@ li[data-kind="edge"] .sg-sec i { background: #6b6a74; }
 .sg-clip[aria-pressed="true"] .sg-clip-tag { background: var(--accent); color: var(--accent-ink); }
 
 /* a sleeve wears its cover (a square on the left, the record peeking out on the right); a video cover plays over it when it is pointed at */
-.sg-sleeve-cover { position: absolute; left: 0; top: 0; z-index: 1; display: block; height: 100%; aspect-ratio: 1; object-fit: cover; }
-.sg-sleeve-clip { position: absolute; left: 0; top: 0; z-index: 2; display: block; height: 100%; aspect-ratio: 1; object-fit: cover; opacity: 0; transition: opacity var(--t-fast); }
+.sg-sleeve-cover { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; object-fit: cover; }
+.sg-sleeve-clip { position: absolute; inset: 0; z-index: 2; display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--t-fast); }
 .sg-sleeve-art:hover .sg-sleeve-clip[src], .sg-sleeve-art:focus-visible .sg-sleeve-clip[src] { opacity: 1; }
 .sg-sleeve.has-cover .sg-sleeve-art { justify-items: start; }
 .sg-sleeve.has-cover.is-track .sg-sleeve-art::after { z-index: 3; }
@@ -230,13 +235,11 @@ li[data-kind="edge"] .sg-sec i { background: #6b6a74; }
   /* (the shelf shrinks to a row of sleeves: the stage and the lyrics keep their room) */
   .sg-shelf { gap: .25rem; padding: .4375rem .875rem .5rem; }
   .sg-shelf-head { display: none; }
-  .sg-sleeve { width: clamp(6.25rem, 8vw, 8rem); gap: .0625rem; }
-  .sg-sleeve-art { height: 3rem; }
-  .sg-sleeve em, .sg-sleeve b { display: none; }
-  .sg-sleeve-art { height: 2.875rem; }
-  .sg-sleeves { scrollbar-width: none; padding-bottom: 0; }
-  .sg-sleeve-play { top: .5rem; right: .375rem; width: 1.75rem; height: 1.75rem; }
-  .sg-import { height: 2.875rem; }
+  .sg-shelf { --sleeve: 4.5rem; }
+  .sg-sleeve-label { padding: 1rem .375rem .3125rem; }
+  .sg-sleeve-label b { font-size: .6875rem; }
+  .sg-sleeve-label em { font-size: .5625rem; }
+  .sg-sleeve-play { top: .3125rem; right: .3125rem; width: 1.5rem; height: 1.5rem; }
   .sg-import b, .sg-import em { display: none; }
   .sg-stage { gap: .4375rem; padding: .75rem 1.25rem; }
   .sg-hint { display: none; }

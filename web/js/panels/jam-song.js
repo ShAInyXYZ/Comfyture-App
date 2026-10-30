@@ -749,11 +749,19 @@ function lyricSeek(time) {
   drawWave();
 }
 
+/** The wheel turned over the songs moves them sideways (a trackpad's own sideways swipe is left alone). */
+function sideways(e) {
+  const row = e.currentTarget;
+  if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || row.scrollWidth <= row.clientWidth) return;
+  e.preventDefault();
+  row.scrollLeft += e.deltaY * (e.deltaMode === 1 ? 32 : 1);
+}
+
 function drawShelf() {
   const list = shelf();
   return [
     h("div.sg-shelf-head", {}, h("span.sg-label", {}, "Your songs"), h("span.sg-meta", {}, list.length ? String(list.length) : "")),
-    h("div.sg-sleeves", { dataset: { scrollKey: "sg-sleeves" } },
+    h("div.sg-sleeves", { dataset: { scrollKey: "sg-sleeves" }, on: { wheel: sideways } },
       ...list.map((m) => {
         const hue = [...(m.name ?? "")].reduce((t, ch) => (t * 31 + ch.charCodeAt(0)) % 360, 17);
         const playing = song.shown === m.file && page.audio && !page.audio.paused;
@@ -766,7 +774,7 @@ function drawShelf() {
           h("button.sg-sleeve-art", { type: "button", title: `${m.name}\nShow it on the stage`, "aria-label": m.name, on: { click: () => show(m.file), pointerenter: play, pointerleave: stop, focus: play, blur: stop } },
             h("span.sg-disc", {}), cv.picture ? h("img.sg-sleeve-cover", { src: cv.picture, alt: "", draggable: false, loading: "lazy" }) : h("span.sg-sleeve-jar", {}, jicon("jar")), clip),
           h("button.sg-sleeve-play", { type: "button", title: playing ? "Pause" : "Play", "aria-label": playing ? `Pause ${m.name}` : `Play ${m.name}`, on: { click: () => toggle(m) } }, jicon(playing ? "pause" : "play")),
-          h("b", { title: m.name }, m.name), h("em", {}, lengthLabel(Math.round(m.seconds || 0))));
+          h("span.sg-sleeve-label", {}, h("b", {}, m.name), h("em", {}, lengthLabel(Math.round(m.seconds || 0)))));
       }),
       h("button.sg-import", { type: "button", title: "A sound or a video's sound becomes a song of the shelf", on: { click: () => pickFile("audio/*,video/*", bringSong) } }, jicon("upload"), h("b", {}, "Import a song"), h("em", {}, "MP3, WAV or video"))),
   ];
