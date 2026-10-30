@@ -29,7 +29,6 @@ const assets: Asset[] = [
   asset("made-lights-off", "Lights Off", "made", "made/lights-off.webp", 720, 1279, "made", { note: "Mixer trend." }),
   asset("made-three-kittens", "Three Kittens", "made", "made/three-kittens.webp", 720, 1279, "made", { note: "Mixer trend." }),
   asset("made-black-cat", "Black Cat Clapping", "made", "made/black-cat-clapping.webp", 720, 1280, "made", { video: "brand/mixer/trends/black-cat-clapping/preview.mp4", note: "Mixer trend, from the reference clip." }),
-  asset("made-ramalama", "Ramalama", "made", "made/ramalama.webp", 720, 1279, "made", { note: "Mixer trend." }),
   asset("made-hotel-lobby", "Hotel Lobby", "made", "made/hotel-lobby.webp", 720, 1280, "made", { video: "brand/mixer/trends/hotel-lobby/preview.mp4", note: "Mixer trend, with human owners." }),
   asset("made-finding-life", "Finding Life", "made", "made/finding-life.webp", 960, 528, "made", { note: "A story shot from Desert Dawn Rescue, 23 s film." }),
   asset("made-observing-sky", "Observing Sky", "made", "made/observing-sky.webp", 960, 528, "made", { note: "A story shot from Desert Dawn Rescue." }),

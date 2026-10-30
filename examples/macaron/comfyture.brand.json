@@ -709,16 +709,6 @@
     "note": "Mixer trend, from the reference clip."
    },
    {
-    "id": "made-ramalama",
-    "name": "Ramalama",
-    "kind": "made",
-    "url": "brand/macaron/comfyture/made/ramalama.webp",
-    "width": 720,
-    "height": 1279,
-    "source": "made",
-    "note": "Mixer trend."
-   },
-   {
     "id": "made-hotel-lobby",
     "name": "Hotel Lobby",
     "kind": "made",
