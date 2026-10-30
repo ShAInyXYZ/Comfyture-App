@@ -5,7 +5,7 @@
 import { h, icon, sprite } from "../dom.js";
 import { state } from "../store.js";
 import {
-  cut, FPS, GRADES, track, mainTrack, findItem, sourceOf, lengthOf, layout, totalLength, filmLength, addTitle, removeItem,
+  cut, FPS, GRADES, track, mainTrack, findItem, sourceOf, lengthOf, layout, totalLength, filmLength, playEnd, addTitle, removeItem,
   select, splitAt, moveMain, moveToTrack, toggleTrack, setJoin, commit, isPlaced, addFx, addSticker, addPictureSticker,
   STICKERS, loadStickers, addBeatAt, removeBeat, draftEdit, addLyric, addMedia, undo, redo, played, repeatsOf, duplicateItem, toggleLoop,
 } from "../cut.js";
@@ -320,7 +320,7 @@ function tick() {
       player.t0 = performance.now();
     }
   }
-  const end = filmLength() || totalLength();
+  const end = playEnd();
   // a page put away stops its film
   if (!ed.shell?.screen.isConnected || ed.shell.screen.closest("[hidden]")) return stop();
   if (t >= end) {
@@ -335,7 +335,7 @@ function tick() {
 }
 function play() {
   if (player.playing) return stop();
-  const end = filmLength() || totalLength();
+  const end = playEnd();
   if (!end) return;
   player.playing = true;
   player.from = cut.playhead >= end - 0.05 ? 0 : cut.playhead;

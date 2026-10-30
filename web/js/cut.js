@@ -139,8 +139,12 @@ export function totalLength(b = body()) {
   return Math.max(main, ...others, 0);
 }
 export const filmLength = (b = body()) => (layout(b).at(-1)?.end ?? 0);
-/** Where a looping clip stops repeating: the end of the film (of the main track, or of the rest when it has no clips). */
-export const loopEnd = (b = body()) => (layout(b).length ? filmLength(b) : totalLength(b));
+/** Where a looping clip stops repeating: the end of the project, whatever runs longest (the song under a short film, say). */
+export const loopEnd = (b = body()) => Math.max(filmLength(b), totalLength(b));
+/** Whether a clip on a lane loops. */
+export const hasLoop = (b = body()) => !!b?.tracks?.some((t) => !t.main && t.items?.some((it) => it.loop));
+/** Where the film stops playing: the main track's end, or the project's end once a clip loops to it. */
+export const playEnd = (b = body()) => (hasLoop(b) ? loopEnd(b) : filmLength(b) || totalLength(b));
 /** The edit as it plays: each looping clip followed by its repeats on its lane. */
 export const played = (b = body()) => withLoops(b, lengthOf, loopEnd(b));
 /** A looping item's repeats on its lane, from where it starts. */

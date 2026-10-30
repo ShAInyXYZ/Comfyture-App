@@ -418,3 +418,23 @@ test("a looping overlay repeats on its lane until the film ends, its last repeat
   const f = await rgbFrame(out.film, 2.5);
   assert.ok(near(px(f, 160, 80, 45), [192, 32, 32], 30), `the overlay's repeat plays at 2.5 s: ${px(f, 160, 80, 45)}`);
 });
+
+test("a looping clip runs to the end of the project: past a short film, to the end of its song", async (t) => {
+  const dir = await tmp(t);
+  await makeClip(join(dir, "blue.mp4"), 160, 90, 2, "solid", "0x2040c0");
+  await makeClip(join(dir, "red.mp4"), 160, 90, 1, "solid", "0xc02020");
+  await exec("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "sine=f=440:d=5", join(dir, "tone.wav")]);
+  const blue = { path: join(dir, "blue.mp4"), still: false, hasAudio: false, duration: 2 };
+  const red = { path: join(dir, "red.mp4"), still: false, hasAudio: false, duration: 1 };
+  const body: any = { aspect: "16:9", tracks: [
+    { id: "v1", kind: "video", main: true, items: [{ id: "c", src: { kind: "video", id: "b" } }] },
+    { id: "v2", kind: "video", items: [{ id: "o", src: { kind: "video", id: "r" }, start: 0, loop: true }] },
+    { id: "a2", kind: "audio", role: "music", items: [{ id: "m", src: { kind: "audio", id: "tone" }, start: 0 }] },
+  ] };
+  const srcs: any = { c: blue, o: red, m: { path: join(dir, "tone.wav"), still: false, hasAudio: true, duration: 5 } };
+  for (let i = 1; i <= 6; i++) srcs[`o~${i}`] = red;
+  const out = await render(body, srcs, join(dir, "l"), { size: { width: 160, height: 90 } });
+  assert.equal(Math.round(out.plan.seconds * 10) / 10, 5, "the film runs as long as the song");
+  const f = await rgbFrame(out.film, 4.5);
+  assert.ok(near(px(f, 160, 80, 45), [192, 32, 32], 30), `the loop still plays at 4.5 s, past the 2 s film: ${px(f, 160, 80, 45)}`);
+});

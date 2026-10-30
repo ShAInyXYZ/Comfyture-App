@@ -299,10 +299,19 @@ export function planCut(body: CutBody, source: (item: CutItem) => Source | null,
     if (!main!.mute && it.sound !== false && src.hasAudio && !src.still) sound(k, it, n(it.from, 0, src.duration, 0), len, start, n(it.speed, 0.25, 4, 1), "clip");
   });
   let T = at;
+  // where the rest ends (the lanes over the film, the sound under it)
+  const end = (t: CutTrack, it: CutItem) => n(it.start, 0, 36000, 0) + (t.kind === "audio" ? Math.max(0, Math.min(Number(it.to) || Infinity, source(it)?.duration ?? 0) - n(it.from, 0, 36000, 0)) : t.kind === "title" ? n(it.length, 0.5, 60, 3) : n(it.length, 0.5, 60, 4));
+  const rest = Math.max(0, ...body.tracks.filter((t) => !t.mute && t.kind !== "fx" && t !== main).flatMap((t) => t.items.map((it) => end(t, it))));
+  // a looping clip runs to the end of the project (the song, say), so the film plays on past its main track to there
+  const looping = body.tracks.some((t) => t !== main && !t.mute && t.items.some((it) => it.loop));
+  if (acc && looping && rest > at + 0.05) {
+    vf.push(`[${acc}]tpad=stop_mode=add:stop_duration=${f3(rest - at)}:color=0x14101f[ext]`);
+    acc = "ext";
+    T = rest;
+  }
   if (!acc) {
     // no clips: a lyric video or a sound alone has a dark stage behind it, as long as the rest runs
-    const end = (t: CutTrack, it: CutItem) => n(it.start, 0, 36000, 0) + (t.kind === "audio" ? Math.max(0, Math.min(Number(it.to) || Infinity, source(it)?.duration ?? 0) - n(it.from, 0, 36000, 0)) : t.kind === "title" ? n(it.length, 0.5, 60, 3) : n(it.length, 0.5, 60, 4));
-    T = Math.max(0, ...body.tracks.filter((t) => !t.mute && t.kind !== "fx" && t !== main).flatMap((t) => t.items.map((it) => end(t, it))));
+    T = rest;
     if (T < 0.5) throw new Error("There is nothing to render: put a clip, a sound or a title on the timeline.");
     vf.push(`color=c=0x14101f:s=${W}x${H}:r=24:d=${f3(T)},format=yuv420p[m0]`);
     acc = "m0";
