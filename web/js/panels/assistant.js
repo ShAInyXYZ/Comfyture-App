@@ -18,7 +18,7 @@ import { hasTour, tourTaken, startTour, onTour } from "../tour.js";
 import { surfaceOf, extrasOf, surfaceReady } from "../surfaces.js";
 
 // One bar, and a pet in it for every product (web/js/harnesses.js): Ketkout in Kitchen's rooms, Praline in Mixer,
-// Pickle in Jam, Brioche in Macaron, Paprika in Spice, Crumpet in Toaster, Truffle in Utensils. The page the bar is on says whose bar it is, and each
+// Pickle in Jam, Brioche in Macaron, Paprika in Spice, Crumpet in Toaster, Canelle in Cabinet, Truffle in Utensils. The page the bar is on says whose bar it is, and each
 // product keeps its own conversation, so what is said to one is never in front of another.
 
 // on the Stage the bar stages a scene; on the Shot it sets up the shot: one bar, two conversations
@@ -53,6 +53,7 @@ function surface() {
     case "mixer":
     case "spice":
     case "toaster":
+    case "cabinet":
     case "utensils":
       return notYet(page);
     case "jam":

@@ -12,6 +12,7 @@ import { MIXER_BRIEF, MIXER_OPS, MIXER_TOOL, mixerPrompt, readMixerAnswer } from
 import { UTENSILS_BRIEF, UTENSILS_OPS, UTENSILS_TOOL, utensilsPrompt, readUtensilsAnswer } from "../server/utensils-assist.ts";
 import { SPICE_BRIEF, SPICE_OPS, SPICE_TOOL, spicePrompt, readSpiceAnswer } from "../server/spice-assist.ts";
 import { TOASTER_BRIEF, TOASTER_OPS } from "../server/toaster-assist.ts";
+import { CABINET_BRIEF, CABINET_OPS, CABINET_TOOL } from "../server/cabinet-assist.ts";
 import { readAnswer } from "../server/assistant.ts";
 import { readControlAnswer } from "../server/control.ts";
 import { readStoryAssist } from "../server/story.ts";
@@ -20,7 +21,7 @@ import { manual } from "../server/manual.ts";
 import * as macaron from "../server/macaron.ts";
 
 const web = join(import.meta.dirname, "..", "web");
-const PETS = { kitchen: "Ketkout", mixer: "Praline", jam: "Pickle", macaron: "Brioche", spice: "Paprika", toaster: "Crumpet", cabinet: "Bagel", utensils: "Truffle" } as const;
+const PETS = { kitchen: "Ketkout", mixer: "Praline", jam: "Pickle", macaron: "Brioche", spice: "Paprika", toaster: "Crumpet", cabinet: "Canelle", utensils: "Truffle" } as const;
 const TAGS = { kitchen: "head chef", mixer: "trend boss", jam: "band leader", macaron: "brand room", spice: "VFX house", toaster: "model maker", cabinet: "stylist", utensils: "shelf keeper" } as const;
 
 // ---------------------------------------------------------------- the registry
@@ -122,18 +123,18 @@ const PET_NAMES = Object.values(PETS);
 /** The names of everything else in the app, to look for in a brief that must not know them. */
 const foreign = (product: keyof typeof PETS) => [...PET_NAMES.filter((n) => n !== PETS[product]), ...PRODUCT_NAMES.filter((n) => n !== PRODUCTS[product][0])];
 
-test("Praline's, Paprika's, Crumpet's and Truffle's briefs are their own product's: their pet, their product, their actions and nothing of the others", () => {
-  for (const [product, brief, ops] of [["mixer", MIXER_BRIEF, MIXER_OPS], ["spice", SPICE_BRIEF, SPICE_OPS], ["toaster", TOASTER_BRIEF, TOASTER_OPS], ["utensils", UTENSILS_BRIEF, UTENSILS_OPS]] as const) {
+test("Praline's, Paprika's, Crumpet's, Canelle's and Truffle's briefs are their own product's: their pet, their product, their actions and nothing of the others", () => {
+  for (const [product, brief, ops] of [["mixer", MIXER_BRIEF, MIXER_OPS], ["spice", SPICE_BRIEF, SPICE_OPS], ["toaster", TOASTER_BRIEF, TOASTER_OPS], ["cabinet", CABINET_BRIEF, CABINET_OPS], ["utensils", UTENSILS_BRIEF, UTENSILS_OPS]] as const) {
     assert.ok(brief.includes(PETS[product]) && brief.includes(PRODUCTS[product][0]));
     for (const n of foreign(product)) assert.ok(!brief.includes(n), `the ${product} brief names ${n}`);
     for (const op of ops) assert.ok(brief.includes(op), `${op} is in the brief`);
     assert.ok(brief.length < 3000, `a short brief (${brief.length} characters)`);
   }
-  assert.ok([MIXER_BRIEF, SPICE_BRIEF, TOASTER_BRIEF, UTENSILS_BRIEF].every((b) => /never that it has started/.test(b)), "what costs credits is only asked for");
+  assert.ok([MIXER_BRIEF, SPICE_BRIEF, TOASTER_BRIEF, CABINET_BRIEF, UTENSILS_BRIEF].every((b) => /never that it has started/.test(b)), "what costs credits is only asked for");
 });
 
 test("their tools are forced answers: a reply and actions, each action one of the pet's own ops", () => {
-  for (const [tool, ops] of [[MIXER_TOOL, MIXER_OPS], [SPICE_TOOL, SPICE_OPS], [UTENSILS_TOOL, UTENSILS_OPS]] as const) {
+  for (const [tool, ops] of [[MIXER_TOOL, MIXER_OPS], [SPICE_TOOL, SPICE_OPS], [CABINET_TOOL, CABINET_OPS], [UTENSILS_TOOL, UTENSILS_OPS]] as const) {
     assert.deepEqual(tool.input_schema.required, ["reply", "actions"]);
     assert.deepEqual(tool.input_schema.properties.actions.items.properties.op.enum, [...ops]);
   }

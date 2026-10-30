@@ -165,6 +165,12 @@ body[data-page="cabinet"] { padding-bottom: 0; overflow: hidden; }
 .cab-shoot { flex: none; min-height: 2.5rem; gap: .5rem; padding: 0 1rem; }
 .cab-price { padding-left: .5rem; border-left: 1px solid rgba(0, 0, 0, .2); font: 600 var(--fs-micro)/1 var(--font-mono); opacity: .75; }
 
+/* Canelle's bar, docked under the toolbar (its conversation opens above it, over the mirror) */
+.cab-chat { flex: none; position: relative; z-index: 29; width: 100%; pointer-events: none; }
+.cab-chat > * { pointer-events: auto; }
+/* a short window: her quick chips go (as on the Stage), so the mirror keeps its room */
+@media (max-height: 760px) and (min-width: 821px) { .cab-chat .pet-chips { display: none; } }
+
 /* ---------------------------------------------------------------- the shelves */
 
 .cab-shelf { border: 1px solid var(--card-line); border-radius: var(--r-panel); background: var(--card); padding: .75rem; gap: .625rem; }

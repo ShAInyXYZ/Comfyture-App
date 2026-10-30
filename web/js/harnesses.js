@@ -113,17 +113,17 @@ export const HARNESSES = {
     offers: TOASTER_OFFERS,
   },
 
-  // a character dressed and posed: Bagel, the cast's goofball, styles the shoots. His bar is not docked on Cabinet's page yet
-  // (he has no brief on the server): this is who he is, and what he will say and offer there
+  // characters dressed and posed: Canelle, the baby squirrel who is Cabinet's stylist. Her brief and the actions she may take are the
+  // server's (server/cabinet-assist.ts); what she is told of the shoot and how her actions are made is in cabinet-assist.js
   cabinet: {
-    pet: "bagel",
-    name: "Bagel",
+    pet: "canelle",
+    name: "Canelle",
     tag: "stylist",
-    face: "brand/cast/bagel-face.webp",
+    face: "brand/cast/canelle-face.webp",
     tools: "bar",
     home: "cabinet",
-    placeholders: { cabinet: "Ask Bagel — dress them for a rainy day in Paris, three poses, for a post" },
-    presets: { cabinet: [p("Beach day", "Dress them for a sunny day at the beach"), p("Office ready", "Dress them for the office, standing confident"), p("Party night", "Dress them for a party at night, in three poses")] },
+    placeholders: { cabinet: "Ask Canelle — Josie and Earl as wedding guests in traditional dress, then shoot" },
+    presets: { cabinet: [p("Wedding guests", "Dress them as wedding guests in traditional dress"), p("Beach day", "Dress them for a sunny day at the beach, in a fun pose"), p("Street style", "A street-style post: an urban outfit, a walking pose, a city street"), p("Four looks", "Try four different outfits on them for a lookbook")] },
   },
 
   // one-tool jobs: Truffle, her seven workspaces and what the bar says in each are Utensils' own data (web/js/utensils-harness.js);

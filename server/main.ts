@@ -41,6 +41,7 @@ import { createEdit } from "./utensils-edit.ts";
 import { createFx, deadlineOf, selfLimit } from "./utensils-fx.ts";
 import { createTemplates, realCloud, fakeRun, type Cloud } from "./comfy-templates.ts";
 import { createToaster3d } from "./toaster-3d.ts";
+import { CABINET_BRIEF, CABINET_TOOL, cabinetPrompt, readCabinetAnswer } from "./cabinet-assist.ts";
 import { readCoverRequest, mergeCover, CoverError, type AudioEntry } from "./audio-cover.ts";
 import { seedExamples, placeMedia, placeThumb, placedName, revOf, type ExampleKind, type Kept } from "./examples.ts";
 import { createTarget, cleanUrl, unreachable, targetOf, CLOUD_URL, LOCAL_URL, type Target } from "./target.ts";
@@ -1770,6 +1771,17 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (!validJob(input.job)) throw bad("Send the frames first.");
     const pops = (Array.isArray(input.sound?.pops) ? input.sound.pops : []).map(Number).filter((n: number) => Number.isFinite(n) && n >= 0 && n < 30);
     return json(res, 201, await encodeFrames(data, input.job, { fps: Math.round(num(input.fps, 12, 60, 30)), name: text(input.name, 60) || "motion", sound: input.sound ? { pops, pad: input.sound.pad === true } : undefined, container: input.container === "webm" ? "webm" : input.container === "gif" ? "gif" : "mp4" }));
+  }
+  if (path === "/api/cabinet/assist" && method === "POST") {
+    // Canelle reads the shoot and the shelves and answers with how to set it up; nothing is pictured here (before Cabinet's store,
+    // which would take "assist" for a shoot's id)
+    const input = await jsonBody(req, 256 * 1024);
+    const turns = petTurns(input.messages);
+    if (!turns.length) throw bad("Say what to do.");
+    const summary = input.cabinet && typeof input.cabinet === "object" ? input.cabinet : {};
+    const reply = await petAnswer(pickLlm(input.model, "assistant"), CABINET_BRIEF, CABINET_TOOL, cabinetPrompt(summary, turns));
+    if (process.env.COMFYTURE_DEBUG) console.log(`canelle answered\n${reply}`);
+    return json(res, 200, readCabinetAnswer(reply, summary));
   }
   // Kitchen's stories and edits, Mixer's mixes, Macaron's brands, Jam's videos, Spice's shots, Toaster's drafts, Cabinet's shoots
   // a store's examples are in before it is first served

@@ -114,7 +114,7 @@ const panels = {
   macaron: [$("page-macaron"), product("macaron", () => Promise.all([import("./panels/macaron.js"), import("./macaron-assist.js")]).then(([m]) => m.renderMacaron)), "macaron"],
   spice: [$("page-spice"), product("spice", () => Promise.all([import("./panels/spice.js"), import("./spice-assist.js")]).then(([m]) => m.renderSpice)), "spice"],
   toaster: [$("page-toaster"), product("toaster", () => Promise.all([import("./panels/toaster.js"), import("./toaster-assist.js")]).then(([m]) => m.renderToaster)), "toaster"],
-  cabinet: [$("page-cabinet"), product("cabinet", () => import("./panels/cabinet.js").then((m) => m.renderCabinet)), "cabinet"],
+  cabinet: [$("page-cabinet"), product("cabinet", () => Promise.all([import("./panels/cabinet.js"), import("./cabinet-assist.js")]).then(([m]) => m.renderCabinet)), "cabinet"],
   utensils: [$("page-utensils"), product("utensils", () => Promise.all([import("./panels/utensils.js"), import("./utensils-assist.js")]).then(([m]) => m.renderUtensils)), "utensils"],
 };
 
@@ -214,6 +214,7 @@ function dockAssistant(page = currentPage()) {
   if (dockSpice(bar, page)) return;
   if (dockUtensils(bar, page)) return;
   if (dockToaster(bar, page)) return;
+  if (dockCabinet(bar, page)) return;
   const slot = page === "stage" ? $("stage-chat") : page === "story" ? $("story-chat") : page === "cut" ? $("cut-chat") : page === "jam" ? $("jam-chat") : page === "mixer" ? document.body : $("page-shot");
   bar.hidden = !slot || !["shot", "stage", "story", "cut", "jam", "mixer"].includes(page);
   if (slot && bar.parentElement !== slot) slot.append(bar);
@@ -274,6 +275,18 @@ function dockUtensils(bar, page) {
   return true;
 }
 document.addEventListener("utensils:drawn", () => currentPage() === "utensils" && $("assistant").parentElement?.id !== "utensils-chat" && dockAssistant());
+// Cabinet: Canelle's bar docks under the toolbar of the mirror (the slot is drawn with the page)
+function dockCabinet(bar, page) {
+  if (page !== "cabinet") return false;
+  const slot = $("cabinet-chat");
+  bar.hidden = !slot;
+  if (slot && bar.parentElement !== slot) slot.append(bar);
+  bar.classList.toggle("is-docked", !!slot);
+  pending.add("assistant");
+  flush();
+  return true;
+}
+document.addEventListener("cabinet:drawn", () => currentPage() === "cabinet" && $("assistant").parentElement?.id !== "cabinet-chat" && dockAssistant());
 // Toaster: Crumpet's bar docks under the viewport (the slot is drawn with the page)
 function dockToaster(bar, page) {
   if (page !== "toaster") return false;

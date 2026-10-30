@@ -117,6 +117,38 @@ export function removeCharacter(index) {
   draw();
 }
 
+/**
+ * The cast set at once, left to right, by our characters' ids ("picture-2": whoever the second place holds, brought in from a
+ * picture). A place kept keeps its picks; in a group each keeps one outfit and one pose. (Canelle sets it so.)
+ */
+export function setCast(ids) {
+  const b = cabinet.shoot?.body;
+  if (!b || !ids?.length) return;
+  b.cast = ids.slice(0, MOST_CAST).map((id, i) => {
+    const m = b.cast[i] ?? member();
+    const kept = /^picture-(\d)$/.exec(id);
+    const who = kept ? b.cast[Number(kept[1]) - 1]?.who ?? m.who : characterById(id) ? { kind: "character", id } : m.who;
+    return { ...m, who };
+  });
+  if (b.cast.length > 1) for (const m of b.cast) (m.outfits = m.outfits.slice(0, 1)), (m.poses = m.poses.slice(0, 1));
+  b.active = Math.min(b.active, b.cast.length - 1);
+  save();
+  draw();
+}
+
+/** One character dressed at once: ids of the shelves (not given: left as it is; []: their own clothes, a natural pose). */
+export function setLook(index, outfits, poses) {
+  const b = cabinet.shoot?.body;
+  const m = b?.cast[index];
+  if (!m) return;
+  const most = isGroup(b) ? 1 : 4;
+  if (Array.isArray(outfits)) m.outfits = outfits.filter((id) => wardrobeItem(id)).slice(0, most).map((id) => `shelf:${id}`);
+  if (Array.isArray(poses)) m.poses = poses.filter((id) => poseItem(id)).slice(0, most).map((id) => `shelf:${id}`);
+  b.active = index;
+  save();
+  draw();
+}
+
 /** The character the shelves dress. */
 export function setActive(index) {
   const b = cabinet.shoot?.body;

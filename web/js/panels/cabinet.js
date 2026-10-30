@@ -326,8 +326,14 @@ function mirror(b) {
   const p = b.pictures.find((x) => x.id === cabinet.shown) ?? b.pictures[0] ?? null;
   return h("main.cab-col.cab-mirror", { "aria-label": "The mirror" },
     h("div.cab-glass", {}, contactSheet(b), bigPicture(p, whoNow(b))),
-    shootBar(b));
+    shootBar(b),
+    chatSlot());
 }
+
+// Canelle's bar docks here, under the toolbar (app.js moves the shared bar in). The slot is made once: the page is drawn again whole,
+// and a new slot would leave the bar behind.
+let slot = null;
+const chatSlot = () => (slot ??= h("div.cab-chat", { id: "cabinet-chat" }));
 
 // ---------------------------------------------------------------- the shelves
 
@@ -407,5 +413,14 @@ export function renderCabinet(el) {
     return;
   }
   const b = cabinet.shoot.body;
+  // (typing in Canelle's bar while the page is drawn again: the bar is moved with its slot, and the caret is put back)
+  const active = document.activeElement;
+  const typing = slot?.contains(active) && active.matches("input, textarea, [contenteditable]:not([contenteditable=false])") ? active : null;
+  const range = typing && getSelection().rangeCount ? getSelection().getRangeAt(0).cloneRange() : null;
   el.replaceChildren(subbar(), h("div.cab-room", { dataset: { cast: String(b.cast.length) } }, whoColumn(b), mirror(b), shelf(b)));
+  if (typing && document.activeElement !== typing) {
+    typing.focus({ preventScroll: true });
+    if (range) getSelection().removeAllRanges(), getSelection().addRange(range);
+  }
+  document.dispatchEvent(new Event("cabinet:drawn"));
 }
