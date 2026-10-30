@@ -6,7 +6,7 @@
   },
   "files": {
     "audio": "web/brand/mixer/voices/ivy-v1.mp3",
-    "audio3": "output/ivy-plant-reveal/stems-1.mp3"
+    "audio3": "output/mixer/ivy-plant-reveal/stems-1.mp3"
   },
   "overrides": {
     "5": {

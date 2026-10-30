@@ -2,6 +2,6 @@
   "id": "stems",
   "template": "audio_melbandroformer_audio_separation",
   "files": {
-    "audio": "output/ivy-plant-reveal/source.wav"
+    "audio": "output/mixer/ivy-plant-reveal/source.wav"
   }
 }

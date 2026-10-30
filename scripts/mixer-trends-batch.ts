@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 import { createTemplates, realCloud, jobOutputs, isDone, isOver } from '../server/comfy-templates.ts';
 import { CREW } from '../web/js/mixer-trends.js';
 import { castVoiceDirection } from '../web/js/mixer-voices.js';
-const root=process.cwd(), dir=join(root,'output/mixer-new-trends-2026-10-28');
+const root=process.cwd(), dir=join(root,'output/mixer/new-trends-2026-10-28');
 const plan=JSON.parse(await readFile(join(root,'docs/research/trends-2026-10-28/production.json'),'utf8'));
 const cloud=realCloud(process.env.COMFY_API_KEY!);
 const service=createTemplates({root,data:join(root,'data'),cloud,warm:false});

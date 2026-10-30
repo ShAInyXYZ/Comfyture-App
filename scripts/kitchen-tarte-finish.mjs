@@ -2,7 +2,7 @@
 import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 import {execFileSync} from 'node:child_process';
-const root=resolve(import.meta.dirname,'..'),out=resolve(root,'output/kitchen-tarte'),folder=resolve(root,'examples/kitchen/tarte-for-friends');
+const root=resolve(import.meta.dirname,'..'),out=resolve(root,'output/kitchen/tarte'),folder=resolve(root,'examples/kitchen/tarte-for-friends');
 const checkpoint=resolve(out,'production.json');
 const state=JSON.parse(await readFile(checkpoint,'utf8'));
 const plan=JSON.parse(await readFile(resolve(folder,'plan.json'),'utf8'));

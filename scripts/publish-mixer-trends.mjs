@@ -6,7 +6,7 @@ import { CREW } from '../web/js/mixer-trends.js';
 import { AUTUMN_TRENDS } from '../web/js/mixer-trends-autumn.js';
 const exec=promisify(execFile);
 const plan=JSON.parse(await readFile('docs/research/trends-2026-10-28/production.json','utf8'));
-const output='output/mixer-new-trends-2026-10-28';
+const output='output/mixer/new-trends-2026-10-28';
 const entries=[];
 for(const s of plan.scenes){
  if(s.productionRecipe){

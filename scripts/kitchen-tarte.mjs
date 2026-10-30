@@ -5,7 +5,7 @@ import { finishVideoPrompt } from '../server/jam-video-prompt.ts';
 import { normalizeBody } from '../web/js/edit.js';
 
 const root = resolve(import.meta.dirname, '..');
-const dir = resolve(root, 'output/kitchen-tarte');
+const dir = resolve(root, 'output/kitchen/tarte');
 await mkdir(dir, { recursive: true });
 const plan = JSON.parse(await readFile(resolve(root, 'examples/kitchen/tarte-for-friends/plan.json'), 'utf8'));
 const checkpoint = resolve(dir, 'production.json');

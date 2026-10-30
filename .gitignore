@@ -1,6 +1,8 @@
 node_modules/
 .env
 data/
+# renders and test runs made by work sessions (one folder per studio: kitchen/, mixer/, utensils/, misc/), kept on disk
+output/
 *.log
 .DS_Store
 site/

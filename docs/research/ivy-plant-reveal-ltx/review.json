@@ -133,6 +133,6 @@
     "audio": "Whisper large-v3 confirms both exact lines, ending at 9.38s. Native audio retained without voice conversion or additional paid audio jobs. Whole-clip integrated loudness -13.66 LUFS, true peak -4.44 dBTP. Speech-window mean levels -16.8/-18.6 dBFS; non-dialogue movement window -57.7 dBFS mean / -22.4 dBFS peak. These are mixed-track measurements, not isolated stems. Emotional delivery remains for user listening review.",
     "reference": "Reused look-v2.webp; no new reference charge.",
     "remake": "Photo/crew recasting uses the same official open-weight template with native sound, without the previous Chatterbox conversion.",
-    "previousVersion": "FastH3 and voice-converted master preserved in output/ivy-plant-reveal; previous published version in git b78ccfc."
+    "previousVersion": "FastH3 and voice-converted master preserved in output/mixer/ivy-plant-reveal; previous published version in git b78ccfc."
   }
 }

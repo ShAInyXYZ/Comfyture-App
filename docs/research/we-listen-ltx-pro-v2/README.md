@@ -27,4 +27,4 @@ The official template is titled Pro but defaults to Fast. The request explicitly
 - Aggregate provider execution: 161.5 seconds. End-to-end production: 194.8 seconds. This is partner execution time, not a measured GPU allocation.
 - Actual per-job credit charges were not reported. Costs remain null; no new first-frame image was generated.
 
-Full prompts, seeds, job IDs, voice directions and timing metadata are in the published recipe. Original take receipts and review artifacts are kept in `output/we-listen-ltx-pro-v2/` (local only). `mixer-scripted-preview.ts` resumes recorded jobs; `publish-scripted-mixer.mjs` packages reviewed takes without spending credits.
+Full prompts, seeds, job IDs, voice directions and timing metadata are in the published recipe. Original take receipts and review artifacts are kept in `output/mixer/we-listen-ltx-pro-v2/` (local only). `mixer-scripted-preview.ts` resumes recorded jobs; `publish-scripted-mixer.mjs` packages reviewed takes without spending credits.
