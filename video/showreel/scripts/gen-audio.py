@@ -34,6 +34,11 @@ def tts(voice, text, seed, stability=0.3):
             "language_code": "en", "seed": seed, "output_format": "mp3_44100_192"}},
     }
 
+def sfx_loop(text, seconds, influence=0.4):
+    g = sfx(text, seconds, influence)
+    g["2"]["inputs"]["model.loop"] = True
+    return g
+
 def sfx(text, seconds, influence=0.45):
     return {"2": {"class_type": "ElevenLabsTextToSoundEffects", "inputs": {
         "text": text, "model": "eleven_sfx_v2", "model.duration": seconds, "model.loop": False,
@@ -48,6 +53,18 @@ JOBS = {
     # The last line alone, pushed harder, for a longer "PUUUBLIC".
     "vo-public-brian": lambda: tts("Brian (male, american)", "[excited] [shouting] It's PUUUUUUUBLIC PROPERTYYYY!", 21, 0.0),
     "vo-public-chris": lambda: tts("Chris (male, american)", "[excited] [shouting] It's PUUUUUUUBLIC PROPERTYYYY!", 22, 0.0),
+    # Section 2, Mixer: the narrator, line by line, so each fits its beat.
+    "s2-vo-a": lambda: tts("Brian (male, american)", "[warm] So, how does Comfyture work? It's all tabs. Each tab is a studio... with its own pet assistant who knows the craft.", 31, 0.4),
+    "s2-vo-b": lambda: tts("Brian (male, american)", "[warm] Take Mixer: viral trends, remade with your own cast.", 32, 0.4),
+    "s2-vo-c": lambda: tts("Brian (male, american)", "Just ask Praline to swap in your character... [excited] and boom! Magic.", 33, 0.35),
+    "s2-vo-d": lambda: tts("Brian (male, american)", "[satisfied] Same trend. Your cast.", 34, 0.4),
+    "s2-bed": lambda: sfx_loop("warm relaxed lo-fi hip hop beat with a clean electric guitar melody, soft drums, loopable background music", 22.0),
+    "s2-sfx-typing": lambda: sfx("soft quick laptop keyboard typing, a short sentence", 2.0, 0.6),
+    "s2-sfx-send": lambda: sfx("short soft UI whoosh, a chat message is sent", 0.6, 0.6),
+    "s2-sfx-reply": lambda: sfx("soft bubbly chat notification pop", 0.5, 0.6),
+    "s2-sfx-ticks": lambda: sfx("four soft clean UI confirmation ticks in a row, evenly spaced", 1.3, 0.6),
+    "s2-sfx-magic": lambda: sfx("magical sparkle whoosh into a soft deep boom, a transformation", 1.8, 0.5),
+    "s2-sfx-cards": lambda: sfx("playful soft whooshes as seven cards slide into a row, light and quick", 1.5, 0.5),
     # Sound effects.
     "sfx-scratch": lambda: sfx("vinyl record scratch, music stops abruptly, comedic freeze frame", 1.2, 0.6),
     "sfx-stamp": lambda: sfx("heavy rubber stamp slammed hard on a wooden desk, one loud thud", 1.0, 0.6),
